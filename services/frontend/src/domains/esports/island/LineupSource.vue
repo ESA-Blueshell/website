@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
+import CheckBox from "@/components/island/CheckBox.vue"
+import FormField from "@/components/island/FormField.vue"
+import FormFields from "@/components/island/FormFields.vue"
+import FormSection from "@/components/island/FormSection.vue"
 import {
   loadRoster,
   loadTeamSeasons,
@@ -120,28 +124,65 @@ const drop = (id: number) => {
 
 /** Named by game and season, so the reader can tell which squad they are about to copy. */
 const nameOf = (fielding: Fielding) => `${fielding.game} · ${fielding.season.name}`
+
+/** The line-ups offered, and starting from nobody, as the picker's rows. */
+const NOBODY = "nobody"
+const keyOf = (fielding: Fielding) => `${fielding.game}:${fielding.season.id}`
+const fieldingOptions = computed(() => [
+  {key: NOBODY, label: "Nobody to begin with"},
+  ...played.value.map(one => ({key: keyOf(one), label: nameOf(one)})),
+])
+const chooseFielding = (key: string) => void show(played.value.find(one => keyOf(one) === key) ?? null)
 </script>
 
 <template>
-  <section
-    class="source"
-    data-testid="lineup-source"
+  <form-section
+    testid="lineup-source"
+    title="Start from a line-up"
   >
-    <h3 class="source__heading">
-      Start from a line-up
-    </h3>
+    <form-fields>
+      <!-- Kept where it was once a team is chosen: choosing again is the same act, so it is the
+           same control, with the one that is chosen filled rather than taken out of the list. -->
+      <form-field
+        v-if="teamId == null"
+        :filled="chosenTeam != null"
+        label="Team"
+        variant="inside"
+      >
+        <template #default="{controlId, labelId}">
+          <search-picker
+            :control-id="controlId"
+            empty-note="The association has no other team to start from."
+            :labelled-by="labelId"
+            :options="pool.map(one => ({key: String(one.id), label: one.name}))"
+            placeholder="Search every team"
+            :selected-key="chosenTeam ? String(chosenTeam.id) : null"
+            testid-prefix="lineup-source-team"
+            @pick="key => { const team = pool.find(one => String(one.id) === key); if (team) pick(team) }"
+          />
+        </template>
+      </form-field>
 
-    <!-- Kept where it was once a team is chosen: choosing again is the same act, so it is the
-         same control, with the one that is chosen filled rather than taken out of the list. -->
-    <search-picker
-      v-if="teamId == null"
-      empty-note="The association has no other team to start from."
-      :options="pool.map(one => ({key: String(one.id), label: one.name}))"
-      placeholder="Search every team"
-      :selected-key="chosenTeam ? String(chosenTeam.id) : null"
-      testid-prefix="lineup-source-team"
-      @pick="key => { const team = pool.find(one => String(one.id) === key); if (team) pick(team) }"
-    />
+      <form-field
+        v-if="(chosenTeam != null || teamId != null) && played.length > 0"
+        :class="{'form-span': teamId != null}"
+        filled
+        label="Line-up"
+        testid="lineup-source-fielding"
+        variant="inside"
+      >
+        <template #default="{controlId, labelId}">
+          <search-picker
+            :control-id="controlId"
+            :labelled-by="labelId"
+            :options="fieldingOptions"
+            :selected-key="chosen ? keyOf(chosen) : NOBODY"
+            testid-prefix="lineup-source-fielding"
+            @pick="chooseFielding"
+          />
+        </template>
+      </form-field>
+    </form-fields>
 
     <template v-if="chosenTeam != null || teamId != null">
       <p
@@ -151,171 +192,54 @@ const nameOf = (fielding: Fielding) => `${fielding.game} · ${fielding.season.na
       >
         {{ chosenTeam?.name ?? "This team" }} has no other line-up to start from.
       </p>
-
-      <template v-else>
-        <label class="source__field">
-          <span class="source__label">Line-up</span>
-          <select
-            class="source__input"
-            data-testid="lineup-source-fielding"
-            :value="chosen ? `${chosen.game}:${chosen.season.id}` : ''"
-            @change="show(played.find(one =>
-              `${one.game}:${one.season.id}` === ($event.target as HTMLSelectElement).value) ?? null)"
-          >
-            <option value="">
-              Nobody to begin with
-            </option>
-            <option
-              v-for="one in played"
-              :key="`${one.game}:${one.season.id}`"
-              :value="`${one.game}:${one.season.id}`"
-            >
-              {{ nameOf(one) }}
-            </option>
-          </select>
-        </label>
-
-        <p
-          v-if="unread"
-          class="source__note"
-          data-testid="lineup-source-unknown"
-          role="alert"
+      <p
+        v-else-if="unread"
+        class="source__note"
+        data-testid="lineup-source-unknown"
+        role="alert"
+      >
+        That line-up could not be read, so there is nobody to carry across. Pick it again.
+      </p>
+      <ul
+        v-else-if="lineup.length > 0"
+        class="source__list"
+        data-testid="lineup-source-people"
+      >
+        <li
+          v-for="entry in lineup"
+          :key="entry.id"
+          class="source__person"
+          :data-testid="`lineup-source-person-${entry.id}`"
         >
-          That line-up could not be read, so there is nobody to carry across. Pick it again.
-        </p>
-
-        <ul
-          v-if="lineup.length > 0"
-          class="source__list"
-          data-testid="lineup-source-people"
-        >
-          <li
-            v-for="entry in lineup"
-            :key="entry.id"
-          >
-            <label
-              class="source__person"
-              :data-testid="`lineup-source-person-${entry.id}`"
-            >
-              <input
-                :checked="!dropped.has(entry.id)"
-                type="checkbox"
-                @change="drop(entry.id)"
-              >
-              <span class="source__handle">{{ entry.handle }}</span>
-              <span
-                v-if="entry.displayName"
-                class="source__name"
-              >{{ entry.displayName }}</span>
-            </label>
-          </li>
-        </ul>
-      </template>
+          <check-box
+            :label="entry.displayName ? `${entry.handle} · ${entry.displayName}` : entry.handle"
+            :model-value="!dropped.has(entry.id)"
+            @update:model-value="drop(entry.id)"
+          />
+        </li>
+      </ul>
     </template>
-  </section>
+  </form-section>
 </template>
 
 <style scoped>
-/*
- * Square-edged rather than cut on the island's diagonal, and deliberately: a clip-path cuts
- * off anything a child paints outside the panel, and the picker inside this one drops a list
- * over the form below it. The slant would take that list off at the panel's edge.
- */
-.source {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 0.85rem 1rem 1rem;
-  background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
-  border-left: 2px solid color-mix(in oklab, var(--color-brand) 55%, transparent);
-}
-
-.source__heading {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 0.72rem;
-  color: var(--color-ash);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.source__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.source__label {
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  color: var(--color-ash);
-}
-
-.source__input {
-  padding: 0.55rem 0.9rem;
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  color: var(--color-chalk);
-  background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-  border: 0;
-  clip-path: polygon(0.55rem 0, 100% 0, calc(100% - 0.55rem) 100%, 0 100%);
-}
-
-/* Scrolls for the same reason the pickers do: a long line-up is read, not truncated. */
-.source__list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  max-height: 13rem;
-  padding: 0;
-  margin: 0;
-  overflow-y: auto;
-  list-style: none;
-  overscroll-behavior: contain;
-}
-
-.source__pick {
-  width: 100%;
-  padding: 0.45rem 0.6rem;
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  background: color-mix(in oklab, var(--color-chalk) 4%, transparent);
-  border: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
-  border-radius: 2px;
-}
-
-.source__person {
-  display: flex;
-  gap: 0.55rem;
-  align-items: baseline;
-  padding: 0.4rem 0.6rem;
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  cursor: pointer;
-  background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
-  clip-path: polygon(0.45rem 0, 100% 0, calc(100% - 0.45rem) 100%, 0 100%);
-}
-
-.source__person:hover {
-  background-color: color-mix(in oklab, var(--color-brand) 18%, transparent);
-}
-
-.source__person input {
-  accent-color: var(--color-brand);
-}
-
-.source__name {
-  font-size: 0.78rem;
-  color: var(--color-ash);
-}
-
 .source__note {
+  font-size: 0.9rem;
+  color: var(--color-ash);
+}
+
+.source__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 2rem;
   margin: 0;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  opacity: 0.85;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 767px) {
+  .source__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

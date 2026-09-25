@@ -39,7 +39,7 @@ const season = {id: 3, name: "2025/26", startDate: "2025-09-01", endDate: "2026-
 const stubs = {
   EditPage: {
     setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
-      () => h("div", [slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()]),
+      () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()]),
   },
   PreviewFrame: {setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) => () => h("div", slots["default"]?.())},
   SliceBand: {
@@ -62,6 +62,15 @@ const openEditor = async () => {
   await settle()
   return wrapper
 }
+
+/** Types into the island field under [testid], as its control reports what was typed. */
+const write = async (wrapper: Awaited<ReturnType<typeof openEditor>>, testid: string, value: string) => {
+  wrapper.findAllComponents({name: "FormControl"}).find(one => one.attributes("data-testid") === testid)!.vm.$emit("update:modelValue", value)
+  await settle()
+}
+
+const memberSearch = (wrapper: Awaited<ReturnType<typeof openEditor>>, index: number) =>
+  wrapper.findAllComponents({name: "SearchPicker"}).find(one => one.props("testidPrefix") === `lineup-search-${index}`)!
 
 const entry = (id: number, handle: string) => ({
   id, handle, role: "PLAYER", sortIndex: id, userId: null, displayName: null,
@@ -202,9 +211,8 @@ describe("TeamEditor, on accounts that could not be read", () => {
   it("offers the search where the accounts were read", async () => {
     const wrapper = await openEditor()
 
-    const search = wrapper.find('[data-testid="lineup-search-0"]')
-    expect(search.attributes("disabled")).toBeUndefined()
-    expect(search.attributes("placeholder")).toBe("No account — search a member")
+    expect(memberSearch(wrapper, 0).props("disabled")).toBe(false)
+    expect(memberSearch(wrapper, 0).props("placeholder")).toBe("No account")
   })
 
   it("says the accounts could not be read rather than answering every search with nobody", async () => {
@@ -212,9 +220,8 @@ describe("TeamEditor, on accounts that could not be read", () => {
 
     const wrapper = await openEditor()
 
-    const search = wrapper.find('[data-testid="lineup-search-0"]')
-    expect(search.attributes("disabled")).toBeDefined()
-    expect(search.attributes("placeholder")).toContain("could not be read")
+    expect(memberSearch(wrapper, 0).props("disabled")).toBe(true)
+    expect(wrapper.text()).toContain("The accounts could not be read, so nobody can be attached.")
   })
 })
 
@@ -272,12 +279,12 @@ describe("TeamEditor, as a page", () => {
     expect(band().text()).toContain("2 on the roster")
     expect(band().text()).toContain("IGL")
     expect(band().text()).toContain("Coach")
-    await wrapper.get("[data-testid=lineup-team-name]").setValue("Blueshell Black")
-    await wrapper.get("[data-testid=lineup-handle-0]").setValue("")
+    await write(wrapper, "lineup-team-name", "Blueshell Black")
+    await write(wrapper, "lineup-handle-0", "")
     expect(band().text()).toContain("\"title\":\"Blueshell Black\"")
     expect(band().text()).toContain("1 on the roster")
 
-    await wrapper.get("[data-testid=lineup-handle-0]").setValue("nova")
+    await write(wrapper, "lineup-handle-0", "nova")
     await wrapper.get("[data-testid=lineup-save]").trigger("click")
     await settle()
     expect(wrapper.emitted("saved")).toHaveLength(1)

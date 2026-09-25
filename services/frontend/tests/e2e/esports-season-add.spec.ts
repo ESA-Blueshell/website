@@ -38,9 +38,9 @@ test.describe("adding a season from the timeline", () => {
     await expect(page).toHaveURL(/\/competition\/seasons\/new$/)
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Add a season")
     await expect(page.getByTestId("season-edit-preview")).toContainText("New season")
-    await expect(page.getByTestId("season-edit-name")).toHaveValue("")
-    await expect(page.getByTestId("season-edit-start")).toHaveValue("")
-    await expect(page.getByTestId("season-edit-end")).toHaveValue("")
+    await expect(page.getByTestId("season-edit-name").locator("input")).toHaveValue("")
+    await expect(page.getByTestId("season-edit-start").locator("input").first()).toHaveValue("")
+    await expect(page.getByTestId("season-edit-end").locator("input").first()).toHaveValue("")
   })
 
   test("a saved season joins the strip in date order rather than at the end", async ({page}) => {
@@ -50,9 +50,9 @@ test.describe("adding a season from the timeline", () => {
 
     await page.getByTestId("esports-season-add").click()
     // Earlier than both seasons the page already knows, so its place is the front of the line.
-    await page.getByTestId("season-edit-name").fill("Spring 2024")
-    await page.getByTestId("season-edit-start").fill("2024-02-01")
-    await page.getByTestId("season-edit-end").fill("2024-08-31")
+    await page.getByTestId("season-edit-name").locator("input").fill("Spring 2024")
+    await page.getByTestId("season-edit-start").locator("input").first().fill("01/02/2024")
+    await page.getByTestId("season-edit-end").locator("input").first().fill("31/08/2024")
     await page.getByTestId("season-edit-save").click()
 
     await expect(page).toHaveURL(/\/competition\/valorant\?season=41$/)
@@ -72,9 +72,9 @@ test.describe("adding a season from the timeline", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("esports-season-add").click()
-    await page.getByTestId("season-edit-name").fill("Spring 2027")
-    await page.getByTestId("season-edit-start").fill("2027-02-01")
-    await page.getByTestId("season-edit-end").fill("2027-08-31")
+    await page.getByTestId("season-edit-name").locator("input").fill("Spring 2027")
+    await page.getByTestId("season-edit-start").locator("input").first().fill("01/02/2027")
+    await page.getByTestId("season-edit-end").locator("input").first().fill("31/08/2027")
     await page.getByTestId("season-edit-save").click()
 
     await expect(page.getByTestId("esports-season-node-41")).toHaveAttribute("aria-current", "true")
@@ -94,15 +94,15 @@ test.describe("adding a season from the timeline", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("esports-season-add").click()
-    await page.getByTestId("season-edit-name").fill("Clashing")
-    await page.getByTestId("season-edit-start").fill("2025-11-01")
-    await page.getByTestId("season-edit-end").fill("2026-03-31")
+    await page.getByTestId("season-edit-name").locator("input").fill("Clashing")
+    await page.getByTestId("season-edit-start").locator("input").first().fill("01/11/2025")
+    await page.getByTestId("season-edit-end").locator("input").first().fill("31/03/2026")
     await page.getByTestId("season-edit-save").click()
 
     await expect(page.getByTestId("season-edit-failure")).toHaveText("Those dates overlap Autumn 2025")
     await expect(page).toHaveURL(/\/competition\/seasons\/new$/)
-    await expect(page.getByTestId("season-edit-name")).toHaveValue("Clashing")
-    await expect(page.getByTestId("season-edit-start")).toHaveValue("2025-11-01")
+    await expect(page.getByTestId("season-edit-name").locator("input")).toHaveValue("Clashing")
+    await expect(page.getByTestId("season-edit-start").locator("input").first()).toHaveValue("01/11/2025")
   })
 
   test("the plus can be reached and taken up from the keyboard", async ({page}) => {

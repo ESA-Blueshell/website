@@ -45,7 +45,7 @@ test.describe("editing a line-up on its own page", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await page.getByTestId("lineup-title-1").fill("In-game leader")
+    await page.getByTestId("lineup-title-1").locator("input").fill("In-game leader")
 
     const preview = page.getByTestId("team-edit-preview")
     await expect(preview).toContainText("In-game leader")
@@ -58,7 +58,7 @@ test.describe("editing a line-up on its own page", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await page.getByTestId("lineup-title-1").fill("In-game leader")
+    await page.getByTestId("lineup-title-1").locator("input").fill("In-game leader")
     await page.getByTestId("team-edit-back").click()
 
     await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
@@ -82,8 +82,8 @@ test.describe("editing a line-up on its own page", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await expect(page.getByTestId("lineup-handle-0")).toHaveValue("AriosFury")
-    await page.getByTestId("lineup-title-1").fill("In-game leader")
+    await expect(page.getByTestId("lineup-handle-0").locator("input")).toHaveValue("AriosFury")
+    await page.getByTestId("lineup-title-1").locator("input").fill("In-game leader")
     await page.getByTestId("lineup-save").click()
 
     await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)

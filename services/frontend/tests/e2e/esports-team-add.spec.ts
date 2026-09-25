@@ -109,8 +109,8 @@ test.describe("adding a team to the shown season", () => {
 
     // "Its last line-up" is only useful if the reader can tell which squad that was, and a
     // team that spans games has more than one answer.
-    await expect(page.getByTestId("lineup-source-fielding")).toContainText("VALORANT")
-    await expect(page.getByTestId("lineup-source-fielding")).toContainText("Spring 2025")
+    await expect(page.getByTestId("lineup-source-fielding-search")).toHaveValue(/VALORANT/)
+    await expect(page.getByTestId("lineup-source-fielding-search")).toHaveValue(/Spring 2025/)
   })
 
   test("anybody offered can be dropped before it is fielded", async ({page}) => {
@@ -168,7 +168,7 @@ test.describe("adding a team to the shown season", () => {
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("lineup-kind-new-team").click()
 
-    await page.getByTestId("lineup-team-name").fill("BS Newcomers")
+    await page.getByTestId("lineup-team-name").locator("input").fill("BS Newcomers")
     // The band the team joins, drawn as it is typed.
     await expect(page.getByTestId("team-edit-preview")).toContainText("BS Newcomers")
     await page.getByTestId("lineup-save").click()
@@ -184,7 +184,7 @@ test.describe("adding a team to the shown season", () => {
 
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("lineup-kind-new-team").click()
-    await page.getByTestId("lineup-team-name").fill("BS Announced")
+    await page.getByTestId("lineup-team-name").locator("input").fill("BS Announced")
 
     // Fielding a team and settling its squad are the two decisions this whole thing separates,
     // so an empty row is not an unfinished one.
@@ -198,7 +198,7 @@ test.describe("adding a team to the shown season", () => {
 
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("lineup-kind-new-team").click()
-    await page.getByTestId("lineup-team-name").fill("BS Abandoned")
+    await page.getByTestId("lineup-team-name").locator("input").fill("BS Abandoned")
     await page.getByTestId("lineup-cancel").click()
 
     await expect(page).toHaveURL(BACK_ON_GAME_PAGE)

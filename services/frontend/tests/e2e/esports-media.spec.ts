@@ -115,7 +115,7 @@ test.describe("banners and icons", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await page.getByTestId("lineup-team-name").fill("A name nobody keeps")
+    await page.getByTestId("lineup-team-name").locator("input").fill("A name nobody keeps")
     await choose(page, "lineup-team-banner")
     await expect(page.getByTestId("lineup-team-banner-preview")).toBeVisible()
 
@@ -124,7 +124,7 @@ test.describe("banners and icons", () => {
 
     await openLineup(page)
     await expect(page.getByTestId("lineup-team-banner-empty")).toBeVisible()
-    await expect(page.getByTestId("lineup-team-name")).toHaveValue("BS Waterboarders")
+    await expect(page.getByTestId("lineup-team-name").locator("input")).toHaveValue("BS Waterboarders")
   })
 
   test("a chosen banner is taken away again before it is ever saved", async ({page}) => {

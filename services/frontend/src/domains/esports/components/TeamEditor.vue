@@ -6,10 +6,16 @@ import PreviewFrame from "@/components/island/PreviewFrame.vue"
 import SliceBand from "@/components/island/SliceBand.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import ImagePicker from "@/components/island/ImagePicker.vue"
-import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import type {Picture} from "@/components/island/pictures"
 import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FormControl from "@/components/island/FormControl.vue"
+import FormField from "@/components/island/FormField.vue"
+import IconButton from "@/components/island/IconButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
+import FormFields from "@/components/island/FormFields.vue"
+import FormSection from "@/components/island/FormSection.vue"
 import LineupSource from "../island/LineupSource.vue"
 import TeamRoster from "../island/TeamRoster.vue"
 import {forgetCompetitionReads} from "../island/forgetCompetitionReads"
@@ -112,7 +118,6 @@ const draftName = ref("")
 const rows = ref<Row[]>([])
 const removed = ref<number[]>([])
 const members = ref<MemberAccount[]>([])
-const memberSearch = ref<Record<number, string>>({})
 const failure = ref<string | null>(null)
 const saving = ref(false)
 const loading = ref(false)
@@ -264,7 +269,6 @@ watch(() => [props.teamId, props.season?.id] as const, async ([teamId, seasonId]
   loading.value = true
   failure.value = null
   removed.value = []
-  memberSearch.value = {}
   draftName.value = props.teamName
   banner.value = props.teamBanner ?? null
   icon.value = props.teamIcon ?? null
@@ -363,19 +367,10 @@ const move = (index: number, by: number) => {
 const nameOf = (userId: number | null) =>
   (userId == null ? null : members.value.find(one => one.id === userId)?.name ?? `Member ${userId}`)
 
-const matches = (index: number) => {
-  const term = (memberSearch.value[index] ?? "").trim().toLowerCase()
-  if (term.length < 2) return []
-  return members.value
-    .filter(one => one.name.toLowerCase().includes(term) || (one.email ?? "").toLowerCase().includes(term))
-    .slice(0, 6)
-}
-
 const attach = (index: number, userId: number | null) => {
   const row = rows.value[index]
   if (!row) return
   row.userId = userId
-  memberSearch.value = {...memberSearch.value, [index]: ""}
 }
 
 /**
@@ -539,6 +534,20 @@ const submit = async () => {
     saving.value = false
   }
 }
+
+/** The parts, as the part picker offers them. */
+const partOptions = PARTS.map(part => ({key: part.value, label: part.label}))
+
+/** Every member account, searched in the picker by name and address alike. */
+const memberOptions = computed(() => members.value.map(one => ({
+  key: String(one.id),
+  label: one.name,
+  note: one.email ?? undefined,
+  terms: one.email ? [one.email] : [],
+})))
+
+/** The row number as the sign-up form numbers its questions. */
+const numbered = (index: number) => String(index + 1).padStart(2, "0")
 </script>
 
 <template>
@@ -549,74 +558,102 @@ const submit = async () => {
     testid="team-edit"
     :title="adding ? 'Add a team' : teamName"
   >
+    <!-- The removals sit in the head, the way an event's Delete does: each leaves the page, and
+         neither belongs in the run of the form. -->
+    <template
+      v-if="!adding"
+      #actions
+    >
+      <cut-button
+        v-if="season"
+        testid="lineup-drop-from-season"
+        tone="quiet"
+        @click="droppingFromSeason = true"
+      >
+        Remove from season
+      </cut-button>
+      <cut-button
+        testid="lineup-remove-team"
+        tone="quiet"
+        @click="askToRemoveTeam"
+      >
+        Delete team
+      </cut-button>
+    </template>
+
     <div
       class="lineup"
       data-testid="lineup-editor"
     >
-      <!--
-        The team itself, marked as belonging to every season rather than to this one, so a
-        rename does not read as a change to the line-up underneath it.
-      -->
-      <!-- Asked first, because the answer decides what the rest of this page is. -->
-      <segmented-choice
+      <form-section
         v-if="adding"
-        v-model="kind"
-        :options="[
-          {key: 'played-before', label: 'An existing team'},
-          {key: 'new-team', label: 'A new team'},
-        ]"
-        testid-prefix="lineup-kind"
-      />
+        title="Which team"
+      >
+        <!-- Asked first, because the answer decides what the rest of this page is. -->
+        <segmented-choice
+          v-model="kind"
+          :options="[
+            {key: 'played-before', label: 'An existing team'},
+            {key: 'new-team', label: 'A new team'},
+          ]"
+          testid-prefix="lineup-kind"
+        />
+        <form-fields v-if="kind === 'played-before'">
+          <form-field
+            class="form-span"
+            :filled="picked != null"
+            label="Team"
+            required
+            variant="inside"
+          >
+            <template #default="{controlId, labelId}">
+              <search-picker
+                :control-id="controlId"
+                empty-note="Every team the association has already plays this game this season."
+                :labelled-by="labelId"
+                :options="poolOffered.map(one => ({key: String(one.id), label: one.name}))"
+                placeholder="Search every team"
+                :selected-key="picked ? String(picked.id) : null"
+                testid-prefix="field-team"
+                @pick="key => picked = poolOffered.find(one => String(one.id) === key) ?? null"
+              />
+            </template>
+          </form-field>
+        </form-fields>
+      </form-section>
 
       <template v-if="adding && kind === 'played-before'">
-        <search-picker
-          empty-note="Every team the association has already plays this game this season."
-          :options="poolOffered.map(one => ({key: String(one.id), label: one.name}))"
-          placeholder="Search every team"
-          :selected-key="picked ? String(picked.id) : null"
-          testid-prefix="field-team"
-          @pick="key => picked = poolOffered.find(one => String(one.id) === key) ?? null"
+        <lineup-source
+          v-if="picked != null"
+          :game="game"
+          :season-id="season?.id ?? null"
+          :team-id="picked.id"
+          @update:carried="onCarried"
         />
-
-        <template v-if="picked != null">
-          <lineup-source
-            :game="game"
-            :season-id="season?.id ?? null"
-            :team-id="picked.id"
-            @update:carried="onCarried"
-          />
-          <p
-            v-if="failure"
-            class="lineup__failure"
-            data-testid="lineup-failure"
-            role="alert"
-          >
-            {{ failure }}
-          </p>
-        </template>
+        <notice-box
+          v-if="failure"
+          testid="lineup-failure"
+          tone="danger"
+        >
+          {{ failure }}
+        </notice-box>
       </template>
 
       <template v-else>
-        <fieldset class="lineup__team">
-          <legend class="lineup__legend">
-            The team
-          </legend>
-          <div class="lineup__line">
-            <input
-              v-model="draftName"
-              aria-label="Team name"
-              class="lineup__input"
-              data-testid="lineup-team-name"
-              maxlength="128"
-              placeholder="Team name"
-              type="text"
-            >
-          </div>
-          <!-- Both held until the save, like the field above them. Side by side, because they
-               are decided together and are the two halves of how a team is drawn. They wrap
-               onto their own lines where there is no room for both. -->
-          <div class="lineup__pictures">
+        <!-- The team itself, which belongs to every season rather than to this one, so a rename
+             does not read as a change to the line-up underneath it. -->
+        <form-section title="The team in every season">
+          <form-fields>
+            <div class="form-span">
+              <form-control
+                v-model="draftName"
+                data-testid="lineup-team-name"
+                label="Team name*"
+                maxlength="128"
+              />
+            </div>
             <image-picker
+              class="form-span"
               label="Banner"
               :picture="banner"
               :store="storeTeamBanner"
@@ -624,6 +661,7 @@ const submit = async () => {
               @update:picture="banner = $event"
             />
             <image-picker
+              class="form-span"
               label="Icon"
               may-be-vector
               :picture="icon"
@@ -632,19 +670,19 @@ const submit = async () => {
               testid="lineup-team-icon"
               @update:picture="icon = $event"
             />
-          </div>
-          <p
+          </form-fields>
+          <notice-box
             v-if="teamFailure"
-            class="lineup__failure"
-            data-testid="lineup-team-failure"
+            testid="lineup-team-failure"
+            tone="danger"
           >
             {{ teamFailure }}
-          </p>
-        </fieldset>
+          </notice-box>
+        </form-section>
 
         <!-- Only while a team is being made: correcting a line-up is about the people already
-           on it, and dropping another squad into it would be a different act in the same
-           clothes. -->
+             on it, and dropping another squad into it would be a different act in the same
+             clothes. -->
         <lineup-source
           v-if="adding"
           :game="game"
@@ -652,305 +690,260 @@ const submit = async () => {
           @update:carried="startFrom"
         />
 
-        <!-- Named, so that the block above it reading "The team" is plainly about something
-             else: one belongs to the team in every season, this one only to this season. -->
-        <h3
-          class="lineup__legend lineup__legend--heading"
-          data-testid="lineup-season-heading"
+        <form-section
+          testid="lineup-season-heading"
+          :title="season ? `The line-up in ${season.name}` : 'This season\'s line-up'"
         >
-          This season's line-up
-        </h3>
+          <p
+            v-if="!loading && !rosterUnknown && rows.length > 0"
+            class="lineup__note"
+          >
+            A recorded name reaches the page only for a member who allows it.
+          </p>
+          <p
+            v-if="loading"
+            class="lineup__note"
+            data-testid="lineup-loading"
+          >
+            Reading the line-up…
+          </p>
 
-        <p
-          v-if="loading"
-          class="lineup__note"
-          data-testid="lineup-loading"
-        >
-          Reading the line-up…
-        </p>
+          <!-- An unread line-up is not an empty one, so it is not described as one. -->
+          <notice-box
+            v-else-if="rosterUnknown"
+            testid="lineup-unknown"
+            title="The line-up could not be read"
+            tone="danger"
+          >
+            It is not shown and cannot be saved. Go back and open it again.
+          </notice-box>
 
-        <!-- An unread line-up is not an empty one, so it is not described as one. -->
-        <p
-          v-else-if="rosterUnknown"
-          class="lineup__failure"
-          data-testid="lineup-unknown"
-          role="alert"
-        >
-          This line-up could not be read, so it is not shown and cannot be saved. Go back
-          and open it again.
-        </p>
+          <p
+            v-else-if="rows.length === 0"
+            class="lineup__note"
+            data-testid="lineup-empty"
+          >
+            Nobody has played for this team this season yet.
+          </p>
 
-        <p
-          v-else-if="rows.length === 0"
-          class="lineup__note"
-          data-testid="lineup-empty"
-        >
-          Nobody has played for this team this season yet.
-        </p>
+          <div
+            v-for="(row, index) in rows"
+            :key="row.id ?? `new-${index}`"
+            class="lineup__row"
+            :data-testid="`lineup-row-${row.id ?? `new-${index}`}`"
+          >
+            <div class="lineup__head">
+              <span class="lineup__number">{{ numbered(index) }}</span>
+              <span class="lineup__who">{{ row.handle.trim() || "Somebody new" }}</span>
+              <span class="lineup__acts">
+                <icon-button
+                  :disabled="index === 0"
+                  :label="`Move ${row.handle || 'this player'} up`"
+                  :testid="`lineup-up-${index}`"
+                  @click="move(index, -1)"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    viewBox="0 0 24 24"
+                  ><path d="m6 14.5 6-6 6 6" /></svg>
+                </icon-button>
+                <icon-button
+                  :disabled="index === rows.length - 1"
+                  :label="`Move ${row.handle || 'this player'} down`"
+                  :testid="`lineup-down-${index}`"
+                  @click="move(index, 1)"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    viewBox="0 0 24 24"
+                  ><path d="m6 9.5 6 6 6-6" /></svg>
+                </icon-button>
+                <icon-button
+                  danger
+                  :label="`Remove ${row.handle || 'this player'}`"
+                  :testid="`lineup-remove-${index}`"
+                  @click="askToRemove(index)"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    viewBox="0 0 24 24"
+                  ><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13" /></svg>
+                </icon-button>
+              </span>
+            </div>
 
-        <div
-          v-for="(row, index) in rows"
-          :key="row.id ?? `new-${index}`"
-          class="lineup__row"
-          :data-testid="`lineup-row-${row.id ?? `new-${index}`}`"
-        >
-          <image-picker
-            label="Icon"
-            layout="tile"
-            :picture="row.icon"
-            shape="icon"
-            :store="storeRosterIcon"
-            :testid="`lineup-icon-${index}`"
-            @update:picture="stageIcon(index, $event)"
-          />
-          <div class="lineup__line">
-            <input
-              v-model="row.handle"
-              aria-label="Handle"
-              class="lineup__input lineup__input--handle"
-              :data-testid="`lineup-handle-${index}`"
-              maxlength="128"
-              placeholder="Handle"
-              type="text"
-            >
-            <select
-              v-model="row.role"
-              aria-label="Part"
-              class="lineup__input lineup__input--part"
-              :data-testid="`lineup-role-${index}`"
-            >
-              <option
-                v-for="part in PARTS"
-                :key="part.value"
-                :value="part.value"
-              >
-                {{ part.label }}
-              </option>
-            </select>
-            <input
-              v-model="row.roleTitle"
-              aria-label="In their own words"
-              class="lineup__input"
-              :data-testid="`lineup-title-${index}`"
-              maxlength="64"
-              placeholder="Captain, in-game leader…"
-              type="text"
-            >
-            <span class="lineup__order">
-              <button
-                :aria-label="`Move ${row.handle || 'this player'} up`"
-                class="lineup__step"
-                :data-testid="`lineup-up-${index}`"
-                :disabled="index === 0"
-                type="button"
-                @click="move(index, -1)"
-              >↑</button>
-              <button
-                :aria-label="`Move ${row.handle || 'this player'} down`"
-                class="lineup__step"
-                :data-testid="`lineup-down-${index}`"
-                :disabled="index === rows.length - 1"
-                type="button"
-                @click="move(index, 1)"
-              >↓</button>
-              <button
-                :aria-label="`Remove ${row.handle || 'this player'}`"
-                class="lineup__step lineup__step--drop"
-                :data-testid="`lineup-remove-${index}`"
-                type="button"
-                @click="askToRemove(index)"
-              >×</button>
-            </span>
-          </div>
-
-          <div class="lineup__line">
-            <div class="lineup__note-field">
-              <markdown-editor
-                v-model="row.description"
-                class="lineup__note"
-                label="A word about them"
-                :max-length="DESCRIPTION_CAP"
-                min-height="3.5rem"
-                placeholder="A word about them"
-                :testid="`lineup-description-${index}`"
+            <div class="lineup__body">
+              <image-picker
+                class="lineup__icon"
+                label="Icon"
+                layout="tile"
+                :picture="row.icon"
+                shape="icon"
+                :store="storeRosterIcon"
+                :testid="`lineup-icon-${index}`"
+                @update:picture="stageIcon(index, $event)"
               />
-              <span
-                class="lineup__count"
-                :class="{'lineup__count--full': row.description.length === DESCRIPTION_CAP}"
-                :data-testid="`lineup-count-${index}`"
-              >{{ row.description.length }}/{{ DESCRIPTION_CAP }}</span>
+              <form-fields>
+                <form-control
+                  v-model="row.handle"
+                  :data-testid="`lineup-handle-${index}`"
+                  label="Handle*"
+                  maxlength="128"
+                />
+                <form-field
+                  filled
+                  label="Part"
+                  variant="inside"
+                >
+                  <template #default="{controlId, labelId}">
+                    <search-picker
+                      :control-id="controlId"
+                      :labelled-by="labelId"
+                      :options="partOptions"
+                      :selected-key="row.role"
+                      :testid-prefix="`lineup-role-${index}`"
+                      @pick="key => row.role = key as TeamRole"
+                    />
+                  </template>
+                </form-field>
+                <form-control
+                  v-model="row.roleTitle"
+                  :data-testid="`lineup-title-${index}`"
+                  label="Title"
+                  maxlength="64"
+                />
+                <form-control
+                  v-model="row.displayName"
+                  :data-testid="`lineup-name-${index}`"
+                  label="Recorded name"
+                  maxlength="128"
+                />
+                <div class="form-span lineup__caption">
+                  <form-control
+                    v-model="row.description"
+                    :data-testid="`lineup-description-${index}`"
+                    kind="markdown"
+                    label="A word about them"
+                    :max-length="DESCRIPTION_CAP"
+                  />
+                  <!-- Only near the cap, which the editor holds while it is typed. -->
+                  <span
+                    v-if="row.description.length > DESCRIPTION_CAP - 40"
+                    class="lineup__count"
+                    :data-testid="`lineup-count-${index}`"
+                  >{{ row.description.length }}/{{ DESCRIPTION_CAP }}</span>
+                </div>
+                <div
+                  v-if="row.userId != null"
+                  class="lineup__attached form-span"
+                  :data-testid="`lineup-member-${index}`"
+                >
+                  <span class="lineup__attached-label">Member account</span>
+                  <span class="lineup__attached-name">{{ nameOf(row.userId) }}</span>
+                  <icon-button
+                    :label="`Detach ${nameOf(row.userId)}`"
+                    :testid="`lineup-detach-${index}`"
+                    @click="attach(index, null)"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.6"
+                      viewBox="0 0 24 24"
+                    ><path d="M6 6l12 12M18 6 6 18" /></svg>
+                  </icon-button>
+                </div>
+                <form-field
+                  v-else
+                  class="form-span"
+                  :error="membersUnknown ? 'The accounts could not be read, so nobody can be attached.' : ''"
+                  label="Member account"
+                  variant="inside"
+                >
+                  <template #default="{controlId, labelId}">
+                    <search-picker
+                      :control-id="controlId"
+                      :disabled="membersUnknown"
+                      empty-note="Nobody has an account yet."
+                      :labelled-by="labelId"
+                      :options="memberOptions"
+                      placeholder="No account"
+                      :testid-prefix="`lineup-search-${index}`"
+                      @pick="key => attach(index, Number(key))"
+                    />
+                  </template>
+                </form-field>
+              </form-fields>
             </div>
           </div>
 
-          <div class="lineup__line">
-            <label class="lineup__note-field">
-              <input
-                v-model="row.displayName"
-                :aria-label="`Recorded name for ${row.handle || 'this player'}`"
-                class="lineup__input"
-                :data-testid="`lineup-name-${index}`"
-                maxlength="128"
-                placeholder="Recorded name — shown on the page only with their consent"
-                type="text"
-              >
-            </label>
-          </div>
-
-          <div class="lineup__line lineup__line--member">
-            <span
-              v-if="row.userId != null"
-              class="lineup__attached"
-              :data-testid="`lineup-member-${index}`"
+          <div v-if="!rosterUnknown">
+            <cut-button
+              testid="lineup-add"
+              tone="quiet"
+              @click="add"
             >
-              {{ nameOf(row.userId) }}
-              <button
-                :aria-label="`Detach ${nameOf(row.userId)}`"
-                class="lineup__step"
-                :data-testid="`lineup-detach-${index}`"
-                type="button"
-                @click="attach(index, null)"
-              >×</button>
-            </span>
-            <template v-else>
-              <!-- Says why it offers nobody, rather than sitting there answering every search
-                   with nothing. -->
-              <input
-                :aria-label="`Attach ${row.handle || 'this player'} to a member`"
-                class="lineup__input lineup__input--search"
-                :data-testid="`lineup-search-${index}`"
-                :disabled="membersUnknown"
-                :placeholder="membersUnknown
-                  ? 'Accounts could not be read — nobody can be attached'
-                  : 'No account — search a member'"
-                type="text"
-                :value="memberSearch[index] ?? ''"
-                @input="memberSearch = {...memberSearch, [index]: ($event.target as HTMLInputElement).value}"
-              >
-              <ul
-                v-if="matches(index).length > 0"
-                class="lineup__matches"
-                :data-testid="`lineup-matches-${index}`"
-              >
-                <li
-                  v-for="member in matches(index)"
-                  :key="member.id"
-                >
-                  <button
-                    class="lineup__match"
-                    :data-testid="`lineup-match-${member.id}`"
-                    type="button"
-                    @click="attach(index, member.id)"
-                  >
-                    {{ member.name }}
-                  </button>
-                </li>
-              </ul>
-            </template>
+              <svg
+                aria-hidden="true"
+                class="lineup__plus"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                viewBox="0 0 24 24"
+              ><path d="M12 5v14M5 12h14" /></svg>Add somebody
+            </cut-button>
           </div>
-        </div>
 
-        <button
-          v-if="!rosterUnknown"
-          class="lineup__add"
-          data-testid="lineup-add"
-          type="button"
-          @click="add"
-        >
-          Add somebody
-        </button>
-
-        <p
-          v-if="failure"
-          class="lineup__failure"
-          data-testid="lineup-failure"
-          role="alert"
-        >
-          {{ failure }}
-        </p>
+          <notice-box
+            v-if="failure"
+            testid="lineup-failure"
+            tone="danger"
+          >
+            {{ failure }}
+          </notice-box>
+        </form-section>
       </template>
     </div>
 
-    <!--
-      Every button that leaves this page, in the save bar: the removals are the two most
-      consequential things in here and they used to sit in the run of the form, where a long
-      line-up scrolled them past the fields they had nothing to do with.
-    -->
     <template #footer>
-      <div
-        v-if="!(adding && kind === 'played-before') || picked != null"
-        class="lineup__actions"
-      >
-        <template v-if="adding && kind === 'played-before'">
-          <div class="lineup__group">
-            <button
-              class="lineup__button lineup__button--ghost"
-              data-testid="lineup-cancel"
-              type="button"
-              @click="emit('cancel')"
-            >
-              Cancel
-            </button>
-            <button
-              class="lineup__button lineup__button--go"
-              data-testid="field-team-confirm"
-              :disabled="fieldingNow || carried.unread"
-              type="button"
-              @click="fieldPicked"
-            >
-              {{ fieldingNow ? "Fielding" : `Field ${picked!.name}` }}
-            </button>
-          </div>
-        </template>
-
-        <template v-else>
-          <!-- The lesser removal first: it is the one asked for more often, and the one meant.
-             Neither is offered while a team is being made: there is nothing yet to drop from
-             a season or to remove, and Cancel is what leaves without writing. -->
-          <div
-            v-if="!adding"
-            class="lineup__group"
-          >
-            <button
-              v-if="season"
-              class="lineup__button lineup__button--drop"
-              data-testid="lineup-drop-from-season"
-              type="button"
-              @click="droppingFromSeason = true"
-            >
-              Remove team
-            </button>
-            <button
-              class="lineup__button lineup__button--drop"
-              data-testid="lineup-remove-team"
-              type="button"
-              @click="askToRemoveTeam"
-            >
-              Delete
-            </button>
-          </div>
-          <div class="lineup__group">
-            <button
-              class="lineup__button lineup__button--ghost"
-              data-testid="lineup-cancel"
-              type="button"
-              @click="emit('cancel')"
-            >
-              Cancel
-            </button>
-            <button
-              class="lineup__button lineup__button--go"
-              data-testid="lineup-save"
-              :disabled="!complete || saving"
-              type="button"
-              @click="submit"
-            >
-              {{ saving ? "Saving" : adding ? "Create" : "Save" }}
-            </button>
-          </div>
-        </template>
+      <div class="lineup__actions">
+        <cut-button
+          testid="lineup-cancel"
+          tone="quiet"
+          @click="emit('cancel')"
+        >
+          Cancel
+        </cut-button>
+        <cut-button
+          v-if="adding && kind === 'played-before'"
+          :disabled="picked == null || fieldingNow || carried.unread"
+          testid="field-team-confirm"
+          tone="solid"
+          @click="fieldPicked"
+        >
+          {{ fieldingNow ? "Fielding" : picked ? `Field ${picked.name}` : "Field the team" }}
+        </cut-button>
+        <cut-button
+          v-else
+          :disabled="!complete || saving"
+          testid="lineup-save"
+          tone="solid"
+          @click="submit"
+        >
+          {{ saving ? "Saving" : adding ? "Add the team" : "Save team" }}
+        </cut-button>
       </div>
     </template>
-
     <template #preview>
       <preview-frame>
         <slice-band
@@ -1011,260 +1004,130 @@ const submit = async () => {
 .lineup {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
 }
 
-.lineup__team {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-  margin: 0;
-  padding: 0.9rem 1rem 1rem;
-  border: 1px solid color-mix(in oklab, var(--color-chalk) 10%, transparent);
-}
-
-/* Standing on its own rather than notched into a fieldset's border, so it needs the spacing
-   the border was providing. */
-.lineup__legend--heading {
-  margin: 0.5rem 0 0;
-}
-
-.lineup__legend {
-  padding: 0 0.35rem;
-  font-family: var(--font-display);
-  font-size: 0.62rem;
-  color: var(--color-ash);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.lineup__button--drop {
-  background: color-mix(in oklab, var(--color-danger-tint) 18%, transparent);
-  color: var(--color-danger-ink);
-}
-
-.lineup__button--drop:hover {
-  background: color-mix(in oklab, var(--color-danger-tint) 34%, transparent);
-  color: var(--color-danger-ink-strong);
-}
-
-.lineup__row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  padding: 0.7rem 0.8rem;
-  background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
-  border-left: 2px solid var(--edit-accent);
-}
-
-.lineup__line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  align-items: flex-end;
-}
-
-.lineup__line--member {
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.lineup__input {
-  flex: 1;
-  min-width: 0;
-  padding: 0.5rem 0.7rem;
-  font-family: inherit;
-  color: var(--color-chalk);
-  background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-  border: 0;
-  font-size: 0.88rem;
-}
-
-.lineup__input--handle {
-  flex: 1.2;
-}
-
-.lineup__input--part {
-  flex: 0 0 7.5rem;
-}
-
-.lineup__input--search {
-  width: 100%;
-}
-
-.lineup__note-field {
-  position: relative;
-  display: flex;
-  width: 100%;
+/* The sections draw the rules here, so the choice does not add one of its own. */
+.lineup :deep(.choice) {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .lineup__note {
-  flex: 1;
+  font-size: 0.9rem;
+  color: var(--color-ash);
+}
+
+/* One person, drawn the way the sign-up form draws a question: a number, a name and the row's
+   own actions over its fields, on the band's ground. */
+.lineup__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem 1.2rem 1.1rem;
+  background-color: var(--band-ground);
+}
+
+.lineup__head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.lineup__number {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--color-chalk);
+}
+
+.lineup__who {
   min-width: 0;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-ash);
+}
+
+.lineup__acts {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.lineup__body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.lineup__attached {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 3.25rem;
+  padding: 0 0.4rem 0 0.9rem;
+  background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.lineup__attached-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-ash);
+}
+
+.lineup__attached-name {
+  margin-right: auto;
+  color: var(--color-chalk);
+}
+
+/* Preflight draws an svg as a block, which would put the plus above the word. */
+.lineup__plus {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 0.4rem;
+  vertical-align: -2px;
+}
+
+.lineup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 767px) {
+  .lineup__row {
+    padding: 0.9rem 0.9rem 1rem;
+  }
+
+  .lineup__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lineup__caption {
+  position: relative;
 }
 
 .lineup__count {
   position: absolute;
-  right: 0.4rem;
-  bottom: 0.3rem;
-  color: var(--color-ash);
+  right: 0.5rem;
+  bottom: 0.35rem;
+  font-family: var(--font-bitmap);
   font-size: 0.68rem;
-}
-
-.lineup__count--full {
-  color: var(--color-warning);
-}
-
-.lineup__order {
-  display: flex;
-  gap: 0.2rem;
-}
-
-.lineup__step {
-  width: 1.6rem;
-  height: 1.9rem;
-  background: var(--color-raised);
-  border: 0;
   color: var(--color-ash);
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.lineup__step:disabled {
-  cursor: not-allowed;
-  opacity: 0.35;
-}
-
-.lineup__step--drop:hover {
-  background: var(--color-danger-ground);
-  color: var(--color-chalk);
-}
-
-.lineup__attached {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--color-chalk);
-  font-size: 0.85rem;
-}
-
-.lineup__matches {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.lineup__match {
-  width: 100%;
-  padding: 0.3rem 0.45rem;
-  background: var(--color-surface);
-  border: 0;
-  color: var(--color-chalk);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.85rem;
-  text-align: left;
-}
-
-.lineup__match:hover,
-.lineup__match:focus-visible {
-  background: color-mix(in oklab, var(--edit-accent) 30%, var(--color-surface));
-}
-
-.lineup__add {
-  align-self: flex-start;
-  padding: 0.35rem 0.7rem;
-  background: none;
-  border: 1px dashed color-mix(in oklab, var(--color-chalk) 22%, transparent);
-  color: var(--color-ash);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.82rem;
-}
-
-.lineup__note,
-.lineup__failure {
-  margin: 0;
-  font-size: 0.85rem;
-}
-
-.lineup__note {
-  color: var(--color-ash);
-}
-
-.lineup__failure {
-  color: var(--color-danger);
-}
-
-/* Side by side, aligned along the bottom so a wide banner and a square logo share a baseline. */
-.lineup__pictures {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.1rem;
-  align-items: flex-end;
-  padding-top: 0.15rem;
-}
-
-/*
- * Its own rule and its own spacing: see the footer in ModalDialog.
- *
- * The two removals and the two ways out do not share a line at this width, so the row breaks
- * between the groups rather than between buttons -- removals on the left of one line, the way
- * out on the right of the next, which is a shape rather than an overflow.
- */
-.lineup__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  align-items: center;
-  justify-content: space-between;
-  row-gap: 0.55rem;
-  margin-top: 1rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
-}
-
-/*
- * The removals lead and the two ways out of the form close the row, wherever the row breaks.
- * Four buttons do not fit the width of a phone, and a Save that wrapped to the
- * left under a Remove read as the pair of them belonging together.
- */
-.lineup__group {
-  display: flex;
-  gap: 0.6rem;
-}
-
-.lineup__group:last-child {
-  margin-left: auto;
-}
-
-.lineup__button {
-  padding: 0.45rem 1.1rem;
-  border: 0;
-  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  font-family: "Shellhouse One", system-ui, sans-serif;
-  font-size: 0.8rem;
-  font-style: italic;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.lineup__button--ghost {
-  background: var(--color-raised);
-  color: var(--color-ash);
-}
-
-.lineup__button--go {
-  background: var(--edit-accent);
-  color: var(--color-void);
-}
-
-.lineup__button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+  pointer-events: none;
 }
 </style>

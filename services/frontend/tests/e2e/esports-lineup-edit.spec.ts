@@ -45,11 +45,11 @@ test.describe("editing a line-up", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await expect(page.getByTestId("lineup-handle-0")).toHaveValue("AriosFury")
-    await expect(page.getByTestId("lineup-handle-1")).toHaveValue("Loafine")
-    await expect(page.getByTestId("lineup-handle-2")).toHaveValue("Blackout")
+    await expect(page.getByTestId("lineup-handle-0").locator("input")).toHaveValue("AriosFury")
+    await expect(page.getByTestId("lineup-handle-1").locator("input")).toHaveValue("Loafine")
+    await expect(page.getByTestId("lineup-handle-2").locator("input")).toHaveValue("Blackout")
     // What was said about somebody comes back to be edited, not just to be read.
-    await expect(page.getByTestId("lineup-title-0")).toHaveValue("Captain")
+    await expect(page.getByTestId("lineup-title-0").locator("input")).toHaveValue("Captain")
     // The editor draws the marks away while the line is not being edited.
     await expect(page.getByTestId("lineup-description-0").locator(".cm-content"))
       .toHaveText("Holds the middle together.")
@@ -81,8 +81,9 @@ test.describe("editing a line-up", () => {
     // Somebody already on the roster is asked about before they come off.
     await page.getByTestId("confirm-go").click()
     await page.getByTestId("lineup-add").click()
-    await page.getByTestId("lineup-handle-2").fill("Newblood")
-    await page.getByTestId("lineup-role-2").selectOption("SUBSTITUTE")
+    await page.getByTestId("lineup-handle-2").locator("input").fill("Newblood")
+    await page.getByTestId("lineup-role-2-search").click()
+    await page.getByTestId("lineup-role-2-SUBSTITUTE").click()
     await page.getByTestId("lineup-save").click()
 
     await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
@@ -97,7 +98,7 @@ test.describe("editing a line-up", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await page.getByTestId("lineup-title-1").fill("In-game leader")
+    await page.getByTestId("lineup-title-1").locator("input").fill("In-game leader")
     await writeMarkdown(page, page.getByTestId("lineup-description-1").locator(".cm-content"), "Calls the *rounds*.")
     await page.getByTestId("lineup-save").click()
 
@@ -117,7 +118,7 @@ test.describe("editing a line-up", () => {
     // pass and released at the end of one: the claim is that none was ever written.
     const held = await heightsHeldFrom(page, SWIPE)
     await openLineup(page)
-    await page.getByTestId("lineup-title-1").fill("In-game leader")
+    await page.getByTestId("lineup-title-1").locator("input").fill("In-game leader")
     await page.getByTestId("lineup-save").click()
     await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
     await expect(page.getByTestId("team-roster-1")).toContainText("In-game leader")
@@ -137,13 +138,13 @@ test.describe("editing a line-up", () => {
 
     // Second becomes first, which is the whole of setting the order.
     await page.getByTestId("lineup-up-1").click()
-    await expect(page.getByTestId("lineup-handle-0")).toHaveValue("Loafine")
+    await expect(page.getByTestId("lineup-handle-0").locator("input")).toHaveValue("Loafine")
     await page.getByTestId("lineup-save").click()
     await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     await openLineup(page)
-    await expect(page.getByTestId("lineup-handle-0")).toHaveValue("Loafine")
-    await expect(page.getByTestId("lineup-handle-1")).toHaveValue("AriosFury")
+    await expect(page.getByTestId("lineup-handle-0").locator("input")).toHaveValue("Loafine")
+    await expect(page.getByTestId("lineup-handle-1").locator("input")).toHaveValue("AriosFury")
   })
 
   test("a player can be attached to a member, and detached again", async ({page}) => {
@@ -155,12 +156,11 @@ test.describe("editing a line-up", () => {
     // The first is attached already; detaching leaves the roster spot behind.
     await expect(page.getByTestId("lineup-member-0")).toBeVisible()
     await page.getByTestId("lineup-detach-0").click()
-    await expect(page.getByTestId("lineup-search-0")).toBeVisible()
+    await expect(page.getByTestId("lineup-search-0-search")).toBeVisible()
 
     // The second has no account until one is searched for and picked.
-    await page.getByTestId("lineup-search-1").fill("Vik")
-    await page.getByTestId("lineup-matches-1").waitFor()
-    await page.getByTestId("lineup-matches-1").locator("button").first().click()
+    await page.getByTestId("lineup-search-1-search").fill("Vik")
+    await page.getByTestId("lineup-search-1-list").locator("[role=option]").first().click()
     await expect(page.getByTestId("lineup-member-1")).toBeVisible()
   })
 
@@ -173,7 +173,7 @@ test.describe("editing a line-up", () => {
     await expect(slice.locator(".slice__entry-name")).toHaveCount(1)
 
     await openLineup(page)
-    await page.getByTestId("lineup-title-0").fill("Still captain")
+    await page.getByTestId("lineup-title-0").locator("input").fill("Still captain")
     await page.getByTestId("lineup-save").click()
     await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
@@ -187,7 +187,7 @@ test.describe("editing a line-up", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await page.getByTestId("lineup-handle-0").fill("Renamed")
+    await page.getByTestId("lineup-handle-0").locator("input").fill("Renamed")
     await page.getByTestId("lineup-save").click()
     await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 

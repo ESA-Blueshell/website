@@ -25,7 +25,7 @@ test.describe("changing the team, not just its line-up", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await expect(page.getByTestId("lineup-team-name")).toHaveValue("BS Waterboarders")
+    await expect(page.getByTestId("lineup-team-name").locator("input")).toHaveValue("BS Waterboarders")
     // One control for the picture rather than a filename beside a picker, and the team the
     // mocks seed carries none, so it opens on the empty state.
     await expect(page.getByTestId("lineup-team-banner-empty")).toBeVisible()
@@ -38,7 +38,7 @@ test.describe("changing the team, not just its line-up", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await page.getByTestId("lineup-team-name").fill("BS Renamed")
+    await page.getByTestId("lineup-team-name").locator("input").fill("BS Renamed")
     await page.getByTestId("lineup-save").click()
 
     await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
@@ -51,7 +51,7 @@ test.describe("changing the team, not just its line-up", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await page.getByTestId("lineup-team-name").fill("   ")
+    await page.getByTestId("lineup-team-name").locator("input").fill("   ")
 
     await expect(page.getByTestId("lineup-save")).toBeDisabled()
   })
@@ -64,8 +64,8 @@ test.describe("changing the team, not just its line-up", () => {
 
     // On the page this member is named because they allowed it; here it is shown either way,
     // since recording a name is not publishing one.
-    await expect(page.getByTestId("lineup-name-0")).toHaveValue("Viktor Petrov")
-    await expect(page.getByTestId("lineup-name-1")).toHaveValue("")
+    await expect(page.getByTestId("lineup-name-0").locator("input")).toHaveValue("Viktor Petrov")
+    await expect(page.getByTestId("lineup-name-1").locator("input")).toHaveValue("")
   })
 
   test("a recorded name is written down without reaching the page", async ({page}) => {
@@ -74,13 +74,13 @@ test.describe("changing the team, not just its line-up", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await page.getByTestId("lineup-name-1").fill("Sanne Kok")
+    await page.getByTestId("lineup-name-1").locator("input").fill("Sanne Kok")
     await page.getByTestId("lineup-save").click()
     await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
 
     // Written down: it comes back when the line-up is opened again.
     await openLineup(page)
-    await expect(page.getByTestId("lineup-name-1")).toHaveValue("Sanne Kok")
+    await expect(page.getByTestId("lineup-name-1").locator("input")).toHaveValue("Sanne Kok")
     await page.getByTestId("lineup-cancel").click()
     await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
 
@@ -148,7 +148,7 @@ test.describe("changing the team, not just its line-up", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await page.getByTestId("lineup-team-name").fill("BS Previewed")
+    await page.getByTestId("lineup-team-name").locator("input").fill("BS Previewed")
     await expect(page.getByTestId("team-edit-preview")).toContainText("BS Previewed")
     const island = page.getByTestId("team-edit")
     await expect(island).toHaveClass(/(^|\s)island(\s|$)/)

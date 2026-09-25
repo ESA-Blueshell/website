@@ -4,6 +4,13 @@ import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import EditPage from "@/components/island/EditPage.vue"
 import PreviewFrame from "@/components/island/PreviewFrame.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FormControl from "@/components/island/FormControl.vue"
+import FormField from "@/components/island/FormField.vue"
+import FormFields from "@/components/island/FormFields.vue"
+import FormSection from "@/components/island/FormSection.vue"
+import IconButton from "@/components/island/IconButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import Timeline from "@/components/island/Timeline.vue"
 import {
   dropSeasonOrReason,
@@ -186,120 +193,139 @@ const removeSeason = async () => {
     testid="season-edit"
     :title="season ? 'Edit season' : 'Add a season'"
   >
+    <template
+      v-if="season"
+      #actions
+    >
+      <cut-button
+        testid="season-edit-remove"
+        tone="quiet"
+        @click="askToRemove"
+      >
+        Remove season
+      </cut-button>
+    </template>
+
     <form
       id="season-edit-form"
       class="season-form"
       @submit.prevent="submit"
     >
-      <label class="season-form__field">
-        <span class="season-form__label">Name</span>
-        <input
-          v-model="name"
-          class="season-form__input"
-          data-testid="season-edit-name"
-          maxlength="64"
-          name="name"
-          required
-          type="text"
-        >
-      </label>
-
-      <div class="season-form__row">
-        <label class="season-form__field">
-          <span class="season-form__label">Starts</span>
-          <input
+      <form-section title="The season">
+        <form-fields>
+          <div class="form-span">
+            <form-control
+              v-model="name"
+              data-testid="season-edit-name"
+              label="Name*"
+              maxlength="64"
+            />
+          </div>
+          <form-control
             v-model="startDate"
-            class="season-form__input"
             data-testid="season-edit-start"
-            name="startDate"
-            required
-            type="date"
-          >
-        </label>
-        <label class="season-form__field">
-          <span class="season-form__label">Ends</span>
-          <input
+            kind="date"
+            label="Starts*"
+          />
+          <form-control
             v-model="endDate"
-            class="season-form__input"
             data-testid="season-edit-end"
-            name="endDate"
-            required
-            type="date"
-          >
-        </label>
-      </div>
-
-      <p
-        v-if="failure"
-        class="season-form__failure"
-        data-testid="season-edit-failure"
-        role="alert"
-      >
-        {{ failure }}
-      </p>
-    </form>
-
-    <!-- Only for a season that exists: entering a game is recorded against the season, so there
-         has to be one to record it against. Each change lands as it is made. -->
-    <section
-      v-if="season"
-      class="season-form__games"
-      data-testid="season-edit-games"
-    >
-      <h2 class="season-form__heading">
-        Games in {{ season.name }}
-      </h2>
-      <ul
-        v-if="entered.length > 0"
-        class="season-form__entered"
-      >
-        <li
-          v-for="one in entered"
-          :key="one.game"
-          class="season-form__game"
-          :data-testid="`season-edit-game-${one.game}`"
+            kind="date"
+            label="Ends*"
+            :min="startDate || undefined"
+          />
+        </form-fields>
+        <notice-box
+          v-if="failure"
+          testid="season-edit-failure"
+          tone="danger"
         >
-          <span>{{ identityOf(one.game).name || one.game }}</span>
-          <span class="season-form__game-teams">{{ countOf(one.teams.length, "team", "teams") }}</span>
-          <button
-            class="season-form__take-out"
-            :data-testid="`season-edit-take-out-${one.game}`"
-            type="button"
-            @click="takeOut(one.game)"
+          {{ failure }}
+        </notice-box>
+      </form-section>
+
+      <!-- Only for a season that exists: entering a game is recorded against the season, so there
+           has to be one to record it against. Each change lands as it is made. -->
+      <form-section
+        v-if="season"
+        testid="season-edit-games"
+        :title="`Games in ${season.name}`"
+      >
+        <ul
+          v-if="entered.length > 0"
+          class="season-form__entered"
+        >
+          <li
+            v-for="one in entered"
+            :key="one.game"
+            class="season-form__game"
+            :data-testid="`season-edit-game-${one.game}`"
           >
-            Take out
-          </button>
-        </li>
-      </ul>
-      <p
-        v-else
-        class="season-form__note"
-      >
-        No games are entered in this season yet.
-      </p>
-      <search-picker
-        empty-note="Every game the association knows is already in this season."
-        :options="offered"
-        placeholder="Enter a game played before"
-        testid-prefix="season-edit-enter"
-        @pick="enter"
+            <span class="season-form__game-name">{{ identityOf(one.game).name || one.game }}</span>
+            <span class="season-form__game-teams">{{ countOf(one.teams.length, "team", "teams") }}</span>
+            <icon-button
+              danger
+              :label="`Take ${identityOf(one.game).name || one.game} out`"
+              :testid="`season-edit-take-out-${one.game}`"
+              @click="takeOut(one.game)"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                viewBox="0 0 24 24"
+              ><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13" /></svg>
+            </icon-button>
+          </li>
+        </ul>
+        <p
+          v-else
+          class="season-form__note"
+        >
+          No games are entered in this season yet.
+        </p>
+        <form-fields>
+          <form-field
+            class="form-span"
+            label="Enter a game played before"
+            variant="inside"
+          >
+            <template #default="{controlId, labelId}">
+              <search-picker
+                :control-id="controlId"
+                empty-note="Every game the association knows is already in this season."
+                :labelled-by="labelId"
+                :options="offered"
+                testid-prefix="season-edit-enter"
+                @pick="enter"
+              />
+            </template>
+          </form-field>
+        </form-fields>
+        <div>
+          <cut-button
+            :href="`/competition/new?season=${season.id}`"
+            testid="season-edit-new-game"
+            tone="quiet"
+          >
+            Add a new game
+          </cut-button>
+        </div>
+        <notice-box
+          v-if="gamesFailure"
+          testid="season-edit-games-failure"
+          tone="danger"
+        >
+          {{ gamesFailure }}
+        </notice-box>
+      </form-section>
+      <button
+        class="season-form__enter"
+        tabindex="-1"
+        type="submit"
       />
-      <router-link
-        class="season-form__new-game"
-        data-testid="season-edit-new-game"
-        :to="`/competition/new?season=${season.id}`"
-      >
-        A game the association has not played before →
-      </router-link>
-      <p
-        v-if="gamesFailure"
-        class="season-form__failure"
-        data-testid="season-edit-games-failure"
-        role="alert"
-      >
-        {{ gamesFailure }}
-      </p>
-    </section>
+    </form>
 
     <template #preview>
       <preview-frame>
@@ -314,32 +340,21 @@ const removeSeason = async () => {
 
     <template #footer>
       <div class="season-form__actions">
-        <button
-          v-if="season"
-          class="season-form__button season-form__button--drop"
-          data-testid="season-edit-remove"
-          type="button"
-          @click="askToRemove"
-        >
-          Remove
-        </button>
-        <button
-          class="season-form__button season-form__button--ghost"
-          data-testid="season-edit-cancel"
-          type="button"
+        <cut-button
+          testid="season-edit-cancel"
+          tone="quiet"
           @click="emit('cancel')"
         >
           Cancel
-        </button>
-        <button
-          class="season-form__button season-form__button--go"
-          data-testid="season-edit-save"
+        </cut-button>
+        <cut-button
           :disabled="!complete || saving"
-          form="season-edit-form"
-          type="submit"
+          testid="season-edit-save"
+          tone="solid"
+          @click="submit"
         >
-          {{ saving ? "Saving" : "Save" }}
-        </button>
+          {{ saving ? "Saving" : season ? "Save season" : "Add the season" }}
+        </cut-button>
       </div>
     </template>
   </edit-page>
@@ -357,68 +372,9 @@ const removeSeason = async () => {
 </template>
 
 <style scoped>
-.season-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.season-form__row {
-  display: flex;
-  gap: 0.85rem;
-}
-
-.season-form__field {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.3rem;
-  min-width: 0;
-}
-
-.season-form__label {
-  color: var(--color-ash);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.season-form__input {
-  width: 100%;
-  padding: 0.5rem 0.6rem;
-  background: var(--color-pit);
-  border: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
-  color: var(--color-chalk);
-  font-family: inherit;
-  font-size: 0.95rem;
-}
-
-.season-form__input:focus-visible {
-  border-color: var(--edit-accent);
-  outline: none;
-}
-
-.season-form__failure {
-  margin: 0;
-  color: var(--color-danger);
-  font-size: 0.85rem;
-}
-
-.season-form__games {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1.75rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.season-form__heading {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
+/* Enter in a field saves, as in any form; the bar's Save is the button a pointer finds. */
+.season-form__enter {
+  display: none;
 }
 
 .season-form__entered {
@@ -434,29 +390,21 @@ const removeSeason = async () => {
   display: flex;
   gap: 1rem;
   align-items: center;
-  padding: 0.55rem 0.75rem;
-  background-color: var(--color-surface);
+  padding: 0.35rem 0.5rem 0.35rem 1rem;
+  background-color: var(--band-ground);
+}
+
+.season-form__game-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  color: var(--color-chalk);
 }
 
 .season-form__game-teams {
-  font-size: 0.8rem;
+  margin-right: auto;
+  font-size: 0.82rem;
   color: var(--color-ash);
-}
-
-.season-form__take-out {
-  margin-left: auto;
-  padding: 0;
-  font-family: inherit;
-  font-size: 0.8rem;
-  color: var(--color-ash);
-  text-decoration: underline;
-  cursor: pointer;
-  background: none;
-  border: 0;
-}
-
-.season-form__take-out:hover {
-  color: var(--color-chalk);
 }
 
 .season-form__note {
@@ -464,56 +412,10 @@ const removeSeason = async () => {
   color: var(--color-ash);
 }
 
-.season-form__new-game {
-  align-self: flex-start;
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--edit-accent);
-}
-
 .season-form__actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.6rem;
-}
-
-.season-form__button {
-  padding: 0.45rem 1.1rem;
-  border: 0;
-  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  font-family: "Shellhouse One", system-ui, sans-serif;
-  font-size: 0.8rem;
-  font-style: italic;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.season-form__button--drop {
-  margin-right: auto;
-  background: color-mix(in oklab, var(--color-danger-tint) 18%, transparent);
-  color: var(--color-danger-ink);
-}
-
-.season-form__button--drop:hover {
-  background: color-mix(in oklab, var(--color-danger-tint) 34%, transparent);
-  color: var(--color-danger-ink-strong);
-}
-
-.season-form__button--ghost {
-  background: var(--color-raised);
-  color: var(--color-ash);
-}
-
-.season-form__button--go {
-  background: var(--edit-accent);
-  color: var(--color-void);
-}
-
-.season-form__button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+  gap: 0.5rem;
 }
 </style>

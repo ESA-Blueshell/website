@@ -25,7 +25,7 @@ const autumn = {id: 3, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2
 const spring = {id: 4, name: "Spring 2026", startDate: "2026-02-01", endDate: "2026-06-30", played: false}
 
 const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
-  () => h("div", [slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()])})
+  () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()])})
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid"]},
   PreviewFrame: passThrough("PreviewFrame"),
@@ -33,6 +33,12 @@ const stubs = {
   SearchPicker: {name: "SearchPicker", props: ["options"], emits: ["pick"], template: "<div />"},
   ConfirmDialog: {name: "ConfirmDialog", props: ["open", "question", "failure"], emits: ["confirm", "update:open"], template: "<div />"},
   RouterLink: {props: ["to"], template: "<a :data-to='to'><slot /></a>"},
+}
+
+/** Types into the island field under [testid], as its control reports what was typed. */
+const write = async (wrapper: Awaited<ReturnType<typeof mountEditor>>, testid: string, value: string) => {
+  wrapper.findAllComponents({name: "FormControl"}).find(one => one.attributes("data-testid") === testid)!.vm.$emit("update:modelValue", value)
+  await flushPromises()
 }
 
 const mountEditor = async (season: typeof autumn | null) => {
@@ -56,9 +62,9 @@ describe("the season edit page", () => {
 
     expect(strip().props("selectedId")).toBe(-1)
     expect(strip().props("stops").map((one: {name: string}) => one.name)).toContain("New season")
-    await wrapper.get("[data-testid=season-edit-name]").setValue("Autumn 2026")
-    await wrapper.get("[data-testid=season-edit-start]").setValue("2026-09-01")
-    await wrapper.get("[data-testid=season-edit-end]").setValue("2027-01-31")
+    await write(wrapper, "season-edit-name", "Autumn 2026")
+    await write(wrapper, "season-edit-start", "2026-09-01")
+    await write(wrapper, "season-edit-end", "2027-01-31")
     expect(strip().props("stops").at(-1).name).toBe("Autumn 2026")
     expect(wrapper.find("[data-testid=season-edit-games]").exists()).toBe(false)
     expect(wrapper.find("[data-testid=season-edit-remove]").exists()).toBe(false)
@@ -80,7 +86,7 @@ describe("the season edit page", () => {
     expect(wrapper.get("[data-testid=season-edit-failure]").text()).toBe("Those dates overlap Spring 2026.")
     expect(wrapper.emitted("saved")).toBeUndefined()
 
-    await wrapper.get("[data-testid=season-edit-name]").setValue("")
+    await write(wrapper, "season-edit-name", "")
     expect(wrapper.get("[data-testid=season-edit-save]").attributes("disabled")).toBeDefined()
     await wrapper.get("[data-testid=season-edit-cancel]").trigger("click")
     expect(wrapper.emitted("cancel")).toHaveLength(1)

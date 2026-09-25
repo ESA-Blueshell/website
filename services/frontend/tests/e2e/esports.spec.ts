@@ -94,10 +94,10 @@ test.describe("what the manager used to do, where it happens now", () => {
 
     const lineup = page.getByTestId("lineup-editor")
     await expect(lineup).toBeVisible()
-    await expect(page.getByTestId("lineup-handle-0")).toHaveValue("AriosFury")
-    await expect(page.getByTestId("lineup-name-0")).toHaveValue("Viktor Petrov")
+    await expect(page.getByTestId("lineup-handle-0").locator("input")).toHaveValue("AriosFury")
+    await expect(page.getByTestId("lineup-name-0").locator("input")).toHaveValue("Viktor Petrov")
     // Somebody nobody could be attributed to is offered a member to attach rather than hidden.
-    await expect(page.getByTestId("lineup-search-1")).toBeVisible()
+    await expect(page.getByTestId("lineup-search-1-search")).toBeVisible()
   })
 
   test("somebody new goes onto a roster from the slice that shows it", async ({page}) => {
@@ -108,7 +108,7 @@ test.describe("what the manager used to do, where it happens now", () => {
     await page.getByTestId("team-roster-1").hover()
     await page.getByTestId("team-roster-edit-1").click()
     await page.getByTestId("lineup-add").click()
-    await page.getByTestId("lineup-handle-3").fill("newcomer")
+    await page.getByTestId("lineup-handle-3").locator("input").fill("newcomer")
 
     const created = page.waitForRequest(
       (request) => request.method() === "POST" && /\/esports\/teams\/\d+\/roster$/.test(new URL(request.url()).pathname),

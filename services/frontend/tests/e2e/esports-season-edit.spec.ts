@@ -120,11 +120,11 @@ test.describe("editing a season where it is shown", () => {
 
     await openEditor(page, 20)
     await expect(page).toHaveURL(/\/competition\/seasons\/20\/edit$/)
-    await expect(page.getByTestId("season-edit-name")).toHaveValue("Autumn 2025")
-    await expect(page.getByTestId("season-edit-start")).toHaveValue("2025-09-01")
-    await expect(page.getByTestId("season-edit-end")).toHaveValue("2026-01-31")
+    await expect(page.getByTestId("season-edit-name").locator("input")).toHaveValue("Autumn 2025")
+    await expect(page.getByTestId("season-edit-start").locator("input").first()).toHaveValue("01/09/2025")
+    await expect(page.getByTestId("season-edit-end").locator("input").first()).toHaveValue("31/01/2026")
 
-    await page.getByTestId("season-edit-name").fill("Autumn 2026")
+    await page.getByTestId("season-edit-name").locator("input").fill("Autumn 2026")
     // The strip the season sits on, drawn as it is typed.
     await expect(page.getByTestId("season-edit-preview")).toContainText("Autumn")
     await page.getByTestId("season-edit-save").click()
@@ -149,11 +149,11 @@ test.describe("editing a season where it is shown", () => {
     await page.goto(GAME_PAGE)
 
     await openEditor(page, 20)
-    await page.getByTestId("season-edit-name").fill("Overlapping")
+    await page.getByTestId("season-edit-name").locator("input").fill("Overlapping")
     await page.getByTestId("season-edit-save").click()
 
     await expect(page.getByTestId("season-edit-failure")).toHaveText("That overlaps Spring 2025.")
-    await expect(page.getByTestId("season-edit-name")).toHaveValue("Overlapping")
+    await expect(page.getByTestId("season-edit-name").locator("input")).toHaveValue("Overlapping")
   })
 
   test("Cancel goes back to the page it came from, on the same season", async ({page}) => {
@@ -162,7 +162,7 @@ test.describe("editing a season where it is shown", () => {
     await page.goto(`${GAME_PAGE}?season=19`)
 
     await openEditor(page, 20)
-    await page.getByTestId("season-edit-name").fill("Not saved")
+    await page.getByTestId("season-edit-name").locator("input").fill("Not saved")
     await page.getByTestId("season-edit-cancel").click()
 
     await expect(page).toHaveURL(/\/competition\/valorant\?season=19$/)

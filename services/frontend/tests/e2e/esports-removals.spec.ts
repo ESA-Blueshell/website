@@ -147,7 +147,7 @@ test.describe("taking things off the esports pages", () => {
 
     await page.getByTestId("confirm-go").click()
     // Off the form, and off the roster once it is saved.
-    await expect(page.getByTestId("lineup-handle-1")).toHaveValue("Blackout")
+    await expect(page.getByTestId("lineup-handle-1").locator("input")).toHaveValue("Blackout")
     await page.getByTestId("lineup-save").click()
     await expect(page.getByTestId("team-roster-1")).not.toContainText("Loafine")
   })
@@ -159,12 +159,12 @@ test.describe("taking things off the esports pages", () => {
 
     await openLineup(page)
     await page.getByTestId("lineup-add").click()
-    await page.getByTestId("lineup-handle-3").fill("Fleeting")
+    await page.getByTestId("lineup-handle-3").locator("input").fill("Fleeting")
 
     await page.getByTestId("lineup-remove-3").click()
 
     // Nobody's record, so there is nothing to ask about.
     await expect(page.getByTestId("lineup-remove-dialog")).toBeHidden()
-    await expect(page.getByTestId("lineup-handle-3")).toHaveCount(0)
+    await expect(page.getByTestId("lineup-handle-3").locator("input")).toHaveCount(0)
   })
 })

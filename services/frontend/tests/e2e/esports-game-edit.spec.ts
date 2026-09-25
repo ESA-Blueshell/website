@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
+import {installApiMocks, loginAsBoard} from "./mocks"
 import type {Page} from "@playwright/test"
 
 /**

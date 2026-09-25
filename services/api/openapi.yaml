@@ -792,13 +792,6 @@ components:
       - failed
       - moved
       type: object
-    CodeRequest:
-      properties:
-        code:
-          minLength: 1
-          type: string
-      required:
-      - code
     CasualGameRequest:
       description: A game as the board adds or corrects it from the casual pages
       properties:
@@ -848,6 +841,12 @@ components:
           maxLength: 64
           minLength: 0
           type: string
+        sortIndex:
+          description: Where the game sits among the others; left out, a new game goes last and a game keeps its place
+          format: int32
+          type:
+          - integer
+          - 'null'
       required:
       - name
       - slug
@@ -907,6 +906,14 @@ components:
       - name
       - slug
       - sortIndex
+      type: object
+    CodeRequest:
+      properties:
+        code:
+          minLength: 1
+          type: string
+      required:
+      - code
       type: object
     CohortDetail:
       properties:

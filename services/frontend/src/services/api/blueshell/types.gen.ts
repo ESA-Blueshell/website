@@ -414,8 +414,6 @@ export type BulkTargetMoveResult = {
     moved: Array<ExternalTarget>;
 };
 
-export type CodeRequest = {
-    code: string;
 /**
  * A game as the board adds or corrects it from the casual pages
  */
@@ -445,6 +443,10 @@ export type CasualGameRequest = {
      * The address this game answers to under /casual
      */
     slug: string;
+    /**
+     * Where the game sits among the others; left out, a new game goes last and a game keeps its place
+     */
+    sortIndex?: number | null;
 };
 
 /**
@@ -495,6 +497,10 @@ export type CasualGameResponse = {
      * Where the game sits among the others
      */
     sortIndex: number;
+};
+
+export type CodeRequest = {
+    code: string;
 };
 
 export type CohortDetail = {

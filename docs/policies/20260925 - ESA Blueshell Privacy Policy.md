@@ -1,6 +1,6 @@
 # Privacy Policy of Blueshell E-Sports Association Enschede
 
-Last updated: September 24, 2026  
+Last updated: September 25, 2026  
 Location: Enschede, The Netherlands
 
 ## Abbreviations
@@ -136,6 +136,27 @@ Data used for contact synchronization includes:
 7. Member-status indicators  
    Used to synchronize contribution-period and membership-related contact lists correctly.
 
+### Esports rosters and game handles
+
+**Contract Type**: Website account; publication of your real name only with your consent  
+**Processing**: Showing who plays for the association's teams on the public esports pages  
+**Processing by**: Board of the Association, the people who keep a team's roster, and anyone reading the public esports
+pages  
+**Retention Period**: See section "Retention Period"  
+**Security**: Rosters are edited only by those allowed to; your real name is published only when you turn it on
+
+Personal data processed for the esports pages includes:
+
+1. Game handles  
+   What you are called in each game. They are shown publicly on every roster you are linked on, and let a team find
+   you when putting a lineup together. You set, change and remove them yourself on the Games page of your account.
+2. Roster entries  
+   The team, season, game and role you played in, with an optional role title, short description and picture. They are
+   public on the esports pages, and your own are listed on the Games page of your account.
+3. Your real name beside your handle  
+   Shown only if you turn it on, on the Games page of your account (or when joining as a member). This applies to members
+   and non-members alike. You can turn it off at any time, and the esports pages stop showing it straight away.
+
 ### Discord and community channels
 
 **Contract Type**: Community participation and optional external community integrations  
@@ -211,6 +232,12 @@ Retention periods vary per processing purpose and technical subsystem.
 - Two-factor data is kept while two-factor is on. It is removed when you turn it off, when an admin resets it or when
   your account is deleted. A trusted browser is forgotten after thirty days.
 - Security log entries are automatically purged after 12 months.
+
+### Esports rosters and game handles
+
+- Game handles are kept until you change or remove them, or your account is deleted.
+- Roster entries are kept as the record of which teams the association fielded. Once your account is deleted your real
+  name no longer shows beside them.
 
 ### Operational job records
 

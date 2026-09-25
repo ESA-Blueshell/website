@@ -1,6 +1,6 @@
 # Privacybeleid van Blueshell E-Sports Association Enschede
 
-Laatst bijgewerkt: 24 september 2026  
+Laatst bijgewerkt: 25 september 2026  
 Locatie: Enschede, Nederland
 
 ## Afkortingen
@@ -144,6 +144,27 @@ Gegevens die worden gebruikt voor contactsynchronisatie omvatten:
 7. Ledenstatus-indicatoren  
    Gebruikt om contributieperiode- en lidmaatschapsgerelateerde contactlijsten correct te synchroniseren.
 
+### Esportsrosters en game-handles
+
+**Contracttype**: Websiteaccount; publicatie van je echte naam alleen met je toestemming  
+**Verwerking**: Tonen wie er voor de teams van de vereniging speelt op de openbare esportspagina's  
+**Verwerkt door**: Bestuur van de Vereniging, de mensen die de roster van een team bijhouden en iedereen die de openbare
+esportspagina's leest  
+**Bewaartermijn**: Zie sectie "Bewaartermijn"  
+**Beveiliging**: Rosters worden alleen bewerkt door wie dat mag; je echte naam wordt alleen gepubliceerd als je dat aanzet
+
+Voor de esportspagina's verwerkte persoonsgegevens omvatten:
+
+1. Game-handles  
+   Hoe je in elke game heet. Ze staan openbaar op elke roster waaraan je gekoppeld bent, en laten een team je vinden bij
+   het samenstellen van een line-up. Je stelt ze zelf in, wijzigt en verwijdert ze op de pagina Games van je account.
+2. Rosterregels  
+   Het team, seizoen, de game en de rol waarin je speelde, met een optionele roltitel, korte beschrijving en afbeelding.
+   Ze zijn openbaar op de esportspagina's, en die van jezelf staan op de pagina Games van je account.
+3. Je echte naam naast je handle  
+   Alleen getoond als je dat aanzet, op de pagina Games van je account (of bij het lid worden). Dit geldt voor leden en
+   niet-leden. Je kunt het op elk moment uitzetten, en de esportspagina's tonen hem dan meteen niet meer.
+
 ### Discord en communitykanalen
 
 **Contracttype**: Communitydeelname en optionele externe community-integraties  
@@ -221,6 +242,12 @@ Bewaartermijnen verschillen per verwerkingsdoel en technisch subsysteem.
   je die uitzet, wanneer een beheerder haar herstelt of wanneer je account wordt verwijderd. Een vertrouwde browser wordt na
   dertig dagen vergeten.
 - Regels in het beveiligingslogboek worden na 12 maanden automatisch verwijderd.
+
+### Esportsrosters en game-handles
+
+- Game-handles worden bewaard tot je ze wijzigt of verwijdert, of je account wordt verwijderd.
+- Rosterregels worden bewaard als vastlegging van welke teams de vereniging heeft opgesteld. Zodra je account is
+  verwijderd, staat je echte naam er niet meer naast.
 
 ### Operationele jobregistraties
 

@@ -39,7 +39,7 @@ import {
 
 defineOptions({name: "UserForm"})
 
-const privacyPolicyUrl = $require("@/assets/documents/20260924 - ESA Blueshell Privacy Policy.pdf")
+const privacyPolicyUrl = $require("@/assets/documents/20260925 - ESA Blueshell Privacy Policy.pdf")
 
 defineRule(
   "acceptedPrivacyPolicy",

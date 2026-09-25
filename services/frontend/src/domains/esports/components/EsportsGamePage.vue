@@ -32,7 +32,8 @@ const motion = useMotionAllowed()
 // page says about it.
 const {identityOf, recordOf} = useGames()
 const identity = computed(() => identityOf(props.game))
-const intro = computed(() => recordOf(props.game)?.intro ?? "")
+// The competition pages say their own intro where one is written, and the casual one otherwise.
+const intro = computed(() => recordOf(props.game)?.competitionIntro || recordOf(props.game)?.intro || "")
 
 const seasonFromRoute = () => seasonInRoute(route)
 
@@ -224,6 +225,7 @@ const carried = ref<number | null>(null)
     <island testid="esports-island">
       <esports-game-head
         :accent="identity.accent"
+        :channels="recordOf(game)?.esportsChannels"
         :icon="identity.icon"
         :icon-srcset="identity.iconSrcset"
         :intro="intro"

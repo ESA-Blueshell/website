@@ -12,4 +12,5 @@ export {fillMentions, forgetMentionNames, nameMentions, type MentionKind, type M
 export {listServerRoles} from "./adapters/roles"
 export {readGuildCounts, readGuildWidget, voiceRoomUrl, type GuildCounts, type GuildWidget} from "./adapters/widget"
 export {readDiscordRooms, watchDiscordRooms, liveOf, howFull, fitting, SERVER_NAME, type DiscordRooms, type VoicePerson, type VoiceRoom} from "./rooms"
+export {GameChannelCategory} from "@/services/api"
 export type {DiscordChannelResponse, DiscordEmojiResponse, DiscordMemberResponse, DiscordNameResponse, DiscordRoleResponse, PingedRoleRequest, SnowflakeType, WidgetChannel, WidgetMember, WidgetResponse} from "@/services/api"

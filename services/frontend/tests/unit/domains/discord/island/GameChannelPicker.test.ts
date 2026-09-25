@@ -64,6 +64,14 @@ describe("GameChannelPicker", () => {
 
     expect(picker(wrapper).props("chosen")).toEqual([])
     expect(picker(wrapper).props("emptyNote")).toBe("None left.")
+    expect(mockChannels).toHaveBeenLastCalledWith("GAMES")
     expect(wrapper.get("[data-label]").attributes("data-label")).toBe("Esports channels")
+  })
+
+  it("offers the esports category's channels where it picks a game's esports channels", async () => {
+    shallowMount(GameChannelPicker, {props: {category: "ESPORTS"}, global: {stubs: {FormField: throughField}}})
+    await flushPromises()
+
+    expect(mockChannels).toHaveBeenLastCalledWith("ESPORTS")
   })
 })

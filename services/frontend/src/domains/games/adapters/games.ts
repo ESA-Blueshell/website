@@ -30,6 +30,9 @@ export interface CasualGameDraft {
   banner: string | null
   icon: string | null
   channels: GameChannel[]
+  /** What the competition pages say; nothing lets them say [intro]. */
+  competitionIntro: string | null
+  esportsChannels: GameChannel[]
   /** Where it sits among the others; nothing puts a new game last and leaves a game where it is. */
   sortIndex?: number | null
 }
@@ -52,6 +55,8 @@ const body = (draft: CasualGameDraft) => ({
   banner: draft.banner ?? undefined,
   icon: draft.icon ?? undefined,
   channels: draft.channels,
+  competitionIntro: draft.competitionIntro ?? undefined,
+  esportsChannels: draft.esportsChannels,
   sortIndex: draft.sortIndex ?? undefined,
 })
 

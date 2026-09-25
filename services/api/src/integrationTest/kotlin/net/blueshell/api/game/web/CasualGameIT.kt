@@ -181,4 +181,42 @@ class CasualGameIT : UserTestSupport() {
             .perform(get("/games/{game}/holdings", tekken.uppercase()).with(signedIn(board)))
             .andExpect(jsonPath("$.channels").value(1))
     }
+
+    @Test
+    fun `a game keeps its competition intro and esports channels apart from the casual ones, and both read them`() {
+        val board = createUserWithRole(Role.BOARD)
+        val name = "Tetris${System.nanoTime()}"
+        val casual = """{"id":"901","guildId":"324","name":"tetris"}"""
+        val esports = """{"id":"902","guildId":"324","name":"tetris-esports"}"""
+
+        mvc
+            .perform(
+                post("/games")
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """{"name":"$name","slug":"${name.lowercase()}","intro":"Lines","competitionIntro":"Ranked",""" +
+                            """"channels":[$casual],"esportsChannels":[$esports]}""",
+                    ),
+            ).andExpect(status().isCreated)
+            .andExpect(jsonPath("$.competitionIntro").value("Ranked"))
+            .andExpect(jsonPath("$.channels[0].name").value("tetris"))
+            .andExpect(jsonPath("$.esportsChannels[0].name").value("tetris-esports"))
+
+        val code = name.uppercase()
+        mvc
+            .perform(get("/esports/games"))
+            .andExpect(jsonPath("$[?(@.code == '$code')].intro").value("Lines"))
+            .andExpect(jsonPath("$[?(@.code == '$code')].competitionIntro").value("Ranked"))
+            .andExpect(jsonPath("$[?(@.code == '$code')].esportsChannels[0].id").value("902"))
+
+        mvc
+            .perform(
+                put("/games/{game}", code)
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"$name","slug":"${name.lowercase()}","competitionIntro":" "}"""),
+            ).andExpect(jsonPath("$.competitionIntro").doesNotExist())
+            .andExpect(jsonPath("$.esportsChannels[0].id").value("902"))
+    }
 }

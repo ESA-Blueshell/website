@@ -431,6 +431,14 @@ export type CasualGameRequest = {
      */
     channels?: Array<GameChannelRequest> | null;
     /**
+     * What the competition pages say; blank to say the intro
+     */
+    competitionIntro?: string | null;
+    /**
+     * The Discord channels its esports players meet in; left out, the ones it has are kept
+     */
+    esportsChannels?: Array<GameChannelRequest> | null;
+    /**
      * Where the game's icon is stored; nothing takes it away
      */
     icon?: string | null;
@@ -473,6 +481,14 @@ export type CasualGameResponse = {
      * The identifier everything else files the game under. Never changes
      */
     code: string;
+    /**
+     * What the competition pages say instead of the intro, where anything is said
+     */
+    competitionIntro?: string | null;
+    /**
+     * The Discord channels its esports players meet in, in the order chosen
+     */
+    esportsChannels: Array<GameChannelResponse>;
     /**
      * The game's own icon
      */
@@ -884,7 +900,7 @@ export type CreateEventSignUpRequest = {
  */
 export type CreateGameRequest = {
     /**
-     * The colour that carries this game, or nothing for the island's own
+     * The colour that carries this game, as # and six hex digits, or nothing for the island's own
      */
     accent?: string | null;
     /**
@@ -1193,6 +1209,18 @@ export type EnqueueJobRequest = {
     } | null;
 };
 
+/**
+ * A Discord channel a game's esports players meet in, with its name as last known
+ */
+export type EsportsChannelResponse = {
+    /**
+     * The server the channel is in, which a link into it needs
+     */
+    guildId: string;
+    id: string;
+    name: string;
+};
+
 export type EventBannerRequest = {
     fileId: number;
     version?: number | null;
@@ -1404,6 +1432,11 @@ export type GameAccountResponse = {
     userId: number;
 };
 
+export enum GameChannelCategory {
+    GAMES = 'GAMES',
+    ESPORTS = 'ESPORTS'
+}
+
 /**
  * A Discord channel a game lives in, as the picker offered it
  */
@@ -1486,9 +1519,17 @@ export type GameResponse = {
      */
     code: string;
     /**
+     * What the competition pages say instead of the intro, where anything is said
+     */
+    competitionIntro?: string | null;
+    /**
      * Whether the association currently plays it: a team played it this season or last
      */
     current: boolean;
+    /**
+     * The Discord channels its esports players meet in, in the order chosen
+     */
+    esportsChannels: Array<EsportsChannelResponse>;
     /**
      * The game's own icon
      */
@@ -2615,7 +2656,7 @@ export type UpdateEventSignUpRequest = {
  */
 export type UpdateGameRequest = {
     /**
-     * The colour that carries this game, or nothing for the island's own
+     * The colour that carries this game, as # and six hex digits, or nothing for the island's own
      */
     accent?: string | null;
     /**
@@ -5130,7 +5171,9 @@ export type ListDiscordEmojisResponse = ListDiscordEmojisResponses[keyof ListDis
 export type ListGameChannelsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        category?: GameChannelCategory;
+    };
     url: '/discord/game-channels';
 };
 

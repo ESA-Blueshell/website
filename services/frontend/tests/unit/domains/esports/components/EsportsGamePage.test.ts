@@ -10,12 +10,12 @@ vi.mock("vue-router", async importOriginal => ({
   useRouter: () => router,
   useRoute: () => route,
 }))
-const record = vi.hoisted(() => ({slug: "valorant"}))
+const record = vi.hoisted(() => ({slug: "valorant", intro: "", competitionIntro: null as string | null, esportsChannels: [] as unknown[]}))
 const games = vi.hoisted(() => ({refresh: vi.fn()}))
 vi.mock("@/domains/esports/island/useGames", () => ({
   useGames: () => ({
     identityOf: () => ({name: "Valorant", accent: "#ff4655", icon: null}),
-    recordOf: () => ({code: "VALORANT", slug: record.slug, intro: ""}),
+    recordOf: () => ({code: "VALORANT", ...record}),
     refresh: games.refresh,
   }),
 }))
@@ -32,7 +32,7 @@ vi.mock("@/domains/esports/composables/useEsportsPage", () => ({
   }),
 }))
 
-const EsportsGameHead = {name: "EsportsGameHead", template: "<div><slot name=\"edit\" /></div>"}
+const EsportsGameHead = {name: "EsportsGameHead", props: ["intro", "channels"], template: "<div><slot name=\"edit\" /></div>"}
 const Timeline = {name: "Timeline", props: ["stops", "selectedId"], emits: ["add", "edit", "select"], template: "<div />"}
 const SeasonSwipe = {name: "SeasonSwipe", props: ["season"], template: "<div><slot :season=\"season\" /></div>"}
 const SliceBand = {name: "SliceBand", props: ["items"], emits: ["add", "edit", "open"], template: "<div />"}
@@ -47,10 +47,20 @@ beforeEach(() => {
   router.push.mockReset()
   router.replace.mockReset()
   games.refresh.mockReset().mockResolvedValue([])
-  record.slug = "valorant"
+  Object.assign(record, {slug: "valorant", intro: "", competitionIntro: null, esportsChannels: []})
 })
 
 describe("a game's competition page", () => {
+  it("says the competition intro where one is written, the casual one otherwise, and names its esports channels", () => {
+    Object.assign(record, {intro: "Customs", competitionIntro: "Two teams", esportsChannels: [{id: "7", guildId: "324", name: "valorant-esports"}]})
+    const head = mountPage().getComponent(EsportsGameHead)
+    expect(head.props("intro")).toBe("Two teams")
+    expect(head.props("channels")).toEqual([{id: "7", guildId: "324", name: "valorant-esports"}])
+
+    record.competitionIntro = null
+    expect(mountPage().getComponent(EsportsGameHead).props("intro")).toBe("Customs")
+  })
+
   it("leads to the game's own edit page", () => {
     expect(mountPage().getComponent(RouterLinkStub).props("to")).toBe("/competition/valorant/edit")
   })

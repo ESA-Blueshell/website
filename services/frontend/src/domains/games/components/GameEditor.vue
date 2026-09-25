@@ -19,6 +19,7 @@ import RecordHead from "@/components/island/RecordHead.vue"
 import SliceBand from "@/components/island/SliceBand.vue"
 import {saveGameOrganisers, useCommittees} from "@/domains/committees"
 import GameOrganisersPicker from "@/domains/committees/island/GameOrganisersPicker.vue"
+import {GameChannelCategory} from "@/domains/discord"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
 import {enterGameInSeason, forgetCompetitionReads, useGames as useCompetitionGames} from "@/domains/esports"
 import EsportsGameHead from "@/domains/esports/island/EsportsGameHead.vue"
@@ -29,8 +30,9 @@ import {cellOf, initialsOf, useCasualGames} from "../useCasualGames"
 
 /**
  * One game, added or corrected on one page for both areas it appears in. A game is one record, so
- * casual gaming and competition edit it here together, and the preview draws the game in both: the
- * casual head and cell above, the competition head and slice below.
+ * casual gaming and competition edit it here together, each with its own intro and its own Discord
+ * channels, and the preview draws the game in both: the casual head and cell above, the
+ * competition head and slice below.
  *
  * A refusal keeps what was typed. The pictures are stored when chosen and put on the game only by
  * Save, like every other field here.
@@ -61,11 +63,14 @@ const {committees, refresh: refreshCommittees} = useCommittees()
 const name = ref(props.game?.name ?? "")
 const slug = ref(props.game?.slug ?? "")
 const intro = ref(props.game?.intro ?? "")
+/** Empty means the competition pages say what the casual pages say. */
+const competitionIntro = ref(props.game?.competitionIntro ?? "")
 const colour = ref(props.game?.accent ?? "")
 const sortIndex = ref<number | null>(props.game?.sortIndex ?? null)
 const banner = ref<Picture | null>((props.game?.banner as Picture | null | undefined) ?? null)
 const icon = ref<Picture | null>((props.game?.icon as Picture | null | undefined) ?? null)
 const channels = ref<GameChannel[]>([...(props.game?.channels ?? [])])
+const esportsChannels = ref<GameChannel[]>([...(props.game?.esportsChannels ?? [])])
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
@@ -105,13 +110,17 @@ const drafted = computed<CasualGame>(() => ({
   archived: props.game?.archived ?? false,
   inCompetition: props.game?.inCompetition ?? false,
   channels: channels.value,
+  competitionIntro: competitionIntro.value,
+  esportsChannels: esportsChannels.value,
 }))
 const accent = computed(() => drafted.value.accent || "var(--color-brand)")
+const competitionSays = computed(() => competitionIntro.value.trim() || intro.value.trim())
+const esportsLine = computed(() => esportsChannels.value.map(one => `#${one.name}`).join(" · "))
 const cells = computed(() => [cellOf(drafted.value, () => organiserNames.value.map(one => one.name))])
 const slice = computed(() => [{
   id: drafted.value.code,
   title: drafted.value.name,
-  meta: "",
+  meta: esportsLine.value,
   banner: banner.value?.url ?? "",
   srcset: srcsetOf(banner.value),
   icon: icon.value?.url ?? null,
@@ -127,6 +136,8 @@ const draft = (): CasualGameDraft => ({
   banner: banner.value?.path ?? null,
   icon: icon.value?.path ?? null,
   channels: channels.value,
+  competitionIntro: competitionIntro.value.trim() || null,
+  esportsChannels: esportsChannels.value,
   sortIndex: sortIndex.value,
 })
 
@@ -293,6 +304,26 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
         />
       </form-section>
 
+      <form-section
+        testid="game-edit-competition"
+        title="Competition"
+      >
+        <vv-field
+          v-model="competitionIntro"
+          :component-props="{kind: 'markdown', maxLength: 4000, hint: 'Empty uses the casual intro'}"
+          label="Intro"
+          name="competitionIntro"
+          test-id="game-edit-competition-intro"
+        />
+        <game-channel-picker
+          v-model="esportsChannels"
+          :category="GameChannelCategory.ESPORTS"
+          empty-note="The esports category has no channels left to add."
+          label="Esports channels"
+          testid="game-edit-esports-channels"
+        />
+      </form-section>
+
       <form-section title="Committees">
         <game-organisers-picker
           v-model="organisers"
@@ -372,7 +403,8 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
               :accent="accent"
               :icon="icon?.url"
               :icon-srcset="srcsetOf(icon)"
-              :intro="drafted.intro ?? ''"
+              :channels="esportsChannels"
+              :intro="competitionSays"
               :name="drafted.name"
             />
           </preview-frame>
@@ -497,4 +529,5 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
 .game-previews__cell :deep(.art-cells) {
   grid-template-columns: minmax(0, 1fr);
 }
+
 </style>

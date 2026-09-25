@@ -27,7 +27,7 @@ const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
   RecordHead: {name: "RecordHead", props: ["title", "accent", "archived"], template: "<div><slot /></div>"},
-  EsportsGameHead: {name: "EsportsGameHead", props: ["name", "accent", "intro"], template: "<div />"},
+  EsportsGameHead: {name: "EsportsGameHead", props: ["name", "accent", "intro", "channels"], template: "<div />"},
   SliceBand: {name: "SliceBand", props: ["items", "accent"], template: "<div />"},
   ArtCells: {name: "ArtCells", props: ["cells"], template: "<div />"},
   ImagePicker: {name: "ImagePicker", props: ["picture", "store", "testid"], emits: ["update:picture"], template: "<div />"},
@@ -81,6 +81,7 @@ describe("the game edit page", () => {
 
     expect(adapter.addCasualGame).toHaveBeenCalledWith({
       name: "Rocket League", slug: "rl", intro: null, accent: "#1183d6", banner: null, icon: null, channels: [], sortIndex: null,
+      competitionIntro: null, esportsChannels: [],
     })
     expect(committees.saveGameOrganisers).not.toHaveBeenCalled()
     expect(esports.enterGameInSeason).not.toHaveBeenCalled()
@@ -151,6 +152,27 @@ describe("the game edit page", () => {
     await wrapper.get("[data-testid=game-edit-accent-field-swatch]").setValue("#1183d6")
     expect(wrapper.getComponent(stubs.EsportsGameHead).props("accent")).toBe("#1183d6")
     expect(wrapper.get("[data-testid=game-edit-save]").attributes("disabled")).toBe("false")
+  })
+
+  it("writes the competition pages' own intro and esports channels, previewed with the casual intro as fallback", async () => {
+    adapter.saveCasualGame.mockResolvedValue({ok: true, game: chess})
+    const wrapper = mountEditor({...chess, competitionIntro: null, esportsChannels: []} as never)
+    const head = () => wrapper.getComponent(stubs.EsportsGameHead)
+    const esports = wrapper.findAllComponents(stubs.GameChannelPicker).find(one => one.props("testid") === "game-edit-esports-channels")!
+
+    expect(head().props("intro")).toBe("Blitz")
+    write(wrapper, "competitionIntro", "Rated only")
+    esports.vm.$emit("update:modelValue", [{id: "7", guildId: "324", name: "chess-esports"}])
+    await flushPromises()
+
+    expect(head().props("intro")).toBe("Rated only")
+    expect(head().props("channels")).toEqual([{id: "7", guildId: "324", name: "chess-esports"}])
+    expect(wrapper.getComponent(stubs.SliceBand).props("items")[0].meta).toBe("#chess-esports")
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+    expect(adapter.saveCasualGame).toHaveBeenCalledWith("CHESS", expect.objectContaining({
+      competitionIntro: "Rated only", esportsChannels: [{id: "7", guildId: "324", name: "chess-esports"}],
+    }))
   })
 
   it("takes an emptied order as last", async () => {

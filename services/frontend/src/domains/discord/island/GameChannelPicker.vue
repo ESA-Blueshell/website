@@ -1,13 +1,14 @@
 <script lang="ts" setup>
 /**
- * The channels a game is played in, picked from the server's games category. Each chosen channel
+ * The channels a game is played in, picked from the server's games category, or from its esports
+ * category for the game's competition. Each chosen channel
  * is kept with its name, so while the bot is away the field still says where the game lives, and
  * says it cannot change them.
  */
 import {computed, onMounted, ref} from "vue"
 import ChipPicker from "@/components/island/ChipPicker.vue"
 import FormField from "@/components/island/FormField.vue"
-import {type GameRoom, listGameRooms} from "../index"
+import {GameChannelCategory, type GameRoom, listGameRooms} from "../index"
 
 const props = withDefaults(defineProps<{
   modelValue?: GameRoom[] | null
@@ -16,11 +17,13 @@ const props = withDefaults(defineProps<{
   label?: string
   /** What the picker says once every channel of its category is chosen. */
   emptyNote?: string
+  category?: GameChannelCategory
 }>(), {
   modelValue: () => [],
   testid: "game-channels",
   label: "Channels",
   emptyNote: "The games category has no channels left to add.",
+  category: GameChannelCategory.GAMES,
 })
 
 const emit = defineEmits<{"update:modelValue": [channels: GameRoom[]]}>()
@@ -28,7 +31,7 @@ const emit = defineEmits<{"update:modelValue": [channels: GameRoom[]]}>()
 const channels = ref<GameRoom[] | null>(null)
 const loaded = ref(false)
 onMounted(async () => {
-  channels.value = await listGameRooms()
+  channels.value = await listGameRooms(props.category)
   loaded.value = true
 })
 

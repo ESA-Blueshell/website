@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
+import {gameRoomUrl} from "@/domains/discord"
 
 /**
  * The head of a game's competition page: its colour, its logo, its name and what the page says
@@ -15,6 +16,8 @@ defineProps<{
   icon?: string | null
   iconSrcset?: string
   intro?: string
+  /** The Discord channels its esports players meet in, each linked into the app. */
+  channels?: {id: string, guildId: string, name: string}[]
 }>()
 </script>
 
@@ -59,7 +62,55 @@ defineProps<{
         data-testid="esports-game-intro"
         :source="intro"
       />
+      <p
+        v-if="channels && channels.length > 0"
+        class="esports-head__channels"
+        data-testid="esports-game-channels"
+      >
+        <span class="esports-head__channels-label">Esports on Discord</span>
+        <template
+          v-for="(channel, index) in channels"
+          :key="channel.id"
+        >
+          <template v-if="index > 0">
+            ·
+          </template>
+          <a
+            :data-testid="`esports-game-channel-${channel.id}`"
+            :href="gameRoomUrl(channel)"
+            rel="noopener"
+            target="_blank"
+          >#{{ channel.name }}</a>
+        </template>
+      </p>
     </template>
     <slot />
   </header-band>
 </template>
+
+<style scoped>
+.esports-head__channels {
+  margin-top: 1rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-chalk);
+}
+
+.esports-head__channels a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.esports-head__channels a:hover,
+.esports-head__channels a:focus-visible {
+  color: var(--color-brand);
+}
+
+.esports-head__channels-label {
+  margin-right: 0.5rem;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-ash);
+}
+</style>

@@ -11,8 +11,8 @@ vi.mock("vuex", async (importOriginal) => {
   return withVuexUseStore(importOriginal, mockStore)
 })
 
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({
-  default: {name: "TopBanner", template: "<div />"},
+vi.mock("@/components/common/AccountFrame.vue", () => ({
+  default: {name: "AccountFrame", props: ["heading", "crumb", "islandContent", "tabs", "eyebrow", "body"], template: "<div><slot /><slot name=\"actions\" /></div>"},
 }))
 
 describe("Games page", () => {
@@ -21,6 +21,7 @@ describe("Games page", () => {
 
     await settle()
 
+    expect(wrapper.getComponent({name: "AccountFrame"}).props("heading")).toBe("Games")
     expect(wrapper.getComponent({name: "GameHandles"}).props("userId")).toBe(42)
   })
 })

@@ -1,6 +1,5 @@
 <template>
-  <v-main>
-    <top-banner title="My address" />
+  <account-frame heading="Address">
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -20,7 +19,7 @@
         />
       </div>
     </div>
-  </v-main>
+  </account-frame>
 </template>
 
 
@@ -28,7 +27,7 @@
 import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import {useRoute} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
+import AccountFrame from "@/components/common/AccountFrame.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {type AddressResponse, type CreateAddressRequest, readAddress} from "@/domains/user"
 import AddressForm from "@/components/form/AddressForm.vue"

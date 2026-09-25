@@ -39,11 +39,8 @@ vi.mock("@/components/form/UserForm.vue", () => ({
   },
 }))
 
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({
-  default: {
-    name: "TopBanner",
-    template: "<div />",
-  },
+vi.mock("@/components/common/AccountFrame.vue", () => ({
+  default: {name: "AccountFrame", props: ["heading", "crumb", "islandContent", "tabs", "eyebrow", "body"], template: "<div><slot /><slot name=\"actions\" /></div>"},
 }))
 
 describe("Account page", () => {

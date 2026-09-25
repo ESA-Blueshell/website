@@ -1,6 +1,5 @@
 <template>
-  <v-main>
-    <top-banner title="My games" />
+  <account-frame heading="Games">
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -12,13 +11,13 @@
         />
       </div>
     </div>
-  </v-main>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
 import {computed} from "vue"
 import {useStore} from "vuex"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
+import AccountFrame from "@/components/common/AccountFrame.vue"
 import GameHandles from "@/domains/esports/components/GameHandles.vue"
 
 const store = useStore()

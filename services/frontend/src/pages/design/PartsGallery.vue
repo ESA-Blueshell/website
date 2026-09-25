@@ -14,6 +14,7 @@ import CutButton from "@/components/island/CutButton.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
+import PageTabs from "@/components/island/PageTabs.vue"
 import PanChevron from "@/components/island/PanChevron.vue"
 import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import SliceBand, {type SliceItem} from "@/components/island/SliceBand.vue"
@@ -24,6 +25,12 @@ const choice = ref("upcoming")
 const choices = [
   {key: "upcoming", label: "Upcoming"},
   {key: "past", label: "Past events"},
+]
+
+const tabs = [
+  {label: "Account", to: "/account"},
+  {label: "Parts", to: "/design/parts"},
+  {label: "Fields", to: "/design/fields"},
 ]
 
 const panned = ref(0)
@@ -93,6 +100,16 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
           v-model="choice"
           :options="choices"
           testid-prefix="gallery-choice"
+        />
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Tabs
+        </h2>
+        <page-tabs
+          :entries="tabs"
+          label="The design pages"
         />
       </section>
 

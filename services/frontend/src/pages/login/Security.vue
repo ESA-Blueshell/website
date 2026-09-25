@@ -1,6 +1,5 @@
 <template>
-  <v-main>
-    <top-banner title="Security" />
+  <account-frame heading="Security">
     <div class="mx-3">
       <div
         class="mx-auto my-10 security-page"
@@ -284,14 +283,14 @@
       :two-factor-on="standing?.on === true"
       @proved="stepUpProved"
     />
-  </v-main>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
+import AccountFrame from "@/components/common/AccountFrame.vue"
 import {
   askToMoveEmail,
   BackupCodes,

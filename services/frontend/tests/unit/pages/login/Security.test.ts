@@ -41,7 +41,9 @@ vi.mock("@/domains/auth", async (importOriginal) => ({
   TwoFactorSetUp: {name: "TwoFactorSetUp", emits: ["done", "stepUp"], template: "<div data-testid='set-up' />"},
 }))
 
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({default: {name: "TopBanner", template: "<div />"}}))
+vi.mock("@/components/common/AccountFrame.vue", () => ({
+  default: {name: "AccountFrame", props: ["heading", "crumb", "islandContent", "tabs", "eyebrow", "body"], template: "<div><slot /><slot name=\"actions\" /></div>"},
+}))
 
 const ok = {ok: true, value: undefined}
 const standing = (on: boolean, backupCodesLeft = on ? 5 : 0, required = false, mayTurnOff = on) =>

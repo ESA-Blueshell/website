@@ -40,6 +40,10 @@ vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))
 
+vi.mock("@/components/common/AccountFrame.vue", () => ({
+  default: {name: "AccountFrame", props: ["heading"], template: "<div><slot /></div>"},
+}))
+
 describe("Address page", () => {
   beforeEach(() => {
     vi.clearAllMocks()

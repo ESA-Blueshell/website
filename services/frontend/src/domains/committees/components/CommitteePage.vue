@@ -7,13 +7,12 @@ import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import RecordFact from "@/components/island/RecordFact.vue"
+import MarkdownView from "@/components/island/MarkdownView.vue"
 import RecordHead from "@/components/island/RecordHead.vue"
 import ScopedEvents from "@/domains/events/island/ScopedEvents.vue"
 import {cellOf as gameCellOf, useCasualGames} from "@/domains/games"
-import $markdownToHtml from "@/plugins/markdownToHtml"
 import type {Committee, CommitteePage} from "../adapters/committees"
 import ArchiveCommitteeDialog from "../island/ArchiveCommitteeDialog.vue"
-import CommitteeDialog from "../island/CommitteeDialog.vue"
 import {useCommitteeRights} from "../island/useCommitteeRights"
 import {initialsOf, useCommittees} from "../useCommittees"
 
@@ -29,20 +28,12 @@ const {page} = defineProps<{page: CommitteePage}>()
 const emit = defineEmits<{(event: "changed", committee: Committee): void}>()
 
 const router = useRouter()
-const {committees, refresh} = useCommittees()
+const {refresh} = useCommittees()
 const {games} = useCasualGames()
 const {isBoard, sitsOn} = useCommitteeRights()
 
 const mayEdit = computed(() => isBoard.value || sitsOn(page.id))
 const mayAddEvent = computed(() => mayEdit.value && !page.archived)
-
-/** The committee as the listing holds it, which carries the version a save needs. */
-const record = computed<Committee>(() => {
-  const listed = committees.value.find(one => one.id === page.id)
-  if (listed) return listed
-  const {members: _seats, ...fields} = page
-  return {...fields, version: 0, createdAt: "", updatedAt: ""}
-})
 
 const named = computed(() => page.gameCodes
   .map(code => games.value.find(game => game.code === code))
@@ -51,14 +42,12 @@ const gameCells = computed(() => named.value.map(game => gameCellOf(game)))
 
 const go = (to: {href: string}) => void router.push(to.href)
 
-const editing = ref(false)
 const archiving = ref(false)
 
-/** Its address may have moved, and this page is at the old one. */
-const saved = async (now: Committee) => {
+/** Archived or brought back: the listing and this page read it again. */
+const archived = async (now: Committee) => {
   await refresh()
   emit("changed", now)
-  if (now.slug !== page.slug) void router.replace(`/committees/${now.slug}`)
 }
 </script>
 
@@ -75,8 +64,7 @@ const saved = async (now: Committee) => {
         testid="committee"
         :title="page.name"
       >
-        <!-- eslint-disable-next-line vue/no-v-html -- the markdown renderer escapes what it is given -->
-        <div v-html="$markdownToHtml(page.description)" />
+        <markdown-view :source="page.description" />
         <template
           v-if="named.length > 0"
           #facts
@@ -111,8 +99,8 @@ const saved = async (now: Committee) => {
             Add an event
           </cut-button>
           <cut-button
+            :href="`/committees/${page.slug}/edit`"
             testid="committee-edit"
-            @click="editing = true"
           >
             Edit committee
           </cut-button>
@@ -194,17 +182,11 @@ const saved = async (now: Committee) => {
       />
 
       <template v-if="mayEdit">
-        <committee-dialog
-          v-model:open="editing"
-          :as-board="isBoard"
-          :committee="record"
-          @saved="saved"
-        />
         <archive-committee-dialog
           v-if="isBoard"
           v-model:open="archiving"
           :committee="page"
-          @saved="saved"
+          @saved="archived"
         />
       </template>
     </island>

@@ -12,7 +12,6 @@ import LeadBand from "@/components/island/LeadBand.vue"
 import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import {cellOf, driftItemOf, reelItemOf, useCommitteeRights, useCommittees, type Committee} from "@/domains/committees"
 import ArchiveCommitteeDialog from "@/domains/committees/island/ArchiveCommitteeDialog.vue"
-import CommitteeDialog from "@/domains/committees/island/CommitteeDialog.vue"
 import {useCasualGames} from "@/domains/games"
 
 defineOptions({name: "CommitteesPage"})
@@ -39,12 +38,6 @@ const every = computed<ArtCell[]>(() => [...live.value, ...archived.value].map(c
 
 const go = (to: {href: string}) => void router.push(to.href)
 
-const adding = ref(false)
-/** A committee added is shown on its own page. */
-const added = async (committee: Committee) => {
-  await refresh()
-  void router.push(`/committees/${committee.slug}`)
-}
 
 const archiving = ref<Committee | null>(null)
 const archiveOf = (id: string | number) => committees.value.find(committee => committee.id === id) ?? null
@@ -69,8 +62,8 @@ const archiveOf = (id: string | number) => committees.value.find(committee => co
           </cut-button>
           <cut-button
             v-if="isBoard"
+            href="/committees/new"
             testid="committees-add"
-            @click="adding = true"
           >
             Add a committee
           </cut-button>
@@ -158,12 +151,6 @@ const archiveOf = (id: string | number) => committees.value.find(committee => co
       </lead-band>
 
       <template v-if="isBoard">
-        <committee-dialog
-          v-model:open="adding"
-          as-board
-          :committee="null"
-          @saved="added"
-        />
         <archive-committee-dialog
           v-if="archiving"
           :committee="archiving"

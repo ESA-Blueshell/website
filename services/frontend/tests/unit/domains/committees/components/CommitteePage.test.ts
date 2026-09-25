@@ -25,7 +25,6 @@ const stubs = {
   RouterLink: RouterLinkStub,
   VMain: {template: "<main><slot /></main>"},
   ScopedEvents: {name: "ScopedEvents", props: ["scope", "testid"], template: "<section />"},
-  CommitteeDialog: dialog("CommitteeDialog"),
   ArchiveCommitteeDialog: dialog("ArchiveCommitteeDialog"),
 }
 
@@ -87,9 +86,7 @@ describe("one committee's page", () => {
     const member = mountPage()
     expect(member.findAllComponents(RouterLinkStub).map(link => link.props("to"))).toContain("/events/create?committee=7")
     expect(member.find("[data-testid=committee-archive]").exists()).toBe(false)
-    await member.get("[data-testid=committee-edit]").trigger("click")
-    expect(member.getComponent({name: "CommitteeDialog"}).props()).toMatchObject({open: true, asBoard: false})
-    expect(member.getComponent({name: "CommitteeDialog"}).props("committee").version).toBe(4)
+    expect(member.findAllComponents(RouterLinkStub).map(link => link.props("to"))).toContain("/committees/lancie/edit")
     expect(member.findComponent({name: "ArchiveCommitteeDialog"}).exists()).toBe(false)
 
     rights.sits = false
@@ -98,7 +95,6 @@ describe("one committee's page", () => {
     await board.get("[data-testid=committee-archive]").trigger("click")
     expect(board.getComponent({name: "ArchiveCommitteeDialog"}).props("open")).toBe(true)
     board.getComponent({name: "ArchiveCommitteeDialog"}).vm.$emit("update:open", false)
-    board.getComponent({name: "CommitteeDialog"}).vm.$emit("update:open", false)
     await board.vm.$nextTick()
     expect(board.getComponent({name: "ArchiveCommitteeDialog"}).props("open")).toBe(false)
   })
@@ -113,20 +109,16 @@ describe("one committee's page", () => {
     expect(wrapper.find("[data-testid=committee-games]").exists()).toBe(false)
   })
 
-  it("follows a committee to its new address once saved, and tells the page to read it again", async () => {
+  it("reads the committee again once it is archived or brought back", async () => {
     rights.isBoard = ref(true) as never
     committees.committees = ref([]) as never
     const wrapper = mountPage()
-    expect(wrapper.getComponent({name: "CommitteeDialog"}).props("committee")).toMatchObject({id: 7, version: 0})
 
-    wrapper.getComponent({name: "CommitteeDialog"}).vm.$emit("saved", {...page(), slug: "lan"})
-    await flushPromises()
     wrapper.getComponent({name: "ArchiveCommitteeDialog"}).vm.$emit("saved", page())
     await flushPromises()
 
-    expect(router.replace).toHaveBeenCalledTimes(1)
-    expect(router.replace).toHaveBeenCalledWith("/committees/lan")
-    expect(committees.refresh).toHaveBeenCalledTimes(2)
-    expect(wrapper.emitted("changed")).toHaveLength(2)
+    expect(router.replace).not.toHaveBeenCalled()
+    expect(committees.refresh).toHaveBeenCalledTimes(1)
+    expect(wrapper.emitted("changed")).toHaveLength(1)
   })
 })

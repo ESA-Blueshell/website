@@ -75,6 +75,12 @@ const bannerSrcset = computed(() => srcsetOf(banner))
       >
         <slot name="acts" />
       </div>
+      <div
+        v-if="$slots.people"
+        class="record-head__people"
+      >
+        <slot name="people" />
+      </div>
     </div>
     <div class="record-head__art">
       <img
@@ -94,6 +100,11 @@ const bannerSrcset = computed(() => srcsetOf(banner))
 </template>
 
 <style scoped>
+/* Who is behind the record, under the ways on from it. */
+.record-head__people {
+  margin-top: 1.6rem;
+}
+
 
 
 

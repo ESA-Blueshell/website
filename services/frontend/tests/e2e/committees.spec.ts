@@ -22,7 +22,7 @@ test.describe("the committees pages", () => {
 
     await expect(page).toHaveURL(/\/committees\/events-committee$/)
     await expect(page.getByTestId("committee-head")).toContainText("Events Committee")
-    await expect(page.getByTestId("committee-seat-0")).toContainText("@nelly")
+    await expect(page.getByTestId("committee-seat-0")).toContainText("Nelly B")
     await expect(page.getByTestId("committee-games")).toContainText("Chess")
     await expect(page.getByTestId("committee-edit")).toHaveCount(0)
 

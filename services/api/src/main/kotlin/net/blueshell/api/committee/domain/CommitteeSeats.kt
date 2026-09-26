@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component
 
 /** One seat as a committee's public page shows it: never the person's name, only their Discord. */
 data class CommitteeSeat(
-    /** Their Discord username, or nothing for a member who has not linked Discord. */
-    val discordTag: String?,
+    /** The name the server shows them by, or nothing for a member who has not linked Discord. */
+    val discordName: String?,
     val avatar: String?,
     val role: String?,
 )
@@ -29,7 +29,7 @@ class CommitteeSeats(
             val id = member.user.discordId
             val face = id?.let(seen::get)
             CommitteeSeat(
-                discordTag = face?.tag ?: id?.let { member.user.discord },
+                discordName = face?.name ?: id?.let { member.user.discord },
                 avatar = face?.avatar ?: id?.let(::defaultAvatarOf),
                 role = member.role,
             )

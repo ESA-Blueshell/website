@@ -71,8 +71,8 @@ class CommitteePageIT : UserTestSupport() {
                 .response.contentAsString
 
         val seats = JsonPath.read<List<Map<String, Any?>>>(body, "$.members")
-        assertThat(seats).anySatisfy { assertThat(it).containsEntry("discordTag", "nelly").containsEntry("role", "Chair") }
-        assertThat(seats).anySatisfy { assertThat(it["discordTag"]).isNull() }
+        assertThat(seats).anySatisfy { assertThat(it).containsEntry("discordName", "nelly").containsEntry("role", "Chair") }
+        assertThat(seats).anySatisfy { assertThat(it["discordName"]).isNull() }
         listOf(chair, unlinked).forEach { person ->
             assertThat(body).doesNotContain(person.firstName, person.lastName, person.email)
         }

@@ -56,5 +56,5 @@ fun Committee.asPageResponse(seats: List<CommitteeSeat>): CommitteePageResponse 
         archived = this.archived,
         banner = this.banner?.asImage(),
         gameCodes = this.gameCodes.sorted(),
-        members = seats.map { CommitteeSeatResponse(discordTag = it.discordTag, avatar = it.avatar, role = it.role) },
+        members = seats.map { CommitteeSeatResponse(discordName = it.discordName, avatar = it.avatar, role = it.role) },
     )

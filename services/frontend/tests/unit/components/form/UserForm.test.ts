@@ -213,6 +213,26 @@ describe("UserForm", () => {
     })
   })
 
+  it("requires the member fields of a member only, and sends no date where none is given", async () => {
+    const mountWith = (required?: boolean) => mount(UserForm, {
+      props: {
+        modelValue: {...baseModel(), id: 5, version: 1},
+        options: {includeMemberProfile: true, updateKind: "user", ...(required === undefined ? {} : {memberProfileRequired: required})},
+      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+
+    expect(rulesByName(mountWith())).toMatchObject({dateOfBirth: "dateRequired", nationality: "required"})
+    const guest = mountWith(false)
+    expect(rulesByName(guest)).toMatchObject({dateOfBirth: "", nationality: ""})
+
+    mockValidate.mockResolvedValue(true)
+    mockUpdateUser.mockResolvedValue({id: 5, email: "a@example.com", roles: [], version: 2})
+    mockFindMemberProfileByUserId.mockResolvedValue(null)
+    await (guest.vm as any).save()
+    expect(mockUpdateUser.mock.calls.at(-1)[1].memberProfile.dateOfBirth).toBeUndefined()
+  })
+
   it("requires identity/contact fields for create flow and includes password rules", () => {
     const wrapper = mount(UserForm, {
       props: {

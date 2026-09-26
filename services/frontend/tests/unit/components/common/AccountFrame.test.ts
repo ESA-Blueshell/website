@@ -35,12 +35,15 @@ describe("the account frame", () => {
     expect(wrapper.find("[data-testid=account-tab-address]").attributes("to")).toBe("/account/addresses/9")
   })
 
-  it("leaves Address out for somebody without one, as the account menu does", () => {
+  it("offers Address to somebody without one too, where the first one is written", () => {
     mockStore.getters.getLogin.addressId = null
-    const tabs = frame().findAll("[data-testid^=account-tab-]").map(tab => tab.text())
+    const wrapper = frame()
+    const tabs = wrapper.findAll("[data-testid^=account-tab-]").map(tab => tab.text())
+    const to = wrapper.find("[data-testid=account-tab-address]").attributes("to")
     mockStore.getters.getLogin.addressId = 9
 
-    expect(tabs).toEqual(["Account", "Security", "Esports Teams"])
+    expect(tabs).toEqual(["Account", "Security", "Esports Teams", "Address"])
+    expect(to).toBe("/account/addresses")
   })
 
   it("draws a crumb back instead of nothing, and no tabs where the page asks for none", () => {

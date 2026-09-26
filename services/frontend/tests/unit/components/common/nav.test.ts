@@ -74,12 +74,12 @@ describe("the bar's own declaration", () => {
     expect(member).toEqual([])
   })
 
-  // A reader with no address has nothing to edit, so the entry is not offered at all.
-  it("offers an address only where the reader has one", () => {
+  // A reader with no address is offered the page where the first one is written.
+  it("offers the address page to every reader, at the address on file where there is one", () => {
     const withAddress = accountFor({loggedIn: true, board: false, admin: false, addressId: 12})
     const without = accountFor({loggedIn: true, board: false, admin: false, addressId: null})
 
     expect(withAddress.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses/12"])
-    expect(without.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games"])
+    expect(without.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses"])
   })
 })

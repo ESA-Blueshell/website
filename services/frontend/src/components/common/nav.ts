@@ -134,7 +134,8 @@ export const accountFor = (reader: NavReader): NavEntry[] => [
   {label: "Account", to: "/account"},
   {label: "Security", to: "/account/security"},
   {label: "Esports Teams", to: "/account/games"},
-  ...(reader.addressId == null ? [] : [{label: "Address", to: `/account/addresses/${reader.addressId}`}]),
+  // Always offered: without an address on file, the page is where the first one is written.
+  {label: "Address", to: reader.addressId == null ? "/account/addresses" : `/account/addresses/${reader.addressId}`},
 ]
 
 /**

@@ -39,6 +39,8 @@ vi.mock("@/components/form/UserForm.vue", () => ({
   },
 }))
 
+const UserForm = {name: "UserForm", props: ["modelValue", "options"], template: "<div />"}
+
 vi.mock("@/components/common/AccountFrame.vue", () => ({
   default: {name: "AccountFrame", props: ["heading", "crumb", "islandContent", "tabs", "eyebrow", "body"], template: "<div><slot /><slot name=\"actions\" /></div>"},
 }))
@@ -75,5 +77,17 @@ describe("Account page", () => {
 
     expect(wrapper.find("game-handles-stub").exists()).toBe(false)
     expect(wrapper.text()).not.toContain("Game handles")
+  })
+
+  it("asks a member for the member fields and anybody else for them without insisting", async () => {
+    const member = mountInApp(Account, {global: {stubs: {UserForm}}})
+    await settle()
+    expect(member.getComponent(UserForm).props("options")).toEqual({includeMemberProfile: true, memberProfileRequired: true})
+
+    mockStore.getters.isMember = false
+    const guest = mountInApp(Account, {global: {stubs: {UserForm}}})
+    await settle()
+    expect(guest.getComponent(UserForm).props("options")).toEqual({includeMemberProfile: true, memberProfileRequired: false})
+    mockStore.getters.isMember = true
   })
 })

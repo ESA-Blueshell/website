@@ -67,10 +67,10 @@ data class SignupDetailsData(
 )
 
 data class UpsertMemberProfileData(
-    val dateOfBirth: Date,
+    val dateOfBirth: Date?,
     val studentNumber: String?,
     val gender: String?,
-    val nationality: String,
+    val nationality: String?,
     val bhv: Boolean,
     val ehbo: Boolean,
     val nameOnRosters: Boolean = false,

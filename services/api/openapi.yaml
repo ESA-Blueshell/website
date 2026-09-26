@@ -5587,8 +5587,11 @@ components:
         bhv:
           type: boolean
         dateOfBirth:
+          description: Required of a member; anybody else may leave it out
           format: date
-          type: string
+          type:
+          - string
+          - 'null'
         ehbo:
           type: boolean
         gender:
@@ -5599,8 +5602,10 @@ components:
           description: Whether this member's real name may appear in a roster
           type: boolean
         nationality:
-          minLength: 1
-          type: string
+          description: Required of a member; anybody else may leave it out
+          type:
+          - string
+          - 'null'
         studentNumber:
           type:
           - string
@@ -5612,10 +5617,8 @@ components:
           - 'null'
       required:
       - bhv
-      - dateOfBirth
       - ehbo
       - nameOnRosters
-      - nationality
       type: object
     UserActivationRequest:
       properties:

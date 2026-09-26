@@ -37,7 +37,7 @@
             <user-form
               v-model="user"
               data-testid="account-user-form"
-              :options="{ includeMemberProfile: isMember }"
+              :options="{ includeMemberProfile: true, memberProfileRequired: isMember }"
               show-submit
             />
           </v-form>

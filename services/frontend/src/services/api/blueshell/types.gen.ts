@@ -2720,14 +2720,20 @@ export type UpdateUserRolesRequest = {
 
 export type UpsertMemberProfileRequest = {
     bhv: boolean;
-    dateOfBirth: string;
+    /**
+     * Required of a member; anybody else may leave it out
+     */
+    dateOfBirth?: string | null;
     ehbo: boolean;
     gender?: string | null;
     /**
      * Whether this member's real name may appear in a roster
      */
     nameOnRosters: boolean;
-    nationality: string;
+    /**
+     * Required of a member; anybody else may leave it out
+     */
+    nationality?: string | null;
     studentNumber?: string | null;
     version?: number | null;
 };

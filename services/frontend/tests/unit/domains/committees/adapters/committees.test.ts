@@ -11,6 +11,7 @@ import {
   saveOwnCommitteePage,
   setCommitteeArchived,
   storeCommitteeBanner,
+  storeCommitteeIcon,
 } from "@/domains/committees/adapters/committees"
 import * as api from "@/services/api"
 
@@ -25,6 +26,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   updateCommitteePage: vi.fn(),
   archiveCommittee: vi.fn(),
   uploadCommitteeBanner: vi.fn(),
+  uploadCommitteeIcon: vi.fn(),
   uploadPublicImage: vi.fn(),
   setGameOrganisers: vi.fn(),
 }))
@@ -55,7 +57,7 @@ describe("reading committees", () => {
   it("answers the committees the account belongs to, and none where there is no body", async () => {
     vi.mocked(api.findCommitteesByUserId).mockResolvedValueOnce({data: [{id: 2, name: "EventCie"}]} as never).mockResolvedValueOnce({} as never)
 
-    await expect(listMyCommittees()).resolves.toEqual([{id: 2, name: "EventCie", banner: null}])
+    await expect(listMyCommittees()).resolves.toEqual([{id: 2, name: "EventCie", banner: null, icon: null}])
     await expect(listMyCommittees()).resolves.toEqual([])
   })
 
@@ -121,6 +123,17 @@ describe("writing committees", () => {
     expect(await storeCommitteeBanner(file, null)).toMatchObject({ok: true})
     expect(api.uploadPublicImage).toHaveBeenCalledWith({query: {type: "COMMITTEE_BANNER"}, body: {file}})
     expect(await storeCommitteeBanner(file, null)).toEqual({ok: false, reason: "That picture could not be stored."})
+  })
+
+  it("stores a logo the same two ways", async () => {
+    const file = new File(["x"], "i.svg")
+    vi.mocked(api.uploadCommitteeIcon).mockResolvedValueOnce({data: banner} as never).mockResolvedValueOnce({error: {}} as never)
+    vi.mocked(api.uploadPublicImage).mockResolvedValueOnce({data: banner} as never)
+
+    expect(await storeCommitteeIcon(file, 1)).toMatchObject({ok: true, picture: {url: resolved}})
+    expect(await storeCommitteeIcon(file, null)).toMatchObject({ok: true})
+    expect(api.uploadPublicImage).toHaveBeenCalledWith({query: {type: "COMMITTEE_ICON"}, body: {file}})
+    expect(await storeCommitteeIcon(file, 1)).toEqual({ok: false, reason: "That picture could not be stored."})
   })
 
   it("sets which committees organise events for a game", async () => {

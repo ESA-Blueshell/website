@@ -60,6 +60,7 @@ const archived = async (now: Committee) => {
         :back="{to: '/committees', label: 'Committees'}"
         :banner="page.banner"
         eyebrow="Committee"
+        :icon="page.icon?.url ?? null"
         :initials="initialsOf(page.name)"
         testid="committee"
         :title="page.name"
@@ -187,7 +188,6 @@ const archived = async (now: Committee) => {
 </template>
 
 <style scoped>
-.committee-page__seats {
 .committee-page__people-label {
   margin: 0;
   font-size: 0.6rem;
@@ -201,22 +201,22 @@ const archived = async (now: Committee) => {
  * stands just left of each member and the row clips its left edge, so a member that wraps to the
  * start of a line has none before it.
  */
+.committee-page__seats {
   display: flex;
   flex-wrap: wrap;
   row-gap: 0.9rem;
   margin: 0.7rem 0 0 -1.5rem;
   padding: 0;
-  list-style: none;
   overflow: hidden;
+  list-style: none;
 }
 
 .committee-page__seat {
-  display: flex;
   position: relative;
+  display: flex;
   gap: 0.75rem;
   align-items: center;
   min-width: 0;
-}
   padding: 0 1.5rem;
 }
 
@@ -229,6 +229,7 @@ const archived = async (now: Committee) => {
   content: "";
   background-color: var(--color-hairline);
   transform: skewX(-12deg);
+}
 
 .committee-page__avatar {
   flex: none;
@@ -241,8 +242,8 @@ const archived = async (now: Committee) => {
   display: flex;
   flex-direction: column;
   min-width: 0;
-}
   line-height: 1.2;
+}
 
 .committee-page__name {
   font-size: 1.05rem;

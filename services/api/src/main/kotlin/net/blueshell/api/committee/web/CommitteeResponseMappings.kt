@@ -24,6 +24,7 @@ fun Committee.asDetailResponse(): CommitteeDetailResponse =
         listed = this.listed,
         archived = this.archived,
         banner = this.banner?.asImage(),
+        icon = this.icon?.asImage(),
         gameCodes = this.gameCodes.sorted(),
         members = this.members.map { it.asDto() }.toMutableList(),
         version = this.version,
@@ -40,6 +41,7 @@ fun Committee.asSummaryResponse(): CommitteeSummaryResponse =
         listed = this.listed,
         archived = this.archived,
         banner = this.banner?.asImage(),
+        icon = this.icon?.asImage(),
         gameCodes = this.gameCodes.sorted(),
         version = this.version,
         createdAt = this.createdAt,
@@ -55,6 +57,7 @@ fun Committee.asPageResponse(seats: List<CommitteeSeat>): CommitteePageResponse 
         listed = this.listed,
         archived = this.archived,
         banner = this.banner?.asImage(),
+        icon = this.icon?.asImage(),
         gameCodes = this.gameCodes.sorted(),
         members = seats.map { CommitteeSeatResponse(discordName = it.discordName, avatar = it.avatar, role = it.role) },
     )

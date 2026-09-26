@@ -81,7 +81,7 @@ class CommitteeService
         }
 
         /**
-         * What a committee's own members may change: its description, its banner and its games.
+         * What a committee's own members may change: its description, its pictures and its games.
          * The name, the address, Listed and the members stay the board's.
          */
         @Transactional
@@ -89,12 +89,14 @@ class CommitteeService
             id: Long,
             description: String,
             banner: String?,
+            icon: String?,
             gameCodes: List<String>?,
             version: Long?,
         ): Committee {
             val committee = findById(id)
             committee.description = description
             committee.banner = pictures.of(banner, FileType.COMMITTEE_BANNER)
+            committee.icon = pictures.of(icon, FileType.COMMITTEE_ICON)
             applyGames(committee, gameCodes)
             version?.let { committee.version = it }
             return super.update(committee)
@@ -143,6 +145,7 @@ class CommitteeService
             committee.slug = addressFor(page.address ?: committee.name, committee)
             committee.listed = page.listed
             committee.banner = pictures.of(page.banner, FileType.COMMITTEE_BANNER)
+            committee.icon = pictures.of(page.icon, FileType.COMMITTEE_ICON)
             applyGames(committee, page.gameCodes)
         }
 

@@ -22,6 +22,8 @@ data class CommitteeSummaryResponse(
     @field:Schema(description = "Whether the committee no longer runs")
     var archived: Boolean,
     var banner: Image?,
+    @field:Schema(description = "Its logo, absent for none")
+    var icon: Image?,
     @field:Schema(description = "The codes of the games the committee organises events for")
     var gameCodes: List<String>,
     var version: Long,

@@ -40,6 +40,7 @@ export function reelItemOf(committee: Committee, gameNames: (codes: string[]) =>
     accent: ACCENT,
     banner: committee.banner?.url ?? null,
     srcset: srcsetOf(committee.banner),
+    icon: committee.icon?.url ?? null,
     initials: initialsOf(committee.name),
     railLabel: committee.name,
     chips: gameNames(committee.gameCodes),

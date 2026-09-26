@@ -50,6 +50,7 @@ class CommitteeControllerTest {
                 listed = false,
                 archived = true,
                 banner = null,
+                icon = null,
                 gameCodes = listOf("CS2", "VALORANT"),
                 members = listOf(CommitteeSeatResponse("nelly", "https://cdn/n.png", "Chair")),
             ),
@@ -69,23 +70,31 @@ class CommitteeControllerTest {
         assertThat(made.slug).isEqualTo("lan")
         assertThat(made.gameCodes).containsExactly("CS2", "VALORANT")
         verify(service)
-            .createWithMembers(eq("LanCie"), eq("LANs"), eq(mutableListOf()), eq(CommitteePage("lan", false, "b.webp", listOf("CS2"))))
+            .createWithMembers(
+                eq("LanCie"),
+                eq("LANs"),
+                eq(mutableListOf()),
+                eq(CommitteePage("lan", false, "b.webp", gameCodes = listOf("CS2"))),
+            )
         verify(service)
-            .updateWithMembers(eq(1), eq("LanCie"), eq("LANs"), eq(mutableListOf()), eq(2), eq(CommitteePage("lan", false, null, null)))
+            .updateWithMembers(eq(1), eq("LanCie"), eq("LANs"), eq(mutableListOf()), eq(2), eq(CommitteePage("lan", false)))
     }
 
     @Test
-    fun `lets the committee's own members save its page and store its banner`() {
-        whenever(service.updateOwnPage(1, "LANs, monthly", "b.webp", listOf("CS2"), 3)).thenReturn(lan)
+    fun `lets the committee's own members save its page and store its banner and its logo`() {
+        whenever(service.updateOwnPage(1, "LANs, monthly", "b.webp", "i.webp", listOf("CS2"), 3)).thenReturn(lan)
         val stored = mock<File> { on { path } doReturn "committee-banners/b.webp" }
         val upload = MockMultipartFile("file", "b.png", "image/png", byteArrayOf(1))
         whenever(files.storeMultipart(upload, FileType.COMMITTEE_BANNER)).thenReturn(stored)
+        whenever(files.storeMultipart(upload, FileType.COMMITTEE_ICON)).thenReturn(stored)
 
-        controller.updateCommitteePage(1, CommitteeOwnPageRequest("LANs, monthly", "b.webp", listOf("CS2"), 3))
+        controller.updateCommitteePage(1, CommitteeOwnPageRequest("LANs, monthly", "b.webp", "i.webp", listOf("CS2"), 3))
         controller.uploadCommitteeBanner(1, upload)
+        controller.uploadCommitteeIcon(1, upload)
 
-        verify(service).updateOwnPage(1, "LANs, monthly", "b.webp", listOf("CS2"), 3)
+        verify(service).updateOwnPage(1, "LANs, monthly", "b.webp", "i.webp", listOf("CS2"), 3)
         verify(files).storeMultipart(upload, FileType.COMMITTEE_BANNER)
+        verify(files).storeMultipart(upload, FileType.COMMITTEE_ICON)
     }
 
     @Test

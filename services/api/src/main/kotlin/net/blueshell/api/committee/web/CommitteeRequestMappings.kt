@@ -11,6 +11,8 @@ fun CommitteeMemberRequest.asData(): CommitteeMemberData =
         role = this.role?.takeIf { it.isNotBlank() },
     )
 
-fun CreateCommitteeRequest.page(): CommitteePage = CommitteePage(address = slug, listed = listed, banner = banner, gameCodes = gameCodes)
+fun CreateCommitteeRequest.page(): CommitteePage =
+    CommitteePage(address = slug, listed = listed, banner = banner, icon = icon, gameCodes = gameCodes)
 
-fun UpdateCommitteeRequest.page(): CommitteePage = CommitteePage(address = slug, listed = listed, banner = banner, gameCodes = gameCodes)
+fun UpdateCommitteeRequest.page(): CommitteePage =
+    CommitteePage(address = slug, listed = listed, banner = banner, icon = icon, gameCodes = gameCodes)

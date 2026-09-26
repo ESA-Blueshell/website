@@ -28,6 +28,7 @@ import {
   saveCommitteeAsBoard,
   saveOwnCommitteePage,
   storeCommitteeBanner,
+  storeCommitteeIcon,
 } from "../adapters/committees"
 import {cellOf, initialsOf} from "../useCommittees"
 
@@ -60,6 +61,7 @@ const slug = ref("")
 const listed = ref(true)
 const description = ref("")
 const banner = ref<Picture | null>(null)
+const icon = ref<Picture | null>(null)
 const gameCodes = ref<string[]>([])
 const seats = ref<Seat[]>([])
 const failure = ref<string | null>(null)
@@ -72,6 +74,7 @@ watch(() => props.committee, async committee => {
   listed.value = committee?.listed ?? true
   description.value = committee?.description ?? ""
   banner.value = (committee?.banner as Picture | null | undefined) ?? null
+  icon.value = (committee?.icon as Picture | null | undefined) ?? null
   gameCodes.value = [...(committee?.gameCodes ?? [])]
   failure.value = null
   if (!props.asBoard) return
@@ -102,6 +105,7 @@ const seat = (key: string) => { seats.value = [...seats.value, {userId: Number(k
 const unseat = (userId: number) => { seats.value = seats.value.filter(one => one.userId !== userId) }
 
 const storeBanner = (file: File) => storeCommitteeBanner(file, props.committee?.id ?? null)
+const storeIcon = (file: File) => storeCommitteeIcon(file, props.committee?.id ?? null)
 
 const complete = computed(() => description.value.trim() !== ""
   && (!props.asBoard || (name.value.trim() !== "" && slug.value.trim() !== "" && seats.value.length > 0)))
@@ -120,6 +124,7 @@ const drafted = computed<Committee>(() => ({
   listed: listed.value,
   archived: props.committee?.archived ?? false,
   banner: banner.value,
+  icon: icon.value,
   gameCodes: gameCodes.value,
   version: 0,
   createdAt: "",
@@ -136,6 +141,7 @@ const draft = (): CommitteeDraft => ({
   listed: listed.value,
   description: description.value.trim(),
   banner: banner.value?.path ?? null,
+  icon: icon.value?.path ?? null,
   members: seats.value.map(one => ({userId: one.userId, role: one.role.trim() || null})),
   gameCodes: gameCodes.value,
 })
@@ -151,7 +157,7 @@ const submit = async () => {
       ? await addCommittee(written)
       : props.asBoard
         ? await saveCommitteeAsBoard(committee.id, committee.version, written)
-        : await saveOwnCommitteePage(committee.id, {description: written.description, banner: written.banner, gameCodes: written.gameCodes})
+        : await saveOwnCommitteePage(committee.id, {description: written.description, banner: written.banner, icon: written.icon, gameCodes: written.gameCodes})
     if (!result.ok) {
       failure.value = result.reason
       return
@@ -196,6 +202,17 @@ const submit = async () => {
               :store="storeBanner"
               testid="committee-edit-banner"
               @update:picture="banner = $event"
+            />
+          </div>
+          <div class="form-span">
+            <image-picker
+              label="Icon"
+              may-be-vector
+              :picture="icon"
+              shape="icon"
+              :store="storeIcon"
+              testid="committee-edit-icon"
+              @update:picture="icon = $event"
             />
           </div>
           <form-control
@@ -337,6 +354,7 @@ const submit = async () => {
             :back="{to: '/committees', label: 'Committees'}"
             :banner="banner"
             eyebrow="Committee"
+            :icon="icon?.url ?? null"
             :initials="initialsOf(drafted.name)"
             testid="committee-edit-preview"
             :title="drafted.name"

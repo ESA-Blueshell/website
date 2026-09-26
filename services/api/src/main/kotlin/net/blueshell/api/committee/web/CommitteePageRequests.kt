@@ -12,6 +12,7 @@ data class CommitteeOwnPageRequest(
     @field:Size(min = 1, max = DESCRIPTION_MAX, message = "Description must be 1-$DESCRIPTION_MAX characters")
     val description: String,
     val banner: String? = null,
+    val icon: String? = null,
     /** Absent leaves the committee's games as they are. */
     val gameCodes: List<String>? = null,
     val version: Long? = null,

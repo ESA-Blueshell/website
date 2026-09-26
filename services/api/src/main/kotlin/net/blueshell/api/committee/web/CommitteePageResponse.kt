@@ -13,6 +13,8 @@ data class CommitteePageResponse(
     val listed: Boolean,
     val archived: Boolean,
     val banner: Image?,
+    @field:Schema(description = "Its logo, absent for none")
+    val icon: Image?,
     val gameCodes: List<String>,
     val members: List<CommitteeSeatResponse>,
 )

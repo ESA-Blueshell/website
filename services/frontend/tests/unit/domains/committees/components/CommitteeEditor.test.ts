@@ -8,6 +8,7 @@ const adapter = vi.hoisted(() => ({
   saveCommitteeAsBoard: vi.fn(),
   saveOwnCommitteePage: vi.fn(),
   storeCommitteeBanner: vi.fn(),
+  storeCommitteeIcon: vi.fn(),
   listCommittees: vi.fn(),
 }))
 vi.mock("@/domains/committees/adapters/committees", () => adapter)
@@ -38,7 +39,8 @@ const stubs = {
 
 const lan = {
   id: 1, name: "LanCie", slug: "lancie", description: "LANs", listed: true, archived: false, version: 3,
-  banner: {url: "/b.webp", path: "b.webp", renditions: []}, gameCodes: ["CS2"], createdAt: "", updatedAt: "",
+  banner: {url: "/b.webp", path: "b.webp", renditions: []}, icon: {url: "/i.webp", path: "i.webp", renditions: []},
+  gameCodes: ["CS2"], createdAt: "", updatedAt: "",
 }
 
 const mountEditor = (committee: typeof lan | null, asBoard: boolean) =>
@@ -80,7 +82,7 @@ describe("the committee edit page, for the board", () => {
     await flushPromises()
 
     expect(adapter.addCommittee).toHaveBeenCalledWith({
-      name: "Pub Quiz Cie", slug: "quiz", listed: false, description: "Questions.", banner: null, members: [{userId: 4, role: "Chair"}], gameCodes: ["CHESS"],
+      name: "Pub Quiz Cie", slug: "quiz", listed: false, description: "Questions.", banner: null, icon: null, members: [{userId: 4, role: "Chair"}], gameCodes: ["CHESS"],
     })
     expect(wrapper.emitted("saved")).toEqual([[lan]])
   })
@@ -116,11 +118,15 @@ describe("the committee edit page, for the board", () => {
     await flushPromises()
     const file = new File(["x"], "b.png")
 
-    await wrapper.getComponent(ImagePicker).props("store")(file)
-    wrapper.getComponent(ImagePicker).vm.$emit("update:picture", null)
+    const [bannerPicker, iconPicker] = wrapper.findAllComponents(ImagePicker)
+    await bannerPicker!.props("store")(file)
+    await iconPicker!.props("store")(file)
+    bannerPicker!.vm.$emit("update:picture", null)
+    iconPicker!.vm.$emit("update:picture", null)
     await wrapper.get("form").trigger("submit")
 
     expect(adapter.storeCommitteeBanner).toHaveBeenCalledWith(file, 1)
+    expect(adapter.storeCommitteeIcon).toHaveBeenCalledWith(file, 1)
     expect(adapter.listCommittees).not.toHaveBeenCalled()
     expect(adapter.saveCommitteeAsBoard).not.toHaveBeenCalled()
     expect(wrapper.get("[data-testid=committee-edit-save]").attributes("data-disabled")).toBe("true")
@@ -143,7 +149,7 @@ describe("the committee edit page, for its own members", () => {
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
-    expect(adapter.saveOwnCommitteePage).toHaveBeenCalledWith(1, {description: "LANs, monthly.", banner: "b.webp", gameCodes: ["CS2"]})
+    expect(adapter.saveOwnCommitteePage).toHaveBeenCalledWith(1, {description: "LANs, monthly.", banner: "b.webp", icon: "i.webp", gameCodes: ["CS2"]})
     expect(wrapper.emitted("saved")).toEqual([[lan]])
   })
 

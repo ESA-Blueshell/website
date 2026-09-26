@@ -114,17 +114,18 @@ class CommitteeServiceTest {
     }
 
     @Test
-    fun `lets a committee's own members change its description, banner and games, keeping an archived game it names`() {
+    fun `lets a committee's own members change its description, pictures and games, keeping an archived game it names`() {
         val lan = committee(1, "LanCie", "CSGO")
         stored(lan)
         whenever(games.requireNameable(listOf("CSGO", "CS2"), setOf("CSGO"))).thenReturn(listOf("CSGO", "CS2"))
 
-        val saved = service.updateOwnPage(1, "LANs, every month", null, listOf("CSGO", "CS2"), 3)
+        val saved = service.updateOwnPage(1, "LANs, every month", null, null, listOf("CSGO", "CS2"), 3)
         assertThat(saved.description).isEqualTo("LANs, every month")
         assertThat(saved.banner).isNull()
+        assertThat(saved.icon).isNull()
         assertThat(saved.gameCodes).containsExactly("CSGO", "CS2")
 
-        service.updateOwnPage(1, "LANs", null, null, null)
+        service.updateOwnPage(1, "LANs", null, null, null, null)
         assertThat(lan.gameCodes).containsExactly("CSGO", "CS2")
     }
 

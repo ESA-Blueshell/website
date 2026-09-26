@@ -25,6 +25,8 @@ data class UpdateCommitteeRequest(
     var listed: Boolean = true,
     @field:Schema(description = "Where its stored banner is, or absent for none")
     var banner: String? = null,
+    @field:Schema(description = "Where its stored logo is, or absent for none")
+    var icon: String? = null,
     /** Absent leaves the committee's games as they are. */
     var gameCodes: List<String>? = null,
 )

@@ -23,6 +23,8 @@ data class CommitteeDetailResponse(
     var listed: Boolean,
     var archived: Boolean,
     var banner: Image?,
+    @field:Schema(description = "Its logo, absent for none")
+    var icon: Image?,
     var gameCodes: List<String>,
     @field:NotNull
     @field:NotEmpty

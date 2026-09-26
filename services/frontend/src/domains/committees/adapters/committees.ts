@@ -1,7 +1,7 @@
 /**
  * Committee domain adapter — the only file in this domain that imports from `@/services/api`
  * (frontend ADR-002). Everything else comes through the door beside it, and every url a
- * committee's banner carries is resolved against the api here.
+ * committee's pictures carry is resolved against the api here.
  */
 import {
   apiUrl,
@@ -21,6 +21,7 @@ import {
   updateCommitteePage,
   type UpdateCommitteeRequest,
   uploadCommitteeBanner,
+  uploadCommitteeIcon,
   uploadPublicImage,
 } from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
@@ -38,6 +39,7 @@ export interface CommitteeDraft {
   listed: boolean
   description: string
   banner: string | null
+  icon: string | null
   members: {userId: number; role: string | null}[]
   gameCodes: string[]
 }
@@ -46,6 +48,7 @@ export interface CommitteeDraft {
 export interface OwnPageDraft {
   description: string
   banner: string | null
+  icon: string | null
   gameCodes: string[]
 }
 
@@ -57,7 +60,8 @@ export interface CommitteeSaved {
 const image = (one?: Image | null): Image | null =>
   one ? {...one, url: apiUrl(one.url), renditions: one.renditions.map(copy => ({...copy, url: apiUrl(copy.url)}))} : null
 
-const withArt = <T extends {banner?: Image | null}>(committee: T): T => ({...committee, banner: image(committee.banner)})
+const withArt = <T extends {banner?: Image | null; icon?: Image | null}>(committee: T): T =>
+  ({...committee, banner: image(committee.banner), icon: image(committee.icon)})
 
 /**
  * Every committee. Throws on a refusal rather than answering with an empty list: a list that
@@ -116,6 +120,7 @@ const boardBody = (draft: CommitteeDraft) => ({
   listed: draft.listed,
   description: draft.description,
   banner: draft.banner ?? undefined,
+  icon: draft.icon ?? undefined,
   members: draft.members.map(member => ({userId: member.userId, role: member.role ?? undefined})),
   gameCodes: draft.gameCodes,
 })
@@ -133,7 +138,7 @@ export async function saveCommitteeAsBoard(id: number, version: number, draft: C
 }
 
 export async function saveOwnCommitteePage(id: number, draft: OwnPageDraft): Promise<CommitteeSaved | Refused> {
-  const res = await updateCommitteePage({path: {id}, body: {...draft, banner: draft.banner ?? undefined}})
+  const res = await updateCommitteePage({path: {id}, body: {...draft, banner: draft.banner ?? undefined, icon: draft.icon ?? undefined}})
   if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "The committee could not be saved.")}
   return {ok: true, committee: withArt(res.data)}
 }
@@ -154,6 +159,15 @@ export async function storeCommitteeBanner(file: File, committeeId: number | nul
   const res = committeeId == null
     ? await uploadPublicImage({query: {type: FileType.COMMITTEE_BANNER}, body: {file}})
     : await uploadCommitteeBanner({path: {id: committeeId}, body: {file}})
+  if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "That picture could not be stored.")}
+  return {ok: true, picture: image(res.data) as Picture}
+}
+
+/** Stores a logo somebody chose, the way [storeCommitteeBanner] stores a banner. */
+export async function storeCommitteeIcon(file: File, committeeId: number | null): Promise<{ok: true; picture: Picture} | Refused> {
+  const res = committeeId == null
+    ? await uploadPublicImage({query: {type: FileType.COMMITTEE_ICON}, body: {file}})
+    : await uploadCommitteeIcon({path: {id: committeeId}, body: {file}})
   if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "That picture could not be stored.")}
   return {ok: true, picture: image(res.data) as Picture}
 }

@@ -56,7 +56,7 @@ export function useEventsOnShow(): {
       id: one.id,
       title: one.title,
       meta: metaOf(one),
-      said: (one.description ?? "").replace(/\s+/gu, " ").trim(),
+      said: one.description ?? "",
       banner: one.banner?.url,
       srcset: one.banner ? srcsetOf(one.banner) : undefined,
       width: one.banner?.width ?? undefined,

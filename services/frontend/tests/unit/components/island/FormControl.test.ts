@@ -194,3 +194,17 @@ describe("what a time and a price field report", () => {
       .toContain("--field-label-left")
   })
 })
+
+describe("what the markdown editor reports", () => {
+  it("passes on the moment it is left, and is told what the form says about it", async () => {
+    const wrapper = control({kind: "markdown", errorMessages: ["Say something."]})
+    const editor = wrapper.findComponent({name: "MarkdownEditor"})
+
+    editor.vm.$emit("blur")
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted("blur")).toHaveLength(1)
+    expect(editor.props("invalid")).toBe(true)
+    expect(editor.props("describedBy")).toBeTruthy()
+  })
+})

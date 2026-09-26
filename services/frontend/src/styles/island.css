@@ -116,6 +116,8 @@
 
   --font-display: "Shellhouse One", system-ui, sans-serif;
   --font-body: "Barlow Semi Condensed", system-ui, sans-serif;
+  /* A description: the body face, where bold is Bold and italic is drawn, not slanted. */
+  --font-prose: "Barlow Semi Condensed Prose", system-ui, sans-serif;
   /* Set at whole multiples of 8px, which is the grid the face is drawn on. */
   --font-bitmap: "Silkscreen", ui-monospace, monospace;
 

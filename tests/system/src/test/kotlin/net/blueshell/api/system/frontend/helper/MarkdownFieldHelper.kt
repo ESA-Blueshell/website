@@ -31,6 +31,9 @@ object MarkdownFieldHelper {
         editor.click()
         page.keyboard().press("ControlOrMeta+a")
         page.keyboard().type(text)
+        // Read back selected, since a span shows its marks only while the selection touches it.
+        // writeMarkdown in the frontend's e2e mocks reads it the same way; change one, change the other.
+        page.keyboard().press("ControlOrMeta+a")
         assertPw(editor).containsText(text)
     }
 }

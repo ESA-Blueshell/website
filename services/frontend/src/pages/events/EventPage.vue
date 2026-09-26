@@ -3,6 +3,7 @@ import {computed, onMounted, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {DateTime} from "luxon"
 import BandRule from "@/components/island/BandRule.vue"
+import BackBar from "@/components/island/BackBar.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
@@ -95,26 +96,11 @@ function signedOut(signUpId: number) {
       class="event-page"
       testid="event-island"
     >
-      <div class="event-page__wrap">
-        <router-link
-          class="event-page__crumb"
-          data-testid="event-page-back"
-          to="/events"
-        >
-          <svg
-            aria-hidden="true"
-            fill="none"
-            height="11"
-            viewBox="0 0 20 12"
-            width="18"
-          ><path
-            d="M20 6H3M7 1.5L1.5 6L7 10.5"
-            stroke="currentColor"
-            stroke-width="1.4"
-          /></svg>
-          All events
-        </router-link>
-      </div>
+      <back-bar
+        label="All events"
+        testid="event-page-back"
+        to="/events"
+      />
 
       <template v-if="event">
         <div
@@ -217,6 +203,7 @@ function signedOut(signUpId: number) {
 </template>
 
 <style scoped>
+
 /* The island root fills a page; the Vuetify main around it already does. */
 .event-page {
   min-height: 0;
@@ -229,20 +216,7 @@ function signedOut(signUpId: number) {
   padding: 0 2rem;
 }
 
-.event-page__crumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 1.1rem 0;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-  color: var(--color-ash);
-}
 
-.event-page__crumb:hover,
-.event-page__crumb:focus-visible {
-  color: var(--color-chalk);
-}
 
 .event-page__organiser {
   background-color: var(--band-ground);

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed} from "vue"
 import {useStore} from "vuex"
+import BackLink from "@/components/island/BackLink.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import Island from "@/components/island/Island.vue"
 import PageTabs from "@/components/island/PageTabs.vue"
@@ -44,25 +45,13 @@ const pages = computed(() => accountFor(reader.value))
     >
       <header-band>
         <template #head>
-          <router-link
+          <back-link
             v-if="crumb"
             class="account__crumb"
-            data-testid="account-crumb"
+            :label="crumb.label"
+            testid="account-crumb"
             :to="crumb.to"
-          >
-            <svg
-              aria-hidden="true"
-              fill="none"
-              height="11"
-              viewBox="0 0 20 12"
-              width="18"
-            ><path
-              d="M20 6H3M7 1.5L1.5 6L7 10.5"
-              stroke="currentColor"
-              stroke-width="1.4"
-            /></svg>
-            {{ crumb.label }}
-          </router-link>
+          />
           <div class="account__head">
             <div>
               <p class="account__eyebrow">
@@ -111,6 +100,10 @@ const pages = computed(() => accountFor(reader.value))
 </template>
 
 <style scoped>
+.account__crumb {
+  margin-bottom: 1.25rem;
+}
+
 /* The island runs down to the footer, so a short page does not stop on the Vuetify ground. A page
    still on Vuetify is drawn below the island, so the island's ground is laid under it too; the
    tile starts where the island's does, so the two meet without a seam. */
@@ -153,20 +146,7 @@ const pages = computed(() => accountFor(reader.value))
   padding-bottom: 3.5rem;
 }
 
-.account__crumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 1.25rem;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-  color: var(--color-ash);
-}
 
-.account__crumb:hover,
-.account__crumb:focus-visible {
-  color: var(--color-chalk);
-}
 
 .account__head {
   display: flex;

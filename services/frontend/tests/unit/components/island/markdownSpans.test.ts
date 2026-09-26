@@ -25,7 +25,12 @@ const open = (doc: string, selection: EditorSelection | number = 0, focused = tr
   return view
 }
 
-const drawn = (view: EditorView) => view.contentDOM.textContent ?? ""
+/* What a reader sees, an emoji picture read as the emoji it draws. */
+const drawn = (view: EditorView) => {
+  const copy = view.contentDOM.cloneNode(true) as HTMLElement
+  for (const art of copy.querySelectorAll("img")) art.replaceWith(art.alt)
+  return copy.textContent ?? ""
+}
 const lineOf = (view: EditorView, n: number) =>
   view.contentDOM.querySelectorAll(".cm-line")[n]?.textContent ?? ""
 

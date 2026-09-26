@@ -43,6 +43,7 @@ import {RouterLink} from "vue-router"
 import PosterArt from "./PosterArt.vue"
 import {fitAcross} from "./fitAcross"
 import $markdownToHtml from "@/plugins/markdownToHtml"
+import {fallBackToCharacter} from "@/plugins/emojiArt"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 /**
@@ -226,6 +227,7 @@ onBeforeUnmount(() => observer?.disconnect())
           <!-- eslint-disable-next-line vue/no-v-html -->
           <span
             class="posters__said"
+            @error.capture="fallBackToCharacter"
             v-html="saidOf(one)"
           />
           <!-- The way through is the whole card; the arrow only says so. -->
@@ -495,8 +497,26 @@ onBeforeUnmount(() => observer?.disconnect())
   content: " ";
 }
 
-.posters__said :deep(:is(br, hr, img)) {
+.posters__said :deep(:is(br, hr, img:not(.emoji))) {
   display: none;
+}
+
+.posters__said :deep(img.emoji) {
+  display: inline-block;
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: -0.3em;
+}
+
+/* The card is one link, so a spoiler in it is never pressed open: it stays a bar. */
+.posters__said :deep(.spoiler) {
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--color-chalk) 12%, var(--color-void));
+  color: transparent;
+}
+
+.posters__said :deep(.spoiler img) {
+  opacity: 0;
 }
 
 /* As tall as the posters, not the room kept above and below them for the lit one to grow. */

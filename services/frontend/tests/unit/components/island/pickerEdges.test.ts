@@ -1,4 +1,5 @@
 import {afterEach, describe, expect, it, vi} from "vitest"
+import {loadDiscordEmoji} from "@/components/island/discordEmoji"
 import {flushPromises, mount} from "@vue/test-utils"
 import {CompletionContext} from "@codemirror/autocomplete"
 import {emojiCompletion} from "@/components/island/markdownEmoji"
@@ -217,7 +218,8 @@ describe("a picker with room for nothing but its own button", () => {
 })
 
 describe("the emoji list", () => {
-  it("answers a bare colon where it was asked for outright", () => {
+  it("answers a bare colon where it was asked for outright", async () => {
+    await loadDiscordEmoji()
     const asked = {
       matchBefore: () => ({from: 4, to: 4, text: ":"}),
       explicit: true,

@@ -346,3 +346,14 @@ describe("a strip of event posters", () => {
     expect(wrapper.get('[data-testid="events-strip"]').classes()).not.toContain("posters--quiet")
   })
 })
+
+describe("an emoji in a poster's description", () => {
+  it("is the character where its picture will not load", () => {
+    const wrapper = strip({items: [{...poster(1), said: "hot 🔥"}]})
+
+    wrapper.get(".posters__said img.emoji").element.dispatchEvent(new Event("error"))
+
+    expect(wrapper.get(".posters__said").text()).toBe("hot 🔥")
+    wrapper.unmount()
+  })
+})

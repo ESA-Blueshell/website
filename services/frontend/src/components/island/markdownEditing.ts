@@ -7,7 +7,9 @@ import {type EditorState, type Extension, Prec, Transaction, type TransactionSpe
   from "@codemirror/state"
 import {type EditorView, keymap} from "@codemirror/view"
 import {tags} from "@lezer/highlight"
-import {markdownLive, wrapWith} from "@/components/island/markdownLive"
+import {discordDialect, spoilerTag, subtextTag, underlineTag} from "@/components/island/markdownDialect"
+import {emojiOnClose} from "@/components/island/markdownEmoji"
+import {emojiLive, markdownLive, wrapWith} from "@/components/island/markdownLive"
 
 /* What markdown looks like once it is being read rather than typed. */
 const look = HighlightStyle.define([
@@ -23,6 +25,11 @@ const look = HighlightStyle.define([
   {tag: tags.monospace, fontFamily: "var(--font-bitmap)", color: "var(--color-eyebrow)"},
   {tag: tags.quote, color: "var(--color-ash)", fontStyle: "italic"},
   {tag: tags.processingInstruction, color: "var(--color-ash)"},
+  {tag: underlineTag, textDecoration: "underline", textUnderlineOffset: "3px"},
+  // Readable while it is written: the dark bar says it is a spoiler without hiding it.
+  {tag: spoilerTag, backgroundColor: "color-mix(in oklab, var(--color-chalk) 12%, var(--color-void))",
+    borderRadius: "3px"},
+  {tag: subtextTag, fontSize: "0.8em", color: "var(--color-ash)"},
 ])
 
 /* High, or `defaultKeymap`'s Mod-i selects the node around the cursor instead, and the next
@@ -46,9 +53,11 @@ export const markdownEditing: Extension[] = [
   marks,
   lists,
   keymap.of([...completionKeymap, ...defaultKeymap, ...historyKeymap]),
-  markdown({base: markdownLanguage, addKeymap: false}),
+  markdown({base: markdownLanguage, addKeymap: false, extensions: [discordDialect]}),
   syntaxHighlighting(look),
   markdownLive,
+  emojiLive,
+  emojiOnClose,
 ]
 
 /**

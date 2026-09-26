@@ -1181,6 +1181,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@iconify-json/noto@npm:^1.2.8":
+  version: 1.2.8
+  resolution: "@iconify-json/noto@npm:1.2.8"
+  dependencies:
+    "@iconify/types": "npm:*"
+  checksum: 10c0/23ab46ff39bc683067b041fc4a38b616d60762eb409075c0de1e1b5b33e9230e10a3d76af5f9428f21abc2b9dcf2e91c0e2bab8c7892e099bdba46e8930b043f
+  languageName: node
+  linkType: hard
+
+"@iconify/types@npm:*":
+  version: 2.0.0
+  resolution: "@iconify/types@npm:2.0.0"
+  checksum: 10c0/65a3be43500c7ccacf360e136d00e1717f050b7b91da644e94370256ac66f582d59212bdb30d00788aab4fc078262e91c95b805d1808d654b72f6d2072a7e4b2
+  languageName: node
+  linkType: hard
+
 "@internationalized/date@npm:^3.5.0":
   version: 3.12.3
   resolution: "@internationalized/date@npm:3.12.3"
@@ -1387,7 +1403,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lezer/markdown@npm:^1.0.0":
+"@lezer/markdown@npm:^1.0.0, @lezer/markdown@npm:^1.7.2":
   version: 1.7.2
   resolution: "@lezer/markdown@npm:1.7.2"
   dependencies:
@@ -3203,7 +3219,9 @@ __metadata:
     "@eslint/js": "npm:^10.0.1"
     "@hey-api/client-axios": "npm:0.9.1"
     "@hey-api/openapi-ts": "npm:0.99.0"
+    "@iconify-json/noto": "npm:^1.2.8"
     "@lezer/highlight": "npm:^1.2.3"
+    "@lezer/markdown": "npm:^1.7.2"
     "@mdi/font": "npm:^7.4.47"
     "@originjs/vite-plugin-commonjs": "npm:^1.0.3"
     "@playwright/test": "npm:1.63.0"
@@ -3227,6 +3245,8 @@ __metadata:
     core-js: "npm:^3.50.0"
     countries-list: "npm:^3.4.0"
     dompurify: "npm:^3.4.15"
+    emojibase-data: "npm:^17.0.0"
+    emojibase-regex: "npm:^17.0.0"
     eslint: "npm:^10.10.0"
     eslint-plugin-vue: "npm:^10.11.0"
     eslint-plugin-vuetify: "npm:^2.7.2"
@@ -3942,6 +3962,22 @@ __metadata:
   version: 9.2.2
   resolution: "emoji-regex@npm:9.2.2"
   checksum: 10c0/af014e759a72064cf66e6e694a7fc6b0ed3d8db680427b021a89727689671cefe9d04151b2cad51dbaf85d5ba790d061cd167f1cf32eb7b281f6368b3c181639
+  languageName: node
+  linkType: hard
+
+"emojibase-data@npm:^17.0.0":
+  version: 17.0.0
+  resolution: "emojibase-data@npm:17.0.0"
+  peerDependencies:
+    emojibase: "*"
+  checksum: 10c0/c1373438ac52e943a7953ce2315c0da4e29a6552a0ee9ae18a22dbf824a6b428d25655c55e2e48c69900358052408496807cdf7af12a43a0a1b39fb369cbf4a0
+  languageName: node
+  linkType: hard
+
+"emojibase-regex@npm:^17.0.0":
+  version: 17.0.0
+  resolution: "emojibase-regex@npm:17.0.0"
+  checksum: 10c0/c6fc5d16303f3f25d48c58105f8658d5f348a7cdfdeb0ba4785ebe14d3149ef808fc848aaa764fcc6abdd30bad1a70bcfb49eadd51e4009396bbf5942e716a3e
   languageName: node
   linkType: hard
 

@@ -6,6 +6,7 @@ import svgLoader from 'vite-svg-loader'
 import istanbul from 'vite-plugin-istanbul'
 import tailwind from '@tailwindcss/vite'
 import {readFileSync} from 'node:fs'
+import {notoEmoji} from './scripts/notoEmoji.mjs'
 
 // The api answers at the page's own origin under /api, in development as in
 // production, so nothing has to know the host it is reached on: localhost from
@@ -92,6 +93,7 @@ export default defineConfig({
     },
     plugins: [
         emitVersion,
+        notoEmoji({cacheDir: fileURLToPath(new URL('./node_modules/.cache/noto-emoji', import.meta.url))}),
         istanbul({
             include: ['src/**/*'],
             exclude: [

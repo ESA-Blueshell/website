@@ -15,6 +15,11 @@ describe("FormControl", () => {
     expect(control({kind: "country"}).findComponent({name: "CountryPicker"}).exists()).toBe(true)
   })
 
+  it("keeps a markdown box's label up while the box is empty, as a text field's rests in it", () => {
+    expect(control({kind: "markdown", label: "Intro"}).findComponent({name: "FormField"}).props("filled")).toBe(true)
+    expect(control({label: "Name"}).findComponent({name: "FormField"}).props("filled")).toBe(false)
+  })
+
   it("reads a nationality as the nationality of a country", () => {
     expect(control({kind: "nationality"}).findComponent({name: "CountryPicker"}).props("reading"))
       .toBe("nationality")

@@ -17,11 +17,13 @@ export interface ReelItem {
   notes?: string[]
   /** Names drawn as small tags in the open slice, such as the committees behind a game. */
   chips?: string[]
+  /** The way to add one more, drawn as a plus rather than as art. */
+  plus?: boolean
 }
 </script>
 
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, shallowRef, watch} from "vue"
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch} from "vue"
 import PanChevron from "./PanChevron.vue"
 import {placeSlices, ReelMotion, type ReelShape} from "./reelMotion"
 import {useMotionAllowed} from "./useMotionAllowed"
@@ -62,13 +64,29 @@ const motion = shallowRef(new ReelMotion(items.length, {unit: shape.value.unit, 
 const resting = ref(0)
 const slices: (HTMLElement | null)[] = []
 let suppressClick = false
+/** What was last written onto each slice, so a frame writes only what it changes. */
+const written: Record<string, string>[] = []
 let frame = 0
 let observer: ResizeObserver | null = null
 
-watch(() => [items.length, shape.value.unit] as const, ([count, unit]) => {
-  motion.value = new ReelMotion(count, {unit, drift}, motion.value.position)
-  paint()
+watch(() => [items.map(item => item.id).join(), shape.value.unit] as const, ([, unit]) => {
+  motion.value = new ReelMotion(items.length, {unit, drift}, motion.value.position)
+  // The slices may be other elements now, holding none of what was written.
+  written.length = 0
+  void nextTick(paint)
 })
+
+
+/* Every write restyles the slice, and `--open` is inherited, so it restyles all it holds: a
+   value the frame did not change is left alone. Off the band, a slice is hidden and nothing
+   else about it is worth writing. */
+const put = (index: number, slice: HTMLElement, key: string, value: string) => {
+  const held = written[index] ??= {}
+  if (held[key] === value) return
+  held[key] = value
+  if (key.startsWith("--")) slice.style.setProperty(key, value)
+  else slice.style[key as "width"] = value
+}
 
 /* The belt is painted by writing onto the slices, not by rendering: a drag moves it every frame,
    and a render per frame across every slice is what made it stutter. */
@@ -77,15 +95,21 @@ function paint() {
     const slice = slices[placed.index]
     if (!slice) continue
     const offBand = placed.left > width.value + 40 || placed.left + placed.width < -40
-    slice.style.transform = `translate3d(${placed.left.toFixed(1)}px,0,0)`
-    slice.style.width = `${placed.width.toFixed(1)}px`
-    slice.style.opacity = placed.visibility.toFixed(3)
-    slice.style.visibility = placed.visibility === 0 || offBand ? "hidden" : "visible"
-    slice.style.zIndex = String(placed.layer)
-    slice.style.setProperty("--open", placed.openness.toFixed(3))
+    const hidden = placed.visibility === 0 || offBand
+    put(placed.index, slice, "visibility", hidden ? "hidden" : "visible")
+    if (hidden) continue
+    put(placed.index, slice, "transform", `translate3d(${placed.left.toFixed(1)}px,0,0)`)
+    put(placed.index, slice, "width", `${placed.width.toFixed(1)}px`)
+    put(placed.index, slice, "opacity", placed.visibility.toFixed(2))
+    put(placed.index, slice, "zIndex", String(placed.layer))
+    put(placed.index, slice, "--open", placed.openness.toFixed(3))
   }
   resting.value = motion.value.resting
 }
+
+/** Whether any of the band is on screen: off it, the belt stands still and costs nothing. */
+const inView = ref(true)
+let viewing: IntersectionObserver | null = null
 
 const frameOf = (callback: (now: number) => void) =>
   typeof window.requestAnimationFrame === "function"
@@ -111,14 +135,25 @@ onMounted(() => {
     const elapsed = Math.min(48, now - last)
     last = now
     if (motion.value.tick(elapsed, now, motionPolicy.reduced.value)) paint()
-    frame = frameOf(tick)
+    frame = inView.value ? frameOf(tick) : 0
   }
   frame = frameOf(tick)
+  if (typeof IntersectionObserver === "function" && band.value) {
+    viewing = new IntersectionObserver(([entry]) => {
+      inView.value = entry?.isIntersecting ?? true
+      if (inView.value && frame === 0) {
+        last = performance.now()
+        frame = frameOf(tick)
+      }
+    })
+    viewing.observe(band.value)
+  }
 })
 
 onBeforeUnmount(() => {
   cancelFrame(frame)
   observer?.disconnect()
+  viewing?.disconnect()
 })
 
 let pressedAt = 0
@@ -150,16 +185,12 @@ function swipe(event: WheelEvent) {
   paint()
 }
 
-/** A press on the open slice follows it; on any other slice it brings that one to the middle. */
-function choose(event: MouseEvent, item: ReelItem, index: number) {
+/** A press anywhere on a slice follows it; the rail is where a slice is brought to the middle. */
+function choose(event: MouseEvent, item: ReelItem) {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
   event.preventDefault()
   if (suppressClick) {
     suppressClick = false
-    return
-  }
-  if (index !== motion.value.resting) {
-    motion.value.bring(index, performance.now())
     return
   }
   emit("go", item)
@@ -199,11 +230,22 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
         draggable="false"
         :href="item.href"
         :style="{'--accent': item.accent}"
-        @click="choose($event, item, index)"
+        @click="choose($event, item)"
         @focus="bring(index)"
       >
+        <span
+          v-if="item.plus"
+          aria-hidden="true"
+          class="flick-reel__plate flick-reel__plate--plus"
+        ><svg
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-width="1.4"
+          viewBox="0 0 24 24"
+        ><path d="M12 5v14M5 12h14" /></svg></span>
         <img
-          v-if="item.banner"
+          v-else-if="item.banner"
           alt=""
           class="flick-reel__art"
           loading="lazy"
@@ -221,16 +263,19 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
           class="flick-reel__glow"
         />
         <span class="flick-reel__body">
-          <span
-            aria-hidden="true"
-            class="flick-reel__tick"
-          />
-          <span class="flick-reel__name">
-            <img
-              v-if="item.icon"
-              alt=""
-              :src="item.icon"
-            >{{ item.title }}
+          <!-- Tick and name shrink as one, so the tick stays on top of the name at every size. -->
+          <span class="flick-reel__title">
+            <span
+              aria-hidden="true"
+              class="flick-reel__tick"
+            />
+            <span class="flick-reel__name">
+              <img
+                v-if="item.icon"
+                alt=""
+                :src="item.icon"
+              >{{ item.title }}
+            </span>
           </span>
           <!-- In the flow under the name rather than laid over the slice's foot: on a phone the
                notes and chips wrap, and a fixed gap under the name let them run into it. -->
@@ -251,7 +296,10 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
               :key="chip"
               class="flick-reel__chip"
             >{{ chip }}</span>
-            <span class="flick-reel__open">Open {{ item.title }} →</span>
+            <span
+              v-if="!item.plus"
+              class="flick-reel__open"
+            >Open {{ item.title }} →</span>
           </span>
         </span>
       </a>
@@ -286,8 +334,18 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
         type="button"
         @click="bring(index)"
       >
+        <svg
+          v-if="item.plus"
+          aria-hidden="true"
+          class="flick-reel__cell-plus"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-width="1.8"
+          viewBox="0 0 24 24"
+        ><path d="M12 5v14M5 12h14" /></svg>
         <img
-          v-if="item.icon"
+          v-else-if="item.icon"
           alt=""
           :src="item.icon"
         >
@@ -395,6 +453,18 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
     var(--color-pit);
 }
 
+.flick-reel__plate--plus {
+  display: grid;
+  place-items: center;
+  color: color-mix(in oklab, var(--accent) 70%, var(--color-chalk));
+}
+
+.flick-reel__plate--plus svg {
+  width: 6rem;
+  height: 6rem;
+  translate: 0 -2.5rem;
+}
+
 .flick-reel__plate > span {
   position: absolute;
   top: -1.2rem;
@@ -423,12 +493,21 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   padding: 1.4rem calc(var(--cut) + 1.1rem) 1.6rem;
 }
 
+/* Laid out at the width it is drawn at once scaled, so a long name wraps in a shut slice
+   instead of running off it. A transform, so the shrinking is the compositor's work. */
+.flick-reel__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: calc(100% / (0.42 + 0.58 * var(--open)));
+  scale: calc(0.42 + 0.58 * var(--open));
+  transform-origin: left bottom;
+}
+
 .flick-reel__tick {
   width: 2.4rem;
   height: 3px;
   background-color: var(--accent);
-  scale: calc(0.35 + 0.65 * var(--open)) 1;
-  transform-origin: left;
 }
 
 .flick-reel__name {
@@ -439,10 +518,7 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   font-size: 2.4rem;
   line-height: 1.05;
   text-transform: uppercase;
-  white-space: nowrap;
   color: var(--color-chalk);
-  scale: calc(0.42 + 0.58 * var(--open));
-  transform-origin: left bottom;
 }
 
 .flick-reel__name img {
@@ -496,32 +572,58 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   color: var(--accent);
 }
 
+/*
+ * Straight at both ends, so the row stops where the reel does. The cells are plain boxes and
+ * the diagonals are drawn: a seam between two cells, and the lit cell's ground reaching from
+ * one seam to the next. Clipped boxes laid edge to edge left hairline gaps wherever a width
+ * fell on a fraction of a pixel.
+ */
 .flick-reel__rail {
   --cut: 10px;
 
   display: flex;
   height: 3.4rem;
-  margin-top: 10px;
-  padding-left: var(--cut);
   overflow: hidden;
+  background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
 }
 
 .flick-reel__cell {
+  position: relative;
+  isolation: isolate;
   display: grid;
   flex: 1 1 0;
   place-items: center;
   min-width: 0;
-  margin-left: calc(var(--cut) * -1);
   padding: 0 0.6rem;
   cursor: pointer;
-  background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
+  background: none;
   border: 0;
+}
+
+/* The lit or hovered cell's ground, from the seam on its left to the seam on its right. */
+.flick-reel__cell::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(var(--cut) / -2);
+  z-index: -1;
+  background-color: transparent;
   clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   transition: background-color 220ms ease;
 }
 
-.flick-reel__cell:hover {
-  background-color: color-mix(in oklab, var(--color-chalk) 11%, transparent);
+/* The seam on a cell's left, leaning the way the slices above it lean. */
+.flick-reel__cell + .flick-reel__cell::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 calc(var(--cut) / -2);
+  width: calc(var(--cut) + 1.5px);
+  pointer-events: none;
+  background-color: var(--color-hairline);
+  clip-path: polygon(var(--cut) 0, calc(var(--cut) + 1.5px) 0, 1.5px 100%, 0 100%);
+}
+
+.flick-reel__cell:hover::before {
+  background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
 }
 
 .flick-reel__cell:focus-visible {
@@ -538,6 +640,12 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   transition: filter 300ms ease, opacity 300ms ease;
 }
 
+.flick-reel__cell-plus {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-ash);
+}
+
 .flick-reel__cell span {
   max-width: 100%;
   overflow: hidden;
@@ -550,7 +658,8 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   color: var(--color-ash);
 }
 
-.flick-reel__cell--on {
+.flick-reel__cell--on::before,
+.flick-reel__cell--on:hover::before {
   background-color: color-mix(in oklab, var(--accent) 24%, transparent);
 }
 
@@ -608,7 +717,7 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .flick-reel__cell,
+  .flick-reel__cell::before,
   .flick-reel__cell img {
     transition: none;
   }

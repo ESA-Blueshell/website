@@ -780,11 +780,12 @@ watch(open, (index) => {
 
   display: flex;
   width: 100%;
-  min-height: 22rem;
+  /* Grows with a wide screen, which a fixed height left a thin strip across. */
+  min-height: clamp(22rem, 27cqw, 38rem);
 }
 
 .slices--short {
-  min-height: 15rem;
+  min-height: clamp(15rem, 18cqw, 26rem);
 }
 
 .slice {
@@ -987,7 +988,6 @@ watch(open, (index) => {
     color-mix(in oklab, var(--color-ground) 62%, transparent) 42%,
     transparent 74%
   );
-  filter: blur(26px);
   pointer-events: none;
 }
 

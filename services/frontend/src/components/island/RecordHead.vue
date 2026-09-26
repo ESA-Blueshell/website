@@ -156,7 +156,7 @@ const bannerSrcset = computed(() => srcsetOf(banner))
   gap: 1.2rem;
   justify-content: center;
   min-width: 0;
-  padding: 2.5rem 3rem 2.75rem max(2rem, calc((100vw - 72rem) / 2 + 2rem));
+  padding: 2.5rem 3rem 2.75rem max(2rem, calc((100cqw - 72rem) / 2 + 2rem));
 }
 
 .record-head__label {

@@ -7,7 +7,7 @@ test.describe("the board keeping the casual games", () => {
     await page.goto("/casual")
 
     await expect(page.getByTestId("casual-every-cell-CHESS")).toBeVisible()
-    await expect(page.getByTestId("casual-add")).toHaveCount(0)
+    await expect(page.getByTestId("casual-slice-add")).toHaveCount(0)
     await expect(page.getByTestId("casual-every-archive-CHESS")).toHaveCount(0)
   })
 
@@ -16,7 +16,7 @@ test.describe("the board keeping the casual games", () => {
     await loginAsBoard(context)
     await page.goto("/casual")
 
-    await page.getByTestId("casual-add").click()
+    await page.getByTestId("casual-slice-add").click()
     await page.getByTestId("game-edit-name").locator("input").fill("Tetris")
     await writeMarkdown(page, page.getByTestId("game-edit-intro").getByRole("textbox"), "Falling blocks, fast.")
     await page.getByTestId("game-edit-save").click()

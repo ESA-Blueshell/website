@@ -54,7 +54,7 @@ const PARTNERS: NavEntry[] = [
  * and they had already drifted: the drawer carried an Events group the bar did not, and offered
  * no way to log in or reach an account at all.
  */
-export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = []): NavSection[] => [
+export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = [], casual: NavGame[] = []): NavSection[] => [
   {label: "Home", to: "/"},
   {label: "Membership", to: "/membership"},
   {
@@ -83,7 +83,15 @@ export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = []): 
       {label: "Circuit Showdown", to: "/events/circuitShowdown"},
     ],
   },
-  {label: "Casual", to: "/casual"},
+  {
+    label: "Casual",
+    to: "/casual",
+    covers: ["/casual"],
+    entries: [
+      {label: "All casual games", to: "/casual"},
+      ...casual.map(game => ({label: game.name, to: `/casual/${game.slug}`})),
+    ],
+  },
   {
     label: "Competition",
     to: "/competition",

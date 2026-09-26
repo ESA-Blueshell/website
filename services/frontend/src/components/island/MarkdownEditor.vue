@@ -356,6 +356,11 @@ onBeforeUnmount(() => {
   min-height: var(--md-min, 12rem);
 }
 
+/* The typing fills the box, so a press anywhere in it lands in the text rather than on nothing. */
+.island-markdown :deep(.cm-content) {
+  min-height: var(--md-min, 12rem);
+}
+
 .island-markdown :deep(.cm-scroller) {
   overflow: auto;
 }

@@ -92,14 +92,17 @@ describe("the casual page", () => {
     expect(wrapper.findComponent({name: "FlickReel"}).exists()).toBe(true)
   })
 
-  it("offers the board a game to add, on its own page", async () => {
+  it("offers the board a game to add as the reel's last slice, leading to its own page", async () => {
     const plain = await mountPage()
-    expect(plain.find("[data-testid=casual-add]").exists()).toBe(false)
+    const ids = (wrapper: Awaited<ReturnType<typeof mountPage>>) =>
+      wrapper.getComponent({name: "FlickReel"}).props("items").map((one: {id: string}) => one.id)
+    expect(ids(plain)).not.toContain("add")
     expect(plain.find("[data-testid=casual-every-archive-CHESS]").exists()).toBe(false)
 
     store.getters.isBoard = true
     const wrapper = await mountPage()
-    expect(wrapper.get("[data-testid=casual-add]").attributes("href")).toBe("/casual/new")
+    const last = wrapper.getComponent({name: "FlickReel"}).props("items").at(-1)
+    expect(last).toMatchObject({id: "add", title: "Add a game", href: "/casual/new", plus: true})
   })
 
   it("lets the board archive a game, or bring one back, from its cell", async () => {

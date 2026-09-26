@@ -29,7 +29,12 @@ const {listed: committees} = useCommittees()
 /** The committees that organise events for a game, by name, drawn as its chips. */
 const organisersOf = (code: string) => committees.value.filter(committee => committee.gameCodes.includes(code)).map(committee => committee.name)
 
-const reel = computed<ReelItem[]>(() => live.value.map(game => reelItemOf(game, organisersOf)))
+/** The way to add a game rides the reel as its last slice, for whoever may add one. */
+const ADD: ReelItem = {id: "add", title: "Add a game", href: "/casual/new", accent: "var(--color-brand)", initials: "+", plus: true}
+const reel = computed<ReelItem[]>(() => [
+  ...live.value.map(game => reelItemOf(game, organisersOf)),
+  ...(mayEdit.value ? [ADD] : []),
+])
 const olden = computed<DriftItem[]>(() => archived.value.map(driftItemOf))
 // The played games first, then the archived ones, each in their own order.
 const every = computed<ArtCell[]>(() => [...live.value, ...archived.value].map(game => cellOf(game, organisersOf)))
@@ -49,7 +54,7 @@ const archiveOf = (id: string | number) => games.value.find(game => game.code ==
         eyebrow="Casual gaming"
         heading="Casual"
       >
-        <div class="casual__actions">
+        <template #acts>
           <cut-button
             away
             :href="DISCORD_INVITE"
@@ -58,14 +63,7 @@ const archiveOf = (id: string | number) => games.value.find(game => game.code ==
           >
             Join the Discord
           </cut-button>
-          <cut-button
-            v-if="mayEdit"
-            href="/casual/new"
-            testid="casual-add"
-          >
-            Add a game
-          </cut-button>
-        </div>
+        </template>
       </header-band>
 
       <lead-band
@@ -176,12 +174,6 @@ const archiveOf = (id: string | number) => games.value.find(game => game.code ==
 </template>
 
 <style scoped>
-.casual__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 1.4rem;
-}
 
 .casual__olden {
   padding: 2.5rem 0 2.75rem;

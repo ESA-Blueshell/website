@@ -381,6 +381,7 @@ import {useRoute} from "vue-router"
 import {DropdownMenuContent, DropdownMenuItem, DropdownMenuRoot, DropdownMenuTrigger} from "reka-ui"
 import {useCommittees} from "@/domains/committees"
 import {useGames} from "@/domains/esports"
+import {useCasualGames} from "@/domains/games"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useNarrow} from "@/components/common/useNarrow"
 import NavMark from "@/components/common/NavMark.vue"
@@ -485,6 +486,9 @@ const {current: currentGames} = useGames()
 /** The committees menu lists every committee running now; archived ones wait on the index. */
 const {live: currentCommittees} = useCommittees()
 
+/** The casual menu lists every game played now; archived ones wait on the index. */
+const {live: casualGames} = useCasualGames()
+
 const store = useStore()
 const route = useRoute()
 
@@ -495,7 +499,7 @@ const reader = computed<NavReader>(() => ({
   addressId: store.getters.getLogin?.addressId ?? null,
 }))
 
-const sections = computed(() => sectionsFor(currentGames.value, currentCommittees.value))
+const sections = computed(() => sectionsFor(currentGames.value, currentCommittees.value, casualGames.value))
 const management = computed(() => managementFor(reader.value))
 const account = computed(() => accountFor(reader.value))
 </script>
@@ -516,8 +520,9 @@ const account = computed(() => accountFor(reader.value))
   width: 100%;
   min-height: 56px;
   padding: 0 1.25rem 0 1.75rem;
-  background: color-mix(in oklab, var(--color-pit) 88%, transparent);
-  backdrop-filter: blur(14px);
+  /* Near-opaque rather than blurred: a backdrop blur the width of the screen is redone for
+     every frame the page scrolls under it. */
+  background: color-mix(in oklab, var(--color-pit) 96%, transparent);
   border-bottom: 1px solid var(--color-hairline);
   color: var(--color-chalk);
   font-family: var(--font-body);

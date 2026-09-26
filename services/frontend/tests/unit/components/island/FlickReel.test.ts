@@ -72,17 +72,40 @@ describe("FlickReel", () => {
     expect(wrapper.get("[data-testid=casual-rail-VALORANT]").classes()).toContain("flick-reel__cell--on")
   })
 
-  it("follows the open slice's link, and brings any other slice to the middle instead", async () => {
+  it("follows a slice's link from anywhere on it, open or shut", async () => {
     const wrapper = mountReel()
 
     await slice(wrapper, "VALORANT").trigger("click", {button: 0})
-    expect(wrapper.emitted("go")?.[0]).toEqual([ITEMS[0]])
-
     await slice(wrapper, "CHESS").trigger("click", {button: 0})
-    runFrames(200)
-    await wrapper.vm.$nextTick()
-    expect(wrapper.emitted("go")).toHaveLength(1)
-    expect(resting(wrapper)).toEqual(["casual-slice-CHESS"])
+
+    expect(wrapper.emitted("go")).toEqual([[ITEMS[0]], [ITEMS.find(one => one.id === "CHESS")]])
+  })
+
+  it("stands still while the band is off screen, and moves on once it is back", () => {
+    let seen: (entries: Array<{isIntersecting: boolean}>) => void = () => {}
+    vi.stubGlobal("IntersectionObserver", class {
+      constructor(callback: typeof seen) { seen = callback }
+      observe() {}
+      disconnect() {}
+    })
+    mountReel({drift: 0.5})
+
+    seen([{isIntersecting: false}])
+    runFrames(1)
+    expect(frames).toHaveLength(0)
+
+    seen([{isIntersecting: true}])
+    expect(frames).toHaveLength(1)
+    seen([{isIntersecting: true}])
+    expect(frames).toHaveLength(1)
+  })
+
+  it("draws the way to add one as a plus, on the reel and on the rail", () => {
+    const wrapper = mountReel({items: [...ITEMS, {id: "add", title: "Add a game", href: "/casual/new", accent: "#39f", initials: "+", plus: true}]})
+
+    expect(slice(wrapper, "add").find(".flick-reel__plate--plus").exists()).toBe(true)
+    expect(slice(wrapper, "add").find(".flick-reel__open").exists()).toBe(false)
+    expect(wrapper.get("[data-testid=casual-rail-add] .flick-reel__cell-plus").exists()).toBe(true)
   })
 
   it("leaves a click with a modifier to the browser", async () => {

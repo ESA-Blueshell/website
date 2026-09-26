@@ -76,6 +76,13 @@ withDefaults(defineProps<{
           {{ body }}
         </p>
       </slot>
+      <!-- Under the words and in their column, so a button starts where the heading does. -->
+      <div
+        v-if="$slots.acts"
+        class="mt-5 flex flex-wrap gap-2.5"
+      >
+        <slot name="acts" />
+      </div>
     </div>
 
     <!-- What the band holds beside its head, which is a dialog the page opens from in here. -->

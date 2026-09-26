@@ -29,6 +29,18 @@ describe("the bar's own declaration", () => {
     expect(covers("/committees/lancie", association!)).toBe(false)
   })
 
+  it("offers every game played casually under Casual: the index, then each game's page", () => {
+    const casual = sectionsFor([], [], [{name: "Chess", slug: "chess"}, {name: "Wordle", slug: "wordle"}])
+      .find(section => section.label === "Casual")
+
+    expect(casual?.entries).toEqual([
+      {label: "All casual games", to: "/casual"},
+      {label: "Chess", to: "/casual/chess"},
+      {label: "Wordle", to: "/casual/wordle"},
+    ])
+    expect(covers("/casual/chess", casual!)).toBe(true)
+  })
+
   it("marks the section a reader is under, from a page below it", () => {
     const sections = sectionsFor([])
     const named = (label: string) => sections.find(section => section.label === label)!

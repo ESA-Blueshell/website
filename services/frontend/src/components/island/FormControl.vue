@@ -86,7 +86,9 @@ const said = computed<string>(() => label.trimEnd().replace(/\*$/, "").trimEnd()
 const SELF_DRAWN = new Set(["date", "datetime-local", "month", "time", "week"])
 const DRAWS_ITS_OWN = new Set<ControlKind>(["date", "time", "datetime", "count", "money"])
 const drawsItsOwn = computed<boolean>(() => DRAWS_ITS_OWN.has(kind) || SELF_DRAWN.has(typedAs.value))
-const filled = computed<boolean>(() => drawsItsOwn.value || (model.value ?? "") !== "")
+/* A markdown box is tall and its label sits over it, so the label stays up rather than resting in
+   the middle of an empty box. */
+const filled = computed<boolean>(() => drawsItsOwn.value || kind === "markdown" || (model.value ?? "") !== "")
 
 
 const text = computed<string>({

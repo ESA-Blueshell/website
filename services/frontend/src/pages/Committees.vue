@@ -51,7 +51,7 @@ const archiveOf = (id: string | number) => committees.value.find(committee => co
         eyebrow="Run by members"
         heading="Committees"
       >
-        <div class="committees__actions">
+        <template #acts>
           <cut-button
             away
             :href="DISCORD_INVITE"
@@ -67,7 +67,7 @@ const archiveOf = (id: string | number) => committees.value.find(committee => co
           >
             Add a committee
           </cut-button>
-        </div>
+        </template>
       </header-band>
 
       <lead-band
@@ -164,12 +164,6 @@ const archiveOf = (id: string | number) => committees.value.find(committee => co
 </template>
 
 <style scoped>
-.committees__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 1.4rem;
-}
 
 .committees__olden {
   padding: 2.5rem 0 2.75rem;

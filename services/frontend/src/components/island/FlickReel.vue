@@ -52,8 +52,13 @@ const NARROW_PX = 600
 /** How far a press may wander before it is a drag rather than a click. */
 const DRAG_PX = 6
 const WIDE: ReelShape & {unit: number} = {rest: 240, open: 608, cut: 30, unit: 300}
+/** The widest the reel is drawn. Wider, it is drawn at this width and scaled up whole. */
+const WIDEST_PX = 1920
 
+const reel = ref<HTMLElement | null>(null)
 const band = ref<HTMLElement | null>(null)
+/** How much larger than drawn the reel is shown. Pointer travel is divided by it. */
+const scale = ref(1)
 const width = ref(1440)
 const narrow = computed(() => width.value < NARROW_PX)
 const shape = computed<ReelShape & {unit: number}>(() =>
@@ -120,14 +125,17 @@ const cancelFrame = (id: number) =>
   typeof window.cancelAnimationFrame === "function" ? window.cancelAnimationFrame(id) : window.clearTimeout(id)
 
 function measure() {
-  width.value = band.value?.clientWidth || width.value
+  const outer = reel.value?.clientWidth
+  if (!outer) return
+  scale.value = Math.max(1, outer / WIDEST_PX)
+  width.value = outer / scale.value
 }
 
 onMounted(() => {
   measure()
-  if (typeof ResizeObserver === "function" && band.value) {
+  if (typeof ResizeObserver === "function" && reel.value) {
     observer = new ResizeObserver(measure)
-    observer.observe(band.value)
+    observer.observe(reel.value)
   }
   paint()
   let last = performance.now()
@@ -161,12 +169,12 @@ let pressedAt = 0
 function press(event: PointerEvent) {
   if ((event.target as HTMLElement).closest("button")) return
   pressedAt = event.clientX
-  motion.value.press(event.clientX, performance.now())
+  motion.value.press(event.clientX / scale.value, performance.now())
 }
 
 function drag(event: PointerEvent) {
   if (!motion.value.isDragging) return
-  motion.value.drag(event.clientX, performance.now())
+  motion.value.drag(event.clientX / scale.value, performance.now())
   // Captured only once it is a drag, so a press on a slice still reaches the slice as a click.
   if (Math.abs(event.clientX - pressedAt) > DRAG_PX && !(event.currentTarget as HTMLElement).hasPointerCapture?.(event.pointerId)) {
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId)
@@ -181,7 +189,7 @@ function release() {
 function swipe(event: WheelEvent) {
   if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
   event.preventDefault()
-  motion.value.swipe(event.deltaX, performance.now())
+  motion.value.swipe(event.deltaX / scale.value, performance.now())
   paint()
 }
 
@@ -204,153 +212,157 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 
 <template>
   <div
+    ref="reel"
     class="flick-reel"
     :class="{'flick-reel--narrow': narrow}"
     :data-testid="`${testidPrefix}-reel`"
+    :style="{'--k': scale}"
   >
-    <div
-      ref="band"
-      class="flick-reel__band"
-      :data-testid="`${testidPrefix}-band`"
-      @mouseenter="motion.hovered = true"
-      @mouseleave="motion.hovered = false"
-      @pointercancel="release"
-      @pointerdown="press"
-      @pointermove="drag"
-      @pointerup="release"
-      @wheel="swipe"
-    >
-      <a
-        v-for="(item, index) in items"
-        :key="item.id"
-        :ref="el => { slices[index] = el as HTMLElement | null }"
-        :aria-current="index === resting ? 'true' : undefined"
-        class="flick-reel__slice"
-        :data-testid="`${testidPrefix}-slice-${item.id}`"
-        draggable="false"
-        :href="item.href"
-        :style="{'--accent': item.accent}"
-        @click="choose($event, item)"
-        @focus="bring(index)"
+    <div class="flick-reel__scale">
+      <div
+        ref="band"
+        class="flick-reel__band"
+        :data-testid="`${testidPrefix}-band`"
+        @mouseenter="motion.hovered = true"
+        @mouseleave="motion.hovered = false"
+        @pointercancel="release"
+        @pointerdown="press"
+        @pointermove="drag"
+        @pointerup="release"
+        @wheel="swipe"
       >
-        <span
-          v-if="item.plus"
-          aria-hidden="true"
-          class="flick-reel__plate flick-reel__plate--plus"
-        ><svg
-          fill="none"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-width="1.4"
-          viewBox="0 0 24 24"
-        ><path d="M12 5v14M5 12h14" /></svg></span>
-        <img
-          v-else-if="item.banner"
-          alt=""
-          class="flick-reel__art"
-          loading="lazy"
-          sizes="608px"
-          :src="item.banner"
-          :srcset="item.srcset"
+        <a
+          v-for="(item, index) in items"
+          :key="item.id"
+          :ref="el => { slices[index] = el as HTMLElement | null }"
+          :aria-current="index === resting ? 'true' : undefined"
+          class="flick-reel__slice"
+          :data-testid="`${testidPrefix}-slice-${item.id}`"
+          draggable="false"
+          :href="item.href"
+          :style="{'--accent': item.accent}"
+          @click="choose($event, item)"
+          @focus="bring(index)"
         >
-        <span
-          v-else
-          aria-hidden="true"
-          class="flick-reel__plate"
-        ><span>{{ item.initials }}</span></span>
-        <span
-          aria-hidden="true"
-          class="flick-reel__glow"
-        />
-        <span class="flick-reel__body">
-          <!-- Tick and name shrink as one, so the tick stays on top of the name at every size. -->
-          <span class="flick-reel__title">
-            <span
-              aria-hidden="true"
-              class="flick-reel__tick"
-            />
-            <span class="flick-reel__name">
-              <img
-                v-if="item.icon"
-                alt=""
-                :src="item.icon"
-              >{{ item.title }}
-            </span>
-          </span>
-          <!-- In the flow under the name rather than laid over the slice's foot: on a phone the
-               notes and chips wrap, and a fixed gap under the name let them run into it. -->
-          <span class="flick-reel__more">
-            <span
-              v-for="note in item.notes ?? []"
-              :key="note"
-              class="flick-reel__note"
-            >
-              <svg
+          <span
+            v-if="item.plus"
+            aria-hidden="true"
+            class="flick-reel__plate flick-reel__plate--plus"
+          ><svg
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-width="1.4"
+            viewBox="0 0 24 24"
+          ><path d="M12 5v14M5 12h14" /></svg></span>
+          <img
+            v-else-if="item.banner"
+            alt=""
+            class="flick-reel__art"
+            loading="lazy"
+            sizes="608px"
+            :src="item.banner"
+            :srcset="item.srcset"
+          >
+          <span
+            v-else
+            aria-hidden="true"
+            class="flick-reel__plate"
+          ><span>{{ item.initials }}</span></span>
+          <span
+            aria-hidden="true"
+            class="flick-reel__glow"
+          />
+          <span class="flick-reel__body">
+            <!-- Tick and name shrink as one, so the tick stays on top of the name at every size. -->
+            <span class="flick-reel__title">
+              <span
                 aria-hidden="true"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              ><path :d="discordMark" /></svg>{{ note }}
+                class="flick-reel__tick"
+              />
+              <span class="flick-reel__name">
+                <img
+                  v-if="item.icon"
+                  alt=""
+                  :src="item.icon"
+                >{{ item.title }}
+              </span>
             </span>
-            <span
-              v-for="chip in item.chips ?? []"
-              :key="chip"
-              class="flick-reel__chip"
-            >{{ chip }}</span>
-            <span
-              v-if="!item.plus"
-              class="flick-reel__open"
-            >Open {{ item.title }} →</span>
+            <!-- In the flow under the name rather than laid over the slice's foot: on a phone the
+                 notes and chips wrap, and a fixed gap under the name let them run into it. -->
+            <span class="flick-reel__more">
+              <span
+                v-for="note in item.notes ?? []"
+                :key="note"
+                class="flick-reel__note"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                ><path :d="discordMark" /></svg>{{ note }}
+              </span>
+              <span
+                v-for="chip in item.chips ?? []"
+                :key="chip"
+                class="flick-reel__chip"
+              >{{ chip }}</span>
+              <span
+                v-if="!item.plus"
+                class="flick-reel__open"
+              >Open {{ item.title }} →</span>
+            </span>
           </span>
-        </span>
-      </a>
+        </a>
 
-      <pan-chevron
-        :label="panBackLabel"
-        :testid="`${testidPrefix}-back`"
-        way="back"
-        @pan="step(-1)"
-      />
-      <pan-chevron
-        :label="panOnLabel"
-        :testid="`${testidPrefix}-on`"
-        way="on"
-        @pan="step(1)"
-      />
-    </div>
+        <pan-chevron
+          :label="panBackLabel"
+          :testid="`${testidPrefix}-back`"
+          way="back"
+          @pan="step(-1)"
+        />
+        <pan-chevron
+          :label="panOnLabel"
+          :testid="`${testidPrefix}-on`"
+          way="on"
+          @pan="step(1)"
+        />
+      </div>
 
-    <div
-      class="flick-reel__rail"
-      :data-testid="`${testidPrefix}-rail`"
-    >
-      <button
-        v-for="(item, index) in items"
-        :key="item.id"
-        :aria-label="item.title"
-        :aria-pressed="index === resting"
-        class="flick-reel__cell"
-        :class="{'flick-reel__cell--on': index === resting}"
-        :data-testid="`${testidPrefix}-rail-${item.id}`"
-        :style="{'--accent': item.accent}"
-        type="button"
-        @click="bring(index)"
+      <div
+        class="flick-reel__rail"
+        :data-testid="`${testidPrefix}-rail`"
       >
-        <svg
-          v-if="item.plus"
-          aria-hidden="true"
-          class="flick-reel__cell-plus"
-          fill="none"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-width="1.8"
-          viewBox="0 0 24 24"
-        ><path d="M12 5v14M5 12h14" /></svg>
-        <img
-          v-else-if="item.icon"
-          alt=""
-          :src="item.icon"
+        <button
+          v-for="(item, index) in items"
+          :key="item.id"
+          :aria-label="item.title"
+          :aria-pressed="index === resting"
+          class="flick-reel__cell"
+          :class="{'flick-reel__cell--on': index === resting}"
+          :data-testid="`${testidPrefix}-rail-${item.id}`"
+          :style="{'--accent': item.accent}"
+          type="button"
+          @click="bring(index)"
         >
-        <span v-else>{{ item.railLabel ?? item.initials }}</span>
-      </button>
+          <svg
+            v-if="item.plus"
+            aria-hidden="true"
+            class="flick-reel__cell-plus"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          ><path d="M12 5v14M5 12h14" /></svg>
+          <img
+            v-else-if="item.icon"
+            alt=""
+            :src="item.icon"
+          >
+          <span v-else>{{ item.railLabel ?? item.initials }}</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -358,10 +370,20 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 <style scoped>
 .flick-reel {
   --reel-height: 25rem;
+  --rail-height: 3.4rem;
   --cut: 30px;
 
   position: relative;
   width: 100%;
+}
+
+/* Scaled rather than zoomed: a transform leaves widths and positions in the units the belt's
+   own arithmetic is done in. The margin gives back the height the transform does not take. */
+.flick-reel__scale {
+  width: calc(100% / var(--k));
+  margin-bottom: calc((var(--reel-height) + var(--rail-height)) * (var(--k) - 1));
+  transform: scale(var(--k));
+  transform-origin: 0 0;
 }
 
 .flick-reel--narrow {
@@ -582,7 +604,7 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   --cut: 10px;
 
   display: flex;
-  height: 3.4rem;
+  height: var(--rail-height);
   overflow: hidden;
   background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
 }
@@ -699,8 +721,7 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 
 .flick-reel--narrow .flick-reel__rail {
   --cut: 6px;
-
-  height: 2.6rem;
+  --rail-height: 2.6rem;
 }
 
 .flick-reel--narrow .flick-reel__cell {

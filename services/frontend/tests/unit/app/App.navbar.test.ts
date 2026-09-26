@@ -106,6 +106,7 @@ vi.mock("@/plugins/handleNetworkError", () => ({
 vi.mock("@/services/api", () => ({
   findUserById: mockFindUserById,
   twoFactorStanding: vi.fn(async () => ({data: null})),
+  findCasualGames: vi.fn(async () => ({data: []})),
   SignInStatus: {SIGNED_IN: "SIGNED_IN", TWO_FACTOR_REQUIRED: "TWO_FACTOR_REQUIRED"},
   // The real one composes the page's own origin with /api; logOut() reads it.
   apiUrl: (path: string) => `${globalThis.location.origin}/api${path}`,

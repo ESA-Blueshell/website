@@ -11,8 +11,8 @@ import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import EsportsGameHead from "@/domains/esports/island/EsportsGameHead.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
-import {sizeOf, srcsetOf} from "@/components/island/pictures"
 import TeamRosterDetails from "@/domains/esports/island/TeamRoster.vue"
+import {rosterGroupsOf, teamSliceOf} from "@/domains/esports/island/teamSlice"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasons} from "@/domains/esports/island/useSeasons"
@@ -98,35 +98,13 @@ const NO_TEAMS: TeamRoster[] = []
 
 const teamsFor = (shown: Season | null): TeamRoster[] => answerAbout(shown)?.teams ?? NO_TEAMS
 
-/** The roster as the pages have always read it: players, then substitutes, then coaches. */
-const GROUPS = [
-  {role: "PLAYER", one: "Player", many: "Players"},
-  {role: "SUBSTITUTE", one: "Substitute", many: "Substitutes"},
-  {role: "COACH", one: "Coach", many: "Coaches"},
-] as const
-
 const rosterOf = (teamId: number, shown: Season | null) => {
   const team = teamsFor(shown).find(t => t.id === teamId)
   if (!team) return []
-  return GROUPS
-    .map(group => ({...group, members: team.members.filter(m => m.role === group.role)}))
-    .filter(group => group.members.length > 0)
+  return rosterGroupsOf(team)
 }
 
-// A team's own two pictures: the banner behind its slice and the icon beside its name. A team
-// nobody has given either to draws neither, and the slice reads on the game's accent instead.
-const sliceOf = (team: TeamRoster) => ({
-  id: team.id,
-  title: team.name,
-  meta: `${team.members.length} on the roster`,
-  banner: team.banner?.url ?? "",
-  srcset: srcsetOf(team.banner),
-  ...sizeOf(team.banner),
-  icon: team.icon?.url ?? null,
-  iconSrcset: srcsetOf(team.icon),
-})
-
-const NO_SLICES: ReturnType<typeof sliceOf>[] = []
+const NO_SLICES: ReturnType<typeof teamSliceOf>[] = []
 
 /**
  * Each season's teams as slices, built when that season's answer arrives and kept afterwards.
@@ -137,7 +115,7 @@ const NO_SLICES: ReturnType<typeof sliceOf>[] = []
  * visitor is looking at. Rebuilt only where the answer it was drawn from is a new one, which a
  * re-read after an edit is, so a corrected roster is drawn afresh.
  */
-const built = new Map<number, {from: TeamRoster[]; slices: ReturnType<typeof sliceOf>[]}>()
+const built = new Map<number, {from: TeamRoster[]; slices: ReturnType<typeof teamSliceOf>[]}>()
 
 const loadingFor = (shown: Season | null) => answerAbout(shown) === undefined
 const hasRostersFor = (shown: Season | null) => teamsFor(shown).length > 0
@@ -147,7 +125,7 @@ const slicesFor = (shown: Season | null) => {
   if (shown == null || roster.length === 0) return NO_SLICES
   const had = built.get(shown.id)
   if (had && had.from === roster) return had.slices
-  const slices = roster.map(sliceOf)
+  const slices = roster.map(teamSliceOf)
   built.set(shown.id, {from: roster, slices})
   return slices
 }

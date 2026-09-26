@@ -1,0 +1,60 @@
+/* The slice band dresses what a page slots into it; a component inside the slot is drawn one level
+   further down, where its slotted rules do not reach, so it carries the same rules itself. */
+.slice__group {
+  display: block;
+}
+
+.slice__group-label {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ash);
+}
+
+.slice__entries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.5rem;
+  margin-top: 0.3rem;
+}
+
+.slice__entry {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.slice__entry-handle {
+  font-size: 0.95rem;
+  color: var(--color-chalk);
+}
+
+.slice__entry-name {
+  font-size: 0.7rem;
+  letter-spacing: 0.01em;
+  color: color-mix(in oklab, var(--color-ash) 85%, transparent);
+}
+
+.slice__entry-role {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--accent) 82%, var(--color-chalk));
+}
+
+.slice__entry-note {
+  display: block;
+  margin-top: 0.15rem;
+  max-width: 22rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: color-mix(in oklab, var(--color-ash) 92%, transparent);
+}
+
+.slice__entry-note :deep(p) {
+  display: inline;
+  margin: 0;
+}

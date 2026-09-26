@@ -659,21 +659,21 @@ const account = computed(() => accountFor(reader.value))
  * Reka places a panel with a transform rounded to whole pixels, and an entry's own box is
  * fractional — the label is text — so the panel stood a third of a pixel clear of the entry on
  * one side and a third short on the other, which is visible as a seam against the bar. Pinned
- * to the entry's own box it cannot drift: it starts where the entry starts and ends where it
- * ends. It costs the collision handling, which this panel never needed, since it is never wider
- * than the entry it belongs to.
+ * to the entry's own box it cannot drift: it starts where the entry starts, and it is at least
+ * as wide as the entry, growing to the right where an entry in it is longer than the label.
  */
 .site-bar__section :deep([data-reka-popper-content-wrapper]) {
   position: absolute !important;
   inset: calc(100% + 1px) auto auto 0 !important;
-  width: 100% !important;
-  min-width: 0 !important;
+  width: max-content !important;
+  min-width: 100% !important;
   transform: none !important;
 }
 
 :deep(.site-bar__menu) {
   z-index: 1010;
   width: 100%;
+  min-width: max-content;
   padding: 0;
   background: var(--color-surface);
   /*

@@ -10,6 +10,7 @@ import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
+import SeasonTeams from "@/domains/esports/island/SeasonTeams.vue"
 import {useMayEditEsports} from "@/domains/esports"
 import {seasonInRoute} from "@/domains/esports"
 import {useGames} from "@/domains/esports"
@@ -339,23 +340,10 @@ const takeOut = async (game: GameCode, season: Season | null) => {
                     Nobody is fielded in {{ item.title }} this season, so visitors do not see it
                     here yet. Add a team on its own page, or take the game out of the season.
                   </p>
-                  <span class="slice__group">
-                    <span class="slice__group-label">
-                      {{ nameOf(season) }}
-                    </span>
-                    <span class="slice__entries">
-                      <span
-                        v-for="team in teamsOf(String(item.id), season)"
-                        :key="team.id"
-                        class="slice__entry"
-                      >
-                        <span class="slice__entry-handle">{{ team.name }}</span>
-                        <span class="slice__entry-name">
-                          {{ team.members.length }} on the roster
-                        </span>
-                      </span>
-                    </span>
-                  </span>
+                  <season-teams
+                    :season="nameOf(season)"
+                    :teams="teamsOf(String(item.id), season)"
+                  />
                   <router-link
                     class="slice__link"
                     :data-testid="`esports-link-${item.id}`"

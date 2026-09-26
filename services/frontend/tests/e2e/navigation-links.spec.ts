@@ -78,7 +78,8 @@ test.describe("navbar route integrity", () => {
     const drawerToggle = page.getByTestId("nav-menu-toggle")
     if (await drawerToggle.isVisible()) {
       await drawerToggle.click()
-      await page.getByTestId("nav-drawer-casual-more").click()
+      // The section the reader is in opens unfolded already, and a press would fold it.
+      await expect(page.getByTestId("nav-drawer-casual-more")).toHaveAttribute("aria-expanded", "true")
     } else {
       await expect(page.getByTestId("nav-casual")).toHaveClass(/bar-button--here/)
       await page.getByTestId("nav-casual-more").hover()

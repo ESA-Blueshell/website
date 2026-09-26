@@ -31,7 +31,7 @@ const stubs = {
 const page = (over: Record<string, unknown> = {}) => ({
   id: 7, name: "LanCie", slug: "lancie", description: "LanCie **runs** the LANs.", listed: true, archived: false, banner: null,
   gameCodes: ["CS2", "GONE"],
-  members: [{discordTag: "nelly", avatar: "https://cdn/n.png", role: "Chair"}, {discordTag: null, avatar: null, role: null}],
+  members: [{discordName: "Nelly B", avatar: "https://cdn/n.png", role: "Chair"}, {discordName: null, avatar: null, role: null}],
   ...over,
 })
 
@@ -65,7 +65,7 @@ describe("one committee's page", () => {
   it("names its members by Discord only, or says their Discord is not linked", () => {
     const wrapper = mountPage()
 
-    expect(wrapper.get("[data-testid=committee-seat-0]").text()).toContain("@nelly")
+    expect(wrapper.get("[data-testid=committee-seat-0]").text()).toContain("Nelly B")
     expect(wrapper.get("[data-testid=committee-seat-0]").text()).toContain("Chair")
     expect(wrapper.get("[data-testid=committee-seat-0] img").attributes("src")).toBe("https://cdn/n.png")
     expect(wrapper.get("[data-testid=committee-seat-1]").text()).toBe("Discord not linked")

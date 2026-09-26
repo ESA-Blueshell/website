@@ -1390,8 +1390,8 @@ components:
           type:
           - string
           - 'null'
-        discordTag:
-          description: Their Discord username, absent for a member who has not linked Discord
+        discordName:
+          description: The name the Discord server shows them by, absent for a member who has not linked Discord
           type:
           - string
           - 'null'

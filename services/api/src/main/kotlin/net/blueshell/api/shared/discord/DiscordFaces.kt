@@ -1,8 +1,8 @@
 package net.blueshell.api.shared.discord
 
-/** A member of the server as others see them there: their username and their avatar. */
+/** A member of the server as others see them there: the name the server shows and their avatar. */
 data class DiscordFace(
-    val tag: String,
+    val name: String,
     val avatar: String,
 )
 

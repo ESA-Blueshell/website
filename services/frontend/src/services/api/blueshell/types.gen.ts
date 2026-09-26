@@ -711,9 +711,9 @@ export type CommitteeSeatResponse = {
      */
     avatar?: string | null;
     /**
-     * Their Discord username, absent for a member who has not linked Discord
+     * The name the Discord server shows them by, absent for a member who has not linked Discord
      */
-    discordTag?: string | null;
+    discordName?: string | null;
     role?: string | null;
 };
 

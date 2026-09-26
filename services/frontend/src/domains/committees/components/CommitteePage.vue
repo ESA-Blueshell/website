@@ -113,51 +113,44 @@ const archived = async (now: Committee) => {
             {{ page.archived ? "Bring it back" : "Archive" }}
           </cut-button>
         </template>
+        <template
+          v-if="page.members.length > 0"
+          #people
+        >
+          <p class="committee-page__people-label">
+            The people behind its events
+          </p>
+          <ul
+            class="committee-page__seats"
+            data-testid="committee-members"
+          >
+            <li
+              v-for="(seat, at) in page.members"
+              :key="at"
+              class="committee-page__seat"
+              :data-testid="`committee-seat-${at}`"
+            >
+              <img
+                v-if="seat.avatar"
+                alt=""
+                class="committee-page__avatar"
+                :src="seat.avatar"
+              >
+              <span class="committee-page__who">
+                <span
+                  class="committee-page__name"
+                  :class="{'committee-page__name--none': !seat.discordName}"
+                >{{ seat.discordName ?? "Discord not linked" }}</span>
+                <span
+                  v-if="seat.role"
+                  class="committee-page__role"
+                >{{ seat.role }}</span>
+              </span>
+            </li>
+          </ul>
+        </template>
       </record-head>
 
-      <lead-band
-        v-if="page.members.length > 0"
-        testid="committee-members"
-      >
-        <band-head
-          eyebrow="Who sits on it"
-          heading="Members"
-        />
-        <ul class="committee-page__seats">
-          <li
-            v-for="(seat, at) in page.members"
-            :key="at"
-            class="committee-page__seat"
-            :data-testid="`committee-seat-${at}`"
-          >
-            <img
-              v-if="seat.avatar"
-              alt=""
-              class="committee-page__avatar"
-              :src="seat.avatar"
-            >
-            <span
-              v-else
-              aria-hidden="true"
-              class="committee-page__avatar committee-page__avatar--none"
-            />
-            <span class="committee-page__who">
-              <span
-                v-if="seat.discordTag"
-                class="committee-page__tag"
-              >@{{ seat.discordTag }}</span>
-              <span
-                v-else
-                class="committee-page__tag committee-page__tag--none"
-              >Discord not linked</span>
-              <span
-                v-if="seat.role"
-                class="committee-page__role"
-              >{{ seat.role }}</span>
-            </span>
-          </li>
-        </ul>
-      </lead-band>
 
       <lead-band
         v-if="gameCells.length > 0"
@@ -195,20 +188,47 @@ const archived = async (now: Committee) => {
 
 <style scoped>
 .committee-page__seats {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 0.9rem 1.6rem;
-  margin: 1.4rem 0 0;
+.committee-page__people-label {
+  margin: 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ash);
+}
+
+/*
+ * One row parted by a rule at the lean the buttons are cut on, as the partners are. The rule
+ * stands just left of each member and the row clips its left edge, so a member that wraps to the
+ * start of a line has none before it.
+ */
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 0.9rem;
+  margin: 0.7rem 0 0 -1.5rem;
   padding: 0;
   list-style: none;
+  overflow: hidden;
 }
 
 .committee-page__seat {
   display: flex;
-  gap: 0.8rem;
+  position: relative;
+  gap: 0.75rem;
   align-items: center;
   min-width: 0;
 }
+  padding: 0 1.5rem;
+}
+
+.committee-page__seat::before {
+  position: absolute;
+  top: 0.2rem;
+  bottom: 0.2rem;
+  left: -4px;
+  width: 1px;
+  content: "";
+  background-color: var(--color-hairline);
+  transform: skewX(-12deg);
 
 .committee-page__avatar {
   flex: none;
@@ -217,30 +237,25 @@ const archived = async (now: Committee) => {
   border-radius: 50%;
 }
 
-.committee-page__avatar--none {
-  background-color: color-mix(in oklab, var(--color-chalk) 10%, transparent);
-}
-
 .committee-page__who {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
+  line-height: 1.2;
 
-.committee-page__tag {
-  overflow: hidden;
-  font-size: 0.95rem;
+.committee-page__name {
+  font-size: 1.05rem;
   color: var(--color-chalk);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.committee-page__tag--none {
+.committee-page__name--none {
   color: var(--color-ash);
 }
 
 .committee-page__role {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-ash);

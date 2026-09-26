@@ -1,5 +1,7 @@
 package net.blueshell.api.auth.domain
 
+import jakarta.validation.ConstraintViolationException
+import jakarta.validation.Validation
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
@@ -14,6 +16,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -36,7 +39,9 @@ class SignupWriteUseCasesTest {
     private val activation = mock<UserActivationService>()
     private val jobs = mock<JobQueue>()
 
-    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs)
+    private val validator = Validation.buildDefaultValidatorFactory().validator
+
+    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs, validator)
 
     private fun applicant(withProfile: Boolean): User {
         val user =
@@ -229,6 +234,18 @@ class SignupWriteUseCasesTest {
             assertThat(user.newsletter).isTrue()
             assertThat(user.photoConsent).isTrue()
             verify(users).update(user)
+        }
+
+        @Test
+        fun `refuses a profile without the date of birth and nationality a member gives`() {
+            applicant(withProfile = false)
+            val bare = UpsertMemberProfileData(null, null, null, " ", bhv = false, ehbo = false)
+
+            val refused = assertThrows<ConstraintViolationException> { useCases.updateDetails("sel.ver", details(profile = bare)) }
+
+            assertThat(refused.constraintViolations.map { it.propertyPath.toString() })
+                .containsExactlyInAnyOrder("memberProfile.dateOfBirth", "memberProfile.nationality")
+            verify(users, never()).update(org.mockito.kotlin.any())
         }
 
         @Test

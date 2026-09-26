@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolation
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.user.api.BoardUserData
+import net.blueshell.api.user.api.MemberProfileCompleteness
 import net.blueshell.api.user.api.NewUserData
 import net.blueshell.api.user.api.SelfUserData
 import net.blueshell.api.user.api.UpsertMemberProfileData
@@ -18,6 +19,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import net.blueshell.api.security.StepUp
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.user.api.UserEmailChangedByBoard
@@ -51,6 +53,7 @@ class UserUseCasesTest {
     fun noViolations() {
         whenever(validator.validate(any<UserRegistration>())).thenReturn(mutableSetOf())
         whenever(validator.validate(any<UserUniqueness>())).thenReturn(mutableSetOf())
+        whenever(validator.validate(any<MemberProfileCompleteness>())).thenReturn(mutableSetOf())
     }
 
     @Nested
@@ -321,6 +324,25 @@ class UserUseCasesTest {
             assertThat(existing.memberProfile?.studentNumber).isEqualTo("s123")
             assertThat(existing.memberProfile?.version).isEqualTo(9L)
             assertThat(result).isSameAs(existing)
+        }
+
+        @Test
+        fun `holds a member's profile to a member's fields, and anybody else's to none`() {
+            val member = testUser("john").apply { roles.add(Role.MEMBER) }
+            whenever(userService.findById(2L)).thenReturn(member)
+            whenever(userService.update(member)).thenReturn(member)
+            val self = SelfUserData(
+                discord = "upd#0001", phoneNumber = "0633333333", newsletter = true, photoConsent = true, version = 8L,
+                memberProfile = upsertMemberProfileData(version = 3L),
+            )
+
+            useCases.update(2L, self)
+            member.roles.remove(Role.MEMBER)
+            useCases.update(2L, self)
+
+            val asked = argumentCaptor<Any>()
+            verify(validator, org.mockito.kotlin.atLeastOnce()).validate(asked.capture())
+            assertThat(asked.allValues.filterIsInstance<MemberProfileCompleteness>().map { it.member }).containsExactly(true, false)
         }
 
         @Test

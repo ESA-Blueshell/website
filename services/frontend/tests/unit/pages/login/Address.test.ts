@@ -7,15 +7,18 @@ const {
   mockRoute,
   mockReadAddress,
   mockHandleNetworkError,
+  mockRouter,
 } = vi.hoisted(() => ({
   mockStore: {
     getters: {
       getLogin: {userId: 5},
     },
+    dispatch: vi.fn(),
   },
   mockRoute: {
-    params: {id: "12"},
+    params: {id: "12"} as {id?: string},
   },
+  mockRouter: {replace: vi.fn()},
   mockReadAddress: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
@@ -29,6 +32,7 @@ vi.mock("vue-router", async (importOriginal) => {
   const {withVueRouter} = await import("../../helpers/testUtils")
   return withVueRouter(importOriginal, {
     route: mockRoute,
+    router: mockRouter,
   })
 })
 
@@ -47,6 +51,7 @@ vi.mock("@/components/common/AccountFrame.vue", () => ({
 describe("Address page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockStore.getters.getLogin = {userId: 5}
     mockReadAddress.mockResolvedValue({id: 12, city: "Enschede", country: "NL"})
   })
 
@@ -124,5 +129,35 @@ describe("Address page", () => {
     await settle()
 
     expect(mockReadAddress).not.toHaveBeenCalled()
+  })
+
+  it("makes the first address written the account's, and moves to it", async () => {
+    mockRoute.params = {}
+    const AddressForm = {
+      name: "AddressForm", props: ["modelValue", "userId"], emits: ["submitted", "update:modelValue"],
+      template: "<div />",
+    }
+    const wrapper = mountInApp(Address, {global: {stubs: {AddressForm}}})
+    await settle()
+    const form = wrapper.findComponent({name: "AddressForm"})
+
+    form.vm.$emit("submitted", false)
+    form.vm.$emit("update:modelValue", {id: 31, city: "Enschede"})
+    await settle()
+    form.vm.$emit("submitted", true)
+
+    expect(mockStore.dispatch).toHaveBeenCalledTimes(1)
+    expect(mockStore.dispatch).toHaveBeenCalledWith("setAddressId", 31)
+    expect(mockRouter.replace).toHaveBeenCalledWith("/account/addresses/31")
+    mockRoute.params = {id: "12"}
+  })
+
+  it("leaves an address that already had its page where it is", async () => {
+    const AddressForm = {name: "AddressForm", props: ["modelValue", "userId"], emits: ["submitted"], template: "<div />"}
+    const wrapper = mountInApp(Address, {global: {stubs: {AddressForm}}})
+    await settle()
+    wrapper.findComponent({name: "AddressForm"}).vm.$emit("submitted", true)
+
+    expect(mockRouter.replace).not.toHaveBeenCalled()
   })
 })

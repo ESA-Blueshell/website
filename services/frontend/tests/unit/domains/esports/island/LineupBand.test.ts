@@ -57,42 +57,42 @@ describe("LineupBand", () => {
     expect(wrapper.find("[data-testid=home-esports]").exists()).toBe(false)
   })
 
-  it("runs every team of the newest season, named with its game and the season, opening to its line-up", async () => {
+  it("runs the index's slices for the newest season, each game opening to its teams and that season", async () => {
     held.loading.value = false
     held.entries.value = [
-      {game: "VALORANT", teams: [team(1, "Blue Shells"), team(2, "Blue Waves", {banner: {url: "/waves.webp", renditions: []}})], public: true},
-      {game: "GEOGUESSR", teams: [team(1, "Blue Shells")], public: true},
+      {game: "VALORANT", teams: [team(1, "Blue Shells"), team(2, "Blue Waves")], public: true},
+      {game: "GEOGUESSR", teams: [team(3, "Blue Maps")], public: true},
     ]
     const wrapper = mountBand()
     await flushPromises()
 
     const band = wrapper.findComponent({name: "SliceBand"})
     expect(band.classes()).toContain("island-dark")
-    const [shells, waves, geo] = band.props("items")
-    expect(shells).toMatchObject({
-      id: "VALORANT-1", title: "Blue Shells", meta: "Valorant · Spring 2026", accent: "#ff4655",
-      href: "/competition/valorant?season=4", banner: "/val.webp", srcset: "/val-640.webp 640w",
+    const [valorant, geo] = band.props("items")
+    expect(valorant).toMatchObject({
+      id: "VALORANT", title: "Valorant", meta: "2 teams this season", accent: "#ff4655",
+      href: "/competition/valorant?season=4", banner: "/val.webp",
     })
-    expect(waves.banner).toBe("/waves.webp")
-    expect(geo).toMatchObject({id: "GEOGUESSR-1", href: "/competition", banner: ""})
-    expect(wrapper.find("[data-testid=home-esports-link-VALORANT-1]").text()).toBe("Valorant in Spring 2026 →")
-    expect(wrapper.text()).toContain("p1")
-    expect(wrapper.text()).toContain("Coach")
+    expect(geo).toMatchObject({id: "GEOGUESSR", href: "/competition"})
+    expect(wrapper.find("[data-testid=home-esports-link-VALORANT]").text()).toBe("Valorant in Spring 2026 →")
+    expect(wrapper.text()).toContain("Spring 2026")
+    expect(wrapper.text()).toContain("Blue Waves")
+    expect(wrapper.text()).toContain("2 on the roster")
   })
 
-  it("names a team by its game alone where the season is not known", async () => {
+  it("leads to every season of a game where the season is not known", async () => {
     held.loading.value = false
     held.selected.value = null
     held.entries.value = [{game: "VALORANT", teams: [team(1, "Blue Shells")], public: true}]
     const wrapper = mountBand()
     await flushPromises()
 
-    const [shells] = wrapper.findComponent({name: "SliceBand"}).props("items")
-    expect(shells).toMatchObject({meta: "Valorant", href: "/competition/valorant"})
-    expect(wrapper.find("[data-testid=home-esports-link-VALORANT-1]").text()).toBe("Valorant →")
+    const [valorant] = wrapper.findComponent({name: "SliceBand"}).props("items")
+    expect(valorant).toMatchObject({href: "/competition/valorant"})
+    expect(wrapper.find("[data-testid=home-esports-link-VALORANT]").text()).toBe("Every season of Valorant →")
   })
 
-  it("draws no line-up for a slice it does not hold", async () => {
+  it("draws no teams for a slice it does not hold", async () => {
     held.loading.value = false
     held.entries.value = [{game: "VALORANT", teams: [team(1, "Blue Shells")], public: true}]
     const wrapper = mount(LineupBand, {global: {stubs: {
@@ -102,7 +102,7 @@ describe("LineupBand", () => {
     await flushPromises()
 
     expect(wrapper.find("[data-testid=home-esports-link-X]").findComponent(RouterLinkStub).props("to")).toBe("/competition")
-    expect(wrapper.text()).not.toContain("Coach")
+    expect(wrapper.text()).not.toContain("Blue Shells")
   })
 
   it("follows a slice that was gone to", async () => {

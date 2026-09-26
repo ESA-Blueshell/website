@@ -781,7 +781,7 @@ watch(open, (index) => {
   display: flex;
   width: 100%;
   /* Grows with the width, zoomed out too, and stops short of filling the screen. */
-  min-height: clamp(22rem, 27cqw, 62svh);
+  min-height: clamp(21rem, 23cqw, 56svh);
 }
 
 .slices--short {

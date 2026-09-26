@@ -284,13 +284,13 @@
       -->
       <template v-else>
         <button
-          :aria-expanded="Boolean(unfolded[section.to])"
+          :aria-expanded="isUnfolded(section)"
           class="site-bar-drawer__entry site-bar-drawer__fold"
           :class="{'site-bar-drawer__entry--here': covers(route.path, section)}"
-          :data-state="unfolded[section.to] ? 'open' : 'closed'"
+          :data-state="isUnfolded(section) ? 'open' : 'closed'"
           :data-testid="`nav-drawer-${section.label.toLowerCase()}-more`"
           type="button"
-          @click="unfolded[section.to] = !unfolded[section.to]"
+          @click="unfolded[section.to] = !isUnfolded(section)"
         >
           {{ section.label }}
           <nav-mark
@@ -298,7 +298,7 @@
             :size="16"
           />
         </button>
-        <template v-if="unfolded[section.to]">
+        <template v-if="isUnfolded(section)">
           <router-link
             v-for="entry in section.entries"
             :key="entry.to"
@@ -392,6 +392,7 @@ import {
   sectionsFor,
   SOCIALS,
   type NavReader,
+  type NavSection,
 } from "@/components/common/nav"
 import logo from "@/assets/topbarlogo-38.webp"
 import logo2x from "@/assets/topbarlogo-76.webp"
@@ -419,8 +420,15 @@ const drawerPanel = ref<HTMLElement | null>(null)
 const side = ref<boolean>(false)
 const sidePanel = ref<HTMLElement | null>(null)
 
-/** The drawer's sections that stand unfolded, keyed by the page the section itself addresses. */
+/** The drawer's sections folded or unfolded by a press, keyed by the page the section itself addresses. */
 const unfolded = reactive<Record<string, boolean>>({})
+
+/**
+ * The section the reader is in stands unfolded until pressed, so where they are is visible without
+ * a press. Read when drawn rather than set on opening: a section whose pages arrive after the
+ * drawer opened is drawn unfolded too.
+ */
+const isUnfolded = (section: NavSection) => unfolded[section.to] ?? covers(route.path, section)
 
 const closePanels = () => {
   drawer.value = false
@@ -431,8 +439,7 @@ const closePanels = () => {
 watch(drawer, async (open) => {
   if (!open) return
   side.value = false
-  // The section the reader is in opens unfolded, so where they are is visible without a press.
-  for (const section of sections.value) unfolded[section.to] = covers(route.path, section)
+  for (const key of Object.keys(unfolded)) delete unfolded[key]
   await nextTick()
   drawerPanel.value?.focus()
 })
@@ -652,21 +659,21 @@ const account = computed(() => accountFor(reader.value))
  * Reka places a panel with a transform rounded to whole pixels, and an entry's own box is
  * fractional — the label is text — so the panel stood a third of a pixel clear of the entry on
  * one side and a third short on the other, which is visible as a seam against the bar. Pinned
- * to the entry's own box it cannot drift: it starts where the entry starts and ends where it
- * ends. It costs the collision handling, which this panel never needed, since it is never wider
- * than the entry it belongs to.
+ * to the entry's own box it cannot drift: it starts where the entry starts, and it is at least
+ * as wide as the entry, growing to the right where an entry in it is longer than the label.
  */
 .site-bar__section :deep([data-reka-popper-content-wrapper]) {
   position: absolute !important;
   inset: calc(100% + 1px) auto auto 0 !important;
-  width: 100% !important;
-  min-width: 0 !important;
+  width: max-content !important;
+  min-width: 100% !important;
   transform: none !important;
 }
 
 :deep(.site-bar__menu) {
   z-index: 1010;
   width: 100%;
+  min-width: max-content;
   padding: 0;
   background: var(--color-surface);
   /*

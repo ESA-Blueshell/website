@@ -2,16 +2,14 @@ import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 
 test.describe("the home page's slice bands", () => {
-  test("runs the newest season's teams, named with their game and season, each leading to that season", async ({page}) => {
+  test("runs the index's slices for the newest season, each game leading to that season", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/")
 
     const band = page.getByTestId("home-esports")
     await band.scrollIntoViewIfNeeded()
-    await expect(band.getByTestId("home-esports-VALORANT-1")).toContainText("BS Waterboarders")
-    await expect(band.getByTestId("home-esports-VALORANT-1")).toContainText("Valorant · Autumn 2025")
-    await expect(band.getByTestId("home-esports-VALORANT-2")).toContainText("BS SpicyWater")
-    await expect(band.getByTestId("home-esports-link-VALORANT-1")).toHaveAttribute("href", "/competition/valorant?season=20")
+    await expect(band.getByTestId("home-esports-VALORANT")).toContainText(/\d+ teams? this season/)
+    await expect(band.getByTestId("home-esports-link-VALORANT")).toHaveAttribute("href", "/competition/valorant?season=20")
     await expect(band.getByTestId("home-esports-more")).toHaveAttribute("href", "/competition")
   })
 
@@ -46,9 +44,9 @@ test.describe("the home page's slice bands", () => {
     await installApiMocks(page)
     await page.goto("/")
 
-    const slice = page.getByTestId("home-esports-VALORANT-1")
+    const slice = page.getByTestId("home-esports-VALORANT")
     await slice.scrollIntoViewIfNeeded()
     await expect(slice.locator("img")).toHaveCount(0)
-    await expect(slice).toContainText("BS Waterboarders")
+    await expect(slice).toContainText("Valorant")
   })
 })

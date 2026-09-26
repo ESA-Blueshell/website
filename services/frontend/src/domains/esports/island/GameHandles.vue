@@ -74,7 +74,7 @@ onMounted(refresh)
     data-testid="game-handles"
   >
     <template
-      v-for="group in [{title: 'Fielded now', list: fielded}, {title: 'Other games', list: others}]"
+      v-for="group in [{title: 'Fielded this season', list: fielded}, {title: 'Other games', list: others}]"
       :key="group.title"
     >
       <template v-if="group.list.length">
@@ -164,11 +164,13 @@ onMounted(refresh)
   margin-top: 0;
 }
 
+/* Two to a row on a wide screen, so a long list of games stays a screen or two tall. */
 .handles__rows {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2px;
 }
+
 
 .handle {
   --row-h: 4.9rem;
@@ -244,6 +246,22 @@ onMounted(refresh)
 
   .handle__field {
     grid-column: 1 / 3;
+  }
+}
+@media (min-width: 1100px) {
+  .handles__rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 1.25rem;
+  }
+
+  .handle {
+    grid-template-columns: 2.75rem minmax(7rem, 11rem) minmax(0, 1fr) auto;
+  }
+
+  /* Two lines rather than an ellipsis: a name is what the row is for. */
+  .handle__name {
+    line-height: 1.05;
+    white-space: normal;
   }
 }
 </style>

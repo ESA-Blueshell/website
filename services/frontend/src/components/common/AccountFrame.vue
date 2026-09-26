@@ -110,10 +110,25 @@ const pages = computed(() => accountFor(reader.value))
 </template>
 
 <style scoped>
-/* The island runs down to the footer, so a short page does not stop on the Vuetify ground. */
+/* The island runs down to the footer, so a short page does not stop on the Vuetify ground. A page
+   still on Vuetify is drawn below the island, so the island's ground is laid under it too; the
+   tile starts where the island's does, so the two meet without a seam. */
 .account-main {
   display: flex;
   flex-direction: column;
+  background-color: var(--color-ground);
+  background-image:
+    linear-gradient(var(--tile-veil), var(--tile-veil)),
+    url("@/assets/bg/shelly-bg-black.png");
+  background-size: auto, 135px 77px;
+  /* Vuetify's reset stops every background repeating, which leaves a single tile at the top. */
+  background-repeat: repeat;
+}
+
+:global([data-theme="light"]) .account-main {
+  background-image:
+    linear-gradient(var(--tile-veil), var(--tile-veil)),
+    url("@/assets/bg/shelly-bg-white.jpg");
 }
 
 .account {

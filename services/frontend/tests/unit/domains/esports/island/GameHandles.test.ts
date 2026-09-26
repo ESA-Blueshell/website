@@ -50,7 +50,7 @@ describe("the game handles", () => {
   it("lists the games fielded now before the rest, each with its handle", async () => {
     const wrapper = await open()
 
-    expect(wrapper.findAll("h2").map(one => one.text().replace(/[\s\u2060]+/gu, " "))).toEqual(["Fielded now 2games", "Other games 1games"])
+    expect(wrapper.findAll("h2").map(one => one.text().replace(/[\s\u2060]+/gu, " "))).toEqual(["Fielded this season 2games", "Other games 1games"])
     expect(wrapper.findAll(".handle__name").map(one => one.text())).toEqual(["Valorant", "League of Legends", "CS:GO"])
     expect((field(wrapper, "valorant").element as HTMLInputElement).value).toBe("alice#EUW")
     expect(wrapper.find(".handle__glyph img").attributes("src")).toBe("/valorant.webp")

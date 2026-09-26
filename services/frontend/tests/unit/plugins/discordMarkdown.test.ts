@@ -105,4 +105,18 @@ describe("emoji in a description", () => {
     expect(emojiFile("👍🏽")).toBe("1f44d-1f3fd")
     expect(emojiSrc("🍝")).toBe("/emoji/1f35d.svg")
   })
+
+  it("draws a server's emoji from Discord, from this server or any other", () => {
+    const shown = document.createElement("div")
+    shown.innerHTML = read("gg <:POGGERS:657733730491826186> and <a:party:123456789012345678>")
+    const [still, moving] = [...shown.querySelectorAll<HTMLImageElement>("img.emoji")]
+
+    expect(still?.getAttribute("src")).toBe("https://cdn.discordapp.com/emojis/657733730491826186.webp?size=48")
+    expect(still?.alt).toBe(":POGGERS:")
+    expect(moving?.getAttribute("src")).toBe("https://cdn.discordapp.com/emojis/123456789012345678.gif?size=48")
+  })
+
+  it("leaves a server's emoji in code as written", () => {
+    expect(read("`<:POGGERS:657733730491826186>`")).toBe("<p><code>&lt;:POGGERS:657733730491826186&gt;</code></p>")
+  })
 })

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
+import net.blueshell.api.discord.domain.DiscordEmojiDirectory
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
 import net.blueshell.api.discord.domain.DiscordRoleDirectory
 import org.springframework.http.HttpStatus
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController
 class DiscordMemberController(
     private val members: DiscordMemberDirectory,
     private val pingableRoles: DiscordRoleDirectory,
+    private val emoji: DiscordEmojiDirectory,
 ) {
     @PermitAll
     @GetMapping("/members")
@@ -75,5 +77,19 @@ class DiscordMemberController(
     fun roles(): ResponseEntity<List<DiscordRoleResponse>> {
         val found = pingableRoles.pingable() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         return ResponseEntity.ok(found.map { DiscordRoleResponse(it.id, it.name) })
+    }
+
+    /* What a description may be written with, for whoever writes one, so it needs a login. */
+    @PermitAll
+    @GetMapping("/emojis")
+    @Operation(operationId = "listDiscordEmojis", summary = "The Discord server's own emoji, by name")
+    @ApiResponse(
+        responseCode = "200",
+        content = [Content(array = ArraySchema(schema = Schema(implementation = DiscordEmojiResponse::class)))],
+    )
+    @ApiResponse(responseCode = "503", description = "The bot is not set up, or Discord did not answer", content = [Content()])
+    fun emojis(): ResponseEntity<List<DiscordEmojiResponse>> {
+        val found = emoji.all() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        return ResponseEntity.ok(found.map { DiscordEmojiResponse(it.id, it.name, it.animated) })
     }
 }

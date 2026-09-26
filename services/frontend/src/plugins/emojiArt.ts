@@ -28,6 +28,23 @@ const escapeAttribute = (text: string): string => text.replaceAll("&", "&amp;").
 export const emojiImg = (emoji: string): string =>
   `<img class="emoji" src="${emojiSrc(emoji)}" alt="${escapeAttribute(emoji)}" draggable="false">`
 
+/** A server emoji as Discord writes it, `<:name:id>` or, moving, `<a:name:id>`. */
+export const SERVER_EMOJI = /<(a?):(\w{2,32}):(\d{15,21})>/g
+
+/* Any server's emoji is on Discord's CDN by its ID alone, so one from elsewhere is drawn too. */
+export const serverEmojiSrc = (id: string, moving: boolean): string =>
+  `https://cdn.discordapp.com/emojis/${id}.${moving ? "gif" : "webp"}?size=48`
+
+/** Stands for `:name:` where the picture will not load, as Discord's own text does. */
+export const serverEmojiImg = (name: string, id: string, moving: boolean): string =>
+  `<img class="emoji" src="${serverEmojiSrc(id, moving)}" alt=":${name}:" draggable="false">`
+
+/** The picture of an emoji as a description writes it: a character, or a server's `<:name:id>`. */
+export const pictureOf = (written: string): string => {
+  const server = new RegExp(`^${SERVER_EMOJI.source}$`).exec(written)
+  return server ? serverEmojiSrc(server[3] as string, server[1] === "a") : emojiSrc(written)
+}
+
 /** Every emoji in escaped html text drawn as its picture. */
 export const withEmojiArt = (html: string): string => html.replace(EMOJI, emojiImg)
 

@@ -5,7 +5,7 @@ import {autocompletion} from "@codemirror/autocomplete"
 import {Compartment, EditorState} from "@codemirror/state"
 import {EditorView, placeholder as showPlaceholder} from "@codemirror/view"
 import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
-import {loadDiscordEmoji} from "@/components/island/discordEmoji"
+import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
 
 defineOptions({name: "MarkdownEditor"})
@@ -150,6 +150,7 @@ const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
 
 onMounted(() => {
   void loadDiscordEmoji()
+  void loadServerEmoji()
   view = new EditorView({
     parent: host.value as HTMLElement,
     state: EditorState.create({

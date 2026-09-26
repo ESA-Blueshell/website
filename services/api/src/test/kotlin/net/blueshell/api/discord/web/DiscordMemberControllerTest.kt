@@ -1,5 +1,7 @@
 package net.blueshell.api.discord.web
 
+import net.blueshell.api.discord.domain.DiscordEmoji
+import net.blueshell.api.discord.domain.DiscordEmojiDirectory
 import net.blueshell.api.discord.domain.DiscordMember
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
 import net.blueshell.api.discord.domain.DiscordRole
@@ -18,7 +20,8 @@ class DiscordMemberControllerTest {
             on { unclaimed() } doReturn listOf(DiscordMember("804", "Anna", "anna", "https://cdn/anna.png"))
         }
     private val roles: DiscordRoleDirectory = mock { on { pingable() } doReturn listOf(DiscordRole("901", "Gamers")) }
-    private val controller = DiscordMemberController(directory, roles)
+    private val emoji: DiscordEmojiDirectory = mock { on { all() } doReturn listOf(DiscordEmoji("657", "ShellyStar", true)) }
+    private val controller = DiscordMemberController(directory, roles, emoji)
 
     @Test
     fun `answers the members found`() {
@@ -40,7 +43,7 @@ class DiscordMemberControllerTest {
         assertThat(controller.unclaimed().body!!.map { it.name }).containsExactly("Anna")
 
         val offline: DiscordMemberDirectory = mock { on { unclaimed() } doReturn null }
-        assertThat(DiscordMemberController(offline, roles).unclaimed().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+        assertThat(DiscordMemberController(offline, roles, emoji).unclaimed().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
 
     @Test
@@ -49,7 +52,15 @@ class DiscordMemberControllerTest {
         assertThat(controller.roles().body!!.single().let { it.id to it.name }).isEqualTo("901" to "Gamers")
 
         val offline: DiscordRoleDirectory = mock { on { pingable() } doReturn null }
-        assertThat(DiscordMemberController(directory, offline).roles().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+        assertThat(DiscordMemberController(directory, offline, emoji).roles().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+    }
+
+    @Test
+    fun `answers the server's own emoji, or 503 without a bot`() {
+        val star = controller.emojis().body!!.single()
+        assertThat(listOf(star.id, star.name, star.animated)).containsExactly("657", "ShellyStar", true)
+
+        val offline: DiscordEmojiDirectory = mock { on { all() } doReturn null }
+        assertThat(DiscordMemberController(directory, roles, offline).emojis().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
 }
-

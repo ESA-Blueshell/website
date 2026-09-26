@@ -1,6 +1,6 @@
 import {Marked, type Token, type TokenizerAndRendererExtension, type Tokens} from "marked"
 import * as emoji from "node-emoji"
-import {emojiImg, withEmojiArt} from "@/plugins/emojiArt"
+import {emojiImg, SERVER_EMOJI, serverEmojiImg, withEmojiArt} from "@/plugins/emojiArt"
 
 /*
  * A description read the way Discord reads a message (architecture ADR-010). Each rule is
@@ -85,6 +85,23 @@ const shortcode: TokenizerAndRendererExtension = {
   },
 }
 
+const WRITTEN_SERVER_EMOJI = new RegExp(`^${SERVER_EMOJI.source}`)
+
+/** A server's emoji, from this server or any other. */
+const serverEmoji: TokenizerAndRendererExtension = {
+  name: "serverEmoji",
+  level: "inline",
+  start: src => src.search(SERVER_EMOJI),
+  tokenizer(src) {
+    const found = WRITTEN_SERVER_EMOJI.exec(src)
+    if (!found) return undefined
+    return {type: "serverEmoji", raw: found[0], moving: found[1] === "a", name: found[2], id: found[3]}
+  },
+  renderer(token) {
+    return serverEmojiImg(token.name as string, token.id as string, token.moving as boolean)
+  },
+}
+
 const subtext: TokenizerAndRendererExtension = {
   name: "subtext",
   level: "block",
@@ -135,7 +152,7 @@ export const discordMarked = new Marked({
   breaks: true,
   async: false,
   // Tried last to first, so bold is read before italic.
-  extensions: [subtext, shortcode, tilde, strike, emphasis, strong, underline, spoiler],
+  extensions: [subtext, serverEmoji, shortcode, tilde, strike, emphasis, strong, underline, spoiler],
   hooks: {preprocess: discordLines},
   renderer: {
     text(token: Tokens.Text | Tokens.Escape) {

@@ -3,7 +3,7 @@ import {EditorSelection, type EditorState, type Range, type SelectionRange} from
 import {Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType}
   from "@codemirror/view"
 import * as emoji from "node-emoji"
-import {EMOJI, emojiSrc} from "@/plugins/emojiArt"
+import {EMOJI, emojiSrc, SERVER_EMOJI, serverEmojiSrc} from "@/plugins/emojiArt"
 
 /* Read off the tree rather than imported, since @lezer/common is not a dependency of its own. */
 type SyntaxNode = ReturnType<ReturnType<typeof syntaxTree>["resolveInner"]>
@@ -80,22 +80,25 @@ class Character extends WidgetType {
   }
 }
 
-/** An emoji drawn as the page draws it, or as the character where its picture will not load. */
+/**
+ * An emoji drawn as the page draws it, or as what it says, the character or a server emoji's
+ * `:name:`, where its picture will not load.
+ */
 class EmojiArt extends WidgetType {
-  constructor(private readonly emoji: string) {
+  constructor(private readonly src: string, private readonly says: string) {
     super()
   }
 
   eq(other: EmojiArt): boolean {
-    return other.emoji === this.emoji
+    return other.src === this.src && other.says === this.says
   }
 
   toDOM(): HTMLElement {
     const drawn = document.createElement("img")
     drawn.className = "cm-emoji"
-    drawn.src = emojiSrc(this.emoji)
-    drawn.alt = this.emoji
-    drawn.addEventListener("error", () => drawn.replaceWith(document.createTextNode(this.emoji)))
+    drawn.src = this.src
+    drawn.alt = this.says
+    drawn.addEventListener("error", () => drawn.replaceWith(document.createTextNode(this.says)))
     return drawn
   }
 
@@ -124,7 +127,22 @@ const shortcodesIn = (view: EditorView, ranges: readonly SelectionRange[]): Rang
       if (touches(ranges, at, end) || literalAt(view.state, at)) continue
       const said = emoji.get(found[1] as string)
       if (!said) continue
-      drawn.push(Decoration.replace({widget: new EmojiArt(said)}).range(at, end))
+      drawn.push(Decoration.replace({widget: new EmojiArt(emojiSrc(said), said)}).range(at, end))
+    }
+  }
+  return drawn
+}
+
+/* Like a mark, `<:name:id>` shows while the cursor touches it, so it can be read and mended. */
+const serverEmojiIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
+  const drawn: Range<Decoration>[] = []
+  for (const {from, to} of view.visibleRanges) {
+    for (const found of view.state.sliceDoc(from, to).matchAll(SERVER_EMOJI)) {
+      const at = from + found.index
+      const end = at + found[0].length
+      if (touches(ranges, at, end) || literalAt(view.state, at)) continue
+      const art = new EmojiArt(serverEmojiSrc(found[3] as string, found[1] === "a"), `:${found[2] as string}:`)
+      drawn.push(Decoration.replace({widget: art}).range(at, end))
     }
   }
   return drawn
@@ -137,7 +155,8 @@ const emojiIn = (view: EditorView): DecorationSet => {
     for (const found of view.state.sliceDoc(from, to).matchAll(EMOJI)) {
       const at = from + found.index
       if (literalAt(view.state, at)) continue
-      drawn.push(Decoration.replace({widget: new EmojiArt(found[0])}).range(at, at + found[0].length))
+      drawn.push(Decoration.replace({widget: new EmojiArt(emojiSrc(found[0]), found[0])})
+        .range(at, at + found[0].length))
     }
   }
   return Decoration.set(drawn)
@@ -195,7 +214,7 @@ const decorate = (view: EditorView): DecorationSet => {
       },
     })
   }
-  return Decoration.set([...marks, ...shortcodesIn(view, ranges)], true)
+  return Decoration.set([...marks, ...shortcodesIn(view, ranges), ...serverEmojiIn(view, ranges)], true)
 }
 
 /** Hides the marks, and redraws whenever the document, the view or the cursor moves. */

@@ -2,7 +2,7 @@ import type {Completion, CompletionContext, CompletionResult} from "@codemirror/
 import {EditorView} from "@codemirror/view"
 import {emojiMatching, emojiNamed} from "@/components/island/discordEmoji"
 import {literalAt} from "@/components/island/markdownLive"
-import {emojiSrc} from "@/plugins/emojiArt"
+import {pictureOf} from "@/plugins/emojiArt"
 
 /* The document keeps the emoji itself, never its name: the name is only how it is typed. */
 
@@ -36,7 +36,7 @@ export const emojiOption = {
   render: (completion: Completion): Node => {
     const drawn = document.createElement("img")
     drawn.className = "cm-emoji"
-    drawn.src = emojiSrc(completion.apply as string)
+    drawn.src = pictureOf(completion.apply as string)
     drawn.alt = ""
     return drawn
   },
@@ -48,7 +48,7 @@ export const emojiOnClose = EditorView.inputHandler.of((view, from, to, text) =>
   const line = view.state.doc.lineAt(from)
   const typed = /:([a-z0-9_+-]+)$/i.exec(line.text.slice(0, from - line.from))
   if (!typed) return false
-  const emoji = emojiNamed((typed[1] as string).toLowerCase())
+  const emoji = emojiNamed(typed[1] as string)
   if (!emoji) return false
   const start = from - typed[0].length
   view.dispatch({

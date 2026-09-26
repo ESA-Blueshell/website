@@ -896,6 +896,35 @@ export type DiscordMemberResponse = {
 };
 
 /**
+ * What a description's mentions name: the members, roles and channels the server has
+ */
+export type DiscordMentionsResponse = {
+    channels: Array<DiscordNameResponse>;
+    roles: Array<DiscordRoleNameResponse>;
+    users: Array<DiscordNameResponse>;
+};
+
+/**
+ * A member or a channel of the Discord server, by the name the server shows
+ */
+export type DiscordNameResponse = {
+    id: string;
+    name: string;
+};
+
+/**
+ * A role of the Discord server, as a mention shows it
+ */
+export type DiscordRoleNameResponse = {
+    /**
+     * The role's colour as 0xRRGGBB, where it has one
+     */
+    colour?: number | null;
+    id: string;
+    name: string;
+};
+
+/**
  * A role in the Discord server an event may ping
  */
 export type DiscordRoleResponse = {
@@ -4560,6 +4589,51 @@ export type OpenDiscordChannelErrors = {
 
 export type OpenDiscordChannelError = OpenDiscordChannelErrors[keyof OpenDiscordChannelErrors];
 
+export type ListDiscordChannelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/discord/channels';
+};
+
+export type ListDiscordChannelsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up, or Discord did not answer
+     */
+    503: unknown;
+};
+
+export type ListDiscordChannelsError = ListDiscordChannelsErrors[keyof ListDiscordChannelsErrors];
+
+export type ListDiscordChannelsResponses = {
+    /**
+     * OK
+     */
+    200: Array<DiscordNameResponse>;
+};
+
+export type ListDiscordChannelsResponse = ListDiscordChannelsResponses[keyof ListDiscordChannelsResponses];
+
 export type ListDiscordEmojisData = {
     body?: never;
     path?: never;
@@ -4820,6 +4894,55 @@ export type ListUnclaimedDiscordMembersResponses = {
 };
 
 export type ListUnclaimedDiscordMembersResponse = ListUnclaimedDiscordMembersResponses[keyof ListUnclaimedDiscordMembersResponses];
+
+export type ReadDiscordMentionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        users?: Array<string>;
+        roles?: Array<string>;
+        channels?: Array<string>;
+    };
+    url: '/discord/mentions';
+};
+
+export type ReadDiscordMentionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up, or Discord did not answer
+     */
+    503: unknown;
+};
+
+export type ReadDiscordMentionsError = ReadDiscordMentionsErrors[keyof ReadDiscordMentionsErrors];
+
+export type ReadDiscordMentionsResponses = {
+    /**
+     * OK
+     */
+    200: DiscordMentionsResponse;
+};
+
+export type ReadDiscordMentionsResponse = ReadDiscordMentionsResponses[keyof ReadDiscordMentionsResponses];
 
 export type ListDiscordRolesData = {
     body?: never;

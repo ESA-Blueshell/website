@@ -53,6 +53,9 @@ class DiscordMemberDirectory(
         return everyone()?.filterNot { it.id in taken }?.sortedBy { it.name.lowercase() }
     }
 
+    /** Everybody among [ids] who is in the server, as kept. */
+    fun named(ids: Set<String>): List<DiscordMember>? = everyone()?.filter { it.id in ids }
+
     /** Everybody in the server as Discord has them now, not as kept. */
     fun everyoneNow(): List<DiscordMember>? = everyone(fresh = true)
 

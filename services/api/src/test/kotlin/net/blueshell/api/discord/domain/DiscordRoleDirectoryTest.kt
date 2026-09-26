@@ -21,12 +21,14 @@ class DiscordRoleDirectoryTest {
         name: String,
         position: Int,
         managed: Boolean = false,
+        colour: Int = 0,
     ): GuildRoleResponse =
         mock {
             on { this.id } doReturn id
             on { this.name } doReturn name
             on { this.position } doReturn position
             on { this.managed } doReturn managed
+            on { color } doReturn colour
         }
 
     private fun directory(api: DiscordApi?): DiscordRoleDirectory {
@@ -71,5 +73,15 @@ class DiscordRoleDirectoryTest {
 
         assertThat(directory(null).pingable()).isNull()
         assertThat(directory(failing).pingable()).isNull()
+    }
+
+    @Test
+    fun `names any role a description mentions, with its colour where it has one`() {
+        val roles = listOf(role("324", "@everyone", 0), role("901", "Gamers", 1, colour = 0x3498DB), role("903", "Bot", 6, managed = true))
+        val api: DiscordApi = mock { on { listGuildRoles("324") } doReturn roles }
+
+        assertThat(directory(api).named(setOf("901", "903", "999")))
+            .containsExactly(DiscordRoleName("901", "Gamers", 0x3498DB), DiscordRoleName("903", "Bot", null))
+        assertThat(directory(null).named(setOf("901"))).isNull()
     }
 }

@@ -44,6 +44,7 @@ import PosterArt from "./PosterArt.vue"
 import {fitAcross} from "./fitAcross"
 import $markdownToHtml from "@/plugins/markdownToHtml"
 import {fallBackToCharacter} from "@/plugins/emojiArt"
+import {fillMentions} from "@/domains/discord"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 /**
@@ -164,7 +165,11 @@ const sizes = computed<string>(() => `${Math.ceil(width.value / perView.value)}p
 
 let observer: ResizeObserver | null = null
 
+const nameMentions = () => void fillMentions(scroller.value as HTMLElement)
+watch(() => items, nameMentions, {flush: "post"})
+
 onMounted(() => {
+  nameMentions()
   requestAnimationFrame(measureScroll)
   // A strip that is hidden measures nothing, which is not a width to fit posters to.
   observer = new ResizeObserver(entries => {
@@ -499,6 +504,11 @@ onBeforeUnmount(() => observer?.disconnect())
 
 .posters__said :deep(:is(br, hr, img:not(.emoji))) {
   display: none;
+}
+
+.posters__said :deep(.mention) {
+  color: var(--color-brand-lit);
+  font-weight: 600;
 }
 
 .posters__said :deep(img.emoji) {

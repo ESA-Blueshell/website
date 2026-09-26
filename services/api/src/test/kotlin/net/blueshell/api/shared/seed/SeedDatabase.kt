@@ -73,6 +73,12 @@ class SeedDatabase {
             CREATE TABLE committees (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL,
                 listed BOOLEAN NOT NULL DEFAULT TRUE, $LIVE);
+            CREATE TABLE game_channels (
+                game_id BIGINT NOT NULL, channel_id VARCHAR(32) NOT NULL, guild_id VARCHAR(32) NOT NULL,
+                channel_name VARCHAR(100) NOT NULL, PRIMARY KEY (game_id, channel_id));
+            CREATE TABLE game_esports_channels (
+                game_id BIGINT NOT NULL, channel_id VARCHAR(32) NOT NULL, guild_id VARCHAR(32) NOT NULL,
+                channel_name VARCHAR(100) NOT NULL, PRIMARY KEY (game_id, channel_id));
             CREATE TABLE committee_games (
                 committee_id BIGINT NOT NULL, game_code VARCHAR(32) NOT NULL, PRIMARY KEY (committee_id, game_code));
             CREATE TABLE user_game_account (

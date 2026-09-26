@@ -113,8 +113,16 @@ onBeforeUnmount(() => {
  */
 const trailing = computed(() => (props.mayEdit ? 1 : 0))
 
+/**
+ * How much larger than drawn the strip is shown.
+ *
+ * Past its widest the strip is drawn at that width and scaled up whole, so a zoomed-out or
+ * high-resolution screen gets the same strip larger rather than a wider, flatter one.
+ */
+const scale = computed(() => Math.max(1, width.value / STRIP.widest))
+
 /** Where everything on the strip sits, in pixels: the bands, the nodes and the line. */
-const axis = computed(() => stripAxis(props.stops, {width: width.value, trailing: trailing.value}))
+const axis = computed(() => stripAxis(props.stops, {width: width.value / scale.value, trailing: trailing.value}))
 const bands = computed(() => axis.value.bands)
 const nodes = computed(() => axis.value.nodes)
 const track = computed(() => axis.value.track)
@@ -296,257 +304,260 @@ const step = (from: number, by: number) => {
       '--lit': `${litFraction * 100}%`,
       '--h': `${STRIP.height}px`,
       '--track': `${track}px`,
+      '--k': scale,
     }"
     @mousemove="aim"
     @mouseleave="hovered = null; rest()"
   >
-    <div
-      ref="scroller"
-      class="timeline__scroll"
-      @scroll="measureScroll"
-    >
-      <div class="timeline__track">
-        <!--
-          One band per stop, tiled exactly so a node can sit in the middle of its own
-          stop and the division between two bands falls halfway between their nodes, which
-          is where whatever the strip governs divides too. Hovering highlights a band and
-          lights the line as far as its node; changing stop takes a click, so a pointer
-          crossing the strip changes nothing.
-        -->
-        <div class="timeline__stops">
-          <div
-            v-for="(band, index) in bands"
-            :key="band.stop.id"
-            class="stop-slot"
-            :class="{'stop-slot--editing': band.stop.id === pinned}"
-            :style="band.stop.accent ? {'--accent': band.stop.accent} : undefined"
-            @mouseenter="enter(band.stop.id)"
-          >
-            <button
-              class="stop"
-              :class="{
-                'stop--on': band.stop.id === selectedId,
-                'stop--lit': band.stop.id === hovered,
-                'stop--last': index === bands.length - 1 && !mayEdit,
-              }"
-              :aria-current="band.stop.id === selectedId ? 'true' : undefined"
-              :data-testid="`${testidPrefix}-node-${band.stop.id}`"
-              type="button"
-              @click="choose(band.stop.id)"
-              @focus="hovered = band.stop.id"
-              @keydown.left.prevent="step(index, -1)"
-              @keydown.right.prevent="step(index, 1)"
+    <div class="timeline__scale">
+      <div
+        ref="scroller"
+        class="timeline__scroll"
+        @scroll="measureScroll"
+      >
+        <div class="timeline__track">
+          <!--
+            One band per stop, tiled exactly so a node can sit in the middle of its own
+            stop and the division between two bands falls halfway between their nodes, which
+            is where whatever the strip governs divides too. Hovering highlights a band and
+            lights the line as far as its node; changing stop takes a click, so a pointer
+            crossing the strip changes nothing.
+          -->
+          <div class="timeline__stops">
+            <div
+              v-for="(band, index) in bands"
+              :key="band.stop.id"
+              class="stop-slot"
+              :class="{'stop-slot--editing': band.stop.id === pinned}"
+              :style="band.stop.accent ? {'--accent': band.stop.accent} : undefined"
+              @mouseenter="enter(band.stop.id)"
             >
-              <span class="sr-only">{{ band.stop.name }}</span>
-              <span
-                aria-hidden="true"
-                class="stop__wash"
-              />
-              <span
-                aria-hidden="true"
-                class="stop__label stop__label--lead"
-                :style="{top: band.high ? `${yOf(band.stop.id) + 18}px` : `${yOf(band.stop.id) - 34}px`}"
-              >{{ band.stop.label }}</span>
-              <span
-                aria-hidden="true"
-                class="stop__label stop__label--year"
-                :style="{top: band.high ? `${yOf(band.stop.id) + 32}px` : `${yOf(band.stop.id) - 20}px`}"
-              >{{ band.stop.sublabel }}</span>
+              <button
+                class="stop"
+                :class="{
+                  'stop--on': band.stop.id === selectedId,
+                  'stop--lit': band.stop.id === hovered,
+                  'stop--last': index === bands.length - 1 && !mayEdit,
+                }"
+                :aria-current="band.stop.id === selectedId ? 'true' : undefined"
+                :data-testid="`${testidPrefix}-node-${band.stop.id}`"
+                type="button"
+                @click="choose(band.stop.id)"
+                @focus="hovered = band.stop.id"
+                @keydown.left.prevent="step(index, -1)"
+                @keydown.right.prevent="step(index, 1)"
+              >
+                <span class="sr-only">{{ band.stop.name }}</span>
+                <span
+                  aria-hidden="true"
+                  class="stop__wash"
+                />
+                <span
+                  aria-hidden="true"
+                  class="stop__label stop__label--lead"
+                  :style="{top: band.high ? `${yOf(band.stop.id) + 18}px` : `${yOf(band.stop.id) - 34}px`}"
+                >{{ band.stop.label }}</span>
+                <span
+                  aria-hidden="true"
+                  class="stop__label stop__label--year"
+                  :style="{top: band.high ? `${yOf(band.stop.id) + 32}px` : `${yOf(band.stop.id) - 20}px`}"
+                >{{ band.stop.sublabel }}</span>
+                <!--
+                  The stop the strip is marking out, in whatever word the page marks it with. On
+                  the far side of the node from the two labels, so it reads as a note on the stop
+                  rather than a third line of its name. Spoken as part of the stop's name, which
+                  is why this is hidden like the labels are.
+                -->
+                <span
+                  v-if="band.stop.mark"
+                  aria-hidden="true"
+                  class="stop__label stop__mark"
+                  :data-testid="`${testidPrefix}-mark-${band.stop.id}`"
+                  :style="{top: band.high ? `${yOf(band.stop.id) - 26}px` : `${yOf(band.stop.id) + 12}px`}"
+                >{{ band.stop.mark }}</span>
+              </button>
+
               <!--
-                The stop the strip is marking out, in whatever word the page marks it with. On
-                the far side of the node from the two labels, so it reads as a note on the stop
-                rather than a third line of its name. Spoken as part of the stop's name, which
-                is why this is hidden like the labels are.
+                Offered only to somebody who may take it up. Where there is a pointer it belongs
+                to the stop being pointed at; where there is not, there is nothing to hover
+                with, so it simply stands.
               -->
-              <span
-                v-if="band.stop.mark"
-                aria-hidden="true"
-                class="stop__label stop__mark"
-                :data-testid="`${testidPrefix}-mark-${band.stop.id}`"
-                :style="{top: band.high ? `${yOf(band.stop.id) - 26}px` : `${yOf(band.stop.id) + 12}px`}"
-              >{{ band.stop.mark }}</span>
-            </button>
+              <button
+                v-if="mayEdit"
+                :aria-label="`Edit ${band.stop.name}`"
+                class="stop-slot__edit"
+                :data-testid="`${testidPrefix}-edit-${band.stop.id}`"
+                type="button"
+                @click="pinned = band.stop.id; emit('edit', band.stop.id)"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+                </svg>
+              </button>
+            </div>
 
             <!--
-              Offered only to somebody who may take it up. Where there is a pointer it belongs
-              to the stop being pointed at; where there is not, there is nothing to hover
-              with, so it simply stands.
+              Stops are added at the end of the line, which is where their absence is noticed,
+              so the offer is a band there rather than a control floating over it. It stands
+              rather than waiting to be hovered: there is no stop under the pointer for it to
+              belong to.
             -->
-            <button
+            <div
               v-if="mayEdit"
-              :aria-label="`Edit ${band.stop.name}`"
-              class="stop-slot__edit"
-              :data-testid="`${testidPrefix}-edit-${band.stop.id}`"
-              type="button"
-              @click="pinned = band.stop.id; emit('edit', band.stop.id)"
+              class="stop-slot stop-slot--add"
             >
-              <svg
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
+              <button
+                :aria-label="addLabel"
+                class="stop stop--add"
+                :data-testid="`${testidPrefix}-add`"
+                type="button"
+                @click="emit('add')"
               >
-                <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
-              </svg>
-            </button>
+                <span
+                  aria-hidden="true"
+                  class="stop__wash"
+                />
+                <span
+                  aria-hidden="true"
+                  class="stop__plus island-plus"
+                >
+                  <svg
+                    class="island-plus__edge"
+                    fill="none"
+                    viewBox="0 0 100 100"
+                  >
+                    <path d="M38 2 H62 V38 H98 V62 H62 V98 H38 V62 H2 V38 H38 Z" />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
 
           <!--
-            Stops are added at the end of the line, which is where their absence is noticed,
-            so the offer is a band there rather than a control floating over it. It stands
-            rather than waiting to be hovered: there is no stop under the pointer for it to
-            belong to.
+            The line, in two layers over the same path: the rule it always is, and the lit
+            stretch as far as the stop being read. Two svgs rather than two groups in one,
+            because the lit one is revealed by clipping its own box, and a box is a thing a
+            group does not have, which is what left the lit stretch measured against the
+            bounding box of the path and stopping short of the stop it was reporting.
           -->
-          <div
-            v-if="mayEdit"
-            class="stop-slot stop-slot--add"
-          >
-            <button
-              :aria-label="addLabel"
-              class="stop stop--add"
-              :data-testid="`${testidPrefix}-add`"
-              type="button"
-              @click="emit('add')"
+          <template v-if="axis.path">
+            <svg
+              aria-hidden="true"
+              class="timeline__line"
+              preserveAspectRatio="none"
+              :viewBox="`0 0 ${Math.max(track, 1)} ${STRIP.height}`"
             >
-              <span
-                aria-hidden="true"
-                class="stop__wash"
-              />
-              <span
-                aria-hidden="true"
-                class="stop__plus island-plus"
-              >
-                <svg
-                  class="island-plus__edge"
-                  fill="none"
-                  viewBox="0 0 100 100"
+              <defs>
+                <!--
+                  The line dissolves as it arrives at its end rather than stopping at one. Where
+                  the block that adds a stop bounds it, its end is in view, and a stub with a
+                  cap on it reads as a drawing laid on the strip rather than as the stops
+                  carrying on. Nothing is left over to fall on a block that is not a stop.
+                -->
+                <linearGradient
+                  :id="fadeId"
+                  gradientUnits="userSpaceOnUse"
+                  :x1="axis.to - STRIP.fade"
+                  :x2="axis.to"
+                  y1="0"
+                  y2="0"
                 >
-                  <path d="M38 2 H62 V38 H98 V62 H62 V98 H38 V62 H2 V38 H38 Z" />
-                </svg>
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <!--
-          The line, in two layers over the same path: the rule it always is, and the lit
-          stretch as far as the stop being read. Two svgs rather than two groups in one,
-          because the lit one is revealed by clipping its own box, and a box is a thing a
-          group does not have, which is what left the lit stretch measured against the
-          bounding box of the path and stopping short of the stop it was reporting.
-        -->
-        <template v-if="axis.path">
-          <svg
-            aria-hidden="true"
-            class="timeline__line"
-            preserveAspectRatio="none"
-            :viewBox="`0 0 ${Math.max(track, 1)} ${STRIP.height}`"
-          >
-            <defs>
-              <!--
-                The line dissolves as it arrives at its end rather than stopping at one. Where
-                the block that adds a stop bounds it, its end is in view, and a stub with a
-                cap on it reads as a drawing laid on the strip rather than as the stops
-                carrying on. Nothing is left over to fall on a block that is not a stop.
-              -->
-              <linearGradient
-                :id="fadeId"
-                gradientUnits="userSpaceOnUse"
-                :x1="axis.to - STRIP.fade"
-                :x2="axis.to"
-                y1="0"
-                y2="0"
-              >
-                <stop
-                  offset="0"
-                  stop-color="#fff"
-                />
-                <stop
-                  offset="1"
-                  stop-color="#fff"
-                  stop-opacity="0"
-                />
-              </linearGradient>
-              <mask
-                :id="maskId"
-                :height="STRIP.height"
-                maskUnits="userSpaceOnUse"
-                :width="axis.to - axis.from"
-                :x="axis.from"
-                y="0"
-              >
-                <rect
-                  :fill="`url(#${fadeId})`"
+                  <stop
+                    offset="0"
+                    stop-color="#fff"
+                  />
+                  <stop
+                    offset="1"
+                    stop-color="#fff"
+                    stop-opacity="0"
+                  />
+                </linearGradient>
+                <mask
+                  :id="maskId"
                   :height="STRIP.height"
+                  maskUnits="userSpaceOnUse"
                   :width="axis.to - axis.from"
                   :x="axis.from"
                   y="0"
-                />
-              </mask>
-            </defs>
-            <path
-              class="timeline__rule"
-              :d="axis.path"
-              fill="none"
-              :mask="`url(#${maskId})`"
-              vector-effect="non-scaling-stroke"
-            />
-          </svg>
+                >
+                  <rect
+                    :fill="`url(#${fadeId})`"
+                    :height="STRIP.height"
+                    :width="axis.to - axis.from"
+                    :x="axis.from"
+                    y="0"
+                  />
+                </mask>
+              </defs>
+              <path
+                class="timeline__rule"
+                :d="axis.path"
+                fill="none"
+                :mask="`url(#${maskId})`"
+                vector-effect="non-scaling-stroke"
+              />
+            </svg>
 
-          <svg
+            <svg
+              aria-hidden="true"
+              class="timeline__line timeline__lit"
+              preserveAspectRatio="none"
+              :viewBox="`0 0 ${Math.max(track, 1)} ${STRIP.height}`"
+            >
+              <path
+                :d="axis.path"
+                fill="none"
+                :mask="`url(#${maskId})`"
+                vector-effect="non-scaling-stroke"
+              />
+            </svg>
+          </template>
+
+          <!-- Drawn as elements rather than inside the svg: the line is stretched to the track
+               by its viewBox, and a circle in that space would stretch with it. -->
+          <span
+            v-for="node in nodes"
+            :key="node.id"
             aria-hidden="true"
-            class="timeline__line timeline__lit"
-            preserveAspectRatio="none"
-            :viewBox="`0 0 ${Math.max(track, 1)} ${STRIP.height}`"
-          >
-            <path
-              :d="axis.path"
-              fill="none"
-              :mask="`url(#${maskId})`"
-              vector-effect="non-scaling-stroke"
-            />
-          </svg>
-        </template>
-
-        <!-- Drawn as elements rather than inside the svg: the line is stretched to the track
-             by its viewBox, and a circle in that space would stretch with it. -->
-        <span
-          v-for="node in nodes"
-          :key="node.id"
-          aria-hidden="true"
-          class="timeline__dot"
-          :class="{
-            'timeline__dot--on': node.id === selectedId,
-            'timeline__dot--lit': node.id === hovered,
-          }"
-          :style="{left: `${node.x}px`, top: `${node.y}px`}"
-        />
+            class="timeline__dot"
+            :class="{
+              'timeline__dot--on': node.id === selectedId,
+              'timeline__dot--lit': node.id === hovered,
+            }"
+            :style="{left: `${node.x}px`, top: `${node.y}px`}"
+          />
+        </div>
       </div>
+
+      <!--
+        Where the strip holds more stops than fit, the way to the rest of them. Resting the
+        pointer on one travels that way; a click moves a screenful, which is what somebody
+        arriving by keyboard gets. Neither changes the stop being read.
+      -->
+      <pan-chevron
+        v-if="canPanBack"
+        :label="panBackLabel"
+        :live="travelling === -1"
+        :testid="`${testidPrefix}-pan-back`"
+        way="back"
+        @pan="panBy(-1)"
+      />
+
+      <pan-chevron
+        v-if="canPanOn"
+        :label="panOnLabel"
+        :live="travelling === 1"
+        :testid="`${testidPrefix}-pan-on`"
+        way="on"
+        @pan="panBy(1)"
+      />
     </div>
-
-    <!--
-      Where the strip holds more stops than fit, the way to the rest of them. Resting the
-      pointer on one travels that way; a click moves a screenful, which is what somebody
-      arriving by keyboard gets. Neither changes the stop being read.
-    -->
-    <pan-chevron
-      v-if="canPanBack"
-      :label="panBackLabel"
-      :live="travelling === -1"
-      :testid="`${testidPrefix}-pan-back`"
-      way="back"
-      @pan="panBy(-1)"
-    />
-
-    <pan-chevron
-      v-if="canPanOn"
-      :label="panOnLabel"
-      :live="travelling === 1"
-      :testid="`${testidPrefix}-pan-on`"
-      way="on"
-      @pan="panBy(1)"
-    />
   </div>
 </template>
 
@@ -560,6 +571,16 @@ const step = (from: number, by: number) => {
      than as a stretch of patterned page with a line over it. */
   background-color: var(--band-ground);
   user-select: none;
+}
+
+/* Scaled rather than zoomed: a transform leaves scroll positions and widths in the units
+   the strip's own arithmetic is done in. */
+.timeline__scale {
+  position: relative;
+  width: calc(100% / var(--k));
+  margin-bottom: calc(var(--h) * (var(--k) - 1));
+  transform: scale(var(--k));
+  transform-origin: 0 0;
 }
 
 /* The ends fade rather than stopping at a line: the strip belongs to the page it sits on. */

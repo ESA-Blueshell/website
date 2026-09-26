@@ -780,12 +780,12 @@ watch(open, (index) => {
 
   display: flex;
   width: 100%;
-  /* Grows with a wide screen, which a fixed height left a thin strip across. */
-  min-height: clamp(22rem, 27cqw, 38rem);
+  /* Grows with the width, zoomed out too, and stops short of filling the screen. */
+  min-height: clamp(22rem, 27cqw, 62svh);
 }
 
 .slices--short {
-  min-height: clamp(15rem, 18cqw, 26rem);
+  min-height: clamp(15rem, 18cqw, 42svh);
 }
 
 .slice {
@@ -1057,7 +1057,8 @@ watch(open, (index) => {
 .slice__name {
   min-width: 0;
   font-family: var(--font-display);
-  font-size: 1rem;
+  /* Smaller in a narrow slice, so a long word fits whole rather than breaking. */
+  font-size: clamp(0.7rem, 7.5cqi, 1rem);
   line-height: 1.1;
   text-transform: uppercase;
   overflow-wrap: break-word;
@@ -1071,7 +1072,7 @@ watch(open, (index) => {
 }
 
 .slices--short .slice:not(.slice--open) .slice__name {
-  font-size: 0.88rem;
+  font-size: clamp(0.7rem, 7cqi, 0.88rem);
 }
 
 .slice--open .slice__name {

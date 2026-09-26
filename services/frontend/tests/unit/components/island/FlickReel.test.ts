@@ -216,6 +216,20 @@ describe("FlickReel", () => {
     expect((slice(wrapper, "VALORANT").element as HTMLElement).style.width).toBe("289px")
   })
 
+  it("is drawn at its widest on a wider band and scaled up, with a drag scaled down to match", async () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(3840)
+    const wrapper = mountReel()
+    await wrapper.vm.$nextTick()
+    const band = wrapper.get("[data-testid=casual-band]")
+    Object.assign(band.element, {setPointerCapture: vi.fn(), hasPointerCapture: () => true})
+
+    expect((wrapper.get("[data-testid=casual-reel]").element as HTMLElement).style.getPropertyValue("--k")).toBe("2")
+    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.width).toBe("608px")
+    pointer(band.element, "pointerdown", 700)
+    pointer(band.element, "pointermove", 550)
+    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.getPropertyValue("--open")).toBe("0.750")
+  })
+
   it("starts over when the items change, and stops its frames when it goes", async () => {
     const wrapper = mountReel()
 

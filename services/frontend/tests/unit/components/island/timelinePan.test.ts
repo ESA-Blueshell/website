@@ -36,3 +36,39 @@ describe("the strip's own way sideways", () => {
     expect(asked[1]).toBeGreaterThan(0)
   })
 })
+
+describe("the strip on a wide screen", () => {
+  it("is drawn at its widest and scaled up whole, so its height keeps pace", async () => {
+    let seen: (entries: Array<{contentRect: {width: number}}>) => void = () => {}
+    vi.stubGlobal("ResizeObserver", class {
+      constructor(callback: typeof seen) { seen = callback }
+      observe() {}
+      disconnect() {}
+    })
+    const wrapper = mount(Timeline, {props: {stops, selectedId: 6, testidPrefix: "strip"}})
+
+    seen([{contentRect: {width: 3840}}])
+    await flushPromises()
+
+    const style = (wrapper.get("[data-testid=strip-timeline]").element as HTMLElement).style
+    expect(style.getPropertyValue("--k")).toBe("2")
+    expect(style.getPropertyValue("--track")).toBe(`${12 * (1920 / 7)}px`)
+    vi.unstubAllGlobals()
+  })
+})
+
+describe("a stop on the strip", () => {
+  it("is chosen by a click, lit by the pointer or focus, and stepped from with the arrows", async () => {
+    const wrapper = mount(Timeline, {props: {stops, selectedId: 6, testidPrefix: "strip"}})
+    const node = wrapper.get("[data-testid=strip-node-6]")
+
+    await node.element.closest(".stop-slot")!.dispatchEvent(new MouseEvent("mouseenter"))
+    await node.trigger("focus")
+    await node.trigger("click")
+    await node.trigger("keydown", {key: "ArrowLeft"})
+    await node.trigger("keydown", {key: "ArrowRight"})
+
+    expect(node.classes()).toContain("stop--lit")
+    expect(wrapper.emitted("select")).toEqual([[6], [5], [7]])
+  })
+})

@@ -77,12 +77,14 @@ describe("stripAxis", () => {
     expect(strip.track).toBe(2400)
   })
 
-  it("shows more bands on a wider strip rather than wider ones", () => {
+  it("shows no more than a handful of bands however wide the strip, widening them instead", () => {
     const many = Array.from({length: 24}, (_, i) => stop(i + 1, "Autumn", `${2000 + i}`))
     const strip = stripAxis(many, {width: 3840, trailing: 0})
 
-    // Nineteen fit at the floor, so each is a nineteenth of the strip.
-    expect(strip.track).toBeCloseTo(24 * (3840 / 19))
+    // Nineteen would fit at the floor; a strip that wide reads as a wall of stops, so the most
+    // across is held and each band is that share of the strip.
+    expect(strip.track).toBeCloseTo(24 * (3840 / STRIP.mostAcross))
+    expect(STRIP.mostAcross).toBeLessThan(10)
   })
 
   /*

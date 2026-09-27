@@ -148,7 +148,7 @@ test.describe("dragging a game's page between seasons", () => {
     await expect(page.locator(ASIDE)).toHaveCount(0)
   })
 
-  test("holds no height on the block it draws while the answer is slow, and lets the answer move the height", async ({page}) => {
+  test("holds the block it draws still while the answer is slow, and lets the answer move the height", async ({page}) => {
     await installApiMocks(page)
     const answer = heldOpen()
     await seasonRead(page, "19", async (route) => {
@@ -162,10 +162,11 @@ test.describe("dragging a game's page between seasons", () => {
     const band = page.getByTestId("season-swipe")
     await dragBand(page, band, {by: 260})
     await expect(page).toHaveURL(/\?season=19$/)
-    // The track stays until the answer does, carrying the block in; the band holds no height for it.
+    // The track stays until the answer does, carrying the block in, and the band is held still at
+    // the block's height so the page does not shorten under the reader meanwhile.
     await page.waitForTimeout(1000)
-    expect(await heldHeight(page, SWIPE)).toBe(null)
     const waiting = Math.round((await band.boundingBox())!.height)
+    expect(Math.abs(parseFloat((await heldHeight(page, SWIPE)) ?? "0") - waiting)).toBeLessThanOrEqual(1)
 
     // Then the answer lands, and moves the height itself by more than a rounding error.
     answer.release()

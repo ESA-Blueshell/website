@@ -93,7 +93,7 @@ export default defineConfig({
     },
     plugins: [
         emitVersion,
-        notoEmoji({cacheDir: fileURLToPath(new URL('./node_modules/.cache/noto-emoji', import.meta.url))}),
+        notoEmoji(),
         istanbul({
             include: ['src/**/*'],
             exclude: [

@@ -1,10 +1,9 @@
 // Standard emoji drawn in Noto, served as /emoji/<code points>.svg, one file per emoji
 // (architecture ADR-010). Everything but the flags comes from @iconify-json/noto. Noto keeps
-// its flags apart, so they are fetched from the noto-emoji repository at one pinned commit and
-// kept in node_modules/.cache, which is what lets a second build run without the network.
-import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs'
+// its flags apart, so they are fetched from the noto-emoji repository at one pinned commit, held
+// in memory for the build and never written anywhere but the bundle.
+import {readFileSync} from 'node:fs'
 import {createRequire} from 'node:module'
-import {join} from 'node:path'
 
 const require = createRequire(import.meta.url)
 
@@ -61,51 +60,54 @@ const fetchFlag = async (name) => {
     return fetchText(`${FLAGS_AT}/${text.trim()}`)
 }
 
-const cachedFlags = async (cacheDir) => {
-    const dir = join(cacheDir, NOTO_COMMIT)
-    const done = join(dir, '.complete')
+/*
+ * Served from the site's own origin, so a flag must be a picture and nothing that runs: an SVG
+ * opened on its own would run a script it held. The commit is pinned, so this only refuses what
+ * the pinned files never held; nginx sandboxes /emoji/ as well.
+ */
+const RUNS = /<script|\son[a-z]+\s*=|javascript:|<foreignObject/i
+const pictureOnly = (file, svg) => {
+    if (!/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(svg) || RUNS.test(svg)) {
+        throw new Error(`Noto flag ${file} is not a plain SVG picture`)
+    }
+    return svg
+}
+
+const fetchFlags = async () => {
     const files = new Map()
-    if (!existsSync(done)) {
-        mkdirSync(dir, {recursive: true})
-        const wanted = flagHexcodes()
-        for (let at = 0; at < wanted.length; at += 16) {
-            await Promise.all(wanted.slice(at, at + 16).map(async (hexcode) => {
-                const svg = await fetchFlag(`emoji_u${hexcode.toLowerCase().replaceAll('-', '_')}.svg`)
-                if (svg !== undefined) writeFileSync(join(dir, `${fileOf(hexcode)}.svg`), svg)
-            }))
-        }
-        for (const [file, path] of Object.entries(LICENCES)) {
-            const text = await fetchText(path)
-            if (!text) throw new Error(`No licence at ${path} in noto-emoji ${NOTO_COMMIT}`)
-            writeFileSync(join(dir, file), text)
-        }
-        writeFileSync(done, '')
+    const wanted = flagHexcodes()
+    for (let at = 0; at < wanted.length; at += 16) {
+        await Promise.all(wanted.slice(at, at + 16).map(async (hexcode) => {
+            const file = `${fileOf(hexcode)}.svg`
+            const svg = await fetchFlag(`emoji_u${hexcode.toLowerCase().replaceAll('-', '_')}.svg`)
+            if (svg !== undefined) files.set(file, pictureOnly(file, svg))
+        }))
     }
-    for (const hexcode of flagHexcodes()) {
-        const file = `${fileOf(hexcode)}.svg`
-        if (existsSync(join(dir, file))) files.set(file, readFileSync(join(dir, file), 'utf8'))
+    for (const [file, path] of Object.entries(LICENCES)) {
+        const text = await fetchText(path)
+        if (!text) throw new Error(`No licence at ${path} in noto-emoji ${NOTO_COMMIT}`)
+        files.set(file, text)
     }
-    for (const file of Object.keys(LICENCES)) files.set(file, readFileSync(join(dir, file), 'utf8'))
     // The Noto notice names the Apache licence without holding it, and the licence asks to
     // travel with the work.
     files.set('LICENSE-apache-2.0.txt', readFileSync(new URL('./Apache-2.0.txt', import.meta.url), 'utf8'))
     return files
 }
 
-export const notoEmoji = ({cacheDir}) => {
+export const notoEmoji = () => {
     let built
     let served
     return {
         name: 'noto-emoji',
         async generateBundle() {
-            built ??= new Map([...iconifyEmoji(), ...await cachedFlags(cacheDir)])
+            built ??= new Map([...iconifyEmoji(), ...await fetchFlags()])
             for (const [file, source] of built) {
                 this.emitFile({type: 'asset', fileName: `emoji/${file}`, source})
             }
         },
         configureServer(server) {
             // A dev server with no network still serves every emoji but the flags.
-            served ??= cachedFlags(cacheDir)
+            served ??= fetchFlags()
                 .catch(() => new Map())
                 .then(flags => new Map([...iconifyEmoji(), ...flags]))
             server.middlewares.use('/emoji/', async (request, response) => {

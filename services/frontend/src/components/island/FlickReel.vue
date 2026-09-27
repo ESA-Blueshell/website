@@ -281,8 +281,11 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
                 class="flick-reel__glow"
               />
               <span class="flick-reel__body">
-                <!-- Tick and name shrink as one, so the tick stays on top of the name at every size. -->
-                <span class="flick-reel__title">
+                <!-- Tick, icon and name shrink as one around the icon, which the rest keep to. -->
+                <span
+                  class="flick-reel__title"
+                  :class="{'flick-reel__title--bare': !item.icon}"
+                >
                   <span
                     aria-hidden="true"
                     class="flick-reel__tick"
@@ -292,11 +295,12 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
                       v-if="item.icon"
                       alt=""
                       :src="item.icon"
-                    >{{ item.title }}
+                    >
+                    <span class="flick-reel__words">{{ item.title }}</span>
                   </span>
                 </span>
-                <!-- In the flow under the name rather than laid over the slice's foot: on a phone the
-                 notes and chips wrap, and a fixed gap under the name let them run into it. -->
+                <!-- Laid over the room the name rises out of, so their wrapping and fading never
+                     move the name. -->
                 <span class="flick-reel__more">
                   <span
                     v-for="note in item.notes ?? []"
@@ -545,37 +549,51 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   background: linear-gradient(to top, color-mix(in oklab, var(--color-ground) 94%, transparent), color-mix(in oklab, var(--color-ground) 60%, transparent) 40%, transparent);
 }
 
+/*
+ * The icon's row is the anchor everything keeps to: it rises with the slice's opening in a
+ * straight line, by the room the notes under it need once open, and nothing drawn in it changes
+ * that room. The name wraps as the slice narrows without moving the icon or the tick above it.
+ */
 .flick-reel__body {
+  --side: calc(var(--cut) + 1.1rem);
+  --foot: 1.6rem;
+  --more-room: 4.8rem;
+  --anchor: 2.8rem;
+
   position: absolute;
-  inset: auto 0 0;
+  right: 0;
+  bottom: calc(var(--foot) + var(--open) * var(--more-room));
+  left: 0;
   z-index: 3;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  padding: 1.4rem calc(var(--cut) + 1.1rem) 1.6rem;
+  padding: 0 var(--side);
 }
 
 /* Laid out at the width it is drawn at once scaled, so a long name wraps in a shut slice
    instead of running off it. A transform, so the shrinking is the compositor's work. */
 .flick-reel__title {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+  position: relative;
+  display: block;
   width: calc(100% / (0.42 + 0.58 * var(--open)));
   scale: calc(0.42 + 0.58 * var(--open));
   transform-origin: left bottom;
 }
 
 .flick-reel__tick {
+  position: absolute;
+  bottom: calc(100% + 0.45rem);
+  left: 0;
   width: 2.4rem;
   height: 3px;
   background-color: var(--accent);
 }
 
+/* As tall as the icon whatever the name does: a name longer than a line spills evenly above and
+   below it, so the icon holds its place. */
 .flick-reel__name {
   display: flex;
-  align-items: center;
   gap: 0.6rem;
+  align-items: center;
+  height: var(--anchor);
   font-family: var(--font-display);
   font-size: 2.4rem;
   line-height: 1.05;
@@ -583,22 +601,32 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   color: var(--color-chalk);
 }
 
+/* Without an icon the name's first line is the anchor, and a second line goes below it. */
+.flick-reel__title--bare .flick-reel__name {
+  align-items: flex-start;
+}
+
 .flick-reel__name img {
-  width: 2.8rem;
-  height: 2.8rem;
+  flex: none;
+  width: var(--anchor);
+  height: var(--anchor);
   object-fit: contain;
 }
 
-/* Grows with the slice's opening, so the name rises by the row's own height and no further. */
+.flick-reel__words {
+  min-width: 0;
+}
+
 .flick-reel__more {
+  position: absolute;
+  top: calc(100% + 0.8rem);
+  right: var(--side);
+  left: var(--side);
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.2rem;
   align-items: center;
   pointer-events: none;
-  max-height: calc(var(--open) * 10rem);
-  margin-top: calc(var(--open) * 0.5rem);
-  overflow: hidden;
   opacity: calc(var(--open) * 3 - 2);
   translate: 0 calc((1 - var(--open)) * 0.8rem);
 }
@@ -739,16 +767,14 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 }
 
 .flick-reel--narrow .flick-reel__body {
-  padding: 1rem calc(var(--cut) + 0.6rem) 1.1rem;
+  --side: calc(var(--cut) + 0.6rem);
+  --foot: 1.1rem;
+  --more-room: 5.6rem;
+  --anchor: 2rem;
 }
 
 .flick-reel--narrow .flick-reel__name {
   font-size: 1.6rem;
-}
-
-.flick-reel--narrow .flick-reel__name img {
-  width: 2rem;
-  height: 2rem;
 }
 
 .flick-reel--narrow .flick-reel__more {

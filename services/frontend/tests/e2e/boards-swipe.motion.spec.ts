@@ -2,7 +2,7 @@ import {devices, type Locator} from "@playwright/test"
 import type {Page} from "./test"
 import {expect, test} from "./test"
 import {dragBand, standing} from "./bandSwipe"
-import {aimedAt, arrivedOpen, framesOf} from "./sliceBand"
+import {arrivedOpen, framesOf, heightsHeldFrom} from "./sliceBand"
 import {recordScrolls, SCROLLER, scrolled, scrollsAsked, sixBoards} from "./boardLine"
 import {installApiMocks} from "./mocks"
 
@@ -46,15 +46,9 @@ const written = sixBoards.map(board => ({
   })),
 }))
 
-/** Under this much, the band calls a difference in height a rounding error and does not carry it. */
+/** Under this much, a difference in height is a rounding error rather than another board. */
 const HAIR = 8
 
-/** Where the band stands once no height is held on it at all, which is the end of the pass. */
-const standsAt = (page: Page) => page.waitForFunction(() => {
-  const shell = document.querySelector("[data-testid=\"board-swipe\"]") as HTMLElement | null
-  if (!shell || shell.style.height) return null
-  return Math.round(shell.getBoundingClientRect().height)
-}).then(handle => handle.jsonValue())
 
 /** Sampled rather than polled to a figure: the claim is that nothing moved, not where it ended. */
 const unmoved = async (page: Page, band: Locator, height: number) => {
@@ -173,37 +167,35 @@ test.describe("dragging the board page", () => {
     expect(seen[0]!.height).toBeGreaterThan(shut.height + 10)
   })
 
-  test("aims the pass at the height the band it brings in stands at, on a swipe and on a hit", async ({page}) => {
+  // Animating the height across a pass laid out and painted the whole page below the band on every
+  // frame, which on a phone was most of the time a swipe took. A swipe holds no height; a hit holds
+  // the leaving board's, still, so the page does not shorten under a reader mid-pass, and lets the
+  // page take the new one in one step.
+  test("animates no height through a pass: a swipe holds none, a hit holds the leaving board's and lets go", async ({page}) => {
     await installApiMocks(page, {boards: written})
     await page.goto("/board?board=3")
     await expect(page.getByTestId("board-band-name")).toHaveText("Drieden")
 
     const band = page.getByTestId("board-swipe")
-    const from = Math.round((await band.boundingBox())!.height)
+    const height = async () => Math.round((await band.boundingBox())!.height)
+    const from = await height()
+    const held = await heightsHeldFrom(page, SWIPE)
 
-    // The pass a finger plays measures the board it is dragging in, which is drawn open — the
-    // axis is claimed before it is mounted — so the figure it aims at is the finished layout.
     await dragBand(page, band, {by: 260})
-    const swiped = await aimedAt(page, SWIPE, from)
     await expect(page).toHaveURL(/\?board=2$/)
-
-    // Aimed at a real difference rather than at the height it already stood at, which is what
-    // makes the two claims below claims about anything.
-    expect(Math.abs(swiped - from)).toBeGreaterThan(HAIR)
-    // And it is the height the band stands at once nothing is held any more: the swipe ends on
-    // the finished band, so nothing resizes after the finger has gone.
-    expect(await standsAt(page)).toBe(swiped)
+    await expect.poll(async () => Math.abs((await height()) - from)).toBeGreaterThan(HAIR)
+    const swiped = await height()
     await unmoved(page, band, swiped)
+    expect(await held()).toEqual([])
 
-    // The pass the band plays for itself, a stop arriving without a gesture, aims at the same
-    // thing: it measures the arriving board a frame after it was built, and it was built open.
     await page.getByTestId("board-node-5").click()
-    const hit = await aimedAt(page, SWIPE, swiped)
     await expect(page.getByTestId("board-band-name")).toHaveText("Eeveelutions")
+    await expect.poll(async () => Math.abs((await height()) - swiped)).toBeGreaterThan(HAIR)
+    await expect.poll(() => band.evaluate(el => (el as HTMLElement).style.height)).toBe("")
 
-    expect(Math.abs(hit - swiped)).toBeGreaterThan(HAIR)
-    expect(await standsAt(page)).toBe(hit)
-    await unmoved(page, band, hit)
+    const hit = await held()
+    expect(hit).toHaveLength(1)
+    expect(Math.abs(parseFloat(hit[0]!) - swiped)).toBeLessThanOrEqual(1)
   })
 
   test("leans and springs home at the end of the line, where there is no board that way", async ({page}) => {

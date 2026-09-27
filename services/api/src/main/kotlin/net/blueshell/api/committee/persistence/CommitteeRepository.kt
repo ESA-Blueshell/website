@@ -14,6 +14,9 @@ interface CommitteeRepository : BaseRepository<Committee, Long> {
 
     fun findBySlug(slug: String): Committee?
 
+    /** The committees the release before the address added, which carry none until they are saved. */
+    fun findAllBySlugIsNull(): List<Committee>
+
     @Query("select count(c) from Committee c join c.gameCodes code where code = :code")
     fun countNamingGame(
         @Param("code") code: String,

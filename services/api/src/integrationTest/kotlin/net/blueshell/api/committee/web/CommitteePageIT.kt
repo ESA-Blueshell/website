@@ -2,6 +2,7 @@ package net.blueshell.api.committee.web
 
 import com.jayway.jsonpath.JsonPath
 import net.blueshell.api.committee.persistence.CommitteeRepository
+import net.blueshell.api.committee.persistence.addressOf
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
@@ -76,6 +77,23 @@ class CommitteePageIT : UserTestSupport() {
             assertThat(body).doesNotContain(person.firstName, person.lastName, person.email)
         }
         mvc.perform(get("/committees/address/{address}", "nobody-${System.nanoTime()}")).andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `a committee the release before added, with no address stored, answers to the one its name makes`() {
+        val name = "Old Release ${System.nanoTime()}"
+        transactionTemplate.execute {
+            entityManager
+                .createNativeQuery("INSERT INTO committees (name, description) VALUES (:name, 'Added before addresses')")
+                .setParameter("name", name)
+                .executeUpdate()
+        }
+
+        mvc
+            .perform(get("/committees/address/{address}", addressOf(name)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.name").value(name))
+            .andExpect(jsonPath("$.slug").value(addressOf(name)))
     }
 
     @Test

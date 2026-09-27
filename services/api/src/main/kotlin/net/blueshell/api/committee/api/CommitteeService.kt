@@ -35,10 +35,17 @@ class CommitteeService
                 },
             )
 
-        /** The committee whose page answers to [address], whatever its case. */
+        /**
+         * The committee whose page answers to [address], whatever its case. One the release before
+         * this one added has no address stored yet, and answers to the one its name makes.
+         */
         @Transactional(readOnly = true)
-        fun findByAddress(address: String): Committee =
-            repository.findBySlug(address.trim().lowercase()) ?: throw UnknownCommitteeAddress(address)
+        fun findByAddress(address: String): Committee {
+            val asked = address.trim().lowercase()
+            return repository.findBySlug(asked)
+                ?: repository.findAllBySlugIsNull().firstOrNull { it.slug == asked }
+                ?: throw UnknownCommitteeAddress(address)
+        }
 
         @Transactional
         fun createWithMembers(

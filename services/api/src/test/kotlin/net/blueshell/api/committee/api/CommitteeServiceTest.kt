@@ -64,6 +64,14 @@ class CommitteeServiceTest {
     }
 
     @Test
+    fun `finds a committee stored without an address by the one its name makes`() {
+        val lan = committee(1, "Lan Cie")
+        whenever(repository.findAllBySlugIsNull()).thenReturn(listOf(committee(2, "Board"), lan))
+
+        assertThat(service.findByAddress("Lan-Cie")).isSameAs(lan)
+    }
+
+    @Test
     fun `adds a committee at an address made from its name, listed, with its banner and games`() {
         val banner = mock<File>()
         whenever(pictures.of("b.webp", FileType.COMMITTEE_BANNER)).thenReturn(banner)

@@ -45,6 +45,9 @@ describe("who sits on a committee", () => {
     expect(wrapper.get("[data-testid=committee-edit-seat-7]").text()).toContain("Nelly Bee")
     expect(wrapper.get("[data-testid=committee-edit-seat-8]").text()).toContain("Account 8")
     expect(users.readUser).toHaveBeenCalledTimes(2)
+
+    await wrapper.get("[data-testid=committee-edit-role-8] input").setValue("Treasurer")
+    expect(wrapper.props("modelValue")).toEqual([{userId: 7, role: "Chair"}, {userId: 8, role: "Treasurer"}])
   })
 
   it("searches as somebody types, leaves out who is seated, and seats who is picked", async () => {

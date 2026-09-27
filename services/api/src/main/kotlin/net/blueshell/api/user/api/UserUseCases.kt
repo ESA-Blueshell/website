@@ -3,6 +3,7 @@ package net.blueshell.api.user.api
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.security.StepUp
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.util.MappingUtil
 import net.blueshell.api.user.domain.UserQuery
@@ -105,6 +106,7 @@ class UserUseCases(
             ),
         )
         val before = service.findById(id)
+        data.memberProfile?.let { validate(it.completenessFor(before.hasRole(Role.MEMBER))) }
         val oldEmail = before.email
         val movesAddress = !data.email.trim().equals(oldEmail, ignoreCase = true)
         // Moving somebody's address moves where their password resets go, so the board member proves it is them.
@@ -137,8 +139,10 @@ class UserUseCases(
         // Username and email are absent from the self-service shape, so only the
         // two fields it can change are checked.
         validate(UserUniqueness(subjectId = id, discordId = data.discordId, phoneNumber = data.phoneNumber))
+        val found = service.findById(id)
+        data.memberProfile?.let { validate(it.completenessFor(found.hasRole(Role.MEMBER))) }
         val user =
-            service.findById(id).apply {
+            found.apply {
                 discord = data.discord
                 discordId = data.discordId
                 phoneNumber = data.phoneNumber

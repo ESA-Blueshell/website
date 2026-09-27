@@ -74,10 +74,10 @@ class SignupRequestValidationTest {
         assertThat(details.memberProfile).isNull()
     }
 
-    // @Valid on the nested profile is what makes the second step's fields refusable at
-    // all; without it a blank nationality would travel as far as the entity.
+    // Whether a profile must name a nationality turns on who it belongs to, which the request
+    // cannot know: the signup and the account writes refuse it, not the request's shape.
     @Test
-    fun `the details carry the refusals of the profile inside them`() {
+    fun `a blank nationality is the writes' to refuse, not the request's`() {
         val details =
             SignupDetailsRequest(
                 username = "applicant",
@@ -98,6 +98,6 @@ class SignupRequestValidationTest {
                     ),
             )
 
-        assertThat(messagesFor(details)).containsExactly("memberProfile.nationality")
+        assertThat(messagesFor(details)).isEmpty()
     }
 }

@@ -16,6 +16,7 @@
           :user-id="login.userId"
           show-submit
           submit-text="Save address"
+          @submitted="saved"
         />
       </div>
     </div>
@@ -26,7 +27,7 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
-import {useRoute} from "vue-router"
+import {useRoute, useRouter} from "vue-router"
 import AccountFrame from "@/components/common/AccountFrame.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {type AddressResponse, type CreateAddressRequest, readAddress} from "@/domains/user"
@@ -44,6 +45,16 @@ const address = ref<AddressModel>({
 })
 const store = useStore()
 const route = useRoute()
+const router = useRouter()
+
+/* The first address somebody writes is theirs from then on: the account menu and this page's
+   address both move to it, so saving again corrects it rather than writing a second. */
+const saved = (ok: boolean) => {
+  const id = address.value.id
+  if (!ok || id == null || route.params.id) return
+  void store.dispatch("setAddressId", id)
+  void router.replace(`/account/addresses/${id}`)
+}
 
 const login = computed(() => store.getters.getLogin)
 

@@ -1,5 +1,6 @@
 package net.blueshell.api.auth.domain
 
+import jakarta.validation.Validation
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
@@ -33,7 +34,9 @@ class SignupResumeUseCasesTest {
     private val activation = mock<UserActivationService>()
     private val jobs = mock<JobQueue>()
 
-    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs)
+    private val validator = Validation.buildDefaultValidatorFactory().validator
+
+    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs, validator)
 
     private fun applicant(id: Long? = APPLICANT_ID): User {
         val user =

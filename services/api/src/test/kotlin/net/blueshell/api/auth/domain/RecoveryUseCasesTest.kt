@@ -1,5 +1,6 @@
 package net.blueshell.api.auth.domain
 
+import jakarta.validation.Validation
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
@@ -31,7 +32,8 @@ class RecoveryUseCasesTest {
     private val memberProfiles = mock<MemberProfileService>()
     private val useCases =
         RecoveryUseCases(passwordRecoveryService, activationService, completion, previews, jobs)
-    private val signupUseCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activationService, jobs)
+    private val validator = Validation.buildDefaultValidatorFactory().validator
+    private val signupUseCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activationService, jobs, validator)
 
     @Nested
     inner class ResetPassword {

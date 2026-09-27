@@ -52,6 +52,11 @@ const props = withDefaults(defineProps<{
   submitText?: string
   options?: {
     includeMemberProfile?: boolean
+    /**
+     * Whether the member fields must be filled in, which they must for a member and nobody else.
+     * TWIN: the api's MemberProfileCompleteness, which refuses the same two fields.
+     */
+    memberProfileRequired?: boolean
     updateKind?: "auto" | "user" | "board"
     /** Public registration goes through POST /signup; POST /users is board-only. */
     createVia?: "signup" | "board"
@@ -94,6 +99,7 @@ const {isReadonly, isBoard} = useReadonly()
 const isCreating = computed<boolean>(() => !user.value?.id)
 
 const includeMemberProfile = computed<boolean>(() => props.options?.includeMemberProfile ?? false)
+const memberProfileRequired = computed<boolean>(() => props.options?.memberProfileRequired ?? true)
 const configuredUpdateKind = computed<"auto" | "user" | "board">(() => props.options?.updateKind ?? "auto")
 const effectiveUpdateKind = computed<"user" | "board">(() => {
   if (configuredUpdateKind.value === "auto") {
@@ -141,10 +147,9 @@ const toMemberProfileRequest = (
   profile: UpsertMemberProfileRequest | null | undefined,
 ): UpsertMemberProfileRequest | undefined => {
   if (!includeMemberProfile.value) return undefined
-  return {
-    ...defaultMemberProfile(),
-    ...profile,
-  }
+  const whole = {...defaultMemberProfile(), ...profile}
+  // An empty date is no date: the api reads "" as a date it cannot parse.
+  return {...whole, dateOfBirth: whole.dateOfBirth || undefined}
 }
 
 const ensureMemberProfile = (): UpsertMemberProfileRequest => {
@@ -536,9 +541,9 @@ defineExpose({validate, save, signupSession})
               v-model="memberProfileModel.dateOfBirth"
               test-id="user-form-date-of-birth-field"
               :component-props="{ type: 'date' }"
-              label="Date of Birth*"
+              :label="memberProfileRequired ? 'Date of Birth*' : 'Date of Birth'"
               name="dateOfBirth"
-              rules="dateRequired"
+              :rules="memberProfileRequired ? 'dateRequired' : ''"
             />
           </v-col>
           <v-col
@@ -549,9 +554,9 @@ defineExpose({validate, save, signupSession})
               v-model="memberProfileModel.nationality"
               test-id="user-form-nationality-field"
               :component="NationalitySelect"
-              label="Nationality*"
+              :label="memberProfileRequired ? 'Nationality*' : 'Nationality'"
               name="nationality"
-              rules="required"
+              :rules="memberProfileRequired ? 'required' : ''"
             />
           </v-col>
         </v-row>

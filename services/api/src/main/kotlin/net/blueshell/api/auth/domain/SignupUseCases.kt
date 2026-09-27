@@ -1,5 +1,7 @@
 package net.blueshell.api.auth.domain
 
+import jakarta.validation.ConstraintViolationException
+import jakarta.validation.Validator
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.model.SignupOutcome
@@ -7,6 +9,7 @@ import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.SignupDetailsData
 import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.api.completenessFor
 import net.blueshell.api.user.api.upsertInto
 import net.blueshell.api.user.persistence.Address
 import org.springframework.http.HttpStatus
@@ -29,6 +32,7 @@ class SignupUseCases(
     private val completion: SignupCompletionService,
     private val activation: UserActivationService,
     private val jobs: JobQueue,
+    private val validator: Validator,
 ) {
     fun issueSession(userId: Long): SignupSession = signupTokens.issue(users.findById(userId))
 
@@ -133,6 +137,11 @@ class SignupUseCases(
             )
         }
 
+        // A signup is somebody becoming a member, so what a member's profile needs is needed here.
+        data.memberProfile?.let { profile ->
+            val refused = validator.validate(profile.completenessFor(member = true))
+            if (refused.isNotEmpty()) throw ConstraintViolationException(refused)
+        }
         refuseIfTaken(users.existsByUsernameAndIdNot(data.username, account.id), "That username is already in use")
         data.discordId?.let {
             refuseIfTaken(users.existsByDiscordIdAndIdNot(it, account.id), "That Discord account is linked to another account")

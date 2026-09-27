@@ -5,21 +5,17 @@ import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import EditPage from "@/components/island/EditPage.vue"
 import FormControl from "@/components/island/FormControl.vue"
-import FormField from "@/components/island/FormField.vue"
 import FormFields from "@/components/island/FormFields.vue"
 import FormSection from "@/components/island/FormSection.vue"
-import IconButton from "@/components/island/IconButton.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import PreviewFrame from "@/components/island/PreviewFrame.vue"
 import RecordFact from "@/components/island/RecordFact.vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
 import RecordHead from "@/components/island/RecordHead.vue"
-import SearchPicker from "@/components/island/SearchPicker.vue"
 import type {Picture} from "@/components/island/pictures"
 import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import {useCasualGames} from "@/domains/games"
-import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
 import {
   addCommittee,
   type Committee,
@@ -30,6 +26,7 @@ import {
   storeCommitteeBanner,
   storeCommitteeIcon,
 } from "../adapters/committees"
+import CommitteeSeats, {type Seat} from "../island/CommitteeSeats.vue"
 import {cellOf, initialsOf} from "../useCommittees"
 
 /**
@@ -38,8 +35,6 @@ import {cellOf, initialsOf} from "../useCommittees"
  * own members write its description, banner and games, and see the rest without changing it.
  */
 defineOptions({name: "CommitteeEditor"})
-
-type Seat = {userId: number; role: string}
 
 const props = defineProps<{
   /** The committee being corrected, or nothing where the board is adding one. */
@@ -66,7 +61,6 @@ const gameCodes = ref<string[]>([])
 const seats = ref<Seat[]>([])
 const failure = ref<string | null>(null)
 const saving = ref(false)
-const accounts = ref<MemberAccount[]>([])
 
 watch(() => props.committee, async committee => {
   name.value = committee?.name ?? ""
@@ -78,7 +72,6 @@ watch(() => props.committee, async committee => {
   gameCodes.value = [...(committee?.gameCodes ?? [])]
   failure.value = null
   if (!props.asBoard) return
-  if (accounts.value.length === 0) accounts.value = (await loadMemberAccounts()) ?? []
   if (committee != null) {
     const held = committee.members ?? (await listCommittees()).find(one => one.id === committee.id)?.members ?? []
     seats.value = held.map(member => ({userId: member.userId, role: member.role ?? ""}))
@@ -96,19 +89,11 @@ const typeSlug = (value: string | null) => {
   slug.value = value ?? ""
 }
 
-const accountOptions = computed(() => accounts.value
-  .filter(account => !seats.value.some(seat => seat.userId === account.id))
-  .map(account => ({key: String(account.id), label: account.name, note: account.email ?? undefined})))
-
-const nameOf = (userId: number) => accounts.value.find(account => account.id === userId)?.name ?? `Member ${userId}`
-const seat = (key: string) => { seats.value = [...seats.value, {userId: Number(key), role: ""}] }
-const unseat = (userId: number) => { seats.value = seats.value.filter(one => one.userId !== userId) }
-
 const storeBanner = (file: File) => storeCommitteeBanner(file, props.committee?.id ?? null)
 const storeIcon = (file: File) => storeCommitteeIcon(file, props.committee?.id ?? null)
 
 const complete = computed(() => description.value.trim() !== ""
-  && (!props.asBoard || (name.value.trim() !== "" && slug.value.trim() !== "" && seats.value.length > 0)))
+  && (!props.asBoard || (name.value.trim() !== "" && slug.value.trim() !== "")))
 
 const {games} = useCasualGames()
 const named = computed(() => gameCodes.value
@@ -167,6 +152,7 @@ const submit = async () => {
     saving.value = false
   }
 }
+
 </script>
 
 <template>
@@ -232,7 +218,7 @@ const submit = async () => {
             <check-box
               v-model="listed"
               :disabled="!asBoard"
-              label="Listed among the committees to join"
+              label="Show on the committees page and in the menu"
               testid="committee-edit-listed"
             />
           </div>
@@ -264,56 +250,7 @@ const submit = async () => {
         v-if="asBoard"
         title="Members"
       >
-        <ul
-          v-if="seats.length > 0"
-          class="committee-editor__seats"
-        >
-          <li
-            v-for="one in seats"
-            :key="one.userId"
-            class="committee-editor__seat"
-            :data-testid="`committee-edit-seat-${one.userId}`"
-          >
-            <span class="committee-editor__who">{{ nameOf(one.userId) }}</span>
-            <form-control
-              v-model="one.role"
-              class="committee-editor__role"
-              label="Role"
-              :testid="`committee-edit-role-${one.userId}`"
-            />
-            <icon-button
-              danger
-              :label="`Take ${nameOf(one.userId)} off the committee`"
-              :testid="`committee-edit-unseat-${one.userId}`"
-              @click="unseat(one.userId)"
-            >
-              <svg
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-width="1.6"
-                viewBox="0 0 24 24"
-              ><path d="M6 6l12 12M18 6 6 18" /></svg>
-            </icon-button>
-          </li>
-        </ul>
-        <form-field
-          label="Add a member"
-          testid="committee-edit-member"
-        >
-          <template #default="{controlId, labelId}">
-            <search-picker
-              :control-id="controlId"
-              empty-note="Every member is on it already."
-              :labelled-by="labelId"
-              :options="accountOptions"
-              placeholder="Search a member"
-              testid-prefix="committee-edit-member"
-              @pick="seat"
-            />
-          </template>
-        </form-field>
+        <committee-seats v-model="seats" />
       </form-section>
 
       <notice-box
@@ -388,30 +325,6 @@ const submit = async () => {
 .committee-editor__note {
   font-size: 0.88rem;
   color: var(--color-ash);
-}
-
-.committee-editor__seats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.committee-editor__seat {
-  display: grid;
-  grid-template-columns: minmax(0, 12rem) minmax(0, 1fr) auto;
-  gap: 1rem;
-  align-items: center;
-}
-
-.committee-editor__who {
-  overflow: hidden;
-  font-size: 0.95rem;
-  color: var(--color-chalk);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .committee-editor__save {

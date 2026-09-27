@@ -1256,7 +1256,6 @@ components:
         members:
           items:
             $ref: '#/components/schemas/CommitteeMemberResponse'
-          minItems: 1
           type: array
         name:
           maxLength: 255
@@ -1699,7 +1698,6 @@ components:
         members:
           items:
             $ref: '#/components/schemas/CommitteeMemberRequest'
-          minItems: 1
           type: array
         name:
           maxLength: 100
@@ -5263,7 +5261,6 @@ components:
         members:
           items:
             $ref: '#/components/schemas/CommitteeMemberRequest'
-          minItems: 1
           type: array
         name:
           maxLength: 100

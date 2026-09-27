@@ -75,7 +75,13 @@ export async function loadMemberAccounts(): Promise<MemberAccount[] | null> {
  * them. A picker cannot hold the whole table, so it asks as the reader types (#1139).
  */
 export async function searchMemberAccounts(term: string, size: number): Promise<UserDetailResponse[]> {
+  return (await findMemberAccounts(term, size)) ?? []
+}
+
+/** The same search, answering nothing where the api refused it rather than an empty page. */
+export async function findMemberAccounts(term: string, size: number): Promise<UserDetailResponse[] | null> {
   const res = await findUsers({query: {search: term, page: 0, size}})
+  if (res.error) return null
   return res.data?.content ?? []
 }
 

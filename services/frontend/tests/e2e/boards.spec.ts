@@ -1247,11 +1247,10 @@ test.describe("travelling between boards with a finger", () => {
     await dragBand(page, page.getByTestId("board-swipe"), {by: 60, on: page.getByTestId("board-member-edit-92")})
 
     await expect(page).toHaveURL(/\/board$/)
-    await expect(page.getByTestId("board-member-dialog")).toHaveCount(0)
     // And the pencil still works when it is pressed rather than dragged from — pressed once the
     // band has come to rest, since a press that has to scroll first sets the band moving again.
     await pressSliceEdit(page.getByTestId("board-member-edit-92"))
-    await expect(page.getByTestId("board-member-dialog")).toBeVisible()
+    await expect(page).toHaveURL(/\/board\/\d+\/members\/92\/edit$/)
   })
 
   test("lands on the board asked for last when two swipes follow one another", async ({page}) => {

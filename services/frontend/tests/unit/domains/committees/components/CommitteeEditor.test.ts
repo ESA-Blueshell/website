@@ -12,8 +12,6 @@ const adapter = vi.hoisted(() => ({
   listCommittees: vi.fn(),
 }))
 vi.mock("@/domains/committees/adapters/committees", () => adapter)
-const users = vi.hoisted(() => ({loadMemberAccounts: vi.fn()}))
-vi.mock("@/domains/user", () => users)
 vi.mock("@/domains/games", async importOriginal => {
   const {ref} = await import("vue")
   return {
@@ -26,14 +24,14 @@ const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slot
   () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()])})
 const ImagePicker = {name: "ImagePicker", props: ["label", "picture", "store", "testid"], emits: ["update:picture"], template: "<div />"}
 const EventGamesPicker = {name: "EventGamesPicker", props: ["modelValue", "testid"], emits: ["update:modelValue"], template: "<div />"}
-const SearchPicker = {name: "SearchPicker", props: ["options", "placeholder", "testidPrefix", "emptyNote"], emits: ["pick"], template: "<div />"}
+const CommitteeSeats = {name: "CommitteeSeats", props: ["modelValue"], emits: ["update:modelValue"], template: "<div data-testid=committee-edit-member />"}
 const ArtCells = {name: "ArtCells", props: ["cells", "testidPrefix"], template: "<div />"}
 const RecordHead = {name: "RecordHead", props: ["title", "archived"], template: "<div data-testid=head><slot /><slot name=\"facts\" /></div>"}
 const MarkdownEditor = {name: "MarkdownEditor", props: ["modelValue"], emits: ["update:modelValue"], template: "<div />"}
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
-  ImagePicker, EventGamesPicker, SearchPicker, ArtCells, RecordHead, MarkdownEditor,
+  ImagePicker, EventGamesPicker, CommitteeSeats, ArtCells, RecordHead, MarkdownEditor,
   CutButton: {props: ["href", "testid", "disabled"], template: "<a :href='href' :data-testid='testid' :data-disabled='disabled'><slot /></a>"},
 }
 
@@ -52,8 +50,9 @@ const describe_ = (wrapper: ReturnType<typeof mountEditor>, text: string) =>
 
 beforeEach(() => {
   Object.values(adapter).forEach(one => one.mockReset())
-  users.loadMemberAccounts.mockReset().mockResolvedValue([{id: 4, name: "Nelly Bee", email: "n@x.nl"}, {id: 5, name: "Mo", email: null}])
 })
+
+const seats = (wrapper: ReturnType<typeof mountEditor>) => wrapper.getComponent(CommitteeSeats)
 
 describe("the committee edit page, for the board", () => {
   it("adds a committee with its address following its name, its members, and previews its head and cell", async () => {
@@ -68,12 +67,9 @@ describe("the committee edit page, for the board", () => {
     await input(wrapper, "name").setValue("Pub Quiz Cie")
     describe_(wrapper, "Questions.")
     await wrapper.get("input[data-testid=committee-edit-listed]").setValue(false)
-    expect(wrapper.getComponent(SearchPicker).props("options")).toHaveLength(2)
-    wrapper.getComponent(SearchPicker).vm.$emit("pick", "4")
+    expect(seats(wrapper).props("modelValue")).toEqual([])
+    seats(wrapper).vm.$emit("update:modelValue", [{userId: 4, role: " Chair "}])
     await flushPromises()
-    await wrapper.get("[data-testid=committee-edit-role-4] input").setValue("Chair")
-    expect(wrapper.get("[data-testid=committee-edit-seat-4]").text()).toContain("Nelly Bee")
-    expect(wrapper.getComponent(SearchPicker).props("options")).toEqual([{key: "5", label: "Mo", note: undefined}])
     expect(wrapper.getComponent(RecordHead).props("title")).toBe("Pub Quiz Cie")
     expect(wrapper.getComponent(ArtCells).props("cells")[0]).toMatchObject({title: "Pub Quiz Cie", sub: "Questions."})
     wrapper.getComponent(EventGamesPicker).vm.$emit("update:modelValue", ["CHESS"])
@@ -98,11 +94,9 @@ describe("the committee edit page, for the board", () => {
     wrapper.getComponent(EventGamesPicker).vm.$emit("update:modelValue", ["CS2", "CHESS"])
     await flushPromises()
     expect(wrapper.get("[data-testid=head]").text()).toContain("Counter-Strike 2 · Chess")
-    expect(wrapper.get("[data-testid=committee-edit-seat-5]").text()).toContain("Mo")
-    await wrapper.get("[data-testid=committee-edit-unseat-5]").trigger("click")
-    wrapper.getComponent(SearchPicker).vm.$emit("pick", "9")
+    expect(seats(wrapper).props("modelValue")).toEqual([{userId: 5, role: ""}])
+    seats(wrapper).vm.$emit("update:modelValue", [{userId: 9, role: ""}])
     await flushPromises()
-    expect(wrapper.get("[data-testid=committee-edit-seat-9]").text()).toContain("Member 9")
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
@@ -111,9 +105,8 @@ describe("the committee edit page, for the board", () => {
     expect(wrapper.emitted("saved")).toBeUndefined()
   })
 
-  it("never saves a committee without a member, and stores a banner against the committee it is for", async () => {
-    adapter.listCommittees.mockResolvedValue([])
-    users.loadMemberAccounts.mockResolvedValue(null)
+  it("saves a committee with nobody on it, and stores its pictures against the committee they are for", async () => {
+    adapter.saveCommitteeAsBoard.mockResolvedValue({ok: true, committee: lan})
     const wrapper = mountEditor({...lan, members: []} as never, true)
     await flushPromises()
     const file = new File(["x"], "b.png")
@@ -124,12 +117,12 @@ describe("the committee edit page, for the board", () => {
     bannerPicker!.vm.$emit("update:picture", null)
     iconPicker!.vm.$emit("update:picture", null)
     await wrapper.get("form").trigger("submit")
+    await flushPromises()
 
     expect(adapter.storeCommitteeBanner).toHaveBeenCalledWith(file, 1)
     expect(adapter.storeCommitteeIcon).toHaveBeenCalledWith(file, 1)
     expect(adapter.listCommittees).not.toHaveBeenCalled()
-    expect(adapter.saveCommitteeAsBoard).not.toHaveBeenCalled()
-    expect(wrapper.get("[data-testid=committee-edit-save]").attributes("data-disabled")).toBe("true")
+    expect(adapter.saveCommitteeAsBoard).toHaveBeenCalledWith(1, 3, expect.objectContaining({banner: null, icon: null, members: []}))
   })
 })
 
@@ -144,7 +137,6 @@ describe("the committee edit page, for its own members", () => {
     expect(wrapper.get("input[data-testid=committee-edit-listed]").attributes("disabled")).toBeDefined()
     expect(wrapper.find("[data-testid=committee-edit-member]").exists()).toBe(false)
     expect(wrapper.get("[data-testid=committee-edit-fixed]").text()).toBe("The board changes the name, address, listing and members.")
-    expect(users.loadMemberAccounts).not.toHaveBeenCalled()
     describe_(wrapper, "LANs, monthly.")
     await wrapper.get("form").trigger("submit")
     await flushPromises()

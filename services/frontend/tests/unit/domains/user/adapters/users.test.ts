@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest"
-import {loadMemberAccounts} from "@/domains/user/adapters/users"
+import {findMemberAccounts, loadMemberAccounts, searchMemberAccounts} from "@/domains/user/adapters/users"
 import {findUsers} from "@/services/api"
 
 vi.mock("@/services/api", async (importOriginal) => ({
@@ -86,5 +86,21 @@ describe("loadMemberAccounts", () => {
     vi.mocked(findUsers).mockResolvedValue({data: {}} as never)
 
     await expect(loadMemberAccounts()).resolves.toBeNull()
+  })
+})
+
+describe("searching accounts", () => {
+  it("asks for one page of what was typed, and tells a refusal from nobody found", async () => {
+    vi.mocked(findUsers)
+      .mockResolvedValueOnce(page([{id: 1, fullName: "Roos Kruk"}]))
+      .mockResolvedValueOnce({error: {}} as never)
+      .mockResolvedValueOnce({error: {}} as never)
+      .mockResolvedValueOnce({data: {}} as never)
+
+    await expect(findMemberAccounts("roos", 20)).resolves.toEqual([{id: 1, fullName: "Roos Kruk"}])
+    expect(findUsers).toHaveBeenLastCalledWith({query: {search: "roos", page: 0, size: 20}})
+    await expect(findMemberAccounts("roos", 20)).resolves.toBeNull()
+    await expect(searchMemberAccounts("roos", 20)).resolves.toEqual([])
+    await expect(searchMemberAccounts("roos", 20)).resolves.toEqual([])
   })
 })

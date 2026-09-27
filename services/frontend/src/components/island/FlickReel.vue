@@ -557,7 +557,8 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 .flick-reel__body {
   --side: calc(var(--cut) + 1.1rem);
   --foot: 1.6rem;
-  --more-room: 4.8rem;
+  --more-room: 5.4rem;
+  --more-gap: 0.8rem;
   --anchor: 2.8rem;
 
   position: absolute;
@@ -619,7 +620,7 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 
 .flick-reel__more {
   position: absolute;
-  top: calc(100% + 0.8rem);
+  top: calc(100% + var(--more-gap));
   right: var(--side);
   left: var(--side);
   display: flex;
@@ -635,19 +636,19 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   display: inline-flex;
   gap: 0.4rem;
   align-items: center;
-  font-size: 0.92rem;
+  font-size: 1.05rem;
   color: var(--color-chalk);
 }
 
 .flick-reel__note svg {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   color: #5865f2;
 }
 
 .flick-reel__chip {
-  padding: 0.18rem 0.5rem;
-  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.82rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-chalk);
@@ -656,7 +657,7 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 
 .flick-reel__open {
   font-family: var(--font-display);
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent);
@@ -769,7 +770,8 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 .flick-reel--narrow .flick-reel__body {
   --side: calc(var(--cut) + 0.6rem);
   --foot: 1.1rem;
-  --more-room: 5.6rem;
+  --more-room: 6.6rem;
+  --more-gap: 1.2rem;
   --anchor: 2rem;
 }
 

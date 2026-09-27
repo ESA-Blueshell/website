@@ -33,7 +33,7 @@ class ShippedCommitteePages(
             } finally {
                 DataSourceUtils.releaseConnection(connection, dataSource)
             }
-        } ?: 0
+        }
 
     private fun load(connection: Connection): Int {
         val ledger = SeedLedger(connection, SEED)

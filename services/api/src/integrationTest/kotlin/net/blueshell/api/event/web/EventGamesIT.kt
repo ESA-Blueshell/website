@@ -62,7 +62,10 @@ class EventGamesIT : UserTestSupport() {
         val created =
             mvc
                 .perform(
-                    post("/events").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(eventBody(committee.id!!, listOf(go, chess))),
+                    post("/events")
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventBody(committee.id!!, listOf(go, chess))),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.gameCodes", contains(chess, go)))
                 .andReturn()
@@ -84,14 +87,24 @@ class EventGamesIT : UserTestSupport() {
         val dota = addGame(board, "Dota${System.nanoTime()}")
         val created =
             mvc
-                .perform(post("/events").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(eventBody(committee.id!!, listOf(dota))))
+                .perform(
+                    post("/events")
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventBody(committee.id!!, listOf(dota))),
+                )
                 .andExpect(status().isCreated)
                 .andReturn()
         val id = JsonPath.read<Int>(created.response.contentAsString, "$.id")
         archive(board, dota).andExpect(status().isOk)
 
         mvc
-            .perform(post("/events").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(eventBody(committee.id!!, listOf(dota))))
+            .perform(
+                post("/events")
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventBody(committee.id!!, listOf(dota))),
+            )
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameArchived"))
         val kept = eventBody(committee.id!!, listOf(dota)).replace("\"gameCodes\"", "\"version\": 0, \"gameCodes\"")

@@ -106,12 +106,22 @@ class CommitteePageIT : UserTestSupport() {
         val page = """{"description":"We run quizzes.","gameCodes":["$game"]}"""
 
         mvc
-            .perform(put("/committees/{id}/page", committee.id).with(signedIn(member)).contentType(MediaType.APPLICATION_JSON).content(page))
+            .perform(
+                put("/committees/{id}/page", committee.id)
+                    .with(signedIn(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(page),
+            )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.description").value("We run quizzes."))
             .andExpect(jsonPath("$.gameCodes", contains(game)))
         mvc
-            .perform(put("/committees/{id}/page", committee.id).with(signedIn(outsider)).contentType(MediaType.APPLICATION_JSON).content(page))
+            .perform(
+                put("/committees/{id}/page", committee.id)
+                    .with(signedIn(outsider))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(page),
+            )
             .andExpect(status().isForbidden)
         mvc
             .perform(
@@ -133,7 +143,10 @@ class CommitteePageIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/committees/{id}/archived", first.id).with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content("""{"archived":true}"""),
+                put("/committees/{id}/archived", first.id)
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"archived":true}"""),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.archived").value(true))
         mvc

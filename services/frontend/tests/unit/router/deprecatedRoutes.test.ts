@@ -43,9 +43,9 @@ describe("Edit routes", () => {
 })
 
 describe("Committee routes", () => {
-  it("serves every committee from its address, and keeps the manager on its own", () => {
+  it("serves every committee from its address, and sends the old manager to the committees", () => {
     expect(router.resolve("/committees/lancie").name).toBe("committee")
-    expect(router.resolve("/committees/manage").name).toBe("committeeManager")
+    expect(router.resolve("/committees/manage").matched[0]?.redirect).toBe("/committees")
     expect(router.resolve("/committees").name).toBe("committees")
     expect(router.resolve("/committees/new").name).toBe("committeeNew")
     expect(router.resolve("/committees/lancie/edit").name).toBe("committeeEdit")

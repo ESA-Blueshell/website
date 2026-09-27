@@ -116,7 +116,6 @@ export const managementFor = (reader: NavReader): NavEntry[] => [
     ? [
       {label: "Manage addresses", to: "/addresses/manage"},
       {label: "Manage account recovery", to: "/recovery/manage"},
-      {label: "Manage committees", to: "/committees/manage"},
       {label: "Manage users", to: "/user-manager"},
     ]
     : []),

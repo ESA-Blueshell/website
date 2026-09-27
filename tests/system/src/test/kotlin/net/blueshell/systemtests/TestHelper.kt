@@ -1166,7 +1166,7 @@ object TestHelper {
     )
 
     /**
-     * Insert a `committees` row. Returns the new committee id.
+     * Insert a `committees` row at the address its name makes. Returns the new committee id.
      */
     fun createCommittee(
         name: String = "Committee ${UUID.randomUUID().toString().take(8)}",
@@ -1175,11 +1175,12 @@ object TestHelper {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             return conn
                 .prepareStatement(
-                    "INSERT INTO committees (name, description) VALUES (?, ?)",
+                    "INSERT INTO committees (name, description, slug) VALUES (?, ?, ?)",
                     java.sql.Statement.RETURN_GENERATED_KEYS,
                 ).use { stmt ->
                     stmt.setString(1, name)
                     stmt.setString(2, description)
+                    stmt.setString(3, committeeAddressOf(name))
                     stmt.executeUpdate()
                     val keys = stmt.generatedKeys
                     require(keys.next()) { "INSERT committees produced no id" }
@@ -1187,6 +1188,14 @@ object TestHelper {
                 }
         }
     }
+
+    /** The address the api makes from a committee's name. TWIN: `addressOf` in `CommitteeAddress.kt`. */
+    fun committeeAddressOf(name: String): String =
+        name
+            .lowercase()
+            .replace(Regex("[^\\p{L}\\p{N}]+"), "-")
+            .trim('-')
+            .take(64)
 
     /**
      * Insert a `committee_members` row linking the given user to a
@@ -1223,6 +1232,26 @@ object TestHelper {
                     "SELECT id, name, description FROM committees WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
                 ).use { stmt ->
                     stmt.setLong(1, committeeId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) {
+                        CommitteeRow(
+                            id = rs.getLong("id"),
+                            name = rs.getString("name"),
+                            description = rs.getString("description"),
+                        )
+                    } else {
+                        null
+                    }
+                }
+        }
+
+    fun findCommitteeByName(name: String): CommitteeRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn
+                .prepareStatement(
+                    "SELECT id, name, description FROM committees WHERE name = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setString(1, name)
                     val rs = stmt.executeQuery()
                     if (rs.next()) {
                         CommitteeRow(

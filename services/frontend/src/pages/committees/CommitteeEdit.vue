@@ -29,6 +29,11 @@ const saved = async (now: Committee) => {
   await refresh()
   void router.replace(`/committees/${now.slug}`)
 }
+
+const removed = async () => {
+  await refresh()
+  void router.replace("/committees")
+}
 </script>
 
 <template>
@@ -38,6 +43,7 @@ const saved = async (now: Committee) => {
     :back="back"
     :committee="adding ? null : committee"
     @cancel="router.replace(back)"
+    @removed="removed"
     @saved="saved"
   />
   <not-found v-else-if="answered" />

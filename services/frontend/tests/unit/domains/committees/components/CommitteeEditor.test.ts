@@ -10,6 +10,7 @@ const adapter = vi.hoisted(() => ({
   storeCommitteeBanner: vi.fn(),
   storeCommitteeIcon: vi.fn(),
   listCommittees: vi.fn(),
+  removeCommittee: vi.fn(),
 }))
 vi.mock("@/domains/committees/adapters/committees", () => adapter)
 vi.mock("@/domains/games", async importOriginal => {
@@ -25,13 +26,14 @@ const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slot
 const ImagePicker = {name: "ImagePicker", props: ["label", "picture", "store", "testid"], emits: ["update:picture"], template: "<div />"}
 const EventGamesPicker = {name: "EventGamesPicker", props: ["modelValue", "testid"], emits: ["update:modelValue"], template: "<div />"}
 const CommitteeSeats = {name: "CommitteeSeats", props: ["modelValue"], emits: ["update:modelValue"], template: "<div data-testid=committee-edit-member />"}
+const ConfirmDialog = {name: "ConfirmDialog", props: ["open", "question", "title", "failure", "working"], emits: ["confirm", "update:open"], template: "<div />"}
 const ArtCells = {name: "ArtCells", props: ["cells", "testidPrefix"], template: "<div />"}
 const RecordHead = {name: "RecordHead", props: ["title", "archived"], template: "<div data-testid=head><slot /><slot name=\"facts\" /></div>"}
 const MarkdownEditor = {name: "MarkdownEditor", props: ["modelValue"], emits: ["update:modelValue"], template: "<div />"}
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
-  ImagePicker, EventGamesPicker, CommitteeSeats, ArtCells, RecordHead, MarkdownEditor,
+  ImagePicker, EventGamesPicker, CommitteeSeats, ConfirmDialog, ArtCells, RecordHead, MarkdownEditor,
   CutButton: {props: ["href", "testid", "disabled"], template: "<a :href='href' :data-testid='testid' :data-disabled='disabled'><slot /></a>"},
 }
 
@@ -124,6 +126,27 @@ describe("the committee edit page, for the board", () => {
     expect(adapter.listCommittees).not.toHaveBeenCalled()
     expect(adapter.saveCommitteeAsBoard).toHaveBeenCalledWith(1, 3, expect.objectContaining({banner: null, icon: null, members: []}))
   })
+
+  it("deletes a committee once asked, and says why where the api would not", async () => {
+    adapter.removeCommittee.mockResolvedValueOnce({ok: false, reason: "The committee could not be deleted."}).mockResolvedValueOnce({ok: true})
+    const wrapper = mountEditor({...lan, members: []} as never, true)
+    await flushPromises()
+    const dialog = wrapper.getComponent(ConfirmDialog)
+
+    await wrapper.get("[data-testid=committee-edit-remove]").trigger("click")
+    expect(dialog.props("open")).toBe(true)
+    expect(dialog.props("question")).toContain("Archiving keeps it")
+    dialog.vm.$emit("confirm")
+    await flushPromises()
+    expect(dialog.props("failure")).toBe("The committee could not be deleted.")
+    dialog.vm.$emit("confirm")
+    dialog.vm.$emit("confirm")
+    await flushPromises()
+
+    expect(adapter.removeCommittee).toHaveBeenCalledTimes(2)
+    expect(wrapper.emitted("removed")).toHaveLength(1)
+    dialog.vm.$emit("update:open", false)
+  })
 })
 
 describe("the committee edit page, for its own members", () => {
@@ -136,6 +159,7 @@ describe("the committee edit page, for its own members", () => {
     expect(input(wrapper, "slug").attributes("disabled")).toBeDefined()
     expect(wrapper.get("input[data-testid=committee-edit-listed]").attributes("disabled")).toBeDefined()
     expect(wrapper.find("[data-testid=committee-edit-member]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=committee-edit-remove]").exists()).toBe(false)
     expect(wrapper.get("[data-testid=committee-edit-fixed]").text()).toBe("The board changes the name, address, listing and members.")
     describe_(wrapper, "LANs, monthly.")
     await wrapper.get("form").trigger("submit")

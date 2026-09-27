@@ -30,6 +30,38 @@
   font-display: swap;
 }
 
+// The body face again, with a true bold and italics, for descriptions only: bold elsewhere on the
+// site is drawn with SemiBold and stays so. Licence beside it: BarlowSemiCondensed-OFL.txt.
+@font-face {
+  font-family: 'Barlow Semi Condensed Prose';
+  src: url('@/assets/fonts/BarlowSemiCondensed-Regular.ttf') format('truetype');
+  font-weight: 100 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow Semi Condensed Prose';
+  src: url('@/assets/fonts/BarlowSemiCondensed-Bold.ttf') format('truetype');
+  font-weight: 600 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow Semi Condensed Prose';
+  src: url('@/assets/fonts/BarlowSemiCondensed-Italic.ttf') format('truetype');
+  font-weight: 100 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow Semi Condensed Prose';
+  src: url('@/assets/fonts/BarlowSemiCondensed-BoldItalic.ttf') format('truetype');
+  font-weight: 600 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 @font-face {
   font-family: 'Blueshell';
   src: local("Blueshell"), url('@/assets/fonts/Blueshell.woff2') format('woff2'), url('@/assets/fonts/Blueshell.ttf') format('truetype');

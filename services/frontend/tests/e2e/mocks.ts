@@ -2045,5 +2045,8 @@ export async function writeMarkdown(page: Page, label: string | Locator, text: s
   await editor.click()
   await page.keyboard.press("ControlOrMeta+a")
   await page.keyboard.type(text)
+  // Read back selected, since a span shows its marks only while the selection touches it.
+  // MarkdownFieldHelper in the system tests reads it the same way; change one, change the other.
+  await page.keyboard.press("ControlOrMeta+a")
   await expect(editor).toContainText(text)
 }

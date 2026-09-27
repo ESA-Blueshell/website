@@ -25,6 +25,7 @@ const html = computed(() => $markdownToHtml(source))
 /* The island resets headings and lists to plain text, so each is given its look back here. */
 .markdown-view {
   overflow-wrap: break-word;
+  font-family: var(--font-prose);
 }
 
 .markdown-view :deep(:is(p, ul, ol, blockquote, pre, table)) {

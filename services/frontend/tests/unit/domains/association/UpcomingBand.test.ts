@@ -57,7 +57,7 @@ describe("UpcomingBand", () => {
     const strip = wrapper.findComponent({name: "PosterStrip"})
     expect(strip.classes()).toContain("island-dark")
     const [art, plate] = strip.props("items")
-    expect(art).toMatchObject({id: 1, banner: "/art/1.webp", href: "/events/1", said: "What the art cannot say."})
+    expect(art).toMatchObject({id: 1, banner: "/art/1.webp", href: "/events/1", said: "What  the art\ncannot say."})
     expect(art.state).toBe("Sign-ups open · 18 of 24 places")
     expect(plate.banner).toBeUndefined()
     expect(plate.where).toBe("Esports Lounge Twente")

@@ -474,11 +474,29 @@ onBeforeUnmount(() => observer?.disconnect())
 .posters__said {
   display: -webkit-box;
   overflow: hidden;
+  font-family: var(--font-prose);
   font-size: 0.88rem;
   line-height: 1.5;
   color: var(--color-chalk);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+}
+
+/* Three lines of a card hold no headings or lists, so every block runs on as words in the
+   body's size, a space apart, and keeps only its bold, italics and emoji. */
+.posters__said :deep(:is(h1, h2, h3, h4, h5, h6, p, ul, ol, li, blockquote, pre, table)) {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.posters__said :deep(:is(h1, h2, h3, h4, h5, h6, p, li, blockquote, pre, tr)::after) {
+  content: " ";
+}
+
+.posters__said :deep(:is(br, hr, img)) {
+  display: none;
 }
 
 /* As tall as the posters, not the room kept above and below them for the lit one to grow. */

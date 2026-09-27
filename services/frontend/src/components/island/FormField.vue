@@ -133,7 +133,8 @@ const saidId = `${uid}-said`
 }
 
 /* Text that runs to more than a line rests its label on the first line rather than the middle. */
-.island-field--inside:has(.island-textarea) .island-field__label {
+.island-field--inside:has(.island-textarea) .island-field__label,
+.island-field--inside:has(.island-markdown) .island-field__label {
   top: 2.1rem;
 }
 
@@ -153,7 +154,8 @@ const saidId = `${uid}-said`
 
 /* The label is the placeholder while it rests, so the control does not say the same thing
    under it. */
-.island-field--inside:not(:focus-within) :deep(input::placeholder) {
+.island-field--inside:not(:focus-within) :deep(input::placeholder),
+.island-field--inside:not(:focus-within) :deep(.cm-placeholder) {
   color: transparent;
 }
 

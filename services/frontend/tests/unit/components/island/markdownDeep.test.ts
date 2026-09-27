@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {mount} from "@vue/test-utils"
+import {flushPromises, mount} from "@vue/test-utils"
 import {markdown, markdownLanguage} from "@codemirror/lang-markdown"
 import {EditorSelection, EditorState} from "@codemirror/state"
 import {EditorView} from "@codemirror/view"
@@ -10,18 +10,51 @@ const editor = (props: Record<string, unknown> = {}) =>
   mount(MarkdownEditor, {props: {modelValue: "", ...props}, attachTo: document.body})
 
 const press = (wrapper: ReturnType<typeof editor>, key: string) =>
-  wrapper.find(".cm-content").trigger("keydown", {key, ctrlKey: true, metaKey: true})
+  wrapper.find(".cm-content").trigger("keydown", {key, ctrlKey: true})
 
 describe("the editor's shortcuts", () => {
-  it("wraps what is selected in bold, and again to unwrap it", async () => {
+  it("writes bold marks where the cursor is, for what is typed next", async () => {
     const wrapper = editor({modelValue: "go to Ameland"})
-    const view = (wrapper.vm as unknown as {$el: HTMLElement})
-    expect(view.$el).toBeTruthy()
 
     await press(wrapper, "b")
-    await press(wrapper, "i")
 
-    expect(wrapper.emitted("update:modelValue") ?? []).toBeTruthy()
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["****go to Ameland"])
+    wrapper.unmount()
+  })
+})
+
+describe("the editor inside a form", () => {
+  it("says so once the writer leaves it, so the form can judge it", async () => {
+    const wrapper = editor()
+    const content = wrapper.find(".cm-content").element as HTMLElement
+
+    content.focus()
+    content.blur()
+    await flushPromises()
+
+    expect(wrapper.emitted("blur")).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it("points at what the form says about it, and says when it is wrong", async () => {
+    const wrapper = editor({describedBy: "said-1"})
+    const content = () => wrapper.find(".cm-content")
+
+    expect(content().attributes("aria-describedby")).toBe("said-1")
+    expect(content().attributes("aria-invalid")).toBeUndefined()
+    await wrapper.setProps({invalid: true})
+    expect(content().attributes("aria-invalid")).toBe("true")
+    wrapper.unmount()
+  })
+
+  it("keeps a stored value longer than the cap whole, rather than cutting it", async () => {
+    const wrapper = editor({maxLength: 5})
+
+    await wrapper.setProps({modelValue: "longer than five"})
+    await flushPromises()
+
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined()
+    expect(wrapper.find(".cm-content").text()).toContain("longer than five")
     wrapper.unmount()
   })
 })

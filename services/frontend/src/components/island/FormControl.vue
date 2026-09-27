@@ -207,10 +207,13 @@ const inset = computed(() =>
       <markdown-editor
         v-else-if="kind === 'markdown'"
         v-model="text"
+        :described-by="describedBy"
         :disabled="disabled"
+        :invalid="invalid"
         :labelled-by="labelId"
         :placeholder="placeholder"
         :testid="named ? `${named}-editor` : undefined"
+        @blur="emit('blur')"
       />
 
       <text-area

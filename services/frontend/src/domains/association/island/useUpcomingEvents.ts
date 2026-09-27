@@ -50,7 +50,7 @@ export function useUpcomingEvents(): {
   const posters = computed<PosterItem[]>(() => events.value.map((one): PosterItem => ({
     id: one.id,
     title: one.title,
-    said: (one.description ?? "").replace(/\s+/gu, " ").trim(),
+    said: one.description ?? "",
     banner: one.banner?.url,
     srcset: one.banner ? srcsetOf(one.banner) : undefined,
     width: one.banner?.width ?? undefined,

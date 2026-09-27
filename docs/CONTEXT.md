@@ -558,6 +558,44 @@ follows from the records is read rather than written.
 Not the **office** above, which is the role one board member held. A board holds
 no office of its own; it is in office, or it is not.
 
+## Writing
+
+### Description
+
+The formatted text a committee, a board, a board member, a game, a line-up row, a
+sponsor, an event or a sign-up question carries. Every description is written in the
+same way and reads the same wherever it is shown, on the site and in Discord.
+
+**A description is not "promo".** Members call an event's description its promo, but
+"promo" once named the banner and is kept out of the code, the issues and the screen.
+
+A description is written in the way Discord writes a message: `__x__` underlines,
+`||x||` is a spoiler and `-# x` is subtext. Tables and pictures are the site's own
+additions, which Discord shows as they were typed.
+
+### Emoji
+
+A small picture set in a description's text. Two kinds exist:
+
+- **Standard emoji** — the Unicode emoji every device knows, drawn by the site in one
+  set of its own, so they look the same on every device
+- **Server emoji** — a picture uploaded to a Discord server. The association's server
+  offers its own while a description is written; one taken from any other server
+  still shows
+
+An emoji is written by its Discord name between colons and becomes the emoji once the
+closing colon is typed. The name is only how it is typed: what the description holds
+is the emoji itself.
+
+### Mention
+
+A name in a description that points at something in the association's Discord server:
+a member (`@name`), a role (`@role`) or a channel (`#channel`). A **timestamp** sits
+beside them: a moment each reader sees in their own time zone.
+
+**A mention is not a ping.** A role mentioned in a description notifies nobody; the
+roles an event notifies are its pinged roles.
+
 ## User interface
 
 ### Island

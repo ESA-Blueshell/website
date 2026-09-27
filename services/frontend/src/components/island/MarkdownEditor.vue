@@ -1,15 +1,11 @@
 <script lang="ts" setup>
 /* The document is the markdown: nothing is serialised either way, only what is drawn changes. */
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
-import {acceptCompletion, autocompletion, completionKeymap} from "@codemirror/autocomplete"
-import {defaultKeymap, history, historyKeymap} from "@codemirror/commands"
-import {markdown, markdownLanguage} from "@codemirror/lang-markdown"
-import {HighlightStyle, syntaxHighlighting} from "@codemirror/language"
+import {autocompletion} from "@codemirror/autocomplete"
 import {Compartment, EditorState} from "@codemirror/state"
-import {EditorView, keymap, placeholder as showPlaceholder} from "@codemirror/view"
-import {tags} from "@lezer/highlight"
+import {EditorView, placeholder as showPlaceholder} from "@codemirror/view"
+import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
 import {emojiCompletion} from "@/components/island/markdownEmoji"
-import {markdownLive, wrapWith} from "@/components/island/markdownLive"
 
 defineOptions({name: "MarkdownEditor"})
 
@@ -18,6 +14,8 @@ const {
   disabled = false,
   minHeight = "12rem",
   labelledBy = undefined,
+  describedBy = undefined,
+  invalid = false,
   label = undefined,
   maxLength = undefined,
   testid = undefined,
@@ -25,6 +23,8 @@ const {
   placeholder?: string
   disabled?: boolean
   labelledBy?: string
+  describedBy?: string
+  invalid?: boolean
   /** The name read out where no element on the page names the field. */
   label?: string
   maxLength?: number
@@ -33,6 +33,8 @@ const {
 }>()
 
 const text = defineModel<string>({default: ""})
+
+const emit = defineEmits<{blur: []}>()
 
 /* `Mod` is command on a Mac and control elsewhere, so only the wording changes. */
 const onMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -75,30 +77,19 @@ watch(helping, (up) => {
 const host = ref<HTMLElement | null>(null)
 let view: EditorView | undefined
 const editable = new Compartment()
+const described = new Compartment()
 
-/* What markdown looks like once it is being read rather than typed. */
-const look = HighlightStyle.define([
-  {tag: tags.heading1, fontSize: "1.55rem", fontFamily: "var(--font-display)", lineHeight: "1.25"},
-  {tag: tags.heading2, fontSize: "1.3rem", fontFamily: "var(--font-display)", lineHeight: "1.3"},
-  {tag: tags.heading3, fontSize: "1.1rem", fontFamily: "var(--font-display)"},
-  {tag: tags.strong, fontWeight: "700", color: "var(--color-chalk)"},
-  {tag: tags.emphasis, fontStyle: "italic"},
-  {tag: tags.strikethrough, textDecoration: "line-through", color: "var(--color-ash)"},
-  {tag: tags.link, color: "var(--color-brand-lit)", textDecoration: "underline"},
-  {tag: tags.url, color: "var(--color-ash)"},
-  {tag: tags.monospace, fontFamily: "var(--font-bitmap)", color: "var(--color-eyebrow)"},
-  {tag: tags.quote, color: "var(--color-ash)", fontStyle: "italic"},
-  // Not blue: blue is what a link is.
-  {tag: tags.list, color: "var(--color-ash)"},
-  {tag: tags.processingInstruction, color: "var(--color-ash)"},
-])
+const describing = () => EditorView.contentAttributes.of({
+  ...(describedBy === undefined ? {} : {"aria-describedby": describedBy}),
+  ...(invalid ? {"aria-invalid": "true"} : {}),
+})
 
 const dress = EditorView.theme({
   "&": {
     backgroundColor: "color-mix(in oklab, var(--color-chalk) 7%, transparent)",
     borderBottom: "1px solid var(--color-hairline)",
     color: "var(--color-chalk)",
-    fontFamily: "var(--font-body)",
+    fontFamily: "var(--font-prose)",
     fontSize: "0.9rem",
   },
   "&.cm-focused": {
@@ -127,9 +118,11 @@ const dress = EditorView.theme({
   ".cm-scroller": {fontFamily: "inherit"},
 })
 
-/* Held at the cap while it is typed, as a textarea's maxlength holds it: a paste keeps what fits. */
+/* Held at the cap while it is typed, as a textarea's maxlength holds it: a paste keeps what fits.
+   A change that does not lengthen the text always goes through, so text over the cap can be
+   cut down. */
 const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
-  if (!tr.docChanged || tr.newDoc.length <= cap) return tr
+  if (!tr.docChanged || tr.newDoc.length <= Math.max(cap, tr.startState.doc.length)) return tr
   const spans: {from: number, to: number, insert: string}[] = []
   tr.changes.iterChanges((from, to, _fromB, _toB, inserted) => {
     spans.push({from, to, insert: inserted.toString()})
@@ -142,25 +135,13 @@ const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
   return {changes: {from, to, insert: insert.slice(0, room)}, selection: {anchor: from + room}}
 })
 
-const marks = keymap.of([
-  {key: "Mod-b", run: (at: EditorView) => wrapWith(at, "**")},
-  {key: "Mod-i", run: (at: EditorView) => wrapWith(at, "*")},
-])
-
 onMounted(() => {
   view = new EditorView({
     parent: host.value as HTMLElement,
     state: EditorState.create({
       doc: text.value,
       extensions: [
-        history(),
-        // Tab first, and only while the list is open, or it would stop leaving the editor.
-        keymap.of([{key: "Tab", run: acceptCompletion}]),
-        keymap.of([...completionKeymap, ...defaultKeymap, ...historyKeymap]),
-        marks,
-        markdown({base: markdownLanguage}),
-        syntaxHighlighting(look),
-        markdownLive,
+        ...markdownEditing,
         autocompletion({override: [emojiCompletion], icons: false, activateOnTyping: true}),
         showPlaceholder(placeholder),
         EditorView.lineWrapping,
@@ -171,12 +152,14 @@ onMounted(() => {
           ...(labelledBy === undefined ? {} : {"aria-labelledby": labelledBy}),
           ...(label === undefined ? {} : {"aria-label": label}),
         }),
+        described.of(describing()),
         ...(maxLength === undefined ? [] : [capped(maxLength)]),
         dress,
         editable.of(EditorView.editable.of(!disabled)),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) text.value = update.state.doc.toString()
         }),
+        EditorView.domEventHandlers({blur: () => emit("blur")}),
       ],
     }),
   })
@@ -187,7 +170,11 @@ watch(text, (said) => {
   // The editor is built on mount, so it is there for as long as this watcher can run.
   const at = view as EditorView
   if (said === at.state.doc.toString()) return
-  at.dispatch({changes: {from: 0, to: at.state.doc.length, insert: said}})
+  at.dispatch(replaceFromOutside(at.state, said))
+})
+
+watch(() => [describedBy, invalid], () => {
+  view?.dispatch({effects: described.reconfigure(describing())})
 })
 
 watch(() => disabled, (off) => {

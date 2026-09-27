@@ -13,6 +13,7 @@ import {
 } from "@/domains/committees"
 import type {UserDetailResponse} from "@/domains/user"
 import {handleSubmitError, useReadonly, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 
 type CommitteeModel = {
   id?: number
@@ -178,7 +179,7 @@ defineExpose({validate, save})
               :disabled="isReadonly"
               label="Description"
               name="description"
-              rules="required|minChars:10|maxChars:10000"
+              :rules="`required|minChars:10|maxChars:${DESCRIPTION_CAP}`"
             />
           </v-col>
         </v-row>

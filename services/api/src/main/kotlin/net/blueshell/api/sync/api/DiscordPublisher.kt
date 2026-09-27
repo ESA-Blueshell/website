@@ -2,11 +2,18 @@ package net.blueshell.api.sync.api
 
 import java.time.Instant
 
-/** A message the bot writes: the roles it notifies, then [banner], then an embed. */
+/** A message the bot writes: the roles it notifies, then [banner], then an embed, then [links] as buttons. */
 data class DiscordPost(
     val pingedRoleIds: List<String>,
     val embed: DiscordEmbed,
     val banner: DiscordImage? = null,
+    val links: List<DiscordLink> = emptyList(),
+)
+
+/** A button under a message that opens [url]. */
+data class DiscordLink(
+    val label: String,
+    val url: String,
 )
 
 /** A Discord embed: a titled card linking [url], with [fields] as label and value. */

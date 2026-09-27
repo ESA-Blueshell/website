@@ -43,6 +43,8 @@ components:
     AddBoardMemberRequest:
       properties:
         description:
+          maxLength: 4096
+          minLength: 0
           type:
           - string
           - 'null'
@@ -1072,7 +1074,7 @@ components:
           format: date-time
           type: string
         description:
-          maxLength: 4095
+          maxLength: 4096
           minLength: 0
           type: string
         id:
@@ -1371,6 +1373,8 @@ components:
           - 'null'
         description:
           description: What the year was about, in the board's own words
+          maxLength: 4096
+          minLength: 0
           type:
           - string
           - 'null'
@@ -1408,7 +1412,7 @@ components:
     CreateCommitteeRequest:
       properties:
         description:
-          maxLength: 1000
+          maxLength: 4096
           minLength: 1
           type: string
         members:
@@ -1500,7 +1504,7 @@ components:
           format: int64
           type: integer
         description:
-          maxLength: 4095
+          maxLength: 4096
           minLength: 1
           type: string
         endTime:
@@ -1604,7 +1608,7 @@ components:
           - string
           - 'null'
         intro:
-          maxLength: 4000
+          maxLength: 4096
           minLength: 0
           type:
           - string
@@ -1690,7 +1694,7 @@ components:
     CreateSponsorRequest:
       properties:
         description:
-          maxLength: 4095
+          maxLength: 4096
           minLength: 0
           type: string
         name:
@@ -3534,7 +3538,7 @@ components:
           format: int64
           type: integer
         label:
-          maxLength: 2055
+          maxLength: 4096
           minLength: 0
           type: string
         required:
@@ -3566,7 +3570,7 @@ components:
           format: int64
           type: integer
         label:
-          maxLength: 2055
+          maxLength: 4096
           minLength: 0
           type: string
         required:
@@ -4706,6 +4710,8 @@ components:
     UpdateBoardMemberRequest:
       properties:
         description:
+          maxLength: 4096
+          minLength: 0
           type:
           - string
           - 'null'
@@ -4767,6 +4773,8 @@ components:
           - 'null'
         description:
           description: What the year was about, in the board's own words
+          maxLength: 4096
+          minLength: 0
           type:
           - string
           - 'null'
@@ -4808,7 +4816,7 @@ components:
     UpdateCommitteeRequest:
       properties:
         description:
-          maxLength: 1000
+          maxLength: 4096
           minLength: 1
           type: string
         members:
@@ -4882,7 +4890,7 @@ components:
           format: int64
           type: integer
         description:
-          maxLength: 4095
+          maxLength: 4096
           minLength: 1
           type: string
         endTime:
@@ -5000,7 +5008,7 @@ components:
           - string
           - 'null'
         intro:
-          maxLength: 4000
+          maxLength: 4096
           minLength: 0
           type:
           - string
@@ -5135,7 +5143,7 @@ components:
     UpdateSponsorRequest:
       properties:
         description:
-          maxLength: 4095
+          maxLength: 4096
           minLength: 0
           type: string
         name:

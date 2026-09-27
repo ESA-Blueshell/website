@@ -8,6 +8,7 @@ import jakarta.persistence.Index
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
@@ -30,7 +31,7 @@ class Committee(
     @Column(name = "name", nullable = false)
     var name: String,
 
-    @Column(name = "description", nullable = false, length = 4095)
+    @Column(name = "description", nullable = false, length = DESCRIPTION_MAX)
     var description: String,
 ) : AuditedAutoIdEntity() {
 

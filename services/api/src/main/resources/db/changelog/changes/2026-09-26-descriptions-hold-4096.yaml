@@ -1,0 +1,27 @@
+# A description holds 4096 characters, Discord's limit for an embed's description (architecture
+# ADR-010), and a sign-up form's description question holds as much. MODIFY is written out rather
+# than left to modifyDataType, which on MariaDB drops NOT NULL; no character set is named, so each
+# column keeps its table's, which production does not always share with the baseline.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-26-descriptions-hold-4096.yaml
+      id: descriptions-hold-4096
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE events MODIFY description VARCHAR(4096) NULL;
+              ALTER TABLE committees MODIFY description VARCHAR(4096) NOT NULL;
+              ALTER TABLE sponsors MODIFY description VARCHAR(4096) NOT NULL;
+              ALTER TABLE questions MODIFY label VARCHAR(4096) NOT NULL;
+      rollback:
+        - sql:
+            sql: |
+              UPDATE events SET description = LEFT(description, 4095) WHERE CHAR_LENGTH(description) > 4095;
+              UPDATE committees SET description = LEFT(description, 4095) WHERE CHAR_LENGTH(description) > 4095;
+              UPDATE sponsors SET description = LEFT(description, 4095) WHERE CHAR_LENGTH(description) > 4095;
+              UPDATE questions SET label = LEFT(label, 2047) WHERE CHAR_LENGTH(label) > 2047;
+              ALTER TABLE events MODIFY description VARCHAR(4095) NULL;
+              ALTER TABLE committees MODIFY description VARCHAR(4095) NOT NULL;
+              ALTER TABLE sponsors MODIFY description VARCHAR(4095) NOT NULL;
+              ALTER TABLE questions MODIFY label VARCHAR(2047) NOT NULL;

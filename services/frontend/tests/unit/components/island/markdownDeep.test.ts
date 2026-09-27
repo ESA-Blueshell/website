@@ -111,3 +111,32 @@ describe("what the editor draws while it is being written in", () => {
     view.destroy()
   })
 })
+
+describe("the count of what a description holds", () => {
+  it("shows only near the cap, counting what is stored, and says when it is over", async () => {
+    const wrapper = editor({maxLength: 10, testid: "note"})
+    expect(wrapper.find("[data-testid=note-count]").exists()).toBe(false)
+
+    await wrapper.setProps({modelValue: "123456789"})
+    await flushPromises()
+    expect(wrapper.get("[data-testid=note-count]").text()).toBe("9/10")
+    expect(wrapper.get("[data-testid=note-count]").classes()).not.toContain("island-markdown__count--over")
+
+    await wrapper.setProps({modelValue: "12345678901"})
+    await flushPromises()
+    expect(wrapper.get("[data-testid=note-count]").classes()).toContain("island-markdown__count--over")
+    wrapper.unmount()
+  })
+
+  it("holds a description to Discord's 4096 characters where no cap is given, and counts nothing where the field counts itself", async () => {
+    const wrapper = editor({modelValue: "a".repeat(4000), counted: false})
+    await flushPromises()
+    expect(wrapper.find(".island-markdown__count").exists()).toBe(false)
+    wrapper.unmount()
+
+    const counted = editor({modelValue: "a".repeat(4000)})
+    await flushPromises()
+    expect(counted.get(".island-markdown__count").text()).toBe("4000/4096")
+    counted.unmount()
+  })
+})

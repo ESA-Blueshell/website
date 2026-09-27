@@ -1,8 +1,10 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventPostData
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import net.blueshell.api.sync.api.DiscordEmbed
 import net.blueshell.api.sync.api.DiscordEventListing
+import net.blueshell.api.sync.api.DiscordLink
 import net.blueshell.api.sync.api.DiscordPost
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
@@ -15,8 +17,6 @@ import java.util.Locale
  * two would stand out in another colour.
  */
 object DiscordPostContent {
-    /* Under Discord's 4096 characters for an embed's description, which holds the links too. */
-    private const val POST_DESCRIPTION = 3800
     /* Discord's limit on a Discord event's whole description, links included. */
     private const val LISTING_DESCRIPTION = 1000
 
@@ -58,9 +58,11 @@ object DiscordPostContent {
                 DiscordEmbed(
                     title = event.title,
                     url = page,
-                    description = "${cut(event.description.orEmpty(), POST_DESCRIPTION)}\n\n${linksOf(event, page)}",
+                    // Whole: a description holds no more than an embed does, and the links are buttons.
+                    description = cut(event.description.orEmpty(), DESCRIPTION_MAX),
                     fields = fields,
                 ),
+            links = linksOf(event, page),
         )
     }
 
@@ -87,7 +89,7 @@ object DiscordPostContent {
     private fun linksOf(
         event: EventPostData,
         page: String,
-    ) = if (event.signUp) "[More on the site]($page) · [Sign up]($page#signup)" else "[More on the site]($page)"
+    ) = listOfNotNull(DiscordLink("More on the site", page), DiscordLink("Sign up", "$page#signup").takeIf { event.signUp })
 
     /** The event's page on the site, which every post links and so finds it by. */
     fun pageOf(
@@ -132,14 +134,21 @@ object DiscordPostContent {
 
     private fun euro(amount: Double) = "€" + String.format(Locale.ROOT, "%.2f", amount)
 
-    /* At a word, so a cut never splits one. */
-    private fun cut(
+    /*
+     * At a space or a line break, so a cut never splits a word, an emoji or a mention, none of
+     * which holds either. A text with neither is cut before an emoji or mention it would split.
+     */
+    internal fun cut(
         text: String,
         limit: Int,
     ): String {
         val said = text.trim()
         if (said.length <= limit) return said
-        val atWord = said.take(limit).substringBeforeLast(' ').ifBlank { said.take(limit) }
-        return "$atWord…"
+        // One short of the limit, which the ellipsis takes.
+        val kept = said.take(limit - 1)
+        val atWord = kept.substring(0, kept.indexOfLast { it.isWhitespace() }.coerceAtLeast(0)).trimEnd()
+        if (atWord.isNotEmpty()) return "$atWord…"
+        val open = kept.lastIndexOf('<')
+        return "${if (open > 0 && kept.indexOf('>', open) == -1) kept.take(open) else kept}…"
     }
 }

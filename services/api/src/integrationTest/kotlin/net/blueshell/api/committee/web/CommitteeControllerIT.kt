@@ -2,6 +2,7 @@ package net.blueshell.api.committee.web
 
 import net.blueshell.api.factory.committee.web.request.CommitteeRequestFactory
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -152,6 +153,29 @@ class CommitteeControllerIT : UserTestSupport() {
             val createdId = mapper.readTree(result.response.contentAsByteArray).path("id").asLong()
             assertThat(createdId).isGreaterThan(0)
             assertThat(userRepository.findById(member.id!!).orElseThrow().roles).contains(Role.COMMITTEE)
+        }
+
+        @Test
+        fun `keeps a description as long as Discord holds, emoji and mentions included`() {
+            val board = createUserWithRole(Role.BOARD)
+            // Four-byte emoji and a server emoji, so the column's character set is tested too.
+            val said = "🍝 <:POGGERS:657733730491826186> <@123456789012345678> "
+            val description = said + "a".repeat(DESCRIPTION_MAX - said.length)
+
+            mvc.perform(
+                post("/committees")
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        committeeRequestFactory.createPayload(
+                            name = "Long Committee",
+                            description = description,
+                            members = listOf(CommitteeRequestFactory.MemberInput(board.id!!, "Chair")),
+                        ),
+                    ),
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.description").value(description))
         }
 
         @Test

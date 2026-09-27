@@ -9,6 +9,7 @@ import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoj
 import DateTimeInput from "@/components/island/DateTimeInput.vue"
 import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
 import {channelCompletion, mentionCompletion} from "@/components/island/markdownMentions"
+import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 import {TIME_STYLES, timestampText, type TimeStyle} from "@/plugins/discordTime"
 
 defineOptions({name: "MarkdownEditor"})
@@ -21,7 +22,8 @@ const {
   describedBy = undefined,
   invalid = false,
   label = undefined,
-  maxLength = undefined,
+  maxLength = DESCRIPTION_CAP,
+  counted = true,
   testid = undefined,
 } = defineProps<{
   placeholder?: string
@@ -32,6 +34,8 @@ const {
   /** The name read out where no element on the page names the field. */
   label?: string
   maxLength?: number
+  /** Off where the field counts its characters itself. */
+  counted?: boolean
   minHeight?: string
   testid?: string
 }>()
@@ -39,6 +43,12 @@ const {
 const text = defineModel<string>({default: ""})
 
 const emit = defineEmits<{blur: []}>()
+
+/* Counted as stored, which is what the cap and Discord hold it to, and shown only near the cap:
+   a server emoji takes some thirty characters for one picture. */
+const NEAR = 0.9
+const count = computed(() => text.value.length)
+const nearCap = computed(() => counted && count.value >= maxLength * NEAR)
 
 /* `Mod` is command on a Mac and control elsewhere, so only the wording changes. */
 const onMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -210,7 +220,7 @@ onMounted(() => {
           ...(label === undefined ? {} : {"aria-label": label}),
         }),
         described.of(describing()),
-        ...(maxLength === undefined ? [] : [capped(maxLength)]),
+        capped(maxLength),
         dress,
         editable.of(EditorView.editable.of(!disabled)),
         EditorView.updateListener.of((update) => {
@@ -346,6 +356,13 @@ onBeforeUnmount(() => {
     </div>
 
     <div ref="host" />
+
+    <span
+      v-if="nearCap"
+      class="island-markdown__count"
+      :class="{'island-markdown__count--over': count > maxLength}"
+      :data-testid="testid ? `${testid}-count` : undefined"
+    >{{ count }}/{{ maxLength }}</span>
   </div>
 </template>
 
@@ -366,6 +383,20 @@ onBeforeUnmount(() => {
   background: none;
   color: var(--color-ash);
   cursor: pointer;
+}
+
+.island-markdown__count {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.3rem;
+  font-family: var(--font-bitmap);
+  font-size: 0.68rem;
+  color: var(--color-ash);
+  pointer-events: none;
+}
+
+.island-markdown__count--over {
+  color: var(--color-danger);
 }
 
 .island-markdown__ask--time {

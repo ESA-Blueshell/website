@@ -364,7 +364,6 @@ const add = async () => {
         <markdown-editor
           v-model="intro"
           :labelled-by="introLabel"
-          :max-length="4000"
           min-height="6rem"
           testid="game-dialog-intro"
         />

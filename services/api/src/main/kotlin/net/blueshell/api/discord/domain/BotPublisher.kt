@@ -3,6 +3,7 @@ package net.blueshell.api.discord.domain
 import net.blueshell.api.sync.api.DiscordEmbed
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordImage
+import net.blueshell.api.sync.api.DiscordLink
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.api.sync.api.DiscordPublisher
 import net.blueshell.clients.discord.api.DiscordApi
@@ -65,10 +66,10 @@ class BotPublisher(
                     allowedMentions = MessageAllowedMentionsRequest(parse = emptySet(), roles = post.pingedRoleIds.toSet()),
                     attachments = attachmentsOf(banner),
                 )
-            if (banner == null) {
+            if (banner == null && post.links.isEmpty()) {
                 api.createMessage(channelId, request).id
             } else {
-                withFile(HttpMethod.POST, "/channels/{channel}/messages", request, banner, channelId)
+                sendRaw(HttpMethod.POST, "/channels/{channel}/messages", withLinks(request, post.links), banner, channelId)
             }
         }
     }
@@ -100,24 +101,53 @@ class BotPublisher(
                 allowedMentions = MessageAllowedMentionsRequest(parse = emptySet()),
                 attachments = attachmentsOf(banner),
             )
-        if (banner == null) {
+        if (banner == null && post.links.isEmpty()) {
             api.updateMessage(channelId, messageId, request)
         } else {
-            withFile(HttpMethod.PATCH, "/channels/{channel}/messages/{message}", request, banner, channelId, messageId)
+            sendRaw(HttpMethod.PATCH, "/channels/{channel}/messages/{message}", withLinks(request, post.links), banner, channelId, messageId)
         }
     }
 
     /*
-     * A message with a file goes as multipart. The banner is the message's attachment rather than
-     * the embed's image: Discord draws an attachment above the embed, and an embed's image under it.
+     * Link buttons go as raw JSON: the generated client's message components hold only text
+     * displays, not an action row of buttons.
      */
-    private fun withFile(
+    private fun withLinks(
+        request: Any,
+        links: List<DiscordLink>,
+    ): Any {
+        if (links.isEmpty()) return request
+        val payload = jsonMapper.valueToTree<ObjectNode>(request)
+        val row = payload.putArray("components").addObject().put("type", ACTION_ROW)
+        val buttons = row.putArray("components")
+        for (link in links) {
+            buttons.addObject().put("type", BUTTON).put("style", LINK_STYLE).put("label", link.label).put("url", link.url)
+        }
+        return payload
+    }
+
+    /*
+     * A message past the generated client goes as JSON, or as multipart where a banner goes with
+     * it. The banner is the message's attachment rather than the embed's image: Discord draws an
+     * attachment above the embed, and an embed's image under it.
+     */
+    private fun sendRaw(
         method: HttpMethod,
         path: String,
         request: Any,
-        banner: DiscordImage,
+        banner: DiscordImage?,
         vararg ids: String,
     ): String {
+        if (banner == null) {
+            return discordRestClient
+                .method(method)
+                .uri(path, *ids)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonMapper.writeValueAsString(request))
+                .retrieve()
+                .body(REPLY)!!
+                .getValue("id") as String
+        }
         val parts = MultipartBodyBuilder()
         parts.part("payload_json", jsonMapper.writeValueAsString(request), MediaType.APPLICATION_JSON)
         parts
@@ -244,6 +274,9 @@ class BotPublisher(
     private companion object {
         /* The only privacy level Discord offers for a server's events. */
         const val GUILD_ONLY = 2
+        const val ACTION_ROW = 1
+        const val BUTTON = 2
+        const val LINK_STYLE = 5
 
         /* Only the ID is read back, so a field Discord adds or leaves null cannot break it. */
         val REPLY = object : ParameterizedTypeReference<Map<String, Any?>>() {}

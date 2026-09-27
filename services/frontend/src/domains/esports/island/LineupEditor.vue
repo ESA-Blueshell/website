@@ -728,6 +728,7 @@ const submit = async () => {
                 v-model="row.description"
                 class="lineup__note"
                 label="A word about them"
+                :counted="false"
                 :max-length="DESCRIPTION_CAP"
                 min-height="3.5rem"
                 placeholder="A word about them"

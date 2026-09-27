@@ -1,6 +1,8 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventPostData
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
+import net.blueshell.api.sync.api.DiscordLink
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -35,9 +37,11 @@ class DiscordPostContentTest {
         assertThat(post.pingedRoleIds).containsExactly("901", "902")
         assertThat(post.embed.title).isEqualTo("LAN party")
         assertThat(post.embed.url).isEqualTo("https://esa-blueshell.nl/events/42")
-        assertThat(post.embed.description)
-            .startsWith("Bring your own rig.")
-            .endsWith("[More on the site](https://esa-blueshell.nl/events/42) · [Sign up](https://esa-blueshell.nl/events/42#signup)")
+        assertThat(post.embed.description).isEqualTo("Bring your own rig.")
+        assertThat(post.links).containsExactly(
+            DiscordLink("More on the site", "https://esa-blueshell.nl/events/42"),
+            DiscordLink("Sign up", "https://esa-blueshell.nl/events/42#signup"),
+        )
         assertThat(post.embed.fields).containsExactly(
             "When" to "`10 Oct 2026 - 20:00-23:00`",
             "Where" to "Pakhuis",
@@ -63,7 +67,7 @@ class DiscordPostContentTest {
                 site,
             )
 
-        assertThat(post.embed.description).endsWith("[More on the site](https://esa-blueshell.nl/events/42)")
+        assertThat(post.links.map { it.label }).containsExactly("More on the site")
         assertThat(post.embed.fields.map { it.first }).doesNotContain("Signed up")
         assertThat(post.embed.fields).containsExactly(
             "When" to "`10 Oct 2026 - 20:00 to 11 Oct 2026 - 14:00`",
@@ -73,16 +77,19 @@ class DiscordPostContentTest {
     }
 
     @Test
-    fun `says the whole description, cutting at a word only past what Discord holds`() {
-        val long = "word ".repeat(700).trim()
-        val tooLong = "word ".repeat(800).trim()
+    fun `says the whole description, however long a description may be`() {
+        val whole = "w".repeat(DESCRIPTION_MAX - 5) + " word"
 
-        val whole = DiscordPostContent.postOf(event.copy(description = long), site).embed.description
-        val cut = DiscordPostContent.postOf(event.copy(description = tooLong), site).embed.description
+        assertThat(DiscordPostContent.postOf(event.copy(description = whole), site).embed.description).isEqualTo(whole)
+    }
 
-        assertThat(whole.substringBefore("\n\n")).isEqualTo(long)
-        assertThat(cut.substringBefore("\n\n")).endsWith("word…").hasSizeLessThanOrEqualTo(3801)
-        assertThat(cut.length).isLessThanOrEqualTo(4096)
+    @Test
+    fun `cuts past a limit at a space or a line break, never inside an emoji or a mention`() {
+        assertThat(DiscordPostContent.cut("one two\nthree <@123456789012345678>", 20)).isEqualTo("one two\nthree…")
+        assertThat(DiscordPostContent.cut("aaaa<:POGGERS:657733730491826186>", 12)).isEqualTo("aaaa…")
+        assertThat(DiscordPostContent.cut("a".repeat(30), 10)).isEqualTo("a".repeat(9) + "…")
+        assertThat(DiscordPostContent.cut("<a:x:123>bbbbbbbbbbbbbbbbb", 12)).isEqualTo("<a:x:123>bb…")
+        assertThat(DiscordPostContent.cut("<abcdefghijklmnop", 10)).isEqualTo("<abcdefgh…")
     }
 
     @Test

@@ -3,6 +3,7 @@ package net.blueshell.api.sponsor.web
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 
 @Schema(name = "UpdateSponsorRequest")
 data class UpdateSponsorRequest(
@@ -10,7 +11,7 @@ data class UpdateSponsorRequest(
     @field:Size(max = 255, message = "Sponsor name cannot exceed 255 characters.")
     var name: String,
     @field:NotBlank(message = "Sponsor description cannot be empty.")
-    @field:Size(max = 4095, message = "Sponsor description cannot exceed 4095 characters.")
+    @field:Size(max = DESCRIPTION_MAX, message = "Sponsor description cannot exceed $DESCRIPTION_MAX characters.")
     var description: String,
     var version: Long,
 )

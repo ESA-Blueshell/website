@@ -48,7 +48,6 @@ const emit = defineEmits<{
   (event: "removed"): void
 }>()
 
-const DESCRIPTION_CAP = 4000
 const descriptionLabel = useId()
 
 const adding = computed(() => props.member == null)
@@ -371,7 +370,6 @@ const submit = async () => {
         <markdown-editor
           v-model="description"
           :labelled-by="descriptionLabel"
-          :max-length="DESCRIPTION_CAP"
           min-height="6rem"
           testid="board-member-dialog-description"
         />

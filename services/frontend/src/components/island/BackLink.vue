@@ -35,12 +35,10 @@ defineProps<{to: string; label: string; testid?: string}>()
   transition: color 220ms ease;
 }
 
-
 .back-link:hover,
 .back-link:focus-visible {
   color: var(--color-chalk);
 }
-
 
 @media (prefers-reduced-motion: reduce) {
   .back-link {

@@ -111,9 +111,6 @@ const previewShut = ref(false)
   min-height: 0;
 }
 
-
-
-
 .edit-page__head {
   display: flex;
   flex-wrap: wrap;

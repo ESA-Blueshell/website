@@ -152,7 +152,6 @@ const archived = async (now: Committee) => {
         </template>
       </record-head>
 
-
       <lead-band
         v-if="gameCells.length > 0"
         testid="committee-games-band"

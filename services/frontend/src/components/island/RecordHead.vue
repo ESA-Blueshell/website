@@ -105,11 +105,6 @@ const bannerSrcset = computed(() => srcsetOf(banner))
   margin-top: 1.6rem;
 }
 
-
-
-
-
-
 .record-head {
   position: relative;
   isolation: isolate;

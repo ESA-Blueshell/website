@@ -35,6 +35,18 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Manage committees", requiresAuth: true},
   },
   {
+    path: "/committees/new",
+    name: "committeeNew",
+    component: () => import("@/pages/committees/CommitteeEdit.vue"),
+    meta: {title: "Add a committee", requiresAuth: true},
+  },
+  {
+    path: "/committees/:address/edit",
+    name: "committeeEdit",
+    component: () => import("@/pages/committees/CommitteeEdit.vue"),
+    meta: {title: "Edit committee", requiresAuth: true},
+  },
+  {
     path: "/committees/:address",
     name: "committee",
     component: () => import("@/pages/committees/CommitteeByAddress.vue"),
@@ -49,6 +61,55 @@ const routes: RouteRecordRaw[] = [
     path: "/casual/:slug",
     name: "casualGame",
     component: () => import("@/pages/casual/CasualGameBySlug.vue"),
+  },
+  // A game is one record, so both areas edit it on the same page; each goes back to itself.
+  {
+    path: "/casual/new",
+    name: "casualGameNew",
+    component: () => import("@/pages/games/GameEdit.vue"),
+    meta: {requiresAuth: true, area: "casual"},
+  },
+  {
+    path: "/casual/:slug/edit",
+    name: "casualGameEdit",
+    component: () => import("@/pages/games/GameEdit.vue"),
+    meta: {requiresAuth: true, area: "casual"},
+  },
+  {
+    path: "/competition/new",
+    name: "competitionGameNew",
+    component: () => import("@/pages/games/GameEdit.vue"),
+    meta: {requiresAuth: true, area: "competition"},
+  },
+  {
+    path: "/competition/:slug/edit",
+    name: "competitionGameEdit",
+    component: () => import("@/pages/games/GameEdit.vue"),
+    meta: {requiresAuth: true, area: "competition"},
+  },
+  {
+    path: "/competition/seasons/new",
+    name: "seasonNew",
+    component: () => import("@/pages/competition/SeasonEdit.vue"),
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/competition/seasons/:id/edit",
+    name: "seasonEdit",
+    component: () => import("@/pages/competition/SeasonEdit.vue"),
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/competition/:slug/teams/new",
+    name: "teamNew",
+    component: () => import("@/pages/competition/TeamEdit.vue"),
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/competition/:slug/teams/:team/edit",
+    name: "teamEdit",
+    component: () => import("@/pages/competition/TeamEdit.vue"),
+    meta: {requiresAuth: true},
   },
   // Competition is the word on screen for what the code calls esports. The old addresses
   // redirect, so a link somebody saved or shared still lands on the same page.
@@ -99,6 +160,30 @@ const routes: RouteRecordRaw[] = [
     name: "board",
     component: () => import("@/pages/Board.vue"),
     meta: {title: "Board"},
+  },
+  {
+    path: "/board/new",
+    name: "boardNew",
+    component: () => import("@/pages/board/BoardEdit.vue"),
+    meta: {title: "Add a board", requiresAuth: true},
+  },
+  {
+    path: "/board/:number(\\d+)/edit",
+    name: "boardEdit",
+    component: () => import("@/pages/board/BoardEdit.vue"),
+    meta: {title: "Edit board", requiresAuth: true},
+  },
+  {
+    path: "/board/:number(\\d+)/members/new",
+    name: "boardMemberNew",
+    component: () => import("@/pages/board/BoardMemberEdit.vue"),
+    meta: {title: "Add a member", requiresAuth: true},
+  },
+  {
+    path: "/board/:number(\\d+)/members/:member(\\d+)/edit",
+    name: "boardMemberEdit",
+    component: () => import("@/pages/board/BoardMemberEdit.vue"),
+    meta: {title: "Edit member", requiresAuth: true},
   },
   // Every game's competition page, found by the address its record names. Adding a game
   // needs no route written.

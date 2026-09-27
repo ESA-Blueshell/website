@@ -28,7 +28,6 @@ const stubs = {
   FlickReel: stub("FlickReel", ["items"]),
   DriftRow: stub("DriftRow", ["items"]),
   ArtCells: {name: "ArtCells", props: ["cells", "testidPrefix"], emits: ["go"], template: "<div><div v-for=\"cell in cells\" :key=\"cell.id\"><slot name=\"action\" :cell=\"cell\" /></div></div>"},
-  CommitteeDialog: {name: "CommitteeDialog", props: {open: Boolean, committee: Object, asBoard: Boolean}, emits: ["update:open", "saved"], template: "<div />"},
   ArchiveCommitteeDialog: {name: "ArchiveCommitteeDialog", props: ["open", "committee"], emits: ["update:open", "saved"], template: "<div />"},
   CutButton: {name: "CutButton", props: ["href", "away", "tone", "testid"], template: "<a :href=\"href\" :data-testid=\"testid\"><slot /></a>"},
   VMain: {template: "<main><slot /></main>"},
@@ -88,20 +87,14 @@ describe("the committees page", () => {
     expect(wrapper.find("[data-testid=committees-ask]").exists()).toBe(true)
   })
 
-  it("offers the board a committee to add, shown on its own page once added, and archiving from a cell", async () => {
+  it("offers the board a committee to add on its own page, and archiving from a cell", async () => {
     const plain = await mountPage()
     expect(plain.find("[data-testid=committees-add]").exists()).toBe(false)
     expect(plain.find("[data-testid=committees-every-archive-1]").exists()).toBe(false)
 
     store.getters.isBoard = true
     const wrapper = await mountPage()
-    await wrapper.get("[data-testid=committees-add]").trigger("click")
-    const dialog = wrapper.getComponent({name: "CommitteeDialog"})
-    expect(dialog.props("asBoard")).toBe(true)
-    dialog.vm.$emit("saved", committee(9, "QuizCie"))
-    dialog.vm.$emit("update:open", false)
-    await flushPromises()
-    expect(push).toHaveBeenCalledWith("/committees/quizcie")
+    expect(wrapper.get("[data-testid=committees-add]").attributes("href")).toBe("/committees/new")
 
     expect(wrapper.get("[data-testid=committees-every-archive-3]").text()).toBe("Bring back")
     await wrapper.get("[data-testid=committees-every-archive-1]").trigger("click")

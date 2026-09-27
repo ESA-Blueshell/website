@@ -36,7 +36,7 @@ class AddressReserved(
 ) : GameRefusal(
         HttpStatus.CONFLICT,
         "AddressReserved",
-        "That address belongs to the esports listing.",
+        "That address is kept for the site's own pages.",
         mapOf("address" to address),
     )
 

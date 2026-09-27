@@ -95,11 +95,11 @@ const openEditor = async (page: Page, number: number) => {
   await stop.hover()
   await expect(pencil).toBeVisible()
   await pencil.click()
-  await expect(page.getByTestId("board-dialog")).toBeVisible()
+  await expect(page.getByTestId("board-edit")).toBeVisible()
 }
 
 const choosePhoto = (page: Page) =>
-  page.getByTestId("board-dialog-photo-file").setInputFiles({
+  page.getByTestId("board-edit-photo-file").setInputFiles({
     name: "board.png",
     mimeType: "image/png",
     buffer: PNG,
@@ -154,7 +154,7 @@ test.describe("a board is corrected on the page it is read on", () => {
     // Not hidden and reachable: not there at all. The api still refuses a visitor's write.
     await expect(page.locator('[data-testid^="board-edit-"]')).toHaveCount(0)
     await expect(page.getByTestId("board-add")).toHaveCount(0)
-    await expect(page.getByTestId("board-dialog")).toHaveCount(0)
+    await expect(page.getByTestId("board-edit")).toHaveCount(0)
 
     await page.goto("/board?board=4")
     // The board with no photograph is the one where an editor is offered a way to add one.
@@ -195,10 +195,10 @@ test.describe("a board is corrected on the page it is read on", () => {
     await page.goto("/board")
     await page.getByTestId("board-add").click()
 
-    await expect(page.getByTestId("board-dialog")).toBeVisible()
+    await expect(page.getByTestId("board-edit")).toBeVisible()
     // Ten boards have not all been recorded here, but the highest is X, so the next is XI.
-    await expect(page.getByTestId("board-dialog-number")).toHaveValue("11")
-    await expect(page.getByTestId("board-dialog-suggested")).toContainText("Board XI")
+    await expect(page.getByTestId("board-edit-number").locator("input")).toHaveValue("11")
+    await expect(page.getByTestId("board-edit").locator("aside")).toContainText("XI")
   })
 
   test("writes a board down from the end of the timeline", async ({page}) => {
@@ -208,17 +208,17 @@ test.describe("a board is corrected on the page it is read on", () => {
     await page.goto("/board")
     await page.getByTestId("board-add").click()
 
-    await page.getByTestId("board-dialog-name").fill("Rocket surgery")
-    await page.getByTestId("board-dialog-cheer").fill("To the moon!")
-    await page.getByTestId("board-dialog-accent").fill("#65c6cd")
+    await page.getByTestId("board-edit-name").locator("input").fill("Rocket surgery")
+    await page.getByTestId("board-edit-cheer").locator("input").fill("To the moon!")
+    await page.locator("[data-testid='board-edit-accent'] input:not([type=color])").fill("#65c6cd")
     await writeMarkdown(page, "Description", "The year the lounge opened.")
-    await page.getByTestId("board-dialog-start").fill("2100-09-01")
-    await page.getByTestId("board-dialog-end").fill("2101-08-31")
+    await page.getByTestId("board-edit-start").locator("input").first().fill("01/09/2100")
+    await page.getByTestId("board-edit-end").locator("input").first().fill("31/08/2101")
 
     const written = page.waitForRequest(
       (request) => request.method() === "POST" && /\/boards$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-dialog-save").click()
+    await page.getByTestId("board-edit-save").click()
 
     expect(JSON.parse((await written).postData() ?? "{}")).toMatchObject({
       number: 11,
@@ -245,24 +245,24 @@ test.describe("a board is corrected on the page it is read on", () => {
     await openEditor(page, 7)
 
     // Opening it fills the form from the board as it stands, colour included.
-    await expect(page.getByTestId("board-dialog-name")).toHaveValue("Overcooked")
-    await expect(page.getByTestId("board-dialog-cheer")).toHaveValue("Krijg de tering!")
-    await expect(page.getByTestId("board-dialog-accent")).toHaveValue("#b00b69")
-    await expect(page.getByTestId("board-dialog-start")).toHaveValue("2023-09-01")
-    await expect(page.getByTestId("board-dialog-end")).toHaveValue("2024-08-31")
+    await expect(page.getByTestId("board-edit-name").locator("input")).toHaveValue("Overcooked")
+    await expect(page.getByTestId("board-edit-cheer").locator("input")).toHaveValue("Krijg de tering!")
+    await expect(page.locator("[data-testid='board-edit-accent'] input:not([type=color])")).toHaveValue("#b00b69")
+    await expect(page.getByTestId("board-edit-start").locator("input").first()).toHaveValue("01/09/2023")
+    await expect(page.getByTestId("board-edit-end").locator("input").first()).toHaveValue("31/08/2024")
 
-    await page.getByTestId("board-dialog-number").fill("8")
-    await page.getByTestId("board-dialog-name").fill("Overcooked 2")
-    await page.getByTestId("board-dialog-cheer").fill("Krijg de tering, opnieuw!")
-    await page.getByTestId("board-dialog-accent").fill("#9100d0")
+    await page.getByTestId("board-edit-number").locator("input").fill("8")
+    await page.getByTestId("board-edit-name").locator("input").fill("Overcooked 2")
+    await page.getByTestId("board-edit-cheer").locator("input").fill("Krijg de tering, opnieuw!")
+    await page.locator("[data-testid='board-edit-accent'] input:not([type=color])").fill("#9100d0")
     await writeMarkdown(page, "Description", "The year the kitchen burned.")
-    await page.getByTestId("board-dialog-start").fill("2023-09-15")
-    await page.getByTestId("board-dialog-end").fill("2024-09-14")
+    await page.getByTestId("board-edit-start").locator("input").first().fill("15/09/2023")
+    await page.getByTestId("board-edit-end").locator("input").first().fill("14/09/2024")
 
     const saved = page.waitForRequest(
       (request) => request.method() === "PUT" && /\/boards\/7$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-dialog-save").click()
+    await page.getByTestId("board-edit-save").click()
 
     expect(JSON.parse((await saved).postData() ?? "{}")).toMatchObject({
       number: 8,
@@ -283,29 +283,26 @@ test.describe("a board is corrected on the page it is read on", () => {
     await expect(page.getByTestId("board-band-description")).toHaveText("The year the kitchen burned.")
   })
 
-  test("the colour field shows a live swatch, in the ink that reads on it", async ({page}) => {
+  test("the colour field shows the board's colour in its swatch, kept in step with the hex", async ({page}) => {
     await installApiMocks(page, {boards: history})
     await loginAsBoard(page.context())
 
     await page.goto("/board?board=6")
     await openEditor(page, 6)
 
-    const swatch = page.getByTestId("board-dialog-swatch")
-    // The colour the board already carries, painted as it was chosen. It is pale, so what is
-    // drawn on it is the near-black ink.
-    await expect(page.getByTestId("board-dialog-accent")).toHaveValue("#eaa4b6")
-    expect(await styleOf(swatch, "background-color")).toBe("rgb(234, 164, 182)")
-    expect(await styleOf(swatch, "color")).toBe("rgb(28, 28, 28)")
+    const hex = page.locator("[data-testid='board-edit-accent'] input:not([type=color])")
+    const swatch = page.getByTestId("board-edit-accent-swatch")
+    await expect(hex).toHaveValue("#eaa4b6")
+    await expect(swatch).toHaveValue("#eaa4b6")
 
-    // A deep fill takes the other ink, and the swatch follows the field as it is typed.
-    await page.getByTestId("board-dialog-accent").fill("#b00b69")
-    await expect.poll(() => styleOf(swatch, "background-color")).toBe("rgb(176, 11, 105)")
-    expect(await styleOf(swatch, "color")).toBe("rgb(244, 246, 248)")
+    await hex.fill("#b00b69")
+    await expect(swatch).toHaveValue("#b00b69")
+    await swatch.fill("#65c6cd")
+    await expect(hex).toHaveValue("#65c6cd")
 
-    // Left blank, the board is drawn in the association's blue — which the swatch says.
-    await page.getByTestId("board-dialog-accent").fill("")
-    await expect.poll(() => styleOf(swatch, "background-color")).toBe("rgb(51, 135, 250)")
-    expect(await styleOf(swatch, "color")).toBe("rgb(28, 28, 28)")
+    await hex.fill("pink")
+    await expect(page.getByTestId("board-edit-accent")).toContainText("Write a colour as # and six hex digits.")
+    await expect(page.getByTestId("board-edit-save")).toBeDisabled()
   })
 
   test("a pale colour still reads in light mode, where it is the ink that has to move", async ({page}) => {
@@ -348,18 +345,18 @@ test.describe("a board is corrected on the page it is read on", () => {
     await page.goto("/board?board=4")
     await openEditor(page, 4)
 
-    await expect(page.getByTestId("board-dialog-photo-empty")).toBeVisible()
+    await expect(page.getByTestId("board-edit-photo-empty")).toBeVisible()
     await choosePhoto(page)
 
     // Shown before it is committed, so a wrong crop is visible while it can still be changed.
-    const preview = page.getByTestId("board-dialog-photo-preview")
+    const preview = page.getByTestId("board-edit-photo-preview")
     await expect(preview).toHaveAttribute("src", /\/files\/public\/board-photos\/[^/]+\.webp/)
     const chosen = (await preview.getAttribute("src"))!
 
     const saved = page.waitForRequest(
       (request) => request.method() === "PUT" && /\/boards\/4$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-dialog-save").click()
+    await page.getByTestId("board-edit-save").click()
 
     const body = JSON.parse((await saved).postData() ?? "{}") as {photo?: string}
     expect(chosen).toContain(body.photo!)
@@ -377,9 +374,9 @@ test.describe("a board is corrected on the page it is read on", () => {
     await page.goto("/board?board=7")
     await openEditor(page, 7)
 
-    const preview = page.getByTestId("board-dialog-photo-preview")
+    const preview = page.getByTestId("board-edit-photo-preview")
     await expect(preview).toHaveAttribute("src", /board7\.webp$/)
-    await expect(page.getByTestId("board-dialog-photo-replace")).toHaveCount(1)
+    await expect(page.getByTestId("board-edit-photo-replace")).toHaveCount(1)
 
     await choosePhoto(page)
     await expect(preview).not.toHaveAttribute("src", /board7\.webp$/)
@@ -387,7 +384,7 @@ test.describe("a board is corrected on the page it is read on", () => {
     const saved = page.waitForRequest(
       (request) => request.method() === "PUT" && /\/boards\/7$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-dialog-save").click()
+    await page.getByTestId("board-edit-save").click()
 
     const body = JSON.parse((await saved).postData() ?? "{}") as {photo?: string}
     expect(body.photo).not.toBe("board-photos/board7.webp")
@@ -405,9 +402,9 @@ test.describe("a board is corrected on the page it is read on", () => {
     await expect(add).toBeVisible()
     await add.click()
 
-    await expect(page.getByTestId("board-dialog")).toBeVisible()
-    await expect(page.getByTestId("board-dialog-number")).toHaveValue("4")
-    await expect(page.getByTestId("board-dialog-photo-empty")).toBeVisible()
+    await expect(page.getByTestId("board-edit")).toBeVisible()
+    await expect(page.getByTestId("board-edit-number").locator("input")).toHaveValue("4")
+    await expect(page.getByTestId("board-edit-photo-empty")).toBeVisible()
 
     // A board that has one is corrected in the dialog, beside the crop, rather than here.
     await page.goto("/board?board=7")
@@ -428,13 +425,13 @@ test.describe("a board is corrected on the page it is read on", () => {
     await page.goto("/board?board=7")
     await openEditor(page, 7)
 
-    await page.getByTestId("board-dialog-name").fill("A name nobody keeps")
-    await page.getByTestId("board-dialog-accent").fill("#000000")
+    await page.getByTestId("board-edit-name").locator("input").fill("A name nobody keeps")
+    await page.locator("[data-testid='board-edit-accent'] input:not([type=color])").fill("#000000")
     await choosePhoto(page)
-    await expect(page.getByTestId("board-dialog-photo-preview")).not.toHaveAttribute("src", /board7/)
+    await expect(page.getByTestId("board-edit-photo-preview")).not.toHaveAttribute("src", /board7/)
 
-    await page.getByTestId("board-dialog-cancel").click()
-    await expect(page.getByTestId("board-dialog")).toBeHidden()
+    await page.getByTestId("board-edit-cancel").click()
+    await expect(page.getByTestId("board-edit")).toBeHidden()
 
     // Nothing was written: the bytes are in storage and the board is untouched, which is what
     // holding a picture until the save is for.
@@ -444,9 +441,9 @@ test.describe("a board is corrected on the page it is read on", () => {
 
     // And reopening it shows the board rather than what was abandoned.
     await openEditor(page, 7)
-    await expect(page.getByTestId("board-dialog-name")).toHaveValue("Overcooked")
-    await expect(page.getByTestId("board-dialog-accent")).toHaveValue("#b00b69")
-    await expect(page.getByTestId("board-dialog-photo-preview")).toHaveAttribute("src", /board7\.webp$/)
+    await expect(page.getByTestId("board-edit-name").locator("input")).toHaveValue("Overcooked")
+    await expect(page.locator("[data-testid='board-edit-accent'] input:not([type=color])")).toHaveValue("#b00b69")
+    await expect(page.getByTestId("board-edit-photo-preview")).toHaveAttribute("src", /board7\.webp$/)
   })
 
   test("refuses to remove a board that still has members, and says how many are in the way", async ({page}) => {
@@ -456,7 +453,7 @@ test.describe("a board is corrected on the page it is read on", () => {
     await page.goto("/board")
     await openEditor(page, 9)
 
-    await page.getByTestId("board-dialog-remove").click()
+    await page.getByTestId("board-edit-remove").click()
     const asking = page.getByTestId("board-remove-dialog")
     await expect(asking).toBeVisible()
     // Asked first, because a board's members are nine people's place in the history.
@@ -467,7 +464,7 @@ test.describe("a board is corrected on the page it is read on", () => {
     // The api refused it and the refusal is what a reader is shown, in the api's own count.
     await expect(asking.getByTestId("confirm-failure")).toContainText("still has 3 members on it")
     await expect(asking.getByTestId("confirm-failure")).toContainText("Remove the members first")
-    await expect(page.getByTestId("board-node-9")).toHaveCount(1)
+    await expect(page.getByTestId("board-edit-preview-node-9")).toHaveCount(1)
   })
 
   test("removes a board nobody is recorded on", async ({page}) => {
@@ -478,7 +475,7 @@ test.describe("a board is corrected on the page it is read on", () => {
     await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD X · 2099-2100")
     await openEditor(page, 10)
 
-    await page.getByTestId("board-dialog-remove").click()
+    await page.getByTestId("board-edit-remove").click()
     const asking = page.getByTestId("board-remove-dialog")
     await expect(asking.getByTestId("confirm-question")).toContainText("holds no members")
 
@@ -503,13 +500,13 @@ test.describe("a board is corrected on the page it is read on", () => {
     await openEditor(page, 4)
 
     // A board's number is its identity, and board IX holds this one.
-    await page.getByTestId("board-dialog-number").fill("9")
-    await page.getByTestId("board-dialog-save").click()
+    await page.getByTestId("board-edit-number").locator("input").fill("9")
+    await page.getByTestId("board-edit-save").click()
 
-    await expect(page.getByTestId("board-dialog-failure")).toContainText("Board 9 already exists")
+    await expect(page.getByTestId("board-edit-failure")).toContainText("Board 9 already exists")
     // The dialog stands with what was typed, so the number can be corrected without retyping
     // the rest of the board.
-    await expect(page.getByTestId("board-dialog")).toBeVisible()
-    await expect(page.getByTestId("board-dialog-number")).toHaveValue("9")
+    await expect(page.getByTestId("board-edit")).toBeVisible()
+    await expect(page.getByTestId("board-edit-number").locator("input")).toHaveValue("9")
   })
 })

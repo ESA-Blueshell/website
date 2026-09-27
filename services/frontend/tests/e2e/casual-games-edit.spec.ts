@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard} from "./mocks"
+import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
 
 test.describe("the board keeping the casual games", () => {
   test("a visitor is offered no way to add, archive or remove a game", async ({page}) => {
@@ -17,9 +17,9 @@ test.describe("the board keeping the casual games", () => {
     await page.goto("/casual")
 
     await page.getByTestId("casual-add").click()
-    await page.getByTestId("casual-game-dialog-name").fill("Tetris")
-    await page.getByTestId("casual-game-dialog-intro").fill("Falling blocks, fast.")
-    await page.getByTestId("casual-game-dialog-save").click()
+    await page.getByTestId("game-edit-name").locator("input").fill("Tetris")
+    await writeMarkdown(page, page.getByTestId("game-edit-intro").getByRole("textbox"), "Falling blocks, fast.")
+    await page.getByTestId("game-edit-save").click()
 
     await expect(page).toHaveURL(/\/casual\/tetris$/)
     await expect(page.getByTestId("casual-game-head")).toContainText("Falling blocks, fast.")
@@ -32,13 +32,44 @@ test.describe("the board keeping the casual games", () => {
     await expect(page.getByTestId("casual-game-open-channel")).toHaveCount(0)
 
     await page.getByTestId("casual-game-edit").click()
-    await page.getByTestId("casual-game-dialog-channels-picker-search").click()
-    await page.getByTestId("casual-game-dialog-channels-picker-6323").click()
-    await expect(page.getByTestId("casual-game-dialog-channels-6323")).toContainText("#chess")
-    await page.getByTestId("casual-game-dialog-save").click()
+    await page.getByTestId("game-edit-channels-picker-search").click()
+    await page.getByTestId("game-edit-channels-picker-6323").click()
+    await expect(page.getByTestId("game-edit-channels-6323")).toContainText("#chess")
+    await page.getByTestId("game-edit-save").click()
 
     await expect(page.getByTestId("casual-game-channel-6323")).toHaveAttribute("href", "https://discord.com/channels/324/6323")
     await expect(page.getByTestId("casual-game-open-channel")).toContainText("Open #chess")
+  })
+
+  test("channels become chips by typing, a comma and a pasted run, and Backspace takes the last away", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+    await page.goto("/casual/chess")
+    await page.getByTestId("casual-game-edit").click()
+
+    const search = page.getByTestId("game-edit-channels-picker-search")
+    await search.fill("#CHESS")
+    await search.press(",")
+    await expect(page.getByTestId("game-edit-channels-6323")).toContainText("#chess")
+    await expect(search).toHaveValue("")
+
+    await search.fill("tetris")
+    await search.press(",")
+    await expect(page.getByTestId("game-edit-channels-picker-refused")).toHaveText("Not on the list: tetris")
+    await search.fill("")
+
+    await page.evaluate(() => {
+      const field = document.querySelector("[data-testid='game-edit-channels-picker-search']") as HTMLInputElement
+      const data = new DataTransfer()
+      data.setData("text", "#valorant #fighting-games")
+      field.dispatchEvent(new ClipboardEvent("paste", {clipboardData: data, bubbles: true, cancelable: true}))
+    })
+    await expect(page.getByTestId("game-edit-channels-6322")).toContainText("#valorant")
+    await expect(page.getByTestId("game-edit-channels-6324")).toContainText("#fighting-games")
+
+    await search.press("Backspace")
+    await expect(page.getByTestId("game-edit-channels-6324")).toHaveCount(0)
+    await expect(page.getByTestId("game-edit-channels-6322")).toBeVisible()
   })
 
   test("the board archives a game from its cell, and it joins the games we used to play", async ({page, context}) => {

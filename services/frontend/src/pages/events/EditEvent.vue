@@ -8,6 +8,7 @@ import Island from "@/components/island/Island.vue"
 import EventForm from "@/components/form/EventForm.vue"
 import store from "@/plugins/store"
 import {deleteEvent, type EventResponse, readEvent} from "@/domains/events"
+import {useReturnTo} from "@/composables/useReturnTo"
 
 const EVENT_LIST = "/events"
 
@@ -46,21 +47,7 @@ async function confirmDelete() {
   }
 }
 
-/**
- * The page the reader came from, read once on arrival rather than gone back to blindly.
- *
- * `history.state.back` is the entry behind this one, which is the page holding the card they
- * opened, filters and season in its query. Two answers are refused: the login page, which a
- * reader bounced through on the way here has behind them and is the one place saving must not
- * land, and any address outside the spa. Neither leaves anywhere to return to, so both fall back
- * to the list the event is on.
- */
-const returnTo = ((): string => {
-  const back = router.options.history.state.back
-  if (typeof back !== "string" || !back.startsWith("/") || back.startsWith("//")) return EVENT_LIST
-  if (back.startsWith("/login")) return EVENT_LIST
-  return back
-})()
+const returnTo = useReturnTo(EVENT_LIST)
 
 function onSuccess() {
   router.replace(returnTo)

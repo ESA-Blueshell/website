@@ -3,6 +3,7 @@ package net.blueshell.api.game.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.game.api.GameCompetition
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameChannel
@@ -53,7 +54,9 @@ class GameController(
                 accent = request.accent,
                 banner = request.banner,
                 icon = request.icon,
+                sortIndex = request.sortIndex,
                 channels = request.channelsAsked(),
+                competition = request.competitionAsked(),
             ),
         )
 
@@ -73,8 +76,9 @@ class GameController(
                 accent = request.accent,
                 banner = request.banner,
                 icon = request.icon,
-                sortIndex = null,
+                sortIndex = request.sortIndex,
                 channels = request.channelsAsked(),
+                competition = request.competitionAsked(),
             ),
         )
 
@@ -110,7 +114,11 @@ class GameController(
         @PathVariable game: String,
     ) = games.remove(game)
 
-    private fun CasualGameRequest.channelsAsked() = channels?.map { GameChannel(it.id, it.guildId, it.name) }
+    private fun CasualGameRequest.channelsAsked() = channels?.map { it.asChannel() }
+
+    private fun CasualGameRequest.competitionAsked() = GameCompetition(competitionIntro, esportsChannels?.map { it.asChannel() })
+
+    private fun GameChannelRequest.asChannel() = GameChannel(id, guildId, name)
 
     private fun answer(game: Game) = game.asCasualResponse(games.inCompetition().contains(game.code))
 }

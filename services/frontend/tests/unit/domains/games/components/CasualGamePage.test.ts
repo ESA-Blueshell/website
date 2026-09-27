@@ -32,7 +32,6 @@ const dialog = (name: string) => ({name, props: ["open", "game"], emits: ["updat
 const stubs = {
   RouterLink: RouterLinkStub,
   VMain: {template: "<main><slot /></main>"},
-  CasualGameDialog: dialog("CasualGameDialog"),
   ArchiveGameDialog: dialog("ArchiveGameDialog"),
   RemoveGameDialog: dialog("RemoveGameDialog"),
   ScopedEvents: {name: "ScopedEvents", props: ["scope", "testid"], template: "<section><slot /></section>"},
@@ -124,35 +123,25 @@ describe("one game's page", () => {
     expect(old.get("[data-testid=casual-game-archive]").text()).toBe("Bring it back")
     await old.get("[data-testid=casual-game-remove]").trigger("click")
     expect(old.findComponent({name: "RemoveGameDialog"}).exists()).toBe(true)
-    await old.get("[data-testid=casual-game-edit]").trigger("click")
-    expect(old.getComponent({name: "CasualGameDialog"}).props("open")).toBe(true)
+    expect(old.findAllComponents(RouterLinkStub).map(link => link.props("to"))).toContain("/casual/dota-2/edit")
     await old.get("[data-testid=casual-game-archive]").trigger("click")
     expect(old.getComponent({name: "ArchiveGameDialog"}).props("open")).toBe(true)
 
-    old.getComponent({name: "CasualGameDialog"}).vm.$emit("update:open", false)
     old.getComponent({name: "ArchiveGameDialog"}).vm.$emit("update:open", false)
     await old.vm.$nextTick()
-    expect(old.getComponent({name: "CasualGameDialog"}).props("open")).toBe(false)
     expect(old.getComponent({name: "ArchiveGameDialog"}).props("open")).toBe(false)
   })
 
-  it("follows a game to its new address once edited, and back to the index once removed", async () => {
+  it("goes back to the index once the game is removed", async () => {
     store.getters.isBoard = true
     const wrapper = mountPage(dota)
 
-    wrapper.getComponent({name: "CasualGameDialog"}).vm.$emit("saved", {...dota, slug: "dota"})
-    await flushPromises()
-    wrapper.getComponent({name: "CasualGameDialog"}).vm.$emit("saved", dota)
-    await flushPromises()
     await wrapper.get("[data-testid=casual-game-remove]").trigger("click")
     wrapper.getComponent({name: "RemoveGameDialog"}).vm.$emit("removed", dota)
     await flushPromises()
     wrapper.getComponent({name: "RemoveGameDialog"}).vm.$emit("update:open", false)
 
-    expect(router.replace).toHaveBeenCalledTimes(1)
-    expect(router.replace).toHaveBeenCalledWith("/casual/dota")
     expect(router.push).toHaveBeenCalledWith("/casual")
-    expect(refresh).toHaveBeenCalledTimes(3)
-    expect(committees.refresh).toHaveBeenCalledTimes(2)
+    expect(refresh).toHaveBeenCalledTimes(1)
   })
 })

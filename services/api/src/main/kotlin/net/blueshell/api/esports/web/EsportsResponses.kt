@@ -57,6 +57,18 @@ data class GameResponse(
     val sortIndex: Int,
     @Schema(description = "Whether the association currently plays it: a team played it this season or last")
     val current: Boolean,
+    @Schema(description = "What the competition pages say instead of the intro, where anything is said")
+    val competitionIntro: String? = null,
+    @Schema(description = "The Discord channels its esports players meet in, in the order chosen")
+    val esportsChannels: List<EsportsChannelResponse> = emptyList(),
+)
+
+@Schema(description = "A Discord channel a game's esports players meet in, with its name as last known")
+data class EsportsChannelResponse(
+    val id: String,
+    @Schema(description = "The server the channel is in, which a link into it needs")
+    val guildId: String,
+    val name: String,
 )
 
 @Schema(description = "One person on a team's roster, as the public read has them")

@@ -117,7 +117,50 @@ class GameServiceTest {
         assertThatThrownBy { service.create(name = "Chess", slug = "chess") }.isInstanceOf(GameAlreadyExists::class.java)
         assertThatThrownBy { service.create(name = "Go", slug = " -- ") }.isInstanceOf(GameAddressBlank::class.java)
         assertThatThrownBy { service.create(name = "Go", slug = "competitive-scene") }.isInstanceOf(AddressReserved::class.java)
+        assertThatThrownBy { service.create(name = "Go", slug = "New") }.isInstanceOf(AddressReserved::class.java)
         assertThatThrownBy { service.create(name = "Go", slug = "taken") }.isInstanceOf(AddressTaken::class.java)
+    }
+
+    @Test
+    fun `keeps what the competition pages say and their channels apart from the casual ones`() {
+        whenever(games.findAllByOrderBySortIndexAsc()).thenReturn(emptyList())
+        val esports = GameChannel("7", "324", "valorant-esports")
+
+        val added =
+            service.create(
+                name = "Valorant",
+                slug = "valorant",
+                intro = "Customs",
+                competition = GameCompetition(intro = " Two teams ", channels = listOf(esports, esports)),
+            )
+
+        assertThat(added.intro).isEqualTo("Customs")
+        assertThat(added.competitionIntro).isEqualTo("Two teams")
+        assertThat(added.esportsChannels).containsExactly(esports)
+        assertThat(added.channels).isEmpty()
+        assertThat(service.create(name = "Go", slug = "go").competitionIntro).isNull()
+    }
+
+    @Test
+    fun `corrects the competition pages' own intro and channels, and keeps them where nothing is said`() {
+        val valorant = game("VALORANT").apply {
+            competitionIntro = "Two teams"
+            esportsChannels += GameChannel("7", "324", "valorant-esports")
+        }
+        whenever(games.findByCode("VALORANT")).thenReturn(valorant)
+        whenever(games.findBySlug("valorant")).thenReturn(valorant)
+
+        service.update("VALORANT", "Valorant", "valorant", null, null, null, null, null)
+        assertThat(valorant.competitionIntro).isEqualTo("Two teams")
+        assertThat(valorant.esportsChannels).hasSize(1)
+
+        service.update("VALORANT", "Valorant", "valorant", null, null, null, null, null, competition = GameCompetition(intro = "  "))
+        assertThat(valorant.competitionIntro).isNull()
+        assertThat(valorant.esportsChannels).hasSize(1)
+
+        val cleared = GameCompetition(channels = emptyList())
+        service.update("VALORANT", "Valorant", "valorant", null, null, null, null, null, competition = cleared)
+        assertThat(valorant.esportsChannels).isEmpty()
     }
 
     @Test

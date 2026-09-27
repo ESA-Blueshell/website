@@ -13,7 +13,6 @@ import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import {useCommittees} from "@/domains/committees"
 import {cellOf, driftItemOf, reelItemOf, useCasualGames, useMayEditGames, type CasualGame} from "@/domains/games"
 import ArchiveGameDialog from "@/domains/games/island/ArchiveGameDialog.vue"
-import CasualGameDialog from "@/domains/games/island/CasualGameDialog.vue"
 import RemoveGameDialog from "@/domains/games/island/RemoveGameDialog.vue"
 
 defineOptions({name: "CasualPage"})
@@ -36,13 +35,6 @@ const olden = computed<DriftItem[]>(() => archived.value.map(driftItemOf))
 const every = computed<ArtCell[]>(() => [...live.value, ...archived.value].map(game => cellOf(game, organisersOf)))
 
 const go = (to: {href: string}) => void router.push(to.href)
-
-const adding = ref(false)
-/** A game added is shown on its own page, where the rest of it is edited. */
-const added = async (game: CasualGame) => {
-  await refresh()
-  void router.push(`/casual/${game.slug}`)
-}
 
 const archiving = ref<CasualGame | null>(null)
 const removing = ref<CasualGame | null>(null)
@@ -68,8 +60,8 @@ const archiveOf = (id: string | number) => games.value.find(game => game.code ==
           </cut-button>
           <cut-button
             v-if="mayEdit"
+            href="/casual/new"
             testid="casual-add"
-            @click="adding = true"
           >
             Add a game
           </cut-button>
@@ -165,11 +157,6 @@ const archiveOf = (id: string | number) => games.value.find(game => game.code ==
         </art-cells>
       </lead-band>
 
-      <casual-game-dialog
-        v-model:open="adding"
-        :game="null"
-        @saved="added"
-      />
       <remove-game-dialog
         v-if="removing"
         :game="removing"

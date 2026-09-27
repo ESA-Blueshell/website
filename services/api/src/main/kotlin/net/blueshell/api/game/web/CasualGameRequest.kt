@@ -3,8 +3,11 @@ package net.blueshell.api.game.web
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
+import net.blueshell.api.shared.web.HEX_COLOUR
+import net.blueshell.api.shared.web.HEX_COLOUR_REFUSED
 
 @Schema(description = "A game as the board adds or corrects it from the casual pages")
 data class CasualGameRequest(
@@ -18,8 +21,11 @@ data class CasualGameRequest(
     val slug: String,
     @field:Size(max = DESCRIPTION_MAX)
     val intro: String? = null,
-    @field:Size(max = 32)
-    @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
+    @field:Size(max = DESCRIPTION_MAX)
+    @field:Schema(description = "What the competition pages say; blank to say the intro")
+    val competitionIntro: String? = null,
+    @field:Pattern(regexp = HEX_COLOUR, message = HEX_COLOUR_REFUSED)
+    @field:Schema(description = "The colour that carries this game, as # and six hex digits, or nothing for the island's own")
     val accent: String? = null,
     @field:Size(max = 255)
     @field:Schema(description = "Where the game's banner is stored; nothing takes it away")
@@ -31,6 +37,12 @@ data class CasualGameRequest(
     @field:Size(max = 20)
     @field:Schema(description = "The Discord channels it lives in; left out, the ones it has are kept")
     val channels: List<GameChannelRequest>? = null,
+    @field:Valid
+    @field:Size(max = 20)
+    @field:Schema(description = "The Discord channels its esports players meet in; left out, the ones it has are kept")
+    val esportsChannels: List<GameChannelRequest>? = null,
+    @field:Schema(description = "Where the game sits among the others; left out, a new game goes last and a game keeps its place")
+    val sortIndex: Int? = null,
 )
 
 @Schema(description = "A Discord channel a game lives in, as the picker offered it")

@@ -17,13 +17,14 @@ const route = reactive<{query: Record<string, string>}>({query: {}})
 const replace = vi.fn(({query}: {query: Record<string, string>}) => {
   route.query = query
 })
+const push = vi.fn()
 
 vi.mock("vue-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-router")>()
   return {
     ...actual,
     useRoute: () => route,
-    useRouter: () => ({replace, push: vi.fn()}),
+    useRouter: () => ({replace, push}),
   }
 })
 
@@ -123,6 +124,23 @@ describe("Esports page", () => {
 
     // One per season on the strip, so the affordance belongs to a season rather than to the page.
     expect(wrapper.findAll('[data-testid^="esports-season-edit-"]')).toHaveLength(seasons.length + 1)
+  })
+
+  it("adds and corrects a season, and corrects or adds a game, each on its own page", async () => {
+    const wrapper = mountPage({board: true})
+    await flushPromises()
+
+    await wrapper.get('[data-testid="esports-season-edit-1"]').trigger("click")
+    await wrapper.get('[data-testid="esports-season-add"]').trigger("click")
+    await wrapper.get('[data-testid="esports-game-edit-VALORANT"]').trigger("click")
+    await wrapper.get('[data-testid="esports-game-add"]').trigger("click")
+
+    expect(push.mock.calls.map(call => call[0])).toEqual([
+      "/competition/seasons/1/edit",
+      "/competition/seasons/new",
+      "/competition/valorant/edit",
+      "/competition/seasons/2/edit",
+    ])
   })
 
   it("shows a visitor only the seasons something was fielded in", async () => {

@@ -2,8 +2,11 @@ package net.blueshell.api.board.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
+import net.blueshell.api.shared.web.HEX_COLOUR
+import net.blueshell.api.shared.web.HEX_COLOUR_REFUSED
 import java.time.LocalDate
 
 @Schema(name = "UpdateBoardRequest")
@@ -20,7 +23,7 @@ data class UpdateBoardRequest(
     @field:Size(max = 255, message = "Cheer must be at most 255 characters")
     var cheer: String? = null,
     @Schema(description = "The board's own colour; blank means the association's blue")
-    @field:Size(max = 32, message = "Accent must be at most 32 characters")
+    @field:Pattern(regexp = HEX_COLOUR, message = HEX_COLOUR_REFUSED)
     var accent: String? = null,
     @Schema(description = "What the year was about, in the board's own words")
     @field:Size(max = DESCRIPTION_MAX, message = "Description must be at most $DESCRIPTION_MAX characters")

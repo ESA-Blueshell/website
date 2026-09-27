@@ -2,8 +2,11 @@ package net.blueshell.api.esports.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.web.HEX_COLOUR
+import net.blueshell.api.shared.web.HEX_COLOUR_REFUSED
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import java.time.LocalDate
@@ -151,8 +154,8 @@ data class CreateGameRequest(
     val slug: String,
     @field:Size(max = DESCRIPTION_MAX)
     val intro: String? = null,
-    @field:Size(max = 32)
-    @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
+    @field:Pattern(regexp = HEX_COLOUR, message = HEX_COLOUR_REFUSED)
+    @field:Schema(description = "The colour that carries this game, as # and six hex digits, or nothing for the island's own")
     val accent: String? = null,
     @field:Size(max = 255)
     @field:Schema(description = "Where the game's banner is stored")
@@ -176,8 +179,8 @@ data class UpdateGameRequest(
     val slug: String,
     @field:Size(max = DESCRIPTION_MAX)
     val intro: String? = null,
-    @field:Size(max = 32)
-    @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
+    @field:Pattern(regexp = HEX_COLOUR, message = HEX_COLOUR_REFUSED)
+    @field:Schema(description = "The colour that carries this game, as # and six hex digits, or nothing for the island's own")
     val accent: String? = null,
     @field:Size(max = 255)
     @field:Schema(description = "Where the game's icon is stored; nothing takes the icon away")

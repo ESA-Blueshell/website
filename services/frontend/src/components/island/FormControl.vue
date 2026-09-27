@@ -32,6 +32,8 @@ const {
   placeholder = "",
   defaultCountry = "NL",
   testid = undefined,
+  maxLength = undefined,
+  counted = true,
 } = defineProps<{
   kind?: ControlKind
   label?: string
@@ -42,6 +44,10 @@ const {
   placeholder?: string
   defaultCountry?: CountryCode
   testid?: string
+  /** The cap a markdown field holds while it is typed; a plain input takes `maxlength` itself. */
+  maxLength?: number
+  /** Off where the field keeps its own count, so a markdown field does not show a second one. */
+  counted?: boolean
 }>()
 
 const model = defineModel<string | null>({default: ""})
@@ -211,6 +217,8 @@ const inset = computed(() =>
         :disabled="disabled"
         :invalid="invalid"
         :labelled-by="labelId"
+        :counted="counted"
+        :max-length="maxLength"
         :placeholder="placeholder"
         :testid="named ? `${named}-editor` : undefined"
         @blur="emit('blur')"

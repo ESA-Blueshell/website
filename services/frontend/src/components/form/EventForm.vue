@@ -1,17 +1,19 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {defineRule, Form} from "vee-validate"
+import {Form} from "vee-validate"
 import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
-import {type FieldMap} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
 import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
 import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import CommitteePicker from "@/components/form/fields/CommitteePicker.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
-import FileInput from "@/components/island/FileInput.vue"
+import FormFields from "@/components/island/FormFields.vue"
+import FormSection from "@/components/island/FormSection.vue"
+import ImagePicker from "@/components/island/ImagePicker.vue"
+import type {Picture, PictureStore} from "@/components/island/pictures"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import RadioGroup from "@/components/island/RadioGroup.vue"
 import EventPreview from "@/domains/events/island/EventPreview.vue"
@@ -128,16 +130,6 @@ const eventIsDirty = computed(() => JSON.stringify(event.value) !== initialEvent
 const initialSignUpForm = ref(JSON.stringify(event.value.signUpForm))
 const signUpFormIsDirty = computed(() => JSON.stringify(event.value.signUpForm) != initialSignUpForm.value)
 
-defineRule("fileSize", (value: File | File[] | null) => {
-  const f = Array.isArray(value) ? value[0] ?? null : (value as File | null)
-  if (!f) return true
-  return f.size <= 10 * 1024 * 1024 || "Promo image must be ≤ 10MB"
-})
-
-const eventFieldMap: FieldMap = {
-  "banner.fileId": "banner",
-}
-
 watch(
   () => event.value.signUp,
   (on) => {
@@ -191,14 +183,29 @@ async function loadBanner() {
   }
 }
 
-async function onBannerChange(val: File | null, handleChange: (v: File | null) => void) {
-  const file = Array.isArray(val) ? val[0] ?? null : val
-  const res = await formRef.value?.validateField("banner")
-  if (file && !res?.valid) return
-  bannerFile.value = file ?? null
-  bannerDirty.value = true
-  handleChange(file ?? null)
+/* The poster is kept here until the event is saved, since a new event has no record to store it on. */
+const posterShown = ref<Picture | null>(null)
+let posterChosen: File | null = null
+const POSTER_MAX_BYTES = 10 * 1024 * 1024
+
+const showPoster = (file: File | null) => {
+  if (posterShown.value) URL.revokeObjectURL(posterShown.value.url)
+  posterShown.value = file ? {path: "", url: URL.createObjectURL(file), renditions: []} : null
 }
+
+const holdPoster: PictureStore = async (file) => {
+  if (file.size > POSTER_MAX_BYTES) return {ok: false, reason: "A poster is at most 10 MB."}
+  posterChosen = file
+  return {ok: true, picture: {path: "", url: "", renditions: []}}
+}
+
+function onPoster(picture: Picture | null) {
+  bannerFile.value = picture ? posterChosen : null
+  bannerDirty.value = true
+}
+
+watch(bannerFile, showPoster)
+onBeforeUnmount(() => showPoster(null))
 
 async function fetchCommittees() {
   try {
@@ -299,7 +306,7 @@ const save = async () => {
       setSubmitResult(true)
     })
   } catch (e: unknown) {
-    handleSubmitError(formRef.value, e, eventFieldMap)
+    handleSubmitError(formRef.value, e)
     emit("submitted", false)
     setSubmitResult(false)
   }
@@ -316,21 +323,18 @@ defineExpose({validate, save})
   >
     <div class="event-form__grid">
       <div class="event-form__sections">
-        <section class="event-form__section">
-          <h2 class="event-form__title">
-            The event
-          </h2>
-          <div class="event-form__fields">
-            <div class="event-form__span">
-              <VvField
-                v-model="bannerFile"
-                :component="FileInput"
-                :component-props="{accept: 'image/png, image/jpeg, image/jpg, image/webp, image/gif', say: 'Choose a poster'}"
+        <form-section title="The event">
+          <form-fields>
+            <div class="form-span">
+              <image-picker
                 label="Poster"
-                name="banner"
-                rules="fileSize"
-                test-id="event-form-banner-field"
-                :update="(file: File, handle: HandleChange<string>) => onBannerChange(file as File | null, handle)"
+                may-be-animated
+                :picture="posterShown"
+                say="Choose a poster"
+                shape="poster"
+                :store="holdPoster"
+                testid="event-form-banner-field"
+                @update:picture="onPoster"
               />
             </div>
             <VvField
@@ -365,7 +369,7 @@ defineExpose({validate, save})
               rules="required|dateTimeAfter:@startTime"
               :update="(v: string, handle: HandleChange<string>) => handle(toISO({dateTime: v}))"
             />
-            <div class="event-form__span">
+            <div class="form-span">
               <VvField
                 v-model="event.committeeId"
                 :component="CommitteePicker"
@@ -376,13 +380,13 @@ defineExpose({validate, save})
                 test-id="event-form-committee-field"
               />
             </div>
-            <div class="event-form__span">
+            <div class="form-span">
               <event-games-picker
                 v-model="event.gameCodes"
                 testid="event-form-games"
               />
             </div>
-            <div class="event-form__span">
+            <div class="form-span">
               <VvField
                 v-model="event.description"
                 :component-props="{kind: 'markdown'}"
@@ -392,14 +396,11 @@ defineExpose({validate, save})
                 test-id="event-form-description-field"
               />
             </div>
-          </div>
-        </section>
+          </form-fields>
+        </form-section>
 
-        <section class="event-form__section">
-          <h2 class="event-form__title">
-            Price and access
-          </h2>
-          <div class="event-form__fields">
+        <form-section title="Price and access">
+          <form-fields>
             <VvField
               v-model="event.memberPrice"
               :component-props="{kind: 'money'}"
@@ -418,7 +419,7 @@ defineExpose({validate, save})
               rules="minValue:0"
               :update="(raw: string, handle: HandleChange<string>) => handle(raw)"
             />
-            <div class="event-form__span">
+            <div class="form-span">
               <VvField
                 v-model="event.membersOnly"
                 :component="CheckBox"
@@ -426,23 +427,17 @@ defineExpose({validate, save})
                 name="membersOnly"
               />
             </div>
-          </div>
-        </section>
+          </form-fields>
+        </form-section>
 
-        <section class="event-form__section">
-          <h2 class="event-form__title">
-            Discord
-          </h2>
+        <form-section title="Discord">
           <pinged-role-picker
             v-model="event.pingedRoles"
             testid="event-form-pinged-roles"
           />
-        </section>
+        </form-section>
 
-        <section class="event-form__section">
-          <h2 class="event-form__title">
-            Sign-ups
-          </h2>
+        <form-section title="Sign-ups">
           <div class="event-form__checks">
             <VvField
               v-model="event.signUp"
@@ -458,10 +453,7 @@ defineExpose({validate, save})
               name="enableSignUpForm"
             />
           </div>
-          <div
-            v-if="event.signUp"
-            class="event-form__fields"
-          >
+          <form-fields v-if="event.signUp">
             <VvField
               v-model="event.signUpDeadline"
               :component-props="{type: 'datetime-local'}"
@@ -482,7 +474,7 @@ defineExpose({validate, save})
               test-id="event-form-signup-limit-field"
               :update="(raw: string, handle: HandleChange<string>) => handle(raw)"
             />
-          </div>
+          </form-fields>
           <VvField
             v-if="enableSignUpForm"
             v-model="event.signUpForm"
@@ -510,7 +502,7 @@ defineExpose({validate, save})
               testid="event-form-signup-disposition"
             />
           </notice-box>
-        </section>
+        </form-section>
       </div>
 
       <event-preview
@@ -568,39 +560,6 @@ defineExpose({validate, save})
   align-items: start;
 }
 
-.event-form__section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.1rem 0 1.25rem;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.event-form__section:first-child {
-  padding-top: 0.75rem;
-  border-top: 0;
-}
-
-.event-form__title {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
-}
-
-.event-form__fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem 1.25rem;
-  align-items: start;
-}
-
-.event-form__span {
-  grid-column: 1 / -1;
-}
-
 .event-form__checks {
   display: flex;
   flex-wrap: wrap;
@@ -655,10 +614,6 @@ defineExpose({validate, save})
 }
 
 @media (max-width: 767px) {
-  .event-form__fields {
-    grid-template-columns: 1fr;
-  }
-
   .event-form__save {
     padding: 0.9rem 1rem;
   }

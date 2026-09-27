@@ -113,7 +113,7 @@ test.describe("taking things off the esports pages", () => {
 
     await page.getByTestId("esports-season-node-20").hover()
     await page.getByTestId("esports-season-edit-20").click()
-    await page.getByTestId("season-dialog-remove").click()
+    await page.getByTestId("season-edit-remove").click()
 
     const question = page.getByTestId("confirm-question")
     await expect(question).toContainText("Autumn 2025")
@@ -128,10 +128,10 @@ test.describe("taking things off the esports pages", () => {
 
     await page.getByTestId("esports-season-node-20").hover()
     await page.getByTestId("esports-season-edit-20").click()
-    await page.getByTestId("season-dialog-remove").click()
+    await page.getByTestId("season-edit-remove").click()
     await page.getByTestId("confirm-go").click()
 
-    await expect(page.getByTestId("season-remove-dialog")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant$/)
     await expect(page.getByTestId("esports-season-node-20")).toHaveCount(0)
   })
 
@@ -147,7 +147,7 @@ test.describe("taking things off the esports pages", () => {
 
     await page.getByTestId("confirm-go").click()
     // Off the form, and off the roster once it is saved.
-    await expect(page.getByTestId("lineup-handle-1")).toHaveValue("Blackout")
+    await expect(page.getByTestId("lineup-handle-1").locator("input")).toHaveValue("Blackout")
     await page.getByTestId("lineup-save").click()
     await expect(page.getByTestId("team-roster-1")).not.toContainText("Loafine")
   })
@@ -159,12 +159,12 @@ test.describe("taking things off the esports pages", () => {
 
     await openLineup(page)
     await page.getByTestId("lineup-add").click()
-    await page.getByTestId("lineup-handle-3").fill("Fleeting")
+    await page.getByTestId("lineup-handle-3").locator("input").fill("Fleeting")
 
     await page.getByTestId("lineup-remove-3").click()
 
     // Nobody's record, so there is nothing to ask about.
     await expect(page.getByTestId("lineup-remove-dialog")).toBeHidden()
-    await expect(page.getByTestId("lineup-handle-3")).toHaveCount(0)
+    await expect(page.getByTestId("lineup-handle-3").locator("input")).toHaveCount(0)
   })
 })

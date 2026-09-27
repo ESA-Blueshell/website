@@ -1,3 +1,4 @@
+import {Buffer} from "node:buffer"
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
 
@@ -35,6 +36,34 @@ test.describe("the event form", () => {
     await page.getByTestId("event-form-submit-btn").click()
     const body = (await created).postDataJSON() as Record<string, unknown>
     expect(body).toMatchObject({title: "Pub quiz", location: "Café De Beiaard", committeeId: 900, approved: true, signUp: true, signUpLimit: 24, gameCodes: ["CHESS"]})
+  })
+
+  test("holds a poster in the picture input and stores it with the event", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/events/create")
+
+    const poster = page.getByTestId("event-form-banner-field")
+    await expect(poster.getByTestId("event-form-banner-field-empty")).toHaveText("Choose a poster")
+    await poster.getByTestId("event-form-banner-field-file").setInputFiles({
+      name: "poster.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64"),
+    })
+    await expect(poster.getByTestId("event-form-banner-field-preview")).toBeVisible()
+
+    await page.getByTestId("event-form-title-field").locator("input").first().fill("Pub quiz")
+    await page.getByTestId("event-form-location-field").locator("input").first().fill("Café De Beiaard")
+    await writeMarkdown(page, "Description*", "Questions, and a round of drinks.")
+    const committee = page.getByTestId("event-form-committee-field")
+    await committee.locator("input").first().fill("Events")
+    await page.getByRole("listbox").getByText("Events Committee", {exact: true}).click()
+
+    const stored = page.waitForRequest(request => request.method() === "POST" && new URL(request.url()).pathname.endsWith("/events/banners"))
+    const created = page.waitForRequest(request => request.method() === "POST" && /\/events$/u.test(new URL(request.url()).pathname))
+    await page.getByTestId("event-form-submit-btn").click()
+    await stored
+    expect((await created).postDataJSON()).toMatchObject({banner: {fileId: 77}})
   })
 
   test("says what is missing on the field it is missing from", async ({page}) => {

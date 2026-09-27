@@ -104,7 +104,7 @@ function paint() {
     put(placed.index, slice, "visibility", hidden ? "hidden" : "visible")
     if (hidden) continue
     put(placed.index, slice, "transform", `translate3d(${placed.left.toFixed(1)}px,0,0)`)
-    put(placed.index, slice, "width", `${placed.width.toFixed(1)}px`)
+    put(placed.index, slice, "width", `${(placed.width - shape.value.cut).toFixed(1)}px`)
     put(placed.index, slice, "opacity", placed.visibility.toFixed(2))
     put(placed.index, slice, "zIndex", String(placed.layer))
     put(placed.index, slice, "--open", placed.openness.toFixed(3))
@@ -231,89 +231,98 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
         @pointerup="release"
         @wheel="swipe"
       >
-        <a
-          v-for="(item, index) in items"
-          :key="item.id"
-          :ref="el => { slices[index] = el as HTMLElement | null }"
-          :aria-current="index === resting ? 'true' : undefined"
-          class="flick-reel__slice"
-          :data-testid="`${testidPrefix}-slice-${item.id}`"
-          draggable="false"
-          :href="item.href"
-          :style="{'--accent': item.accent}"
-          @click="choose($event, item)"
-          @focus="bring(index)"
-        >
-          <span
-            v-if="item.plus"
-            aria-hidden="true"
-            class="flick-reel__plate flick-reel__plate--plus"
-          ><svg
-            fill="none"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-width="1.4"
-            viewBox="0 0 24 24"
-          ><path d="M12 5v14M5 12h14" /></svg></span>
-          <img
-            v-else-if="item.banner"
-            alt=""
-            class="flick-reel__art"
-            loading="lazy"
-            sizes="608px"
-            :src="item.banner"
-            :srcset="item.srcset"
+        <div class="flick-reel__belt">
+          <a
+            v-for="(item, index) in items"
+            :key="item.id"
+            :ref="el => { slices[index] = el as HTMLElement | null }"
+            :aria-current="index === resting ? 'true' : undefined"
+            class="flick-reel__slice"
+            :data-testid="`${testidPrefix}-slice-${item.id}`"
+            draggable="false"
+            :href="item.href"
+            :style="{'--accent': item.accent}"
+            @click="choose($event, item)"
+            @focus="bring(index)"
           >
-          <span
-            v-else
-            aria-hidden="true"
-            class="flick-reel__plate"
-          ><span>{{ item.initials }}</span></span>
-          <span
-            aria-hidden="true"
-            class="flick-reel__glow"
-          />
-          <span class="flick-reel__body">
-            <!-- Tick and name shrink as one, so the tick stays on top of the name at every size. -->
-            <span class="flick-reel__title">
+            <span class="flick-reel__face">
+              <span
+                v-if="item.plus"
+                aria-hidden="true"
+                class="flick-reel__plate flick-reel__plate--plus"
+              ><svg
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.4"
+                viewBox="0 0 24 24"
+              ><path d="M12 5v14M5 12h14" /></svg></span>
+              <img
+                v-else-if="item.banner"
+                alt=""
+                class="flick-reel__art"
+                loading="lazy"
+                sizes="608px"
+                :src="item.banner"
+                :srcset="item.srcset"
+              >
+              <template v-else>
+                <span
+                  aria-hidden="true"
+                  class="flick-reel__plate"
+                />
+                <span
+                  aria-hidden="true"
+                  class="flick-reel__initials"
+                >{{ item.initials }}</span>
+              </template>
               <span
                 aria-hidden="true"
-                class="flick-reel__tick"
+                class="flick-reel__glow"
               />
-              <span class="flick-reel__name">
-                <img
-                  v-if="item.icon"
-                  alt=""
-                  :src="item.icon"
-                >{{ item.title }}
-              </span>
-            </span>
-            <!-- In the flow under the name rather than laid over the slice's foot: on a phone the
+              <span class="flick-reel__body">
+                <!-- Tick and name shrink as one, so the tick stays on top of the name at every size. -->
+                <span class="flick-reel__title">
+                  <span
+                    aria-hidden="true"
+                    class="flick-reel__tick"
+                  />
+                  <span class="flick-reel__name">
+                    <img
+                      v-if="item.icon"
+                      alt=""
+                      :src="item.icon"
+                    >{{ item.title }}
+                  </span>
+                </span>
+                <!-- In the flow under the name rather than laid over the slice's foot: on a phone the
                  notes and chips wrap, and a fixed gap under the name let them run into it. -->
-            <span class="flick-reel__more">
-              <span
-                v-for="note in item.notes ?? []"
-                :key="note"
-                class="flick-reel__note"
-              >
-                <svg
-                  aria-hidden="true"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                ><path :d="discordMark" /></svg>{{ note }}
+                <span class="flick-reel__more">
+                  <span
+                    v-for="note in item.notes ?? []"
+                    :key="note"
+                    class="flick-reel__note"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    ><path :d="discordMark" /></svg>{{ note }}
+                  </span>
+                  <span
+                    v-for="chip in item.chips ?? []"
+                    :key="chip"
+                    class="flick-reel__chip"
+                  >{{ chip }}</span>
+                  <span
+                    v-if="!item.plus"
+                    class="flick-reel__open"
+                  >Open {{ item.title }} →</span>
+                </span>
               </span>
-              <span
-                v-for="chip in item.chips ?? []"
-                :key="chip"
-                class="flick-reel__chip"
-              >{{ chip }}</span>
-              <span
-                v-if="!item.plus"
-                class="flick-reel__open"
-              >Open {{ item.title }} →</span>
             </span>
-          </span>
-        </a>
+          </a>
+        </div>
 
         <pan-chevron
           :label="panBackLabel"
@@ -372,6 +381,8 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   --reel-height: 25rem;
   --rail-height: 3.4rem;
   --cut: 30px;
+  /* The lean that puts the cut across the reel's height, which the belt is skewed by once. */
+  --lean: atan2(var(--cut), var(--reel-height));
 
   position: relative;
   width: 100%;
@@ -413,6 +424,17 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   z-index: 60;
 }
 
+/*
+ * The belt is skewed once, so the slices are plain boxes whose edges lean: a slanted clip on
+ * each slice was a mask the compositor drew again every frame, for every slice on screen.
+ */
+.flick-reel__belt {
+  position: absolute;
+  inset: 0;
+  transform: skewX(calc(-1 * var(--lean)));
+  transform-origin: 0 100%;
+}
+
 .flick-reel__slice {
   --open: 0;
 
@@ -422,12 +444,31 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   height: 100%;
   overflow: hidden;
   background-color: var(--color-surface);
-  clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
-  will-change: transform, width;
+  will-change: transform;
   -webkit-user-drag: none;
 }
 
-.flick-reel__slice::before {
+/* The seam between two slices, drawn on the one to the right. */
+.flick-reel__slice::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 2;
+  width: 1.5px;
+  pointer-events: none;
+  background-color: var(--color-hairline);
+}
+
+/* Upright again inside the leaning slice, and as wide as the slice and its cut together. */
+.flick-reel__face {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(100% + var(--cut));
+  transform: skewX(var(--lean));
+  transform-origin: 0 100%;
+}
+
+.flick-reel__face::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -437,38 +478,33 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   opacity: calc((1 - var(--open)) * 0.42);
 }
 
-/* The seam between two slices, drawn on the one to the right. */
-.flick-reel__slice::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background-color: var(--color-hairline);
-  clip-path: polygon(var(--cut) 0, calc(var(--cut) + 1.5px) 0, 1.5px 100%, 0 100%);
-}
-
 .flick-reel__slice:focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: -4px;
 }
 
-.flick-reel__art {
+/*
+ * The pictures and grounds keep one size whatever the slice's width and sit on layers of their
+ * own, so a slice growing moves them rather than having them painted again every frame.
+ */
+.flick-reel__art,
+.flick-reel__plate {
   position: absolute;
   top: 0;
   left: 50%;
   width: 38rem;
   max-width: none;
   height: 100%;
-  object-fit: cover;
   translate: -50% 0;
   pointer-events: none;
+  will-change: transform;
+}
+
+.flick-reel__art {
+  object-fit: cover;
 }
 
 .flick-reel__plate {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
   background:
     radial-gradient(110% 90% at 0 0, color-mix(in oklab, var(--accent) 30%, transparent), transparent 70%),
     repeating-linear-gradient(-62deg, transparent 0 22px, color-mix(in oklab, var(--accent) 7%, transparent) 22px 24px),
@@ -487,10 +523,11 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   translate: 0 -2.5rem;
 }
 
-.flick-reel__plate > span {
+.flick-reel__initials {
   position: absolute;
   top: -1.2rem;
   right: -0.4rem;
+  will-change: transform;
   font-family: var(--font-display);
   font-size: 9rem;
   line-height: 1;
@@ -499,9 +536,12 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 
 .flick-reel__glow {
   position: absolute;
-  inset: auto 0 0;
+  bottom: 0;
+  left: 0;
+  width: 38rem;
   height: 75%;
   pointer-events: none;
+  will-change: transform;
   background: linear-gradient(to top, color-mix(in oklab, var(--color-ground) 94%, transparent), color-mix(in oklab, var(--color-ground) 60%, transparent) 40%, transparent);
 }
 

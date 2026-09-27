@@ -56,19 +56,20 @@ describe("FlickReel", () => {
     expect(slice(wrapper, "VALORANT").find(".flick-reel__art").attributes("srcset")).toBe("/v-640.webp 640w")
     expect(slice(wrapper, "VALORANT").text()).toContain("#valorant")
     expect(slice(wrapper, "VALORANT").text()).toContain("LanCie")
-    expect(slice(wrapper, "CHESS").find(".flick-reel__plate").text()).toBe("C")
+    expect(slice(wrapper, "CHESS").find(".flick-reel__initials").text()).toBe("C")
     expect(wrapper.get("[data-testid=casual-rail-VALORANT] img").attributes("src")).toBe("/v-icon.webp")
     expect(wrapper.get("[data-testid=casual-rail-CHESS]").text()).toBe("Chess")
     expect(wrapper.get("[data-testid=casual-rail-WORDLE]").text()).toBe("W")
   })
 
+  // A slice is drawn as the box between its seams; the belt's lean adds the cut back on screen.
   it("opens the first slice in the middle and paints every slice onto the band", () => {
     const wrapper = mountReel()
     const first = slice(wrapper, "VALORANT").element as HTMLElement
 
     expect(resting(wrapper)).toEqual(["casual-slice-VALORANT"])
     expect(first.style.getPropertyValue("--open")).toBe("1.000")
-    expect(first.style.width).toBe("608px")
+    expect(first.style.width).toBe("578px")
     expect(wrapper.get("[data-testid=casual-rail-VALORANT]").classes()).toContain("flick-reel__cell--on")
   })
 
@@ -213,7 +214,7 @@ describe("FlickReel", () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.get("[data-testid=casual-reel]").classes()).toContain("flick-reel--narrow")
-    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.width).toBe("289px")
+    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.width).toBe("271px")
   })
 
   it("is drawn at its widest on a wider band and scaled up, with a drag scaled down to match", async () => {
@@ -224,7 +225,7 @@ describe("FlickReel", () => {
     Object.assign(band.element, {setPointerCapture: vi.fn(), hasPointerCapture: () => true})
 
     expect((wrapper.get("[data-testid=casual-reel]").element as HTMLElement).style.getPropertyValue("--k")).toBe("2")
-    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.width).toBe("608px")
+    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.width).toBe("578px")
     pointer(band.element, "pointerdown", 700)
     pointer(band.element, "pointermove", 550)
     expect((slice(wrapper, "VALORANT").element as HTMLElement).style.getPropertyValue("--open")).toBe("0.750")

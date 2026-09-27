@@ -66,8 +66,21 @@ const fetchFlag = async (name) => {
  * the pinned files never held; nginx sandboxes /emoji/ as well.
  */
 const RUNS = /<script|\son[a-z]+\s*=|javascript:|<foreignObject/i
+
+/* What follows an XML declaration and any comments: read by hand, as a pattern for it backtracks. */
+const firstTagOf = (svg) => {
+    let rest = svg.trimStart()
+    if (rest.startsWith('<?xml')) rest = rest.slice(rest.indexOf('?>') + 2).trimStart()
+    while (rest.startsWith('<!--')) {
+        const end = rest.indexOf('-->')
+        if (end === -1) return ''
+        rest = rest.slice(end + 3).trimStart()
+    }
+    return rest
+}
+
 const pictureOnly = (file, svg) => {
-    if (!/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(svg) || RUNS.test(svg)) {
+    if (!/^<svg[\s>]/i.test(firstTagOf(svg)) || RUNS.test(svg)) {
         throw new Error(`Noto flag ${file} is not a plain SVG picture`)
     }
     return svg

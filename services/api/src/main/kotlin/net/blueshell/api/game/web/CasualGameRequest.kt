@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 
 @Schema(description = "A game as the board adds or corrects it from the casual pages")
 data class CasualGameRequest(
@@ -15,7 +16,7 @@ data class CasualGameRequest(
     @field:Size(max = 64, message = "Address must be at most 64 characters")
     @field:Schema(description = "The address this game answers to under /casual")
     val slug: String,
-    @field:Size(max = 4000)
+    @field:Size(max = DESCRIPTION_MAX)
     val intro: String? = null,
     @field:Size(max = 32)
     @field:Schema(description = "The colour that carries this game, or nothing for the island's own")

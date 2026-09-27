@@ -7,6 +7,7 @@ import type {Picture} from "@/components/island/pictures"
 import {saveGameOrganisers, useCommittees} from "@/domains/committees"
 import GameOrganisersPicker from "@/domains/committees/island/GameOrganisersPicker.vue"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
+import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 import {addCasualGame, saveCasualGame, storeGameBanner, storeGameIcon, type CasualGame, type CasualGameDraft, type GameChannel} from "../adapters/games"
 import {cellOf} from "../useCasualGames"
 
@@ -175,7 +176,7 @@ const submit = async () => {
           v-model="intro"
           class="casual-form__input casual-form__input--tall"
           data-testid="casual-game-dialog-intro"
-          maxlength="4000"
+          :maxlength="DESCRIPTION_CAP"
           rows="3"
         />
       </label>

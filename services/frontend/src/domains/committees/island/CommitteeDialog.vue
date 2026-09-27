@@ -7,6 +7,7 @@ import SearchPicker from "@/components/island/SearchPicker.vue"
 import type {Picture} from "@/components/island/pictures"
 import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
+import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 import {
   addCommittee,
   type Committee,
@@ -223,7 +224,7 @@ const submit = async () => {
           v-model="description"
           class="committee-form__input committee-form__input--tall"
           data-testid="committee-dialog-description"
-          maxlength="4000"
+          :maxlength="DESCRIPTION_CAP"
           required
           rows="5"
         />

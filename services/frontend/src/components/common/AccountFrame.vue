@@ -39,6 +39,7 @@ const pages = computed(() => accountFor(reader.value))
   <v-main class="account-main">
     <island
       class="account"
+      :class="{'account--whole': islandContent}"
       testid="account-island"
     >
       <header-band>
@@ -131,9 +132,14 @@ const pages = computed(() => accountFor(reader.value))
     url("@/assets/bg/shelly-bg-white.jpg");
 }
 
+/* Only a page drawn wholly inside the island stretches it to the footer; a page still on Vuetify
+   is drawn below it and starts right under the tabs, so there the island is only its head. */
 .account {
-  flex: 1 0 auto;
   min-height: 0;
+}
+
+.account--whole {
+  flex: 1 0 auto;
 }
 
 .account__wrap {

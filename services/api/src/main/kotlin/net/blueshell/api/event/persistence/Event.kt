@@ -18,6 +18,7 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import net.blueshell.api.survey.persistence.Survey
 import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.SQLDelete
@@ -64,7 +65,7 @@ class Event(
     var committee: Committee?,
     @Column(name = "title", nullable = false)
     var title: String,
-    @Column(name = "description", length = 4095)
+    @Column(name = "description", length = DESCRIPTION_MAX)
     var description: String? = null,
     @Column(name = "location")
     var location: String? = null,

@@ -1,11 +1,14 @@
 import {Marked, type Token, type TokenizerAndRendererExtension, type Tokens} from "marked"
 import * as emoji from "node-emoji"
+import {voiceRoomUrl} from "@/domains/discord"
+import {TIMESTAMP, timestampText, type TimeStyle} from "@/plugins/discordTime"
 import {emojiImg, SERVER_EMOJI, serverEmojiImg, withEmojiArt} from "@/plugins/emojiArt"
 
 /*
  * A description read the way Discord reads a message (architecture ADR-010). Each rule is
- * Discord's own pattern; markdownDialect.ts parses the same rules for the editor, so change
- * one, change the other.
+ * Discord's own pattern; markdownDialect.ts parses the same rules for the editor, and the api's
+ * DiscordMarkdown.kt translates them for Google Calendar and link previews. Change one, change
+ * the others.
  */
 
 const escapeHtml = (text: string): string => text
@@ -102,6 +105,46 @@ const serverEmoji: TokenizerAndRendererExtension = {
   },
 }
 
+/*
+ * A mention is drawn with its ID and a stand-in; fillMentions names it once the api has said who
+ * or what it is, so the page never waits on Discord to be drawn.
+ */
+const MENTION = /^<(@!?|@&|#)(\d{15,21})>/
+const mention: TokenizerAndRendererExtension = {
+  name: "mention",
+  level: "inline",
+  start: src => src.search(/<[@#]/),
+  tokenizer(src) {
+    const found = MENTION.exec(src)
+    if (!found) return undefined
+    return {type: "mention", raw: found[0], sign: found[1], id: found[2]}
+  },
+  renderer(token) {
+    const id = token.id as string
+    // The pill inside the link, so a card that unwraps its links keeps the pill to name.
+    if (token.sign === "#") return `<a href="${voiceRoomUrl(id)}"><span class="mention" data-channel="${id}">#…</span></a>`
+    if (token.sign === "@&") return `<span class="mention mention--role" data-role="${id}">@…</span>`
+    return `<span class="mention" data-user="${id}">@…</span>`
+  },
+}
+
+const WRITTEN_TIMESTAMP = new RegExp(`^${TIMESTAMP.source}`)
+const timestamp: TokenizerAndRendererExtension = {
+  name: "timestamp",
+  level: "inline",
+  start: src => src.indexOf("<t:"),
+  tokenizer(src) {
+    const found = WRITTEN_TIMESTAMP.exec(src)
+    if (!found) return undefined
+    return {type: "timestamp", raw: found[0], unix: Number(found[1]), style: found[2] ?? "f"}
+  },
+  renderer(token) {
+    const unix = token.unix as number
+    const when = new Date(unix * 1000).toISOString()
+    return `<time class="timestamp" datetime="${when}">${escapeHtml(timestampText(unix, token.style as TimeStyle))}</time>`
+  },
+}
+
 const subtext: TokenizerAndRendererExtension = {
   name: "subtext",
   level: "block",
@@ -152,7 +195,7 @@ export const discordMarked = new Marked({
   breaks: true,
   async: false,
   // Tried last to first, so bold is read before italic.
-  extensions: [subtext, serverEmoji, shortcode, tilde, strike, emphasis, strong, underline, spoiler],
+  extensions: [subtext, timestamp, mention, serverEmoji, shortcode, tilde, strike, emphasis, strong, underline, spoiler],
   hooks: {preprocess: discordLines},
   renderer: {
     text(token: Tokens.Text | Tokens.Escape) {

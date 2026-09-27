@@ -951,6 +951,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/discord/members") {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)
     }
+    if (method === "GET" && path === "/discord/mentions") {
+      return fulfillJson(route, {users: [], roles: [], channels: []})
+    }
+    if (method === "GET" && path === "/discord/channels") {
+      return fulfillJson(route, [{id: "323456789012345602", name: "events-info"}])
+    }
     if (method === "GET" && path === "/discord/emojis") {
       return fulfillJson(route, [{id: "657733730491826186", name: "POGGERS", animated: false}])
     }

@@ -285,7 +285,6 @@ const submit = async () => {
         <markdown-editor
           v-model="description"
           :labelled-by="descriptionLabel"
-          :max-length="4000"
           min-height="6rem"
           testid="board-dialog-description"
         />

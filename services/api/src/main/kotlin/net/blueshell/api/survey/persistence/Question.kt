@@ -16,6 +16,7 @@ import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.hibernate.DirtyField
 import net.blueshell.api.shared.hibernate.DirtyModel
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import net.blueshell.api.shared.model.DirtyAwareModel
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -49,7 +50,7 @@ class Question(
     @Column(name = "type", nullable = false)
     @field:DirtyField
     var type: QuestionType,
-    @Column(name = "label", nullable = false, length = 2047)
+    @Column(name = "label", nullable = false, length = DESCRIPTION_MAX)
     @field:DirtyField
     var label: String,
     @Column(name = "choice_labels", columnDefinition = "JSON")

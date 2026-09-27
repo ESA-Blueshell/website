@@ -3,6 +3,8 @@ import {EditorSelection, type EditorState, type Range, type SelectionRange} from
 import {Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType}
   from "@codemirror/view"
 import * as emoji from "node-emoji"
+import {type MentionKind, nameMentions} from "@/domains/discord"
+import {TIMESTAMP, timestampText, type TimeStyle} from "@/plugins/discordTime"
 import {EMOJI, emojiSrc, SERVER_EMOJI, serverEmojiSrc} from "@/plugins/emojiArt"
 
 /* Read off the tree rather than imported, since @lezer/common is not a dependency of its own. */
@@ -133,6 +135,78 @@ const shortcodesIn = (view: EditorView, ranges: readonly SelectionRange[]): Rang
   return drawn
 }
 
+/** A mention as the page draws it, named once the api has said who or what it is. */
+class MentionPill extends WidgetType {
+  constructor(private readonly kind: MentionKind, private readonly id: string) {
+    super()
+  }
+
+  eq(other: MentionPill): boolean {
+    return other.kind === this.kind && other.id === this.id
+  }
+
+  toDOM(): HTMLElement {
+    const drawn = document.createElement("span")
+    drawn.className = "cm-mention"
+    drawn.textContent = this.kind === "channel" ? "#…" : "@…"
+    const ids = {users: [] as string[], roles: [] as string[], channels: [] as string[]}
+    ids[`${this.kind}s`].push(this.id)
+    void nameMentions(ids).then((nameOf) => {
+      const {said, colour} = nameOf(this.kind, this.id)
+      drawn.textContent = said
+      if (colour) drawn.style.setProperty("--mention", colour)
+    })
+    return drawn
+  }
+
+  ignoreEvent(): boolean {
+    return false
+  }
+}
+
+class TimePill extends WidgetType {
+  constructor(private readonly unix: number, private readonly style: TimeStyle) {
+    super()
+  }
+
+  eq(other: TimePill): boolean {
+    return other.unix === this.unix && other.style === this.style
+  }
+
+  toDOM(): HTMLElement {
+    const drawn = document.createElement("span")
+    drawn.className = "cm-timestamp"
+    drawn.textContent = timestampText(this.unix, this.style)
+    return drawn
+  }
+
+  ignoreEvent(): boolean {
+    return false
+  }
+}
+
+const MENTION = /<(@!?|@&|#)(\d{15,21})>/g
+const KINDS: Record<string, MentionKind> = {"@": "user", "@!": "user", "@&": "role", "#": "channel"}
+
+/* Shown as written while the cursor touches one, like a mark, so it can be read and mended. */
+const mentionsIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
+  const drawn: Range<Decoration>[] = []
+  for (const {from, to} of view.visibleRanges) {
+    const text = view.state.sliceDoc(from, to)
+    const found = [
+      ...[...text.matchAll(MENTION)].map(one => ({one, widget: new MentionPill(KINDS[one[1] as string] as MentionKind, one[2] as string)})),
+      ...[...text.matchAll(TIMESTAMP)].map(one => ({one, widget: new TimePill(Number(one[1]), (one[2] ?? "f") as TimeStyle)})),
+    ]
+    for (const {one, widget} of found) {
+      const at = from + one.index
+      const end = at + one[0].length
+      if (touches(ranges, at, end) || literalAt(view.state, at)) continue
+      drawn.push(Decoration.replace({widget}).range(at, end))
+    }
+  }
+  return drawn
+}
+
 /* Like a mark, `<:name:id>` shows while the cursor touches it, so it can be read and mended. */
 const serverEmojiIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
   const drawn: Range<Decoration>[] = []
@@ -214,7 +288,8 @@ const decorate = (view: EditorView): DecorationSet => {
       },
     })
   }
-  return Decoration.set([...marks, ...shortcodesIn(view, ranges), ...serverEmojiIn(view, ranges)], true)
+  return Decoration.set(
+    [...marks, ...shortcodesIn(view, ranges), ...serverEmojiIn(view, ranges), ...mentionsIn(view, ranges)], true)
 }
 
 /** Hides the marks, and redraws whenever the document, the view or the cursor moves. */

@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 
 @Schema(name = "UpdateCommitteeRequest")
 data class UpdateCommitteeRequest(
@@ -12,7 +13,7 @@ data class UpdateCommitteeRequest(
     @field:Size(min = 1, max = 100, message = "Name must be 1-100 characters")
     var name: String,
     @field:NotBlank(message = "Committee description cannot be empty.")
-    @field:Size(min = 1, max = 1000, message = "Description must be 1-1000 characters")
+    @field:Size(min = 1, max = DESCRIPTION_MAX, message = "Description must be 1-$DESCRIPTION_MAX characters")
     var description: String,
     @field:NotEmpty
     @field:Valid

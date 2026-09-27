@@ -49,6 +49,27 @@ data class DiscordEmojiResponse(
     val animated: Boolean,
 )
 
+@Schema(description = "What a description's mentions name: the members, roles and channels the server has")
+data class DiscordMentionsResponse(
+    val users: List<DiscordNameResponse>,
+    val roles: List<DiscordRoleNameResponse>,
+    val channels: List<DiscordNameResponse>,
+)
+
+@Schema(description = "A member or a channel of the Discord server, by the name the server shows")
+data class DiscordNameResponse(
+    val id: String,
+    val name: String,
+)
+
+@Schema(description = "A role of the Discord server, as a mention shows it")
+data class DiscordRoleNameResponse(
+    val id: String,
+    val name: String,
+    @Schema(description = "The role's colour as 0xRRGGBB, where it has one")
+    val colour: Int?,
+)
+
 @Schema(description = "A member of the Discord server, as a picker shows them")
 data class DiscordMemberResponse(
     @Schema(description = "Their Discord user ID, which never changes")

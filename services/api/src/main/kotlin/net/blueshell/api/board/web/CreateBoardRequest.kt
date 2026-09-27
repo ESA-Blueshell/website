@@ -3,6 +3,7 @@ package net.blueshell.api.board.web
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import java.time.LocalDate
 
 @Schema(name = "CreateBoardRequest")
@@ -22,6 +23,7 @@ data class CreateBoardRequest(
     @field:Size(max = 32, message = "Accent must be at most 32 characters")
     var accent: String? = null,
     @Schema(description = "What the year was about, in the board's own words")
+    @field:Size(max = DESCRIPTION_MAX, message = "Description must be at most $DESCRIPTION_MAX characters")
     var description: String? = null,
     var startDate: LocalDate,
     var endDate: LocalDate? = null,

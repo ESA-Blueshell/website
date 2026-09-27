@@ -3,6 +3,9 @@ package net.blueshell.api.event.domain
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.file.api.Image
 import net.blueshell.api.file.api.asImage
+import net.blueshell.api.shared.discord.DiscordMarkdown
+import net.blueshell.api.shared.discord.DiscordMentionNames
+import net.blueshell.api.shared.discord.MentionNames
 import org.commonmark.node.Block
 import org.commonmark.node.Code
 import org.commonmark.node.HardLineBreak
@@ -45,6 +48,7 @@ private val markdown = Parser.builder().build()
 fun Event.linkPreview(
     frontendUrl: String,
     apiUrl: String,
+    names: DiscordMentionNames? = null,
 ): EventLinkPreview =
     EventLinkPreview(
         title = title,
@@ -53,7 +57,7 @@ fun Event.linkPreview(
                 whenOf(this),
                 location?.takeIf { it.isNotBlank() },
                 "Members only".takeIf { membersOnly },
-                snippetOf(description),
+                snippetOf(description, names),
             ).joinToString(" · "),
         url = "$frontendUrl/events/$id",
         image =
@@ -74,9 +78,14 @@ private fun whenOf(event: Event): String {
     return "${DAY.format(from)}, $hours"
 }
 
-private fun snippetOf(description: String?): String? {
+/* The description in Discord's markdown, read as CommonMark with its mentions named and no spoiler. */
+private fun snippetOf(
+    description: String?,
+    names: DiscordMentionNames?,
+): String? {
     val text =
         description
+            ?.let { DiscordMarkdown.toCommonMark(it, names?.named(DiscordMarkdown.mentionsIn(it)) ?: MentionNames(), html = false) }
             ?.let { StringBuilder().also { words -> wordsOf(markdown.parse(it), words) }.toString() }
             ?.replace(Regex("\\s+"), " ")
             ?.trim()

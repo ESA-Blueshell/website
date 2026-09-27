@@ -4,7 +4,11 @@ import net.blueshell.api.event.api.CalendarAdapter
 import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.event.api.CalendarEventRef
 import net.blueshell.api.event.api.CalendarServiceException
+import net.blueshell.api.shared.discord.DiscordMarkdown
+import net.blueshell.api.shared.discord.DiscordMentionNames
+import net.blueshell.api.shared.discord.MentionNames
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -21,7 +25,15 @@ import java.io.IOException
 @Profile("!test & !dev")
 class GoogleCalendarAdapter(
     private val googleCalendarClient: GoogleCalendarClient,
+    private val names: ObjectProvider<DiscordMentionNames>,
 ) : CalendarAdapter {
+    /* The calendar renders CommonMark as HTML, so a description in Discord's markdown is translated first. */
+    private fun readable(description: String?): String? =
+        description?.let {
+            val named = names.ifAvailable?.named(DiscordMarkdown.mentionsIn(it)) ?: MentionNames()
+            DiscordMarkdown.toCommonMark(it, named, html = true)
+        }
+
     override fun addEvent(
         eventId: Long,
         eventData: CalendarEventData,
@@ -33,7 +45,7 @@ class GoogleCalendarAdapter(
                 googleCalendarClient.addEvent(
                     title = eventData.title,
                     location = eventData.location,
-                    description = eventData.description,
+                    description = readable(eventData.description),
                     startTime = eventData.startTime,
                     endTime = eventData.endTime,
                 )
@@ -60,7 +72,7 @@ class GoogleCalendarAdapter(
                 googleEventId = externalId,
                 title = eventData.title,
                 location = eventData.location,
-                description = eventData.description,
+                description = readable(eventData.description),
                 startTime = eventData.startTime,
                 endTime = eventData.endTime,
             )

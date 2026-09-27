@@ -3,6 +3,7 @@ package net.blueshell.api.board.web
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import java.time.LocalDate
 
 @Schema(name = "AddBoardMemberRequest")
@@ -19,6 +20,7 @@ data class AddBoardMemberRequest(
     @Schema(description = "The name the member was known by, without the quotes around it")
     @field:Size(max = 128, message = "Nickname must be at most 128 characters")
     var nickname: String? = null,
+    @field:Size(max = DESCRIPTION_MAX, message = "Description must be at most $DESCRIPTION_MAX characters")
     var description: String? = null,
     @Schema(description = "Where the portrait is stored; blank leaves the member without one")
     @field:Size(max = 255, message = "Portrait must be at most 255 characters")

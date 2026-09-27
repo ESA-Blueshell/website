@@ -65,7 +65,7 @@ describe("CommitteeForm", () => {
 
     expect(rules).toMatchObject({
       name: "required|minChars:3|maxChars:100",
-      description: "required|minChars:10|maxChars:10000",
+      description: "required|minChars:10|maxChars:4096",
       "members[0].role": "maxChars:50",
       "members[0].userId": "committeeMemberPicked|uniqueCommitteeMember:0",
     })

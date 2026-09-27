@@ -6,7 +6,11 @@ import {Compartment, EditorState} from "@codemirror/state"
 import {EditorView, placeholder as showPlaceholder} from "@codemirror/view"
 import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
 import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
+import DateTimeInput from "@/components/island/DateTimeInput.vue"
 import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
+import {channelCompletion, mentionCompletion} from "@/components/island/markdownMentions"
+import {DESCRIPTION_CAP} from "@/plugins/descriptions"
+import {TIME_STYLES, timestampText, type TimeStyle} from "@/plugins/discordTime"
 
 defineOptions({name: "MarkdownEditor"})
 
@@ -18,7 +22,8 @@ const {
   describedBy = undefined,
   invalid = false,
   label = undefined,
-  maxLength = undefined,
+  maxLength = DESCRIPTION_CAP,
+  counted = true,
   testid = undefined,
 } = defineProps<{
   placeholder?: string
@@ -29,6 +34,8 @@ const {
   /** The name read out where no element on the page names the field. */
   label?: string
   maxLength?: number
+  /** Off where the field counts its characters itself. */
+  counted?: boolean
   minHeight?: string
   testid?: string
 }>()
@@ -36,6 +43,12 @@ const {
 const text = defineModel<string>({default: ""})
 
 const emit = defineEmits<{blur: []}>()
+
+/* Counted as stored, which is what the cap and Discord hold it to, and shown only near the cap:
+   a server emoji takes some thirty characters for one picture. */
+const NEAR = 0.9
+const count = computed(() => text.value.length)
+const nearCap = computed(() => counted && count.value >= maxLength * NEAR)
 
 /* `Mod` is command on a Mac and control elsewhere, so only the wording changes. */
 const onMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -54,9 +67,28 @@ const said = computed(() => [
   {does: "Quote", how: "", looks: "> quoted"},
   {does: "Code", how: "", looks: "`code`"},
   {does: "Emoji", how: "", looks: ":fire: becomes the emoji"},
+  {does: "Mention", how: "", looks: "@name, or #channel mid-line"},
 ])
 
 const helping = ref(false)
+
+/* A moment written as Discord writes one, `<t:unix:style>`, which every reader sees in their own
+   time zone. The moment is chosen first, then the style, each shown as it will read. */
+const timing = ref(false)
+const moment = ref("")
+const unixOf = (local: string): number => Math.floor(new Date(local).getTime() / 1000)
+const styled = computed(() => (moment.value === "" ? [] : TIME_STYLES.map(style => ({
+  style,
+  reads: timestampText(unixOf(moment.value), style),
+}))))
+
+const insertMoment = (style: TimeStyle) => {
+  const at = view as EditorView
+  at.dispatch(at.state.replaceSelection(`<t:${unixOf(moment.value)}:${style}>`))
+  timing.value = false
+  moment.value = ""
+  at.focus()
+}
 
 const elsewhere = (event: Event) => {
   if (!(event.target as Element | null)?.closest?.(".island-markdown__help, .island-markdown__ask")) {
@@ -65,18 +97,21 @@ const elsewhere = (event: Event) => {
 }
 
 const onEscape = (event: Event) => {
-  if ((event as KeyboardEvent).key === "Escape") helping.value = false
+  if ((event as KeyboardEvent).key !== "Escape") return
+  helping.value = false
+  timing.value = false
 }
 
 // Called through `document`, or the methods lose the `this` a browser insists on.
+watch(() => helping.value || timing.value, (up) => {
+  if (up) document.addEventListener("keydown", onEscape)
+  else document.removeEventListener("keydown", onEscape)
+})
+
+// Only the help: the picker's own calendar opens outside it, and a press there is not elsewhere.
 watch(helping, (up) => {
-  if (up) {
-    document.addEventListener("pointerdown", elsewhere)
-    document.addEventListener("keydown", onEscape)
-    return
-  }
-  document.removeEventListener("pointerdown", elsewhere)
-  document.removeEventListener("keydown", onEscape)
+  if (up) document.addEventListener("pointerdown", elsewhere)
+  else document.removeEventListener("pointerdown", elsewhere)
 })
 
 const host = ref<HTMLElement | null>(null)
@@ -116,6 +151,18 @@ const dress = EditorView.theme({
     color: "var(--color-ash)",
   },
   ".cm-cursor": {borderLeftColor: "var(--color-chalk)"},
+  ".cm-mention": {
+    padding: "0 0.2em",
+    borderRadius: "3px",
+    backgroundColor: "color-mix(in oklab, var(--mention, var(--color-brand)) 22%, transparent)",
+    color: "color-mix(in oklab, var(--mention, var(--color-brand-lit)) 70%, var(--color-chalk))",
+    fontWeight: "600",
+  },
+  ".cm-timestamp": {
+    padding: "0 0.2em",
+    borderRadius: "3px",
+    backgroundColor: "color-mix(in oklab, var(--color-chalk) 10%, transparent)",
+  },
   // Drawn at the size the page draws an emoji in a line of text.
   ".cm-emoji": {
     display: "inline-block",
@@ -158,7 +205,7 @@ onMounted(() => {
       extensions: [
         ...markdownEditing,
         autocompletion({
-          override: [emojiCompletion],
+          override: [emojiCompletion, mentionCompletion, channelCompletion],
           icons: false,
           activateOnTyping: true,
           addToOptions: [emojiOption],
@@ -173,7 +220,7 @@ onMounted(() => {
           ...(label === undefined ? {} : {"aria-label": label}),
         }),
         described.of(describing()),
-        ...(maxLength === undefined ? [] : [capped(maxLength)]),
+        capped(maxLength),
         dress,
         editable.of(EditorView.editable.of(!disabled)),
         EditorView.updateListener.of((update) => {
@@ -261,7 +308,61 @@ onBeforeUnmount(() => {
       </template>
     </dl>
 
+    <button
+      :aria-expanded="timing"
+      aria-label="Write a moment each reader sees in their own time"
+      class="island-markdown__ask island-markdown__ask--time"
+      data-testid="markdown-time"
+      type="button"
+      @click="timing = !timing"
+    >
+      <svg
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.6"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+        />
+        <path d="M12 7.5V12l3 2" />
+      </svg>
+    </button>
+
+    <div
+      v-if="timing"
+      class="island-markdown__help island-markdown__time"
+      data-testid="markdown-time-picker"
+    >
+      <date-time-input
+        v-model="moment"
+        testid="markdown-time-when"
+      />
+      <button
+        v-for="one in styled"
+        :key="one.style"
+        class="island-markdown__style"
+        :data-testid="`markdown-time-${one.style}`"
+        type="button"
+        @click="insertMoment(one.style)"
+      >
+        {{ one.reads }}
+      </button>
+    </div>
+
     <div ref="host" />
+
+    <span
+      v-if="nearCap"
+      class="island-markdown__count"
+      :class="{'island-markdown__count--over': count > maxLength}"
+      :data-testid="testid ? `${testid}-count` : undefined"
+    >{{ count }}/{{ maxLength }}</span>
   </div>
 </template>
 
@@ -282,6 +383,44 @@ onBeforeUnmount(() => {
   background: none;
   color: var(--color-ash);
   cursor: pointer;
+}
+
+.island-markdown__count {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.3rem;
+  font-family: var(--font-bitmap);
+  font-size: 0.68rem;
+  color: var(--color-ash);
+  pointer-events: none;
+}
+
+.island-markdown__count--over {
+  color: var(--color-danger);
+}
+
+.island-markdown__ask--time {
+  right: 2rem;
+}
+
+.island-markdown__time {
+  grid-template-columns: 1fr;
+  min-width: 16rem;
+}
+
+.island-markdown__style {
+  padding: 0.3rem 0.4rem;
+  border: 0;
+  background: none;
+  color: var(--color-chalk);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.island-markdown__style:hover,
+.island-markdown__style:focus-visible {
+  background: color-mix(in oklab, var(--color-brand) 26%, transparent);
 }
 
 .island-markdown__ask:hover,

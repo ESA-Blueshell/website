@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.enums.TeamRole
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import java.time.LocalDate
 
 @Schema(description = "Create or rename a season")
@@ -148,7 +149,7 @@ data class CreateGameRequest(
     @field:Size(min = 1, max = 64, message = "Address must be 1-64 characters")
     @field:Schema(description = "The address this game answers to")
     val slug: String,
-    @field:Size(max = 4000)
+    @field:Size(max = DESCRIPTION_MAX)
     val intro: String? = null,
     @field:Size(max = 32)
     @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
@@ -173,7 +174,7 @@ data class UpdateGameRequest(
     @field:Size(max = 64)
     @field:Schema(description = "The address this game answers to")
     val slug: String,
-    @field:Size(max = 4000)
+    @field:Size(max = DESCRIPTION_MAX)
     val intro: String? = null,
     @field:Size(max = 32)
     @field:Schema(description = "The colour that carries this game, or nothing for the island's own")

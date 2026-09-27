@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 /* Markdown as it reads once written: the same looks the editor gives it while it is typed. */
-import {computed} from "vue"
+import {computed, onMounted, ref, watch} from "vue"
+import {fillMentions} from "@/domains/discord"
 import $markdownToHtml from "@/plugins/markdownToHtml"
 import {fallBackToCharacter} from "@/plugins/emojiArt"
 
@@ -11,6 +12,11 @@ const {source} = defineProps<{
 }>()
 
 const html = computed(() => $markdownToHtml(source))
+
+const root = ref<HTMLElement | null>(null)
+const name = () => void fillMentions(root.value as HTMLElement)
+onMounted(name)
+watch(html, name, {flush: "post"})
 
 /* A spoiler stays shown once shown, as in Discord, and a link inside one is not followed until
    it is. */
@@ -28,6 +34,7 @@ const reveal = (event: MouseEvent | KeyboardEvent) => {
   <!-- Sanitised in markdownToHtml, because it is written by members and read in public. -->
   <!-- eslint-disable-next-line vue/no-v-html -->
   <div
+    ref="root"
     class="markdown-view"
     @click="reveal"
     @keydown="reveal"
@@ -134,6 +141,26 @@ const reveal = (event: MouseEvent | KeyboardEvent) => {
 .markdown-view :deep(.spoiler--shown) {
   background: color-mix(in oklab, var(--color-chalk) 10%, transparent);
   cursor: auto;
+}
+
+/* A mention is a pill in its role's colour, or the brand's for a member or a channel. */
+.markdown-view :deep(a:has(> .mention)) {
+  text-decoration: none;
+}
+
+.markdown-view :deep(.mention) {
+  padding: 0 0.2em;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--mention, var(--color-brand)) 22%, transparent);
+  color: color-mix(in oklab, var(--mention, var(--color-brand-lit)) 70%, var(--color-chalk));
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.markdown-view :deep(.timestamp) {
+  padding: 0 0.2em;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--color-chalk) 10%, transparent);
 }
 
 .markdown-view :deep(del) {

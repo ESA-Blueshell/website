@@ -10,6 +10,7 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -30,7 +31,7 @@ import org.hibernate.annotations.SQLRestriction
 class Sponsor(
     @Column(nullable = false)
     var name: String,
-    @Column(nullable = false, length = 4095)
+    @Column(nullable = false, length = DESCRIPTION_MAX)
     var description: String,
 ) : AuditedAutoIdEntity() {
     @OneToOne(fetch = FetchType.LAZY)

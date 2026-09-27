@@ -119,4 +119,40 @@ describe("emoji in a description", () => {
   it("leaves a server's emoji in code as written", () => {
     expect(read("`<:POGGERS:657733730491826186>`")).toBe("<p><code>&lt;:POGGERS:657733730491826186&gt;</code></p>")
   })
+
 })
+
+describe("mentions and timestamps in a description", () => {
+  const shown = (source: string) => {
+    const page = document.createElement("div")
+    page.innerHTML = read(source)
+    return page
+  }
+
+  it("draws a member, a role and a channel with the ID they are named by", () => {
+    const page = shown("<@123456789012345678> <@!123456789012345679> <@&223456789012345678> <#323456789012345678>")
+
+    expect([...page.querySelectorAll("[data-user]")].map(one => (one as HTMLElement).dataset.user))
+      .toEqual(["123456789012345678", "123456789012345679"])
+    expect(page.querySelector(".mention--role")?.getAttribute("data-role")).toBe("223456789012345678")
+    expect(page.querySelector("a")?.getAttribute("href"))
+      .toBe("https://discord.com/channels/324285132133629963/323456789012345678")
+    expect(page.querySelector("a > .mention")?.getAttribute("data-channel")).toBe("323456789012345678")
+  })
+
+  it("draws a timestamp as a time, in the style written or f", () => {
+    const page = shown("<t:1790000000:R> and <t:1790000000>")
+    const [relative, plain] = [...page.querySelectorAll("time")]
+
+    expect(plain?.getAttribute("datetime")).toBe(new Date(1790000000 * 1000).toISOString())
+    expect(plain?.textContent).toBe(new Intl.DateTimeFormat(undefined, {dateStyle: "long", timeStyle: "short"})
+      .format(new Date(1790000000 * 1000)))
+    expect(relative?.textContent).not.toBe(plain?.textContent)
+  })
+
+  it("leaves what only looks like one as written", () => {
+    expect(read("<t:soon> <@me> `<@123456789012345678>`")).toBe(
+      "<p>&lt;t:soon&gt; &lt;@me&gt; <code>&lt;@123456789012345678&gt;</code></p>")
+  })
+})
+

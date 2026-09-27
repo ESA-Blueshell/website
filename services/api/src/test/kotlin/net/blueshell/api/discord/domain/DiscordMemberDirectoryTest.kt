@@ -158,5 +158,13 @@ class DiscordMemberDirectoryTest {
 
         verify(api, times(2)).listGuildMembers("324", 1000, null)
     }
-}
 
+    @Test
+    fun `names the members a description mentions, and leaves out who left`() {
+        val listed = listOf(member(id = "11", username = "anna"), member(id = "12", username = "bea"))
+        val api: DiscordApi = mock { on { listGuildMembers("324", 1000, null) } doReturn listed }
+
+        assertThat(directory(api).named(setOf("12", "99"))!!.map { it.name }).containsExactly("bea")
+        assertThat(directory(null).named(setOf("12"))).isNull()
+    }
+}

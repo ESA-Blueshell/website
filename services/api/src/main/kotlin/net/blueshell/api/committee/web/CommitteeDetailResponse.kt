@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import java.time.Instant
 
 @Schema(name = "CommitteeDetailResponse")
@@ -15,7 +16,7 @@ data class CommitteeDetailResponse(
     @field:Size(max = 255, message = "Committee name cannot exceed 255 characters.")
     var name: String,
     @field:NotBlank(message = "Committee description cannot be empty.")
-    @field:Size(max = 4095, message = "Committee description cannot exceed 4095 characters.")
+    @field:Size(max = DESCRIPTION_MAX, message = "Committee description cannot exceed $DESCRIPTION_MAX characters.")
     var description: String,
     @field:NotNull
     @field:NotEmpty

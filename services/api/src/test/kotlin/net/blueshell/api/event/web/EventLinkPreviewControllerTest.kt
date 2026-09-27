@@ -23,7 +23,7 @@ class EventLinkPreviewControllerTest {
                 },
             )
         }
-    private val controller = EventLinkPreviewController(events, templates, "https://site.example", "https://site.example/api")
+    private val controller = EventLinkPreviewController(events, templates, "https://site.example", "https://site.example/api", mock())
 
     @Test
     fun `answers the event's tags`() {

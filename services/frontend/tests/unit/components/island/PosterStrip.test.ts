@@ -1,6 +1,9 @@
 import {afterEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount, RouterLinkStub} from "@vue/test-utils"
 import PosterStrip from "@/components/island/PosterStrip.vue"
+import {readMentionNames} from "@/domains/discord/adapters/mentions"
+
+vi.mock("@/domains/discord/adapters/mentions", () => ({readMentionNames: vi.fn(), listServerChannels: vi.fn()}))
 
 const poster = (id: number) => ({
   id,
@@ -354,6 +357,18 @@ describe("an emoji in a poster's description", () => {
     wrapper.get(".posters__said img.emoji").element.dispatchEvent(new Event("error"))
 
     expect(wrapper.get(".posters__said").text()).toBe("hot 🔥")
+    wrapper.unmount()
+  })
+})
+
+describe("a mention in a poster's description", () => {
+  it("is named, a channel's pill kept though the card unwraps its links", async () => {
+    vi.mocked(readMentionNames).mockResolvedValue({users: [], roles: [], channels: [{id: "323456789012345602", name: "events-info"}]})
+    const wrapper = strip({items: [{...poster(1), said: "in <#323456789012345602>"}]})
+    await flushPromises()
+
+    expect(wrapper.get(".posters__said").text()).toBe("in #events-info")
+    expect(wrapper.find(".posters__said a").exists()).toBe(false)
     wrapper.unmount()
   })
 })

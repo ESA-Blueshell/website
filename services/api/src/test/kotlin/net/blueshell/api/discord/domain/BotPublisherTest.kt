@@ -3,6 +3,7 @@ package net.blueshell.api.discord.domain
 import net.blueshell.api.sync.api.DiscordEmbed
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordImage
+import net.blueshell.api.sync.api.DiscordLink
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.MessageCreateRequest
@@ -130,6 +131,44 @@ class BotPublisherTest {
 
         assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("m1")
         publisher.edit("events-info", "m1", post.copy(banner = banner))
+
+        discord.verify()
+        verifyNoInteractions(api)
+    }
+
+    @Test
+    fun `puts the links under the message as buttons, with a banner and without`() {
+        val links =
+            listOf(
+                DiscordLink("More on the site", "https://site/events/42"),
+                DiscordLink("Sign up", "https://site/events/42#signup"),
+            )
+        val linked = post.copy(links = links)
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(header(HttpHeaders.CONTENT_TYPE, containsString("application/json")))
+            .andExpect(jsonPath("$.components[0].type").value(1))
+            .andExpect(jsonPath("$.components[0].components[0].style").value(5))
+            .andExpect(jsonPath("$.components[0].components[1].label").value("Sign up"))
+            .andExpect(jsonPath("$.components[0].components[1].url").value("https://site/events/42#signup"))
+            .andExpect(jsonPath("$.content").value("<@&901> <@&902>"))
+            .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages/m1"))
+            .andExpect(method(HttpMethod.PATCH))
+            .andExpect(jsonPath("$.components[0].components[0].label").value("More on the site"))
+            .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().string(containsString("filename=\"banner.webp\"")))
+            .andExpect(content().string(containsString("\"style\":5")))
+            .andRespond(withSuccess("""{"id": "m2"}""", MediaType.APPLICATION_JSON))
+
+        assertThat(publisher.post("events-info", linked)).isEqualTo("m1")
+        publisher.edit("events-info", "m1", linked)
+        assertThat(publisher.post("events-info", linked.copy(banner = banner))).isEqualTo("m2")
 
         discord.verify()
         verifyNoInteractions(api)

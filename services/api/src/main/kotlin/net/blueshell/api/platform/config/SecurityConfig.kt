@@ -240,6 +240,8 @@ class SecurityConfig(
             // The Discord person picker, which account creation shows before any login.
             "/discord/members",
             "/discord/members/unclaimed",
+            // What a description's mentions name, read wherever a description is.
+            "/discord/mentions",
             // Only on the dev profile; absent anywhere else.
             "/dev/discord-posts/run",
             "/health",

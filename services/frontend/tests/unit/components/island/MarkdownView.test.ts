@@ -1,6 +1,9 @@
-import {describe, expect, it} from "vitest"
-import {mount} from "@vue/test-utils"
+import {describe, expect, it, vi} from "vitest"
+import {flushPromises, mount} from "@vue/test-utils"
 import MarkdownView from "@/components/island/MarkdownView.vue"
+import {readMentionNames} from "@/domains/discord/adapters/mentions"
+
+vi.mock("@/domains/discord/adapters/mentions", () => ({readMentionNames: vi.fn(), listServerChannels: vi.fn()}))
 
 describe("MarkdownView", () => {
   it("draws the markdown it is given as its elements", () => {
@@ -73,5 +76,20 @@ describe("an emoji in a description", () => {
 
     expect(wrapper.find("img").exists()).toBe(true)
     wrapper.unmount()
+  })
+})
+
+describe("a mention in a description", () => {
+  it("is named once the api answers, and named again when the description changes", async () => {
+    vi.mocked(readMentionNames).mockResolvedValue({
+      users: [{id: "123456789012345611", name: "Anna"}, {id: "123456789012345612", name: "Bea"}], roles: [], channels: [],
+    })
+    const wrapper = mount(MarkdownView, {props: {source: "ask <@123456789012345611>"}})
+    await flushPromises()
+    expect(wrapper.get(".mention").text()).toBe("@Anna")
+
+    await wrapper.setProps({source: "ask <@123456789012345612>"})
+    await flushPromises()
+    expect(wrapper.get(".mention").text()).toBe("@Bea")
   })
 })

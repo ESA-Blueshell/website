@@ -117,11 +117,36 @@ const travel = (going: boolean) => {
   }, motion.duration(TRAVEL_S) * 1000 + 60)
 }
 
+const shell = ref<HTMLElement | null>(null)
+
+/**
+ * The page held at the leaving stop's height for the length of a pass, then let go in one step.
+ *
+ * The leaving stop leaves the flow before the arriving one stands at its full height, so without
+ * the hold the page shortens for a moment and a reader scrolled down it is thrown back up. Held
+ * still rather than animated: animating the height laid out everything below the band on every
+ * frame, which on a phone was most of what a pass cost.
+ */
+let held: ReturnType<typeof setTimeout> | null = null
+
+const letGo = () => {
+  if (held) clearTimeout(held)
+  held = null
+  if (shell.value) shell.value.style.height = ""
+}
+
+const hold = () => {
+  const el = shell.value
+  if (!el) return
+  if (held) clearTimeout(held)
+  el.style.height = `${el.offsetHeight}px`
+  held = setTimeout(letGo, motion.duration(TRAVEL_S) * 1000 + 60)
+}
+
 onBeforeUnmount(() => {
   if (settling) clearTimeout(settling)
+  if (held) clearTimeout(held)
 })
-
-const shell = ref<HTMLElement | null>(null)
 /**
  * The contents that arrived last.
  *
@@ -198,13 +223,6 @@ const variants = {
   }),
 }
 
-const frame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-
-/** Under this much, a difference in height is not a difference worth a frame of layout. */
-const HAIR = 8
-
-let sizing: Animation | null = null
-
 /**
  * The stop on its way out stops being a stop and becomes a picture of one.
  *
@@ -222,25 +240,10 @@ const ghost = (el: HTMLElement) => {
   el.querySelectorAll<HTMLElement>("[data-testid]").forEach(one => one.removeAttribute("data-testid"))
 }
 
-/**
- * Sees the stop leaving off, and carries the height from the one to the other.
- *
- * Side by side the two are the same height and the height half of this shows nothing. Stacked
- * they are not, one stop's contents being twice another's, and the contents leaving are taken
- * out of the flow the moment they start to travel, so without it the page below would jump to
- * the new height at the start of a pass and sit there while it played out.
- */
-const carry = async (travelling: boolean) => {
+/** Sees the stop leaving off. */
+const carry = async () => {
   const el = shell.value
   if (!el) return
-  sizing?.cancel()
-  const from = el.offsetHeight
-  // Only while a stop is actually travelling. The stop is answered afresh every time the page
-  // re-asks about it, an edit saved, and holding the height through those would animate the
-  // band growing to fit an editor that had just opened, which is a change the visitor made and
-  // can already see.
-  if (travelling) el.style.height = `${from}px`
-
   await nextTick()
   // Straight after the swap, before the browser has had a chance to paint either of them, so
   // there is no moment in which the page shows two of the same slice under the same name.
@@ -251,31 +254,6 @@ const carry = async (travelling: boolean) => {
       if (live && !child.contains(live)) ghost(child as HTMLElement)
     })
   }
-  if (!travelling) return
-
-  await frame()
-  // Open already, this band having been built while the pass was on, so the figure measured here
-  // is the arrived layout rather than a shut box that grows out of it once the pass is over.
-  const to = live?.offsetHeight ?? 0
-  // Animating a height is a layout of everything inside it on every frame, and inside it are
-  // two whole bands: worth it to carry a real difference, never worth it to carry a rounding
-  // error. Side by side the two are usually the same height and this is where that is spent.
-  if (to === 0 || Math.abs(to - from) < HAIR) {
-    el.style.height = ""
-    return
-  }
-
-  // Set the resting height before animating over it, so the end of the pass is where the
-  // element already stands and releasing the hold shows nothing.
-  el.style.height = `${to}px`
-  sizing = el.animate(
-    [{height: `${from}px`}, {height: `${to}px`}],
-    {duration: motion.duration(TRAVEL_S) * 1000, easing: EASE_CSS},
-  )
-  const release = () => {
-    if (el.style.height === `${to}px`) el.style.height = ""
-  }
-  sizing.finished.then(release, release)
 }
 
 /*
@@ -347,9 +325,19 @@ const aside = ref<HTMLElement | null>(null)
 /** A place on the axis, as a transform: so far from home, and so far beside it. */
 const at = (x: number, from = "0px"): string => `translate3d(calc(${x}px + ${from}), 0, 0)`
 
-/** Where the band and its neighbour stand, the neighbour a width to one side of the band. */
-const standing = computed(() => at(reach.value))
-const asideStanding = computed(() => at(reach.value, asideAt.value))
+/**
+ * Stands the band and its neighbour where the gesture has them, the neighbour a width to one side.
+ *
+ * Written onto the two elements rather than bound in the template: a binding re-rendered the
+ * band's whole contents on every move of the finger.
+ */
+const place = () => {
+  const band = arriving.value
+  if (band) band.style.transform = holding.value ? at(reach.value) : ""
+  if (aside.value) aside.value.style.transform = at(reach.value, asideAt.value)
+}
+
+watch([reach, asideAt, holding, aside, arriving], place, {flush: "sync"})
 
 const neighbour = (way: BandDirection): string | number | null => {
   if (way === "past") return props.past ?? null
@@ -389,34 +377,8 @@ const glide = async (to: number) => {
   await Promise.all(runs.map(run => run?.finished.catch(() => undefined)))
 }
 
-/**
- * The band's height carried onto the neighbour's while the commit plays out.
- *
- * The neighbour is drawn out of the flow, so the band stands at the height of the stop showing
- * for the whole of a drag. Left alone, the page would jump to the arrived stop's height the
- * moment it landed — two stops' contents are not the same height, one board having six members
- * and the next one — and it would jump after the movement rather than during it, which is the
- * one thing the handover is for. So the height travels with the commit, and is held at the end
- * of it until the track is dropped, by which point the arrived contents stand at it themselves.
- */
-const bear = (ms: number) => {
-  const el = shell.value
-  // The neighbour was drawn open, the axis having been claimed before it was mounted, so this is
-  // the height the arrived stop stands at and the commit ends on the finished band. Where its
-  // contents have not landed yet it is the loading block, and the answer moves the height itself.
-  const to = aside.value?.offsetHeight ?? 0
-  if (!el || to === 0) return
-  const from = el.offsetHeight
-  if (Math.abs(to - from) < HAIR) return
-  sizing?.cancel()
-  el.style.height = `${to}px`
-  sizing = el.animate([{height: `${from}px`}, {height: `${to}px`}], {duration: ms, easing: EASE_CSS})
-}
-
 /** The track put away: the neighbour gone, the band square, and nothing travelling. */
 const drop = () => {
-  const el = shell.value
-  if (el?.style.height) el.style.height = ""
   beside.value = null
   reach.value = 0
   holding.value = false
@@ -542,8 +504,6 @@ const release = async (event: PointerEvent) => {
   easing.value = true
 
   if (wanted != null && commits({travel: gone, pace, width: across, onward: true})) {
-    const ms = motion.duration(TRAVEL_S) * 1000
-    bear(ms)
     await glide(Math.sign(gone) * across)
     // Set before the page is asked, because the page may answer immediately: this is what the
     // change coming back is recognised by.
@@ -646,7 +606,7 @@ const settleAtOnce = async () => {
   if (settling) clearTimeout(settling)
   settling = null
   travelling.value = true
-  await carry(false)
+  await carry()
   drop()
 }
 
@@ -666,13 +626,13 @@ watch(() => props.stop, () => {
     // else — a link followed mid-flight, a stop that has just been removed. The track is put away
     // before the pass rather than left holding a stop nobody is going to.
     if (holding.value) drop()
+    if (going) hold()
     travel(going)
   }
 
   // A stop that is not going anywhere still has to see off whatever was on the page before it,
-  // the first one to arrive replacing the loading block, but it holds no height while it does,
-  // because nothing is travelling.
-  void carry(going).then(() => {
+  // the first one to arrive replacing the loading block.
+  void carry().then(() => {
     if (arrived) drop()
   })
 })
@@ -696,7 +656,7 @@ watch(() => props.stop, () => {
     <!--
       Both stops are on the page for the length of a pass, which is what makes it a pass and
       not a repaint. The one leaving is taken out of the flow so the one arriving has the room
-      it needs; the height above carries the difference.
+      it needs; the hold above keeps the page from shortening meanwhile.
     -->
     <animate-presence
       :initial="false"
@@ -712,7 +672,6 @@ watch(() => props.stop, () => {
         <div
           :ref="takeArriving"
           class="band-swipe__carried"
-          :style="holding ? {transform: standing} : undefined"
         >
           <!--
             What is carried is drawn for the stop it is handed, not for the one the page is
@@ -743,7 +702,6 @@ watch(() => props.stop, () => {
       aria-hidden="true"
       class="band-swipe__aside"
       inert
-      :style="{transform: asideStanding}"
     >
       <slot :stop="beside" />
     </div>

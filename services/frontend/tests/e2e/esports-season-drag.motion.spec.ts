@@ -148,7 +148,7 @@ test.describe("dragging a game's page between seasons", () => {
     await expect(page.locator(ASIDE)).toHaveCount(0)
   })
 
-  test("aims at the block it can measure where the answer is slow, and lets the answer move the height", async ({page}) => {
+  test("holds no height on the block it draws while the answer is slow, and lets the answer move the height", async ({page}) => {
     await installApiMocks(page)
     const answer = heldOpen()
     await seasonRead(page, "19", async (route) => {
@@ -160,24 +160,18 @@ test.describe("dragging a game's page between seasons", () => {
 
     // What the season being brought in is drawn as, having nothing of its own to draw yet.
     const band = page.getByTestId("season-swipe")
-    await dragBand(page, band, {by: 260, release: false})
-    const block = Math.round((await page.locator(ASIDE).boundingBox())!.height)
-    await page.mouse.up()
+    await dragBand(page, band, {by: 260})
     await expect(page).toHaveURL(/\?season=19$/)
+    // The track stays until the answer does, carrying the block in; the band holds no height for it.
+    await page.waitForTimeout(1000)
+    expect(await heldHeight(page, SWIPE)).toBe(null)
+    const waiting = Math.round((await band.boundingBox())!.height)
 
-    // The height goes where the band can see, which is the loading block: a pass cannot aim at
-    // the height of teams nobody has yet, so it aims at what is on the page and holds it there.
-    await expect.poll(async () => heldHeight(page, SWIPE), {
-      message: "the height was never carried onto the block",
-    }).toBe(block)
-
-    // Then the answer lands, and moves the height itself with nothing held on the band any more,
-    // which is the one growing after a pass that is meant to happen.
+    // Then the answer lands, and moves the height itself by more than a rounding error.
     answer.release()
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
-    await expect.poll(async () => heldHeight(page, SWIPE), {message: "the band held a height it had no pass for"}).toBe(null)
-    // By more than the rounding the band declines to carry, so it is a move rather than a reflow.
-    await expect.poll(async () => Math.abs(Math.round((await band.boundingBox())!.height) - block))
+    expect(await heldHeight(page, SWIPE)).toBe(null)
+    await expect.poll(async () => Math.abs(Math.round((await band.boundingBox())!.height) - waiting))
       .toBeGreaterThan(8)
   })
 

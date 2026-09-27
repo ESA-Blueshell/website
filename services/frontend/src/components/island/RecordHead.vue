@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed} from "vue"
 import {type Picture, srcsetOf} from "./pictures"
+import BackBar from "./BackBar.vue"
 
 /**
  * The banner band heading one record's own page, such as a game's or a committee's: the way back
@@ -26,24 +27,12 @@ const bannerSrcset = computed(() => srcsetOf(banner))
 </script>
 
 <template>
-  <div class="record-head__crumb-row">
-    <router-link
-      class="record-head__crumb"
-      :data-testid="`${testid}-back`"
-      :to="back.to"
-    >
-      <svg
-        aria-hidden="true"
-        fill="none"
-        viewBox="0 0 20 12"
-      ><path
-        d="M20 6H3M7 1.5 1.5 6 7 10.5"
-        stroke="currentColor"
-        stroke-width="1.4"
-      /></svg>
-      {{ back.label }}
-    </router-link>
-  </div>
+  <back-bar
+    :accent="accent"
+    :label="back.label"
+    :testid="`${testid}-back`"
+    :to="back.to"
+  />
 
   <section
     class="record-head"
@@ -86,6 +75,12 @@ const bannerSrcset = computed(() => srcsetOf(banner))
       >
         <slot name="acts" />
       </div>
+      <div
+        v-if="$slots.people"
+        class="record-head__people"
+      >
+        <slot name="people" />
+      </div>
     </div>
     <div class="record-head__art">
       <img
@@ -105,31 +100,9 @@ const bannerSrcset = computed(() => srcsetOf(banner))
 </template>
 
 <style scoped>
-.record-head__crumb-row {
-  width: 100%;
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
-.record-head__crumb {
-  display: inline-flex;
-  gap: 0.6rem;
-  align-items: center;
-  padding: 1.1rem 0;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-  color: var(--color-ash);
-  text-decoration: none;
-}
-
-.record-head__crumb:hover {
-  color: var(--color-chalk);
-}
-
-.record-head__crumb svg {
-  width: 18px;
-  height: 11px;
+/* Who is behind the record, under the ways on from it. */
+.record-head__people {
+  margin-top: 1.6rem;
 }
 
 .record-head {
@@ -156,7 +129,7 @@ const bannerSrcset = computed(() => srcsetOf(banner))
   gap: 1.2rem;
   justify-content: center;
   min-width: 0;
-  padding: 2.5rem 3rem 2.75rem max(2rem, calc((100vw - 72rem) / 2 + 2rem));
+  padding: 2.5rem 3rem 2.75rem max(2rem, calc((100cqw - 72rem) / 2 + 2rem));
 }
 
 .record-head__label {
@@ -256,9 +229,6 @@ const bannerSrcset = computed(() => srcsetOf(banner))
 }
 
 @media (max-width: 639px) {
-  .record-head__crumb-row {
-    padding: 0 1.25rem;
-  }
 
   .record-head {
     grid-template-columns: 1fr;

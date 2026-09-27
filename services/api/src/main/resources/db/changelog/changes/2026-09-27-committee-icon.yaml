@@ -1,0 +1,22 @@
+# A committee's logo, drawn beside its name and in place of it where committees are picked from a
+# row of marks.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-27-committee-icon.yaml
+      id: committee-icon
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: committees
+            columns:
+              - column:
+                  name: icon_file_id
+                  type: BIGINT
+                  constraints: {foreignKeyName: fk_committees_icon_file_id, references: files(id)}
+      rollback:
+        - dropForeignKeyConstraint:
+            baseTableName: committees
+            constraintName: fk_committees_icon_file_id
+        - dropColumn:
+            tableName: committees
+            columnName: icon_file_id

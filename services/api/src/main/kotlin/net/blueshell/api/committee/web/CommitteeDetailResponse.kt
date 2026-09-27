@@ -3,7 +3,6 @@ package net.blueshell.api.committee.web
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import net.blueshell.api.file.api.Image
@@ -23,9 +22,10 @@ data class CommitteeDetailResponse(
     var listed: Boolean,
     var archived: Boolean,
     var banner: Image?,
+    @field:Schema(description = "Its logo, absent for none")
+    var icon: Image?,
     var gameCodes: List<String>,
     @field:NotNull
-    @field:NotEmpty
     @field:Valid
     var members: MutableList<CommitteeMemberResponse>,
     var version: Long,

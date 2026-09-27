@@ -109,8 +109,8 @@ const classes = computed(() => ["pan-chevron", `pan-chevron--${way}`, {"pan-chev
 
 .pan-chevron--back::before {
   left: 0;
-  right: -40px;
-  background: linear-gradient(to right, color-mix(in oklab, var(--pan-fade) 82%, transparent), transparent);
+  right: -20px;
+  background: linear-gradient(to right, color-mix(in oklab, var(--pan-fade) 58%, transparent), transparent);
 }
 
 .pan-chevron--on {
@@ -118,8 +118,8 @@ const classes = computed(() => ["pan-chevron", `pan-chevron--${way}`, {"pan-chev
 }
 
 .pan-chevron--on::before {
-  left: -40px;
+  left: -20px;
   right: 0;
-  background: linear-gradient(to left, color-mix(in oklab, var(--pan-fade) 82%, transparent), transparent);
+  background: linear-gradient(to left, color-mix(in oklab, var(--pan-fade) 58%, transparent), transparent);
 }
 </style>

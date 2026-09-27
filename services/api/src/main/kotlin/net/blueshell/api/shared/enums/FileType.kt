@@ -112,6 +112,17 @@ enum class FileType(
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
 
+    /** A committee's logo, drawn beside its name. Lossless or vector, as a game's is. */
+    COMMITTEE_ICON(
+        "committee-icons",
+        publiclyReadable = true,
+        maxBytes = 5 * MB,
+        allowedMediaTypes = IMAGE + VECTOR_MEDIA_TYPE,
+        maxImageEdge = 512,
+        webpLossless = true,
+        renditionWidths = ICON_WIDTHS,
+    ),
+
     /** A photograph from an event, rather than the banner drawn behind it. */
     EVENT_PICTURE("event-pictures", allowedMediaTypes = IMAGE),
 

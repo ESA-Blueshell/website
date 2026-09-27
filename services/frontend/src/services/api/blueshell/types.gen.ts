@@ -658,6 +658,10 @@ export type CommitteeDetailResponse = {
     createdAt: string;
     description: string;
     gameCodes: Array<string>;
+    /**
+     * Its logo, absent for none
+     */
+    icon?: Image | null;
     id: number;
     listed: boolean;
     members: Array<CommitteeMemberResponse>;
@@ -688,6 +692,7 @@ export type CommitteeOwnPageRequest = {
     banner?: string | null;
     description: string;
     gameCodes?: Array<string> | null;
+    icon?: string | null;
     version?: number | null;
 };
 
@@ -696,6 +701,10 @@ export type CommitteePageResponse = {
     banner?: Image | null;
     description: string;
     gameCodes: Array<string>;
+    /**
+     * Its logo, absent for none
+     */
+    icon?: Image | null;
     id: number;
     listed: boolean;
     members: Array<CommitteeSeatResponse>;
@@ -711,9 +720,9 @@ export type CommitteeSeatResponse = {
      */
     avatar?: string | null;
     /**
-     * Their Discord username, absent for a member who has not linked Discord
+     * The name the Discord server shows them by, absent for a member who has not linked Discord
      */
-    discordTag?: string | null;
+    discordName?: string | null;
     role?: string | null;
 };
 
@@ -834,6 +843,10 @@ export type CreateCommitteeRequest = {
     banner?: string | null;
     description: string;
     gameCodes: Array<string>;
+    /**
+     * Where its stored logo is, or absent for none
+     */
+    icon?: string | null;
     listed: boolean;
     members: Array<CommitteeMemberRequest>;
     name: string;
@@ -1404,6 +1417,7 @@ export enum FileType {
     PROFILE_PICTURE = 'PROFILE_PICTURE',
     EVENT_BANNER = 'EVENT_BANNER',
     COMMITTEE_BANNER = 'COMMITTEE_BANNER',
+    COMMITTEE_ICON = 'COMMITTEE_ICON',
     EVENT_PICTURE = 'EVENT_PICTURE',
     SPONSOR_PICTURE = 'SPONSOR_PICTURE',
     GAME_BANNER = 'GAME_BANNER',
@@ -2598,6 +2612,10 @@ export type UpdateCommitteeRequest = {
     banner?: string | null;
     description: string;
     gameCodes?: Array<string> | null;
+    /**
+     * Where its stored logo is, or absent for none
+     */
+    icon?: string | null;
     listed: boolean;
     members: Array<CommitteeMemberRequest>;
     name: string;
@@ -4239,6 +4257,51 @@ export type UploadCommitteeBannerResponses = {
 };
 
 export type UploadCommitteeBannerResponse = UploadCommitteeBannerResponses[keyof UploadCommitteeBannerResponses];
+
+export type UploadCommitteeIconData = {
+    body?: {
+        file: Blob | File;
+    };
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/committees/{id}/icons';
+};
+
+export type UploadCommitteeIconErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadCommitteeIconError = UploadCommitteeIconErrors[keyof UploadCommitteeIconErrors];
+
+export type UploadCommitteeIconResponses = {
+    /**
+     * Created
+     */
+    201: Image;
+};
+
+export type UploadCommitteeIconResponse = UploadCommitteeIconResponses[keyof UploadCommitteeIconResponses];
 
 export type UpdateCommitteePageData = {
     body: CommitteeOwnPageRequest;

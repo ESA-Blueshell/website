@@ -65,10 +65,13 @@ onBeforeUnmount(() => watcher?.disconnect())
   outline: 1px solid var(--color-hairline);
 }
 
+/* A container, so a part that sizes itself by the page's width (in cqw, which on the page
+   itself falls back to the viewport) takes the stage's width here instead of the screen's. */
 .preview-frame__stage {
   position: absolute;
   top: 0;
   left: 0;
+  container-type: inline-size;
   transform-origin: 0 0;
   pointer-events: none;
 }

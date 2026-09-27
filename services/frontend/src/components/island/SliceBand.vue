@@ -780,11 +780,14 @@ watch(open, (index) => {
 
   display: flex;
   width: 100%;
-  min-height: 22rem;
+  /* Grows with the width, zoomed out too, and stops short of filling the screen. */
+  min-height: clamp(21rem, 23cqw, 56svh);
+  /* A layer of its own, so a slice opening repaints the row and not the page's ground under it. */
+  will-change: transform;
 }
 
 .slices--short {
-  min-height: 15rem;
+  min-height: clamp(15rem, 18cqw, 42svh);
 }
 
 .slice {
@@ -971,6 +974,7 @@ watch(open, (index) => {
   object-fit: cover;
   scale: 1.06;
   transition: scale 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 
 .slice--open .slice__banner {
@@ -987,7 +991,6 @@ watch(open, (index) => {
     color-mix(in oklab, var(--color-ground) 62%, transparent) 42%,
     transparent 74%
   );
-  filter: blur(26px);
   pointer-events: none;
 }
 
@@ -1057,7 +1060,8 @@ watch(open, (index) => {
 .slice__name {
   min-width: 0;
   font-family: var(--font-display);
-  font-size: 1rem;
+  /* Smaller in a narrow slice, so a long word fits whole rather than breaking. */
+  font-size: clamp(0.7rem, 7.5cqi, 1rem);
   line-height: 1.1;
   text-transform: uppercase;
   overflow-wrap: break-word;
@@ -1071,7 +1075,7 @@ watch(open, (index) => {
 }
 
 .slices--short .slice:not(.slice--open) .slice__name {
-  font-size: 0.88rem;
+  font-size: clamp(0.7rem, 7cqi, 0.88rem);
 }
 
 .slice--open .slice__name {

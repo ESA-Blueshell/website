@@ -22,7 +22,7 @@ test.describe("the committees pages", () => {
 
     await expect(page).toHaveURL(/\/committees\/events-committee$/)
     await expect(page.getByTestId("committee-head")).toContainText("Events Committee")
-    await expect(page.getByTestId("committee-seat-0")).toContainText("@nelly")
+    await expect(page.getByTestId("committee-seat-0")).toContainText("Nelly B")
     await expect(page.getByTestId("committee-games")).toContainText("Chess")
     await expect(page.getByTestId("committee-edit")).toHaveCount(0)
 
@@ -63,8 +63,10 @@ test.describe("the committees pages", () => {
     await page.getByTestId("committee-edit-name").locator("input").fill("Quiz Cie")
     await expect(page.getByTestId("committee-edit-slug").locator("input")).toHaveValue("quiz-cie")
     await writeMarkdown(page, page.getByTestId("committee-edit-description").getByRole("textbox"), "Questions on Thursdays.")
-    await page.getByTestId("committee-edit-member-search").click()
-    await page.getByTestId("committee-edit-member-list").locator("[role=option]").first().click()
+    // Found by what is typed: the picker asks the api rather than holding every account.
+    await page.getByTestId("committee-edit-member-search").fill("Emma")
+    await page.getByTestId("committee-edit-member-list").locator("[role=option]", {hasText: "Emma Dokter"}).click()
+    await expect(page.getByTestId("committee-edit-seat-1")).toContainText("Emma Dokter")
     await expect(page.getByTestId("committee-edit").locator("aside")).toContainText("Quiz Cie")
     await page.getByTestId("committee-edit-save").click()
 

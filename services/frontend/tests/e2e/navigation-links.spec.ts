@@ -71,6 +71,25 @@ test.describe("navbar route integrity", () => {
     await expect(page.locator("a[href='/committees/oldcie']")).toHaveCount(0)
   })
 
+  test("every game played casually has an entry under Casual", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/casual/chess")
+
+    const drawerToggle = page.getByTestId("nav-menu-toggle")
+    if (await drawerToggle.isVisible()) {
+      await drawerToggle.click()
+      // The section the reader is in opens unfolded already, and a press would fold it.
+      await expect(page.getByTestId("nav-drawer-casual-more")).toHaveAttribute("aria-expanded", "true")
+    } else {
+      await expect(page.getByTestId("nav-casual")).toHaveClass(/bar-button--here/)
+      await page.getByTestId("nav-casual-more").hover()
+    }
+
+    await expect(page.locator("a[href='/casual/chess']").first()).toBeAttached()
+    await expect(page.locator("a[href='/casual/valorant']").first()).toBeAttached()
+    await expect(page.locator("a[href='/casual/dota-2']")).toHaveCount(0)
+  })
+
   test("mobile navbar drawer exposes partner and newsletter links", async ({page}) => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})

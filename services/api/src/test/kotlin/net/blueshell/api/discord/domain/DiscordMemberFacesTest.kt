@@ -9,14 +9,14 @@ import org.mockito.kotlin.verifyNoInteractions
 
 class DiscordMemberFacesTest {
     @Test
-    fun `answers the members asked for by username and avatar, and nobody the bot cannot see`() {
+    fun `answers the members asked for by the name the server shows and their avatar, and nobody the bot cannot see`() {
         val directory =
             mock<DiscordMemberDirectory> {
                 on { everyoneKept() } doReturn
                     listOf(DiscordMember("1", "Nelly B", "nelly", "https://cdn/n.png"), DiscordMember("2", "Mo", "mo", "m"))
             }
 
-        assertThat(DiscordMemberFaces(directory).of(listOf("1", "9"))).isEqualTo(mapOf("1" to DiscordFace("nelly", "https://cdn/n.png")))
+        assertThat(DiscordMemberFaces(directory).of(listOf("1", "9"))).isEqualTo(mapOf("1" to DiscordFace("Nelly B", "https://cdn/n.png")))
     }
 
     @Test

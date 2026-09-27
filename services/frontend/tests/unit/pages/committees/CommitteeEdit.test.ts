@@ -15,7 +15,7 @@ vi.mock("@/domains/committees", () => ({
   useCommitteeRights: () => ({isBoard: ref(rights.board), sitsOn: () => rights.sits}),
 }))
 
-const CommitteeEditor = {name: "CommitteeEditor", props: ["committee", "asBoard", "back"], emits: ["saved", "cancel"], template: "<div />"}
+const CommitteeEditor = {name: "CommitteeEditor", props: ["committee", "asBoard", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
 const stubs = {CommitteeEditor, NotFound: {template: "<div data-testid=missing />"}}
 
 const mountPage = async (address?: string) => {
@@ -45,6 +45,17 @@ describe("the committee edit page", () => {
 
     expect(store.refresh).toHaveBeenCalled()
     expect(router.replace.mock.calls).toEqual([["/committees/lan"], ["/committees/lancie"]])
+  })
+
+  it("goes to every committee once the board has deleted this one", async () => {
+    rights.board = true
+    const wrapper = await mountPage("lancie")
+
+    wrapper.getComponent(CommitteeEditor).vm.$emit("removed")
+    await flushPromises()
+
+    expect(store.refresh).toHaveBeenCalled()
+    expect(router.replace).toHaveBeenCalledWith("/committees")
   })
 
   it("lets a committee's own members reach their committee's page, not as the board", async () => {

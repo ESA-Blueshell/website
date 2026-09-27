@@ -1100,8 +1100,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const found = committeesNow().find(one => one.slug === decodeURIComponent(committeeAddress[1]!).toLowerCase())
       if (!found) return fulfillJson(route, {code: "UnknownCommitteeAddress", address: committeeAddress[1]}, 404)
       const seats = ((found.members as Array<Record<string, unknown>>) ?? []).map((member, at) => (at === 0
-        ? {discordTag: "nelly", avatar: "https://cdn.discordapp.com/embed/avatars/1.png", role: member.role ?? null}
-        : {discordTag: null, avatar: null, role: member.role ?? null}))
+        ? {discordName: "Nelly B", avatar: "https://cdn.discordapp.com/embed/avatars/1.png", role: member.role ?? null}
+        : {discordName: null, avatar: null, role: member.role ?? null}))
       return fulfillJson(route, {...found, members: seats})
     }
     const committeeOwn = /^\/committees\/(\d+)\/(page|archived)$/.exec(path)

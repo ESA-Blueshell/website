@@ -118,6 +118,19 @@ export const STRIP = {
    * for.
    */
   minBandStacked: 320,
+  /**
+   * The most bands shown across at once, however wide the strip.
+   *
+   * A wide or zoomed-out screen fits a great many at the floor, and a strip of twenty stops
+   * reads as a wall rather than a line; past this each band widens instead, and the strip
+   * scrolls to the rest.
+   */
+  mostAcross: 7,
+  /**
+   * The widest the strip is drawn. Wider, it is drawn at this width and scaled up whole, so its
+   * height keeps pace with its width.
+   */
+  widest: 1920,
   /** Under this the strip is being read on a phone. The same figure the bands stack at. */
   stacks: 768,
   /**
@@ -246,7 +259,7 @@ export function stripAxis(
   // An unmeasured strip is not a phone: it reserves the pointer's floor until it has a width.
   const band = width > 0 && width < STRIP.stacks
     ? STRIP.minBandStacked
-    : Math.max(width / fitAcross(width, STRIP.minBand), STRIP.minBand)
+    : Math.max(width / Math.min(fitAcross(width, STRIP.minBand), STRIP.mostAcross), STRIP.minBand)
   const track = Math.max(width, count * band)
   const middle = STRIP.height / 2
 

@@ -57,6 +57,11 @@ class Committee(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "banner_file_id")
     var banner: File? = null,
+
+    /** Its logo, drawn beside its name and in place of it in a row of marks. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "icon_file_id")
+    var icon: File? = null,
 ) : AuditedAutoIdEntity() {
 
     /** The codes of the games the committee organises events for. */

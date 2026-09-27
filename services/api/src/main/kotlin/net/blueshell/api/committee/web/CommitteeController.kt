@@ -118,7 +118,7 @@ class CommitteeController(
         return committee.asPageResponse(seats.of(committee))
     }
 
-    /** What the committee's own members change about it: its description, banner and games. */
+    /** What the committee's own members change about it: its description, pictures and games. */
     @PreAuthorize("hasPermission(#id, 'Committee', 'page')")
     @PutMapping("/committees/{id}/page")
     fun updateCommitteePage(
@@ -130,6 +130,7 @@ class CommitteeController(
                 id = id,
                 description = request.description,
                 banner = request.banner,
+                icon = request.icon,
                 gameCodes = request.gameCodes,
                 version = request.version,
             ).asDetailResponse()
@@ -143,6 +144,16 @@ class CommitteeController(
         @PathVariable id: Long,
         @RequestPart("file") file: MultipartFile,
     ): Image = files.storeMultipart(file, FileType.COMMITTEE_BANNER).asImage()
+
+    /** A logo the committee's own members chose, stored so a save can point at it. The id is read by the permission. */
+    @Suppress("UnusedParameter")
+    @PreAuthorize("hasPermission(#id, 'Committee', 'page')")
+    @PostMapping("/committees/{id}/icons", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @ResponseStatus(HttpStatus.CREATED)
+    fun uploadCommitteeIcon(
+        @PathVariable id: Long,
+        @RequestPart("file") file: MultipartFile,
+    ): Image = files.storeMultipart(file, FileType.COMMITTEE_ICON).asImage()
 
     @PreAuthorize("hasPermission(#id, 'Committee', 'write')")
     @PutMapping("/committees/{id}/archived")

@@ -2,14 +2,14 @@ import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 
 test.describe("the home page's slice bands", () => {
-  test("runs the newest season's games with their team counts, each leading to its own page", async ({page}) => {
+  test("runs the index's slices for the newest season, each game leading to that season", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/")
 
     const band = page.getByTestId("home-esports")
     await band.scrollIntoViewIfNeeded()
     await expect(band.getByTestId("home-esports-VALORANT")).toContainText(/\d+ teams? this season/)
-    await expect(band.getByTestId("home-esports-link-VALORANT")).toHaveAttribute("href", "/competition/valorant")
+    await expect(band.getByTestId("home-esports-link-VALORANT")).toHaveAttribute("href", "/competition/valorant?season=20")
     await expect(band.getByTestId("home-esports-more")).toHaveAttribute("href", "/competition")
   })
 

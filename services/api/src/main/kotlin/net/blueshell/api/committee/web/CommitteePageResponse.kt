@@ -13,14 +13,16 @@ data class CommitteePageResponse(
     val listed: Boolean,
     val archived: Boolean,
     val banner: Image?,
+    @field:Schema(description = "Its logo, absent for none")
+    val icon: Image?,
     val gameCodes: List<String>,
     val members: List<CommitteeSeatResponse>,
 )
 
 @Schema(name = "CommitteeSeatResponse")
 data class CommitteeSeatResponse(
-    @field:Schema(description = "Their Discord username, absent for a member who has not linked Discord")
-    val discordTag: String?,
+    @field:Schema(description = "The name the Discord server shows them by, absent for a member who has not linked Discord")
+    val discordName: String?,
     @field:Schema(description = "Their Discord avatar's address")
     val avatar: String?,
     val role: String?,

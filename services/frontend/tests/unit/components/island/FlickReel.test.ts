@@ -56,33 +56,57 @@ describe("FlickReel", () => {
     expect(slice(wrapper, "VALORANT").find(".flick-reel__art").attributes("srcset")).toBe("/v-640.webp 640w")
     expect(slice(wrapper, "VALORANT").text()).toContain("#valorant")
     expect(slice(wrapper, "VALORANT").text()).toContain("LanCie")
-    expect(slice(wrapper, "CHESS").find(".flick-reel__plate").text()).toBe("C")
+    expect(slice(wrapper, "CHESS").find(".flick-reel__initials").text()).toBe("C")
     expect(wrapper.get("[data-testid=casual-rail-VALORANT] img").attributes("src")).toBe("/v-icon.webp")
     expect(wrapper.get("[data-testid=casual-rail-CHESS]").text()).toBe("Chess")
     expect(wrapper.get("[data-testid=casual-rail-WORDLE]").text()).toBe("W")
   })
 
+  // A slice is drawn as the box between its seams; the belt's lean adds the cut back on screen.
   it("opens the first slice in the middle and paints every slice onto the band", () => {
     const wrapper = mountReel()
     const first = slice(wrapper, "VALORANT").element as HTMLElement
 
     expect(resting(wrapper)).toEqual(["casual-slice-VALORANT"])
     expect(first.style.getPropertyValue("--open")).toBe("1.000")
-    expect(first.style.width).toBe("608px")
+    expect(first.style.width).toBe("578px")
     expect(wrapper.get("[data-testid=casual-rail-VALORANT]").classes()).toContain("flick-reel__cell--on")
   })
 
-  it("follows the open slice's link, and brings any other slice to the middle instead", async () => {
+  it("follows a slice's link from anywhere on it, open or shut", async () => {
     const wrapper = mountReel()
 
     await slice(wrapper, "VALORANT").trigger("click", {button: 0})
-    expect(wrapper.emitted("go")?.[0]).toEqual([ITEMS[0]])
-
     await slice(wrapper, "CHESS").trigger("click", {button: 0})
-    runFrames(200)
-    await wrapper.vm.$nextTick()
-    expect(wrapper.emitted("go")).toHaveLength(1)
-    expect(resting(wrapper)).toEqual(["casual-slice-CHESS"])
+
+    expect(wrapper.emitted("go")).toEqual([[ITEMS[0]], [ITEMS.find(one => one.id === "CHESS")]])
+  })
+
+  it("stands still while the band is off screen, and moves on once it is back", () => {
+    let seen: (entries: Array<{isIntersecting: boolean}>) => void = () => {}
+    vi.stubGlobal("IntersectionObserver", class {
+      constructor(callback: typeof seen) { seen = callback }
+      observe() {}
+      disconnect() {}
+    })
+    mountReel({drift: 0.5})
+
+    seen([{isIntersecting: false}])
+    runFrames(1)
+    expect(frames).toHaveLength(0)
+
+    seen([{isIntersecting: true}])
+    expect(frames).toHaveLength(1)
+    seen([{isIntersecting: true}])
+    expect(frames).toHaveLength(1)
+  })
+
+  it("draws the way to add one as a plus, on the reel and on the rail", () => {
+    const wrapper = mountReel({items: [...ITEMS, {id: "add", title: "Add a game", href: "/casual/new", accent: "#39f", initials: "+", plus: true}]})
+
+    expect(slice(wrapper, "add").find(".flick-reel__plate--plus").exists()).toBe(true)
+    expect(slice(wrapper, "add").find(".flick-reel__open").exists()).toBe(false)
+    expect(wrapper.get("[data-testid=casual-rail-add] .flick-reel__cell-plus").exists()).toBe(true)
   })
 
   it("leaves a click with a modifier to the browser", async () => {
@@ -190,7 +214,21 @@ describe("FlickReel", () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.get("[data-testid=casual-reel]").classes()).toContain("flick-reel--narrow")
-    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.width).toBe("289px")
+    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.width).toBe("271px")
+  })
+
+  it("is drawn at its widest on a wider band and scaled up, with a drag scaled down to match", async () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(3840)
+    const wrapper = mountReel()
+    await wrapper.vm.$nextTick()
+    const band = wrapper.get("[data-testid=casual-band]")
+    Object.assign(band.element, {setPointerCapture: vi.fn(), hasPointerCapture: () => true})
+
+    expect((wrapper.get("[data-testid=casual-reel]").element as HTMLElement).style.getPropertyValue("--k")).toBe("2")
+    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.width).toBe("578px")
+    pointer(band.element, "pointerdown", 700)
+    pointer(band.element, "pointermove", 550)
+    expect((slice(wrapper, "VALORANT").element as HTMLElement).style.getPropertyValue("--open")).toBe("0.750")
   })
 
   it("starts over when the items change, and stops its frames when it goes", async () => {

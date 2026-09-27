@@ -12,6 +12,7 @@ vi.mock("vue-router", async importOriginal => ({
 }))
 const record = vi.hoisted(() => ({slug: "valorant", intro: "", competitionIntro: null as string | null, esportsChannels: [] as unknown[]}))
 const games = vi.hoisted(() => ({refresh: vi.fn()}))
+const answers = vi.hoisted(() => ({answerFor: vi.fn((): unknown => null)}))
 vi.mock("@/domains/esports/island/useGames", () => ({
   useGames: () => ({
     identityOf: () => ({name: "Valorant", accent: "#ff4655", icon: null}),
@@ -28,7 +29,7 @@ vi.mock("@/components/island/useSwipeArrival", () => ({
 vi.mock("@/domains/esports/composables/useEsportsPage", () => ({
   useEsportsPage: () => ({
     page: ref(null), loading: ref(false), teams: ref([]), seasons: ref(seasons), season: ref(seasons[1]), chosen: ref(4),
-    showSeason: vi.fn(), reload: vi.fn(), askAhead: vi.fn(), answerFor: () => null,
+    showSeason: vi.fn(), reload: vi.fn(), askAhead: vi.fn(), answerFor: answers.answerFor,
   }),
 }))
 
@@ -48,9 +49,25 @@ beforeEach(() => {
   router.replace.mockReset()
   games.refresh.mockReset().mockResolvedValue([])
   Object.assign(record, {slug: "valorant", intro: "", competitionIntro: null, esportsChannels: []})
+  answers.answerFor.mockReset().mockReturnValue(null)
 })
 
 describe("a game's competition page", () => {
+  it("draws the shown season's teams as slices, each opening to its line-up", () => {
+    const team = {id: 8, name: "BS Waterboarders", banner: null, icon: null, members: [{handle: "Sony", role: "PLAYER"}]}
+    answers.answerFor.mockReturnValue({teams: [team]})
+    const band = shallowMount(EsportsGamePage, {props: {game: "VALORANT"}, global: {stubs: {
+      ...stubs,
+      SliceBand: {...SliceBand, template: "<div><slot name=\"details\" :item=\"{id: 8}\" /><slot name=\"details\" :item=\"{id: 9}\" /></div>"},
+      TeamRosterDetails: {name: "TeamRosterDetails", props: ["groups"], template: "<div />"},
+    }}}).getComponent(SliceBand)
+
+    expect(band.props("items")).toMatchObject([{id: 8, title: "BS Waterboarders"}])
+    const [held, missing] = band.findAllComponents({name: "TeamRosterDetails"})
+    expect(held!.props("groups")).toMatchObject([{role: "PLAYER", members: [{handle: "Sony"}]}])
+    expect(missing!.props("groups")).toEqual([])
+  })
+
   it("says the competition intro where one is written, the casual one otherwise, and names its esports channels", () => {
     Object.assign(record, {intro: "Customs", competitionIntro: "Two teams", esportsChannels: [{id: "7", guildId: "324", name: "valorant-esports"}]})
     const head = mountPage().getComponent(EsportsGameHead)

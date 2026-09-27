@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {ref} from "vue"
 import HeaderBand from "./HeaderBand.vue"
+import BackLink from "./BackLink.vue"
 import Island from "./Island.vue"
 
 /**
@@ -37,22 +38,12 @@ const previewShut = ref(false)
         blob="tight"
       >
         <template #head>
-          <router-link
+          <back-link
             class="edit-page__back"
-            :data-testid="`${testid}-back`"
+            :label="back.label"
+            :testid="`${testid}-back`"
             :to="back.to"
-          >
-            <svg
-              aria-hidden="true"
-              fill="none"
-              viewBox="0 0 20 12"
-            ><path
-              d="M20 6H3M7 1.5 1.5 6 7 10.5"
-              stroke="currentColor"
-              stroke-width="1.4"
-            /></svg>
-            {{ back.label }}
-          </router-link>
+          />
           <div class="edit-page__head">
             <div>
               <p class="edit-page__eyebrow">
@@ -111,29 +102,13 @@ const previewShut = ref(false)
 </template>
 
 <style scoped>
+.edit-page__back {
+  margin: 1rem 0 0.4rem;
+}
+
 /* The island root fills a page; the Vuetify main around it already does. */
 .edit-page {
   min-height: 0;
-}
-
-.edit-page__back {
-  display: inline-flex;
-  gap: 0.6rem;
-  align-items: center;
-  padding: 1.1rem 0 0.4rem;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-  color: var(--color-ash);
-  text-decoration: none;
-}
-
-.edit-page__back:hover {
-  color: var(--color-chalk);
-}
-
-.edit-page__back svg {
-  width: 18px;
-  height: 11px;
 }
 
 .edit-page__head {

@@ -381,6 +381,7 @@ import {useRoute} from "vue-router"
 import {DropdownMenuContent, DropdownMenuItem, DropdownMenuRoot, DropdownMenuTrigger} from "reka-ui"
 import {useCommittees} from "@/domains/committees"
 import {useGames} from "@/domains/esports"
+import {useCasualGames} from "@/domains/games"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useNarrow} from "@/components/common/useNarrow"
 import NavMark from "@/components/common/NavMark.vue"
@@ -492,6 +493,9 @@ const {current: currentGames} = useGames()
 /** The committees menu lists every committee running now; archived ones wait on the index. */
 const {live: currentCommittees} = useCommittees()
 
+/** The casual menu lists every game played now; archived ones wait on the index. */
+const {live: casualGames} = useCasualGames()
+
 const store = useStore()
 const route = useRoute()
 
@@ -502,7 +506,7 @@ const reader = computed<NavReader>(() => ({
   addressId: store.getters.getLogin?.addressId ?? null,
 }))
 
-const sections = computed(() => sectionsFor(currentGames.value, currentCommittees.value))
+const sections = computed(() => sectionsFor(currentGames.value, currentCommittees.value, casualGames.value))
 const management = computed(() => managementFor(reader.value))
 const account = computed(() => accountFor(reader.value))
 </script>
@@ -523,8 +527,9 @@ const account = computed(() => accountFor(reader.value))
   width: 100%;
   min-height: 56px;
   padding: 0 1.25rem 0 1.75rem;
-  background: color-mix(in oklab, var(--color-pit) 88%, transparent);
-  backdrop-filter: blur(14px);
+  /* Near-opaque rather than blurred: a backdrop blur the width of the screen is redone for
+     every frame the page scrolls under it. */
+  background: color-mix(in oklab, var(--color-pit) 96%, transparent);
   border-bottom: 1px solid var(--color-hairline);
   color: var(--color-chalk);
   font-family: var(--font-body);
@@ -654,21 +659,21 @@ const account = computed(() => accountFor(reader.value))
  * Reka places a panel with a transform rounded to whole pixels, and an entry's own box is
  * fractional — the label is text — so the panel stood a third of a pixel clear of the entry on
  * one side and a third short on the other, which is visible as a seam against the bar. Pinned
- * to the entry's own box it cannot drift: it starts where the entry starts and ends where it
- * ends. It costs the collision handling, which this panel never needed, since it is never wider
- * than the entry it belongs to.
+ * to the entry's own box it cannot drift: it starts where the entry starts, and it is at least
+ * as wide as the entry, growing to the right where an entry in it is longer than the label.
  */
 .site-bar__section :deep([data-reka-popper-content-wrapper]) {
   position: absolute !important;
   inset: calc(100% + 1px) auto auto 0 !important;
-  width: 100% !important;
-  min-width: 0 !important;
+  width: max-content !important;
+  min-width: 100% !important;
   transform: none !important;
 }
 
 :deep(.site-bar__menu) {
   z-index: 1010;
   width: 100%;
+  min-width: max-content;
   padding: 0;
   background: var(--color-surface);
   /*

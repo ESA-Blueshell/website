@@ -44,9 +44,9 @@ describe("the committees", () => {
 
 describe("a committee as the pages draw it", () => {
   const banner = {url: "/b.webp", path: "b.webp", width: 1600, height: 900, renditions: [{url: "/b-640.webp", width: 640}]}
-  const lan = committee(1, "LanCie", {banner, gameCodes: ["CS2"], description: ":tada: **LanCie** runs the LANs.\n\nMore below."})
+  const lan = committee(1, "LanCie", {banner, icon: {url: "/i.webp", path: "i.webp", renditions: []}, gameCodes: ["CS2"], description: ":tada: **LanCie** runs the LANs.\n\nMore below."})
 
-  it("leads to its page, carries its banner, its name on the rail and its games as chips", () => {
+  it("leads to its page, carries its banner and logo, its name on the rail and its games as chips", () => {
     expect(reelItemOf(lan, codes => codes.map(code => `Game ${code}`))).toEqual({
       id: 1,
       title: "LanCie",
@@ -54,6 +54,7 @@ describe("a committee as the pages draw it", () => {
       accent: "var(--color-brand)",
       banner: "/b.webp",
       srcset: "/b-640.webp 640w, /b.webp 1600w",
+      icon: "/i.webp",
       initials: "L",
       railLabel: "LanCie",
       chips: ["Game CS2"],

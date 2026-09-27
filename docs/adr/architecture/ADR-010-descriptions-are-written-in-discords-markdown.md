@@ -3,10 +3,6 @@
 ## Status
 Accepted
 
-## Implementation status
-Built in four slices under epic #1641. Until they merge, main still reads GFM
-and passes descriptions to Google Calendar and link previews raw.
-
 ## Context
 
 Every **description** on the site is shown twice: on the site, and in the

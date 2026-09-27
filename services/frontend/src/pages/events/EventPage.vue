@@ -216,8 +216,6 @@ function signedOut(signUpId: number) {
   padding: 0 2rem;
 }
 
-
-
 .event-page__organiser {
   background-color: var(--band-ground);
 }

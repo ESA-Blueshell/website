@@ -146,8 +146,6 @@ const pages = computed(() => accountFor(reader.value))
   padding-bottom: 3.5rem;
 }
 
-
-
 .account__head {
   display: flex;
   align-items: flex-end;

@@ -56,7 +56,8 @@ class SeedDatabase {
                 start_date DATE, end_date DATE, $LIVE);
             CREATE TABLE game (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(32) NOT NULL, name VARCHAR(255),
-                slug VARCHAR(255), accent VARCHAR(255), sort_index INT, intro TEXT, $LIVE);
+                slug VARCHAR(255), accent VARCHAR(255), sort_index INT, intro TEXT,
+                archived BOOLEAN NOT NULL DEFAULT FALSE, $LIVE);
             CREATE TABLE season (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, start_date DATE,
                 end_date DATE, $LIVE);
@@ -69,6 +70,11 @@ class SeedDatabase {
             CREATE TABLE team_roster_entry (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY, team_season_id BIGINT NOT NULL, handle VARCHAR(255),
                 team_role VARCHAR(32), display_name VARCHAR(255), sort_index INT, user_id BIGINT, $LIVE);
+            CREATE TABLE committees (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL,
+                listed BOOLEAN NOT NULL DEFAULT TRUE, $LIVE);
+            CREATE TABLE committee_games (
+                committee_id BIGINT NOT NULL, game_code VARCHAR(32) NOT NULL, PRIMARY KEY (committee_id, game_code));
             CREATE TABLE user_game_account (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY, user_id BIGINT NOT NULL, game VARCHAR(32) NOT NULL,
                 handle VARCHAR(255), $LIVE)

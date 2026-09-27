@@ -609,7 +609,7 @@ defineExpose({validate, save, signupSession})
             test-id="user-form-name-on-rosters-field"
             :component="VCheckbox"
             :component-props="{ hideDetails: true, class: 'w-100' }"
-            label="Show my name next to my handle on the esports team pages."
+            label="Show my name next to my handle on the competition team pages."
             name="nameOnRosters"
           />
         </div>

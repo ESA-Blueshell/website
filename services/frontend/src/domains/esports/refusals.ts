@@ -29,7 +29,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
     `${r.gameName} still has ${countOf(r.teams ?? 0, "team", "teams")} in this season. `
     + "Drop them from the season first, and the game can be taken out of it.",
   GameAddressBlank: () => "A game's page needs an address.",
-  AddressReserved: r => `The address '${r.address}' belongs to the esports index.`,
+  AddressReserved: r => `The address '${r.address}' belongs to the competition index.`,
   AddressTaken: r => `The address '${r.address}' is already used by ${r.gameName}.`,
   SeasonDatesOverlap: r => `Those dates overlap ${r.seasonName}.`,
   SeasonEndsBeforeStart: () => "A season cannot end before it starts.",

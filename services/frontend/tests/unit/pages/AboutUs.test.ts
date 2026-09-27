@@ -109,7 +109,7 @@ describe("About us page", () => {
 
     const html = wrapper.html()
     expect(html).toContain("/committees")
-    expect(html).toContain("/esports/competitive-scene")
+    expect(html).toContain("/competition")
     expect(html).toContain("/events")
   })
 

@@ -16,7 +16,7 @@ test.describe("a game's page, by its address", () => {
       ["rocketleague", "Rocket League"],
       ["geoguessr", "GeoGuessr"],
     ]) {
-      await page.goto(`/esports/${slug}`)
+      await page.goto(`/competition/${slug}`)
       await expect(page.getByRole("heading", {level: 1})).toHaveText(name!)
     }
   })
@@ -25,7 +25,7 @@ test.describe("a game's page, by its address", () => {
     await installApiMocks(page)
 
     // It has had a page written for it and no way to get to it.
-    await page.goto("/esports/trackmania")
+    await page.goto("/competition/trackmania")
 
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Trackmania")
     await expect(page.getByTestId("esports-game-intro")).toContainText("Driving, fast.")
@@ -34,7 +34,7 @@ test.describe("a game's page, by its address", () => {
   test("an address no game claims is a not-found, not an empty page", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/tiddlywinks")
+    await page.goto("/competition/tiddlywinks")
 
     await expect(page.getByTestId("not-found")).toBeVisible()
     await expect(page.getByTestId("esports-island")).toHaveCount(0)
@@ -48,7 +48,7 @@ test.describe("a game's page, by its address", () => {
       ],
     })
 
-    await page.goto("/esports/pong")
+    await page.goto("/competition/pong")
 
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Pong")
     await expect(page.getByTestId("esports-game-intro")).toContainText("Two paddles and a ball.")
@@ -64,13 +64,13 @@ test.describe("a game's page, by its address", () => {
     const drawerToggle = page.getByTestId("nav-menu-toggle")
     if (await drawerToggle.isVisible()) {
       await drawerToggle.click()
-      await page.getByTestId("nav-drawer-esports-more").click()
+      await page.getByTestId("nav-drawer-competition-more").click()
     } else {
-      await page.getByTestId("nav-esports-more").hover()
+      await page.getByTestId("nav-competition-more").hover()
     }
 
     // CS:GO is history and is not offered; Trackmania is fielded and now is.
-    await expect(page.locator("a[href='/esports/trackmania']").first()).toBeAttached()
-    await expect(page.locator("a[href='/esports/counter-strike-global-offensive']")).toHaveCount(0)
+    await expect(page.locator("a[href='/competition/trackmania']").first()).toBeAttached()
+    await expect(page.locator("a[href='/competition/counter-strike-global-offensive']")).toHaveCount(0)
   })
 })

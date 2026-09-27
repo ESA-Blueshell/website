@@ -10,7 +10,7 @@ import {useGames} from "./useGames"
 import {useSeasonLineup} from "./useSeasonLineup"
 
 /**
- * Blueshell's Esports on a page that is not the index: the games fielded in the newest season,
+ * Blueshell in competition on a page that is not the index: the games fielded in the newest season,
  * each with how many teams it has, and the way through to the esports pages.
  *
  * The same read and the same slices the index draws, so the two cannot disagree. Absent while
@@ -23,7 +23,7 @@ const {entries, loading} = useSeasonLineup(() => null, ready)
 
 const slices = computed(() => entries.value.map(entry => {
   const record = recordOf(entry.game)
-  return lineupSliceOf(entry, identityOf(entry.game), record ? `/esports/${record.slug}` : "/esports")
+  return lineupSliceOf(entry, identityOf(entry.game), record ? `/competition/${record.slug}` : "/competition")
 }))
 </script>
 
@@ -35,17 +35,17 @@ const slices = computed(() => entries.value.map(entry => {
   >
     <band-head
       eyebrow="Competitive gaming for anyone who wants to"
-      heading="Blueshell's Esports"
+      heading="Blueshell in competition"
     >
       <template #heading>
-        Blueshell's <span class="text-brand">Esports</span>
+        Blueshell in <span class="text-brand">competition</span>
       </template>
       <cut-button
-        href="/esports"
+        href="/competition"
         testid="home-esports-more"
         tone="solid"
       >
-        More on esports
+        More on competition
       </cut-button>
     </band-head>
 
@@ -62,7 +62,7 @@ const slices = computed(() => entries.value.map(entry => {
           <router-link
             class="slice__link"
             :data-testid="`home-esports-link-${item.id}`"
-            :to="item.href ?? '/esports'"
+            :to="item.href ?? '/competition'"
           >
             {{ item.title }} this season →
           </router-link>

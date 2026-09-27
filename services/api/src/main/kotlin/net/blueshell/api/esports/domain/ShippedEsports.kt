@@ -87,18 +87,29 @@ class ShippedEsports(
         return applied
     }
 
-    /** A game, keyed on its code. Whether the association still plays it is derived from the seasons. */
+    /**
+     * A game, keyed on its code. Whether the association still fields it is derived from the
+     * seasons; whether it is archived is the file's to say once, since the site edits it after.
+     */
     private fun addGame(
         connection: Connection,
         ledger: SeedLedger,
         row: Map<String, String>,
     ): Boolean {
         val code = row.getValue("code")
+        val archived = row["archived"].toBoolean()
+        // Its own key, so a game already standing when archiving shipped is archived once too.
+        if (archived && ledger.toWrite("game-archived|$code") { false }) {
+            connection.prepareStatement("UPDATE game SET archived = TRUE WHERE code = ?").use { statement ->
+                statement.setString(1, code)
+                statement.executeUpdate()
+            }
+        }
         if (!ledger.toWrite("game|$code") { exists(connection, "SELECT id FROM game WHERE code = ?", code) }) {
             return false
         }
         connection
-            .prepareStatement("INSERT INTO game (code, name, slug, accent, sort_index, intro) VALUES (?, ?, ?, ?, ?, ?)")
+            .prepareStatement("INSERT INTO game (code, name, slug, accent, sort_index, intro, archived) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .use { statement ->
                 listOf<Any?>(
                     code,
@@ -107,6 +118,7 @@ class ShippedEsports(
                     row.getValue("accent").ifBlank { null },
                     row.getValue("sort_index").toInt(),
                     row.getValue("intro").ifBlank { null },
+                    archived,
                 ).forEachIndexed { index, value -> statement.setObject(index + 1, value) }
                 statement.executeUpdate()
             }

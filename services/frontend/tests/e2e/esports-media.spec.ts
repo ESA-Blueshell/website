@@ -14,7 +14,7 @@ import {installApiMocks, loginAsBoard} from "./mocks"
  * puts it on the record. That is why these tests save before they look, and why there is a
  * test that cancels instead.
  */
-const GAME_PAGE = "/esports/valorant"
+const GAME_PAGE = "/competition/valorant"
 
 /** A one-pixel PNG, which is the smallest thing that is genuinely the type it claims. */
 const PNG = Buffer.from(
@@ -184,7 +184,7 @@ test.describe("banners and icons", () => {
   test("a game's banner is chosen on the index and reaches the slice it is drawn in", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/esports")
+    await page.goto("/competition")
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
@@ -212,7 +212,7 @@ test.describe("banners and icons", () => {
   test("a game's icon is chosen on the index and is drawn beside its name", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/esports")
+    await page.goto("/competition")
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
@@ -272,7 +272,7 @@ test.describe("banners and icons", () => {
   test("a game's icon may be a vector, and the page offers no widths for one", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/esports")
+    await page.goto("/competition")
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
@@ -316,7 +316,7 @@ test.describe("banners and icons", () => {
   test("the file chooser offers a vector for a logo and not for a banner", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/esports")
+    await page.goto("/competition")
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
@@ -329,7 +329,7 @@ test.describe("banners and icons", () => {
   test("a game's chosen icon is discarded when the dialog is cancelled", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/esports")
+    await page.goto("/competition")
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
@@ -380,7 +380,7 @@ test.describe("banners and icons", () => {
   test("the game's own page is identified by the game's logo", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/esports")
+    await page.goto("/competition")
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
@@ -408,7 +408,7 @@ test.describe("banners and icons", () => {
 
   test("a visitor is offered none of this", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports")
+    await page.goto("/competition")
 
     await expect(page.getByTestId("esports-game-edit-VALORANT")).toBeHidden()
   })

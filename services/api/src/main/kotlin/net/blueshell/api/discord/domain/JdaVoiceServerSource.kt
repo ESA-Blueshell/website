@@ -130,7 +130,7 @@ class JdaVoiceServerSource(
         jda
             ?.getGuildById(guildId)
             ?.let { it.textChannels + it.newsChannels }
-            ?.map { TextRoom(it.id, guildId, it.name) }
+            ?.map { TextRoom(it.id, guildId, it.name, it.parentCategory?.name) }
             .orEmpty()
 
     /* Made once per channel and kept: unique=false has Discord hand back the same invite anyway. */

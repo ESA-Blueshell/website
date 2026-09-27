@@ -27,7 +27,7 @@ defineOptions({name: "EsportsPage"})
 
 /** What the head of the index says, which no season changes. */
 const HEAD = {
-  eyebrow: "Blueshell Esports",
+  eyebrow: "Blueshell Competition",
   heading: "Any game you want to play,",
   headingTail: "competitively",
   body: "The games below have teams in them right now, and that list is not a limit: bring enough people who want to play something else and the association will arrange it. Tryouts run every season, and there is a room full of people who will help you get better.",
@@ -43,7 +43,7 @@ const {ready, games, identityOf, recordOf, refresh: refreshGames} = useGames()
 
 const urlOf = (game: string) => {
   const record = recordOf(game)
-  return record ? `/esports/${record.slug}` : "/esports"
+  return record ? `/competition/${record.slug}` : "/competition"
 }
 
 // The band is one read now: the api answers with the games of the shown season, and with

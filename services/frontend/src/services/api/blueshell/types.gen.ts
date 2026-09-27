@@ -141,6 +141,17 @@ export type ApiError = {
     type?: string;
 };
 
+export type ArchiveCommitteeRequest = {
+    archived: boolean;
+};
+
+/**
+ * Whether nobody plays a game casually any more
+ */
+export type ArchiveGameRequest = {
+    archived: boolean;
+};
+
 /**
  * What the association can say about itself in numbers
  */
@@ -403,6 +414,87 @@ export type BulkTargetMoveResult = {
     moved: Array<ExternalTarget>;
 };
 
+/**
+ * A game as the board adds or corrects it from the casual pages
+ */
+export type CasualGameRequest = {
+    /**
+     * The colour that carries this game, or nothing for the island's own
+     */
+    accent?: string | null;
+    /**
+     * Where the game's banner is stored; nothing takes it away
+     */
+    banner?: string | null;
+    /**
+     * The Discord channels it lives in; left out, the ones it has are kept
+     */
+    channels?: Array<GameChannelRequest> | null;
+    /**
+     * Where the game's icon is stored; nothing takes it away
+     */
+    icon?: string | null;
+    intro?: string | null;
+    /**
+     * What this game is called. Its code is taken from it once, when it is added
+     */
+    name: string;
+    /**
+     * The address this game answers to under /casual
+     */
+    slug: string;
+};
+
+/**
+ * A game as the casual pages show it
+ */
+export type CasualGameResponse = {
+    /**
+     * The colour that carries this game, where one has been chosen
+     */
+    accent?: string | null;
+    /**
+     * Nobody plays it casually any more; it is among the games we used to play
+     */
+    archived: boolean;
+    /**
+     * The game's own image
+     */
+    banner?: Image | null;
+    /**
+     * The Discord channels it is talked about in, in the order chosen
+     */
+    channels: Array<GameChannelResponse>;
+    /**
+     * The identifier everything else files the game under. Never changes
+     */
+    code: string;
+    /**
+     * The game's own icon
+     */
+    icon?: Image | null;
+    /**
+     * A team is fielded in it this season
+     */
+    inCompetition: boolean;
+    /**
+     * What is said about the game, where anything is said
+     */
+    intro?: string | null;
+    /**
+     * What this game is called
+     */
+    name: string;
+    /**
+     * The address this game answers to under /casual
+     */
+    slug: string;
+    /**
+     * Where the game sits among the others
+     */
+    sortIndex: number;
+};
+
 export type CodeRequest = {
     code: string;
 };
@@ -541,11 +633,16 @@ export type CohortSummary = {
 };
 
 export type CommitteeDetailResponse = {
+    archived: boolean;
+    banner?: Image | null;
     createdAt: string;
     description: string;
+    gameCodes: Array<string>;
     id: number;
+    listed: boolean;
     members: Array<CommitteeMemberResponse>;
     name: string;
+    slug: string;
     updatedAt: string;
     version: number;
 };
@@ -567,7 +664,38 @@ export type CommitteeMemberResponse = {
     version: number;
 };
 
+export type CommitteeOwnPageRequest = {
+    banner?: string | null;
+    description: string;
+    gameCodes?: Array<string> | null;
+    version?: number | null;
+};
+
+export type CommitteePageResponse = {
+    archived: boolean;
+    banner?: Image | null;
+    description: string;
+    gameCodes: Array<string>;
+    id: number;
+    listed: boolean;
+    members: Array<CommitteeSeatResponse>;
+    name: string;
+    slug: string;
+};
+
 export type CommitteeResponse = unknown;
+
+export type CommitteeSeatResponse = {
+    /**
+     * Their Discord avatar's address
+     */
+    avatar?: string | null;
+    /**
+     * Their Discord username, absent for a member who has not linked Discord
+     */
+    discordTag?: string | null;
+    role?: string | null;
+};
 
 export enum ContributionEmailKind {
     REMINDER = 'REMINDER',
@@ -680,9 +808,19 @@ export type CreateBoardRequest = {
 };
 
 export type CreateCommitteeRequest = {
+    /**
+     * Where its stored banner is, or absent for none
+     */
+    banner?: string | null;
     description: string;
+    gameCodes: Array<string>;
+    listed: boolean;
     members: Array<CommitteeMemberRequest>;
     name: string;
+    /**
+     * The address its page answers to; absent makes one from the name
+     */
+    slug?: string | null;
 };
 
 export type CreateContributionPeriodRequest = {
@@ -714,6 +852,10 @@ export type CreateEventRequest = {
     committeeId: number;
     description: string;
     endTime: string;
+    /**
+     * The codes of the games the event names
+     */
+    gameCodes: Array<string>;
     location?: string | null;
     memberPrice?: number | null;
     membersOnly: boolean;
@@ -840,6 +982,18 @@ export type CsrfToken = {
 export type DerivedRoleResponse = {
     role: Role;
     source: RoleSource;
+};
+
+/**
+ * A text channel a game may live in
+ */
+export type DiscordChannelResponse = {
+    /**
+     * The server the channel is in, which a link into it needs
+     */
+    guildId: string;
+    id: string;
+    name: string;
 };
 
 /**
@@ -1056,6 +1210,10 @@ export type EventResponse = {
     createdAt: string;
     description?: string | null;
     endTime: string;
+    /**
+     * The codes of the games the event names
+     */
+    gameCodes: Array<string>;
     id: number;
     location?: string | null;
     memberPrice?: number | null;
@@ -1213,6 +1371,7 @@ export enum FileType {
     DOCUMENT = 'DOCUMENT',
     PROFILE_PICTURE = 'PROFILE_PICTURE',
     EVENT_BANNER = 'EVENT_BANNER',
+    COMMITTEE_BANNER = 'COMMITTEE_BANNER',
     EVENT_PICTURE = 'EVENT_PICTURE',
     SPONSOR_PICTURE = 'SPONSOR_PICTURE',
     GAME_BANNER = 'GAME_BANNER',
@@ -1242,6 +1401,27 @@ export type GameAccountResponse = {
 };
 
 /**
+ * A Discord channel a game lives in, as the picker offered it
+ */
+export type GameChannelRequest = {
+    guildId: string;
+    id: string;
+    name: string;
+};
+
+/**
+ * A Discord channel a game lives in, with its name as last known
+ */
+export type GameChannelResponse = {
+    /**
+     * The server the channel is in, which a link into it needs
+     */
+    guildId: string;
+    id: string;
+    name: string;
+};
+
+/**
  * What a game holds, for a removal to say before it happens
  */
 export type GameContentsResponse = {
@@ -1253,6 +1433,36 @@ export type GameContentsResponse = {
      * Teams recorded in it, across every season
      */
     teams: number;
+};
+
+/**
+ * What removing a game would touch, so the offer to remove it can say so
+ */
+export type GameHoldingsResponse = {
+    /**
+     * Discord channels the game lives in
+     */
+    channels: number;
+    /**
+     * Committees linked to the game
+     */
+    committees: number;
+    /**
+     * Events that name the game
+     */
+    events: number;
+    /**
+     * People on those teams' line-ups
+     */
+    players: number;
+    /**
+     * Teams fielded in the game; a game with any cannot be removed
+     */
+    teams: number;
+};
+
+export type GameOrganisersRequest = {
+    committeeIds: Array<number>;
 };
 
 /**
@@ -2337,9 +2547,19 @@ export type UpdateBoardRequest = {
 };
 
 export type UpdateCommitteeRequest = {
+    /**
+     * Where its stored banner is, or absent for none
+     */
+    banner?: string | null;
     description: string;
+    gameCodes?: Array<string> | null;
+    listed: boolean;
     members: Array<CommitteeMemberRequest>;
     name: string;
+    /**
+     * The address its page answers to; absent makes one from the name
+     */
+    slug?: string | null;
     version: number;
 };
 
@@ -2363,6 +2583,7 @@ export type UpdateEventRequest = {
     committeeId: number;
     description: string;
     endTime: string;
+    gameCodes?: Array<string> | null;
     location?: string | null;
     memberPrice?: number | null;
     membersOnly: boolean;
@@ -3665,6 +3886,92 @@ export type CreateCommitteeResponses = {
 
 export type CreateCommitteeResponse = CreateCommitteeResponses[keyof CreateCommitteeResponses];
 
+export type FindCommitteePageData = {
+    body?: never;
+    path: {
+        address: string;
+    };
+    query?: never;
+    url: '/committees/address/{address}';
+};
+
+export type FindCommitteePageErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCommitteePageError = FindCommitteePageErrors[keyof FindCommitteePageErrors];
+
+export type FindCommitteePageResponses = {
+    /**
+     * OK
+     */
+    200: CommitteePageResponse;
+};
+
+export type FindCommitteePageResponse = FindCommitteePageResponses[keyof FindCommitteePageResponses];
+
+export type SetGameOrganisersData = {
+    body: GameOrganisersRequest;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/committees/games/{game}';
+};
+
+export type SetGameOrganisersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetGameOrganisersError = SetGameOrganisersErrors[keyof SetGameOrganisersErrors];
+
+export type SetGameOrganisersResponses = {
+    /**
+     * OK
+     */
+    200: Array<CommitteeResponse>;
+};
+
+export type SetGameOrganisersResponse = SetGameOrganisersResponses[keyof SetGameOrganisersResponses];
+
 export type FindCommitteeByIdData = {
     body?: never;
     path: {
@@ -3793,6 +4100,137 @@ export type UpdateCommitteeResponses = {
 };
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
+
+export type ArchiveCommitteeData = {
+    body: ArchiveCommitteeRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/committees/{id}/archived';
+};
+
+export type ArchiveCommitteeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ArchiveCommitteeError = ArchiveCommitteeErrors[keyof ArchiveCommitteeErrors];
+
+export type ArchiveCommitteeResponses = {
+    /**
+     * OK
+     */
+    200: CommitteeDetailResponse;
+};
+
+export type ArchiveCommitteeResponse = ArchiveCommitteeResponses[keyof ArchiveCommitteeResponses];
+
+export type UploadCommitteeBannerData = {
+    body?: {
+        file: Blob | File;
+    };
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/committees/{id}/banners';
+};
+
+export type UploadCommitteeBannerErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadCommitteeBannerError = UploadCommitteeBannerErrors[keyof UploadCommitteeBannerErrors];
+
+export type UploadCommitteeBannerResponses = {
+    /**
+     * Created
+     */
+    201: Image;
+};
+
+export type UploadCommitteeBannerResponse = UploadCommitteeBannerResponses[keyof UploadCommitteeBannerResponses];
+
+export type UpdateCommitteePageData = {
+    body: CommitteeOwnPageRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/committees/{id}/page';
+};
+
+export type UpdateCommitteePageErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateCommitteePageError = UpdateCommitteePageErrors[keyof UpdateCommitteePageErrors];
+
+export type UpdateCommitteePageResponses = {
+    /**
+     * OK
+     */
+    200: CommitteeDetailResponse;
+};
+
+export type UpdateCommitteePageResponse = UpdateCommitteePageResponses[keyof UpdateCommitteePageResponses];
 
 export type FindContributionPeriodsData = {
     body?: never;
@@ -4678,6 +5116,51 @@ export type ListDiscordEmojisResponses = {
 };
 
 export type ListDiscordEmojisResponse = ListDiscordEmojisResponses[keyof ListDiscordEmojisResponses];
+
+export type ListGameChannelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/discord/game-channels';
+};
+
+export type ListGameChannelsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up
+     */
+    503: unknown;
+};
+
+export type ListGameChannelsError = ListGameChannelsErrors[keyof ListGameChannelsErrors];
+
+export type ListGameChannelsResponses = {
+    /**
+     * OK
+     */
+    200: Array<DiscordChannelResponse>;
+};
+
+export type ListGameChannelsResponse = ListGameChannelsResponses[keyof ListGameChannelsResponses];
 
 export type OpenDiscordInviteData = {
     body?: never;
@@ -6128,6 +6611,7 @@ export type FindEventsData = {
         committeeId?: number;
         titleContains?: string;
         hasBanner?: boolean;
+        gameCode?: string;
     };
     url: '/events';
 };
@@ -6870,6 +7354,260 @@ export type DownloadPublicFileResponses = {
 };
 
 export type DownloadPublicFileResponse = DownloadPublicFileResponses[keyof DownloadPublicFileResponses];
+
+export type FindCasualGamesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/games';
+};
+
+export type FindCasualGamesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCasualGamesError = FindCasualGamesErrors[keyof FindCasualGamesErrors];
+
+export type FindCasualGamesResponses = {
+    /**
+     * OK
+     */
+    200: Array<CasualGameResponse>;
+};
+
+export type FindCasualGamesResponse = FindCasualGamesResponses[keyof FindCasualGamesResponses];
+
+export type CreateCasualGameData = {
+    body: CasualGameRequest;
+    path?: never;
+    query?: never;
+    url: '/games';
+};
+
+export type CreateCasualGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateCasualGameError = CreateCasualGameErrors[keyof CreateCasualGameErrors];
+
+export type CreateCasualGameResponses = {
+    /**
+     * Created
+     */
+    201: CasualGameResponse;
+};
+
+export type CreateCasualGameResponse = CreateCasualGameResponses[keyof CreateCasualGameResponses];
+
+export type RemoveGameData = {
+    body?: never;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/games/{game}';
+};
+
+export type RemoveGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveGameError = RemoveGameErrors[keyof RemoveGameErrors];
+
+export type RemoveGameResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveGameResponse = RemoveGameResponses[keyof RemoveGameResponses];
+
+export type UpdateCasualGameData = {
+    body: CasualGameRequest;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/games/{game}';
+};
+
+export type UpdateCasualGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateCasualGameError = UpdateCasualGameErrors[keyof UpdateCasualGameErrors];
+
+export type UpdateCasualGameResponses = {
+    /**
+     * OK
+     */
+    200: CasualGameResponse;
+};
+
+export type UpdateCasualGameResponse = UpdateCasualGameResponses[keyof UpdateCasualGameResponses];
+
+export type ArchiveGameData = {
+    body: ArchiveGameRequest;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/games/{game}/archived';
+};
+
+export type ArchiveGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ArchiveGameError = ArchiveGameErrors[keyof ArchiveGameErrors];
+
+export type ArchiveGameResponses = {
+    /**
+     * OK
+     */
+    200: CasualGameResponse;
+};
+
+export type ArchiveGameResponse = ArchiveGameResponses[keyof ArchiveGameResponses];
+
+export type FindGameHoldingsData = {
+    body?: never;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/games/{game}/holdings';
+};
+
+export type FindGameHoldingsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindGameHoldingsError = FindGameHoldingsErrors[keyof FindGameHoldingsErrors];
+
+export type FindGameHoldingsResponses = {
+    /**
+     * OK
+     */
+    200: GameHoldingsResponse;
+};
+
+export type FindGameHoldingsResponse = FindGameHoldingsResponses[keyof FindGameHoldingsResponses];
 
 export type HealthCheckData = {
     body?: never;

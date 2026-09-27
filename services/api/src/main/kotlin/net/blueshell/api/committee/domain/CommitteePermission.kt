@@ -36,7 +36,7 @@ class CommitteePermission
             val principal = SecurityUtils.principalFrom(authentication)
             return when (permission) {
                 "read" -> true
-                "events" -> isBoard || committee.hasMember(principal?.id)
+                "events", "page" -> isBoard || committee.hasMember(principal?.id)
                 "write" -> isBoard
                 "delete" -> isBoard
                 else -> false

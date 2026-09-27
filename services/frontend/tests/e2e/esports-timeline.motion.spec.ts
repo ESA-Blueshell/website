@@ -10,7 +10,7 @@ import {eightSeasonFixtures} from "./esportsStrip"
 test.describe("the season timeline, with motion", () => {
   test("lights the chain as far as the season under the pointer", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     const timeline = page.getByTestId("esports-season-timeline")
     await timeline.waitFor()
 
@@ -32,7 +32,7 @@ test.describe("the season timeline, with motion", () => {
 
   test("highlights the band under the pointer, and bolds the half being read", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await page.getByTestId("esports-season-timeline").waitFor()
 
     const band = page.getByTestId("esports-season-node-19")
@@ -52,7 +52,7 @@ test.describe("the season timeline, with motion", () => {
 
   test("takes a click to change season, not a hover", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await page.getByTestId("esports-season-timeline").waitFor()
 
     const older = page.getByTestId("esports-season-node-19")
@@ -69,7 +69,7 @@ test.describe("the season timeline, with motion", () => {
   test("travels while the pointer rests on the side of the strip", async ({page}) => {
     await installApiMocks(page, eightSeasonFixtures)
     await loginAsBoard(page.context())
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     const strip = page.getByTestId("esports-season-timeline")
     await strip.waitFor()
     await expect(page.getByTestId("esports-season-pan-back")).toBeVisible()
@@ -94,7 +94,7 @@ test.describe("the season timeline, with motion", () => {
 
   test("opens the slice under the pointer and closes the one that was open", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     const first = page.getByTestId("team-roster-1")
     const second = page.getByTestId("team-roster-2")
     await first.waitFor()

@@ -41,6 +41,29 @@ class ShippedEsportsTest {
     }
 
     @Test
+    fun `a game the files archive is archived once, and stays unarchived when the site says so`() {
+        load()
+        assertThat(db.count("SELECT COUNT(*) FROM game WHERE code = 'BETA' AND archived")).isEqualTo(1)
+        assertThat(db.count("SELECT COUNT(*) FROM game WHERE code = 'ALPHA' AND archived")).isZero()
+
+        db.jdbc.update("UPDATE game SET archived = FALSE WHERE code = 'BETA'")
+        load()
+
+        assertThat(db.count("SELECT COUNT(*) FROM game WHERE code = 'BETA' AND archived")).isZero()
+    }
+
+    @Test
+    fun `a game standing before archiving shipped is archived by the next run`() {
+        load()
+        db.jdbc.update("UPDATE game SET archived = FALSE WHERE code = 'BETA'")
+        db.jdbc.update("DELETE FROM seed_applied WHERE record_key = 'game-archived|BETA'")
+
+        load()
+
+        assertThat(db.count("SELECT COUNT(*) FROM game WHERE code = 'BETA' AND archived")).isEqualTo(1)
+    }
+
+    @Test
     fun `a database seeded before the ledger records what it holds and changes none of it`() {
         load()
         db.jdbc.update("DELETE FROM seed_applied")

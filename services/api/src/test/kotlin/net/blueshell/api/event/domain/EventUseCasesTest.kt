@@ -7,6 +7,8 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.game.api.GameArchived
+import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
@@ -23,6 +25,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Instant
@@ -33,7 +36,8 @@ class EventUseCasesTest {
     private val currentUserProvider = mock<CurrentUserProvider>()
     private val surveyFactory = mock<SurveyFactory>()
     private val fileService = mock<FileService>()
-    private val useCases = EventUseCases(eventService, committeeService, currentUserProvider, surveyFactory, fileService)
+    private val games = mock<GameService>()
+    private val useCases = EventUseCases(eventService, committeeService, currentUserProvider, surveyFactory, fileService, games)
 
     @Nested
     inner class CreateEvent {
@@ -152,7 +156,15 @@ class EventUseCasesTest {
         fun `refuses @everyone as a pinged role, on a new event and on an edit`() {
             asBoard()
             val guarded =
-                EventUseCases(eventService, committeeService, currentUserProvider, surveyFactory, fileService, discordGuildId = "324")
+                EventUseCases(
+                    eventService,
+                    committeeService,
+                    currentUserProvider,
+                    surveyFactory,
+                    fileService,
+                    games,
+                    discordGuildId = "324",
+                )
             val everyone = listOf(PingedRoleData("324", "@everyone"))
 
             assertThatThrownBy { guarded.create(createEventData(approved = true).copy(pingedRoles = everyone)) }
@@ -180,6 +192,54 @@ class EventUseCasesTest {
                 version = 1L,
             )
             assertThat(existing.pingedRoles).containsExactly(PingedRole("902", "Board"))
+        }
+    }
+
+    @Nested
+    inner class Games {
+        private fun asBoard() {
+            whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
+            whenever(fileService.findById(any())).thenReturn(mock<File>())
+            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(mock<Survey>())
+            whenever(committeeService.findById(any())).thenReturn(mock())
+        }
+
+        @Test
+        fun `names the games a new event picks, as the game module answers them`() {
+            asBoard()
+            whenever(games.requireNameable(listOf(" CHESS ", "WORDLE"), emptySet())).thenReturn(listOf("CHESS", "WORDLE"))
+            val captured = argumentCaptor<Event>()
+            whenever(eventService.create(captured.capture())).thenAnswer { captured.firstValue }
+
+            useCases.create(createEventData(approved = true).copy(gameCodes = listOf(" CHESS ", "WORDLE")))
+
+            assertThat(captured.firstValue.gameCodes).containsExactly("CHESS", "WORDLE")
+        }
+
+        @Test
+        fun `keeps the games an edit says nothing of, and lets an archived one stay named`() {
+            asBoard()
+            val existing = eventEntity().apply { gameCodes += "DOTA_2" }
+            whenever(eventService.findById(9L)).thenReturn(existing)
+            whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
+            whenever(games.requireNameable(listOf("DOTA_2", "CHESS"), setOf("DOTA_2"))).thenReturn(listOf("DOTA_2", "CHESS"))
+
+            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L)
+            assertThat(existing.gameCodes).containsExactly("DOTA_2")
+
+            val both = updateEventData().copy(gameCodes = listOf("DOTA_2", "CHESS"))
+            useCases.update(id = 9L, data = both, removeExistingSignUps = false, version = 1L)
+            assertThat(existing.gameCodes).containsExactly("DOTA_2", "CHESS")
+        }
+
+        @Test
+        fun `saves nothing when a game is refused`() {
+            asBoard()
+            whenever(games.requireNameable(listOf("DOTA_2"), emptySet())).thenThrow(GameArchived("Dota 2"))
+
+            assertThatThrownBy { useCases.create(createEventData(approved = true).copy(gameCodes = listOf("DOTA_2"))) }
+                .isInstanceOf(GameArchived::class.java)
+            verify(eventService, never()).create(any())
         }
     }
 

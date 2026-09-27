@@ -34,6 +34,7 @@ type Fixtures = {
   esportsTeams?: Array<Record<string, unknown>>
   esportsRoster?: Array<Record<string, unknown>>
   esportsGames?: Array<Record<string, unknown>>
+  casualGames?: Array<Record<string, unknown>>
   boards?: Array<Record<string, unknown>>
   cohortSubjectDetail?: Record<string, unknown>
   /** A refusal the payment-email send answers with instead of accepting the batch. */
@@ -77,6 +78,27 @@ const esportsGames = [
   // No accent has ever been written for Trackmania: it reads on the island's own blue.
   {code: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, current: true},
   {code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, current: false},
+]
+
+/**
+ * The games as the casual pages read them: every one, the archived ones included, each saying
+ * whether a team is fielded in it this season. No art, so a page is seen drawing its plates.
+ */
+const casualGame = (code: string, name: string, slug: string, sortIndex: number, extra: Record<string, unknown> = {}) => ({
+  code, name, slug, accent: null, intro: null, banner: null, icon: null, sortIndex, archived: false, inCompetition: false, channels: [], ...extra,
+})
+
+/** What the casual game dialog sends. */
+type CasualGameBody = {name: string, slug: string, intro?: string, accent?: string, channels?: Array<Record<string, string>>}
+
+const casualGames = [
+  casualGame("VALORANT", "Valorant", "valorant", 1, {accent: "#ff4655", intro: "Five-stacks, customs and clips.", inCompetition: true, channels: [{id: "6322", guildId: "324", name: "valorant"}]}),
+  casualGame("MINECRAFT", "Minecraft", "minecraft", 2, {accent: "#6cbf3f", intro: "The association server."}),
+  casualGame("POKEMON", "Pokémon", "pokemon", 3, {accent: "#ffcb05"}),
+  casualGame("CHESS", "Chess", "chess", 4, {accent: "#b58863"}),
+  casualGame("WORDLE", "Wordle", "wordle", 5),
+  casualGame("DOTA_2", "Dota 2", "dota-2", 6, {archived: true}),
+  casualGame("OVERWATCH", "Overwatch", "overwatch", 7, {archived: true}),
 ]
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
@@ -303,6 +325,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const teamsMade: Array<Record<string, unknown>> = []
   /** Games added during the test, which every read then reports as one of the games. */
   const gamesMade: Array<Record<string, string | number | boolean | null>> = []
+  const casualEdited = new Map<string, Record<string, unknown>>()
+  const casualGone = new Set<string>()
+  const casualNow = () => {
+    const known = (fixtures.casualGames ?? casualGames).map(one => casualEdited.get(String(one.code)) ?? one)
+    const added = [...casualEdited.values()].filter(one => !known.some(k => k.code === one.code))
+    return [...known, ...added].filter(one => !casualGone.has(String(one.code)))
+  }
   /** Games corrected during the test, which every read then reports as corrected. */
   const gamesEdited = new Map<string, Record<string, unknown>>()
   /** Games removed during the test, which the reads then leave out. */
@@ -512,6 +541,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       membersOnly: false,
       committeeId: 900,
       banner: false,
+      gameCodes: ["VALORANT"],
     },
   ]
 
@@ -519,9 +549,23 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     {id: 600, eventId: 500, userId: 1, kind: "MEMBER"},
   ]
 
+  const committeeRecord = (id: number, name: string, slug: string, extra: Record<string, unknown> = {}) => ({
+    id, name, slug, description: `${name} runs things.`, listed: true, archived: false, banner: null, gameCodes: [] as string[],
+    version: 0, members: [] as Array<Record<string, unknown>>, createdAt: "2025-01-01T00:00:00Z", updatedAt: "2025-01-01T00:00:00Z", ...extra,
+  })
   const baseCommittees = fixtures.committees ?? [
-    {id: 900, name: "Events Committee", description: "Runs the events.", version: 0, members: []},
+    committeeRecord(900, "Events Committee", "events-committee", {description: "Runs the events.", gameCodes: ["CHESS"], members: [{userId: 1, committeeId: 900, role: "Chair"}]}),
+    committeeRecord(901, "LanCie", "lancie", {gameCodes: ["VALORANT"]}),
+    committeeRecord(902, "Board", "board", {listed: false}),
+    committeeRecord(903, "OldCie", "oldcie", {archived: true}),
   ]
+  // The committees, kept per page so a spec sees its own adds, edits and archives.
+  const committeesEdited = new Map<number, Record<string, unknown>>()
+  const committeesNow = () => {
+    const known = baseCommittees.map(one => committeesEdited.get(Number(one.id)) ?? one)
+    const added = [...committeesEdited.values()].filter(one => !known.some(k => k.id === one.id))
+    return [...known, ...added] as Array<Record<string, unknown>>
+  }
 
   const baseBlogs = fixtures.blogs ?? [
     {
@@ -957,6 +1001,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/discord/channels") {
       return fulfillJson(route, [{id: "323456789012345602", name: "events-info"}])
     }
+    // The games category's channels, which the casual game dialog offers.
+    if (method === "GET" && path === "/discord/game-channels") {
+      return fulfillJson(route, [
+        {id: "6322", guildId: "324", name: "valorant"},
+        {id: "6323", guildId: "324", name: "chess"},
+        {id: "6324", guildId: "324", name: "fighting-games"},
+      ])
+    }
     if (method === "GET" && path === "/discord/emojis") {
       return fulfillJson(route, [{id: "657733730491826186", name: "POGGERS", animated: false}])
     }
@@ -965,10 +1017,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)
     }
     if (method === "GET" && path === "/events") {
-      // Only the archive's search and paging are answered; every other filter gets every event.
+      // The archive's search and paging are answered, and a game's page asking by game and by
+      // time; every other filter gets every event.
       const params = new URL(route.request().url()).searchParams
       const title = (params.get("titleContains") ?? "").toLowerCase()
-      const found = baseEvents.filter(one => String(one.title ?? "").toLowerCase().includes(title))
+      const game = params.get("gameCode")
+      const from = game ? params.get("from") : null
+      const to = game ? params.get("to") : null
+      const found = baseEvents
+        .filter(one => String(one.title ?? "").toLowerCase().includes(title))
+        .filter(one => !game || ((one as {gameCodes?: string[]}).gameCodes ?? []).includes(game))
+        .filter(one => !from || String(one.startTime) >= new Date(from).toISOString())
+        .filter(one => !to || String(one.startTime) <= new Date(to).toISOString())
       const size = Number(params.get("size") ?? found.length)
       const at = Number(params.get("page") ?? "0") * size
       return fulfillJson(route, {content: found.slice(at, at + size), page: {totalElements: found.length}})
@@ -991,13 +1051,50 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, detail)
     }
     if (method === "GET" && path === "/committees") {
-      return fulfillJson(route, baseCommittees)
+      return fulfillJson(route, committeesNow())
+    }
+    if (method === "POST" && path === "/committees") {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const name = String(body.name)
+      const made = committeeRecord(990 + committeesEdited.size, name, String(body.slug ?? "") || name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), body)
+      committeesEdited.set(Number(made.id), made)
+      return fulfillJson(route, made, 201)
+    }
+    const committeeAddress = /^\/committees\/address\/([^/]+)$/.exec(path)
+    if (method === "GET" && committeeAddress) {
+      const found = committeesNow().find(one => one.slug === decodeURIComponent(committeeAddress[1]!).toLowerCase())
+      if (!found) return fulfillJson(route, {code: "UnknownCommitteeAddress", address: committeeAddress[1]}, 404)
+      const seats = ((found.members as Array<Record<string, unknown>>) ?? []).map((member, at) => (at === 0
+        ? {discordTag: "nelly", avatar: "https://cdn.discordapp.com/embed/avatars/1.png", role: member.role ?? null}
+        : {discordTag: null, avatar: null, role: member.role ?? null}))
+      return fulfillJson(route, {...found, members: seats})
+    }
+    const committeeOwn = /^\/committees\/(\d+)\/(page|archived)$/.exec(path)
+    if (method === "PUT" && committeeOwn) {
+      const id = Number(committeeOwn[1])
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const stored = committeesNow().find(one => Number(one.id) === id) ?? committeeRecord(id, `Committee ${id}`, `committee-${id}`)
+      const changed = {...stored, ...body, banner: stored.banner, version: Number(stored.version ?? 0) + 1}
+      committeesEdited.set(id, changed)
+      return fulfillJson(route, changed)
+    }
+    const committeeGame = /^\/committees\/games\/([A-Z0-9_]+)$/.exec(path)
+    if (method === "PUT" && committeeGame) {
+      const code = committeeGame[1]!
+      const {committeeIds} = JSON.parse(request.postData() ?? "{}") as {committeeIds: number[]}
+      committeesNow().forEach(one => {
+        const codes = (one.gameCodes as string[]).filter(held => held !== code)
+        committeesEdited.set(Number(one.id), {...one, gameCodes: committeeIds.includes(Number(one.id)) ? [...codes, code] : codes})
+      })
+      return fulfillJson(route, committeesNow().filter(one => (one.gameCodes as string[]).includes(code)))
     }
     if (method === "PUT" && /^\/committees\/\d+$/.test(path)) {
       const id = Number(path.split("/").at(-1))
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const stored = baseCommittees.find((candidate) => Number(candidate.id) === id) ?? {id}
-      return fulfillJson(route, {...stored, ...body, id, version: Number(body.version ?? 0) + 1})
+      const stored = committeesNow().find((candidate) => Number(candidate.id) === id) ?? {id}
+      const changed = {...stored, ...body, id, version: Number(body.version ?? 0) + 1}
+      committeesEdited.set(id, changed)
+      return fulfillJson(route, changed)
     }
     if (method === "GET" && path === "/committeeMembers/committees") {
       return fulfillJson(route, baseCommittees)
@@ -1373,6 +1470,45 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       } as Record<string, unknown>
       gamesEdited.set(code, now)
       return fulfillJson(route, now)
+    }
+    // The casual games, kept per page so a spec sees its own adds, archives and removals.
+    if (method === "GET" && path === "/games") {
+      return fulfillJson(route, casualNow())
+    }
+    if (method === "POST" && path === "/games") {
+      const body = JSON.parse(request.postData() ?? "{}") as CasualGameBody
+      const code = body.name.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+      const made = casualGame(code, body.name, body.slug, 99, {intro: body.intro ?? null, accent: body.accent ?? null, channels: body.channels ?? []})
+      casualEdited.set(code, made)
+      return fulfillJson(route, made, 201)
+    }
+    const casualArchive = /^\/games\/([A-Z0-9_]+)\/archived$/.exec(path)
+    if (method === "PUT" && casualArchive) {
+      const code = casualArchive[1]!
+      const now = casualNow().find(one => one.code === code)
+      if (!now) return fulfillJson(route, {code: "UnknownGameCode", gameCode: code}, 400)
+      const {archived} = JSON.parse(request.postData() ?? "{}") as {archived: boolean}
+      const changed = {...now, archived}
+      casualEdited.set(code, changed)
+      return fulfillJson(route, changed)
+    }
+    const casualHoldings = /^\/games\/([A-Z0-9_]+)\/holdings$/.exec(path)
+    if (method === "GET" && casualHoldings) {
+      return fulfillJson(route, {channels: 1, committees: 0, events: 2, teams: 0, players: 0})
+    }
+    const casualOne = /^\/games\/([A-Z0-9_]+)$/.exec(path)
+    if (method === "PUT" && casualOne) {
+      const code = casualOne[1]!
+      const now = casualNow().find(one => one.code === code)
+      if (!now) return fulfillJson(route, {code: "UnknownGameCode", gameCode: code}, 400)
+      const body = JSON.parse(request.postData() ?? "{}") as CasualGameBody
+      const changed = {...now, name: body.name, slug: body.slug, intro: body.intro ?? null, accent: body.accent ?? null, channels: body.channels ?? now.channels}
+      casualEdited.set(code, changed)
+      return fulfillJson(route, changed)
+    }
+    if (method === "DELETE" && casualOne) {
+      casualGone.add(casualOne[1]!)
+      return route.fulfill({status: 204, body: ""})
     }
     // The api answers in the order the records put the games in, and so does this.
     if (method === "GET" && path === "/esports/games") {

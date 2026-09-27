@@ -3,7 +3,9 @@ package net.blueshell.api.discord.web
 import net.blueshell.api.discord.domain.DiscordEmoji
 import net.blueshell.api.discord.domain.DiscordEmojiDirectory
 import net.blueshell.api.discord.domain.DiscordMember
+import net.blueshell.api.discord.domain.DiscordGameChannels
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
+import net.blueshell.api.discord.domain.TextRoom
 import net.blueshell.api.discord.domain.DiscordRole
 import net.blueshell.api.discord.domain.DiscordRoleDirectory
 import org.assertj.core.api.Assertions.assertThat
@@ -20,8 +22,10 @@ class DiscordMemberControllerTest {
             on { unclaimed() } doReturn listOf(DiscordMember("804", "Anna", "anna", "https://cdn/anna.png"))
         }
     private val roles: DiscordRoleDirectory = mock { on { pingable() } doReturn listOf(DiscordRole("901", "Gamers")) }
+    private val channels: DiscordGameChannels =
+        mock { on { offered() } doReturn listOf(TextRoom("11", "324", "valorant", "Games")) }
     private val emoji: DiscordEmojiDirectory = mock { on { all() } doReturn listOf(DiscordEmoji("657", "ShellyStar", true)) }
-    private val controller = DiscordMemberController(directory, roles, emoji)
+    private val controller = DiscordMemberController(directory, roles, channels, emoji)
 
     @Test
     fun `answers the members found`() {
@@ -43,7 +47,8 @@ class DiscordMemberControllerTest {
         assertThat(controller.unclaimed().body!!.map { it.name }).containsExactly("Anna")
 
         val offline: DiscordMemberDirectory = mock { on { unclaimed() } doReturn null }
-        assertThat(DiscordMemberController(offline, roles, emoji).unclaimed().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+        assertThat(DiscordMemberController(offline, roles, channels, emoji).unclaimed().statusCode)
+            .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
 
     @Test
@@ -52,7 +57,17 @@ class DiscordMemberControllerTest {
         assertThat(controller.roles().body!!.single().let { it.id to it.name }).isEqualTo("901" to "Gamers")
 
         val offline: DiscordRoleDirectory = mock { on { pingable() } doReturn null }
-        assertThat(DiscordMemberController(directory, offline, emoji).roles().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+        assertThat(DiscordMemberController(directory, offline, channels, emoji).roles().statusCode)
+            .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+    }
+
+    @Test
+    fun `answers the channels a game may live in, or 503 without a bot`() {
+        assertThat(controller.channels().body).containsExactly(DiscordChannelResponse("11", "324", "valorant"))
+        assertThat(controller.channels().body!!.single().guildId).isEqualTo("324")
+        val offline: DiscordGameChannels = mock { on { offered() } doReturn null }
+        assertThat(DiscordMemberController(directory, roles, offline, emoji).channels().statusCode)
+            .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
 
     @Test
@@ -61,6 +76,7 @@ class DiscordMemberControllerTest {
         assertThat(listOf(star.id, star.name, star.animated)).containsExactly("657", "ShellyStar", true)
 
         val offline: DiscordEmojiDirectory = mock { on { all() } doReturn null }
-        assertThat(DiscordMemberController(directory, roles, offline).emojis().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+        assertThat(DiscordMemberController(directory, roles, channels, offline).emojis().statusCode)
+            .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
 }

@@ -7,6 +7,7 @@ import {useStore} from "vuex"
 import {type FieldMap} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
 import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
+import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import CommitteePicker from "@/components/form/fields/CommitteePicker.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -34,7 +35,11 @@ import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/com
 import {safeFormatISO, toISO} from "@/utils/datetime"
 import type {HandleChange} from "@/types/VVField.types.ts"
 
-const props = defineProps<{modelValue?: EventModel}>()
+const props = defineProps<{
+  modelValue?: EventModel
+  /** The committee a new event starts on, where the page it was added from belongs to one. */
+  committeeId?: number
+}>()
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
@@ -70,8 +75,9 @@ function defaultEvent(): EventModel {
     signUpDeadline: undefined,
     signUpLimit: undefined,
     banner: undefined,
-    committeeId: undefined,
+    committeeId: props.committeeId,
     pingedRoles: [],
+    gameCodes: [],
   }
 }
 
@@ -203,6 +209,8 @@ async function fetchCommittees() {
         const id = typeof value.id === "number" ? value.id : null
         const name = typeof value.name === "string" ? value.name : null
         if (id == null || name == null) return null
+        // An archived committee leaves the picker, but stays on an event it already runs.
+        if (value.archived === true && id !== event.value.committeeId) return null
         return {id, name}
       })
       .filter((committee): committee is CommitteeOption => committee != null)
@@ -274,6 +282,7 @@ const save = async () => {
           : undefined,
         signUpForm: surveyRequest,
         pingedRoles: event.value.pingedRoles ?? [],
+        gameCodes: event.value.gameCodes ?? [],
       } as CreateEventRequest
 
       const saved = event.value?.id
@@ -365,6 +374,12 @@ defineExpose({validate, save})
                 name="committeeId"
                 rules="required"
                 test-id="event-form-committee-field"
+              />
+            </div>
+            <div class="event-form__span">
+              <event-games-picker
+                v-model="event.gameCodes"
+                testid="event-form-games"
               />
             </div>
             <div class="event-form__span">

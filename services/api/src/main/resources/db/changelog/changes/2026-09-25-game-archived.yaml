@@ -1,0 +1,20 @@
+# Whether nobody plays a game casually any more. Casual only: whether it is in competition still
+# follows from the teams fielded in it.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-25-game-archived.yaml
+      id: game-archived
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: game
+            columns:
+              - column:
+                  name: archived
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints: {nullable: false}
+      rollback:
+        - dropColumn:
+            tableName: game
+            columnName: archived

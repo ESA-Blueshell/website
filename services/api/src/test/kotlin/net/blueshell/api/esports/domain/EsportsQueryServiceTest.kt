@@ -5,6 +5,7 @@ import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamSeason
+import net.blueshell.api.game.api.GameService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat

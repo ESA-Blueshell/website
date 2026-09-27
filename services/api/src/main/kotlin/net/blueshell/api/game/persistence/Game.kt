@@ -1,6 +1,8 @@
-package net.blueshell.api.esports.persistence
+package net.blueshell.api.game.persistence
 
+import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.Index
@@ -11,20 +13,22 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import org.hibernate.annotations.BatchSize
+import org.hibernate.annotations.SQLRestriction
 
 /**
- * A game the association plays: its name, art, address, blurb and place among the others.
+ * A game the association plays, casually or in competition: its name, art, address, blurb and
+ * place among the others, and whether it is archived.
  *
- * Whether it is still played is derived rather than stored — a game is current when a team
+ * Whether it is in competition is derived rather than stored — a game is fielded when a team
  * played it in this season or the one before — so there is only one source for that claim.
  *
- * Removal is real rather than soft, unlike everything else in this module: a game holding a team
- * cannot be removed at all, and its code is unique across every row, which a soft delete would
- * hold against a game added by mistake for good. `deleted_at` is vestigial, carrying the
- * sentinel on every row and scoping the slug index as a no-op. Nothing filters on it, and
- * nothing should start to.
+ * Removal is soft: a removed game keeps its row, stamped in `deleted_at`, and every query here
+ * leaves it out. Its code stays unique across every row, removed ones included, so adding a game
+ * whose code a removed one holds brings that one back rather than writing a second.
  */
 @Entity
+@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @Table(
     name = "game",
     uniqueConstraints = [
@@ -70,4 +74,13 @@ class Game(
     var icon: File? = null,
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,
-) : AuditedAutoIdEntity()
+    /** Nobody plays it casually any more. Casual only: whether it is in competition follows from fieldings. */
+    @Column(name = "archived", nullable = false)
+    var archived: Boolean = false,
+) : AuditedAutoIdEntity() {
+    /** The Discord channels it is talked about in, in the order chosen. Batched, since every listing reads them. */
+    @ElementCollection
+    @CollectionTable(name = "game_channels", joinColumns = [JoinColumn(name = "game_id")])
+    @BatchSize(size = 50)
+    val channels: MutableList<GameChannel> = mutableListOf()
+}

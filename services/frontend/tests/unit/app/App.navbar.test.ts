@@ -206,13 +206,13 @@ describe("App navbar behavior", () => {
     expect(destinations(wrapper)).not.toContain("/login")
 
     // A section's pages are drawn once it is opened, which is what a reader does to reach them.
-    await wrapper.get("[data-testid='nav-esports-more']").trigger("click")
+    await wrapper.get("[data-testid='nav-competition-more']").trigger("click")
     await settle()
 
-    expect(destinations(wrapper)).toContain("/esports/geoguessr")
+    expect(destinations(wrapper)).toContain("/competition/geoguessr")
     // Trackmania was played this season or last and is offered; CS:GO is history and is not.
-    expect(destinations(wrapper)).toContain("/esports/trackmania")
-    expect(destinations(wrapper)).not.toContain("/esports/counter-strike-global-offensive")
+    expect(destinations(wrapper)).toContain("/competition/trackmania")
+    expect(destinations(wrapper)).not.toContain("/competition/counter-strike-global-offensive")
 
     await wrapper.get("[data-testid='nav-association-more']").trigger("click")
     await settle()
@@ -231,12 +231,12 @@ describe("App navbar behavior", () => {
   // The mark cannot be Vuetify's own active class: an entry that opens a menu addresses one
   // page of its section, so a reader standing on a game would leave Esports unmarked.
   it("marks the section the reader is in, from a page under it", async () => {
-    mockRoute.path = "/esports/trackmania"
+    mockRoute.path = "/competition/trackmania"
 
     const wrapper = await mountWithLinks()
 
     const marked = wrapper.findAll("a.bar-button--here").map((item) => item.attributes("href"))
-    expect(marked).toEqual(["/esports/competitive-scene"])
+    expect(marked).toEqual(["/competition"])
   })
 
   it("marks home only on home", async () => {
@@ -264,16 +264,16 @@ describe("App navbar behavior", () => {
     expect(destinations(wrapper)).toContain("/membership")
 
     await wrapper.get("[data-testid='nav-drawer-association-more']").trigger("click")
-    await wrapper.get("[data-testid='nav-drawer-esports-more']").trigger("click")
+    await wrapper.get("[data-testid='nav-drawer-competition-more']").trigger("click")
 
     expect(destinations(wrapper)).toContain("/blogs")
-    expect(destinations(wrapper)).toContain("/esports/geoguessr")
-    expect(destinations(wrapper)).toContain("/esports/trackmania")
-    expect(wrapper.get("[data-testid='nav-drawer-esports-more']").attributes("aria-expanded"))
+    expect(destinations(wrapper)).toContain("/competition/geoguessr")
+    expect(destinations(wrapper)).toContain("/competition/trackmania")
+    expect(wrapper.get("[data-testid='nav-drawer-competition-more']").attributes("aria-expanded"))
       .toBe("true")
 
-    await wrapper.get("[data-testid='nav-drawer-esports-more']").trigger("click")
-    expect(destinations(wrapper)).not.toContain("/esports/geoguessr")
+    await wrapper.get("[data-testid='nav-drawer-competition-more']").trigger("click")
+    expect(destinations(wrapper)).not.toContain("/competition/geoguessr")
 
     // Following a page closes the drawer, whether it is a section or a page under one.
     await wrapper.get("[data-testid='nav-drawer'] a[href='/blogs']").trigger("click")
@@ -286,13 +286,13 @@ describe("App navbar behavior", () => {
 
   it("opens the drawer on the section the reader is in, unfolded", async () => {
     matchMediaState.narrow = true
-    mockRoute.path = "/esports/trackmania"
+    mockRoute.path = "/competition/trackmania"
 
     const wrapper = await mountWithLinks()
     await wrapper.get("[data-testid='nav-menu-toggle']").trigger("click")
     await settle()
 
-    expect(destinations(wrapper)).toContain("/esports/geoguessr")
+    expect(destinations(wrapper)).toContain("/competition/geoguessr")
     expect(destinations(wrapper)).not.toContain("/blogs")
   })
 

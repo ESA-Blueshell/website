@@ -1,0 +1,30 @@
+# The Discord channels a game is talked about in, each with the server it is in and its name as
+# last known, so a page can name and link it while Discord cannot be asked. Several games may
+# share a channel, so a channel is not unique here, only once per game.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-25-game-channels.yaml
+      id: game-channels
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: game_channels
+            columns:
+              - column: {name: game_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: channel_id, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: guild_id, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: channel_name, type: VARCHAR(100), constraints: {nullable: false}}
+        - addPrimaryKey:
+            tableName: game_channels
+            columnNames: game_id, channel_id
+            constraintName: pk_game_channels
+        - addForeignKeyConstraint:
+            constraintName: fk_game_channels_game_id
+            baseTableName: game_channels
+            baseColumnNames: game_id
+            referencedTableName: game
+            referencedColumnNames: id
+            onDelete: CASCADE
+      rollback:
+        - dropTable:
+            tableName: game_channels

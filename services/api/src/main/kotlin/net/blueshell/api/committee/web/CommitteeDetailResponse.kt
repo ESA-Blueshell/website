@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import net.blueshell.api.file.api.Image
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import java.time.Instant
 
@@ -18,6 +19,11 @@ data class CommitteeDetailResponse(
     @field:NotBlank(message = "Committee description cannot be empty.")
     @field:Size(max = DESCRIPTION_MAX, message = "Committee description cannot exceed $DESCRIPTION_MAX characters.")
     var description: String,
+    var slug: String,
+    var listed: Boolean,
+    var archived: Boolean,
+    var banner: Image?,
+    var gameCodes: List<String>,
     @field:NotNull
     @field:NotEmpty
     @field:Valid

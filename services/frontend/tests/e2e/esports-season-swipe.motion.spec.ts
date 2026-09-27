@@ -27,7 +27,7 @@ const crossing = async (page: import("@playwright/test").Page) =>
 test.describe("swiping between seasons", () => {
   test("sends the season on screen out to the right and brings an older one in from the left", async ({page}) => {
     await installApiMocks(page, eightSeasonFixtures)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     const swipe = page.getByTestId("season-swipe")
     await swipe.waitFor()
 
@@ -47,7 +47,7 @@ test.describe("swiping between seasons", () => {
 
   test("mirrors it exactly when the season chosen is a later one", async ({page}) => {
     await installApiMocks(page, eightSeasonFixtures)
-    await page.goto(`/esports/valorant?season=${OLDER}`)
+    await page.goto(`/competition/valorant?season=${OLDER}`)
     const swipe = page.getByTestId("season-swipe")
     await swipe.waitFor()
 
@@ -63,7 +63,7 @@ test.describe("swiping between seasons", () => {
 
   test("settles with the season that arrived standing square, and only it", async ({page}) => {
     await installApiMocks(page, eightSeasonFixtures)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await page.getByTestId("season-swipe").waitFor()
 
     const drawn = await landingFrom(page, SWIPE, "team-roster-52")
@@ -82,7 +82,7 @@ test.describe("swiping between seasons", () => {
 
   test("does not travel when the same season is asked for again", async ({page}) => {
     await installApiMocks(page, eightSeasonFixtures)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     const swipe = page.getByTestId("season-swipe")
     await swipe.waitFor()
 
@@ -95,7 +95,7 @@ test.describe("swiping between seasons", () => {
 
   test("arrives at the last season clicked, however fast they were clicked", async ({page}) => {
     await installApiMocks(page, eightSeasonFixtures)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await page.getByTestId("season-swipe").waitFor()
 
     await page.getByTestId(`esports-season-node-${OLDER}`).click()

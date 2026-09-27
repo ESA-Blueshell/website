@@ -11,7 +11,7 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
  * Both are asked for in the line-up dialog rather than from the slice. The band says what a
  * season holds; it does not carry a way to take things out of it.
  */
-const GAME_PAGE = "/esports/valorant"
+const GAME_PAGE = "/competition/valorant"
 
 const openLineup = async (page: import("@playwright/test").Page) => {
   await page.getByTestId("team-roster-1").hover()

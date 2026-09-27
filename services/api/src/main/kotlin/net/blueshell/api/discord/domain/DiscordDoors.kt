@@ -41,11 +41,12 @@ data class DiscordDoorsProperties(
         }
 }
 
-/** A text channel the gateway knows. */
+/** A text channel the gateway knows, and the category it is filed under where it is in one. */
 data class TextRoom(
     val id: String,
     val guildId: String,
     val name: String,
+    val category: String? = null,
 )
 
 /** The server's text channels, and invites into them. */

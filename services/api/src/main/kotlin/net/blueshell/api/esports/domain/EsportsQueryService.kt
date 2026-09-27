@@ -3,6 +3,7 @@ package net.blueshell.api.esports.domain
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.file.api.asImage
+import net.blueshell.api.game.api.GameService
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

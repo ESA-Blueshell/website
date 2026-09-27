@@ -1,9 +1,18 @@
-code,name,slug,accent,sort_index,intro
-VALORANT,Valorant,valorant,#ff4655,1,"With shooters’ prevalence in the global esports scene, not only do we have a CS team, but also multiple Valorant teams. They'll be battling it out within the dutch Valorant esports scene. Below you can find our competitive Valorant teams."
-CS2,Counter-Strike 2,counter-strike-2,#e8842a,2,"With shooters’ prevalence in the global esports scene, Blueshell Esports's CS2 teams are trying to climb up the charts with those sweet headshots! Below you can find our competitive CS2 team(s)."
-LEAGUE_OF_LEGENDS,League of Legends,league-of-legends,#c8963c,3,"As it is around the globe, League of Legends as a competitive ground holds a special place in Blueshell Esports. Below you can find our competitive League of Legends team(s)."
-ROCKET_LEAGUE,Rocket League,rocketleague,#1183d6,4,This year we have another new game Blueshell will compete in. A new rocket league team has been created! They will be joining tournaments representing Blueshell and compete in DSL.
-GEOGUESSR,GeoGuessr,geoguessr,#6cbf3f,5,"Geoguessr is one of Blueshell Esports' newest competitive titles. Our players test their geographical knowledge and quick decision-making in community events and tournaments, proudly representing Blueshell esports."
-TRACKMANIA,Trackmania,trackmania,,6,"We have two players playing under the Blueshell banner for multiple Trackmania tournaments, most notably in the regionals of the Trackmania World Tour circuit. Aside from that we have multiple players sporting our club tag, competing in whatever tournament happens to be active."
-CSGO,CS:GO,counter-strike-global-offensive,#e8842a,7,
-SMASH,Super Smash Bros.,super-smash-bros,,8,
+code,name,slug,accent,sort_index,intro,archived
+VALORANT,Valorant,valorant,#ff4655,1,"With shooters’ prevalence in the global esports scene, not only do we have a CS team, but also multiple Valorant teams. They'll be battling it out within the dutch Valorant esports scene. Below you can find our competitive Valorant teams.",false
+CS2,Counter-Strike 2,counter-strike-2,#e8842a,2,"With shooters’ prevalence in the global esports scene, Blueshell Esports's CS2 teams are trying to climb up the charts with those sweet headshots! Below you can find our competitive CS2 team(s).",false
+LEAGUE_OF_LEGENDS,League of Legends,league-of-legends,#c8963c,3,"As it is around the globe, League of Legends as a competitive ground holds a special place in Blueshell Esports. Below you can find our competitive League of Legends team(s).",false
+ROCKET_LEAGUE,Rocket League,rocketleague,#1183d6,4,This year we have another new game Blueshell will compete in. A new rocket league team has been created! They will be joining tournaments representing Blueshell and compete in DSL.,false
+GEOGUESSR,GeoGuessr,geoguessr,#6cbf3f,5,"Geoguessr is one of Blueshell Esports' newest competitive titles. Our players test their geographical knowledge and quick decision-making in community events and tournaments, proudly representing Blueshell esports.",true
+TRACKMANIA,Trackmania,trackmania,,6,"We have two players playing under the Blueshell banner for multiple Trackmania tournaments, most notably in the regionals of the Trackmania World Tour circuit. Aside from that we have multiple players sporting our club tag, competing in whatever tournament happens to be active.",false
+CSGO,CS:GO,counter-strike-global-offensive,#e8842a,7,,true
+SMASH,Super Smash Bros.,super-smash-bros,,8,,false
+TEAMFIGHT_TACTICS,Teamfight Tactics,teamfight-tactics,#d4a93c,9,"Lobbies of eight, comps argued over and the occasional double up.",false
+MINECRAFT,Minecraft,minecraft,#6cbf3f,10,"The association server and everything MCie builds on it: building games, bingo and whole seasons of modpacks.",false
+POKEMON,Pokémon,pokemon,#ffcb05,11,"Trades, raids and customs, and the evenings NintenCo runs in the Lounge.",false
+HERO_SHOOTERS,Hero shooters,hero-shooters,#f99e1a,12,"Marvel Rivals, Overwatch and whatever comes next: one channel for every game where you pick a hero.",false
+FIGHTING_GAMES,Fighting games,fighting-games,#ff7a1a,13,"Tekken, Street Fighter, Guilty Gear and anything else with frame data.",false
+CHESS,Chess,chess,#b58863,14,Blitz in the channel and a board in the Lounge.,false
+WORDLE,Wordle,wordle,#6aaa64,15,One word a day and everybody's grid posted underneath.,false
+DOTA_2,Dota 2,dota-2,#c23c2a,16,"Stacks most weeknights, back when there were enough of us.",true
+OVERWATCH,Overwatch,overwatch,#f99e1a,17,"Now part of hero shooters, together with every game like it.",true

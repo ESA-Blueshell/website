@@ -7,6 +7,7 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.file.api.FileService
+import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
@@ -27,6 +28,7 @@ class EventUseCases(
     private val currentUserProvider: CurrentUserProvider,
     private val surveyFactory: SurveyFactory,
     private val fileService: FileService,
+    private val games: GameService,
     @param:Value($$"${discord.guildId:}") private val discordGuildId: String = "",
 ) {
     /* @everyone's ID is the server's own, and pinging it reaches everybody, which a pinged role may not. */
@@ -58,6 +60,7 @@ class EventUseCases(
         event.replaceBanner(data.banner?.toEntity(event, fileService))
         event.replaceSignUpForm(data.signUpForm?.let(surveyFactory::createFromData))
         event.applyPingedRoles(data)
+        applyGames(event, data)
         return service.create(event)
     }
 
@@ -70,6 +73,7 @@ class EventUseCases(
         refuseEveryone(data)
         val event = service.findById(id)
         event.applyEditableFields(data, committeeService.findById(data.committeeId))
+        applyGames(event, data)
         event.replaceBanner(data.banner?.toEntity(event, fileService, existingBanner = event.banner))
         applySignUpFormUpdate(event, data.signUpForm, surveyFactory)
         event.approved = isBoard() && data.approved
@@ -84,6 +88,17 @@ class EventUseCases(
         val event = service.findById(id)
         event.approved = approved
         return service.update(event)
+    }
+
+    /* An archived game the event already names stays named; one cannot be newly picked. */
+    private fun applyGames(
+        event: Event,
+        data: EventData,
+    ) {
+        val codes = data.gameCodes ?: return
+        val named = games.requireNameable(codes, kept = event.gameCodes.toSet())
+        event.gameCodes.clear()
+        event.gameCodes.addAll(named)
     }
 
     private fun isBoard(): Boolean = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true

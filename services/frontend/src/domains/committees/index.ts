@@ -7,9 +7,14 @@ export {
   deleteCommittee,
   listCommittees,
   listMyCommittees,
+  loadCommitteePage,
   saveCommittee,
+  saveGameOrganisers,
   saveNewCommittee,
+  type Committee,
 } from "./adapters/committees"
+export {cellOf, driftItemOf, forgetCommittees, initialsOf, openingLineOf, reelItemOf, useCommittees} from "./useCommittees"
+export {useCommitteeRights} from "./island/useCommitteeRights"
 export type {
   CommitteeDetailResponse,
   CommitteeMemberRequest,

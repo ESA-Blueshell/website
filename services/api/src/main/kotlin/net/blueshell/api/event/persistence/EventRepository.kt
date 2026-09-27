@@ -36,4 +36,9 @@ interface EventRepository : BaseRepository<Event, Long> {
     ): List<Long>
 
     fun existsByTitle(title: String): Boolean
+
+    @Query("select count(e) from Event e join e.gameCodes code where code = :code")
+    fun countNamingGame(
+        @Param("code") code: String,
+    ): Long
 }

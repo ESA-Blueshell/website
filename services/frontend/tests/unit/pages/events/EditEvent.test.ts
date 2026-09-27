@@ -13,7 +13,8 @@ const {
   mockDeleteEvent: vi.fn(),
   mockCommit: vi.fn(),
   mockRoute: {
-    params: {},
+    params: {} as Record<string, string>,
+    query: {} as Record<string, string>,
   },
   mockRouterReplace: vi.fn(),
   mockReadEvent: vi.fn(),
@@ -148,6 +149,18 @@ describe("EditEvent page", () => {
     await wrapper.get("[data-test='submitted']").trigger("click")
     expect(mockRouterReplace).toHaveBeenCalledWith("/events")
   })
+  it("starts a new event on the committee the page it was added from belongs to", async () => {
+    mockRoute.params = {}
+    mockRoute.query = {committee: "7"}
+    const EventForm = {name: "EventForm", props: ["committeeId"], template: "<div />"}
+
+    const wrapper = mountInApp(EditEvent, {global: {stubs: {EventForm}}})
+    await settle()
+
+    expect(wrapper.getComponent(EventForm).props("committeeId")).toBe(7)
+    mockRoute.query = {}
+  })
+
 
   it("loads event in edit mode", async () => {
     mockRoute.params = {id: "33"}

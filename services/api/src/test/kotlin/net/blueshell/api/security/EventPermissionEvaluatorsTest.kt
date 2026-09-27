@@ -47,6 +47,8 @@ class EventPermissionEvaluatorsTest {
             assertThat(evaluator.hasPermission(memberAuth, committee, "events")).isTrue()
             assertThat(evaluator.hasPermission(guestAuth(id = 99L), committee, "events")).isFalse()
             assertThat(evaluator.hasPermission(boardAuth(), committee, "events")).isTrue()
+            assertThat(evaluator.hasPermission(memberAuth, committee, "page")).isTrue()
+            assertThat(evaluator.hasPermission(guestAuth(id = 99L), committee, "page")).isFalse()
             assertThat(evaluator.hasPermission(guestAuth(), committee, "read")).isTrue()
             assertThat(evaluator.hasPermission(boardAuth(), committee, "write")).isTrue()
             assertThat(evaluator.hasPermission(guestAuth(), committee, "write")).isFalse()

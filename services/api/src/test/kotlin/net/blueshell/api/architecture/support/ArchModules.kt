@@ -14,7 +14,7 @@ object ArchModules {
     const val BASE = "net.blueshell.api"
 
     /**
-     * The twenty modules, each a direct sub-package of the base package.
+     * The modules, each a direct sub-package of the base package.
      */
     private val FLAT_MODULES =
         setOf(
@@ -24,6 +24,7 @@ object ArchModules {
             "committee",
             "contribution",
             "esports",
+            "game",
             "event",
             "file",
             "sponsor",

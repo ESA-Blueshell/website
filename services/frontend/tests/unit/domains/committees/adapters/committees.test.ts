@@ -1,8 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {
   addCommittee,
-  deleteCommittee,
   listCommittees,
+  removeCommittee,
   listMyCommittees,
   loadCommitteePage,
   loadCommittees,
@@ -144,11 +144,11 @@ describe("writing committees", () => {
     expect(await saveGameOrganisers("CS2", [])).toEqual({ok: false, reason: "The committees could not be saved."})
   })
 
-  it("removes a committee by its number", async () => {
-    vi.mocked(api.deleteCommitteeById).mockResolvedValue({} as never)
+  it("deletes a committee by its number, or says why not", async () => {
+    vi.mocked(api.deleteCommitteeById).mockResolvedValueOnce({} as never).mockResolvedValueOnce({error: {}} as never)
 
-    await deleteCommittee(5)
-
-    expect(api.deleteCommitteeById).toHaveBeenCalledWith({path: {id: 5}, throwOnError: true})
+    expect(await removeCommittee(5)).toEqual({ok: true})
+    expect(api.deleteCommitteeById).toHaveBeenCalledWith({path: {id: 5}})
+    expect(await removeCommittee(5)).toEqual({ok: false, reason: "The committee could not be deleted."})
   })
 })

@@ -28,11 +28,10 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/Committees.vue"),
     meta: {title: "Committees"},
   },
+  // The manager's work happens on each committee's own page now.
   {
     path: "/committees/manage",
-    name: "committeeManager",
-    component: () => import("@/pages/management/CommitteeManager.vue"),
-    meta: {title: "Manage committees", requiresAuth: true},
+    redirect: "/committees",
   },
   {
     path: "/committees/new",

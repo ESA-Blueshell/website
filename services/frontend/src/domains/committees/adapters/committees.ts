@@ -9,7 +9,6 @@ import {
   type CommitteeDetailResponse,
   type CommitteePageResponse,
   createCommittee,
-  type CreateCommitteeRequest,
   deleteCommitteeById,
   FileType,
   findCommitteePage,
@@ -19,7 +18,6 @@ import {
   setGameOrganisers,
   updateCommittee,
   updateCommitteePage,
-  type UpdateCommitteeRequest,
   uploadCommitteeBanner,
   uploadCommitteeIcon,
   uploadPublicImage,
@@ -94,24 +92,11 @@ export async function loadCommitteePage(address: string): Promise<CommitteePage 
   return res.data ? withArt(res.data) : null
 }
 
-/** Removes the committee, throwing on a refusal so the caller reports it rather than reading on. */
-export async function deleteCommittee(id: number): Promise<void> {
-  await deleteCommitteeById({path: {id}, throwOnError: true})
-}
-
-/** Records a new committee. Throws with the refusal the form reads its fields from. */
-export async function saveNewCommittee(body: CreateCommitteeRequest): Promise<CommitteeDetailResponse> {
-  const res = await createCommittee({body, throwOnError: true})
-  return res.data!
-}
-
-/** Records a change to a committee. Throws with the refusal the form reads its fields from. */
-export async function saveCommittee(
-  id: number,
-  body: UpdateCommitteeRequest,
-): Promise<CommitteeDetailResponse> {
-  const res = await updateCommittee({path: {id}, body, throwOnError: true})
-  return res.data!
+/** Deletes the committee, or says why the api would not. */
+export async function removeCommittee(id: number): Promise<{ok: true} | Refused> {
+  const res = await deleteCommitteeById({path: {id}})
+  if (res.error) return {ok: false, reason: reasonFor(res.error, "The committee could not be deleted.")}
+  return {ok: true}
 }
 
 const boardBody = (draft: CommitteeDraft) => ({

@@ -4,20 +4,12 @@
  * `export *`, because the list of names is the promise being made.
  */
 export {
-  deleteCommittee,
   listCommittees,
   listMyCommittees,
   loadCommitteePage,
-  saveCommittee,
   saveGameOrganisers,
-  saveNewCommittee,
   type Committee,
 } from "./adapters/committees"
 export {cellOf, driftItemOf, forgetCommittees, initialsOf, openingLineOf, reelItemOf, useCommittees} from "./useCommittees"
 export {useCommitteeRights} from "./island/useCommitteeRights"
-export type {
-  CommitteeDetailResponse,
-  CommitteeMemberRequest,
-  CreateCommitteeRequest,
-  UpdateCommitteeRequest,
-} from "@/services/api"
+export type {CommitteeDetailResponse} from "@/services/api"

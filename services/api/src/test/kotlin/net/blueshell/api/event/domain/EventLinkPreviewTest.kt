@@ -5,6 +5,8 @@ import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.file.api.Image
 import net.blueshell.api.file.api.ImageRendition
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.shared.discord.DiscordMentionNames
+import net.blueshell.api.shared.discord.MentionNames
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -44,6 +46,16 @@ class EventLinkPreviewTest {
                 event(description = "# Come **play**\n\nWith [us](https://x.nl), `code`\nand <b>html</b>.").linkPreview(FRONTEND, API)
 
             assertThat(preview.text).endsWith(" · Come play With us, code and html.")
+        }
+
+        @Test
+        fun `reads a description in Discord's markdown, naming mentions and keeping spoilers out`() {
+            val names = DiscordMentionNames { MentionNames(users = mapOf("123456789012345611" to "Anna")) }
+            val preview =
+                event(description = "Ask <@123456789012345611> __now__, the end: ||he wins||").linkPreview(FRONTEND, API, names)
+
+            assertThat(preview.text).endsWith(" · Ask @Anna now, the end: (spoiler)")
+            assertThat(event(description = "Ask <@123456789012345611>").linkPreview(FRONTEND, API).text).endsWith(" · Ask @unknown-user")
         }
 
         @Test

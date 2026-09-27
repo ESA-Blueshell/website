@@ -4,8 +4,8 @@
 Accepted
 
 ## Implementation status
-Landing in four slices under one epic. Until the last one merges, the renderer
-still reads GFM and the api's outputs pass descriptions through raw.
+Built in four slices under epic #1641. Until they merge, main still reads GFM
+and passes descriptions to Google Calendar and link previews raw.
 
 ## Context
 
@@ -49,8 +49,9 @@ of what it contains.**
   which Noto keeps apart, fetched from the noto-emoji repository at a pinned
   commit. Nothing of either is committed.
 - Every place a description leaves the site follows the dialect. Google
-  Calendar, link previews and email name emoji and mentions in words, and never
-  show a spoiler's text.
+  Calendar and link previews name emoji and mentions in words, write
+  timestamps as Amsterdam dates, and never show a spoiler's text. No email
+  carries a description.
 - A description is capped at 4096 characters, Discord's limit for an embed
   description, counted as stored. The event post carries its links as buttons,
   so the embed holds the whole description.

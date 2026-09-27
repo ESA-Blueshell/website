@@ -107,6 +107,24 @@ test.describe("editing a line-up", () => {
     await expect(slice.locator(".slice__entry-note em")).toHaveText("rounds")
   })
 
+  test("an emoji typed by its name is written as the emoji, the server's own included", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await openLineup(page)
+
+    const note = page.getByTestId("lineup-description-1").locator(".cm-content")
+    await note.click()
+    await page.keyboard.press("ControlOrMeta+a")
+    await page.keyboard.type("GG :poggers: :spaghetti: ")
+    await expect(note.locator("img.cm-emoji")).toHaveCount(2)
+    await page.getByTestId("lineup-save").click()
+
+    const drawn = page.getByTestId("team-roster-1").locator(".slice__entry-note img.emoji")
+    await expect(drawn.first()).toHaveAttribute("src", "https://cdn.discordapp.com/emojis/657733730491826186.webp?size=48")
+    await expect(drawn.nth(1)).toHaveAttribute("src", "/emoji/1f35d.svg")
+  })
+
   test("does not grow the band, the height being held for a travelling stop and nothing else", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())

@@ -41,6 +41,14 @@ data class DiscordRoleResponse(
     val name: String,
 )
 
+@Schema(description = "A picture uploaded to the Discord server, which a description writes as <:name:id>")
+data class DiscordEmojiResponse(
+    val id: String,
+    val name: String,
+    @Schema(description = "Moving, written <a:name:id> rather than <:name:id>")
+    val animated: Boolean,
+)
+
 @Schema(description = "A member of the Discord server, as a picker shows them")
 data class DiscordMemberResponse(
     @Schema(description = "Their Discord user ID, which never changes")

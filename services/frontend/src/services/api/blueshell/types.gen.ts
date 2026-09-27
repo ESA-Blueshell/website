@@ -843,6 +843,18 @@ export type DerivedRoleResponse = {
 };
 
 /**
+ * A picture uploaded to the Discord server, which a description writes as <:name:id>
+ */
+export type DiscordEmojiResponse = {
+    /**
+     * Moving, written <a:name:id> rather than <:name:id>
+     */
+    animated: boolean;
+    id: string;
+    name: string;
+};
+
+/**
  * The association's Discord server as the site shows it: counts and the voice rooms with who is in them
  */
 export type DiscordLiveResponse = {
@@ -4547,6 +4559,51 @@ export type OpenDiscordChannelErrors = {
 };
 
 export type OpenDiscordChannelError = OpenDiscordChannelErrors[keyof OpenDiscordChannelErrors];
+
+export type ListDiscordEmojisData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/discord/emojis';
+};
+
+export type ListDiscordEmojisErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up, or Discord did not answer
+     */
+    503: unknown;
+};
+
+export type ListDiscordEmojisError = ListDiscordEmojisErrors[keyof ListDiscordEmojisErrors];
+
+export type ListDiscordEmojisResponses = {
+    /**
+     * OK
+     */
+    200: Array<DiscordEmojiResponse>;
+};
+
+export type ListDiscordEmojisResponse = ListDiscordEmojisResponses[keyof ListDiscordEmojisResponses];
 
 export type OpenDiscordInviteData = {
     body?: never;

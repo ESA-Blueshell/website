@@ -38,11 +38,16 @@ of what it contains.**
   only `~~` strikes through. Tables and images are the site's own additions.
 - A finished emoji is stored as the emoji. A standard emoji is its Unicode
   character. A server emoji is `<:name:id>` or `<a:name:id>`. Shortcodes are
-  typed in Discord's names and exist only while typing.
+  typed in Discord's names, which are JoyPixels', and exist only while typing.
 - Mentions and timestamps are stored as `<@id>`, `<@&id>`, `<#id>` and
   `<t:unix:style>`.
-- The site draws standard emoji in one self-hosted set, Noto Emoji. The set is
-  Apache 2.0, and its licence ships beside the files rather than on the page.
+- The site draws standard emoji in one self-hosted set, Noto Emoji, one file per
+  emoji under `/emoji/`. The set is Apache 2.0, and its licence ships beside the
+  files rather than on the page. Only emoji presentation is drawn, so `©` and
+  `™` in running text stay text.
+- The build writes the files: the emoji from an npm package, and Noto's flags,
+  which Noto keeps apart, fetched from the noto-emoji repository at a pinned
+  commit. Nothing of either is committed.
 - Every place a description leaves the site follows the dialect. Google
   Calendar, link previews and email name emoji and mentions in words, and never
   show a spoiler's text.
@@ -58,7 +63,10 @@ of what it contains.**
   text does not regress. Discord still shows them as text until the description
   is edited.
 - Server emoji load from Discord's CDN by id. A deleted emoji falls back to its
-  `:name:`.
+  `:name:`, and a standard emoji whose picture is missing falls back to the
+  character.
+- An image build needs GitHub reachable the first time, for the flags. The
+  frontend image grows by about 35 MB of emoji.
 - A server emoji counts about thirty characters towards the cap, and the
   counter shows that.
 

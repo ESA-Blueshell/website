@@ -3,6 +3,7 @@ import {EditorSelection, type EditorState, type Range, type SelectionRange} from
 import {Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType}
   from "@codemirror/view"
 import * as emoji from "node-emoji"
+import {EMOJI, emojiSrc, SERVER_EMOJI, serverEmojiSrc} from "@/plugins/emojiArt"
 
 /* Read off the tree rather than imported, since @lezer/common is not a dependency of its own. */
 type SyntaxNode = ReturnType<ReturnType<typeof syntaxTree>["resolveInner"]>
@@ -19,13 +20,15 @@ const SPANS: Record<string, Set<string>> = {
   StrongEmphasis: new Set(["EmphasisMark"]),
   Strikethrough: new Set(["StrikethroughMark"]),
   InlineCode: new Set(["CodeMark"]),
+  Underline: new Set(["UnderlineMark"]),
+  Spoiler: new Set(["SpoilerMark"]),
 }
 
 /** A link or a picture, of which only the words in its brackets are drawn. */
 const LINKS = new Set(["Link", "Image"])
 
 /** A mark that opens a line, shown on the whole line the cursor is on. */
-const LINE_MARKS = new Set(["HeaderMark", "QuoteMark"])
+const LINE_MARKS = new Set(["HeaderMark", "QuoteMark", "SubtextMark"])
 
 /** Where a shortcode is only characters: code, and an address. */
 const LITERAL = new Set(["InlineCode", "FencedCode", "CodeBlock", "URL", "Autolink", "HTMLTag"])
@@ -49,7 +52,7 @@ const linesOf = (state: EditorState, ranges: readonly SelectionRange[]): Set<num
 
 const hidden = Decoration.replace({})
 
-/* The space after a `##` or a `>` belongs to the mark, or the line starts one space in. */
+/* The space after a `##`, a `>` or a `-#` belongs to the mark, or the line starts one space in. */
 const endOf = (state: EditorState, to: number): number => {
   let end = to
   while (end < state.doc.length && state.sliceDoc(end, end + 1) === " ") end++
@@ -57,7 +60,7 @@ const endOf = (state: EditorState, to: number): number => {
 }
 
 class Character extends WidgetType {
-  constructor(private readonly said: string, private readonly as = "") {
+  constructor(private readonly said: string, private readonly as: string) {
     super()
   }
 
@@ -68,7 +71,7 @@ class Character extends WidgetType {
   toDOM(): HTMLElement {
     const drawn = document.createElement("span")
     drawn.textContent = this.said
-    if (this.as !== "") drawn.className = this.as
+    drawn.className = this.as
     return drawn
   }
 
@@ -77,17 +80,45 @@ class Character extends WidgetType {
   }
 }
 
-/** `:name:`, which is how a description writes an emoji down. */
+/**
+ * An emoji drawn as the page draws it, or as what it says, the character or a server emoji's
+ * `:name:`, where its picture will not load.
+ */
+class EmojiArt extends WidgetType {
+  constructor(private readonly src: string, private readonly says: string) {
+    super()
+  }
+
+  eq(other: EmojiArt): boolean {
+    return other.src === this.src && other.says === this.says
+  }
+
+  toDOM(): HTMLElement {
+    const drawn = document.createElement("img")
+    drawn.className = "cm-emoji"
+    drawn.src = this.src
+    drawn.alt = this.says
+    drawn.addEventListener("error", () => drawn.replaceWith(document.createTextNode(this.says)))
+    return drawn
+  }
+
+  ignoreEvent(): boolean {
+    return false
+  }
+}
+
+/** `:name:`, which is how a description written before emoji were stored as themselves says one. */
 const SHORTCODE = /:([a-z0-9_+-]+):/g
 
-const literalAt = (state: EditorState, at: number): boolean => {
-  for (let node: SyntaxNode | null = syntaxTree(state).resolveInner(at, 1); node; node = node.parent) {
+/** Whether the text at a position is code or an address; `side` -1 reads what ends there. */
+export const literalAt = (state: EditorState, at: number, side: -1 | 1 = 1): boolean => {
+  for (let node: SyntaxNode | null = syntaxTree(state).resolveInner(at, side); node; node = node.parent) {
     if (LITERAL.has(node.name)) return true
   }
   return false
 }
 
-const emojiIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
+const shortcodesIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
   const drawn: Range<Decoration>[] = []
   for (const {from, to} of view.visibleRanges) {
     for (const found of view.state.sliceDoc(from, to).matchAll(SHORTCODE)) {
@@ -96,10 +127,39 @@ const emojiIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Dec
       if (touches(ranges, at, end) || literalAt(view.state, at)) continue
       const said = emoji.get(found[1] as string)
       if (!said) continue
-      drawn.push(Decoration.replace({widget: new Character(said)}).range(at, end))
+      drawn.push(Decoration.replace({widget: new EmojiArt(emojiSrc(said), said)}).range(at, end))
     }
   }
   return drawn
+}
+
+/* Like a mark, `<:name:id>` shows while the cursor touches it, so it can be read and mended. */
+const serverEmojiIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
+  const drawn: Range<Decoration>[] = []
+  for (const {from, to} of view.visibleRanges) {
+    for (const found of view.state.sliceDoc(from, to).matchAll(SERVER_EMOJI)) {
+      const at = from + found.index
+      const end = at + found[0].length
+      if (touches(ranges, at, end) || literalAt(view.state, at)) continue
+      const art = new EmojiArt(serverEmojiSrc(found[3] as string, found[1] === "a"), `:${found[2] as string}:`)
+      drawn.push(Decoration.replace({widget: art}).range(at, end))
+    }
+  }
+  return drawn
+}
+
+/* Always drawn, cursor or not: the character is the emoji, so there is no mark to show. */
+const emojiIn = (view: EditorView): DecorationSet => {
+  const drawn: Range<Decoration>[] = []
+  for (const {from, to} of view.visibleRanges) {
+    for (const found of view.state.sliceDoc(from, to).matchAll(EMOJI)) {
+      const at = from + found.index
+      if (literalAt(view.state, at)) continue
+      drawn.push(Decoration.replace({widget: new EmojiArt(emojiSrc(found[0]), found[0])})
+        .range(at, at + found[0].length))
+    }
+  }
+  return Decoration.set(drawn)
 }
 
 /** The fenced block a node sits in, whose fences and language show while it is written. */
@@ -154,7 +214,7 @@ const decorate = (view: EditorView): DecorationSet => {
       },
     })
   }
-  return Decoration.set([...marks, ...emojiIn(view, ranges)], true)
+  return Decoration.set([...marks, ...shortcodesIn(view, ranges), ...serverEmojiIn(view, ranges)], true)
 }
 
 /** Hides the marks, and redraws whenever the document, the view or the cursor moves. */
@@ -173,6 +233,22 @@ export const markdownLive = ViewPlugin.fromClass(
     }
   },
   {decorations: plugin => plugin.decorations},
+)
+
+/** Draws every emoji as its picture. */
+export const emojiLive = ViewPlugin.fromClass(
+  class {
+    emoji: DecorationSet
+
+    constructor(view: EditorView) {
+      this.emoji = emojiIn(view)
+    }
+
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.viewportChanged) this.emoji = emojiIn(update.view)
+    }
+  },
+  {decorations: plugin => plugin.emoji},
 )
 
 /** The span a mark writes, so `*` never mistakes the stars of a bold for its own. */

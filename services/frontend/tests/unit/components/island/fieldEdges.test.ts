@@ -1,4 +1,5 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import {afterEach, beforeAll, beforeEach, describe, expect, it, vi} from "vitest"
+import {loadDiscordEmoji} from "@/components/island/discordEmoji"
 import {flushPromises, mount} from "@vue/test-utils"
 import {CompletionContext} from "@codemirror/autocomplete"
 import {markdown, markdownLanguage} from "@codemirror/lang-markdown"
@@ -69,6 +70,8 @@ describe("a picker with nothing to stand on", () => {
 })
 
 describe("what the emoji list answers to", () => {
+  beforeAll(() => loadDiscordEmoji())
+
   const asking = (doc: string, explicit = false) => {
     const state = EditorState.create({doc})
     return emojiCompletion(new CompletionContext(state, doc.length, explicit))
@@ -93,10 +96,10 @@ describe("an emoji drawn in the text", () => {
         extensions: [markdown({base: markdownLanguage}), markdownLive],
       }),
     })
-    const drawn = view.contentDOM.querySelector("span")
+    const drawn = view.contentDOM.querySelector<HTMLImageElement>("img.cm-emoji")
     drawn?.dispatchEvent(new Event("mousedown", {bubbles: true}))
 
-    expect(view.contentDOM.textContent).toContain("🔥")
+    expect(drawn?.alt).toBe("🔥")
     view.destroy()
   })
 })

@@ -183,7 +183,7 @@ describe("an emoji written where a line is being read", () => {
       }),
     })
 
-    expect(view.contentDOM.textContent).toContain("🔥")
+    expect(view.contentDOM.querySelector<HTMLImageElement>("img.cm-emoji")?.alt).toBe("🔥")
     view.destroy()
   })
 })

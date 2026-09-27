@@ -5,7 +5,8 @@ import {autocompletion} from "@codemirror/autocomplete"
 import {Compartment, EditorState} from "@codemirror/state"
 import {EditorView, placeholder as showPlaceholder} from "@codemirror/view"
 import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
-import {emojiCompletion} from "@/components/island/markdownEmoji"
+import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
+import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
 
 defineOptions({name: "MarkdownEditor"})
 
@@ -43,12 +44,16 @@ const mod = onMac ? "\u2318" : "Ctrl"
 const said = computed(() => [
   {does: "Bold", how: `${mod} B`, looks: "**bold**"},
   {does: "Italic", how: `${mod} I`, looks: "*italic*"},
+  {does: "Underline", how: "", looks: "__underline__"},
+  {does: "Strike", how: "", looks: "~~struck~~"},
+  {does: "Spoiler", how: "", looks: "||hidden until pressed||"},
   {does: "Heading", how: "", looks: "## Heading"},
+  {does: "Small print", how: "", looks: "-# small print"},
   {does: "Link", how: "", looks: "[what it says](https://…)"},
   {does: "List", how: "", looks: "- one per line"},
   {does: "Quote", how: "", looks: "> quoted"},
   {does: "Code", how: "", looks: "`code`"},
-  {does: "Emoji", how: "", looks: ":sparkles: while typing"},
+  {does: "Emoji", how: "", looks: ":fire: becomes the emoji"},
 ])
 
 const helping = ref(false)
@@ -111,6 +116,14 @@ const dress = EditorView.theme({
     color: "var(--color-ash)",
   },
   ".cm-cursor": {borderLeftColor: "var(--color-chalk)"},
+  // Drawn at the size the page draws an emoji in a line of text.
+  ".cm-emoji": {
+    display: "inline-block",
+    width: "1.375em",
+    height: "1.375em",
+    margin: "0 0.05em",
+    verticalAlign: "-0.3em",
+  },
   ".cm-placeholder": {color: "var(--color-ash)"},
   "&.cm-editor .cm-selectionBackground, ::selection": {
     backgroundColor: "color-mix(in oklab, var(--color-brand) 35%, transparent)",
@@ -136,13 +149,20 @@ const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
 })
 
 onMounted(() => {
+  void loadDiscordEmoji()
+  void loadServerEmoji()
   view = new EditorView({
     parent: host.value as HTMLElement,
     state: EditorState.create({
       doc: text.value,
       extensions: [
         ...markdownEditing,
-        autocompletion({override: [emojiCompletion], icons: false, activateOnTyping: true}),
+        autocompletion({
+          override: [emojiCompletion],
+          icons: false,
+          activateOnTyping: true,
+          addToOptions: [emojiOption],
+        }),
         showPlaceholder(placeholder),
         EditorView.lineWrapping,
         // Without this the editor is a div to a screen reader, not a textbox with a label.
@@ -333,10 +353,9 @@ onBeforeUnmount(() => {
   color: var(--color-chalk);
 }
 
-.island-markdown :deep(.cm-completionDetail) {
-  margin-left: auto;
-  font-style: normal;
-  font-size: 1rem;
+.island-markdown :deep(.cm-tooltip-autocomplete .cm-emoji) {
+  width: 1.3rem;
+  height: 1.3rem;
 }
 
 .island-markdown :deep(.cm-editor) {

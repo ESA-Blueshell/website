@@ -951,6 +951,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/discord/members") {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)
     }
+    if (method === "GET" && path === "/discord/emojis") {
+      return fulfillJson(route, [{id: "657733730491826186", name: "POGGERS", animated: false}])
+    }
     // No bot in the mocked api: the Discord band falls back to the public widget, mocked below.
     if (method === "GET" && path === "/discord/live") {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)

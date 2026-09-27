@@ -2,6 +2,7 @@
 /* Markdown as it reads once written: the same looks the editor gives it while it is typed. */
 import {computed} from "vue"
 import $markdownToHtml from "@/plugins/markdownToHtml"
+import {fallBackToCharacter} from "@/plugins/emojiArt"
 
 defineOptions({name: "MarkdownView"})
 
@@ -10,6 +11,17 @@ const {source} = defineProps<{
 }>()
 
 const html = computed(() => $markdownToHtml(source))
+
+/* A spoiler stays shown once shown, as in Discord, and a link inside one is not followed until
+   it is. */
+const reveal = (event: MouseEvent | KeyboardEvent) => {
+  if (event instanceof KeyboardEvent && event.key !== "Enter" && event.key !== " ") return
+  const hidden = (event.target as Element | null)?.closest(".spoiler:not(.spoiler--shown)")
+  if (!hidden) return
+  event.preventDefault()
+  hidden.classList.add("spoiler--shown")
+  hidden.setAttribute("aria-expanded", "true")
+}
 </script>
 
 <template>
@@ -17,6 +29,9 @@ const html = computed(() => $markdownToHtml(source))
   <!-- eslint-disable-next-line vue/no-v-html -->
   <div
     class="markdown-view"
+    @click="reveal"
+    @keydown="reveal"
+    @error.capture="fallBackToCharacter"
     v-html="html"
   />
 </template>
@@ -85,6 +100,42 @@ const html = computed(() => $markdownToHtml(source))
   color: var(--color-chalk);
 }
 
+.markdown-view :deep(u) {
+  text-underline-offset: 3px;
+}
+
+.markdown-view :deep(.subtext) {
+  font-size: 0.8em;
+  color: var(--color-ash);
+}
+
+.markdown-view :deep(.spoiler) {
+  padding: 0 0.15em;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--color-chalk) 12%, var(--color-void));
+  cursor: pointer;
+}
+
+.markdown-view :deep(.spoiler:not(.spoiler--shown)),
+.markdown-view :deep(.spoiler:not(.spoiler--shown) *) {
+  color: transparent;
+  text-decoration-color: transparent;
+}
+
+.markdown-view :deep(.spoiler:not(.spoiler--shown) img) {
+  opacity: 0;
+}
+
+.markdown-view :deep(.spoiler:focus-visible) {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.markdown-view :deep(.spoiler--shown) {
+  background: color-mix(in oklab, var(--color-chalk) 10%, transparent);
+  cursor: auto;
+}
+
 .markdown-view :deep(del) {
   color: var(--color-ash);
 }
@@ -136,5 +187,15 @@ const html = computed(() => $markdownToHtml(source))
 .markdown-view :deep(img) {
   max-width: 100%;
   height: auto;
+}
+
+/* Drawn at the size Discord draws an emoji in a line of text. */
+.markdown-view :deep(img.emoji) {
+  display: inline-block;
+  width: 1.375em;
+  height: 1.375em;
+  margin: 0 0.05em;
+  vertical-align: -0.3em;
+  object-fit: contain;
 }
 </style>

@@ -46,7 +46,12 @@ describe("what the editor draws", () => {
   })
 
   it("draws a shortcode as the emoji it names, and leaves an unknown one alone", () => {
-    expect(drawnOn("we are :fire: about it")).toContain("🔥")
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({doc: "we are :fire: about it", extensions: [markdown({base: markdownLanguage}), markdownLive]}),
+    })
+    expect(view.contentDOM.querySelector<HTMLImageElement>("img.cm-emoji")?.getAttribute("src")).toBe("/emoji/1f525.svg")
+    view.destroy()
     expect(drawnOn("we are :notanemoji: about it")).toContain(":notanemoji:")
   })
 
@@ -59,5 +64,19 @@ describe("what the editor draws", () => {
 
   it("leaves a bare address alone, since it is the text as well as the target", () => {
     expect(drawnOn("Go to <https://example.com> for it")).toContain("https://example.com")
+  })
+
+  it("lets a press on a bullet reach the line it stands on", () => {
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({doc: "- one", extensions: [markdown({base: markdownLanguage}), markdownLive]}),
+    })
+    const bullet = view.contentDOM.querySelector(".cm-bullet") as HTMLElement
+    const press = new MouseEvent("mousedown", {bubbles: true, cancelable: true})
+
+    bullet.dispatchEvent(press)
+
+    expect(view.contentDOM.textContent).toContain("•")
+    view.destroy()
   })
 })

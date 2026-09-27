@@ -65,6 +65,29 @@ describe("a band dragged under a finger", () => {
   })
 })
 
+describe("a committed gesture", () => {
+  it("holds the band at the neighbour's height until the arrived stop stands, then lets it go", async () => {
+    const wrapper = mountBand({})
+    const shell = wrapper.get("[data-testid=swipe]").element as HTMLElement
+
+    pointer(shell, "pointerdown", 100)
+    pointer(shell, "pointermove", 140)
+    await flushPromises()
+    pointer(shell, "pointermove", 900)
+    Object.defineProperty(wrapper.get(".band-swipe__aside").element, "offsetHeight", {configurable: true, get: () => 480})
+    pointer(shell, "pointerup", 900)
+    await flushPromises()
+
+    expect(wrapper.emitted("travel")).toEqual([[1]])
+    expect(shell.style.height).toBe("480px")
+
+    await wrapper.setProps({stop: 1, past: null, future: 2})
+    await flushPromises()
+    expect(shell.style.height).toBe("")
+    wrapper.unmount()
+  })
+})
+
 describe("a pass from one stop to the next", () => {
   it("holds the page at the leaving stop's height for the pass, then lets it go in one step", async () => {
     vi.useFakeTimers()

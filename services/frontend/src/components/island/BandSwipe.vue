@@ -122,10 +122,12 @@ const shell = ref<HTMLElement | null>(null)
 /**
  * The page held at the leaving stop's height for the length of a pass, then let go in one step.
  *
- * The leaving stop leaves the flow before the arriving one stands at its full height, so without
- * the hold the page shortens for a moment and a reader scrolled down it is thrown back up. Held
- * still rather than animated: animating the height laid out everything below the band on every
- * frame, which on a phone was most of what a pass cost.
+ * The leaving stop leaves the flow before the arriving one stands at its full height, and a layout
+ * forced in between (the strip scrolling to the arrived stop is one) finds the band at no height
+ * at all: the page shortens, the window's scroll is cut to fit, and a reader scrolled down it is
+ * thrown back up. Held still rather than animated: animating the height laid out everything below
+ * the band on every frame, which on a phone was most of what a pass cost. A gesture holds the band
+ * the same way, from its commit until the track is put away.
  */
 let held: ReturnType<typeof setTimeout> | null = null
 
@@ -377,8 +379,20 @@ const glide = async (to: number) => {
   await Promise.all(runs.map(run => run?.finished.catch(() => undefined)))
 }
 
+/**
+ * The band held at the height the neighbour stands at, from a gesture's commit until the track is
+ * put away, for the reason a pass holds it. The neighbour was drawn open, so this is the height
+ * the arrived stop stands at.
+ */
+const bear = () => {
+  const el = shell.value
+  if (!el) return
+  el.style.height = `${aside.value?.offsetHeight || el.offsetHeight}px`
+}
+
 /** The track put away: the neighbour gone, the band square, and nothing travelling. */
 const drop = () => {
+  if (held == null && shell.value) shell.value.style.height = ""
   beside.value = null
   reach.value = 0
   holding.value = false
@@ -504,6 +518,7 @@ const release = async (event: PointerEvent) => {
   easing.value = true
 
   if (wanted != null && commits({travel: gone, pace, width: across, onward: true})) {
+    bear()
     await glide(Math.sign(gone) * across)
     // Set before the page is asked, because the page may answer immediately: this is what the
     // change coming back is recognised by.

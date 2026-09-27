@@ -139,12 +139,17 @@ test.describe("travelling between seasons with a finger", () => {
     const counterStrike = page.getByTestId("esports-game-CS2")
     await counterStrike.evaluate(slice => slice.scrollIntoView({block: "center"}))
     await expect(counterStrike.getByRole("button").first()).toHaveAttribute("aria-expanded", "true")
+    const reading = await page.evaluate(() => window.scrollY)
 
     await dragBand(page, page.getByTestId("season-swipe"), {by: 260})
     await expect(page).toHaveURL(/\?season=19$/)
+    await expect.poll(() => page.locator("[data-testid=\"season-swipe\"] > *").count()).toBe(1)
 
-    // The gesture costs the visitor their place no more than a tap does: the game they were
-    // reading is the game open on the season that arrived.
+    // The gesture costs the visitor their place no more than a tap does: the page stays where
+    // it was read, and the game they were reading is the game open on the season that arrived.
+    // The browser's scroll anchoring once threw the page up by the height of a slice or two
+    // when the arriving season took the leaving one's place, which only sometimes shut this one.
+    expect(Math.abs(await page.evaluate(() => window.scrollY) - reading)).toBeLessThanOrEqual(1)
     await expect(page.getByTestId("esports-game-CS2").getByRole("button").first())
       .toHaveAttribute("aria-expanded", "true")
   })

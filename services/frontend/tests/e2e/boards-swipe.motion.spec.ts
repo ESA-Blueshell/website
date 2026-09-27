@@ -168,10 +168,11 @@ test.describe("dragging the board page", () => {
   })
 
   // Animating the height across a pass laid out and painted the whole page below the band on every
-  // frame, which on a phone was most of the time a swipe took. A swipe holds no height; a hit holds
-  // the leaving board's, still, so the page does not shorten under a reader mid-pass, and lets the
-  // page take the new one in one step.
-  test("animates no height through a pass: a swipe holds none, a hit holds the leaving board's and lets go", async ({page}) => {
+  // frame, which on a phone was most of the time a swipe took. Each holds one height still instead,
+  // so the page never shortens under a reader mid-pass: a swipe the arriving board's, from its
+  // release until the board stands, and a hit the leaving board's for the length of the pass.
+  // Then the page takes the new height in one step.
+  test("animates no height through a pass: a swipe and a hit each hold one height still and let go", async ({page}) => {
     await installApiMocks(page, {boards: written})
     await page.goto("/board?board=3")
     await expect(page.getByTestId("board-band-name")).toHaveText("Drieden")
@@ -186,14 +187,17 @@ test.describe("dragging the board page", () => {
     await expect.poll(async () => Math.abs((await height()) - from)).toBeGreaterThan(HAIR)
     const swiped = await height()
     await unmoved(page, band, swiped)
-    expect(await held()).toEqual([])
+    await expect.poll(() => band.evaluate(el => (el as HTMLElement).style.height)).toBe("")
+    const swipe = await held()
+    expect(swipe).toHaveLength(1)
+    expect(Math.abs(parseFloat(swipe[0]!) - swiped)).toBeLessThanOrEqual(1)
 
     await page.getByTestId("board-node-5").click()
     await expect(page.getByTestId("board-band-name")).toHaveText("Eeveelutions")
     await expect.poll(async () => Math.abs((await height()) - swiped)).toBeGreaterThan(HAIR)
     await expect.poll(() => band.evaluate(el => (el as HTMLElement).style.height)).toBe("")
 
-    const hit = await held()
+    const hit = (await held()).slice(1)
     expect(hit).toHaveLength(1)
     expect(Math.abs(parseFloat(hit[0]!) - swiped)).toBeLessThanOrEqual(1)
   })

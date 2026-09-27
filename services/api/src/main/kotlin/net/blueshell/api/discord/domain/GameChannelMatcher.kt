@@ -43,7 +43,7 @@ class GameChannelMatcher(
             } finally {
                 DataSourceUtils.releaseConnection(connection, dataSource)
             }
-        } ?: 0
+        }
     }
 
     private fun match(

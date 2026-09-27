@@ -12,7 +12,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
-import org.springframework.transaction.support.TransactionTemplate
 
 class GameChannelMatcherTest {
     private val db = SeedDatabase()
@@ -90,14 +89,6 @@ class GameChannelMatcherTest {
 
         rooms(games = emptyList())
         assertThat(matcher.apply()).isZero()
-    }
-
-    @Test
-    fun `counts nothing written where the transaction answers nothing`() {
-        rooms(games = listOf("chess"))
-        val silent = mock<TransactionTemplate> { on { execute<Int?>(any()) } doReturn null }
-
-        assertThat(GameChannelMatcher(offered, db.dataSource, silent).apply()).isZero()
     }
 
     @Test

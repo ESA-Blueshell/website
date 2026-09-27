@@ -782,6 +782,8 @@ watch(open, (index) => {
   width: 100%;
   /* Grows with the width, zoomed out too, and stops short of filling the screen. */
   min-height: clamp(21rem, 23cqw, 56svh);
+  /* A layer of its own, so a slice opening repaints the row and not the page's ground under it. */
+  will-change: transform;
 }
 
 .slices--short {
@@ -972,6 +974,7 @@ watch(open, (index) => {
   object-fit: cover;
   scale: 1.06;
   transition: scale 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 
 .slice--open .slice__banner {

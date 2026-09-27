@@ -28,7 +28,8 @@ class DiscordMentionNameSourceTest {
         val quiet: DiscordMemberDirectory = mock()
         val none: DiscordRoleDirectory = mock()
         val shut: DiscordChannelDirectory = mock()
-        assertThat(DiscordMentionNameSource(quiet, none, shut).named(MentionIds(emptySet(), emptySet(), emptySet()))).isEqualTo(MentionNames())
+        val nothing = MentionIds(emptySet(), emptySet(), emptySet())
+        assertThat(DiscordMentionNameSource(quiet, none, shut).named(nothing)).isEqualTo(MentionNames())
         verifyNoInteractions(quiet, none, shut)
 
         val offline: DiscordChannelDirectory = mock { on { open() } doReturn null }

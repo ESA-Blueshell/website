@@ -138,7 +138,12 @@ class BotPublisherTest {
 
     @Test
     fun `puts the links under the message as buttons, with a banner and without`() {
-        val linked = post.copy(links = listOf(DiscordLink("More on the site", "https://site/events/42"), DiscordLink("Sign up", "https://site/events/42#signup")))
+        val links =
+            listOf(
+                DiscordLink("More on the site", "https://site/events/42"),
+                DiscordLink("Sign up", "https://site/events/42#signup"),
+            )
+        val linked = post.copy(links = links)
         discord
             .expect(requestTo("https://discord.test/channels/111/messages"))
             .andExpect(method(HttpMethod.POST))

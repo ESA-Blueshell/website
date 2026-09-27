@@ -104,7 +104,8 @@ class BotPublisher(
         if (banner == null && post.links.isEmpty()) {
             api.updateMessage(channelId, messageId, request)
         } else {
-            sendRaw(HttpMethod.PATCH, "/channels/{channel}/messages/{message}", withLinks(request, post.links), banner, channelId, messageId)
+            val path = "/channels/{channel}/messages/{message}"
+            sendRaw(HttpMethod.PATCH, path, withLinks(request, post.links), banner, channelId, messageId)
         }
     }
 

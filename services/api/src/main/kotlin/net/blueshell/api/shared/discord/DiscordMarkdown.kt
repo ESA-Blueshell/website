@@ -52,33 +52,54 @@ object DiscordMarkdown {
         names: MentionNames,
         html: Boolean,
     ): String {
+        val lines = text.split("\n")
+        val quoted = quoteStartOf(lines)
         val read = mutableListOf<String>()
         var fenced = false
         var listed = false
-        val lines = text.split("\n")
-        for ((at, line) in lines.withIndex()) {
-            if (FENCE.containsMatchIn(line)) fenced = !fenced
-            if (fenced || FENCE.containsMatchIn(line)) {
+        for (line in lines.take(quoted)) {
+            val fence = FENCE.containsMatchIn(line)
+            if (fence) fenced = !fenced
+            if (fenced || fence) {
                 read.add(line)
-                continue
+            } else {
+                if (listed && unmarked(line)) read.add("")
+                listed = ITEM.containsMatchIn(line) || (listed && indented(line))
+                read.add(lineOf(line, names, html))
             }
-            if (QUOTE_REST.containsMatchIn(line)) {
-                val rest = listOf(line.replace(QUOTE_REST, "")) + lines.drop(at + 1)
-                rest.mapTo(read) { "> ${inline(it, names, html)}" }
-                break
-            }
-            if (listed && line.isNotBlank() && !line.first().isWhitespace() && !ITEM.containsMatchIn(line)) read.add("")
-            listed = ITEM.containsMatchIn(line) || (listed && line.isNotBlank() && line.first().isWhitespace())
-            val small = SUBTEXT.find(line)
-            read.add(
-                when {
-                    small == null -> inline(line, names, html)
-                    html -> "<small>${inline(small.groupValues[1], names, html)}</small>"
-                    else -> inline(small.groupValues[1], names, html)
-                },
-            )
+        }
+        lines.drop(quoted).mapIndexedTo(read) { at, line ->
+            "> ${inline(if (at == 0) line.replace(QUOTE_REST, "") else line, names, html)}"
         }
         return read.joinToString("\n")
+    }
+
+    /* The line `>>>` quotes the rest from, outside code, or past the end where there is none. */
+    private fun quoteStartOf(lines: List<String>): Int {
+        var fenced = false
+        lines.forEachIndexed { at, line ->
+            if (FENCE.containsMatchIn(line)) {
+                fenced = !fenced
+            } else if (!fenced && QUOTE_REST.containsMatchIn(line)) {
+                return at
+            }
+        }
+        return lines.size
+    }
+
+    /* A line that is neither an item nor indented under one, which ends a list in Discord. */
+    private fun unmarked(line: String) = line.isNotBlank() && !line.first().isWhitespace() && !ITEM.containsMatchIn(line)
+
+    private fun indented(line: String) = line.isNotBlank() && line.first().isWhitespace()
+
+    private fun lineOf(
+        line: String,
+        names: MentionNames,
+        html: Boolean,
+    ): String {
+        val small = SUBTEXT.find(line) ?: return inline(line, names, html)
+        val said = inline(small.groupValues[1], names, html)
+        return if (html) "<small>$said</small>" else said
     }
 
     /* Inline rules outside code spans, which keep every character as written. */

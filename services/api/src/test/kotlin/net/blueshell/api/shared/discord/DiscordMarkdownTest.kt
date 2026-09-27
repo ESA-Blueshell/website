@@ -55,7 +55,8 @@ class DiscordMarkdownTest {
 
     @Test
     fun `underlines and sets subtext small in HTML, and keeps only their words in plain text`() {
-        assertThat(html("__under__ and _slanted_\n-# small **print**")).isEqualTo("<u>under</u> and _slanted_\n<small>small **print**</small>")
+        assertThat(html("__under__ and _slanted_\n-# small **print**"))
+            .isEqualTo("<u>under</u> and _slanted_\n<small>small **print**</small>")
         assertThat(plain("__under__\n-# small")).isEqualTo("under\nsmall")
     }
 
@@ -73,7 +74,8 @@ class DiscordMarkdownTest {
 
     @Test
     fun `leaves code as written`() {
-        assertThat(plain("`||x|| <@123456789012345611>` and ||y||")).isEqualTo("`||x|| <@123456789012345611>` and ${DiscordMarkdown.SPOILER_SAID}")
+        assertThat(plain("`||x|| <@123456789012345611>` and ||y||"))
+            .isEqualTo("`||x|| <@123456789012345611>` and ${DiscordMarkdown.SPOILER_SAID}")
         assertThat(plain("```\n||x||\n>>> no\n```\n||y||")).isEqualTo("```\n||x||\n>>> no\n```\n${DiscordMarkdown.SPOILER_SAID}")
     }
 }

@@ -33,6 +33,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -207,6 +208,80 @@ class UserUseCasesTest {
             assertThat(existing.memberProfile).isNotNull
             assertThat(existing.memberProfile?.studentNumber).isEqualTo("s123")
             assertThat(result).isSameAs(existing)
+        }
+
+        @Test
+        fun `refuses a board edit made against an older version, before any step-up or check`() {
+            val existing = testUser("john").apply { version = 2L }
+            whenever(userService.findById(1L)).thenReturn(existing)
+
+            assertThatThrownBy {
+                useCases.boardUpdate(
+                    1L,
+                    BoardUserData(
+                        username = "newuser",
+                        email = "moved@example.com",
+                        initials = "NU",
+                        firstName = "New",
+                        prefix = null,
+                        lastName = "User",
+                        newsletter = false,
+                        photoConsent = true,
+                        discord = "new#0001",
+                        phoneNumber = "0622222222",
+                        version = 1L,
+                        memberProfile = null,
+                    ),
+                )
+            }.isInstanceOf(OptimisticLockingFailureException::class.java)
+            verify(stepUp, never()).require()
+            verify(validator, never()).validate(any<Any>())
+            verify(userService, never()).update(any())
+        }
+
+        @Test
+        fun `refuses an own edit made against an older version`() {
+            val existing = testUser("john").apply { version = 2L }
+            whenever(userService.findById(2L)).thenReturn(existing)
+
+            assertThatThrownBy {
+                useCases.update(
+                    2L,
+                    SelfUserData(discord = "x#0001", phoneNumber = "0600000000", newsletter = true, photoConsent = true, version = 1L),
+                )
+            }.isInstanceOf(OptimisticLockingFailureException::class.java)
+            verify(userService, never()).update(any())
+        }
+
+        @Test
+        fun `refuses a member profile edit made against an older version`() {
+            val existing = testUser("john")
+            existing.replaceMemberProfile(
+                MemberProfile(
+                    user = existing,
+                    dateOfBirth = Date.valueOf("1999-01-01"),
+                    studentNumber = "old",
+                    gender = "F",
+                    nationality = "Dutch",
+                    bhv = false,
+                    ehbo = false,
+                ).apply { version = 2L },
+            )
+            whenever(userService.findById(2L)).thenReturn(existing)
+
+            assertThatThrownBy {
+                useCases.update(
+                    2L,
+                    SelfUserData(
+                        discord = "x#0001",
+                        phoneNumber = "0600000000",
+                        newsletter = true,
+                        photoConsent = true,
+                        version = 0L,
+                        memberProfile = upsertMemberProfileData(version = 1L),
+                    ),
+                )
+            }.isInstanceOf(OptimisticLockingFailureException::class.java)
         }
 
         @Test

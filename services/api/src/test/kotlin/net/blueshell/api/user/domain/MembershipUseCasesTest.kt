@@ -23,6 +23,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
@@ -230,8 +231,45 @@ class MembershipUseCasesTest {
         }
 
         @Test
+        fun `refuses a correction made against an older version, before checking the interval`() {
+            val membership =
+                Membership(
+                    user = testUser("john"),
+                    startDate = LocalDate.of(2024, 1, 1),
+                    memberType = MemberType.ALUMNI,
+                    endDate = null,
+                    incasso = false,
+                ).apply { version = 2L }
+            whenever(membershipService.findById(3L)).thenReturn(membership)
+
+            assertThatThrownBy {
+                useCases.correct(
+                    id = 3L,
+                    userId = 2L,
+                    memberType = MemberType.HONORARY,
+                    startDate = LocalDate.of(2025, 1, 1),
+                    endDate = LocalDate.of(2025, 12, 31),
+                    incasso = true,
+                    version = 1L,
+                )
+            }.isInstanceOf(OptimisticLockingFailureException::class.java)
+            assertThat(membership.memberType).isEqualTo(MemberType.ALUMNI)
+            verify(validator, never()).validate(any<Any>())
+            verify(membershipService, never()).update(any())
+        }
+
+        @Test
         fun `throws when the corrected interval is invalid`() {
             withViolation()
+            val membership =
+                Membership(
+                    user = testUser("john"),
+                    startDate = LocalDate.of(2024, 1, 1),
+                    memberType = MemberType.ALUMNI,
+                    endDate = null,
+                    incasso = false,
+                ).apply { version = 5L }
+            whenever(membershipService.findById(3L)).thenReturn(membership)
 
             assertThatThrownBy {
                 useCases.correct(

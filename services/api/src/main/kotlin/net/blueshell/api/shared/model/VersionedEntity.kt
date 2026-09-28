@@ -14,8 +14,9 @@ abstract class VersionedEntity {
     var version: Long = 0L
 
     /**
-     * Refuses a write made against [seen] once somebody else has saved over it. Hibernate checks
-     * the version it loaded, so copying a request's version onto a loaded entity checks nothing.
+     * Refuses a write made against [seen] once somebody else has saved over it, called right after
+     * loading and before any other refusal. An entity loaded inside a transaction stays managed,
+     * and Hibernate then checks the version it loaded, not one copied onto it afterwards.
      */
     fun requireVersion(seen: Long) {
         if (seen != version) {

@@ -28,6 +28,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import java.time.Instant
 
 class EventUseCasesTest {
@@ -130,6 +131,17 @@ class EventUseCasesTest {
             assertThat(existing.version).isEqualTo(1L)
             assertThat(result).isSameAs(existing)
         }
+
+        @Test
+        fun `refuses an edit made against an older version, before touching a field`() {
+            val existing = eventEntity().apply { version = 2L }
+            whenever(eventService.findById(9L)).thenReturn(existing)
+
+            assertThatThrownBy { useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L) }
+                .isInstanceOf(OptimisticLockingFailureException::class.java)
+            assertThat(existing.title).isNotEqualTo("Updated title")
+            verify(eventService, never()).update(any(), any())
+        }
     }
 
     @Nested
@@ -166,6 +178,7 @@ class EventUseCasesTest {
                     discordGuildId = "324",
                 )
             val everyone = listOf(PingedRoleData("324", "@everyone"))
+            whenever(eventService.findById(9L)).thenReturn(eventEntity().apply { version = 1L })
 
             assertThatThrownBy { guarded.create(createEventData(approved = true).copy(pingedRoles = everyone)) }
                 .isInstanceOf(InvalidEventException::class.java)

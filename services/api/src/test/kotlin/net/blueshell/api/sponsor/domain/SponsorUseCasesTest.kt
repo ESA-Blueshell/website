@@ -2,11 +2,16 @@ package net.blueshell.api.sponsor.domain
 
 import net.blueshell.api.sponsor.persistence.Sponsor
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import java.time.Instant
 
 class SponsorUseCasesTest {
@@ -81,6 +86,17 @@ class SponsorUseCasesTest {
             assertThat(result.name).isEqualTo("New")
             assertThat(result.description).isEqualTo("New Description")
             assertThat(existing.version).isEqualTo(1L)
+        }
+
+        @Test
+        fun `refuses an edit made against an older version, before touching a field`() {
+            val existing = sponsor("Old", "Old Description").apply { version = 2L }
+            whenever(sponsorService.findById(9L)).thenReturn(existing)
+
+            assertThatThrownBy { useCases.update(id = 9L, name = "New", description = "New", version = 1L) }
+                .isInstanceOf(OptimisticLockingFailureException::class.java)
+            assertThat(existing.name).isEqualTo("Old")
+            verify(sponsorService, never()).update(any())
         }
     }
 }

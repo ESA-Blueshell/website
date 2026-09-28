@@ -8,8 +8,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 import java.sql.Date
@@ -99,6 +103,27 @@ class MemberProfileUseCasesTest {
             assertThat(profile.ehbo).isTrue()
             assertThat(profile.version).isEqualTo(0L)
             assertThat(result).isSameAs(profile)
+        }
+
+        @Test
+        fun `refuses an edit made against an older version, before touching a field`() {
+            val profile = profileFor(testUser("john"), studentNumber = "old").apply { version = 2L }
+            whenever(memberProfileService.findById(1L)).thenReturn(profile)
+
+            assertThatThrownBy {
+                useCases.update(
+                    userId = 1L,
+                    dateOfBirth = Date.valueOf("2000-01-01"),
+                    studentNumber = "new",
+                    gender = "M",
+                    nationality = "Belgian",
+                    bhv = true,
+                    ehbo = true,
+                    version = 1L,
+                )
+            }.isInstanceOf(OptimisticLockingFailureException::class.java)
+            assertThat(profile.studentNumber).isEqualTo("old")
+            verify(memberProfileService, never()).update(any())
         }
     }
 

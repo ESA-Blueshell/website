@@ -99,9 +99,9 @@ describe("writing committees", () => {
   it("saves what a committee's own members change", async () => {
     vi.mocked(api.updateCommitteePage).mockResolvedValueOnce({data: lan} as never).mockResolvedValueOnce({error: {code: "GameArchived", gameName: "CS:GO"}} as never)
 
-    expect(await saveOwnCommitteePage(1, {description: "LANs", banner: null, gameCodes: []})).toMatchObject({ok: true})
-    expect(api.updateCommitteePage).toHaveBeenCalledWith({path: {id: 1}, body: {description: "LANs", banner: undefined, gameCodes: []}})
-    expect(await saveOwnCommitteePage(1, {description: "LANs", banner: "b.webp", gameCodes: ["CSGO"]}))
+    expect(await saveOwnCommitteePage(1, 4, {description: "LANs", banner: null, gameCodes: []})).toMatchObject({ok: true})
+    expect(api.updateCommitteePage).toHaveBeenCalledWith({path: {id: 1}, body: {description: "LANs", version: 4, banner: undefined, gameCodes: []}})
+    expect(await saveOwnCommitteePage(1, 4, {description: "LANs", banner: "b.webp", gameCodes: ["CSGO"]}))
       .toEqual({ok: false, reason: "CS:GO is archived, so it cannot be newly picked."})
   })
 

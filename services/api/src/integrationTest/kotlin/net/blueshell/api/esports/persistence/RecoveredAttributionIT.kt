@@ -25,6 +25,8 @@ import javax.sql.DataSource
 class RecoveredAttributionIT : UserTestSupport() {
     @Autowired private lateinit var jdbc: JdbcTemplate
 
+    @Autowired private lateinit var shippedEsports: ShippedEsports
+
     @Autowired private lateinit var dataSource: DataSource
 
     /** A name the seed files record a line-up place under, with its most recent season's handle. */
@@ -118,7 +120,7 @@ class RecoveredAttributionIT : UserTestSupport() {
     }
 
     private fun runLoader() {
-        ShippedEsports(dataSource, transactionTemplate, EsportsSeedFixture.files).apply()
+        shippedEsports.apply(EsportsSeedFixture.files)
     }
 
     @AfterEach

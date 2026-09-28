@@ -1,94 +1,235 @@
 package net.blueshell.api.esports.domain
 
+import net.blueshell.api.esports.persistence.Season
+import net.blueshell.api.esports.persistence.SeasonGame
+import net.blueshell.api.esports.persistence.SeasonGameRepository
+import net.blueshell.api.esports.persistence.SeasonRepository
+import net.blueshell.api.esports.persistence.Team
+import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.esports.persistence.TeamRosterEntry
+import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
+import net.blueshell.api.esports.persistence.TeamSeason
+import net.blueshell.api.esports.persistence.TeamSeasonRepository
+import net.blueshell.api.esports.persistence.UserGameAccount
+import net.blueshell.api.esports.persistence.UserGameAccountRepository
+import net.blueshell.api.game.api.ShippedGame
+import net.blueshell.api.game.api.ShippedGames
+import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.shared.seed.SeedDatabase
 import net.blueshell.api.testsupport.EsportsSeedFixture
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
+/**
+ * The loader against repositories that keep what they are given, and the ledger on an in-memory
+ * database. `EsportsSeedLoadIT` checks the same rows against the real schema.
+ */
 class ShippedEsportsTest {
     private val db = SeedDatabase()
+    private var ids = 0L
 
-    private fun load() = ShippedEsports(db.dataSource, db.transactions, EsportsSeedFixture.files).apply()
+    private val games = mutableMapOf<String, ShippedGame>()
+    private val archived = mutableListOf<String>()
+    private val seasons = mutableListOf<Season>()
+    private val teams = mutableListOf<Team>()
+    private val deletedTeams = mutableSetOf<String>()
+    private val entered = mutableListOf<SeasonGame>()
+    private val fieldings = mutableListOf<TeamSeason>()
+    private val entries = mutableListOf<TeamRosterEntry>()
+    private val accounts = mutableListOf<UserGameAccount>()
 
-    private fun places(): Int = db.count("SELECT COUNT(*) FROM team_roster_entry")
+    private val shippedGames =
+        mock<ShippedGames>().also { mock ->
+            whenever(mock.everHeld(any())).thenAnswer { it.arguments[0] in games }
+            whenever(mock.add(any())).thenAnswer { (it.arguments[0] as ShippedGame).let { game -> games[game.code] = game } }
+            whenever(mock.archive(any())).thenAnswer { archived += it.arguments[0] as String }
+        }
+
+    private val seasonRepository =
+        mock<SeasonRepository>().also { mock ->
+            whenever(mock.save(any<Season>())).thenAnswer {
+                (it.arguments[0] as Season).also { s ->
+                    s.id = ++ids
+                    seasons += s
+                }
+            }
+            whenever(mock.countEverNamed(any())).thenAnswer { call -> seasons.count { it.name == call.arguments[0] }.toLong() }
+            whenever(mock.findByNameIgnoreCase(any())).thenAnswer { call -> seasons.firstOrNull { it.name == call.arguments[0] } }
+        }
+
+    private val teamRepository =
+        mock<TeamRepository>().also { mock ->
+            whenever(mock.save(any<Team>())).thenAnswer {
+                (it.arguments[0] as Team).also { t ->
+                    t.id = ++ids
+                    teams += t
+                }
+            }
+            whenever(mock.countEverNamed(any())).thenAnswer { call -> teams.count { it.name == call.arguments[0] }.toLong() }
+            whenever(mock.findByNameIgnoreCase(any())).thenAnswer { call ->
+                teams.firstOrNull { it.name == call.arguments[0] && it.name !in deletedTeams }
+            }
+        }
+
+    private val seasonGames =
+        mock<SeasonGameRepository>().also { mock ->
+            whenever(mock.save(any<SeasonGame>())).thenAnswer { (it.arguments[0] as SeasonGame).also { g -> entered += g } }
+            whenever(mock.findBySeasonIdAndGame(any(), any())).thenAnswer { call ->
+                entered.firstOrNull { it.season.id == call.arguments[0] && it.game == call.arguments[1] }
+            }
+        }
+
+    private val fieldingRepository =
+        mock<TeamSeasonRepository>().also { mock ->
+            whenever(mock.save(any<TeamSeason>())).thenAnswer {
+                (it.arguments[0] as TeamSeason).also { f ->
+                    f.id = ++ids
+                    fieldings += f
+                }
+            }
+            whenever(mock.findByTeamIdAndGameAndSeasonId(any(), any(), any())).thenAnswer { call ->
+                fieldings.firstOrNull {
+                    it.team.id == call.arguments[0] && it.game == call.arguments[1] && it.season.id == call.arguments[2]
+                }
+            }
+        }
+
+    private val entryRepository =
+        mock<TeamRosterEntryRepository>().also { mock ->
+            whenever(mock.save(any<TeamRosterEntry>())).thenAnswer { call ->
+                (call.arguments[0] as TeamRosterEntry).also { e ->
+                    e.id = ++ids
+                    entries += e
+                }
+            }
+            whenever(mock.countEverPlaced(any(), any(), any(), any())).thenAnswer { call ->
+                entries
+                    .count {
+                        it.teamSeason.team.id == call.arguments[0] &&
+                            it.teamSeason.game == call.arguments[1] &&
+                            it.teamSeason.season.id == call.arguments[2] &&
+                            it.handle == call.arguments[3]
+                    }.toLong()
+            }
+            whenever(mock.findAllAttached()).thenAnswer { entries.filter { it.userId != null } }
+        }
+
+    private val accountRepository =
+        mock<UserGameAccountRepository>().also { mock ->
+            whenever(mock.save(any<UserGameAccount>())).thenAnswer { (it.arguments[0] as UserGameAccount).also { a -> accounts += a } }
+            whenever(mock.findByUserIdAndGame(any(), any())).thenAnswer { call ->
+                accounts.firstOrNull { it.userId == call.arguments[0] && it.game == call.arguments[1] }
+            }
+        }
+
+    private val users = mock<UserService>().also { whenever(it.findOnlyByWrittenName(anyOrNull())).thenReturn(null) }
+
+    private val records =
+        EsportsSeedRecords(
+            shippedGames,
+            seasonRepository,
+            teamRepository,
+            fieldingRepository,
+            seasonGames,
+            entryRepository,
+            accountRepository,
+            users,
+        )
+
+    private fun load() = ShippedEsports(records, db.dataSource, db.transactions).apply(EsportsSeedFixture.files)
 
     @Test
     fun `the first run writes every row and the second writes none`() {
-        val games = EsportsSeedFixture.GAMES.size
         assertThat(load()).isEqualTo(
-            ShippedEsports.Applied(games, EsportsSeedFixture.SEASONS, EsportsSeedFixture.TEAMS, EsportsSeedFixture.ROSTER_PLACES),
+            ShippedEsports.Applied(
+                EsportsSeedFixture.GAMES.size,
+                EsportsSeedFixture.SEASONS,
+                EsportsSeedFixture.TEAMS,
+                EsportsSeedFixture.ROSTER_PLACES,
+            ),
         )
         assertThat(load()).isEqualTo(ShippedEsports.Applied(0, 0, 0, 0))
+        assertThat(entries).hasSize(EsportsSeedFixture.ROSTER_PLACES)
     }
 
     @Test
-    fun `an edit, a rename and a delete all outlive the next run`() {
+    fun `rows are written as the files have them, a team fielded where it played`() {
         load()
-        db.jdbc.update("UPDATE game SET name = 'Edited' WHERE code = 'BETA'")
-        db.jdbc.update("UPDATE game SET deleted_at = NOW() WHERE code = 'GAMMA'")
-        db.jdbc.update("UPDATE season SET end_date = '2000-01-01' WHERE name = 'First 2030'")
-        db.jdbc.update("UPDATE team SET name = 'Nomads (renamed)' WHERE name = 'Nomads'")
-        db.jdbc.update("UPDATE team_roster_entry SET team_role = 'COACH', handle = 'three-corrected' WHERE handle = 'three'")
 
-        assertThat(load()).isEqualTo(ShippedEsports.Applied(0, 0, 0, 0))
-
-        assertThat(db.jdbc.queryForObject("SELECT name FROM game WHERE code = 'BETA'", String::class.java)).isEqualTo("Edited")
-        assertThat(db.count("SELECT COUNT(*) FROM game WHERE code = 'GAMMA' AND deleted_at = '9999-12-31 23:59:59'")).isZero()
-        assertThat(db.jdbc.queryForObject("SELECT end_date FROM season WHERE name = 'First 2030'", String::class.java))
-            .startsWith("2000-01-01")
-        assertThat(db.count("SELECT COUNT(*) FROM team WHERE name = 'Nomads'")).isZero()
-        assertThat(places()).isEqualTo(EsportsSeedFixture.ROSTER_PLACES)
+        assertThat(games.getValue("ALPHA")).isEqualTo(
+            ShippedGame("ALPHA", "Alpha", "alpha", "#112233", 1, "Alpha, the game a fixture team is fielded in.", false),
+        )
+        assertThat(games.getValue("GAMMA").accent).isNull()
+        val two = entries.single { it.handle == "two" }
+        assertThat(two.teamRole).isEqualTo(TeamRole.SUBSTITUTE)
+        assertThat(two.displayName).isNull()
+        assertThat(two.sortIndex).isEqualTo(1)
+        assertThat(fieldings.map { "${it.team.name}/${it.game}/${it.season.name}" }).containsExactlyInAnyOrder(
+            "Nomads/ALPHA/First 2030",
+            "Settlers/ALPHA/First 2030",
+            "Nomads/BETA/Second 2031",
+            "Drifters/GAMMA/First 2030",
+            "Drifters/GAMMA/Second 2031",
+        )
+        assertThat(entered.map { "${it.game}/${it.season.name}" })
+            .containsExactlyInAnyOrder("ALPHA/First 2030", "BETA/Second 2031", "GAMMA/First 2030", "GAMMA/Second 2031")
     }
 
     @Test
-    fun `a game the files archive is archived once, and stays unarchived when the site says so`() {
+    fun `a game the files archive is archived once, the way it is written`() {
         load()
-        assertThat(db.count("SELECT COUNT(*) FROM game WHERE code = 'BETA' AND archived")).isEqualTo(1)
-        assertThat(db.count("SELECT COUNT(*) FROM game WHERE code = 'ALPHA' AND archived")).isZero()
+        assertThat(games.getValue("BETA").archived).isTrue()
+        assertThat(archived).containsExactly("BETA")
 
-        db.jdbc.update("UPDATE game SET archived = FALSE WHERE code = 'BETA'")
         load()
+        assertThat(archived).containsExactly("BETA")
 
-        assertThat(db.count("SELECT COUNT(*) FROM game WHERE code = 'BETA' AND archived")).isZero()
-    }
-
-    @Test
-    fun `a game standing before archiving shipped is archived by the next run`() {
-        load()
-        db.jdbc.update("UPDATE game SET archived = FALSE WHERE code = 'BETA'")
         db.jdbc.update("DELETE FROM seed_applied WHERE record_key = 'game-archived|BETA'")
-
         load()
-
-        assertThat(db.count("SELECT COUNT(*) FROM game WHERE code = 'BETA' AND archived")).isEqualTo(1)
+        assertThat(archived).containsExactly("BETA", "BETA")
     }
 
     @Test
-    fun `a database seeded before the ledger records what it holds and changes none of it`() {
+    fun `a database seeded before the ledger records what it holds and writes none of it again`() {
         load()
         db.jdbc.update("DELETE FROM seed_applied")
-        db.jdbc.update("UPDATE game SET name = 'Edited' WHERE code = 'BETA'")
 
         assertThat(load()).isEqualTo(ShippedEsports.Applied(0, 0, 0, 0))
-
-        assertThat(db.jdbc.queryForObject("SELECT name FROM game WHERE code = 'BETA'", String::class.java)).isEqualTo("Edited")
     }
 
     @Test
-    fun `a place new to the files is attached to its player, who takes up the handle`() {
-        val user = db.addUser("Player", "One")
+    fun `a place new to the files is attached to its player, who takes up the handle they last played`() {
+        val player = mock<User>().also { whenever(it.id).thenReturn(41L) }
+        whenever(users.findOnlyByWrittenName("Player Four")).thenReturn(player)
 
         load()
 
-        assertThat(db.count("SELECT COUNT(*) FROM team_roster_entry WHERE user_id = ?", user)).isEqualTo(2)
-        assertThat(db.count("SELECT COUNT(*) FROM user_game_account WHERE user_id = ?", user)).isEqualTo(2)
+        assertThat(entries.filter { it.userId == 41L }.map { it.handle }).containsExactlyInAnyOrder("four-then", "four")
+        assertThat(accounts.map { Triple(it.userId, it.game, it.handle) }).containsExactly(Triple(41L, "GAMMA", "four"))
+    }
+
+    @Test
+    fun `a handle a member already set is left alone`() {
+        val player = mock<User>().also { whenever(it.id).thenReturn(41L) }
+        whenever(users.findOnlyByWrittenName("Player Four")).thenReturn(player)
+        accounts += UserGameAccount(userId = 41L, game = "GAMMA", handle = "chosen")
+
+        load()
+
+        assertThat(accounts.map { it.handle }).containsExactly("chosen")
     }
 
     @Test
     fun `a deleted team leaves its line-up out`() {
         load()
-        db.jdbc.update("UPDATE team SET deleted_at = NOW() WHERE name = 'Drifters'")
-        db.jdbc.update("DELETE FROM team_roster_entry")
+        deletedTeams += "Drifters"
+        entries.clear()
         db.jdbc.update("DELETE FROM seed_applied WHERE record_key LIKE 'entry|%'")
 
         assertThat(load()).isEqualTo(ShippedEsports.Applied(0, 0, 0, EsportsSeedFixture.ROSTER_PLACES - 2))

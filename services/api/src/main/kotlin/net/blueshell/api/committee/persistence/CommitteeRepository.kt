@@ -14,6 +14,9 @@ interface CommitteeRepository : BaseRepository<Committee, Long> {
 
     fun findBySlug(slug: String): Committee?
 
+    /** The committee going by [name], which is unique among the committees that exist. */
+    fun findByName(name: String): Committee?
+
     /** The committees the release before the address added, which carry none until they are saved. */
     fun findAllBySlugIsNull(): List<Committee>
 

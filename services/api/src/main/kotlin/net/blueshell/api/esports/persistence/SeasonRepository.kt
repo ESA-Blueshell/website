@@ -10,6 +10,12 @@ import java.time.LocalDate
 interface SeasonRepository : JpaRepository<Season, Long> {
     fun findByNameIgnoreCase(name: String): Season?
 
+    /** How many seasons ever held this name, deleted ones included, which the seed never writes again. */
+    @Query(value = "SELECT COUNT(*) FROM season WHERE name = :name", nativeQuery = true)
+    fun countEverNamed(
+        @Param("name") name: String,
+    ): Long
+
     fun findAllByOrderByStartDateDesc(): List<Season>
 
     /** Every season that ran during the window, which is how a period asks about play. */

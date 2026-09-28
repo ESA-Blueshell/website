@@ -1,5 +1,7 @@
 package net.blueshell.api.committee.domain
 
+import net.blueshell.api.committee.persistence.CommitteeRepository
+import net.blueshell.api.game.api.ShippedGames
 import net.blueshell.api.shared.seed.SeedCsv
 import net.blueshell.api.shared.seed.SeedLedger
 import net.blueshell.api.shared.seed.SeedOrder
@@ -10,7 +12,6 @@ import org.springframework.core.annotation.Order
 import org.springframework.jdbc.datasource.DataSourceUtils
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
-import java.sql.Connection
 import javax.sql.DataSource
 
 /**
@@ -20,6 +21,8 @@ import javax.sql.DataSource
  */
 @Component
 class ShippedCommitteePages(
+    private val committees: CommitteeRepository,
+    private val games: ShippedGames,
     private val dataSource: DataSource,
     private val transactions: TransactionTemplate,
     private val seed: SeedCsv = SeedCsv("db/seed/committees"),
@@ -29,83 +32,31 @@ class ShippedCommitteePages(
         transactions.execute {
             val connection = DataSourceUtils.getConnection(dataSource)
             try {
-                load(connection)
+                load(SeedLedger(connection, SEED))
             } finally {
                 DataSourceUtils.releaseConnection(connection, dataSource)
             }
         }
 
-    private fun load(connection: Connection): Int {
-        val ledger = SeedLedger(connection, SEED)
-        return seed.rows("pages.csv").sumOf { row ->
+    private fun load(ledger: SeedLedger): Int =
+        seed.rows("pages.csv").sumOf { row ->
             val name = row.getValue("name")
-            val id = committeeId(connection, name) ?: return@sumOf 0
+            val committee = committees.findByName(name) ?: return@sumOf 0
             var written = 0
             if (!row.getValue("listed").toBoolean() && ledger.toWrite("committee-unlisted|$name") { false }) {
-                written += update(connection, "UPDATE committees SET listed = FALSE WHERE id = ?", id)
+                committee.listed = false
+                written++
             }
             row.getValue("games").split(' ').filter { it.isNotBlank() }.forEach { code ->
-                if (gameStands(connection, code) && ledger.toWrite("committee-game|$name|$code") { names(connection, id, code) }) {
-                    written += link(connection, id, code)
+                if (games.stands(code) && ledger.toWrite("committee-game|$name|$code") { code in committee.gameCodes }) {
+                    committee.gameCodes.add(code)
+                    written++
                 }
             }
             written
         }
-    }
-
-    private fun committeeId(
-        connection: Connection,
-        name: String,
-    ): Long? =
-        connection.prepareStatement("SELECT id FROM committees WHERE name = ? AND $ACTIVE").use { statement ->
-            statement.setString(1, name)
-            statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) else null }
-        }
-
-    private fun gameStands(
-        connection: Connection,
-        code: String,
-    ): Boolean =
-        connection.prepareStatement("SELECT 1 FROM game WHERE code = ? AND $ACTIVE").use { statement ->
-            statement.setString(1, code)
-            statement.executeQuery().use { rows -> rows.next() }
-        }
-
-    private fun names(
-        connection: Connection,
-        id: Long,
-        code: String,
-    ): Boolean =
-        connection.prepareStatement("SELECT 1 FROM committee_games WHERE committee_id = ? AND game_code = ?").use { statement ->
-            statement.setLong(1, id)
-            statement.setString(2, code)
-            statement.executeQuery().use { rows -> rows.next() }
-        }
-
-    private fun link(
-        connection: Connection,
-        id: Long,
-        code: String,
-    ): Int =
-        connection.prepareStatement("INSERT INTO committee_games (committee_id, game_code) VALUES (?, ?)").use { statement ->
-            statement.setLong(1, id)
-            statement.setString(2, code)
-            statement.executeUpdate()
-        }
-
-    private fun update(
-        connection: Connection,
-        sql: String,
-        id: Long,
-    ): Int =
-        connection.prepareStatement(sql).use { statement ->
-            statement.setLong(1, id)
-            statement.executeUpdate()
-        }
 
     private companion object {
-        /** The sentinel a live row carries, as every soft-deleted table here uses it. */
-        const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"
         const val SEED = "committees"
     }
 }

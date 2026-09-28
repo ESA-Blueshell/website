@@ -73,14 +73,6 @@ contract:
   - '!services/frontend/src/assets/**'
   - '!services/frontend/src/styles/**'
   - 'tests/**'
-  - 'docker-compose.yml'
-  - 'docker-compose.oidc-e2e.yml'
-  - 'services/*/docker-compose.yml'
-  - 'services/stalwart/**'
-  - 'infra/stalwart/**'
-  - '.env'
-  - 'dev-setup.sh'
-  - 'scripts/seed-stalwart-accounts.sh'
 
 changesets:
   - 'services/api/src/main/resources/db/changelog/**'
@@ -131,3 +123,12 @@ ignore:
   - 'renovate.json'
   - 'release-please-config.json'
   - '.release-please-manifest.json'
+  # The dev stack: compose, its mail server, its env and their scripts. CI starts none of
+  # them since the system tests run the jar and the bundle natively (#1284).
+  - 'docker-compose.yml'
+  - 'docker-compose.oidc-e2e.yml'
+  - 'services/*/docker-compose.yml'
+  - 'services/stalwart/**'
+  - '.env'
+  - 'dev-setup.sh'
+  - 'scripts/seed-stalwart-accounts.sh'

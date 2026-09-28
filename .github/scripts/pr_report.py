@@ -29,6 +29,8 @@ import xml.etree.ElementTree as ElementTree
 from collections import defaultdict
 from pathlib import Path
 
+import yaml
+
 MARKER = "<!-- pr-report -->"
 
 # Caps, so a large pull request does not bury the coverage under a list of lines.
@@ -103,48 +105,16 @@ def glob_to_regex(pattern: str) -> re.Pattern[str]:
 RULE_KEYS = ("glob", "bucket")
 
 
-def _scalar(value: str, where: str) -> str:
-    value = value.strip()
-    if value[:1] in ("'", '"'):
-        if len(value) < 2 or value[-1] != value[0]:
-            raise ValueError(f"{where}: unterminated quoted value")
-        return value[1:-1]
-    if "#" in value:
-        raise ValueError(f"{where}: quote any value containing '#'")
-    return value
-
-
 def parse_rules(text: str, source: str = "<rules>") -> list[dict[str, str]]:
-    """Read a sequence of mappings with two scalar keys, raising on anything else.
-
-    Not PyYAML: it is absent from the runner, and pip installing it would put a
-    network dependency inside a workflow that holds a write token.
-    """
-    entries: list[dict[str, str]] = []
-    for lineno, raw in enumerate(text.splitlines(), start=1):
-        stripped = raw.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        where = f"{source}:{lineno}"
-        if stripped.startswith("- "):
-            entries.append({})
-            stripped = stripped[2:]
-        elif not entries:
-            raise ValueError(f"{where}: mapping before any '-' entry")
-        key, sep, value = stripped.partition(":")
-        key = key.strip()
-        if not sep or key not in RULE_KEYS:
-            raise ValueError(f"{where}: expected one of {RULE_KEYS}, got {key!r}")
-        if key in entries[-1]:
-            raise ValueError(f"{where}: duplicate key {key!r}")
-        entries[-1][key] = _scalar(value, where)
-
-    for index, entry in enumerate(entries, start=1):
-        missing = [k for k in RULE_KEYS if k not in entry]
-        if missing:
-            raise ValueError(f"{source}: entry {index} is missing {missing}")
-    if not entries:
+    """Read a sequence of mappings with two string keys, raising on anything else."""
+    entries = yaml.safe_load(text)
+    if not isinstance(entries, list) or not entries:
         raise ValueError(f"{source}: no rules defined")
+    for index, entry in enumerate(entries, start=1):
+        if not isinstance(entry, dict) or set(entry) != set(RULE_KEYS):
+            raise ValueError(f"{source}: entry {index} must have exactly {RULE_KEYS}, got {entry!r}")
+        if not all(isinstance(entry[key], str) for key in RULE_KEYS):
+            raise ValueError(f"{source}: entry {index} has a value that is not a string")
     return entries
 
 

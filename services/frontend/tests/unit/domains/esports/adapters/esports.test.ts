@@ -5,7 +5,6 @@ import {
   enterGameInSeason,
   fieldTeamInSeason,
   leaveGameInSeason,
-  linkRosterMember,
   loadEsportsPage,
   loadGameAccounts,
   loadPlayedRosters,
@@ -32,7 +31,6 @@ import {
   findSeasonGames,
   findTeams,
   leaveGame,
-  linkRosterEntry,
   setGameAccount,
   uploadPublicImage,
 } from "@/services/api"
@@ -52,7 +50,6 @@ vi.mock("@/services/api", async (importOriginal) => ({
   findSeasonGames: vi.fn(),
   findTeams: vi.fn(),
   leaveGame: vi.fn(),
-  linkRosterEntry: vi.fn(),
   setGameAccount: vi.fn(),
   uploadPublicImage: vi.fn(),
 }))
@@ -278,17 +275,6 @@ describe("addToRoster", () => {
 
     await expect(addToRoster(7, {game: "VAL", seasonId: 20, handle: "nova", role: "PLAYER"}))
       .resolves.toEqual({ok: false, reason: "That person could not be put on the roster."})
-  })
-})
-
-describe("linkRosterMember", () => {
-  // Detaching, which is how a roster entry is kept for somebody the association has no member for.
-  it("names no member at all where the entry is being detached", async () => {
-    vi.mocked(linkRosterEntry).mockResolvedValue({data: {id: 21}} as never)
-
-    await linkRosterMember(21, null)
-
-    expect(optionsOf(vi.mocked(linkRosterEntry).mock.calls[0]?.[0]).body).toEqual({userId: undefined})
   })
 })
 

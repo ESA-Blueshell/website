@@ -225,41 +225,21 @@ describe("TeamEditor, on accounts that could not be read", () => {
   })
 })
 
-/**
- * Several writes stand behind one Save, and a refusal partway leaves what came before it
- * written. Closing on "saved" would report a line-up that only half landed.
- */
+/** One request stands behind a Save, and the api applies it whole or not at all. */
 describe("TeamEditor, when the publish is refused", () => {
   beforeEach(() => {
     vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
   })
 
-  it("does not report the line-up saved, and says the team itself is", async () => {
-    vi.mocked(publishLineup).mockResolvedValue({
-      ok: false, reason: "That team could not be fielded this season.", written: 0,
-      stage: "fielding",
-    })
+  it("does not report the line-up saved, and says why in the api's words", async () => {
+    vi.mocked(publishLineup).mockResolvedValue({ok: false, reason: "That team could not be fielded this season."})
 
     const wrapper = await openEditor()
     await wrapper.find('[data-testid="lineup-save"]').trigger("click")
     await settle()
 
     expect(wrapper.emitted("saved")).toBeUndefined()
-    expect(wrapper.text()).toContain("could not be fielded")
-    expect(wrapper.text()).toContain("The team itself is saved.")
-  })
-
-  it("says how much of the line-up was written before the entry that stopped it", async () => {
-    vi.mocked(publishLineup)
-      .mockResolvedValue({ok: false, reason: "Nope.", written: 3, stage: "roster"})
-
-    const wrapper = await openEditor()
-    await wrapper.find('[data-testid="lineup-save"]').trigger("click")
-    await settle()
-
-    expect(wrapper.emitted("saved")).toBeUndefined()
-    expect(wrapper.find('[data-testid="lineup-failure"]').text())
-      .toContain("The first 3 of the line-up entries are saved.")
+    expect(wrapper.find('[data-testid="lineup-failure"]').text()).toBe("That team could not be fielded this season.")
   })
 })
 

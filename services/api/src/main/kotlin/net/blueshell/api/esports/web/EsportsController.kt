@@ -3,6 +3,8 @@ package net.blueshell.api.esports.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.esports.api.DraftEntry
+import net.blueshell.api.esports.api.LineupDraft
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.EsportsQueryService
 import net.blueshell.api.esports.domain.SeasonGameService
@@ -218,6 +220,36 @@ class EsportsController(
             banner = fieldedTeam.fielding.banner?.asImage(),
             carried = fieldedTeam.carried.map { it.asResponse() },
         )
+    }
+
+    /**
+     * Saves a team's whole line-up for a game and a season in one transaction: the team, this
+     * season's banner, the entries taken off and everybody on it in order. A refusal part-way
+     * leaves the line-up as it was.
+     */
+    @BoardOnly
+    @PutMapping("/seasons/{seasonId}/lineup")
+    fun publishLineup(
+        @PathVariable seasonId: Long,
+        @Valid @RequestBody request: PublishLineupRequest,
+    ): PublishedLineupResponse {
+        val published =
+            rosters.publish(
+                LineupDraft(
+                    teamId = request.teamId,
+                    name = request.name,
+                    teamIcon = request.icon,
+                    game = request.game,
+                    seasonId = seasonId,
+                    banner = request.banner,
+                    removed = request.removed,
+                    entries =
+                        request.entries.map {
+                            DraftEntry(it.id, it.handle, it.role, it.userId, it.displayName, it.roleTitle, it.description, it.icon)
+                        },
+                ),
+            )
+        return PublishedLineupResponse(published.team.asResponse(), published.roster.map { it.asResponse() })
     }
 
     /** Stops a team being fielded in a season. The team, and its other seasons, are untouched. */

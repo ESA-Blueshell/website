@@ -1,6 +1,7 @@
 package net.blueshell.api.esports.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
@@ -137,4 +138,50 @@ data class GameAccountRequest(
     @field:NotBlank(message = "Handle is required")
     @field:Size(min = 1, max = 128, message = "Handle must be 1-128 characters")
     val handle: String,
+)
+
+@Schema(description = "One person on a line-up being saved: an entry kept, or somebody added")
+data class LineupEntryRequest(
+    @Schema(description = "The entry this stands for; nothing adds somebody new")
+    val id: Long? = null,
+    @field:NotBlank(message = "Handle is required")
+    @field:Size(min = 1, max = 128, message = "Handle must be 1-128 characters")
+    val handle: String,
+    @field:NotNull(message = "Role is required")
+    val role: TeamRole,
+    @Schema(description = "The member this entry belongs to; nothing leaves it unattributed")
+    val userId: Long? = null,
+    @field:Size(max = 128, message = "Name must be at most 128 characters")
+    val displayName: String? = null,
+    @Schema(description = "What they did in the team's own words, beside the fixed part")
+    @field:Size(max = 64, message = "Role must be at most 64 characters")
+    val roleTitle: String? = null,
+    @Schema(description = "A short caption about them, in markdown")
+    @field:Size(max = 280, message = "Description must be at most 280 characters")
+    val description: String? = null,
+    @Schema(description = "Where this entry's picture is stored; nothing takes the picture away")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val icon: String? = null,
+)
+
+@Schema(description = "A team's whole line-up for a game and a season, saved in one transaction")
+data class PublishLineupRequest(
+    @Schema(description = "The team; nothing creates it under the name given")
+    val teamId: Long? = null,
+    @field:NotBlank(message = "Team name is required")
+    @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")
+    val name: String,
+    @Schema(description = "Where the team's icon is stored")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val icon: String? = null,
+    @field:NotBlank(message = "Game is required")
+    @field:Size(min = 1, max = 32)
+    val game: String,
+    @Schema(description = "Where this season's banner is stored; nothing leaves the banner as it is")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val banner: String? = null,
+    @Schema(description = "Entries taken off the line-up")
+    val removed: List<Long> = emptyList(),
+    @Schema(description = "Everybody on the line-up, in the order they are shown")
+    val entries: List<@Valid LineupEntryRequest> = emptyList(),
 )

@@ -1725,6 +1725,61 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const teamId = Number(path.split("/")[3])
       return fulfillJson(route, teamId === 3 ? [{game: "VALORANT", season: esportsSeasons[1]}] : [])
     }
+    // One Save: the team, this season's art, the entries taken off and everybody else in order,
+    // applied whole as the api does.
+    if (method === "PUT" && /^\/esports\/seasons\/\d+\/lineup$/.test(path)) {
+      const seasonId = Number(path.split("/")[3])
+      const body = JSON.parse(request.postData() ?? "{}") as {
+        teamId?: number | null
+        name?: string
+        icon?: string | null
+        game?: string
+        banner?: string | null
+        removed?: number[]
+        entries?: Array<Record<string, unknown>>
+      }
+      const icon = pictureNamed(body.icon)
+      let teamId = body.teamId ?? null
+      if (teamId == null) {
+        nextTeamId += 1
+        teamId = nextTeamId
+        teamsMade.push({id: teamId, name: body.name, icon: icon ?? null})
+      } else {
+        renamed.set(teamId, {name: body.name, banner: teamBanners.get(teamId) ?? null, icon: icon ?? null})
+      }
+      if (icon) teamIcons.set(teamId, icon)
+      else teamIcons.delete(teamId)
+      const banner = pictureNamed(body.banner)
+      if (banner) teamBanners.set(teamId, banner)
+      let seated = fieldedNow.find(one => one.teamId === teamId && one.seasonId === seasonId)
+      if (!seated) {
+        seated = {seasonId, teamId, game: String(body.game ?? "VALORANT"), members: []}
+        fieldedNow.push(seated)
+      }
+      for (const id of body.removed ?? []) {
+        const at = roster.findIndex(one => one.id === id)
+        if (at >= 0) roster.splice(at, 1)
+      }
+      const saved = (body.entries ?? []).map((entry, sortIndex) => {
+        let row = entry.id == null ? undefined : roster.find(one => one.id === entry.id)
+        if (!row) {
+          nextEntryId += 1
+          row = {id: nextEntryId, teamId, seasonId}
+          roster.push(row)
+          seated?.members.push({role: entry.role, handle: entry.handle, name: null})
+        }
+        Object.assign(row, {
+          handle: entry.handle, role: entry.role, displayName: entry.displayName ?? null,
+          userId: entry.userId ?? null, sortIndex, roleTitle: entry.roleTitle ?? null,
+          description: entry.description ?? null,
+        })
+        const picture = pictureNamed(entry.icon)
+        if (picture) icons.set(Number(row.id), picture)
+        else icons.delete(Number(row.id))
+        return {...row, icon: picture ?? null}
+      })
+      return fulfillJson(route, {team: {id: teamId, name: body.name, icon: icon ?? null}, roster: saved})
+    }
     if (method === "PUT" && /^\/esports\/seasons\/\d+\/teams\/\d+$/.test(path)) {
       const parts = path.split("/")
       const seasonId = Number(parts[3])

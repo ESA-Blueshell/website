@@ -145,15 +145,12 @@ is published.
 
 ### Publish
 
-Writing a line-up draft as one answer rather than as a series of half-finished ones.
-The writes run in a fixed order, because a team has to exist before anything can be
-written against it, and a rename has to land before rows are written against the
-renamed team.
+Writing a line-up draft as one answer: the team, this season's art, the entries taken
+off and everybody else in order, sent in one request (`PUT /esports/seasons/{id}/lineup`).
 
-Publishing stops at the first refusal and says what was written before it. It is not
-a transaction: the api cannot undo the earlier stages, so a half-published line-up is
-reported rather than rolled back. **Publishing a line-up is distinct from saving one
-roster entry**, which is one row and answers for itself.
+It is a transaction. A refusal anywhere leaves the team and its line-up as they were, so
+there is no half-published line-up to report. **Publishing a line-up is distinct from
+saving one roster entry**, which is one row and answers for itself.
 
 ### Roster entry
 

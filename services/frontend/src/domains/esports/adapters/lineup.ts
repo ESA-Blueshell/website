@@ -1,20 +1,16 @@
 /**
- * Publishing a line-up draft: the ordered writes that stand behind one Save.
+ * Writing a line-up: one Save, and a team fielded with the people it brings.
  *
- * Each is several requests with one outcome, and the failure they answer for is half-written
- * data, so they run in a fixed order, stop at the first refusal and report the stage that
- * stopped them with the count of roster entries that landed. No sentence a reader sees is
- * written here and nothing about a `Row` or a `Picture` crosses this seam: the component turns
- * a reason, a count and a stage into prose.
+ * A Save is one request the api applies whole or not at all. Fielding a team that played
+ * before is still several, so it stops at the first refusal and reports the stage that stopped
+ * it with the count of entries that landed. No sentence a reader sees is written here and
+ * nothing about a `Row` or a `Picture` crosses this seam.
  */
+import {publishLineup as sendLineup} from "@/services/api"
+import type {Refused} from "@/types/api"
 import {
   addToRoster,
-  dropRosterEntry,
   fieldTeamInSeason,
-  linkRosterMember,
-  saveRosterEntry,
-  saveTeamAs,
-  saveTeamOrReason,
   type GameCode,
   type TeamRole,
 } from "./esports"
@@ -46,20 +42,18 @@ export interface LineupDraft {
   /** The art of this season's fielding, which is why it is not written with the team. */
   banner: string | null
   icon: string | null
-  /** Entries taken off, dropped before the rest are written. */
+  /** Entries taken off. */
   removed: number[]
   entries: DraftEntry[]
 }
 
-export type PublishStage = "team" | "fielding" | "removals" | "roster"
 export type CarryStage = "source" | "fielding" | "carry"
 
 /**
- * How far a publish got.
+ * How far fielding a team got.
  *
- * `written` counts roster entries, so every stage before the roster reports none — it is not a
- * count of requests. Generic over one function's own stages, so no caller can branch on a stage
- * that function cannot stop at.
+ * `written` counts roster entries, so every stage before the carry reports none — it is not a
+ * count of requests.
  */
 export type Published<S> =
   | {ok: true}
@@ -103,63 +97,30 @@ const bodyOf = (entry: DraftEntry) => ({
 })
 
 /**
- * A line-up draft written as one answer.
- *
- * The order is forced: a team has to exist before anything can be written against it, and a
- * rename has to land before rows are written against the renamed team. A throw comes back as
- * the same refusal an argued-with write does, so a caller has one failure to read rather than
- * two.
+ * A line-up draft saved in one request: the team, this season's art, who comes off and everybody
+ * else in order. The api applies it in one transaction, so a refusal leaves the line-up as it was
+ * and there is no half to report. Blank rows are dropped here, before positions are handed out.
  */
-export async function publishLineup(draft: LineupDraft): Promise<Published<PublishStage>> {
-  let stage: PublishStage = "team"
-  let written = 0
+export async function publishLineup(draft: LineupDraft): Promise<{ok: true} | Refused> {
   try {
-    const saved = draft.teamId == null
-      ? await saveTeamOrReason({name: draft.name, icon: draft.icon})
-      : await saveTeamAs(draft.teamId, {name: draft.name, icon: draft.icon})
-    if (!saved.ok) return refused(saved.reason, stage)
-    const teamId = draft.teamId ?? saved.team.id
-
-    stage = "fielding"
-    const fielded = await fieldTeamInSeason(teamId, draft.game, draft.seasonId, false, draft.banner)
-    if (!fielded.ok) return refused(fielded.reason, stage)
-
-    stage = "removals"
-    for (const id of draft.removed) {
-      const gone = await dropRosterEntry(id)
-      if (!gone.ok) return refused(gone.reason, stage)
-    }
-
-    // Blanks are dropped before positions are handed out, so a row nobody typed into no longer
-    // spends one. A new entry still spends one and cannot be told it: `AddRosterEntryRequest`
-    // has no `sortIndex`, so a new row in the middle leaves a gap where it stands.
-    stage = "roster"
-    const entries = draft.entries.filter(entry => !isBlank(entry))
-    for (const [sortIndex, entry] of entries.entries()) {
-      const shared = bodyOf(entry)
-      // Each answer is read before the next write, so a refusal partway leaves everything
-      // before it saved and the count says which one stopped.
-      if (entry.id == null) {
-        // No position on this one: where a new entry lands is the api's to say, and its
-        // request has nowhere to put one.
-        const added = await addToRoster(teamId, {
-          game: draft.game,
-          seasonId: draft.seasonId,
-          ...shared,
-          userId: entry.userId,
-        })
-        if (!added.ok) return refused(added.reason, stage, written)
-      } else {
-        const savedEntry = await saveRosterEntry(entry.id, {...shared, sortIndex})
-        if (!savedEntry.ok) return refused(savedEntry.reason, stage, written)
-        const linked = await linkRosterMember(entry.id, entry.userId)
-        if (!linked.ok) return refused(linked.reason, stage, written)
-      }
-      written += 1
-    }
+    const res = await sendLineup({
+      path: {seasonId: draft.seasonId},
+      body: {
+        teamId: draft.teamId,
+        name: draft.name,
+        icon: draft.icon,
+        game: draft.game,
+        banner: draft.banner,
+        removed: draft.removed,
+        entries: draft.entries
+          .filter(entry => !isBlank(entry))
+          .map(entry => ({id: entry.id, ...bodyOf(entry), userId: entry.userId})),
+      },
+    })
+    if (res.error) return {ok: false, reason: reasonFor(res.error, "The line-up could not be saved.")}
     return {ok: true}
   } catch (error) {
-    return refused(reasonFor(error, "The line-up could not be saved."), stage, written)
+    return {ok: false, reason: reasonFor(error, "The line-up could not be saved.")}
   }
 }
 

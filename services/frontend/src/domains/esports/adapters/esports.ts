@@ -12,7 +12,6 @@ import {
   apiUrl,
   clearGameAccount,
   createSeason,
-  createTeam,
   deleteSeason,
   deleteTeam,
   fieldTeam,
@@ -25,16 +24,12 @@ import {
   findSeasons,
   findTeamSeasons,
   findTeams,
-  linkRosterEntry,
-  removeRosterEntry,
   setGameAccount,
-  updateRosterEntry,
   unfieldTeam,
   findSeasonGames,
   enterGame,
   leaveGame,
   updateSeason,
-  updateTeam,
   uploadPublicImage,
 } from "@/services/api"
 import type {
@@ -302,58 +297,6 @@ export async function loadTeams(): Promise<Team[]> {
   return (res.data ?? []).map(withArt)
 }
 
-/**
- * The team as it now stands. `ok` carries it rather than perhaps carrying it: a caller needs the
- * id to write a line-up against, and a success promising a team that is not there is how a
- * line-up gets written against nothing.
- */
-export interface TeamSaved {
-  ok: true
-  team: Team
-}
-
-/** Same reason as a season's: the api answers a refusal with a body, not a thrown error. */
-export async function saveTeamOrReason(
-  team: {name: string; icon?: string | null},
-): Promise<TeamSaved | Refused> {
-  const res = await createTeam({
-    body: {
-      name: team.name,
-      icon: team.icon ?? undefined,
-    },
-  })
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFrom(res.error, "The team could not be added.")}
-  }
-  return {ok: true, team: withArt(res.data)}
-}
-
-/**
- * The team as it now stands: what it is called, the banner it is drawn on and the icon it is
- * known by. Its game never changes — a team is of the game it was made for, and moving one
- * between games would be a different team.
- *
- * Both pictures are part of this write rather than something applied when they were chosen, so
- * cancelling the dialog leaves the team exactly as it was. Naming no picture takes it away.
- */
-/**
- * A team's name and its logo. The art it is drawn with belongs to the fielding, so it is
- * saved with the season rather than here.
- */
-export async function saveTeamAs(
-  id: number,
-  team: {name: string; icon: string | null},
-): Promise<TeamSaved | Refused> {
-  const res = await updateTeam({
-    path: {id},
-    body: {name: team.name, icon: team.icon ?? undefined},
-  })
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFrom(res.error, "The team could not be saved.")}
-  }
-  return {ok: true, team: withArt(res.data)}
-}
-
 export async function dropTeam(id: number): Promise<{ok: true} | Refused> {
   const res = await deleteTeam({path: {id}})
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be removed.")}
@@ -453,54 +396,6 @@ export async function addToRoster(
     return {ok: false, reason: reasonFrom(res.error, "That person could not be put on the roster.")}
   }
   return {ok: true, entry: withIcon(res.data)}
-}
-
-export async function saveRosterEntry(
-  id: number,
-  entry: {
-    handle: string
-    role: TeamRole
-    displayName?: string | null
-    sortIndex: number
-    roleTitle?: string | null
-    description?: string | null
-    icon?: string | null
-  },
-): Promise<RosterEntrySaved | Refused> {
-  const res = await updateRosterEntry({
-    path: {id},
-    body: {
-      handle: entry.handle,
-      role: entry.role,
-      displayName: entry.displayName ?? undefined,
-      sortIndex: entry.sortIndex,
-      roleTitle: entry.roleTitle ?? undefined,
-      description: entry.description ?? undefined,
-      icon: entry.icon ?? undefined,
-    },
-  })
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFrom(res.error, "That roster entry could not be saved.")}
-  }
-  return {ok: true, entry: withIcon(res.data)}
-}
-
-/** A null member detaches the entry, which is how an unattributed roster spot is kept. */
-export async function linkRosterMember(
-  id: number,
-  userId: number | null,
-): Promise<{ok: true; entry: RosterEntry} | Refused> {
-  const res = await linkRosterEntry({path: {id}, body: {userId: userId ?? undefined}})
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFrom(res.error, "Who that entry belongs to could not be saved.")}
-  }
-  return {ok: true, entry: res.data}
-}
-
-export async function dropRosterEntry(id: number): Promise<{ok: true} | Refused> {
-  const res = await removeRosterEntry({path: {id}})
-  if (res.error) return {ok: false, reason: reasonFrom(res.error, "That person could not be taken off.")}
-  return {ok: true}
 }
 
 /** Every roster spot somebody held, newest season first; nothing where the read failed. */

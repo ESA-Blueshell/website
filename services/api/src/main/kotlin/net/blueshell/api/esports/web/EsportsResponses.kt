@@ -166,3 +166,9 @@ data class PlayedRosterResponse(
     val role: TeamRole,
     val roleTitle: String?,
 )
+
+@Schema(description = "A line-up as saved: the team as it now stands and its roster in order")
+data class PublishedLineupResponse(
+    val team: TeamResponse,
+    val roster: List<RosterEntryResponse>,
+)

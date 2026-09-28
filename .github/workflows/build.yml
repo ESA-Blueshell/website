@@ -52,28 +52,15 @@ env:
   OWNER: ${{ github.repository_owner }}
 
 jobs:
-  detect-changes:
-    # Compare the merge commit against the previous main commit and only
-    # rebuild services whose code (or its shared deps) actually changed.
-    # A service that did not change is not rebuilt. The build matrix is expanded to
-    # one entry per (service × platform) so each platform can run on its
-    # native runner; `services` lists the unique service names the merge
-    # job iterates over.
-    name: Detect Changes
+  release-tag:
+    # The one place the tag is resolved, so no later job needs to know which
+    # trigger fired. Only a release has one: a push, including one to the
+    # release branch, publishes sha tags and nothing else.
+    name: Resolve the release tag
     runs-on: ubuntu-latest
     outputs:
-      build-matrix: ${{ steps.compute.outputs.build-matrix }}
-      services: ${{ steps.compute.outputs.services }}
-      has-matrix: ${{ steps.compute.outputs.has-matrix }}
       release-tag: ${{ steps.tag.outputs.release-tag }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
-
-      # The one place the tag is resolved, so no later job needs to know which
-      # trigger fired. Only a release has one: a push, including one to the
-      # release branch, publishes sha tags and nothing else.
       - name: Resolve the release tag
         id: tag
         env:
@@ -83,110 +70,13 @@ jobs:
           echo "release-tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
           echo "::notice::release tag for this run: ${INPUT_TAG:-none, ordinary build}"
 
-      # Skipped on a release: the tag needs a complete set of images.
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
-        id: filter
-        if: steps.tag.outputs.release-tag == ''
-        with:
-          base: ${{ github.event.before }}
-          filters: |
-            workflow:
-              - '.github/workflows/build.yml'
-            api:
-              - 'services/api/**'
-            frontend:
-              - 'services/frontend/**'
-            stalwart-tools:
-              - 'infra/stalwart/**'
-            build-logic:
-              - 'build-logic/**'
-            libs:
-              - 'libs/**'
-            gradle-config:
-              - 'gradle/**'
-              - 'build.gradle.kts'
-              - 'settings.gradle.kts'
-              - 'gradlew'
-              - 'gradlew.bat'
-
-      - name: Compute rebuild matrix
-        id: compute
-        env:
-          FILTER_WORKFLOW: ${{ steps.filter.outputs.workflow }}
-          FILTER_API: ${{ steps.filter.outputs.api }}
-          FILTER_FRONTEND: ${{ steps.filter.outputs.frontend }}
-          FILTER_STALWART_TOOLS: ${{ steps.filter.outputs.stalwart-tools }}
-          FILTER_BUILD_LOGIC: ${{ steps.filter.outputs.build-logic }}
-          FILTER_LIBS: ${{ steps.filter.outputs.libs }}
-          FILTER_GRADLE_CONFIG: ${{ steps.filter.outputs.gradle-config }}
-          IS_RELEASE: ${{ steps.tag.outputs.release-tag != '' }}
-        run: |
-          set -euo pipefail
-          any() { for v in "$@"; do [[ "$v" == "true" ]] && echo "true" && return; done; echo "false"; }
-
-          # build-logic / libs / gradle-config affect the JVM build classpath
-          # (api). The workflow itself touches both. Frontend changes never
-          # invalidate the api and vice versa beyond shared gradle config.
-          API_SHARED=$(any "$FILTER_WORKFLOW" "$FILTER_BUILD_LOGIC" "$FILTER_LIBS" "$FILTER_GRADLE_CONFIG")
-          FRONTEND_SHARED=$(any "$FILTER_WORKFLOW")
-
-          # A release rebuilds everything, not just what changed in the tag commit.
-          if [[ "$IS_RELEASE" == "true" ]]; then
-            API_SHARED=true
-            FRONTEND_SHARED=true
-            FILTER_STALWART_TOOLS=true
-          fi
-
-          MATRIX="[]"
-          SERVICES="[]"
-          add_platform() {
-            local name=$1 context=$2 file=$3 platform=$4 arch=$5 runner=$6
-            MATRIX=$(echo "$MATRIX" | jq -c \
-              --arg n "$name" --arg c "$context" --arg f "$file" \
-              --arg p "$platform" --arg a "$arch" --arg r "$runner" \
-              '. + [{"name":$n, "context":$c, "file":$f, "platform":$p, "arch":$a, "runner":$r}]')
-          }
-          add_service() {
-            local name=$1
-            SERVICES=$(echo "$SERVICES" | jq -c --arg n "$name" '. + [$n] | unique')
-          }
-
-          if [[ "$(any "$API_SHARED" "$FILTER_API")" == "true" ]]; then
-            add_platform api . services/api/Dockerfile linux/amd64 amd64 ubuntu-latest
-            add_service api
-          fi
-          if [[ "$(any "$FRONTEND_SHARED" "$FILTER_FRONTEND")" == "true" ]]; then
-            add_platform frontend services/frontend services/frontend/Dockerfile linux/amd64 amd64 ubuntu-latest
-            add_platform frontend services/frontend services/frontend/Dockerfile linux/arm64 arm64 ubuntu-24.04-arm
-            add_service frontend
-          fi
-          # stalwart-tools is the apply-sidecar image for the Stalwart
-          # Deployment; the Dockerfile expects the repo root as build
-          # context so it can COPY infra/stalwart/*. Workflow changes
-          # rebuild it too (FILTER_WORKFLOW).
-          if [[ "$(any "$FILTER_WORKFLOW" "$FILTER_STALWART_TOOLS")" == "true" ]]; then
-            add_platform stalwart-tools . infra/stalwart/Dockerfile linux/amd64 amd64 ubuntu-latest
-            add_service stalwart-tools
-          fi
-
-          echo "build-matrix=$MATRIX" >> "$GITHUB_OUTPUT"
-          echo "services=$SERVICES" >> "$GITHUB_OUTPUT"
-          if [[ "$MATRIX" == "[]" ]]; then
-            echo "has-matrix=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No service image needs rebuilding for this push."
-          else
-            echo "has-matrix=true" >> "$GITHUB_OUTPUT"
-            echo "Build matrix: $MATRIX"
-            echo "Services to tag: $SERVICES"
-          fi
-
   build:
-    # One run per (service, platform). Native runner per arch means
-    # neither leg waits on QEMU emulation, and the per-arch cache scope
-    # stops amd64 and arm64 from clobbering each other's layer cache.
+    # One run per (service, platform), on every push: an image is not
+    # skipped because its own paths did not change, so every commit on main
+    # has a full set to deploy. Native runner per arch means neither leg
+    # waits on QEMU emulation, and the per-arch cache scope stops amd64 and
+    # arm64 from clobbering each other's layer cache.
     name: Build ${{ matrix.target.name }} (${{ matrix.target.arch }})
-    needs: detect-changes
-    if: needs.detect-changes.outputs.has-matrix == 'true'
     runs-on: ${{ matrix.target.runner }}
     permissions:
       contents: read
@@ -194,7 +84,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJson(needs.detect-changes.outputs.build-matrix) }}
+        target:
+          - {name: api, context: ., file: services/api/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
+          - {name: frontend, context: services/frontend, file: services/frontend/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
+          - {name: frontend, context: services/frontend, file: services/frontend/Dockerfile, platform: linux/arm64, arch: arm64, runner: ubuntu-24.04-arm}
+          # The apply sidecar for the Stalwart Deployment. Its Dockerfile
+          # copies infra/stalwart/*, so the context is the repo root.
+          - {name: stalwart-tools, context: ., file: infra/stalwart/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
 
     steps:
       - name: Checkout repository
@@ -256,8 +152,7 @@ jobs:
     # that service and assembles one manifest list under :sha-<short>. The
     # version tag is written at release, by release.yml.
     name: Push manifest for ${{ matrix.service }}
-    needs: [detect-changes, build]
-    if: needs.detect-changes.outputs.has-matrix == 'true'
+    needs: [release-tag, build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -268,7 +163,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+        service: [api, frontend, stalwart-tools]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -341,10 +236,10 @@ jobs:
       # this is the only place that holds the digest it must name. Skipped
       # unless release.yml called this workflow for a release.
       - name: Write the version tag
-        if: needs.detect-changes.outputs.release-tag != ''
+        if: needs.release-tag.outputs.release-tag != ''
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
-          RELEASE_TAG: ${{ needs.detect-changes.outputs.release-tag }}
+          RELEASE_TAG: ${{ needs.release-tag.outputs.release-tag }}
           DIGEST: ${{ steps.manifest.outputs.digest }}
         run: |
           set -euo pipefail

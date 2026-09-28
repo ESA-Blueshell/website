@@ -15,8 +15,9 @@ fun CommitteeMember.asDto(): CommitteeMemberResponse =
         updatedAt = this.updatedAt,
     )
 
-fun Committee.asDetailResponse(): CommitteeDetailResponse =
-    CommitteeDetailResponse(
+/** The committee, with who sits on it only where [withMembers] says the reader may know. */
+fun Committee.asResponse(withMembers: Boolean = true): CommitteeResponse =
+    CommitteeResponse(
         id = this.id!!,
         name = this.name,
         description = this.description,
@@ -26,23 +27,7 @@ fun Committee.asDetailResponse(): CommitteeDetailResponse =
         banner = this.banner?.asImage(),
         icon = this.icon?.asImage(),
         gameCodes = this.gameCodes.sorted(),
-        members = this.members.map { it.asDto() }.toMutableList(),
-        version = this.version,
-        createdAt = this.createdAt,
-        updatedAt = this.updatedAt,
-    )
-
-fun Committee.asSummaryResponse(): CommitteeSummaryResponse =
-    CommitteeSummaryResponse(
-        id = this.id!!,
-        name = this.name,
-        description = this.description,
-        slug = this.slug,
-        listed = this.listed,
-        archived = this.archived,
-        banner = this.banner?.asImage(),
-        icon = this.icon?.asImage(),
-        gameCodes = this.gameCodes.sorted(),
+        members = if (withMembers) this.members.map { it.asDto() } else null,
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

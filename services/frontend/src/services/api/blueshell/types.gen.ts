@@ -652,25 +652,6 @@ export type CohortSummary = {
     system: string;
 };
 
-export type CommitteeDetailResponse = {
-    archived: boolean;
-    banner?: Image | null;
-    createdAt: string;
-    description: string;
-    gameCodes: Array<string>;
-    /**
-     * Its logo, absent for none
-     */
-    icon?: Image | null;
-    id: number;
-    listed: boolean;
-    members: Array<CommitteeMemberResponse>;
-    name: string;
-    slug: string;
-    updatedAt: string;
-    version: number;
-};
-
 export type CommitteeMemberRequest = {
     /**
      * What this member does on the committee. Omitted for a member who simply sits on it, which is most of them.
@@ -712,7 +693,39 @@ export type CommitteePageResponse = {
     slug: string;
 };
 
-export type CommitteeResponse = unknown;
+export type CommitteeResponse = {
+    /**
+     * Whether the committee no longer runs
+     */
+    archived: boolean;
+    banner?: Image | null;
+    createdAt: string;
+    description: string;
+    /**
+     * The codes of the games the committee organises events for
+     */
+    gameCodes: Array<string>;
+    /**
+     * Its logo, absent for none
+     */
+    icon?: Image | null;
+    id: number;
+    /**
+     * Whether the committee is shown among the committees to join
+     */
+    listed: boolean;
+    /**
+     * Who sits on it, for the board and its own members; absent for anybody else
+     */
+    members?: Array<CommitteeMemberResponse> | null;
+    name: string;
+    /**
+     * The address the committee's page answers to
+     */
+    slug: string;
+    updatedAt: string;
+    version: number;
+};
 
 export type CommitteeSeatResponse = {
     /**
@@ -3875,7 +3888,7 @@ export type CreateCommitteeResponses = {
     /**
      * Created
      */
-    201: CommitteeDetailResponse;
+    201: CommitteeResponse;
 };
 
 export type CreateCommitteeResponse = CreateCommitteeResponses[keyof CreateCommitteeResponses];
@@ -4090,7 +4103,7 @@ export type UpdateCommitteeResponses = {
     /**
      * OK
      */
-    200: CommitteeDetailResponse;
+    200: CommitteeResponse;
 };
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
@@ -4133,7 +4146,7 @@ export type ArchiveCommitteeResponses = {
     /**
      * OK
      */
-    200: CommitteeDetailResponse;
+    200: CommitteeResponse;
 };
 
 export type ArchiveCommitteeResponse = ArchiveCommitteeResponses[keyof ArchiveCommitteeResponses];
@@ -4266,7 +4279,7 @@ export type UpdateCommitteePageResponses = {
     /**
      * OK
      */
-    200: CommitteeDetailResponse;
+    200: CommitteeResponse;
 };
 
 export type UpdateCommitteePageResponse = UpdateCommitteePageResponses[keyof UpdateCommitteePageResponses];

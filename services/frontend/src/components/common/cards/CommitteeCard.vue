@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import {type PropType, toRef} from "vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
-import {type CommitteeDetailResponse} from "@/domains/committees"
+import {type Committee} from "@/domains/committees"
 
 const props = defineProps({
   committee: {
-    type: Object as PropType<CommitteeDetailResponse>,
+    type: Object as PropType<Committee>,
     required: true,
   },
 })

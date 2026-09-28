@@ -12,4 +12,3 @@ export {
 } from "./adapters/committees"
 export {cellOf, driftItemOf, forgetCommittees, initialsOf, openingLineOf, reelItemOf, useCommittees} from "./useCommittees"
 export {useCommitteeRights} from "./island/useCommitteeRights"
-export type {CommitteeDetailResponse} from "@/services/api"

@@ -6,8 +6,8 @@
 import {
   apiUrl,
   archiveCommittee,
-  type CommitteeDetailResponse,
   type CommitteePageResponse,
+  type CommitteeResponse,
   createCommittee,
   deleteCommitteeById,
   FileType,
@@ -26,8 +26,8 @@ import type {Picture} from "@/components/island/pictures"
 import type {Refused} from "@/types/api"
 import {reasonFor} from "../refusals"
 
-/** A committee as every reader gets it; only the board's answer also carries its members. */
-export type Committee = Omit<CommitteeDetailResponse, "members"> & Partial<Pick<CommitteeDetailResponse, "members">>
+/** A committee as every reader gets it; its members only where the board or its own members read it. */
+export type Committee = CommitteeResponse
 export type CommitteePage = CommitteePageResponse
 
 /** What the board writes about a committee: everything but its archived state. */
@@ -65,9 +65,9 @@ const withArt = <T extends {banner?: Image | null; icon?: Image | null}>(committ
  * Every committee. Throws on a refusal rather than answering with an empty list: a list that
  * could not be read is not an association without committees, and the manager says so.
  */
-export async function listCommittees(): Promise<CommitteeDetailResponse[]> {
+export async function listCommittees(): Promise<Committee[]> {
   const res = await findCommittees({throwOnError: true})
-  return ((res.data ?? []) as CommitteeDetailResponse[]).map(withArt)
+  return (res.data ?? []).map(withArt)
 }
 
 /**
@@ -75,15 +75,15 @@ export async function listCommittees(): Promise<CommitteeDetailResponse[]> {
  * refusal like the listing above it: a reader whose committees could not be read is not a reader
  * in none.
  */
-export async function listMyCommittees(): Promise<CommitteeDetailResponse[]> {
+export async function listMyCommittees(): Promise<Committee[]> {
   const res = await findCommitteesByUserId({throwOnError: true})
-  return ((res.data ?? []) as CommitteeDetailResponse[]).map(withArt)
+  return (res.data ?? []).map(withArt)
 }
 
 /** Every committee for the committees pages, or none where the api fails. */
 export async function loadCommittees(): Promise<Committee[]> {
   const res = await findCommittees()
-  return Array.isArray(res.data) ? (res.data as Committee[]).map(withArt) : []
+  return (res.data ?? []).map(withArt)
 }
 
 /** One committee's page by its address, or null where no committee answers to it. */

@@ -1224,64 +1224,6 @@ components:
       - memberCount
       - system
       type: object
-    CommitteeDetailResponse:
-      properties:
-        archived:
-          type: boolean
-        banner:
-          oneOf:
-          - $ref: '#/components/schemas/Image'
-          - type: 'null'
-        createdAt:
-          format: date-time
-          type: string
-        description:
-          maxLength: 4096
-          minLength: 0
-          type: string
-        gameCodes:
-          items:
-            type: string
-          type: array
-        icon:
-          description: Its logo, absent for none
-          oneOf:
-          - $ref: '#/components/schemas/Image'
-          - type: 'null'
-        id:
-          format: int64
-          type: integer
-        listed:
-          type: boolean
-        members:
-          items:
-            $ref: '#/components/schemas/CommitteeMemberResponse'
-          type: array
-        name:
-          maxLength: 255
-          minLength: 0
-          type: string
-        slug:
-          type: string
-        updatedAt:
-          format: date-time
-          type: string
-        version:
-          format: int64
-          type: integer
-      required:
-      - archived
-      - createdAt
-      - description
-      - gameCodes
-      - id
-      - listed
-      - members
-      - name
-      - slug
-      - updatedAt
-      - version
-      type: object
     CommitteeMemberRequest:
       properties:
         role:
@@ -1396,8 +1338,66 @@ components:
       - name
       - slug
       type: object
-    CommitteeResponse: {
-      }
+    CommitteeResponse:
+      properties:
+        archived:
+          description: Whether the committee no longer runs
+          type: boolean
+        banner:
+          oneOf:
+          - $ref: '#/components/schemas/Image'
+          - type: 'null'
+        createdAt:
+          format: date-time
+          type: string
+        description:
+          type: string
+        gameCodes:
+          description: The codes of the games the committee organises events for
+          items:
+            type: string
+          type: array
+        icon:
+          description: Its logo, absent for none
+          oneOf:
+          - $ref: '#/components/schemas/Image'
+          - type: 'null'
+        id:
+          format: int64
+          type: integer
+        listed:
+          description: Whether the committee is shown among the committees to join
+          type: boolean
+        members:
+          description: Who sits on it, for the board and its own members; absent for anybody else
+          items:
+            $ref: '#/components/schemas/CommitteeMemberResponse'
+          type:
+          - array
+          - 'null'
+        name:
+          type: string
+        slug:
+          description: The address the committee's page answers to
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        version:
+          format: int64
+          type: integer
+      required:
+      - archived
+      - createdAt
+      - description
+      - gameCodes
+      - id
+      - listed
+      - name
+      - slug
+      - updatedAt
+      - version
+      type: object
     CommitteeSeatResponse:
       properties:
         avatar:
@@ -8460,7 +8460,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CommitteeDetailResponse'
+                $ref: '#/components/schemas/CommitteeResponse'
           description: Created
         '400':
           content:
@@ -9007,7 +9007,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CommitteeDetailResponse'
+                $ref: '#/components/schemas/CommitteeResponse'
           description: OK
         '400':
           content:
@@ -9121,7 +9121,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CommitteeDetailResponse'
+                $ref: '#/components/schemas/CommitteeResponse'
           description: OK
         '400':
           content:
@@ -9473,7 +9473,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CommitteeDetailResponse'
+                $ref: '#/components/schemas/CommitteeResponse'
           description: OK
         '400':
           content:

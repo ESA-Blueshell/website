@@ -42,20 +42,16 @@ class CommitteeController(
         val principalId = principal?.id ?: return mutableListOf()
         val includeAll = principal.hasAuthority(Role.BOARD)
         val committees = if (includeAll) service.findAll() else service.findAllByUserId(principalId)
-        return committees.map { it.asDetailResponse() }.toMutableList()
+        return committees.map { it.asResponse() }.toMutableList()
     }
 
     @GetMapping("/committees")
     @PermitAll
     fun findCommittees(): MutableList<CommitteeResponse> {
-        val committees = service.findAll()
-        // Taken from the security context rather than bound as a request parameter, so the
-        // detail level is picked from a server-held value only.
-        return if (SecurityUtils.hasAuthority(Role.BOARD)) {
-            committees.map { it.asDetailResponse() }.toMutableList()
-        } else {
-            committees.map { it.asSummaryResponse() }.toMutableList()
-        }
+        // Taken from the security context rather than bound as a request parameter, so who may
+        // see the members is decided from a server-held value only.
+        val withMembers = SecurityUtils.hasAuthority(Role.BOARD)
+        return service.findAll().map { it.asResponse(withMembers) }.toMutableList()
     }
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
@@ -64,14 +60,10 @@ class CommitteeController(
         @PathVariable committeeId: Long,
     ): CommitteeResponse {
         val committee = service.findById(committeeId)
-        // Taken from the security context rather than bound as a request parameter, so the
-        // detail level is picked from a server-held value only.
+        // Taken from the security context rather than bound as a request parameter, so who may
+        // see the members is decided from a server-held value only.
         val principal = SecurityUtils.currentPrincipal()
-        if (principal?.hasAuthority(Role.BOARD) == true || committee.hasMember(principal?.id)) {
-            return committee.asDetailResponse()
-        }
-
-        return committee.asSummaryResponse()
+        return committee.asResponse(withMembers = principal?.hasAuthority(Role.BOARD) == true || committee.hasMember(principal?.id))
     }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Committee', 'write')")
@@ -79,7 +71,7 @@ class CommitteeController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createCommittee(
         @Valid @RequestBody request: @Valid CreateCommitteeRequest,
-    ): CommitteeDetailResponse {
+    ): CommitteeResponse {
         val committee =
             service.createWithMembers(
                 name = request.name,
@@ -87,7 +79,7 @@ class CommitteeController(
                 members = request.members.map { it.asData() }.toMutableList(),
                 page = request.page(),
             )
-        return committee.asDetailResponse()
+        return committee.asResponse()
     }
 
     @PreAuthorize("hasPermission(#id, 'Committee', 'write')")
@@ -95,7 +87,7 @@ class CommitteeController(
     fun updateCommittee(
         @PathVariable id: Long,
         @Valid @RequestBody request: @Valid UpdateCommitteeRequest,
-    ): CommitteeDetailResponse {
+    ): CommitteeResponse {
         val committee =
             service.updateWithMembers(
                 id = id,
@@ -105,7 +97,7 @@ class CommitteeController(
                 version = request.version,
                 page = request.page(),
             )
-        return committee.asDetailResponse()
+        return committee.asResponse()
     }
 
     /** A committee's public page, by the address it answers to. Its members by Discord only. */
@@ -124,7 +116,7 @@ class CommitteeController(
     fun updateCommitteePage(
         @PathVariable id: Long,
         @Valid @RequestBody request: CommitteeOwnPageRequest,
-    ): CommitteeDetailResponse =
+    ): CommitteeResponse =
         service
             .updateOwnPage(
                 id = id,
@@ -133,7 +125,7 @@ class CommitteeController(
                 icon = request.icon,
                 gameCodes = request.gameCodes,
                 version = request.version,
-            ).asDetailResponse()
+            ).asResponse()
 
     /** A banner the committee's own members chose, stored so a save can point at it. The id is read by the permission. */
     @Suppress("UnusedParameter")
@@ -160,7 +152,7 @@ class CommitteeController(
     fun archiveCommittee(
         @PathVariable id: Long,
         @RequestBody request: ArchiveCommitteeRequest,
-    ): CommitteeDetailResponse = service.archive(id, request.archived).asDetailResponse()
+    ): CommitteeResponse = service.archive(id, request.archived).asResponse()
 
     /** Sets which committees organise events for a game, from the game's own form. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Committee', 'write')")
@@ -168,7 +160,7 @@ class CommitteeController(
     fun setGameOrganisers(
         @PathVariable game: String,
         @RequestBody request: GameOrganisersRequest,
-    ): List<CommitteeResponse> = service.organisersOf(game, request.committeeIds.toSet()).map { it.asSummaryResponse() }
+    ): List<CommitteeResponse> = service.organisersOf(game, request.committeeIds.toSet()).map { it.asResponse(withMembers = false) }
 
     @PreAuthorize("hasPermission(#id, 'Committee', 'delete')")
     @DeleteMapping(value = ["/committees/{id}"])

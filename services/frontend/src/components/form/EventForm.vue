@@ -28,7 +28,7 @@ import {
   type UpdateEventRequest,
 } from "@/domains/events"
 import {
-  type CommitteeDetailResponse,
+  type Committee,
   listCommittees,
   listMyCommittees,
 } from "@/domains/committees"
@@ -49,7 +49,7 @@ const emit = defineEmits<{
   (e: "update:modelValue", val: EventModel): void
 }>()
 
-type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
+type CommitteeOption = Pick<Committee, "id" | "name">
 type EventModel = Omit<CreateEventRequest, "committeeId" | "banner" | "signUpForm"> & {
   committeeId?: number | null;
   id?: number;

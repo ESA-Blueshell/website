@@ -128,6 +128,22 @@ class UserControllerIT : UserTestSupport() {
                 .describedAs("Board-created users should still receive a generated password hash")
                 .isNotBlank()
         }
+
+        /** The user form sends the password empty on a board create, so the length rule must not reach it. */
+        @Test
+        fun `board can create user with the password left empty`() {
+            val board = createUserWithRole(Role.BOARD)
+            val username = "board_empty_${System.currentTimeMillis()}"
+            val payload =
+                """{"username":"$username","initials":"BE","firstName":"Board","lastName":"Empty","newsletter":true,"email":"$username@example.com","discord":"boardempty#1234","phoneNumber":"+31612345001","password":""}"""
+
+            mvc.perform(
+                post("/users")
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload)
+            ).andExpect(status().isCreated)
+        }
     }
 
     @Nested

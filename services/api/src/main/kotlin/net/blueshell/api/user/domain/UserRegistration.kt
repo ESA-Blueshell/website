@@ -28,6 +28,10 @@ data class UserRegistration(
     val isPasswordPresentForPublicRegistration: Boolean
         get() = isBoard || !password.isNullOrBlank()
 
+    @get:AssertTrue(message = PasswordPolicy.LENGTH_MESSAGE)
+    val isPasswordLengthAllowedForPublicRegistration: Boolean
+        get() = isBoard || password == null || password.length in PasswordPolicy.MIN_LENGTH..PasswordPolicy.MAX_LENGTH
+
     @get:AssertTrue(message = "Privacy policy consent is required for public user registration.")
     val isPrivacyConsentGivenForPublicRegistration: Boolean
         get() = isBoard || consentPrivacy

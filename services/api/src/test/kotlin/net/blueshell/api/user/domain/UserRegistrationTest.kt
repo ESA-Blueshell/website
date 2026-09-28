@@ -1,14 +1,14 @@
 package net.blueshell.api.user.domain
 
+import net.blueshell.api.user.api.PasswordPolicy
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * These three rules are the only thing standing between the public signup route
- * and an account with no password: `CreateUserRequest` scopes its password
- * constraints to the `Creation` group, and `SignupController.signUp` validates
- * the default group.
+ * These rules are the only thing standing between the public signup route and a
+ * weak password: `CreateUserRequest` carries no password constraint, because the
+ * board sends the same request with the password left empty.
  */
 class UserRegistrationTest {
     @Nested
@@ -26,6 +26,22 @@ class UserRegistrationTest {
             assertThat(registration(password = "Password").isPasswordComplexForPublicRegistration).isFalse()
             assertThat(registration(password = "Password1").isPasswordComplexForPublicRegistration).isFalse()
             assertThat(registration(password = "Password1!").isPasswordComplexForPublicRegistration).isTrue()
+        }
+
+        @Test
+        fun `demands a password of the allowed length`() {
+            fun allowed(length: Int) =
+                registration(password = "Aa1!".padEnd(length, 'x')).isPasswordLengthAllowedForPublicRegistration
+
+            assertThat(allowed(PasswordPolicy.MIN_LENGTH - 1)).isFalse()
+            assertThat(allowed(PasswordPolicy.MIN_LENGTH)).isTrue()
+            assertThat(allowed(PasswordPolicy.MAX_LENGTH)).isTrue()
+            assertThat(allowed(PasswordPolicy.MAX_LENGTH + 1)).isFalse()
+        }
+
+        @Test
+        fun `leaves a missing password to the presence rule`() {
+            assertThat(registration(password = null).isPasswordLengthAllowedForPublicRegistration).isTrue()
         }
 
         /**
@@ -58,10 +74,11 @@ class UserRegistrationTest {
     @Nested
     inner class BoardCreated {
         @Test
-        fun `waives all three, since the board supplies no password and consents to nothing`() {
+        fun `waives every rule, since the board supplies no password and consents to nothing`() {
             val boardCreated = registration(isBoard = true, password = null, consentPrivacy = false)
 
             assertThat(boardCreated.isPasswordPresentForPublicRegistration).isTrue()
+            assertThat(boardCreated.isPasswordLengthAllowedForPublicRegistration).isTrue()
             assertThat(boardCreated.isPasswordComplexForPublicRegistration).isTrue()
             assertThat(boardCreated.isPrivacyConsentGivenForPublicRegistration).isTrue()
         }

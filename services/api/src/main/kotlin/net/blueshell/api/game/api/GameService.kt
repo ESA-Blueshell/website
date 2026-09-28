@@ -5,6 +5,7 @@ import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameChannel
 import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.model.addressOf
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -219,20 +220,9 @@ class GameService(
             .replace(Regex("_+"), "_")
             .take(CODE_LENGTH)
 
-    /**
-     * An address somebody can be sent to: no case, no spaces, nothing that reads as a path.
-     * Mirrored by `GameEditor.vue`, which fills a new game's address from its name.
-     */
+    /** An address somebody can be sent to, made the way every page address is ([addressOf]). */
     private fun addressFor(slug: String): String {
-        val address =
-            slug
-                .trim()
-                .lowercase()
-                .map { if (it.isLetterOrDigit()) it else '-' }
-                .joinToString("")
-                .trim('-')
-                .replace(Regex("-+"), "-")
-                .take(SLUG_LENGTH)
+        val address = addressOf(slug)
         if (address.isBlank()) throw GameAddressBlank()
         if (address in RESERVED) throw AddressReserved(address)
         return address
@@ -250,7 +240,6 @@ class GameService(
 
     private companion object {
         const val CODE_LENGTH = 32
-        const val SLUG_LENGTH = 64
 
         /** Addresses the site's own pages answer to under /casual and /competition, so a game claiming one is unreachable. */
         val RESERVED = setOf("competitive-scene", "new", "seasons")

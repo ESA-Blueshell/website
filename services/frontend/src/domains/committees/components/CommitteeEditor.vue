@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {addressOf} from "@/utils/address"
 import {computed, ref, watch} from "vue"
 import ArtCells from "@/components/island/ArtCells.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
@@ -82,10 +83,9 @@ watch(() => props.committee, async committee => {
 }, {immediate: true})
 
 // A new committee's address follows its name until somebody types one of their own.
-// TWIN: `addressOf` in `CommitteeAddress.kt` makes the address the api keeps.
 const slugTouched = ref(false)
 watch(name, typed => {
-  if (adding.value && !slugTouched.value) slug.value = typed.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "")
+  if (adding.value && !slugTouched.value) slug.value = addressOf(typed)
 })
 const typeSlug = (value: string | null) => {
   slugTouched.value = true

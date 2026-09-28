@@ -2,8 +2,8 @@ package net.blueshell.api.committee.web
 
 import com.jayway.jsonpath.JsonPath
 import net.blueshell.api.committee.persistence.CommitteeRepository
-import net.blueshell.api.committee.persistence.addressOf
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.model.addressOf
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat

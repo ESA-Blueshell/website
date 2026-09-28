@@ -22,7 +22,7 @@ databaseChangeLog:
         - sql:
             sql: >-
               UPDATE committees
-              SET slug = LEFT(TRIM(BOTH '-' FROM REGEXP_REPLACE(LOWER(name), '[^a-z0-9]+', '-')), 64)
+              SET slug = LEFT(TRIM(BOTH '-' FROM REGEXP_REPLACE(LOWER(name), '[^\\p{L}\\p{Nd}]+', '-')), 64)
         - sql:
             sql: >-
               UPDATE committees SET slug = CONCAT('committee-', id) WHERE slug = ''

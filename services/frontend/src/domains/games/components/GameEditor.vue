@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {addressOf} from "@/utils/address"
 import {computed, ref, watch} from "vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import ArtCells from "@/components/island/ArtCells.vue"
@@ -84,10 +85,9 @@ watch(organisersBefore, before => { organisers.value = [...before] }, {immediate
 const organiserNames = computed(() => committees.value.filter(one => organisers.value.includes(one.id)))
 
 // A new game's address follows its name until somebody types one of their own.
-// TWIN: `GameService.addressFor` makes the address the api keeps.
 const slugTouched = ref(false)
 watch(name, typed => {
-  if (adding.value && !slugTouched.value) slug.value = typed.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "")
+  if (adding.value && !slugTouched.value) slug.value = addressOf(typed)
 })
 const typeSlug = (value: string, handle: (value: string) => void) => {
   slugTouched.value = true

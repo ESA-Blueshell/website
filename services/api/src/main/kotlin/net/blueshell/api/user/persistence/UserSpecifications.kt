@@ -8,7 +8,7 @@ import net.blueshell.api.user.domain.UserQuery
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import org.springframework.data.jpa.domain.Specification
-import java.util.EnumSet
+import java.util.*
 
 object UserSpecifications {
     fun hasMemberAuthority(): Specification<User> {

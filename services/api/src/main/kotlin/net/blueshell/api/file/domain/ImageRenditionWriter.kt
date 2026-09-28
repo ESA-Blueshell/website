@@ -139,11 +139,8 @@ class ImageRenditionWriter(
      * independently: a lost storage volume leaves a record with no bytes and a crash leaves
      * bytes with no record, and either alone is reason enough to encode.
      */
-    @Suppress(
-        // One return per repair the record and the bytes can already be in.
-        "ReturnCount",
-        "LongParameterList",
-    )
+    // One return per repair the record and the bytes can already be in.
+    @Suppress("ReturnCount", "LongParameterList")
     private fun renditionOf(
         source: File,
         still: ScratchFile,

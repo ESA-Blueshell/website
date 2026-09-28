@@ -113,11 +113,7 @@ class InboundReconcile(
             listOf(selected.externalUserId),
         ).filter { it.externalId == selected.externalUserId }
         val mappedUserId = mappings.singleOrNull()?.aggregateId
-            ?: return if (mappings.isEmpty()) {
-                MembershipWriteStatus.SKIPPED_UNMATCHED
-            } else {
-                MembershipWriteStatus.SKIPPED_MAPPING_CONFLICT
-            }
+            ?: return if (mappings.isEmpty()) MembershipWriteStatus.SKIPPED_UNMATCHED else MembershipWriteStatus.SKIPPED_MAPPING_CONFLICT
         if (mappedUserId != selected.userId) return MembershipWriteStatus.SKIPPED_MAPPING_CONFLICT
         val writer = writers.find(definition.type) ?: return MembershipWriteStatus.UNSUPPORTED
         return runCatching { writer.apply(selected.userId, definition) }

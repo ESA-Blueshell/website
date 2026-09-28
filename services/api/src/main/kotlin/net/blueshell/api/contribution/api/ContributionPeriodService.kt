@@ -25,6 +25,16 @@ class ContributionPeriodService
 
         private fun written(row: ContributionPeriod): ContributionPeriod = repository.saveAndFlush(row).also(em::refresh)
 
+        // The existence query flushes the session first, which writes what the edit cascades (a new
+        // address on a user, say) before the merge; merging it unwritten fails on the lazy owner.
+        private fun rewritten(row: ContributionPeriod): ContributionPeriod {
+            val id = row.id
+            if (id == null || !repository.existsById(id)) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "ContributionPeriod not found with id: $id")
+            }
+            return written(row)
+        }
+
         @Transactional(readOnly = true)
         fun findById(id: Long): ContributionPeriod =
             repository.findById(id).orElseThrow {
@@ -54,7 +64,7 @@ class ContributionPeriodService
 
         @Transactional
         fun update(entity: ContributionPeriod): ContributionPeriod {
-            val saved = written(entity)
+            val saved = rewritten(entity)
             trackedEvents.publish { actor ->
                 ContributionPeriodChanged(
                     saved.id!!,

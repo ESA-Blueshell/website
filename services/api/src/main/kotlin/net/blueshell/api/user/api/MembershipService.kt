@@ -41,7 +41,7 @@ class MembershipService @Autowired constructor(
 
     @Transactional
     fun update(entity: Membership): Membership {
-        val saved = written(entity)
+        val saved = rewritten(entity)
         trackedEvents.publish { actor ->
             MembershipChanged(
                 saved.userId,
@@ -150,6 +150,16 @@ class MembershipService @Autowired constructor(
     private lateinit var em: EntityManager
 
     private fun written(row: Membership): Membership = repository.saveAndFlush(row).also(em::refresh)
+
+    // The existence query flushes the session first, which writes what the edit cascades (a new
+    // address on a user, say) before the merge; merging it unwritten fails on the lazy owner.
+    private fun rewritten(row: Membership): Membership {
+        val id = row.id
+        if (id == null || !repository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Membership not found with id: $id")
+        }
+        return written(row)
+    }
 
     @Transactional(readOnly = true)
     fun findById(id: Long): Membership =

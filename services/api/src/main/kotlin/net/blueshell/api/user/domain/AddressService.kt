@@ -19,6 +19,16 @@ class AddressService(
 
     private fun written(row: Address): Address = repository.saveAndFlush(row).also(em::refresh)
 
+    // The existence query flushes the session first, which writes what the edit cascades (a new
+    // address on a user, say) before the merge; merging it unwritten fails on the lazy owner.
+    private fun rewritten(row: Address): Address {
+        val id = row.id
+        if (id == null || !repository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Address not found with id: $id")
+        }
+        return written(row)
+    }
+
     @Transactional(readOnly = true)
     fun findById(id: Long): Address =
         repository.findById(id).orElseThrow {
@@ -29,5 +39,5 @@ class AddressService(
     fun findAll(): List<Address> = repository.findAll()
 
     @Transactional
-    fun update(address: Address): Address = written(address)
+    fun update(address: Address): Address = rewritten(address)
 }

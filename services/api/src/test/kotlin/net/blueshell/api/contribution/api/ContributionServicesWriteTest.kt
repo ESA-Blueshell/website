@@ -9,6 +9,7 @@ import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.contribution.persistence.ContributionRepository
+import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import org.assertj.core.api.Assertions.assertThat
@@ -61,13 +62,15 @@ class ContributionServicesWriteTest {
 
     @Test
     fun `a contribution is written back and removed, by itself or by its id`() {
-        val contribution = mock<Contribution>()
         val id = Contribution.Id(1, 2)
+        val contribution = mock<Contribution>().also { whenever(it.id).thenReturn(id) }
         val repository =
             mock<ContributionRepository> {
                 on { saveAndFlush(any<Contribution>()) } doAnswer { it.getArgument(0) }
             }
         whenever(repository.findById(id)).thenReturn(Optional.of(contribution))
+        whenever(repository.findById(Contribution.Id(1, 3))).thenReturn(Optional.empty())
+        whenever(repository.existsById(id)).thenReturn(true)
         val service = ContributionService(repository, mock(), mock(), mock<TrackedEventPublisher>()).withEntityManager()
 
         service.create(contribution)
@@ -77,6 +80,7 @@ class ContributionServicesWriteTest {
 
         verify(manager, times(2)).refresh(contribution)
         verify(repository, times(2)).delete(contribution)
+        assertThatThrownBy { service.findById(Contribution.Id(1, 3)) }.isInstanceOf(ResponseStatusException::class.java)
     }
 
     @Test
@@ -84,11 +88,19 @@ class ContributionServicesWriteTest {
         val reminders = mock<ContributionReminderRepository>()
         val reminder = mock<ContributionReminder>()
         whenever(reminders.findById(7)).thenReturn(Optional.of(reminder))
+        whenever(reminders.findById(9)).thenReturn(Optional.empty())
+        whenever(reminders.saveAndFlush(reminder)).thenReturn(reminder)
         val notifications = mock<IncassoNotificationRepository>()
+        val notification = mock<IncassoNotification>()
         whenever(notifications.findById(8)).thenReturn(Optional.empty())
+        whenever(notifications.findById(6)).thenReturn(Optional.of(notification))
+        val reminderService = ContributionReminderService(reminders, mock(), mock()).withEntityManager()
+        val notificationService = IncassoNotificationService(notifications, mock(), mock())
 
-        assertThat(ContributionReminderService(reminders, mock(), mock()).findById(7)).isSameAs(reminder)
-        assertThatThrownBy { IncassoNotificationService(notifications, mock(), mock()).findById(8) }
-            .isInstanceOf(ResponseStatusException::class.java)
+        assertThat(reminderService.findById(7)).isSameAs(reminder)
+        assertThat(reminderService.create(reminder)).isSameAs(reminder)
+        assertThatThrownBy { reminderService.findById(9) }.isInstanceOf(ResponseStatusException::class.java)
+        assertThat(notificationService.findById(6)).isSameAs(notification)
+        assertThatThrownBy { notificationService.findById(8) }.isInstanceOf(ResponseStatusException::class.java)
     }
 }

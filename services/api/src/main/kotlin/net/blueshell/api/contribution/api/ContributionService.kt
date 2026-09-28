@@ -29,6 +29,16 @@ class ContributionService
 
         private fun written(row: Contribution): Contribution = repository.saveAndFlush(row).also(em::refresh)
 
+        // The existence query flushes the session first, which writes what the edit cascades (a new
+        // address on a user, say) before the merge; merging it unwritten fails on the lazy owner.
+        private fun rewritten(row: Contribution): Contribution {
+            val id = row.id
+            if (id == null || !repository.existsById(id)) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Contribution not found with id: $id")
+            }
+            return written(row)
+        }
+
         @Transactional(readOnly = true)
         fun findById(id: Contribution.Id): Contribution =
             repository.findById(id).orElseThrow {
@@ -44,7 +54,7 @@ class ContributionService
 
         @Transactional
         fun update(entity: Contribution): Contribution {
-            val saved = written(entity)
+            val saved = rewritten(entity)
             publishChange(saved, ContributionChange.UPDATED)
             return saved
         }

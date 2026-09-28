@@ -19,6 +19,16 @@ class MemberProfileService(
 
     private fun written(row: MemberProfile): MemberProfile = repository.saveAndFlush(row).also(em::refresh)
 
+    // The existence query flushes the session first, which writes what the edit cascades (a new
+    // address on a user, say) before the merge; merging it unwritten fails on the lazy owner.
+    private fun rewritten(row: MemberProfile): MemberProfile {
+        val id = row.id
+        if (id == null || !repository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "MemberProfile not found with id: $id")
+        }
+        return written(row)
+    }
+
     @Transactional(readOnly = true)
     fun findById(id: Long): MemberProfile =
         repository.findById(id).orElseThrow {
@@ -26,5 +36,5 @@ class MemberProfileService(
         }
 
     @Transactional
-    fun update(profile: MemberProfile): MemberProfile = written(profile)
+    fun update(profile: MemberProfile): MemberProfile = rewritten(profile)
 }

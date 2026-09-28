@@ -4,9 +4,10 @@ import {
   seasonStops,
   seasonsIncluding,
 } from "@/domains/esports/island/seasonAxis"
+import {aSeason} from "../../helpers/apiFixtures"
 
 const season = (id: number, name: string, startDate: string) =>
-  ({id, name, startDate, endDate: startDate}) as never
+  aSeason({id, name, startDate, endDate: startDate})
 
 describe("seasonStops", () => {
   it("puts the oldest season at the left of the strip and the newest at the right", () => {
@@ -93,7 +94,7 @@ describe("seasonsIncluding", () => {
   })
 
   it("leaves a list that already carries it alone", () => {
-    const strip = seasonsIncluding(played, played[1])
+    const strip = seasonsIncluding(played, played[1] ?? null)
 
     expect(strip.map(one => one.id)).toEqual([1, 2])
   })

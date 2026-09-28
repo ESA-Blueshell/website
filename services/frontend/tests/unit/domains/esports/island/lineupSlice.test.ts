@@ -1,8 +1,9 @@
 import {describe, expect, it} from "vitest"
 import {lineupSliceOf} from "@/domains/esports/island/lineupSlice"
+import {aTeamRoster} from "../../../helpers/apiFixtures"
 
 const identity = {name: "Valorant", accent: "#ff4655", icon: "/icon.webp", banner: "/art.webp", srcset: "/art.webp 1280w", width: 1280, height: 720}
-const team = (id: number) => ({id, name: `Team ${id}`, members: []}) as never
+const team = (id: number) => aTeamRoster({id, name: `Team ${id}`})
 
 describe("a season's game as a slice", () => {
   it("names the game from its record and counts the teams it fielded", () => {

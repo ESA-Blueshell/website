@@ -14,15 +14,20 @@ import type {
   EventBannerResponse,
   EventResponse,
   EventSignUpResponse,
+  GameResponse,
   GuestResponse,
   Image,
   MemberProfileResponse,
   MembershipResponse,
   QuestionResponse,
+  RosterEntryResponse,
+  SeasonResponse,
   SurveyResponse,
+  TeamRosterResponse,
+  TeamResponse,
   UserDetailResponse,
 } from "@/services/api"
-import {EventSignUpKind, MemberType, QuestionType, Role} from "@/services/api"
+import {EventSignUpKind, MemberType, QuestionType, Role, TeamRole} from "@/services/api"
 
 const stamped = {createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", version: 0}
 
@@ -222,5 +227,47 @@ export const aCasualGame = (over: Partial<CasualGameResponse> = {}): CasualGameR
   inCompetition: false,
   channels: [],
   esportsChannels: [],
+  ...over,
+})
+
+export const aGame = (over: Partial<GameResponse> = {}): GameResponse => ({
+  code: "VALORANT",
+  name: "Valorant",
+  slug: "valorant",
+  sortIndex: 0,
+  current: true,
+  esportsChannels: [],
+  ...over,
+})
+
+export const aSeason = (over: Partial<SeasonResponse> = {}): SeasonResponse => ({
+  id: 19,
+  name: "Season 19",
+  startDate: "2026-09-01",
+  endDate: "2027-01-31",
+  played: false,
+  ...over,
+})
+
+export const aTeam = (over: Partial<TeamResponse> = {}): TeamResponse => ({
+  id: 1,
+  name: "BS Main",
+  ...over,
+})
+
+export const aRosterEntry = (over: Partial<RosterEntryResponse> = {}): RosterEntryResponse => ({
+  id: 1,
+  teamId: 1,
+  seasonId: 19,
+  handle: "ace",
+  role: TeamRole.PLAYER,
+  sortIndex: 0,
+  ...over,
+})
+
+export const aTeamRoster = (over: Partial<TeamRosterResponse> = {}): TeamRosterResponse => ({
+  id: 1,
+  name: "BS Waterboarders",
+  members: [],
   ...over,
 })

@@ -24,7 +24,16 @@
     "tests/unit/domains/committees/components/CommitteeEditor.test.ts",
     "tests/unit/domains/committees/components/CommitteePage.test.ts",
     "tests/unit/domains/games/components/CasualGamePage.test.ts",
-    "tests/unit/domains/games/components/GameEditor.test.ts"
+    "tests/unit/domains/games/components/GameEditor.test.ts",
+    "tests/unit/domains/esports/adapters/**/*.ts",
+    "tests/unit/domains/esports/seasonAxis.test.ts",
+    "tests/unit/domains/esports/island/useTeamToEdit.test.ts",
+    "tests/unit/domains/esports/island/useSeasonLineup.test.ts",
+    "tests/unit/domains/esports/island/lineupSlice.test.ts",
+    "tests/unit/domains/esports/composables/useEsportsPage.test.ts",
+    "tests/unit/domains/esports/island/LineupSource.test.ts",
+    "tests/unit/domains/esports/components/SeasonEditor.test.ts",
+    "tests/unit/domains/esports/components/TeamEditor.test.ts"
   ],
   "exclude": [
     "dist",

@@ -34,6 +34,10 @@ import {
   setGameAccount,
   uploadPublicImage,
 } from "@/services/api"
+import type {Image} from "@/services/api"
+import {FileType, TeamRole, type GameResponse} from "@/services/api"
+import {aGame, aSeason, aTeam} from "../../../helpers/apiFixtures"
+import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -55,7 +59,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 }))
 
 /** An image as the api answers with one: paths of its own, which the adapter has to resolve. */
-const picture = (path: string) => ({
+const picture = (path: string): Image => ({
   path,
   url: path,
   width: 1200,
@@ -71,20 +75,18 @@ beforeEach(() => {
 
 describe("loadGames", () => {
   it("answers with the games it read, drawn against the api rather than the page's own origin", async () => {
-    vi.mocked(findGames).mockResolvedValue({
-      data: [{code: "VAL", name: "Valorant", banner: picture("/media/val.png"), icon: null}],
-    } as never)
+    vi.mocked(findGames).mockResolvedValue(answer(findGames, [aGame({code: "VAL", name: "Valorant", banner: picture("/media/val.png"), icon: null})]))
 
     const [game] = await loadGames()
 
-    expect(game.banner?.url).toBe(apiUrl("/media/val.png"))
-    expect(game.banner?.renditions[0]?.url).toBe(apiUrl("/media/val.png?w=600"))
+    expect(game?.banner?.url).toBe(apiUrl("/media/val.png"))
+    expect(game?.banner?.renditions[0]?.url).toBe(apiUrl("/media/val.png?w=600"))
   })
 
   // Every page asks for this, including ones served before the api is reachable, so a body that
   // is not the list it was promised reads as no games rather than taking the navigation down.
   it("answers with no games at all where the body was not a list", async () => {
-    vi.mocked(findGames).mockResolvedValue({data: {message: "no"}} as never)
+    vi.mocked(findGames).mockResolvedValue(answer(findGames, {message: "no"} as unknown as GameResponse[]))
 
     await expect(loadGames()).resolves.toEqual([])
   })
@@ -97,7 +99,7 @@ describe("loadSeasonContents", () => {
   // Deliberate rather than an oversight: this answers zero where it could not read, so the offer
   // to remove says the season is empty.
   it("answers that the season holds nothing where the read failed", async () => {
-    vi.mocked(findSeasonContents).mockResolvedValue({error: {status: 500}, data: undefined} as never)
+    vi.mocked(findSeasonContents).mockResolvedValue(refusal(findSeasonContents, {status: 500}))
 
     await expect(loadSeasonContents(19)).resolves.toEqual({teams: 0, players: 0})
   })
@@ -105,9 +107,9 @@ describe("loadSeasonContents", () => {
 
 describe("storePicture", () => {
   it("answers with the whole image, every width of it drawn against the api", async () => {
-    vi.mocked(uploadPublicImage).mockResolvedValue({data: picture("/media/banner.png")} as never)
+    vi.mocked(uploadPublicImage).mockResolvedValue(answer(uploadPublicImage, picture("/media/banner.png")))
 
-    const stored = await storePicture(new File([], "banner.png"), "GAME_BANNER" as never)
+    const stored = await storePicture(new File([], "banner.png"), FileType.GAME_BANNER)
 
     expect(stored).toMatchObject({ok: true})
     expect((stored as {picture: {url: string}}).picture.url).toBe(apiUrl("/media/banner.png"))
@@ -115,26 +117,24 @@ describe("storePicture", () => {
 
   // "Something went wrong" does not tell somebody to pick another file.
   it("answers a refused upload in the api's own words", async () => {
-    vi.mocked(uploadPublicImage).mockResolvedValue({error: {detail: "That file is not an image."}} as never)
+    vi.mocked(uploadPublicImage).mockResolvedValue(refusal(uploadPublicImage, {detail: "That file is not an image."}))
 
-    await expect(storePicture(new File([], "notes.txt"), "GAME_BANNER" as never))
+    await expect(storePicture(new File([], "notes.txt"), FileType.GAME_BANNER))
       .resolves.toEqual({ok: false, reason: "That file is not an image."})
   })
 })
 
 describe("loadEsportsPage", () => {
   it("draws every team's art, and every person's, against the api", async () => {
-    vi.mocked(findGame).mockResolvedValue({
-      data: {
+    vi.mocked(findGame).mockResolvedValue(answer(findGame, {
         game: "VAL",
-        season: {id: 20},
+        season: aSeason({id: 20}),
         seasons: [],
         teams: [{
           id: 1, name: "BS Waterboarders", banner: picture("/media/team.png"), icon: null,
-          members: [{id: 5, handle: "nova", icon: picture("/media/nova.png")}],
+          members: [{handle: "nova", role: TeamRole.PLAYER, icon: picture("/media/nova.png")}],
         }],
-      },
-    } as never)
+      }))
 
     const page = await loadEsportsPage("VAL", 20)
 
@@ -143,7 +143,7 @@ describe("loadEsportsPage", () => {
   })
 
   it("asks about no season in particular where none was named, the api choosing one", async () => {
-    vi.mocked(findGame).mockResolvedValue({data: {game: "VAL", season: {id: 20}, seasons: [], teams: []}} as never)
+    vi.mocked(findGame).mockResolvedValue(answer(findGame, {game: "VAL", season: aSeason({id: 20}), seasons: [], teams: []}))
 
     await loadEsportsPage("VAL")
 
@@ -151,7 +151,7 @@ describe("loadEsportsPage", () => {
   })
 
   it("answers with nothing at all where there was no page", async () => {
-    vi.mocked(findGame).mockResolvedValue({error: {status: 404}, data: undefined} as never)
+    vi.mocked(findGame).mockResolvedValue(refusal(findGame, {status: 404}))
 
     await expect(loadEsportsPage("VAL", 20)).resolves.toBeNull()
   })
@@ -159,25 +159,23 @@ describe("loadEsportsPage", () => {
 
 describe("saveSeasonOrReason", () => {
   it("writes a season that has no id yet, and corrects one that has", async () => {
-    vi.mocked(createSeason).mockResolvedValue({data: {id: 21}} as never)
+    vi.mocked(createSeason).mockResolvedValue(answer(createSeason, aSeason({id: 21})))
 
     await expect(saveSeasonOrReason({name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}))
-      .resolves.toEqual({ok: true, season: {id: 21}})
+      .resolves.toEqual({ok: true, season: aSeason({id: 21})})
 
     expect(createSeason).toHaveBeenCalled()
   })
 
   it("answers with the api's own account of dates that overlap another season", async () => {
-    vi.mocked(createSeason).mockResolvedValue({
-      error: {code: "SeasonDatesOverlap", seasonName: "Spring 2025"},
-    } as never)
+    vi.mocked(createSeason).mockResolvedValue(refusal(createSeason, {code: "SeasonDatesOverlap", seasonName: "Spring 2025"}))
 
     await expect(saveSeasonOrReason({name: "Autumn 2025", startDate: "2025-01-01", endDate: "2026-01-31"}))
       .resolves.toEqual({ok: false, reason: "Those dates overlap Spring 2025."})
   })
 
   it("counts an answer carrying no season as a refusal, not as a write that landed", async () => {
-    vi.mocked(createSeason).mockResolvedValue({data: undefined} as never)
+    vi.mocked(createSeason).mockResolvedValue(emptyAnswer(createSeason))
 
     await expect(saveSeasonOrReason({name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}))
       .resolves.toEqual({ok: false, reason: "The season could not be saved."})
@@ -186,15 +184,13 @@ describe("saveSeasonOrReason", () => {
 
 describe("loadSeasonGames", () => {
   it("answers with each game the season ran, and whether a visitor sees it", async () => {
-    vi.mocked(findSeasonGames).mockResolvedValue({
-      data: [{game: "VAL", public: false, teams: [{id: 1, name: "BS Waterboarders", members: []}]}],
-    } as never)
+    vi.mocked(findSeasonGames).mockResolvedValue(answer(findSeasonGames, [{game: "VAL", public: false, teams: [{id: 1, name: "BS Waterboarders", members: []}]}]))
 
     await expect(loadSeasonGames(20)).resolves.toMatchObject([{game: "VAL", public: false}])
   })
 
   it("answers with no games where the read failed", async () => {
-    vi.mocked(findSeasonGames).mockResolvedValue({error: {status: 500}, data: undefined} as never)
+    vi.mocked(findSeasonGames).mockResolvedValue(refusal(findSeasonGames, {status: 500}))
 
     await expect(loadSeasonGames(20)).resolves.toEqual([])
   })
@@ -202,16 +198,14 @@ describe("loadSeasonGames", () => {
 
 describe("enterGameInSeason", () => {
   it("answers with the game entered, holding nobody until a team is fielded in it", async () => {
-    vi.mocked(enterGame).mockResolvedValue({data: {game: "VAL", public: false}} as never)
+    vi.mocked(enterGame).mockResolvedValue(answer(enterGame, {game: "VAL", public: false, teams: []}))
 
     await expect(enterGameInSeason(20, "VAL"))
       .resolves.toEqual({ok: true, entered: {game: "VAL", teams: [], public: false}})
   })
 
   it("answers with the api's account of why the entry was refused", async () => {
-    vi.mocked(enterGame).mockResolvedValue({
-      error: {code: "GameFieldedInSeason", gameName: "Valorant", teams: 2},
-    } as never)
+    vi.mocked(enterGame).mockResolvedValue(refusal(enterGame, {code: "GameFieldedInSeason", gameName: "Valorant", teams: 2}))
 
     const answer = await enterGameInSeason(20, "VAL")
 
@@ -220,7 +214,7 @@ describe("enterGameInSeason", () => {
   })
 
   it("counts an answer carrying no game as a refusal, not as an entry that landed", async () => {
-    vi.mocked(enterGame).mockResolvedValue({data: undefined} as never)
+    vi.mocked(enterGame).mockResolvedValue(emptyAnswer(enterGame))
 
     await expect(enterGameInSeason(20, "VAL"))
       .resolves.toEqual({ok: false, reason: "That game could not be put into the season."})
@@ -229,9 +223,7 @@ describe("enterGameInSeason", () => {
 
 describe("leaveGameInSeason", () => {
   it("answers with the api's account of the teams still in the season", async () => {
-    vi.mocked(leaveGame).mockResolvedValue({
-      error: {code: "GameFieldedInSeason", gameName: "Valorant", teams: 2},
-    } as never)
+    vi.mocked(leaveGame).mockResolvedValue(refusal(leaveGame, {code: "GameFieldedInSeason", gameName: "Valorant", teams: 2}))
 
     const answer = await leaveGameInSeason(20, "VAL")
 
@@ -241,7 +233,7 @@ describe("leaveGameInSeason", () => {
 
 describe("fieldTeamInSeason", () => {
   it("brings the line-up across from the fielding that was chosen", async () => {
-    vi.mocked(fieldTeam).mockResolvedValue({data: {team: {id: 7}}} as never)
+    vi.mocked(fieldTeam).mockResolvedValue(answer(fieldTeam, {team: aTeam({id: 7}), game: "VAL", season: aSeason({id: 20}), carried: []}))
 
     await fieldTeamInSeason(7, "VAL", 20, true, null, {game: "CS2", seasonId: 19})
 
@@ -252,7 +244,7 @@ describe("fieldTeamInSeason", () => {
   // Naming no banner leaves the art alone: a team is re-fielded to say it plays this season as
   // often as to change its picture.
   it("says nothing about the banner where none was named, rather than taking it away", async () => {
-    vi.mocked(fieldTeam).mockResolvedValue({data: {team: {id: 7}}} as never)
+    vi.mocked(fieldTeam).mockResolvedValue(answer(fieldTeam, {team: aTeam({id: 7}), game: "VAL", season: aSeason({id: 20}), carried: []}))
 
     await fieldTeamInSeason(7, "VAL", 20, false)
 
@@ -262,7 +254,7 @@ describe("fieldTeamInSeason", () => {
   // The body is what says the fielding happened; the roster writes that follow would otherwise
   // land on a fielding nobody confirmed.
   it("refuses a fielding the api answered with nothing at all", async () => {
-    vi.mocked(fieldTeam).mockResolvedValue({data: undefined} as never)
+    vi.mocked(fieldTeam).mockResolvedValue(emptyAnswer(fieldTeam))
 
     await expect(fieldTeamInSeason(7, "VAL", 20, false))
       .resolves.toEqual({ok: false, reason: "That team could not be fielded this season."})
@@ -271,35 +263,40 @@ describe("fieldTeamInSeason", () => {
 
 describe("addToRoster", () => {
   it("refuses an entry the api answered with nothing, so nobody is reported as put on", async () => {
-    vi.mocked(addRosterEntry).mockResolvedValue({data: undefined} as never)
+    vi.mocked(addRosterEntry).mockResolvedValue(emptyAnswer(addRosterEntry))
 
-    await expect(addToRoster(7, {game: "VAL", seasonId: 20, handle: "nova", role: "PLAYER"}))
+    await expect(addToRoster(7, {game: "VAL", seasonId: 20, handle: "nova", role: TeamRole.PLAYER}))
       .resolves.toEqual({ok: false, reason: "That person could not be put on the roster."})
   })
 })
 
 describe("loadTeams", () => {
   it("answers with no teams where the read failed, the pool being shared and read on every page", async () => {
-    vi.mocked(findTeams).mockResolvedValue({error: {status: 500}, data: undefined} as never)
+    vi.mocked(findTeams).mockResolvedValue(refusal(findTeams, {status: 500}))
 
     await expect(loadTeams()).resolves.toEqual([])
   })
 })
 
 describe("loadPlayedRosters", () => {
+  const played = {
+    teamId: 1, teamName: "Blue Shells", game: "VAL", role: TeamRole.PLAYER,
+    seasonId: 19, seasonName: "Season 19", seasonStart: "2026-09-01",
+  }
+
   it("answers with the roster spots a person held, or none where the read failed", async () => {
-    vi.mocked(findPlayedRosters).mockResolvedValueOnce({data: [{teamName: "Blue Shells"}]} as never)
-    await expect(loadPlayedRosters(5)).resolves.toEqual([{teamName: "Blue Shells"}])
+    vi.mocked(findPlayedRosters).mockResolvedValueOnce(answer(findPlayedRosters, [played]))
+    await expect(loadPlayedRosters(5)).resolves.toEqual([played])
     expect(findPlayedRosters).toHaveBeenCalledWith({path: {userId: 5}})
 
-    vi.mocked(findPlayedRosters).mockResolvedValueOnce({error: {status: 500}, data: undefined} as never)
+    vi.mocked(findPlayedRosters).mockResolvedValueOnce(refusal(findPlayedRosters, {status: 500}))
     await expect(loadPlayedRosters(5)).resolves.toEqual([])
   })
 })
 
 describe("loadGameAccounts", () => {
   it("answers with no handles where the read failed", async () => {
-    vi.mocked(findGameAccounts).mockResolvedValue({error: {status: 500}, data: undefined} as never)
+    vi.mocked(findGameAccounts).mockResolvedValue(refusal(findGameAccounts, {status: 500}))
 
     await expect(loadGameAccounts(5)).resolves.toEqual([])
   })
@@ -309,8 +306,8 @@ describe("a member's game handle", () => {
   // These two throw rather than answering a shrug: a discarded refusal left the handle looking
   // saved, with only the still-enabled button to hint otherwise.
   it("asks the sdk to throw, so the editor's own catch is the thing that reports a refusal", async () => {
-    vi.mocked(setGameAccount).mockResolvedValue({data: {game: "VAL", handle: "nova"}} as never)
-    vi.mocked(clearGameAccount).mockResolvedValue({data: undefined} as never)
+    vi.mocked(setGameAccount).mockResolvedValue(answer(setGameAccount, {id: 3, userId: 5, game: "VAL", handle: "nova"}))
+    vi.mocked(clearGameAccount).mockResolvedValue(emptyAnswer(clearGameAccount))
 
     await saveGameAccount(5, "VAL", "nova")
     await dropGameAccount(5, "VAL")

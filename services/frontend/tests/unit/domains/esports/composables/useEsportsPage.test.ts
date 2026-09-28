@@ -3,19 +3,20 @@ import {defineComponent, h, ref, type Ref} from "vue"
 import {mount} from "@vue/test-utils"
 import {useEsportsPage} from "@/domains/esports/composables/useEsportsPage"
 import {forgetSeasons} from "@/domains/esports/island/useSeasons"
-import {loadEsportsPage, loadSeasons, type EsportsPage} from "@/domains/esports/adapters/esports"
+import {loadEsportsPage, loadSeasons, type EsportsPage, type Season} from "@/domains/esports/adapters/esports"
 import {settle} from "../../../helpers/testUtils"
+import {aSeason} from "../../../helpers/apiFixtures"
 
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadEsportsPage: vi.fn(),
   loadSeasons: vi.fn(),
 }))
 
-const SPRING = {id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31"}
-const AUTUMN = {id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}
+const SPRING = aSeason({id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31"})
+const AUTUMN = aSeason({id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"})
 
-const pageAbout = (season: typeof SPRING): EsportsPage =>
-  ({game: "VAL", season, seasons: [SPRING, AUTUMN], teams: []}) as never
+const pageAbout = (season: Season): EsportsPage =>
+  ({game: "VAL", season, seasons: [SPRING, AUTUMN], teams: []})
 
 /**
  * A fresh game code per reading, the composable holding one set of answers per game for the life

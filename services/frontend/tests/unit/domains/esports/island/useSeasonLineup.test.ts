@@ -5,17 +5,18 @@ import {forgetSeasonLineups, useSeasonLineup} from "@/domains/esports/island/use
 import {forgetSeasons} from "@/domains/esports/island/useSeasons"
 import {loadSeasonGames, loadSeasons, type SeasonGame} from "@/domains/esports/adapters/esports"
 import {settle} from "../../../helpers/testUtils"
+import {aSeason, aTeamRoster} from "../../../helpers/apiFixtures"
 
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadSeasonGames: vi.fn(),
   loadSeasons: vi.fn(),
 }))
 
-const SPRING = {id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31", played: true}
-const AUTUMN = {id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31", played: false}
+const SPRING = aSeason({id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31", played: true})
+const AUTUMN = aSeason({id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31", played: false})
 
 const fielded = (game: string): SeasonGame =>
-  ({game, public: true, teams: [{id: 1, name: "BS Waterboarders", members: []}]}) as never
+  ({game, public: true, teams: [aTeamRoster()]})
 
 const open = async (route: Ref<number | null>) => {
   let api!: ReturnType<typeof useSeasonLineup>

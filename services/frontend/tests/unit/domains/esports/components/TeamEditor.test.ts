@@ -1,11 +1,13 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
-import {h} from "vue"
+import {defineComponent, h, type VNode} from "vue"
 import TeamEditor from "@/domains/esports/components/TeamEditor.vue"
 import {dropTeam, loadRoster, loadTeamSeasons, loadTeams, unfieldTeamFromSeason} from "@/domains/esports/adapters/esports"
 import {fieldExistingTeam, publishLineup} from "@/domains/esports/adapters/lineup"
 import {loadMemberAccounts} from "@/domains/user"
 import {settle} from "../../../helpers/testUtils"
+import {TeamRole} from "@/services/api"
+import {aRosterEntry, aSeason, aTeam} from "../../../helpers/apiFixtures"
 
 /**
  * The writes are the adapter's, and are proven there. What is left here is what the component
@@ -32,21 +34,21 @@ vi.mock("@/domains/esports/adapters/lineup", async (importOriginal) => ({
 
 vi.mock("@/domains/user", () => ({loadMemberAccounts: vi.fn()}))
 
-const season = {id: 3, name: "2025/26", startDate: "2025-09-01", endDate: "2026-08-31"}
+const season = aSeason({id: 3, name: "2025/26", startDate: "2025-09-01", endDate: "2026-08-31"})
 
 // The page shell is replaced by a pass-through: what is under test is what the editor puts
 // inside it, the form, its footer and its preview.
 const stubs = {
   EditPage: {
-    setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
+    setup: (_: unknown, {slots}: {slots: Record<string, (() => VNode[]) | undefined>}) =>
       () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()]),
   },
-  PreviewFrame: {setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) => () => h("div", slots["default"]?.())},
-  SliceBand: {
-    props: ["items"],
-    setup: (props: {items: unknown[]}, {slots}: {slots: Record<string, () => unknown>}) =>
+  PreviewFrame: {setup: (_: unknown, {slots}: {slots: Record<string, (() => VNode[]) | undefined>}) => () => h("div", slots["default"]?.())},
+  SliceBand: defineComponent({
+    props: {items: {type: Array, required: true}},
+    setup: (props, {slots}) =>
       () => h("div", {"data-testid": "preview-band"}, [JSON.stringify(props.items), slots["details"]?.()]),
-  },
+  }),
   ConfirmDialog: true,
   ImagePicker: true,
   SegmentedChoice: true,
@@ -72,8 +74,8 @@ const write = async (wrapper: Awaited<ReturnType<typeof openEditor>>, testid: st
 const memberSearch = (wrapper: Awaited<ReturnType<typeof openEditor>>, index: number) =>
   wrapper.findAllComponents({name: "SearchPicker"}).find(one => one.props("testidPrefix") === `lineup-search-${index}`)!
 
-const entry = (id: number, handle: string) => ({
-  id, handle, role: "PLAYER", sortIndex: id, userId: null, displayName: null,
+const entry = (id: number, handle: string) => aRosterEntry({
+  id, handle, sortIndex: id, userId: null, displayName: null,
   roleTitle: null, description: null, icon: null,
 })
 
@@ -98,7 +100,7 @@ describe("TeamEditor, fielding from a line-up that could not be read", () => {
   })
 
   const pickTeamThen = async (unread: boolean) => {
-    vi.mocked(loadTeams).mockResolvedValue([{id: 9, name: "Old squad"}] as never)
+    vi.mocked(loadTeams).mockResolvedValue([aTeam({id: 9, name: "Old squad"})])
     const wrapper = mount(TeamEditor, {
       props: {back: "/competition/valorant", gameName: "Valorant", game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
       global: {stubs},
@@ -160,7 +162,7 @@ describe("TeamEditor, fielding from a line-up that could not be read", () => {
 
 describe("TeamEditor, on a roster that could not be read", () => {
   it("shows the line-up it read, and offers to save it", async () => {
-    vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
+    vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")])
 
     const wrapper = await openEditor()
 
@@ -170,7 +172,7 @@ describe("TeamEditor, on a roster that could not be read", () => {
   })
 
   it("says nobody has played where the read came back empty", async () => {
-    vi.mocked(loadRoster).mockResolvedValue([] as never)
+    vi.mocked(loadRoster).mockResolvedValue([])
 
     const wrapper = await openEditor()
 
@@ -205,7 +207,7 @@ describe("TeamEditor, on a roster that could not be read", () => {
 
 describe("TeamEditor, on accounts that could not be read", () => {
   beforeEach(() => {
-    vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
+    vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")])
   })
 
   it("offers the search where the accounts were read", async () => {
@@ -228,7 +230,7 @@ describe("TeamEditor, on accounts that could not be read", () => {
 /** One request stands behind a Save, and the api applies it whole or not at all. */
 describe("TeamEditor, when the publish is refused", () => {
   beforeEach(() => {
-    vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
+    vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")])
   })
 
   it("does not report the line-up saved, and says why in the api's words", async () => {
@@ -247,8 +249,8 @@ describe("TeamEditor, as a page", () => {
   beforeEach(() => {
     vi.mocked(loadRoster).mockResolvedValue([
       {...entry(1, "nova"), roleTitle: "IGL"},
-      {...entry(2, "coach"), role: "COACH"},
-    ] as never)
+      {...entry(2, "coach"), role: TeamRole.COACH},
+    ])
   })
 
   it("previews the team's slice and its line-up as typed, and saves and leaves", async () => {
@@ -283,7 +285,7 @@ describe("TeamEditor, as a page", () => {
     ["deleting the team", "lineup-remove-team", "team-remove-dialog"],
     ["taking it out of this season", "lineup-drop-from-season", "team-drop-dialog"],
   ])("leaves once %s is confirmed", async (_, button, dialog) => {
-    vi.mocked(loadTeamSeasons).mockResolvedValue([] as never)
+    vi.mocked(loadTeamSeasons).mockResolvedValue([])
     vi.mocked(dropTeam).mockResolvedValue({ok: true})
     vi.mocked(unfieldTeamFromSeason).mockResolvedValue({ok: true})
     const wrapper = await openEditor()
@@ -304,8 +306,8 @@ describe("TeamEditor, one line-up card at a time", () => {
     vi.mocked(loadRoster).mockResolvedValue([
       {...entry(1, "nova"), userId: 2},
       {...entry(2, "vex")},
-    ] as never)
-    vi.mocked(loadMemberAccounts).mockResolvedValue([{id: 2, name: "Nova Vos", email: null}, {id: 3, name: "Vex", email: null}] as never)
+    ])
+    vi.mocked(loadMemberAccounts).mockResolvedValue([{id: 2, name: "Nova Vos", email: null}, {id: 3, name: "Vex", email: null}])
   })
 
   const handles = (wrapper: Awaited<ReturnType<typeof openEditor>>) =>
@@ -330,7 +332,7 @@ describe("TeamEditor, one line-up card at a time", () => {
     await wrapper.get("[data-testid=lineup-save]").trigger("click")
     await settle()
 
-    const rows = vi.mocked(publishLineup).mock.calls[0]![0].entries as Array<Record<string, unknown>>
+    const rows = vi.mocked(publishLineup).mock.calls[0]![0].entries
     expect(rows[1]).toMatchObject({handle: "vex", role: "COACH", roleTitle: "Analyst", displayName: "Vex V", description: "Reads the *map*."})
     expect(JSON.stringify(rows[1])).toContain("i.webp")
   })
@@ -351,7 +353,7 @@ describe("TeamEditor, one line-up card at a time", () => {
   })
 
   it("asks an adding editor which kind of team first", async () => {
-    vi.mocked(loadTeams).mockResolvedValue([] as never)
+    vi.mocked(loadTeams).mockResolvedValue([])
     const wrapper = mount(TeamEditor, {
       props: {back: "/competition/valorant", gameName: "Valorant", game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
       global: {stubs},

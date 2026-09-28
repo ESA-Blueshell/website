@@ -3,6 +3,7 @@ import {mount} from "@vue/test-utils"
 import LineupSource from "@/domains/esports/island/LineupSource.vue"
 import {loadRoster, loadTeamSeasons, loadTeams} from "@/domains/esports/adapters/esports"
 import {settle} from "../../../helpers/testUtils"
+import {aRosterEntry, aSeason, aTeam} from "../../../helpers/apiFixtures"
 
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadRoster: vi.fn(),
@@ -10,8 +11,8 @@ vi.mock("@/domains/esports/adapters/esports", () => ({
   loadTeams: vi.fn(),
 }))
 
-const team = {id: 7, name: "Blueshell"}
-const fielding = {game: "VAL", season: {id: 2, name: "2024/25", startDate: "2024-09-01", endDate: "2025-08-31"}}
+const team = aTeam({id: 7, name: "Blueshell"})
+const fielding = {game: "VAL", season: aSeason({id: 2, name: "2024/25", startDate: "2024-09-01", endDate: "2025-08-31"})}
 
 const open = async () => {
   const wrapper = mount(LineupSource, {
@@ -24,14 +25,12 @@ const open = async () => {
 
 describe("LineupSource", () => {
   beforeEach(() => {
-    vi.mocked(loadTeams).mockResolvedValue([team] as never)
-    vi.mocked(loadTeamSeasons).mockResolvedValue([fielding] as never)
+    vi.mocked(loadTeams).mockResolvedValue([team])
+    vi.mocked(loadTeamSeasons).mockResolvedValue([fielding])
   })
 
   it("offers the people it read", async () => {
-    vi.mocked(loadRoster).mockResolvedValue([
-      {id: 1, handle: "nova", role: "PLAYER", sortIndex: 0, displayName: null},
-    ] as never)
+    vi.mocked(loadRoster).mockResolvedValue([aRosterEntry({id: 1, handle: "nova", displayName: null})])
 
     const wrapper = await open()
 
@@ -52,7 +51,7 @@ describe("LineupSource", () => {
   })
 
   it("carries nobody, and says nothing, from a line-up that really is empty", async () => {
-    vi.mocked(loadRoster).mockResolvedValue([] as never)
+    vi.mocked(loadRoster).mockResolvedValue([])
 
     const wrapper = await open()
 
@@ -63,7 +62,7 @@ describe("LineupSource", () => {
   })
 
   it("offers every team to start from where none is settled, and reads the picked one's line-up", async () => {
-    vi.mocked(loadRoster).mockResolvedValue([{id: 1, handle: "nova", role: "PLAYER", sortIndex: 0, displayName: "Nova V"}] as never)
+    vi.mocked(loadRoster).mockResolvedValue([aRosterEntry({id: 1, handle: "nova", displayName: "Nova V"})])
     const wrapper = mount(LineupSource, {props: {game: "VAL", seasonId: 3}, global: {stubs: {SearchPicker: true}}})
     await settle()
     const teams = wrapper.findAllComponents({name: "SearchPicker"}).find(one => one.props("testidPrefix") === "lineup-source-team")!
@@ -78,7 +77,7 @@ describe("LineupSource", () => {
   })
 
   it("lets anybody offered be dropped and taken back before the line-up is carried", async () => {
-    vi.mocked(loadRoster).mockResolvedValue([{id: 1, handle: "nova", role: "PLAYER", sortIndex: 0, displayName: null}] as never)
+    vi.mocked(loadRoster).mockResolvedValue([aRosterEntry({id: 1, handle: "nova", displayName: null})])
     const wrapper = await open()
     const box = wrapper.get('[data-testid="lineup-source-person-1"] input')
 

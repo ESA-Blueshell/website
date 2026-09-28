@@ -1,7 +1,9 @@
 package net.blueshell.api.event.domain
 
+import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventRepository
@@ -35,6 +37,7 @@ import java.time.Instant
 @Profile("dev")
 class ShippedDevEvents(
     private val committees: CommitteeService,
+    private val committeeMembers: CommitteeMemberService,
     private val events: EventRepository,
     private val files: FileService,
     private val users: UserService,
@@ -88,7 +91,7 @@ class ShippedDevEvents(
     }
 
     /**
-     * The committees the events are hung on.
+     * The committees the events are hung on, with the development accounts the file seats on them.
      *
      * One already in the database is taken as it stands: the name is unique, so writing it
      * again is refused rather than merged.
@@ -99,9 +102,26 @@ class ShippedDevEvents(
             val name = row.getValue(NAME)
             name to (
                 held[name] ?: transactions.execute {
-                    committees.create(Committee(name = name, description = row[DESCRIPTION].orEmpty()))
+                    committees.create(Committee(name = name, description = row[DESCRIPTION].orEmpty())).also { committee ->
+                        seat(committee, row[MEMBERS].orEmpty())
+                    }
                 }
             )
+        }
+    }
+
+    /**
+     * `username[:role]` entries separated by `;`. An account the database does not have is left
+     * out, the way a missing committee leaves an event without one.
+     */
+    private fun seat(
+        committee: Committee,
+        members: String,
+    ) {
+        members.split(';').map { it.trim() }.filter { it.isNotEmpty() }.forEach { entry ->
+            val user = runCatching { users.findByUsername(entry.substringBefore(':')) }.getOrNull() ?: return@forEach
+            val role = entry.substringAfter(':', "").ifBlank { null }
+            committeeMembers.create(CommitteeMember(committee = committee, user = user, role = role))
         }
     }
 
@@ -154,6 +174,7 @@ class ShippedDevEvents(
     private companion object {
         val log = LoggerFactory.getLogger(ShippedDevEvents::class.java)
         const val NAME = "name"
+        const val MEMBERS = "members"
         const val DESCRIPTION = "description"
         const val COMMITTEE = "committee"
         const val TITLE = "title"

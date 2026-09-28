@@ -1,8 +1,10 @@
 package net.blueshell.api.event.domain
 
+import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.file.api.FileService
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
@@ -18,13 +20,15 @@ import org.springframework.beans.factory.annotation.Autowired
 class ShippedDevEventsIT : UserTestSupport() {
     @Autowired private lateinit var committees: CommitteeService
 
+    @Autowired private lateinit var committeeMembers: CommitteeMemberService
+
     @Autowired private lateinit var events: EventRepository
 
     @Autowired private lateinit var files: FileService
 
     @Autowired private lateinit var users: UserService
 
-    private fun loader() = ShippedDevEvents(committees, events, files, users, transactionTemplate)
+    private fun loader() = ShippedDevEvents(committees, committeeMembers, events, files, users, transactionTemplate)
 
     @Test
     fun `the events the seed names are written with the committees they were run by`() {
@@ -35,6 +39,23 @@ class ShippedDevEventsIT : UserTestSupport() {
         assertThat(events.count()).isEqualTo(applied.events.toLong())
         assertThat(transactionTemplate.execute { events.findAll().count { it.committee != null } })
             .isEqualTo(applied.events)
+    }
+
+    @Test
+    fun `a committee the seed names seats the development accounts the database has`() {
+        userRepository.save(createUserWithRole(Role.COMMITTEE).apply { username = "committee" })
+
+        loader().apply()
+
+        val seated =
+            transactionTemplate.execute {
+                committees
+                    .findAll()
+                    .single { it.name == "SiteCie" }
+                    .members
+                    .map { it.user.username to it.role }
+            }
+        assertThat(seated).containsExactly("committee" to "Chair")
     }
 
     @Test

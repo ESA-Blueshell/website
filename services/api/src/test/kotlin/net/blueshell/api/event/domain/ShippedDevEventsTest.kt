@@ -1,7 +1,9 @@
 package net.blueshell.api.event.domain
 
+import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.file.api.FileService
@@ -32,6 +34,7 @@ import org.springframework.transaction.support.TransactionTemplate
  */
 class ShippedDevEventsTest {
     private val committees = mock<CommitteeService>()
+    private val committeeMembers = mock<CommitteeMemberService>()
     private val events = mock<EventRepository>()
     private val files = mock<FileService>()
     private val users = mock<UserService>()
@@ -44,7 +47,7 @@ class ShippedDevEventsTest {
         whenever(manager.getTransaction(any())).thenReturn(mock<TransactionStatus>())
     }
 
-    private val loader = ShippedDevEvents(committees, events, files, users, transactions)
+    private val loader = ShippedDevEvents(committees, committeeMembers, events, files, users, transactions)
 
     private val rows = EventSeed.files.rows(EventSeed.EVENTS)
     private val named = EventSeed.files.rows(EventSeed.COMMITTEES)
@@ -66,6 +69,21 @@ class ShippedDevEventsTest {
 
         assertThat(applied).isEqualTo(ShippedDevEvents.Applied(named.size, rows.size, drawn))
         verify(events, times(rows.size)).save(any())
+    }
+
+    @Test
+    fun `seats the development accounts the file names, with their roles, and skips one the database lacks`() {
+        database()
+        val cas = mock<User>()
+        whenever(users.findByUsername("committee")).thenReturn(cas)
+        whenever(users.findByUsername("member.paid")).thenThrow(IllegalStateException("no such account"))
+
+        loader.apply()
+
+        val seated = argumentCaptor<CommitteeMember>()
+        verify(committeeMembers, times(2)).create(seated.capture())
+        val siteCie = seated.allValues.filter { it.committee.name == "SiteCie" }
+        assertThat(siteCie.map { it.user to it.role }).containsExactly(cas to "Chair")
     }
 
     @Test

@@ -47,6 +47,36 @@ export interface Stop {
  */
 export type BandDirection = "past" | "future" | "same"
 
+/** A stop's id, as the strip and the band carry it. */
+export type StopId = string | number
+
+/**
+ * Which way [to] lies from [from] along [order], the stops' ids oldest first.
+ *
+ * Null where either is not on the line, so a caller can ask again of a line that still holds both.
+ * The same stop is "same", which is also what a page arriving for the first time travels.
+ */
+export function directionAlong(order: readonly StopId[], from: StopId | null, to: StopId | null): BandDirection | null {
+  if (from == null || to == null) return "same"
+  const a = order.indexOf(from)
+  const b = order.indexOf(to)
+  if (a < 0 || b < 0) return null
+  return b < a ? "past" : b > a ? "future" : "same"
+}
+
+/** The stops either side of one, or null where the line ends there. */
+export interface StopsBeside {
+  past: StopId | null
+  future: StopId | null
+}
+
+/** Which stops lie either side of [on] along [order]; a stop not on the line has no sides. */
+export function stopsBeside(order: readonly StopId[], on: StopId | null): StopsBeside {
+  const at = on == null ? -1 : order.indexOf(on)
+  if (at < 0) return {past: null, future: null}
+  return {past: order[at - 1] ?? null, future: order[at + 1] ?? null}
+}
+
 /**
  * How a stop came to be the one being read, which decides whether the strip travels to it.
  *

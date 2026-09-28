@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {bands, litAt, STRIP, stripAxis, type Stop} from "@/components/island/stripAxis"
+import {bands, directionAlong, litAt, STRIP, stopsBeside, stripAxis, type Stop} from "@/components/island/stripAxis"
 
 /**
  * The stops arrive in the order they are to be read: what makes one older than another is
@@ -227,5 +227,34 @@ describe("stripAxis", () => {
 
     expect(strip.path).toBe("")
     expect(strip.nodes).toEqual([])
+  })
+})
+
+describe("directionAlong", () => {
+  const order = [3, 7, 9]
+
+  it("reads which way one stop lies from another by where they stand on the line", () => {
+    expect(directionAlong(order, 7, 3)).toBe("past")
+    expect(directionAlong(order, 7, 9)).toBe("future")
+    expect(directionAlong(order, 7, 7)).toBe("same")
+  })
+
+  it("travels nowhere from nowhere, and does not guess for a stop off the line", () => {
+    expect(directionAlong(order, null, 9)).toBe("same")
+    expect(directionAlong(order, 7, null)).toBe("same")
+    expect(directionAlong(order, 7, 4)).toBeNull()
+  })
+})
+
+describe("stopsBeside", () => {
+  it("offers the stops either side, and nothing past either end", () => {
+    expect(stopsBeside(["a", "b", "c"], "b")).toEqual({past: "a", future: "c"})
+    expect(stopsBeside(["a", "b", "c"], "a")).toEqual({past: null, future: "b"})
+    expect(stopsBeside(["a", "b", "c"], "c")).toEqual({past: "b", future: null})
+  })
+
+  it("gives a stop off the line, or none at all, no sides", () => {
+    expect(stopsBeside(["a", "b"], "z")).toEqual({past: null, future: null})
+    expect(stopsBeside(["a", "b"], null)).toEqual({past: null, future: null})
   })
 })

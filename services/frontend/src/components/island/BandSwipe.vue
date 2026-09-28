@@ -3,7 +3,7 @@ import {computed, nextTick, onBeforeUnmount, onScopeDispose, ref, watch} from "v
 import {AnimatePresence, Motion} from "motion-v"
 import {provideTravelling} from "./bandTravel"
 import {commits, directionOf, DRAG, follow, paceOf} from "./dragAxis"
-import type {BandDirection} from "./stripAxis"
+import {directionAlong, stopsBeside, type BandDirection, type StopId, type StopsBeside} from "./stripAxis"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 defineOptions({name: "BandSwipe"})
@@ -22,23 +22,12 @@ const props = withDefaults(defineProps<{
    */
   stop: string | number | null
   /**
-   * Which way this change travels, which the domain works out.
+   * Every stop a finger may travel to, as ids, oldest first: the strip's own order.
    *
-   * Which of two stops is later is knowledge about what the stops are, which the island does
-   * not have: it draws the pass, the way the strip takes stops it cannot order for itself.
+   * Which way a change travels and which stops lie either side are read off this by index. A band
+   * handed none does not drag, which is how a page with no neighbours to offer opts out.
    */
-  direction?: BandDirection
-  /**
-   * The stops either side of the one showing, back down the line and on up it, which the domain
-   * works out for the same reason the direction is.
-   *
-   * They are what makes a drag possible at all: the one the finger is heading for is drawn beside
-   * the one showing for the length of the gesture, and where there is none that way the band
-   * leans and springs home instead. A band handed neither is a band that does not drag, which is
-   * how a page that has no neighbours to offer opts out by saying nothing.
-   */
-  past?: string | number | null
-  future?: string | number | null
+  stops?: readonly StopId[]
   /**
    * A stop the page has just said is not coming, which releases a committed gesture waiting on it.
    *
@@ -48,7 +37,7 @@ const props = withDefaults(defineProps<{
    */
   refused?: string | number | null
   testid?: string
-}>(), {direction: "same", past: null, future: null, refused: null, testid: "band-swipe"})
+}>(), {stops: () => [], refused: null, testid: "band-swipe"})
 
 /**
  * A committed gesture asks the page to travel; it does not travel by itself.
@@ -62,7 +51,7 @@ const props = withDefaults(defineProps<{
  */
 const emit = defineEmits<{
   (event: "travel", stop: string | number): void
-  (event: "reaching"): void
+  (event: "reaching", stops: StopId[]): void
 }>()
 
 const motion = useMotionAllowed()
@@ -118,6 +107,20 @@ const travel = (going: boolean) => {
 }
 
 const shell = ref<HTMLElement | null>(null)
+
+/**
+ * Which way the stop last changed. Set before the change renders, since it decides which side the
+ * arriving contents come from. A stop off the line now, such as a season a page stood on without
+ * listing it, is placed by the line it was on.
+ */
+const direction = ref<BandDirection>("same")
+let shownStop: StopId | null = props.stop
+let shownStops: readonly StopId[] = props.stops
+watch(() => props.stop, (next) => {
+  direction.value = directionAlong(props.stops, shownStop, next) ?? directionAlong(shownStops, shownStop, next) ?? "same"
+  shownStop = next
+  shownStops = props.stops
+})
 
 /**
  * The page held at the leaving stop's height for the length of a pass, then let go in one step.
@@ -181,8 +184,8 @@ const played = ref(false)
  * and brings the older stop in from the left. Forward is the mirror of it.
  */
 const offset = (edge: "in" | "out"): string => {
-  if (mode.value === "fade" || props.direction === "same" || played.value) return "0%"
-  const back = props.direction === "past"
+  if (mode.value === "fade" || direction.value === "same" || played.value) return "0%"
+  const back = direction.value === "past"
   return (edge === "in") === back ? "-100%" : "100%"
 }
 
@@ -194,7 +197,7 @@ const offset = (edge: "in" | "out"): string => {
  * change a finger has already carried across the screen.
  */
 const crossing = () => ({
-  duration: props.direction === "same" || played.value ? 0 : motion.duration(TRAVEL_S),
+  duration: direction.value === "same" || played.value ? 0 : motion.duration(TRAVEL_S),
   ease: EASE,
 })
 
@@ -293,12 +296,27 @@ if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
 }
 
 /**
+ * The stops either side of the one in the window: the one a waiting gesture asked for where there
+ * is one, since the track holds it on screen, and otherwise the one drawn.
+ */
+const besideShown = computed(() => stopsBeside(props.stops, asked.value ?? props.stop))
+
+/**
+ * The sides a gesture steps to, taken as it claims the axis and before it supersedes a waiting
+ * one: stepping from the drawn stop instead made a second swipe skip the stop the reader could see.
+ */
+let stepping: StopsBeside = {past: null, future: null}
+
+/**
  * Whether this band drags at all: a finger, and somewhere for it to go.
  *
  * A page that names neither neighbour has said it has none to offer, and the gesture stays out
  * of its way entirely — no track, no claim on the axis, no press swallowed.
  */
-const armed = computed(() => coarse.value && (props.past != null || props.future != null))
+const armed = computed(() => {
+  const {past, future} = besideShown.value
+  return coarse.value && (past != null || future != null)
+})
 
 /** The neighbouring stop drawn beside the one showing, for the length of a gesture. */
 const beside = ref<string | number | null>(null)
@@ -342,8 +360,8 @@ const place = () => {
 watch([reach, asideAt, holding, aside, arriving], place, {flush: "sync"})
 
 const neighbour = (way: BandDirection): string | number | null => {
-  if (way === "past") return props.past ?? null
-  if (way === "future") return props.future ?? null
+  if (way === "past") return stepping.past
+  if (way === "future") return stepping.future
   return null
 }
 
@@ -464,6 +482,7 @@ const drag = (event: PointerEvent) => {
     claimed = true
     // Only now, rather than on the press: a press that turned out to be a tap has taken nothing
     // over, and the stop a waiting gesture asked for is still the one the visitor is looking at.
+    stepping = besideShown.value
     if (asked.value != null) supersede()
     across = shell.value?.clientWidth || window.innerWidth
     cap = leanCap()
@@ -473,7 +492,7 @@ const drag = (event: PointerEvent) => {
     // neighbours every time a thumb touched a slice would fetch for visitors who never travel.
     // This is the first moment the gesture is a gesture, and it is still a quarter of a screen
     // away from being a committed one.
-    emit("reaching")
+    emit("reaching", [stepping.past, stepping.future].filter((stop): stop is StopId => stop != null))
     // So the gesture keeps its events when the finger wanders off the band, which on a page
     // this tall it does: an arrival is a whole width away and the band is not a whole width tall.
     shell.value?.setPointerCapture(event.pointerId)
@@ -629,7 +648,7 @@ watch(() => props.stop, () => {
   const arrived = asked.value != null && props.stop === asked.value
   played.value = arrived
   asked.value = null
-  const going = !arrived && props.direction !== "same"
+  const going = !arrived && direction.value !== "same"
 
   if (arrived) {
     // Still travelling until the track is put away: the band is not standing where it rests yet.

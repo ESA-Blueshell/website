@@ -24,7 +24,7 @@ const seasons = [{id: 3, name: "Autumn 2025", startDate: "2025-09-01", endDate: 
 vi.mock("@/domains/esports/island/useSeasons", () => ({useSeasons: () => ({seasons: ref(seasons)})}))
 vi.mock("@/composables/useIsBoard", () => ({useIsBoard: () => ref(true)}))
 vi.mock("@/components/island/useSwipeArrival", () => ({
-  useSwipeArrival: () => ({arrival: ref(null), asked: ref(null), pending: ref(false), refused: ref(false), travelTo: vi.fn()}),
+  useSwipeArrival: () => ({arrival: ref(null), asked: ref(null), refused: ref(false), travelTo: vi.fn()}),
 }))
 vi.mock("@/domains/esports/composables/useEsportsPage", () => ({
   useEsportsPage: () => ({

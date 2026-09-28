@@ -47,7 +47,7 @@ const seasonFromRoute = () => seasonInRoute(route)
  * than the read, since the sdk hands a refusal back as a body rather than throwing — so either way
  * what the gesture waits on is an arrival.
  */
-const {arrival, asked, pending, refused, travelTo} = useSwipeArrival({
+const {arrival, asked, refused, travelTo} = useSwipeArrival({
   inRoute: seasonFromRoute,
   following: () => chosen.value,
   reach: async (id) => {
@@ -282,7 +282,6 @@ const carried = ref<number | null>(null)
           season at a time and the one being dragged in does not exist until somebody asks.
         -->
         <season-swipe
-          :pending="pending"
           :refused="refused"
           :season="season"
           :seasons="stripSeasons"

@@ -22,7 +22,7 @@ afterEach(() => {
 })
 
 const mountBand = (props: Record<string, unknown>) => mount(BandSwipe, {
-  props: {stop: 2, past: 1, future: 3, testid: "swipe", ...props},
+  props: {stop: 2, stops: [1, 2, 3], testid: "swipe", ...props},
   slots: {default: `<template #default="{stop}"><p class="stop">Stop {{ stop }}</p></template>`},
   attachTo: document.body,
 })
@@ -42,22 +42,29 @@ describe("a band dragged under a finger", () => {
     expect(carried.style.transform).toBe("translate3d(calc(100px + 0px), 0, 0)")
     expect(aside.style.transform).toBe("translate3d(calc(100px + -100%), 0, 0)")
     expect(aside.textContent).toBe("Stop 1")
+    expect(wrapper.emitted("reaching")).toEqual([[[1, 3]]])
     wrapper.unmount()
   })
 
   it("puts the track away at once where the page answers with the stop it already shows", async () => {
-    const wrapper = mountBand({past: 2})
+    const wrapper = mountBand({})
     const shell = wrapper.get("[data-testid=swipe]").element
+    const swipe = async (from: number, to: number) => {
+      pointer(shell, "pointerdown", from)
+      pointer(shell, "pointermove", from + Math.sign(to - from) * 40)
+      await flushPromises()
+      pointer(shell, "pointermove", to)
+      pointer(shell, "pointerup", to)
+      await flushPromises()
+      await flushPromises()
+    }
 
-    pointer(shell, "pointerdown", 100)
-    pointer(shell, "pointermove", 140)
-    await flushPromises()
-    pointer(shell, "pointermove", 900)
-    pointer(shell, "pointerup", 900)
-    await flushPromises()
-    await flushPromises()
+    // Back to 1, which the page has not answered yet; then on again from 1, which is 2, the stop
+    // still drawn behind it.
+    await swipe(100, 900)
+    await swipe(900, 100)
 
-    expect(wrapper.emitted("travel")).toEqual([[2]])
+    expect(wrapper.emitted("travel")).toEqual([[1], [2]])
     expect(wrapper.find(".band-swipe__aside").exists()).toBe(false)
     expect((wrapper.get(".band-swipe__carried").element as HTMLElement).style.transform).toBe("")
     expect((shell as HTMLElement).style.height).toBe("")
@@ -81,7 +88,7 @@ describe("a committed gesture", () => {
     expect(wrapper.emitted("travel")).toEqual([[1]])
     expect(shell.style.height).toBe("480px")
 
-    await wrapper.setProps({stop: 1, past: null, future: 2})
+    await wrapper.setProps({stop: 1})
     await flushPromises()
     expect(shell.style.height).toBe("")
     wrapper.unmount()
@@ -95,7 +102,7 @@ describe("a pass from one stop to the next", () => {
     const shell = wrapper.get("[data-testid=swipe]").element as HTMLElement
     Object.defineProperty(shell, "offsetHeight", {configurable: true, get: () => 640})
 
-    await wrapper.setProps({stop: 1, direction: "past"})
+    await wrapper.setProps({stop: 1})
     expect(shell.style.height).toBe("640px")
 
     vi.advanceTimersByTime(2000)
@@ -104,11 +111,22 @@ describe("a pass from one stop to the next", () => {
     vi.useRealTimers()
   })
 
+  it("reads the way of a pass off the line the leaving stop was on, where it has left the line", async () => {
+    const wrapper = mountBand({stop: 3})
+    const shell = wrapper.get("[data-testid=swipe]").element as HTMLElement
+    Object.defineProperty(shell, "offsetHeight", {configurable: true, get: () => 640})
+
+    // A season a page stood on without listing it drops off the line as the page moves on.
+    await wrapper.setProps({stop: 1, stops: [1, 2]})
+    expect(shell.style.height).toBe("640px")
+    wrapper.unmount()
+  })
+
   it("holds nothing where the stop is answered afresh rather than travelled to", async () => {
     const wrapper = mountBand({})
     const shell = wrapper.get("[data-testid=swipe]").element as HTMLElement
 
-    await wrapper.setProps({stop: 3})
+    await wrapper.setProps({stop: 9})
     expect(shell.style.height).toBe("")
     wrapper.unmount()
   })

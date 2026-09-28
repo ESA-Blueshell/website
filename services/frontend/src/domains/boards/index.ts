@@ -8,7 +8,7 @@
  * with `export *`, because the list of names is the promise.
  */
 export {academicYear, boardEyebrow, boardName, romanNumeral} from "./reading"
-export {boardStops, boardsEitherSide, type BoardsEitherSide, travelBetween, type Stopped} from "./boardAxis"
+export {boardStops, type Stopped} from "./boardAxis"
 export {boardInRoute} from "./boardInRoute"
 export {
   type BoardStanding,

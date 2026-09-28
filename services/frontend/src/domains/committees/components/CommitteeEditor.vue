@@ -30,7 +30,8 @@ import {
   storeCommitteeIcon,
 } from "../adapters/committees"
 import CommitteeSeats, {type Seat} from "../island/CommitteeSeats.vue"
-import {cellOf, initialsOf} from "../useCommittees"
+import {cellOf} from "../useCommittees"
+import {initialsOf} from "@/utils/initials"
 import {BRAND_ACCENT} from "@/utils/brand"
 
 /**

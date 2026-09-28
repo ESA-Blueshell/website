@@ -10,5 +10,5 @@ export {
   saveGameOrganisers,
   type Committee,
 } from "./adapters/committees"
-export {cellOf, driftItemOf, forgetCommittees, initialsOf, openingLineOf, reelItemOf, useCommittees} from "./useCommittees"
+export {cellOf, driftItemOf, forgetCommittees, openingLineOf, reelItemOf, useCommittees} from "./useCommittees"
 export {useCommitteeRights} from "./island/useCommitteeRights"

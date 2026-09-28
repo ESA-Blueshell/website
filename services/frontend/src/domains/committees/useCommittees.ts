@@ -5,17 +5,7 @@ import type {ReelItem} from "@/components/island/FlickReel.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {loadCommittees, type Committee} from "./adapters/committees"
 import {BRAND_ACCENT} from "@/utils/brand"
-
-/** A committee's plate letters where it has no banner: the first of its first two words. */
-export function initialsOf(name: string): string {
-  return name
-    .replace(/[^\p{L}\p{N}\s]/gu, "")
-    .split(/\s+/u)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(word => word.charAt(0).toUpperCase())
-    .join("")
-}
+import {initialsOf} from "@/utils/initials"
 
 /**
  * The first line of a committee's description with its markdown and emoji codes taken out, cut

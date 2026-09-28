@@ -81,16 +81,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      platform-nix: ${{ steps.decide.outputs.platform-nix }}
-      platform-flux: ${{ steps.decide.outputs.platform-flux }}
-      workflows: ${{ steps.decide.outputs.workflows }}
-      backend: ${{ steps.decide.outputs.backend }}
-      frontend: ${{ steps.decide.outputs.frontend }}
-      contract: ${{ steps.decide.outputs.contract }}
-      changesets: ${{ steps.decide.outputs.changesets }}
-      images: ${{ steps.decide.outputs.images }}
-      measured: ${{ steps.decide.outputs.measured }}
-      app: ${{ steps.decide.outputs.app }}
+      # Every bucket in `.github/buckets.yml`, and `app`, as one JSON object. A
+      # job reads one as `fromJSON(needs.changes.outputs.run).<bucket>`.
+      run: ${{ steps.decide.outputs.run }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -100,9 +93,8 @@ jobs:
           fetch-depth: 0
 
       # `.github/buckets.yml` says which jobs a changed path reaches, and each
-      # job below gates on the bucket it belongs to. Buckets overlap on
-      # purpose: a controller is backend source and an API surface, so it sets
-      # both.
+      # job below gates on the buckets it belongs to. A path in no bucket runs
+      # everything, and this file is in none.
       #
       # The matching is a script rather than a paths-filter step because that
       # action evaluates each pattern on its own, where `!a/**` matches every
@@ -122,10 +114,7 @@ jobs:
           # run that sees two pull requests combined, and it runs once per
           # merge rather than once per push. A dispatched run has no diff.
           if [ "${{ github.event_name }}" != "pull_request" ]; then
-            for bucket in platform-nix platform-flux workflows backend frontend \
-                          contract changesets images measured app; do
-              echo "$bucket=true" >> "$GITHUB_OUTPUT"
-            done
+            ./scripts/check-diff-buckets.py --all
             exit 0
           fi
 
@@ -154,7 +143,7 @@ jobs:
   nix-flake-check:
     name: NixOS flake check
     needs: changes
-    if: needs.changes.outputs.platform-nix == 'true'
+    if: fromJSON(needs.changes.outputs.run).platform
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -174,7 +163,7 @@ jobs:
   flux-kustomize-check:
     name: Flux manifests
     needs: changes
-    if: needs.changes.outputs.platform-flux == 'true'
+    if: fromJSON(needs.changes.outputs.run).platform
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -228,8 +217,6 @@ jobs:
 
   workflow-checks:
     name: Workflow checks
-    needs: changes
-    if: needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -249,7 +236,7 @@ jobs:
     # `vite preview`, so building it once here spares six shards a build each.
     name: Frontend typecheck, lint and build
     needs: changes
-    if: needs.changes.outputs.app == 'true'
+    if: fromJSON(needs.changes.outputs.run).app
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -289,7 +276,7 @@ jobs:
     # so building it once here spares six shards a build each.
     name: API compile checks and jar
     needs: changes
-    if: needs.changes.outputs.app == 'true'
+    if: fromJSON(needs.changes.outputs.run).app
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -330,7 +317,7 @@ jobs:
     # check said so.
     name: Schema compatibility
     needs: changes
-    if: needs.changes.outputs.changesets == 'true'
+    if: fromJSON(needs.changes.outputs.run).api
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -354,7 +341,7 @@ jobs:
     # Renders the statements a changeset will run, for pr-report.yml to post.
     name: Changeset SQL
     needs: changes
-    if: needs.changes.outputs.changesets == 'true'
+    if: fromJSON(needs.changes.outputs.run).api
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -382,7 +369,7 @@ jobs:
     # they cost their own runner rather than 46s in front of every test job.
     name: API formatting and static analysis
     needs: [ changes, api-static ]
-    if: needs.changes.outputs.backend == 'true'
+    if: fromJSON(needs.changes.outputs.run).api || fromJSON(needs.changes.outputs.run).system
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -414,7 +401,7 @@ jobs:
     # No build cache: a task restored from it prints nothing it warned about.
     name: Build has no warnings
     needs: changes
-    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.contract == 'true'
+    if: fromJSON(needs.changes.outputs.run).api || fromJSON(needs.changes.outputs.run).system
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -450,7 +437,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [ changes, api-static, fe-static ]
-    if: needs.changes.outputs.backend == 'true'
+    if: fromJSON(needs.changes.outputs.run).api
 
     steps:
       - name: Checkout repository
@@ -495,7 +482,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [ changes, api-static, fe-static ]
-    if: needs.changes.outputs.backend == 'true'
+    if: fromJSON(needs.changes.outputs.run).api
     strategy:
       fail-fast: false
       matrix:
@@ -631,7 +618,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: [ changes, api-static, fe-static ]
-    if: needs.changes.outputs.images == 'true'
+    if: fromJSON(needs.changes.outputs.run).app
     strategy:
       fail-fast: false
       matrix:
@@ -687,7 +674,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     needs: [ changes, api-static, fe-static ]
-    if: needs.changes.outputs.contract == 'true'
+    if: fromJSON(needs.changes.outputs.run).app
     strategy:
       fail-fast: false
       matrix:
@@ -782,7 +769,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [ changes, api-static, fe-static ]
-    if: needs.changes.outputs.contract == 'true'
+    if: fromJSON(needs.changes.outputs.run).app
 
     # MariaDB and Valkey are the only containers left in the loop, and both are
     # pulled rather than built. The api and the frontend run on the runner
@@ -859,7 +846,7 @@ jobs:
   fe-unit:
     name: Frontend unit tests with coverage
     needs: [ changes, fe-static ]
-    if: needs.changes.outputs.frontend == 'true'
+    if: fromJSON(needs.changes.outputs.run).frontend
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -895,12 +882,11 @@ jobs:
     # Only measured lines count, so docs, config and any file outside an
     # `include` are not in the denominator.
     name: Changed lines are covered
-    # Gated on the paths the reports measure, not on the suites that produce
-    # them. A bucket that stops running a suite would otherwise take the
-    # coverage floor with it in silence; here it fails and says so.
+    # Gated on the buckets that hold measured sources, api and frontend. Both
+    # unit suites skipping on such a run fails below and says so.
     if: |
       always() && github.event_name == 'pull_request'
-      && needs.changes.outputs.measured == 'true'
+      && (fromJSON(needs.changes.outputs.run).api || fromJSON(needs.changes.outputs.run).frontend)
     needs: [ changes, api-unit-tests, fe-unit ]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -911,9 +897,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Measured lines changed, so a suite that measures them had to run.
-      # Both skipped means the filter let a measured path through without its
-      # bucket, which is the one thing selectivity could quietly break.
+      # The api or frontend bucket is on, so the unit suite it gates had to run.
+      # Both skipped means a gate in this file drifted from the buckets, which
+      # is the one thing selectivity could quietly break.
       #
       # Neither succeeding for any other reason is not that: a failed suite
       # uploads nothing and reports itself, and a cancelled one is a
@@ -932,7 +918,7 @@ jobs:
           fi
           echo "ran=false" >> "$GITHUB_OUTPUT"
           if [ "$API" = "skipped" ] && [ "$FRONTEND" = "skipped" ]; then
-            echo "::error::measured lines changed but neither unit suite ran; a bucket in validate.yml does not cover them"
+            echo "::error::the api or frontend bucket is on but neither unit suite ran; a gate in validate.yml does not follow the buckets"
             exit 1
           fi
           echo "neither unit suite reported ($API, $FRONTEND); the jobs that own them say why"
@@ -970,7 +956,7 @@ jobs:
     # ~12m of tests, so paying for it six times still wins by a wide margin.
     name: Frontend e2e (shard ${{ matrix.shard }}/6)
     needs: [ changes, fe-static ]
-    if: needs.changes.outputs.frontend == 'true'
+    if: fromJSON(needs.changes.outputs.run).frontend
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -1066,11 +1052,8 @@ jobs:
     name: Validate OpenAPI client generation
     needs: [ changes, api-static, fe-static ]
     # One generate-and-diff, and the check that catches an API surface change
-    # nobody noticed, so it runs on either side rather than on the narrower
-    # contract bucket.
-    if: >-
-      needs.changes.outputs.backend == 'true'
-      || needs.changes.outputs.frontend == 'true'
+    # nobody noticed, so it runs on either side.
+    if: fromJSON(needs.changes.outputs.run).api || fromJSON(needs.changes.outputs.run).frontend
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

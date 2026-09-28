@@ -20,9 +20,32 @@ A dispatched run has no diff to read, so it runs everything.
 
 ## Validate runs the suites the diff needs
 
-`.github/buckets.yml` maps a changed path to a set of **buckets**, and each job gates on the
-bucket it belongs to. A bucket names what a change can break, so a NixOS module runs the flake
-check and nothing else, and a stylesheet runs the frontend suites and no system tests.
+`.github/buckets.yml` maps a changed path to **buckets**, and each job gates on the buckets it
+belongs to. There are four, and each one skips work the others run:
+
+| Bucket | Paths | What runs |
+| --- | --- | --- |
+| `platform` | `platform/**` but its docs, the Flux scripts | `NixOS flake check`, `Flux manifests` |
+| `api` | `services/api/**`, `libs/**`, detekt config, the OpenAPI and changeset scripts | api lint, unit, integration and coverage, `Build has no warnings`, schema compatibility, changeset SQL, and everything `app` runs |
+| `frontend` | `services/frontend/**` | frontend unit, e2e and e2e coverage, and everything `app` runs |
+| `system` | `tests/**` | api lint, `Build has no warnings`, and everything `app` runs |
+
+`app` is any bucket but `platform`. It runs both compile jobs, the image builds, the system tests
+and the acceptance features, because the system tests drive the api through the pages and a
+change on either side can break them. `Validate OpenAPI client generation` and `Changed lines are
+covered` run on `api` or `frontend`. `Workflow checks` runs on every pull request.
+
+Two things sit outside the four.
+
+**`ignore`** is what no suite reads: `docs/**`, `gameart/**`, `infra/dns/**`, the editor and
+Renovate config, the release-please manifest, every workflow but `validate.yml`, and the dev
+stack's compose files, env and mail server, which CI has not started since the system tests run
+natively. A pull request touching only these runs `Workflow checks` and nothing else.
+
+**A path in no bucket runs everything**, and the job names it in a notice. That is where the
+Gradle wrapper, build-logic, `gradle.properties`, `.github/actions/**`, `.github/buckets.yml` and
+`validate.yml` itself sit: each can change how every suite builds or runs. A new top-level
+directory lands here too until it gets an entry.
 
 `Decide what to validate` does the matching with `scripts/check-diff-buckets.py`, not with a
 paths-filter step. That action evaluates each pattern on its own, so `!a/**` matches every path
@@ -31,41 +54,12 @@ the script means the rules CI runs are the rules `--self-test` proves.
 
 [#1453]: https://github.com/ESA-Blueshell/website/issues/1453
 
-| Changed | What runs |
-| --- | --- |
-| `platform/nix/**`, `platform/flake.*` | `NixOS flake check` |
-| `platform/cluster/**` | `Flux manifests` |
-| `.github/**` other than `actions/` | `Workflow checks` |
-| `services/api/**`, `libs/**`, `config/detekt/**` | api lint, unit, integration and coverage, `Build has no warnings` |
-| `services/frontend/**` | frontend unit, e2e and e2e coverage |
-| the API surface, the schema, `services/frontend/src/**` outside `assets` and `styles`, `tests/**` | system tests, acceptance features |
-| `db/changelog/**` | schema compatibility, changeset SQL |
-| the Dockerfiles and what they resolve | image builds |
-| `services/api/src/main/kotlin/**`, `services/frontend/src/**` | `Changed lines are covered` |
-
-Buckets overlap on purpose. A controller is API source and an API surface, so it sets both and
-runs the api suites and the system tests.
-
-Every script reaches the job that runs it, so `check-flux-manifests.sh` is `platform-flux` and
-`changeset-sql.sh` is `changesets`. `check-diff-buckets.py` is ignored, because the
-`Decide what to validate` job runs its self-test on every pull request anyway.
-
-Three things sit outside the buckets.
-
-**`meta`** is what can change how every suite builds or runs: the Gradle wrapper, build
-logic and `gradle.properties`, and `.github/actions/**`. A match turns on every bucket.
-
-**`ignore`** is what no job validates: `docs/**`, `gameart/**`, `infra/dns/**`, the editor and
-Renovate config, the release-please manifest and the dev stack's compose files, env and mail
-server, which CI has not started since the system tests run natively. A pull request touching only these runs
-nothing, as it did before.
-
-**Anything else** runs the whole suite and says so. A changed path in neither a bucket nor the
-ignore list makes the job warn with the path names, so a new top-level directory gets an entry
-in `buckets.yml` rather than silence. The script carries a fixture table placing one path per
-pattern, and its `--self-test` refuses a pattern no fixture exercises, so the table cannot fall
-behind the file. The self-test also runs first thing in the job, so a broken rule fails before
-anything is decided.
+The job publishes one output, `run`, a JSON object with a key per bucket and `app`, and a job
+reads it as `fromJSON(needs.changes.outputs.run).api`. The bucket names are written once, in
+`buckets.yml`; the self-test refuses a job gated on a name no bucket declares, which would read as
+false and skip that job on every run. It also carries a fixture table placing one path per
+pattern and refuses a pattern no fixture exercises, so the table cannot fall behind the file. The
+self-test runs first thing in the job, so a broken rule fails before anything is decided.
 
 To see what a given path would run, add it to `FIXTURES` and run the self-test:
 
@@ -73,18 +67,12 @@ To see what a given path would run, add it to `FIXTURES` and run the self-test:
 ./scripts/check-diff-buckets.py --self-test
 ```
 
-## Editing validate.yml runs the jobs it edits
+A merge queue entry and a dispatched run have no diff to read, so they run everything. The queue
+entry is the only run that sees two pull requests combined, and it runs once per merge rather than
+once per push.
 
-`validate.yml` is not `meta`, or every change to CI would be the most expensive kind of pull
-request. The `Decide what to validate` job compares this file's jobs against the base and turns
-on the buckets the edited jobs gate on. Change the step that runs the api unit tests and the
-backend bucket runs; change a platform job and it does not.
-
-Four things there reach every bucket, because none of them belongs to one job: the trigger, the
-workflow environment, a job that gates on no bucket at all, and a job this file gained or lost.
-
-A merge queue entry runs everything. It is the only run that sees two pull requests combined,
-and it runs once per merge rather than once per push.
+`Build` publishes every image on every push to `main`, with no path filter, so every commit there
+has a full set to deploy.
 
 ## A check belongs to a commit, not to a branch
 
@@ -107,7 +95,7 @@ Two readings that trip up a first look:
 ## The build has no warnings
 
 `Build has no warnings` compiles build-logic, the build scripts and every source set with
-each warning an error. It runs on the backend and contract buckets. Three switches refuse a
+each warning an error. It runs on the api and system buckets. Three switches refuse a
 warning, and the log is read for the rest:
 
 - `--warning-mode=fail` refuses a Gradle deprecation.

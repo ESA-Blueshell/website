@@ -8,12 +8,13 @@ there `!a/**` matches every path outside `a`, so one negation made a bucket
 claim the whole repository (#1453). Matching here instead means the rules CI
 runs are the rules --self-test proves.
 
-A path in no bucket is validated by nothing, so it runs everything and says
-which path it was, rather than deciding in silence.
+A path in no bucket runs everything and says which path it was. That is how
+the Gradle build, the CI actions and validate.yml itself reach every suite.
 
 --self-test proves this can still fail, the way check-flux-manifests.sh does.
 """
 
+import json
 import os
 import re
 import subprocess
@@ -25,28 +26,21 @@ import yaml
 WORKFLOW = Path(".github/workflows/validate.yml")
 BUCKETS = Path(".github/buckets.yml")
 
-# Everything `Validate` gates on. `meta` and `ignore` are not gates: meta turns
-# them all on, and ignore is what no job validates.
-GATES = ["platform-nix", "platform-flux", "workflows", "backend", "frontend",
-         "contract", "changesets", "images", "measured"]
-
-# What api-static and fe-static compile for. A platform or workflow change
-# needs neither.
-APP = {"backend", "frontend", "contract", "changesets", "images"}
-
-# The suites whose coverage the `measured` gate reads. A path that is measured
-# is always in one of these already; an edit to the gate job is not, and the
-# gate refuses to run with neither suite behind it.
-MEASURED_BY = {"backend", "frontend"}
+# What a job's `if` reads a bucket through: `fromJSON(needs.changes.outputs.run).api`.
+GATE = re.compile(r"needs\.changes\.outputs\.run\)\.([a-z-]+)")
 
 
 def buckets_of(path=BUCKETS):
     """Every bucket, as {name: [pattern, ...]}."""
     declared = yaml.safe_load(path.read_text())
-    for name in [*GATES, "meta", "ignore"]:
-        if name not in declared:
-            raise SystemExit(f"::error::{path} declares no `{name}` bucket")
+    if "ignore" not in declared:
+        raise SystemExit(f"::error::{path} declares no `ignore` bucket")
     return declared
+
+
+def gates_of(buckets):
+    """The buckets a job can gate on: every one but `ignore`, which gates nothing."""
+    return [name for name in buckets if name != "ignore"]
 
 
 # The three globstar shapes, lifted out before the single-segment wildcards so
@@ -111,138 +105,69 @@ def unmatched(paths, buckets):
     return [path for path in paths if not classify(path, buckets)]
 
 
-def gate_of(job):
-    """The buckets a job's `if` reads, or None when it reads no bucket."""
-    found = set(re.findall(r"needs\.changes\.outputs\.([a-z-]+) == 'true'", str(job.get("if", ""))))
-    return found or None
-
-
-def reached_by(was, head):
-    """The buckets an edit from `was` to `head` reaches, or None for all of them."""
-    if {k: v for k, v in was.items() if k != "jobs"} != {k: v for k, v in head.items() if k != "jobs"}:
-        return None
-    old_jobs, new_jobs = was.get("jobs") or {}, head.get("jobs") or {}
-    reached = set()
-    for name in set(old_jobs) | set(new_jobs):
-        if old_jobs.get(name) == new_jobs.get(name):
-            continue
-        gate = gate_of(new_jobs.get(name) or old_jobs[name])
-        if gate is None:
-            return None
-        reached |= gate
-    if "measured" in reached:
-        reached |= MEASURED_BY
-    return reached
-
-
-def workflow_buckets(base, workflow=WORKFLOW):
-    """
-    The buckets a change to this workflow reaches, by the jobs it edits.
-
-    An edited job is validated by whatever it gates on, so editing the api
-    unit-test step runs the backend bucket and editing a platform job does not.
-    A job that gates on nothing, a job this file gained or lost, and the
-    workflow's own trigger and environment all reach everything: none of them
-    belongs to one bucket, and the decision is not worth guessing.
-    """
-    shown = subprocess.run(
-        ["git", "show", f"{base}:{workflow}"],
-        capture_output=True, text=True,
-    )
-    if shown.returncode:
-        return None
-    return reached_by(yaml.safe_load(shown.stdout), yaml.safe_load(workflow.read_text()))
-
-
 # A path for every pattern in the filter, including the negations. A bucket
 # that stops covering its own tree fails here rather than on the pull request
 # that happens to touch it, and the self-test refuses a pattern no fixture
 # exercises, so the table cannot fall behind the filter.
 FIXTURES = [
-    ("platform/nix/modules/k3s/bootstrap.nix", {"platform-nix"}),
-    ("platform/flake.lock", {"platform-nix"}),
-    ("platform/flake.nix", {"platform-nix"}),
-    ("platform/cluster/flux/apps/data/valkey/deployment.yaml", {"platform-flux"}),
-    (".github/workflows/release.yml", {"workflows"}),
-    (".github/workflows/validate.yml", {"workflows"}),
-    # A workflow file like any other, and meta besides, since it decides
-    # what every bucket claims.
-    (".github/buckets.yml", {"meta", "workflows"}),
-    (".github/actions/setup-gradle/action.yml", {"meta"}),
-    ("gradle/libs.versions.toml", {"meta"}),
-    ("gradlew", {"meta"}),
-    ("gradlew.bat", {"meta"}),
-    ("build.gradle.kts", {"meta"}),
-    ("settings.gradle.kts", {"meta"}),
-    ("gradle.properties", {"meta"}),
-    ("build-logic/src/main/kotlin/blueshell.kotlin-conventions.gradle.kts", {"meta"}),
-    # Every script reaches the job that runs it. check-diff-buckets.py is
-    # ignored because the `changes` job self-tests it on every pull request.
+    ("platform/nix/modules/k3s/bootstrap.nix", {"platform"}),
+    ("platform/flake.lock", {"platform"}),
+    ("platform/cluster/flux/apps/data/valkey/deployment.yaml", {"platform"}),
+    ("platform/docs/runbook.md", {"ignore"}),
+    ("scripts/check-flux-manifests.sh", {"platform"}),
+    ("scripts/regenerate-flux-components.sh", {"platform"}),
+    ("scripts/seed-vault-from-env.sh", {"platform"}),
+    # validate.yml, the actions it runs and this file change how every suite runs,
+    # so they sit in no bucket, which runs everything.
+    (".github/workflows/validate.yml", set()),
+    (".github/actions/setup-gradle/action.yml", set()),
+    (".github/buckets.yml", set()),
+    ("gradle/libs.versions.toml", set()),
+    ("build-logic/src/main/kotlin/blueshell.kotlin-conventions.gradle.kts", set()),
+    ("settings.gradle.kts", set()),
+    ("infra/stalwart/accounts.json", set()),
+    # Workflow checks runs on every pull request; nothing else reads these.
+    (".github/workflows/release.yml", {"ignore"}),
+    (".github/scripts/pr_report.py", {"ignore"}),
+    ("scripts/check-workflow-permissions.py", {"ignore"}),
+    ("scripts/write-release-tag.sh", {"ignore"}),
+    # The `changes` job self-tests this on every pull request.
     ("scripts/check-diff-buckets.py", {"ignore"}),
     ("scripts/generate-policy-pdfs.sh", {"ignore"}),
     ("scripts/pandoc-html-br.lua", {"ignore"}),
     ("scripts/__pycache__/check-diff-buckets.cpython-310.pyc", {"ignore"}),
-    ("scripts/check-workflow-permissions.py", {"workflows"}),
-    ("scripts/write-release-tag.sh", {"workflows"}),
-    ("scripts/check-flux-manifests.sh", {"platform-flux"}),
-    ("scripts/regenerate-flux-components.sh", {"platform-flux"}),
-    ("scripts/seed-vault-from-env.sh", {"platform-flux"}),
-    ("scripts/generate_openapi.sh", {"backend"}),
-    ("scripts/generate-openapi-local.sh", {"backend"}),
-    ("scripts/openapi-common.sh", {"backend"}),
-    ("scripts/scrape-public-events.py", {"backend"}),
-    ("scripts/seed-stalwart-accounts.sh", {"ignore"}),
-    ("scripts/check-changeset-compatibility.py", {"changesets"}),
-    ("scripts/changeset-sql.sh", {"changesets"}),
-    ("config/detekt/detekt.yml", {"backend"}),
-    ("services/api/src/main/kotlin/net/blueshell/api/event/domain/EventService.kt",
-     {"backend", "measured"}),
-    ("services/api/src/main/kotlin/net/blueshell/api/event/web/EventController.kt",
-     {"backend", "measured", "contract"}),
-    # No controller lives outside a `web` package today. The pattern is what
-    # keeps that from mattering, so a fixture holds it open.
-    ("services/api/src/main/kotlin/net/blueshell/api/job/JobController.kt",
-     {"backend", "measured", "contract"}),
-    ("services/api/src/main/resources/application.yaml", {"backend", "contract"}),
-    ("services/api/src/main/resources/db/changelog/changes/V70__thing.sql",
-     {"backend", "contract", "changesets"}),
-    ("services/api/openapi.yaml", {"backend", "contract"}),
-    ("services/api/src/main/kotlin/net/blueshell/api/event/web/EventDto.kt",
-     {"backend", "measured", "contract"}),
+    ("services/api/src/main/kotlin/net/blueshell/api/event/web/EventController.kt", {"api"}),
+    ("services/api/src/main/resources/db/changelog/changes/2026-09-26-thing.yaml", {"api"}),
+    ("services/api/Dockerfile", {"api"}),
     ("services/api/docker-compose.yml", {"ignore"}),
-    ("services/api/build.gradle.kts", {"backend", "images"}),
-    ("services/api/Dockerfile", {"images"}),
-    ("services/.dockerignore", {"images"}),
-    ("services/frontend/src/pages/Home.vue", {"frontend", "contract", "measured"}),
-    ("services/frontend/src/styles/main.css", {"frontend", "measured"}),
-    ("services/frontend/src/assets/logo.svg", {"frontend", "measured"}),
-    ("services/frontend/yarn.lock", {"frontend", "images"}),
-    ("services/frontend/Dockerfile", {"images"}),
-    ("services/frontend/nginx.conf", {"images"}),
-    ("services/frontend/index.html", {"frontend", "images"}),
-    ("services/frontend/tests/nginx/link-preview.sh", {"frontend", "images"}),
+    ("libs/kotlin-common/src/main/kotlin/Thing.kt", {"api"}),
+    ("config/detekt/detekt.yml", {"api"}),
+    ("scripts/generate_openapi.sh", {"api"}),
+    ("scripts/generate-openapi-local.sh", {"api"}),
+    ("scripts/openapi-common.sh", {"api"}),
+    ("scripts/scrape-public-events.py", {"api"}),
+    ("scripts/check-changeset-compatibility.py", {"api"}),
+    ("scripts/changeset-sql.sh", {"api"}),
+    ("services/frontend/src/pages/Home.vue", {"frontend"}),
+    ("services/frontend/Dockerfile", {"frontend"}),
     ("services/frontend/docker-compose.yml", {"ignore"}),
-    ("services/frontend/package.json", {"frontend", "images"}),
-    ("services/frontend/.yarnrc.yml", {"frontend", "images"}),
-    ("libs/kotlin-common/src/main/kotlin/Thing.kt", {"backend", "contract", "images"}),
-    ("tests/system/src/test/kotlin/SignUpTest.kt", {"contract"}),
+    ("tests/system/src/test/kotlin/SignUpTest.kt", {"system"}),
     ("docker-compose.yml", {"ignore"}),
     ("docker-compose.oidc-e2e.yml", {"ignore"}),
     ("services/stalwart/config.dev.toml", {"ignore"}),
-    (".env", {"ignore"}),
     ("services/vault/docker-compose.yml", {"ignore"}),
-    ("infra/stalwart/accounts.json", {"images"}),
+    (".env", {"ignore"}),
     ("dev-setup.sh", {"ignore"}),
+    ("scripts/seed-stalwart-accounts.sh", {"ignore"}),
     ("docs/agents/ci.md", {"ignore"}),
-    ("platform/docs/runbook.md", {"ignore"}),
     ("gameart/cs2-1.webp", {"ignore"}),
-    ("renovate.json", {"ignore"}),
     ("infra/dns/esa-blueshell.nl.zone", {"ignore"}),
     (".idea/misc.xml", {"ignore"}),
     ("README.md", {"ignore"}),
     (".editorconfig", {"ignore"}),
     (".gitattributes", {"ignore"}),
     (".gitignore", {"ignore"}),
+    ("renovate.json", {"ignore"}),
     ("release-please-config.json", {"ignore"}),
     (".release-please-manifest.json", {"ignore"}),
 ]
@@ -260,33 +185,14 @@ def unexercised(buckets):
     return loose
 
 
-GATED = {"if": "needs.changes.outputs.backend == 'true'"}
-UNGATED = {"if": "always() && needs.api-integration-tests.result != 'skipped'"}
-
-# What an edit to this workflow reaches. `None` is every bucket: the trigger,
-# the environment and a job that gates on nothing each belong to no one bucket.
-WORKFLOW_EDITS = [
-    ("an edited gated job",
-     {"jobs": {"a": dict(GATED, run="x")}}, {"jobs": {"a": dict(GATED, run="y")}}, {"backend"}),
-    ("an untouched job",
-     {"jobs": {"a": dict(GATED, run="x")}}, {"jobs": {"a": dict(GATED, run="x")}}, set()),
-    ("an added job",
-     {"jobs": {}}, {"jobs": {"a": dict(GATED, run="x")}}, {"backend"}),
-    ("a removed job",
-     {"jobs": {"a": dict(GATED, run="x")}}, {"jobs": {}}, {"backend"}),
-    ("an edited coverage gate",
-     {"jobs": {"a": {"if": "needs.changes.outputs.measured == 'true'", "run": "x"}}},
-     {"jobs": {"a": {"if": "needs.changes.outputs.measured == 'true'", "run": "y"}}},
-     {"measured", "backend", "frontend"}),
-    ("an edited job that gates on nothing",
-     {"jobs": {"a": dict(UNGATED, run="x")}}, {"jobs": {"a": dict(UNGATED, run="y")}}, None),
-    ("an edited trigger",
-     {"on": ["pull_request"], "jobs": {}}, {"on": ["push"], "jobs": {}}, None),
-]
+def unknown_gates(buckets, workflow=WORKFLOW):
+    """Bucket names a job's `if` reads that no bucket declares, which would read as false."""
+    known = {*gates_of(buckets), "app"}
+    return sorted(set(GATE.findall(workflow.read_text())) - known)
 
 
 def self_test():
-    """Every fixture lands where it says, and a stray path is reported."""
+    """Every fixture lands where it says, and every gate a job reads exists."""
     buckets = buckets_of()
     wrong = []
     for path, expected in FIXTURES:
@@ -297,10 +203,6 @@ def self_test():
         for line in wrong:
             print(f"self-test FAILED: {line}")
         return 1
-    for label, was, head, expected in WORKFLOW_EDITS:
-        if reached_by(was, head) != expected:
-            print(f"self-test FAILED: {label} reaches {reached_by(was, head)}, expected {expected}")
-            return 1
     # A `!` pattern subtracts from its own bucket. It must never add a path to
     # one, which is what dorny/paths-filter did: there `!a/**` matched every
     # path outside `a`, so `backend` claimed the whole repository (#1453).
@@ -309,12 +211,10 @@ def self_test():
         if negated and matches("nothing/in/any/bucket.txt", patterns):
             print(f"self-test FAILED: `{name}` claims a path only its {negated[0]} matches")
             return 1
-    stray = "services/worker/src/main/kotlin/Worker.kt"
-    if not unmatched([stray], buckets):
-        print(f"self-test FAILED: {stray} belongs to no bucket and went unreported")
-        return 1
-    if unmatched(["services/api/openapi.yaml"], buckets):
-        print("self-test FAILED: a bucketed path was reported as unmatched")
+    # A misspelt gate is null in an `if`, so its job would skip on every run.
+    for name in unknown_gates(buckets):
+        print(f"self-test FAILED: {WORKFLOW} gates a job on `{name}`, which no bucket declares")
+    if unknown_gates(buckets):
         return 1
     # A pattern nothing exercises is a pattern nothing would miss. Either the
     # filter has an entry it does not need, or the table is behind it.
@@ -322,52 +222,49 @@ def self_test():
         print(f"self-test FAILED: no fixture exercises {pattern}")
     if unexercised(buckets):
         return 1
-    print(f"self-test ok: {len(FIXTURES)} fixtures place correctly, would report {stray}")
+    print(f"self-test ok: {len(FIXTURES)} fixtures place correctly")
     return 0
 
 
 def decide(base, head):
     """
-    Every output the `changes` job publishes, as `name=value` lines.
+    The `run` output the `changes` job publishes: each bucket, and `app`, as JSON.
 
-    Three things mean every bucket: a `meta` path, a changed path in no bucket
-    at all, and a change to validate.yml that no single job owns.
+    `app` is any bucket but `platform`: what needs the jar and the bundle built.
+    A path in no bucket turns every bucket on, and a run with no diff to read
+    passes no base and runs everything.
     """
     buckets = buckets_of()
-    paths = changed(base, head)
-    stray = unmatched(paths, buckets)
-    reached = workflow_buckets(base)
-
-    on = {name: any(matches(path, buckets[name]) for path in paths) for name in GATES}
-    if stray:
-        print("::warning::these changed paths are in no bucket, so the whole suite runs: "
-              + " ".join(stray))
-    if any(matches(path, buckets["meta"]) for path in paths) or stray or reached is None:
-        on = dict.fromkeys(GATES, True)
-    elif reached:
-        on.update(dict.fromkeys(reached & set(GATES), True))
-
-    on["app"] = any(on[name] for name in APP)
-    return [f"{name}={str(value).lower()}" for name, value in on.items()]
+    gates = gates_of(buckets)
+    if base is None:
+        on = dict.fromkeys(gates, True)
+    else:
+        paths = changed(base, head)
+        stray = unmatched(paths, buckets)
+        on = {name: any(matches(path, buckets[name]) for path in paths) for name in gates}
+        if stray:
+            print("::notice::these changed paths are in no bucket, so the whole suite runs: "
+                  + " ".join(stray))
+            on = dict.fromkeys(gates, True)
+    on["app"] = any(value for name, value in on.items() if name != "platform")
+    return "run=" + json.dumps(on)
 
 
 def main():
     if "--self-test" in sys.argv:
         return self_test()
     args = dict(zip(sys.argv[1::2], sys.argv[2::2]))
-    base, head = args.get("--base"), args.get("--head", "HEAD")
-    if not base:
-        print("::error::--base is required")
+    if "--all" not in sys.argv and not args.get("--base"):
+        print("::error::--base is required, or --all for a run with no diff")
         return 1
-    lines = decide(base, head)
-    for line in lines:
-        print(line)
-    # The step reads these as outputs; the same lines go to the log above, so
+    line = decide(args.get("--base"), args.get("--head", "HEAD"))
+    print(line)
+    # The step reads this as its output; the same line goes to the log above, so
     # a run says what it decided without opening the job's output.
     destination = os.environ.get("GITHUB_OUTPUT")
     if destination:
         with open(destination, "a") as handle:
-            handle.write("\n".join(lines) + "\n")
+            handle.write(line + "\n")
     return 0
 
 

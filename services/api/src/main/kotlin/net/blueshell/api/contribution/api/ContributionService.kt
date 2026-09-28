@@ -33,7 +33,7 @@ class ContributionService
         // address on a user, say) before the merge; merging it unwritten fails on the lazy owner.
         private fun rewritten(row: Contribution): Contribution {
             val id = row.id
-            if (id == null || !repository.existsById(id)) {
+            if (!repository.existsById(id)) {
                 throw ResponseStatusException(HttpStatus.NOT_FOUND, "Contribution not found with id: $id")
             }
             return written(row)

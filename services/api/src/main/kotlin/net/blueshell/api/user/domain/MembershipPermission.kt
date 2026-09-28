@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component
 class MembershipPermission
     @Autowired
     constructor(
-        service: MembershipService,
-    ) : BasePermissionEvaluator<Membership, Long, MembershipService>(service) {
+        private val service: MembershipService,
+    ) : BasePermissionEvaluator<Membership, Long>() {
         override fun hasPermission(
             authentication: Authentication?,
             entity: Any?,

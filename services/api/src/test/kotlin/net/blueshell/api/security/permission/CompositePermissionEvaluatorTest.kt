@@ -1,8 +1,6 @@
 package net.blueshell.api.security.permission
 
-import net.blueshell.api.sponsor.domain.SponsorService
 import net.blueshell.api.sponsor.persistence.Sponsor
-import net.blueshell.api.telemetry.domain.TelemetryService
 import net.blueshell.api.telemetry.persistence.Telemetry
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -74,9 +72,7 @@ class CompositePermissionEvaluatorTest {
         }
     }
 
-    private class RecordingTelemetryEvaluator(
-        service: TelemetryService = mock(),
-    ) : BasePermissionEvaluator<Telemetry, Long, TelemetryService>(service) {
+    private class RecordingTelemetryEvaluator : BasePermissionEvaluator<Telemetry, Long>() {
         var entityResult: Boolean = false
         var idResult: Boolean = false
         var entityCalls: Int = 0
@@ -101,9 +97,7 @@ class CompositePermissionEvaluatorTest {
         }
     }
 
-    private class RecordingSponsorEvaluator(
-        service: SponsorService = mock(),
-    ) : BasePermissionEvaluator<Sponsor, Long, SponsorService>(service) {
+    private class RecordingSponsorEvaluator : BasePermissionEvaluator<Sponsor, Long>() {
         var entityResult: Boolean = false
         var idResult: Boolean = false
         var entityCalls: Int = 0

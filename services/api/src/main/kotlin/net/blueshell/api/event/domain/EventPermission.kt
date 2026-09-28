@@ -11,8 +11,8 @@ import java.time.Instant
 import net.blueshell.api.event.api.EventService
 
 @Component
-class EventPermission @Autowired constructor(service: EventService) :
-    BasePermissionEvaluator<Event, Long, EventService>(service) {
+class EventPermission @Autowired constructor(private val service: EventService) :
+    BasePermissionEvaluator<Event, Long>() {
     override fun hasPermission(
         authentication: Authentication?,
         entity: Any?,

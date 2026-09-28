@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component
 class AddressPermission
     @Autowired
     constructor(
-        service: AddressService,
-    ) : BasePermissionEvaluator<Address, Long, AddressService>(service) {
+        private val service: AddressService,
+    ) : BasePermissionEvaluator<Address, Long>() {
         override fun hasPermission(
             authentication: Authentication?,
             entity: Any?,

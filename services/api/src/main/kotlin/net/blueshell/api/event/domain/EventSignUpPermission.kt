@@ -14,9 +14,9 @@ import java.time.Instant
 class EventSignUpPermission
     @Autowired
     constructor(
-        service: EventSignUpService,
+        private val service: EventSignUpService,
         private val events: EventService,
-    ) : BasePermissionEvaluator<EventSignUp, Long, EventSignUpService>(service) {
+    ) : BasePermissionEvaluator<EventSignUp, Long>() {
         override fun hasPermission(
             authentication: Authentication?,
             entity: Any?,

@@ -2,6 +2,7 @@ package net.blueshell.api.jobs.api
 
 import net.blueshell.api.jobs.domain.JobExecutionQuery
 import net.blueshell.api.jobs.persistence.FoldedTrigger
+import net.blueshell.api.jobs.persistence.JobEnqueueLocks
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.jobs.persistence.JobExecutionSpecifications
@@ -14,7 +15,6 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.security.MessageDigest
 import java.time.Clock
 import java.time.Instant
 
@@ -29,6 +29,7 @@ data class Enqueued(
 @Service
 class JobExecutionService(
     private val jobExecutionRepository: JobExecutionRepository,
+    private val enqueueLocks: JobEnqueueLocks,
 ) : BaseModelService<JobExecution, Long, JobExecutionRepository>(jobExecutionRepository) {
     // Settable for tests only.
     internal var clock: Clock = Clock.systemUTC()
@@ -51,14 +52,18 @@ class JobExecutionService(
     ): Enqueued? {
         val create = { Enqueued(super.create(newExecution(jobType, payload, actor, trigger, dedupKey, forced)), dispatch = true) }
         if (dedupKey == null) return create()
-        return holdingEnqueueLock(jobType, dedupKey) {
-            val twins = jobExecutionRepository.findTwinsForUpdate(jobType, dedupKey, ACTIVE)
-            val queued = twins.firstOrNull { it.status == JobExecutionStatus.QUEUED }
-            when {
-                queued != null -> fold(queued, trigger, actor)
-                twins.isNotEmpty() && !queuesBehindRunning -> null
-                else -> create()
-            }
+        check(enqueueLocks.lock(jobType, dedupKey, ENQUEUE_LOCK_SECONDS)) { "Another enqueue of $jobType kept its lock" }
+        val twins = enqueueLocks.activeTwins(jobType, dedupKey)
+        // It may have started since it was read, and then it is a running twin.
+        val queued =
+            twins
+                .firstOrNull { it.status == JobExecutionStatus.QUEUED }
+                ?.let { jobExecutionRepository.findByIdForUpdate(it.id) }
+                ?.takeIf { it.status == JobExecutionStatus.QUEUED }
+        return when {
+            queued != null -> fold(queued, trigger, actor)
+            twins.isNotEmpty() && !queuesBehindRunning -> null
+            else -> create()
         }
     }
 
@@ -76,27 +81,6 @@ class JobExecutionService(
             twin.queuedAt = now
         }
         return Enqueued(super.update(twin), dispatch = waiting)
-    }
-
-    /*
-     * Two first enqueues of one key would each take the locking read's gap lock and then deadlock
-     * on their inserts. The named lock lets one through at a time; the locking read then waits on a
-     * row the other inserted until it commits, so releasing the lock before the commit is safe.
-     */
-    private fun <T> holdingEnqueueLock(
-        jobType: String,
-        dedupKey: String,
-        work: () -> T,
-    ): T {
-        val digest = MessageDigest.getInstance("SHA-256").digest("$jobType|$dedupKey".toByteArray())
-        // MariaDB caps a lock's name at 64 characters.
-        val name = "job-enqueue-" + digest.joinToString("") { "%02x".format(it) }.take(ENQUEUE_LOCK_HEX)
-        check(jobExecutionRepository.acquireNamedLock(name, ENQUEUE_LOCK_SECONDS) == 1) { "Another enqueue of $jobType kept its lock" }
-        try {
-            return work()
-        } finally {
-            jobExecutionRepository.releaseNamedLock(name)
-        }
     }
 
     private fun newExecution(
@@ -324,8 +308,6 @@ class JobExecutionService(
     }
 
     private companion object {
-        val ACTIVE = listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
         const val ENQUEUE_LOCK_SECONDS = 10
-        const val ENQUEUE_LOCK_HEX = 40
     }
 }

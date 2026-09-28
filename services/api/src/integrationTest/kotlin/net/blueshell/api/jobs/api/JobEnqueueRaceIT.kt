@@ -84,6 +84,23 @@ class JobEnqueueRaceIT : ServiceTestSupport() {
     }
 
     @Test
+    fun `an enqueue still open holds up no run of another job beside it`() {
+        // Keys that sort next to each other, so a gap lock around one would cover the other's move.
+        val prefix = UUID.randomUUID().toString()
+        val running = enqueue("$prefix-a", JobTrigger.EVENT_CREATED).get(20, TimeUnit.SECONDS)!!.execution
+        val inserted = CountDownLatch(1)
+        val open = enqueue("$prefix-b", JobTrigger.EVENT_CREATED, holdMillis = 3000, after = inserted::countDown)
+        inserted.await(10, TimeUnit.SECONDS)
+
+        val started = System.nanoTime()
+        executions.markRunning(executions.findByIdOrNull(running.id!!)!!)
+        val tookMillis = (System.nanoTime() - started) / 1_000_000
+
+        assertThat(tookMillis).isLessThan(2000)
+        assertThat(open.get(20, TimeUnit.SECONDS)?.dispatch).isTrue()
+    }
+
+    @Test
     fun `an enqueue that fails still gives its lock back`() {
         val key = UUID.randomUUID().toString()
 

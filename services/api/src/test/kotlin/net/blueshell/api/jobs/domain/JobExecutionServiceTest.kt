@@ -2,7 +2,9 @@ package net.blueshell.api.jobs.domain
 
 import jakarta.persistence.EntityManager
 import net.blueshell.api.jobs.api.JobExecutionService
+import net.blueshell.api.jobs.persistence.ActiveTwin
 import net.blueshell.api.jobs.persistence.FoldedTrigger
+import net.blueshell.api.jobs.persistence.JobEnqueueLocks
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus
@@ -14,8 +16,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -35,10 +36,11 @@ import java.time.ZoneOffset
  */
 class JobExecutionServiceTest {
     private val repository: JobExecutionRepository = mock()
+    private val locks: JobEnqueueLocks = mock()
     private val entityManager: EntityManager = mock()
     private val now = Instant.parse("2026-10-01T10:00:00Z")
     private val service =
-        JobExecutionService(repository).also {
+        JobExecutionService(repository, locks).also {
             injectEntityManager(it)
             it.clock = Clock.fixed(now, ZoneOffset.UTC)
         }
@@ -46,11 +48,14 @@ class JobExecutionServiceTest {
     private val systemActor = Actor.system()
     private val board = Actor.user(5, Role.BOARD)
 
-    /** The twins of `demo` with dedup key `k` that the locking read finds, the lock taken. */
+    /** The twins of `demo` with dedup key `k` as committed now, the lock taken. */
     private fun twins(vararg found: JobExecution) {
-        whenever(repository.acquireNamedLock(any(), any())).thenReturn(1)
-        whenever(repository.findTwinsForUpdate(eq("demo"), eq("k"), any())).thenReturn(found.toList())
-        found.forEach { whenever(repository.existsById(it.id!!)).thenReturn(true) }
+        whenever(locks.lock("demo", "k", 10)).thenReturn(true)
+        whenever(locks.activeTwins("demo", "k")).thenReturn(found.map { ActiveTwin(it.id!!, it.status) })
+        found.forEach {
+            whenever(repository.existsById(it.id!!)).thenReturn(true)
+            whenever(repository.findByIdForUpdate(it.id!!)).thenReturn(it)
+        }
         whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
     }
 
@@ -104,17 +109,27 @@ class JobExecutionServiceTest {
     }
 
     @Test
-    fun `holds one lock per job type and key around the check and the insert, and gives up where another keeps it`() {
+    fun `takes the lock for the job type and key before reading its twins, and gives up where another keeps it`() {
         twins()
 
         service.createQueued("demo", null, systemActor, dedupKey = "k")
 
-        val name = argumentCaptor<String>()
-        verify(repository).acquireNamedLock(name.capture(), eq(10))
-        verify(repository).releaseNamedLock(name.firstValue)
-        assertThat(name.firstValue).startsWith("job-enqueue-").hasSizeLessThanOrEqualTo(64)
-        whenever(repository.acquireNamedLock(any(), any())).thenReturn(0)
+        inOrder(locks) {
+            verify(locks).lock("demo", "k", 10)
+            verify(locks).activeTwins("demo", "k")
+        }
+        whenever(locks.lock("demo", "k", 10)).thenReturn(false)
         assertThatThrownBy { service.createQueued("demo", null, systemActor, dedupKey = "k") }.hasMessageContaining("enqueue")
+    }
+
+    @Test
+    fun `a queued twin that started since it was read counts as running`() {
+        val started = twin(JobExecutionStatus.QUEUED)
+        twins(started)
+        whenever(repository.findByIdForUpdate(3)).thenReturn(twin(JobExecutionStatus.RUNNING))
+
+        assertThat(service.createQueued("demo", null, systemActor, dedupKey = "k")).isNull()
+        assertThat(service.createQueued("demo", null, systemActor, dedupKey = "k", queuesBehindRunning = true)!!.dispatch).isTrue()
     }
 
     @Test

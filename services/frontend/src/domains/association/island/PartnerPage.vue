@@ -151,7 +151,7 @@ const {content} = defineProps<{content: PartnerContent}>()
 }
 
 .partner__link {
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
   text-decoration: none;
 }
 

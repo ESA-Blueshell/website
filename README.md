@@ -41,19 +41,18 @@ Domain-Driven Design with a clean layered architecture:
 
 The builds read the token from `.secrets/` as a BuildKit secret, so it never
 lands in the image history. Write the files once — they are gitignored, and the
-compose files expect exactly these three names:
+compose files expect exactly these two names:
 
 ```bash
 mkdir -p .secrets && chmod 700 .secrets
 gh auth token          > .secrets/github_token      # Gradle → maven.pkg.github.com
-gh auth token          > .secrets/node_auth_token   # Yarn   → npm.pkg.github.com
 gh api user -q .login  > .secrets/github_actor      # username the maven registry wants
 chmod 600 .secrets/*
 ```
 
 A classic PAT with `read:packages` works just as well as the `gh` token — paste
-it into the two token files instead. Compose refuses to start when a secret
-file is missing, so create all three even if you leave one empty.
+it into the token file instead. Compose refuses to start when a secret file is
+missing, so create both.
 
 The tokens are read at **image build** time only. The api image bakes Gradle's
 dependency cache in, so the running container starts `bootRun --offline` and

@@ -2,10 +2,35 @@
  * Discord adapter: the one file in this domain that goes to Discord itself.
  *
  * Both reads are public urls Discord serves to a browser, so they are plain reads rather than
- * the api; the widget's shapes are the generated ones, which the door re-exports.
+ * the api. The widget's shapes are written here, and hold only what the band reads.
  */
 import axios from "axios"
-import type {WidgetChannel, WidgetMember, WidgetResponse} from "@/services/api"
+
+/** A voice room the widget lists: only the rooms @everyone may join. */
+export interface WidgetChannel {
+  id: string
+  name: string
+  position: number
+}
+
+/** Somebody online, as the widget shows them; `channel_id` is the voice room they are in. */
+export interface WidgetMember {
+  id: string
+  username: string
+  avatar_url: string
+  status: string
+  channel_id?: string
+}
+
+/** Discord's public widget of the server, `GET /guilds/{id}/widget.json`. */
+export interface WidgetResponse {
+  id: string
+  name: string
+  instant_invite: string | null
+  presence_count: number
+  channels?: WidgetChannel[]
+  members?: WidgetMember[]
+}
 
 /** The widget with both of its lists present, whatever Discord left out. */
 export type GuildWidget = WidgetResponse & {members: WidgetMember[]; channels: WidgetChannel[]}

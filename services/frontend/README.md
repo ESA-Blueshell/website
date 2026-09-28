@@ -418,18 +418,3 @@ Refer to these in signup flows, consent workflows, and user-facing documentation
 ---
 
 **Note**: The frontend is part of the Blueshell website project. See the root [README.md](../README.md) for full project setup.
-
-## The Discord client
-
-The frontend used to generate a Discord client from a vendored spec, and
-nothing imported it. That generation has been removed. If the frontend ever
-needs Discord, install the published package rather than regenerating:
-
-```bash
-npm install @esa-blueshell/discord-client
-```
-
-It is released from
-[ESA-Blueshell/discord-client](https://github.com/ESA-Blueshell/discord-client),
-which re-derives the spec from upstream nightly. GitHub Packages needs a token
-even for public packages — see that repository's README for the `.npmrc`.

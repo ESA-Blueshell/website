@@ -11,6 +11,7 @@ import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
 import {channelCompletion, mentionCompletion} from "@/components/island/markdownMentions"
 import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 import {TIME_STYLES, timestampText, type TimeStyle} from "@/plugins/discordTime"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 defineOptions({name: "MarkdownEditor"})
 
@@ -134,7 +135,7 @@ const dress = EditorView.theme({
   },
   "&.cm-focused": {
     outline: "none",
-    borderBottomColor: "var(--color-brand)",
+    borderBottomColor: BRAND_ACCENT,
     backgroundColor: "color-mix(in oklab, var(--color-chalk) 10%, transparent)",
   },
   // A variable, so a field whose label rests inside the box can make room for it.

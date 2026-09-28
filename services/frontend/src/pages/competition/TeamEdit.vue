@@ -5,6 +5,7 @@ import TeamEditor from "@/domains/esports/components/TeamEditor.vue"
 import {type Season, useGames, useSeasons, useTeamToEdit} from "@/domains/esports"
 import {useReturnTo} from "@/composables/useReturnTo"
 import NotFound from "@/pages/NotFound.vue"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 defineOptions({name: "TeamEditPage"})
 
@@ -45,7 +46,7 @@ const found = computed(() => answered.value && game.value != null && (teamId == 
 <template>
   <team-editor
     v-if="found && game"
-    :accent="game.accent || 'var(--color-brand)'"
+    :accent="game.accent || BRAND_ACCENT"
     :already-fielded="loaded?.fielded.value.map(one => one.id) ?? []"
     :back="back"
     :game="game.code"

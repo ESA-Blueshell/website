@@ -15,6 +15,7 @@ import type {Committee, CommitteePage} from "../adapters/committees"
 import ArchiveCommitteeDialog from "../island/ArchiveCommitteeDialog.vue"
 import {useCommitteeRights} from "../island/useCommitteeRights"
 import {initialsOf, useCommittees} from "../useCommittees"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 defineOptions({name: "CommitteePage"})
 
@@ -55,7 +56,7 @@ const archived = async (now: Committee) => {
   <v-main>
     <island testid="committee-island">
       <record-head
-        accent="var(--color-brand)"
+        :accent="BRAND_ACCENT"
         :archived="page.archived"
         :back="{to: '/committees', label: 'Committees'}"
         :banner="page.banner"

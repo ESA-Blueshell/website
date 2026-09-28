@@ -25,6 +25,7 @@ import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import SliceBand, {type SliceItem} from "@/components/island/SliceBand.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 const dark = ref(true)
 
@@ -63,7 +64,7 @@ const slices: SliceItem[] = [
 const reel: ReelItem[] = [
   {id: "nights", title: "Game nights", href: "/events", accent: "var(--color-acid)", banner: busy, initials: "GN", notes: ["#general"], chips: ["LegaCie"]},
   {id: "karaoke", title: "Karaoke", href: "/events", accent: "#ff4655", banner: karaoke, initials: "K"},
-  {id: "lan", title: "LAN parties", href: "/events", accent: "var(--color-brand)", banner: lan, initials: "LP", chips: ["LanCie"]},
+  {id: "lan", title: "LAN parties", href: "/events", accent: BRAND_ACCENT, banner: lan, initials: "LP", chips: ["LanCie"]},
   {id: "chess", title: "Chess", href: "/events", accent: "#b58863", initials: "C"},
   {id: "wordle", title: "Wordle", href: "/events", accent: "#6aaa64", initials: "W", railLabel: "Wordle"},
 ]
@@ -293,7 +294,7 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
         </lead-band>
         <band-rule mirrored />
         <slice-band
-          accent="var(--color-brand)"
+          :accent="BRAND_ACCENT"
           :items="slices"
           testid-prefix="gallery-slice"
         />

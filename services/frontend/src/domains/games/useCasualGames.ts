@@ -4,6 +4,7 @@ import type {DriftItem} from "@/components/island/DriftRow.vue"
 import type {ReelItem} from "@/components/island/FlickReel.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {loadCasualGames, type CasualGame} from "./adapters/games"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /** The letters a game's plate carries where it has no banner: the first of its first two words. */
 export function initialsOf(name: string): string {
@@ -16,9 +17,6 @@ export function initialsOf(name: string): string {
     .join("")
 }
 
-/** A game nobody has drawn art for reads on the association's own blue. */
-const UNDRAWN_ACCENT = "var(--color-brand)"
-
 /** The channels a game is played in, as a line: "#fighting-games · #valorant". */
 const channelLine = (game: CasualGame): string | undefined =>
   game.channels.length > 0 ? game.channels.map(channel => `#${channel.name}`).join(" · ") : undefined
@@ -29,7 +27,7 @@ export function reelItemOf(game: CasualGame, organisersOf: (code: string) => str
     id: game.code,
     title: game.name,
     href: `/casual/${game.slug}`,
-    accent: game.accent || UNDRAWN_ACCENT,
+    accent: game.accent || BRAND_ACCENT,
     banner: game.banner?.url ?? null,
     srcset: srcsetOf(game.banner),
     icon: game.icon?.url ?? null,

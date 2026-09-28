@@ -2,7 +2,8 @@
 import {computed, ref, watch} from "vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import {loadGameHoldings, removeCasualGame, type CasualGame, type GameHoldings} from "../adapters/games"
-import {plural, sentenceFor} from "../refusals"
+import {sentenceFor} from "../refusals"
+import {countOf} from "@/utils/countOf"
 
 /**
  * Removing a game, confirmed twice because it is easy to regret.
@@ -49,9 +50,9 @@ const touches = computed(() => {
     return sentenceFor({code: "GameHoldsHistory", gameName: props.game.name, teams: h.teams, players: h.players}) ?? ""
   }
   const parts = [
-    plural(h.channels, "channel", "channels"),
-    plural(h.committees, "committee", "committees"),
-    plural(h.events, "event", "events"),
+    countOf(h.channels, "channel", "channels"),
+    countOf(h.committees, "committee", "committees"),
+    countOf(h.events, "event", "events"),
   ]
   return `Removing takes ${props.game.name} off every page, list and picker. It is linked to ${parts[0]}, `
     + `${parts[1]} and ${parts[2]}, which stop naming it.`

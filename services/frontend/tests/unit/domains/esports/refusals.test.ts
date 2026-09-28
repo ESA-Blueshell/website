@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {countOf} from "@/domains/esports/copy"
+import {countOf} from "@/utils/countOf"
 import {sentenceFor} from "@/domains/esports/refusals"
 
 describe("countOf", () => {

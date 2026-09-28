@@ -35,7 +35,6 @@ const months = computed(() => monthsOf(events))
 
 <template>
   <lead-band
-    accent="var(--color-brand)"
     testid="events-agenda"
   >
     <band-head

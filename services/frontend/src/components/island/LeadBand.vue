@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {BRAND_ACCENT} from "@/utils/brand"
 /**
  * A heading band: the band ground under the section's own accent, laid from the top left.
  * At 7% it marks the band; stronger reads as a colour field with type lost on it.
@@ -9,7 +10,7 @@ withDefaults(defineProps<{
   /** The section's colour, as a token or a colour. Blue where the section has none of its own. */
   accent?: string
   testid?: string
-}>(), {accent: "var(--color-brand)", testid: "lead-band"})
+}>(), {accent: BRAND_ACCENT, testid: "lead-band"})
 </script>
 
 <template>

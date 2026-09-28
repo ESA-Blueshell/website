@@ -31,6 +31,7 @@ import {
 } from "../adapters/committees"
 import CommitteeSeats, {type Seat} from "../island/CommitteeSeats.vue"
 import {cellOf, initialsOf} from "../useCommittees"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * A committee added or corrected on its own page, with its page head and its cell in Every
@@ -53,8 +54,6 @@ const emit = defineEmits<{
 }>()
 
 const adding = computed(() => props.committee == null)
-const ACCENT = "var(--color-brand)"
-
 const name = ref("")
 const slug = ref("")
 const listed = ref(true)
@@ -181,7 +180,7 @@ const removeIt = async () => {
 
 <template>
   <edit-page
-    :accent="ACCENT"
+    :accent="BRAND_ACCENT"
     :back="{to: back, label: committee ? committee.name : 'Committees'}"
     :eyebrow="committee ? committee.name : 'Committees'"
     testid="committee-edit"
@@ -318,7 +317,7 @@ const removeIt = async () => {
       <div class="committee-editor__previews">
         <preview-frame>
           <record-head
-            :accent="ACCENT"
+            :accent="BRAND_ACCENT"
             :archived="drafted.archived"
             :back="{to: '/committees', label: 'Committees'}"
             :banner="banner"
@@ -354,7 +353,7 @@ const removeIt = async () => {
 
   <confirm-dialog
     v-if="committee && asBoard"
-    :accent="ACCENT"
+    :accent="BRAND_ACCENT"
     confirm-label="Delete the committee"
     :failure="removalFailure"
     :open="confirming"

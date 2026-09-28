@@ -28,6 +28,7 @@ import {addCasualGame, saveCasualGame, storeGameBanner, storeGameIcon, type Casu
 import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
 import RemoveGameDialog from "../island/RemoveGameDialog.vue"
 import {cellOf, initialsOf, useCasualGames} from "../useCasualGames"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * One game, added or corrected on one page for both areas it appears in. A game is one record, so
@@ -113,7 +114,7 @@ const drafted = computed<CasualGame>(() => ({
   competitionIntro: competitionIntro.value,
   esportsChannels: esportsChannels.value,
 }))
-const accent = computed(() => drafted.value.accent || "var(--color-brand)")
+const accent = computed(() => drafted.value.accent || BRAND_ACCENT)
 const competitionSays = computed(() => competitionIntro.value.trim() || intro.value.trim())
 const esportsLine = computed(() => esportsChannels.value.map(one => `#${one.name}`).join(" · "))
 const cells = computed(() => [cellOf(drafted.value, () => organiserNames.value.map(one => one.name))])

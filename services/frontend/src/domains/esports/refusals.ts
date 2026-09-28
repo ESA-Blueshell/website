@@ -1,6 +1,6 @@
 // TWIN: `esports/domain/EsportsRefusal.kt` declares the codes and their facts. See ADR-026.
 
-import {countOf} from "./copy"
+import {countOf} from "@/utils/countOf"
 import {refusalReader, type RefusalCode} from "@/utils/refusals"
 
 const gameHoldsHistory = (gameName: string, teams: number, players: number) =>

@@ -1,6 +1,6 @@
 // TWIN: `board/domain/BoardRefusal.kt` declares the codes and their facts. See ADR-026.
 
-import {countOf} from "./copy"
+import {countOf} from "@/utils/countOf"
 import {refusalReader, type RefusalCode} from "@/utils/refusals"
 
 export const boardHoldsMembers = (number: number, members: number) =>

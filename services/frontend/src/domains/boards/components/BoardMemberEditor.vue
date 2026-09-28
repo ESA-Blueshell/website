@@ -28,6 +28,7 @@ import {
 } from "../adapters/boards"
 import {membersInOrder} from "../memberOrder"
 import {boardName} from "../reading"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * One board membership written down or corrected on its own page, with the board's row of faces
@@ -51,7 +52,7 @@ const emit = defineEmits<{
 
 const DRAFT = "draft"
 const adding = computed(() => props.member == null)
-const accent = computed(() => props.board.accent?.trim() || "var(--color-brand)")
+const accent = computed(() => props.board.accent?.trim() || BRAND_ACCENT)
 
 const name = ref("")
 const nickname = ref("")
@@ -361,7 +362,7 @@ const submit = async () => {
     <template #preview>
       <preview-frame>
         <slice-band
-          accent="var(--color-brand)"
+          :accent="BRAND_ACCENT"
           :items="slices"
           layout="aside"
           :open-id="drafted.id"

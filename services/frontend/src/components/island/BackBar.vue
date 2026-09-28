@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import BackChevrons from "./BackChevrons.vue"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * The way back as a band of its own, for a page whose first band is not a header. The whole band is
@@ -10,7 +11,7 @@ defineOptions({name: "BackBar"})
 
 withDefaults(defineProps<{to: string; label: string; testid?: string; accent?: string}>(), {
   testid: undefined,
-  accent: "var(--color-brand)",
+  accent: BRAND_ACCENT,
 })
 </script>
 

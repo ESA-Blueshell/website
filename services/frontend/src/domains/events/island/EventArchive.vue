@@ -81,7 +81,7 @@ const tileOf = (event: EventResponse) => {
       </div>
     </div>
 
-    <lead-band accent="var(--color-brand)">
+    <lead-band>
       <p
         v-if="answered && events.length === 0"
         class="archive__none"

@@ -17,6 +17,7 @@ import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
 import RemoveGameDialog from "../island/RemoveGameDialog.vue"
 import {initialsOf, useCasualGames} from "../useCasualGames"
 import {useIsBoard} from "@/composables/useIsBoard"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 defineOptions({name: "CasualGamePage"})
 
@@ -42,7 +43,7 @@ const firstChannel = computed(() => (game.archived ? null : game.channels[0] ?? 
 const organisers = computed(() => committees.value.filter(committee => committee.gameCodes.includes(game.code)))
 const organiserCells = computed(() => organisers.value.map(committee => committeeCellOf(committee)))
 
-const accent = computed(() => game.accent || "var(--color-brand)")
+const accent = computed(() => game.accent || BRAND_ACCENT)
 </script>
 
 <template>

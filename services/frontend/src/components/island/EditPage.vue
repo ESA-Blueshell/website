@@ -3,6 +3,7 @@ import {ref} from "vue"
 import HeaderBand from "./HeaderBand.vue"
 import BackLink from "./BackLink.vue"
 import Island from "./Island.vue"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * A page something is edited on: the way back, what is being edited, the form, and beside it a
@@ -14,7 +15,7 @@ import Island from "./Island.vue"
  */
 defineOptions({name: "EditPage"})
 
-const {accent = "var(--color-brand)"} = defineProps<{
+const {accent = BRAND_ACCENT} = defineProps<{
   testid: string
   eyebrow: string
   title: string

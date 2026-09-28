@@ -19,6 +19,7 @@ import {useBoards} from "@/domains/boards"
 import {academicYear, boardEyebrow, boardInRoute, boardName, boardStops, membersInOrder} from "@/domains/boards"
 import {memberTitle, type Board, type BoardMember} from "@/domains/boards"
 import {useIsBoard} from "@/composables/useIsBoard"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * The association's own history, as a line of boards.
@@ -69,7 +70,7 @@ const stopIds = computed(() => stops.value.map(stop => stop.id))
  * value (the lit stretch of the strip, the band, the cheer and the focus ring) so a colour
  * appearing on a board is the only change that has to happen for all four to follow it.
  */
-const accent = computed(() => shown.value?.accent?.trim() || "var(--color-brand)")
+const accent = computed(() => shown.value?.accent?.trim() || BRAND_ACCENT)
 
 /** The board being read goes in the url, pushed, so the back button returns to the one before. */
 const chooseBoard = (number: number) => {
@@ -345,7 +346,7 @@ const addMember = (stop: string | number | null) => {
                   chose says that colour again where the page has already said it twice.
                 -->
                 <slice-band
-                  accent="var(--color-brand)"
+                  :accent="BRAND_ACCENT"
                   add-label="Add a member"
                   empty-label="No members are recorded on this board yet"
                   :items="memberSlicesOf(stop)"

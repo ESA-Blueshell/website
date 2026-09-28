@@ -220,7 +220,6 @@ function exportCsv(): void {
       />
 
       <lead-band
-        accent="var(--color-brand)"
         testid="signups-attendees"
       >
         <band-head

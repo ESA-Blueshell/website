@@ -86,7 +86,7 @@ class GoogleCalendarClient {
 
     private fun requireService(): Calendar =
         service ?: throw IllegalStateException(
-            "Google Calendar client is not configured — seed google.calendar.serviceAccountJson in Vault " +
+            "Google Calendar client is not configured: seed google.calendar.serviceAccountJson in Vault " +
                 "and restart the api pod before invoking calendar operations.",
         )
 

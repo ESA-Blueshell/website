@@ -87,7 +87,7 @@ of them blocks at least one downstream Secret.
   uptime alerts and Flagger release events. Optional at day 0 —
   both consumers start without it.
 - **One-shot generated values** (only if missing from the env files):
-  - `JWT_SECRET` — `openssl rand -base64 64`.
+  - `JWT_SECRET`: `openssl rand -base64 64`.
   - `VAULT_OIDC_CLIENT_SECRET`: `openssl rand -hex 32`.
 
 Sanity-check the env files locally with a dry run *before* unsealing:
@@ -193,10 +193,10 @@ vault kv put secret/api \
   spring.datasource.password=<app-password>
 ```
 
-A missing key falls back to the default in `application.yaml`, which is a
-development value or empty: the hardening guard refuses to start without
-`app.jwt.secret` and `app.two-factor.key`, and an empty integration key leaves
-that integration off.
+A missing key is blank in production, never `application.yaml`'s development
+value: the hardening guard refuses to start without `app.jwt.secret`,
+`app.two-factor.key` or `auth.clients.vault.secret`, and an empty integration
+key leaves that integration off.
 
 The api also reads `secret/platform/mail`, the path Stalwart uses, with the
 prefix `mail.`: `account.api` is its SMTP password and `account.bounce` its
@@ -323,7 +323,6 @@ After seeding, force a VSO reconcile and verify secrets appear:
 flux reconcile kustomization apps-vso-secrets --timeout=3m
 kubectl get secret -n cert-manager cloudflare-api-token
 kubectl get secret -n data-system  mariadb-credentials
-kubectl get secret -n default      stalwart-secrets
 kubectl get secret -n mail-system  stalwart-secrets
 ```
 
@@ -347,7 +346,7 @@ vault operator generate-root -init
 
 VSO renders a path into a Kubernetes Secret for the consumers that are not
 Spring, and none of them reloads it on its own. The api reads its paths from
-Vault at start. So the rotation pattern is still: *update Vault, then restart
+Vault at start. So the rotation pattern is: *update Vault, then restart
 the consumer.*
 
 ### MariaDB password (api + Bitnami chart)

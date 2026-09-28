@@ -82,11 +82,11 @@ path "secret/data/platform/edge" {
 EOF
 
 # VSO reads here to mint k8s Secrets in the namespaces of apps that need
-# them — platform/edge (Cloudflare DNS-01 token for cert-manager and
-# external-dns), platform/mail (stalwart
-# admin + SMTP relay credentials, bounce mailbox, DKIM),
-# platform/ghcr (GitHub PAT for pulling private ghcr.io images),
-# platform/flux-git (write deploy key image-automation-controller pushes with).
+# them: platform/edge (Cloudflare DNS-01 token for cert-manager and
+# external-dns), platform/mail (stalwart admin + SMTP relay credentials,
+# bounce mailbox, DKIM), platform/ghcr (GitHub PAT for pulling private
+# ghcr.io images), platform/flux-git (write deploy key
+# image-automation-controller pushes with).
 # See platform/docs/vault-bootstrap.md §4 for the full key list.
 cat <<'EOF' >/tmp/admin.hcl
 # Broad operator policy attached to OIDC-issued tokens for users with
@@ -253,6 +253,6 @@ JSON
 
   unset OIDC_CLIENT_SECRET
 else
-  echo "secret/api:auth.clients.vault.secret not seeded yet — skipping OIDC auth method."
+  echo "secret/api:auth.clients.vault.secret not seeded yet; skipping OIDC auth method."
   echo "Seed with: scripts/seed-vault-from-env.sh --apply <env-files...> (then re-run this Job via flux reconcile kustomization apps-data)."
 fi

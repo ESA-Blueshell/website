@@ -27,9 +27,15 @@ class VaultConfigImportIT {
             assertThat(property("brevo.apiKey")).isEqualTo("brevo-from-vault")
             assertThat(property("google.calendar.serviceAccountJson")).isEqualTo("""{"type":"service_account"}""")
             assertThat(property("discord.botToken")).isEqualTo("discord-from-vault")
-            assertThat(property("auth.clients.vault.secret")).isEqualTo("oidc-from-vault")
             assertThat(property("spring.datasource.username")).isEqualTo("db-user-from-vault")
             assertThat(property("spring.datasource.password")).isEqualTo("db-password-from-vault")
+        }
+    }
+
+    @Test
+    fun `a key missing from Vault is blank in prod, never application yaml's development value`() {
+        prodEnvironment { property ->
+            assertThat(property("auth.clients.vault.secret")).isEmpty()
         }
     }
 
@@ -82,7 +88,6 @@ class VaultConfigImportIT {
                 "brevo.apiKey=brevo-from-vault",
                 """google.calendar.serviceAccountJson={"type":"service_account"}""",
                 "discord.botToken=discord-from-vault",
-                "auth.clients.vault.secret=oidc-from-vault",
                 "spring.datasource.username=db-user-from-vault",
                 "spring.datasource.password=db-password-from-vault",
             )

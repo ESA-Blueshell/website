@@ -197,9 +197,7 @@ fi
 
 command -v vault >/dev/null 2>&1 || { echo "missing command: vault" >&2; exit 1; }
 if [[ "$SYNC_API" -eq 1 ]]; then
-  for cmd in kubectl; do
-    command -v "$cmd" >/dev/null 2>&1 || { echo "missing command: $cmd" >&2; exit 1; }
-  done
+  command -v kubectl >/dev/null 2>&1 || { echo "missing command: kubectl" >&2; exit 1; }
 fi
 
 if (( ${#FILES[@]} > 0 )); then

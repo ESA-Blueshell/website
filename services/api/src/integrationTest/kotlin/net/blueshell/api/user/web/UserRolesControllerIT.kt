@@ -79,6 +79,18 @@ class UserRolesControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `a granted board role reaches the job stats on the person's next request`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            // A granted role is dormant on an account without two-factor.
+            val subject = createUserWithRole(Role.MEMBER, twoFactor = true)
+            mvc.perform(get("/management/jobs/stats").with(signedIn(subject))).andExpect(status().isForbidden)
+
+            setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isOk)
+
+            mvc.perform(get("/management/jobs/stats").with(signedIn(subject))).andExpect(status().isOk)
+        }
+
+        @Test
         fun `the request states the whole set, so a role left out is revoked`() {
             val admin = createUserWithRole(Role.ADMIN)
             val subject = createUserWithRole(Role.MEMBER)

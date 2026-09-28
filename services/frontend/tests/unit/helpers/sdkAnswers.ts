@@ -10,9 +10,9 @@ type Refusal<F extends SdkCall> = Extract<Result<F>, {data: undefined}>["error"]
 
 const envelope = {headers: {}, config: {headers: {}}}
 
-/** What [call] answers when the api accepts, with [data] as the body. */
-export function answer<F extends SdkCall>(_call: F, data: Body<F>): Result<F> {
-  return {...envelope, status: 200, statusText: "OK", data, error: undefined} as unknown as Result<F>
+/** What [call] answers when the api accepts, with [data] as the body and any [headers] it sent. */
+export function answer<F extends SdkCall>(_call: F, data: Body<F>, headers: Record<string, string | string[]> = {}): Result<F> {
+  return {...envelope, headers, status: 200, statusText: "OK", data, error: undefined} as unknown as Result<F>
 }
 
 /** What [call] answers when the api accepts but sends no body, which the types say cannot happen. */

@@ -4,6 +4,8 @@ import AlsoComingUp from "@/domains/events/island/AlsoComingUp.vue"
 import EventBand from "@/domains/events/island/EventBand.vue"
 import EventSignUpPanel from "@/domains/events/island/EventSignUpPanel.vue"
 import {downloadIcs, pageUrlOf} from "@/domains/events/island/eventCalendar"
+import type {EventResponse} from "@/services/api"
+import {aBanner, anEvent, anImage, aQuestion, aSignUp, aSurvey} from "../../../helpers/apiFixtures"
 
 const {getters, mockWithdraw, mockNetworkError, mockCreate} = vi.hoisted(() => ({
   getters: {isLoggedIn: false, isMember: false, getGuestData: null as null | {accessToken: string}},
@@ -17,11 +19,11 @@ vi.mock("@/domains/events/adapters/signUps", async (importOriginal) => ({...(awa
 vi.mock("ics", () => ({createEvent: mockCreate}))
 
 const soon = new Date(Date.now() + 3 * 86_400_000).toISOString()
-const event = (over: Record<string, unknown> = {}) => ({
+const event = (over: Partial<EventResponse> = {}): EventResponse => anEvent({
   id: 7, title: "4Funcie Pooling", startTime: soon, endTime: soon, location: "Esports Lounge Twente",
   description: "Pool.", approved: true, signUp: true, signUpCount: 6, signUpLimit: 24,
-  signUpDeadline: new Date(Date.now() + 86_400_000).toISOString(), membersOnly: false, memberPrice: 5, publicPrice: 9.5, ...over,
-}) as never
+  signUpDeadline: new Date(Date.now() + 86_400_000).toISOString(), membersOnly: false, memberPrice: 5, publicPrice: 9.5, banner: undefined, ...over,
+})
 
 const EventSignUpForm = {name: "EventSignUpForm", props: ["event", "initialSignUp", "showGuestForm"], emits: ["update:signUp", "delete:signUp"], template: "<form data-testid='event-signup-form' />"}
 
@@ -44,7 +46,7 @@ describe("the sign-up panel on an event's page", () => {
     Object.assign(getters, {isLoggedIn: false, isMember: false, getGuestData: null})
   })
 
-  const panel = (props: Record<string, unknown>) => mount(EventSignUpPanel, {props, global: {stubs: {EventSignUpForm}}})
+  const panel = (props: InstanceType<typeof EventSignUpPanel>["$props"]) => mount(EventSignUpPanel, {props, global: {stubs: {EventSignUpForm}}})
 
   it("asks a visitor for their details, and a member only for the answers", () => {
     const visitor = panel({event: event()})
@@ -88,7 +90,7 @@ describe("the sign-up panel on an event's page", () => {
   })
 
   it("tells somebody going so, with the calendar file, and lets them change their answers", async () => {
-    const wrapper = panel({event: event({signUpForm: {questions: [{id: 1}]}, signUpCount: 24}), signUp: {id: 40}})
+    const wrapper = panel({event: event({signUpForm: aSurvey({questions: [aQuestion({id: 1})]}), signUpCount: 24}), signUp: aSignUp({id: 40})})
 
     expect(wrapper.text()).toContain("You are going")
     await wrapper.get("[data-testid=event-panel-ics]").trigger("click")
@@ -96,8 +98,8 @@ describe("the sign-up panel on an event's page", () => {
 
     await wrapper.get("[data-testid=event-panel-change]").trigger("click")
     const form = wrapper.getComponent({name: "EventSignUpForm"})
-    expect(form.props("initialSignUp")).toEqual({id: 40})
-    form.vm.$emit("update:signUp", {id: 40})
+    expect(form.props("initialSignUp")).toEqual(aSignUp({id: 40}))
+    form.vm.$emit("update:signUp", aSignUp({id: 40}))
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain("You are going")
   })
@@ -105,7 +107,7 @@ describe("the sign-up panel on an event's page", () => {
   it("withdraws somebody going to an event that asks nothing, carrying a guest's token", async () => {
     getters.getGuestData = {accessToken: "guest-token"}
     mockWithdraw.mockResolvedValue(undefined)
-    const wrapper = panel({event: event(), signUp: {id: 40}})
+    const wrapper = panel({event: event(), signUp: aSignUp({id: 40})})
 
     await wrapper.get("[data-testid=event-panel-withdraw]").trigger("click")
     await flushPromises()
@@ -116,7 +118,7 @@ describe("the sign-up panel on an event's page", () => {
 
   it("reports a withdrawal the api refused", async () => {
     mockWithdraw.mockRejectedValue(new Error("500"))
-    const wrapper = panel({event: event(), signUp: {id: 40}})
+    const wrapper = panel({event: event(), signUp: aSignUp({id: 40})})
 
     await wrapper.get("[data-testid=event-panel-withdraw]").trigger("click")
     await flushPromises()
@@ -127,14 +129,14 @@ describe("the sign-up panel on an event's page", () => {
   })
 
   it("says where somebody is going, and leaves out a place the event does not name", () => {
-    expect(panel({event: event({location: null}), signUp: {id: 40}}).get(".panel__line").text()).not.toContain(" at ")
+    expect(panel({event: event({location: null}), signUp: aSignUp({id: 40})}).get(".panel__line").text()).not.toContain(" at ")
   })
 })
 
 describe("what else is coming", () => {
   it("shows a few posters, counts the rest and leads to all of them", () => {
     const wrapper = mount(AlsoComingUp, {
-      props: {events: [event({id: 8}), event({id: 9, location: null, banner: {image: {url: "/f/p.webp", renditions: []}}})], total: 5},
+      props: {events: [event({id: 8}), event({id: 9, location: null, banner: aBanner({image: anImage({url: "/f/p.webp", renditions: []})})})], total: 5},
       global: {stubs: {RouterLink: RouterLinkStub}},
     })
 

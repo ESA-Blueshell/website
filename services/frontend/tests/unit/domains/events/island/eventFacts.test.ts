@@ -1,19 +1,24 @@
 import {describe, expect, it} from "vitest"
 import {DateTime} from "luxon"
 import {deadlineOf, directionsOf, monthsOf, pastPosterOf, placesOf, plateOf, posterOf, priceOf, signUpStateOf, soonOf, whenOf} from "@/domains/events/island/eventFacts"
+import type {EventResponse, Image} from "@/services/api"
+import {aBanner, anEvent, anImage} from "../../../helpers/apiFixtures"
 
-const event = (over: Record<string, unknown> = {}) => ({
+const event = (over: Partial<EventResponse> = {}): EventResponse => anEvent({
   id: 1,
   title: "LAN",
   startTime: "2026-09-22T19:00:00",
   endTime: "2026-09-22T22:00:00",
+  location: undefined,
+  description: undefined,
+  banner: undefined,
   signUp: true,
   signUpCount: 6,
   signUpLimit: 24,
   membersOnly: false,
   approved: true,
   ...over,
-}) as never
+})
 
 const now = DateTime.fromISO("2026-09-21T12:00:00")
 
@@ -71,11 +76,12 @@ describe("what the events page says about an event", () => {
   })
 
   it("resolves the poster's paths against the api, and draws none where there is none", () => {
-    const poster = posterOf(event({banner: {image: {url: "/files/p.webp", path: "p.webp", width: 1080, height: 1080, renditions: [{url: "/files/p-540.webp", width: 540}]}}}))
+    const poster = posterOf(event({banner: aBanner({image: anImage({url: "/files/p.webp", path: "p.webp", width: 1080, height: 1080, renditions: [{url: "/files/p-540.webp", width: 540}]})})}))
 
     expect(poster?.url).toMatch(/\/files\/p\.webp$/u)
     expect(poster?.renditions[0]?.width).toBe(540)
-    expect(posterOf(event({banner: {image: {url: "/files/p.webp"}}}))).toMatchObject({path: "", width: undefined, renditions: []})
+    // Stored before the api recorded a picture's path and measurements, which its type now requires.
+    expect(posterOf(event({banner: aBanner({image: {url: "/files/p.webp"} as Image})}))).toMatchObject({path: "", width: undefined, renditions: []})
     expect(posterOf(event())).toBeNull()
   })
 
@@ -98,7 +104,7 @@ describe("what the events page says about an event", () => {
 
 describe("an event that has run, on the poster strip", () => {
   it("draws its poster, its line and where it leads, saying an older year and who it was for", () => {
-    const banner = {image: {url: "/files/p.webp", path: "p.webp", width: 1080, height: 1350, renditions: [{url: "/files/p-540.webp", width: 540}]}}
+    const banner = aBanner({image: anImage({url: "/files/p.webp", path: "p.webp", width: 1080, height: 1350, renditions: [{url: "/files/p-540.webp", width: 540}]})})
     const poster = pastPosterOf(event({id: 9, startTime: "2025-03-01T19:00:00", endTime: "2025-03-01T22:00:00", banner, membersOnly: true,
       description: "Swiss  rounds,\nfive of them.", location: "Pakhuis"}), now)
 

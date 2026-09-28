@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import EditSignUpDialog from "@/components/common/modals/EditSignUpDialog.vue"
+import {aSignUp, anEvent} from "../../../helpers/apiFixtures"
 
 vi.mock("@/components/form/EventSignUpForm.vue", () => ({
   default: {
@@ -11,8 +12,8 @@ vi.mock("@/components/form/EventSignUpForm.vue", () => ({
   },
 }))
 
-const event = {id: 500, title: "LAN"} as never
-const signUp = {id: 44, version: 3, answers: []} as never
+const event = anEvent({id: 500, title: "LAN"})
+const signUp = aSignUp({id: 44, version: 3})
 
 // The island's dialog portals to the body; a stand-in keeps the form where it can be read.
 const modalStub = {

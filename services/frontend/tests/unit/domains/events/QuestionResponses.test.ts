@@ -1,15 +1,18 @@
 import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
 import QuestionResponses from "@/domains/events/island/QuestionResponses.vue"
+import type {RosterRow} from "@/domains/events/island/SignUpRoster.vue"
+import {type AnswerResponse, QuestionType} from "@/services/api"
+import {anAnswer, aQuestion, aSignUp} from "../../helpers/apiFixtures"
 
-const row = (id: number, name: string, answers: Array<Record<string, unknown>>) => ({
-  signUp: {id} as never,
+const row = (id: number, name: string, answers: Array<Partial<AnswerResponse>>): RosterRow => ({
+  signUp: aSignUp({id}),
   person: {name, discord: "", email: "", phoneNumber: ""},
-  answers: new Map(answers.map(one => [one.questionId as number, one as never])),
+  answers: new Map(answers.map(one => [one.questionId ?? 0, anAnswer(one)])),
 })
 
-const choice = (type: string) => ({id: 2, idx: 1, type, label: "Food", choiceLabels: ["Pizza", "Pasta"]}) as never
-const open = {id: 3, idx: 0, type: "OPEN", label: "Comment"} as never
+const choice = (type: QuestionType) => aQuestion({id: 2, idx: 1, type, label: "Food", choiceLabels: ["Pizza", "Pasta"]})
+const open = aQuestion()
 
 describe("what everybody answered to one question", () => {
   it("lists each open answer, and why there is none where there is none", () => {
@@ -27,7 +30,7 @@ describe("what everybody answered to one question", () => {
   })
 
   it("tallies a choice beside its grid of ticks, with the totals under it", () => {
-    const wrapper = mount(QuestionResponses, {props: {question: choice("CHECKBOX"), rows: [
+    const wrapper = mount(QuestionResponses, {props: {question: choice(QuestionType.CHECKBOX), rows: [
       row(1, "Alice", [{questionId: 2, optionSelections: [true, false]}]),
       row(2, "Bob", [{questionId: 2, optionSelections: [true, true]}]),
       row(3, "Cara", []),
@@ -44,7 +47,7 @@ describe("what everybody answered to one question", () => {
   })
 
   it("reads an answer that predates an option, or carries no selections, as no answer at all", () => {
-    const wrapper = mount(QuestionResponses, {props: {question: choice("RADIO"), rows: [
+    const wrapper = mount(QuestionResponses, {props: {question: choice(QuestionType.RADIO), rows: [
       row(1, "Alice", [{questionId: 2, optionSelections: [true]}]),
       row(2, "Bob", [{questionId: 2, textResponse: "typed"}]),
     ]}})
@@ -55,7 +58,7 @@ describe("what everybody answered to one question", () => {
   })
 
   it("says nothing about the rest where everybody answered, and tallies nothing out of nothing", () => {
-    const wrapper = mount(QuestionResponses, {props: {question: choice("CHECKBOX"), rows: [
+    const wrapper = mount(QuestionResponses, {props: {question: choice(QuestionType.CHECKBOX), rows: [
       row(1, "Alice", [{questionId: 2, optionSelections: [false, false]}]),
     ]}})
 
@@ -64,7 +67,7 @@ describe("what everybody answered to one question", () => {
   })
 
   it("draws a choice question without options as a question without a tally", () => {
-    const wrapper = mount(QuestionResponses, {props: {question: {id: 4, idx: 2, type: "RADIO", label: "Empty"} as never, rows: []}})
+    const wrapper = mount(QuestionResponses, {props: {question: aQuestion({id: 4, idx: 2, type: QuestionType.RADIO, label: "Empty"}), rows: []}})
 
     expect(wrapper.findAll(".question__tally-row")).toHaveLength(0)
   })

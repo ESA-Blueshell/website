@@ -1,6 +1,9 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount, RouterLinkStub} from "@vue/test-utils"
-import {ref} from "vue"
+import {type Ref, ref} from "vue"
+import type {EventSignUpResponse} from "@/services/api"
+import type {CommitteeOption} from "@/domains/events/island/useEventReader"
+import {aSignUp} from "../../helpers/apiFixtures"
 import EventPage from "@/pages/events/EventPage.vue"
 
 const {mockRead, mockList, mockPush, mockCommit, getters, reader, mockNetworkError, mockIcs, route} = vi.hoisted(() => ({
@@ -10,7 +13,8 @@ const {mockRead, mockList, mockPush, mockCommit, getters, reader, mockNetworkErr
   mockPush: vi.fn(),
   mockCommit: vi.fn(),
   getters: {isBoard: false},
-  reader: {signUps: null as never, committees: null as never},
+  // Filled in before each test, since a ref cannot be made inside the hoisted factory.
+  reader: {} as {signUps: Ref<EventSignUpResponse[]>, committees: Ref<CommitteeOption[]>},
   mockNetworkError: vi.fn(),
   mockIcs: vi.fn(),
 }))
@@ -63,8 +67,8 @@ describe("an event's own page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getters.isBoard = false
-    reader.signUps = ref([]) as never
-    reader.committees = ref([]) as never
+    reader.signUps = ref([])
+    reader.committees = ref([])
     mockRead.mockResolvedValue(event())
     mockList.mockResolvedValue([event(), event({id: 8}), event({id: 9})])
   })
@@ -104,7 +108,7 @@ describe("an event's own page", () => {
   })
 
   it("names the committee that runs it, where the reader knows it", async () => {
-    reader.committees = ref([{id: 2, name: "4FunCie"}]) as never
+    reader.committees = ref([{id: 2, name: "4FunCie"}])
     const wrapper = await mountPage()
 
     expect(wrapper.getComponent({name: "EventBand"}).props("eyebrow")).toBe("4FunCie")
@@ -138,7 +142,7 @@ describe("an event's own page", () => {
   it("gives its organisers their strip, and leaves after a deletion", async () => {
     expect((await mountPage()).find("[data-testid=event-organiser]").exists()).toBe(false)
 
-    reader.committees = ref([{id: 2, name: "4FunCie"}]) as never
+    reader.committees = ref([{id: 2, name: "4FunCie"}])
     const wrapper = await mountPage()
     const actions = wrapper.getComponent({name: "EventActions"})
     expect(actions.props("manageOnly")).toBe(true)
@@ -171,7 +175,7 @@ describe("an event's own page", () => {
   })
 
   it("keeps its count and the reader's sign-up in step with the panel", async () => {
-    reader.signUps = ref([{id: 99, eventId: 3}]) as never
+    reader.signUps = ref([aSignUp({id: 99, eventId: 3})])
     const wrapper = await mountPage()
     const panel = () => wrapper.getComponent({name: "EventSignUpPanel"})
 

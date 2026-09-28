@@ -1,11 +1,13 @@
 import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
-import SignUpRoster from "@/domains/events/island/SignUpRoster.vue"
+import SignUpRoster, {type RosterRow} from "@/domains/events/island/SignUpRoster.vue"
+import {EventSignUpKind} from "@/services/api"
+import {aGuest, aSignUp} from "../../helpers/apiFixtures"
 
-const rows = [
-  {signUp: {id: 11, kind: "MEMBER"} as never, person: {name: "Alice", discord: "alice#1", email: "a@x", phoneNumber: "1"}, answers: new Map()},
-  {signUp: {id: 12, kind: "GUEST", guest: {name: "Bob"}} as never, person: {name: "Bob", discord: "", email: "b@x", phoneNumber: ""}, answers: new Map()},
-  {signUp: {id: 13, kind: "NON_MEMBER"} as never, person: {name: "Cara", discord: "", email: "c@x", phoneNumber: ""}, answers: new Map()},
+const rows: RosterRow[] = [
+  {signUp: aSignUp({id: 11, kind: EventSignUpKind.MEMBER}), person: {name: "Alice", discord: "alice#1", email: "a@x", phoneNumber: "1"}, answers: new Map()},
+  {signUp: aSignUp({id: 12, kind: EventSignUpKind.GUEST, guest: aGuest({name: "Bob"})}), person: {name: "Bob", discord: "", email: "b@x", phoneNumber: ""}, answers: new Map()},
+  {signUp: aSignUp({id: 13, kind: EventSignUpKind.NON_MEMBER}), person: {name: "Cara", discord: "", email: "c@x", phoneNumber: ""}, answers: new Map()},
 ]
 
 describe("the roster", () => {

@@ -11,7 +11,15 @@
     "tests/unit/domains/blogs/adapters/**/*.ts",
     "tests/unit/domains/contribution/adapters/**/*.ts",
     "tests/unit/domains/recovery/adapters/**/*.ts",
-    "tests/unit/domains/user/adapters/**/*.ts"
+    "tests/unit/domains/user/adapters/**/*.ts",
+    "tests/unit/domains/events/adapters/**/*.ts",
+    "tests/unit/domains/events/QuestionResponses.test.ts",
+    "tests/unit/domains/events/SignUpRoster.test.ts",
+    "tests/unit/domains/events/island/eventFacts.test.ts",
+    "tests/unit/domains/events/island/eventPageParts.test.ts",
+    "tests/unit/domains/events/island/ScopedEvents.test.ts",
+    "tests/unit/pages/events/EventPage.test.ts",
+    "tests/unit/components/common/modals/EditSignUpDialog.test.ts"
   ],
   "exclude": [
     "dist",

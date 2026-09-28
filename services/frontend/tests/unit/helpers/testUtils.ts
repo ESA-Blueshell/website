@@ -29,7 +29,8 @@ export function unmountAll(wrappers: VueWrapper[], suite: string): void {
 }
 
 export function hrefs(wrapper: VueWrapper<any>): string[] {
-  return wrapper.findAll("a[href]").map((node) => node.attributes("href"))
+  // The selector only matches anchors that carry one.
+  return wrapper.findAll("a[href]").map((node) => node.attributes("href") ?? "")
 }
 
 export async function withVuexUseStore(

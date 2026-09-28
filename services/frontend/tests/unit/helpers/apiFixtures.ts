@@ -4,17 +4,22 @@
  */
 import type {
   AddressResponse,
+  AnswerResponse,
   AssociationStatisticsResponse,
   BlogResponse,
   ContributionPeriodResponse,
   EventBannerResponse,
   EventResponse,
+  EventSignUpResponse,
+  GuestResponse,
   Image,
   MemberProfileResponse,
   MembershipResponse,
+  QuestionResponse,
+  SurveyResponse,
   UserDetailResponse,
 } from "@/services/api"
-import {MemberType, Role} from "@/services/api"
+import {EventSignUpKind, MemberType, QuestionType, Role} from "@/services/api"
 
 const stamped = {createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", version: 0}
 
@@ -135,5 +140,48 @@ export const aMemberProfile = (over: Partial<MemberProfileResponse> = {}): Membe
   bhv: false,
   ehbo: false,
   nameOnRosters: true,
+  ...over,
+})
+
+export const aSignUp = (over: Partial<EventSignUpResponse> = {}): EventSignUpResponse => ({
+  ...stamped,
+  id: 5,
+  eventId: 500,
+  kind: EventSignUpKind.MEMBER,
+  answers: [],
+  ...over,
+})
+
+export const aQuestion = (over: Partial<QuestionResponse> = {}): QuestionResponse => ({
+  ...stamped,
+  id: 3,
+  idx: 0,
+  surveyId: 1,
+  type: QuestionType.OPEN,
+  label: "Comment",
+  ...over,
+})
+
+export const anAnswer = (over: Partial<AnswerResponse> = {}): AnswerResponse => ({
+  ...stamped,
+  id: 1,
+  questionId: 3,
+  ...over,
+})
+
+export const aGuest = (over: Partial<GuestResponse> = {}): GuestResponse => ({
+  ...stamped,
+  id: 60,
+  name: "Bob",
+  email: "b@x",
+  discord: "",
+  ...over,
+})
+
+export const aSurvey = (over: Partial<SurveyResponse> = {}): SurveyResponse => ({
+  ...stamped,
+  id: 1,
+  questions: [],
+  responseCount: 0,
   ...over,
 })

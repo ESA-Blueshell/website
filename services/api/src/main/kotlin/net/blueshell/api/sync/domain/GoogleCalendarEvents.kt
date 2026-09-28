@@ -31,5 +31,5 @@ internal fun toGoogleEvent(
     return googleEvent
 }
 
-/* Google is handed whole seconds, as it always was. */
+// Google is handed whole seconds, as it always was.
 private fun Instant.wholeSeconds(): Long = truncatedTo(ChronoUnit.SECONDS).toEpochMilli()

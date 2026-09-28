@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -26,7 +27,7 @@ class CohortVerificationScheduler(
                 targetIds.find(cohort) != null
             }
         log.info("Scheduling reconcile for {} externally-mapped cohorts", mapped.size)
-        mapped.forEach { jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(it.id!!)) }
+        mapped.forEach { jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(it.id!!), JobTrigger.SCHEDULED_RUN) }
     }
 
     companion object {

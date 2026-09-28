@@ -3,6 +3,7 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.shared.job.CalendarJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.runAsyncFromActor
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Component
 
@@ -19,6 +20,11 @@ class CalendarSyncListener(
 ) {
     @ApplicationModuleListener
     fun on(event: EventChanged) {
-        jobs.runAsync(CalendarJobs.SyncCalendarEvent, CalendarJobs.SyncCalendarEventPayload(event.eventId))
+        jobs.runAsyncFromActor(
+            CalendarJobs.SyncCalendarEvent,
+            CalendarJobs.SyncCalendarEventPayload(event.eventId),
+            event.changeType.asTrigger(),
+            event,
+        )
     }
 }

@@ -3315,6 +3315,10 @@ components:
           oneOf:
           - $ref: '#/components/schemas/TargetSystem'
           - type: 'null'
+        trigger:
+          oneOf:
+          - $ref: '#/components/schemas/JobTrigger'
+          - type: 'null'
         updatedAt:
           format: date-time
           type:
@@ -3436,6 +3440,24 @@ components:
       - successCount
       - totalCount
       type: object
+    JobTrigger:
+      enum:
+      - EVENT_CREATED
+      - EVENT_UPDATED
+      - EVENT_APPROVED
+      - EVENT_UNAPPROVED
+      - EVENT_DELETED
+      - SIGN_UPS_CHANGED
+      - USER_CHANGED
+      - USER_REMOVED
+      - MEMBERSHIP_CHANGED
+      - SITE_ACTION
+      - MORNING_RUN
+      - HOURLY_RUN
+      - SCHEDULED_RUN
+      - ANOTHER_JOB
+      - BY_HAND
+      type: string
     JobTypeDescriptor:
       properties:
         payloadFields:

@@ -8,6 +8,7 @@ import net.blueshell.api.shared.enums.JobExecutionCategory
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
 import java.time.Instant
 
@@ -31,6 +32,8 @@ data class JobExecutionDTO(
     val skipReason: String?,
     /** Asked for by hand, so it did what it would otherwise have waited for. */
     val forced: Boolean,
+    /** What queued it; null on a row written before triggers were recorded. */
+    val trigger: JobTrigger?,
     /**
      * The raw job payload parsed into a key/value map (or `null` when the
      * stored payload was empty or unparseable). Shipped as structured data

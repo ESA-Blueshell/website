@@ -4,6 +4,7 @@ import jakarta.validation.Validation
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
@@ -12,6 +13,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -48,6 +50,8 @@ class RecoveryUseCasesTest {
             verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
                 eq(EmailJobs.RecoveryPayload(7L, "token-1", TokenPurpose.PASSWORD_RESET)),
+                eq(JobTrigger.SITE_ACTION),
+                anyOrNull(),
             )
         }
 
@@ -111,6 +115,8 @@ class RecoveryUseCasesTest {
             verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
                 eq(EmailJobs.RecoveryPayload(8L, "token-5", TokenPurpose.USER_ACTIVATION)),
+                eq(JobTrigger.SITE_ACTION),
+                anyOrNull(),
             )
         }
 
@@ -138,6 +144,8 @@ class RecoveryUseCasesTest {
             verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
                 eq(EmailJobs.RecoveryPayload(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION)),
+                eq(JobTrigger.SITE_ACTION),
+                anyOrNull(),
             )
         }
 
@@ -163,6 +171,8 @@ class RecoveryUseCasesTest {
             verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
                 eq(EmailJobs.RecoveryPayload(9L, "token-7", TokenPurpose.MEMBER_ACTIVATION)),
+                eq(JobTrigger.SITE_ACTION),
+                anyOrNull(),
             )
         }
 

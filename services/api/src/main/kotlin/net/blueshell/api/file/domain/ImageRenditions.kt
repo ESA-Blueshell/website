@@ -4,6 +4,7 @@ import net.blueshell.api.file.api.BlobStore
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.job.ImageJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import org.springframework.stereotype.Component
 
 /**
@@ -31,7 +32,7 @@ class ImageRenditions(
      */
     fun request(source: File): List<File> {
         if (!moves(source)) return writer.derive(source)
-        source.id?.let { id -> jobs.runAsync(ImageJobs.DeriveRenditions, ImageJobs.DeriveRenditionsPayload(id)) }
+        source.id?.let { id -> jobs.runAsync(ImageJobs.DeriveRenditions, ImageJobs.DeriveRenditionsPayload(id), JobTrigger.SITE_ACTION) }
         return emptyList()
     }
 
@@ -41,6 +42,5 @@ class ImageRenditions(
      * A picture whose bytes are gone has none. It takes the ordinary path, where the writer
      * reports the missing bytes in its own words rather than a job failing to find them.
      */
-    private fun moves(source: File): Boolean =
-        blobs.exists(source.path) && animated.animates(source.mediaType) { blobs.open(source.path) }
+    private fun moves(source: File): Boolean = blobs.exists(source.path) && animated.animates(source.mediaType) { blobs.open(source.path) }
 }

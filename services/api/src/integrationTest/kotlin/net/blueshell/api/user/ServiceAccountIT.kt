@@ -3,12 +3,14 @@ package net.blueshell.api.user
 import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.sync.domain.SyncAllContactsJob
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -78,10 +80,14 @@ class ServiceAccountIT : UserTestSupport() {
 
         fanOut.runJob(mapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()), null)
 
-        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(member.id!!)))
+        verify(
+            jobs,
+        ).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(member.id!!)), eq(JobTrigger.ANOTHER_JOB), anyOrNull())
         verify(jobs, never()).runAsync(
             eq(ContactJobs.SyncContact),
             eq(ContactJobs.SyncContactPayload(serviceAccount().id!!)),
+            eq(JobTrigger.ANOTHER_JOB),
+            anyOrNull(),
         )
     }
 

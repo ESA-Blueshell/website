@@ -10,6 +10,7 @@ import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.AnswerData
@@ -22,6 +23,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -615,6 +617,8 @@ class EventSignUpUseCasesTest {
                         eventTitle = "LAN Party",
                     ),
                 ),
+                eq(JobTrigger.SITE_ACTION),
+                anyOrNull(),
             )
         }
 
@@ -645,6 +649,8 @@ class EventSignUpUseCasesTest {
                         eventTitle = "LAN Party",
                     ),
                 ),
+                eq(JobTrigger.SITE_ACTION),
+                anyOrNull(),
             )
         }
 

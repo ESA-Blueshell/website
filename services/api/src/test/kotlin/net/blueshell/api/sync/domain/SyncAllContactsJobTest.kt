@@ -2,10 +2,12 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -33,8 +35,8 @@ class SyncAllContactsJobTest {
 
         job.runJob(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
-        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
-        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))
+        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)), eq(JobTrigger.ANOTHER_JOB), anyOrNull())
+        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)), eq(JobTrigger.ANOTHER_JOB), anyOrNull())
     }
 
     @Test
@@ -52,11 +54,17 @@ class SyncAllContactsJobTest {
         whenever(userService.findAll()).thenReturn(users)
         doThrow(RuntimeException("enqueue boom"))
             .whenever(jobs)
-            .runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
+            .runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)), eq(JobTrigger.ANOTHER_JOB), anyOrNull())
 
         job.runJob(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
-        verify(jobs, times(1)).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
-        verify(jobs, times(1)).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))
+        verify(
+            jobs,
+            times(1),
+        ).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)), eq(JobTrigger.ANOTHER_JOB), anyOrNull())
+        verify(
+            jobs,
+            times(1),
+        ).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)), eq(JobTrigger.ANOTHER_JOB), anyOrNull())
     }
 }

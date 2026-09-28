@@ -21,6 +21,7 @@ import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.server.ResponseStatusException
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import net.blueshell.api.shared.job.JobTrigger
 
 @Service
 class InboundReconcile(
@@ -69,7 +70,8 @@ class InboundReconcile(
             target.definition.key, selected,
         )
         val skipped = current.skipped.size + current.matched.size - selected.size
-        return InboundReconcileApplyResponse(jobs.runAsync(CohortJobs.ApplyInboundReconcile, payload)?.id, selected.size, skipped)
+        val queued = jobs.runAsync(CohortJobs.ApplyInboundReconcile, payload, JobTrigger.SITE_ACTION)
+        return InboundReconcileApplyResponse(queued?.id, selected.size, skipped)
     }
 
     fun applyJob(payload: CohortJobs.ApplyInboundReconcilePayload): List<ApplyInboundReconcileItemResult> {

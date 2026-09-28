@@ -2,6 +2,7 @@ package net.blueshell.api.contact.domain
 
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -22,7 +23,7 @@ class ContactSyncScheduler(
     @Scheduled(cron = "\${contact.sync-cron:0 0 2 * * *}")
     fun syncAllContacts() {
         log.info("Scheduling contact sync spawn job")
-        jobs.runAsync(ContactJobs.SyncAllContacts, ContactJobs.SyncAllContactsPayload())
+        jobs.runAsync(ContactJobs.SyncAllContacts, ContactJobs.SyncAllContactsPayload(), JobTrigger.SCHEDULED_RUN)
     }
 
     companion object {

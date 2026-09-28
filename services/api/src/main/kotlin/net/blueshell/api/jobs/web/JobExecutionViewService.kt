@@ -80,6 +80,7 @@ class JobExecutionViewService(
             dedupKey = execution.dedupKey,
             skipReason = execution.skipReason,
             forced = execution.forced,
+            trigger = execution.trigger,
             payload = parsedPayload.raw,
             queuedAt = execution.queuedAt,
             startedAt = execution.startedAt,

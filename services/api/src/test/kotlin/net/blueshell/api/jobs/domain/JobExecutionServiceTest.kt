@@ -5,6 +5,7 @@ import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -155,6 +156,15 @@ class JobExecutionServiceTest {
         assertThat(result.status).isEqualTo(JobExecutionStatus.SKIPPED)
         assertThat(result.skipReason).isEqualTo("Not due yet.")
         assertThat(result.finishedAt).isNotNull()
+    }
+
+    @Test
+    fun `createQueued records what queued the job`() {
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
+
+        assertThat(service.createQueued("demo", null, systemActor, trigger = JobTrigger.MORNING_RUN)!!.trigger)
+            .isEqualTo(JobTrigger.MORNING_RUN)
+        assertThat(service.createQueued("demo", null, systemActor)!!.trigger).isNull()
     }
 
     @Test

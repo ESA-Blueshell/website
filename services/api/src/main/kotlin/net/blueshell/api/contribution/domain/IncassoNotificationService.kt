@@ -5,6 +5,7 @@ import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -33,6 +34,7 @@ class IncassoNotificationService(
         jobs.runAsync(
             EmailJobs.IncassoNotification,
             EmailJobs.IncassoNotificationPayload(requireNotNull(written.id)),
+            JobTrigger.SITE_ACTION,
         )
         return written
     }

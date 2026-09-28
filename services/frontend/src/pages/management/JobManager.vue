@@ -4,7 +4,7 @@ import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
 import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
-import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, errorSummary, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase} from "@/domains/jobs"
+import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, errorSummary, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
@@ -510,6 +510,10 @@ onMounted(async () => {
                     </div>
 
                     <div class="job-meta-inline">
+                      <template v-if="execution.trigger">
+                        <span :data-testid="`job-row-trigger-${execution.id}`">{{ triggerLabel(execution) }}</span>
+                        <span class="job-meta-sep">·</span>
+                      </template>
                       <span>{{ previewActorDisplay(execution) }}</span>
                       <span class="job-meta-sep">·</span>
                       <span>{{ attemptsLabel(execution.attempts) }}</span>
@@ -582,6 +586,13 @@ onMounted(async () => {
                     >
                       <p class="text-caption text-medium-emphasis mb-2">
                         Trigger
+                      </p>
+                      <p
+                        v-if="execution.trigger"
+                        :data-testid="`job-trigger-${execution.id}`"
+                        class="text-body-2 mb-1"
+                      >
+                        <strong>Queued by:</strong> {{ triggerLabel(execution) }}
                       </p>
                       <p class="text-body-2 mb-1">
                         <strong>Actor:</strong> {{ actorDisplay(execution) }}

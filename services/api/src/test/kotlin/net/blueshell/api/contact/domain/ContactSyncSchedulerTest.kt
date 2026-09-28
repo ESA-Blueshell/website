@@ -2,7 +2,9 @@ package net.blueshell.api.contact.domain
 
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -23,6 +25,8 @@ class ContactSyncSchedulerTest {
         verify(jobs).runAsync(
             eq(ContactJobs.SyncAllContacts),
             eq(ContactJobs.SyncAllContactsPayload()),
+            eq(JobTrigger.SCHEDULED_RUN),
+            anyOrNull(),
         )
     }
 }

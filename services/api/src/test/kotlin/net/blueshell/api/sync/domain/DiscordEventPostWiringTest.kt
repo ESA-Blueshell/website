@@ -1,13 +1,15 @@
 package net.blueshell.api.sync.domain
 
+import net.blueshell.api.event.api.EventChange
 import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.event.api.EventSignUpsChanged
-import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.jobs.api.JobOutcome
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.sync.api.ExternalIdMappingService
@@ -106,13 +108,16 @@ class DiscordEventPostWiringTest {
 
     private class Queued : JobQueue {
         val types = mutableListOf<String>()
+        val triggers = mutableListOf<Pair<JobTrigger, Actor?>>()
 
         override fun <T : Any> runAsync(
             job: JobDefinition<T>,
             payload: T,
+            trigger: JobTrigger,
             actor: Actor?,
         ): QueuedJob? {
             types += "${job.type} $payload"
+            triggers += trigger to actor
             return null
         }
     }
@@ -180,6 +185,31 @@ class DiscordEventPostWiringTest {
             "discord.announcement EventPostPayload(eventId=42)",
             "discord.event EventPostPayload(eventId=42)",
             "discord.event EventPostPayload(eventId=42)",
+        )
+        assertThat(jobs.triggers.map { it.first })
+            .containsExactly(JobTrigger.MORNING_RUN, JobTrigger.MORNING_RUN, JobTrigger.HOURLY_RUN)
+    }
+
+    @Test
+    fun `says what queued each job and who made the change`() {
+        val board = Actor.user(5, Role.BOARD)
+        val jobs = Queued()
+        triggers("2026-10-10T10:00", jobs = jobs).on(EventChanged(42, EventChange.APPROVED, board))
+        triggers("2026-10-10T10:00", out = setOf(DiscordArtefact.INFO_POST), jobs = jobs).on(EventSignUpsChanged(42, board))
+        triggers("2026-10-10T10:00", jobs = jobs).on(EventChanged(42, EventChange.CREATED, board))
+        triggers("2026-10-10T10:00", jobs = jobs).on(EventChanged(42, EventChange.UPDATED, board))
+        triggers("2026-10-10T10:00", found = lan.copy(live = false), out = setOf(DiscordArtefact.INFO_POST), jobs = jobs)
+            .on(EventChanged(42, EventChange.UNAPPROVED, board))
+        triggers("2026-10-10T10:00", found = null, out = setOf(DiscordArtefact.INFO_POST), jobs = jobs)
+            .on(EventChanged(42, EventChange.DELETED, board))
+
+        assertThat(jobs.triggers.distinct()).containsExactly(
+            JobTrigger.EVENT_APPROVED to board,
+            JobTrigger.SIGN_UPS_CHANGED to board,
+            JobTrigger.EVENT_CREATED to board,
+            JobTrigger.EVENT_UPDATED to board,
+            JobTrigger.EVENT_UNAPPROVED to board,
+            JobTrigger.EVENT_DELETED to board,
         )
     }
 

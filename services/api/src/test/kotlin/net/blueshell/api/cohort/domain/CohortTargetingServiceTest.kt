@@ -8,10 +8,12 @@ import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -175,10 +177,14 @@ class CohortTargetingServiceTest {
         verify(jobs).runAsync(
             eq(CohortJobs.DeleteExternalTarget),
             eq(CohortJobs.DeleteExternalTargetPayload("BREVO", "old-list")),
+            eq(JobTrigger.SITE_ACTION),
+            anyOrNull(),
         )
         verify(jobs).runAsync(
             eq(CohortJobs.ReconcileList),
             eq(CohortJobs.ReconcileListPayload(7L)),
+            eq(JobTrigger.SITE_ACTION),
+            anyOrNull(),
         )
     }
 
@@ -194,8 +200,8 @@ class CohortTargetingServiceTest {
 
         service.switchTarget(1L, 7L, "new-list", deletePrevious = true, reconcileNow = false)
 
-        verify(jobs, never()).runAsync(eq(CohortJobs.DeleteExternalTarget), any())
-        verify(jobs, never()).runAsync(eq(CohortJobs.ReconcileList), any())
+        verify(jobs, never()).runAsync(eq(CohortJobs.DeleteExternalTarget), any(), any(), anyOrNull())
+        verify(jobs, never()).runAsync(eq(CohortJobs.ReconcileList), any(), any(), anyOrNull())
     }
 
     @Test

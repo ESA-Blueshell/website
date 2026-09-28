@@ -9,6 +9,7 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
@@ -70,7 +71,7 @@ class CohortMembershipSyncServiceTest {
             .hasMessageContaining("cohort 10 has no BREVO target")
 
         verify(exactly = 0) {
-            jobs.runAsync(CohortJobs.MaterializeCohortTarget, any<CohortJobs.MaterializeCohortTargetPayload>())
+            jobs.runAsync(CohortJobs.MaterializeCohortTarget, any<CohortJobs.MaterializeCohortTargetPayload>(), any())
         }
         verify(exactly = 0) { brevoTarget.add(any(), any()) }
         verify(exactly = 0) { brevoTarget.create(any(), any()) }
@@ -98,7 +99,7 @@ class CohortMembershipSyncServiceTest {
         }.isInstanceOf(CohortMembershipNotReadyException::class.java)
 
         verify {
-            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(1L))
+            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(1L), JobTrigger.ANOTHER_JOB)
         }
         verify(exactly = 0) { brevoTarget.add(any(), any()) }
     }

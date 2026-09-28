@@ -5,7 +5,7 @@
  * without mounting anything.
  */
 import type {Job, JobRelatedEntity, JobStats} from "./adapters/jobs"
-import {JobExecutionCategory, JobExecutionStatus} from "./adapters/jobs"
+import {JobExecutionCategory, JobExecutionStatus, JobTrigger} from "./adapters/jobs"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
 
 /** `contact.sync_user` reads as `Contact Sync User`. */
@@ -33,6 +33,31 @@ export function previewTitle(job: Job): string {
 
 export function jobDescription(job: Job): string {
   return jobCatalogEntry(job.jobType ?? "").description
+}
+
+const TRIGGERS: Record<JobTrigger, string> = {
+  [JobTrigger.EVENT_CREATED]: "Creating the event",
+  [JobTrigger.EVENT_UPDATED]: "Editing the event",
+  [JobTrigger.EVENT_APPROVED]: "Approving the event",
+  [JobTrigger.EVENT_UNAPPROVED]: "Unapproving the event",
+  [JobTrigger.EVENT_DELETED]: "Deleting the event",
+  [JobTrigger.SIGN_UPS_CHANGED]: "A change in sign-ups",
+  [JobTrigger.USER_CHANGED]: "A change to the account",
+  [JobTrigger.USER_REMOVED]: "Removing the account",
+  [JobTrigger.MEMBERSHIP_CHANGED]: "A change in a cohort's members",
+  [JobTrigger.SITE_ACTION]: "An action on the site",
+  [JobTrigger.MORNING_RUN]: "The 08:00 run",
+  [JobTrigger.HOURLY_RUN]: "The hourly run",
+  [JobTrigger.SCHEDULED_RUN]: "A scheduled run",
+  [JobTrigger.ANOTHER_JOB]: "Another job",
+  [JobTrigger.BY_HAND]: "The trigger dialog",
+}
+
+/** What queued the job, and that somebody ran it again by hand; empty on a row too old to say. */
+export function triggerLabel(job: Job): string {
+  if (!job.trigger) return ""
+  const queuedBy = TRIGGERS[job.trigger]
+  return job.forced && job.trigger !== JobTrigger.BY_HAND ? `${queuedBy}, run again by hand` : queuedBy
 }
 
 export function errorSummary(job: Job): string {

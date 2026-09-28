@@ -1,6 +1,5 @@
 package net.blueshell.api.event.api
 
-import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.event.domain.EventQuery
 import net.blueshell.api.event.domain.EventSignUpService
 import net.blueshell.api.event.persistence.Event
@@ -59,7 +58,7 @@ class EventService
                 clearSignUpsForEvent(saved.id!!)
             }
 
-            publishEventChanged(saved.id!!, EventChange.UPDATED)
+            publishEventChanged(saved.id!!, changeOf(previous.approved, saved.approved))
             return saved
         }
 
@@ -190,10 +189,22 @@ class EventService
 
         private data class EventUpdateSnapshot(
             val bannerFileId: Long?,
+            val approved: Boolean,
         )
 
         private fun Event.toUpdateSnapshot(): EventUpdateSnapshot =
             EventUpdateSnapshot(
                 bannerFileId = banner?.file?.id,
+                approved = approved,
             )
+
+        private fun changeOf(
+            wasApproved: Boolean,
+            approved: Boolean,
+        ): EventChange =
+            when {
+                approved == wasApproved -> EventChange.UPDATED
+                approved -> EventChange.APPROVED
+                else -> EventChange.UNAPPROVED
+            }
     }

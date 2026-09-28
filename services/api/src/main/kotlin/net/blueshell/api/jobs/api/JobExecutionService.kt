@@ -5,6 +5,7 @@ import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.jobs.persistence.JobExecutionSpecifications
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.shared.tracking.Actor
 import org.springframework.data.domain.Page
@@ -24,6 +25,7 @@ class JobExecutionService(
         jobType: String,
         payload: String?,
         actor: Actor,
+        trigger: JobTrigger? = null,
         dedupKey: String? = null,
         queuesBehindRunning: Boolean = false,
         forced: Boolean = false,
@@ -51,6 +53,7 @@ class JobExecutionService(
                 queuedAt = Instant.now(),
                 dedupKey = dedupKey,
                 forced = forced,
+                trigger = trigger,
                 initiatedByUserId = actor.userId,
                 initiatedByType = actor.type,
                 initiatedByRole = actor.role,

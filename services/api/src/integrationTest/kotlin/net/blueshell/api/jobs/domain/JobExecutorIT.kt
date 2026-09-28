@@ -4,6 +4,7 @@ import net.blueshell.api.jobs.api.JobExecutor
 import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -42,7 +43,7 @@ class JobExecutorIT : ServiceTestSupport() {
     fun `first failure schedules a retry and bumps attempts to 2`() {
         retryingHandler.failForFirstCalls(1)
         // Enqueue starts attempts at 1 (the initial run is already counted).
-        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "123"))!!
+        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "123"), JobTrigger.BY_HAND)!!
         assertThat(execution.attempts).describedAs("initial enqueue counts as attempt 1").isEqualTo(1)
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -59,7 +60,7 @@ class JobExecutorIT : ServiceTestSupport() {
     @Test
     fun `repeated executions eventually succeed`() {
         retryingHandler.failForFirstCalls(2)
-        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "abc"))!!
+        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "abc"), JobTrigger.BY_HAND)!!
 
         repeat(3) {
             executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -73,7 +74,7 @@ class JobExecutorIT : ServiceTestSupport() {
     @Test
     fun `exhausting maxRetries marks the job as FAILED`() {
         retryingHandler.alwaysFail()
-        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "456"))!!
+        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "456"), JobTrigger.BY_HAND)!!
 
         val maxInvocations = jobQueueProperties.maxRetries + 1
         repeat(maxInvocations) {
@@ -90,7 +91,7 @@ class JobExecutorIT : ServiceTestSupport() {
 
     @Test
     fun `marks missing handler errors as DEAD`() {
-        val execution = dispatcher.runAsync("test.missing.handler", mapOf("id" to "789"))!!
+        val execution = dispatcher.runAsync("test.missing.handler", mapOf("id" to "789"), JobTrigger.BY_HAND)!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
@@ -105,7 +106,7 @@ class JobExecutorIT : ServiceTestSupport() {
     @Test
     fun `non-retryable exception marks job as FAILED immediately`() {
         retryingHandler.throwNonRetryable()
-        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "failed"))!!
+        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "failed"), JobTrigger.BY_HAND)!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 

@@ -28,6 +28,7 @@ export {
   statusCounts,
   statusOptions,
   statusTitle,
+  triggerLabel,
   successRate,
   summarizeExecution,
   titleCase,

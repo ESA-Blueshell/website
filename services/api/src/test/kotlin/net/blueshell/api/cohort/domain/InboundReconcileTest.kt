@@ -102,7 +102,7 @@ class InboundReconcileTest {
         assertThat(preview.matched.map { it.externalUserId }).doesNotContain("ext-internal")
         verify(exactly = 0) { externalIds.linkUser(any(), any(), any()) }
         verify(exactly = 0) { contributionWriter.apply(any(), any()) }
-        verify(exactly = 0) { jobs.runAsync(CohortJobs.ApplyInboundReconcile, any<CohortJobs.ApplyInboundReconcilePayload>()) }
+        verify(exactly = 0) { jobs.runAsync(CohortJobs.ApplyInboundReconcile, any<CohortJobs.ApplyInboundReconcilePayload>(), any()) }
     }
 
     @Test
@@ -149,7 +149,7 @@ class InboundReconcileTest {
         }.isInstanceOf(ResponseStatusException::class.java)
             .extracting("statusCode")
             .isEqualTo(HttpStatus.CONFLICT)
-        verify(exactly = 0) { jobs.runAsync(CohortJobs.ApplyInboundReconcile, any<CohortJobs.ApplyInboundReconcilePayload>()) }
+        verify(exactly = 0) { jobs.runAsync(CohortJobs.ApplyInboundReconcile, any<CohortJobs.ApplyInboundReconcilePayload>(), any()) }
     }
 
     @Test
@@ -170,7 +170,7 @@ class InboundReconcileTest {
             )
         every { writers.find(CohortSubjectType.PERIOD_PAYERS) } returns contributionWriter
         every { contributionWriter.preview(any(), any()) } returns MembershipPreview(alreadyMember = false)
-        every { jobs.runAsync(CohortJobs.ApplyInboundReconcile, any<CohortJobs.ApplyInboundReconcilePayload>()) } returns
+        every { jobs.runAsync(CohortJobs.ApplyInboundReconcile, any<CohortJobs.ApplyInboundReconcilePayload>(), any()) } returns
             TestJobExecution(55L)
 
         val preview = service.preview(10L, 20L)
@@ -190,6 +190,7 @@ class InboundReconcileTest {
                         it.definitionKey == "PERIOD_PAYERS:12" &&
                         it.selected == listOf(CohortJobs.InboundReconcileSelectedUser("ext-2", 2L))
                 },
+                any(),
             )
         }
         verify(exactly = 0) { externalIds.linkUser(any(), any(), any()) }

@@ -22,11 +22,11 @@ class JobQueueTest {
             object : ActorTracked {
                 override val actor: Actor = trackedActor
             }
-        whenever(queue.runAsync(eq(job), eq(payload), eq(trackedActor))).thenReturn(mock())
+        whenever(queue.runAsync(eq(job), eq(payload), eq(JobTrigger.SITE_ACTION), eq(trackedActor))).thenReturn(mock())
 
-        queue.runAsyncFromActor(job, payload, actorTracked)
+        queue.runAsyncFromActor(job, payload, JobTrigger.SITE_ACTION, actorTracked)
 
-        verify(queue).runAsync(eq(job), eq(payload), eq(trackedActor))
+        verify(queue).runAsync(eq(job), eq(payload), eq(JobTrigger.SITE_ACTION), eq(trackedActor))
     }
 
     private data class TestPayload(

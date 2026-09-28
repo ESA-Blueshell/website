@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import org.junit.jupiter.api.Test
 
@@ -78,8 +79,8 @@ class CohortReconciliationServiceTest {
 
         verify { users.findActiveIdsAfter(0L, pageSize) }
         verify { users.findActiveIdsAfter(11L, pageSize) }
-        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L)) }
-        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(11L)) }
+        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L), JobTrigger.ANOTHER_JOB) }
+        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(11L), JobTrigger.ANOTHER_JOB) }
     }
 
     @Test
@@ -88,13 +89,13 @@ class CohortReconciliationServiceTest {
         every { users.findActiveIdsAfter(11L, pageSize) } returns listOf(12L)
         every { users.findActiveIdsAfter(12L, pageSize) } returns emptyList()
         every {
-            jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(11L))
+            jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(11L), JobTrigger.ANOTHER_JOB)
         } throws RuntimeException("boom")
 
         service.reconcileAllUserCohorts()
 
         // 10 (before the failure) and 12 (a later page) are still enqueued.
-        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L)) }
-        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(12L)) }
+        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L), JobTrigger.ANOTHER_JOB) }
+        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(12L), JobTrigger.ANOTHER_JOB) }
     }
 }

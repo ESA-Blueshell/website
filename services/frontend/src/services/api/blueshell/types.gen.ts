@@ -1660,6 +1660,7 @@ export type JobExecution = {
     startedAt?: string | null;
     status: JobExecutionStatus | null;
     targetSystem?: TargetSystem | null;
+    trigger?: JobTrigger | null;
     updatedAt?: string | null;
 };
 
@@ -1714,6 +1715,24 @@ export type JobStatsDto = {
     successCount: number;
     totalCount: number;
 };
+
+export enum JobTrigger {
+    EVENT_CREATED = 'EVENT_CREATED',
+    EVENT_UPDATED = 'EVENT_UPDATED',
+    EVENT_APPROVED = 'EVENT_APPROVED',
+    EVENT_UNAPPROVED = 'EVENT_UNAPPROVED',
+    EVENT_DELETED = 'EVENT_DELETED',
+    SIGN_UPS_CHANGED = 'SIGN_UPS_CHANGED',
+    USER_CHANGED = 'USER_CHANGED',
+    USER_REMOVED = 'USER_REMOVED',
+    MEMBERSHIP_CHANGED = 'MEMBERSHIP_CHANGED',
+    SITE_ACTION = 'SITE_ACTION',
+    MORNING_RUN = 'MORNING_RUN',
+    HOURLY_RUN = 'HOURLY_RUN',
+    SCHEDULED_RUN = 'SCHEDULED_RUN',
+    ANOTHER_JOB = 'ANOTHER_JOB',
+    BY_HAND = 'BY_HAND'
+}
 
 export type JobTypeDescriptor = {
     payloadFields: Array<JobPayloadField>;

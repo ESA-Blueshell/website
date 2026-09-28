@@ -11,6 +11,7 @@ import jakarta.persistence.Transient
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.tracking.Actor
@@ -67,6 +68,10 @@ class JobExecution(
     /** Asked for by hand: see [net.blueshell.api.jobs.domain.JobHandler.handle]. */
     @Column(nullable = false)
     var forced: Boolean = false,
+    // `trigger` is a reserved word in MariaDB.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "queued_by")
+    var trigger: JobTrigger? = null,
     @Column(name = "initiated_by_user_id")
     var initiatedByUserId: Long? = null,
     @Enumerated(EnumType.STRING)

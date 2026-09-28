@@ -163,6 +163,19 @@ describe("JobManager page", () => {
     expect(wrapper.find('[data-testid="job-forced-3"]').exists()).toBe(true)
   })
 
+  it("says what queued each job, on the row and in its detail", async () => {
+    mockList.mockResolvedValue(pageOf([job({id: 4, trigger: "SIGN_UPS_CHANGED"}), job({id: 5})]))
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-row-trigger-4"]').text()).toBe("A change in sign-ups")
+    expect(wrapper.find('[data-testid="job-row-trigger-5"]').exists()).toBe(false)
+    await wrapper.find('[data-testid="job-row-4"]').trigger("click")
+    await settle()
+    expect(wrapper.find('[data-testid="job-trigger-4"]').text()).toBe("Queued by: A change in sign-ups")
+  })
+
   // Pressing Retry and being told nothing is indistinguishable from pressing nothing at all.
   it("says why a retry was refused, in the api's own words", async () => {
     mockRetry.mockResolvedValueOnce({status: 409, error: {detail: "That job is already running."}})

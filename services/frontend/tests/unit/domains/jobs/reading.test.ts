@@ -19,11 +19,22 @@ import {
   statusTitle,
   successRate,
   titleCase,
+  triggerLabel,
 } from "@/domains/jobs"
+import {JobTrigger} from "@/services/api"
 
 const job = (fields: Partial<Job>): Job => fields as Job
 
 describe("job reading", () => {
+  it("says what queued a job, and that it was run again by hand", () => {
+    expect(triggerLabel(job({trigger: JobTrigger.EVENT_APPROVED}))).toBe("Approving the event")
+    expect(triggerLabel(job({trigger: JobTrigger.MORNING_RUN}))).toBe("The 08:00 run")
+    expect(triggerLabel(job({trigger: JobTrigger.EVENT_UPDATED, forced: true}))).toBe("Editing the event, run again by hand")
+    expect(triggerLabel(job({trigger: JobTrigger.BY_HAND, forced: true}))).toBe("The trigger dialog")
+    expect(triggerLabel(job({}))).toBe("")
+    expect(Object.values(JobTrigger).every(trigger => triggerLabel(job({trigger})) !== "")).toBe(true)
+  })
+
   it("titles a status and a snake-cased type", () => {
     expect(titleCase("contact.sync_user")).toBe("Contact Sync User")
     expect(statusTitle("SUCCESS")).toBe("Success")

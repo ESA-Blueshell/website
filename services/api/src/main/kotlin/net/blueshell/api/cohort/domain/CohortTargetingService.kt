@@ -5,6 +5,7 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -66,7 +67,7 @@ class CohortTargetingService(
                 CohortMappingRow(cohort, externalId)
             }
 
-        jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(linked.cohort.id!!))
+        jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(linked.cohort.id!!), JobTrigger.SITE_ACTION)
         return linked
     }
 
@@ -119,10 +120,11 @@ class CohortTargetingService(
             jobs.runAsync(
                 CohortJobs.DeleteExternalTarget,
                 CohortJobs.DeleteExternalTargetPayload(switched.system.name, switched.previousExternalId),
+                JobTrigger.SITE_ACTION,
             )
         }
         if (reconcileNow) {
-            jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId))
+            jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId), JobTrigger.SITE_ACTION)
         }
         return CohortMappingRow(switched.cohort, externalId)
     }

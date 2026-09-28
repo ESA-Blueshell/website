@@ -14,6 +14,7 @@ import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import org.assertj.core.api.Assertions.assertThat
@@ -129,11 +130,12 @@ class CohortRemediationServiceTest {
             jobs.runAsync(
                 CohortJobs.SyncCohortMembership,
                 CohortJobs.SyncCohortMembershipPayload(2L, 99L, SyncCohortMembershipIntent.ADD),
+                JobTrigger.ANOTHER_JOB,
             )
-            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(3L))
+            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(3L), JobTrigger.ANOTHER_JOB)
         }
         verify(exactly = 0) {
-            jobs.runAsync(CohortJobs.RemoveExternalMember, any<CohortJobs.RemoveExternalMemberPayload>())
+            jobs.runAsync(CohortJobs.RemoveExternalMember, any<CohortJobs.RemoveExternalMemberPayload>(), any())
         }
         verify {
             members.save(
@@ -236,16 +238,19 @@ class CohortRemediationServiceTest {
             jobs.runAsync(
                 CohortJobs.SyncCohortMembership,
                 CohortJobs.SyncCohortMembershipPayload(1L, 99L, SyncCohortMembershipIntent.ADD),
+                JobTrigger.SITE_ACTION,
             )
             jobs.runAsync(
                 CohortJobs.SyncCohortMembership,
                 CohortJobs.SyncCohortMembershipPayload(2L, 99L, SyncCohortMembershipIntent.ADD),
+                JobTrigger.SITE_ACTION,
             )
         }
         verify(exactly = 0) {
             jobs.runAsync(
                 CohortJobs.SyncCohortMembership,
                 CohortJobs.SyncCohortMembershipPayload(3L, 99L, SyncCohortMembershipIntent.ADD),
+                JobTrigger.SITE_ACTION,
             )
         }
     }

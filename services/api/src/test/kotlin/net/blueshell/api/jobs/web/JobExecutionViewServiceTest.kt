@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.JobExecutionCategory
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -132,5 +133,13 @@ class JobExecutionViewServiceTest {
         assertThat(categoryOf("cohort-sync")).isEqualTo(JobExecutionCategory.cohort)
         assertThat(categoryOf("discordant")).isEqualTo(JobExecutionCategory.other)
         assertThat(categoryOf("")).isEqualTo(JobExecutionCategory.other)
+    }
+
+    @Test
+    fun `says what queued the job`() {
+        val queued = execution().apply { trigger = JobTrigger.SIGN_UPS_CHANGED }
+
+        assertThat(service().toDto(queued).trigger).isEqualTo(JobTrigger.SIGN_UPS_CHANGED)
+        assertThat(service().toDto(execution()).trigger).isNull()
     }
 }

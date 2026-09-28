@@ -6,11 +6,13 @@ import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -117,6 +119,8 @@ class JoiningContributionAskServiceTest {
         verify(jobs).runAsync(
             eq(EmailJobs.JoiningContribution),
             eq(EmailJobs.JoiningContributionPayload(ASK_ID)),
+            eq(JobTrigger.SITE_ACTION),
+            anyOrNull(),
         )
     }
 

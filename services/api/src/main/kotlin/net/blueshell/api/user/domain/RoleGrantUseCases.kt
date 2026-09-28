@@ -15,6 +15,7 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
+import net.blueshell.api.shared.job.JobTrigger
 
 /**
  * What a person may reach, as an admin decides it.
@@ -83,7 +84,7 @@ class RoleGrantUseCases(
         )
         trackedEvents.publish { UserRolesChanged(userId, it, record.dormantGranted) }
         if (record.dormantGranted.isNotEmpty() || NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
-            jobs.runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(requireNotNull(record.id)))
+            jobs.runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(requireNotNull(record.id)), JobTrigger.SITE_ACTION)
         }
         return standingOf(saved)
     }

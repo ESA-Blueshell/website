@@ -1,37 +1,34 @@
-# ADR-033: The Api Reads Its Secrets From Vault, and They Rotate Without a Restart
+# ADR-033: The API Reads Its Secrets From Vault, and They Rotate Without a Restart
 
 ## Status
-Accepted. Not built yet: the slices of epic #1824 build it, in order #1682 (the KV import),
-#1826 (leased database credentials), then #1823, #1827 and #1828 (rotation without a restart).
-Until #1682 lands, `main` still reads secrets from an injector-rendered env file.
+Accepted
 
 ## Context
 
-The api read Vault four ways, and only one of them was live. The Vault injector rendered 17
-keys from `secret/api` into an env file once at pod start, and the start script exported
-them. The Vault Secrets Operator synced the same path into a Kubernetes Secret, which the api
-read one key from, and the mail passwords arrived the same way from a second synced Secret.
-Spring Cloud Vault was on, but its `vault://` import read `secret/BlueshellAPI` and
-`secret/application`, not `secret/api`, so it delivered nothing the api used. Only Transit,
-which signs the api's OIDC and forward-auth tokens, reached Vault while the api ran.
+The api reads Vault four ways, and only one of them is live. The Vault injector renders 17
+keys from `secret/api` into an env file once at pod start, and the start script exports
+them. The Vault Secrets Operator syncs the same path into a Kubernetes Secret, which the api
+reads one key from, and the mail passwords arrive the same way from a second synced Secret.
+Spring Cloud Vault is on, but its `vault://` import reads `secret/BlueshellAPI` and
+`secret/application`, not `secret/api`, so it delivers nothing the api uses. Only Transit,
+which signs the api's OIDC and forward-auth tokens, reaches Vault while the api runs.
 
-Every one of those copies went stale when a key rotated: the running api kept the old value
-until somebody restarted the pod, and a restart after a rotation is easy to forget. The api
-and the migrate Job also logged in to MariaDB with a static password copied into
-`secret/api`, beside a dynamic credentials engine configured for them and switched off.
+Every one of those copies goes stale when a key rotates: the running api keeps the old value
+until somebody restarts the pod, and a restart after a rotation is easy to forget. The api
+and the migrate Job also log in to MariaDB with a static password copied into `secret/api`,
+beside a dynamic credentials engine configured for them and switched off.
 
 ## Decision
 
 **The api and the migrate Job read secrets from Vault through Spring Cloud Vault only.** They
 log in with Kubernetes auth as the `api` role. No rendered env file, no environment variable
-and no synced Secret sits between Vault and the api, because each copy goes stale when a key
-rotates.
+and no synced Secret sits between Vault and the api.
 
 **Each KV key is named for the Spring property it fills.** `spring.config.import` names
 `secret/api` and `secret/platform/mail`, and `application.yaml` binds the keys directly, with
 no `${ENV_VAR}` placeholder for a secret. Dev and test run without Vault on their profile
-defaults. Adding a key is one KV write and one property, and the Vault bootstrap doc says how
-to rotate it.
+defaults. Adding a key is one KV write and one property, and
+`platform/docs/vault-bootstrap.md` says how to rotate it.
 
 **KV is polled.** KV v2 secrets carry no lease, so Spring Cloud Vault's lease lifecycle never
 re-reads them, and Vault tells the api nothing when a key changes. The api calls
@@ -59,20 +56,20 @@ whether a bean exists, and a refresh does not create or remove beans. A key that
 takes effect without a restart; a key that goes from empty to set needs one.
 
 **The Vault Secrets Operator serves consumers that are not Spring**: Stalwart, MariaDB,
-Gatus, cert-manager, external-dns and Flux. The api and the migrate Job do not use it.
+Gatus, cert-manager, external-dns and Flux. The api and the migrate Job do not use it, and it
+is not how a rotated key reaches the api.
 
 ## Considered Options
 
 - **The synced Secret, read as environment variables.** Keeps a restarted api starting while
-  Vault is sealed. But a container's environment never changes after it starts, so every
-  rotation needs a restart, and the operator's `rolloutRestartTargets` only automates that
-  restart.
+  Vault is sealed. But a container's environment never changes after it starts, and the
+  operator's `rolloutRestartTargets` only automates the restart.
 - **The synced Secret mounted as files, read with `configtree:`.** The files do update in
   place, so the same refresh code would work. It adds the operator's `refreshAfter` and the
   kubelet's sync delay on top of the poll, for a copy the api does not need, since Spring
   Cloud Vault already talks to Vault.
-- **The Vault injector.** Renders once at pod start, the same staleness as environment
-  variables, plus an init container and a template that repeats every key.
+- **The Vault injector.** Renders once at pod start, as stale as environment variables, plus
+  an init container and a template that repeats every key.
 - **Push instead of poll.** Vault sends nothing to a KV v2 reader when a key changes, so a
   push would need a separate notifier. Polling one path on an interval is cheaper than
   running one.
@@ -88,3 +85,13 @@ Gatus, cert-manager, external-dns and Flux. The api and the migrate Job do not u
 - Removing a key is one KV delete and one property, with no manifest, template or Secret to
   edit.
 - The `api-secrets` Secret, the injector annotations and the env-file start script go.
+- api ADR-031 says the two-factor key "arrives with `secret/data/api` like `JWT_SECRET`
+  does". Once #1682 names each key for its property, that sentence is updated with it.
+
+## Implementation status
+
+Not built. The slices of epic #1824 build it: #1682 (Kubernetes auth and the KV import),
+#1826 (leased database credentials), then #1823, #1827 and #1828 (rotation without a
+restart). Until #1682 lands, `main` reads secrets from the injector-rendered env file and,
+for the Vault OIDC client secret and the mail passwords, from synced Secrets through
+`secretKeyRef`.

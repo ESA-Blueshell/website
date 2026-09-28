@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.SoftDelete
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -20,8 +21,8 @@ import org.hibernate.annotations.SQLRestriction
         Index(name = "idx_answers_question_id", columnList = "question_id"),
     ],
 )
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@SQLDelete(sql = "UPDATE answers SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction(SoftDelete.ACTIVE)
+@SQLDelete(sql = "UPDATE answers SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
 class Answer(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "question_id", nullable = false)

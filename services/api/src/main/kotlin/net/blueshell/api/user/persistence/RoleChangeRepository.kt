@@ -1,5 +1,6 @@
 package net.blueshell.api.user.persistence
 
+import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -39,7 +40,7 @@ interface RoleChangeRepository : BaseRepository<RoleChange, Long> {
         FROM authorities a
                  JOIN users u ON u.id = a.user_id
         WHERE a.authority = 'ADMIN'
-          AND u.deleted_at = '9999-12-31 23:59:59'
+          AND u.deleted_at = '${SoftDelete.LIVE}'
           AND NOT EXISTS (SELECT 1 FROM authorities s WHERE s.user_id = u.id AND s.authority = 'SYSTEM')
         FOR UPDATE
         """,

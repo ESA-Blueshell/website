@@ -10,6 +10,7 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.SoftDelete
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -32,8 +33,8 @@ import org.hibernate.annotations.SQLRestriction
         Index(name = "idx_team_deleted_at", columnList = "deleted_at"),
     ],
 )
-@SQLDelete(sql = "UPDATE team SET deleted_at = NOW(6), version = version + 1 WHERE id = ? AND version = ?")
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@SQLDelete(sql = "UPDATE team SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction(SoftDelete.ACTIVE)
 class Team(
     @Column(name = "name", nullable = false, length = 128)
     var name: String,

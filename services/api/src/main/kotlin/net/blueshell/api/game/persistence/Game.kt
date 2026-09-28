@@ -13,6 +13,7 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.SoftDelete
 import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.SQLRestriction
 
@@ -28,7 +29,7 @@ import org.hibernate.annotations.SQLRestriction
  * whose code a removed one holds brings that one back rather than writing a second.
  */
 @Entity
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@SQLRestriction(SoftDelete.ACTIVE)
 @Table(
     name = "game",
     uniqueConstraints = [

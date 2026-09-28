@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.SoftDelete
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -27,8 +28,8 @@ import org.hibernate.annotations.SQLRestriction
         Index(name = "idx_cohort_deleted_at", columnList = "deleted_at"),
     ],
 )
-@SQLDelete(sql = "UPDATE cohort SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@SQLDelete(sql = "UPDATE cohort SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction(SoftDelete.ACTIVE)
 class Cohort(
     @Column(name = "system", nullable = false, length = 32)
     var system: String,

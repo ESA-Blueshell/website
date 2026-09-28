@@ -6,11 +6,8 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.persistence.Version
 import net.blueshell.api.shared.model.Identifiable
+import net.blueshell.api.shared.model.SoftDelete
 import java.time.Instant
-
-object SoftDeleteSentinels {
-    val ACTIVE_ROW_DELETED_AT: Instant = Instant.parse("9999-12-31T23:59:59Z")
-}
 
 @Entity
 @Table(name = "addresses")
@@ -21,7 +18,7 @@ class AddressLifecycle(
     @Column(name = "version", nullable = false)
     var version: Long = 0L,
     @Column(name = "deleted_at", nullable = false)
-    var deletedAt: Instant = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT,
+    var deletedAt: Instant = SoftDelete.LIVE_INSTANT,
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = Instant.now(),
 ) : Identifiable<Long>
@@ -35,7 +32,7 @@ class ProfileLifecycle(
     @Column(name = "version", nullable = false)
     var version: Long = 0L,
     @Column(name = "deleted_at", nullable = false)
-    var deletedAt: Instant = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT,
+    var deletedAt: Instant = SoftDelete.LIVE_INSTANT,
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = Instant.now(),
 ) : Identifiable<Long>

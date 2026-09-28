@@ -15,6 +15,7 @@ import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
+import net.blueshell.api.shared.model.SoftDelete
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -38,11 +39,11 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(
     sql = """
       UPDATE event_pictures
-      SET deleted_at = NOW(), version = version + 1
+      SET ${SoftDelete.STAMP}, version = version + 1
       WHERE event_id = ? AND picture_id = ? AND version = ?
     """,
 )
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@SQLRestriction(SoftDelete.ACTIVE)
 class EventPicture(
     @EmbeddedId
     override var id: Id = Id(),

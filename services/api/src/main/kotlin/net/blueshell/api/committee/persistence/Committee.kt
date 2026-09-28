@@ -17,6 +17,7 @@ import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.ADDRESS_LENGTH
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
+import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.shared.model.addressOf
 import net.blueshell.api.user.persistence.User
 import org.hibernate.annotations.BatchSize
@@ -35,8 +36,8 @@ import org.hibernate.annotations.SQLRestriction
         Index(name = "idx_committees_name", columnList = "name"),
     ],
 )
-@SQLDelete(sql = "UPDATE committees SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@SQLDelete(sql = "UPDATE committees SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction(SoftDelete.ACTIVE)
 class Committee(
     @Column(name = "name", nullable = false)
     var name: String,

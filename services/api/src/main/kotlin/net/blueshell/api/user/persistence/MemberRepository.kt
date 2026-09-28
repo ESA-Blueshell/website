@@ -1,5 +1,6 @@
 package net.blueshell.api.user.persistence
 
+import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -88,11 +89,7 @@ interface MemberRepository : BaseRepository<Membership, Long> {
         @Param("to") to: LocalDate,
     ): Boolean
 
-    // Native queries deliberately bypass the entity's @SQLRestriction (which pins
-    // every managed/Criteria query to deleted_at = sentinel), so they can read and
-    // restore soft-deleted rows. The sentinel mirrors SoftDeleteSentinels
-    // .ACTIVE_ROW_DELETED_AT ('9999-12-31 23:59:59'); annotation values must be
-    // compile-time constants, so it is centralised here as a String literal const.
+    // Native, to read and restore soft-deleted rows the entity's @SQLRestriction hides.
 
     @Query(value = "SELECT * FROM memberships WHERE user_id = :userId AND deleted_at <> " + SENTINEL, nativeQuery = true)
     fun findDeletedByUser_Id(
@@ -116,7 +113,6 @@ interface MemberRepository : BaseRepository<Membership, Long> {
     ): Int
 
     companion object {
-        /** SQL literal for the not-deleted sentinel; see SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT. */
-        private const val SENTINEL = "'9999-12-31 23:59:59'"
+        private const val SENTINEL = "'${SoftDelete.LIVE}'"
     }
 }

@@ -1,5 +1,6 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.shared.model.SoftDelete
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -31,7 +32,7 @@ interface SeasonGameRepository : JpaRepository<SeasonGame, Long> {
         value = """
         SELECT id FROM season_game
         WHERE season_id = :seasonId AND game = :game
-          AND deleted_at <> '9999-12-31 23:59:59.000000'
+          AND deleted_at <> '${SoftDelete.LIVE}'
         ORDER BY deleted_at DESC LIMIT 1
         """,
     )
@@ -44,7 +45,7 @@ interface SeasonGameRepository : JpaRepository<SeasonGame, Long> {
     @Query(
         nativeQuery = true,
         value = """
-        UPDATE season_game SET deleted_at = '9999-12-31 23:59:59.000000', version = version + 1
+        UPDATE season_game SET deleted_at = '${SoftDelete.LIVE}', version = version + 1
         WHERE id = :id
         """,
     )

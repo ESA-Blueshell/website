@@ -5,7 +5,7 @@ package net.blueshell.api.email.domain
  *
  * Implemented by [SmtpEmailClient] in dev / prod (delegates to Spring's
  * `JavaMailSender`) and by
- * [net.blueshell.api.platform.integration.mock.InMemoryEmailClient] in tests.
+ * [net.blueshell.api.email.domain.InMemoryEmailClient] in tests.
  */
 interface EmailTransportClient {
     /** Send a transactional HTML email. Returns the messageId stamped on the outbox row. */

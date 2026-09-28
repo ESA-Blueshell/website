@@ -236,10 +236,9 @@ email:
     address: ${EMAIL_FROM_ADDRESS:no-reply@esa-blueshell.nl}
   reply-to: ${EMAIL_REPLY_TO_ADDRESS:sitecie@blueshell.utwente.nl}
   bounce:
-    # Poll period for the IMAP bounce mailbox (only relevant when imap.enabled).
+    # Poll period for the IMAP bounce mailbox, which is read where its host, username and password are set.
     poll-interval-ms: ${EMAIL_BOUNCE_POLL_INTERVAL_MS:300000}
     imap:
-      enabled: ${EMAIL_BOUNCE_IMAP_ENABLED:false}
       host: ${EMAIL_BOUNCE_IMAP_HOST:}
       port: ${EMAIL_BOUNCE_IMAP_PORT:993}
       username: ${EMAIL_BOUNCE_IMAP_USERNAME:}

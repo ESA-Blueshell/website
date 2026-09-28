@@ -1,9 +1,9 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.clients.discord.api.DiscordApi
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
@@ -14,8 +14,7 @@ import java.time.Duration
  * refused or failed read keeps the last answer, or null where there was none.
  */
 @Component
-@Profile("!test")
-@ConditionalOnExpression(DISCORD_TOKEN_SET)
+@WhenCredentialsSet(Credentials.DISCORD_BOT)
 class RestGuildCountsSource(
     private val discordApi: DiscordApi,
     @Value($$"${discord.guildId:}") private val guildId: String,

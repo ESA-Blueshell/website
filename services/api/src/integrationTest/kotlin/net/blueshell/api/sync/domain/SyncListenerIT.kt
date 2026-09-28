@@ -1,10 +1,10 @@
 package net.blueshell.api.sync.domain
 
+import net.blueshell.api.contact.domain.MockContactAdapter
 import net.blueshell.api.event.api.EventChange
 import net.blueshell.api.event.api.EventChanged
+import net.blueshell.api.event.domain.MockCalendarAdapter
 import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.platform.integration.mock.MockCalendarAdapter
-import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.persistence.ExternalIdMapping

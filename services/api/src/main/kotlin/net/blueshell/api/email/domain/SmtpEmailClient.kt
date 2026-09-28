@@ -1,8 +1,9 @@
 package net.blueshell.api.email.domain
 
 import jakarta.mail.internet.InternetAddress
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Profile
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Component
@@ -16,7 +17,7 @@ import java.util.UUID
  * in every non-test profile; tests use `InMemoryEmailClient`.
  */
 @Component
-@Profile("!test")
+@WhenCredentialsSet(Credentials.SMTP_HOST)
 class SmtpEmailClient(
     private val mailSender: JavaMailSender,
 ) : EmailTransportClient {

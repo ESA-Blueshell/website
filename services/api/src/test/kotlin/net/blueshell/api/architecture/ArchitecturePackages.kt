@@ -40,13 +40,9 @@ object ArchitecturePackages {
     /** ADR-007: only the base and composite evaluator stay here, never a `*Permission`. */
     const val PERMISSION = "$ROOT.security.permission.."
 
-    /** Platform - global wiring and the profile-scoped doubles, not a module. */
+    /** Platform - global wiring, not a module. */
     const val PLATFORM = "$ROOT.platform.."
     const val PLATFORM_CONFIG = "$ROOT.platform.config.."
-    const val PLATFORM_INTEGRATION = "$ROOT.platform.integration.."
-
-    /** Mock/test adapter implementations */
-    const val PLATFORM_MOCK = "$ROOT.platform.integration.mock.."
 
     /**
      * Where a capability module's job handlers sit. The flattening left them in the module's own

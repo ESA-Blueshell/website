@@ -1,22 +1,21 @@
-package net.blueshell.api.platform.integration.mock
+package net.blueshell.api.event.domain
 
 import net.blueshell.api.event.api.CalendarAdapter
 import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.event.api.CalendarEventRef
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsMissing
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Primary
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * In-memory [CalendarAdapter] for the `test` and `dev` profiles: stable ids, events held in a
- * map, and inspection methods for a test to assert against.
+ * In-memory [CalendarAdapter], standing in for Google Calendar where its calendar id or key is
+ * not set: stable ids, events held in a map, and inspection methods for a test to assert against.
  */
 @Service
-@Primary
-@Profile("test | dev")
+@WhenCredentialsMissing(Credentials.GOOGLE_CALENDAR_ID, Credentials.GOOGLE_CALENDAR_KEY)
 class MockCalendarAdapter : CalendarAdapter {
     private val seq = AtomicLong(1000000L)
     private val eventsById: MutableMap<String, StoredEvent> = ConcurrentHashMap()

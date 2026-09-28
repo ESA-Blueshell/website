@@ -1,21 +1,17 @@
-package net.blueshell.api.platform.integration.mock
+package net.blueshell.api.email.domain
 
-import net.blueshell.api.email.domain.EmailTransportClient
-import org.springframework.context.annotation.Primary
-import org.springframework.context.annotation.Profile
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsMissing
 import org.springframework.stereotype.Component
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * In-memory capture mock of [EmailTransportClient] used in the test profile.
- *
- * Sent messages land in [sentEmails] for assertion; [simulateSendFailure]
- * forces the next `send(...)` to throw. Drop-in replacement for the former
- * the former MockListmonkEmailClient.
+ * Stands in for [SmtpEmailClient] where no relay host is set, which the test profile arranges.
+ * Sent messages land in [sentEmails] for assertion; [simulateSendFailure] forces the next
+ * `send(...)` to throw.
  */
 @Component
-@Primary
-@Profile("test")
+@WhenCredentialsMissing(Credentials.SMTP_HOST)
 class InMemoryEmailClient : EmailTransportClient {
     // Thread-safe because email jobs run async, and a send that queues two at once has two
     // threads adding at the same moment. A plain ArrayList loses one of them, and the loss

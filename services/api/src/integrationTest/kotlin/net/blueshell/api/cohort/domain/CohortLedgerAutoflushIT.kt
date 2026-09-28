@@ -9,7 +9,8 @@ import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.cohort.persistence.state
-import net.blueshell.api.platform.integration.mock.MockTargetStrategy
+import net.blueshell.api.contact.api.ContactData
+import net.blueshell.api.contact.domain.MockContactAdapter
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
@@ -40,39 +41,42 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
     private lateinit var remediation: CohortRemediationService
 
     @Autowired
-    private lateinit var mockTarget: MockTargetStrategy
+    private lateinit var brevo: MockContactAdapter
 
     @BeforeEach
     fun resetTarget() {
-        mockTarget.clear()
+        brevo.clear()
     }
 
     @Test
     fun `confirming desired row with matching stranger does not violate external unique key`() {
         val user = createUserWithRole(Role.MEMBER)
         val subject = newSubject()
-        val cohort = newCohort(subject, externalId = "list-99")
+        val list = brevo.createList("Members", null)
+        val remote = brevo.createContact(ContactData("ada@remote.example", "Ada", "Remote", null, false, false))
+        brevo.addToList(remote, list)
+        val externalUserId = remote.toString()
+        val cohort = newCohort(subject, externalId = list.toString())
         members.saveAndFlush(CohortMember(cohort = cohort, userId = user.id!!, subject = subject))
         members.saveAndFlush(
             CohortMember(
                 cohort = cohort,
                 userId = null,
                 subject = subject,
-                externalUserId = "ext-1",
+                externalUserId = externalUserId,
                 verifiedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
                 label = "old stranger",
             ),
         )
-        externalIds.saveAndFlush(ExternalIdMapping("USER", user.id!!, TargetSystem.BREVO.name, "ext-1"))
-        mockTarget.seedMember("ext-1", "list-99", "Ada Remote")
+        externalIds.saveAndFlush(ExternalIdMapping("USER", user.id!!, TargetSystem.BREVO.name, externalUserId))
 
         assertThatCode { remediation.verifyCohort(cohort.id!!) }.doesNotThrowAnyException()
 
         val desired = members.findByCohortIdAndUserId(cohort.id!!, user.id!!)!!
-        assertThat(desired.externalUserId).isEqualTo("ext-1")
-        assertThat(desired.label).isEqualTo("Ada Remote")
+        assertThat(desired.externalUserId).isEqualTo(externalUserId)
+        assertThat(desired.label).isEqualTo("ada@remote.example")
         assertThat(desired.state).isEqualTo(CohortMemberState.VERIFIED)
-        assertThat(members.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohort.id!!, "ext-1")).isNull()
+        assertThat(members.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohort.id!!, externalUserId)).isNull()
     }
 
     @Test

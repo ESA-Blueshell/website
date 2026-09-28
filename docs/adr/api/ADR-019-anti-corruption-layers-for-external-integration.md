@@ -17,31 +17,31 @@ Direct integration risks:
 
 We implement an **Anti-Corruption Layer** for every external system.
 
-An ACL lives in the module that owns the concern, beside the domain it protects, rather than in one integration package: contact sync is `contact`'s business and calendar sync is `sync`'s, so that is where their adapters are. `platform/integration/` holds the mocks the test and dev profiles use, and nothing else.
+An ACL lives in the module that owns the concern, beside the domain it protects, rather than in one integration package: contact sync is `contact`'s business and calendar sync is `sync`'s, so that is where their adapters are. Each in-memory stand-in lives beside the port it replaces.
 
 ### Where the layers are
 
 ```
 email/domain/
 ├── EmailTransportClient.kt      # the domain interface
-└── SmtpEmailClient.kt           # SMTP through Spring's JavaMailSender, every non-test profile
+├── SmtpEmailClient.kt           # SMTP through Spring's JavaMailSender, where a relay host is set
+└── InMemoryEmailClient.kt       # the stand-in where none is
 contact/
-├── api/ContactAdapter.kt        # the domain interface
-├── api/BrevoContactAdapter.kt   # @Profile("!test & !dev")
-└── domain/BrevoListAdapter.kt   # @Profile("!test & !dev"), lists rather than contacts
+├── api/ContactAdapter.kt        # the domain interface, with api/ContactListAdapter.kt
+├── api/BrevoContactAdapter.kt   # where a Brevo API key is set
+├── domain/BrevoListAdapter.kt   # where a Brevo API key is set, lists rather than contacts
+└── domain/MockContactAdapter.kt # the stand-in for both where none is
+event/
+├── api/CalendarAdapter.kt       # the domain interface
+└── domain/MockCalendarAdapter.kt # the stand-in where Google Calendar's id or key is not set
 sync/domain/
-├── GoogleCalendarAdapter.kt     # @Profile("!test & !dev")
+├── GoogleCalendarAdapter.kt     # where Google Calendar's id and key are set
 └── GoogleCalendarClient.kt
 sync/api/
 └── DiscordPublisher.kt          # the domain interface for the bot's posts and Discord events
 discord/domain/
-├── DiscordClientConfig.kt       # @Profile("!test"), wires the published client wherever a bot token is set
-└── BotPublisher.kt              # @Profile("!test"), implements sync's DiscordPublisher
-platform/integration/mock/
-├── InMemoryEmailClient.kt       # @Primary @Profile("test")
-├── MockContactAdapter.kt        # @Primary @Profile("test | dev")
-├── MockCalendarAdapter.kt       # @Primary @Profile("test | dev")
-└── MockTargetStrategy.kt
+├── DiscordClientConfig.kt       # wires the published client wherever a bot token is set
+└── BotPublisher.kt              # where a bot token is set, implements sync's DiscordPublisher
 ```
 
 **Email is SMTP, not Listmonk.** The Listmonk transport and its contact adapter are gone; this ADR described both until #1196. `SmtpEmailClient` generates the `Message-ID` itself so the outbox row and the MIME header carry the same value, which is what lets the bounce poller match a DSN to what it answers.
@@ -76,9 +76,9 @@ interface ContactAdapter {
     fun deleteContact(externalId: Long)
 }
 
-// contact/api/BrevoContactAdapter.kt — production only
+// contact/api/BrevoContactAdapter.kt: where a Brevo API key is set
 @Service
-@Profile("!test & !dev")
+@WhenCredentialsSet(Credentials.BREVO)
 class BrevoContactAdapter(...) : ContactAdapter { ... }
 ```
 
@@ -88,32 +88,31 @@ already abandoned. The interface says so; the adapter absorbs it.
 
 ### Profile conventions
 
-A production adapter declares a `@Profile`, so nothing reaches a real system from a test:
+A vendor client is real where its credentials are set and an in-memory stand-in otherwise, by one
+rule: the real one carries `@WhenCredentialsSet`, its stand-in `@WhenCredentialsMissing` with the
+same properties (`shared/credentials`), and a property counts as set when it is not blank. The
+profile plays no part, so dev with a Brevo key talks to Brevo, and the test profile, which sets
+none, talks to the stand-ins. An architecture test keeps every adapter on the rule and every
+stand-in naming the same properties as its real twin.
 
-| Adapter | `@Profile` | Why |
+| Real | Stand-in | Switched on |
 |---|---|---|
-| `SmtpEmailClient` | `!test` | Dev sends through the local mail container; tests send nothing |
-| `BrevoContactAdapter` | `!test & !dev` | Production only |
-| `BrevoListAdapter` | `!test & !dev` | Production only |
-| `GoogleCalendarAdapter` | `!test & !dev` | Production only |
-| `DiscordClientConfig` | `!test & !dev` | Production only; wires the client, and nothing reads it yet |
+| `SmtpEmailClient` | `InMemoryEmailClient` | `spring.mail.host` |
+| `BrevoContactAdapter`, `BrevoListAdapter` | `MockContactAdapter` | `brevo.apiKey` |
+| `GoogleCalendarAdapter` | `MockCalendarAdapter` | `google.calendar.id`, `google.calendar.serviceAccountJson` |
+| `ImapBouncePollingService` | none: the bounce mailbox goes unread | `email.bounce.imap.host`, `.username`, `.password` |
+| the Discord beans | none: each reader copes with the bot's absence | `discord.botToken` |
 
-A mock declares `@Primary` and the profiles it stands in for:
-
-| Mock | `@Profile` | Stands in for |
-|---|---|---|
-| `InMemoryEmailClient` | `test` | `SmtpEmailClient` |
-| `MockContactAdapter` | `test \| dev` | `BrevoContactAdapter` |
-| `MockCalendarAdapter` | `test \| dev` | `GoogleCalendarAdapter` |
-| `MockTargetStrategy` | `test \| dev` | the target strategy the fan-out reads |
+`BrevoTargetStrategy`, the Brevo cohort target, needs no credentials of its own: it is written
+against `ContactListAdapter`, so it runs over Brevo or over `MockContactAdapter`. In dev and in
+the api's integration tests the contact sync and the cohort targets see the same stand-in.
 
 ## Guidelines
 
 ### DO:
-- ✅ Place ACLs in `platform/integration/{system}/`
+- ✅ Place an ACL in the module that owns the concern, and its stand-in beside the port
 - ✅ Use adapter pattern with domain-friendly interfaces defined in `shared/`
-- ✅ Annotate production adapters with `@Profile` (e.g., `@Profile("!test")`)
-- ✅ Annotate mock adapters with `@Primary` and a test/dev profile
+- ✅ Switch a vendor client and its stand-in on the same credentials (`@WhenCredentialsSet` / `@WhenCredentialsMissing`)
 - ✅ Translate at boundary (no external types in domain)
 - ✅ Handle external API errors gracefully (wrap in domain exceptions)
 - ✅ Use `List<AdapterInterface>` injection for fan-out across multiple systems
@@ -123,8 +122,7 @@ A mock declares `@Primary` and the profiles it stands in for:
 - ❌ Scatter integration logic across domain
 - ❌ Skip validation of external data
 - ❌ Expose external API details to domain
-- ❌ Omit `@Profile` from production adapters (causes test pollution)
-- ❌ Omit `@Primary` from mock adapters (causes `NoUniqueBeanDefinitionException`)
+- ❌ Gate a vendor client on a profile
 
 ## Examples
 
@@ -133,7 +131,7 @@ A mock declares `@Primary` and the profiles it stands in for:
 ```kotlin
 // email/domain/SmtpEmailClient.kt
 @Component
-@Profile("!test")
+@WhenCredentialsSet(Credentials.SMTP_HOST)
 class SmtpEmailClient(private val mailSender: JavaMailSender) : EmailTransportClient {
     override fun send(...): String {
         val messageId = "<${UUID.randomUUID()}@blueshell.utwente.nl>"
@@ -147,24 +145,16 @@ The id is generated here rather than read back from the server, so the outbox ro
 carry the same value and a bounce can be matched to what it answers. That is translation the
 domain does not have to know about, which is the point of the layer.
 
-### Mock Adapter Pattern
+### Stand-in Pattern
 ```kotlin
-// platform/integration/mock/MockContactAdapter.kt
+// contact/domain/MockContactAdapter.kt
 @Service
-@Primary
-@Profile("test | dev")
-class MockContactAdapter : ContactSyncAdapter, ListSyncAdapter {
-    override val system = ContactSystem.LISTMONK
+@WhenCredentialsMissing(Credentials.BREVO)
+class MockContactAdapter : ContactAdapter, ContactListAdapter {
+    override val system = TargetSystem.BREVO
 
     private val contacts = ConcurrentHashMap<Long, MockContact>()
-
-    override fun createContact(data: ContactData): Long { /* in-memory */ }
-    override fun updateContact(externalId: Long, data: ContactData): Long { /* in-memory */ }
-    override fun deleteContact(externalId: Long) { /* in-memory */ }
-
-    // Test inspection helpers
-    fun getAllContacts(): Map<Long, MockContact> = contacts.toMap()
-    fun clear() = contacts.clear()
+    // ... the same operations, held in memory
 }
 ```
 

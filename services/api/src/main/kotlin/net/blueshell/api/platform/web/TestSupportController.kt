@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpServletResponse
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.auth.web.AuthenticationController
+import net.blueshell.api.email.domain.InMemoryEmailClient
 import net.blueshell.api.platform.config.SettableClock
-import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.security.AuthTokenCookieService
 import net.blueshell.api.security.Browser
 import net.blueshell.api.security.SignIn

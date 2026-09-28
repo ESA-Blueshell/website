@@ -1,6 +1,6 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
+import net.blueshell.api.email.domain.InMemoryEmailClient
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.testsupport.runJob

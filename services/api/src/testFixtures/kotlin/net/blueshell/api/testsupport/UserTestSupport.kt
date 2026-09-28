@@ -7,6 +7,7 @@ import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.email.domain.InMemoryEmailClient
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
@@ -25,7 +26,6 @@ import net.blueshell.api.file.api.PublicFileUrls
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.SettableClock
-import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.security.Browser
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.enums.FileType

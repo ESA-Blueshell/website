@@ -6,8 +6,9 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.contact.api.toContactData
+import net.blueshell.api.contact.domain.MockContactAdapter
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
-import net.blueshell.api.platform.integration.mock.MockTargetStrategy
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
@@ -27,8 +28,8 @@ import tools.jackson.databind.ObjectMapper
  * is `@Transactional`, so a job is always dispatched with a transaction
  * active. The application services suspend it (`PROPAGATION_NOT_SUPPORTED`)
  * around every [TargetStrategy][net.blueshell.api.cohort.domain.TargetStrategy]
- * call; [MockTargetStrategy] records whether a transaction was actually active
- * at each call so we can assert it never is.
+ * call; the Brevo target runs over [MockContactAdapter], which records whether a
+ * transaction was actually active at each call so we can assert it never is.
  */
 @SpringBootTest
 class CohortProviderTransactionBoundaryIT : UserTestSupport() {
@@ -41,7 +42,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
 
     @Autowired private lateinit var externalIds: ExternalIdMappingRepository
 
-    @Autowired private lateinit var port: MockTargetStrategy
+    @Autowired private lateinit var port: MockContactAdapter
 
     @Autowired private lateinit var objectMapper: ObjectMapper
 
@@ -49,7 +50,8 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
     fun `membership-sync ADD calls the provider outside any transaction`() {
         val user = createUserWithRole(Role.MEMBER)
         val cohort = newCohort(newSubject())
-        externalIds.saveAndFlush(ExternalIdMapping(USER_AGGREGATE, user.id!!, TargetSystem.BREVO.name, "ext-user"))
+        val contact = port.createContact(user.toContactData())
+        externalIds.saveAndFlush(ExternalIdMapping(USER_AGGREGATE, user.id!!, TargetSystem.BREVO.name, contact.toString()))
         port.transactionActiveDuringCalls.clear()
 
         handler(CohortJobs.SyncCohortMembership.type).runJob(
@@ -80,6 +82,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
     private fun newSubject(): CohortSubject =
         subjects.save(CohortSubject(type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS, label = "Members"))
 
+    // The list the cohort names exists on the stand-in Brevo, as it would on Brevo.
     private fun newCohort(subject: CohortSubject): Cohort =
         cohorts.save(
             Cohort(
@@ -87,7 +90,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
                 kind = CohortKind.LIST,
                 label = "Members",
                 subjectId = subject.id,
-                externalId = "ext-cohort",
+                externalId = port.createList("Members", null).toString(),
             ),
         )
 }

@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.integration.mock
+package net.blueshell.api.contact.domain
 
 import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.contact.api.ContactServiceException
@@ -203,4 +203,27 @@ class MockContactAdapterTest {
             isMember = isMember,
             attributes = attributes,
         )
+
+    @Test
+    fun `a list filed in a folder lists with its folder and moves to another`() {
+        val first = adapter.createList("Members 2026", "Contribution periods")
+        adapter.createList("Board", "Committees")
+        val folders = adapter.listFolders()
+        val committees = folders.entries.single { it.value == "Committees" }.key
+
+        assertThat(folders.values).containsExactlyInAnyOrder("Contribution periods", "Committees")
+        assertThat(adapter.listAll().single { it.externalListId == first }.memberCount).isZero()
+
+        adapter.moveList(first, committees)
+
+        assertThat(adapter.listAll().single { it.externalListId == first }.folderId).isEqualTo(committees)
+    }
+
+    @Test
+    fun `moving refuses a list or a folder that does not exist`() {
+        val list = adapter.createList("Board", null)
+
+        assertThatThrownBy { adapter.moveList(999, 1) }.isInstanceOf(ContactServiceException::class.java)
+        assertThatThrownBy { adapter.moveList(list, 999) }.isInstanceOf(ContactServiceException::class.java)
+    }
 }

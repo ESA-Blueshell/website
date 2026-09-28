@@ -11,6 +11,10 @@ spring:
     enabled: true
     drop-first: false
 
+  # No relay, so the in-memory outbox stands in for SMTP and a test can read what was sent.
+  mail:
+    host: ""
+
   main:
     banner-mode: off
     log-startup-info: false

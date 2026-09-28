@@ -51,7 +51,13 @@ class RosterEntryDetailIT : UserTestSupport() {
         val team = team()
 
         val entry =
-            rosters.add(team.id!!, game, season.id!!, RosterEntryInput("driver", TeamRole.PLAYER), null)
+            rosters.add(
+                team.id!!,
+                game,
+                season.id!!,
+                RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "Captain", description = "Holds the **middle** together."),
+                null,
+            )
 
         assertThat(entry.roleTitle).isEqualTo("Captain")
         assertThat(entry.description).isEqualTo("Holds the **middle** together.")
@@ -61,7 +67,13 @@ class RosterEntryDetailIT : UserTestSupport() {
     fun `both reach the public read, where the roster is published`() {
         val season = season()
         val team = team()
-        rosters.add(team.id!!, game, season.id!!, RosterEntryInput("driver", TeamRole.PLAYER), null)
+        rosters.add(
+            team.id!!,
+            game,
+            season.id!!,
+            RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "In-game leader", description = "Calls the rounds."),
+            null,
+        )
 
         val member =
             views
@@ -83,7 +95,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         val team = team()
 
         val entry =
-            rosters.add(team.id!!, game, season.id!!, RosterEntryInput("quiet", TeamRole.PLAYER), null)
+            rosters.add(team.id!!, game, season.id!!, RosterEntryInput("quiet", TeamRole.PLAYER, roleTitle = "   ", description = ""), null)
 
         assertThat(entry.roleTitle).isNull()
         assertThat(entry.description).isNull()
@@ -140,8 +152,8 @@ class RosterEntryDetailIT : UserTestSupport() {
                 ),
             )
         val team = team()
-        val first = rosters.add(team.id!!, game, earlier.id!!, RosterEntryInput("driver", TeamRole.PLAYER), null)
-        rosters.add(team.id!!, game, later.id!!, RosterEntryInput("driver", TeamRole.PLAYER), null)
+        val first = rosters.add(team.id!!, game, earlier.id!!, RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "Captain"), null)
+        rosters.add(team.id!!, game, later.id!!, RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "Coach"), null)
 
         rosters.update(first.id!!, RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "Stand-in captain"), sortIndex = 0)
 

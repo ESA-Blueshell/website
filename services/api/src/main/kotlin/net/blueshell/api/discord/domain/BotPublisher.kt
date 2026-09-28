@@ -40,7 +40,8 @@ import java.time.ZoneOffset
 
 /**
  * The bot's voice: messages through the generated REST client, or as multipart where a banner
- * goes with them, channels found by name among the text channels the gateway holds. Mentions
+ * goes with them, channels found by name among the text channels the gateway holds and a posted
+ * message by the channel its reference carries. Mentions
  * notify only when a message is first posted; an edit is sent with no mention allowed, so
  * rewriting a post never pings anybody.
  */
@@ -60,31 +61,33 @@ class BotPublisher(
     ): String =
         explained(posting(channel)) {
             val channelId = channelIdOf(channel)
-            withoutImageIfRefused(post.banner != null) { withBanner ->
-                val banner = post.banner?.takeIf { withBanner }
-                val request =
-                    MessageCreateRequest(
-                        content = mentionsOf(post),
-                        embeds = listOf(post.embed.asRichEmbed()),
-                        allowedMentions = MessageAllowedMentionsRequest(parse = emptySet(), roles = post.pingedRoleIds.toSet()),
-                        attachments = attachmentsOf(banner),
-                    )
-                if (banner == null && post.links.isEmpty()) {
-                    api.createMessage(channelId, request).id
-                } else {
-                    sendRaw(HttpMethod.POST, "/channels/{channel}/messages", withLinks(request, post.links), banner, channelId)
+            val messageId =
+                withoutImageIfRefused(post.banner != null) { withBanner ->
+                    val banner = post.banner?.takeIf { withBanner }
+                    val request =
+                        MessageCreateRequest(
+                            content = mentionsOf(post),
+                            embeds = listOf(post.embed.asRichEmbed()),
+                            allowedMentions = MessageAllowedMentionsRequest(parse = emptySet(), roles = post.pingedRoleIds.toSet()),
+                            attachments = attachmentsOf(banner),
+                        )
+                    if (banner == null && post.links.isEmpty()) {
+                        api.createMessage(channelId, request).id
+                    } else {
+                        sendRaw(HttpMethod.POST, "/channels/{channel}/messages", withLinks(request, post.links), banner, channelId)
+                    }
                 }
-            }
+            "$channelId/$messageId"
         }
 
     // The attachments listed replace the message's own, so a banner taken off the event leaves the post.
     override fun edit(
         channel: String,
-        messageId: String,
+        reference: String,
         post: DiscordPost,
     ): Boolean =
         explained(posting(channel)) {
-            val channelId = channelIdOf(channel)
+            val (channelId, messageId) = messageOf(channel, reference)
             stillThere {
                 withoutImageIfRefused(post.banner != null) { withBanner ->
                     send(post, post.banner?.takeIf { withBanner }, channelId, messageId)
@@ -175,19 +178,47 @@ class BotPublisher(
 
     override fun delete(
         channel: String,
-        messageId: String,
-    ) = explained(removing(channel)) { gone { api.deleteMessage(channelIdOf(channel), messageId) } }
+        reference: String,
+    ) = explained(removing(channel)) {
+        val (channelId, messageId) = messageOf(channel, reference)
+        gone { api.deleteMessage(channelId, messageId) }
+    }
 
     override fun findPosts(
         channel: String,
         url: String,
     ): List<String> =
         explained(reading(channel)) {
-            readAll("/channels/{channel}/messages?limit=100", channelIdOf(channel))
+            val channelId = channelIdOf(channel)
+            readAll("/channels/{channel}/messages?limit=100", channelId)
                 .filter { message ->
-                    (message["author"] as? Map<*, *>)?.get("bot") == true &&
-                        (message["embeds"] as? List<*>).orEmpty().any { (it as? Map<*, *>)?.get("url") == url }
-                }.map { it.getValue("id") as String }
+                    (message["embeds"] as? List<*>).orEmpty().any { (it as? Map<*, *>)?.get("url") == url } &&
+                        (message["author"] as? Map<*, *>)?.get("id") == selfId
+                }.map { "$channelId/${it.getValue("id")}" }
+        }
+
+    override fun stillPosted(
+        channel: String,
+        reference: String,
+    ): String? =
+        explained(reading(channel)) {
+            val (channelId, messageId) = messageOf(channel, reference)
+            "$channelId/$messageId".takeIf { found("/channels/{channel}/messages/{message}", channelId, messageId) }
+        }
+
+    override fun stillListed(discordEventId: String): Boolean =
+        explained(LISTING) { found("/guilds/{guild}/scheduled-events/{event}", guildId, discordEventId) }
+
+    private fun found(
+        path: String,
+        vararg ids: String,
+    ): Boolean =
+        stillThere {
+            discordRestClient
+                .get()
+                .uri(path, *ids)
+                .retrieve()
+                .toBodilessEntity()
         }
 
     override fun findDiscordEvents(line: String): List<String> =
@@ -231,12 +262,11 @@ class BotPublisher(
 
     override fun linkOf(
         channel: String,
-        messageId: String,
-    ): String? =
-        doors.ifAvailable
-            ?.textRooms()
-            ?.firstOrNull { plain(it.name) == plain(channel) }
-            ?.let { "https://discord.com/channels/$guildId/${it.id}/$messageId" }
+        reference: String,
+    ): String? {
+        val (channelId, messageId) = split(reference) ?: ((roomIdOf(channel) ?: return null) to reference)
+        return "https://discord.com/channels/$guildId/$channelId/$messageId"
+    }
 
     override fun linkOfDiscordEvent(discordEventId: String) = "https://discord.com/events/$guildId/$discordEventId"
 
@@ -296,12 +326,32 @@ class BotPublisher(
 
     // The channel list comes from the gateway, which holds none while it is not connected.
     private fun channelIdOf(channel: String): String {
-        val rooms = doors.ifAvailable?.textRooms().orEmpty()
-        if (rooms.isEmpty()) {
+        if (doors.ifAvailable?.textRooms().isNullOrEmpty()) {
             throw ExplainedJobFailure("The Discord gateway is not connected, so no channel called #$channel can be found yet.")
         }
-        return rooms.firstOrNull { plain(it.name) == plain(channel) }?.id
-            ?: throw ExplainedJobFailure("The Discord server has no text channel called #$channel.")
+        return roomIdOf(channel) ?: throw ExplainedJobFailure("The Discord server has no text channel called #$channel.")
+    }
+
+    private fun roomIdOf(channel: String): String? =
+        doors.ifAvailable
+            ?.textRooms()
+            ?.firstOrNull { plain(it.name) == plain(channel) }
+            ?.id
+
+    // A bare message ID, recorded before references carried the channel, is in the channel of that name.
+    private fun messageOf(
+        channel: String,
+        reference: String,
+    ): Pair<String, String> = split(reference) ?: (channelIdOf(channel) to reference)
+
+    // Asked once, and only once a message links the page: another bot's post may link it too.
+    private val selfId: String by lazy {
+        discordRestClient
+            .get()
+            .uri("/users/@me")
+            .retrieve()
+            .body(REPLY)!!
+            .getValue("id") as String
     }
 
     private companion object {
@@ -327,6 +377,10 @@ private fun DiscordEmbed.asRichEmbed() =
         description = description,
         fields = fields.map { (name, value) -> RichEmbedField(name = name, value = value, inline = true) },
     )
+
+// A reference is the channel's ID and the message's, split by a slash.
+private fun split(reference: String): Pair<String, String>? =
+    reference.split('/', limit = 2).takeIf { it.size == 2 }?.let { (channelId, messageId) -> channelId to messageId }
 
 private fun attachmentsOf(banner: DiscordImage?) = listOfNotNull(banner?.let { MessageAttachmentRequest(id = "0", filename = it.fileName) })
 

@@ -87,6 +87,7 @@ class BotPublisherTest {
     @Test
     fun `links a message and a Discord event where Discord opens them`() {
         assertThat(publisher.linkOf("events-info", "m1")).isEqualTo("https://discord.com/channels/324/111/m1")
+        assertThat(publisher.linkOf("events-lobby", "222/m1")).isEqualTo("https://discord.com/channels/324/222/m1")
         assertThat(publisher.linkOf("events-lobby", "m1")).isNull()
         assertThat(publisher.linkOfDiscordEvent("e1")).isEqualTo("https://discord.com/events/324/e1")
     }
@@ -96,7 +97,7 @@ class BotPublisherTest {
         val message: MessageResponse = mock { on { id } doReturn "m1" }
         whenever(api.createMessage(eq("111"), any())).thenReturn(message)
 
-        assertThat(publisher.post("events-info", post)).isEqualTo("m1")
+        assertThat(publisher.post("events-info", post)).isEqualTo("111/m1")
 
         val sent = argumentCaptor<MessageCreateRequest>()
         verify(api).createMessage(eq("111"), sent.capture())
@@ -138,7 +139,7 @@ class BotPublisherTest {
             .andExpect(content().string(containsString("filename=\"banner.webp\"")))
             .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
 
-        assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("m1")
+        assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("111/m1")
         publisher.edit("events-info", "m1", post.copy(banner = banner))
 
         discord.verify()
@@ -175,9 +176,9 @@ class BotPublisherTest {
             .andExpect(content().string(containsString("\"style\":5")))
             .andRespond(withSuccess("""{"id": "m2"}""", MediaType.APPLICATION_JSON))
 
-        assertThat(publisher.post("events-info", linked)).isEqualTo("m1")
+        assertThat(publisher.post("events-info", linked)).isEqualTo("111/m1")
         publisher.edit("events-info", "m1", linked)
-        assertThat(publisher.post("events-info", linked.copy(banner = banner))).isEqualTo("m2")
+        assertThat(publisher.post("events-info", linked.copy(banner = banner))).isEqualTo("111/m2")
 
         discord.verify()
         verifyNoInteractions(api)
@@ -211,7 +212,7 @@ class BotPublisherTest {
         discord.expect(requestTo("https://discord.test/channels/111/messages/m1")).andRespond(withStatus(HttpStatus.CONTENT_TOO_LARGE))
         discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withServerError())
 
-        assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("m1")
+        assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("111/m1")
         publisher.edit("events-info", "m1", post.copy(banner = banner))
         assertThatThrownBy { publisher.post("events-info", post.copy(banner = banner)) }
             .isInstanceOf(ExplainedJobFailure::class.java)
@@ -236,6 +237,34 @@ class BotPublisherTest {
 
         whenever(api.deleteGuildScheduledEvent("324", "e1")).thenThrow(HttpClientErrorException(HttpStatus.CONFLICT))
         assertThatThrownBy { publisher.deleteDiscordEvent("e1") }.isInstanceOf(HttpClientErrorException::class.java)
+    }
+
+    @Test
+    fun `reaches a message by the channel its reference carries, whatever the channel is called now`() {
+        publisher.edit("events-lobby", "222/m1", post)
+        publisher.delete("events-lobby", "222/m2")
+
+        verify(api).updateMessage(eq("222"), eq("m1"), any())
+        verify(api).deleteMessage("222", "m2")
+    }
+
+    @Test
+    fun `asks Discord after a message and a Discord event by their IDs, answering a message's reference as it stands`() {
+        discord.expect(requestTo("https://discord.test/channels/222/messages/m1")).andRespond(withSuccess())
+        discord.expect(requestTo("https://discord.test/channels/111/messages/m2")).andRespond(withSuccess())
+        discord.expect(requestTo("https://discord.test/channels/111/messages/m3")).andRespond(withStatus(HttpStatus.NOT_FOUND))
+        discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events/e1")).andRespond(withSuccess())
+        discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events/e2")).andRespond(withStatus(HttpStatus.NOT_FOUND))
+        discord.expect(requestTo("https://discord.test/channels/111/messages/m4")).andRespond(withStatus(HttpStatus.FORBIDDEN))
+
+        assertThat(publisher.stillPosted("events-info", "222/m1")).isEqualTo("222/m1")
+        assertThat(publisher.stillPosted("events-info", "m2")).isEqualTo("111/m2")
+        assertThat(publisher.stillPosted("events-info", "111/m3")).isNull()
+        assertThat(publisher.stillListed("e1")).isTrue()
+        assertThat(publisher.stillListed("e2")).isFalse()
+        assertThatThrownBy { publisher.stillPosted("events-info", "111/m4") }
+            .hasMessage("The bot may not read #events-info: it needs View Channel and Read Message History there.")
+        discord.verify()
     }
 
     @Test
@@ -362,22 +391,26 @@ class BotPublisherTest {
     }
 
     @Test
-    fun `finds the bot's own posts linking a page, and Discord events naming it on a line`() {
+    fun `finds this bot's own posts linking a page, not another bot's, and Discord events naming it on a line`() {
         discord
             .expect(requestTo("https://discord.test/channels/111/messages?limit=100"))
             .andRespond(
                 withSuccess(
                     """
                     [
-                      {"id": "m3", "author": {"bot": true}, "embeds": [{"url": "https://site/events/42"}]},
-                      {"id": "m2", "author": {"bot": false}, "embeds": [{"url": "https://site/events/42"}]},
-                      {"id": "m1", "author": {"bot": true}, "embeds": [{"url": "https://site/events/421"}]},
-                      {"id": "m0", "author": {"bot": true}}
+                      {"id": "m4", "author": {"id": "900", "bot": true}, "embeds": [{"url": "https://site/events/42"}]},
+                      {"id": "m3", "author": {"id": "700", "bot": true}, "embeds": [{"url": "https://site/events/42"}]},
+                      {"id": "m2", "author": {"id": "701", "bot": false}, "embeds": [{"url": "https://site/events/42"}]},
+                      {"id": "m1", "author": {"id": "900", "bot": true}, "embeds": [{"url": "https://site/events/421"}]},
+                      {"id": "m0", "author": {"id": "900", "bot": true}}
                     ]
                     """,
                     MediaType.APPLICATION_JSON,
                 ),
             )
+        discord
+            .expect(requestTo("https://discord.test/users/@me"))
+            .andRespond(withSuccess("""{"id": "900", "bot": true}""", MediaType.APPLICATION_JSON))
         discord
             .expect(requestTo("https://discord.test/guilds/324/scheduled-events"))
             .andRespond(
@@ -393,7 +426,7 @@ class BotPublisherTest {
                 ),
             )
 
-        assertThat(publisher.findPosts("events-info", "https://site/events/42")).containsExactly("m3")
+        assertThat(publisher.findPosts("events-info", "https://site/events/42")).containsExactly("111/m4")
         assertThat(publisher.findDiscordEvents("More on the site: https://site/events/42")).containsExactly("e2")
         discord.verify()
     }

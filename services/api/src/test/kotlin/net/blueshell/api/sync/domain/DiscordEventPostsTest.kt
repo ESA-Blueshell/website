@@ -66,20 +66,20 @@ class DiscordEventPostsTest {
 
         override fun edit(
             channel: String,
-            messageId: String,
+            reference: String,
             post: DiscordPost,
         ): Boolean {
-            if (messageId in gone) return false
+            if (reference in gone) return false
             banners += post.banner?.fileName
-            said += "edit $channel $messageId"
+            said += "edit $channel $reference"
             return true
         }
 
         override fun delete(
             channel: String,
-            messageId: String,
+            reference: String,
         ) {
-            said += "delete $channel $messageId"
+            said += "delete $channel $reference"
         }
 
         /** What the server holds that links event 42 without the ledger knowing, by channel or "events". */
@@ -117,10 +117,30 @@ class DiscordEventPostsTest {
 
         override fun linkOf(
             channel: String,
-            messageId: String,
-        ) = "https://discord.test/$channel/$messageId"
+            reference: String,
+        ) = "https://discord.test/$channel/$reference"
 
         override fun linkOfDiscordEvent(discordEventId: String) = "https://discord.test/events/$discordEventId"
+
+        /** Gone by the time an edit reaches it, though still there when asked after. */
+        val vanishing = mutableSetOf<String>()
+
+        /** What a run asked Discord after by reference, and the reference Discord answers for an old one. */
+        val checked = mutableListOf<String>()
+        val upgraded = mutableMapOf<String, String>()
+
+        override fun stillPosted(
+            channel: String,
+            reference: String,
+        ): String? {
+            checked += reference
+            return if (reference in gone && reference !in vanishing) null else upgraded[reference] ?: reference
+        }
+
+        override fun stillListed(discordEventId: String): Boolean {
+            checked += discordEventId
+            return discordEventId !in gone
+        }
     }
 
     /** The ledger as a map, with a switch for a claim somebody else holds. */
@@ -366,14 +386,63 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `makes a post again that somebody removed by hand, once the event changes`() {
+    fun `puts a post somebody removed by hand back on the next run, though nothing changed, notifying again`() {
         posts("2026-09-26T08:00").keepAnnouncement(42)
         publisher.gone += "m1"
 
-        assertThat(posts("2026-09-27T08:00", found = event.copy(title = "LAN party, bigger")).keepAnnouncement(42).made).isTrue()
+        assertThat(posts("2026-09-27T08:00").keepAnnouncement(42).effect).isEqualTo(JobEffect.MADE)
 
         assertThat(publisher.said).containsExactly("post events-info m1", "post events-info m2")
         assertThat(ledger.posted[DiscordArtefact.INFO_POST]?.externalId).isEqualTo("m2")
+    }
+
+    @Test
+    fun `makes a post again that goes between being asked after and being edited`() {
+        posts("2026-09-26T08:00").keepAnnouncement(42)
+        publisher.gone += "m1"
+        publisher.vanishing += "m1"
+
+        assertThat(posts("2026-09-27T08:00", found = event.copy(title = "LAN party, bigger")).keepAnnouncement(42).effect)
+            .isEqualTo(JobEffect.MADE)
+
+        assertThat(publisher.said).containsExactly("post events-info m1", "post events-info m2")
+    }
+
+    @Test
+    fun `lists a Discord event somebody removed by hand again on the next run`() {
+        posts("2026-09-26T08:00").keepDiscordEvent(42)
+        publisher.gone += "m1"
+
+        assertThat(posts("2026-09-27T08:00").keepDiscordEvent(42).effect).isEqualTo(JobEffect.MADE)
+
+        assertThat(publisher.said).containsExactly("list m1", "list m2")
+        assertThat(ledger.posted[DiscordArtefact.DISCORD_EVENT]?.externalId).isEqualTo("m2")
+    }
+
+    @Test
+    fun `asks Discord after what it recorded on every run, whether or not anything changed`() {
+        all("2026-10-10T08:00")
+        publisher.checked.clear()
+
+        all("2026-10-10T09:00")
+
+        assertThat(publisher.checked).containsExactly("m1", "m2", "m3")
+        assertThat(publisher.said).containsExactly("post events-info m1", "post events-calendar m2", "list m3")
+    }
+
+    @Test
+    fun `records the reference Discord answers for a post recorded the old way, and keeps that copy`() {
+        posts("2026-09-26T08:00").keepAnnouncement(42)
+        val old = ledger.posted.getValue(DiscordArtefact.INFO_POST)
+        ledger.posted[DiscordArtefact.INFO_POST] = old.copy(externalId = "legacy")
+        publisher.upgraded["legacy"] = "111/legacy"
+        publisher.strays["events-info"] = listOf("111/legacy")
+
+        val kept = posts("2026-09-27T08:00").keepAnnouncement(42)
+
+        assertThat(kept).isEqualTo(Kept(JobEffect.UNCHANGED, "https://discord.test/events-info/111/legacy"))
+        assertThat(ledger.posted[DiscordArtefact.INFO_POST]).isEqualTo(old.copy(externalId = "111/legacy"))
+        assertThat(publisher.said).containsExactly("post events-info m1")
     }
 
     @Test

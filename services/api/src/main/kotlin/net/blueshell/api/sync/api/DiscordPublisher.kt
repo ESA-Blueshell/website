@@ -48,12 +48,14 @@ data class DiscordEventListing(
 
 /**
  * What the bot can put in the association's Discord server, in this module's terms (ADR-019): the
- * discord module, which holds the bot, implements it. Every call throws when Discord cannot be
- * reached or refuses, so the caller's job can retry it; a failure the board can act on comes as an
- * ExplainedJobFailure that says so in plain words.
+ * discord module, which holds the bot, implements it. A message is named by the reference [post]
+ * answers, which carries its channel, so renaming the channel loses nothing; a bare message ID,
+ * as recorded before references carried one, names a message in the channel called by name. Every
+ * call throws when Discord cannot be reached or refuses, so the caller's job can retry it; a
+ * failure the board can act on comes as an ExplainedJobFailure that says so in plain words.
  */
 interface DiscordPublisher {
-    /** Posts [post] in the channel called [channel], notifying its roles; answers the message's ID. */
+    /** Posts [post] in the channel called [channel], notifying its roles; answers the message's reference. */
     fun post(
         channel: String,
         post: DiscordPost,
@@ -65,13 +67,14 @@ interface DiscordPublisher {
      */
     fun edit(
         channel: String,
-        messageId: String,
+        reference: String,
         post: DiscordPost,
     ): Boolean
 
     /**
-     * The bot's messages among the latest hundred in the channel called [channel] whose embed
-     * links [url], newest first: what is already out, whether or not it was recorded.
+     * This bot's messages among the latest hundred in the channel called [channel] whose embed
+     * links [url], newest first, by reference: what is already out, whether or not it was
+     * recorded. Another bot's message linking the same page is not the bot's to touch.
      */
     fun findPosts(
         channel: String,
@@ -84,8 +87,17 @@ interface DiscordPublisher {
     /** Removes a message the bot posted; one already gone is no failure. */
     fun delete(
         channel: String,
-        messageId: String,
+        reference: String,
     )
+
+    /** The reference of a message the bot posted, as it should be recorded now; null where it is gone, removed by hand. */
+    fun stillPosted(
+        channel: String,
+        reference: String,
+    ): String?
+
+    /** False where the Discord event is gone, removed by hand. */
+    fun stillListed(discordEventId: String): Boolean
 
     /** Answers the Discord event's ID. */
     fun createDiscordEvent(listing: DiscordEventListing): String
@@ -102,7 +114,7 @@ interface DiscordPublisher {
     /** Where a message the bot posted in the channel called [channel] opens; null where that channel is not known. */
     fun linkOf(
         channel: String,
-        messageId: String,
+        reference: String,
     ): String?
 
     fun linkOfDiscordEvent(discordEventId: String): String

@@ -3,6 +3,7 @@ package net.blueshell.api.event.domain
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.file.api.FileService
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
@@ -35,6 +36,23 @@ class ShippedDevEventsIT : UserTestSupport() {
         assertThat(events.count()).isEqualTo(applied.events.toLong())
         assertThat(transactionTemplate.execute { events.findAll().count { it.committee != null } })
             .isEqualTo(applied.events)
+    }
+
+    @Test
+    fun `a committee the seed names seats the development accounts the database has`() {
+        userRepository.save(createUserWithRole(Role.COMMITTEE).apply { username = "committee" })
+
+        loader().apply()
+
+        val seated =
+            transactionTemplate.execute {
+                committees
+                    .findAll()
+                    .single { it.name == "SiteCie" }
+                    .members
+                    .map { it.user.username to it.role }
+            }
+        assertThat(seated).containsExactly("committee" to "Chair")
     }
 
     @Test

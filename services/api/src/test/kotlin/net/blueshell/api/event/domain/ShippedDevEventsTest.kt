@@ -12,6 +12,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -66,6 +67,22 @@ class ShippedDevEventsTest {
 
         assertThat(applied).isEqualTo(ShippedDevEvents.Applied(named.size, rows.size, drawn))
         verify(events, times(rows.size)).save(any())
+    }
+
+    @Test
+    fun `seats the development accounts the file names, with their roles, and skips one the database lacks`() {
+        database()
+        val cas = mock<User>()
+        whenever(users.findByUsername("committee")).thenReturn(cas)
+        whenever(users.findByUsername("member.paid")).thenThrow(IllegalStateException("no such account"))
+
+        loader.apply()
+
+        val created = argumentCaptor<Committee>()
+        verify(committees, atLeastOnce()).create(created.capture())
+        val siteCie = created.allValues.single { it.name == "SiteCie" }
+        assertThat(siteCie.members.map { it.user to it.role }).containsExactly(cas to "Chair")
+        assertThat(siteCie.members.map { it.committee }).containsOnly(siteCie)
     }
 
     @Test

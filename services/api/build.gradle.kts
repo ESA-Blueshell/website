@@ -360,24 +360,6 @@ tasks.register<JavaExec>("classDependencyGraph") {
     )
 }
 
-tasks.register<JavaExec>("seed") {
-    description = "Seeds the currently configured database using factories and YAML configuration."
-    group = "application"
-    dependsOn(tasks.named("testClasses"))
-    mainClass.set("net.blueshell.tools.DatabaseSeedToolKt")
-    classpath = sourceSets["test"].runtimeClasspath
-
-    val seedConfigPath = findProperty("config")?.toString()
-    if (!seedConfigPath.isNullOrBlank()) {
-        args("--config", seedConfigPath)
-    }
-
-    val seedProfile = findProperty("profile")?.toString()
-    if (!seedProfile.isNullOrBlank()) {
-        args("--profile", seedProfile)
-    }
-}
-
 kotlin {
     compilerOptions {
         // Without this, `List<@Positive Long>` compiles to bytecode carrying no

@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import type {Job} from "@/domains/jobs"
+import type {Job, JobFoldedTrigger} from "@/domains/jobs"
 import {
   actorDisplay,
   canRetry,
@@ -19,11 +19,46 @@ import {
   statusTitle,
   successRate,
   titleCase,
+  effectLabel,
+  foldedTriggerLabel,
+  triggerLabel,
 } from "@/domains/jobs"
+import {ActionActorType, JobEffect, JobTrigger} from "@/services/api"
 
 const job = (fields: Partial<Job>): Job => fields as Job
 
 describe("job reading", () => {
+  it("says what queued a job, and that it was run again by hand", () => {
+    expect(triggerLabel(job({trigger: JobTrigger.EVENT_APPROVED}))).toBe("Approving the event")
+    expect(triggerLabel(job({trigger: JobTrigger.MORNING_RUN}))).toBe("The 08:00 run")
+    expect(triggerLabel(job({trigger: JobTrigger.EVENT_SENT_BACK}))).toBe("Sending the event back to the board")
+    expect(triggerLabel(job({trigger: JobTrigger.EVENT_UPDATED, forced: true}))).toBe("Editing the event, run again by hand")
+    expect(triggerLabel(job({trigger: JobTrigger.BY_HAND, forced: true}))).toBe("The trigger dialog")
+    expect(triggerLabel(job({}))).toBe("")
+    expect(Object.values(JobTrigger).every(trigger => triggerLabel(job({trigger})) !== "")).toBe(true)
+  })
+
+  it("names a trigger folded into a job in the words its own trigger would have", () => {
+    const folded: JobFoldedTrigger = {
+      trigger: JobTrigger.SIGN_UPS_CHANGED,
+      at: "2026-10-01T10:00:00Z",
+      initiatedByType: ActionActorType.USER,
+      initiatedByDisplay: "Jane Doe (@jdoe)",
+    }
+    expect(foldedTriggerLabel(folded)).toBe("A change in sign-ups")
+  })
+
+  it("says what a run did to the thing its job keeps", () => {
+    const announcement = (effect: JobEffect) => effectLabel(job({jobType: "discord.announcement", effect}))
+    expect(announcement(JobEffect.MADE)).toBe("Put up the #events-info announcement")
+    expect(announcement(JobEffect.EDITED)).toBe("Edited the #events-info announcement")
+    expect(announcement(JobEffect.UNCHANGED)).toBe("Found the #events-info announcement up to date")
+    expect(announcement(JobEffect.REMOVED)).toBe("Took down the #events-info announcement")
+    expect(effectLabel(job({jobType: "discord.event", effect: JobEffect.MADE}))).toBe("Put up the Discord event")
+    expect(effectLabel(job({jobType: "contact.sync", effect: JobEffect.EDITED}))).toBe("Edited what it keeps")
+    expect(effectLabel(job({jobType: "discord.post"}))).toBe("")
+  })
+
   it("titles a status and a snake-cased type", () => {
     expect(titleCase("contact.sync_user")).toBe("Contact Sync User")
     expect(statusTitle("SUCCESS")).toBe("Success")

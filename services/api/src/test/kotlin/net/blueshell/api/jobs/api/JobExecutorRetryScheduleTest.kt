@@ -5,9 +5,12 @@ import net.blueshell.api.jobs.domain.JobHandler
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.JobQueueProperties
+import net.blueshell.api.shared.job.ExplainedJobFailure
+import net.blueshell.api.shared.job.JobEffect
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -52,8 +55,8 @@ class JobExecutorRetryScheduleTest {
         run(Failing(hours), attempts = 5)
 
         val next = argumentCaptor<Instant>()
-        verify(executions).markRetryScheduled(any(), any(), any(), any(), next.capture())
-        verify(executions, never()).markFailed(any(), any(), any(), any())
+        verify(executions).markRetryScheduled(any(), any(), any(), any(), next.capture(), eq(false))
+        verify(executions, never()).markFailed(any(), any(), any(), any(), any())
         // Two minutes doubled four times is 32 minutes.
         assertThat(Duration.between(before, next.firstValue)).isBetween(Duration.ofMinutes(31), Duration.ofMinutes(33))
     }
@@ -63,18 +66,64 @@ class JobExecutorRetryScheduleTest {
         val before = Instant.now()
         run(Failing(hours), attempts = 10)
         val next = argumentCaptor<Instant>()
-        verify(executions).markRetryScheduled(any(), any(), any(), any(), next.capture())
+        verify(executions).markRetryScheduled(any(), any(), any(), any(), next.capture(), eq(false))
         assertThat(Duration.between(before, next.firstValue)).isBetween(Duration.ofMinutes(119), Duration.ofMinutes(121))
 
         run(Failing(hours), attempts = 11)
-        verify(executions).markFailed(any(), eq("java.lang.IllegalStateException"), eq("down"), any())
+        verify(executions).markFailed(any(), eq("java.lang.IllegalStateException"), eq("down"), any(), eq(false))
+    }
+
+    @Test
+    fun `retries a failure that explains itself like any other, and records it as explained`() {
+        val refusing =
+            object : JobHandler {
+                override val jobType = "failing"
+                override val payloadType = String::class.java
+
+                override fun handle(
+                    payload: String?,
+                    executionId: Long?,
+                    forced: Boolean,
+                ): JobOutcome = throw ExplainedJobFailure("Discord is unavailable.")
+            }
+
+        run(refusing, attempts = 1)
+
+        verify(executions).markRetryScheduled(
+            any(),
+            eq("net.blueshell.api.shared.job.ExplainedJobFailure"),
+            eq("Discord is unavailable."),
+            any(),
+            any(),
+            eq(true),
+        )
+    }
+
+    @Test
+    fun `fails at once, without a retry, on an error no retry can fix`() {
+        val broken =
+            object : JobHandler {
+                override val jobType = "failing"
+                override val payloadType = String::class.java
+
+                override fun handle(
+                    payload: String?,
+                    executionId: Long?,
+                    forced: Boolean,
+                ): JobOutcome = throw IllegalArgumentException("No such event")
+            }
+
+        run(broken, attempts = 1)
+
+        verify(executions).markFailed(any(), eq("java.lang.IllegalArgumentException"), eq("No such event"), any(), eq(false))
+        verify(executions, never()).markRetryScheduled(any(), any(), any(), any(), any(), any())
     }
 
     @Test
     fun `keeps to the queue's schedule for a handler without one`() {
         run(Failing(null), attempts = 4)
 
-        verify(executions).markFailed(any(), any(), any(), any())
+        verify(executions).markFailed(any(), any(), any(), any(), any())
     }
 
     @Test
@@ -100,7 +149,7 @@ class JobExecutorRetryScheduleTest {
         JobExecutor(executions, JobHandlerRegistry(listOf(skipping)), properties, SimpleMeterRegistry()).execute(execution)
 
         verify(executions).markSkipped(execution, "Not due yet.")
-        verify(executions, never()).markSuccess(any())
+        verify(executions, never()).markSuccess(any(), anyOrNull(), anyOrNull())
         assertThat(told).isTrue()
     }
 
@@ -115,14 +164,14 @@ class JobExecutorRetryScheduleTest {
                     payload: String?,
                     executionId: Long?,
                     forced: Boolean,
-                ) = JobOutcome.Done
+                ) = JobOutcome.Done(JobEffect.EDITED, "https://discord.test/m1")
             }
         val execution = JobExecution(jobType = "failing", payload = "{}")
         whenever(executions.markRunning(any())).thenReturn(execution)
 
         JobExecutor(executions, JobHandlerRegistry(listOf(done)), properties, SimpleMeterRegistry()).execute(execution)
 
-        verify(executions).markSuccess(execution)
+        verify(executions).markSuccess(execution, JobEffect.EDITED, "https://discord.test/m1")
         verify(executions, never()).markSkipped(any(), any())
     }
 
@@ -137,7 +186,7 @@ class JobExecutorRetryScheduleTest {
                     payload: String?,
                     executionId: Long?,
                     forced: Boolean,
-                ) = JobOutcome.Done
+                ) = JobOutcome.Done()
             }
 
         assertThat(plain.retrySchedule).isNull()

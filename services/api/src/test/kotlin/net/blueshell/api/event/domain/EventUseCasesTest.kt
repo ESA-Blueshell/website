@@ -132,6 +132,44 @@ class EventUseCasesTest {
             assertThat(result).isSameAs(existing)
         }
 
+        /** The event after [role]'s edit of one stored [approved], [awaiting] re-approval. */
+        private fun editedBy(
+            role: Role,
+            approved: Boolean,
+            awaiting: Boolean = false,
+        ): Event {
+            val existing =
+                eventEntity().apply {
+                    version = 1L
+                    this.approved = approved
+                    awaitingReapproval = awaiting
+                }
+            val bannerFile = mock<File>()
+            whenever(bannerFile.id).thenReturn(88L)
+            whenever(eventService.findById(9L)).thenReturn(existing)
+            whenever(committeeService.findById(4L)).thenReturn(mock())
+            whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(2L, setOf(role), null))
+            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(mock())
+            whenever(fileService.findById(88L)).thenReturn(bannerFile)
+            whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
+            return useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L)
+        }
+
+        @Test
+        fun `sends an approved event back to the board on an edit by anybody else, and only then`() {
+            val sentBack = editedBy(Role.COMMITTEE, approved = true)
+            assertThat(sentBack.approved to sentBack.awaitingReapproval).isEqualTo(false to true)
+
+            val stillWaiting = editedBy(Role.COMMITTEE, approved = false, awaiting = true)
+            assertThat(stillWaiting.approved to stillWaiting.awaitingReapproval).isEqualTo(false to true)
+
+            val neverApproved = editedBy(Role.COMMITTEE, approved = false)
+            assertThat(neverApproved.approved to neverApproved.awaitingReapproval).isEqualTo(false to false)
+
+            val byTheBoard = editedBy(Role.BOARD, approved = true)
+            assertThat(byTheBoard.approved to byTheBoard.awaitingReapproval).isEqualTo(true to false)
+        }
+
         @Test
         fun `refuses an edit made against an older version, before touching a field`() {
             val existing = eventEntity().apply { version = 2L }
@@ -268,6 +306,20 @@ class EventUseCasesTest {
 
             assertThat(existing.approved).isTrue()
             assertThat(result).isSameAs(existing)
+        }
+
+        @Test
+        fun `settles an event awaiting re-approval, whichever way the board decides`() {
+            val approved = eventEntity().apply { awaitingReapproval = true }
+            val declined = eventEntity().apply { awaitingReapproval = true }
+            whenever(eventService.findById(6L)).thenReturn(approved)
+            whenever(eventService.findById(7L)).thenReturn(declined)
+
+            useCases.approve(id = 6L, approved = true)
+            useCases.approve(id = 7L, approved = false)
+
+            assertThat(approved.approved to approved.awaitingReapproval).isEqualTo(true to false)
+            assertThat(declined.approved to declined.awaitingReapproval).isEqualTo(false to false)
         }
     }
 

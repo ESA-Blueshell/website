@@ -5,17 +5,20 @@ import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.shared.job.DiscordPostJobs
 import net.blueshell.api.shared.job.JobQueue
-import org.springframework.modulith.events.ApplicationModuleListener
+import net.blueshell.api.shared.job.JobTrigger
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import org.springframework.transaction.event.TransactionPhase
+import org.springframework.transaction.event.TransactionalEventListener
 import java.time.Clock
 import java.time.Duration
 
 /**
- * What queues the bot's jobs for an event: every change to it; the morning run at 08:00 for every
- * approved event near its time; and an hourly look at events on now or just over, which takes a
- * Discord event down within the hour of its end rather than the next morning. Only a job with
- * something to do is queued: one for what is already out, or for what is due.
+ * What queues the bot's jobs for an event: every change to it, which queues all three in the
+ * change's own transaction so each job says what it did or why it did nothing; the morning run at
+ * 08:00 for every approved event near its time; and an hourly look at events on now or just over,
+ * which takes a Discord event down within the hour of its end rather than the next morning. The
+ * two runs queue only a job with something to do: one for what is already out, or for what is due.
  */
 @Component
 class DiscordEventPostTriggers(
@@ -26,15 +29,18 @@ class DiscordEventPostTriggers(
     // Settable for tests only.
     internal var clock: Clock = Clock.systemUTC()
 
-    @ApplicationModuleListener
-    fun on(event: EventChanged) = queue(event.eventId, morning = false)
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = true)
+    fun on(event: EventChanged) {
+        val payload = DiscordPostJobs.EventPostPayload(event.eventId)
+        val trigger = event.changeType.asTrigger()
+        ALL.forEach { jobs.runAsync(it, payload, trigger, event.actor) }
+    }
 
-    // Only the posts show the count, and only one already out has it to change.
-    @ApplicationModuleListener
+    // Only the posts show the count.
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = true)
     fun on(signUps: EventSignUpsChanged) {
         val payload = DiscordPostJobs.EventPostPayload(signUps.eventId)
-        if (out(signUps.eventId, DiscordArtefact.INFO_POST)) jobs.runAsync(DiscordPostJobs.Announcement, payload)
-        if (out(signUps.eventId, DiscordArtefact.CALENDAR_POST)) jobs.runAsync(DiscordPostJobs.CalendarPost, payload)
+        POSTS.forEach { jobs.runAsync(it, payload, JobTrigger.SIGN_UPS_CHANGED, signUps.actor) }
     }
 
     @Scheduled(cron = "0 0 8 * * *", zone = DiscordPostSchedule.ZONE_ID)
@@ -46,46 +52,39 @@ class DiscordEventPostTriggers(
     fun hourly() {
         val now = clock.instant()
         events
-            .approvedOverlapping(now.minus(HOURLY_BEHIND), now)
+            .keptOverlapping(now.minus(HOURLY_BEHIND), now)
             .filter { out(it, DiscordArtefact.DISCORD_EVENT) }
-            .forEach { jobs.runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(it)) }
+            .forEach { jobs.runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(it), JobTrigger.HOURLY_RUN) }
     }
 
     /** The morning run; answers how many events it looked at. */
     fun runMorning(): Int {
         val now = clock.instant()
-        val near = events.approvedOverlapping(now.minus(MORNING_BEHIND), now.plus(MORNING_AHEAD))
-        near.forEach { queue(it, morning = true) }
+        val near = events.keptOverlapping(now.minus(MORNING_BEHIND), now.plus(MORNING_AHEAD))
+        near.forEach { queue(it, JobTrigger.MORNING_RUN) }
         return near.size
     }
 
-    // A late events-info post waits for the next morning run, unless the event's own day has come.
     private fun queue(
         eventId: Long,
-        morning: Boolean,
+        trigger: JobTrigger,
     ) {
         val due =
             events
                 .of(eventId)
                 ?.takeIf { it.live }
                 ?.let { DiscordPostSchedule.due(it.startTime, it.endTime, clock.instant()) }
-        val announced = out(eventId, DiscordArtefact.INFO_POST)
         val payload = DiscordPostJobs.EventPostPayload(eventId)
-        if (announced || mayAnnounce(due, morning)) {
-            jobs.runAsync(DiscordPostJobs.Announcement, payload)
+        if (out(eventId, DiscordArtefact.INFO_POST) || due?.withinTwoWeeks == true) {
+            jobs.runAsync(DiscordPostJobs.Announcement, payload, trigger)
         }
-        if (out(eventId, DiscordArtefact.CALENDAR_POST) || (due?.calendarPost == true && !due.startedBeforeToday)) {
-            jobs.runAsync(DiscordPostJobs.CalendarPost, payload)
+        if (out(eventId, DiscordArtefact.CALENDAR_POST) || due?.calendarPost == true) {
+            jobs.runAsync(DiscordPostJobs.CalendarPost, payload, trigger)
         }
-        if (out(eventId, DiscordArtefact.DISCORD_EVENT) || (announced && due?.over == false)) {
-            jobs.runAsync(DiscordPostJobs.DiscordEvent, payload)
+        if (out(eventId, DiscordArtefact.DISCORD_EVENT) || due?.withinTwoWeeks == true) {
+            jobs.runAsync(DiscordPostJobs.DiscordEvent, payload, trigger)
         }
     }
-
-    private fun mayAnnounce(
-        due: DiscordPostsDue?,
-        morning: Boolean,
-    ) = due != null && due.infoPost && (morning || due.firstDayHasCome)
 
     private fun out(
         eventId: Long,
@@ -93,6 +92,9 @@ class DiscordEventPostTriggers(
     ) = ledger.find(eventId, artefact) != null
 
     private companion object {
+        val POSTS = listOf(DiscordPostJobs.Announcement, DiscordPostJobs.CalendarPost)
+        val ALL = POSTS + DiscordPostJobs.DiscordEvent
+
         // An events-calendar post comes down the morning after the event ends.
         val MORNING_BEHIND: Duration = Duration.ofDays(2)
 

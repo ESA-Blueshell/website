@@ -113,10 +113,14 @@ const DISPOSITIONS = [
   {key: "delete", label: "Delete event sign-ups"},
 ]
 
-/* The board approves; anybody else saving is told what that does to the event. */
-const approvalSaid = computed<string>(() => (event.value.id
-  ? "The event will be hidden until the board re-approves it"
-  : "The event will be hidden until the board approves it"))
+/* The board approves; anybody else saving is told what that does to the event, and to its Discord posts (api ADR-032). */
+const approvalSaid = computed<string>(() => {
+  if (!event.value.id) return "The event will be hidden until the board approves it"
+  if (event.value.approved) {
+    return "The event will be hidden until the board re-approves it, and what the bot has out on Discord stays as it is until then"
+  }
+  return "The event will be hidden until the board re-approves it"
+})
 const nowISO = DateTime.now().toISO()
 
 const hadSignUp = ref<boolean>(!!event.value.signUp)

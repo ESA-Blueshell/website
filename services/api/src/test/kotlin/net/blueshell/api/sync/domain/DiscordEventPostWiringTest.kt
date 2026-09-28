@@ -1,14 +1,16 @@
 package net.blueshell.api.sync.domain
 
+import net.blueshell.api.event.api.EventChange
 import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.event.api.EventSignUpsChanged
-import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.jobs.api.JobOutcome
-import net.blueshell.api.shared.job.DiscordPostJobs
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.sync.api.ExternalIdMappingService
@@ -22,7 +24,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -40,18 +41,17 @@ class DiscordEventPostWiringTest {
     private val mapper = JsonMapper.builder().build()
 
     @Test
-    fun `runs each job on the event it names, queueing the Discord event once the events-info post is up`() {
+    fun `runs each job on the event it names`() {
         val posts: DiscordEventPosts =
             mock {
-                on { keepAnnouncement(42, false) } doReturn Kept(made = true)
+                on { keepAnnouncement(42, false) } doReturn Kept(JobEffect.MADE)
                 on { keepAnnouncement(7, false) } doReturn Kept()
                 on { keepCalendarPost(42, false) } doReturn Kept()
                 on { keepDiscordEvent(42, false) } doReturn Kept()
             }
-        val jobs: JobQueue = mock()
         val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
         val lock = DiscordEventLock(repository)
-        val announcement = DiscordAnnouncementJob(mapper, posts, lock, jobs)
+        val announcement = DiscordAnnouncementJob(mapper, posts, lock)
         val calendar = DiscordCalendarPostJob(mapper, posts, lock)
         val listing = DiscordEventJob(mapper, posts, lock)
 
@@ -63,11 +63,9 @@ class DiscordEventPostWiringTest {
         verify(posts).keepCalendarPost(42, false)
         verify(posts).keepDiscordEvent(42, false)
         verify(repository, times(4)).releaseNamedLock(any())
-        verify(jobs).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(42))
-        verify(jobs, never()).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(7))
         assertThat(listOf(announcement.jobType, calendar.jobType, listing.jobType))
             .containsExactly("discord.announcement", "discord.post", "discord.event")
-        assertThat(listOf(announcement, calendar, listing).map { it.retrySchedule?.maxRetries }).containsOnly(10)
+        assertThat(listOf(announcement, calendar, listing).map { it.retrySchedule.maxRetries }).containsOnly(10)
     }
 
     @Test
@@ -76,19 +74,17 @@ class DiscordEventPostWiringTest {
             mock {
                 on { keepAnnouncement(42, true) } doReturn Kept(skipped = "The event is over.")
                 on { keepCalendarPost(42, true) } doReturn Kept(skipped = "The event's day is over.")
-                on { keepDiscordEvent(42, true) } doReturn Kept(made = true)
+                on { keepDiscordEvent(42, true) } doReturn Kept(JobEffect.MADE, "https://discord.test/events/e1")
             }
         val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
         val lock = DiscordEventLock(repository)
-        val jobs: JobQueue = mock()
 
-        assertThat(DiscordAnnouncementJob(mapper, posts, lock, jobs).runJob("""{"eventId": 42}""", forced = true))
+        assertThat(DiscordAnnouncementJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
             .isEqualTo(JobOutcome.Skipped("The event is over."))
         assertThat(DiscordCalendarPostJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
             .isEqualTo(JobOutcome.Skipped("The event's day is over."))
         assertThat(DiscordEventJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
-            .isEqualTo(JobOutcome.Done)
-        verify(jobs, never()).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(42))
+            .isEqualTo(JobOutcome.Done(JobEffect.MADE, "https://discord.test/events/e1"))
     }
 
     private val lan =
@@ -113,13 +109,16 @@ class DiscordEventPostWiringTest {
 
     private class Queued : JobQueue {
         val types = mutableListOf<String>()
+        val triggers = mutableListOf<Pair<JobTrigger, Actor?>>()
 
         override fun <T : Any> runAsync(
             job: JobDefinition<T>,
             payload: T,
+            trigger: JobTrigger,
             actor: Actor?,
         ): QueuedJob? {
             types += "${job.type} $payload"
+            triggers += trigger to actor
             return null
         }
     }
@@ -130,40 +129,57 @@ class DiscordEventPostWiringTest {
         out: Set<DiscordArtefact> = emptySet(),
         jobs: JobQueue = Queued(),
     ): DiscordEventPostTriggers {
-        val events: EventPosts = mock { on { of(42) } doReturn found }
+        val events: EventPosts =
+            mock {
+                on { of(42) } doReturn found
+                on { keptOverlapping(any(), any()) } doReturn listOf(42L)
+            }
         val ledger: PostLedger = mock()
         out.forEach { whenever(ledger.find(42, it)).thenReturn(RecordedArtefact("m", 1)) }
         return DiscordEventPostTriggers(jobs, events, ledger).apply { clock = Clock.fixed(at(now), ZoneOffset.UTC) }
     }
 
-    private fun changed(
+    private fun queuedBy(
         now: String,
         found: EventPostData? = lan,
         out: Set<DiscordArtefact> = emptySet(),
+        run: DiscordEventPostTriggers.() -> Unit,
     ): List<String> {
         val jobs = Queued()
-        triggers(now, found, out, jobs).on(EventChanged(42, EventChange.UPDATED))
+        triggers(now, found, out, jobs).run()
         return jobs.types.map { it.substringBefore(' ') }
     }
 
+    private val all = listOf("discord.announcement", "discord.post", "discord.event")
+
     @Test
-    fun `leaves a late events-info post for the next morning run, unless the event's day has come`() {
-        assertThat(changed("2026-10-05T10:00")).isEmpty()
-        assertThat(changed("2026-10-10T10:00")).containsExactly("discord.announcement", "discord.post")
-        assertThat(changed("2026-10-11T01:00", found = lan.copy(endTime = at("2026-10-11T03:00")))).isEmpty()
+    fun `queues all three for every change, whatever is due or out, and both posts for a change in sign-ups`() {
+        val changed: DiscordEventPostTriggers.() -> Unit = { on(EventChanged(42, EventChange.UPDATED)) }
+
+        assertThat(queuedBy("2026-08-01T10:00", run = changed)).isEqualTo(all)
+        assertThat(queuedBy("2026-10-10T10:00", found = null, run = changed)).isEqualTo(all)
+        assertThat(queuedBy("2026-10-10T10:00") { on(EventSignUpsChanged(42)) }).containsExactly("discord.announcement", "discord.post")
     }
 
     @Test
-    fun `queues a change for what is out, to edit or remove it`() {
-        val everything = DiscordArtefact.entries.toSet()
+    fun `queues each morning the events-info post and the Discord event within two weeks, and the day post from its morning`() {
+        val morning: DiscordEventPostTriggers.() -> Unit = { runMorning() }
 
-        assertThat(changed("2026-10-05T10:00", out = setOf(DiscordArtefact.INFO_POST)))
-            .containsExactly("discord.announcement", "discord.event")
-        assertThat(changed("2026-10-10T10:00", found = lan.copy(live = false), out = everything))
-            .containsExactly("discord.announcement", "discord.post", "discord.event")
-        assertThat(changed("2026-10-10T23:30", found = null, out = setOf(DiscordArtefact.INFO_POST)))
+        assertThat(queuedBy("2026-09-26T07:59", run = morning)).isEmpty()
+        assertThat(queuedBy("2026-09-26T08:00", run = morning)).containsExactly("discord.announcement", "discord.event")
+        assertThat(queuedBy("2026-10-10T10:00", run = morning)).isEqualTo(all)
+        assertThat(queuedBy("2026-10-11T01:00", found = lan.copy(endTime = at("2026-10-11T03:00")), run = morning)).isEqualTo(all)
+    }
+
+    @Test
+    fun `queues each morning what is out, to edit or remove it`() {
+        val morning: DiscordEventPostTriggers.() -> Unit = { runMorning() }
+
+        assertThat(queuedBy("2026-09-20T08:00", out = setOf(DiscordArtefact.INFO_POST), run = morning))
             .containsExactly("discord.announcement")
-        assertThat(changed("2026-10-10T10:00", found = null)).isEmpty()
+        assertThat(queuedBy("2026-10-10T10:00", found = lan.copy(live = false), out = DiscordArtefact.entries.toSet(), run = morning))
+            .isEqualTo(all)
+        assertThat(queuedBy("2026-10-10T10:00", found = null, run = morning)).isEmpty()
     }
 
     @Test
@@ -171,8 +187,8 @@ class DiscordEventPostWiringTest {
         val jobs = Queued()
         val events: EventPosts =
             mock {
-                on { approvedOverlapping(at("2026-09-24T08:00"), at("2026-10-11T08:00")) } doReturn listOf(42L)
-                on { approvedOverlapping(at("2026-09-26T06:00"), at("2026-09-26T08:00")) } doReturn listOf(42L, 43L)
+                on { keptOverlapping(at("2026-09-24T08:00"), at("2026-10-11T08:00")) } doReturn listOf(42L)
+                on { keptOverlapping(at("2026-09-26T06:00"), at("2026-09-26T08:00")) } doReturn listOf(42L, 43L)
                 on { of(42) } doReturn lan
             }
         val ledger: PostLedger = mock { on { find(42, DiscordArtefact.DISCORD_EVENT) } doReturn RecordedArtefact("e1", 1) }
@@ -186,16 +202,33 @@ class DiscordEventPostWiringTest {
             "discord.event EventPostPayload(eventId=42)",
             "discord.event EventPostPayload(eventId=42)",
         )
+        assertThat(jobs.triggers.map { it.first })
+            .containsExactly(JobTrigger.MORNING_RUN, JobTrigger.MORNING_RUN, JobTrigger.HOURLY_RUN)
     }
 
     @Test
-    fun `queues an edit of the posts already out when the sign-up count moves`() {
+    fun `says what queued each job and who made the change`() {
+        val board = Actor.user(5, Role.BOARD)
         val jobs = Queued()
-        triggers("2026-10-10T10:00", out = setOf(DiscordArtefact.INFO_POST, DiscordArtefact.CALENDAR_POST), jobs = jobs)
-            .on(EventSignUpsChanged(42))
-        triggers("2026-10-10T10:00", jobs = jobs).on(EventSignUpsChanged(42))
+        triggers("2026-10-10T10:00", jobs = jobs).on(EventChanged(42, EventChange.APPROVED, board))
+        triggers("2026-10-10T10:00", out = setOf(DiscordArtefact.INFO_POST), jobs = jobs).on(EventSignUpsChanged(42, board))
+        triggers("2026-10-10T10:00", jobs = jobs).on(EventChanged(42, EventChange.CREATED, board))
+        triggers("2026-10-10T10:00", jobs = jobs).on(EventChanged(42, EventChange.UPDATED, board))
+        triggers("2026-10-10T10:00", found = lan.copy(live = false), out = setOf(DiscordArtefact.INFO_POST), jobs = jobs)
+            .on(EventChanged(42, EventChange.UNAPPROVED, board))
+        triggers("2026-10-10T10:00", found = null, out = setOf(DiscordArtefact.INFO_POST), jobs = jobs)
+            .on(EventChanged(42, EventChange.DELETED, board))
+        triggers("2026-10-10T10:00", jobs = jobs).on(EventChanged(42, EventChange.SENT_BACK, board))
 
-        assertThat(jobs.types.map { it.substringBefore(' ') }).containsExactly("discord.announcement", "discord.post")
+        assertThat(jobs.triggers.distinct()).containsExactly(
+            JobTrigger.EVENT_APPROVED to board,
+            JobTrigger.SIGN_UPS_CHANGED to board,
+            JobTrigger.EVENT_CREATED to board,
+            JobTrigger.EVENT_UPDATED to board,
+            JobTrigger.EVENT_UNAPPROVED to board,
+            JobTrigger.EVENT_DELETED to board,
+            JobTrigger.EVENT_SENT_BACK to board,
+        )
     }
 
     @Test

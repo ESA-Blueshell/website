@@ -84,6 +84,7 @@ object JobExecutionSpecifications {
         var spec = Specification { _: Root<JobExecution>, _: CriteriaQuery<*>?, cb: CriteriaBuilder -> cb.conjunction() }
 
         filter.status?.let { spec = spec.and(status(it)) }
+        if (filter.hideSkipped == true) spec = spec.and(Specification.not(status(JobExecutionStatus.SKIPPED)))
         filter.initiatedByType?.let { spec = spec.and(initiatedByType(it)) }
         filter.category?.let { spec = spec.and(category(it)) }
         if (!filter.jobType.isNullOrBlank()) {

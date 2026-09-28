@@ -14,6 +14,7 @@ import net.blueshell.api.security.StepUpRequiredException
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.springframework.data.domain.Page
@@ -156,7 +157,7 @@ class AccountSecurity(
         user.pendingEmail = address
         users.update(user)
         val token = tokenFactory.issue(user, TokenPurpose.EMAIL_CHANGE, EMAIL_CHANGE_TTL)
-        jobs.runAsync(EmailJobs.Recovery, EmailJobs.RecoveryPayload(userId, token, TokenPurpose.EMAIL_CHANGE))
+        jobs.runAsync(EmailJobs.Recovery, EmailJobs.RecoveryPayload(userId, token, TokenPurpose.EMAIL_CHANGE), JobTrigger.SITE_ACTION)
         events.record(userId, SecurityEventKind.EMAIL_CHANGE_REQUESTED, note = address)
     }
 
@@ -317,6 +318,7 @@ class AccountSecurity(
         jobs.runAsync(
             EmailJobs.Recovery,
             EmailJobs.RecoveryPayload(requireNotNull(user.id), token, TokenPurpose.TWO_FACTOR_REENROLMENT),
+            JobTrigger.SITE_ACTION,
         )
     }
 

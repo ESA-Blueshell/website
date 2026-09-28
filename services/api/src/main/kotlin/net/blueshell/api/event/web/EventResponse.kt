@@ -30,6 +30,9 @@ data class EventResponse(
     var publicPrice: Double? = null,
     @field:NotNull
     var approved: Boolean,
+    /** Sent back to the board by an edit from anybody else; what the bot has out stays as last approved. */
+    @field:NotNull
+    var awaitingReapproval: Boolean,
     @field:NotNull
     var membersOnly: Boolean,
     @field:NotNull

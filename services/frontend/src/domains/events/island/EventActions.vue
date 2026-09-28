@@ -123,7 +123,7 @@ async function confirmDelete() {
         type="button"
         @click="toggleApproved"
       >
-        {{ event.approved ? "Approved" : "Awaiting approval" }}
+        {{ event.approved ? "Approved" : event.awaitingReapproval ? "Awaiting re-approval" : "Awaiting approval" }}
       </button>
       <icon-button
         :disabled="!event.signUp"

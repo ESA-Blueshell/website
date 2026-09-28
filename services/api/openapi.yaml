@@ -2481,6 +2481,8 @@ components:
       properties:
         approved:
           type: boolean
+        awaitingReapproval:
+          type: boolean
         banner:
           oneOf:
           - $ref: '#/components/schemas/EventBannerResponse'
@@ -2563,6 +2565,7 @@ components:
           type: integer
       required:
       - approved
+      - awaitingReapproval
       - createdAt
       - endTime
       - gameCodes
@@ -3196,6 +3199,13 @@ components:
       - externalUserId
       - writable
       type: object
+    JobEffect:
+      enum:
+      - MADE
+      - EDITED
+      - UNCHANGED
+      - REMOVED
+      type: string
     JobExecution:
       properties:
         actor:
@@ -3220,6 +3230,14 @@ components:
           type:
           - string
           - 'null'
+        effect:
+          oneOf:
+          - $ref: '#/components/schemas/JobEffect'
+          - type: 'null'
+        effectLink:
+          type:
+          - string
+          - 'null'
         errorMessage:
           type:
           - string
@@ -3237,6 +3255,10 @@ components:
           type:
           - string
           - 'null'
+        foldedTriggers:
+          items:
+            $ref: '#/components/schemas/JobFoldedTrigger'
+          type: array
         forced:
           type: boolean
         id:
@@ -3315,6 +3337,10 @@ components:
           oneOf:
           - $ref: '#/components/schemas/TargetSystem'
           - type: 'null'
+        trigger:
+          oneOf:
+          - $ref: '#/components/schemas/JobTrigger'
+          - type: 'null'
         updatedAt:
           format: date-time
           type:
@@ -3322,6 +3348,7 @@ components:
           - 'null'
       required:
       - attempts
+      - foldedTriggers
       - forced
       - jobType
       - relatedEntities
@@ -3360,6 +3387,28 @@ components:
       - FAILED
       - DEAD
       type: string
+    JobFoldedTrigger:
+      properties:
+        at:
+          format: date-time
+          type: string
+        initiatedByDisplay:
+          type: string
+        initiatedByType:
+          $ref: '#/components/schemas/ActionActorType'
+        initiatedByUserId:
+          format: int64
+          type:
+          - integer
+          - 'null'
+        trigger:
+          $ref: '#/components/schemas/JobTrigger'
+      required:
+      - at
+      - initiatedByDisplay
+      - initiatedByType
+      - trigger
+      type: object
     JobPayloadField:
       properties:
         enumValues:
@@ -3436,6 +3485,25 @@ components:
       - successCount
       - totalCount
       type: object
+    JobTrigger:
+      enum:
+      - EVENT_CREATED
+      - EVENT_UPDATED
+      - EVENT_APPROVED
+      - EVENT_SENT_BACK
+      - EVENT_UNAPPROVED
+      - EVENT_DELETED
+      - SIGN_UPS_CHANGED
+      - USER_CHANGED
+      - USER_REMOVED
+      - MEMBERSHIP_CHANGED
+      - SITE_ACTION
+      - MORNING_RUN
+      - HOURLY_RUN
+      - SCHEDULED_RUN
+      - ANOTHER_JOB
+      - BY_HAND
+      type: string
     JobTypeDescriptor:
       properties:
         payloadFields:
@@ -20140,6 +20208,11 @@ paths:
         required: false
         schema:
           type: string
+      - in: query
+        name: hideSkipped
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:

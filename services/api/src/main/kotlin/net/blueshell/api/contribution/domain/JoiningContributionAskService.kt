@@ -6,6 +6,7 @@ import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -62,6 +63,7 @@ class JoiningContributionAskService(
         jobs.runAsync(
             EmailJobs.JoiningContribution,
             EmailJobs.JoiningContributionPayload(requireNotNull(ask.id)),
+            JobTrigger.SITE_ACTION,
         )
     }
 

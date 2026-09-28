@@ -1,6 +1,7 @@
 package net.blueshell.api.jobs.persistence
 
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -11,6 +12,8 @@ import jakarta.persistence.Transient
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.tracking.Actor
@@ -67,6 +70,18 @@ class JobExecution(
     /** Asked for by hand: see [net.blueshell.api.jobs.domain.JobHandler.handle]. */
     @Column(nullable = false)
     var forced: Boolean = false,
+    // `trigger` is a reserved word in MariaDB.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "queued_by")
+    var trigger: JobTrigger? = null,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "effect")
+    var effect: JobEffect? = null,
+    @Column(name = "effect_link", length = 512)
+    var effectLink: String? = null,
+    @Convert(converter = FoldedTriggersConverter::class)
+    @Column(name = "folded_triggers", columnDefinition = "LONGTEXT")
+    var foldedTriggers: List<FoldedTrigger> = emptyList(),
     @Column(name = "initiated_by_user_id")
     var initiatedByUserId: Long? = null,
     @Enumerated(EnumType.STRING)

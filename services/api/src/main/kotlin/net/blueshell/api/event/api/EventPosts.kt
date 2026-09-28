@@ -8,7 +8,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
-/** An event as the bot posts it to Discord. [live] is false once it is deleted or no longer approved. */
+/**
+ * An event as the bot posts it to Discord. [live] is false once it is deleted or no longer approved;
+ * [frozen] is true while it awaits re-approval, when what is out stays as last approved.
+ */
 data class EventPostData(
     val id: Long,
     val live: Boolean,
@@ -29,6 +32,7 @@ data class EventPostData(
     val pingedRoleIds: List<String>,
     /** The banner's public path, new with every banner; null without one. */
     val bannerPath: String?,
+    val frozen: Boolean = false,
 )
 
 /** An event banner's bytes, for a Discord event's cover, which Discord takes as data rather than a link. */
@@ -49,12 +53,12 @@ class EventPosts(
     @Transactional(readOnly = true)
     fun of(eventId: Long): EventPostData? = events.findByIdIncludingDeleted(eventId)?.asPostData()
 
-    /** Approved events any part of which falls between [from] and [to]. */
+    /** Events whose Discord things the bot keeps, approved or awaiting re-approval, any part of which falls between [from] and [to]. */
     @Transactional(readOnly = true)
-    fun approvedOverlapping(
+    fun keptOverlapping(
         from: Instant,
         to: Instant,
-    ): List<Long> = events.findApprovedIdsOverlapping(from, to)
+    ): List<Long> = events.findKeptIdsOverlapping(from, to)
 
     // The widest rendition Discord takes comfortably rather than the master, which can be large.
     @Transactional(readOnly = true)
@@ -88,4 +92,5 @@ private fun Event.asPostData() =
         signUpDeadline = signUpDeadline,
         pingedRoleIds = pingedRoles.map { it.roleId },
         bannerPath = banner?.file?.let(PublicFileUrls::of),
+        frozen = awaitingReapproval && !isSoftDeleted,
     )

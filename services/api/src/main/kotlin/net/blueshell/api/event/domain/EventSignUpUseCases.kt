@@ -9,6 +9,7 @@ import net.blueshell.api.event.persistence.GuestAccessTokenCodec
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
@@ -168,7 +169,7 @@ class EventSignUpUseCases(
             val signUp = service.findById(eventSignUpId)
             val removal = removalNotice(signUp)
             service.delete(signUp)
-            removal?.let { jobs.runAsync(EmailJobs.EventSignUpRemoved, it) }
+            removal?.let { jobs.runAsync(EmailJobs.EventSignUpRemoved, it, JobTrigger.SITE_ACTION) }
             return
         }
         // Preserve 404 semantics for unknown guest tokens before target-signup binding check.

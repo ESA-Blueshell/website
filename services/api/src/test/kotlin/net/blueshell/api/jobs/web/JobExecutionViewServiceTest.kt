@@ -2,12 +2,20 @@ package net.blueshell.api.jobs.web
 
 import io.mockk.every
 import io.mockk.mockk
+import net.blueshell.api.jobs.persistence.FoldedTrigger
 import net.blueshell.api.jobs.persistence.JobExecution
+import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionCategory
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
+import org.springframework.web.server.ResponseStatusException
 import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
 
@@ -132,5 +140,42 @@ class JobExecutionViewServiceTest {
         assertThat(categoryOf("cohort-sync")).isEqualTo(JobExecutionCategory.cohort)
         assertThat(categoryOf("discordant")).isEqualTo(JobExecutionCategory.other)
         assertThat(categoryOf("")).isEqualTo(JobExecutionCategory.other)
+    }
+
+    @Test
+    fun `lists the triggers folded into the job, naming who made them`() {
+        stubUser(5, "Jane Doe", "jdoe")
+        every { users.findById(6) } throws ResponseStatusException(HttpStatus.NOT_FOUND)
+        val at = Instant.parse("2026-10-01T10:00:00Z")
+        val folded =
+            execution().apply {
+                foldedTriggers =
+                    listOf(
+                        FoldedTrigger(JobTrigger.EVENT_UPDATED, Actor.user(5, Role.BOARD), at),
+                        FoldedTrigger(JobTrigger.MORNING_RUN, Actor.system(), at),
+                        FoldedTrigger(JobTrigger.SITE_ACTION, Actor.user(6, Role.MEMBER), at),
+                        FoldedTrigger(JobTrigger.SITE_ACTION, Actor(null, ActionActorType.USER, Role.MEMBER), at),
+                    )
+            }
+
+        assertThat(service().toDto(folded).foldedTriggers.map { it.initiatedByDisplay })
+            .containsExactly("Jane Doe (@jdoe)", "System", "User #6", "USER")
+        assertThat(service().toDto(folded).foldedTriggers.first())
+            .isEqualTo(JobFoldedTriggerDTO(JobTrigger.EVENT_UPDATED, at, 5, ActionActorType.USER, "Jane Doe (@jdoe)"))
+    }
+
+    @Test
+    fun `says what queued the job and what it did`() {
+        val queued =
+            execution().apply {
+                trigger = JobTrigger.SIGN_UPS_CHANGED
+                effect = JobEffect.EDITED
+                effectLink = "https://discord.test/m1"
+            }
+
+        val shown = service().toDto(queued)
+        assertThat(listOf(shown.trigger, shown.effect, shown.effectLink))
+            .containsExactly(JobTrigger.SIGN_UPS_CHANGED, JobEffect.EDITED, "https://discord.test/m1")
+        assertThat(service().toDto(execution()).trigger).isNull()
     }
 }

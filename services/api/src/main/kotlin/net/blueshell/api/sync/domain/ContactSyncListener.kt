@@ -2,6 +2,7 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserUpdated
@@ -21,16 +22,16 @@ class ContactSyncListener(
 ) {
     @ApplicationModuleListener
     fun on(event: UserCreated) {
-        jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId))
+        jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId), JobTrigger.USER_CHANGED)
     }
 
     @ApplicationModuleListener
     fun on(event: UserUpdated) {
-        jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId))
+        jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId), JobTrigger.USER_CHANGED)
     }
 
     @ApplicationModuleListener
     fun on(event: UserDeleted) {
-        jobs.runAsync(ContactJobs.RemoveContact, ContactJobs.RemoveContactPayload(event.userId))
+        jobs.runAsync(ContactJobs.RemoveContact, ContactJobs.RemoveContactPayload(event.userId), JobTrigger.USER_REMOVED)
     }
 }

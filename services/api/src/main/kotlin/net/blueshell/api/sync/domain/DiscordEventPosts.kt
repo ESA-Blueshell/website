@@ -2,16 +2,19 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
+import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.sync.api.DiscordImage
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.api.sync.api.DiscordPublisher
-import net.blueshell.api.sync.domain.DiscordPostSchedule.infoPostAt
+import net.blueshell.api.sync.domain.DiscordPostSchedule.calendarPostFrom
+import net.blueshell.api.sync.domain.DiscordPostSchedule.withinTwoWeeksFrom
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Base64
@@ -23,7 +26,6 @@ import java.util.Locale
  * takes that over, and any other copy it finds there is removed, so a copy Discord made after an
  * answer that never arrived is neither made again nor left behind. Creating runs under a claim,
  * and an edit goes out only when the content differs from the fingerprint recorded with it.
- * Whether a late events-info post waits for the morning run is the queueing side's call.
  */
 @Service
 class DiscordEventPosts(
@@ -37,44 +39,46 @@ class DiscordEventPosts(
     // Settable for tests only.
     internal var clock: Clock = Clock.systemUTC()
 
-    /** The events-info post, which stays once out. A forced run posts it ahead of its morning. */
+    /** The events-info post, which stays once out. A forced run posts it before the event is within two weeks. */
     fun keepAnnouncement(
         eventId: Long,
         forced: Boolean = false,
     ): Kept =
-        keepPost(eventId, DiscordArtefact.INFO_POST, infoChannel) { event, due, out ->
+        keepPost(eventId, DiscordArtefact.INFO_POST, infoChannel, { null }) { event, due, out ->
             when {
                 out -> null
                 due.over -> OVER
-                forced -> null
-                due.startedBeforeToday -> "The event started before today, so no #$infoChannel announcement is made for it."
-                !due.infoPost -> "The #$infoChannel announcement is not due until ${morningOf(infoPostAt(event.startTime))}."
-                else -> null
+                forced || due.withinTwoWeeks -> null
+                else -> "The #$infoChannel announcement is not due until ${morningOf(withinTwoWeeksFrom(event.startTime))}."
             }
         }
 
     /**
-     * The events-calendar post, up only while the event's day lasts, and only made on its first day.
-     * A forced run posts it before that day too, and the next run that is not forced takes it down.
+     * The events-calendar post, due from 08:00 on the event's first day and down for good at 08:00
+     * the morning after its last. Once out, a forced one included, it stays until then.
      */
     fun keepCalendarPost(
         eventId: Long,
         forced: Boolean = false,
-    ): Kept =
-        keepPost(eventId, DiscordArtefact.CALENDAR_POST, calendarChannel) { _, due, out ->
+    ): Kept {
+        val dayOver = "The event's day is over, so its #$calendarChannel post has come down."
+        return keepPost(eventId, DiscordArtefact.CALENDAR_POST, calendarChannel, { due -> dayOver.takeIf { due.calendarPostOver } }) {
+            event,
+            due,
+            out,
+            ->
             when {
-                due.calendarPost && (out || forced || !due.startedBeforeToday) -> null
-                due.calendarPost -> "The event started before today, so no #$calendarChannel post is made for it."
-                due.firstDayHasCome -> "The event's day is over, so its #$calendarChannel post has come down."
-                forced -> null
-                else -> "The #$calendarChannel post is not due until 08:00 on the event's first day."
+                due.calendarPostOver -> dayOver
+                due.calendarPost || out || forced -> null
+                else -> "The #$calendarChannel post is not due until ${morningOf(calendarPostFrom(event.startTime))}."
             }
         }
+    }
 
     /**
-     * The Discord event: beside the events-info post, including after an attempt that failed,
-     * and gone once the event is over. Made only before the event starts, which Discord insists on;
-     * a forced run makes it without waiting for the events-info post.
+     * The Discord event, on the same terms as the events-info post but without waiting for it, and
+     * gone once the event is over. Discord refuses a start in the past, so one made for an event
+     * already running starts a minute from now, and an edit then leaves the start as Discord has it.
      */
     fun keepDiscordEvent(
         eventId: Long,
@@ -82,40 +86,52 @@ class DiscordEventPosts(
     ): Kept {
         val bot = publisher.ifAvailable ?: return NO_BOT
         val found = bot.findDiscordEvents(DiscordPostContent.listingLineOf(eventId, site))
-        val event = liveEvent(eventId) ?: return sweep(eventId, DiscordArtefact.DISCORD_EVENT, found, GONE) { bot.deleteDiscordEvent(it) }
+        val stored = events.of(eventId)
+        val unlist: (String) -> Unit = { bot.deleteDiscordEvent(it) }
+        if (stored?.frozen == true) return frozen(eventId, DiscordArtefact.DISCORD_EVENT, found, OVER.takeIf { due(stored).over }, unlist)
+        val event = stored?.takeIf { it.live } ?: return sweep(eventId, DiscordArtefact.DISCORD_EVENT, found, GONE, unlist)
+        val due = due(event)
         val refusal =
             when {
-                due(event).over -> OVER
-                forced || announced(event) -> null
-                else -> "The event has no #$infoChannel announcement yet, and its Discord event is made beside it."
+                due.over -> OVER
+                forced || due.withinTwoWeeks || ledger.find(eventId, DiscordArtefact.DISCORD_EVENT) != null -> null
+                else -> "The Discord event is not due until ${morningOf(withinTwoWeeksFrom(event.startTime))}."
             }
-        if (refusal != null) return sweep(eventId, DiscordArtefact.DISCORD_EVENT, found, refusal) { bot.deleteDiscordEvent(it) }
-        val starts = event.startTime.takeIf { it.isAfter(clock.instant()) }
+        if (refusal != null) return sweep(eventId, DiscordArtefact.DISCORD_EVENT, found, refusal, unlist)
+        val now = clock.instant()
+        val madeStarting = maxOf(event.startTime, now.plus(DISCORD_EVENT_LEAD))
         return keep(
             eventId,
             DiscordArtefact.DISCORD_EVENT,
             found,
             fingerprint = fingerprintOf(DiscordPostContent.listingOf(event, site, cover = null) to event.bannerPath),
-            make = { if (starts == null) null else bot.createDiscordEvent(listingOf(event, starts)) },
-            update = { bot.updateDiscordEvent(it, listingOf(event, starts)) },
-            delete = { bot.deleteDiscordEvent(it) },
-            unmade = "The event has already started, and Discord makes no event for one in progress.",
+            Remote(
+                make = { if (event.endTime.isAfter(madeStarting)) bot.createDiscordEvent(listingOf(event, madeStarting)) else null },
+                update = { bot.updateDiscordEvent(it, listingOf(event, event.startTime.takeIf { start -> start.isAfter(now) })) },
+                delete = unlist,
+                locate = { it.takeIf(bot::stillListed) },
+                link = { bot.linkOfDiscordEvent(it) },
+            ),
+            unmade = "The event ends within a minute, too soon for Discord to list it.",
         )
     }
 
-    private fun announced(event: EventPostData) =
-        ledger.find(event.id, DiscordArtefact.DISCORD_EVENT) != null || ledger.find(event.id, DiscordArtefact.INFO_POST) != null
-
-    // [refusal] answers why the post should not stand now, or null where it should.
+    /*
+     * [refusal] answers why the post should not stand now, or null where it should; [downWhileFrozen]
+     * why it comes down by time while the event awaits re-approval, or null where it stays.
+     */
     private fun keepPost(
         eventId: Long,
         artefact: DiscordArtefact,
         channel: String,
+        downWhileFrozen: (DiscordPostsDue) -> String?,
         refusal: (EventPostData, DiscordPostsDue, Boolean) -> String?,
     ): Kept {
         val bot = publisher.ifAvailable ?: return NO_BOT
         val found = bot.findPosts(channel, DiscordPostContent.pageOf(eventId, site))
-        val event = liveEvent(eventId) ?: return sweep(eventId, artefact, found, GONE) { bot.delete(channel, it) }
+        val stored = events.of(eventId)
+        if (stored?.frozen == true) return frozen(eventId, artefact, found, downWhileFrozen(due(stored))) { bot.delete(channel, it) }
+        val event = stored?.takeIf { it.live } ?: return sweep(eventId, artefact, found, GONE) { bot.delete(channel, it) }
         refusal(event, due(event), ledger.find(eventId, artefact) != null)?.let { why ->
             return sweep(eventId, artefact, found, why) { bot.delete(channel, it) }
         }
@@ -126,11 +142,24 @@ class DiscordEventPosts(
             found,
             // The banner goes by its path: its bytes would read as new on every run.
             fingerprint = fingerprintOf(post to event.bannerPath),
-            make = { bot.post(channel, withBanner(post, event)) },
-            update = { bot.edit(channel, it, withBanner(post, event)) },
-            delete = { bot.delete(channel, it) },
+            Remote(
+                make = { bot.post(channel, withBanner(post, event)) },
+                update = { bot.edit(channel, it, withBanner(post, event)) },
+                delete = { bot.delete(channel, it) },
+                locate = { bot.stillPosted(channel, it) },
+                link = { bot.linkOf(channel, it) },
+            ),
         )
     }
+
+    // What is out while the event awaits re-approval stays as last approved; only what comes down by time goes, [down] saying why.
+    private fun frozen(
+        eventId: Long,
+        artefact: DiscordArtefact,
+        found: List<String>,
+        down: String?,
+        delete: (String) -> Unit,
+    ): Kept = if (down == null) Kept(skipped = FROZEN) else sweep(eventId, artefact, found, down, delete)
 
     /*
      * What should not stand goes, recorded or not: [found] is what the server holds that links the
@@ -147,13 +176,13 @@ class DiscordEventPosts(
         val standing = (found + listOfNotNull(recorded?.externalId)).distinct()
         standing.forEach(delete)
         if (recorded != null) ledger.release(eventId, artefact)
-        return if (standing.isEmpty()) Kept(skipped = why) else Kept()
+        return if (standing.isEmpty()) Kept(skipped = why) else Kept(JobEffect.REMOVED)
     }
 
     /*
      * What should stand is kept to one: the recorded one, or else one already in the server taken
-     * over, or else a new one. [update] answers false for one removed by hand, which is made again;
-     * [make] answers null where none may be made now, which skips the run [unmade].
+     * over, or else a new one, which notifies as a first post does; one removed by hand is made
+     * again. [Remote.make] answers null where none may be made now, which skips the run [unmade].
      */
     @Suppress("LongParameterList")
     private fun keep(
@@ -161,18 +190,18 @@ class DiscordEventPosts(
         artefact: DiscordArtefact,
         found: List<String>,
         fingerprint: Long,
-        make: () -> String?,
-        update: (String) -> Boolean,
-        delete: (String) -> Unit,
+        remote: Remote,
         unmade: String? = null,
     ): Kept {
-        val recorded = ledger.find(eventId, artefact)
-        if (recorded != null && stillKept(eventId, artefact, recorded, found, fingerprint, update, delete)) return Kept()
+        ledger.find(eventId, artefact)?.let { recorded ->
+            stillKept(eventId, artefact, recorded, found, fingerprint, remote)?.let { return it }
+        }
         // Another run holds it, or held it and stopped; retrying finds its record or takes over its stale claim.
         check(ledger.claim(eventId, artefact, clock.instant())) { "Another run is making the $artefact of event $eventId" }
+        var takenOver = false
         val id =
             try {
-                found.firstOrNull { update(it) } ?: make()
+                found.firstOrNull { remote.update(it) }?.also { takenOver = true } ?: remote.make()
             } catch (refused: RuntimeException) {
                 ledger.release(eventId, artefact)
                 throw refused
@@ -182,11 +211,15 @@ class DiscordEventPosts(
             return Kept(skipped = unmade)
         }
         ledger.record(eventId, artefact, id, fingerprint)
-        found.filter { it != id }.forEach(delete)
-        return Kept(made = true)
+        found.filter { it != id }.forEach(remote.delete)
+        return Kept(if (takenOver) JobEffect.EDITED else JobEffect.MADE, remote.link(id))
     }
 
-    // The recorded one, brought up to date; false where somebody removed it by hand, its record given back.
+    /*
+     * The recorded one, asked after by its reference on every run and brought up to date; null
+     * where somebody removed it by hand, its record given back. A record naming it the old way is
+     * rewritten to the reference Discord answers now.
+     */
     @Suppress("LongParameterList")
     private fun stillKept(
         eventId: Long,
@@ -194,20 +227,24 @@ class DiscordEventPosts(
         recorded: RecordedArtefact,
         found: List<String>,
         fingerprint: Long,
-        update: (String) -> Boolean,
-        delete: (String) -> Unit,
-    ): Boolean {
-        found.filter { it != recorded.externalId }.forEach(delete)
-        if (recorded.fingerprint == fingerprint) return true
-        if (update(recorded.externalId)) {
-            ledger.record(eventId, artefact, recorded.externalId, fingerprint)
-            return true
+        remote: Remote,
+    ): Kept? {
+        val standing = remote.locate(recorded.externalId)
+        val effect =
+            when {
+                standing == null -> null
+                recorded.fingerprint == fingerprint -> JobEffect.UNCHANGED
+                remote.update(standing) -> JobEffect.EDITED
+                else -> null
+            }
+        if (standing == null || effect == null) {
+            ledger.release(eventId, artefact)
+            return null
         }
-        ledger.release(eventId, artefact)
-        return false
+        found.filter { it != standing }.forEach(remote.delete)
+        if (effect == JobEffect.EDITED || standing != recorded.externalId) ledger.record(eventId, artefact, standing, fingerprint)
+        return Kept(effect, remote.link(standing))
     }
-
-    private fun liveEvent(eventId: Long) = events.of(eventId)?.takeIf { it.live }
 
     private fun due(event: EventPostData) = DiscordPostSchedule.due(event.startTime, event.endTime, clock.instant())
 
@@ -229,15 +266,33 @@ class DiscordEventPosts(
         ).copy(start = starts)
 }
 
-/** What one run did: [skipped] says why it did nothing, [made] whether it put the thing up. */
+/**
+ * How one of the three is reached in the server, by the reference its record holds. [locate]
+ * answers where the one a reference names stands now, as it should be recorded, or null where it
+ * is gone; [update] answers false for one gone; [link] is where it opens in Discord.
+ */
+private class Remote(
+    val make: () -> String?,
+    val update: (String) -> Boolean,
+    val delete: (String) -> Unit,
+    val locate: (String) -> String?,
+    val link: (String) -> String?,
+)
+
+/** What one run did: its [effect] on the thing and [link] to it, or else why it [skipped] doing anything. */
 data class Kept(
-    val made: Boolean = false,
+    val effect: JobEffect? = null,
+    val link: String? = null,
     val skipped: String? = null,
 )
 
 private val NO_BOT = Kept(skipped = "The Discord bot is not configured.")
 private const val GONE = "The event is deleted or no longer approved."
 private const val OVER = "The event is over."
+private const val FROZEN = "The event awaits re-approval, so what is out stays as last approved."
+
+// Room for the request to reach Discord before the start it names.
+private val DISCORD_EVENT_LEAD: Duration = Duration.ofMinutes(1)
 private val MORNING_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm 'on' d MMMM yyyy", Locale.ENGLISH)
 
 private fun morningOf(moment: Instant): String = MORNING_FORMAT.format(moment.atZone(DiscordPostSchedule.ZONE))

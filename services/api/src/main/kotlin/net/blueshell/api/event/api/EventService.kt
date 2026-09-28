@@ -1,6 +1,5 @@
 package net.blueshell.api.event.api
 
-import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.event.domain.EventQuery
 import net.blueshell.api.event.domain.EventSignUpService
 import net.blueshell.api.event.persistence.Event
@@ -59,7 +58,7 @@ class EventService
                 clearSignUpsForEvent(saved.id!!)
             }
 
-            publishEventChanged(saved.id!!, EventChange.UPDATED)
+            publishEventChanged(saved.id!!, changeOf(previous, saved))
             return saved
         }
 
@@ -183,17 +182,33 @@ class EventService
             eventId: Long,
             changeType: EventChange,
         ) {
-            trackedEvents.publish { actor ->
+            // Within the change's transaction: the jobs queued for it commit with it.
+            trackedEvents.publishWithin { actor ->
                 EventChanged(eventId, changeType, actor = actor)
             }
         }
 
         private data class EventUpdateSnapshot(
             val bannerFileId: Long?,
+            val approved: Boolean,
+            val awaitingReapproval: Boolean,
         )
 
         private fun Event.toUpdateSnapshot(): EventUpdateSnapshot =
             EventUpdateSnapshot(
                 bannerFileId = banner?.file?.id,
+                approved = approved,
+                awaitingReapproval = awaitingReapproval,
             )
+
+        private fun changeOf(
+            before: EventUpdateSnapshot,
+            after: Event,
+        ): EventChange =
+            when {
+                after.approved -> if (before.approved) EventChange.UPDATED else EventChange.APPROVED
+                after.awaitingReapproval -> if (before.approved) EventChange.SENT_BACK else EventChange.UPDATED
+                before.approved || before.awaitingReapproval -> EventChange.UNAPPROVED
+                else -> EventChange.UPDATED
+            }
     }

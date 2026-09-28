@@ -7,6 +7,7 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -88,6 +89,7 @@ class CohortMembershipUpdater(
         jobs.runAsync(
             CohortJobs.SyncCohortMembership,
             CohortJobs.SyncCohortMembershipPayload(userId, cohort.id!!, SyncCohortMembershipIntent.ADD),
+            JobTrigger.MEMBERSHIP_CHANGED,
         )
     }
 
@@ -98,6 +100,7 @@ class CohortMembershipUpdater(
         jobs.runAsync(
             CohortJobs.SyncCohortMembership,
             CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.REMOVE),
+            JobTrigger.MEMBERSHIP_CHANGED,
         )
     }
 

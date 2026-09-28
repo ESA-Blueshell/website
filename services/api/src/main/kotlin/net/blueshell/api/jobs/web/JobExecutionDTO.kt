@@ -8,6 +8,8 @@ import net.blueshell.api.shared.enums.JobExecutionCategory
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
 import java.time.Instant
 
@@ -31,6 +33,13 @@ data class JobExecutionDTO(
     val skipReason: String?,
     /** Asked for by hand, so it did what it would otherwise have waited for. */
     val forced: Boolean,
+    /** What queued it; null on a row written before triggers were recorded. */
+    val trigger: JobTrigger?,
+    /** What a successful run did to the thing it keeps, and where that is; null where it keeps none. */
+    val effect: JobEffect?,
+    val effectLink: String?,
+    /** The triggers that met this job already queued and were folded into it, oldest first. */
+    val foldedTriggers: List<JobFoldedTriggerDTO>,
     /**
      * The raw job payload parsed into a key/value map (or `null` when the
      * stored payload was empty or unparseable). Shipped as structured data
@@ -51,6 +60,15 @@ data class JobExecutionDTO(
     val relatedEntities: List<JobExecutionRelatedEntityDTO>,
     val createdAt: Instant?,
     val updatedAt: Instant?,
+)
+
+@Schema(name = "JobFoldedTrigger")
+data class JobFoldedTriggerDTO(
+    val trigger: JobTrigger,
+    val at: Instant,
+    val initiatedByUserId: Long?,
+    val initiatedByType: ActionActorType,
+    val initiatedByDisplay: String,
 )
 
 @Schema(name = "JobExecutionRelatedEntity")

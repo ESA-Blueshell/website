@@ -2,6 +2,7 @@ package net.blueshell.api.event.domain
 
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.runAsyncFromActor
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -23,6 +24,7 @@ class EventJobsListener(
             jobs.runAsyncFromActor(
                 EmailJobs.EventSignup,
                 EmailJobs.EventSignupPayload(e.id!!, guestAccessToken),
+                JobTrigger.SITE_ACTION,
                 evt,
             )
         }

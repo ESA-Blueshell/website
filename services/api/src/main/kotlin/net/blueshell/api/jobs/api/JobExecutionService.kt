@@ -1,62 +1,112 @@
 package net.blueshell.api.jobs.api
 
 import net.blueshell.api.jobs.domain.JobExecutionQuery
+import net.blueshell.api.jobs.persistence.FoldedTrigger
+import net.blueshell.api.jobs.persistence.JobEnqueueLocks
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.jobs.persistence.JobExecutionSpecifications
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.shared.tracking.Actor
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.Instant
+
+/** What an enqueue came to: a new row, or the queued twin it was folded into, and whether that is to be dispatched now. */
+data class Enqueued(
+    val execution: JobExecution,
+    val dispatch: Boolean,
+)
 
 // One mark per status an execution can reach.
 @Suppress("TooManyFunctions")
 @Service
 class JobExecutionService(
     private val jobExecutionRepository: JobExecutionRepository,
+    private val enqueueLocks: JobEnqueueLocks,
 ) : BaseModelService<JobExecution, Long, JobExecutionRepository>(jobExecutionRepository) {
+    // Settable for tests only.
+    internal var clock: Clock = Clock.systemUTC()
+
+    /**
+     * Queues a job, or folds it into its queued twin: one of the same type and dedup key, which
+     * reads what it works on only once it runs. A twin waiting out a retry's backoff is pulled
+     * forward to run now. Null where a running twin makes the job redundant, which it does not
+     * for a job that [queuesBehindRunning].
+     */
     @Transactional
     fun createQueued(
         jobType: String,
         payload: String?,
         actor: Actor,
+        trigger: JobTrigger? = null,
         dedupKey: String? = null,
         queuesBehindRunning: Boolean = false,
         forced: Boolean = false,
-    ): JobExecution? {
-        if (dedupKey != null) {
-            val twins =
-                if (queuesBehindRunning) {
-                    listOf(JobExecutionStatus.QUEUED)
-                } else {
-                    listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
-                }
-            val active = jobExecutionRepository.existsByJobTypeAndDedupKeyAndStatusIn(jobType, dedupKey, twins)
-            if (active) return null
+    ): Enqueued? {
+        val create = { Enqueued(super.create(newExecution(jobType, payload, actor, trigger, dedupKey, forced)), dispatch = true) }
+        if (dedupKey == null) return create()
+        check(enqueueLocks.lock(jobType, dedupKey, ENQUEUE_LOCK_SECONDS)) { "Another enqueue of $jobType kept its lock" }
+        val twins = enqueueLocks.activeTwins(jobType, dedupKey)
+        // It may have started since it was read, and then it is a running twin.
+        val queued =
+            twins
+                .firstOrNull { it.status == JobExecutionStatus.QUEUED }
+                ?.let { jobExecutionRepository.findByIdForUpdate(it.id) }
+                ?.takeIf { it.status == JobExecutionStatus.QUEUED }
+        return when {
+            queued != null -> fold(queued, trigger, actor)
+            twins.isNotEmpty() && !queuesBehindRunning -> null
+            else -> create()
         }
-
-        val execution =
-            JobExecution(
-                jobType = jobType,
-                status = JobExecutionStatus.QUEUED,
-                payload = payload,
-                // The initial enqueue already counts: attempts represents the
-                // upcoming-or-current run number, so a job that hasn't started
-                // yet shows attempts = 1 in the UI rather than 0.
-                attempts = 1,
-                queuedAt = Instant.now(),
-                dedupKey = dedupKey,
-                forced = forced,
-                initiatedByUserId = actor.userId,
-                initiatedByType = actor.type,
-                initiatedByRole = actor.role,
-            )
-        return super.create(execution)
     }
+
+    private fun fold(
+        twin: JobExecution,
+        trigger: JobTrigger?,
+        actor: Actor,
+    ): Enqueued {
+        val now = clock.instant()
+        val waiting = twin.nextAttemptAt?.isAfter(now) == true
+        if (trigger != null) twin.foldedTriggers += FoldedTrigger(trigger, actor, now)
+        if (waiting) {
+            // A fresh row's shape: dispatched after this commit, and left alone by both sweeps meanwhile.
+            twin.nextAttemptAt = null
+            twin.queuedAt = now
+        }
+        return Enqueued(super.update(twin), dispatch = waiting)
+    }
+
+    private fun newExecution(
+        jobType: String,
+        payload: String?,
+        actor: Actor,
+        trigger: JobTrigger?,
+        dedupKey: String?,
+        forced: Boolean,
+    ): JobExecution =
+        JobExecution(
+            jobType = jobType,
+            status = JobExecutionStatus.QUEUED,
+            payload = payload,
+            // The initial enqueue already counts: attempts represents the
+            // upcoming-or-current run number, so a job that hasn't started
+            // yet shows attempts = 1 in the UI rather than 0.
+            attempts = 1,
+            queuedAt = clock.instant(),
+            dedupKey = dedupKey,
+            forced = forced,
+            trigger = trigger,
+            initiatedByUserId = actor.userId,
+            initiatedByType = actor.type,
+            initiatedByRole = actor.role,
+        )
 
     @Transactional(readOnly = true)
     fun findByFilter(
@@ -114,13 +164,21 @@ class JobExecutionService(
     fun markRunning(execution: JobExecution): JobExecution {
         execution.status = JobExecutionStatus.RUNNING
         execution.startedAt = Instant.now()
+        execution.effect = null
+        execution.effectLink = null
         return super.update(execution)
     }
 
     @Transactional
-    fun markSuccess(execution: JobExecution): JobExecution {
+    fun markSuccess(
+        execution: JobExecution,
+        effect: JobEffect? = null,
+        link: String? = null,
+    ): JobExecution {
         execution.status = JobExecutionStatus.SUCCESS
         execution.finishedAt = Instant.now()
+        execution.effect = effect
+        execution.effectLink = link
         execution.errorMessage = null
         execution.errorType = null
         execution.errorReason = null
@@ -147,10 +205,11 @@ class JobExecutionService(
         errorType: String,
         errorReason: String,
         stackTrace: String? = null,
+        explained: Boolean = false,
     ): JobExecution {
         execution.status = JobExecutionStatus.FAILED
         execution.finishedAt = Instant.now()
-        applyErrorInfo(execution, errorType, errorReason, stackTrace)
+        applyErrorInfo(execution, errorType, errorReason, stackTrace, explained)
         return super.update(execution)
     }
 
@@ -174,26 +233,29 @@ class JobExecutionService(
         errorReason: String,
         stackTrace: String? = null,
         nextAttemptAt: Instant,
+        explained: Boolean = false,
     ): JobExecution {
         execution.status = JobExecutionStatus.QUEUED
         execution.queuedAt = Instant.now()
         execution.startedAt = null
         execution.finishedAt = null
         execution.nextAttemptAt = nextAttemptAt
-        applyErrorInfo(execution, errorType, errorReason, stackTrace)
+        applyErrorInfo(execution, errorType, errorReason, stackTrace, explained)
         execution.attempts += 1
         return super.update(execution)
     }
 
+    // An explained failure's reason is already a sentence for the jobs page, which its type would only clutter.
     private fun applyErrorInfo(
         execution: JobExecution,
         errorType: String,
         errorReason: String,
         stackTrace: String?,
+        explained: Boolean = false,
     ) {
         execution.errorType = errorType
         execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
-        execution.errorMessage = "$errorType: $errorReason"
+        execution.errorMessage = if (explained) errorReason else "$errorType: $errorReason"
     }
 
     /**
@@ -243,5 +305,9 @@ class JobExecutionService(
         execution.forced = true
         execution.attempts += 1
         return super.update(execution)
+    }
+
+    private companion object {
+        const val ENQUEUE_LOCK_SECONDS = 10
     }
 }

@@ -70,11 +70,32 @@ class EventPostsTest {
     }
 
     @Test
+    fun `reads an event awaiting re-approval as not live but frozen, unless it is deleted`() {
+        val waiting: Event =
+            mock {
+                on { id } doReturn 45
+                on { approved } doReturn false
+                on { awaitingReapproval } doReturn true
+                on { isSoftDeleted } doReturn false
+                on { title } doReturn "Waiting"
+                on { startTime } doReturn Instant.EPOCH
+                on { endTime } doReturn Instant.EPOCH
+                on { pingedRoles } doReturn mutableSetOf()
+            }
+        val events: EventRepository = mock { on { findByIdIncludingDeleted(45) } doReturn waiting }
+
+        val read = EventPosts(events, blobs).of(45)!!
+        assertThat(read.live to read.frozen).isEqualTo(false to true)
+        whenever(waiting.isSoftDeleted).thenReturn(true)
+        assertThat(EventPosts(events, blobs).of(45)!!.frozen).isFalse()
+    }
+
+    @Test
     fun `hands over the banner's bytes, and the approved events near a window`() {
         val events: EventRepository =
             mock {
                 on { findByIdIncludingDeleted(42) } doReturn event
-                on { findApprovedIdsOverlapping(Instant.EPOCH, Instant.MAX) } doReturn listOf(42L)
+                on { findKeptIdsOverlapping(Instant.EPOCH, Instant.MAX) } doReturn listOf(42L)
             }
 
         val image = EventPosts(events, blobs).bannerOf(42)!!
@@ -82,7 +103,7 @@ class EventPostsTest {
         assertThat(image.mediaType).isEqualTo("image/webp")
         assertThat(image.bytes).containsExactly(1, 2)
         assertThat(EventPosts(events, blobs).bannerOf(44)).isNull()
-        assertThat(EventPosts(events, blobs).approvedOverlapping(Instant.EPOCH, Instant.MAX)).containsExactly(42L)
+        assertThat(EventPosts(events, blobs).keptOverlapping(Instant.EPOCH, Instant.MAX)).containsExactly(42L)
     }
 
     @Test

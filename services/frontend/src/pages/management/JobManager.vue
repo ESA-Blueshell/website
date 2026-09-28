@@ -4,7 +4,7 @@ import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
 import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
-import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, errorSummary, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase} from "@/domains/jobs"
+import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
@@ -18,6 +18,7 @@ const PAGE_SIZE = 50
 const stats = ref<JobStats | null>(null)
 const selectedCategory = ref<JobExecutionCategory | "all">("all")
 const selectedStatus = ref<JobExecutionStatus | "all">("all")
+const hideSkipped = ref(false)
 const showTriggerDialog = ref(false)
 
 const loadStats = async () => {
@@ -31,6 +32,7 @@ const loadPage = (query: PageQuery) => {
   return loadJobPage(query, {
     ...(selectedCategory.value !== "all" ? {category: selectedCategory.value} : {}),
     ...(selectedStatus.value !== "all" ? {status: selectedStatus.value} : {}),
+    hideSkipped: hideSkipped.value,
   })
 }
 
@@ -49,7 +51,7 @@ const {
   resetToFirstPage,
 } = table
 
-watch([selectedCategory, selectedStatus], () => {
+watch([selectedCategory, selectedStatus, hideSkipped], () => {
   resetToFirstPage()
 })
 
@@ -367,8 +369,21 @@ onMounted(async () => {
               </v-col>
               <v-col
                 cols="12"
-                md="6"
-                sm="12"
+                md="2"
+                sm="4"
+              >
+                <v-switch
+                  v-model="hideSkipped"
+                  color="primary"
+                  data-testid="job-filter-hide-skipped"
+                  hide-details
+                  label="Hide skipped"
+                />
+              </v-col>
+              <v-col
+                cols="12"
+                md="4"
+                sm="8"
               >
                 <v-text-field
                   v-model="searchQuery"
@@ -510,6 +525,14 @@ onMounted(async () => {
                     </div>
 
                     <div class="job-meta-inline">
+                      <template v-if="execution.effect">
+                        <span :data-testid="`job-row-effect-${execution.id}`">{{ effectLabel(execution) }}</span>
+                        <span class="job-meta-sep">·</span>
+                      </template>
+                      <template v-if="execution.trigger">
+                        <span :data-testid="`job-row-trigger-${execution.id}`">{{ triggerLabel(execution) }}</span>
+                        <span class="job-meta-sep">·</span>
+                      </template>
                       <span>{{ previewActorDisplay(execution) }}</span>
                       <span class="job-meta-sep">·</span>
                       <span>{{ attemptsLabel(execution.attempts) }}</span>
@@ -583,6 +606,21 @@ onMounted(async () => {
                       <p class="text-caption text-medium-emphasis mb-2">
                         Trigger
                       </p>
+                      <p
+                        v-if="execution.trigger"
+                        :data-testid="`job-trigger-${execution.id}`"
+                        class="text-body-2 mb-1"
+                      >
+                        <strong>Queued by:</strong> {{ triggerLabel(execution) }}
+                      </p>
+                      <p
+                        v-for="(folded, index) in execution.foldedTriggers ?? []"
+                        :key="index"
+                        :data-testid="`job-folded-trigger-${execution.id}-${index}`"
+                        class="text-body-2 mb-1"
+                      >
+                        <strong>Also queued by:</strong> {{ foldedTriggerLabel(folded) }} · {{ folded.initiatedByDisplay }} · {{ formatDate(folded.at) }}
+                      </p>
                       <p class="text-body-2 mb-1">
                         <strong>Actor:</strong> {{ actorDisplay(execution) }}
                       </p>
@@ -648,6 +686,27 @@ onMounted(async () => {
                       class="text-body-2 text-medium-emphasis mb-0"
                     >
                       No related entities.
+                    </p>
+                  </v-sheet>
+
+                  <v-sheet
+                    v-if="execution.effect"
+                    class="detail-panel mt-3"
+                    rounded="md"
+                    variant="tonal"
+                  >
+                    <p class="text-caption text-medium-emphasis mb-2">
+                      Outcome
+                    </p>
+                    <p class="text-body-2 mb-0">
+                      {{ effectLabel(execution) }}
+                      <a
+                        v-if="execution.effectLink"
+                        :data-testid="`job-effect-link-${execution.id}`"
+                        :href="execution.effectLink"
+                        rel="noopener"
+                        target="_blank"
+                      >Open in Discord</a>
                     </p>
                   </v-sheet>
 

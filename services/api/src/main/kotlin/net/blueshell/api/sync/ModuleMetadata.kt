@@ -8,8 +8,10 @@ import org.springframework.modulith.PackageInfo
  * resulting external id in `external_id_mapping`. Each destination implements the `SyncTarget`
  * port; the Google Calendar adapter is the sibling `calendar` package, folded in by the flattening.
  *
- * Fan-out runs off `@ApplicationModuleListener`s, so a failed push is retried from the event
- * publication registry instead of failing the transaction that caused it.
+ * Contact and calendar fan-out runs off `@ApplicationModuleListener`s, so a failed push is retried
+ * from the event publication registry instead of failing the transaction that caused it. The
+ * Discord triggers queue their jobs inside that transaction instead, so a change never commits
+ * without them.
  */
 @PackageInfo
 @ApplicationModule(

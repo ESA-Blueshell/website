@@ -1,0 +1,18 @@
+# What a successful run did, and a link to what it did it to.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-28-job-effect.yaml
+      id: job-effect
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: job_executions
+            columns:
+              - column: {name: effect, type: VARCHAR(16)}
+              - column: {name: effect_link, type: VARCHAR(512)}
+      rollback:
+        - dropColumn:
+            tableName: job_executions
+            columns:
+              - column: {name: effect}
+              - column: {name: effect_link}

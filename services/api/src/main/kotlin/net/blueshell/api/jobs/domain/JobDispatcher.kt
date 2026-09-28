@@ -6,6 +6,7 @@ import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorProvider
 import org.springframework.stereotype.Service
@@ -31,10 +32,11 @@ class JobDispatcher(
     override fun <T : Any> runAsync(
         job: JobDefinition<T>,
         payload: T,
+        trigger: JobTrigger,
         actor: Actor?,
     ): JobExecution? {
         val dedupKey = job.dedupKey(payload)
-        return runAsync(job.type, payload, actor, dedupKey, job.queuesBehindRunning)
+        return runAsync(job.type, payload, trigger, actor, dedupKey, job.queuesBehindRunning)
     }
 
     /**
@@ -43,7 +45,8 @@ class JobDispatcher(
      */
     fun runAsync(
         jobType: String,
-        payload: Any? = null,
+        payload: Any?,
+        trigger: JobTrigger,
         actor: Actor? = null,
         dedupKey: String? = null,
         queuesBehindRunning: Boolean = false,
@@ -51,18 +54,19 @@ class JobDispatcher(
     ): JobExecution? {
         val payloadJson = payload?.let { objectMapper.writeValueAsString(it) }
         val resolvedActor = actor ?: actorProvider.currentOrSystem()
-        val execution =
+        val enqueued =
             jobExecutionService.createQueued(
                 jobType = jobType,
                 payload = payloadJson,
                 actor = resolvedActor,
+                trigger = trigger,
                 dedupKey = dedupKey,
                 queuesBehindRunning = queuesBehindRunning,
                 forced = forced,
             ) ?: return null
 
-        if (properties.autoDispatch) {
-            val executionId = execution.id!!
+        if (properties.autoDispatch && enqueued.dispatch) {
+            val executionId = enqueued.execution.id!!
             if (TransactionSynchronizationManager.isSynchronizationActive()) {
                 TransactionSynchronizationManager.registerSynchronization(
                     object : TransactionSynchronization {
@@ -75,6 +79,6 @@ class JobDispatcher(
                 jobExecutor.executeAsync(executionId)
             }
         }
-        return execution
+        return enqueued.execution
     }
 }

@@ -2,6 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.runAsyncFromActor
 import net.blueshell.api.user.api.UserCreated
 import org.slf4j.LoggerFactory
@@ -50,6 +51,7 @@ open class ActivationEmailDispatcher(
         jobs.runAsyncFromActor(
             EmailJobs.Recovery,
             EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
+            JobTrigger.SITE_ACTION,
             event,
         )
     }

@@ -5,7 +5,6 @@ import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.EventSignUpRepository
-import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.service.BaseModelService
@@ -19,14 +18,15 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.context.ApplicationEventPublisher
 import java.util.Optional
 
 class EventSignUpServiceTest {
     private val repository = mock<EventSignUpRepository>()
-    private val published = mock<AfterCommitEventPublisher>()
+    private val published = mock<ApplicationEventPublisher>()
     private val actors = mock<ActorProvider> { on { currentOrSystem() } doReturn Actor.system() }
     private val service =
-        EventSignUpService(repository, TrackedEventPublisher(published, actors), mock<CurrentUserProvider>()).apply {
+        EventSignUpService(repository, TrackedEventPublisher(mock(), actors, published), mock<CurrentUserProvider>()).apply {
             // The entity manager is injected by field; create refreshes the saved row through it.
             BaseModelService::class.java
                 .getDeclaredField("em")
@@ -38,7 +38,7 @@ class EventSignUpServiceTest {
 
     private fun countsMoved() =
         argumentCaptor<Any>().let { sent ->
-            verify(published, atLeastOnce()).publish(sent.capture())
+            verify(published, atLeastOnce()).publishEvent(sent.capture())
             sent.allValues.filterIsInstance<EventSignUpsChanged>().map { it.eventId }
         }
 

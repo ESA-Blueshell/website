@@ -4,6 +4,7 @@ import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -36,7 +37,7 @@ class SyncAllContactsJob(
         log.info("Enqueueing per-user contact sync jobs for {} users", users.size)
         users.forEach { user ->
             runCatching {
-                jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(user.id!!))
+                jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(user.id!!), JobTrigger.ANOTHER_JOB)
             }.onFailure { e ->
                 log.error("Failed to enqueue contact sync for user {}: {}", user.id, e.message)
             }

@@ -581,6 +581,13 @@ describe("EventForm", () => {
       ;(edited.vm as any).event.title = "Renamed"
       await settle()
       expect(edited.get("[data-testid=event-form-approval-note]").text()).toBe("The event will be hidden until the board re-approves it")
+
+      const approved = mountForm({modelValue: baseEvent({id: 33, version: 1, approved: true})})
+      await settle()
+      ;(approved.vm as any).event.title = "Renamed"
+      await settle()
+      expect(approved.get("[data-testid=event-form-approval-note]").text())
+        .toBe("The event will be hidden until the board re-approves it, and what the bot has out on Discord stays as it is until then")
     })
 
     it("keeps or drops the existing sign-ups on the choice made in the notice", async () => {

@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.user.api.MemberProfileService
@@ -117,6 +118,7 @@ class SignupUseCases(
         jobs.runAsync(
             EmailJobs.Recovery,
             EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
+            JobTrigger.SITE_ACTION,
         )
     }
 

@@ -3,6 +3,7 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.RecoveryEmailPreview
 import net.blueshell.api.shared.model.SignupOutcome
 import org.springframework.stereotype.Service
@@ -65,6 +66,7 @@ class RecoveryUseCases(
         jobs.runAsync(
             EmailJobs.Recovery,
             EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
+            JobTrigger.SITE_ACTION,
         )
     }
 }

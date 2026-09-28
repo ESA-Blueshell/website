@@ -7,7 +7,9 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Expression
 import jakarta.persistence.criteria.Root
+import net.blueshell.api.jobs.domain.JobExecutionQuery
 import net.blueshell.api.shared.enums.JobExecutionCategory
+import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.junit.jupiter.api.Test
 
 class JobExecutionSpecificationsTest {
@@ -15,6 +17,17 @@ class JobExecutionSpecificationsTest {
     private val root: Root<JobExecution> = mockk { every { get<String>("jobType") } returns mockk() }
     private val cb: CriteriaBuilder = mockk(relaxed = true) { every { lower(any()) } returns jobType }
     private val query: CriteriaQuery<*> = mockk()
+
+    @Test
+    fun `leaves out skipped runs where asked, and only then`() {
+        val status: jakarta.persistence.criteria.Path<JobExecutionStatus> = mockk()
+        every { root.get<JobExecutionStatus>("status") } returns status
+
+        JobExecutionSpecifications.fromFilter(JobExecutionQuery(hideSkipped = true)).toPredicate(root, query, cb)
+        JobExecutionSpecifications.fromFilter(JobExecutionQuery(hideSkipped = false)).toPredicate(root, query, cb)
+
+        verify(exactly = 1) { cb.equal(status, JobExecutionStatus.SKIPPED) }
+    }
 
     @Test
     fun `filters a category by its prefix, and other by no category's prefix`() {

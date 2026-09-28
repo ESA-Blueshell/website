@@ -18,6 +18,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -205,7 +206,9 @@ class AccountSecurityTest {
             verify(stepUp).require()
             assertThat(user.pendingEmail).isEqualTo("new@example.com")
             verify(tokenFactory).issue(user, TokenPurpose.EMAIL_CHANGE, AccountSecurity.EMAIL_CHANGE_TTL)
-            verify(jobs).runAsync(EmailJobs.Recovery, EmailJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.EMAIL_CHANGE))
+            verify(
+                jobs,
+            ).runAsync(EmailJobs.Recovery, EmailJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.EMAIL_CHANGE), JobTrigger.SITE_ACTION)
             recorded(SecurityEventKind.EMAIL_CHANGE_REQUESTED)
         }
 
@@ -326,7 +329,13 @@ class AccountSecurityTest {
             assertThat(user.awaitingReenrolment).isTrue()
             verify(signIns).endAll(7)
             verify(tokenFactory).issue(user, TokenPurpose.TWO_FACTOR_REENROLMENT, AccountSecurity.REENROLMENT_TTL)
-            verify(jobs).runAsync(EmailJobs.Recovery, EmailJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT))
+            verify(
+                jobs,
+            ).runAsync(
+                EmailJobs.Recovery,
+                EmailJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT),
+                JobTrigger.SITE_ACTION,
+            )
             recorded(SecurityEventKind.TWO_FACTOR_RESET)
         }
 

@@ -3,6 +3,7 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.event.api.EventBannerImage
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
+import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.api.sync.api.DiscordPublisher
@@ -65,20 +66,20 @@ class DiscordEventPostsTest {
 
         override fun edit(
             channel: String,
-            messageId: String,
+            reference: String,
             post: DiscordPost,
         ): Boolean {
-            if (messageId in gone) return false
+            if (reference in gone) return false
             banners += post.banner?.fileName
-            said += "edit $channel $messageId"
+            said += "edit $channel $reference"
             return true
         }
 
         override fun delete(
             channel: String,
-            messageId: String,
+            reference: String,
         ) {
-            said += "delete $channel $messageId"
+            said += "delete $channel $reference"
         }
 
         /** What the server holds that links event 42 without the ledger knowing, by channel or "events". */
@@ -112,6 +113,33 @@ class DiscordEventPostsTest {
 
         override fun deleteDiscordEvent(discordEventId: String) {
             said += "unlist $discordEventId"
+        }
+
+        override fun linkOf(
+            channel: String,
+            reference: String,
+        ) = "https://discord.test/$channel/$reference"
+
+        override fun linkOfDiscordEvent(discordEventId: String) = "https://discord.test/events/$discordEventId"
+
+        /** Gone by the time an edit reaches it, though still there when asked after. */
+        val vanishing = mutableSetOf<String>()
+
+        /** What a run asked Discord after by reference, and the reference Discord answers for an old one. */
+        val checked = mutableListOf<String>()
+        val upgraded = mutableMapOf<String, String>()
+
+        override fun stillPosted(
+            channel: String,
+            reference: String,
+        ): String? {
+            checked += reference
+            return if (reference in gone && reference !in vanishing) null else upgraded[reference] ?: reference
+        }
+
+        override fun stillListed(discordEventId: String): Boolean {
+            checked += discordEventId
+            return discordEventId !in gone
         }
     }
 
@@ -181,8 +209,8 @@ class DiscordEventPostsTest {
 
     @Test
     fun `announces the event two weeks ahead with its banner attached, once`() {
-        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42).made).isTrue()
-        assertThat(posts("2026-09-27T08:00").keepAnnouncement(42).made).isFalse()
+        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42).effect).isEqualTo(JobEffect.MADE)
+        assertThat(posts("2026-09-27T08:00").keepAnnouncement(42).effect).isNotEqualTo(JobEffect.MADE)
 
         assertThat(publisher.said).containsExactly("post events-info m1")
         assertThat(publisher.banners).containsExactly("banner.webp")
@@ -191,11 +219,11 @@ class DiscordEventPostsTest {
 
     @Test
     fun `posts nothing before its time or without a bot, and retries later for a claim another run holds`() {
-        assertThat(posts("2026-09-25T08:00").keepAnnouncement(42).made).isFalse()
+        assertThat(posts("2026-09-25T08:00").keepAnnouncement(42).effect).isNotEqualTo(JobEffect.MADE)
         ledger.othersHoldClaims = true
         assertThatThrownBy { posts("2026-09-26T08:00").keepAnnouncement(42) }.hasMessageContaining("Another run")
         ledger.othersHoldClaims = false
-        assertThat(posts("2026-09-26T08:00", bot = null).keepAnnouncement(42).made).isFalse()
+        assertThat(posts("2026-09-26T08:00", bot = null).keepAnnouncement(42).effect).isNotEqualTo(JobEffect.MADE)
         posts("2026-10-10T08:00", bot = null).keepCalendarPost(42)
         posts("2026-09-26T08:00", bot = null).keepDiscordEvent(42)
 
@@ -215,16 +243,16 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `lists the Discord event only beside the events-info post, with the banner as its cover`() {
-        posts("2026-09-26T08:00").keepDiscordEvent(42)
+    fun `lists the Discord event within two weeks without waiting for the events-info post, with the banner as its cover`() {
+        posts("2026-09-26T07:59").keepDiscordEvent(42)
         assertThat(publisher.said).isEmpty()
 
-        posts("2026-09-26T08:00").keepAnnouncement(42)
         posts("2026-09-26T08:00").keepDiscordEvent(42)
         posts("2026-09-27T08:00").keepDiscordEvent(42)
 
-        assertThat(publisher.said).containsExactly("post events-info m1", "list m2")
+        assertThat(publisher.said).containsExactly("list m1")
         assertThat(publisher.listings.single().cover).isEqualTo("data:image/webp;base64,AQID")
+        assertThat(publisher.listings.single().start).isEqualTo(event.startTime)
     }
 
     @Test
@@ -268,13 +296,13 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `takes a day post down when the event moves off the day, and keeps the rest`() {
+    fun `keeps what is out when the event moves further away, edited, until the day post's take-down`() {
         all("2026-10-10T08:00")
         publisher.said.clear()
 
         all("2026-10-10T09:00", event.copy(startTime = at("2026-12-10T20:00"), endTime = at("2026-12-10T23:00")))
 
-        assertThat(publisher.said).containsExactly("edit events-info m1", "delete events-calendar m2", "relist m3")
+        assertThat(publisher.said).containsExactly("edit events-info m1", "edit events-calendar m2", "relist m3")
     }
 
     @Test
@@ -310,7 +338,7 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `lists the Discord event on a later run where listing it failed beside the events-info post`() {
+    fun `lists the Discord event on a later run where listing it failed`() {
         publisher.refuseDiscordEvents = true
         posts("2026-09-26T08:00").keepAnnouncement(42)
         assertThatThrownBy { posts("2026-09-26T08:00").keepDiscordEvent(42) }.hasMessageContaining("refused")
@@ -325,7 +353,7 @@ class DiscordEventPostsTest {
     fun `takes over a post Discord already holds rather than posting again, removing any other copy`() {
         publisher.strays["events-info"] = listOf("x1", "x2")
 
-        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42).made).isTrue()
+        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42).effect).isEqualTo(JobEffect.EDITED)
 
         assertThat(publisher.said).containsExactly("edit events-info x1", "delete events-info x2")
         assertThat(ledger.posted[DiscordArtefact.INFO_POST]?.externalId).isEqualTo("x1")
@@ -348,7 +376,7 @@ class DiscordEventPostsTest {
         publisher.strays["events-calendar"] = listOf("c1")
         publisher.strays["events"] = listOf("e1")
 
-        posts("2026-09-26T08:00").run {
+        posts("2026-09-25T08:00").run {
             keepCalendarPost(42)
             keepDiscordEvent(42)
         }
@@ -358,27 +386,72 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `makes a post again that somebody removed by hand, once the event changes`() {
+    fun `puts a post somebody removed by hand back on the next run, though nothing changed, notifying again`() {
         posts("2026-09-26T08:00").keepAnnouncement(42)
         publisher.gone += "m1"
 
-        assertThat(posts("2026-09-27T08:00", found = event.copy(title = "LAN party, bigger")).keepAnnouncement(42).made).isTrue()
+        assertThat(posts("2026-09-27T08:00").keepAnnouncement(42).effect).isEqualTo(JobEffect.MADE)
 
         assertThat(publisher.said).containsExactly("post events-info m1", "post events-info m2")
         assertThat(ledger.posted[DiscordArtefact.INFO_POST]?.externalId).isEqualTo("m2")
     }
 
     @Test
-    fun `lists no Discord event once the event has started, and leaves the start alone when editing one then`() {
-        posts("2026-10-10T08:00").keepAnnouncement(42)
-        posts("2026-10-10T20:30").keepDiscordEvent(42)
+    fun `makes a post again that goes between being asked after and being edited`() {
+        posts("2026-09-26T08:00").keepAnnouncement(42)
+        publisher.gone += "m1"
+        publisher.vanishing += "m1"
+
+        assertThat(posts("2026-09-27T08:00", found = event.copy(title = "LAN party, bigger")).keepAnnouncement(42).effect)
+            .isEqualTo(JobEffect.MADE)
+
+        assertThat(publisher.said).containsExactly("post events-info m1", "post events-info m2")
+    }
+
+    @Test
+    fun `lists a Discord event somebody removed by hand again on the next run`() {
+        posts("2026-09-26T08:00").keepDiscordEvent(42)
+        publisher.gone += "m1"
+
+        assertThat(posts("2026-09-27T08:00").keepDiscordEvent(42).effect).isEqualTo(JobEffect.MADE)
+
+        assertThat(publisher.said).containsExactly("list m1", "list m2")
+        assertThat(ledger.posted[DiscordArtefact.DISCORD_EVENT]?.externalId).isEqualTo("m2")
+    }
+
+    @Test
+    fun `asks Discord after what it recorded on every run, whether or not anything changed`() {
+        all("2026-10-10T08:00")
+        publisher.checked.clear()
+
+        all("2026-10-10T09:00")
+
+        assertThat(publisher.checked).containsExactly("m1", "m2", "m3")
+        assertThat(publisher.said).containsExactly("post events-info m1", "post events-calendar m2", "list m3")
+    }
+
+    @Test
+    fun `records the reference Discord answers for a post recorded the old way, and keeps that copy`() {
+        posts("2026-09-26T08:00").keepAnnouncement(42)
+        val old = ledger.posted.getValue(DiscordArtefact.INFO_POST)
+        ledger.posted[DiscordArtefact.INFO_POST] = old.copy(externalId = "legacy")
+        publisher.upgraded["legacy"] = "111/legacy"
+        publisher.strays["events-info"] = listOf("111/legacy")
+
+        val kept = posts("2026-09-27T08:00").keepAnnouncement(42)
+
+        assertThat(kept).isEqualTo(Kept(JobEffect.UNCHANGED, "https://discord.test/events-info/111/legacy"))
+        assertThat(ledger.posted[DiscordArtefact.INFO_POST]).isEqualTo(old.copy(externalId = "111/legacy"))
         assertThat(publisher.said).containsExactly("post events-info m1")
-        assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.INFO_POST)
+    }
 
-        posts("2026-10-10T19:00").keepDiscordEvent(42)
-        posts("2026-10-10T20:30", found = event.copy(title = "LAN party, bigger")).keepDiscordEvent(42)
+    @Test
+    fun `lists an event already running from a minute on, and leaves the start alone when editing it then`() {
+        posts("2026-10-10T20:30").keepDiscordEvent(42)
+        posts("2026-10-10T20:40", found = event.copy(title = "LAN party, bigger")).keepDiscordEvent(42)
 
-        assertThat(publisher.listings.map { it.start }).containsExactly(event.startTime, null)
+        assertThat(publisher.said).containsExactly("list m1", "relist m1")
+        assertThat(publisher.listings.map { it.start }).containsExactly(at("2026-10-10T20:31"), null)
     }
 
     @Test
@@ -397,28 +470,69 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `backfills nothing for an event that started before today, and keeps what is already out`() {
+    fun `puts all three up for a multi-day event approved while it runs`() {
         val weekend = event.copy(endTime = at("2026-10-12T16:00"))
 
         posts("2026-10-11T09:00", found = weekend).run {
-            assertThat(keepAnnouncement(42).made).isFalse()
-            keepCalendarPost(42)
+            assertThat(keepAnnouncement(42).effect).isEqualTo(JobEffect.MADE)
+            assertThat(keepCalendarPost(42).effect).isEqualTo(JobEffect.MADE)
+            assertThat(keepDiscordEvent(42).effect).isEqualTo(JobEffect.MADE)
         }
+
+        assertThat(publisher.said).containsExactly("post events-info m1", "post events-calendar m2", "list m3")
+        assertThat(publisher.listings.single().start).isEqualTo(at("2026-10-11T09:01"))
+    }
+
+    @Test
+    fun `freezes what is out while the event awaits re-approval, and brings it up to date once approved again`() {
+        all("2026-10-10T08:00")
+        publisher.said.clear()
+        val waiting = event.copy(live = false, frozen = true, title = "LAN party, typo fixed")
+
+        val kept =
+            posts(
+                "2026-10-10T09:00",
+                found = waiting,
+            ).run { listOf(keepAnnouncement(42), keepCalendarPost(42), keepDiscordEvent(42)) }
+        assertThat(kept.map { it.skipped }.distinct())
+            .containsExactly("The event awaits re-approval, so what is out stays as last approved.")
         assertThat(publisher.said).isEmpty()
 
-        posts("2026-10-10T09:00", found = weekend).run {
-            keepAnnouncement(42)
-            keepCalendarPost(42)
-        }
-        posts("2026-10-11T09:00", found = weekend.copy(title = "LAN weekend")).run {
-            keepAnnouncement(42)
-            keepCalendarPost(42)
-        }
-        assertThat(publisher.said).containsExactly(
-            "post events-info m1",
-            "post events-calendar m2",
-            "edit events-info m1",
-            "edit events-calendar m2",
+        all("2026-10-10T10:00", found = waiting.copy(live = true, frozen = false))
+        assertThat(publisher.said).containsExactly("edit events-info m1", "edit events-calendar m2", "relist m3")
+    }
+
+    @Test
+    fun `still takes down on time what is frozen, and makes nothing new for it`() {
+        all("2026-10-10T08:00")
+        publisher.said.clear()
+        val waiting = event.copy(live = false, frozen = true)
+
+        all("2026-10-10T23:30", found = waiting)
+        all("2026-10-11T08:00", found = waiting)
+        assertThat(publisher.said).containsExactly("unlist m3", "delete events-calendar m2")
+        assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.INFO_POST)
+
+        ledger.posted.clear()
+        publisher.said.clear()
+        all("2026-10-01T08:00", found = waiting)
+        assertThat(publisher.said).isEmpty()
+    }
+
+    @Test
+    fun `says what each run did, with a link to what it did it to`() {
+        val made = posts("2026-09-26T08:00").keepAnnouncement(42)
+        val unchanged = posts("2026-09-26T09:00").keepAnnouncement(42)
+        val edited = posts("2026-09-26T10:00", found = event.copy(title = "LAN party, bigger")).keepAnnouncement(42)
+        val listed = posts("2026-09-26T08:00").keepDiscordEvent(42)
+        val removed = posts("2026-09-26T11:00", found = null).keepAnnouncement(42)
+
+        assertThat(listOf(made, unchanged, edited, listed, removed)).containsExactly(
+            Kept(JobEffect.MADE, "https://discord.test/events-info/m1"),
+            Kept(JobEffect.UNCHANGED, "https://discord.test/events-info/m1"),
+            Kept(JobEffect.EDITED, "https://discord.test/events-info/m1"),
+            Kept(JobEffect.MADE, "https://discord.test/events/m2"),
+            Kept(JobEffect.REMOVED),
         )
     }
 
@@ -427,10 +541,10 @@ class DiscordEventPostsTest {
         assertThat(posts("2026-09-26T08:00", bot = null).keepDiscordEvent(42).skipped).isEqualTo("The Discord bot is not configured.")
         assertThat(posts("2026-09-25T08:00").keepAnnouncement(42).skipped)
             .isEqualTo("The #events-info announcement is not due until 08:00 on 26 September 2026.")
-        assertThat(posts("2026-09-26T08:00").keepDiscordEvent(42).skipped)
-            .isEqualTo("The event has no #events-info announcement yet, and its Discord event is made beside it.")
+        assertThat(posts("2026-09-25T08:00").keepDiscordEvent(42).skipped)
+            .isEqualTo("The Discord event is not due until 08:00 on 26 September 2026.")
         assertThat(posts("2026-09-26T08:00").keepCalendarPost(42).skipped)
-            .isEqualTo("The #events-calendar post is not due until 08:00 on the event's first day.")
+            .isEqualTo("The #events-calendar post is not due until 08:00 on 10 October 2026.")
         assertThat(posts("2026-10-11T08:00").keepCalendarPost(42).skipped)
             .isEqualTo("The event's day is over, so its #events-calendar post has come down.")
         assertThat(posts("2026-09-26T08:00", found = null).keepAnnouncement(42).skipped)
@@ -442,37 +556,31 @@ class DiscordEventPostsTest {
     fun `counts taking something down as the run's work, not a skip`() {
         publisher.strays["events"] = listOf("e1")
 
-        val kept = posts("2026-09-26T08:00").keepDiscordEvent(42)
+        val kept = posts("2026-09-25T08:00").keepDiscordEvent(42)
 
-        assertThat(kept).isEqualTo(Kept())
+        assertThat(kept).isEqualTo(Kept(JobEffect.REMOVED))
         assertThat(publisher.said).containsExactly("unlist e1")
     }
 
     @Test
     fun `a forced run does what it would wait for`() {
         posts("2026-09-20T09:00").run {
-            assertThat(keepDiscordEvent(42, forced = true).made).isTrue()
-            assertThat(keepAnnouncement(42, forced = true).made).isTrue()
-            assertThat(keepCalendarPost(42, forced = true).made).isTrue()
+            assertThat(keepDiscordEvent(42, forced = true).effect).isEqualTo(JobEffect.MADE)
+            assertThat(keepAnnouncement(42, forced = true).effect).isEqualTo(JobEffect.MADE)
+            assertThat(keepCalendarPost(42, forced = true).effect).isEqualTo(JobEffect.MADE)
         }
 
         assertThat(publisher.said).containsExactly("list m1", "post events-info m2", "post events-calendar m3")
     }
 
     @Test
-    fun `a forced run posts for an event that started before today`() {
-        val weekend = event.copy(endTime = at("2026-10-12T16:00"))
+    fun `keeps a forced day post up until its take-down`() {
+        posts("2026-09-20T09:00").keepCalendarPost(42, forced = true)
 
-        posts("2026-10-11T09:00", found = weekend).run {
-            assertThat(keepAnnouncement(42).skipped)
-                .isEqualTo("The event started before today, so no #events-info announcement is made for it.")
-            assertThat(keepCalendarPost(42).skipped)
-                .isEqualTo("The event started before today, so no #events-calendar post is made for it.")
-            keepAnnouncement(42, forced = true)
-            keepCalendarPost(42, forced = true)
-        }
+        assertThat(posts("2026-09-21T09:00").keepCalendarPost(42).effect).isEqualTo(JobEffect.UNCHANGED)
+        posts("2026-10-11T08:00").keepCalendarPost(42)
 
-        assertThat(publisher.said).containsExactly("post events-info m1", "post events-calendar m2")
+        assertThat(publisher.said).containsExactly("post events-calendar m1", "delete events-calendar m1")
     }
 
     @Test
@@ -481,8 +589,8 @@ class DiscordEventPostsTest {
         assertThat(posts("2026-10-11T08:00").keepDiscordEvent(42, forced = true).skipped).isEqualTo("The event is over.")
         assertThat(posts("2026-10-11T08:00").keepCalendarPost(42, forced = true).skipped)
             .isEqualTo("The event's day is over, so its #events-calendar post has come down.")
-        assertThat(posts("2026-10-10T20:30").keepDiscordEvent(42, forced = true).skipped)
-            .isEqualTo("The event has already started, and Discord makes no event for one in progress.")
+        assertThat(posts("2026-10-10T22:59:30").keepDiscordEvent(42, forced = true).skipped)
+            .isEqualTo("The event ends within a minute, too soon for Discord to list it.")
         assertThat(publisher.said).isEmpty()
     }
 }

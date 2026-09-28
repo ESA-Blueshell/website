@@ -2,10 +2,12 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserUpdated
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -19,7 +21,7 @@ class ContactSyncListenerTest {
     fun `UserCreated enqueues a SyncContact job`() {
         listener.on(UserCreated(7L))
 
-        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(7L)))
+        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(7L)), eq(JobTrigger.USER_CHANGED), anyOrNull())
         verifyNoMoreInteractions(jobs)
     }
 
@@ -27,7 +29,9 @@ class ContactSyncListenerTest {
     fun `UserUpdated enqueues a SyncContact job`() {
         listener.on(UserUpdated(11L))
 
-        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(11L)))
+        verify(
+            jobs,
+        ).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(11L)), eq(JobTrigger.USER_CHANGED), anyOrNull())
         verifyNoMoreInteractions(jobs)
     }
 
@@ -35,7 +39,9 @@ class ContactSyncListenerTest {
     fun `UserDeleted enqueues a RemoveContact job`() {
         listener.on(UserDeleted(13L))
 
-        verify(jobs).runAsync(eq(ContactJobs.RemoveContact), eq(ContactJobs.RemoveContactPayload(13L)))
+        verify(
+            jobs,
+        ).runAsync(eq(ContactJobs.RemoveContact), eq(ContactJobs.RemoveContactPayload(13L)), eq(JobTrigger.USER_REMOVED), anyOrNull())
         verifyNoMoreInteractions(jobs)
     }
 }

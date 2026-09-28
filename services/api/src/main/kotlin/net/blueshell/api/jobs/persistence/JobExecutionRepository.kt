@@ -1,8 +1,12 @@
 package net.blueshell.api.jobs.persistence
 
+import jakarta.persistence.LockModeType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import java.time.Instant
 
 interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
@@ -20,11 +24,12 @@ interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
         payload: String,
     ): List<JobExecution>
 
-    fun existsByJobTypeAndDedupKeyAndStatusIn(
-        jobType: String,
-        dedupKey: String,
-        statuses: Collection<JobExecutionStatus>,
-    ): Boolean
+    // By its key alone, so the lock covers that row and no gap beside it.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select j from JobExecution j where j.id = :id")
+    fun findByIdForUpdate(
+        @Param("id") id: Long,
+    ): JobExecution?
 
     fun findByStatusAndStartedAtBefore(
         status: JobExecutionStatus,

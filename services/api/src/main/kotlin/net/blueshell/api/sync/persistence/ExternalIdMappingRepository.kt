@@ -1,8 +1,11 @@
 package net.blueshell.api.sync.persistence
 
+import jakarta.persistence.QueryHint
 import net.blueshell.api.shared.repository.BaseRepository
+import org.hibernate.jpa.HibernateHints
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.jpa.repository.QueryHints
 import org.springframework.data.repository.query.Param
 import java.time.Instant
 
@@ -74,14 +77,18 @@ interface ExternalIdMappingRepository : BaseRepository<ExternalIdMapping, Long> 
 
     /*
      * A MariaDB named lock belongs to the connection, so both halves must run on one: inside the
-     * caller's transaction. Answers 1 once held, 0 when [seconds] ran out.
+     * caller's transaction. Answers 1 once held, 0 when [seconds] ran out. Neither flushes first:
+     * after a failed write a flush throws again, and a lock never released stays on the pooled
+     * connection, holding up every later run for the event.
      */
+    @QueryHints(QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
     @Query(value = "SELECT GET_LOCK(:name, :seconds)", nativeQuery = true)
     fun acquireNamedLock(
         @Param("name") name: String,
         @Param("seconds") seconds: Int,
     ): Int?
 
+    @QueryHints(QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
     @Query(value = "SELECT RELEASE_LOCK(:name)", nativeQuery = true)
     fun releaseNamedLock(
         @Param("name") name: String,

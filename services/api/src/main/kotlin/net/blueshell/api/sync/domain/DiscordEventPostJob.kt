@@ -3,7 +3,6 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.jobs.api.RetrySchedule
 import net.blueshell.api.shared.job.DiscordPostJobs
-import net.blueshell.api.shared.job.JobQueue
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 import java.time.Duration
@@ -12,51 +11,67 @@ import java.time.Duration
 private val THROUGH_THE_DAY = RetrySchedule(10, Duration.ofMinutes(2), 2.0, Duration.ofHours(2))
 
 /**
- * The events-info post; once it is up, the Discord event beside it is queued at once. Type and
- * schedule are getters over constants, not fields, in all three: the handlers are proxied, and a
- * proxy's own fields are empty.
+ * One of the bot's three jobs for an event: keeps its thing under the event's lock and reports
+ * what that did, or why it did nothing. Type and schedule are getters over constants, not fields,
+ * in all three: the handlers are proxied, and a proxy's own fields are empty.
  */
+abstract class DiscordEventPostJob(
+    objectMapper: ObjectMapper,
+    private val lock: DiscordEventLock,
+) : AbstractJsonJobHandler<DiscordPostJobs.EventPostPayload>(objectMapper, DiscordPostJobs.EventPostPayload::class.java) {
+    override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
+
+    protected abstract fun keep(
+        eventId: Long,
+        forced: Boolean,
+    ): Kept
+
+    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) {
+        val kept = lock.holding(payload.eventId) { keep(payload.eventId, forced) }
+        kept.skipped?.let(::skip)
+        kept.effect?.let { did(it, kept.link) }
+    }
+}
+
+/** The events-info post. */
 @Component
 class DiscordAnnouncementJob(
     objectMapper: ObjectMapper,
     private val posts: DiscordEventPosts,
-    private val lock: DiscordEventLock,
-    private val jobs: JobQueue,
-) : AbstractJsonJobHandler<DiscordPostJobs.EventPostPayload>(objectMapper, DiscordPostJobs.Announcement.payloadType) {
+    lock: DiscordEventLock,
+) : DiscordEventPostJob(objectMapper, lock) {
     override val jobType: String get() = DiscordPostJobs.Announcement.type
-    override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
-    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) {
-        val kept = lock.holding(payload.eventId) { posts.keepAnnouncement(payload.eventId, forced) }
-        kept.skipped?.let(::skip)
-        if (kept.made) jobs.runAsync(DiscordPostJobs.DiscordEvent, payload)
-    }
+    override fun keep(
+        eventId: Long,
+        forced: Boolean,
+    ) = posts.keepAnnouncement(eventId, forced)
 }
 
 @Component
 class DiscordCalendarPostJob(
     objectMapper: ObjectMapper,
     private val posts: DiscordEventPosts,
-    private val lock: DiscordEventLock,
-) : AbstractJsonJobHandler<DiscordPostJobs.EventPostPayload>(objectMapper, DiscordPostJobs.CalendarPost.payloadType) {
+    lock: DiscordEventLock,
+) : DiscordEventPostJob(objectMapper, lock) {
     override val jobType: String get() = DiscordPostJobs.CalendarPost.type
-    override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
-    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) {
-        lock.holding(payload.eventId) { posts.keepCalendarPost(payload.eventId, forced) }.skipped?.let(::skip)
-    }
+    override fun keep(
+        eventId: Long,
+        forced: Boolean,
+    ) = posts.keepCalendarPost(eventId, forced)
 }
 
 @Component
 class DiscordEventJob(
     objectMapper: ObjectMapper,
     private val posts: DiscordEventPosts,
-    private val lock: DiscordEventLock,
-) : AbstractJsonJobHandler<DiscordPostJobs.EventPostPayload>(objectMapper, DiscordPostJobs.DiscordEvent.payloadType) {
+    lock: DiscordEventLock,
+) : DiscordEventPostJob(objectMapper, lock) {
     override val jobType: String get() = DiscordPostJobs.DiscordEvent.type
-    override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
-    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) {
-        lock.holding(payload.eventId) { posts.keepDiscordEvent(payload.eventId, forced) }.skipped?.let(::skip)
-    }
+    override fun keep(
+        eventId: Long,
+        forced: Boolean,
+    ) = posts.keepDiscordEvent(eventId, forced)
 }

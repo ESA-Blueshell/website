@@ -4,6 +4,7 @@ import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.JobTrigger
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -48,8 +49,17 @@ class JobCatalogServiceTest {
             .thenReturn(ContactJobs.SyncContactPayload::class.java)
         whenever(objectMapper.convertValue(eq(rawPayload), eq(ContactJobs.SyncContactPayload::class.java)))
             .thenReturn(payload)
-        whenever(dispatcher.runAsync(eq(ContactJobs.SyncContact.type), eq(payload), isNull(), isNull(), eq(false), eq(true)))
-            .thenReturn(execution)
+        whenever(
+            dispatcher.runAsync(
+                eq(ContactJobs.SyncContact.type),
+                eq(payload),
+                eq(JobTrigger.BY_HAND),
+                isNull(),
+                isNull(),
+                eq(false),
+                eq(true),
+            ),
+        ).thenReturn(execution)
 
         val result = service.enqueue(ContactJobs.SyncContact.type, rawPayload)
 

@@ -5,6 +5,7 @@ import jakarta.validation.Validation
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.SignupDetailsData
@@ -176,6 +177,7 @@ class SignupWriteUseCasesTest {
             verify(jobs).runAsync(
                 EmailJobs.Recovery,
                 EmailJobs.RecoveryPayload(APPLICANT_ID, "new.token", TokenPurpose.USER_ACTIVATION),
+                JobTrigger.SITE_ACTION,
             )
         }
 

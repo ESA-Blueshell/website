@@ -77,7 +77,10 @@ class EventUseCases(
         applyGames(event, data)
         event.replaceBanner(data.banner?.toEntity(event, fileService, existingBanner = event.banner))
         applySignUpFormUpdate(event, data.signUpForm, surveyFactory)
-        event.approved = isBoard() && data.approved
+        // Anybody but the board sends an approved event back to it; see api ADR-032.
+        val board = isBoard()
+        event.awaitingReapproval = !board && (event.approved || event.awaitingReapproval)
+        event.approved = board && data.approved
         return service.update(event, removeExistingSignUps = removeExistingSignUps)
     }
 
@@ -87,6 +90,7 @@ class EventUseCases(
     ): Event {
         val event = service.findById(id)
         event.approved = approved
+        event.awaitingReapproval = false
         return service.update(event)
     }
 

@@ -10,6 +10,7 @@ import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.EmailJobs.SecurityNotificationAudience
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.springframework.data.domain.Page
@@ -110,6 +111,7 @@ class SecurityEvents(
                 lockToken = lockToken,
                 recipientEmail = oldAddress,
             ),
+            JobTrigger.SITE_ACTION,
         )
     }
 
@@ -122,6 +124,7 @@ class SecurityEvents(
                     audience = EmailJobs.SecurityNotificationAudience.ADMINISTRATOR,
                     recipientUserId = admin.id,
                 ),
+                JobTrigger.SITE_ACTION,
             )
         }
     }

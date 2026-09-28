@@ -1235,6 +1235,7 @@ export type EventBannerResponse = {
 
 export type EventResponse = {
     approved: boolean;
+    awaitingReapproval: boolean;
     banner?: EventBannerResponse | null;
     committeeId?: number | null;
     createdAt: string;
@@ -1630,16 +1631,26 @@ export type InboundReconcileRow = {
     writable: boolean;
 };
 
+export enum JobEffect {
+    MADE = 'MADE',
+    EDITED = 'EDITED',
+    UNCHANGED = 'UNCHANGED',
+    REMOVED = 'REMOVED'
+}
+
 export type JobExecution = {
     actor?: Actor | null;
     attempts: number | null;
     category?: JobExecutionCategory | null;
     createdAt?: string | null;
     dedupKey?: string | null;
+    effect?: JobEffect | null;
+    effectLink?: string | null;
     errorMessage?: string | null;
     errorReason?: string | null;
     errorType?: string | null;
     finishedAt?: string | null;
+    foldedTriggers: Array<JobFoldedTrigger>;
     forced: boolean;
     id?: number | null;
     initiatedByDisplay?: string | null;
@@ -1660,6 +1671,7 @@ export type JobExecution = {
     startedAt?: string | null;
     status: JobExecutionStatus | null;
     targetSystem?: TargetSystem | null;
+    trigger?: JobTrigger | null;
     updatedAt?: string | null;
 };
 
@@ -1686,6 +1698,14 @@ export enum JobExecutionStatus {
     FAILED = 'FAILED',
     DEAD = 'DEAD'
 }
+
+export type JobFoldedTrigger = {
+    at: string;
+    initiatedByDisplay: string;
+    initiatedByType: ActionActorType;
+    initiatedByUserId?: number | null;
+    trigger: JobTrigger;
+};
 
 export type JobPayloadField = {
     enumValues?: Array<string> | null;
@@ -1714,6 +1734,25 @@ export type JobStatsDto = {
     successCount: number;
     totalCount: number;
 };
+
+export enum JobTrigger {
+    EVENT_CREATED = 'EVENT_CREATED',
+    EVENT_UPDATED = 'EVENT_UPDATED',
+    EVENT_APPROVED = 'EVENT_APPROVED',
+    EVENT_SENT_BACK = 'EVENT_SENT_BACK',
+    EVENT_UNAPPROVED = 'EVENT_UNAPPROVED',
+    EVENT_DELETED = 'EVENT_DELETED',
+    SIGN_UPS_CHANGED = 'SIGN_UPS_CHANGED',
+    USER_CHANGED = 'USER_CHANGED',
+    USER_REMOVED = 'USER_REMOVED',
+    MEMBERSHIP_CHANGED = 'MEMBERSHIP_CHANGED',
+    SITE_ACTION = 'SITE_ACTION',
+    MORNING_RUN = 'MORNING_RUN',
+    HOURLY_RUN = 'HOURLY_RUN',
+    SCHEDULED_RUN = 'SCHEDULED_RUN',
+    ANOTHER_JOB = 'ANOTHER_JOB',
+    BY_HAND = 'BY_HAND'
+}
 
 export type JobTypeDescriptor = {
     payloadFields: Array<JobPayloadField>;
@@ -8427,6 +8466,7 @@ export type ListData = {
         search?: string;
         initiatedByType?: ActionActorType;
         jobType?: string;
+        hideSkipped?: boolean;
     };
     url: '/management/jobs';
 };

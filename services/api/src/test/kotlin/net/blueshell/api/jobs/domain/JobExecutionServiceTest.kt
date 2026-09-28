@@ -2,16 +2,28 @@ package net.blueshell.api.jobs.domain
 
 import jakarta.persistence.EntityManager
 import net.blueshell.api.jobs.api.JobExecutionService
+import net.blueshell.api.jobs.persistence.ActiveTwin
+import net.blueshell.api.jobs.persistence.FoldedTrigger
+import net.blueshell.api.jobs.persistence.JobEnqueueLocks
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.lang.reflect.Field
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 
 /**
  * Pure unit tests for [JobExecutionService]. No Spring context.
@@ -24,27 +36,107 @@ import java.lang.reflect.Field
  */
 class JobExecutionServiceTest {
     private val repository: JobExecutionRepository = mock()
+    private val locks: JobEnqueueLocks = mock()
     private val entityManager: EntityManager = mock()
-    private val service = JobExecutionService(repository).also { injectEntityManager(it) }
+    private val now = Instant.parse("2026-10-01T10:00:00Z")
+    private val service =
+        JobExecutionService(repository, locks).also {
+            injectEntityManager(it)
+            it.clock = Clock.fixed(now, ZoneOffset.UTC)
+        }
 
     private val systemActor = Actor.system()
+    private val board = Actor.user(5, Role.BOARD)
+
+    /** The twins of `demo` with dedup key `k` as committed now, the lock taken. */
+    private fun twins(vararg found: JobExecution) {
+        whenever(locks.lock("demo", "k", 10)).thenReturn(true)
+        whenever(locks.activeTwins("demo", "k")).thenReturn(found.map { ActiveTwin(it.id!!, it.status) })
+        found.forEach {
+            whenever(repository.existsById(it.id!!)).thenReturn(true)
+            whenever(repository.findByIdForUpdate(it.id!!)).thenReturn(it)
+        }
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
+    }
+
+    private fun twin(
+        status: JobExecutionStatus,
+        nextAttemptAt: Instant? = null,
+    ) = JobExecution(
+        jobType = "demo",
+        status = status,
+        dedupKey = "k",
+        queuedAt = now.minusSeconds(5),
+        nextAttemptAt = nextAttemptAt,
+    ).apply { id = 3 }
 
     @Test
-    fun `createQueued drops a job whose twin is queued or running, or only queued where it queues behind a running one`() {
-        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
-        val both = listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
-        whenever(repository.existsByJobTypeAndDedupKeyAndStatusIn("demo", "k", both)).thenReturn(true)
-        whenever(repository.existsByJobTypeAndDedupKeyAndStatusIn("demo", "k", listOf(JobExecutionStatus.QUEUED))).thenReturn(false)
+    fun `createQueued drops a job behind a running twin, or queues it behind one where its definition asks`() {
+        twins(twin(JobExecutionStatus.RUNNING))
 
         assertThat(service.createQueued("demo", null, systemActor, dedupKey = "k")).isNull()
-        assertThat(service.createQueued("demo", null, systemActor, dedupKey = "k", queuesBehindRunning = true)).isNotNull()
+        val behind = service.createQueued("demo", null, systemActor, dedupKey = "k", queuesBehindRunning = true)!!
+        assertThat(behind.dispatch).isTrue()
+        assertThat(behind.execution.id).isNull()
+    }
+
+    @Test
+    fun `a trigger that meets a twin waiting out its backoff pulls it forward and is noted on it`() {
+        val waiting = twin(JobExecutionStatus.QUEUED, nextAttemptAt = now.plusSeconds(600))
+        twins(waiting)
+
+        val enqueued = service.createQueued("demo", null, board, JobTrigger.EVENT_UPDATED, dedupKey = "k", queuesBehindRunning = true)!!
+
+        assertThat(enqueued.execution).isSameAs(waiting)
+        assertThat(enqueued.dispatch).isTrue()
+        assertThat(waiting.nextAttemptAt).isNull()
+        assertThat(waiting.queuedAt).isEqualTo(now)
+        assertThat(waiting.foldedTriggers).containsExactly(FoldedTrigger(JobTrigger.EVENT_UPDATED, board, now))
+    }
+
+    @Test
+    fun `a trigger that meets a twin about to run leaves its timing alone and is noted on it`() {
+        val due = twin(JobExecutionStatus.QUEUED)
+        twins(due)
+
+        val enqueued = service.createQueued("demo", null, board, JobTrigger.SIGN_UPS_CHANGED, dedupKey = "k")!!
+        service.createQueued("demo", null, board, dedupKey = "k")
+
+        assertThat(enqueued.execution).isSameAs(due)
+        assertThat(enqueued.dispatch).isFalse()
+        assertThat(due.queuedAt).isEqualTo(now.minusSeconds(5))
+        assertThat(due.foldedTriggers.map { it.trigger }).containsExactly(JobTrigger.SIGN_UPS_CHANGED)
+    }
+
+    @Test
+    fun `takes the lock for the job type and key before reading its twins, and gives up where another keeps it`() {
+        twins()
+
+        service.createQueued("demo", null, systemActor, dedupKey = "k")
+
+        inOrder(locks) {
+            verify(locks).lock("demo", "k", 10)
+            verify(locks).activeTwins("demo", "k")
+        }
+        whenever(locks.lock("demo", "k", 10)).thenReturn(false)
+        assertThatThrownBy { service.createQueued("demo", null, systemActor, dedupKey = "k") }.hasMessageContaining("enqueue")
+    }
+
+    @Test
+    fun `a queued twin that started since it was read counts as running`() {
+        val started = twin(JobExecutionStatus.QUEUED)
+        twins(started)
+        whenever(repository.findByIdForUpdate(3)).thenReturn(twin(JobExecutionStatus.RUNNING))
+
+        assertThat(service.createQueued("demo", null, systemActor, dedupKey = "k")).isNull()
+        assertThat(service.createQueued("demo", null, systemActor, dedupKey = "k", queuesBehindRunning = true)!!.dispatch).isTrue()
     }
 
     @Test
     fun `createQueued initializes attempts to 1 so the initial run counts`() {
         whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
 
-        val execution = service.createQueued(jobType = "demo", payload = null, actor = systemActor)
+        val execution = service.createQueued(jobType = "demo", payload = null, actor = systemActor)?.execution
 
         assertThat(execution).isNotNull
         assertThat(execution!!.attempts).isEqualTo(1)
@@ -117,6 +209,21 @@ class JobExecutionServiceTest {
     }
 
     @Test
+    fun `records an explained failure as its sentence alone, and any other as its type and message`() {
+        val explained = JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING).apply { id = 1L }
+        val plain = JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING).apply { id = 2L }
+        stubPersistence(explained)
+        stubPersistence(plain)
+
+        service.markRetryScheduled(explained, "Refused", "Discord is unavailable.", "trace", java.time.Instant.now(), explained = true)
+        service.markFailed(plain, "SomeError", "boom", "trace")
+
+        assertThat(explained.errorMessage).isEqualTo("Discord is unavailable.")
+        assertThat(explained.errorReason).isEqualTo("trace")
+        assertThat(plain.errorMessage).isEqualTo("SomeError: boom")
+    }
+
+    @Test
     fun `requeue bumps attempts immediately so the count reflects the upcoming run`() {
         val execution =
             JobExecution(jobType = "demo", attempts = 3, status = JobExecutionStatus.FAILED)
@@ -158,11 +265,33 @@ class JobExecutionServiceTest {
     }
 
     @Test
+    fun `a success records what the run did, and the next run starts without it`() {
+        whenever(repository.existsById(any())).thenReturn(true)
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
+        val execution = JobExecution(jobType = "demo").apply { id = 1 }
+
+        service.markSuccess(execution, JobEffect.MADE, "https://discord.test/m1")
+        assertThat(execution.effect to execution.effectLink).isEqualTo(JobEffect.MADE to "https://discord.test/m1")
+
+        service.markRunning(execution)
+        assertThat(execution.effect to execution.effectLink).isEqualTo(null to null)
+    }
+
+    @Test
+    fun `createQueued records what queued the job`() {
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
+
+        assertThat(service.createQueued("demo", null, systemActor, trigger = JobTrigger.MORNING_RUN)!!.execution.trigger)
+            .isEqualTo(JobTrigger.MORNING_RUN)
+        assertThat(service.createQueued("demo", null, systemActor)!!.execution.trigger).isNull()
+    }
+
+    @Test
     fun `createQueued records a run asked for by hand`() {
         whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
 
-        assertThat(service.createQueued("demo", null, systemActor, forced = true)!!.forced).isTrue()
-        assertThat(service.createQueued("demo", null, systemActor)!!.forced).isFalse()
+        assertThat(service.createQueued("demo", null, systemActor, forced = true)!!.execution.forced).isTrue()
+        assertThat(service.createQueued("demo", null, systemActor)!!.execution.forced).isFalse()
     }
 
     @Test
@@ -193,6 +322,7 @@ class JobExecutionServiceTest {
         val once =
             service
                 .createQueued("demo", null, systemActor)!!
+                .execution
                 .also {
                     it.id = 11L
                     whenever(repository.existsById(it.id!!)).thenReturn(true)
@@ -205,6 +335,7 @@ class JobExecutionServiceTest {
         val thrice =
             service
                 .createQueued("demo", null, systemActor)!!
+                .execution
                 .also {
                     it.id = 12L
                     whenever(repository.existsById(it.id!!)).thenReturn(true)

@@ -5,6 +5,7 @@ import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -35,6 +36,7 @@ class ContributionReminderService
             jobs.runAsync(
                 EmailJobs.ContributionReminder,
                 EmailJobs.ContributionReminderPayload(requireNotNull(written.id)),
+                JobTrigger.SITE_ACTION,
             )
             return written
         }

@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.shared.job.ExplainedJobFailure
 import net.blueshell.api.sync.api.DiscordEmbed
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordImage
@@ -40,6 +41,7 @@ import org.springframework.test.web.client.response.MockRestResponseCreators.wit
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.HttpServerErrorException
+import org.springframework.web.client.ResourceAccessException
 import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
@@ -83,11 +85,19 @@ class BotPublisherTest {
         )
 
     @Test
+    fun `links a message and a Discord event where Discord opens them`() {
+        assertThat(publisher.linkOf("events-info", "m1")).isEqualTo("https://discord.com/channels/324/111/m1")
+        assertThat(publisher.linkOf("events-lobby", "222/m1")).isEqualTo("https://discord.com/channels/324/222/m1")
+        assertThat(publisher.linkOf("events-lobby", "m1")).isNull()
+        assertThat(publisher.linkOfDiscordEvent("e1")).isEqualTo("https://discord.com/events/324/e1")
+    }
+
+    @Test
     fun `posts in the channel of that name, naming and notifying only the pinged roles`() {
         val message: MessageResponse = mock { on { id } doReturn "m1" }
         whenever(api.createMessage(eq("111"), any())).thenReturn(message)
 
-        assertThat(publisher.post("events-info", post)).isEqualTo("m1")
+        assertThat(publisher.post("events-info", post)).isEqualTo("111/m1")
 
         val sent = argumentCaptor<MessageCreateRequest>()
         verify(api).createMessage(eq("111"), sent.capture())
@@ -129,7 +139,7 @@ class BotPublisherTest {
             .andExpect(content().string(containsString("filename=\"banner.webp\"")))
             .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
 
-        assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("m1")
+        assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("111/m1")
         publisher.edit("events-info", "m1", post.copy(banner = banner))
 
         discord.verify()
@@ -166,11 +176,31 @@ class BotPublisherTest {
             .andExpect(content().string(containsString("\"style\":5")))
             .andRespond(withSuccess("""{"id": "m2"}""", MediaType.APPLICATION_JSON))
 
-        assertThat(publisher.post("events-info", linked)).isEqualTo("m1")
+        assertThat(publisher.post("events-info", linked)).isEqualTo("111/m1")
         publisher.edit("events-info", "m1", linked)
-        assertThat(publisher.post("events-info", linked.copy(banner = banner))).isEqualTo("m2")
+        assertThat(publisher.post("events-info", linked.copy(banner = banner))).isEqualTo("111/m2")
 
         discord.verify()
+        verifyNoInteractions(api)
+    }
+
+    @Test
+    fun `says the gateway is not connected while it has no channels, and names a channel it cannot find`() {
+        val down: ObjectProvider<DoorSource> =
+            mock {
+                on { ifAvailable } doReturn
+                    object : DoorSource {
+                        override fun textRooms() = emptyList<TextRoom>()
+
+                        override fun invite(channelId: String): String? = null
+                    }
+            }
+
+        assertThatThrownBy { BotPublisher(api, builder.build(), mapper, down, "324").post("events-info", post) }
+            .isInstanceOf(ExplainedJobFailure::class.java)
+            .hasMessage("The Discord gateway is not connected, so no channel called #events-info can be found yet.")
+        assertThatThrownBy { publisher.post("events-calendar", post) }
+            .hasMessage("The Discord server has no text channel called #events-calendar.")
         verifyNoInteractions(api)
     }
 
@@ -182,10 +212,11 @@ class BotPublisherTest {
         discord.expect(requestTo("https://discord.test/channels/111/messages/m1")).andRespond(withStatus(HttpStatus.CONTENT_TOO_LARGE))
         discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withServerError())
 
-        assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("m1")
+        assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("111/m1")
         publisher.edit("events-info", "m1", post.copy(banner = banner))
         assertThatThrownBy { publisher.post("events-info", post.copy(banner = banner)) }
-            .isInstanceOf(HttpServerErrorException::class.java)
+            .isInstanceOf(ExplainedJobFailure::class.java)
+            .hasCauseInstanceOf(HttpServerErrorException::class.java)
 
         val sent = argumentCaptor<MessageCreateRequest>()
         verify(api).createMessage(eq("111"), sent.capture())
@@ -204,8 +235,36 @@ class BotPublisherTest {
         whenever(api.deleteMessage("111", "m1")).thenThrow(HttpClientErrorException(HttpStatus.NOT_FOUND))
         publisher.delete("events-info", "m1")
 
-        whenever(api.deleteGuildScheduledEvent("324", "e1")).thenThrow(HttpClientErrorException(HttpStatus.FORBIDDEN))
+        whenever(api.deleteGuildScheduledEvent("324", "e1")).thenThrow(HttpClientErrorException(HttpStatus.CONFLICT))
         assertThatThrownBy { publisher.deleteDiscordEvent("e1") }.isInstanceOf(HttpClientErrorException::class.java)
+    }
+
+    @Test
+    fun `reaches a message by the channel its reference carries, whatever the channel is called now`() {
+        publisher.edit("events-lobby", "222/m1", post)
+        publisher.delete("events-lobby", "222/m2")
+
+        verify(api).updateMessage(eq("222"), eq("m1"), any())
+        verify(api).deleteMessage("222", "m2")
+    }
+
+    @Test
+    fun `asks Discord after a message and a Discord event by their IDs, answering a message's reference as it stands`() {
+        discord.expect(requestTo("https://discord.test/channels/222/messages/m1")).andRespond(withSuccess())
+        discord.expect(requestTo("https://discord.test/channels/111/messages/m2")).andRespond(withSuccess())
+        discord.expect(requestTo("https://discord.test/channels/111/messages/m3")).andRespond(withStatus(HttpStatus.NOT_FOUND))
+        discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events/e1")).andRespond(withSuccess())
+        discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events/e2")).andRespond(withStatus(HttpStatus.NOT_FOUND))
+        discord.expect(requestTo("https://discord.test/channels/111/messages/m4")).andRespond(withStatus(HttpStatus.FORBIDDEN))
+
+        assertThat(publisher.stillPosted("events-info", "222/m1")).isEqualTo("222/m1")
+        assertThat(publisher.stillPosted("events-info", "m2")).isEqualTo("111/m2")
+        assertThat(publisher.stillPosted("events-info", "111/m3")).isNull()
+        assertThat(publisher.stillListed("e1")).isTrue()
+        assertThat(publisher.stillListed("e2")).isFalse()
+        assertThatThrownBy { publisher.stillPosted("events-info", "111/m4") }
+            .hasMessage("The bot may not read #events-info: it needs View Channel and Read Message History there.")
+        discord.verify()
     }
 
     @Test
@@ -218,8 +277,69 @@ class BotPublisherTest {
     }
 
     @Test
-    fun `refuses a channel the server does not have`() {
-        assertThatThrownBy { publisher.post("events-lobby", post) }.hasMessageContaining("events-lobby")
+    fun `refuses a channel the server does not have, naming it`() {
+        assertThatThrownBy { publisher.post("events-lobby", post) }
+            .isInstanceOf(ExplainedJobFailure::class.java)
+            .hasMessage("The Discord server has no text channel called #events-lobby.")
+    }
+
+    @Test
+    fun `says which permission the bot lacks for what it was doing`() {
+        whenever(api.createMessage(eq("111"), any())).thenThrow(HttpClientErrorException(HttpStatus.FORBIDDEN))
+        whenever(api.deleteMessage("111", "m1")).thenThrow(HttpClientErrorException(HttpStatus.FORBIDDEN))
+        whenever(api.deleteGuildScheduledEvent("324", "e1")).thenThrow(HttpClientErrorException(HttpStatus.FORBIDDEN))
+        discord.expect(requestTo("https://discord.test/channels/111/messages?limit=100")).andRespond(withStatus(HttpStatus.FORBIDDEN))
+        discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events")).andRespond(withStatus(HttpStatus.FORBIDDEN))
+
+        assertThatThrownBy { publisher.post("events-info", post) }
+            .isInstanceOf(ExplainedJobFailure::class.java)
+            .hasMessage(
+                "The bot may not post in #events-info: it needs Send Messages, Embed Links, Attach Files and Mention All Roles there.",
+            ).hasCauseInstanceOf(HttpClientErrorException::class.java)
+        assertThatThrownBy { publisher.findPosts("events-info", "https://site/events/42") }
+            .hasMessage("The bot may not read #events-info: it needs View Channel and Read Message History there.")
+        assertThatThrownBy { publisher.delete("events-info", "m1") }
+            .hasMessage("The bot may not remove its post in #events-info: it needs View Channel there.")
+        assertThatThrownBy { publisher.findDiscordEvents("More on the site: https://site/events/42") }
+            .hasMessage("The bot may not keep the server's Events list: it needs Create Events.")
+        assertThatThrownBy { publisher.deleteDiscordEvent("e1") }
+            .hasMessage("The bot may not keep the server's Events list: it needs Create Events.")
+        discord.verify()
+    }
+
+    @Test
+    fun `says Discord refuses a post or a Discord event as too long, and passes on any other refusal`() {
+        val tooLong = """{"code": 50035, "errors": {"embeds": {"0": {"description": {"_errors": [{"code": "BASE_TYPE_MAX_LENGTH"}]}}}}}"""
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages"))
+            .andRespond(withBadRequest().body(tooLong).contentType(MediaType.APPLICATION_JSON))
+        discord
+            .expect(requestTo("https://discord.test/guilds/324/scheduled-events"))
+            .andRespond(withBadRequest().body(tooLong).contentType(MediaType.APPLICATION_JSON))
+        discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events")).andRespond(withBadRequest())
+
+        assertThatThrownBy { publisher.post("events-info", post.copy(links = listOf(DiscordLink("Sign up", "https://site/events/42")))) }
+            .hasMessage("Discord refuses the #events-info post as too long.")
+        assertThatThrownBy { publisher.createDiscordEvent(listing.copy(cover = null)) }
+            .hasMessage("Discord refuses the Discord event as too long.")
+        assertThatThrownBy { publisher.createDiscordEvent(listing.copy(cover = null)) }
+            .isInstanceOf(HttpClientErrorException::class.java)
+        discord.verify()
+    }
+
+    @Test
+    fun `says Discord is unavailable when it answers with an error of its own or cannot be reached`() {
+        discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events")).andRespond(withServerError())
+        discord
+            .expect(requestTo("https://discord.test/guilds/324/scheduled-events"))
+            .andRespond { throw java.io.IOException("Connection refused") }
+
+        assertThatThrownBy { publisher.findDiscordEvents("line") }.hasMessage("Discord is unavailable.")
+        assertThatThrownBy { publisher.findDiscordEvents("line") }
+            .isInstanceOf(ExplainedJobFailure::class.java)
+            .hasMessage("Discord is unavailable.")
+            .hasCauseInstanceOf(ResourceAccessException::class.java)
+        discord.verify()
     }
 
     @Test
@@ -265,27 +385,32 @@ class BotPublisherTest {
         assertThatThrownBy { publisher.createDiscordEvent(listing.copy(cover = null)) }
             .isInstanceOf(HttpClientErrorException::class.java)
         assertThatThrownBy { publisher.createDiscordEvent(listing) }
-            .isInstanceOf(HttpServerErrorException::class.java)
+            .isInstanceOf(ExplainedJobFailure::class.java)
+            .hasCauseInstanceOf(HttpServerErrorException::class.java)
         discord.verify()
     }
 
     @Test
-    fun `finds the bot's own posts linking a page, and Discord events naming it on a line`() {
+    fun `finds this bot's own posts linking a page, not another bot's, and Discord events naming it on a line`() {
         discord
             .expect(requestTo("https://discord.test/channels/111/messages?limit=100"))
             .andRespond(
                 withSuccess(
                     """
                     [
-                      {"id": "m3", "author": {"bot": true}, "embeds": [{"url": "https://site/events/42"}]},
-                      {"id": "m2", "author": {"bot": false}, "embeds": [{"url": "https://site/events/42"}]},
-                      {"id": "m1", "author": {"bot": true}, "embeds": [{"url": "https://site/events/421"}]},
-                      {"id": "m0", "author": {"bot": true}}
+                      {"id": "m4", "author": {"id": "900", "bot": true}, "embeds": [{"url": "https://site/events/42"}]},
+                      {"id": "m3", "author": {"id": "700", "bot": true}, "embeds": [{"url": "https://site/events/42"}]},
+                      {"id": "m2", "author": {"id": "701", "bot": false}, "embeds": [{"url": "https://site/events/42"}]},
+                      {"id": "m1", "author": {"id": "900", "bot": true}, "embeds": [{"url": "https://site/events/421"}]},
+                      {"id": "m0", "author": {"id": "900", "bot": true}}
                     ]
                     """,
                     MediaType.APPLICATION_JSON,
                 ),
             )
+        discord
+            .expect(requestTo("https://discord.test/users/@me"))
+            .andRespond(withSuccess("""{"id": "900", "bot": true}""", MediaType.APPLICATION_JSON))
         discord
             .expect(requestTo("https://discord.test/guilds/324/scheduled-events"))
             .andRespond(
@@ -301,7 +426,7 @@ class BotPublisherTest {
                 ),
             )
 
-        assertThat(publisher.findPosts("events-info", "https://site/events/42")).containsExactly("m3")
+        assertThat(publisher.findPosts("events-info", "https://site/events/42")).containsExactly("111/m4")
         assertThat(publisher.findDiscordEvents("More on the site: https://site/events/42")).containsExactly("e2")
         discord.verify()
     }
@@ -312,7 +437,8 @@ class BotPublisherTest {
         whenever(api.updateMessage(eq("111"), eq("m9"), any())).thenThrow(HttpClientErrorException(HttpStatus.NOT_FOUND))
 
         assertThatThrownBy { publisher.post("events-info", post.copy(banner = banner)) }
-            .isInstanceOf(HttpClientErrorException.TooManyRequests::class.java)
+            .hasMessage("Discord is rate limiting the bot.")
+            .hasCauseInstanceOf(HttpClientErrorException.TooManyRequests::class.java)
         assertThat(publisher.edit("events-info", "m9", post)).isFalse()
         assertThat(publisher.edit("events-info", "m1", post)).isTrue()
         discord.verify()

@@ -13,6 +13,8 @@ import {
   type JobStatsDto,
   JobExecutionCategory,
   JobExecutionStatus,
+  JobEffect,
+  JobTrigger,
 } from "@/services/api"
 import type {PageOf, PageQuery} from "@/composables/usePagedTable"
 import type {Refused} from "@/types/api"
@@ -24,7 +26,8 @@ export type {Refused}
 export type Job = JobExecution
 export type JobStats = JobStatsDto
 export type JobRelatedEntity = NonNullable<Job["relatedEntities"]>[number]
-export {JobExecutionCategory, JobExecutionStatus}
+export type JobFoldedTrigger = Job["foldedTriggers"][number]
+export {JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger}
 
 /**
  * The api declares no refusal codes for this module, so a refused job write reads as whatever
@@ -36,6 +39,7 @@ const {reasonFor} = refusalReader({})
 export interface JobFilter {
   category?: JobExecutionCategory
   status?: JobExecutionStatus
+  hideSkipped?: boolean
 }
 
 /** Newest first, and by id where two share a moment, so paging cannot show a row twice. */
@@ -61,6 +65,7 @@ export async function loadJobPage(query: PageQuery, filter: JobFilter = {}): Pro
       sort: JOB_SORT,
       ...(filter.category ? {category: filter.category} : {}),
       ...(filter.status ? {status: filter.status} : {}),
+      ...(filter.hideSkipped ? {hideSkipped: true} : {}),
       ...(query.search ? {search: query.search} : {}),
     },
   })

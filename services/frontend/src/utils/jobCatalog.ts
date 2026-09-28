@@ -19,6 +19,8 @@ export type JobCatalogEntry = {
    * as a tooltip / expanded-row caption on JobManager rows.
    */
   description: string
+  /** The thing a job of this type keeps, for saying what a run did to it (e.g. "the Discord event"). */
+  thing?: string
 }
 
 export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
@@ -109,30 +111,34 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
 
   "discord.announcement": {
     title: "Announce an event in #events-info",
+    thing: "the #events-info announcement",
     description:
       "Keeps one event's announcement in the #events-info announcement channel of the Discord " +
-      "server: posts it at 08:00 two weeks before the event, pinging the event's roles, edits it " +
-      "when the event or its sign-up count changes and removes it when the event is deleted or " +
-      "no longer approved. Once it is up, the Discord event is queued. Run by hand, it posts " +
-      "straight away rather than waiting for its morning. Safe to re-run: the announcement goes " +
-      "out once.",
+      "server: posts it, pinging the event's roles, once the event is approved and within two " +
+      "weeks (from 08:00 fourteen days before its day, or at once when it is approved inside " +
+      "that), edits it when the event or its sign-up count changes and removes it when the event " +
+      "is deleted or no longer approved. Run by hand, it posts straight away, however far off the " +
+      "event is. Safe to re-run: the announcement goes out once.",
   },
   "discord.post": {
     title: "Re-announce an event in #events-calendar",
+    thing: "the #events-calendar post",
     description:
       "Keeps one event's post in the #events-calendar channel of the Discord server: up from " +
-      "08:00 on the event's first day until 08:00 the morning after its last, pinging the " +
-      "event's roles and edited when the event or its sign-up count changes. Run by hand, it " +
-      "posts before the event's day too, until the next run not made by hand takes it down. " +
-      "Safe to re-run: the post goes out once.",
+      "08:00 on the event's first day, or at once when it is approved while it runs, until 08:00 " +
+      "the morning after its last, pinging the event's roles and edited when the event or its " +
+      "sign-up count changes. Run by hand, it posts before the event's day too, and stays up " +
+      "until then. Safe to re-run: the post goes out once.",
   },
   "discord.event": {
     title: "Post an event in the server's Events list",
+    thing: "the Discord event",
     description:
-      "Keeps one event in the Events list at the top of the Discord server's channel list, " +
-      "beside its #events-info announcement and with the banner as its cover: edits it when " +
-      "the event changes and deletes it once the event is over. Run by hand, it does not wait " +
-      "for the announcement. Safe to re-run: the Discord event is made once.",
+      "Keeps one event in the Events list at the top of the Discord server's channel list, with " +
+      "the banner as its cover, on the same terms as its #events-info announcement but without " +
+      "waiting for it: edits it when the event changes and deletes it once the event is over. An " +
+      "event already running is listed from a minute on. Run by hand, it lists the event straight " +
+      "away. Safe to re-run: the Discord event is made once.",
   },
 
   "calendar.sync-event": {

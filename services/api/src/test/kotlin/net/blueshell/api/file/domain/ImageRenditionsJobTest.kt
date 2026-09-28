@@ -35,7 +35,7 @@ class ImageRenditionsJobTest {
         whenever(files.findById(7L)).thenReturn(Optional.of(source))
         whenever(renditions.widthsOf(source)).thenReturn(ImageRenditionWriter.Widths(emptyList()))
 
-        assertThat(job.runJob("""{"fileId":7}""")).isEqualTo(JobOutcome.Done)
+        assertThat(job.runJob("""{"fileId":7}""")).isEqualTo(JobOutcome.Done())
 
         verify(renditions).widthsOf(source)
     }

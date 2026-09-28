@@ -76,6 +76,6 @@ class CohortJobHandlersTest {
 
         assertThat(bound.syncCohortMembershipHandler().runJob("""{"userId":1,"cohortId":10,"intent":"REMOVE"}"""))
             .isEqualTo(JobOutcome.Skipped("The cohort has no BREVO list linked."))
-        assertThat(bound.evaluateUserCohortsHandler().runJob("""{"userId":1}""")).isEqualTo(JobOutcome.Done)
+        assertThat(bound.evaluateUserCohortsHandler().runJob("""{"userId":1}""")).isEqualTo(JobOutcome.Done())
     }
 }

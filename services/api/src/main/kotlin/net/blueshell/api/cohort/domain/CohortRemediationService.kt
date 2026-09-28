@@ -9,6 +9,7 @@ import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
@@ -108,6 +109,7 @@ class CohortRemediationService(
                 jobs.runAsync(
                     CohortJobs.SyncCohortMembership,
                     CohortJobs.SyncCohortMembershipPayload(row.userId!!, cohortId, SyncCohortMembershipIntent.ADD),
+                    JobTrigger.SITE_ACTION,
                 )
             }
             CohortRepairResult(cohortId, rows.size)
@@ -219,11 +221,12 @@ class CohortRemediationService(
         desiredRows.forEach { row ->
             val extId = externalIdByUserId[row.userId]
             if (extId == null) {
-                jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(row.userId!!))
+                jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(row.userId!!), JobTrigger.ANOTHER_JOB)
             } else if (extId !in remoteExtIds) {
                 jobs.runAsync(
                     CohortJobs.SyncCohortMembership,
                     CohortJobs.SyncCohortMembershipPayload(row.userId!!, plan.cohortId, SyncCohortMembershipIntent.ADD),
+                    JobTrigger.ANOTHER_JOB,
                 )
             }
         }

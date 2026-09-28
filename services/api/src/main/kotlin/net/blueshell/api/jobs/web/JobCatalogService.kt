@@ -3,6 +3,7 @@ package net.blueshell.api.jobs.web
 import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.jobs.persistence.JobExecution
+import net.blueshell.api.shared.job.JobTrigger
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ResponseStatusException
@@ -37,7 +38,7 @@ class JobCatalogService(
         val typedPayload = deserializePayload(payload, payloadType, jobType)
         // dedupKey = null on purpose: a manual trigger should always run even if an
         // identical job is queued/running. The retry-supersede flow collapses dups.
-        return jobDispatcher.runAsync(jobType, typedPayload, actor = null, dedupKey = null, forced = true)
+        return jobDispatcher.runAsync(jobType, typedPayload, JobTrigger.BY_HAND, dedupKey = null, forced = true)
             ?: throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Job '$jobType' was not enqueued")
     }
 

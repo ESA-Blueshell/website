@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.platform.config.JobQueueProperties
+import net.blueshell.api.shared.job.ExplainedJobFailure
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
@@ -58,8 +59,8 @@ class JobExecutor(
 
         try {
             when (val outcome = handler.handle(current.payload, current.id, current.forced)) {
-                JobOutcome.Done -> {
-                    jobExecutionService.markSuccess(current)
+                is JobOutcome.Done -> {
+                    jobExecutionService.markSuccess(current, outcome.effect, outcome.link)
                     sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "success"))
                 }
                 is JobOutcome.Skipped -> {
@@ -83,6 +84,7 @@ class JobExecutor(
         val errorType = ex::class.java.name
         val errorReason = ex.message ?: "Unknown error"
         val stackTrace = ex.stackTraceToString()
+        val explained = ex is ExplainedJobFailure
 
         if (isNonRetryable(ex)) {
             // Non-retryable means "retrying will not change the outcome", so
@@ -98,7 +100,7 @@ class JobExecutor(
                 errorReason,
                 ex,
             )
-            jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace)
+            jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace, explained)
             sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "failed"))
             meterRegistry.counter("job.failed.count", "job_type", execution.jobType).increment()
             return
@@ -116,7 +118,7 @@ class JobExecutor(
                 errorReason,
                 ex,
             )
-            jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace)
+            jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace, explained)
             sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "failed"))
             meterRegistry.counter("job.failed.count", "job_type", execution.jobType).increment()
             return
@@ -135,7 +137,7 @@ class JobExecutor(
             errorType,
             errorReason,
         )
-        jobExecutionService.markRetryScheduled(execution, errorType, errorReason, stackTrace, nextAttemptAt)
+        jobExecutionService.markRetryScheduled(execution, errorType, errorReason, stackTrace, nextAttemptAt, explained)
         sample.stop(
             meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "retry-scheduled"),
         )

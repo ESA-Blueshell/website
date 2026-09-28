@@ -5,6 +5,7 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
@@ -84,7 +85,7 @@ class CohortMembershipSyncService(
         val system = cohort.system
         val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
         if (externalUserId == null) {
-            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId))
+            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId), JobTrigger.ANOTHER_JOB)
             throw CohortMembershipNotReadyException(
                 "user $userId has no $system external id — enqueued SyncContact, will retry",
             )

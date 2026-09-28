@@ -1,0 +1,16 @@
+# The triggers that met a job already queued and were folded into it.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-28-job-folded-triggers.yaml
+      id: job-folded-triggers
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: job_executions
+            columns:
+              - column: {name: folded_triggers, type: LONGTEXT}
+      rollback:
+        - dropColumn:
+            tableName: job_executions
+            columns:
+              - column: {name: folded_triggers}

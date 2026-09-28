@@ -9,12 +9,14 @@ import net.blueshell.api.security.Browser
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -66,6 +68,7 @@ class SecurityEventsTest {
         verify(jobs).runAsync(
             EmailJobs.SecurityNotification,
             EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.PERSON, lockToken = "sel.ver"),
+            JobTrigger.SITE_ACTION,
         )
     }
 
@@ -76,6 +79,7 @@ class SecurityEventsTest {
         verify(jobs).runAsync(
             EmailJobs.SecurityNotification,
             EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.OLD_ADDRESS, "sel.ver", "old@example.com"),
+            JobTrigger.SITE_ACTION,
         )
     }
 
@@ -96,7 +100,7 @@ class SecurityEventsTest {
         events.record(7, SecurityEventKind.BREAK_GLASS, SecurityActor.Operator)
 
         val payloads = argumentCaptor<EmailJobs.SecurityNotificationPayload>()
-        verify(jobs, times(2)).runAsync(eq(EmailJobs.SecurityNotification), payloads.capture())
+        verify(jobs, times(2)).runAsync(eq(EmailJobs.SecurityNotification), payloads.capture(), any(), anyOrNull())
         assertThat(payloads.allValues.map { it.audience }).containsOnly(EmailJobs.SecurityNotificationAudience.ADMINISTRATOR)
         assertThat(payloads.allValues.map { it.recipientUserId }).containsOnly(1L)
     }

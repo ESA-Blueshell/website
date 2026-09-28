@@ -1,6 +1,7 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -82,6 +83,7 @@ class CohortReconciliationService(
                             jobs.runAsync(
                                 CohortJobs.EvaluateUserCohorts,
                                 CohortJobs.EvaluateUserCohortsPayload(userId),
+                                JobTrigger.ANOTHER_JOB,
                             )
                         }.onFailure { e ->
                             log.error("Failed to enqueue evaluation for user {}: {}", userId, e.message)

@@ -9,11 +9,12 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import net.blueshell.api.discord.domain.DiscordEmojiDirectory
 import net.blueshell.api.discord.domain.DiscordGameChannels
-import net.blueshell.api.discord.domain.GameChannelCategory
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
 import net.blueshell.api.discord.domain.DiscordRoleDirectory
+import net.blueshell.api.discord.domain.GameChannelCategory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -69,7 +70,7 @@ class DiscordMemberController(
     }
 
     /* What an event may ping, for whoever edits events, so it needs a login. */
-    @PermitAll
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/roles")
     @Operation(operationId = "listDiscordRoles", summary = "The Discord server's roles an event may ping, in the server's order")
     @ApiResponse(
@@ -83,7 +84,7 @@ class DiscordMemberController(
     }
 
     /* What a game may be put in, for whoever edits games, so it needs a login. */
-    @PermitAll
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/game-channels")
     @Operation(
         operationId = "listGameChannels",
@@ -102,7 +103,7 @@ class DiscordMemberController(
     }
 
     /* What a description may be written with, for whoever writes one, so it needs a login. */
-    @PermitAll
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/emojis")
     @Operation(operationId = "listDiscordEmojis", summary = "The Discord server's own emoji, by name")
     @ApiResponse(

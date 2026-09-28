@@ -289,13 +289,13 @@ class EsportsController(
     }
 
     /**
-     * The line-ups a team has, newest first: which game, which season. Public, as the rosters
-     * themselves are.
+     * The line-ups a team has, newest first: which game, which season. Only the team and
+     * line-up editors read it, so it needs a login.
      *
      * Each is a fielding rather than a season, because a team that played two games in one
      * season has two of them, with a line-up in each.
      */
-    @PermitAll
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/teams/{teamId}/seasons")
     fun findTeamSeasons(
         @PathVariable teamId: Long,

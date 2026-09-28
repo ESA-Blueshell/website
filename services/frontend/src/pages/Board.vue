@@ -175,24 +175,12 @@ const sliceOf = (member: BoardMember) => ({
   ...sizeOf(member.portrait),
 })
 
-const NO_SLICES: ReturnType<typeof sliceOf>[] = []
-
 /**
- * Every board's members as slices, by board number: chair first, then the rest by seniority,
- * which is the order the association thinks in.
- *
- * Held for all of them at once rather than worked out for the one being drawn, because the set
- * handed to a band has to keep its identity from one render to the next: the band watches the
- * set it was given and reads a new one as a different board, dropping what it had measured of
- * the portraits and reconsidering which slice is open. A plain function of a stop would answer
- * with a fresh array every render and do that continually. Every board is in memory anyway, so
- * the whole map is one pass over what has already been read.
+ * A board's members as slices: chair first, then the rest by seniority, which is the order the
+ * association thinks in.
  */
-const memberSlices = computed(() => new Map(boards.value.map(board =>
-  [board.number, membersInOrder(board.members ?? []).map(sliceOf)])))
-
 const memberSlicesOf = (stop: string | number | null) =>
-  memberSlices.value.get(boardAt(stop)?.number ?? -1) ?? NO_SLICES
+  membersInOrder(boardAt(stop)?.members ?? []).map(sliceOf)
 
 /** What a member wrote about themselves, by the id the band hands back, on the stop it is on. */
 const blurbOf = (id: number | string, stop: string | number | null): string | undefined =>

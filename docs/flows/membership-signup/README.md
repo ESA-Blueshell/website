@@ -565,5 +565,5 @@ pages render and the steps are reachable by clicking:
 
 - [ADR-024: Scoped Signup Continuation Tokens](../../adr/api/ADR-024-scoped-signup-continuation-tokens.md)
 - [ADR-025: Membership Commit Rendezvous](../../adr/api/ADR-025-membership-commit-rendezvous.md)
-- [ADR-014: Permission Evaluation Strategy](../../adr/api/ADR-014-permission-evaluation-strategy.md)
+- [ADR-014: Permission Evaluation Strategy](../../adr/api/superseded/ADR-014-permission-evaluation-strategy.md)
 - [Flow documentation index](../README.md)

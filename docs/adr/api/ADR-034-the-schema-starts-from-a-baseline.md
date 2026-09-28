@@ -1,7 +1,7 @@
-# ADR-026: The Schema Starts From a Baseline, Owned by Liquibase
+# ADR-034: The Schema Starts From a Baseline, Owned by Liquibase
 
 **Status:** Accepted
-**Supersedes:** [ADR-010: Database Migrations with Flyway](ADR-010-database-migrations-with-flyway.md)
+**Supersedes:** [ADR-010: Database Migrations with Flyway](superseded/ADR-010-database-migrations-with-flyway.md)
 
 ## Context
 

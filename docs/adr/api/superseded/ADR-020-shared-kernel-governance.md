@@ -2,7 +2,7 @@
 
 ## Status
 Superseded by
-[architecture ADR-003](../architecture/ADR-003-package-topology-and-placement-rules.md).
+[architecture ADR-003](../../architecture/ADR-003-package-topology-and-placement-rules.md).
 
 The governance rules here are replaced by a measurable one: a package used by a
 single module does not belong in the shared kernel. Applied to the current

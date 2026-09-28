@@ -2,7 +2,7 @@
 
 ## Status
 Superseded by
-[architecture ADR-007](../architecture/ADR-007-authorization-lives-with-its-aggregate.md).
+[architecture ADR-007](../../architecture/ADR-007-authorization-lives-with-its-aggregate.md).
 
 The mechanism described here is unchanged and still in force: domain-specific
 evaluators behind Spring Security's `PermissionEvaluator`, dispatched by

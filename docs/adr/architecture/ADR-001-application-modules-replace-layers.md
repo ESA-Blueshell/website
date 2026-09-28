@@ -206,5 +206,5 @@ What is genuinely outstanding:
 - [ADR-002: Use-Case Services Replace the Command Bus](ADR-002-use-case-services-replace-the-command-bus.md) — what fills the modules
 - [ADR-003: Package Topology and Placement Rules](ADR-003-package-topology-and-placement-rules.md) — the physical layout
 - [ADR-006: Migration Sequencing](ADR-006-migration-sequencing.md) — the order, and why cycles come early
-- [API ADR-016: Layer Dependency Rules](../api/ADR-016-layer-dependency-rules.md) — superseded by this record
+- [API ADR-016: Layer Dependency Rules](../api/superseded/ADR-016-layer-dependency-rules.md): superseded by this record
 - [API ADR-018: Data Ownership in Modular Monolith](../api/ADR-018-data-ownership-in-modular-monolith.md) — the intent this finally verifies

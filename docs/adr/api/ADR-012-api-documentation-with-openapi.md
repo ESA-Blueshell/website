@@ -57,12 +57,12 @@ data class JwtRequest(
 
 **Frontend TypeScript Client:**
 ```bash
-./scripts/generate_openapi.sh
+./scripts/generate-openapi-local.sh
 ```
 
-This generates:
-- `openapi/blueshell.json` - OpenAPI specification
-- `frontend/src/lib/` - TypeScript client
+This starts the api on an in-memory H2 database, which CI does too, and writes:
+- `services/api/openapi.yaml` - OpenAPI specification
+- `services/frontend/src/services/api/blueshell/` - TypeScript client
 
 ## Guidelines
 

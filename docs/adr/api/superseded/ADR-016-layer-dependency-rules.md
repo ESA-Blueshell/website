@@ -2,7 +2,7 @@
 
 ## Status
 Superseded by
-[architecture ADR-001](../architecture/ADR-001-application-modules-replace-layers.md).
+[architecture ADR-001](../../architecture/ADR-001-application-modules-replace-layers.md).
 
 The seven-layer rules enforced by `LayeredArchitectureTest` are replaced by
 Spring Modulith module verification. The layering held while feature coupling
@@ -478,9 +478,9 @@ For existing violations:
 ## Related ADRs
 - [ADR-001: Multi-Layered Domain-Driven Architecture](ADR-001-multi-layered-domain-driven-architecture.md) - Layer structure
 - [ADR-002: Command Pattern with CommandBus](ADR-002-command-pattern-with-command-bus.md) - Command independence
-- [ADR-006: Event-Driven Architecture](ADR-006-event-driven-architecture.md) - Cross-domain communication
+- [ADR-006: Event-Driven Architecture](../ADR-006-event-driven-architecture.md) - Cross-domain communication
 - [ADR-014: Permission Evaluation Strategy](ADR-014-permission-evaluation-strategy.md) - Infrastructure layer placement
-- [ADR-015: JPA Specifications and Dynamic Queries](ADR-015-jpa-specifications-dynamic-queries.md) - Query object pattern
+- [ADR-015: JPA Specifications and Dynamic Queries](../ADR-015-jpa-specifications-dynamic-queries.md) - Query object pattern
 
 ## References
 - Clean Architecture (Robert C. Martin)

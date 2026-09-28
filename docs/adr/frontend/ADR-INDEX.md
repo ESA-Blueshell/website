@@ -12,11 +12,11 @@ This index tracks frontend architecture decisions for the Vue application.
 | [004](ADR-004-form-validation-and-command-mapping.md) | Form Validation and Command Mapping | Accepted | Three-stage validation and explicit mapping from form models to command payloads |
 | [005](ADR-005-routing-and-authorization.md) | Routing and Authorization | Accepted | Modular routes with centralized guard evaluation and route metadata policy |
 | [006](ADR-006-component-and-composable-standards.md) | Component and Composable Standards | Accepted | Vue 3 Composition API standards and clear responsibility split |
-| [007](ADR-007-testing-and-quality-gates.md) | Testing and Quality Gates | Superseded | Replaced by the [testing ADR set](../testing/ADR-INDEX.md); contract-safety rules carried forward |
+| [007](superseded/ADR-007-testing-and-quality-gates.md) | Testing and Quality Gates | Superseded | Replaced by the [testing ADR set](../testing/ADR-INDEX.md); contract-safety rules carried forward |
 | [008](ADR-008-printed-figures-stand-until-the-records-answer.md) | Printed Figures Stand Until the Records Answer | Accepted | Published figures are drawn first and replaced by the records; what nothing can count stays a claim |
 
 ## Related Documentation
 - [ADR umbrella index](../ADR-INDEX.md)
 - [API ADR index](../api/ADR-INDEX.md)
 - [Testing ADR index](../testing/ADR-INDEX.md)
-- [CLAUDE.md](../../../CLAUDE.md)
+- [AGENTS.md](../../../AGENTS.md)

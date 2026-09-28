@@ -2,7 +2,7 @@
 
 ## Status
 Superseded by
-[architecture ADR-003](../architecture/ADR-003-package-topology-and-placement-rules.md).
+[architecture ADR-003](../../architecture/ADR-003-package-topology-and-placement-rules.md).
 
 The `shared` / `infrastructure` / `platform` split described here is withdrawn.
 The ambiguities this ADR set out to resolve — where job definitions go, whether
@@ -513,7 +513,7 @@ These tests enforce the canonical 4-sub-package structure within every integrati
 ## Related ADRs
 - [ADR-001: Multi-Layered Domain-Driven Architecture](ADR-001-multi-layered-domain-driven-architecture.md) - Layer structure
 - [ADR-016: Layer Dependency Rules](ADR-016-layer-dependency-rules.md) - Dependency constraints
-- [ADR-019: Anti-Corruption Layers for External Integration](ADR-019-anti-corruption-layers-for-external-integration.md) - Platform isolation
+- [ADR-019: Anti-Corruption Layers for External Integration](../ADR-019-anti-corruption-layers-for-external-integration.md) - Platform isolation
 - [ADR-020: Shared Kernel Governance](ADR-020-shared-kernel-governance.md) - Shared kernel principles
 
 ## References

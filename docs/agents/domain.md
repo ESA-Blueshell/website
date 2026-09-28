@@ -31,8 +31,12 @@ actually get resolved.
 │       ├── api/ADR-INDEX.md           ← ADR-001…  numbered within this set
 │       ├── architecture/ADR-INDEX.md  ← ADR-001…  numbered independently
 │       ├── frontend/ADR-INDEX.md      ← ADR-001…  numbered independently
-│       └── testing/ADR-INDEX.md       ← ADR-001…  numbered independently
-└── services/{api,frontend,nginx,listmonk,mailserver}/
+│       ├── testing/ADR-INDEX.md       ← ADR-001…  numbered independently
+│       └── {api,frontend}/superseded/ ← replaced decisions, kept for history
+├── libs/                              ← shared Kotlin code and vendored OpenAPI specs
+├── platform/                          ← cluster manifests, Nix hosts and their docs
+├── services/{api,frontend,stalwart,vault}/
+└── tests/system/                      ← the Kotlin Playwright suite
 ```
 
 ## Always cite an ADR with its set

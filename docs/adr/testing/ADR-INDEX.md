@@ -30,8 +30,8 @@ Vue frontend, and the suites that drive both at once.
 | [006](ADR-006-frontend-end-to-end-completeness.md) | Frontend End-to-End Completeness | Accepted | Route inventory plus a function threshold as the checkable form of "covers every action" |
 
 ## Superseded by this set
-- [API ADR-011: Testing Strategy](../api/ADR-011-testing-strategy.md)
-- [Frontend ADR-007: Testing and Quality Gates](../frontend/ADR-007-testing-and-quality-gates.md)
+- [API ADR-011: Testing Strategy](../api/superseded/ADR-011-testing-strategy.md)
+- [Frontend ADR-007: Testing and Quality Gates](../frontend/superseded/ADR-007-testing-and-quality-gates.md)
 
 ## Related Documentation
 - [ADR umbrella index](../ADR-INDEX.md)

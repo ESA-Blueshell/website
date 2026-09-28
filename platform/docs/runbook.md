@@ -129,7 +129,7 @@ creates the Canaries, and Flagger only recreates them once its
 
 Liquibase owns it, starting from a baseline that captures what the 96 Flyway
 migrations produced — see
-[ADR-026](../../docs/adr/api/ADR-026-the-schema-starts-from-a-baseline.md).
+[api ADR-034](../../docs/adr/api/ADR-034-the-schema-starts-from-a-baseline.md).
 An empty database applies the baseline. A database that already ran the
 migrations must be told it has it, rather than running it:
 

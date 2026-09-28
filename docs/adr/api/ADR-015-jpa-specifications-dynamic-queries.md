@@ -572,9 +572,9 @@ Database
 - ❌ Skip pagination for large result sets
 
 ## Related ADRs
-- [ADR-001: Multi-Layered Domain-Driven Architecture](ADR-001-multi-layered-domain-driven-architecture.md) - Package structure
+- [ADR-001: Multi-Layered Domain-Driven Architecture](superseded/ADR-001-multi-layered-domain-driven-architecture.md) - Package structure
 - [ADR-007: Repository Pattern and JPA](ADR-007-repository-pattern-and-jpa.md) - Repository interface
-- [ADR-011: Testing Strategy](ADR-011-testing-strategy.md) - Testing approach
+- [ADR-011: Testing Strategy](superseded/ADR-011-testing-strategy.md) - Testing approach
 
 ## References
 - Spring Data JPA Specifications Documentation

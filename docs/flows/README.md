@@ -103,4 +103,4 @@ renderer that does not.
 ## Related documentation
 
 - [ADR umbrella index](../adr/ADR-INDEX.md)
-- [CLAUDE.md](../../CLAUDE.md)
+- [AGENTS.md](../../AGENTS.md)

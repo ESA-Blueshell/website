@@ -25,7 +25,8 @@ cross-cutting sets for decisions that bind more than one.
 - **Proposed**: Under discussion
 - **Accepted**: Approved and implemented
 - **Deprecated**: No longer recommended
-- **Superseded**: Replaced by another ADR
+- **Superseded**: Replaced by another ADR. A superseded record moves to its set's
+  `superseded/` folder and keeps its number, which no later record reuses.
 
 Accepted records a decision, not its enforcement. Where a decision is agreed but
 the tooling that enforces it has not landed, the ADR carries an
@@ -34,5 +35,5 @@ the tooling that enforces it has not landed, the ADR carries an
 ## Related Documentation
 - [Glossary](../CONTEXT.md)
 - [Flow documentation](../flows/README.md)
-- [CLAUDE.md](../../CLAUDE.md)
+- [AGENTS.md](../../AGENTS.md)
 - [AGENTS.md](../../AGENTS.md)

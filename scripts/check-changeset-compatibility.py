@@ -151,7 +151,7 @@ def main():
 
     print(
         f"::error::A removal takes two releases: the first stops reading, the second drops. "
-        f"See ADR-026. If this really is safe, label the pull request `{OVERRIDE_LABEL}`."
+        f"See api ADR-034. If this really is safe, label the pull request `{OVERRIDE_LABEL}`."
     )
     return 1
 

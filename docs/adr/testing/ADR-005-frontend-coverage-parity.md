@@ -190,4 +190,4 @@ is visible to whoever writes the next test.
 - [ADR-002: Coverage Gates Apply to Changed Code](ADR-002-coverage-gates-apply-to-changed-code.md) — the scoping applied here
 - [ADR-003: Coverage Counters, Thresholds and the Ratchet](ADR-003-coverage-counters-thresholds-and-ratchet.md) — the numbers and dates
 - [ADR-006: Frontend End-to-End Completeness](ADR-006-frontend-end-to-end-completeness.md) — the layer that proves what jsdom cannot
-- [Frontend ADR-007: Testing and Quality Gates](../frontend/ADR-007-testing-and-quality-gates.md) — superseded by this set
+- [Frontend ADR-007: Testing and Quality Gates](../frontend/superseded/ADR-007-testing-and-quality-gates.md): superseded by this set

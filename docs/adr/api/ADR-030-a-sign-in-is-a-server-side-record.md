@@ -92,7 +92,7 @@ beyond them.
 
 ## Related
 
-- [ADR-009: JWT Authentication Strategy](ADR-009-jwt-authentication-strategy.md) — superseded
+- [ADR-009: JWT Authentication Strategy](superseded/ADR-009-jwt-authentication-strategy.md): superseded
 - [ADR-031: Two-Factor Authentication](ADR-031-two-factor-authentication.md) — what the record's factor state is for
 - [ADR-024: Scoped Signup Continuation Tokens](ADR-024-scoped-signup-continuation-tokens.md) — a capability that stays outside the sign-in
 - `docs/CONTEXT.md`, **Two-factor** — sign-in, trusted browser, locked account

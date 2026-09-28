@@ -43,9 +43,6 @@ const AFK = /^afk$/iu
 /** A room that makes a new room when entered. */
 const STARTS_ROOM = /create/iu
 
-/** Where Discord lists a room; a room it gives no place goes first. */
-const placeOf = (channel: {position?: number | null}): number => channel.position ?? 0
-
 /**
  * The rooms somebody is in, the fullest leading, then the rooms that start one. Any other empty
  * room is not listed, so it goes the moment its last person leaves; the AFK room never shows.
@@ -81,7 +78,7 @@ export async function readDiscordRooms(): Promise<DiscordRooms | null> {
   if (widget.status === "rejected") return null
   const {channels, members, presence_count} = widget.value
   const rooms = [...channels]
-    .sort((a, b) => placeOf(a) - placeOf(b))
+    .sort((a, b) => a.position - b.position)
     .map(channel => roomOf({
       id: String(channel.id),
       name: channel.name,

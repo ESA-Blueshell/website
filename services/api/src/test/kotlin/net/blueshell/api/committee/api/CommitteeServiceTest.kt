@@ -1,6 +1,5 @@
 package net.blueshell.api.committee.api
 
-import jakarta.persistence.EntityManager
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeRepository
 import net.blueshell.api.file.api.StoredPictures
@@ -10,13 +9,13 @@ import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.event.TrackedEventPublisher
-import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorProvider
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -32,7 +31,6 @@ class CommitteeServiceTest {
         mock<CommitteeRepository> {
             // A new committee gets its id on the save, as the database gives it one.
             on { saveAndFlush(any<Committee>()) } doAnswer { it.getArgument<Committee>(0).apply { id = id ?: 9 } }
-            on { existsById(any()) } doReturn true
         }
     private val pictures = mock<StoredPictures>()
     private val games = mock<GameService>()
@@ -44,13 +42,7 @@ class CommitteeServiceTest {
             TrackedEventPublisher(mock<AfterCommitEventPublisher>(), actors, mock()),
             pictures,
             games,
-        ).apply {
-            // The entity manager is injected by field; create and update refresh through it.
-            BaseModelService::class.java
-                .getDeclaredField("em")
-                .apply { isAccessible = true }
-                .set(this, mock<EntityManager>())
-        }
+        )
 
     private fun committee(
         id: Long,
@@ -195,5 +187,26 @@ class CommitteeServiceTest {
 
         assertThat(service.organisersOf("CSGO", setOf(1L))).containsExactly(lan)
         assertThatThrownBy { service.organisersOf("CSGO", setOf(1L, 2L)) }.isInstanceOf(GameArchived::class.java)
+    }
+
+    @Test
+    fun `reads every committee, and refuses one that does not exist with its own code`() {
+        val lan = committee(1, "LanCie")
+        whenever(repository.findAll()).thenReturn(mutableListOf(lan))
+        whenever(repository.findById(404L)).thenReturn(Optional.empty())
+
+        assertThat(service.findAll()).containsExactly(lan)
+        assertThat(assertThrows<CommitteeNotFound> { service.findById(404L) }.code).isEqualTo("CommitteeNotFound")
+    }
+
+    @Test
+    fun `saves a committee as given, and removes the one it read`() {
+        val lan = committee(1, "LanCie")
+        stored(lan)
+
+        assertThat(service.create(lan)).isSameAs(lan)
+        service.deleteById(1)
+
+        verify(repository).delete(lan)
     }
 }

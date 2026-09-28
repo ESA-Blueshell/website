@@ -1,7 +1,6 @@
 package net.blueshell.api.committee.api
 
 import net.blueshell.api.committee.domain.CommitteeMemberData
-import net.blueshell.api.committee.domain.CommitteeNotFoundException
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.committee.persistence.CommitteeRepository
@@ -10,30 +9,33 @@ import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.model.addressOf
-import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.user.api.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.function.Supplier
 
 @Service
 class CommitteeService
     @Autowired
     constructor(
-        repository: CommitteeRepository,
+        private val repository: CommitteeRepository,
         private val userService: UserService,
         private val trackedEvents: TrackedEventPublisher,
         private val pictures: StoredPictures,
         private val games: GameService,
-    ) : BaseModelService<Committee, Long, CommitteeRepository>(repository) {
+    ) {
         @Transactional(readOnly = true)
-        override fun findById(id: Long): Committee =
-            repository.findById(id).orElseThrow(
-                Supplier {
-                    CommitteeNotFoundException(id)
-                },
-            )
+        fun findAll(): List<Committee> = repository.findAll()
+
+        @Transactional(readOnly = true)
+        fun findById(id: Long): Committee = repository.findById(id).orElseThrow { CommitteeNotFound(id) }
+
+        /** A committee as given, members and all: they are saved with it. */
+        @Transactional
+        fun create(committee: Committee): Committee = repository.saveAndFlush(committee)
+
+        @Transactional
+        fun deleteById(id: Long) = repository.delete(findById(id))
 
         /**
          * The committee whose page answers to [address], whatever its case. One the release before
@@ -57,7 +59,7 @@ class CommitteeService
             val committee = Committee(name = name, description = description)
             applyPage(committee, page)
             reconcileMembers(committee, members)
-            val saved = super.create(committee)
+            val saved = repository.saveAndFlush(committee)
             publishMembershipChanges(saved.id!!, saved.members.map { it.userId }.toSet())
             return saved
         }
@@ -80,7 +82,7 @@ class CommitteeService
             applyPage(committee, page)
             reconcileMembers(committee, members)
 
-            val saved = super.update(committee)
+            val saved = repository.saveAndFlush(committee)
             val currentMembers = saved.members.associate { it.userId to it.role }
             val changedUserIds = changedUserIds(previousMembers, currentMembers)
             publishMembershipChanges(saved.id!!, changedUserIds)
@@ -106,7 +108,7 @@ class CommitteeService
             committee.banner = pictures.of(banner, FileType.COMMITTEE_BANNER)
             committee.icon = pictures.of(icon, FileType.COMMITTEE_ICON)
             applyGames(committee, gameCodes)
-            return super.update(committee)
+            return repository.saveAndFlush(committee)
         }
 
         /** A committee that stopped running, or runs again. */
@@ -117,7 +119,7 @@ class CommitteeService
         ): Committee {
             val committee = findById(id)
             committee.archived = archived
-            return super.update(committee)
+            return repository.saveAndFlush(committee)
         }
 
         /**
@@ -140,7 +142,7 @@ class CommitteeService
                     !wanted && named -> committee.gameCodes -= game
                     else -> return@forEach
                 }
-                super.update(committee)
+                repository.saveAndFlush(committee)
             }
             return all.filter { game in it.gameCodes }
         }

@@ -1,6 +1,7 @@
 import {computed, ref, type ComputedRef, type Ref} from "vue"
 import {loadGames, type GameCode, type Game} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "@/components/island/pictures"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /** A game as the island draws it: its name, its colour, and the art it carries. */
 export interface GameIdentity {
@@ -26,7 +27,7 @@ export interface GameIdentity {
  * A game nobody has drawn art for reads on the association's own blue and shows no icon. Its
  * name still comes from its record; there is no game without one.
  */
-const UNDRAWN = {accent: "var(--color-brand)", icon: null, banner: null}
+const UNDRAWN = {accent: BRAND_ACCENT, icon: null, banner: null}
 
 const identify = (record: Game): GameIdentity => ({
   name: record.name,

@@ -41,8 +41,9 @@ import {
   type PublishStage,
 } from "../adapters/lineup"
 import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
-import {countOf} from "../copy"
+import {countOf} from "@/utils/countOf"
 import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * Who played for one team in one season, and what is said about each of them, on its own page with
@@ -948,7 +949,7 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
     <template #preview>
       <preview-frame>
         <slice-band
-          :accent="accent ?? 'var(--color-brand)'"
+          :accent="accent ?? BRAND_ACCENT"
           :items="previewSlices"
           open-id="draft"
           testid-prefix="team-edit-preview"

@@ -9,6 +9,7 @@ import SeasonTeams from "./SeasonTeams.vue"
 import {lineupSliceOf} from "./lineupSlice"
 import {useGames} from "./useGames"
 import {useSeasonLineup} from "./useSeasonLineup"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * Blueshell in competition on a page that is not the index: the index's own band for the newest
@@ -37,7 +38,6 @@ const teamsOf = (game: string | number) => entries.value.find(entry => entry.gam
 <template>
   <lead-band
     v-if="!loading && slices.length > 0"
-    accent="var(--color-brand)"
     testid="home-esports"
   >
     <band-head
@@ -58,7 +58,7 @@ const teamsOf = (game: string | number) => entries.value.find(entry => entry.gam
 
     <template #bleed>
       <slice-band
-        accent="var(--color-brand)"
+        :accent="BRAND_ACCENT"
         class="island-dark"
         :items="slices"
         testid-prefix="home-esports"

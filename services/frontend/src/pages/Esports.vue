@@ -21,6 +21,7 @@ import {leaveGameInSeason} from "@/domains/esports"
 import {lineupSliceOf} from "@/domains/esports"
 import type {GameCode, Game, Season} from "@/domains/esports"
 import {useIsBoard} from "@/composables/useIsBoard"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 defineOptions({name: "EsportsPage"})
 
@@ -238,7 +239,7 @@ const takeOut = async (game: GameCode, season: Season | null) => {
         data-testid="esports-index-seasons"
       >
         <timeline
-          accent="var(--color-brand)"
+          :accent="BRAND_ACCENT"
           add-label="Add a season"
           :arrival="arrival"
           :may-edit="mayEdit"
@@ -313,7 +314,7 @@ const takeOut = async (game: GameCode, season: Season | null) => {
               v-bind="entrance"
             >
               <slice-band
-                accent="var(--color-brand)"
+                :accent="BRAND_ACCENT"
                 add-label="Add a game"
                 :empty-label="`No games ran in ${nameOf(season) || 'this season'} yet`"
                 :items="slicesFor(season)"

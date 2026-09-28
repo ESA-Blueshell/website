@@ -23,7 +23,6 @@ const {events, total} = defineProps<{
 <template>
   <lead-band
     v-if="events.length > 0"
-    accent="var(--color-brand)"
     testid="event-also"
   >
     <band-head

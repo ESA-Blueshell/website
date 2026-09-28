@@ -4,6 +4,7 @@ import type {DriftItem} from "@/components/island/DriftRow.vue"
 import type {ReelItem} from "@/components/island/FlickReel.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {loadCommittees, type Committee} from "./adapters/committees"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /** A committee's plate letters where it has no banner: the first of its first two words. */
 export function initialsOf(name: string): string {
@@ -29,15 +30,13 @@ export function openingLineOf(description: string, cap = 140): string {
   return `${line.slice(0, line.lastIndexOf(" ", cap)).replace(/[,.;:]$/u, "")}...`
 }
 
-const ACCENT = "var(--color-brand)"
-
 /** A committee as the flick reel draws it, with the games it organises events for as chips. */
 export function reelItemOf(committee: Committee, gameNames: (codes: string[]) => string[] = () => []): ReelItem {
   return {
     id: committee.id,
     title: committee.name,
     href: `/committees/${committee.slug}`,
-    accent: ACCENT,
+    accent: BRAND_ACCENT,
     banner: committee.banner?.url ?? null,
     srcset: srcsetOf(committee.banner),
     icon: committee.icon?.url ?? null,

@@ -22,11 +22,12 @@ import {
   type Season,
   type SeasonGame,
 } from "../adapters/esports"
-import {countOf} from "../copy"
+import {countOf} from "@/utils/countOf"
 import {forgetCompetitionReads} from "../island/forgetCompetitionReads"
 import {seasonStops} from "../island/seasonAxis"
 import {useGames} from "../island/useGames"
 import {useSeasons} from "../island/useSeasons"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * A season written down or corrected on its own page, with the strip it will sit on drawn beside
@@ -330,7 +331,7 @@ const removeSeason = async () => {
     <template #preview>
       <preview-frame>
         <timeline
-          accent="var(--color-brand)"
+          :accent="BRAND_ACCENT"
           :selected-id="season?.id ?? DRAFT_ID"
           :stops="previewStops"
           testid-prefix="season-edit-preview"

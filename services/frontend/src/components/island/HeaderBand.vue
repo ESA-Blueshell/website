@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {BRAND_ACCENT} from "@/utils/brand"
 /**
  * The band at the head of an island page: an eyebrow, a display heading, a line of body and
  * the accent blob behind them.
@@ -41,7 +42,7 @@ withDefaults(defineProps<{
   heading: "",
   headingTail: "",
   body: "",
-  accent: "var(--color-brand)",
+  accent: BRAND_ACCENT,
   blob: "broad",
 })
 </script>

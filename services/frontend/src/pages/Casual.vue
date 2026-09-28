@@ -15,6 +15,7 @@ import {cellOf, driftItemOf, reelItemOf, useCasualGames, type CasualGame} from "
 import ArchiveGameDialog from "@/domains/games/island/ArchiveGameDialog.vue"
 import RemoveGameDialog from "@/domains/games/island/RemoveGameDialog.vue"
 import {useIsBoard} from "@/composables/useIsBoard"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 defineOptions({name: "CasualPage"})
 
@@ -31,7 +32,7 @@ const {listed: committees} = useCommittees()
 const organisersOf = (code: string) => committees.value.filter(committee => committee.gameCodes.includes(code)).map(committee => committee.name)
 
 /** The way to add a game rides the reel as its last slice, for whoever may add one. */
-const ADD: ReelItem = {id: "add", title: "Add a game", href: "/casual/new", accent: "var(--color-brand)", initials: "+", plus: true}
+const ADD: ReelItem = {id: "add", title: "Add a game", href: "/casual/new", accent: BRAND_ACCENT, initials: "+", plus: true}
 const reel = computed<ReelItem[]>(() => [
   ...live.value.map(game => reelItemOf(game, organisersOf)),
   ...(mayEdit.value ? [ADD] : []),

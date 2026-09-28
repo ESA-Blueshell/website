@@ -15,9 +15,10 @@ import Timeline from "@/components/island/Timeline.vue"
 import type {Picture} from "@/components/island/pictures"
 import {dropBoard, saveBoardOrReason, storeBoardPhoto, type Board} from "../adapters/boards"
 import {boardStops} from "../boardAxis"
-import {countOf} from "../copy"
+import {countOf} from "@/utils/countOf"
 import BoardBand from "../island/BoardBand.vue"
 import {academicYear, boardEyebrow, boardName} from "../reading"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 /**
  * A board written down or corrected on its own page, with the timeline and the board's band drawn
@@ -70,7 +71,7 @@ watch(() => [props.board, props.nextNumber] as const, ([board, next]) => {
 
 const numbered = computed(() => Number(number.value))
 const colourOk = computed(() => colour.value.trim() === "" || isHexColour(colour.value.trim()))
-const accent = computed(() => (colourOk.value && colour.value.trim()) || "var(--color-brand)")
+const accent = computed(() => (colourOk.value && colour.value.trim()) || BRAND_ACCENT)
 const complete = computed(() => Number.isInteger(numbered.value) && numbered.value > 0 && startDate.value !== "" && colourOk.value)
 
 /** The board as the page will draw it, from what is typed now. */

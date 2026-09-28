@@ -24,9 +24,9 @@ class SponsorUseCases(
     ): Sponsor {
         val sponsor =
             service.findById(id).apply {
+                requireVersion(version)
                 this.name = name
                 this.description = description
-                this.version = version
             }
         return service.update(sponsor)
     }

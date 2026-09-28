@@ -112,7 +112,7 @@ class EventSignUpUseCasesTest {
 
             assertThat(captured.firstValue.event).isSameAs(eventRef)
             assertThat(captured.firstValue.userId).isEqualTo(42L)
-            assertThat(captured.firstValue.version).isEqualTo(7L)
+            assertThat(captured.firstValue.version).isEqualTo(0L)
             assertThat(captured.firstValue.guest?.accessTokenRaw).isEqualTo("GUEST-TOKEN")
             assertThat(captured.firstValue.guest?.matchesAccessToken("GUEST-TOKEN")).isTrue()
             assertThat(captured.firstValue.answers).hasSize(1)
@@ -219,7 +219,7 @@ class EventSignUpUseCasesTest {
     inner class UpdateEventSignUp {
         @Test
         fun `updates sign up resolved by principal when access token is missing`() {
-            val existing = emptySignUp()
+            val existing = emptySignUp().apply { id = 11L }
             val eventRef = mock<Event>()
             val questionRef = mock<Question>()
             whenever(eventSignUpService.findByUserIdAndEventId(42L, 100L)).thenReturn(existing)
@@ -235,7 +235,7 @@ class EventSignUpUseCasesTest {
                         answers = listOf(AnswerData(questionId = 201L, textResponse = "Updated")),
                         userId = 55L,
                         guest = null,
-                        version = 4L,
+                        version = 0L,
                     ),
                     42L,
                     null,
@@ -244,7 +244,7 @@ class EventSignUpUseCasesTest {
             verify(eventSignUpService).findByUserIdAndEventId(42L, 100L)
             assertThat(existing.event).isSameAs(eventRef)
             assertThat(existing.userId).isEqualTo(42L)
-            assertThat(existing.version).isEqualTo(4L)
+            assertThat(existing.version).isEqualTo(0L)
             assertThat(existing.answers).hasSize(1)
             assertThat(existing.answers.first().question).isSameAs(questionRef)
             assertThat(existing.answers.first().textResponse).isEqualTo("Updated")

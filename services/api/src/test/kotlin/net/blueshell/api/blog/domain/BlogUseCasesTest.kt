@@ -49,7 +49,7 @@ class BlogUseCasesTest {
     @Nested
     inner class Update {
         @Test
-        fun `updates blog fields and version`() {
+        fun `updates blog fields, keeping the version it was read at`() {
             val existing =
                 Blog(
                     title = "Old",
@@ -71,14 +71,14 @@ class BlogUseCasesTest {
                         <a href="javascript:alert('xss')">Click me</a>
                         """.trimIndent(),
                     publishedAt = newPublishedAt,
-                    version = 4L,
+                    version = 1L,
                 )
 
             assertThat(existing.title).isEqualTo("New")
             assertThat(existing.html).doesNotContain("Unsubscribe")
             assertThat(existing.html).doesNotContain("javascript:")
             assertThat(existing.publishedAt).isEqualTo(newPublishedAt)
-            assertThat(existing.version).isEqualTo(4L)
+            assertThat(existing.version).isEqualTo(1L)
             assertThat(result).isSameAs(existing)
         }
     }

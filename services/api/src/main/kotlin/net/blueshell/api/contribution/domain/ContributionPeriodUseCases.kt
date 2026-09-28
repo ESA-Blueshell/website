@@ -44,6 +44,7 @@ class ContributionPeriodUseCases(
     ): ContributionPeriod {
         val period =
             service.findById(id).apply {
+                requireVersion(version)
                 this.startDate = startDate
                 this.endDate = endDate
                 this.halfYearCutoffDate = halfYearCutoffDate
@@ -51,7 +52,6 @@ class ContributionPeriodUseCases(
                 this.fullYearFee = fullYearFee
                 this.alumniFee = alumniFee
                 this.contactListId = contactListId
-                this.version = version
             }
         return service.update(period)
     }

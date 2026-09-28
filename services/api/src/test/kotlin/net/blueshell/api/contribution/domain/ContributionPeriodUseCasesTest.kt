@@ -46,7 +46,7 @@ class ContributionPeriodUseCasesTest {
     }
 
     @Test
-    fun `applies every editable field and the version on update`() {
+    fun `applies every editable field on update, keeping the version it was read at`() {
         val existing = period()
         whenever(service.findById(7L)).thenReturn(existing.seeded(7L))
         whenever(service.update(existing)).thenReturn(existing)
@@ -60,7 +60,7 @@ class ContributionPeriodUseCasesTest {
             fullYearFee = 55.0,
             alumniFee = 5.0,
             contactListId = null,
-            version = 6L,
+            version = 0L,
         )
 
         assertThat(existing.startDate).isEqualTo(LocalDate.of(2027, 2, 1))
@@ -68,6 +68,6 @@ class ContributionPeriodUseCasesTest {
         assertThat(existing.fullYearFee).isEqualTo(55.0)
         assertThat(existing.alumniFee).isEqualTo(5.0)
         assertThat(existing.contactListId).isNull()
-        assertThat(existing.version).isEqualTo(6L)
+        assertThat(existing.version).isEqualTo(0L)
     }
 }

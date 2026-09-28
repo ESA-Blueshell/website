@@ -56,6 +56,7 @@ class MemberProfileUseCases(
     ): MemberProfile {
         val profile =
             memberProfileService.findById(userId).apply {
+                requireVersion(version)
                 this.dateOfBirth = dateOfBirth
                 this.studentNumber = studentNumber
                 this.gender = gender
@@ -63,7 +64,6 @@ class MemberProfileUseCases(
                 this.bhv = bhv
                 this.ehbo = ehbo
                 this.nameOnRosters = nameOnRosters
-                this.version = version
             }
         return memberProfileService.update(profile)
     }

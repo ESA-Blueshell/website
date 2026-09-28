@@ -104,7 +104,8 @@ const save = async (): Promise<AddressModel | null> => {
     address.value = resp
     emit("submitted", true)
     setSubmitResult(true)
-    return address.value
+    // Bound through v-model, address.value still reads the copy from before the save.
+    return resp
   } catch (error: unknown) {
     handleSubmitError(formRef.value, error)
     emit("submitted", false)

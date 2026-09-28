@@ -356,7 +356,8 @@ const save = async (): Promise<EditableUser | null> => {
     user.value = updated
     emit("submitted", true)
     setSubmitResult(true)
-    return user.value
+    // Bound through v-model, user.value still reads the copy from before the save.
+    return updated
   } catch (error: unknown) {
     if (needsStepUp(error)) stepUpOpen.value = true
     else handleSubmitError(formRef.value, error, userFieldMap)

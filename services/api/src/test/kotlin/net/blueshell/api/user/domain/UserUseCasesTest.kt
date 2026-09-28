@@ -188,7 +188,7 @@ class UserUseCasesTest {
                         photoConsent = true,
                         discord = "new#0001",
                         phoneNumber = "0622222222",
-                        version = 4L,
+                        version = 0L,
                         memberProfile = upsertMemberProfileData(version = null),
                     ),
                 )
@@ -203,7 +203,7 @@ class UserUseCasesTest {
             assertThat(existing.photoConsent).isTrue()
             assertThat(existing.discord).isEqualTo("new#0001")
             assertThat(existing.phoneNumber).isEqualTo("0622222222")
-            assertThat(existing.version).isEqualTo(4L)
+            assertThat(existing.version).isEqualTo(0L)
             assertThat(existing.memberProfile).isNotNull
             assertThat(existing.memberProfile?.studentNumber).isEqualTo("s123")
             assertThat(result).isSameAs(existing)
@@ -228,7 +228,7 @@ class UserUseCasesTest {
                     photoConsent = false,
                     discord = "new#0001",
                     phoneNumber = "0622222222",
-                    version = 4L,
+                    version = 0L,
                 ),
             )
 
@@ -280,7 +280,7 @@ class UserUseCasesTest {
                 photoConsent = false,
                 discord = "john#0001",
                 phoneNumber = "0612345678",
-                version = 1L,
+                version = 0L,
             )
     }
 
@@ -311,8 +311,8 @@ class UserUseCasesTest {
                         phoneNumber = "0633333333",
                         newsletter = true,
                         photoConsent = true,
-                        version = 8L,
-                        memberProfile = upsertMemberProfileData(version = 9L),
+                        version = 0L,
+                        memberProfile = upsertMemberProfileData(version = 0L),
                     ),
                 )
 
@@ -320,9 +320,9 @@ class UserUseCasesTest {
             assertThat(existing.phoneNumber).isEqualTo("0633333333")
             assertThat(existing.newsletter).isTrue()
             assertThat(existing.photoConsent).isTrue()
-            assertThat(existing.version).isEqualTo(8L)
+            assertThat(existing.version).isEqualTo(0L)
             assertThat(existing.memberProfile?.studentNumber).isEqualTo("s123")
-            assertThat(existing.memberProfile?.version).isEqualTo(9L)
+            assertThat(existing.memberProfile?.version).isEqualTo(0L)
             assertThat(result).isSameAs(existing)
         }
 
@@ -332,8 +332,8 @@ class UserUseCasesTest {
             whenever(userService.findById(2L)).thenReturn(member)
             whenever(userService.update(member)).thenReturn(member)
             val self = SelfUserData(
-                discord = "upd#0001", phoneNumber = "0633333333", newsletter = true, photoConsent = true, version = 8L,
-                memberProfile = upsertMemberProfileData(version = 3L),
+                discord = "upd#0001", phoneNumber = "0633333333", newsletter = true, photoConsent = true, version = 0L,
+                memberProfile = upsertMemberProfileData(version = 0L),
             )
 
             useCases.update(2L, self)
@@ -358,7 +358,7 @@ class UserUseCasesTest {
                     phoneNumber = "0633333333",
                     newsletter = true,
                     photoConsent = true,
-                    version = 8L,
+                    version = 0L,
                 ),
             )
 

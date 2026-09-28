@@ -47,12 +47,12 @@ class AddressUseCases(
     ): Address {
         val address =
             addressService.findById(id).apply {
+                requireVersion(version)
                 this.country = country
                 this.city = city
                 this.street = street
                 this.houseNumber = houseNumber
                 this.zipCode = zipCode
-                this.version = version
             }
         return addressService.update(address)
     }

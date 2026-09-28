@@ -180,7 +180,7 @@ class MembershipUseCasesTest {
     @Nested
     inner class Correct {
         @Test
-        fun `corrects membership fields and version`() {
+        fun `corrects membership fields, keeping the version it was read at`() {
             noViolations()
             val membership =
                 Membership(
@@ -201,14 +201,14 @@ class MembershipUseCasesTest {
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = LocalDate.of(2025, 12, 31),
                     incasso = true,
-                    version = 5L,
+                    version = 1L,
                 )
 
             assertThat(membership.memberType).isEqualTo(MemberType.HONORARY)
             assertThat(membership.startDate).isEqualTo(LocalDate.of(2025, 1, 1))
             assertThat(membership.endDate).isEqualTo(LocalDate.of(2025, 12, 31))
             assertThat(membership.incasso).isTrue()
-            assertThat(membership.version).isEqualTo(5L)
+            assertThat(membership.version).isEqualTo(1L)
             assertThat(result).isSameAs(membership)
         }
 

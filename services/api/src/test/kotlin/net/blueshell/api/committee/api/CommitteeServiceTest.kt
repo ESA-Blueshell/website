@@ -104,13 +104,13 @@ class CommitteeServiceTest {
         stored(lan)
         whenever(repository.findBySlug("lan")).thenReturn(lan)
 
-        val saved = service.updateWithMembers(1, "LanCie", "LANs, bigger", emptyList(), 4, CommitteePage(address = "lan", listed = false))
+        val saved = service.updateWithMembers(1, "LanCie", "LANs, bigger", emptyList(), 0, CommitteePage(address = "lan", listed = false))
 
         assertThat(saved.slug).isEqualTo("lan")
         assertThat(saved.listed).isFalse()
         assertThat(saved.description).isEqualTo("LANs, bigger")
         assertThat(saved.gameCodes).containsExactly("CS2")
-        assertThat(saved.version).isEqualTo(4)
+        assertThat(saved.version).isEqualTo(0)
     }
 
     @Test
@@ -119,7 +119,7 @@ class CommitteeServiceTest {
         stored(lan)
         whenever(games.requireNameable(listOf("CSGO", "CS2"), setOf("CSGO"))).thenReturn(listOf("CSGO", "CS2"))
 
-        val saved = service.updateOwnPage(1, "LANs, every month", null, null, listOf("CSGO", "CS2"), 3)
+        val saved = service.updateOwnPage(1, "LANs, every month", null, null, listOf("CSGO", "CS2"), 0)
         assertThat(saved.description).isEqualTo("LANs, every month")
         assertThat(saved.banner).isNull()
         assertThat(saved.icon).isNull()

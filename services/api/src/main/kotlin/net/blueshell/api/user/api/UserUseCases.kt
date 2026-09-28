@@ -111,6 +111,7 @@ class UserUseCases(
         val movesAddress = !data.email.trim().equals(oldEmail, ignoreCase = true)
         // Moving somebody's address moves where their password resets go, so the board member proves it is them.
         if (movesAddress) stepUp.require()
+        before.requireVersion(data.version)
         val user =
             before.apply {
                 username = data.username
@@ -124,7 +125,6 @@ class UserUseCases(
                 firstName = data.firstName
                 prefix = data.prefix
                 lastName = data.lastName
-                version = data.version
                 data.memberProfile?.upsertInto(this)
             }
         val saved = service.update(user)
@@ -140,6 +140,7 @@ class UserUseCases(
         // two fields it can change are checked.
         validate(UserUniqueness(subjectId = id, discordId = data.discordId, phoneNumber = data.phoneNumber))
         val found = service.findById(id)
+        found.requireVersion(data.version)
         data.memberProfile?.let { validate(it.completenessFor(found.hasRole(Role.MEMBER))) }
         val user =
             found.apply {
@@ -148,7 +149,6 @@ class UserUseCases(
                 phoneNumber = data.phoneNumber
                 newsletter = data.newsletter
                 photoConsent = data.photoConsent
-                version = data.version
                 data.memberProfile?.upsertInto(this)
             }
         return service.update(user)
@@ -186,6 +186,9 @@ internal fun UpsertMemberProfileData.upsertInto(user: User) {
         return
     }
 
+    // The board and self-service payloads both require a version, so this only skips the
+    // check for the signup routes, where the token holder is the only writer.
+    version?.let(existing::requireVersion)
     existing.dateOfBirth = dateOfBirth
     existing.studentNumber = studentNumber
     existing.gender = gender
@@ -193,8 +196,4 @@ internal fun UpsertMemberProfileData.upsertInto(user: User) {
     existing.bhv = bhv
     existing.ehbo = ehbo
     existing.nameOnRosters = nameOnRosters
-    // The board and self-service payloads both require a version, so this only
-    // skips the optimistic check for the signup routes, where the token holder is
-    // the only writer. Force-unwrapping here would answer them with a 500.
-    version?.let { existing.version = it }
 }

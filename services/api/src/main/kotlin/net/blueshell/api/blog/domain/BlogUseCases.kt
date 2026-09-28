@@ -33,10 +33,10 @@ class BlogUseCases(
         version: Long,
     ): Blog {
         val blog = service.findById(id)
+        blog.requireVersion(version)
         blog.title = title
         blog.html = sanitizeBlogHtml(html)
         blog.publishedAt = publishedAt
-        blog.version = version
         return service.update(blog)
     }
 }

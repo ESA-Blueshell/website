@@ -46,7 +46,7 @@ class AddressUseCasesTest {
     @Nested
     inner class Update {
         @Test
-        fun `updates address fields and version`() {
+        fun `updates address fields, keeping the version it was read at`() {
             val address = Address(user = testUser("john"))
             whenever(addressService.findById(2L)).thenReturn(address)
             whenever(addressService.update(address)).thenReturn(address)
@@ -59,7 +59,7 @@ class AddressUseCasesTest {
                     street = "River Road",
                     houseNumber = "99",
                     zipCode = "9000",
-                    version = 5L,
+                    version = 0L,
                 )
 
             assertThat(address.country).isEqualTo("BE")
@@ -67,7 +67,7 @@ class AddressUseCasesTest {
             assertThat(address.street).isEqualTo("River Road")
             assertThat(address.houseNumber).isEqualTo("99")
             assertThat(address.zipCode).isEqualTo("9000")
-            assertThat(address.version).isEqualTo(5L)
+            assertThat(address.version).isEqualTo(0L)
             assertThat(result).isSameAs(address)
         }
     }

@@ -24,11 +24,15 @@ beside a dynamic credentials engine configured for them and switched off.
 log in with Kubernetes auth as the `api` role. No rendered env file, no environment variable
 and no synced Secret sits between Vault and the api.
 
-**Each KV key is named for the Spring property it fills.** `spring.config.import` names
-`secret/api` and `secret/platform/mail`, and `application.yaml` binds the keys directly, with
-no `${ENV_VAR}` placeholder for a secret. Dev and test run without Vault on their profile
-defaults. Adding a key is one KV write and one property, and
+**Each KV key is named for the Spring property it fills.** The prod profile imports
+`secret/api` and `secret/platform/mail`, and an import outranks `application.yaml`, so a
+key in Vault wins over the `${ENV_VAR:default}` placeholder beside the same property there.
+Those placeholders are how dev, test and CI supply values without Vault; the production pod
+sets none of those variables. Adding a key is one KV write and one property, and
 `platform/docs/vault-bootstrap.md` says how to rotate it.
+
+**A read Vault refuses stops the start.** `fail-fast` is on, so a missing grant surfaces as
+a failed pod rather than an empty key.
 
 **KV is polled.** KV v2 secrets carry no lease, so Spring Cloud Vault's lease lifecycle never
 re-reads them, and Vault tells the api nothing when a key changes. The api calls
@@ -85,13 +89,12 @@ is not how a rotated key reaches the api.
 - Removing a key is one KV delete and one property, with no manifest, template or Secret to
   edit.
 - The `api-secrets` Secret, the injector annotations and the env-file start script go.
-- api ADR-031 says the two-factor key "arrives with `secret/data/api` like `JWT_SECRET`
-  does". Once #1682 names each key for its property, that sentence is updated with it.
+- The `api` policy the bootstrap Job writes is what the api can read; an integration test
+  logs in with exactly that policy against a real Vault, so the two cannot drift.
 
 ## Implementation status
 
-Not built. The slices of epic #1824 build it: #1682 (Kubernetes auth and the KV import),
-#1826 (leased database credentials), then #1823, #1827 and #1828 (rotation without a
-restart). Until #1682 lands, `main` reads secrets from the injector-rendered env file and,
-for the Vault OIDC client secret and the mail passwords, from synced Secrets through
-`secretKeyRef`.
+Kubernetes auth, the KV import, fail-fast and the key names are built (#1682);
+`VaultConfigImportIT` proves the import against a real Vault with the `api` policy. The
+database login is still a static pair in `secret/api` until #1826 leases it, and keys are
+read at start until #1823, #1827 and #1828 make them rotate without a restart.

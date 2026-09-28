@@ -47,7 +47,7 @@ stored on each row.**
   It would need a new key, a new policy and new client methods, and every sign-in would
   call Vault.
 
-The key arrives with `secret/data/api` like `JWT_SECRET` does, and the hardening guard
+The key arrives from `secret/api` as `app.two-factor.key` (api ADR-033), and the hardening guard
 refuses a missing or short key outside dev and test. The key id lets a new key encrypt
 while an old one still decrypts, so rotating it is a re-encryption job rather than an
 outage.

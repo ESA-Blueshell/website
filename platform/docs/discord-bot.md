@@ -101,11 +101,11 @@ scripts/discord-bot-check.sh --guild <server-id> --vault
 By hand, it is always `patch`, never `put`. `vault kv put secret/api …` replaces every field in the secret, including the JWT secret and every other integration:
 
 ```bash
-vault kv patch secret/api discord-bot-token=- discord-guild-id=<server-id>   # the token on stdin
+vault kv patch secret/api discord.botToken=- discord.guildId=<server-id>   # the token on stdin
 kubectl -n default rollout restart deployment/api
 ```
 
-The api's Vault Agent template renders both fields into `DISCORD_BOT_TOKEN` and `DISCORD_GUILD_ID` (`platform/cluster/flux/apps/stateless/api/deployment.yaml`).
+The api reads both keys from `secret/api` at start (api ADR-033), which is why it is restarted.
 
 `./gradlew :services:api:discordLiveTest` with `DISCORD_BOT_TOKEN` set calls Discord once as the bot, as a second check.
 

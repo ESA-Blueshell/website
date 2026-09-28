@@ -88,7 +88,7 @@ of them blocks at least one downstream Secret.
   both consumers start without it.
 - **One-shot generated values** (only if missing from the env files):
   - `JWT_SECRET` — `openssl rand -base64 64`.
-  - `vault-oidc-client-secret` — `openssl rand -hex 32`.
+  - `VAULT_OIDC_CLIENT_SECRET`: `openssl rand -hex 32`.
 
 Sanity-check the env files locally with a dry run *before* unsealing:
 
@@ -130,8 +130,8 @@ scripts/seed-vault-from-env.sh \
 ```
 
 Preview is the default. Re-run with `--apply` once the mapping looks
-correct. Add `--sync-api` when you want the script to force VSO to pull
-the refreshed `secret/api` values and roll the api pod immediately.
+correct. Add `--sync-api` to restart the api once `secret/api` is written,
+since it reads the path at start.
 
 ### Cloudflare DNS token (cert-manager + external-dns)
 
@@ -169,46 +169,61 @@ vault kv put secret/platform/mail \
   bounce-mailbox-password=<bounce-mailbox-password>
 ```
 
-### API third-party secrets
+### API secrets
 
-The api Vault Agent template renders these into `/vault/secrets/api.env`
-at pod start (`platform/cluster/flux/apps/stateless/api/deployment.yaml`).
-Every key must exist; the template silently substitutes empty strings
-when a KV key is missing, which boots the pod with a broken integration.
+The api reads `secret/api` itself. In the prod profile Spring Cloud Vault logs
+in with Kubernetes auth as role `api`, bound to the `api` ServiceAccount, and
+imports the path as configuration (api ADR-033). Nothing renders these into a
+file, an environment variable or a Kubernetes Secret, and the api reads them at
+start. Each key is named for the Spring property it fills, so a new one is one
+KV write and one property.
 
 ```bash
 vault kv put secret/api \
-  jwt-secret=$(openssl rand -base64 64) \
-  two-factor-encryption-key=$(openssl rand -base64 32) \
-  brevo-api-key=<brevo-api-key> \
-  brevo-folder-contribution-periods-id=<brevo-folder-id> \
-  google-calendar-id=<calendar-id> \
-  google-calendar-sa-json=<raw-single-line-service-account-json> \
-  discord-bot-token=<discord-bot-token> \
-  discord-guild-id=<discord-guild-id> \
-  vault-oidc-client-secret=$(openssl rand -hex 32)
+  app.jwt.secret=$(openssl rand -base64 64) \
+  app.two-factor.key=$(openssl rand -base64 32) \
+  brevo.apiKey=<brevo-api-key> \
+  brevo.folders.contributionPeriodsId=<brevo-folder-id> \
+  google.calendar.id=<calendar-id> \
+  google.calendar.serviceAccountJson=<raw-single-line-service-account-json> \
+  discord.botToken=<discord-bot-token> \
+  discord.guildId=<discord-guild-id> \
+  auth.clients.vault.secret=$(openssl rand -hex 32) \
+  spring.datasource.username=blueshell \
+  spring.datasource.password=<app-password>
 ```
+
+A missing key falls back to the default in `application.yaml`, which is a
+development value or empty: the hardening guard refuses to start without
+`app.jwt.secret` and `app.two-factor.key`, and an empty integration key leaves
+that integration off.
+
+The api also reads `secret/platform/mail`, the path Stalwart uses, with the
+prefix `mail.`: `account.api` is its SMTP password and `account.bounce` its
+IMAP bounce password.
 
 Adding or rotating only the Discord bot is a `vault kv patch`, not a `put`:
 see [`discord-bot.md`](discord-bot.md), or run `scripts/discord-bot-check.sh --vault`.
 
 Notes:
 
-- `jwt-secret` is the HMAC key the api uses to sign its own JWTs. Must be
+- `app.jwt.secret` is the HMAC key the api uses to sign its own JWTs. Must be
   Base64 and decode to at least 64 bytes because the service signs with
   HS512. `openssl rand -base64 64` satisfies that guard.
-- `two-factor-encryption-key` seals every authenticator app's secret (api ADR-031). It
+- `app.two-factor.key` seals every authenticator app's secret (api ADR-031). It
   must decode to exactly 32 bytes; `openssl rand -base64 32` does. The api and the
   migrate Job refuse to start without it. It is not rotated by replacing it: a new key
-  takes a new `TWO_FACTOR_KEY_ID`, and the old one moves to `TWO_FACTOR_RETIRED_KEYS` as
-  `id:key`, or every secret sealed with it stops opening. Losing it means every person
-  with two-factor needs a [two-factor reset](../../docs/flows/two-factor/README.md).
-- `vault-oidc-client-secret` is the shared secret the Vault OIDC auth
-  method uses when calling back to the api. It reaches the api via VSO
-  (`api-secrets` Kubernetes Secret) rather than the Vault Agent template,
-  so it must be seeded here even though it is not in the agent template.
-- `google-calendar-sa-json` is the full JSON contents of a Google service
-  account key as raw JSON on one line, not base64.
+  takes a new `app.two-factor.key-id`, and the old one moves to
+  `app.two-factor.retired-keys` as `id:key`, or every secret sealed with it stops
+  opening. Losing it means every person with two-factor needs a
+  [two-factor reset](../../docs/flows/two-factor/README.md).
+- `auth.clients.vault.secret` is the shared secret the Vault OIDC auth
+  method uses when calling back to the api. The bootstrap Job reads the same
+  key to configure that method.
+- `google.calendar.serviceAccountJson` is the full JSON contents of a Google
+  service account key as raw JSON on one line, not base64.
+- `spring.datasource.username` and `password` are the api's MariaDB login, the
+  same pair `secret/platform/mariadb` holds as `user` and `password`.
 
 ### Transit signing key + Vault OIDC auth method (handled by the bootstrap Job)
 
@@ -218,7 +233,7 @@ JWTs) and configures the `oidc` auth method that backs
 `vault login -method=oidc` — the operator does not run any `vault write`
 commands for either.
 
-The OIDC step short-circuits when `secret/api:vault-oidc-client-secret`
+The OIDC step short-circuits when `secret/api:auth.clients.vault.secret`
 is missing, so on a fresh cluster the Job runs once before the seed
 script and again after it. After running `seed-vault-from-env.sh
 --apply`, trigger the Job to re-run:
@@ -308,7 +323,6 @@ After seeding, force a VSO reconcile and verify secrets appear:
 flux reconcile kustomization apps-vso-secrets --timeout=3m
 kubectl get secret -n cert-manager cloudflare-api-token
 kubectl get secret -n data-system  mariadb-credentials
-kubectl get secret -n default      api-secrets
 kubectl get secret -n default      stalwart-secrets
 kubectl get secret -n mail-system  stalwart-secrets
 ```
@@ -331,23 +345,20 @@ vault operator generate-root -init
 
 ## 7. Rotating credentials
 
-Every Vault path consumed by an app is rendered into the running pod
-either by VSO (k8s Secret) or the Vault Agent injector
-(`/vault/secrets/*.env`). Both modes are pre-populate-only — neither
-auto-rolls a pod when the source changes — so the rotation pattern is
-always: *update Vault, then restart the consumer.*
+VSO renders a path into a Kubernetes Secret for the consumers that are not
+Spring, and none of them reloads it on its own. The api reads its paths from
+Vault at start. So the rotation pattern is still: *update Vault, then restart
+the consumer.*
 
 ### MariaDB password (api + Bitnami chart)
 
-The api reads `MYSQL_USER` / `MYSQL_PASSWORD` from `secret/api`
-(rendered into `/vault/secrets/api.env` by the Vault Agent template in
-`apps/stateless/api/deployment.yaml`). The Bitnami MariaDB chart reads
-the same value from `secret/platform/mariadb` via VSO. Keep the two
-fields in lockstep:
+The api reads its login from `secret/api` as `spring.datasource.username` and
+`password`. The Bitnami MariaDB chart reads the same value from
+`secret/platform/mariadb` via VSO. Keep the two fields in lockstep:
 
 ```bash
 NEW=<new-password>
-vault kv patch secret/api               mysql-password="$NEW"
+vault kv patch secret/api               spring.datasource.password="$NEW"
 vault kv patch secret/platform/mariadb  password="$NEW"
 
 ROOT=$(vault kv get -field=root-password secret/platform/mariadb)
@@ -374,8 +385,8 @@ Same shape, narrower blast radius:
 | `secret/platform/ghcr` | `imagePullSecrets` plus the Flux registry scan | next image pull picks up the new auth; a scan recovers on its own interval |
 
 For the api's third-party tokens (Brevo, Google Calendar, Discord),
-`scripts/seed-vault-from-env.sh --apply --sync-api` does the
-`vault kv patch` + VSO force-refresh + api pod delete in one step.
+`scripts/seed-vault-from-env.sh --apply --sync-api` writes Vault and
+restarts the api in one step.
 
 ### Future: Spring Cloud Vault dynamic MariaDB creds
 
@@ -384,8 +395,8 @@ engine (`database/config/mariadb`) and role
 (`database/roles/api`, 72h default / 168h max). Once
 `spring.cloud.vault.database.enabled=true` correctly rebinds
 `spring.datasource.{username,password}` (currently broken in our
-Spring Cloud Vault version), drop `mysql-user` / `mysql-password`
-from the Vault Agent template and re-set
-`VAULT_DB_ENABLED=true` on the api Deployment. Vault then mints a
+Spring Cloud Vault version), drop `spring.datasource.username` and
+`password` from `secret/api` and set
+`spring.cloud.vault.database.enabled=true` in the prod profile. Vault then mints a
 short-lived MariaDB user per pod and rotates it without operator
 involvement.

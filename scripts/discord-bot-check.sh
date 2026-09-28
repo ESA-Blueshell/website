@@ -25,7 +25,7 @@ Checks:
 
 Once every check passes:
   --dev    write DISCORD_BOT_TOKEN and DISCORD_GUILD_ID into services/api/.api.env
-  --vault  patch secret/api (discord-bot-token, discord-guild-id) and restart
+  --vault  patch secret/api (discord.botToken, discord.guildId) and restart
            the api deployment
 EOF
 }
@@ -200,7 +200,7 @@ case "$write" in
     command -v vault >/dev/null || { echo "Needs the vault CLI, logged in." >&2; exit 2; }
     command -v kubectl >/dev/null || { echo "Needs kubectl, pointed at the cluster." >&2; exit 2; }
     # patch, never put: put replaces every field of secret/api.
-    printf '%s' "$token" | vault kv patch secret/api discord-bot-token=- discord-guild-id="$guild" >/dev/null
+    printf '%s' "$token" | vault kv patch secret/api discord.botToken=- discord.guildId="$guild" >/dev/null
     kubectl -n default rollout restart deployment/api
     echo "Patched secret/api and restarted the api."
     ;;

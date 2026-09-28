@@ -53,26 +53,8 @@ path "secret/data/api/*" {
   capabilities = ["read"]
 }
 
-# Spring Cloud Vault's KV backend probes secret/<spring.application.name>
-# (= "BlueshellAPI"), secret/<...>/<active-profile>, secret/application,
-# and secret/application/<active-profile> on every startup. None of those
-# paths are seeded — but a 403 on the lookup is fatal to the boot
-# sequence (the Vault property source aborts), while a 404 is a benign
-# INFO log. Granting read here turns the deny-by-default into a 404.
-# These four paths are intentionally never written.
-path "secret/data/application" {
-  capabilities = ["read"]
-}
-
-path "secret/data/application/*" {
-  capabilities = ["read"]
-}
-
-path "secret/data/BlueshellAPI" {
-  capabilities = ["read"]
-}
-
-path "secret/data/BlueshellAPI/*" {
+# The mail passwords, from the path Stalwart shares.
+path "secret/data/platform/mail" {
   capabilities = ["read"]
 }
 
@@ -101,8 +83,7 @@ EOF
 
 # VSO reads here to mint k8s Secrets in the namespaces of apps that need
 # them — platform/edge (Cloudflare DNS-01 token for cert-manager and
-# external-dns), api (Brevo, Google Calendar and Discord keys, plus
-# jwt-secret and the Vault OIDC client secret), platform/mail (stalwart
+# external-dns), platform/mail (stalwart
 # admin + SMTP relay credentials, bounce mailbox, DKIM),
 # platform/ghcr (GitHub PAT for pulling private ghcr.io images),
 # platform/flux-git (write deploy key image-automation-controller pushes with).
@@ -135,10 +116,6 @@ EOF
 
 cat <<'EOF' >/tmp/vso.hcl
 path "secret/data/platform/edge" {
-  capabilities = ["read"]
-}
-
-path "secret/data/api" {
   capabilities = ["read"]
 }
 
@@ -232,12 +209,12 @@ fi
 # Short-circuit when the client secret is unseeded so a fresh Vault
 # install doesn't fail the Job on an unsatisfiable precondition.
 
-if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
+if vault kv get -field=auth.clients.vault.secret secret/api >/dev/null 2>&1; then
   if ! vault auth list -format=json | grep -q '"oidc/"'; then
     vault auth enable oidc
   fi
 
-  OIDC_CLIENT_SECRET=$(vault kv get -field=vault-oidc-client-secret secret/api)
+  OIDC_CLIENT_SECRET=$(vault kv get -field=auth.clients.vault.secret secret/api)
 
   # `oidc_discovery_url` is validated at write time. Tolerate failure
   # for the first run on a cold cluster (api not yet Ready); the next
@@ -276,6 +253,6 @@ JSON
 
   unset OIDC_CLIENT_SECRET
 else
-  echo "secret/api:vault-oidc-client-secret not seeded yet — skipping OIDC auth method."
+  echo "secret/api:auth.clients.vault.secret not seeded yet — skipping OIDC auth method."
   echo "Seed with: scripts/seed-vault-from-env.sh --apply <env-files...> (then re-run this Job via flux reconcile kustomization apps-data)."
 fi

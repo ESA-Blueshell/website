@@ -38,7 +38,7 @@ the script means the rules CI runs are the rules `--self-test` proves.
 | `.github/**` other than `actions/` | `Workflow checks` |
 | `services/api/**`, `libs/**`, `config/detekt/**` | api lint, unit, integration and coverage, `Build has no warnings` |
 | `services/frontend/**` | frontend unit, e2e and e2e coverage |
-| the API surface, the schema, `services/frontend/src/**` outside `assets` and `styles`, `tests/**`, the compose files | system tests, acceptance features |
+| the API surface, the schema, `services/frontend/src/**` outside `assets` and `styles`, `tests/**` | system tests, acceptance features |
 | `db/changelog/**` | schema compatibility, changeset SQL |
 | the Dockerfiles and what they resolve | image builds |
 | `services/api/src/main/kotlin/**`, `services/frontend/src/**` | `Changed lines are covered` |
@@ -56,7 +56,8 @@ Three things sit outside the buckets.
 logic and `gradle.properties`, and `.github/actions/**`. A match turns on every bucket.
 
 **`ignore`** is what no job validates: `docs/**`, `gameart/**`, `infra/dns/**`, the editor and
-Renovate config, and the release-please manifest. A pull request touching only these runs
+Renovate config, the release-please manifest and the dev stack's compose files, env and mail
+server, which CI has not started since the system tests run natively. A pull request touching only these runs
 nothing, as it did before.
 
 **Anything else** runs the whole suite and says so. A changed path in neither a bucket nor the

@@ -1,6 +1,6 @@
 services:
   stalwart:
-    image: stalwartlabs/stalwart:v0.15.5
+    image: stalwartlabs/stalwart:v0.16.22
     hostname: mail.dev.local
     environment:
       STALWART_FALLBACK_ADMIN_USER: ${STALWART_ADMIN_USER:-admin}
@@ -29,7 +29,7 @@ services:
       start_period: 30s
 
   stalwart-init:
-    image: curlimages/curl:8.11.1
+    image: curlimages/curl:8.22.0
     depends_on:
       stalwart:
         condition: service_healthy

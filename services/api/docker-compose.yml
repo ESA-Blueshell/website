@@ -1,6 +1,6 @@
 services:
   db:
-    image: mariadb:10.11.10
+    image: mariadb:10.11.19
     container_name: db
     ports:
       - "3307:3306"

@@ -1,6 +1,6 @@
 services:
   vault:
-    image: hashicorp/vault:1.18
+    image: hashicorp/vault:1.21
     profiles: [oidc-e2e]
     cap_add:
       - IPC_LOCK
@@ -20,7 +20,7 @@ services:
       start_period: 5s
 
   vault-init:
-    image: hashicorp/vault:1.18
+    image: hashicorp/vault:1.21
     profiles: [oidc-e2e]
     depends_on:
       vault:

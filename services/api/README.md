@@ -91,7 +91,6 @@ api/src/main/kotlin/net/blueshell/api/
     ├── integration/       # Anti-corruption layers
     │   ├── email/        # Brevo email service
     │   ├── calendar/     # Google Calendar API
-    │   ├── payment/      # Mollie payment processor
     │   └── ...
     └── jobs/             # Job dispatching (@Async + RetryTemplate)
 ```
@@ -141,7 +140,6 @@ Auto-generated from `@Tag`, `@Operation`, and parameter annotations.
 The API integrates with several external services via anti-corruption layers in `platform/integration/`:
 
 - **Google Calendar API**: Event synchronization
-- **Mollie**: Payment processing
 - **Brevo**: Email campaigns (contact sync fallback)
 - **Stalwart** (SMTP relay): transactional email delivery via JavaMailSender
 - **Job Dispatch**: @Async thread pool + RetryTemplate (no external broker)

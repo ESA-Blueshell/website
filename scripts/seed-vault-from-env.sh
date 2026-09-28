@@ -66,17 +66,8 @@ load_env_file() {
   done <"$file"
 }
 
-first_value() {
-  local key
-  local value
-  for key in "$@"; do
-    value="${!key-}"
-    if [[ -n "$value" ]]; then
-      printf '%s' "$value"
-      return 0
-    fi
-  done
-  return 1
+env_value() {
+  printf '%s' "${!1-}"
 }
 
 append_field() {
@@ -221,7 +212,6 @@ sync_api_secret() {
   echo "Watch rollout: kubectl -n default get pod -l app.kubernetes.io/name=api -w"
 }
 
-
 APPLY=0
 SYNC_API=0
 FILES=()
@@ -250,9 +240,7 @@ if [[ "$SYNC_API" -eq 1 && "$APPLY" -ne 1 ]]; then
   exit 1
 fi
 
-for cmd in vault; do
-  command -v "$cmd" >/dev/null 2>&1 || { echo "missing command: $cmd" >&2; exit 1; }
-done
+command -v vault >/dev/null 2>&1 || { echo "missing command: vault" >&2; exit 1; }
 if [[ "$SYNC_API" -eq 1 ]]; then
   for cmd in kubectl base64; do
     command -v "$cmd" >/dev/null 2>&1 || { echo "missing command: $cmd" >&2; exit 1; }
@@ -277,24 +265,24 @@ EDGE_FIELDS=()
 GHCR_ARGS=()
 GHCR_FIELDS=()
 
-jwt_secret="$(first_value JWT_SECRET 2>/dev/null || true)"
+jwt_secret="$(env_value JWT_SECRET)"
 if [[ "$jwt_secret" =~ ^[0-9A-Fa-f]{64}$ ]]; then
   echo "Warning: JWT_SECRET looks like a 32-byte hex string. Production expects Base64 that decodes to at least 64 bytes." >&2
 fi
 
 append_field secret/api jwt-secret "$jwt_secret"
-append_field secret/api two-factor-encryption-key "$(first_value TWO_FACTOR_ENCRYPTION_KEY 2>/dev/null || true)"
-append_field secret/api brevo-api-key "$(first_value BREVO_API_KEY 2>/dev/null || true)"
-append_field secret/api brevo-folder-contribution-periods-id "$(first_value BREVO_FOLDER_CONTRIBUTION_PERIODS_ID 2>/dev/null || true)"
-append_field secret/api google-calendar-id "$(first_value GOOGLE_CALENDAR_ID 2>/dev/null || true)"
-append_field secret/api google-calendar-sa-json "$(first_value GOOGLE_CALENDAR_SA_JSON 2>/dev/null || true)"
-append_field secret/api discord-bot-token "$(first_value DISCORD_BOT_TOKEN 2>/dev/null || true)"
-append_field secret/api discord-guild-id "$(first_value DISCORD_GUILD_ID 2>/dev/null || true)"
-append_field secret/api vault-oidc-client-secret "$(first_value VAULT_OIDC_CLIENT_SECRET 2>/dev/null || true)"
+append_field secret/api two-factor-encryption-key "$(env_value TWO_FACTOR_ENCRYPTION_KEY)"
+append_field secret/api brevo-api-key "$(env_value BREVO_API_KEY)"
+append_field secret/api brevo-folder-contribution-periods-id "$(env_value BREVO_FOLDER_CONTRIBUTION_PERIODS_ID)"
+append_field secret/api google-calendar-id "$(env_value GOOGLE_CALENDAR_ID)"
+append_field secret/api google-calendar-sa-json "$(env_value GOOGLE_CALENDAR_SA_JSON)"
+append_field secret/api discord-bot-token "$(env_value DISCORD_BOT_TOKEN)"
+append_field secret/api discord-guild-id "$(env_value DISCORD_GUILD_ID)"
+append_field secret/api vault-oidc-client-secret "$(env_value VAULT_OIDC_CLIENT_SECRET)"
 
-mariadb_root_password="$(first_value MYSQL_ROOT_PASSWORD 2>/dev/null || true)"
-mariadb_user="$(first_value MYSQL_USER 2>/dev/null || true)"
-mariadb_password="$(first_value MYSQL_PASSWORD 2>/dev/null || true)"
+mariadb_root_password="$(env_value MYSQL_ROOT_PASSWORD)"
+mariadb_user="$(env_value MYSQL_USER)"
+mariadb_password="$(env_value MYSQL_PASSWORD)"
 
 # Mirror the app DB user + password into secret/api so the Vault Agent
 # template in apps/stateless/api/deployment.yaml can render them
@@ -303,8 +291,8 @@ mariadb_password="$(first_value MYSQL_PASSWORD 2>/dev/null || true)"
 # creds (`spring.cloud.vault.database.enabled=true`) are working.
 append_field secret/api mysql-user     "$mariadb_user"
 append_field secret/api mysql-password "$mariadb_password"
-mariadb_admin_user="$(first_value MARIADB_ADMIN_USER 2>/dev/null || true)"
-mariadb_admin_password="$(first_value MARIADB_ADMIN_PASSWORD 2>/dev/null || true)"
+mariadb_admin_user="$(env_value MARIADB_ADMIN_USER)"
+mariadb_admin_password="$(env_value MARIADB_ADMIN_PASSWORD)"
 
 if [[ -z "$mariadb_admin_user" && -n "$mariadb_root_password" ]]; then
   mariadb_admin_user="root"
@@ -319,14 +307,14 @@ append_field secret/platform/mariadb password "$mariadb_password"
 append_field secret/platform/mariadb admin-user "$mariadb_admin_user"
 append_field secret/platform/mariadb admin-password "$mariadb_admin_password"
 
-append_field secret/platform/mail admin-user "$(first_value STALWART_ADMIN_USER 2>/dev/null || true)"
-append_field secret/platform/mail admin-password "$(first_value STALWART_ADMIN_PASSWORD 2>/dev/null || true)"
-append_field secret/platform/mail bounce-mailbox-user "$(first_value EMAIL_BOUNCE_IMAP_USERNAME 2>/dev/null || true)"
-append_field secret/platform/mail bounce-mailbox-password "$(first_value EMAIL_BOUNCE_IMAP_PASSWORD 2>/dev/null || true)"
+append_field secret/platform/mail admin-user "$(env_value STALWART_ADMIN_USER)"
+append_field secret/platform/mail admin-password "$(env_value STALWART_ADMIN_PASSWORD)"
+append_field secret/platform/mail bounce-mailbox-user "$(env_value EMAIL_BOUNCE_IMAP_USERNAME)"
+append_field secret/platform/mail bounce-mailbox-password "$(env_value EMAIL_BOUNCE_IMAP_PASSWORD)"
 
-append_field secret/platform/edge cloudflare.dns_api_token "$(first_value CF_DNS_API_TOKEN 2>/dev/null || true)"
-append_field secret/platform/ghcr username "$(first_value GHCR_USERNAME 2>/dev/null || true)"
-append_field secret/platform/ghcr token "$(first_value GHCR_TOKEN 2>/dev/null || true)"
+append_field secret/platform/edge cloudflare.dns_api_token "$(env_value CF_DNS_API_TOKEN)"
+append_field secret/platform/ghcr username "$(env_value GHCR_USERNAME)"
+append_field secret/platform/ghcr token "$(env_value GHCR_TOKEN)"
 
 if [[ ${#API_ARGS[@]} -eq 0 && ${#MARIADB_ARGS[@]} -eq 0 && ${#MAIL_ARGS[@]} -eq 0 && ${#EDGE_ARGS[@]} -eq 0 && ${#GHCR_ARGS[@]} -eq 0 ]]; then
   echo "No mapped secret values were found in the provided environment." >&2

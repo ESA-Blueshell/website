@@ -6,6 +6,8 @@ import jakarta.validation.Valid
 import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.api.JobExecutor
 import net.blueshell.api.jobs.domain.JobExecutionQuery
+import net.blueshell.api.security.AdminOnly
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
@@ -15,7 +17,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -36,7 +37,7 @@ class JobManagementController(
     private val meterRegistry: MeterRegistry,
 ) {
     @GetMapping
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'read')")
+    @AdminOnly
     fun list(
         @ParameterObject
         @PageableDefault(size = PAGE_SIZE, sort = ["updatedAt"], direction = Sort.Direction.DESC)
@@ -49,7 +50,7 @@ class JobManagementController(
     }
 
     @PostMapping("/{id}/retry")
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'retry')")
+    @AdminOnly
     fun retry(
         @PathVariable id: Long,
     ): JobExecutionDTO {
@@ -66,17 +67,17 @@ class JobManagementController(
     }
 
     @GetMapping("/types")
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'read')")
+    @AdminOnly
     fun jobTypes(): List<JobTypeDescriptorDTO> = jobCatalog.describe()
 
     @PostMapping("/enqueue")
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'write')")
+    @AdminOnly
     fun enqueue(
         @Valid @RequestBody request: EnqueueJobRequest,
     ): JobExecutionDTO = views.toDto(jobCatalog.enqueue(request.jobType, request.payload))
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyAuthority('BOARD', 'ADMIN')")
+    @BoardOnly
     fun getStats(): JobStatsDTO {
         val countByStatus = jobExecutionService.countAllByStatus()
 

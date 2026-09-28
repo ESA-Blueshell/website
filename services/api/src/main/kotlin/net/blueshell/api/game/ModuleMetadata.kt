@@ -15,6 +15,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "game",
     allowedDependencies = [
+        // Open kernel: the game writes are @BoardOnly.
+        "security",
         // Open kernel.
         "shared",
         // A game's pictures are stored through StoredPictures and drawn through asImage.

@@ -5,11 +5,11 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.domain.ContributionPeriodUseCases
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -42,7 +42,7 @@ class ContributionPeriodController
             }
         }
 
-        @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionPeriod', 'write')")
+        @BoardOnly
         @PostMapping("/contributionPeriods")
         @ResponseStatus(HttpStatus.CREATED)
         fun createContributionPeriod(
@@ -61,7 +61,7 @@ class ContributionPeriodController
             return contributionPeriod.asResponse()
         }
 
-        @PreAuthorize("hasPermission(#id, 'ContributionPeriod', 'write')")
+        @BoardOnly
         @PutMapping("/contributionPeriods/{id}")
         fun updateContributionPeriod(
             @PathVariable id: Long,
@@ -82,7 +82,7 @@ class ContributionPeriodController
             return contributionPeriod.asResponse()
         }
 
-        @PreAuthorize("hasPermission(#id, 'ContributionPeriod', 'delete')")
+        @BoardOnly
         @DeleteMapping("/contributionPeriods/{id}")
         @ResponseStatus(HttpStatus.NO_CONTENT)
         fun deleteContributionPeriodById(

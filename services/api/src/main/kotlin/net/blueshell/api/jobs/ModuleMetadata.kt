@@ -15,7 +15,7 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "jobs",
     allowedDependencies = [
-        // Open kernel: JobExecutionPermission extends the base evaluator.
+        // Open kernel: the job manager is @AdminOnly, its stats @BoardOnly.
         "security",
         // Open kernel.
         "shared",

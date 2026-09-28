@@ -14,7 +14,7 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "blog",
     allowedDependencies = [
-        // Open kernel: BlogPermission extends the base evaluator.
+        // Open kernel: the writes are @BoardOnly.
         "security",
         // Open kernel.
         "shared",

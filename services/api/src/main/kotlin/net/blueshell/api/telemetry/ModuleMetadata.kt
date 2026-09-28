@@ -14,7 +14,7 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "telemetry",
     allowedDependencies = [
-        // Open kernel: TelemetryPermission extends the base evaluator.
+        // Open kernel: recording is @BoardOnly.
         "security",
         // Open kernel.
         "shared",

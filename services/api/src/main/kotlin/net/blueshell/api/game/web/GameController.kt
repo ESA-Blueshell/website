@@ -7,8 +7,8 @@ import net.blueshell.api.game.api.GameCompetition
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameChannel
+import net.blueshell.api.security.BoardOnly
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -40,7 +40,7 @@ class GameController(
     }
 
     /** A game the board adds from the casual pages. Its address answers straight away. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun createCasualGame(
@@ -61,7 +61,7 @@ class GameController(
         )
 
     /** A game corrected: everything but its code, which everything else points at. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PutMapping("/{game}")
     fun updateCasualGame(
         @PathVariable game: String,
@@ -83,7 +83,7 @@ class GameController(
         )
 
     /** A game archived, or back among the games played. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PutMapping("/{game}/archived")
     fun archiveGame(
         @PathVariable game: String,
@@ -91,7 +91,7 @@ class GameController(
     ): CasualGameResponse = answer(games.archive(game, request.archived))
 
     /** What removing a game would touch, read before the board is asked to agree to it. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @BoardOnly
     @GetMapping("/{game}/holdings")
     fun findGameHoldings(
         @PathVariable game: String,
@@ -107,7 +107,7 @@ class GameController(
     }
 
     /** An archived game taken off the site; its row is kept. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @BoardOnly
     @DeleteMapping("/{game}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun removeGame(

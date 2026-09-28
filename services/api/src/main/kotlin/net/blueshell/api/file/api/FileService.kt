@@ -54,16 +54,16 @@ class FileService
         @PersistenceContext
         private lateinit var em: EntityManager
 
-        private fun written(row: File): File = repository.saveAndFlush(row).also(em::refresh)
+        private fun create(row: File): File = repository.saveAndFlush(row).also(em::refresh)
 
         // The existence query flushes the session first, which writes what the edit cascades before
         // the merge; merging it unwritten fails on a lazy owner.
-        private fun rewritten(row: File): File {
+        private fun update(row: File): File {
             val id = row.id
             if (id == null || !repository.existsById(id)) {
                 throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with id: $id")
             }
-            return written(row)
+            return create(row)
         }
 
         @Transactional(readOnly = true)
@@ -195,7 +195,7 @@ class FileService
             )
             entity.type = type
 
-            val stored = if (entity.id != null) rewritten(entity) else written(entity)
+            val stored = if (entity.id != null) update(entity) else create(entity)
             // The widths this picture is served at, asked for now rather than at the first
             // request for one: a converter run while somebody is waiting for an image is a
             // request that waits for a subprocess. A picture that moves is queued instead.

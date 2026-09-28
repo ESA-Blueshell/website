@@ -62,8 +62,8 @@ class FileServiceWriteTest {
         val stored = mock<File>().also { whenever(it.id).thenReturn(3) }
         whenever(repository.existsById(3)).thenReturn(true)
 
-        assertThat(save("written", fresh)).isSameAs(fresh)
-        assertThat(save("rewritten", stored)).isSameAs(stored)
+        assertThat(save("create", fresh)).isSameAs(fresh)
+        assertThat(save("update", stored)).isSameAs(stored)
 
         verify(manager, times(1)).refresh(fresh)
         verify(manager, times(1)).refresh(stored)
@@ -73,6 +73,21 @@ class FileServiceWriteTest {
     fun `a file the database no longer has is not written back`() {
         val lost = mock<File>().also { whenever(it.id).thenReturn(4) }
 
-        assertThatThrownBy { save("rewritten", lost) }.isInstanceOf(ResponseStatusException::class.java)
+        assertThatThrownBy { save("update", lost) }.isInstanceOf(ResponseStatusException::class.java)
+    }
+
+    @Test
+    fun `a file is removed, by itself or by its id, and says so`() {
+        val file =
+            mock<File>().also {
+                whenever(it.id).thenReturn(5)
+                whenever(it.path).thenReturn("ab/cd")
+            }
+        whenever(repository.findById(5)).thenReturn(Optional.of(file))
+
+        service.delete(file)
+        service.deleteById(5)
+
+        verify(repository, times(2)).delete(file)
     }
 }

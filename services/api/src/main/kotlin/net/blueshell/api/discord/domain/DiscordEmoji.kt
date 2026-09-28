@@ -33,8 +33,8 @@ class DiscordEmojiDirectory(
             client
                 .getGuild(guildId, false)
                 .emojis
-                ?.map { DiscordEmoji(it.id, it.name, it.animated) }
-                ?.sortedBy { it.name.lowercase() }
+                .map { DiscordEmoji(it.id, it.name, it.animated) }
+                .sortedBy { it.name.lowercase() }
         }
     }
 

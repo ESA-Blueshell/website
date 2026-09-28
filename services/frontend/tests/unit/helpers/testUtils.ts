@@ -1,6 +1,5 @@
 import {type Component, h, nextTick} from "vue"
 import {flushPromises, mount, type VueWrapper} from "@vue/test-utils"
-import {vi} from "vitest"
 import {VApp} from "vuetify/components"
 
 type ImportOriginal = <T = unknown>() => Promise<T>
@@ -31,24 +30,6 @@ export function unmountAll(wrappers: VueWrapper[], suite: string): void {
 
 export function hrefs(wrapper: VueWrapper<any>): string[] {
   return wrapper.findAll("a[href]").map((node) => node.attributes("href"))
-}
-
-export function createTestStore<
-  G extends Record<string, unknown> = Record<string, unknown>,
->(
-  getters: G,
-): {
-  getters: G
-  state: Record<string, unknown>
-  commit: ReturnType<typeof vi.fn>
-  dispatch: ReturnType<typeof vi.fn>
-} {
-  return {
-    getters,
-    state: {},
-    commit: vi.fn(),
-    dispatch: vi.fn(),
-  }
 }
 
 export async function withVuexUseStore(

@@ -17,7 +17,8 @@ export const editorStubs = {
   SearchPicker: {name: "SearchPicker", props: ["options", "emptyNote", "testidPrefix"], emits: ["pick"], template: "<div />"},
   ConfirmDialog: {name: "ConfirmDialog", props: ["open", "question", "failure", "working", "testid"], emits: ["confirm", "update:open"], template: "<div />"},
   MarkdownEditor: {name: "MarkdownEditor", props: ["modelValue", "maxLength"], emits: ["update:modelValue"], template: "<div />"},
-  CutButton: {props: ["href", "testid", "disabled"], emits: ["click"], template: "<button :data-testid='testid' :data-disabled='String(Boolean(disabled))' @click=\"$emit('click')\"><slot /></button>"},
+  // Declares only what CutButton declares, so `disabled` falls through to the button as it does on the real one.
+  CutButton: {props: ["href", "testid"], emits: ["click"], template: "<button :data-testid='testid' @click=\"$emit('click')\"><slot /></button>"},
 }
 
 /** Types into the island field under [testid], as its control reports what was typed. */

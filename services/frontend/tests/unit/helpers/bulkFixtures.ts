@@ -46,66 +46,12 @@ export function period(overrides?: Partial<ContributionPeriodResponse>): Contrib
 
 // ── Reminder / incasso-email preset helpers (base: incasso: false) ─────────────
 
-/** Regular unpaid non-incasso member — included by default in reminder action. */
-export function regularTarget(userId: number): BulkTarget {
-  return target(userId)
-}
-
-/** Member on incasso — WARNING in reminder, INCLUDED in incasso action. */
-export function incassoPayerTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: true,
-    },
-  })
-}
-
-/** Member explicitly NOT on incasso — used for INCASSO_MISMATCH tests. */
-export function noIncassoTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: false,
-    },
-  })
-}
-
-/** Member with no email address — SKIPPED(NO_EMAIL) in any email action. */
-export function noEmailTarget(userId: number, incasso = false): BulkTarget {
-  return target(userId, {
-    email: null,
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso,
-    },
-  })
-}
-
 /** Honorary member — EXCLUDED in reminder/incasso actions, SKIPPED in paid-status/end/resume. */
 export function honoraryTarget(userId: number): BulkTarget {
   return target(userId, {
     isHonorary: true,
     mostRecentMembership: {
       type: MemberType.HONORARY,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: false,
-    },
-  })
-}
-
-/** Alumni member. */
-export function alumniTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: {
-      type: MemberType.ALUMNI,
       startDate: "2024-01-01",
       endDate: null,
       incasso: false,
@@ -129,21 +75,6 @@ export function alreadyPaidTarget(userId: number, incasso = false): BulkTarget {
 /** Member with no membership record. */
 export function noMembershipTarget(userId: number): BulkTarget {
   return target(userId, {mostRecentMembership: null, memberSince: null})
-}
-
-/**
- * Member whose membership ended recently, within the latest period.
- * Useful for resume-membership WILL_RESUME tests.
- */
-export function recentlyEndedTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: "2025-06-15",
-      incasso: false,
-    },
-  })
 }
 
 /**

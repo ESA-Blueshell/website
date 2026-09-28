@@ -101,7 +101,7 @@ describe("the board member edit page", () => {
     await flushPromises()
     await wrapper.get("form").trigger("submit")
     expect(adapter.saveMemberOrReason).toHaveBeenCalledTimes(1)
-    expect(wrapper.get("[data-testid=board-member-edit-save]").attributes("data-disabled")).toBe("true")
+    expect(wrapper.get("[data-testid=board-member-edit-save]").attributes("disabled")).toBeDefined()
   })
 
   it("says the accounts could not be read rather than that there are none", async () => {

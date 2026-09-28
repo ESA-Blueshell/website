@@ -9,7 +9,6 @@ import EventPicker from "@/components/form/fields/EventPicker.vue"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import UserSelect from "@/components/form/fields/UserSelect.vue"
 import CountryPicker from "@/components/island/CountryPicker.vue"
-import FileInput from "@/components/island/FileInput.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import PhoneInput from "@/components/island/PhoneInput.vue"
 import {emojiCompletion} from "@/components/island/markdownEmoji"
@@ -35,27 +34,6 @@ describe("the eye on a password field", () => {
 
     expect(wrapper.find("button").attributes("data-testid")).toBeUndefined()
     expect(wrapper.find("button").attributes("aria-label")).toBe("Show the password")
-  })
-})
-
-describe("a file field", () => {
-  it("says nothing about the weight of a file the browser sized at nothing", () => {
-    const empty = new File([], "empty.pdf", {type: "application/pdf"})
-    const wrapper = mount(FileInput, {props: {modelValue: empty}})
-
-    expect(wrapper.find(".island-file__weight").text()).toBe("")
-  })
-
-  it("empties the browser's own box when the file is taken off", async () => {
-    const wrapper = mount(FileInput, {
-      props: {modelValue: new File(["x"], "a.png", {type: "image/png"}), testid: "poster"},
-      attachTo: document.body,
-    })
-
-    await wrapper.find('[data-testid="poster-clear"]').trigger("click")
-
-    expect((wrapper.find("input").element as HTMLInputElement).value).toBe("")
-    wrapper.unmount()
   })
 })
 

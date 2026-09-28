@@ -241,7 +241,11 @@ class GameService(
     private companion object {
         const val CODE_LENGTH = 32
 
-        /** Addresses the site's own pages answer to under /casual and /competition, so a game claiming one is unreachable. */
+        /**
+         * Addresses a game's page cannot take. `new` and `seasons` are the site's own pages under
+         * /casual and /competition; `competitive-scene` is the index's old /esports address, which
+         * still redirects to the index.
+         */
         val RESERVED = setOf("competitive-scene", "new", "seasons")
     }
 }

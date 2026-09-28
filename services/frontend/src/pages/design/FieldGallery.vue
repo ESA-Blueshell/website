@@ -14,9 +14,7 @@ import UserPicker from "@/components/form/fields/UserPicker.vue"
 import UserSelect from "@/components/form/fields/UserSelect.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
-import FileInput from "@/components/island/FileInput.vue"
 import FormControl from "@/components/island/FormControl.vue"
-import FormField from "@/components/island/FormField.vue"
 import IconButton from "@/components/island/IconButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import RadioGroup from "@/components/island/RadioGroup.vue"
@@ -39,7 +37,6 @@ const limit = ref("")
 const agreed = ref(false)
 const keeps = ref(true)
 const pick = ref("weekly")
-const picture = ref<File | null>(null)
 
 const wrong = ref("")
 const wrongDate = ref("")
@@ -267,16 +264,6 @@ const dark = ref(true)
               {value: 'never', label: 'Never'},
             ]"
           />
-          <form-field
-            label="A picture"
-            variant="stacked"
-          >
-            <file-input
-              v-model="picture"
-              accept="image/*"
-              say="Pick a picture"
-            />
-          </form-field>
         </div>
       </section>
 

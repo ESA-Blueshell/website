@@ -214,6 +214,16 @@
       ],
       "groupName": "blueshell generated clients",
       "minimumReleaseAge": null
+    },
+    {
+      "description": "CI, dev compose and the changeset render run production's MariaDB, 10.11.10, pinned in platform/cluster/flux/apps/data/mariadb/release.yaml. A bump there comes first (#1738); these follow it by hand.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "mariadb"
+      ],
+      "enabled": false
     }
   ]
 }

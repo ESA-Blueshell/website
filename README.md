@@ -157,7 +157,7 @@ Runbook: [`platform/docs/runbook.md`](platform/docs/runbook.md).
 |---------|-------|---------------|-------------|
 | `api` | `ghcr.io/esa-blueshell/api` | 8080 | Spring Boot REST API |
 | `frontend` | `ghcr.io/esa-blueshell/frontend` | 3000 | Vue.js SPA |
-| `db` | `mariadb:10.11` | 3306 | Application database |
+| `db` | `mariadb:10.11.10` | 3306 | Application database |
 
 ---
 

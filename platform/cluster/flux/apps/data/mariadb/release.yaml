@@ -32,14 +32,13 @@ spec:
   values:
     image:
       repository: bitnamilegacy/mariadb
-      # Pin MariaDB 10.11 LTS to match the old VPS and the rest of the
-      # codebase (services/api/docker-compose.yml + CI workflows — all
-      # pinned to mariadb:10.11.10). Bitnami chart
-      # 18.x defaults to MariaDB 11.x, which tightened a number of DDL
-      # rules (e.g. refusing `MODIFY COLUMN` on a column referenced by a
-      # foreign key — ERROR 1832) that our Flyway V28 migration
-      # `constraints-cleanup-hibernate-realignment` relies on. Without
-      # this pin the api crashloops on first boot against a fresh DB.
+      # MariaDB 10.11.10, the version the schema was taken from. Chart
+      # 18.x defaults to MariaDB 11.x, whose stricter DDL (a `MODIFY
+      # COLUMN` on a column a foreign key references is ERROR 1832) the
+      # changesets have never been run against. CI's service blocks in
+      # .github/workflows/validate.yml, services/api/docker-compose.yml
+      # and scripts/changeset-sql.sh run this same version; renovate.json
+      # holds them there. Moving off this frozen image is #1738.
       tag: 10.11.10-debian-12-r4
     auth:
       database: blueshell

@@ -503,7 +503,9 @@ jobs:
 
     services:
       db:
-        image: mariadb:10.11.18@sha256:8020e05c4c498d06c87f0a1db010eb79bd6f8fb30e9b763d4690c34ce1e61008
+        # Production's version, pinned in platform/cluster/flux/apps/data/mariadb/release.yaml;
+        # services/api/docker-compose.yml and scripts/changeset-sql.sh match it.
+        image: mariadb:10.11.10@sha256:41d89394db8e777d96058d4cf5cf4daf1ed87f76192154f3d89572676f1e2327
         ports: [ "3306:3306" ]
         env:
           MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
@@ -699,7 +701,9 @@ jobs:
     # downloaded instead of after two image builds.
     services:
       db:
-        image: mariadb:10.11.18@sha256:8020e05c4c498d06c87f0a1db010eb79bd6f8fb30e9b763d4690c34ce1e61008
+        # Production's version, pinned in platform/cluster/flux/apps/data/mariadb/release.yaml;
+        # services/api/docker-compose.yml and scripts/changeset-sql.sh match it.
+        image: mariadb:10.11.10@sha256:41d89394db8e777d96058d4cf5cf4daf1ed87f76192154f3d89572676f1e2327
         ports: [ "3306:3306" ]
         env:
           MYSQL_ROOT_PASSWORD: ci-blueshell-root
@@ -790,7 +794,9 @@ jobs:
     # downloaded instead of after two image builds.
     services:
       db:
-        image: mariadb:10.11.18@sha256:8020e05c4c498d06c87f0a1db010eb79bd6f8fb30e9b763d4690c34ce1e61008
+        # Production's version, pinned in platform/cluster/flux/apps/data/mariadb/release.yaml;
+        # services/api/docker-compose.yml and scripts/changeset-sql.sh match it.
+        image: mariadb:10.11.10@sha256:41d89394db8e777d96058d4cf5cf4daf1ed87f76192154f3d89572676f1e2327
         ports: [ "3306:3306" ]
         env:
           MYSQL_ROOT_PASSWORD: ci-blueshell-root

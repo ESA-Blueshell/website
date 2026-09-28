@@ -9,6 +9,31 @@ import java.time.LocalDate
 @Repository
 interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     /**
+     * How many places this handle ever held in this team's line-up for the game and season,
+     * through whatever fielding holds them, dropped or deleted, which the seed never writes again.
+     */
+    @Query(
+        value = """
+            SELECT COUNT(*) FROM team_roster_entry e
+            JOIN team_season ts ON ts.id = e.team_season_id
+            WHERE ts.team_id = :teamId AND ts.game = :game AND ts.season_id = :seasonId AND e.handle = :handle
+        """,
+        nativeQuery = true,
+    )
+    fun countEverPlaced(
+        @Param("teamId") teamId: Long,
+        @Param("game") game: String,
+        @Param("seasonId") seasonId: Long,
+        @Param("handle") handle: String,
+    ): Long
+
+    /** Every place a member is attached to, with the fielding and season it was played in. */
+    @Query(
+        "SELECT e FROM TeamRosterEntry e JOIN FETCH e.teamSeason ts JOIN FETCH ts.season WHERE e.userId IS NOT NULL",
+    )
+    fun findAllAttached(): List<TeamRosterEntry>
+
+    /**
      * A whole game's rosters for one season, the fielding and what it names fetched with them:
      * one read answers with every team at once, and lazy loading them would be one query per team.
      */

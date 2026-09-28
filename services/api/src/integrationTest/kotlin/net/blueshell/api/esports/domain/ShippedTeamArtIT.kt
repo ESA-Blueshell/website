@@ -37,6 +37,8 @@ import javax.sql.DataSource
  */
 @SpringBootTest
 class ShippedTeamArtIT : UserTestSupport() {
+    @Autowired private lateinit var shippedEsports: ShippedEsports
+
     @Autowired private lateinit var dataSource: DataSource
 
     @Autowired private lateinit var pictures: ShippedPictures
@@ -57,7 +59,7 @@ class ShippedTeamArtIT : UserTestSupport() {
 
     @BeforeEach
     fun loadTheRecords() {
-        ShippedEsports(dataSource, transactionTemplate, EsportsSeedFixture.files).apply()
+        shippedEsports.apply(EsportsSeedFixture.files)
     }
 
     /**

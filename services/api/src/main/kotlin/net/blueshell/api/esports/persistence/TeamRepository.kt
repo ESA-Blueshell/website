@@ -2,6 +2,7 @@ package net.blueshell.api.esports.persistence
 
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -18,4 +19,10 @@ interface TeamRepository : BaseRepository<Team, Long> {
     fun findAllOrderByNameAsc(): List<Team>
 
     fun findByNameIgnoreCase(name: String): Team?
+
+    /** How many teams ever held this name, deleted ones included, which the seed never writes again. */
+    @Query(value = "SELECT COUNT(*) FROM team WHERE name = :name", nativeQuery = true)
+    fun countEverNamed(
+        @Param("name") name: String,
+    ): Long
 }

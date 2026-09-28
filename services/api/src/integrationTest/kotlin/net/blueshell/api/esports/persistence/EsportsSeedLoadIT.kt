@@ -26,6 +26,8 @@ import javax.sql.DataSource
  */
 @SpringBootTest
 class EsportsSeedLoadIT : UserTestSupport() {
+    @Autowired private lateinit var shippedEsports: ShippedEsports
+
     @Autowired private lateinit var dataSource: DataSource
 
     @Autowired private lateinit var jdbc: JdbcTemplate
@@ -248,7 +250,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
         assertThat(count("team_roster_entry")).isEqualTo(before)
     }
 
-    private fun runLoader(): ShippedEsports.Applied = ShippedEsports(dataSource, transactionTemplate, EsportsSeedFixture.files).apply()
+    private fun runLoader(): ShippedEsports.Applied = shippedEsports.apply(EsportsSeedFixture.files)
 
     @AfterEach
     fun forgetTheFixtureGames() {

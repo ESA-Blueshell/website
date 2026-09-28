@@ -6,14 +6,12 @@ plugins {
     id("spring-conventions")
     id("testing-conventions")
     id("detekt-conventions")
-    id("org.graalvm.buildtools.native") version "1.1.12"
     `java-test-fixtures`
 
     // No versions: the root build puts the Kotlin plugins on the classpath.
     kotlin("plugin.jpa")
     kotlin("plugin.allopen")
     kotlin("plugin.noarg")
-    kotlin("kapt")
 
     java
 }
@@ -33,15 +31,6 @@ noArg {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
-}
-
-configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
-    }
-    testCompileOnly {
-        extendsFrom(configurations.testAnnotationProcessor.get())
-    }
 }
 
 val mockitoAgent =
@@ -96,23 +85,17 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
     implementation("com.google.apis:google-api-services-calendar:v3-rev20251207-2.0.0")
-    implementation("com.google.apis:google-api-services-groupssettings:v1-rev20220614-2.0.0")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.52.0")
 
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
     implementation("jakarta.validation:jakarta.validation-api")
-    implementation("jakarta.ws.rs:jakarta.ws.rs-api")
     implementation("jakarta.transaction:jakarta.transaction-api")
     implementation("org.springframework.data:spring-data-jpa")
     implementation("jakarta.persistence:jakarta.persistence-api")
 
-    implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
-    implementation("org.apache.tika:tika-core:4.0.0")
     implementation("com.googlecode.libphonenumber:libphonenumber:9.0.38")
-    implementation("com.github.scribejava:scribejava-apis:8.3.3")
-    implementation("org.springframework.retry:spring-retry:2.0.13")
-    implementation("org.springframework:spring-aop")
-    implementation("org.aspectj:aspectjweaver")
+    // BlogHtmlSanitizer's safelist. It arrived through flexmark until flexmark went; pinned where it resolved.
+    implementation("org.jsoup:jsoup:1.15.4")
 
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
 
@@ -122,7 +105,6 @@ dependencies {
     // generation, which uses its own com.fasterxml.jackson ObjectMapper
     // independently of our tools.jackson mapper.
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.2")
-    implementation("org.openapitools:jackson-databind-nullable:0.2.11")
 
     // Generated clients, published from ESA-Blueshell/{brevo,discord}-client.
     // They were generated in-repo under libs/clients until their specs, their
@@ -142,6 +124,7 @@ dependencies {
 
     implementation("org.commonmark:commonmark:0.30.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.30.0")
+    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.30.0")
     implementation(files("libs/snakeyaml-2.5.jar"))
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -150,7 +133,6 @@ dependencies {
     testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-mariadb:2.0.5")
-    testImplementation("io.rest-assured:spring-mock-mvc:6.0.1")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
     testImplementation("org.springframework.modulith:spring-modulith-core")
     testImplementation("io.github.classgraph:classgraph:4.8.194")
@@ -204,11 +186,6 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
 // non-consumable — it is only used internally for `bootJar`.
 configurations.named("bootArchives") {
     isCanBeConsumed = false
-}
-
-tasks.withType<JavaCompile>().configureEach {
-    options.release.set(25)
-    options.compilerArgs.add("-parameters")
 }
 
 // Mockito inline-mock-maker requires an agent on JDK 21+.
@@ -356,18 +333,6 @@ tasks.register("dumpOpenApiSpec") {
 tasks.withType<BootRun>().configureEach {
     outputs.upToDateWhen { false }
     jvmArgs("-Dspring.devtools.restart.enabled=true")
-}
-
-tasks.named<JavaCompile>("compileJava") {
-    options.annotationProcessorPath = configurations.annotationProcessor.get()
-}
-
-tasks.named<JavaCompile>("compileTestJava") {
-    options.annotationProcessorPath = configurations.testAnnotationProcessor.get()
-    options.compilerArgs = options.compilerArgs.filter { it != "-proc:none" }.toMutableList()
-    doFirst {
-        options.compilerArgs.removeAll(listOf("-proc:none"))
-    }
 }
 
 val classDependencyOutputDir = layout.buildDirectory.dir("reports/class-dependencies")

@@ -1,48 +1,7 @@
-import java.io.File
-
 plugins {
     java
     jacoco
     id("test-logging-conventions")
-}
-
-// Sharding via env vars `SHARD_TOTAL` / `SHARD_INDEX` (1-based), the same
-// partition :tests:system uses: scan the test classes directory sorted by FQCN,
-// take `absoluteHash(fqcn) % SHARD_TOTAL`, and include only that slice through
-// Gradle's `--tests` filter. A class always lands on the same shard, so a
-// failure is easy to place, and leaving the env vars unset runs everything in
-// one JVM exactly as before.
-fun Test.shardByTestClass() {
-    val shardTotal = System.getenv("SHARD_TOTAL")?.toIntOrNull()?.takeIf { it > 1 } ?: return
-    val shardIndex = System.getenv("SHARD_INDEX")?.toIntOrNull()?.takeIf { it in 1..shardTotal } ?: return
-    // The filter below is applied in doFirst, which Gradle does not hash, so
-    // without these every shard has identical inputs and one shard's result is
-    // served to the next FROM-CACHE. Naming them makes each slice its own task.
-    inputs.property("shardTotal", shardTotal)
-    inputs.property("shardIndex", shardIndex)
-    doFirst {
-        val classes =
-            testClassesDirs.asFileTree
-                .matching { include("**/*Test.class", "**/*IT.class") }
-                .files
-                .mapNotNull { f ->
-                    val root = testClassesDirs.firstOrNull { f.startsWith(it) } ?: return@mapNotNull null
-                    f.relativeTo(root).path.removeSuffix(".class").replace(File.separatorChar, '.')
-                }.filter { !it.contains('$') } // skip anonymous / nested $-classes
-                .sorted()
-        val mine = classes.filter { Math.floorMod(it.hashCode(), shardTotal) == shardIndex - 1 }
-        logger.lifecycle("Shard $shardIndex/$shardTotal — ${mine.size}/${classes.size} test classes")
-        filter {
-            isFailOnNoMatchingTests = false
-            if (mine.isEmpty()) {
-                // No classes assigned — exclude everything by including a pattern
-                // that cannot match. An empty include list would match all.
-                includeTestsMatching("__no_match__shard_${shardIndex}__")
-            } else {
-                mine.forEach { includeTestsMatching(it) }
-            }
-        }
-    }
 }
 
 // Where a report or a floor reads its execution data from. CI shards the

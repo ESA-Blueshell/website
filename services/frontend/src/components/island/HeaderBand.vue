@@ -66,7 +66,7 @@ withDefaults(defineProps<{
           class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl"
         >
           {{ heading }}<template v-if="headingTail">
-            <br><span class="text-brand">{{ headingTail }}</span>
+            <br><span class="text-brand-ink">{{ headingTail }}</span>
           </template>
         </h1>
         <p

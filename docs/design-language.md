@@ -95,7 +95,7 @@ ground rather than borrow borders.
 
 `--font-display` for headlines and short labels, `--font-body` for everything read,
 `--font-bitmap` for small technical labels, `--font-name` for people and boards. Eyebrows are
-11px at `0.3em` tracking in `--color-eyebrow`. A heading's second line takes `text-brand` when
+11px at `0.3em` tracking in `--color-eyebrow`. A heading's second line takes `text-brand-ink` when
 it earns the emphasis.
 
 ## Colour
@@ -104,6 +104,11 @@ Colours are asked for by token, never as a hex value or a Tailwind palette name.
 house look and is tuned first; light is values-only and every band is checked in both, which
 is why the accent resolves to blue there: `--color-acid` is 1.2:1 on white. Text meets AA in
 both halves.
+
+The blue has two tokens. `--color-brand` fills (a solid button, a sweep, a blob) and carries dark
+ink, so it stays light; `--color-brand-ink` is the blue read as text. They are the same in dark.
+Light darkens the ink, because `#3387fa` is 2.8:1 on the light ground, and every area pinned
+dark (`.island-dark`, `.band-swipe--pinned`, a hero's words) resets it to the fill.
 
 The ok colour is the house acid. `--color-ok` is `#a8ff00` in dark and a darker acid in
 light, so a tick or a saved notice reads as the house rather than as a stock green.

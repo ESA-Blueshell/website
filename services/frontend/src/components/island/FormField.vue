@@ -149,7 +149,7 @@ const saidId = `${uid}-said`
 }
 
 .island-field--inside:focus-within .island-field__label {
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 /* The label is the placeholder while it rests, so the control does not say the same thing
@@ -219,7 +219,7 @@ const saidId = `${uid}-said`
 
 .island-field__must {
   margin-left: 0.15rem;
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 .island-field__said {

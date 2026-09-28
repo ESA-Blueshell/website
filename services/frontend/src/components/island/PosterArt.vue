@@ -124,7 +124,7 @@ const {
   font-family: var(--font-display);
   font-size: 27cqw;
   line-height: 0.85;
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 .poster-art__month {

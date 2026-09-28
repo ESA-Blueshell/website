@@ -112,6 +112,7 @@ const sizes = computed(() => "100vw")
   bottom: 0;
   /* The scrim is what makes this legible, and it is dark in both themes, so the ink is too. */
   color: #f2f4f6;
+  --color-brand-ink: var(--color-brand);
 }
 
 .hero-band__words :deep(.text-ash) {
@@ -128,6 +129,17 @@ const sizes = computed(() => "100vw")
 @media (max-width: 767px) {
   .hero-band {
     height: clamp(17rem, 62vw, 24rem);
+  }
+
+  /* The words take most of a phone's hero, so the scrim reaches as high as the eyebrow. */
+  .hero-band__scrim {
+    background: linear-gradient(
+      to top,
+      color-mix(in oklab, #0d1319 94%, transparent) 0%,
+      color-mix(in oklab, #0d1319 86%, transparent) 50%,
+      color-mix(in oklab, #0d1319 62%, transparent) 78%,
+      transparent 100%
+    );
   }
 }
 </style>

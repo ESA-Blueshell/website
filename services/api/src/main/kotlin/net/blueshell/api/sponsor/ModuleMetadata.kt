@@ -17,7 +17,7 @@ import org.springframework.modulith.PackageInfo
         // DEBT: SponsorRepository.findByPicture takes a File, so the query signature
         // reaches for the entity where the id would do.
         "file :: entities",
-        // Open kernel: SponsorPermission extends the base evaluator.
+        // Open kernel: the controller is @BoardOnly.
         "security",
         // Open kernel.
         "shared",

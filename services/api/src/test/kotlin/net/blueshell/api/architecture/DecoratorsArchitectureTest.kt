@@ -206,12 +206,15 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
                 item: JavaMethod,
                 events: ConditionEvents,
             ) {
+                // Meta-annotated counts: @BoardOnly and @AdminOnly carry their @PreAuthorize.
                 val hasMethodLevelSecurity =
-                    item.isAnnotatedWith(PreAuthorize::class.java) ||
+                    item.isMetaAnnotatedWith(PreAuthorize::class.java) ||
+                        item.isAnnotatedWith(PreAuthorize::class.java) ||
                         item.isAnnotatedWith(PermitAll::class.java)
 
                 val hasClassLevelSecurity =
-                    item.owner.isAnnotatedWith(PreAuthorize::class.java) ||
+                    item.owner.isMetaAnnotatedWith(PreAuthorize::class.java) ||
+                        item.owner.isAnnotatedWith(PreAuthorize::class.java) ||
                         item.owner.isAnnotatedWith(PermitAll::class.java)
 
                 val isSecured = hasMethodLevelSecurity || hasClassLevelSecurity

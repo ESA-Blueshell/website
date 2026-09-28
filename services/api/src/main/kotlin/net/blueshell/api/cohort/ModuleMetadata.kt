@@ -42,6 +42,8 @@ import org.springframework.modulith.PackageInfo
         // JobSubjectResolver, which sit under jobs' web package. Pinned in
         // CrossModuleWebAccessArchitectureTest.
         "jobs :: legacy-web",
+        // Open kernel: the controllers are @AdminOnly.
+        "security",
         // Open kernel.
         "shared",
         // External ids are resolved through ExternalIdMappingService.

@@ -19,9 +19,9 @@ import net.blueshell.api.cohort.domain.InboundReconcilePreview
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -44,7 +44,7 @@ import java.time.Instant
 @RestController
 @RequestMapping("/management/cohort-subjects")
 @Tag(name = "Cohort Subjects", description = "Admin: logical subjects + their per-system mappings")
-@PreAuthorize("hasAuthority('ADMIN')")
+@AdminOnly
 class CohortSubjectController(
     private val queries: CohortSubjectQueryService,
     private val remediation: CohortRemediation,

@@ -2,12 +2,10 @@ package net.blueshell.api.architecture
 
 import com.tngtech.archunit.base.DescribedPredicate
 import com.tngtech.archunit.core.domain.JavaClass
-import com.tngtech.archunit.core.domain.JavaMethod
 import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import org.junit.jupiter.api.Test
@@ -195,41 +193,38 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         }
 
     @Test
-    fun `controller methods must not use standalone hasAuthority`(): Unit =
-        arch("@PreAuthorize should use hasPermission, not standalone hasAuthority") {
-            methods()
+    fun `controllers must not use standalone hasAuthority`(): Unit =
+        arch("@PreAuthorize should use hasPermission or a role annotation, not standalone hasAuthority") {
+            classes()
                 .that()
-                .areDeclaredInClassesThat()
                 .resideInAnyPackage(ArchitecturePackages.WEB)
                 .and()
-                .areDeclaredInClassesThat()
                 .haveSimpleNameEndingWith("Controller")
-                .and()
-                .areAnnotatedWith(PreAuthorize::class.java)
                 .should(notUseStandaloneHasAuthority())
-                .because("ADR-014: All authorization should use permission evaluators for consistency and testability")
+                .because(
+                    "ADR-014: a rule about the row goes through a permission evaluator, and a rule about the role " +
+                        "through @BoardOnly or @AdminOnly, so neither is a string that fails silently",
+                )
         }
 
-    private fun notUseStandaloneHasAuthority(): ArchCondition<JavaMethod> =
-        object : ArchCondition<JavaMethod>("not use standalone hasAuthority") {
+    /** Reads the class's own @PreAuthorize as well as each method's: a class-level one guards every route. */
+    private fun notUseStandaloneHasAuthority(): ArchCondition<JavaClass> =
+        object : ArchCondition<JavaClass>("not use standalone hasAuthority") {
             override fun check(
-                method: JavaMethod,
+                javaClass: JavaClass,
                 events: ConditionEvents,
             ) {
-                val preAuth = method.tryGetAnnotationOfType(PreAuthorize::class.java)
-                if (preAuth.isPresent) {
+                val guarded =
+                    listOf(javaClass.name to javaClass.tryGetAnnotationOfType(PreAuthorize::class.java)) +
+                        javaClass.methods.map { it.fullName to it.tryGetAnnotationOfType(PreAuthorize::class.java) }
+                for ((where, preAuth) in guarded) {
+                    if (!preAuth.isPresent) continue
                     val expression = preAuth.get().value
-
-                    // Check if hasAuthority is used without hasPermission
-                    val hasAuthority = expression.contains("hasAuthority")
-                    val hasPermission = expression.contains("hasPermission")
-
-                    if (hasAuthority && !hasPermission) {
+                    if (expression.contains("hasAuthority") && !expression.contains("hasPermission")) {
                         val msg =
-                            "Method ${method.fullName} uses standalone hasAuthority('...') " +
-                                "instead of hasPermission(...): $expression. " +
-                                "Use hasPermission(null, 'Role', 'ROLENAME') for role checks."
-                        events.add(SimpleConditionEvent.violated(method, msg))
+                            "$where uses standalone hasAuthority('...'): $expression. " +
+                                "Use @BoardOnly or @AdminOnly for a role rule, or hasPermission(...) for a rule about the row."
+                        events.add(SimpleConditionEvent.violated(javaClass, msg))
                     }
                 }
             }

@@ -109,8 +109,7 @@ export default defineConfig({
             }
         }),
         svgLoader(),
-        // Tailwind serves the esports island only; src/styles/island.css lists
-        // the directories it scans, so a class used elsewhere generates nothing.
+        // Tailwind serves the island only: src/styles/island.css scopes its utilities to `.island`.
         tailwind(),
     ],
     optimizeDeps: {

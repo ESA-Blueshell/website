@@ -12,8 +12,13 @@ describe("Partner page", () => {
     expect(wrapper.getComponent(PartnerPage).props("content")).toBe(PARTNER_PAGES["marketing-maatwerk"])
   })
 
-  it("routes each partner's address to its content", () => {
-    expect(router.resolve("/partners/el-nino").matched[0]?.props.default).toEqual({slug: "el-nino"})
-    expect(router.resolve("/partners/marketing-maatwerk").matched[0]?.props.default).toEqual({slug: "marketing-maatwerk"})
+  it("routes each partner's address to this page, with its content's slug", async () => {
+    for (const slug of ["el-nino", "marketing-maatwerk"]) {
+      const route = router.resolve(`/partners/${slug}`).matched[0]!
+      const load = route.components!.default as () => Promise<{default: unknown}>
+
+      expect(route.props.default).toEqual({slug})
+      expect((await load()).default).toBe(Partner)
+    }
   })
 })

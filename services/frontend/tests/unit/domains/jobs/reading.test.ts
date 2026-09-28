@@ -19,9 +19,10 @@ import {
   statusTitle,
   successRate,
   titleCase,
+  effectLabel,
   triggerLabel,
 } from "@/domains/jobs"
-import {JobTrigger} from "@/services/api"
+import {JobEffect, JobTrigger} from "@/services/api"
 
 const job = (fields: Partial<Job>): Job => fields as Job
 
@@ -33,6 +34,17 @@ describe("job reading", () => {
     expect(triggerLabel(job({trigger: JobTrigger.BY_HAND, forced: true}))).toBe("The trigger dialog")
     expect(triggerLabel(job({}))).toBe("")
     expect(Object.values(JobTrigger).every(trigger => triggerLabel(job({trigger})) !== "")).toBe(true)
+  })
+
+  it("says what a run did to the thing its job keeps", () => {
+    const announcement = (effect: JobEffect) => effectLabel(job({jobType: "discord.announcement", effect}))
+    expect(announcement(JobEffect.MADE)).toBe("Put up the #events-info announcement")
+    expect(announcement(JobEffect.EDITED)).toBe("Edited the #events-info announcement")
+    expect(announcement(JobEffect.UNCHANGED)).toBe("Found the #events-info announcement up to date")
+    expect(announcement(JobEffect.REMOVED)).toBe("Took down the #events-info announcement")
+    expect(effectLabel(job({jobType: "discord.event", effect: JobEffect.MADE}))).toBe("Put up the Discord event")
+    expect(effectLabel(job({jobType: "contact.sync", effect: JobEffect.EDITED}))).toBe("Edited what it keeps")
+    expect(effectLabel(job({jobType: "discord.post"}))).toBe("")
   })
 
   it("titles a status and a snake-cased type", () => {

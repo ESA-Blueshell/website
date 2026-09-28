@@ -5,6 +5,7 @@ import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.jobs.persistence.JobExecutionSpecifications
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.shared.tracking.Actor
@@ -117,13 +118,21 @@ class JobExecutionService(
     fun markRunning(execution: JobExecution): JobExecution {
         execution.status = JobExecutionStatus.RUNNING
         execution.startedAt = Instant.now()
+        execution.effect = null
+        execution.effectLink = null
         return super.update(execution)
     }
 
     @Transactional
-    fun markSuccess(execution: JobExecution): JobExecution {
+    fun markSuccess(
+        execution: JobExecution,
+        effect: JobEffect? = null,
+        link: String? = null,
+    ): JobExecution {
         execution.status = JobExecutionStatus.SUCCESS
         execution.finishedAt = Instant.now()
+        execution.effect = effect
+        execution.effectLink = link
         execution.errorMessage = null
         execution.errorType = null
         execution.errorReason = null

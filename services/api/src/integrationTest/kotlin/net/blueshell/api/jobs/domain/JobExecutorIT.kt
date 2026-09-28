@@ -150,7 +150,7 @@ class RetryingTestJobHandler : JobHandler {
         if (currentInvocation <= failuresBeforeSuccess) {
             throw IllegalStateException("planned failure $currentInvocation")
         }
-        return JobOutcome.Done
+        return JobOutcome.Done()
     }
 
     fun failForFirstCalls(count: Int) {

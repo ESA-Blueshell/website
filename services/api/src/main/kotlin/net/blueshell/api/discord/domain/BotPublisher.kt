@@ -229,6 +229,17 @@ class BotPublisher(
     override fun deleteDiscordEvent(discordEventId: String) =
         explained(LISTING) { gone { api.deleteGuildScheduledEvent(guildId, discordEventId) } }
 
+    override fun linkOf(
+        channel: String,
+        messageId: String,
+    ): String? =
+        doors.ifAvailable
+            ?.textRooms()
+            ?.firstOrNull { plain(it.name) == plain(channel) }
+            ?.let { "https://discord.com/channels/$guildId/${it.id}/$messageId" }
+
+    override fun linkOfDiscordEvent(discordEventId: String) = "https://discord.com/events/$guildId/$discordEventId"
+
     /*
      * Sent bare and only the ID read back: the generated response model wants a cover Discord
      * leaves null, and a create that throws after Discord made the event would make it again.

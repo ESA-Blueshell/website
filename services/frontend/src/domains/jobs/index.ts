@@ -13,6 +13,7 @@ export {
   actorDisplay,
   canRetry,
   categoryOptions,
+  effectLabel,
   errorSummary,
   hasStackTrace,
   jobDescription,

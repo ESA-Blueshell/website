@@ -5,7 +5,7 @@
  * without mounting anything.
  */
 import type {Job, JobRelatedEntity, JobStats} from "./adapters/jobs"
-import {JobExecutionCategory, JobExecutionStatus, JobTrigger} from "./adapters/jobs"
+import {JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger} from "./adapters/jobs"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
 
 /** `contact.sync_user` reads as `Contact Sync User`. */
@@ -58,6 +58,18 @@ export function triggerLabel(job: Job): string {
   if (!job.trigger) return ""
   const queuedBy = TRIGGERS[job.trigger]
   return job.forced && job.trigger !== JobTrigger.BY_HAND ? `${queuedBy}, run again by hand` : queuedBy
+}
+
+/** What a successful run did to the thing its job keeps; empty where it reported nothing. */
+export function effectLabel(job: Job): string {
+  if (!job.effect) return ""
+  const thing = jobCatalogEntry(job.jobType ?? "").thing ?? "what it keeps"
+  switch (job.effect) {
+    case JobEffect.MADE: return `Put up ${thing}`
+    case JobEffect.EDITED: return `Edited ${thing}`
+    case JobEffect.UNCHANGED: return `Found ${thing} up to date`
+    case JobEffect.REMOVED: return `Took down ${thing}`
+  }
 }
 
 export function errorSummary(job: Job): string {

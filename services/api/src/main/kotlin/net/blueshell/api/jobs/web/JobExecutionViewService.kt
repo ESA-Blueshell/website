@@ -81,6 +81,8 @@ class JobExecutionViewService(
             skipReason = execution.skipReason,
             forced = execution.forced,
             trigger = execution.trigger,
+            effect = execution.effect,
+            effectLink = execution.effectLink,
             payload = parsedPayload.raw,
             queuedAt = execution.queuedAt,
             startedAt = execution.startedAt,

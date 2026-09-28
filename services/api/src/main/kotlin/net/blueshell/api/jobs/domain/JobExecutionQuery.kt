@@ -10,4 +10,6 @@ data class JobExecutionQuery(
     var search: String? = null,
     var initiatedByType: ActionActorType? = null,
     var jobType: String? = null,
+    /** Leaves out the runs that found nothing to do. */
+    var hideSkipped: Boolean? = null,
 )

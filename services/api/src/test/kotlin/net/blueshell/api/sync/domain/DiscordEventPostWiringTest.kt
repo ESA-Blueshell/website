@@ -8,6 +8,7 @@ import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.QueuedJob
@@ -43,7 +44,7 @@ class DiscordEventPostWiringTest {
     fun `runs each job on the event it names`() {
         val posts: DiscordEventPosts =
             mock {
-                on { keepAnnouncement(42, false) } doReturn Kept(made = true)
+                on { keepAnnouncement(42, false) } doReturn Kept(JobEffect.MADE)
                 on { keepAnnouncement(7, false) } doReturn Kept()
                 on { keepCalendarPost(42, false) } doReturn Kept()
                 on { keepDiscordEvent(42, false) } doReturn Kept()
@@ -73,7 +74,7 @@ class DiscordEventPostWiringTest {
             mock {
                 on { keepAnnouncement(42, true) } doReturn Kept(skipped = "The event is over.")
                 on { keepCalendarPost(42, true) } doReturn Kept(skipped = "The event's day is over.")
-                on { keepDiscordEvent(42, true) } doReturn Kept(made = true)
+                on { keepDiscordEvent(42, true) } doReturn Kept(JobEffect.MADE, "https://discord.test/events/e1")
             }
         val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
         val lock = DiscordEventLock(repository)
@@ -83,7 +84,7 @@ class DiscordEventPostWiringTest {
         assertThat(DiscordCalendarPostJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
             .isEqualTo(JobOutcome.Skipped("The event's day is over."))
         assertThat(DiscordEventJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
-            .isEqualTo(JobOutcome.Done)
+            .isEqualTo(JobOutcome.Done(JobEffect.MADE, "https://discord.test/events/e1"))
     }
 
     private val lan =

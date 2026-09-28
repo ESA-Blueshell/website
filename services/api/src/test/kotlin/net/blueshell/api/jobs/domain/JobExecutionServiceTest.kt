@@ -5,6 +5,7 @@ import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
 import org.assertj.core.api.Assertions.assertThat
@@ -171,6 +172,19 @@ class JobExecutionServiceTest {
         assertThat(result.status).isEqualTo(JobExecutionStatus.SKIPPED)
         assertThat(result.skipReason).isEqualTo("Not due yet.")
         assertThat(result.finishedAt).isNotNull()
+    }
+
+    @Test
+    fun `a success records what the run did, and the next run starts without it`() {
+        whenever(repository.existsById(any())).thenReturn(true)
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
+        val execution = JobExecution(jobType = "demo").apply { id = 1 }
+
+        service.markSuccess(execution, JobEffect.MADE, "https://discord.test/m1")
+        assertThat(execution.effect to execution.effectLink).isEqualTo(JobEffect.MADE to "https://discord.test/m1")
+
+        service.markRunning(execution)
+        assertThat(execution.effect to execution.effectLink).isEqualTo(null to null)
     }
 
     @Test

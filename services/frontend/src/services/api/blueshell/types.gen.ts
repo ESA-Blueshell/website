@@ -1630,12 +1630,21 @@ export type InboundReconcileRow = {
     writable: boolean;
 };
 
+export enum JobEffect {
+    MADE = 'MADE',
+    EDITED = 'EDITED',
+    UNCHANGED = 'UNCHANGED',
+    REMOVED = 'REMOVED'
+}
+
 export type JobExecution = {
     actor?: Actor | null;
     attempts: number | null;
     category?: JobExecutionCategory | null;
     createdAt?: string | null;
     dedupKey?: string | null;
+    effect?: JobEffect | null;
+    effectLink?: string | null;
     errorMessage?: string | null;
     errorReason?: string | null;
     errorType?: string | null;
@@ -8446,6 +8455,7 @@ export type ListData = {
         search?: string;
         initiatedByType?: ActionActorType;
         jobType?: string;
+        hideSkipped?: boolean;
     };
     url: '/management/jobs';
 };

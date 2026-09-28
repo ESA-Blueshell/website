@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.JobExecutionCategory
+import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
@@ -136,10 +137,17 @@ class JobExecutionViewServiceTest {
     }
 
     @Test
-    fun `says what queued the job`() {
-        val queued = execution().apply { trigger = JobTrigger.SIGN_UPS_CHANGED }
+    fun `says what queued the job and what it did`() {
+        val queued =
+            execution().apply {
+                trigger = JobTrigger.SIGN_UPS_CHANGED
+                effect = JobEffect.EDITED
+                effectLink = "https://discord.test/m1"
+            }
 
-        assertThat(service().toDto(queued).trigger).isEqualTo(JobTrigger.SIGN_UPS_CHANGED)
+        val shown = service().toDto(queued)
+        assertThat(listOf(shown.trigger, shown.effect, shown.effectLink))
+            .containsExactly(JobTrigger.SIGN_UPS_CHANGED, JobEffect.EDITED, "https://discord.test/m1")
         assertThat(service().toDto(execution()).trigger).isNull()
     }
 }

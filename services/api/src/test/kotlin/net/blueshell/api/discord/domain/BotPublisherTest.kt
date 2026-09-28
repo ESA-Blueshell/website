@@ -85,6 +85,13 @@ class BotPublisherTest {
         )
 
     @Test
+    fun `links a message and a Discord event where Discord opens them`() {
+        assertThat(publisher.linkOf("events-info", "m1")).isEqualTo("https://discord.com/channels/324/111/m1")
+        assertThat(publisher.linkOf("events-lobby", "m1")).isNull()
+        assertThat(publisher.linkOfDiscordEvent("e1")).isEqualTo("https://discord.com/events/324/e1")
+    }
+
+    @Test
     fun `posts in the channel of that name, naming and notifying only the pinged roles`() {
         val message: MessageResponse = mock { on { id } doReturn "m1" }
         whenever(api.createMessage(eq("111"), any())).thenReturn(message)

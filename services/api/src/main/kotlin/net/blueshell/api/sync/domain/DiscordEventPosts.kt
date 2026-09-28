@@ -2,6 +2,7 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
+import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.sync.api.DiscordImage
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.api.sync.api.DiscordPublisher
@@ -98,6 +99,7 @@ class DiscordEventPosts(
             make = { if (event.endTime.isAfter(madeStarting)) bot.createDiscordEvent(listingOf(event, madeStarting)) else null },
             update = { bot.updateDiscordEvent(it, listingOf(event, event.startTime.takeIf { start -> start.isAfter(now) })) },
             delete = { bot.deleteDiscordEvent(it) },
+            link = { bot.linkOfDiscordEvent(it) },
             unmade = "The event ends within a minute, too soon for Discord to list it.",
         )
     }
@@ -125,6 +127,7 @@ class DiscordEventPosts(
             make = { bot.post(channel, withBanner(post, event)) },
             update = { bot.edit(channel, it, withBanner(post, event)) },
             delete = { bot.delete(channel, it) },
+            link = { bot.linkOf(channel, it) },
         )
     }
 
@@ -143,13 +146,14 @@ class DiscordEventPosts(
         val standing = (found + listOfNotNull(recorded?.externalId)).distinct()
         standing.forEach(delete)
         if (recorded != null) ledger.release(eventId, artefact)
-        return if (standing.isEmpty()) Kept(skipped = why) else Kept()
+        return if (standing.isEmpty()) Kept(skipped = why) else Kept(JobEffect.REMOVED)
     }
 
     /*
      * What should stand is kept to one: the recorded one, or else one already in the server taken
      * over, or else a new one. [update] answers false for one removed by hand, which is made again;
-     * [make] answers null where none may be made now, which skips the run [unmade].
+     * [make] answers null where none may be made now, which skips the run [unmade]. [link] is where
+     * what stands opens in Discord.
      */
     @Suppress("LongParameterList")
     private fun keep(
@@ -160,15 +164,19 @@ class DiscordEventPosts(
         make: () -> String?,
         update: (String) -> Boolean,
         delete: (String) -> Unit,
+        link: (String) -> String?,
         unmade: String? = null,
     ): Kept {
         val recorded = ledger.find(eventId, artefact)
-        if (recorded != null && stillKept(eventId, artefact, recorded, found, fingerprint, update, delete)) return Kept()
+        if (recorded != null) {
+            stillKept(eventId, artefact, recorded, found, fingerprint, update, delete)?.let { return Kept(it, link(recorded.externalId)) }
+        }
         // Another run holds it, or held it and stopped; retrying finds its record or takes over its stale claim.
         check(ledger.claim(eventId, artefact, clock.instant())) { "Another run is making the $artefact of event $eventId" }
+        var takenOver = false
         val id =
             try {
-                found.firstOrNull { update(it) } ?: make()
+                found.firstOrNull { update(it) }?.also { takenOver = true } ?: make()
             } catch (refused: RuntimeException) {
                 ledger.release(eventId, artefact)
                 throw refused
@@ -179,10 +187,10 @@ class DiscordEventPosts(
         }
         ledger.record(eventId, artefact, id, fingerprint)
         found.filter { it != id }.forEach(delete)
-        return Kept(made = true)
+        return Kept(if (takenOver) JobEffect.EDITED else JobEffect.MADE, link(id))
     }
 
-    // The recorded one, brought up to date; false where somebody removed it by hand, its record given back.
+    // The recorded one, brought up to date; null where somebody removed it by hand, its record given back.
     @Suppress("LongParameterList")
     private fun stillKept(
         eventId: Long,
@@ -192,15 +200,15 @@ class DiscordEventPosts(
         fingerprint: Long,
         update: (String) -> Boolean,
         delete: (String) -> Unit,
-    ): Boolean {
+    ): JobEffect? {
         found.filter { it != recorded.externalId }.forEach(delete)
-        if (recorded.fingerprint == fingerprint) return true
+        if (recorded.fingerprint == fingerprint) return JobEffect.UNCHANGED
         if (update(recorded.externalId)) {
             ledger.record(eventId, artefact, recorded.externalId, fingerprint)
-            return true
+            return JobEffect.EDITED
         }
         ledger.release(eventId, artefact)
-        return false
+        return null
     }
 
     private fun liveEvent(eventId: Long) = events.of(eventId)?.takeIf { it.live }
@@ -225,11 +233,14 @@ class DiscordEventPosts(
         ).copy(start = starts)
 }
 
-/** What one run did: [skipped] says why it did nothing, [made] whether it put the thing up. */
+/** What one run did: its [effect] on the thing and [link] to it, or else why it [skipped] doing anything. */
 data class Kept(
-    val made: Boolean = false,
+    val effect: JobEffect? = null,
+    val link: String? = null,
     val skipped: String? = null,
-)
+) {
+    val made: Boolean get() = effect == JobEffect.MADE
+}
 
 private val NO_BOT = Kept(skipped = "The Discord bot is not configured.")
 private const val GONE = "The event is deleted or no longer approved."

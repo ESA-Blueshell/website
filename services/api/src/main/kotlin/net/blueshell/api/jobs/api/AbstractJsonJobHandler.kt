@@ -1,6 +1,7 @@
 package net.blueshell.api.jobs.api
 
 import net.blueshell.api.jobs.domain.JobHandler
+import net.blueshell.api.shared.job.JobEffect
 import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
 
@@ -17,6 +18,8 @@ abstract class AbstractJsonJobHandler<T : Any>(
         val forced: Boolean,
     ) {
         var skipped: String? = null
+        var effect: JobEffect? = null
+        var link: String? = null
     }
 
     // Thread-local is safe because @Async jobs each run on their own thread.
@@ -35,6 +38,17 @@ abstract class AbstractJsonJobHandler<T : Any>(
         run.get()?.skipped = reason
     }
 
+    /** Records what the run did to the thing it keeps, and where that thing is. */
+    protected fun did(
+        effect: JobEffect,
+        link: String? = null,
+    ) {
+        run.get()?.apply {
+            this.effect = effect
+            this.link = link
+        }
+    }
+
     @Transactional
     override fun handle(
         payload: String?,
@@ -46,7 +60,7 @@ abstract class AbstractJsonJobHandler<T : Any>(
         run.set(current)
         try {
             handlePayload(objectMapper.readValue(body, payloadType))
-            return current.skipped?.let(JobOutcome::Skipped) ?: JobOutcome.Done
+            return current.skipped?.let(JobOutcome::Skipped) ?: JobOutcome.Done(current.effect, current.link)
         } finally {
             run.remove()
         }

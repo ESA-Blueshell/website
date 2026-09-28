@@ -3196,6 +3196,13 @@ components:
       - externalUserId
       - writable
       type: object
+    JobEffect:
+      enum:
+      - MADE
+      - EDITED
+      - UNCHANGED
+      - REMOVED
+      type: string
     JobExecution:
       properties:
         actor:
@@ -3217,6 +3224,14 @@ components:
           - string
           - 'null'
         dedupKey:
+          type:
+          - string
+          - 'null'
+        effect:
+          oneOf:
+          - $ref: '#/components/schemas/JobEffect'
+          - type: 'null'
+        effectLink:
           type:
           - string
           - 'null'
@@ -20162,6 +20177,11 @@ paths:
         required: false
         schema:
           type: string
+      - in: query
+        name: hideSkipped
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:

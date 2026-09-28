@@ -11,6 +11,7 @@ import jakarta.persistence.Transient
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
@@ -72,6 +73,11 @@ class JobExecution(
     @Enumerated(EnumType.STRING)
     @Column(name = "queued_by")
     var trigger: JobTrigger? = null,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "effect")
+    var effect: JobEffect? = null,
+    @Column(name = "effect_link", length = 512)
+    var effectLink: String? = null,
     @Column(name = "initiated_by_user_id")
     var initiatedByUserId: Long? = null,
     @Enumerated(EnumType.STRING)

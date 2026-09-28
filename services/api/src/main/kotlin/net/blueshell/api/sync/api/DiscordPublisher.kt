@@ -98,4 +98,12 @@ interface DiscordPublisher {
 
     /** One already gone is no failure. */
     fun deleteDiscordEvent(discordEventId: String)
+
+    /** Where a message the bot posted in the channel called [channel] opens; null where that channel is not known. */
+    fun linkOf(
+        channel: String,
+        messageId: String,
+    ): String?
+
+    fun linkOfDiscordEvent(discordEventId: String): String
 }

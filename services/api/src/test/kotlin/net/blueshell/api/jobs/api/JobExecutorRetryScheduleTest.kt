@@ -6,9 +6,11 @@ import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.job.ExplainedJobFailure
+import net.blueshell.api.shared.job.JobEffect
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -127,7 +129,7 @@ class JobExecutorRetryScheduleTest {
         JobExecutor(executions, JobHandlerRegistry(listOf(skipping)), properties, SimpleMeterRegistry()).execute(execution)
 
         verify(executions).markSkipped(execution, "Not due yet.")
-        verify(executions, never()).markSuccess(any())
+        verify(executions, never()).markSuccess(any(), anyOrNull(), anyOrNull())
         assertThat(told).isTrue()
     }
 
@@ -142,14 +144,14 @@ class JobExecutorRetryScheduleTest {
                     payload: String?,
                     executionId: Long?,
                     forced: Boolean,
-                ) = JobOutcome.Done
+                ) = JobOutcome.Done(JobEffect.EDITED, "https://discord.test/m1")
             }
         val execution = JobExecution(jobType = "failing", payload = "{}")
         whenever(executions.markRunning(any())).thenReturn(execution)
 
         JobExecutor(executions, JobHandlerRegistry(listOf(done)), properties, SimpleMeterRegistry()).execute(execution)
 
-        verify(executions).markSuccess(execution)
+        verify(executions).markSuccess(execution, JobEffect.EDITED, "https://discord.test/m1")
         verify(executions, never()).markSkipped(any(), any())
     }
 
@@ -164,7 +166,7 @@ class JobExecutorRetryScheduleTest {
                     payload: String?,
                     executionId: Long?,
                     forced: Boolean,
-                ) = JobOutcome.Done
+                ) = JobOutcome.Done()
             }
 
         assertThat(plain.retrySchedule).isNull()

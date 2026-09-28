@@ -176,6 +176,27 @@ describe("JobManager page", () => {
     expect(wrapper.find('[data-testid="job-trigger-4"]').text()).toBe("Queued by: A change in sign-ups")
   })
 
+  it("says what a run did, linking to it, and hides skipped runs on request", async () => {
+    mockList.mockResolvedValue(pageOf([
+      job({id: 6, jobType: "discord.post", effect: "EDITED", effectLink: "https://discord.com/channels/1/2/3"}),
+      job({id: 7}),
+    ]))
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-row-effect-6"]').text()).toBe("Edited the #events-calendar post")
+    expect(wrapper.find('[data-testid="job-row-effect-7"]').exists()).toBe(false)
+    await wrapper.find('[data-testid="job-row-6"]').trigger("click")
+    await settle()
+    expect(wrapper.find('[data-testid="job-effect-link-6"]').attributes("href")).toBe("https://discord.com/channels/1/2/3")
+
+    mockList.mockClear()
+    await wrapper.findComponent('[data-testid="job-filter-hide-skipped"]').vm.$emit("update:modelValue", true)
+    await settle()
+    expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({page: 0, hideSkipped: true})})
+  })
+
   // Pressing Retry and being told nothing is indistinguishable from pressing nothing at all.
   it("says why a retry was refused, in the api's own words", async () => {
     mockRetry.mockResolvedValueOnce({status: 409, error: {detail: "That job is already running."}})

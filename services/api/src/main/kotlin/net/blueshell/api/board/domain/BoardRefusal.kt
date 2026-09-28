@@ -1,14 +1,15 @@
 package net.blueshell.api.board.domain
 
+import net.blueshell.api.shared.refusal.Refusal
 import org.springframework.http.HttpStatus
 
 // A code and the facts, never the sentence: `boards/refusals.ts` writes that. See ADR-026.
 sealed class BoardRefusal(
-    val status: HttpStatus,
-    val code: String,
-    val summary: String,
-    val facts: Map<String, Any>,
-) : RuntimeException(summary)
+    status: HttpStatus,
+    code: String,
+    summary: String,
+    facts: Map<String, Any>,
+) : Refusal(status, code, summary, facts)
 
 /**
  * A board's members are the record of who sat that year, and [net.blueshell.api.board.persistence.Board]

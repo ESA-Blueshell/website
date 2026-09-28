@@ -47,8 +47,8 @@ The api already had two error shapes to choose between:
 `detail` is fixed per code. The frontend composes the sentence.**
 
 `EsportsRefusal` is a sealed class carrying the status, the code, a fixed summary and a map of
-facts. `EsportsRefusalAdvice` has one handler for the whole hierarchy: it puts the code and each
-fact on a flat `ProblemDetail`. `esports/refusals.ts` maps a code to a sentence, and that map is
+facts. One advice handler takes the whole hierarchy and puts the code and each fact on a flat
+`ProblemDetail`. `esports/refusals.ts` maps a code to a sentence, and that map is
 the only place esports refusal copy lives.
 
 ```
@@ -110,12 +110,17 @@ and frontend ADR-002.
 their twin in a comment. The alternative — shipping the sentence — is what this replaces, and a
 missing sentence degrades to `detail` rather than to a blank.
 
-**It is scoped to esports.** The other advices keep their shapes. A module adopting this pattern
-should follow it rather than invent a third; a module with no user-facing refusals needs nothing.
+**It was scoped to esports, and is now shared.** Board, account security, roles, committees and
+games adopted it one by one, each with a copy of the base type's fields and an identical advice
+class. Six users meet architecture ADR-003's rule for the shared kernel, so `shared.refusal.Refusal`
+carries the status, code, summary and facts, `shared.web.RefusalAdvice` answers every refusal, and
+each module keeps only its own sealed family under the base. A module with no user-facing refusals
+needs nothing.
 
 ## Implementation status
 
-`EsportsRefusal`, `EsportsRefusalAdvice` and `esports/refusals.ts` are in place, with
+`Refusal`, `RefusalAdvice` and a sealed family per module are in place (#1645). For esports,
+`EsportsRefusal` and `esports/refusals.ts` are in place, with
 `EsportsRefusalIT` asserting each code and its properties over http and `refusals.test.ts`
 covering the sentences. Nothing enforces that a new code gets a sentence: that is the mirrored
 comment's job, and the fallback to `detail` is what makes the omission survivable.

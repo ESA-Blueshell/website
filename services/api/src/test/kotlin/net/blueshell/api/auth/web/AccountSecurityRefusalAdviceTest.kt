@@ -2,6 +2,7 @@ package net.blueshell.api.auth.web
 
 import net.blueshell.api.auth.domain.WrongCode
 import net.blueshell.api.security.StepUpRequiredException
+import net.blueshell.api.shared.web.RefusalAdvice
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.slf4j.MDC
@@ -13,15 +14,15 @@ class AccountSecurityRefusalAdviceTest {
     private val request = MockHttpServletRequest("POST", "/auth/two-factor")
 
     @Test
-    fun `a refusal answers its code, its facts and the trace it happened in`() {
+    fun `an account security refusal answers its code, its facts and the trace it happened in`() {
         MDC.put("traceId", "t-1")
-        val problem = advice.handleRefusal(WrongCode(2), request)
+        val problem = RefusalAdvice().handleRefusal(WrongCode(2), request)
         MDC.remove("traceId")
 
         assertThat(problem.status).isEqualTo(401)
         assertThat(problem.properties).containsEntry("code", "WrongCode").containsEntry("triesLeft", 2).containsEntry("traceId", "t-1")
         assertThat(problem.instance.toString()).isEqualTo("/auth/two-factor")
-        assertThat(advice.handleRefusal(WrongCode(null), request).properties).doesNotContainKey("triesLeft")
+        assertThat(RefusalAdvice().handleRefusal(WrongCode(null), request).properties).doesNotContainKey("triesLeft")
     }
 
     @Test

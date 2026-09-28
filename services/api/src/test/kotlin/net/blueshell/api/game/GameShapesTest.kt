@@ -34,5 +34,4 @@ class GameShapesTest {
         assertThat(game.sortIndex).isEqualTo(4)
         assertThat(channel.guildId).isEqualTo("324")
     }
-
 }

@@ -101,9 +101,8 @@ EOF
 
 # VSO reads here to mint k8s Secrets in the namespaces of apps that need
 # them — platform/edge (Cloudflare DNS-01 token for cert-manager and
-# external-dns), api (third-party integration keys — Brevo, Mollie,
-# Google Calendar, Facebook, X, Discord, plus jwt-secret and the Vault
-# OIDC client secret), platform/mail (stalwart admin + SMTP relay
+# external-dns), api (third-party integration keys — Brevo, Google
+# Calendar, Discord, plus jwt-secret and the Vault OIDC client secret), platform/mail (stalwart admin + SMTP relay
 # credentials, bounce mailbox, DKIM),
 # platform/ghcr (GitHub PAT for pulling private ghcr.io images),
 # platform/flux-git (write deploy key image-automation-controller pushes with).

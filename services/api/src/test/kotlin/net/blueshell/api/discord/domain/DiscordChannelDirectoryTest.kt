@@ -11,11 +11,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 
 class DiscordChannelDirectoryTest {
     private fun rule(
@@ -70,20 +66,14 @@ class DiscordChannelDirectoryTest {
     }
 
     @Test
-    fun `keeps them five minutes, and the last list where Discord stops answering`() {
+    fun `keeps the list rather than asking Discord on every read`() {
         val channels = listOf(channel("1", "general", 1))
         val api: DiscordApi = mock { on { listGuildChannels("324") } doReturn channels }
         val directory = directory(api)
-        val start = Instant.parse("2026-09-26T10:00:00Z")
-        directory.clock = Clock.fixed(start, ZoneOffset.UTC)
 
         directory.open()
-        directory.open()
-        verify(api, times(1)).listGuildChannels("324")
-
-        directory.clock = Clock.fixed(start.plus(DiscordChannelDirectory.KEPT_FOR), ZoneOffset.UTC)
-        whenever(api.listGuildChannels("324")).thenThrow(IllegalStateException("down"))
         assertThat(directory.open()).containsExactly(DiscordChannel("1", "general"))
+        verify(api, times(1)).listGuildChannels("324")
     }
 
     @Test

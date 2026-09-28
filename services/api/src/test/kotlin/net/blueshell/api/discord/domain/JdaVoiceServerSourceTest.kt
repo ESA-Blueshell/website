@@ -31,11 +31,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -316,7 +313,6 @@ class JdaVoiceServerSourceTest {
         val source = source(applicationWith(0))
         assertThat(source.joinableBy("803")).isNull()
         source.start()
-        source.clock = Clock.fixed(Instant.parse("2026-09-24T10:00:00Z"), ZoneOffset.UTC)
 
         assertThat(source.joinableBy("803")).containsExactly("11")
         whenever(chair.hasPermission(board, Permission.VIEW_CHANNEL, Permission.VOICE_CONNECT)).thenReturn(true)

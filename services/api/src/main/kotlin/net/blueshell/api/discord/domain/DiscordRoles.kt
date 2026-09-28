@@ -1,13 +1,11 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.clients.discord.api.DiscordApi
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 
 /** A role in the server an event may ping. */
 data class DiscordRole(
@@ -39,9 +37,9 @@ private data class ServerRole(
 class DiscordRoleDirectory(
     private val api: ObjectProvider<DiscordApi>,
     @Value($$"${discord.guildId:}") private val guildId: String,
-    internal var clock: Clock = Clock.systemUTC(),
+    clock: Clock = Clock.systemUTC(),
 ) {
-    @Volatile private var kept: Pair<Instant, List<ServerRole>>? = null
+    private val kept = KeptRead<List<ServerRole>>("Discord roles", KEPT_FOR, clock)
 
     fun pingable(): List<DiscordRole>? =
         roles()
@@ -57,18 +55,10 @@ class DiscordRoleDirectory(
 
     private fun roles(): List<ServerRole>? {
         val client = api.ifAvailable ?: return null
-        val now = clock.instant()
-        kept?.let { (at, roles) -> if (Duration.between(at, now) < KEPT_FOR) return roles }
-        return runCatching { client.listGuildRoles(guildId) }
-            .onFailure { log.warn("Discord roles could not be read", it) }
-            .getOrNull()
-            ?.map { ServerRole(it.id, it.name, it.position, it.managed, it.color) }
-            ?.also { kept = now to it }
-            ?: kept?.second
+        return kept.get { client.listGuildRoles(guildId).map { ServerRole(it.id, it.name, it.position, it.managed, it.color) } }
     }
 
     internal companion object {
         val KEPT_FOR: Duration = Duration.ofMinutes(5)
-        private val log = LoggerFactory.getLogger(DiscordRoleDirectory::class.java)
     }
 }

@@ -23,7 +23,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
@@ -48,7 +47,7 @@ class JdaVoiceServerSource(
     @Value($$"${discord.botToken:}") private val botToken: String,
     @Value($$"${discord.guildId:}") private val guildId: String,
     private val discordApi: DiscordApi,
-    internal var clock: Clock = Clock.systemUTC(),
+    private val clock: Clock = Clock.systemUTC(),
 ) : VoiceServerSource,
     DoorSource,
     MemberEvents,
@@ -63,7 +62,7 @@ class JdaVoiceServerSource(
     private val connected = CopyOnWriteArrayList<() -> Unit>()
 
     private val invites = ConcurrentHashMap<String, String>()
-    private val access = ConcurrentHashMap<String, Pair<Instant, Set<String>>>()
+    private val access = ConcurrentHashMap<String, KeptRead<Set<String>>>()
 
     internal val relay =
         EventListener { event ->
@@ -127,12 +126,10 @@ class JdaVoiceServerSource(
      */
     override fun joinableBy(memberId: String): Set<String>? {
         val guild = jda?.getGuildById(guildId) ?: return null
-        val now = clock.instant()
-        access[memberId]?.let { (at, rooms) -> if (Duration.between(at, now) < ACCESS_KEPT_FOR) return rooms }
-        val member =
-            guild.getMemberById(memberId)
-                ?: runCatching { guild.retrieveMemberById(memberId).complete() }.getOrNull()
-        val rooms =
+        return access.computeIfAbsent(memberId) { KeptRead("Discord voice access", ACCESS_KEPT_FOR, clock) }.get {
+            val member =
+                guild.getMemberById(memberId)
+                    ?: runCatching { guild.retrieveMemberById(memberId).complete() }.getOrNull()
             member
                 ?.let { one ->
                     guild.voiceChannels
@@ -140,8 +137,7 @@ class JdaVoiceServerSource(
                         .map { it.id }
                         .toSet()
                 }.orEmpty()
-        access[memberId] = now to rooms
-        return rooms
+        }
     }
 
     // JDA keeps announcement channels apart from text channels; both take posts and invites.

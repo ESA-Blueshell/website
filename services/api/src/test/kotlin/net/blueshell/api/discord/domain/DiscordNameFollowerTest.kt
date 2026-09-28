@@ -1,6 +1,5 @@
 package net.blueshell.api.discord.domain
 
-import net.blueshell.api.shared.discord.ClaimedDiscordMembers
 import net.blueshell.api.shared.discord.DiscordMemberNamed
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -24,7 +23,7 @@ class DiscordNameFollowerTest {
         linked: Set<String> = emptySet(),
     ): DiscordNameFollower {
         val members: DiscordMemberDirectory = mock { on { everyoneNow() } doReturn everyone }
-        return DiscordNameFollower(provided(source), members, provided(ClaimedDiscordMembers { linked }), publisher)
+        return DiscordNameFollower(provided(source), members, { linked }, publisher)
     }
 
     private fun member(
@@ -52,7 +51,7 @@ class DiscordNameFollowerTest {
     @Test
     fun `reads nothing of Discord where nobody is linked`() {
         val members: DiscordMemberDirectory = mock()
-        DiscordNameFollower(provided(null), members, provided(ClaimedDiscordMembers { emptySet() }), publisher).catchUp()
+        DiscordNameFollower(provided(null), members, { emptySet() }, publisher).catchUp()
 
         verifyNoInteractions(members, publisher)
     }

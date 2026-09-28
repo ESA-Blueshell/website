@@ -12,12 +12,10 @@ import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import org.springframework.beans.factory.ObjectProvider
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
@@ -47,11 +45,10 @@ class BotPublisherTest {
 
             override fun invite(channelId: String): String? = null
         }
-    private val provided: ObjectProvider<DoorSource> = mock { on { ifAvailable } doReturn doors }
     private val mapper = JsonMapper.builder().build()
     private val builder = RestClient.builder().baseUrl("https://discord.test")
     private val discord = MockRestServiceServer.bindTo(builder).build()
-    private val publisher = BotPublisher(api, builder.build(), mapper, provided, "324")
+    private val publisher = BotPublisher(api, builder.build(), mapper, doors, "324")
 
     private val banner = DiscordImage("banner.webp", "image/webp", byteArrayOf(1, 2, 3))
 
@@ -186,14 +183,11 @@ class BotPublisherTest {
 
     @Test
     fun `says the gateway is not connected while it has no channels, and names a channel it cannot find`() {
-        val down: ObjectProvider<DoorSource> =
-            mock {
-                on { ifAvailable } doReturn
-                    object : DoorSource {
-                        override fun textRooms() = emptyList<TextRoom>()
+        val down =
+            object : DoorSource {
+                override fun textRooms() = emptyList<TextRoom>()
 
-                        override fun invite(channelId: String): String? = null
-                    }
+                override fun invite(channelId: String): String? = null
             }
 
         assertThatThrownBy { BotPublisher(api, builder.build(), mapper, down, "324").post("events-info", post) }

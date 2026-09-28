@@ -2,13 +2,11 @@ package net.blueshell.api.discord.domain
 
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.ListGuildChannels200ResponseInner
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 
 /** A channel everybody in the server can see, which a description writes as `<#id>`. */
 data class DiscordChannel(
@@ -25,20 +23,13 @@ data class DiscordChannel(
 class DiscordChannelDirectory(
     private val api: ObjectProvider<DiscordApi>,
     @Value($$"${discord.guildId:}") private val guildId: String,
-    internal var clock: Clock = Clock.systemUTC(),
+    clock: Clock = Clock.systemUTC(),
 ) {
-    @Volatile private var kept: Pair<Instant, List<DiscordChannel>>? = null
+    private val kept = KeptRead<List<DiscordChannel>>("Discord channels", KEPT_FOR, clock)
 
     fun open(): List<DiscordChannel>? {
         val client = api.ifAvailable ?: return null
-        val now = clock.instant()
-        kept?.let { (at, channels) -> if (Duration.between(at, now) < KEPT_FOR) return channels }
-        return runCatching { client.listGuildChannels(guildId) }
-            .onFailure { log.warn("Discord channels could not be read", it) }
-            .getOrNull()
-            ?.let(::seenByEveryone)
-            ?.also { kept = now to it }
-            ?: kept?.second
+        return kept.get { seenByEveryone(client.listGuildChannels(guildId)) }
     }
 
     private fun seenByEveryone(channels: List<ListGuildChannels200ResponseInner>): List<DiscordChannel> {
@@ -63,6 +54,5 @@ class DiscordChannelDirectory(
         const val VIEW_CHANNEL = 1L shl 10
         const val CATEGORY = 4
         val KEPT_FOR: Duration = Duration.ofMinutes(5)
-        private val log = LoggerFactory.getLogger(DiscordChannelDirectory::class.java)
     }
 }

@@ -23,7 +23,7 @@ import java.util.concurrent.Executors
 class DiscordNameFollower(
     private val events: ObjectProvider<MemberEvents>,
     private val members: DiscordMemberDirectory,
-    private val claimed: ObjectProvider<ClaimedDiscordMembers>,
+    private val claimed: ClaimedDiscordMembers,
     private val publisher: ApplicationEventPublisher,
 ) : SmartLifecycle {
     @Volatile private var executor: ExecutorService? = null
@@ -34,7 +34,7 @@ class DiscordNameFollower(
     ) = publisher.publishEvent(DiscordMemberNamed(discordId, name))
 
     internal fun catchUp() {
-        val linked = claimed.ifAvailable?.claimedIds().orEmpty()
+        val linked = claimed.claimedIds()
         if (linked.isEmpty()) return
         members
             .everyoneNow()

@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.domain.linkPreview
 import net.blueshell.api.shared.discord.DiscordMentionNames
-import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -24,14 +23,14 @@ class EventLinkPreviewController(
     private val templates: TemplateEngine,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     @param:Value($$"${app.url}") private val apiUrl: String,
-    private val names: ObjectProvider<DiscordMentionNames>,
+    private val names: DiscordMentionNames,
 ) {
     @GetMapping("/events/{id}/link-preview", produces = [MediaType.TEXT_HTML_VALUE])
     @PreAuthorize("hasPermission(#id, 'Event', 'read')")
     fun findLinkPreview(
         @PathVariable id: Long,
     ): String {
-        val preview = service.findById(id).linkPreview(frontendUrl, apiUrl, names.ifAvailable)
+        val preview = service.findById(id).linkPreview(frontendUrl, apiUrl, names)
         return templates.process("link-previews/event", Context().apply { setVariable("preview", preview) })
     }
 }

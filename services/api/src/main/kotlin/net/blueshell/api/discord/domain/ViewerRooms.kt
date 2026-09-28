@@ -18,13 +18,13 @@ data class ViewerRooms(
 @Service
 class ViewerRoomService(
     private val viewer: CurrentUserProvider,
-    private val links: ObjectProvider<DiscordLinks>,
+    private val links: DiscordLinks,
     private val access: ObjectProvider<RoomAccess>,
 ) {
     /** Null without the gateway, so the band keeps the public locks. */
     fun rooms(): ViewerRooms? {
         val rooms = access.ifAvailable ?: return null
-        val memberId = viewer.currentUser()?.let { links.ifAvailable?.discordIdOf(it.id) } ?: return ViewerRooms(false, emptySet())
+        val memberId = viewer.currentUser()?.let { links.discordIdOf(it.id) } ?: return ViewerRooms(false, emptySet())
         return rooms.joinableBy(memberId)?.let { ViewerRooms(true, it) }
     }
 }

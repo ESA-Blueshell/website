@@ -2,7 +2,6 @@ package net.blueshell.api.committee.domain
 
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
-import net.blueshell.api.game.api.provider
 import net.blueshell.api.shared.discord.DiscordFace
 import net.blueshell.api.shared.discord.DiscordFaces
 import net.blueshell.api.user.persistence.User
@@ -35,7 +34,7 @@ class CommitteeSeatsTest {
     fun `names each seat by the Discord the bot sees, else as last known, else not at all`() {
         val faces = DiscordFaces { ids -> ids.filter { it == "111" }.associateWith { DiscordFace("Mo the Great", "https://cdn/mo.png") } }
 
-        val seats = CommitteeSeats(provider(faces)).of(committee)
+        val seats = CommitteeSeats(faces).of(committee)
 
         assertThat(seats).containsExactly(
             CommitteeSeat("Nelly", "https://cdn.discordapp.com/embed/avatars/5.png", "Chair"),
@@ -46,7 +45,7 @@ class CommitteeSeatsTest {
 
     @Test
     fun `without a bot every linked seat keeps its last known name and Discord's default avatar`() {
-        val seats = CommitteeSeats(provider<DiscordFaces>()).of(committee)
+        val seats = CommitteeSeats { emptyMap() }.of(committee)
 
         assertThat(seats.map { it.discordName }).containsExactly("Nelly", "Mo", null)
         assertThat(seats[1].avatar).startsWith("https://cdn.discordapp.com/embed/avatars/")

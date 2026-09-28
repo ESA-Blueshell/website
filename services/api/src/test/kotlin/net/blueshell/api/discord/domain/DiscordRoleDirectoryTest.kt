@@ -9,11 +9,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 
 class DiscordRoleDirectoryTest {
     private fun role(
@@ -51,20 +47,14 @@ class DiscordRoleDirectoryTest {
     }
 
     @Test
-    fun `keeps them five minutes, and the last list where Discord stops answering`() {
+    fun `keeps the list rather than asking Discord on every read`() {
         val roles = listOf(role("901", "Gamers", 1))
         val api: DiscordApi = mock { on { listGuildRoles("324") } doReturn roles }
         val directory = directory(api)
-        val start = Instant.parse("2026-09-24T10:00:00Z")
-        directory.clock = Clock.fixed(start, ZoneOffset.UTC)
 
         directory.pingable()
-        directory.pingable()
+        assertThat(directory.named(setOf("901"))).containsExactly(DiscordRoleName("901", "Gamers", null))
         verify(api, times(1)).listGuildRoles("324")
-
-        directory.clock = Clock.fixed(start.plus(DiscordRoleDirectory.KEPT_FOR), ZoneOffset.UTC)
-        whenever(api.listGuildRoles("324")).thenThrow(IllegalStateException("down"))
-        assertThat(directory.pingable()).containsExactly(DiscordRole("901", "Gamers"))
     }
 
     @Test

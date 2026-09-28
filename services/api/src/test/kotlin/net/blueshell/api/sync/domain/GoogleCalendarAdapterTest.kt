@@ -12,17 +12,13 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import org.springframework.beans.factory.ObjectProvider
 import java.time.Instant
 
 class GoogleCalendarAdapterTest {
     private val client: GoogleCalendarClient =
         mock { on { addEvent(any(), anyOrNull(), anyOrNull(), any(), any()) } doReturn GoogleCalendarEventResult("g1", null) }
 
-    private fun adapter(names: DiscordMentionNames?): GoogleCalendarAdapter {
-        val provider: ObjectProvider<DiscordMentionNames> = mock { on { ifAvailable } doReturn names }
-        return GoogleCalendarAdapter(client, provider)
-    }
+    private fun adapter(names: DiscordMentionNames?) = GoogleCalendarAdapter(client, names ?: DiscordMentionNames { null })
 
     private fun event(description: String?) =
         CalendarEventData(

@@ -8,7 +8,6 @@ import net.blueshell.api.shared.discord.DiscordMarkdown
 import net.blueshell.api.shared.discord.DiscordMentionNames
 import net.blueshell.api.shared.discord.MentionNames
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.ObjectProvider
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -25,12 +24,12 @@ import java.io.IOException
 @Profile("!test & !dev")
 class GoogleCalendarAdapter(
     private val googleCalendarClient: GoogleCalendarClient,
-    private val names: ObjectProvider<DiscordMentionNames>,
+    private val names: DiscordMentionNames,
 ) : CalendarAdapter {
     // The calendar renders CommonMark as HTML, so a description in Discord's markdown is translated first.
     private fun readable(description: String?): String? =
         description?.let {
-            val named = names.ifAvailable?.named(DiscordMarkdown.mentionsIn(it)) ?: MentionNames()
+            val named = names.named(DiscordMarkdown.mentionsIn(it)) ?: MentionNames()
             DiscordMarkdown.toCommonMark(it, named, html = true)
         }
 

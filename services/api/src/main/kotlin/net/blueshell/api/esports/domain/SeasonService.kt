@@ -34,29 +34,23 @@ class SeasonService(
     ): List<Season> = seasons.findAllOverlapping(from, to)
 
     @Transactional
-    fun create(
-        name: String,
-        startDate: LocalDate,
-        endDate: LocalDate,
-    ): Season {
-        requireOrdered(startDate, endDate)
-        requireClear(startDate, endDate, itself = null)
-        return seasons.save(Season(name = name.trim(), startDate = startDate, endDate = endDate))
+    fun create(input: SeasonInput): Season {
+        requireOrdered(input.startDate, input.endDate)
+        requireClear(input.startDate, input.endDate, itself = null)
+        return seasons.save(Season(name = input.name.trim(), startDate = input.startDate, endDate = input.endDate))
     }
 
     @Transactional
     fun update(
         id: Long,
-        name: String,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        input: SeasonInput,
     ): Season {
-        requireOrdered(startDate, endDate)
-        requireClear(startDate, endDate, itself = id)
+        requireOrdered(input.startDate, input.endDate)
+        requireClear(input.startDate, input.endDate, itself = id)
         val season = findById(id)
-        season.name = name.trim()
-        season.startDate = startDate
-        season.endDate = endDate
+        season.name = input.name.trim()
+        season.startDate = input.startDate
+        season.endDate = input.endDate
         return seasons.save(season)
     }
 

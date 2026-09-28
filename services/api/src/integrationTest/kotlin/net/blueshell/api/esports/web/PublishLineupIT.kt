@@ -1,5 +1,6 @@
 package net.blueshell.api.esports.web
 
+import net.blueshell.api.esports.api.RosterEntryInput
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.SeasonRepository
@@ -76,8 +77,8 @@ class PublishLineupIT : UserTestSupport() {
     fun `an existing line-up is renamed, reordered and trimmed in one request`() {
         val season = season()
         val team = team()
-        val kept = rosters.add(team.id!!, game, season.id!!, "kept", TeamRole.PLAYER, null, null)
-        val gone = rosters.add(team.id!!, game, season.id!!, "gone", TeamRole.PLAYER, null, null)
+        val kept = rosters.add(team.id!!, game, season.id!!, RosterEntryInput("kept", TeamRole.PLAYER), null)
+        val gone = rosters.add(team.id!!, game, season.id!!, RosterEntryInput("gone", TeamRole.PLAYER), null)
 
         publish(
             season,
@@ -98,8 +99,8 @@ class PublishLineupIT : UserTestSupport() {
         val season = season()
         val team = team()
         val before = team.name
-        val kept = rosters.add(team.id!!, game, season.id!!, "kept", TeamRole.PLAYER, null, null)
-        val gone = rosters.add(team.id!!, game, season.id!!, "gone", TeamRole.PLAYER, null, null)
+        val kept = rosters.add(team.id!!, game, season.id!!, RosterEntryInput("kept", TeamRole.PLAYER), null)
+        val gone = rosters.add(team.id!!, game, season.id!!, RosterEntryInput("gone", TeamRole.PLAYER), null)
 
         // The rename, the removal and the first edit all come before the entry that is not there.
         publish(

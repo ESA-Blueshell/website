@@ -1,5 +1,6 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.api.RosterEntryInput
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.EsportsQueryService
 import net.blueshell.api.shared.enums.Role
@@ -54,12 +55,8 @@ class RosterEntryDetailIT : UserTestSupport() {
                 team.id!!,
                 game,
                 season.id!!,
-                "driver",
-                TeamRole.PLAYER,
+                RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "Captain", description = "Holds the **middle** together."),
                 null,
-                null,
-                roleTitle = "Captain",
-                description = "Holds the **middle** together.",
             )
 
         assertThat(entry.roleTitle).isEqualTo("Captain")
@@ -74,12 +71,8 @@ class RosterEntryDetailIT : UserTestSupport() {
             team.id!!,
             game,
             season.id!!,
-            "driver",
-            TeamRole.PLAYER,
+            RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "In-game leader", description = "Calls the rounds."),
             null,
-            null,
-            roleTitle = "In-game leader",
-            description = "Calls the rounds.",
         )
 
         val member =
@@ -102,17 +95,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         val team = team()
 
         val entry =
-            rosters.add(
-                team.id!!,
-                game,
-                season.id!!,
-                "quiet",
-                TeamRole.PLAYER,
-                null,
-                null,
-                roleTitle = "   ",
-                description = "",
-            )
+            rosters.add(team.id!!, game, season.id!!, RosterEntryInput("quiet", TeamRole.PLAYER, roleTitle = "   ", description = ""), null)
 
         assertThat(entry.roleTitle).isNull()
         assertThat(entry.description).isNull()
@@ -169,17 +152,10 @@ class RosterEntryDetailIT : UserTestSupport() {
                 ),
             )
         val team = team()
-        val first = rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Captain")
-        rosters.add(team.id!!, game, later.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Coach")
+        val first = rosters.add(team.id!!, game, earlier.id!!, RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "Captain"), null)
+        rosters.add(team.id!!, game, later.id!!, RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "Coach"), null)
 
-        rosters.update(
-            id = first.id!!,
-            handle = "driver",
-            role = TeamRole.PLAYER,
-            displayName = null,
-            sortIndex = 0,
-            roleTitle = "Stand-in captain",
-        )
+        rosters.update(first.id!!, RosterEntryInput("driver", TeamRole.PLAYER, roleTitle = "Stand-in captain"), sortIndex = 0)
 
         val laterEntry = rosters.findByTeamAndSeason(team.id!!, game, later.id!!).single()
         assertThat(laterEntry.roleTitle).isEqualTo("Coach")

@@ -457,6 +457,71 @@ components:
       - updatedAt
       - version
       type: object
+    BoardRequest:
+      description: A board as a write says it stands, whether it makes one or edits one
+      properties:
+        accent:
+          description: The board's own colour; blank means the association's blue
+          pattern: \s*(#[0-9a-fA-F]{6})?\s*
+          type:
+          - string
+          - 'null'
+        candidate:
+          description: Kept for the column behind it; the board's own name is used when blank
+          type:
+          - string
+          - 'null'
+        cheer:
+          description: The board's shouted line
+          maxLength: 255
+          minLength: 0
+          type:
+          - string
+          - 'null'
+        description:
+          description: What the year was about, in the board's own words
+          maxLength: 4096
+          minLength: 0
+          type:
+          - string
+          - 'null'
+        endDate:
+          format: date
+          type:
+          - string
+          - 'null'
+        name:
+          description: The name the board chose for itself; blank for a board with none
+          maxLength: 100
+          minLength: 0
+          type:
+          - string
+          - 'null'
+        number:
+          description: The board's place in the line; the ninth board is 9
+          format: int32
+          minimum: 1
+          type: integer
+        photo:
+          description: Where the board's group photograph is stored; blank leaves it without one
+          maxLength: 255
+          minLength: 0
+          type:
+          - string
+          - 'null'
+        startDate:
+          format: date
+          type: string
+        version:
+          description: The version the edit was made against; a stale one is refused. Ignored on create
+          format: int64
+          type:
+          - integer
+          - 'null'
+      required:
+      - number
+      - startDate
+      type: object
     BoardResponse:
       properties:
         accent:
@@ -1615,64 +1680,6 @@ components:
       - publishedAt
       - title
       type: object
-    CreateBoardRequest:
-      properties:
-        accent:
-          description: The board's own colour; blank means the association's blue
-          pattern: \s*(#[0-9a-fA-F]{6})?\s*
-          type:
-          - string
-          - 'null'
-        candidate:
-          description: Kept for the column behind it; the board's own name is used when blank
-          type:
-          - string
-          - 'null'
-        cheer:
-          description: The board's shouted line
-          maxLength: 255
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        description:
-          description: What the year was about, in the board's own words
-          maxLength: 4096
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        endDate:
-          format: date
-          type:
-          - string
-          - 'null'
-        name:
-          description: The name the board chose for itself; blank for a board with none
-          maxLength: 100
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        number:
-          description: The board's place in the line; the ninth board is 9
-          format: int32
-          minimum: 1
-          type: integer
-        photo:
-          description: Where the board's group photograph is stored; blank leaves it without one
-          maxLength: 255
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        startDate:
-          format: date
-          type: string
-      required:
-      - number
-      - startDate
-      type: object
     CreateCommitteeRequest:
       properties:
         banner:
@@ -1964,23 +1971,6 @@ components:
       required:
       - label
       - system
-      type: object
-    CreateTeamRequest:
-      description: Create a team. A team is the association's rather than a game's, so it names none
-      properties:
-        icon:
-          description: Where the team's icon is stored; nothing leaves the team without one
-          maxLength: 255
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          maxLength: 128
-          minLength: 1
-          type: string
-      required:
-      - name
       type: object
     CreateTelemetryRequest:
       properties:
@@ -4982,6 +4972,23 @@ components:
       - BREVO
       - GOOGLE_CALENDAR
       type: string
+    TeamRequest:
+      description: A team as a write says it stands. A team is the association's rather than a game's, so it names none
+      properties:
+        icon:
+          description: Where the team's icon is stored; nothing leaves the team without one
+          maxLength: 255
+          minLength: 0
+          type:
+          - string
+          - 'null'
+        name:
+          maxLength: 128
+          minLength: 1
+          type: string
+      required:
+      - name
+      type: object
     TeamResponse:
       description: A team the association fields in one game
       properties:
@@ -5263,68 +5270,6 @@ components:
       required:
       - role
       - startDate
-      type: object
-    UpdateBoardRequest:
-      properties:
-        accent:
-          description: The board's own colour; blank means the association's blue
-          pattern: \s*(#[0-9a-fA-F]{6})?\s*
-          type:
-          - string
-          - 'null'
-        candidate:
-          description: Kept for the column behind it; the board's own name is used when blank
-          type:
-          - string
-          - 'null'
-        cheer:
-          description: The board's shouted line
-          maxLength: 255
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        description:
-          description: What the year was about, in the board's own words
-          maxLength: 4096
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        endDate:
-          format: date
-          type:
-          - string
-          - 'null'
-        name:
-          description: The name the board chose for itself; blank for a board with none
-          maxLength: 100
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        number:
-          description: The board's place in the line; the ninth board is 9
-          format: int32
-          minimum: 1
-          type: integer
-        photo:
-          description: Where the board's group photograph is stored; blank leaves it without one
-          maxLength: 255
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        startDate:
-          format: date
-          type: string
-        version:
-          format: int64
-          type: integer
-      required:
-      - number
-      - startDate
-      - version
       type: object
     UpdateCommitteeRequest:
       properties:
@@ -5653,23 +5598,6 @@ components:
       - description
       - name
       - version
-      type: object
-    UpdateTeamRequest:
-      description: Rename a team or change its icon. Its banner belongs to the fielding
-      properties:
-        icon:
-          description: Where the team's icon is stored; nothing takes the icon away
-          maxLength: 255
-          minLength: 0
-          type:
-          - string
-          - 'null'
-        name:
-          maxLength: 128
-          minLength: 1
-          type: string
-      required:
-      - name
       type: object
     UpdateUserRequest:
       properties:
@@ -7535,7 +7463,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateBoardRequest'
+              $ref: '#/components/schemas/BoardRequest'
         required: true
       responses:
         '201':
@@ -8322,7 +8250,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateBoardRequest'
+              $ref: '#/components/schemas/BoardRequest'
         required: true
       responses:
         '200':
@@ -14752,7 +14680,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTeamRequest'
+              $ref: '#/components/schemas/TeamRequest'
         required: true
       responses:
         '201':
@@ -14969,7 +14897,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateTeamRequest'
+              $ref: '#/components/schemas/TeamRequest'
         required: true
       responses:
         '200':

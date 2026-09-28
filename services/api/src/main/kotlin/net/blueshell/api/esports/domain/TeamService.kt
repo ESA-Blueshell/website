@@ -29,10 +29,7 @@ class TeamService(
      * arrives when it is fielded. Its art arrives then too, for the same reason.
      */
     @Transactional
-    fun create(
-        name: String,
-        icon: String? = null,
-    ): Team = teams.save(Team(name = name.trim(), icon = pictures.of(icon, FileType.TEAM_ICON)))
+    fun create(input: TeamInput): Team = teams.save(Team(name = input.name.trim(), icon = pictures.of(input.icon, FileType.TEAM_ICON)))
 
     /**
      * The team as the caller now says it stands: a write says what the team is, not what changed,
@@ -44,12 +41,11 @@ class TeamService(
     @Transactional
     fun update(
         id: Long,
-        name: String,
-        icon: String? = null,
+        input: TeamInput,
     ): Team {
         val team = findById(id)
-        team.name = name.trim()
-        team.icon = pictures.of(icon, FileType.TEAM_ICON)
+        team.name = input.name.trim()
+        team.icon = pictures.of(input.icon, FileType.TEAM_ICON)
         return teams.save(team)
     }
 

@@ -3,6 +3,7 @@ package net.blueshell.api.esports.api
 import net.blueshell.api.esports.domain.RosterEntryNotFoundException
 import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.SeasonService
+import net.blueshell.api.esports.domain.TeamInput
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import net.blueshell.api.esports.persistence.Season
@@ -12,7 +13,6 @@ import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -21,13 +21,8 @@ import java.time.LocalDate
 data class DraftEntry(
     /** The entry this stands for, or nothing where it is somebody being added. */
     val id: Long?,
-    val handle: String,
-    val role: TeamRole,
+    val entry: RosterEntryInput,
     val userId: Long?,
-    val displayName: String?,
-    val roleTitle: String?,
-    val description: String?,
-    val icon: String?,
 )
 
 /** A team's whole line-up for a game and a season, as one Save in the editor sends it. */
@@ -112,15 +107,10 @@ class TeamRosterService(
         teamId: Long,
         game: String,
         seasonId: Long,
-        handle: String,
-        role: TeamRole,
+        input: RosterEntryInput,
         userId: Long?,
-        displayName: String?,
-        roleTitle: String? = null,
-        description: String? = null,
-        icon: String? = null,
     ): TeamRosterEntry {
-        val trimmed = handle.trim()
+        val trimmed = input.handle.trim()
         require(trimmed.isNotBlank()) { "A roster entry needs a handle" }
         // Naming somebody to a team in a season says the team is fielded there, whether or
         // not anybody said so first. The entry hangs off that fielding, so this is what it is
@@ -135,13 +125,13 @@ class TeamRosterService(
             TeamRosterEntry(
                 teamSeason = fielding,
                 handle = trimmed,
-                teamRole = role,
+                teamRole = input.role,
                 userId = userId,
-                displayName = displayName?.trim()?.ifBlank { null },
-                roleTitle = roleTitle?.trim()?.ifBlank { null },
-                description = description?.trim()?.ifBlank { null },
+                displayName = input.displayName?.trim()?.ifBlank { null },
+                roleTitle = input.roleTitle?.trim()?.ifBlank { null },
+                description = input.description?.trim()?.ifBlank { null },
                 sortIndex = next,
-                icon = pictures.of(icon, FileType.ROSTER_ICON),
+                icon = pictures.of(input.icon, FileType.ROSTER_ICON),
             ),
         )
     }
@@ -209,28 +199,17 @@ class TeamRosterService(
      */
     @Transactional
     fun publish(draft: LineupDraft): PublishedLineup {
-        val team = draft.teamId?.let { teams.update(it, draft.name, draft.teamIcon) } ?: teams.create(draft.name, draft.teamIcon)
+        val input = TeamInput(draft.name, draft.teamIcon)
+        val team = draft.teamId?.let { teams.update(it, input) } ?: teams.create(input)
         val teamId = team.id!!
         fieldWithLineup(teamId, draft.game, draft.seasonId, carryLineup = false, banner = draft.banner)
         draft.removed.forEach(::remove)
         val roster =
-            draft.entries.mapIndexed { sortIndex, entry ->
-                if (entry.id == null) {
-                    add(
-                        teamId,
-                        draft.game,
-                        draft.seasonId,
-                        entry.handle,
-                        entry.role,
-                        entry.userId,
-                        entry.displayName,
-                        entry.roleTitle,
-                        entry.description,
-                        entry.icon,
-                    ).also { it.sortIndex = sortIndex }
+            draft.entries.mapIndexed { sortIndex, drafted ->
+                if (drafted.id == null) {
+                    add(teamId, draft.game, draft.seasonId, drafted.entry, drafted.userId).also { it.sortIndex = sortIndex }
                 } else {
-                    update(entry.id, entry.handle, entry.role, entry.displayName, sortIndex, entry.roleTitle, entry.description, entry.icon)
-                        .also { it.userId = entry.userId }
+                    update(drafted.id, drafted.entry, sortIndex).also { it.userId = drafted.userId }
                 }
             }
         return PublishedLineup(team, roster)
@@ -239,26 +218,21 @@ class TeamRosterService(
     @Transactional
     fun update(
         id: Long,
-        handle: String,
-        role: TeamRole,
-        displayName: String?,
+        input: RosterEntryInput,
         sortIndex: Int,
-        roleTitle: String? = null,
-        description: String? = null,
-        icon: String? = null,
     ): TeamRosterEntry {
         val entry = findById(id)
-        val trimmed = handle.trim()
+        val trimmed = input.handle.trim()
         require(trimmed.isNotBlank()) { "A roster entry needs a handle" }
         entry.handle = trimmed
-        entry.teamRole = role
-        entry.displayName = displayName?.trim()?.ifBlank { null }
-        entry.roleTitle = roleTitle?.trim()?.ifBlank { null }
-        entry.description = description?.trim()?.ifBlank { null }
+        entry.teamRole = input.role
+        entry.displayName = input.displayName?.trim()?.ifBlank { null }
+        entry.roleTitle = input.roleTitle?.trim()?.ifBlank { null }
+        entry.description = input.description?.trim()?.ifBlank { null }
         entry.sortIndex = sortIndex
         // Part of the save rather than applied when it was chosen, so cancelling the line-up
         // leaves the person as they were. Naming no picture takes theirs away.
-        entry.icon = pictures.of(icon, FileType.ROSTER_ICON)
+        entry.icon = pictures.of(input.icon, FileType.ROSTER_ICON)
         return entries.save(entry)
     }
 

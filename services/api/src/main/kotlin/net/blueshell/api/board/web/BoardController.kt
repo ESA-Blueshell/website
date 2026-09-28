@@ -26,22 +26,8 @@ class BoardController(
     @BoardOnly
     @ResponseStatus(HttpStatus.CREATED)
     fun createBoard(
-        @Valid @RequestBody request: CreateBoardRequest,
-    ): BoardResponse {
-        val board =
-            useCases.create(
-                number = request.number,
-                name = request.name,
-                candidate = request.candidate,
-                startDate = request.startDate,
-                endDate = request.endDate,
-                photo = request.photo,
-                cheer = request.cheer,
-                accent = request.accent,
-                description = request.description,
-            )
-        return board.asResponse()
-    }
+        @Valid @RequestBody request: BoardRequest,
+    ): BoardResponse = useCases.create(request.asInput()).asResponse()
 
     @GetMapping
     @PermitAll
@@ -57,23 +43,8 @@ class BoardController(
     @BoardOnly
     fun updateBoard(
         @PathVariable id: Long,
-        @Valid @RequestBody request: UpdateBoardRequest,
-    ): BoardResponse {
-        val board =
-            useCases.update(
-                id = id,
-                number = request.number,
-                name = request.name,
-                candidate = request.candidate,
-                startDate = request.startDate,
-                endDate = request.endDate,
-                photo = request.photo,
-                cheer = request.cheer,
-                accent = request.accent,
-                description = request.description,
-            )
-        return board.asResponse()
-    }
+        @Valid @RequestBody request: BoardRequest,
+    ): BoardResponse = useCases.update(id, request.asInput(), request.version).asResponse()
 
     @DeleteMapping("/{id}")
     @BoardOnly
@@ -91,21 +62,7 @@ class BoardController(
     fun addMember(
         @PathVariable boardId: Long,
         @Valid @RequestBody request: AddBoardMemberRequest,
-    ): BoardMemberResponse {
-        val member =
-            useCases.addMember(
-                boardId = boardId,
-                userId = request.userId,
-                role = request.role,
-                startDate = request.startDate,
-                endDate = request.endDate,
-                displayName = request.displayName,
-                nickname = request.nickname,
-                description = request.description,
-                portrait = request.portrait,
-            )
-        return member.asResponse()
-    }
+    ): BoardMemberResponse = useCases.addMember(boardId, request.userId, request.asInput()).asResponse()
 
     @PutMapping("/{boardId}/members/{id}")
     @BoardOnly
@@ -115,20 +72,7 @@ class BoardController(
         @PathVariable boardId: Long,
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateBoardMemberRequest,
-    ): BoardMemberResponse {
-        val member =
-            useCases.updateMember(
-                id = id,
-                role = request.role,
-                startDate = request.startDate,
-                endDate = request.endDate,
-                displayName = request.displayName,
-                nickname = request.nickname,
-                description = request.description,
-                portrait = request.portrait,
-            )
-        return member.asResponse()
-    }
+    ): BoardMemberResponse = useCases.updateMember(id, request.asInput()).asResponse()
 
     /** A null account detaches the membership, leaving the history standing under its own name. */
     @PutMapping("/{boardId}/members/{id}/member")

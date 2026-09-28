@@ -9,7 +9,6 @@ import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
 
 /** Every board read and write, straight against the repository. */
 @Service
@@ -27,61 +26,38 @@ class BoardUseCases(
     fun byId(id: Long): Board = boards.findById(id).orElseThrow { BoardNotFound(id) }
 
     @Transactional
-    fun create(
-        number: Int,
-        name: String?,
-        candidate: String?,
-        startDate: LocalDate,
-        endDate: LocalDate?,
-        photo: String?,
-        cheer: String? = null,
-        accent: String? = null,
-        description: String? = null,
-    ): Board {
-        if (boards.findByNumber(number).isPresent) throw DuplicateBoardException(number)
-        val recorded = name?.ifBlank { null }
-        val board =
-            Board(
-                number = number,
-                candidate = candidateFor(candidate, recorded, number),
-                startDate = startDate,
-                name = recorded,
-                endDate = endDate,
-                cheer = cheer?.ifBlank { null },
-                accent = accent?.ifBlank { null },
-                description = description?.ifBlank { null },
-            )
-        board.replacePicture(pictures.of(photo, FileType.BOARD_PHOTO))
-        return boards.saveAndFlush(board)
+    fun create(input: BoardInput): Board {
+        if (boards.findByNumber(input.number).isPresent) throw DuplicateBoardException(input.number)
+        return written(Board(number = input.number, candidate = "", startDate = input.startDate), input)
     }
 
-    // `version` is deliberately absent: the command carried one and the handler
-    // never applied it, so board update has never used optimistic locking.
+    /** The edit is refused where [version] is not the one the board is at: somebody saved since. */
     @Transactional
     fun update(
         id: Long,
-        number: Int,
-        name: String?,
-        candidate: String?,
-        startDate: LocalDate,
-        endDate: LocalDate?,
-        photo: String?,
-        cheer: String? = null,
-        accent: String? = null,
-        description: String? = null,
+        input: BoardInput,
+        version: Long?,
     ): Board {
         val board = byId(id)
-        if (boards.findByNumber(number).filter { it.id != id }.isPresent) throw DuplicateBoardException(number)
-        val recorded = name?.ifBlank { null }
-        board.number = number
+        version?.let(board::requireVersion)
+        if (boards.findByNumber(input.number).filter { it.id != id }.isPresent) throw DuplicateBoardException(input.number)
+        return written(board, input)
+    }
+
+    private fun written(
+        board: Board,
+        input: BoardInput,
+    ): Board {
+        val recorded = input.name?.ifBlank { null }
+        board.number = input.number
         board.name = recorded
-        board.candidate = candidateFor(candidate, recorded, number)
-        board.startDate = startDate
-        board.endDate = endDate
-        board.cheer = cheer?.ifBlank { null }
-        board.accent = accent?.ifBlank { null }
-        board.description = description?.ifBlank { null }
-        board.replacePicture(pictures.of(photo, FileType.BOARD_PHOTO))
+        board.candidate = candidateFor(input.candidate, recorded, input.number)
+        board.startDate = input.startDate
+        board.endDate = input.endDate
+        board.cheer = input.cheer?.ifBlank { null }
+        board.accent = input.accent?.ifBlank { null }
+        board.description = input.description?.ifBlank { null }
+        board.replacePicture(pictures.of(input.photo, FileType.BOARD_PHOTO))
         return boards.saveAndFlush(board)
     }
 
@@ -100,7 +76,7 @@ class BoardUseCases(
 
     /**
      * Puts somebody on a board. [userId] is absent for the people most of the history is
-     * made of, who never had an account here: their membership stands under [displayName].
+     * made of, who never had an account here: their membership stands under the display name.
      *
      * An account already on this board keeps its membership and has it updated; a membership
      * with no account is always a new one, since there is nothing to match it on.
@@ -109,64 +85,34 @@ class BoardUseCases(
     fun addMember(
         boardId: Long,
         userId: Long?,
-        role: String,
-        startDate: LocalDate,
-        endDate: LocalDate?,
-        displayName: String? = null,
-        nickname: String? = null,
-        description: String? = null,
-        portrait: String? = null,
+        input: BoardMemberInput,
     ): BoardMember {
         val board = byId(boardId)
         val user = userId?.let { userService.findById(it) }
         val existing = userId?.let { boardMemberService.findByBoardAndUser(boardId, it) }
-
-        if (existing != null) {
-            existing.role = role
-            existing.startDate = startDate
-            existing.endDate = endDate
-            existing.displayName = displayName
-            existing.nickname = nickname
-            existing.description = description
-            existing.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
-            return boardMemberService.update(existing)
-        }
-
-        val member =
-            BoardMember(
-                board = board,
-                user = user,
-                role = role,
-                startDate = startDate,
-                endDate = endDate,
-                displayName = displayName,
-                nickname = nickname,
-                description = description,
-            )
-        member.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
-        return boardMemberService.create(member)
+        if (existing != null) return boardMemberService.update(written(existing, input))
+        val member = BoardMember(board = board, user = user, role = input.role, startDate = input.startDate)
+        return boardMemberService.create(written(member, input))
     }
 
     @Transactional
     fun updateMember(
         id: Long,
-        role: String,
-        startDate: LocalDate,
-        endDate: LocalDate?,
-        displayName: String? = null,
-        nickname: String? = null,
-        description: String? = null,
-        portrait: String? = null,
+        input: BoardMemberInput,
+    ): BoardMember = boardMemberService.update(written(boardMemberService.findMember(id), input))
+
+    private fun written(
+        member: BoardMember,
+        input: BoardMemberInput,
     ): BoardMember {
-        val member = boardMemberService.findMember(id)
-        member.role = role
-        member.startDate = startDate
-        member.endDate = endDate
-        member.displayName = displayName
-        member.nickname = nickname
-        member.description = description
-        member.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
-        return boardMemberService.update(member)
+        member.role = input.role
+        member.startDate = input.startDate
+        member.endDate = input.endDate
+        member.displayName = input.displayName
+        member.nickname = input.nickname
+        member.description = input.description
+        member.replacePicture(pictures.of(input.portrait, FileType.BOARD_PORTRAIT))
+        return member
     }
 
     /** A null account detaches the membership, which keeps standing under its own name. */

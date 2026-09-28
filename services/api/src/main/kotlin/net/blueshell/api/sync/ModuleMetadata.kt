@@ -5,8 +5,8 @@ import org.springframework.modulith.PackageInfo
 
 /**
  * Pushes an aggregate's current state to the external systems that mirror it and remembers the
- * resulting external id in `external_id_mapping`. Each destination implements the `SyncTarget`
- * port; the Google Calendar adapter is the sibling `calendar` package, folded in by the flattening.
+ * resulting external id in `external_id_mapping`: contacts through contact's `ContactAdapter`,
+ * events through event's `CalendarAdapter`.
  *
  * Contact and calendar fan-out runs off `@ApplicationModuleListener`s, so a failed push is retried
  * from the event publication registry instead of failing the transaction that caused it. The
@@ -19,8 +19,7 @@ import org.springframework.modulith.PackageInfo
     allowedDependencies = [
         // AbstractJsonJobHandler, which this module's job handlers extend.
         "jobs :: api",
-        // Contacts are pushed through ContactAdapter, and the Brevo target composes
-        // the Brevo adapter.
+        // Contacts are pushed through ContactAdapter.
         "contact :: api",
         // Calendar publication runs through EventService and the CalendarAdapter port
         // event declares.

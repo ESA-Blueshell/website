@@ -31,8 +31,7 @@ contact/
 └── domain/BrevoListAdapter.kt   # @Profile("!test & !dev"), lists rather than contacts
 sync/domain/
 ├── GoogleCalendarAdapter.kt     # @Profile("!test & !dev")
-├── GoogleCalendarClient.kt
-└── BrevoContactSyncTarget.kt    # @Profile("!test & !dev")
+└── GoogleCalendarClient.kt
 sync/api/
 └── DiscordPublisher.kt          # the domain interface for the bot's posts and Discord events
 discord/domain/
@@ -42,8 +41,6 @@ platform/integration/mock/
 ├── InMemoryEmailClient.kt       # @Primary @Profile("test")
 ├── MockContactAdapter.kt        # @Primary @Profile("test | dev")
 ├── MockCalendarAdapter.kt       # @Primary @Profile("test | dev")
-├── MockBrevoContactSyncTarget.kt
-├── MockGoogleCalendarSyncTarget.kt
 └── MockTargetStrategy.kt
 ```
 
@@ -99,7 +96,6 @@ A production adapter declares a `@Profile`, so nothing reaches a real system fro
 | `BrevoContactAdapter` | `!test & !dev` | Production only |
 | `BrevoListAdapter` | `!test & !dev` | Production only |
 | `GoogleCalendarAdapter` | `!test & !dev` | Production only |
-| `BrevoContactSyncTarget` | `!test & !dev` | Production only |
 | `DiscordClientConfig` | `!test & !dev` | Production only; wires the client, and nothing reads it yet |
 
 A mock declares `@Primary` and the profiles it stands in for:
@@ -109,8 +105,6 @@ A mock declares `@Primary` and the profiles it stands in for:
 | `InMemoryEmailClient` | `test` | `SmtpEmailClient` |
 | `MockContactAdapter` | `test \| dev` | `BrevoContactAdapter` |
 | `MockCalendarAdapter` | `test \| dev` | `GoogleCalendarAdapter` |
-| `MockBrevoContactSyncTarget` | `test \| dev` | `BrevoContactSyncTarget` |
-| `MockGoogleCalendarSyncTarget` | `test \| dev` | the calendar sync target |
 | `MockTargetStrategy` | `test \| dev` | the target strategy the fan-out reads |
 
 ## Guidelines

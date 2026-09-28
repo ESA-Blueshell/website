@@ -95,39 +95,6 @@ class GoogleCalendarAdapter(
         }
     }
 
-    override fun syncEvent(
-        eventId: Long,
-        eventData: CalendarEventData,
-        externalId: String?,
-    ): CalendarEventRef? {
-        log.info("Syncing event {} (googleId={}) with Google Calendar", eventId, externalId)
-
-        return when {
-            // Event has external ID and is approved -> update
-            externalId != null && eventData.approved -> {
-                updateEvent(eventId, externalId, eventData)
-                CalendarEventRef(externalId, null)
-            }
-
-            // Event has external ID but not approved -> remove
-            externalId != null && !eventData.approved -> {
-                removeEvent(eventId, externalId)
-                null
-            }
-
-            // Event has no external ID and is approved -> add
-            externalId == null && eventData.approved -> {
-                addEvent(eventId, eventData)
-            }
-
-            // Event has no external ID and not approved -> nothing to do
-            else -> {
-                log.debug("Event {} has no external ID and is not approved, skipping sync", eventId)
-                null
-            }
-        }
-    }
-
     companion object {
         private val log = LoggerFactory.getLogger(GoogleCalendarAdapter::class.java)
     }

@@ -12,6 +12,7 @@ import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.user.api.UserDeleted
+import net.blueshell.api.user.api.UserUpdated
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.BeforeEach
@@ -98,6 +99,51 @@ class SyncListenerIT : UserTestSupport() {
         val mapping = awaitMapping("EVENT", event.id!!, TargetSystem.GOOGLE_CALENDAR)
         assertThat(mapping.externalId).describedAs("calendar external id is stored").isNotBlank
         assertThat(mockCalendarAdapter.getAllEvents()).describedAs("adapter received the event").isNotEmpty
+    }
+
+    @Test
+    fun `publishing UserUpdated pushes the edit to the user's contact`() {
+        val user = createUserWithRole(Role.MEMBER)
+        tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
+        awaitMapping("USER", user.id!!, TargetSystem.BREVO)
+        jdbc.update("UPDATE users SET first_name = ? WHERE id = ?", "Renamed", user.id)
+
+        tx.executeWithoutResult { publisher.publishEvent(UserUpdated(user.id!!)) }
+
+        awaitCondition {
+            mockContactAdapter.getAllContacts().values.any { it.email == user.email && it.firstName == "Renamed" }
+        }
+        assertThat(mockContactAdapter.getAllContacts().values.filter { it.email == user.email })
+            .describedAs("the edit updates the contact rather than adding another")
+            .hasSize(1)
+    }
+
+    @Test
+    fun `publishing EventChanged for an edit updates the event on the calendar`() {
+        val event: Event = createEventFixture()
+        tx.executeWithoutResult { publisher.publishEvent(EventChanged(event.id!!, EventChange.CREATED)) }
+        val externalId = awaitMapping("EVENT", event.id!!, TargetSystem.GOOGLE_CALENDAR).externalId!!
+        jdbc.update("UPDATE events SET title = ? WHERE id = ?", "Renamed event", event.id)
+
+        tx.executeWithoutResult { publisher.publishEvent(EventChanged(event.id!!, EventChange.UPDATED)) }
+
+        awaitCondition { mockCalendarAdapter.findByExternalId(externalId)?.title == "Renamed event" }
+        assertThat(mockCalendarAdapter.getEventCount()).isEqualTo(1)
+    }
+
+    @Test
+    fun `publishing EventChanged for an unapproval takes the event off the calendar`() {
+        val event: Event = createEventFixture()
+        tx.executeWithoutResult { publisher.publishEvent(EventChanged(event.id!!, EventChange.CREATED)) }
+        val externalId = awaitMapping("EVENT", event.id!!, TargetSystem.GOOGLE_CALENDAR).externalId!!
+        jdbc.update("UPDATE events SET approved = false WHERE id = ?", event.id)
+
+        tx.executeWithoutResult { publisher.publishEvent(EventChanged(event.id!!, EventChange.UNAPPROVED)) }
+
+        awaitCondition {
+            mappings.findByAggregateTypeAndAggregateIdAndSystem("EVENT", event.id!!, TargetSystem.GOOGLE_CALENDAR.name)?.externalId == null
+        }
+        assertThat(mockCalendarAdapter.findByExternalId(externalId)).isNull()
     }
 
     @Test

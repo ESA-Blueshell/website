@@ -131,6 +131,7 @@ class ExternalIdMappingService(
 
     companion object {
         const val USER_AGGREGATE = "USER"
+        const val EVENT_AGGREGATE = "EVENT"
         const val COHORT_AGGREGATE = "COHORT"
     }
 }

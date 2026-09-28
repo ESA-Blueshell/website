@@ -31,17 +31,6 @@ interface CalendarAdapter {
         eventId: Long,
         externalId: String,
     )
-
-    /**
-     * Brings the external calendar in line with the event: adds it where it is approved and
-     * unpublished, updates it where it is approved and published, removes it where approval has
-     * gone. Answers null once removed.
-     */
-    fun syncEvent(
-        eventId: Long,
-        eventData: CalendarEventData,
-        externalId: String?,
-    ): CalendarEventRef?
 }
 
 /**
@@ -55,7 +44,6 @@ data class CalendarEventData(
     val description: String?,
     val startTime: Instant,
     val endTime: Instant,
-    val approved: Boolean,
 )
 
 /**

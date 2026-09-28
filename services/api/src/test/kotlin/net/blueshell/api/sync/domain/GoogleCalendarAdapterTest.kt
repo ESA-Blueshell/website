@@ -27,7 +27,6 @@ class GoogleCalendarAdapterTest {
             description = description,
             startTime = Instant.parse("2026-10-10T18:00:00Z"),
             endTime = Instant.parse("2026-10-10T21:00:00Z"),
-            approved = true,
         )
 
     @Test

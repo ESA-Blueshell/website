@@ -207,13 +207,15 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/partners/el-nino",
     name: "elnino",
-    component: () => import("@/pages/partners/ElNino.vue"),
+    component: () => import("@/pages/partners/Partner.vue"),
+    props: {slug: "el-nino"},
     meta: {title: "El Niño"},
   },
   {
     path: "/partners/marketing-maatwerk",
     name: "marketingmaatwerk",
-    component: () => import("@/pages/partners/MarketingMaatwerk.vue"),
+    component: () => import("@/pages/partners/Partner.vue"),
+    props: {slug: "marketing-maatwerk"},
     meta: {title: "Marketing Maatwerk"},
   },
   {

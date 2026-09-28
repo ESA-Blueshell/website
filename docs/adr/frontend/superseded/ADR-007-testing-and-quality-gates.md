@@ -1,14 +1,14 @@
 # ADR-007: Testing and Quality Gates
 
 ## Status
-Superseded by the [testing ADR set](../testing/ADR-INDEX.md).
+Superseded by the [testing ADR set](../../testing/ADR-INDEX.md).
 
 The contract-safety rules below remain in force and are carried forward by
-[testing ADR-005](../testing/ADR-005-frontend-coverage-parity.md): mapper and schema
+[testing ADR-005](../../testing/ADR-005-frontend-coverage-parity.md): mapper and schema
 tests after an OpenAPI regeneration, and route-guard coverage for authenticated and
 unauthorised paths. The gate definitions are replaced —
-[ADR-005](../testing/ADR-005-frontend-coverage-parity.md) sets the unit numbers and
-[ADR-006](../testing/ADR-006-frontend-end-to-end-completeness.md) the end-to-end
+[ADR-005](../../testing/ADR-005-frontend-coverage-parity.md) sets the unit numbers and
+[ADR-006](../../testing/ADR-006-frontend-end-to-end-completeness.md) the end-to-end
 completeness rule. Retained for history.
 
 ## Context

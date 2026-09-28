@@ -142,7 +142,6 @@ FIXTURES = [
     ("services/api/docker-compose.yml", {"ignore"}),
     ("libs/kotlin-common/src/main/kotlin/Thing.kt", {"api"}),
     ("config/detekt/detekt.yml", {"api"}),
-    ("scripts/generate_openapi.sh", {"api"}),
     ("scripts/generate-openapi-local.sh", {"api"}),
     ("scripts/openapi-common.sh", {"api"}),
     ("scripts/scrape-public-events.py", {"api"}),

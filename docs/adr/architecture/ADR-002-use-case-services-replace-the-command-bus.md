@@ -5,7 +5,7 @@ Accepted
 
 ## Context
 
-[ADR-002 in the API set](../api/ADR-002-command-pattern-with-command-bus.md)
+[ADR-002 in the API set](../api/superseded/ADR-002-command-pattern-with-command-bus.md)
 adopted a `CommandBus` with one handler per command. Measured against the
 codebase it produced:
 
@@ -147,4 +147,4 @@ used folds into that module's use cases.
 - [ADR-001: Application Modules Replace Layers](ADR-001-application-modules-replace-layers.md) — the boundaries these services sit inside
 - [ADR-004: Deferred Execution Surface](ADR-004-deferred-execution-surface.md) — what happened to runAsync and runIn
 - [ADR-005: Validation Placement](ADR-005-validation-placement.md) — where the bus's validate step went
-- [API ADR-002: Command Pattern with CommandBus](../api/ADR-002-command-pattern-with-command-bus.md) — superseded by this record
+- [API ADR-002: Command Pattern with CommandBus](../api/superseded/ADR-002-command-pattern-with-command-bus.md): superseded by this record

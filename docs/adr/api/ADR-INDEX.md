@@ -8,11 +8,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
-| [001](ADR-001-multi-layered-domain-driven-architecture.md) | Multi-Layered Domain-Driven Architecture | Superseded | Replaced by the [architecture ADR set](../architecture/ADR-INDEX.md) |
-| [002](ADR-002-command-pattern-with-command-bus.md) | Command Pattern with CommandBus | Superseded | Replaced by use-case services; query/command split carried forward |
 | [013](ADR-013-entity-association-pattern.md) | Entity Association Pattern | Accepted | Association ownership and reference consistency rules; owning side may cross a module boundary, `mappedBy` may not |
-| [016](ADR-016-layer-dependency-rules.md) | Layer Dependency Rules and Clean Architecture | Superseded | Replaced by Spring Modulith module verification |
-| [022](ADR-022-platform-infrastructure-shared-organization.md) | Platform, Infrastructure, and Shared Organization | Superseded | Replaced by the flat-module package topology |
 
 ### Strategic Domain-Driven Design
 
@@ -21,7 +17,6 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [017](ADR-017-bounded-context-relationships-and-context-map.md) | Bounded Context Relationships | Accepted | What a relationship between modules means, and the ACLs in front of external systems |
 | [018](ADR-018-data-ownership-in-modular-monolith.md) | Data Ownership in Modular Monolith | Accepted | Data ownership boundaries across domains |
 | [019](ADR-019-anti-corruption-layers-for-external-integration.md) | Anti-Corruption Layers for External Integration | Accepted | External integration isolation via ACL adapters |
-| [020](ADR-020-shared-kernel-governance.md) | Shared Kernel Governance | Superseded | Replaced by the fan-in placement rule |
 | [021](ADR-021-observability-and-distributed-tracing.md) | Observability and Distributed Tracing | Proposed | Correlation, tracing, and observability standards |
 
 ### Data and Persistence
@@ -29,8 +24,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
 | [007](ADR-007-repository-pattern-and-jpa.md) | Repository Pattern and JPA | Accepted | Spring Data repositories and persistence-layer rules |
-| [010](ADR-010-database-migrations-with-flyway.md) | Database Migrations with Flyway | Superseded | Replaced by 026 |
-| [026](ADR-026-the-schema-starts-from-a-baseline.md) | The Schema Starts From a Baseline, Owned by Liquibase | Accepted | Baseline plus YAML changesets, each with a rollback |
+| [034](ADR-034-the-schema-starts-from-a-baseline.md) | The Schema Starts From a Baseline, Owned by Liquibase | Accepted | Baseline plus YAML changesets, each with a rollback |
 | [015](ADR-015-jpa-specifications-dynamic-queries.md) | JPA Specifications and Dynamic Queries | Accepted | Query-object driven dynamic filtering |
 
 ### Validation and Mapping
@@ -56,9 +50,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
 | [008](ADR-008-exception-handling-strategy.md) | Exception Handling Strategy | Accepted | Problem Details and exception handling conventions |
-| [009](ADR-009-jwt-authentication-strategy.md) | JWT Authentication Strategy | Superseded | Replaced by 030 |
 | [012](ADR-012-api-documentation-with-openapi.md) | API Documentation with OpenAPI | Accepted | OpenAPI-first API documentation workflow |
-| [014](ADR-014-permission-evaluation-strategy.md) | Permission Evaluation Strategy | Superseded | Mechanism carried forward; evaluators now live with their aggregate |
 | [024](ADR-024-scoped-signup-continuation-tokens.md) | Scoped Signup Continuation Tokens | Accepted | Header-borne capability for unauthenticated signup writes, deliberately not a JWT or a principal |
 | [026](ADR-026-refusals-carry-a-code-not-a-sentence.md) | A Refused Write Carries a Code, Not a Sentence | Accepted | Narrows ADR-008: esports refusals answer a code plus named facts, the frontend writes the sentence |
 | [028](ADR-028-a-derived-role-is-not-hand-assignable.md) | A Derived Role Is Not Hand-Assignable | Accepted | Board, treasurer and admin are granted; member and committee follow the records that own them |
@@ -71,11 +63,21 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 |---|-------|--------|---------|
 | [023](ADR-023-job-consolidation-and-reliable-execution.md) | Job Consolidation and Reliable Execution | Accepted (amended) | @Async + RetryTemplate, consolidated job types, dedup; gains scheduledFor |
 
-### Testing
+### Superseded
+
+Replaced decisions, kept in `superseded/` for history.
 
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
-| [011](ADR-011-testing-strategy.md) | Testing Strategy | Superseded | Replaced by the [testing ADR set](../testing/ADR-INDEX.md) |
+| [001](superseded/ADR-001-multi-layered-domain-driven-architecture.md) | Multi-Layered Domain-Driven Architecture | Superseded | Replaced by the [architecture ADR set](../architecture/ADR-INDEX.md) |
+| [002](superseded/ADR-002-command-pattern-with-command-bus.md) | Command Pattern with CommandBus | Superseded | Replaced by use-case services; query/command split carried forward |
+| [009](superseded/ADR-009-jwt-authentication-strategy.md) | JWT Authentication Strategy | Superseded | Replaced by 030 |
+| [010](superseded/ADR-010-database-migrations-with-flyway.md) | Database Migrations with Flyway | Superseded | Replaced by 034 |
+| [011](superseded/ADR-011-testing-strategy.md) | Testing Strategy | Superseded | Replaced by the [testing ADR set](../testing/ADR-INDEX.md) |
+| [014](superseded/ADR-014-permission-evaluation-strategy.md) | Permission Evaluation Strategy | Superseded | Mechanism carried forward; evaluators now live with their aggregate |
+| [016](superseded/ADR-016-layer-dependency-rules.md) | Layer Dependency Rules and Clean Architecture | Superseded | Replaced by Spring Modulith module verification |
+| [020](superseded/ADR-020-shared-kernel-governance.md) | Shared Kernel Governance | Superseded | Replaced by the fan-in placement rule |
+| [022](superseded/ADR-022-platform-infrastructure-shared-organization.md) | Platform, Infrastructure, and Shared Organization | Superseded | Replaced by the flat-module package topology |
 
 ## Related Documentation
 - [Flow documentation](../../flows/README.md)
@@ -83,4 +85,4 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 - [Frontend ADR index](../frontend/ADR-INDEX.md)
 - [Testing ADR index](../testing/ADR-INDEX.md)
 - [Architecture ADR index](../architecture/ADR-INDEX.md)
-- [CLAUDE.md](../../../CLAUDE.md)
+- [AGENTS.md](../../../AGENTS.md)

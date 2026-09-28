@@ -2,7 +2,7 @@
 
 ## Status
 Superseded by
-[architecture ADR-002](../architecture/ADR-002-use-case-services-replace-the-command-bus.md).
+[architecture ADR-002](../../architecture/ADR-002-use-case-services-replace-the-command-bus.md).
 
 The `CommandBus`, the `CommandHandler` interface and the one-handler-per-command
 rule are withdrawn. Measured against the codebase this pattern produced 110

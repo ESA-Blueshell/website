@@ -75,9 +75,9 @@ remains available for reporting.
 ### Why not a data-testid inventory
 
 Requiring every interactive `data-testid` in `src` to be referenced by some spec is
-the most literal reading of "every action", and it was rejected. There are 280
-unique testids, and they are already shared with the Kotlin Playwright helpers in
-`tests/system` — renaming one breaks two suites today. A gate that made
+the most literal reading of "every action", and it was rejected. There are about
+400 unique testids, and 28 of them are also read by the Kotlin Playwright helpers in
+`tests/system`, so renaming one of those breaks two suites today. A gate that made
 every testid load-bearing in a third place would make renaming a selector an
 expensive act, which is a poor trade for a rule that routes plus functions already
 approximate.

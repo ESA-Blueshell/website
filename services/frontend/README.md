@@ -59,13 +59,13 @@ src/
 ```
 
 **For comprehensive architecture guidance, see:**
-- **[CLAUDE.md](../CLAUDE.md)** - Complete developer guide
-- **[docs/adr/frontend/ADR-INDEX.md](../docs/adr/frontend/ADR-INDEX.md)** - All architecture decisions
+- **[AGENTS.md](../../AGENTS.md)** - Complete developer guide
+- **[docs/adr/frontend/ADR-INDEX.md](../../docs/adr/frontend/ADR-INDEX.md)** - All architecture decisions
 - **Key ADRs**:
-  - [ADR-001: Domain Feature Architecture](../docs/adr/frontend/ADR-001-domain-feature-architecture.md)
-  - [ADR-002: API Client Boundary and Domain Mapping](../docs/adr/frontend/ADR-002-api-client-boundary-and-domain-mapping.md)
-  - [ADR-003: State Management and Server Data Ownership](../docs/adr/frontend/ADR-003-state-management-and-server-data.md)
-  - [ADR-004: Form Validation and Command Mapping](../docs/adr/frontend/ADR-004-form-validation-and-command-mapping.md)
+  - [ADR-001: Domain Feature Architecture](../../docs/adr/frontend/ADR-001-domain-feature-architecture.md)
+  - [ADR-002: API Client Boundary and Domain Mapping](../../docs/adr/frontend/ADR-002-api-client-boundary-and-domain-mapping.md)
+  - [ADR-003: State Management and Server Data Ownership](../../docs/adr/frontend/ADR-003-state-management-and-server-data.md)
+  - [ADR-004: Form Validation and Command Mapping](../../docs/adr/frontend/ADR-004-form-validation-and-command-mapping.md)
 
 ## Technology Stack
 
@@ -273,7 +273,7 @@ Frontend validation improves UX; backend validation ensures security. Server val
 - Custom validators (`@ValidQuestion`, `@ValidAnswer`)
 - Business rule validation
 
-See [ADR-004: Form Validation and Command Mapping](../docs/adr/frontend/ADR-004-form-validation-and-command-mapping.md).
+See [ADR-004: Form Validation and Command Mapping](../../docs/adr/frontend/ADR-004-form-validation-and-command-mapping.md).
 
 ## OpenAPI Client Generation
 
@@ -370,7 +370,7 @@ yarn gen:all           # The Blueshell client
 ### Using Docker Compose
 
 ```bash
-docker compose -f docker-compose.dev.yml up frontend
+docker compose up frontend   # from the repository root
 ```
 
 Features:
@@ -417,4 +417,4 @@ Refer to these in signup flows, consent workflows, and user-facing documentation
 
 ---
 
-**Note**: The frontend is part of the Blueshell website project. See the root [README.md](../README.md) for full project setup.
+**Note**: The frontend is part of the Blueshell website project. See the root [README.md](../../README.md) for full project setup.

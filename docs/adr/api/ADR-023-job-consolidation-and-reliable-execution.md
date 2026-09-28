@@ -89,4 +89,4 @@ This handles jobs orphaned by app crashes.
 ## Related ADRs
 - [ADR-006: Event-Driven Architecture](ADR-006-event-driven-architecture.md)
 - [ADR-019: Anti-Corruption Layers](ADR-019-anti-corruption-layers-for-external-integration.md)
-- [ADR-022: Platform, Infrastructure, and Shared Organization](ADR-022-platform-infrastructure-shared-organization.md)
+- [ADR-022: Platform, Infrastructure, and Shared Organization](superseded/ADR-022-platform-infrastructure-shared-organization.md)

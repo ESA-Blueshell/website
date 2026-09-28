@@ -2,7 +2,7 @@
 
 ## Status
 Superseded by
-[ADR-030](ADR-030-a-sign-in-is-a-server-side-record.md).
+[ADR-030](../ADR-030-a-sign-in-is-a-server-side-record.md).
 
 What follows was already out of date before it was replaced: the token is signed
 HS512, lives thirty days in an http-only cookie, is revoked by `jti` and sits beside a

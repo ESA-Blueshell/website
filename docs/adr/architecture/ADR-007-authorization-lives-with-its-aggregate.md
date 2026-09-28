@@ -5,7 +5,7 @@ Accepted
 
 ## Context
 
-[API ADR-014](../api/ADR-014-permission-evaluation-strategy.md) established
+[API ADR-014](../api/superseded/ADR-014-permission-evaluation-strategy.md) established
 domain-specific permission evaluators dispatched through Spring Security's
 `PermissionEvaluator`, and placed every evaluator in
 `infrastructure/security/permission`. An ArchUnit rule enforces the location:
@@ -125,7 +125,7 @@ the constitution requires the ADR to land first.
   simple name; both are package-independent.
 
 ## Related ADRs
-- [API ADR-014: Permission Evaluation Strategy](../api/ADR-014-permission-evaluation-strategy.md) — superseded by this record; its mechanism is carried forward
+- [API ADR-014: Permission Evaluation Strategy](../api/superseded/ADR-014-permission-evaluation-strategy.md): superseded by this record; its mechanism is carried forward
 - [ADR-003: Package Topology and Placement Rules](ADR-003-package-topology-and-placement-rules.md) — rule 4, which this settles
 - [ADR-001: Application Modules Replace Layers](ADR-001-application-modules-replace-layers.md) — why a central package would invert module encapsulation
 - [ADR-002: Use-Case Services Replace the Command Bus](ADR-002-use-case-services-replace-the-command-bus.md) — where hexagonal was rejected

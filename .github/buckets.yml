@@ -24,7 +24,6 @@ api:
   - '!services/api/docker-compose.yml'
   - 'libs/**'
   - 'config/detekt/**'
-  - 'scripts/generate_openapi.sh'
   - 'scripts/generate-openapi-local.sh'
   - 'scripts/openapi-common.sh'
   - 'scripts/scrape-public-events.py'

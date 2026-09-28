@@ -97,4 +97,4 @@ from test sources would close the gap if it proves necessary.
 ## Related ADRs
 - [ADR-001: The Test Pyramid and Layer Placement](ADR-001-test-pyramid-and-layer-placement.md) — what decides a test's layer
 - [ADR-003: Coverage Counters, Thresholds and the Ratchet](ADR-003-coverage-counters-thresholds-and-ratchet.md) — the METHOD floor this rule interprets
-- [API ADR-001: Multi-Layered Domain-Driven Architecture](../api/ADR-001-multi-layered-domain-driven-architecture.md) — the boundaries extraction respects
+- [API ADR-001: Multi-Layered Domain-Driven Architecture](../api/superseded/ADR-001-multi-layered-domain-driven-architecture.md): the boundaries extraction respects

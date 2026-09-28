@@ -155,4 +155,4 @@ Decided, not yet enforced.
 - [ADR-002: Coverage Gates Apply to Changed Code](ADR-002-coverage-gates-apply-to-changed-code.md) — what the gates bind to
 - [ADR-003: Coverage Counters, Thresholds and the Ratchet](ADR-003-coverage-counters-thresholds-and-ratchet.md) — the numbers per layer
 - [ADR-004: The Public Surface Is the Unit of Test](ADR-004-public-surface-is-the-unit-of-test.md) — what a test addresses
-- [API ADR-011: Testing Strategy](../api/ADR-011-testing-strategy.md) — superseded by this set
+- [API ADR-011: Testing Strategy](../api/superseded/ADR-011-testing-strategy.md): superseded by this set

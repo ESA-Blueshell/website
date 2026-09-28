@@ -121,7 +121,7 @@ cp services/api/.db.example.env             services/api/.db.env
 ### Generate OpenAPI TypeScript client
 
 ```bash
-./scripts/generate_openapi.sh
+./scripts/generate-openapi-local.sh
 ```
 
 ### Remote debugging
@@ -183,7 +183,7 @@ Runbook: [`platform/docs/runbook.md`](platform/docs/runbook.md).
 1. Create a feature branch from `main`
 2. Make changes with hot reload in the dev environment
 3. Run tests: `./gradlew :services:api:test`
-4. If API endpoints changed: `./scripts/generate_openapi.sh`
+4. If API endpoints changed: `./scripts/generate-openapi-local.sh`
 5. Open a pull request
 
 ---

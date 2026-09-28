@@ -93,5 +93,5 @@ have to be paid for at all.
 
 ## Related Documentation
 - [ADR-003: Package Topology and Placement Rules](ADR-003-package-topology-and-placement-rules.md)
-- [API ADR-010: Database Migrations with Flyway](../api/ADR-010-database-migrations-with-flyway.md)
+- [API ADR-010: Database Migrations with Flyway](../api/superseded/ADR-010-database-migrations-with-flyway.md)
 - [API ADR-012: API Documentation with OpenAPI](../api/ADR-012-api-documentation-with-openapi.md)

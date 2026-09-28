@@ -6,7 +6,7 @@ Accepted
 ## Context
 
 Finding code costs more than it should, and adding it means guessing where it
-goes. [ADR-022](../api/ADR-022-platform-infrastructure-shared-organization.md)
+goes. [ADR-022](../api/superseded/ADR-022-platform-infrastructure-shared-organization.md)
 was written to fix precisely this, with decision trees for `shared`,
 `infrastructure` and `platform`. Its own Context section lists the questions it
 set out to answer — *"Where do job definitions go?"*, *"Is permission evaluation
@@ -281,5 +281,5 @@ Outstanding:
 - [ADR-001: Application Modules Replace Layers](ADR-001-application-modules-replace-layers.md) — why flat is required rather than preferred
 - [ADR-002: Use-Case Services Replace the Command Bus](ADR-002-use-case-services-replace-the-command-bus.md) — what empties the deep web packages
 - [ADR-006: Migration Sequencing](ADR-006-migration-sequencing.md) — when this moves
-- [API ADR-022: Platform, Infrastructure, and Shared Organization](../api/ADR-022-platform-infrastructure-shared-organization.md) — superseded by this record
-- [API ADR-020: Shared Kernel Governance](../api/ADR-020-shared-kernel-governance.md) — superseded; fan-in replaces its rules
+- [API ADR-022: Platform, Infrastructure, and Shared Organization](../api/superseded/ADR-022-platform-infrastructure-shared-organization.md): superseded by this record
+- [API ADR-020: Shared Kernel Governance](../api/superseded/ADR-020-shared-kernel-governance.md): superseded; fan-in replaces its rules

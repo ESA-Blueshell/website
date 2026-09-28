@@ -197,7 +197,7 @@ server already knows.
 ## Related ADRs
 - [ADR-024: Scoped Signup Continuation Tokens](ADR-024-scoped-signup-continuation-tokens.md) — the credential this retires
 - [ADR-006: Event-Driven Architecture](ADR-006-event-driven-architecture.md) — `MembershipChanged` and the role grant
-- [ADR-010: Database Migrations with Flyway](ADR-010-database-migrations-with-flyway.md) — the acceptance column
+- [ADR-010: Database Migrations with Flyway](superseded/ADR-010-database-migrations-with-flyway.md): the acceptance column
 - [ADR-018: Data Ownership in Modular Monolith](ADR-018-data-ownership-in-modular-monolith.md) — why the acceptance lives on `MemberProfile`
 
 ## Related documentation

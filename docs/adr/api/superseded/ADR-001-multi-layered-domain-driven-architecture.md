@@ -1,13 +1,13 @@
 # ADR-001: Multi-Layered Domain-Driven Architecture
 
 ## Status
-Superseded by the [architecture ADR set](../architecture/ADR-INDEX.md).
+Superseded by the [architecture ADR set](../../architecture/ADR-INDEX.md).
 
 The layered organisation described here is replaced by feature modules verified
 at build time — see
-[architecture ADR-001](../architecture/ADR-001-application-modules-replace-layers.md)
+[architecture ADR-001](../../architecture/ADR-001-application-modules-replace-layers.md)
 for the module boundary and
-[ADR-003](../architecture/ADR-003-package-topology-and-placement-rules.md) for the
+[ADR-003](../../architecture/ADR-003-package-topology-and-placement-rules.md) for the
 package layout that replaces `domain/{feature}/{application,persistence,web}`.
 The domain-driven intent is unchanged; only its physical expression is.
 Retained for history.

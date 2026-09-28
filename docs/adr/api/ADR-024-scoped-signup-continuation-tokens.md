@@ -265,8 +265,8 @@ outside the dispatch and answers with no body, so an applicant was told they lac
 authority for a step that only wanted a profile.
 
 ## Related ADRs
-- [ADR-009: JWT Authentication Strategy](ADR-009-jwt-authentication-strategy.md) — the mechanism deliberately not reused here
-- [ADR-014: Permission Evaluation Strategy](ADR-014-permission-evaluation-strategy.md) — the guards this token stays outside of
+- [ADR-009: JWT Authentication Strategy](superseded/ADR-009-jwt-authentication-strategy.md): the mechanism deliberately not reused here
+- [ADR-014: Permission Evaluation Strategy](superseded/ADR-014-permission-evaluation-strategy.md): the guards this token stays outside of
 - [ADR-025: Membership Commit Rendezvous](ADR-025-membership-commit-rendezvous.md) — what retires this token
 - [ADR-008: Exception Handling Strategy](ADR-008-exception-handling-strategy.md) — how token failures surface
 

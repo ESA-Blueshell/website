@@ -38,12 +38,12 @@ stack.
 | [006](ADR-006-migration-sequencing.md) | Migration Sequencing | Accepted | Delete, untangle, verify, move — four phases across 881 files, with verification before the rename |
 
 ## Superseded by this set
-- [API ADR-001: Multi-Layered Domain-Driven Architecture](../api/ADR-001-multi-layered-domain-driven-architecture.md)
-- [API ADR-002: Command Pattern with CommandBus](../api/ADR-002-command-pattern-with-command-bus.md)
-- [API ADR-016: Layer Dependency Rules](../api/ADR-016-layer-dependency-rules.md)
-- [API ADR-020: Shared Kernel Governance](../api/ADR-020-shared-kernel-governance.md)
-- [API ADR-022: Platform, Infrastructure, and Shared Organization](../api/ADR-022-platform-infrastructure-shared-organization.md)
-- [API ADR-014: Permission Evaluation Strategy](../api/ADR-014-permission-evaluation-strategy.md) — location only; the mechanism is carried forward
+- [API ADR-001: Multi-Layered Domain-Driven Architecture](../api/superseded/ADR-001-multi-layered-domain-driven-architecture.md)
+- [API ADR-002: Command Pattern with CommandBus](../api/superseded/ADR-002-command-pattern-with-command-bus.md)
+- [API ADR-016: Layer Dependency Rules](../api/superseded/ADR-016-layer-dependency-rules.md)
+- [API ADR-020: Shared Kernel Governance](../api/superseded/ADR-020-shared-kernel-governance.md)
+- [API ADR-022: Platform, Infrastructure, and Shared Organization](../api/superseded/ADR-022-platform-infrastructure-shared-organization.md)
+- [API ADR-014: Permission Evaluation Strategy](../api/superseded/ADR-014-permission-evaluation-strategy.md): location only; the mechanism is carried forward
 
 ## Amended by this set
 - [API ADR-003: Validation Layer Separation](../api/ADR-003-validation-layer-separation.md) — where database-dependent rules run

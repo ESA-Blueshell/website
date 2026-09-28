@@ -2,6 +2,7 @@ import {describe, expect, it, vi} from "vitest"
 import {resumeSignupSession} from "@/domains/user/adapters/signup"
 import {resumeSignup} from "@/services/api"
 import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
+import {answer, emptyAnswer} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -10,9 +11,21 @@ vi.mock("@/services/api", async (importOriginal) => ({
 
 describe("resumeSignupSession", () => {
   it("carries the token the applicant was mailed, in the header the api reads it from", async () => {
-    vi.mocked(resumeSignup).mockResolvedValue({data: {userId: 3, email: "roos@esa.test"}} as never)
+    const session = {
+      userId: 3,
+      username: "roos",
+      email: "roos@esa.test",
+      firstName: "Roos",
+      initials: "R.",
+      lastName: "Visser",
+      emailConfirmed: false,
+      conditionsAccepted: false,
+      newsletter: false,
+      photoConsent: false,
+    }
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, session))
 
-    await expect(resumeSignupSession("tok-7")).resolves.toEqual({userId: 3, email: "roos@esa.test"})
+    await expect(resumeSignupSession("tok-7")).resolves.toEqual(session)
     expect(resumeSignup).toHaveBeenCalledWith({
       headers: {[SIGNUP_TOKEN_HEADER]: "tok-7"},
       throwOnError: true,
@@ -20,7 +33,7 @@ describe("resumeSignupSession", () => {
   })
 
   it("answers with nothing when the api says nothing about the session", async () => {
-    vi.mocked(resumeSignup).mockResolvedValue({} as never)
+    vi.mocked(resumeSignup).mockResolvedValue(emptyAnswer(resumeSignup))
 
     await expect(resumeSignupSession("tok-7")).resolves.toBeNull()
   })

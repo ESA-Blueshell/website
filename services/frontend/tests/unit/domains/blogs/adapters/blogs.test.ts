@@ -1,6 +1,8 @@
 import {describe, expect, it, vi} from "vitest"
 import {listBlogs, readBlog} from "@/domains/blogs/adapters/blogs"
 import {findBlogById, findBlogs} from "@/services/api"
+import {aBlog} from "../../../helpers/apiFixtures"
+import {answer, emptyAnswer} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -12,13 +14,13 @@ const refusal = (status: number) => ({isAxiosError: true, response: {status}})
 
 describe("listBlogs", () => {
   it("answers with the newsletters it read", async () => {
-    vi.mocked(findBlogs).mockResolvedValue({data: [{id: "7", title: "January update"}]} as never)
+    vi.mocked(findBlogs).mockResolvedValue(answer(findBlogs, [aBlog()]))
 
-    await expect(listBlogs()).resolves.toEqual([{id: "7", title: "January update"}])
+    await expect(listBlogs()).resolves.toEqual([aBlog()])
   })
 
   it("reads an answer without a body as no newsletters", async () => {
-    vi.mocked(findBlogs).mockResolvedValue({} as never)
+    vi.mocked(findBlogs).mockResolvedValue(emptyAnswer(findBlogs))
 
     await expect(listBlogs()).resolves.toEqual([])
   })
@@ -32,13 +34,13 @@ describe("listBlogs", () => {
 
 describe("readBlog", () => {
   it("answers with the newsletter behind the number", async () => {
-    vi.mocked(findBlogById).mockResolvedValue({data: {id: 9, html: "<h1>Blog</h1>"}} as never)
+    vi.mocked(findBlogById).mockResolvedValue(answer(findBlogById, aBlog({id: 9})))
 
-    await expect(readBlog(9)).resolves.toEqual({id: 9, html: "<h1>Blog</h1>"})
+    await expect(readBlog(9)).resolves.toEqual(aBlog({id: 9}))
   })
 
   it("reads an answer without a body as no newsletter", async () => {
-    vi.mocked(findBlogById).mockResolvedValue({} as never)
+    vi.mocked(findBlogById).mockResolvedValue(emptyAnswer(findBlogById))
 
     await expect(readBlog(9)).resolves.toBeNull()
   })

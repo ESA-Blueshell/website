@@ -1,13 +1,20 @@
 import {describe, expect, it, vi} from "vitest"
 import {findMemberAccounts, loadMemberAccounts, searchMemberAccounts} from "@/domains/user/adapters/users"
 import {findUsers} from "@/services/api"
+import type {UserDetailResponse} from "@/services/api"
+import {answer, refusal} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   findUsers: vi.fn(),
 }))
 
-const page = (content: unknown[]) => ({data: {content}}) as never
+/**
+ * A page of accounts. The rows are loose on purpose: the loader guards against rows missing the
+ * id, name or address their type promises, and these tests hand it exactly those.
+ */
+const page = (rows: Array<Partial<Record<keyof UserDetailResponse, unknown>>>) =>
+  answer(findUsers, {content: rows as UserDetailResponse[]})
 
 describe("loadMemberAccounts", () => {
   it("asks for the whole listing rather than a page whose size it would have to guess", async () => {
@@ -77,13 +84,13 @@ describe("loadMemberAccounts", () => {
   // The sdk resolves rather than throws on 4xx/5xx, so a refused read has to be told apart from
   // an empty one here or a picker tells a board member that nobody here has an account.
   it("answers with nothing at all where the read failed", async () => {
-    vi.mocked(findUsers).mockResolvedValue({error: {status: 500}, data: undefined} as never)
+    vi.mocked(findUsers).mockResolvedValue(refusal(findUsers, {status: 500}))
 
     await expect(loadMemberAccounts()).resolves.toBeNull()
   })
 
   it("answers with nothing at all where the api sent a body with no page in it", async () => {
-    vi.mocked(findUsers).mockResolvedValue({data: {}} as never)
+    vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {}))
 
     await expect(loadMemberAccounts()).resolves.toBeNull()
   })
@@ -93,9 +100,9 @@ describe("searching accounts", () => {
   it("asks for one page of what was typed, and tells a refusal from nobody found", async () => {
     vi.mocked(findUsers)
       .mockResolvedValueOnce(page([{id: 1, fullName: "Roos Kruk"}]))
-      .mockResolvedValueOnce({error: {}} as never)
-      .mockResolvedValueOnce({error: {}} as never)
-      .mockResolvedValueOnce({data: {}} as never)
+      .mockResolvedValueOnce(refusal(findUsers, {}))
+      .mockResolvedValueOnce(refusal(findUsers, {}))
+      .mockResolvedValueOnce(answer(findUsers, {}))
 
     await expect(findMemberAccounts("roos", 20)).resolves.toEqual([{id: 1, fullName: "Roos Kruk"}])
     expect(findUsers).toHaveBeenLastCalledWith({query: {search: "roos", page: 0, size: 20}})

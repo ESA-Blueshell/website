@@ -2,6 +2,7 @@ import {describe, expect, it, vi} from "vitest"
 import {correctSignupEmail} from "@/domains/recovery/adapters/recovery"
 import {correctEmail} from "@/services/api"
 import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
+import {emptyAnswer} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -10,7 +11,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 
 describe("correctSignupEmail", () => {
   it("carries the token the applicant holds, in the header the api reads it from", async () => {
-    vi.mocked(correctEmail).mockResolvedValue({} as never)
+    vi.mocked(correctEmail).mockResolvedValue(emptyAnswer(correctEmail))
 
     await correctSignupEmail("sel.ver", "corrected@example.com")
 

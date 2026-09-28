@@ -3,12 +3,13 @@ import {DateTime} from "luxon"
 import {flushPromises, mount, RouterLinkStub} from "@vue/test-utils"
 import UpcomingBand from "@/domains/association/island/UpcomingBand.vue"
 import {stateOf} from "@/domains/association/island/useUpcomingEvents"
+import type {UpcomingEvent} from "@/domains/association/adapters/association"
 
 const {mockLoad} = vi.hoisted(() => ({mockLoad: vi.fn()}))
 
 vi.mock("@/domains/association/adapters/association", () => ({loadUpcomingEvents: mockLoad}))
 
-const coming = (id: number, over: Record<string, unknown> = {}) => ({
+const coming = (id: number, over: Partial<UpcomingEvent> = {}): UpcomingEvent => ({
   id,
   title: `Event ${id}`,
   startTime: "2026-10-03T19:00:00Z",
@@ -126,7 +127,7 @@ describe("UpcomingBand", () => {
 
 describe("what a poster says about signing up", () => {
   const now = DateTime.fromISO("2026-09-21T12:00:00Z")
-  const event = (over: Record<string, unknown>) => ({...coming(1), ...over}) as never
+  const event = (over: Partial<UpcomingEvent>) => coming(1, over)
 
   it("says there is nothing to sign up for", () => {
     expect(stateOf(event({signUp: false}), now)).toBe("No sign-ups, just walk in")

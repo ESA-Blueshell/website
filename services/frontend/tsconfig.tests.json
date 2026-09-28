@@ -4,7 +4,14 @@
     "env.d.ts",
     "src/**/*.d.ts",
     "tests/unit/helpers/sdkAnswers.ts",
-    "tests/unit/domains/boards/adapters/**/*.ts"
+    "tests/unit/domains/boards/adapters/**/*.ts",
+    "tests/unit/helpers/apiFixtures.ts",
+    "tests/unit/domains/association/adapters/**/*.ts",
+    "tests/unit/domains/association/UpcomingBand.test.ts",
+    "tests/unit/domains/blogs/adapters/**/*.ts",
+    "tests/unit/domains/contribution/adapters/**/*.ts",
+    "tests/unit/domains/recovery/adapters/**/*.ts",
+    "tests/unit/domains/user/adapters/**/*.ts"
   ],
   "exclude": [
     "dist",

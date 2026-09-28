@@ -368,6 +368,10 @@ An event only members may attend. The rule binds the **attendee**, not whoever i
 doing the typing: a board member cannot put a non-member onto a members-only event by
 signing them up, nor by moving a guest's sign-up onto their account.
 
+**Members-only is not hidden.** Once approved, a members-only event is listed to
+anonymous callers and non-members like any other, and the bot announces it on Discord;
+membership decides who may attend, not who may see the event.
+
 ### Pinged role
 
 A role in the association's Discord server that an event notifies when the bot posts

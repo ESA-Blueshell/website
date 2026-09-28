@@ -153,6 +153,17 @@ class EventSpecificationsIT : UserTestSupport() {
 
             assertThat(result).isEmpty()
         }
+
+        @Test
+        fun `anonymous sees an approved members-only event`() {
+            val committee = createCommitteeFixture()
+            val membersOnly =
+                createEvent(committee, "Members Only", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true, membersOnly = true)
+
+            val result = events.findAll(EventSpecifications.fromFilter(EventQuery(), user = null))
+
+            assertThat(result.map { it.id }).contains(membersOnly.id)
+        }
     }
 
     @Nested
@@ -231,6 +242,7 @@ class EventSpecificationsIT : UserTestSupport() {
         title: String,
         start: LocalDateTime,
         approved: Boolean,
+        membersOnly: Boolean = false,
     ): Event =
         persist(
             Event(
@@ -241,7 +253,7 @@ class EventSpecificationsIT : UserTestSupport() {
                 startTime = start.toInstant(ZoneOffset.UTC),
                 endTime = start.plusHours(2).toInstant(ZoneOffset.UTC),
                 approved = approved,
-                membersOnly = false,
+                membersOnly = membersOnly,
                 signUp = true,
             ),
         )

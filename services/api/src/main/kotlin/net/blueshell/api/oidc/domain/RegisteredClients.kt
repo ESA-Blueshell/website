@@ -19,60 +19,65 @@ private const val REFRESH_TOKEN_DAYS = 7L
 
 @Configuration
 class RegisteredClients {
-
     @Bean
     fun registeredClientRepository(
         @Value("\${auth.clients.vault.secret:}") vaultClientSecret: String,
     ): RegisteredClientRepository {
-        val headlamp = RegisteredClient.withId(UUID.randomUUID().toString())
-            .clientId("headlamp")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .redirectUri("https://headlamp.esa-blueshell.nl/oidc-callback")
-            .scope(OidcScopes.OPENID)
-            .scope(OidcScopes.PROFILE)
-            .scope(OidcScopes.EMAIL)
-            .scope("groups")
-            .clientSettings(
-                ClientSettings.builder()
-                    .requireProofKey(true)
-                    .requireAuthorizationConsent(false)
-                    .build()
-            )
-            .tokenSettings(tokenSettings())
-            .build()
+        val headlamp =
+            RegisteredClient
+                .withId(UUID.randomUUID().toString())
+                .clientId("headlamp")
+                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .redirectUri("https://headlamp.esa-blueshell.nl/oidc-callback")
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.PROFILE)
+                .scope(OidcScopes.EMAIL)
+                .scope("groups")
+                .clientSettings(
+                    ClientSettings
+                        .builder()
+                        .requireProofKey(true)
+                        .requireAuthorizationConsent(false)
+                        .build(),
+                ).tokenSettings(tokenSettings())
+                .build()
 
-        val vault = RegisteredClient.withId(UUID.randomUUID().toString())
-            .clientId("vault")
-            .clientSecret("{noop}$vaultClientSecret")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .redirectUri("https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback")
-            // `vault login -method=oidc` binds a listener on 127.0.0.1:8250 and
-            // the code must return there, so the terminal flow needs a second
-            // redirect_uri. Nothing off this machine can reach it, and the code
-            // is exchanged by the Vault server with the client secret.
-            .redirectUri("http://localhost:8250/oidc/callback")
-            .scope(OidcScopes.OPENID)
-            .scope(OidcScopes.PROFILE)
-            .scope(OidcScopes.EMAIL)
-            .scope("groups")
-            .clientSettings(
-                ClientSettings.builder()
-                    .requireProofKey(false)
-                    .requireAuthorizationConsent(false)
-                    .build()
-            )
-            .tokenSettings(tokenSettings())
-            .build()
+        val vault =
+            RegisteredClient
+                .withId(UUID.randomUUID().toString())
+                .clientId("vault")
+                .clientSecret("{noop}$vaultClientSecret")
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .redirectUri("https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback")
+                // `vault login -method=oidc` binds a listener on 127.0.0.1:8250 and
+                // the code must return there, so the terminal flow needs a second
+                // redirect_uri. Nothing off this machine can reach it, and the code
+                // is exchanged by the Vault server with the client secret.
+                .redirectUri("http://localhost:8250/oidc/callback")
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.PROFILE)
+                .scope(OidcScopes.EMAIL)
+                .scope("groups")
+                .clientSettings(
+                    ClientSettings
+                        .builder()
+                        .requireProofKey(false)
+                        .requireAuthorizationConsent(false)
+                        .build(),
+                ).tokenSettings(tokenSettings())
+                .build()
 
         return InMemoryRegisteredClientRepository(headlamp, vault)
     }
 
-    private fun tokenSettings() = TokenSettings.builder()
-        .accessTokenTimeToLive(Duration.ofMinutes(ACCESS_TOKEN_MINUTES))
-        .refreshTokenTimeToLive(Duration.ofDays(REFRESH_TOKEN_DAYS))
-        .reuseRefreshTokens(false)
-        .build()
+    private fun tokenSettings() =
+        TokenSettings
+            .builder()
+            .accessTokenTimeToLive(Duration.ofMinutes(ACCESS_TOKEN_MINUTES))
+            .refreshTokenTimeToLive(Duration.ofDays(REFRESH_TOKEN_DAYS))
+            .reuseRefreshTokens(false)
+            .build()
 }

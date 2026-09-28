@@ -78,7 +78,7 @@ private fun whenOf(event: Event): String {
     return "${DAY.format(from)}, $hours"
 }
 
-/* The description in Discord's markdown, read as CommonMark with its mentions named and no spoiler. */
+// The description in Discord's markdown, read as CommonMark with its mentions named and no spoiler.
 private fun snippetOf(
     description: String?,
     names: DiscordMentionNames?,

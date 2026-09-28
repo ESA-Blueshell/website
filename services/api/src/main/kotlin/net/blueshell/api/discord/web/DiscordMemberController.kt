@@ -69,7 +69,7 @@ class DiscordMemberController(
         return ResponseEntity.ok(found.map { it.toResponse() })
     }
 
-    /* What an event may ping, for whoever edits events, so it needs a login. */
+    // What an event may ping, for whoever edits events, so it needs a login.
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/roles")
     @Operation(operationId = "listDiscordRoles", summary = "The Discord server's roles an event may ping, in the server's order")
@@ -83,7 +83,7 @@ class DiscordMemberController(
         return ResponseEntity.ok(found.map { DiscordRoleResponse(it.id, it.name) })
     }
 
-    /* What a game may be put in, for whoever edits games, so it needs a login. */
+    // What a game may be put in, for whoever edits games, so it needs a login.
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/game-channels")
     @Operation(
@@ -102,7 +102,7 @@ class DiscordMemberController(
         return ResponseEntity.ok(found.map { DiscordChannelResponse(it.id, it.guildId, it.name) })
     }
 
-    /* What a description may be written with, for whoever writes one, so it needs a login. */
+    // What a description may be written with, for whoever writes one, so it needs a login.
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/emojis")
     @Operation(operationId = "listDiscordEmojis", summary = "The Discord server's own emoji, by name")

@@ -24,7 +24,12 @@ class DiscordRenameIT : UserTestSupport() {
 
     @Test
     fun `leaves a name that has not changed alone`() {
-        userRepository.save(createUserWithRole(Role.MEMBER).apply { discordId = "1144058844004233370"; discord = "Anna" })
+        userRepository.save(
+            createUserWithRole(Role.MEMBER).apply {
+                discordId = "1144058844004233370"
+                discord = "Anna"
+            },
+        )
 
         val renamed = transactionTemplate.execute { userRepository.renameDiscordMember("1144058844004233370", "Anna") }
 

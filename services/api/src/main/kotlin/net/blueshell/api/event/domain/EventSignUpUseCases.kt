@@ -12,8 +12,8 @@ import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.user.api.UserService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -35,8 +35,8 @@ class EventSignUpUseCases(
     private val currentUser: CurrentUserProvider,
 ) {
     /** Board and above, asked of the caller rather than of the route they came in on. */
-    private fun callerIsBoard(): Boolean =
-        currentUser.currentUser()?.roles?.any { it.matchesRole(Role.BOARD) } == true
+    private fun callerIsBoard(): Boolean = currentUser.currentUser()?.roles?.any { it.matchesRole(Role.BOARD) } == true
+
     /**
      * Applies the declarative rules on [EventSignUpData] by hand: the event id arrives on the
      * path rather than in a body, so there is no request DTO to carry the annotation.

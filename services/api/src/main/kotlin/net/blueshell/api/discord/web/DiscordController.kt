@@ -30,7 +30,7 @@ class DiscordController(
     private val viewerRooms: ViewerRoomService,
 ) {
     private companion object {
-        /* Short enough that a join shows within the band's own refresh, long enough to spare the api. */
+        // Short enough that a join shows within the band's own refresh, long enough to spare the api.
         val BROWSER_CACHE: Duration = Duration.ofSeconds(15)
     }
 
@@ -51,7 +51,7 @@ class DiscordController(
             .body(live.toResponse())
     }
 
-    /* Public like the feed, but the answer is the viewer's: logged out, nothing is unlocked. */
+    // Public like the feed, but the answer is the viewer's: logged out, nothing is unlocked.
     @PermitAll
     @GetMapping("/live/mine")
     @Operation(operationId = "readMyDiscordRooms", summary = "The voice rooms the viewer's own Discord member may join")

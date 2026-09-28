@@ -4,9 +4,9 @@ import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import org.springframework.transaction.annotation.Propagation
 
 @Service
 class ExternalIdMappingService(

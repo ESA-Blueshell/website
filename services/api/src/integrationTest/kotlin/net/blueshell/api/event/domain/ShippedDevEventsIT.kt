@@ -55,12 +55,21 @@ class ShippedDevEventsIT : UserTestSupport() {
         val again = loader().apply()
 
         assertThat(again).isEqualTo(ShippedDevEvents.Applied(0, 0, 0))
-        assertThat(events.count()).isEqualTo(EventSeed.files.rows(EventSeed.EVENTS).size.toLong())
+        assertThat(events.count()).isEqualTo(
+            EventSeed.files
+                .rows(EventSeed.EVENTS)
+                .size
+                .toLong(),
+        )
     }
 
     @Test
     fun `a committee the database already holds is taken as it stands`() {
-        val name = EventSeed.files.rows(EventSeed.COMMITTEES).first().getValue("name")
+        val name =
+            EventSeed.files
+                .rows(EventSeed.COMMITTEES)
+                .first()
+                .getValue("name")
         val held = createCommitteeFixture(name = name)
 
         loader().apply()

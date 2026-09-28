@@ -10,10 +10,10 @@ import net.blueshell.clients.discord.model.MessageCreateRequest
 import net.blueshell.clients.discord.model.MessageEditRequestPartial
 import net.blueshell.clients.discord.model.MessageResponse
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.nullValue
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -189,7 +189,11 @@ class BotPublisherTest {
 
         val sent = argumentCaptor<MessageCreateRequest>()
         verify(api).createMessage(eq("111"), sent.capture())
-        assertThat(sent.firstValue.embeds!!.single().image).isNull()
+        assertThat(
+            sent.firstValue.embeds!!
+                .single()
+                .image,
+        ).isNull()
         verify(api).updateMessage(eq("111"), eq("m1"), any())
         whenever(api.createMessage(eq("111"), any())).thenThrow(HttpClientErrorException(HttpStatus.BAD_REQUEST))
         assertThatThrownBy { publisher.post("events-info", post) }.isInstanceOf(HttpClientErrorException::class.java)

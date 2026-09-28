@@ -66,7 +66,7 @@ class GameChannelMatcher(
         }
     }
 
-    /* The longest name wins, so a channel for one game is not taken by a game whose name is inside it. */
+    // The longest name wins, so a channel for one game is not taken by a game whose name is inside it.
     private fun heldBy(
         room: TextRoom,
         standing: List<StandingGame>,

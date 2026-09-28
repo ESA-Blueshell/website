@@ -29,7 +29,12 @@ class GameService(
     fun findAll(): List<Game> = games.findAllByOrderBySortIndexAsc()
 
     /** The codes of the games in competition now, as the module that fields teams answers. */
-    fun inCompetition(): Set<String> = competition.orderedStream().toList().flatMap { it.currentlyFielded() }.toSet()
+    fun inCompetition(): Set<String> =
+        competition
+            .orderedStream()
+            .toList()
+            .flatMap { it.currentlyFielded() }
+            .toSet()
 
     @Transactional(readOnly = true)
     fun findByCode(code: String): Game = requireGame(code)
@@ -252,8 +257,7 @@ class GameService(
         const val CODE_LENGTH = 32
         const val SLUG_LENGTH = 64
 
-        /** Addresses under /esports that are not a game's, so a game claiming one is unreachable. */
-        /* Addresses the site's own pages answer to under /casual and /competition. */
+        /** Addresses the site's own pages answer to under /casual and /competition, so a game claiming one is unreachable. */
         val RESERVED = setOf("competitive-scene", "new", "seasons")
     }
 }

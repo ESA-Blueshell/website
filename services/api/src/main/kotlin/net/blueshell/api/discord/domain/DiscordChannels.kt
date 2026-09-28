@@ -43,12 +43,14 @@ class DiscordChannelDirectory(
 
     private fun seenByEveryone(channels: List<ListGuildChannels200ResponseInner>): List<DiscordChannel> {
         val byId = channels.associateBy { it.id }
+
         // The channel's own rule for @everyone decides; without one, its category's does.
         fun hidden(channel: ListGuildChannels200ResponseInner): Boolean {
             val own = channel.permissionOverwrites?.firstOrNull { it.id == guildId }
             if (own != null) return own.deny.toLong() and VIEW_CHANNEL != 0L
             val category = channel.parentId?.let(byId::get) ?: return false
-            return category.permissionOverwrites?.firstOrNull { it.id == guildId }
+            return category.permissionOverwrites
+                ?.firstOrNull { it.id == guildId }
                 ?.let { it.deny.toLong() and VIEW_CHANNEL != 0L } ?: false
         }
         return channels

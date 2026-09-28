@@ -1,8 +1,5 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.auth.persistence.RecoveryToken
-import net.blueshell.api.auth.persistence.SecurityEventKind
-import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.auth.domain.twofactor.Challenge
 import net.blueshell.api.auth.domain.twofactor.Challenges
 import net.blueshell.api.auth.domain.twofactor.Proof
@@ -10,12 +7,15 @@ import net.blueshell.api.auth.domain.twofactor.ThrottledCodes
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.auth.domain.twofactor.TwoFactorStanding
+import net.blueshell.api.auth.persistence.RecoveryToken
+import net.blueshell.api.auth.persistence.SecurityEventKind
+import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.security.Browser
 import net.blueshell.api.security.JwtTokenUtil
 import net.blueshell.api.security.SignIn
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.platform.config.SettableClock
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.testsupport.InMemorySignInStore
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
@@ -191,14 +191,15 @@ class AuthenticationServiceTest {
     fun `a re-enrolment link of somebody else's opens nothing`() {
         val john = user()
         whenever(users.findByUsername("john")).thenReturn(john)
-        val other = User(
-            username = "eve",
-            email = "e@example.com",
-            password = "h",
-            initials = "E",
-            firstName = "E",
-            lastName = "V",
-        ).also { it.id = 6 }
+        val other =
+            User(
+                username = "eve",
+                email = "e@example.com",
+                password = "h",
+                initials = "E",
+                firstName = "E",
+                lastName = "V",
+            ).also { it.id = 6 }
         whenever(tokens.verify("sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT))
             .thenReturn(RecoveryToken(other, TokenPurpose.TWO_FACTOR_REENROLMENT, "sel", "hash", clock.instant().plusSeconds(60)))
 

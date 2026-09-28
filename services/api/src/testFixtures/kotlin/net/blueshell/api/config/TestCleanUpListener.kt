@@ -227,6 +227,7 @@ class TestCleanUpListener : TestExecutionListener {
         val snapshots = mutableMapOf<String, Snapshot>()
 
         const val TEST_SCHEMA = "blueshell-test"
+
         // Liquibase's own tables, plus the Flyway history a database predating the
         // baseline still carries.
         val BOOKKEEPING_TABLES = listOf("DATABASECHANGELOG", "DATABASECHANGELOGLOCK", "flyway_schema_history")

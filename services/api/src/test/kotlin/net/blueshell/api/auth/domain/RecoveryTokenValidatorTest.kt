@@ -2,6 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
+import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.security.crypto.password.PasswordEncoder
-import net.blueshell.api.platform.config.SettableClock
 import java.time.Instant
 import java.util.Optional
 

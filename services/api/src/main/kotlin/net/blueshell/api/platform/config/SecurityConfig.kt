@@ -35,6 +35,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import java.util.Arrays
 
 private const val CORS_PREFLIGHT_MAX_AGE_SECONDS = 3600L
+
 // A year, which is what the HSTS preload list asks for.
 private const val HSTS_MAX_AGE_SECONDS = 31_536_000L
 
@@ -201,60 +202,60 @@ class SecurityConfig(
         /** What anybody may read without logging in. */
         val ANONYMOUS_READS =
             arrayOf(
-            "/csrf",
-            // Read back on the signup token, which is the credential; named exactly
-            // rather than as /signup/** so a later read cannot join it by accident.
-            "/signup/session",
-            "/events/**",
-            "/events/signups/byAccessToken",
-            "/me/services",
-            "/blogs",
-            "/blogs/*",
-            "/boards",
-            "/boards/*",
-            "/telemetry/*",
-            "/committeeMembers/committees",
-            "/contributionPeriods",
-            // Posters, banners and roster icons: the images the public pages draw.
-            "/files/public/**",
-            // The collection and one game: "/esports/games/*" matches the second only,
-            // so the list of games needs saying separately.
-            "/esports/games",
-            "/esports/games/*",
-            "/esports/seasons",
-            // A season's band. It answers everybody and answers them differently: a
-            // visitor gets the games with a team in them, the board also gets the ones
-            // entered with nobody fielded yet.
-            "/esports/seasons/*/games",
-            "/esports/teams",
-            // The games as the casual pages list them.
-            "/games",
-            "/committees/**",
-            "/contributionPeriods/current",
-            // The Discord band, read and followed live; the socket opens with a GET.
-            "/discord/live",
-            "/discord/live/socket",
-            "/discord/live/mine",
-            // The site's links into Discord, which redirect.
-            "/discord/invite/*",
-            "/discord/channel/*",
-            // The Discord person picker, which account creation shows before any login.
-            "/discord/members",
-            "/discord/members/unclaimed",
-            // What a description's mentions name, read wherever a description is.
-            "/discord/mentions",
-            // Only on the dev profile; absent anywhere else.
-            "/dev/discord-posts/run",
-            "/health",
-            "/version",
-            // The association's own numbers, which an anonymous caller reads.
-            "/statistics/association",
-            "/oauth2/forward-auth",
-            "/track/email/**",
-            "/actuator/health",
-            "/actuator/health/**",
-            "/actuator/prometheus",
-            "/test-support/**",
+                "/csrf",
+                // Read back on the signup token, which is the credential; named exactly
+                // rather than as /signup/** so a later read cannot join it by accident.
+                "/signup/session",
+                "/events/**",
+                "/events/signups/byAccessToken",
+                "/me/services",
+                "/blogs",
+                "/blogs/*",
+                "/boards",
+                "/boards/*",
+                "/telemetry/*",
+                "/committeeMembers/committees",
+                "/contributionPeriods",
+                // Posters, banners and roster icons: the images the public pages draw.
+                "/files/public/**",
+                // The collection and one game: "/esports/games/*" matches the second only,
+                // so the list of games needs saying separately.
+                "/esports/games",
+                "/esports/games/*",
+                "/esports/seasons",
+                // A season's band. It answers everybody and answers them differently: a
+                // visitor gets the games with a team in them, the board also gets the ones
+                // entered with nobody fielded yet.
+                "/esports/seasons/*/games",
+                "/esports/teams",
+                // The games as the casual pages list them.
+                "/games",
+                "/committees/**",
+                "/contributionPeriods/current",
+                // The Discord band, read and followed live; the socket opens with a GET.
+                "/discord/live",
+                "/discord/live/socket",
+                "/discord/live/mine",
+                // The site's links into Discord, which redirect.
+                "/discord/invite/*",
+                "/discord/channel/*",
+                // The Discord person picker, which account creation shows before any login.
+                "/discord/members",
+                "/discord/members/unclaimed",
+                // What a description's mentions name, read wherever a description is.
+                "/discord/mentions",
+                // Only on the dev profile; absent anywhere else.
+                "/dev/discord-posts/run",
+                "/health",
+                "/version",
+                // The association's own numbers, which an anonymous caller reads.
+                "/statistics/association",
+                "/oauth2/forward-auth",
+                "/track/email/**",
+                "/actuator/health",
+                "/actuator/health/**",
+                "/actuator/prometheus",
+                "/test-support/**",
             )
     }
 }

@@ -3,29 +3,29 @@ package net.blueshell.api.platform.web
 import io.swagger.v3.oas.annotations.Hidden
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
-import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.auth.web.AuthenticationController
 import net.blueshell.api.platform.config.SettableClock
+import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.security.AuthTokenCookieService
 import net.blueshell.api.security.Browser
 import net.blueshell.api.security.SignIn
 import net.blueshell.api.security.SignInContext
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.user.api.UserService
-import org.springframework.http.HttpHeaders
 import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.ResponseStatus
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
@@ -102,12 +102,16 @@ class TestSupportController(
     @PutMapping("/clock")
     @PermitAll
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun setClock(@RequestParam instant: Instant) = clock.set(instant)
+    fun setClock(
+        @RequestParam instant: Instant,
+    ) = clock.set(instant)
 
     @PostMapping("/clock/advance")
     @PermitAll
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun advanceClock(@RequestParam seconds: Long) = clock.advance(Duration.ofSeconds(seconds))
+    fun advanceClock(
+        @RequestParam seconds: Long,
+    ) = clock.advance(Duration.ofSeconds(seconds))
 
     @DeleteMapping("/clock")
     @PermitAll

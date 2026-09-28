@@ -35,7 +35,9 @@ class JwtTokenUtil(
             .builder()
             .subject(subject)
             .issuer(issuer)
-            .audience().add(audience).and()
+            .audience()
+            .add(audience)
+            .and()
             .id(jti)
             .claim(SID, sid)
             .issuedAt(Date.from(clock.instant()))
@@ -44,8 +46,10 @@ class JwtTokenUtil(
             .compact()
 
     /** The claims of a valid, unexpired token of ours, or null for anything else. */
-    // A null for each thing a token can lack, which reads straighter than one long condition.
-    @Suppress("ReturnCount")
+    @Suppress(
+        // A null for each thing a token can lack, which reads straighter than one long condition.
+        "ReturnCount",
+    )
     fun read(token: String?): Claims? {
         if (token.isNullOrBlank()) return null
         val claims =

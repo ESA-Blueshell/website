@@ -91,7 +91,7 @@ class DiscordMemberDirectory(
         const val MAX_MEMBERS = 10
         const val PAGE = 1000
 
-        /* Ten thousand members, which this server is far from; past it the list is cut, not endless. */
+        // Ten thousand members, which this server is far from; past it the list is cut, not endless.
         const val MAX_PAGES = 10
         val KEPT_FOR: Duration = Duration.ofMinutes(5)
         private val log = LoggerFactory.getLogger(DiscordMemberDirectory::class.java)

@@ -111,8 +111,7 @@ class CommitteePageIT : UserTestSupport() {
                     .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(page),
-            )
-            .andExpect(status().isOk)
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.description").value("We run quizzes."))
             .andExpect(jsonPath("$.gameCodes", contains(game)))
         mvc
@@ -121,8 +120,7 @@ class CommitteePageIT : UserTestSupport() {
                     .with(signedIn(outsider))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(page),
-            )
-            .andExpect(status().isForbidden)
+            ).andExpect(status().isForbidden)
         mvc
             .perform(
                 put("/committees/{id}", committee.id)

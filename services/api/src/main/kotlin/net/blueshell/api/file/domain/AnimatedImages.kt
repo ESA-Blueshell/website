@@ -105,9 +105,11 @@ class AnimatedImages(
      * so pulling one out is enough: there is no earlier frame to replay onto it. An animation
      * from anywhere else may not be built that way, which is why this module writes its own.
      */
-    // The frames already cut have to be cleaned up whatever came out of the ones after them,
-    // including an Error, and the failure is rethrown untouched.
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress(
+        // The frames already cut have to be cleaned up whatever came out of the ones after them,
+        // including an Error, and the failure is rethrown untouched.
+        "TooGenericExceptionCaught",
+    )
     private fun webpFramesOf(source: ScratchFile): FrameSequence? {
         val animation = webpEncoder.animationOf(source) ?: return null
         val frames = mutableListOf<FrameSequence.Frame>()
@@ -128,7 +130,12 @@ class AnimatedImages(
             frames.forEach { frame -> runCatching { frame.bytes.close() } }
             throw e
         }
-        val size = frames.first().bytes.open().use(ImageDimensions::of)
+        val size =
+            frames
+                .first()
+                .bytes
+                .open()
+                .use(ImageDimensions::of)
         if (size == null) {
             frames.forEach { frame -> runCatching { frame.bytes.close() } }
             return null

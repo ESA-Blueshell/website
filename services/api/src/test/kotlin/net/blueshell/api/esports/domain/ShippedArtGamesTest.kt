@@ -66,7 +66,7 @@ class ShippedArtGamesTest {
         assertThat(stored.filter { "banner" in it || "icon" in it }).hasSize(6)
     }
 
-    /* A blank the game module fills stores its picture, which is the only way one is stored. */
+    // A blank the game module fills stores its picture, which is the only way one is stored.
     private fun stores(picture: () -> File): Boolean {
         picture()
         return true

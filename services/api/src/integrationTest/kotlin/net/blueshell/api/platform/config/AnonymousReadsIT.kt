@@ -22,7 +22,11 @@ class AnonymousReadsIT : UserTestSupport() {
     fun `a signed-in member reads it`(path: String) {
         val member = createUserWithRole(Role.MEMBER)
 
-        val status = mvc.perform(get(path).with(signedIn(member))).andReturn().response.status
+        val status =
+            mvc
+                .perform(get(path).with(signedIn(member)))
+                .andReturn()
+                .response.status
 
         assertThat(status).isNotIn(401, 403)
     }

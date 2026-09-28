@@ -3,10 +3,10 @@ package net.blueshell.api.factory.user.persistence
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.user.domain.GrantedRoles
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
-import net.blueshell.api.user.domain.GrantedRoles
 import net.blueshell.api.user.persistence.User
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component

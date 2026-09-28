@@ -14,8 +14,10 @@ class DiscordLiveServiceTest {
 
     private fun <T : Any> provided(bean: T?): ObjectProvider<T> = mock { on { ifAvailable } doReturn bean }
 
-    private fun service(voice: VoiceServerSource?, counts: GuildCountsSource?) =
-        DiscordLiveService(provided(voice), provided(counts), "https://discord.com/api/v10")
+    private fun service(
+        voice: VoiceServerSource?,
+        counts: GuildCountsSource?,
+    ) = DiscordLiveService(provided(voice), provided(counts), "https://discord.com/api/v10")
 
     @Test
     fun `puts the voice rooms in Discord's order with the counts and a way into each room`() {

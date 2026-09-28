@@ -11,5 +11,5 @@ enum class JobExecutionStatus {
     /** Ran without an error and found nothing it should do; the execution says why. */
     SKIPPED,
     FAILED,
-    DEAD
+    DEAD,
 }

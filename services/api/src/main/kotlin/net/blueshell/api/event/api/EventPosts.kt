@@ -56,7 +56,7 @@ class EventPosts(
         to: Instant,
     ): List<Long> = events.findApprovedIdsOverlapping(from, to)
 
-    /* The widest rendition Discord takes comfortably rather than the master, which can be large. */
+    // The widest rendition Discord takes comfortably rather than the master, which can be large.
     @Transactional(readOnly = true)
     fun bannerOf(eventId: Long): EventBannerImage? {
         val master = events.findByIdIncludingDeleted(eventId)?.banner?.file ?: return null
@@ -69,7 +69,7 @@ class EventPosts(
     }
 }
 
-/* A soft-deleted row is read by the native query, which the entity's restriction does not filter. */
+// A soft-deleted row is read by the native query, which the entity's restriction does not filter.
 private fun Event.asPostData() =
     EventPostData(
         id = id!!,

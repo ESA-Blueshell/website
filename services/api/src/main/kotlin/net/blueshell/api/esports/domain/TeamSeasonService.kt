@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.domain
 
-import java.time.LocalDate
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
@@ -9,6 +8,7 @@ import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.FileType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 /**
  * Which teams the association fielded in which game, in which season.

@@ -1,8 +1,8 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
+import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.security.SignInEndReason
 import net.blueshell.api.security.SignInEndedAsSuspicious
 import net.blueshell.api.security.SignIns

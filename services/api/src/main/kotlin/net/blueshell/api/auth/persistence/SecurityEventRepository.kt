@@ -57,5 +57,4 @@ interface SecurityEventRepository : BaseRepository<SecurityEvent, Long> {
     fun purgeOlderThan(
         @Param("before") before: Instant,
     ): Int
-
 }

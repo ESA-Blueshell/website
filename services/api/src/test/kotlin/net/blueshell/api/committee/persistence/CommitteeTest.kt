@@ -4,9 +4,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class CommitteeTest {
-    private fun loadedWithoutAddress(name: String) = Committee(name = name, description = "").also {
-        Committee::class.java.getDeclaredField("slug").apply { isAccessible = true }.set(it, null)
-    }
+    private fun loadedWithoutAddress(name: String) =
+        Committee(name = name, description = "").also {
+            Committee::class.java
+                .getDeclaredField("slug")
+                .apply { isAccessible = true }
+                .set(it, null)
+        }
 
     @Test
     fun `a committee loaded without an address answers to the one its name makes`() {

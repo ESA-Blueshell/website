@@ -34,7 +34,7 @@ class DiscordEventPosts(
     @Value($$"${discord.posts.info-channel:events-info}") private val infoChannel: String,
     @Value($$"${discord.posts.calendar-channel:events-calendar}") private val calendarChannel: String,
 ) {
-    /* Settable for tests only. */
+    // Settable for tests only.
     internal var clock: Clock = Clock.systemUTC()
 
     /** The events-info post, which stays once out. A forced run posts it ahead of its morning. */
@@ -106,7 +106,7 @@ class DiscordEventPosts(
     private fun announced(event: EventPostData) =
         ledger.find(event.id, DiscordArtefact.DISCORD_EVENT) != null || ledger.find(event.id, DiscordArtefact.INFO_POST) != null
 
-    /* [refusal] answers why the post should not stand now, or null where it should. */
+    // [refusal] answers why the post should not stand now, or null where it should.
     private fun keepPost(
         eventId: Long,
         artefact: DiscordArtefact,
@@ -186,7 +186,7 @@ class DiscordEventPosts(
         return Kept(made = true)
     }
 
-    /* The recorded one, brought up to date; false where somebody removed it by hand, its record given back. */
+    // The recorded one, brought up to date; false where somebody removed it by hand, its record given back.
     @Suppress("LongParameterList")
     private fun stillKept(
         eventId: Long,
@@ -242,6 +242,6 @@ private val MORNING_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:
 
 private fun morningOf(moment: Instant): String = MORNING_FORMAT.format(moment.atZone(DiscordPostSchedule.ZONE))
 
-/* Eight bytes of a digest of what is said, so an edit goes out only when something changed. */
+// Eight bytes of a digest of what is said, so an edit goes out only when something changed.
 private fun fingerprintOf(content: Any): Long =
     ByteBuffer.wrap(MessageDigest.getInstance("SHA-256").digest(content.toString().toByteArray())).long

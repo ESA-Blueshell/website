@@ -129,7 +129,12 @@ class SignInIT : UserTestSupport() {
         val pool = Executors.newFixedThreadPool(10)
 
         val statuses =
-            (1..10).map { pool.submit<Int> { start.await(); read(user, cookie).andReturn().response.status } }
+            (1..10).map {
+                pool.submit<Int> {
+                    start.await()
+                    read(user, cookie).andReturn().response.status
+                }
+            }
         start.countDown()
 
         assertThat(statuses.map { it.get(30, TimeUnit.SECONDS) }).containsOnly(200)

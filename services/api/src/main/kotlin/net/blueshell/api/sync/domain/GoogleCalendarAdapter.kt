@@ -27,7 +27,7 @@ class GoogleCalendarAdapter(
     private val googleCalendarClient: GoogleCalendarClient,
     private val names: ObjectProvider<DiscordMentionNames>,
 ) : CalendarAdapter {
-    /* The calendar renders CommonMark as HTML, so a description in Discord's markdown is translated first. */
+    // The calendar renders CommonMark as HTML, so a description in Discord's markdown is translated first.
     private fun readable(description: String?): String? =
         description?.let {
             val named = names.ifAvailable?.named(DiscordMarkdown.mentionsIn(it)) ?: MentionNames()

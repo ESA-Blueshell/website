@@ -110,8 +110,9 @@ class DiscordPostContentTest {
 
     @Test
     fun `counts sign-ups against no limit as a bare number, and against a limit of none as full`() {
-        val fields = DiscordPostContent.postOf(event.copy(signUpLimit = null), site).embed.fields +
-            DiscordPostContent.postOf(event.copy(signUpLimit = 0, signUpCount = 3), site).embed.fields
+        val fields =
+            DiscordPostContent.postOf(event.copy(signUpLimit = null), site).embed.fields +
+                DiscordPostContent.postOf(event.copy(signUpLimit = 0, signUpCount = 3), site).embed.fields
 
         assertThat(fields.filter { it.first == "Signed up" }.map { it.second }).containsExactly("10", "3/0")
     }
@@ -133,10 +134,11 @@ class DiscordPostContentTest {
 
     @Test
     fun `writes September as Sept`() {
-        val post = DiscordPostContent.postOf(
-            event.copy(startTime = Instant.parse("2026-09-24T17:00:00Z"), endTime = Instant.parse("2026-09-24T18:00:00Z")),
-            site,
-        )
+        val post =
+            DiscordPostContent.postOf(
+                event.copy(startTime = Instant.parse("2026-09-24T17:00:00Z"), endTime = Instant.parse("2026-09-24T18:00:00Z")),
+                site,
+            )
 
         assertThat(post.embed.fields.first()).isEqualTo("When" to "`24 Sept 2026 - 19:00-20:00`")
     }

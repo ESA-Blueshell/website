@@ -18,7 +18,8 @@ class CommitteeRefusalAdviceTest {
 
             assertThat(problem.status).isEqualTo(HttpStatus.CONFLICT.value())
             assertThat(problem.instance.toString()).isEqualTo("/committees/1")
-            assertThat(problem.properties).containsEntry("code", "CommitteeAddressTaken")
+            assertThat(problem.properties)
+                .containsEntry("code", "CommitteeAddressTaken")
                 .containsEntry("committeeName", "Board")
                 .containsEntry("address", "board")
                 .containsEntry("traceId", "abc")

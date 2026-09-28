@@ -16,7 +16,8 @@ class GameRefusalAdviceTest {
 
             assertThat(problem.status).isEqualTo(HttpStatus.CONFLICT.value())
             assertThat(problem.instance.toString()).isEqualTo("/games/CHESS")
-            assertThat(problem.properties).containsEntry("code", "AddressTaken")
+            assertThat(problem.properties)
+                .containsEntry("code", "AddressTaken")
                 .containsEntry("gameName", "Chess")
                 .containsEntry("address", "chess")
                 .containsEntry("traceId", "abc")

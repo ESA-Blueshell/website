@@ -57,7 +57,7 @@ class DiscordMentionController(
         )
     }
 
-    /* What a description may mention, for whoever writes one, so it needs a login. */
+    // What a description may mention, for whoever writes one, so it needs a login.
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/channels")
     @Operation(operationId = "listDiscordChannels", summary = "The Discord server's channels everybody can see, in the server's order")
@@ -71,7 +71,7 @@ class DiscordMentionController(
         return ResponseEntity.ok(found.map { DiscordNameResponse(it.id, it.name) })
     }
 
-    /* A page names a few; a caller asking for thousands is cut short rather than served. */
+    // A page names a few; a caller asking for thousands is cut short rather than served.
     private fun asked(ids: List<String>): Set<String> = ids.filter { it.isNotBlank() }.take(MAX_ASKED).toSet()
 
     private companion object {

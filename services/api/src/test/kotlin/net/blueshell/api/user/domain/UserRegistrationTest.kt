@@ -30,8 +30,7 @@ class UserRegistrationTest {
 
         @Test
         fun `demands a password of the allowed length`() {
-            fun allowed(length: Int) =
-                registration(password = "Aa1!".padEnd(length, 'x')).isPasswordLengthAllowedForPublicRegistration
+            fun allowed(length: Int) = registration(password = "Aa1!".padEnd(length, 'x')).isPasswordLengthAllowedForPublicRegistration
 
             assertThat(allowed(PasswordPolicy.MIN_LENGTH - 1)).isFalse()
             assertThat(allowed(PasswordPolicy.MIN_LENGTH)).isTrue()

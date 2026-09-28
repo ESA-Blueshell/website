@@ -12,10 +12,10 @@ import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ImageJobs
 import net.blueshell.api.testsupport.AnimatedGifs
-import org.slf4j.LoggerFactory
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
@@ -61,7 +61,6 @@ class ImageRenditionsIT : UserTestSupport() {
 
     @Autowired
     private lateinit var blobs: BlobStore
-
 
     @Value($$"${storage.location}")
     private lateinit var storageLocation: String
@@ -333,8 +332,7 @@ class ImageRenditionsIT : UserTestSupport() {
     }
 
     /** What the stored bytes at [key] say about their own frames, or nothing where they are a still. */
-    private fun storedAnimation(key: String): WebpAnimation? =
-        scratch.hold(blobs.open(key)).use(webpEncoder::animationOf)
+    private fun storedAnimation(key: String): WebpAnimation? = scratch.hold(blobs.open(key)).use(webpEncoder::animationOf)
 
     private fun uploadGif(bytes: ByteArray): String {
         val admin = createUserWithRole(Role.ADMIN)

@@ -18,19 +18,30 @@ import org.mockito.kotlin.whenever
 class VoiceServerOfTest {
     private val everyone: Role = mock()
 
-    private fun member(name: String, avatar: String): Member =
+    private fun member(
+        name: String,
+        avatar: String,
+    ): Member =
         mock {
             on { effectiveName } doReturn name
             on { effectiveAvatarUrl } doReturn avatar
         }
 
-    private fun channel(id: String, name: String, position: Int, view: Boolean, connect: Boolean, vararg people: Member): VoiceChannel {
-        val channel: VoiceChannel = mock {
-            on { this.id } doReturn id
-            on { this.name } doReturn name
-            on { positionRaw } doReturn position
-            on { members } doReturn people.toList()
-        }
+    private fun channel(
+        id: String,
+        name: String,
+        position: Int,
+        view: Boolean,
+        connect: Boolean,
+        vararg people: Member,
+    ): VoiceChannel {
+        val channel: VoiceChannel =
+            mock {
+                on { this.id } doReturn id
+                on { this.name } doReturn name
+                on { positionRaw } doReturn position
+                on { members } doReturn people.toList()
+            }
         whenever(everyone.hasPermission(channel, Permission.VIEW_CHANNEL)).thenReturn(view)
         whenever(everyone.hasPermission(channel, Permission.VOICE_CONNECT)).thenReturn(connect)
         return channel
@@ -42,13 +53,14 @@ class VoiceServerOfTest {
         val general = channel("2", "General", 1, view = true, connect = true, member("Emma", "https://cdn/emma.png"))
         val lounge = channel("3", "Members lounge", 2, view = true, connect = false, member("Mo", "https://cdn/embed/avatars/1.png"))
         val board = channel("4", "Board", 3, view = false, connect = false, member("Chair", "https://cdn/chair.png"))
-        val guild: Guild = mock {
-            on { id } doReturn "324"
-            on { name } doReturn "Blueshell Esports"
-            on { publicRole } doReturn everyone
-            on { afkChannel } doReturn afk
-            on { voiceChannels } doReturn listOf(afk, general, lounge, board)
-        }
+        val guild: Guild =
+            mock {
+                on { id } doReturn "324"
+                on { name } doReturn "Blueshell Esports"
+                on { publicRole } doReturn everyone
+                on { afkChannel } doReturn afk
+                on { voiceChannels } doReturn listOf(afk, general, lounge, board)
+            }
 
         val server = voiceServerOf(guild)
 
@@ -63,13 +75,14 @@ class VoiceServerOfTest {
     @Test
     fun `keeps every visible room where the server has no AFK room`() {
         val general = channel("2", "General", 1, view = true, connect = true)
-        val guild: Guild = mock {
-            on { id } doReturn "324"
-            on { name } doReturn "Blueshell"
-            on { publicRole } doReturn everyone
-            on { afkChannel } doReturn null
-            on { voiceChannels } doReturn listOf(general)
-        }
+        val guild: Guild =
+            mock {
+                on { id } doReturn "324"
+                on { name } doReturn "Blueshell"
+                on { publicRole } doReturn everyone
+                on { afkChannel } doReturn null
+                on { voiceChannels } doReturn listOf(general)
+            }
 
         assertThat(voiceServerOf(guild).rooms.map { it.id }).containsExactly("2")
     }
@@ -77,14 +90,15 @@ class VoiceServerOfTest {
     @Test
     fun `counts only what the gateway keeps current`() {
         val presences: CacheView.SimpleCacheView<MemberPresenceImpl> = mock { on { size() } doReturn 269L }
-        val guild: GuildImpl = mock {
-            on { id } doReturn "324"
-            on { name } doReturn "Blueshell"
-            on { publicRole } doReturn everyone
-            on { voiceChannels } doReturn emptyList()
-            on { memberCount } doReturn 1199
-            on { presenceView } doReturn presences
-        }
+        val guild: GuildImpl =
+            mock {
+                on { id } doReturn "324"
+                on { name } doReturn "Blueshell"
+                on { publicRole } doReturn everyone
+                on { voiceChannels } doReturn emptyList()
+                on { memberCount } doReturn 1199
+                on { presenceView } doReturn presences
+            }
 
         val counted = voiceServerOf(guild, countsOnline = true, countsMembers = true)
         assertThat(counted.online to counted.members).isEqualTo(269 to 1199)

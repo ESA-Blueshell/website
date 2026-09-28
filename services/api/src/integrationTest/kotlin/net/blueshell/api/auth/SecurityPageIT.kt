@@ -42,8 +42,7 @@ class SecurityPageIT : AccountSecurityTestSupport() {
             .perform(
                 json(put("/users/me/password"), """{"currentPassword":"Password123!","newPassword":"Another123!"}""")
                     .with(signedIn(member)),
-            )
-            .andExpect(jsonPath("$.code").value("StepUpRequired"))
+            ).andExpect(jsonPath("$.code").value("StepUpRequired"))
     }
 
     @Test

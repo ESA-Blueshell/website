@@ -19,7 +19,11 @@ class SeedDatabase {
     val transactions = TransactionTemplate(DataSourceTransactionManager(dataSource))
 
     init {
-        SCHEMA.split(";").map { it.trim() }.filter { it.isNotEmpty() }.forEach(jdbc::execute)
+        SCHEMA
+            .split(";")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .forEach(jdbc::execute)
     }
 
     fun count(

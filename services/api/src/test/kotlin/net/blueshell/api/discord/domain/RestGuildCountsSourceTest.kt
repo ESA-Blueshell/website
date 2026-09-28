@@ -24,11 +24,15 @@ class RestGuildCountsSourceTest {
         source.clock = Clock.fixed(Instant.ofEpochSecond(epochSecond), ZoneOffset.UTC)
     }
 
-    private fun answers(members: Int?, online: Int?) {
-        val guild: GuildWithCountsResponse = mock {
-            on { approximateMemberCount } doReturn members
-            on { approximatePresenceCount } doReturn online
-        }
+    private fun answers(
+        members: Int?,
+        online: Int?,
+    ) {
+        val guild: GuildWithCountsResponse =
+            mock {
+                on { approximateMemberCount } doReturn members
+                on { approximatePresenceCount } doReturn online
+            }
         // doReturn rather than whenever(...): re-stubbing through a call would hit the earlier stub.
         doReturn(guild).whenever(discordApi).getGuild(eq("324"), eq(true))
     }

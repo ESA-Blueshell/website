@@ -53,7 +53,13 @@ class EsportsQueryServiceTest {
         whenever(accounts.handlesFor("VALORANT", setOf(7L, 8L))).thenReturn(emptyMap())
         whenever(users.findAllByIds(setOf(7L, 8L))).thenReturn(listOf(person(7, named = true), person(8, named = false)))
 
-        val members = query.gamesOf(1, mayEdit = false).single().teams.single().members
+        val members =
+            query
+                .gamesOf(1, mayEdit = false)
+                .single()
+                .teams
+                .single()
+                .members
 
         assertThat(members.map { it.handle to it.name }).containsExactly("said-yes" to "Una 7", "said-no" to null)
     }

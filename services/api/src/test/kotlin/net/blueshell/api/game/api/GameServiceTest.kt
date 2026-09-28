@@ -143,10 +143,11 @@ class GameServiceTest {
 
     @Test
     fun `corrects the competition pages' own intro and channels, and keeps them where nothing is said`() {
-        val valorant = game("VALORANT").apply {
-            competitionIntro = "Two teams"
-            esportsChannels += GameChannel("7", "324", "valorant-esports")
-        }
+        val valorant =
+            game("VALORANT").apply {
+                competitionIntro = "Two teams"
+                esportsChannels += GameChannel("7", "324", "valorant-esports")
+            }
         whenever(games.findByCode("VALORANT")).thenReturn(valorant)
         whenever(games.findBySlug("valorant")).thenReturn(valorant)
 
@@ -219,9 +220,10 @@ class GameServiceTest {
     fun `keeps a game a holding refuses to let go`() {
         val chess = game("CHESS").apply { archived = true }
         whenever(games.findByCode("CHESS")).thenReturn(chess)
-        val refusing = object : GameHoldings {
-            override fun refuseRemoval(code: String) = throw IllegalStateException("held")
-        }
+        val refusing =
+            object : GameHoldings {
+                override fun refuseRemoval(code: String) = throw IllegalStateException("held")
+            }
         val strict = GameService(games, pictures, provider(refusing), provider())
 
         assertThatThrownBy { strict.remove("CHESS") }.hasMessage("held")
@@ -231,12 +233,14 @@ class GameServiceTest {
     @Test
     fun `adds up what every module holds against a game`() {
         whenever(games.findByCode("CHESS")).thenReturn(game("CHESS"))
-        val teams = object : GameHoldings {
-            override fun heldAgainst(code: String) = mapOf("teams" to 2L, "players" to 9L)
-        }
-        val events = object : GameHoldings {
-            override fun heldAgainst(code: String) = mapOf("events" to 4L, "teams" to 1L)
-        }
+        val teams =
+            object : GameHoldings {
+                override fun heldAgainst(code: String) = mapOf("teams" to 2L, "players" to 9L)
+            }
+        val events =
+            object : GameHoldings {
+                override fun heldAgainst(code: String) = mapOf("events" to 4L, "teams" to 1L)
+            }
         val counting = GameService(games, pictures, provider(teams, events), provider())
 
         assertThat(counting.heldAgainst("CHESS")).isEqualTo(mapOf("channels" to 0L, "teams" to 3L, "players" to 9L, "events" to 4L))

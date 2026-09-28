@@ -1,7 +1,7 @@
 package net.blueshell.api.security
 
-import net.blueshell.api.security.SignIns.Resolution
 import net.blueshell.api.platform.config.SettableClock
+import net.blueshell.api.security.SignIns.Resolution
 import net.blueshell.api.testsupport.InMemorySignInStore
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -20,8 +20,11 @@ class SignInsTest {
         SignIns(store, tokens, clock, events, Duration.ofDays(30), Duration.ofDays(14), Duration.ofMinutes(5), Duration.ofSeconds(60))
     private val firefox = Browser("Firefox", "Windows")
 
-    private fun resolve(token: String, browser: Browser = firefox, mayRotate: Boolean = true) =
-        signIns.resolve(token, browser, mayRotate)
+    private fun resolve(
+        token: String,
+        browser: Browser = firefox,
+        mayRotate: Boolean = true,
+    ) = signIns.resolve(token, browser, mayRotate)
 
     @Test
     fun `a fresh sign-in is honoured and not rotated`() {

@@ -86,7 +86,7 @@ class CohortJobHandlers(
             null
         }
 
-    /* [perform] answers why the run did nothing, or null where it did its work. */
+    // [perform] answers why the run did nothing, or null where it did its work.
     private fun <T : Any> bindSkipping(
         definition: JobDefinition<T>,
         perform: (T) -> String?,

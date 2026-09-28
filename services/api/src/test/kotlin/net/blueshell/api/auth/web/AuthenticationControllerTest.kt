@@ -27,12 +27,13 @@ class AuthenticationControllerTest {
     private val clock = SettableClock()
     private val service = mock<AuthenticationService>()
     private val cookies = AuthTokenCookieService("BSH_AUTH", "/", "Lax", "", false)
-    private val tokens = JwtTokenUtil(
-        "2goYh5PqH6dPkWWXLUJQ4QY6nD2YgR5qk9+6Yu8aITR7cfwxkuNolL9zkgf2qHFxifWdbxG+E+XqMIKkt3ibDw==",
-        "api",
-        "web",
-        clock,
-    )
+    private val tokens =
+        JwtTokenUtil(
+            "2goYh5PqH6dPkWWXLUJQ4QY6nD2YgR5qk9+6Yu8aITR7cfwxkuNolL9zkgf2qHFxifWdbxG+E+XqMIKkt3ibDw==",
+            "api",
+            "web",
+            clock,
+        )
     private val signIns = mock<SignIns>()
     private val controller = AuthenticationController(service, cookies, tokens, signIns)
     private val firefox = "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0"

@@ -82,7 +82,7 @@ class MappingPostLedger(
     private companion object {
         const val AGGREGATE = "EVENT"
 
-        /* Far longer than one post takes; a claim this old was left by a run that died. */
+        // Far longer than one post takes; a claim this old was left by a run that died.
         val CLAIM_EXPIRES: Duration = Duration.ofMinutes(15)
     }
 }

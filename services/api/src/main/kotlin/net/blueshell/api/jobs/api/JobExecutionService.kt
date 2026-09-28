@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
-/* One mark per status an execution can reach. */
+// One mark per status an execution can reach.
 @Suppress("TooManyFunctions")
 @Service
 class JobExecutionService(

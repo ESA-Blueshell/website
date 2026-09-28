@@ -74,7 +74,7 @@ object DiscordMarkdown {
         return read.joinToString("\n")
     }
 
-    /* The line `>>>` quotes the rest from, outside code, or past the end where there is none. */
+    // The line `>>>` quotes the rest from, outside code, or past the end where there is none.
     private fun quoteStartOf(lines: List<String>): Int {
         var fenced = false
         lines.forEachIndexed { at, line ->
@@ -87,7 +87,7 @@ object DiscordMarkdown {
         return lines.size
     }
 
-    /* A line that is neither an item nor indented under one, which ends a list in Discord. */
+    // A line that is neither an item nor indented under one, which ends a list in Discord.
     private fun unmarked(line: String) = line.isNotBlank() && !line.first().isWhitespace() && !ITEM.containsMatchIn(line)
 
     private fun indented(line: String) = line.isNotBlank() && line.first().isWhitespace()
@@ -102,7 +102,7 @@ object DiscordMarkdown {
         return if (html) "<small>$said</small>" else said
     }
 
-    /* Inline rules outside code spans, which keep every character as written. */
+    // Inline rules outside code spans, which keep every character as written.
     private fun inline(
         line: String,
         names: MentionNames,
@@ -144,14 +144,14 @@ object DiscordMarkdown {
 
     private fun escaped(said: String) = said.replace(MARKDOWN_SIGNS, "\\\\$1")
 
-    /* Discord closes bold however it is flanked; CommonMark does not, so the spaces step outside. */
+    // Discord closes bold however it is flanked; CommonMark does not, so the spaces step outside.
     private fun boldOf(inside: String): String {
         val said = inside.trim()
         if (said.isEmpty()) return "**$inside**"
         return "${inside.takeWhile { it.isWhitespace() }}**$said**${inside.takeLastWhile { it.isWhitespace() }}"
     }
 
-    /* In Amsterdam time and English: a calendar and a preview are read by no reader in particular. */
+    // In Amsterdam time and English: a calendar and a preview are read by no reader in particular.
     private fun momentOf(
         unix: Long,
         style: String,

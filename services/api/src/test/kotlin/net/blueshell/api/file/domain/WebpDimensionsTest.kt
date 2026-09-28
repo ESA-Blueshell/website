@@ -116,15 +116,38 @@ class WebpDimensionsTest {
      */
     private val animated: ByteArray =
         byteArrayOf(
-            'R'.code.toByte(), 'I'.code.toByte(), 'F'.code.toByte(), 'F'.code.toByte(),
-            0x1a, 0, 0, 0,
-            'W'.code.toByte(), 'E'.code.toByte(), 'B'.code.toByte(), 'P'.code.toByte(),
-            'V'.code.toByte(), 'P'.code.toByte(), '8'.code.toByte(), 'X'.code.toByte(),
-            0x0a, 0, 0, 0,
+            'R'.code.toByte(),
+            'I'.code.toByte(),
+            'F'.code.toByte(),
+            'F'.code.toByte(),
+            0x1a,
+            0,
+            0,
+            0,
+            'W'.code.toByte(),
+            'E'.code.toByte(),
+            'B'.code.toByte(),
+            'P'.code.toByte(),
+            'V'.code.toByte(),
+            'P'.code.toByte(),
+            '8'.code.toByte(),
+            'X'.code.toByte(),
+            0x0a,
+            0,
+            0,
+            0,
             // Flags: animation, and nothing else. Then three reserved bytes.
-            0x02, 0, 0, 0,
+            0x02,
+            0,
+            0,
+            0,
             // Canvas, one less than the size it stands for: 40 by 25.
-            0x27, 0, 0, 0x18, 0, 0,
+            0x27,
+            0,
+            0,
+            0x18,
+            0,
+            0,
         )
 
     private fun decode(base64: String): ByteArray = Base64.getDecoder().decode(base64)

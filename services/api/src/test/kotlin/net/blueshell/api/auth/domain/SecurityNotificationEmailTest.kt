@@ -12,11 +12,12 @@ import org.junit.jupiter.params.provider.EnumSource
 import java.time.Instant
 
 class SecurityNotificationEmailTest {
-    private val contacts = SecurityContacts(
-        "board@example.org",
-        "https://api/discord/channel/board",
-        "https://api/discord/channel/suggestions",
-    )
+    private val contacts =
+        SecurityContacts(
+            "board@example.org",
+            "https://api/discord/channel/board",
+            "https://api/discord/channel/suggestions",
+        )
 
     private fun person(id: Long) =
         User(username = "alice", email = "alice@example.com", password = "h", initials = "A", firstName = "Alice", lastName = "Doe").also {
@@ -66,11 +67,12 @@ class SecurityNotificationEmailTest {
     @Test
     fun `an admin is told of a lock and of a break-glass run`() {
         val locked = email(event(SecurityEventKind.ACCOUNT_LOCKED), SecurityNotificationAudience.ADMINISTRATOR, null)
-        val glass = email(
-            event(SecurityEventKind.BREAK_GLASS, actorKind = SecurityActorKind.OPERATOR),
-            SecurityNotificationAudience.ADMINISTRATOR,
-            null,
-        )
+        val glass =
+            email(
+                event(SecurityEventKind.BREAK_GLASS, actorKind = SecurityActorKind.OPERATOR),
+                SecurityNotificationAudience.ADMINISTRATOR,
+                null,
+            )
 
         assertThat(locked.subject).isEqualTo("A Blueshell account was locked")
         assertThat(locked.markdownContent).contains("The account of Alice Doe (alice) was locked")
@@ -81,16 +83,17 @@ class SecurityNotificationEmailTest {
     @Test
     fun `an event with no browser says none`() {
         val subject = person(7)
-        val quiet = SecurityEvent(
-            subject,
-            subject,
-            SecurityActorKind.PERSON,
-            SecurityEventKind.PASSWORD_RESET,
-            null,
-            null,
-            null,
-            Instant.EPOCH,
-        )
+        val quiet =
+            SecurityEvent(
+                subject,
+                subject,
+                SecurityActorKind.PERSON,
+                SecurityEventKind.PASSWORD_RESET,
+                null,
+                null,
+                null,
+                Instant.EPOCH,
+            )
 
         assertThat(email(quiet).markdownContent).contains("Your password was reset through the emailed link on 1 January 1970 at 01:00.")
     }

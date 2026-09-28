@@ -168,7 +168,7 @@ class JobExecutionViewService(
         return execution.initiatedByType.name
     }
 
-    /* A category owns its name as a whole type and as a prefix before `.`, `_` or `-`, as the filter does. */
+    // A category owns its name as a whole type and as a prefix before `.`, `_` or `-`, as the filter does.
     private fun categoryFor(jobType: String): JobExecutionCategory {
         val lowered = jobType.trim().lowercase()
         return JobExecutionCategory.entries.firstOrNull { category ->

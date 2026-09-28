@@ -1,7 +1,7 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
+import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.user.api.UserNotFoundException

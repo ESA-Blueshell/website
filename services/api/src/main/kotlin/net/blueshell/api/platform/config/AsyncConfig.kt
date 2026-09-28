@@ -9,6 +9,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 private const val POOL_CORE_THREADS = 4
 private const val POOL_MAX_THREADS = 20
 private const val COMMAND_QUEUE_CAPACITY = 1000
+
 // Shorter than the command queue: a backlog of calls to a third party is a
 // reason to push back, not to hold more of them.
 private const val EXTERNAL_QUEUE_CAPACITY = 200

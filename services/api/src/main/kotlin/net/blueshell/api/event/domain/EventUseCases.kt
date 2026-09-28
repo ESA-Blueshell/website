@@ -4,8 +4,8 @@ import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.event.persistence.EventBanner
+import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.Role
@@ -31,7 +31,7 @@ class EventUseCases(
     private val games: GameService,
     @param:Value($$"${discord.guildId:}") private val discordGuildId: String = "",
 ) {
-    /* @everyone's ID is the server's own, and pinging it reaches everybody, which a pinged role may not. */
+    // @everyone's ID is the server's own, and pinging it reaches everybody, which a pinged role may not.
     private fun refuseEveryone(data: EventData) {
         if (discordGuildId.isNotEmpty() && data.pingedRoles.orEmpty().any { it.id == discordGuildId }) {
             throw InvalidEventException("@everyone cannot be a pinged role")
@@ -90,7 +90,7 @@ class EventUseCases(
         return service.update(event)
     }
 
-    /* An archived game the event already names stays named; one cannot be newly picked. */
+    // An archived game the event already names stays named; one cannot be newly picked.
     private fun applyGames(
         event: Event,
         data: EventData,

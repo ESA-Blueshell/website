@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
-/* From two minutes, doubling to two hours: about ten hours of trying before it gives up. */
+// From two minutes, doubling to two hours: about ten hours of trying before it gives up.
 private val THROUGH_THE_DAY = RetrySchedule(10, Duration.ofMinutes(2), 2.0, Duration.ofHours(2))
 
 /**

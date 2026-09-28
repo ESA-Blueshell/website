@@ -21,14 +21,12 @@ class WrongCode(
         triesLeft?.let { mapOf("triesLeft" to it) } ?: emptyMap(),
     )
 
-class ChallengeExpired :
-    AccountSecurityRefusal(HttpStatus.UNAUTHORIZED, "ChallengeExpired", "Sign in with your password again.")
+class ChallengeExpired : AccountSecurityRefusal(HttpStatus.UNAUTHORIZED, "ChallengeExpired", "Sign in with your password again.")
 
 class CodeLimitReached :
     AccountSecurityRefusal(HttpStatus.TOO_MANY_REQUESTS, "CodeLimitReached", "Too many wrong codes. Try again later.")
 
-class NothingToConfirm :
-    AccountSecurityRefusal(HttpStatus.CONFLICT, "NothingToConfirm", "Start setting up two-factor first.")
+class NothingToConfirm : AccountSecurityRefusal(HttpStatus.CONFLICT, "NothingToConfirm", "Start setting up two-factor first.")
 
 class TwoFactorRequired :
     AccountSecurityRefusal(HttpStatus.CONFLICT, "TwoFactorRequired", "Holding a granted role requires two-factor.")
@@ -45,7 +43,6 @@ class OwnAccount : AccountSecurityRefusal(HttpStatus.FORBIDDEN, "OwnAccount", "A
 class ReenrolmentRequired :
     AccountSecurityRefusal(HttpStatus.FORBIDDEN, "ReenrolmentRequired", "Use the re-enrolment link in your email.")
 
-class AccountLocked :
-    AccountSecurityRefusal(HttpStatus.FORBIDDEN, "AccountLocked", "This account is locked.")
+class AccountLocked : AccountSecurityRefusal(HttpStatus.FORBIDDEN, "AccountLocked", "This account is locked.")
 
 class EmailTaken : AccountSecurityRefusal(HttpStatus.CONFLICT, "EmailTaken", "That address belongs to another account.")

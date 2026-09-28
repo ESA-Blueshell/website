@@ -48,7 +48,7 @@ object DiscordPostSchedule {
         )
     }
 
-    /* The first 08:00 at or after the end: an event over at 02:00 comes down that same morning. */
+    // The first 08:00 at or after the end: an event over at 02:00 comes down that same morning.
     private fun takeDownAt(end: Instant): Instant = morningOf(end, 0).takeIf { !end.isAfter(it) } ?: morningOf(end, 1)
 
     private fun morningOf(

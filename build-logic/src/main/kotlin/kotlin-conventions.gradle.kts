@@ -2,6 +2,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
+    // Applied here so no Kotlin project can leave it out: `ktlintCheck` runs
+    // only where the plugin is, and passes over a project without it.
+    id("ktlint-conventions")
 }
 
 java {

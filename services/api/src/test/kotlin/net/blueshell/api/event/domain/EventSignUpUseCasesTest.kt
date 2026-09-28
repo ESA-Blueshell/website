@@ -7,6 +7,7 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.security.CurrentUser
@@ -14,7 +15,6 @@ import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat

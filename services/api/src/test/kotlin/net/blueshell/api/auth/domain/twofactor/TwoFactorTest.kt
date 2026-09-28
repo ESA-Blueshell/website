@@ -59,11 +59,15 @@ class TwoFactorTest {
 
     private val raw = "12345678901234567890".toByteArray()
 
-    private fun secret(state: TwoFactorSecretState, id: Long = 1) =
-        cipher.seal(raw).let { TwoFactorSecret(user, it.ciphertext, it.keyId, state).also { s -> s.id = id } }
+    private fun secret(
+        state: TwoFactorSecretState,
+        id: Long = 1,
+    ) = cipher.seal(raw).let { TwoFactorSecret(user, it.ciphertext, it.keyId, state).also { s -> s.id = id } }
 
-    private fun holding(state: TwoFactorSecretState, secret: TwoFactorSecret?) =
-        whenever(secrets.findByUserAndState(7, state)).thenReturn(Optional.ofNullable(secret))
+    private fun holding(
+        state: TwoFactorSecretState,
+        secret: TwoFactorSecret?,
+    ) = whenever(secrets.findByUserAndState(7, state)).thenReturn(Optional.ofNullable(secret))
 
     private fun code() = Totp.code(raw, Totp.stepAt(clock.instant()))
 

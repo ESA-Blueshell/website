@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.web
 
-import java.time.LocalDate
 import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.persistence.Season
@@ -24,6 +23,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.LocalDate
 
 @SpringBootTest
 class EsportsRefusalIT : UserTestSupport() {

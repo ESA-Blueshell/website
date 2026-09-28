@@ -21,65 +21,64 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class BlogControllerSecurityTest : UserTestSupport() {
-
     @Nested
     inner class CreateBlog {
-
         @Test
         fun `allows BOARD to create blogs`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                post("/blogs")
-                    .with(signedIn(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/blogs")
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}"""),
+                ).andExpect(status().isCreated)
         }
 
         @Test
         fun `denies non-BOARD users from creating blogs`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                post("/blogs")
-                    .with(signedIn(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    post("/blogs")
+                        .with(signedIn(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}"""),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            mvc.perform(
-                post("/blogs")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
-            )
-                .andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    post("/blogs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}"""),
+                ).andExpect(status().isUnauthorized)
         }
     }
 
     @Nested
     inner class UpdateBlog {
-
         @Test
         fun `allows BOARD to update blogs`() {
             val board = createUserWithRole(Role.BOARD)
             val blog = createBlogFixture()
             val blogId = blog.id!!
 
-            mvc.perform(
-                post("/blogs/{id}", blogId)
-                    .with(signedIn(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""
-                        {"title":"Updated Blog","html":"<p>Updated Content</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
-                        """.trimIndent())
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/blogs/{id}", blogId)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"title":"Updated Blog","html":"<p>Updated Content</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isOk)
         }
 
         @Test
@@ -88,15 +87,17 @@ class BlogControllerSecurityTest : UserTestSupport() {
             val blog = createBlogFixture()
             val blogId = blog.id!!
 
-            mvc.perform(
-                post("/blogs/{id}", blogId)
-                    .with(signedIn(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""
-                        {"title":"Hacked Blog","html":"<p>Hacked</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
-                        """.trimIndent())
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    post("/blogs/{id}", blogId)
+                        .with(signedIn(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"title":"Hacked Blog","html":"<p>Hacked</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
@@ -104,23 +105,25 @@ class BlogControllerSecurityTest : UserTestSupport() {
             val blog = createBlogFixture()
             val blogId = blog.id!!
 
-            mvc.perform(
-                post("/blogs/{id}", blogId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""
-                        {"title":"Unauthorized","html":"<p>Unauthorized</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
-                        """.trimIndent())
-            )
-                .andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    post("/blogs/{id}", blogId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"title":"Unauthorized","html":"<p>Unauthorized</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isUnauthorized)
         }
     }
 
     @Nested
     inner class FindBlogs {
-
         @Test
         fun `allows anyone to list blogs`() {
-            mvc.perform(get("/blogs"))
+            mvc
+                .perform(get("/blogs"))
                 .andExpect(status().isOk)
         }
 
@@ -128,28 +131,29 @@ class BlogControllerSecurityTest : UserTestSupport() {
         fun `allows authenticated user to list blogs`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                get("/blogs")
-                    .with(signedIn(member))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/blogs")
+                        .with(signedIn(member)),
+                ).andExpect(status().isOk)
         }
 
         @Test
         fun `allows unauthenticated access to blogs`() {
-            mvc.perform(get("/blogs"))
+            mvc
+                .perform(get("/blogs"))
                 .andExpect(status().isOk)
         }
     }
 
     @Nested
     inner class FindBlogById {
-
         @Test
         fun `allows anyone to read blog details`() {
             val blogId = createBlogFixture().id!!
 
-            mvc.perform(get("/blogs/{id}", blogId))
+            mvc
+                .perform(get("/blogs/{id}", blogId))
                 .andExpect(status().isOk)
         }
 
@@ -158,35 +162,35 @@ class BlogControllerSecurityTest : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             val blogId = createBlogFixture().id!!
 
-            mvc.perform(
-                get("/blogs/{id}", blogId)
-                    .with(signedIn(member))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/blogs/{id}", blogId)
+                        .with(signedIn(member)),
+                ).andExpect(status().isOk)
         }
 
         @Test
         fun `allows unauthenticated access to blog details`() {
             val blogId = createBlogFixture().id!!
 
-            mvc.perform(get("/blogs/{id}", blogId))
+            mvc
+                .perform(get("/blogs/{id}", blogId))
                 .andExpect(status().isOk)
         }
     }
 
     @Nested
     inner class DeleteBlog {
-
         @Test
         fun `allows BOARD to delete blogs`() {
             val board = createUserWithRole(Role.BOARD)
             val blogId = createBlogFixture().id!!
 
-            mvc.perform(
-                delete("/blogs/{id}", blogId)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/blogs/{id}", blogId)
+                        .with(signedIn(board)),
+                ).andExpect(status().isNoContent)
         }
 
         @Test
@@ -194,49 +198,49 @@ class BlogControllerSecurityTest : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             val blogId = createBlogFixture().id!!
 
-            mvc.perform(
-                delete("/blogs/{id}", blogId)
-                    .with(signedIn(member))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    delete("/blogs/{id}", blogId)
+                        .with(signedIn(member)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
             val blogId = createBlogFixture().id!!
 
-            mvc.perform(delete("/blogs/{id}", blogId))
+            mvc
+                .perform(delete("/blogs/{id}", blogId))
                 .andExpect(status().isUnauthorized)
         }
     }
 
     @Nested
     inner class RoleHierarchy {
-
         @Test
         fun `ADMIN can perform BOARD operations`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(
-                post("/blogs")
-                    .with(signedIn(admin))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/blogs")
+                        .with(signedIn(admin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}"""),
+                ).andExpect(status().isCreated)
         }
 
         @Test
         fun `COMMITTEE cannot create blogs`() {
             val committee = createUserWithRole(Role.COMMITTEE)
 
-            mvc.perform(
-                post("/blogs")
-                    .with(signedIn(committee))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    post("/blogs")
+                        .with(signedIn(committee))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}"""),
+                ).andExpect(status().isForbidden)
         }
     }
 }

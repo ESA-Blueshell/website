@@ -1,12 +1,13 @@
 package net.blueshell.api.event.api
 
 import jakarta.persistence.EntityManager
+import net.blueshell.api.event.domain.EventNotFoundException
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
-import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.shared.tracking.Actor
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -46,7 +47,7 @@ class EventServiceTest {
             }
         val published: TrackedEventPublisher = mock()
         val service = EventService(repository, mock(), mock(), mock(), published, mock())
-        BaseModelService::class.java
+        EventService::class.java
             .getDeclaredField("em")
             .apply { isAccessible = true }
             .set(service, mock<EntityManager>())
@@ -72,5 +73,23 @@ class EventServiceTest {
         assertThat(changeOf(stored = false, edited = false, storedAwaiting = true, editedAwaiting = true)).isEqualTo(EventChange.UPDATED)
         assertThat(changeOf(stored = false, edited = false, storedAwaiting = true)).isEqualTo(EventChange.UNAPPROVED)
         assertThat(changeOf(stored = false, edited = true, storedAwaiting = true)).isEqualTo(EventChange.APPROVED)
+    }
+
+    @Test
+    fun `refuses an event that is not there, and says a deleted one is gone`() {
+        val stored = event(true)
+        val repository: EventRepository =
+            mock {
+                on { findById(42) } doReturn Optional.of(stored)
+                on { findById(43) } doReturn Optional.empty()
+            }
+        val published: TrackedEventPublisher = mock()
+        val service = EventService(repository, mock(), mock(), mock(), published, mock())
+
+        assertThatThrownBy { service.findById(43) }.isInstanceOf(EventNotFoundException::class.java)
+        service.deleteById(42)
+
+        verify(repository).delete(stored)
+        verify(published).publishWithin(any())
     }
 }

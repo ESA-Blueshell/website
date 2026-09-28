@@ -1,5 +1,8 @@
 package net.blueshell.api.event.api
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
+import net.blueshell.api.event.domain.EventNotFoundException
 import net.blueshell.api.event.domain.EventQuery
 import net.blueshell.api.event.domain.EventSignUpService
 import net.blueshell.api.event.persistence.Event
@@ -9,7 +12,6 @@ import net.blueshell.api.event.persistence.EventSpecifications
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
-import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -21,23 +23,32 @@ import java.time.LocalDateTime
 class EventService
     @Autowired
     constructor(
-        repository: EventRepository,
+        private val repository: EventRepository,
         private val eventBannerRepository: EventBannerRepository,
         private val fileService: FileService,
         private val eventSignUpService: EventSignUpService,
         private val trackedEvents: TrackedEventPublisher,
         private val currentUserProvider: CurrentUserProvider,
-    ) : BaseModelService<Event, Long, EventRepository>(repository) {
+    ) {
+        // Read back after each write, so the columns the database fills are on the answer.
+        @PersistenceContext
+        private lateinit var em: EntityManager
+
+        private fun written(event: Event): Event = repository.saveAndFlush(event).also(em::refresh)
+
+        @Transactional(readOnly = true)
+        fun findById(id: Long): Event = repository.findById(id).orElseThrow { EventNotFoundException(id) }
+
         @Transactional
-        override fun create(entity: Event): Event {
+        fun create(entity: Event): Event {
             mergeAssociations(entity)
-            val saved = super.create(entity)
+            val saved = written(entity)
             publishEventChanged(saved.id!!, EventChange.CREATED)
             return saved
         }
 
         @Transactional
-        override fun update(entity: Event): Event = update(entity, removeExistingSignUps = false)
+        fun update(entity: Event): Event = update(entity, removeExistingSignUps = false)
 
         /**
          * Sign-ups are deleted only when the caller asks via [removeExistingSignUps]. A form edit
@@ -51,7 +62,7 @@ class EventService
             val previous = findById(entity.id!!).toUpdateSnapshot()
 
             mergeAssociations(entity)
-            val saved = super.update(entity)
+            val saved = written(entity)
 
             maybeDeleteReplacedBannerFile(previous.bannerFileId, saved.banner?.file?.id)
             if (removeExistingSignUps) {
@@ -78,19 +89,12 @@ class EventService
             }
 
             entity.googleId = googleId
-            return super.update(entity)
+            return written(entity)
         }
 
         @Transactional
-        override fun delete(entity: Event) {
-            val eventId = entity.id!!
-            super.delete(entity)
-            publishEventChanged(eventId, EventChange.DELETED)
-        }
-
-        @Transactional
-        override fun deleteById(id: Long) {
-            super.deleteById(id)
+        fun deleteById(id: Long) {
+            repository.delete(findById(id))
             publishEventChanged(id, EventChange.DELETED)
         }
 

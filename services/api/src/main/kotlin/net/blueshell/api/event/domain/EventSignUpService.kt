@@ -1,5 +1,7 @@
 package net.blueshell.api.event.domain
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.EventSignUpRepository
@@ -7,7 +9,6 @@ import net.blueshell.api.event.persistence.EventSignUpSpecifications
 import net.blueshell.api.event.persistence.GuestAccessTokenCodec
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
-import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -19,13 +20,23 @@ import java.util.function.Supplier
 class EventSignUpService
     @Autowired
     constructor(
-        repository: EventSignUpRepository,
+        private val repository: EventSignUpRepository,
         private val trackedEvents: TrackedEventPublisher,
         private val currentUserProvider: CurrentUserProvider,
-    ) : BaseModelService<EventSignUp, Long, EventSignUpRepository>(repository) {
+    ) {
+        // Read back after each write, so the columns the database fills are on the answer.
+        @PersistenceContext
+        private lateinit var em: EntityManager
+
+        private fun written(signUp: EventSignUp): EventSignUp = repository.saveAndFlush(signUp).also(em::refresh)
+
+        @Transactional(readOnly = true)
+        fun findById(id: Long): EventSignUp =
+            repository.findById(id).orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "EventSignUp not found with id: $id") }
+
         @Transactional
-        override fun create(entity: EventSignUp): EventSignUp {
-            val saved = super.create(entity)
+        fun create(entity: EventSignUp): EventSignUp {
+            val saved = written(entity)
             trackedEvents.publish { actor ->
                 EventSignUpCreated(
                     saved.id!!,
@@ -38,23 +49,23 @@ class EventSignUpService
         }
 
         @Transactional
-        override fun deleteById(id: Long) {
-            val eventId = repository.findById(id).orElse(null)?.eventId
-            super.deleteById(id)
-            eventId?.let(::countMoved)
-        }
+        fun deleteById(id: Long) = delete(findById(id))
 
         @Transactional
-        override fun delete(entity: EventSignUp) {
-            super.delete(entity)
+        fun delete(entity: EventSignUp) {
+            repository.delete(entity)
             countMoved(entity.eventId)
         }
+
+        /** Takes sign-ups away with no count published, for an event whose form is being replaced. */
+        @Transactional
+        fun deleteAll(signUps: Set<EventSignUp>) = repository.deleteAll(signUps)
 
         // Within the change's transaction, like EventChanged: the jobs queued for it commit with it.
         private fun countMoved(eventId: Long) = trackedEvents.publishWithin { actor -> EventSignUpsChanged(eventId, actor) }
 
         @Transactional
-        override fun update(entity: EventSignUp): EventSignUp = super.update(entity)
+        fun update(entity: EventSignUp): EventSignUp = written(entity)
 
         @Transactional(readOnly = true)
         fun existsByUserIdAndEventId(

@@ -68,9 +68,13 @@ of them blocks at least one downstream Secret.
 - **`.env` files** (operator-controlled, never committed). The
   repo's `scripts/seed-vault-from-env.sh` reads dotenv-style files named
   like the repo's examples:
-  - `services/api/.api.env` — `JWT_SECRET` (Base64, ≥64 bytes),
-    `TWO_FACTOR_ENCRYPTION_KEY`, Brevo, Google Calendar SA and Discord tokens,
-    `VAULT_OIDC_CLIENT_SECRET`.
+  - `services/api/.api.env`: `JWT_SECRET` (Base64, ≥64 bytes),
+    `TWO_FACTOR_ENCRYPTION_KEY`, the Brevo, Google Calendar and Discord keys
+    and `VAULT_OIDC_CLIENT_SECRET`.
+  - An extra file for the platform paths: `CF_DNS_API_TOKEN`,
+    `GHCR_USERNAME`/`GHCR_TOKEN`, `STALWART_ADMIN_USER`/`STALWART_ADMIN_PASSWORD`
+    and `EMAIL_BOUNCE_IMAP_USERNAME`/`EMAIL_BOUNCE_IMAP_PASSWORD`. The script
+    reads these names only.
   - `services/api/.db.env` — `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`,
     `MYSQL_PASSWORD`.
 - **Cloudflare DNS API token** with `Zone:DNS:Edit` scope on
@@ -90,8 +94,8 @@ Sanity-check the env files locally with a dry run *before* unsealing:
 
 ```bash
 scripts/seed-vault-from-env.sh \
-  services/api/.api.env \
   services/api/.db.env \
+  services/api/.api.env \
   /path/to/extra-tokens.env
 ```
 

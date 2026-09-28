@@ -73,25 +73,6 @@ class EventService
             return saved
         }
 
-        /**
-         * Persists calendar linkage changes without publishing EventChanged.
-         *
-         * Calendar jobs update googleId as part of synchronization. Emitting EventChanged here
-         * would re-enqueue calendar jobs and can create scheduling loops.
-         */
-        @Transactional
-        fun updateCalendarLink(
-            entity: Event,
-            googleId: String?,
-        ): Event {
-            if (entity.googleId == googleId) {
-                return entity
-            }
-
-            entity.googleId = googleId
-            return written(entity)
-        }
-
         @Transactional
         fun deleteById(id: Long) {
             repository.delete(findById(id))

@@ -35,7 +35,6 @@ class MockCalendarAdapter : CalendarAdapter {
                 description = eventData.description,
                 startTime = eventData.startTime,
                 endTime = eventData.endTime,
-                approved = eventData.approved,
             )
         eventsById[mockId] = stored
 
@@ -66,7 +65,6 @@ class MockCalendarAdapter : CalendarAdapter {
                     description = eventData.description,
                     startTime = eventData.startTime,
                     endTime = eventData.endTime,
-                    approved = eventData.approved,
                 )
             log.info(
                 "[mock-calendar] Updated event eventId={} externalId={} title='{}'",
@@ -104,36 +102,6 @@ class MockCalendarAdapter : CalendarAdapter {
             )
         }
     }
-
-    override fun syncEvent(
-        eventId: Long,
-        eventData: CalendarEventData,
-        externalId: String?,
-    ): CalendarEventRef? =
-        when {
-            // Event has external ID and is approved -> update
-            externalId != null && eventData.approved -> {
-                updateEvent(eventId, externalId, eventData)
-                CalendarEventRef(externalId, "https://mock-calendar.example.com/event/$externalId")
-            }
-
-            // Event has external ID but not approved -> remove
-            externalId != null && !eventData.approved -> {
-                removeEvent(eventId, externalId)
-                null
-            }
-
-            // Event has no external ID and is approved -> add
-            externalId == null && eventData.approved -> {
-                addEvent(eventId, eventData)
-            }
-
-            // Event has no external ID and not approved -> nothing to do
-            else -> {
-                log.debug("[mock-calendar] Event eventId={} has no external ID and is not approved, skipping sync", eventId)
-                null
-            }
-        }
 
     /**
      * Clear all stored events. Useful for test cleanup.
@@ -174,5 +142,4 @@ data class StoredEvent(
     val description: String?,
     val startTime: java.time.Instant,
     val endTime: java.time.Instant,
-    val approved: Boolean,
 )

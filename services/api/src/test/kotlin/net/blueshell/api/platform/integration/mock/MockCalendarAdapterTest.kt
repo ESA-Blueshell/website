@@ -17,7 +17,7 @@ class MockCalendarAdapterTest {
 
     @Test
     fun `addEvent stores event and returns mock reference`() {
-        val ref = adapter.addEvent(1L, eventData(title = "Launch Party", approved = true))
+        val ref = adapter.addEvent(1L, eventData(title = "Launch Party"))
 
         assertThat(ref.externalId).startsWith("mock-")
         assertThat(ref.externalUrl).contains(ref.externalId)
@@ -26,33 +26,31 @@ class MockCalendarAdapterTest {
         assertThat(stored).isNotNull
         assertThat(stored!!.title).isEqualTo("Launch Party")
         assertThat(stored.eventId).isEqualTo(1L)
-        assertThat(stored.approved).isTrue()
     }
 
     @Test
     fun `updateEvent updates existing stored event`() {
-        val ref = adapter.addEvent(2L, eventData(title = "Original", approved = true))
+        val ref = adapter.addEvent(2L, eventData(title = "Original"))
 
-        adapter.updateEvent(2L, ref.externalId, eventData(title = "Updated", approved = true))
+        adapter.updateEvent(2L, ref.externalId, eventData(title = "Updated"))
 
         val stored = adapter.findByExternalId(ref.externalId)
         assertThat(stored).isNotNull
         assertThat(stored!!.title).isEqualTo("Updated")
         assertThat(stored.eventId).isEqualTo(2L)
-        assertThat(stored.approved).isTrue()
     }
 
     @Test
     fun `updateEvent throws for unknown external id`() {
         assertThatThrownBy {
-            adapter.updateEvent(3L, "missing-id", eventData(title = "Ignored", approved = true))
+            adapter.updateEvent(3L, "missing-id", eventData(title = "Ignored"))
         }.isInstanceOf(IllegalStateException::class.java)
             .hasMessageContaining("Cannot update missing event")
     }
 
     @Test
     fun `removeEvent deletes known id and throws for unknown id`() {
-        val ref = adapter.addEvent(4L, eventData(title = "To Remove", approved = true))
+        val ref = adapter.addEvent(4L, eventData(title = "To Remove"))
         assertThat(adapter.getEventCount()).isEqualTo(1)
 
         adapter.removeEvent(4L, ref.externalId)
@@ -64,52 +62,7 @@ class MockCalendarAdapterTest {
             .hasMessageContaining("Cannot remove missing event")
     }
 
-    @Test
-    fun `syncEvent updates existing external event when approved`() {
-        val created = adapter.addEvent(5L, eventData(title = "Initial", approved = true))
-
-        val result = adapter.syncEvent(5L, eventData(title = "Synced Update", approved = true), created.externalId)
-
-        assertThat(result).isNotNull
-        assertThat(result!!.externalId).isEqualTo(created.externalId)
-        assertThat(adapter.findByExternalId(created.externalId)!!.title).isEqualTo("Synced Update")
-    }
-
-    @Test
-    fun `syncEvent removes existing external event when not approved`() {
-        val created = adapter.addEvent(6L, eventData(title = "Pending", approved = true))
-
-        val result = adapter.syncEvent(6L, eventData(title = "Pending", approved = false), created.externalId)
-
-        assertThat(result).isNull()
-        assertThat(adapter.findByExternalId(created.externalId)).isNull()
-    }
-
-    @Test
-    fun `syncEvent adds event when approved and no external id exists`() {
-        val result = adapter.syncEvent(7L, eventData(title = "New Approved", approved = true), externalId = null)
-
-        assertThat(result).isNotNull
-        assertThat(adapter.getEventCount()).isEqualTo(1)
-        val stored = adapter.findByExternalId(result!!.externalId)
-        assertThat(stored).isNotNull
-        assertThat(stored!!.eventId).isEqualTo(7L)
-        assertThat(stored.title).isEqualTo("New Approved")
-        assertThat(stored.approved).isTrue()
-    }
-
-    @Test
-    fun `syncEvent does nothing when not approved and no external id exists`() {
-        val result = adapter.syncEvent(8L, eventData(title = "Not Approved", approved = false), externalId = null)
-
-        assertThat(result).isNull()
-        assertThat(adapter.getEventCount()).isZero()
-    }
-
-    private fun eventData(
-        title: String,
-        approved: Boolean,
-    ): CalendarEventData {
+    private fun eventData(title: String): CalendarEventData {
         val start = Instant.parse("2026-03-01T10:00:00Z")
         val end = Instant.parse("2026-03-01T12:00:00Z")
         return CalendarEventData(
@@ -118,7 +71,6 @@ class MockCalendarAdapterTest {
             description = "Calendar test event",
             startTime = start,
             endTime = end,
-            approved = approved,
         )
     }
 }

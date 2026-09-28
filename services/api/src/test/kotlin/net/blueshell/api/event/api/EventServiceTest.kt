@@ -14,7 +14,6 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import java.time.Instant
 import java.util.Optional
@@ -96,7 +95,7 @@ class EventServiceTest {
     }
 
     @Test
-    fun `writes a new event and a calendar link, and reads each back`() {
+    fun `writes a new event and reads it back`() {
         val repository: EventRepository = mock { on { saveAndFlush(any<Event>()) } doAnswer { it.getArgument<Event>(0) } }
         val published: TrackedEventPublisher = mock()
         val manager = mock<EntityManager>()
@@ -108,9 +107,7 @@ class EventServiceTest {
         val event = event(true)
 
         service.create(event)
-        service.updateCalendarLink(event, "google-1")
 
-        assertThat(event.googleId).isEqualTo("google-1")
-        verify(manager, times(2)).refresh(event)
+        verify(manager).refresh(event)
     }
 }

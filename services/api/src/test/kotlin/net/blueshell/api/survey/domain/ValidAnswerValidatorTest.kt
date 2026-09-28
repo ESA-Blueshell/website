@@ -22,13 +22,13 @@ class ValidAnswerValidatorTest {
 
     @Test
     fun `rejects when question id is missing or unknown`() {
-        whenever(questions.findById(999)).thenThrow(RuntimeException("not found"))
+        whenever(questions.find(999)).thenReturn(null)
         assertThat(validator.isValid(AnswerData(questionId = 999), mock())).isFalse()
     }
 
     @Test
     fun `validates required open text answers`() {
-        whenever(questions.findById(1)).thenReturn(question(type = QuestionType.OPEN, required = true))
+        whenever(questions.find(1)).thenReturn(question(type = QuestionType.OPEN, required = true))
 
         assertThat(validator.isValid(AnswerData(questionId = 1, textResponse = "hello"), mock())).isTrue()
         assertThat(validator.isValid(AnswerData(questionId = 1, textResponse = "  "), mock())).isFalse()
@@ -37,7 +37,7 @@ class ValidAnswerValidatorTest {
 
     @Test
     fun `accepts blank open text when question is optional`() {
-        whenever(questions.findById(1)).thenReturn(question(type = QuestionType.OPEN, required = false))
+        whenever(questions.find(1)).thenReturn(question(type = QuestionType.OPEN, required = false))
 
         assertThat(validator.isValid(AnswerData(questionId = 1, textResponse = ""), mock())).isTrue()
         assertThat(validator.isValid(AnswerData(questionId = 1, textResponse = null), mock())).isTrue()
@@ -46,7 +46,7 @@ class ValidAnswerValidatorTest {
 
     @Test
     fun `validates required checkbox selections against labels`() {
-        whenever(questions.findById(2))
+        whenever(questions.find(2))
             .thenReturn(question(type = QuestionType.CHECKBOX, choices = mutableListOf("A", "B", "C"), required = true))
 
         val valid = AnswerData(questionId = 2, optionSelections = mutableListOf(true, false, true))
@@ -62,7 +62,7 @@ class ValidAnswerValidatorTest {
 
     @Test
     fun `accepts checkbox with no selection when question is optional`() {
-        whenever(questions.findById(2))
+        whenever(questions.find(2))
             .thenReturn(question(type = QuestionType.CHECKBOX, choices = mutableListOf("A", "B", "C"), required = false))
 
         val noneSelected = AnswerData(questionId = 2, optionSelections = mutableListOf(false, false, false))
@@ -78,7 +78,7 @@ class ValidAnswerValidatorTest {
 
     @Test
     fun `validates required radio selection count and size`() {
-        whenever(questions.findById(3))
+        whenever(questions.find(3))
             .thenReturn(question(type = QuestionType.RADIO, choices = mutableListOf("A", "B"), required = true))
 
         val exactlyOne = AnswerData(questionId = 3, optionSelections = mutableListOf(true, false))
@@ -94,7 +94,7 @@ class ValidAnswerValidatorTest {
 
     @Test
     fun `accepts optional radio with no selection`() {
-        whenever(questions.findById(3))
+        whenever(questions.find(3))
             .thenReturn(question(type = QuestionType.RADIO, choices = mutableListOf("A", "B"), required = false))
 
         val none = AnswerData(questionId = 3, optionSelections = mutableListOf(false, false))
@@ -110,7 +110,7 @@ class ValidAnswerValidatorTest {
 
     @Test
     fun `description question always passes`() {
-        whenever(questions.findById(any())).thenReturn(question(type = QuestionType.DESCRIPTION))
+        whenever(questions.find(any())).thenReturn(question(type = QuestionType.DESCRIPTION))
 
         val dto = AnswerData(questionId = 4, optionSelections = null, textResponse = null)
         assertThat(validator.isValid(dto, mock())).isTrue()

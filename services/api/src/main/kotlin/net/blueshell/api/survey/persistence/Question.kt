@@ -18,6 +18,7 @@ import net.blueshell.api.shared.hibernate.DirtyField
 import net.blueshell.api.shared.hibernate.DirtyModel
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import net.blueshell.api.shared.model.DirtyAwareModel
+import net.blueshell.api.shared.model.SoftDelete
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -37,8 +38,8 @@ import org.hibernate.annotations.SQLRestriction
         Index(name = "idx_questions_type", columnList = "type"),
     ],
 )
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-@SQLDelete(sql = "UPDATE questions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction(SoftDelete.ACTIVE)
+@SQLDelete(sql = "UPDATE questions SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
 @DirtyModel
 class Question(
     @Column(name = "idx", nullable = false)

@@ -1,6 +1,7 @@
 package net.blueshell.api.user.api
 
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.user.domain.AddressLifecycleQuery
 import net.blueshell.api.user.domain.ErasureException
 import net.blueshell.api.user.domain.ProfileLifecycleQuery
@@ -12,7 +13,6 @@ import net.blueshell.api.user.persistence.DeletedUser
 import net.blueshell.api.user.persistence.DeletedUserRepository
 import net.blueshell.api.user.persistence.ProfileLifecycleRepo
 import net.blueshell.api.user.persistence.ProfileLifecycleSpecs
-import net.blueshell.api.user.persistence.SoftDeleteSentinels
 import net.blueshell.api.user.persistence.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
@@ -116,7 +116,7 @@ class UserErasureService(
                     ProfileLifecycleQuery(userId = snapshot.userId, softDeleted = true),
                 ),
             ).ifPresent { profile ->
-                profile.deletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
+                profile.deletedAt = SoftDelete.LIVE_INSTANT
                 profile.updatedAt = now
                 profileLifecycles.saveAndFlush(profile)
             }
@@ -130,7 +130,7 @@ class UserErasureService(
                         AddressLifecycleQuery(id = restoreAddressId, softDeleted = true),
                     ),
                 ).ifPresent { addr ->
-                    addr.deletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
+                    addr.deletedAt = SoftDelete.LIVE_INSTANT
                     addr.updatedAt = now
                     addressLifecycles.saveAndFlush(addr)
                 }

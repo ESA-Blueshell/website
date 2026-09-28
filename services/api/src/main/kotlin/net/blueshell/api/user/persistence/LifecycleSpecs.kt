@@ -3,6 +3,7 @@ package net.blueshell.api.user.persistence
 import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
+import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.user.domain.AddressLifecycleQuery
 import net.blueshell.api.user.domain.ProfileLifecycleQuery
 import org.springframework.data.jpa.domain.Specification
@@ -21,7 +22,7 @@ object AddressLifecycleSpecs {
 
     private fun softDeleted(softDeleted: Boolean): Specification<AddressLifecycle> =
         Specification { root, _, cb ->
-            val activeDeletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
+            val activeDeletedAt = SoftDelete.LIVE_INSTANT
             if (softDeleted) {
                 cb.notEqual(root.get<Instant>("deletedAt"), activeDeletedAt)
             } else {
@@ -59,7 +60,7 @@ object ProfileLifecycleSpecs {
 
     private fun softDeleted(softDeleted: Boolean): Specification<ProfileLifecycle> =
         Specification { root, _, cb ->
-            val activeDeletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
+            val activeDeletedAt = SoftDelete.LIVE_INSTANT
             if (softDeleted) {
                 cb.notEqual(root.get<Instant>("deletedAt"), activeDeletedAt)
             } else {

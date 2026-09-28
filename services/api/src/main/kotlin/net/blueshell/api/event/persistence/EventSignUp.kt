@@ -15,6 +15,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.survey.persistence.Answer
 import net.blueshell.api.user.persistence.User
 import org.hibernate.annotations.SQLDelete
@@ -54,8 +55,8 @@ import org.hibernate.annotations.SQLRestriction
         NamedSubgraph(name = "answersSub", attributeNodes = [NamedAttributeNode("question")]),
     ],
 )
-@SQLDelete(sql = "UPDATE event_signups SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@SQLDelete(sql = "UPDATE event_signups SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction(SoftDelete.ACTIVE)
 class EventSignUp(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id", nullable = false)

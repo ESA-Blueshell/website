@@ -1,5 +1,6 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.shared.model.SoftDelete
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -164,7 +165,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         value = """
         SELECT COUNT(*) FROM team_roster_entry e
         JOIN team_season ts ON ts.id = e.team_season_id
-        WHERE ts.season_id = :seasonId AND e.deleted_at = '9999-12-31 23:59:59.000000'
+        WHERE ts.season_id = :seasonId AND e.deleted_at = '${SoftDelete.LIVE}'
         """,
     )
     fun countBySeasonId(
@@ -179,8 +180,8 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         JOIN team_season ts ON ts.id = e.team_season_id
         JOIN team t ON t.id = ts.team_id
         WHERE ts.game = :game
-          AND e.deleted_at = '9999-12-31 23:59:59.000000'
-          AND t.deleted_at = '9999-12-31 23:59:59.000000'
+          AND e.deleted_at = '${SoftDelete.LIVE}'
+          AND t.deleted_at = '${SoftDelete.LIVE}'
         """,
     )
     fun countByGame(

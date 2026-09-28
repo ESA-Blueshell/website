@@ -1,5 +1,6 @@
 package net.blueshell.api.user.persistence
 
+import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.Modifying
@@ -108,7 +109,7 @@ interface UserRepository : BaseRepository<User, Long> {
      * who once existed from an id that never was. Native, to bypass `User`'s `@SQLRestriction`.
      */
     @Query(
-        value = "SELECT id FROM users WHERE id = :userId AND deleted_at <> '9999-12-31 23:59:59.000000'",
+        value = "SELECT id FROM users WHERE id = :userId AND deleted_at <> '${SoftDelete.LIVE}'",
         nativeQuery = true,
     )
     fun findSoftDeletedUserId(
@@ -123,7 +124,7 @@ interface UserRepository : BaseRepository<User, Long> {
         value = """
             SELECT * FROM users u
             WHERE TRIM(CONCAT_WS(' ', u.first_name, u.prefix, u.last_name)) = :name
-              AND u.deleted_at = '9999-12-31 23:59:59'
+              AND u.deleted_at = '${SoftDelete.LIVE}'
         """,
         nativeQuery = true,
     )
@@ -132,7 +133,7 @@ interface UserRepository : BaseRepository<User, Long> {
     ): List<User>
 
     @Query(
-        value = "SELECT id FROM users WHERE id IN (:userIds) AND deleted_at <> '9999-12-31 23:59:59.000000'",
+        value = "SELECT id FROM users WHERE id IN (:userIds) AND deleted_at <> '${SoftDelete.LIVE}'",
         nativeQuery = true,
     )
     fun findSoftDeletedUserIds(

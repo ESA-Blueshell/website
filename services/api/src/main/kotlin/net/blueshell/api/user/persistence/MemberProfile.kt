@@ -8,6 +8,7 @@ import jakarta.persistence.MapsId
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import net.blueshell.api.shared.model.AuditedCustomIdEntity
+import net.blueshell.api.shared.model.SoftDelete
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.sql.Date
@@ -17,8 +18,8 @@ import java.time.Instant
 @Table(
     name = "member_profiles",
 )
-@SQLDelete(sql = "UPDATE member_profiles SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@SQLDelete(sql = "UPDATE member_profiles SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction(SoftDelete.ACTIVE)
 class MemberProfile(
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId

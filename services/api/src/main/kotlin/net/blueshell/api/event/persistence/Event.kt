@@ -19,6 +19,7 @@ import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
+import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.survey.persistence.Survey
 import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.SQLDelete
@@ -53,8 +54,8 @@ import java.time.Instant
         NamedSubgraph(name = "formSub", attributeNodes = [NamedAttributeNode("_questions")]),
     ],
 )
-@SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@SQLDelete(sql = "UPDATE events SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction(SoftDelete.ACTIVE)
 class Event(
     // Nullable: a soft-deleted Committee leaves its events orphaned with
     // committee_id = NULL (see V55__null-committee-id-for-deleted-committees.sql).

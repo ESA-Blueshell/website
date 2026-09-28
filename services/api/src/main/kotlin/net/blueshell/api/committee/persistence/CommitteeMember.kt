@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.MapsId
 import jakarta.persistence.Table
 import jakarta.persistence.Transient
+import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
@@ -31,11 +32,11 @@ import java.io.Serializable
         Index(name = "idx_committee_members_committee_role", columnList = "committee_id, role")
     ]
 )
-@SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
+@SQLRestriction(SoftDelete.ACTIVE)
 @SQLDelete(
     sql = """
       UPDATE committee_members
-      SET deleted_at = NOW(), version = version + 1
+      SET ${SoftDelete.STAMP}, version = version + 1
       WHERE committee_id = ? AND user_id = ? AND version = ?
     """
 )

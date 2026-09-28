@@ -62,27 +62,6 @@ object EventSpecifications {
         to: LocalDateTime?,
     ): Specification<Event> = startTimeFrom(from).and(startTimeTo(to))
 
-    val isPublicEvent: Specification<Event>
-        get() =
-            Specification { root, _, cb ->
-                cb.isFalse(
-                    root.get("membersOnly"),
-                )
-            }
-
-    fun membersOnly(value: Boolean?): Specification<Event> {
-        if (value == null) return Specification { _, _, cb -> cb.conjunction() }
-        return Specification { root, _, cb ->
-            if (value) {
-                cb.isTrue(
-                    root.get("membersOnly"),
-                )
-            } else {
-                cb.isFalse(root.get("membersOnly"))
-            }
-        }
-    }
-
     fun userIsCommitteeMember(userId: Long): Specification<Event> {
         if (userId <= 0) {
             return Specification { _, _, cb -> cb.disjunction() }
@@ -150,6 +129,13 @@ object EventSpecifications {
         }
     }
 
+    /**
+     * The events [user] may list, narrowed by the query's filters.
+     *
+     * Members-only events are listed to non-members too, on purpose: the Discord posts announce
+     * them publicly already, and membership gates signing up (`EventPermission`,
+     * `EventSignUpUseCases`), not the listing.
+     */
     fun fromFilter(
         f: EventQuery,
         user: CurrentUser?,
@@ -185,15 +171,11 @@ object EventSpecifications {
             spec = spec.and(namesGame(gameCode.trim()))
         }
 
-        // Select the events that are visible to the user
-        // Board members can see all events
-        // So we don't filter further
+        // The board sees every event, so it gets no branch.
         if (user == null || !hasAuthority(user, Role.MEMBER)) {
-            // Only approved are visible
             spec = spec.and(approved())
         } else if (!hasAuthority(user, Role.BOARD)) {
-            // For a regular member, non-public events of their committee are included
-            // And approved events are included
+            // A member also sees their own committees' unapproved events.
             spec = spec.and(approved().or(userIsCommitteeMember(user.id)))
         }
 

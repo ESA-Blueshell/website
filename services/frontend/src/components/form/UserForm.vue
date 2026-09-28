@@ -482,7 +482,7 @@ defineExpose({validate, save, signupSession})
             v-model="user.email"
             test-id="user-form-email-field"
             :disabled="isReadonly || !canEditEmail"
-            :rules="canEditEmail ? 'required|email|noStudentEmail' : ''"
+            :rules="canEditEmail ? 'required|email' : ''"
             label="E-mail*"
             name="email"
           />

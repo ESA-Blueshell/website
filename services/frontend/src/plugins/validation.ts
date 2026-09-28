@@ -55,11 +55,6 @@ defineRule("email", (value?: string) => {
   return ok || "Enter a valid e-mail address"
 })
 
-defineRule("noStudentEmail", (value?: string) => {
-  if (isEmpty(value)) return true
-  return !/student/i.test(value!) || "You may not use your student email to sign up"
-})
-
 defineRule("hasLower", (v: string) => isEmpty(v) || /[a-z]/.test(v) || "Include a lowercase letter")
 defineRule("hasUpper", (v: string) => isEmpty(v) || /[A-Z]/.test(v) || "Include an uppercase letter")
 defineRule("hasNumber", (v: string) => isEmpty(v) || /\d/.test(v) || "Include a number")

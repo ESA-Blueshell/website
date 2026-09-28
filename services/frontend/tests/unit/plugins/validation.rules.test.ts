@@ -36,10 +36,6 @@ describe("validation rules messages", () => {
     expect(email.valid).toBe(false)
     expect(email.errors[0]).toBe("Enter a valid e-mail address")
 
-    const studentEmail = await validate("foo@student.utwente.nl", "noStudentEmail")
-    expect(studentEmail.valid).toBe(false)
-    expect(studentEmail.errors[0]).toBe("You may not use your student email to sign up")
-
     const lower = await validate("PASSWORD1!", "hasLower")
     expect(lower.valid).toBe(false)
     expect(lower.errors[0]).toBe("Include a lowercase letter")

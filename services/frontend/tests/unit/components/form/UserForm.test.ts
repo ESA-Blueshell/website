@@ -269,7 +269,7 @@ describe("UserForm", () => {
       lastName: "required",
       username: "required|alphaNum",
       discord: "required",
-      email: "required|email|noStudentEmail",
+      email: "required|email",
       phoneNumber: "required|phoneMobile:NL",
       password: "required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial",
       confirmPassword: "required|match:@password",

@@ -35,7 +35,7 @@
         :component-props="{ type: 'email', 'data-testid': 'email-confirm-address-field' }"
         label="Email address"
         name="email"
-        rules="required|email|noStudentEmail"
+        rules="required|email"
       />
       <v-row
         align="center"

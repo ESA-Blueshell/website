@@ -1,8 +1,8 @@
 package net.blueshell.api.user.web
 
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.api.UserJobs
 import net.blueshell.api.user.persistence.RoleChangeRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.contains
@@ -294,7 +294,7 @@ class UserRolesControllerIT : UserTestSupport() {
 
             setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isOk)
 
-            assertThat(findJobsByType(EmailJobs.RoleChange.type)).hasSize(1)
+            assertThat(findJobsByType(UserJobs.RoleChange.type)).hasSize(1)
         }
 
         @Test
@@ -303,7 +303,7 @@ class UserRolesControllerIT : UserTestSupport() {
             val subject = createUserWithRole(Role.ADMIN)
             setRoles(admin.id!!, subject.id!!, emptyList()).andExpect(status().isOk)
 
-            assertThat(findJobsByType(EmailJobs.RoleChange.type)).hasSize(1)
+            assertThat(findJobsByType(UserJobs.RoleChange.type)).hasSize(1)
         }
 
         @Test
@@ -314,7 +314,7 @@ class UserRolesControllerIT : UserTestSupport() {
             setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD, Role.TREASURER))
                 .andExpect(status().isOk)
 
-            assertThat(findJobsByType(EmailJobs.RoleChange.type)).isEmpty()
+            assertThat(findJobsByType(UserJobs.RoleChange.type)).isEmpty()
         }
     }
 

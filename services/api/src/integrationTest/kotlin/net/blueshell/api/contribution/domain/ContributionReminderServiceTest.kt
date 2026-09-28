@@ -3,7 +3,6 @@ package net.blueshell.api.contribution.domain
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -37,7 +36,7 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
             .describedAs("The row is written before its email is queued")
             .isNotNull()
 
-        val jobs = findJobsByType(EmailJobs.ContributionReminder.type)
+        val jobs = findJobsByType(ContributionJobs.ContributionReminder.type)
         assertThat(jobs)
             .describedAs("Should schedule contribution reminder email job")
             .hasSize(1)
@@ -68,7 +67,7 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
             )
 
         // Then: Email jobs are scheduled for each reminder
-        val jobs = findJobsByType(EmailJobs.ContributionReminder.type)
+        val jobs = findJobsByType(ContributionJobs.ContributionReminder.type)
         assertThat(jobs)
             .describedAs("Should schedule one email job per reminder")
             .hasSize(reminders.size)

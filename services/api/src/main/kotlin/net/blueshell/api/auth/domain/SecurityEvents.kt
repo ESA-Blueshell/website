@@ -1,5 +1,6 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.auth.domain.AuthJobs.SecurityNotificationAudience
 import net.blueshell.api.auth.persistence.SecurityActorKind
 import net.blueshell.api.auth.persistence.SecurityEvent
 import net.blueshell.api.auth.persistence.SecurityEventKind
@@ -7,8 +8,6 @@ import net.blueshell.api.auth.persistence.SecurityEventRepository
 import net.blueshell.api.security.Browser
 import net.blueshell.api.security.CurrentBrowser
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.shared.job.EmailJobs.SecurityNotificationAudience
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
@@ -104,8 +103,8 @@ class SecurityEvents(
     ) {
         val lockToken = tokens.issue(subject, TokenPurpose.ACCOUNT_LOCK, LOCK_LINK_TTL)
         jobs.runAsync(
-            EmailJobs.SecurityNotification,
-            EmailJobs.SecurityNotificationPayload(
+            AuthJobs.SecurityNotification,
+            AuthJobs.SecurityNotificationPayload(
                 securityEventId = requireNotNull(event.id),
                 audience = if (oldAddress == null) SecurityNotificationAudience.PERSON else SecurityNotificationAudience.OLD_ADDRESS,
                 lockToken = lockToken,
@@ -118,10 +117,10 @@ class SecurityEvents(
     private fun tellAdministrators(event: SecurityEvent) {
         users.findAdministrators().forEach { admin ->
             jobs.runAsync(
-                EmailJobs.SecurityNotification,
-                EmailJobs.SecurityNotificationPayload(
+                AuthJobs.SecurityNotification,
+                AuthJobs.SecurityNotificationPayload(
                     securityEventId = requireNotNull(event.id),
-                    audience = EmailJobs.SecurityNotificationAudience.ADMINISTRATOR,
+                    audience = AuthJobs.SecurityNotificationAudience.ADMINISTRATOR,
                     recipientUserId = admin.id,
                 ),
                 JobTrigger.SITE_ACTION,

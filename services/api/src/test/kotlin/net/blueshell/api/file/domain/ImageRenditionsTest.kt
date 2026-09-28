@@ -2,7 +2,6 @@ package net.blueshell.api.file.domain
 
 import net.blueshell.api.file.api.BlobStore
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.shared.job.ImageJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import org.assertj.core.api.Assertions.assertThat

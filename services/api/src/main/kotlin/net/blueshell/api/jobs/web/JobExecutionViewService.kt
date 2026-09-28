@@ -1,5 +1,7 @@
 package net.blueshell.api.jobs.web
 
+import net.blueshell.api.jobs.api.JobSubject
+import net.blueshell.api.jobs.api.JobSubjectResolver
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionCategory

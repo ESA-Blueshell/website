@@ -2,7 +2,6 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventChange
 import net.blueshell.api.event.api.EventChanged
-import net.blueshell.api.shared.job.CalendarJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import org.junit.jupiter.api.Test

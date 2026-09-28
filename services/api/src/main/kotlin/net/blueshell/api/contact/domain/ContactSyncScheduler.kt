@@ -1,6 +1,6 @@
 package net.blueshell.api.contact.domain
 
-import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import org.slf4j.LoggerFactory

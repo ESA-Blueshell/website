@@ -2,7 +2,6 @@ package net.blueshell.api.auth.domain
 
 import jakarta.validation.Validation
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.SignupOutcome
@@ -48,8 +47,8 @@ class RecoveryUseCasesTest {
 
             verify(passwordRecoveryService).requestPasswordReset("john")
             verify(jobs).runAsync(
-                eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(7L, "token-1", TokenPurpose.PASSWORD_RESET)),
+                eq(AuthJobs.Recovery),
+                eq(AuthJobs.RecoveryPayload(7L, "token-1", TokenPurpose.PASSWORD_RESET)),
                 eq(JobTrigger.SITE_ACTION),
                 anyOrNull(),
             )
@@ -113,8 +112,8 @@ class RecoveryUseCasesTest {
 
             verify(activationService).requestUserActivation("john")
             verify(jobs).runAsync(
-                eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(8L, "token-5", TokenPurpose.USER_ACTIVATION)),
+                eq(AuthJobs.Recovery),
+                eq(AuthJobs.RecoveryPayload(8L, "token-5", TokenPurpose.USER_ACTIVATION)),
                 eq(JobTrigger.SITE_ACTION),
                 anyOrNull(),
             )
@@ -142,8 +141,8 @@ class RecoveryUseCasesTest {
 
             verify(activationService).requestActivationEmail(9L)
             verify(jobs).runAsync(
-                eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION)),
+                eq(AuthJobs.Recovery),
+                eq(AuthJobs.RecoveryPayload(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION)),
                 eq(JobTrigger.SITE_ACTION),
                 anyOrNull(),
             )
@@ -169,8 +168,8 @@ class RecoveryUseCasesTest {
             verify(activationService).requestActivation(9L, TokenPurpose.MEMBER_ACTIVATION)
             verify(activationService, never()).requestActivationEmail(any())
             verify(jobs).runAsync(
-                eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(9L, "token-7", TokenPurpose.MEMBER_ACTIVATION)),
+                eq(AuthJobs.Recovery),
+                eq(AuthJobs.RecoveryPayload(9L, "token-7", TokenPurpose.MEMBER_ACTIVATION)),
                 eq(JobTrigger.SITE_ACTION),
                 anyOrNull(),
             )

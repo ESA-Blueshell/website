@@ -1,10 +1,13 @@
 package net.blueshell.api.email.domain
 
+import net.blueshell.api.auth.domain.AuthJobs
 import net.blueshell.api.auth.domain.RecoveryEmailJob
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.contribution.domain.ContributionJobs
 import net.blueshell.api.contribution.domain.ContributionReminderEmailJob
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
+import net.blueshell.api.event.domain.EventJobs
 import net.blueshell.api.event.domain.EventSignupEmailJob
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
@@ -12,7 +15,6 @@ import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.testsupport.runJob
@@ -61,18 +63,18 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         userId: Long,
         token: String,
         purpose: TokenPurpose,
-    ) = recoveryEmailJob.runJob(objectMapper.writeValueAsString(EmailJobs.RecoveryPayload(userId, token, purpose)))
+    ) = recoveryEmailJob.runJob(objectMapper.writeValueAsString(AuthJobs.RecoveryPayload(userId, token, purpose)))
 
     private fun sendContributionReminder(reminderId: Long) =
         contributionReminderEmailJob.runJob(
-            objectMapper.writeValueAsString(EmailJobs.ContributionReminderPayload(reminderId)),
+            objectMapper.writeValueAsString(ContributionJobs.ContributionReminderPayload(reminderId)),
         )
 
     private fun sendEventSignup(
         signUpId: Long,
         guestAccessToken: String,
     ) = eventSignupEmailJob.runJob(
-        objectMapper.writeValueAsString(EmailJobs.EventSignupPayload(signUpId, guestAccessToken)),
+        objectMapper.writeValueAsString(EventJobs.EventSignupPayload(signUpId, guestAccessToken)),
     )
 
     @Nested

@@ -1,7 +1,7 @@
 package net.blueshell.api.sync.domain
 
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.jobs.api.JobOutcome
-import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

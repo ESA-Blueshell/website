@@ -5,7 +5,7 @@ import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.persistence.SecurityEventRepository
 import net.blueshell.api.auth.persistence.TwoFactorSecretRepository
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.user.api.UserJobs
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.startsWith
 import org.junit.jupiter.api.Nested
@@ -372,7 +372,7 @@ class TwoFactorIT : AccountSecurityTestSupport() {
             val logged = securityEvents.findAll().filter { it.subject.id == member.id }
             assertThat(logged.map { it.kind }).contains(SecurityEventKind.ROLES_CHANGED, SecurityEventKind.SIGNED_OUT_EVERYWHERE)
             assertThat(logged.single { it.kind == SecurityEventKind.SIGNED_OUT_EVERYWHERE }.actor?.id).isEqualTo(admin.id)
-            assertThat(findJobsByType(EmailJobs.RoleChange.type)).hasSize(1)
+            assertThat(findJobsByType(UserJobs.RoleChange.type)).hasSize(1)
 
             val next = passwordStep(member).andReturn().authCookie!!
             mvc.perform(json(post("/users/me/two-factor/setup"), "{}").cookie(next)).andExpect(status().isOk)

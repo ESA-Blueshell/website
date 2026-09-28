@@ -34,10 +34,6 @@ import org.springframework.modulith.PackageInfo
         // EventBanner.file and EventPicture.picture are owning associations holding
         // the FKs into files.
         "file :: entities",
-        // DEBT, not a surface. The event job resolvers implement JobSubject and
-        // JobSubjectResolver, which sit under jobs' web package. Pinned in
-        // CrossModuleWebAccessArchitectureTest.
-        "jobs :: legacy-web",
         // Open kernel: EventPermission extends the base evaluator.
         "security",
         // Open kernel.

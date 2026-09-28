@@ -2,7 +2,6 @@ package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -20,13 +19,11 @@ class JoiningContributionEmailJob(
     private val reminders: ContributionReminderService,
     private val emails: EmailSenderService,
     private val channels: PaymentChannels,
-) : AbstractJsonJobHandler<EmailJobs.JoiningContributionPayload>(
+) : AbstractJsonJobHandler<ContributionJobs.JoiningContributionPayload>(
         objectMapper,
-        EmailJobs.JoiningContribution.payloadType,
+        ContributionJobs.JoiningContribution,
     ) {
-    override val jobType: String = EmailJobs.JoiningContribution.type
-
-    override fun handlePayload(payload: EmailJobs.JoiningContributionPayload) {
+    override fun handlePayload(payload: ContributionJobs.JoiningContributionPayload) {
         val ask = requireExists { reminders.findById(payload.contributionReminderId) }
         // Written by JoiningContributionAskService, which always states a fee.
         val stated = requireNotNull(ask.statedFee) { "A joining ask states one fee" }

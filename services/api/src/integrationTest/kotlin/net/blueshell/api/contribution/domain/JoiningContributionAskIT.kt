@@ -4,7 +4,6 @@ import net.blueshell.api.auth.domain.SignupCompletionService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
@@ -77,7 +76,7 @@ class JoiningContributionAskIT : UserTestSupport() {
         assertThat(ask.amount).isEqualTo(20.0)
         assertThat(ask.paymentDueDate).isEqualTo(LocalDate.now().plusWeeks(2))
 
-        val jobs = findJobsByType(EmailJobs.JoiningContribution.type)
+        val jobs = findJobsByType(ContributionJobs.JoiningContribution.type)
         assertThat(jobs).hasSize(1)
         assertThat(jobs.single().payload).contains("\"contributionReminderId\":${ask.id}")
     }
@@ -101,6 +100,6 @@ class JoiningContributionAskIT : UserTestSupport() {
 
         join(user)
 
-        assertThat(findJobsByType(EmailJobs.JoiningContribution.type)).isEmpty()
+        assertThat(findJobsByType(ContributionJobs.JoiningContribution.type)).isEmpty()
     }
 }

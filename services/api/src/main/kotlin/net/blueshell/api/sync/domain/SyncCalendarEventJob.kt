@@ -1,7 +1,6 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.CalendarJobs
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
@@ -18,10 +17,8 @@ class SyncCalendarEventJob(
     private val calendarSync: CalendarSyncService,
 ) : AbstractJsonJobHandler<CalendarJobs.SyncCalendarEventPayload>(
         objectMapper,
-        CalendarJobs.SyncCalendarEvent.payloadType,
+        CalendarJobs.SyncCalendarEvent,
     ) {
-    override val jobType: String = CalendarJobs.SyncCalendarEvent.type
-
     override fun handlePayload(payload: CalendarJobs.SyncCalendarEventPayload) {
         calendarSync.sync(payload.eventId)?.let(::skip)
     }

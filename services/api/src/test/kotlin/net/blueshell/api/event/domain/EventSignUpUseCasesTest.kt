@@ -8,7 +8,6 @@ import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.security.CurrentUser
@@ -609,9 +608,9 @@ class EventSignUpUseCasesTest {
 
             verify(eventSignUpService).delete(signUp)
             verify(jobs).runAsync(
-                eq(EmailJobs.EventSignUpRemoved),
+                eq(EventJobs.EventSignUpRemoved),
                 eq(
-                    EmailJobs.EventSignUpRemovedPayload(
+                    EventJobs.EventSignUpRemovedPayload(
                         recipientEmail = "gordon@example.com",
                         recipientName = "Guest Gordon",
                         eventTitle = "LAN Party",
@@ -641,9 +640,9 @@ class EventSignUpUseCasesTest {
             useCases.delete(36L, null, notify = true)
 
             verify(jobs).runAsync(
-                eq(EmailJobs.EventSignUpRemoved),
+                eq(EventJobs.EventSignUpRemoved),
                 eq(
-                    EmailJobs.EventSignUpRemovedPayload(
+                    EventJobs.EventSignUpRemovedPayload(
                         recipientEmail = "ada@example.com",
                         recipientName = "Ada Lovelace",
                         eventTitle = "LAN Party",

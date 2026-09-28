@@ -1,6 +1,5 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.shared.job.CalendarJobs
 import net.blueshell.api.testsupport.runJob
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq

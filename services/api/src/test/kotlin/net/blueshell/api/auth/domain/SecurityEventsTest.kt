@@ -7,7 +7,6 @@ import net.blueshell.api.auth.persistence.SecurityEventRepository
 import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.security.Browser
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
@@ -66,8 +65,8 @@ class SecurityEventsTest {
         assertThat(event.occurredAt).isEqualTo(clock.instant())
         verify(tokens).issue(subject, TokenPurpose.ACCOUNT_LOCK, SecurityEvents.LOCK_LINK_TTL)
         verify(jobs).runAsync(
-            EmailJobs.SecurityNotification,
-            EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.PERSON, lockToken = "sel.ver"),
+            AuthJobs.SecurityNotification,
+            AuthJobs.SecurityNotificationPayload(99, AuthJobs.SecurityNotificationAudience.PERSON, lockToken = "sel.ver"),
             JobTrigger.SITE_ACTION,
         )
     }
@@ -77,8 +76,8 @@ class SecurityEventsTest {
         events.record(7, SecurityEventKind.EMAIL_CHANGED_BY_BOARD, SecurityActor.Person(1), oldAddress = "old@example.com")
 
         verify(jobs).runAsync(
-            EmailJobs.SecurityNotification,
-            EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.OLD_ADDRESS, "sel.ver", "old@example.com"),
+            AuthJobs.SecurityNotification,
+            AuthJobs.SecurityNotificationPayload(99, AuthJobs.SecurityNotificationAudience.OLD_ADDRESS, "sel.ver", "old@example.com"),
             JobTrigger.SITE_ACTION,
         )
     }
@@ -99,9 +98,9 @@ class SecurityEventsTest {
         events.record(7, SecurityEventKind.ACCOUNT_LOCKED)
         events.record(7, SecurityEventKind.BREAK_GLASS, SecurityActor.Operator)
 
-        val payloads = argumentCaptor<EmailJobs.SecurityNotificationPayload>()
-        verify(jobs, times(2)).runAsync(eq(EmailJobs.SecurityNotification), payloads.capture(), any(), anyOrNull())
-        assertThat(payloads.allValues.map { it.audience }).containsOnly(EmailJobs.SecurityNotificationAudience.ADMINISTRATOR)
+        val payloads = argumentCaptor<AuthJobs.SecurityNotificationPayload>()
+        verify(jobs, times(2)).runAsync(eq(AuthJobs.SecurityNotification), payloads.capture(), any(), anyOrNull())
+        assertThat(payloads.allValues.map { it.audience }).containsOnly(AuthJobs.SecurityNotificationAudience.ADMINISTRATOR)
         assertThat(payloads.allValues.map { it.recipientUserId }).containsOnly(1L)
     }
 

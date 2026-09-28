@@ -4,7 +4,6 @@ import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
@@ -117,8 +116,8 @@ class JoiningContributionAskServiceTest {
         service.askOnJoining(USER_ID, LocalDate.now())
 
         verify(jobs).runAsync(
-            eq(EmailJobs.JoiningContribution),
-            eq(EmailJobs.JoiningContributionPayload(ASK_ID)),
+            eq(ContributionJobs.JoiningContribution),
+            eq(ContributionJobs.JoiningContributionPayload(ASK_ID)),
             eq(JobTrigger.SITE_ACTION),
             anyOrNull(),
         )

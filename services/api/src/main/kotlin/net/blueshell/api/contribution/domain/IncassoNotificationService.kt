@@ -5,7 +5,6 @@ import jakarta.persistence.PersistenceContext
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import org.springframework.http.HttpStatus
@@ -47,8 +46,8 @@ class IncassoNotificationService(
     fun record(notification: IncassoNotification): IncassoNotification {
         val saved = written(notification)
         jobs.runAsync(
-            EmailJobs.IncassoNotification,
-            EmailJobs.IncassoNotificationPayload(requireNotNull(saved.id)),
+            ContributionJobs.IncassoNotification,
+            ContributionJobs.IncassoNotificationPayload(requireNotNull(saved.id)),
             JobTrigger.SITE_ACTION,
         )
         return saved

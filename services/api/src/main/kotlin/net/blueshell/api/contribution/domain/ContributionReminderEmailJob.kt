@@ -2,7 +2,6 @@ package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -21,13 +20,11 @@ class ContributionReminderEmailJob(
     private val reminders: ContributionReminderService,
     private val emails: EmailSenderService,
     private val channels: PaymentChannels,
-) : AbstractJsonJobHandler<EmailJobs.ContributionReminderPayload>(
+) : AbstractJsonJobHandler<ContributionJobs.ContributionReminderPayload>(
         objectMapper,
-        EmailJobs.ContributionReminder.payloadType,
+        ContributionJobs.ContributionReminder,
     ) {
-    override val jobType: String = EmailJobs.ContributionReminder.type
-
-    override fun handlePayload(payload: EmailJobs.ContributionReminderPayload) {
+    override fun handlePayload(payload: ContributionJobs.ContributionReminderPayload) {
         val reminder = requireExists { reminders.findById(payload.contributionReminderId) }
         val stated = reminder.statedFee
         val content =

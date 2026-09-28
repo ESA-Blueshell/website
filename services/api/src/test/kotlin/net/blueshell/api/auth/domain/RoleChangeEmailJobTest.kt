@@ -3,8 +3,8 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.user.api.RoleChanges
+import net.blueshell.api.user.api.UserJobs
 import net.blueshell.api.user.persistence.RoleChange
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -34,10 +34,10 @@ class RoleChangeEmailJobTest {
             RoleChange(person(7, "person@example.com"), person(1, "admin@example.com"), setOf(Role.MEMBER), setOf(Role.MEMBER, Role.BOARD))
         whenever(changes.find(42)).thenReturn(change)
 
-        job.handle(mapper.writeValueAsString(EmailJobs.RoleChangePayload(42)), 5, forced = false)
+        job.handle(mapper.writeValueAsString(UserJobs.RoleChangePayload(42)), 5, forced = false)
 
         val content = argumentCaptor<EmailContent>()
-        verify(emails).send(content.capture(), eq(EmailJobs.RoleChange.type), anyOrNull())
+        verify(emails).send(content.capture(), eq(UserJobs.RoleChange.type), anyOrNull())
         assertThat(content.firstValue.recipientEmail).isEqualTo("person@example.com")
     }
 }

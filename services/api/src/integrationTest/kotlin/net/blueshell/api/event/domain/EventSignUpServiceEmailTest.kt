@@ -5,7 +5,6 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -37,7 +36,7 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
         val created = eventSignUpService.create(signUp)
 
         // Then: Email job is scheduled
-        val jobs = findJobsByType(EmailJobs.EventSignup.type)
+        val jobs = findJobsByType(EventJobs.EventSignup.type)
         assertThat(jobs)
             .describedAs("Should schedule event signup email job")
             .hasSize(1)
@@ -65,7 +64,7 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
         eventSignUpService.create(signUp)
 
         // Then: No email job is scheduled (users don't get confirmation emails)
-        val jobs = findJobsByType(EmailJobs.EventSignup.type)
+        val jobs = findJobsByType(EventJobs.EventSignup.type)
         assertThat(jobs)
             .describedAs("Should not schedule email for user-only signups")
             .isEmpty()

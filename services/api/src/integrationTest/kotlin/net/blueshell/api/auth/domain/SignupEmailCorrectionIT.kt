@@ -4,7 +4,6 @@ import net.blueshell.api.auth.persistence.RecoveryTokenRepository
 import net.blueshell.api.auth.web.SignupController
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.api.MemberProfileService
 import org.assertj.core.api.Assertions.assertThat
@@ -89,7 +88,7 @@ class SignupEmailCorrectionIT : UserTestSupport() {
         correct(signupToken(user), "corrected3@example.com").andExpect(status().isNoContent)
 
         assertThat(jobExecutions.findAll().map { it.jobType })
-            .contains(EmailJobs.Recovery.type)
+            .contains(AuthJobs.Recovery.type)
     }
 
     @Test

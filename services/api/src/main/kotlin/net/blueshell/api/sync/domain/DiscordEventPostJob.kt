@@ -2,7 +2,7 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.jobs.api.RetrySchedule
-import net.blueshell.api.shared.job.DiscordPostJobs
+import net.blueshell.api.shared.job.JobDefinition
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 import java.time.Duration
@@ -12,13 +12,14 @@ private val THROUGH_THE_DAY = RetrySchedule(10, Duration.ofMinutes(2), 2.0, Dura
 
 /**
  * One of the bot's three jobs for an event: keeps its thing under the event's lock and reports
- * what that did, or why it did nothing. Type and schedule are getters over constants, not fields,
- * in all three: the handlers are proxied, and a proxy's own fields are empty.
+ * what that did, or why it did nothing. The schedule is a getter over a constant, not a field: the
+ * handlers are proxied, and a proxy's own fields are empty.
  */
 abstract class DiscordEventPostJob(
     objectMapper: ObjectMapper,
     private val lock: DiscordEventLock,
-) : AbstractJsonJobHandler<DiscordPostJobs.EventPostPayload>(objectMapper, DiscordPostJobs.EventPostPayload::class.java) {
+    definition: JobDefinition<DiscordPostJobs.EventPostPayload>,
+) : AbstractJsonJobHandler<DiscordPostJobs.EventPostPayload>(objectMapper, definition) {
     override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
     protected abstract fun keep(
@@ -39,9 +40,7 @@ class DiscordAnnouncementJob(
     objectMapper: ObjectMapper,
     private val posts: DiscordEventPosts,
     lock: DiscordEventLock,
-) : DiscordEventPostJob(objectMapper, lock) {
-    override val jobType: String get() = DiscordPostJobs.Announcement.type
-
+) : DiscordEventPostJob(objectMapper, lock, DiscordPostJobs.Announcement) {
     override fun keep(
         eventId: Long,
         forced: Boolean,
@@ -53,9 +52,7 @@ class DiscordCalendarPostJob(
     objectMapper: ObjectMapper,
     private val posts: DiscordEventPosts,
     lock: DiscordEventLock,
-) : DiscordEventPostJob(objectMapper, lock) {
-    override val jobType: String get() = DiscordPostJobs.CalendarPost.type
-
+) : DiscordEventPostJob(objectMapper, lock, DiscordPostJobs.CalendarPost) {
     override fun keep(
         eventId: Long,
         forced: Boolean,
@@ -67,9 +64,7 @@ class DiscordEventJob(
     objectMapper: ObjectMapper,
     private val posts: DiscordEventPosts,
     lock: DiscordEventLock,
-) : DiscordEventPostJob(objectMapper, lock) {
-    override val jobType: String get() = DiscordPostJobs.DiscordEvent.type
-
+) : DiscordEventPostJob(objectMapper, lock, DiscordPostJobs.DiscordEvent) {
     override fun keep(
         eventId: Long,
         forced: Boolean,

@@ -2,20 +2,20 @@ package net.blueshell.api.user.domain
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.TrackedEventPublisher
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.user.api.UserJobs
 import net.blueshell.api.user.api.UserRolesChanged
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.RoleChange
 import net.blueshell.api.user.persistence.RoleChangeRepository
-import net.blueshell.api.user.persistence.dormantGranted
 import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.persistence.dormantGranted
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
-import net.blueshell.api.shared.job.JobTrigger
 
 /**
  * What a person may reach, as an admin decides it.
@@ -84,7 +84,7 @@ class RoleGrantUseCases(
         )
         trackedEvents.publish { UserRolesChanged(userId, it, record.dormantGranted) }
         if (record.dormantGranted.isNotEmpty() || NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
-            jobs.runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(requireNotNull(record.id)), JobTrigger.SITE_ACTION)
+            jobs.runAsync(UserJobs.RoleChange, UserJobs.RoleChangePayload(requireNotNull(record.id)), JobTrigger.SITE_ACTION)
         }
         return standingOf(saved)
     }

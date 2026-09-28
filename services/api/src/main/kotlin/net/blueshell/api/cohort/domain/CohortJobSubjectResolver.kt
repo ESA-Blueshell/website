@@ -1,7 +1,7 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.jobs.web.JobSubjectResolver
+import net.blueshell.api.jobs.api.JobSubjectResolver
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 

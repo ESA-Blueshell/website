@@ -1,10 +1,9 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.auth.domain.AuthJobs.SecurityNotificationAudience
 import net.blueshell.api.auth.persistence.SecurityEventRepository
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.shared.job.EmailJobs.SecurityNotificationAudience
 import net.blueshell.api.shared.job.requireExists
 import net.blueshell.api.user.api.UserService
 import org.springframework.beans.factory.annotation.Value
@@ -19,13 +18,11 @@ class SecurityNotificationEmailJob(
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     private val contacts: SecurityContacts,
-) : AbstractJsonJobHandler<EmailJobs.SecurityNotificationPayload>(
+) : AbstractJsonJobHandler<AuthJobs.SecurityNotificationPayload>(
         objectMapper,
-        EmailJobs.SecurityNotification.payloadType,
+        AuthJobs.SecurityNotification,
     ) {
-    override val jobType: String = EmailJobs.SecurityNotification.type
-
-    override fun handlePayload(payload: EmailJobs.SecurityNotificationPayload) {
+    override fun handlePayload(payload: AuthJobs.SecurityNotificationPayload) {
         val event = requireExists { requireNotNull(events.findWithPeopleById(payload.securityEventId)) }
         val (email, name) =
             when (payload.audience) {
@@ -36,7 +33,7 @@ class SecurityNotificationEmailJob(
             }
         emails.send(
             createSecurityNotificationEmail(event, payload.audience, email, name, payload.lockToken, frontendUrl, contacts),
-            EmailJobs.SecurityNotification.type,
+            AuthJobs.SecurityNotification.type,
             currentExecutionId,
         )
     }

@@ -1,10 +1,10 @@
 package net.blueshell.api.auth.web
 
+import net.blueshell.api.auth.domain.AuthJobs
 import net.blueshell.api.auth.domain.RecoveryTokenFactory
 import net.blueshell.api.factory.auth.web.request.AuthRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -39,7 +39,7 @@ class RecoveryControllerIT : UserTestSupport() {
                 .perform(post("/recovery/password/reset/{username}", user.username))
                 .andExpect(status().isNoContent)
 
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .hasSize(1)
                 .anySatisfy {
@@ -185,7 +185,7 @@ class RecoveryControllerIT : UserTestSupport() {
                 .perform(post("/recovery/user/activate/resend/{username}", user.username))
                 .andExpect(status().isNoContent)
 
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .hasSize(1)
                 .anySatisfy {
@@ -238,7 +238,7 @@ class RecoveryControllerIT : UserTestSupport() {
                         .with(signedIn(board)),
                 ).andExpect(status().isBadRequest)
 
-            assertThat(findJobsByType(EmailJobs.Recovery.type)).isEmpty()
+            assertThat(findJobsByType(AuthJobs.Recovery.type)).isEmpty()
         }
 
         @Test
@@ -253,7 +253,7 @@ class RecoveryControllerIT : UserTestSupport() {
                         .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
 
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .hasSize(1)
                 .anySatisfy {

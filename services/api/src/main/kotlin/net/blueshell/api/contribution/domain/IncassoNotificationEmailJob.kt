@@ -2,7 +2,6 @@ package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -18,13 +17,11 @@ class IncassoNotificationEmailJob(
     objectMapper: ObjectMapper,
     private val notifications: IncassoNotificationService,
     private val emails: EmailSenderService,
-) : AbstractJsonJobHandler<EmailJobs.IncassoNotificationPayload>(
+) : AbstractJsonJobHandler<ContributionJobs.IncassoNotificationPayload>(
         objectMapper,
-        EmailJobs.IncassoNotification.payloadType,
+        ContributionJobs.IncassoNotification,
     ) {
-    override val jobType: String = EmailJobs.IncassoNotification.type
-
-    override fun handlePayload(payload: EmailJobs.IncassoNotificationPayload) {
+    override fun handlePayload(payload: ContributionJobs.IncassoNotificationPayload) {
         val notification = requireExists { notifications.findById(payload.incassoNotificationId) }
         emails.send(
             createIncassoNotificationEmail(

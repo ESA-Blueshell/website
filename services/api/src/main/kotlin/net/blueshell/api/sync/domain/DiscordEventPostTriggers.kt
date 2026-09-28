@@ -3,7 +3,6 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.event.api.EventSignUpsChanged
-import net.blueshell.api.shared.job.DiscordPostJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import org.springframework.scheduling.annotation.Scheduled

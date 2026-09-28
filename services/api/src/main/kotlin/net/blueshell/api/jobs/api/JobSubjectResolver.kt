@@ -1,4 +1,4 @@
-package net.blueshell.api.jobs.web
+package net.blueshell.api.jobs.api
 
 /** One entity a job payload names, as the payload field carrying it and its id. */
 data class JobSubject(

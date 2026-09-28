@@ -5,7 +5,6 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -40,7 +39,7 @@ class EventJobsListenerTest : ServiceTestSupport() {
 
         listener.onPersist(evt)
 
-        val jobs = findJobsByType(EmailJobs.EventSignup.type)
+        val jobs = findJobsByType(EventJobs.EventSignup.type)
         assertThat(jobs)
             .describedAs("Should schedule one EventSignup email job")
             .hasSize(1)
@@ -68,7 +67,7 @@ class EventJobsListenerTest : ServiceTestSupport() {
 
         listener.onPersist(evt)
 
-        assertThat(findJobsByType(EmailJobs.EventSignup.type))
+        assertThat(findJobsByType(EventJobs.EventSignup.type))
             .describedAs("Should not schedule email job when guestAccessToken is null")
             .isEmpty()
     }
@@ -83,7 +82,7 @@ class EventJobsListenerTest : ServiceTestSupport() {
 
         listener.onPersist(evt)
 
-        assertThat(findJobsByType(EmailJobs.EventSignup.type))
+        assertThat(findJobsByType(EventJobs.EventSignup.type))
             .describedAs("Should not schedule email job when signup has no guest")
             .isEmpty()
     }

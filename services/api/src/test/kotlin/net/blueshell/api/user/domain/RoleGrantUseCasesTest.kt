@@ -3,11 +3,11 @@ package net.blueshell.api.user.domain
 import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.TrackedEventPublisher
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.user.api.UserJobs
 import net.blueshell.api.user.api.UserRolesChanged
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.RoleChange
@@ -73,7 +73,7 @@ class RoleGrantUseCasesTest {
         verify(trackedEvents).publish(published.capture())
         assertThat(published.firstValue(Actor.system()))
             .isEqualTo(UserRolesChanged(7, Actor.system(), dormantGranted = setOf(Role.TREASURER)))
-        verify(jobs).runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(3), JobTrigger.SITE_ACTION)
+        verify(jobs).runAsync(UserJobs.RoleChange, UserJobs.RoleChangePayload(3), JobTrigger.SITE_ACTION)
     }
 
     @Test

@@ -1,9 +1,9 @@
 package net.blueshell.api.contribution.web
 
+import net.blueshell.api.contribution.domain.ContributionJobs
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -50,7 +50,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.contributionPeriodId").value(period.id))
 
-            val jobs = findJobsByType(EmailJobs.ContributionReminder.type)
+            val jobs = findJobsByType(ContributionJobs.ContributionReminder.type)
             assertThat(jobs).hasSize(1)
             // The job names the ask, because a member can be asked for the same period more
             // than once and the pair no longer names one row.
@@ -79,7 +79,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
             }
 
             assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).hasSize(3)
-            assertThat(findJobsByType(EmailJobs.ContributionReminder.type)).hasSize(3)
+            assertThat(findJobsByType(ContributionJobs.ContributionReminder.type)).hasSize(3)
         }
 
         @Test
@@ -117,7 +117,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$[0].contributionPeriodId").value(period.id))
                 .andExpect(jsonPath("$[1].contributionPeriodId").value(period.id))
 
-            val jobs = findJobsByType(EmailJobs.ContributionReminder.type)
+            val jobs = findJobsByType(ContributionJobs.ContributionReminder.type)
             assertThat(jobs).hasSize(2)
         }
     }

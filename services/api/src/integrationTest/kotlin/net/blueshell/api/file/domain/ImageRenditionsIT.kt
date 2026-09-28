@@ -10,7 +10,6 @@ import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ImageJobs
 import net.blueshell.api.testsupport.AnimatedGifs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat

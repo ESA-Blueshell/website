@@ -7,7 +7,6 @@ import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.event.persistence.GuestAccessTokenCodec
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.security.CurrentUserProvider
@@ -169,7 +168,7 @@ class EventSignUpUseCases(
             val signUp = service.findById(eventSignUpId)
             val removal = removalNotice(signUp)
             service.delete(signUp)
-            removal?.let { jobs.runAsync(EmailJobs.EventSignUpRemoved, it, JobTrigger.SITE_ACTION) }
+            removal?.let { jobs.runAsync(EventJobs.EventSignUpRemoved, it, JobTrigger.SITE_ACTION) }
             return
         }
         // Preserve 404 semantics for unknown guest tokens before target-signup binding check.
@@ -191,7 +190,7 @@ private fun Guest.asData(): GuestData =
         version = this.version,
     )
 
-private fun removalNotice(signUp: EventSignUp): EmailJobs.EventSignUpRemovedPayload? {
+private fun removalNotice(signUp: EventSignUp): EventJobs.EventSignUpRemovedPayload? {
     val user = signUp.user
     val guest = signUp.guest
     val (email, name) =
@@ -200,7 +199,7 @@ private fun removalNotice(signUp: EventSignUp): EmailJobs.EventSignUpRemovedPayl
             guest != null -> guest.email to guest.name
             else -> return null
         }
-    return EmailJobs.EventSignUpRemovedPayload(
+    return EventJobs.EventSignUpRemovedPayload(
         recipientEmail = email,
         recipientName = name,
         eventTitle = signUp.event.title,

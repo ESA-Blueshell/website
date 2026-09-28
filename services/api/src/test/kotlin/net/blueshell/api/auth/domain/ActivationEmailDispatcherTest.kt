@@ -2,7 +2,6 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
@@ -23,8 +22,8 @@ class ActivationEmailDispatcherTest {
         ActivationEmailDispatcher(jobs, activation).dispatchFor(UserCreated(7, createdByBoard = true, actor = board))
 
         verify(jobs).runAsync(
-            EmailJobs.Recovery,
-            EmailJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.USER_ACTIVATION),
+            AuthJobs.Recovery,
+            AuthJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.USER_ACTIVATION),
             JobTrigger.SITE_ACTION,
             board,
         )

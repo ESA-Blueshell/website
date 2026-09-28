@@ -102,6 +102,10 @@ Landed, because both were free and neither was speculative:
   to default the actor, which `JobDispatcher` already did, so the wrapper is gone
   and `runAsyncFromActor` is an extension function on `JobQueue`. The verbs and
   their return are unchanged.
+- `AsyncJob` had no callers and is gone (#1803). A module's job definitions live
+  in that module, beside the handler or in its `api` where another module queues
+  them; `shared/job` keeps `JobQueue` and the `JobDefinition` type. A handler
+  takes its definition, which gives it its type and payload class (#1656).
 
 Deferred until a caller exists, on this record's own reasoning that it would
 otherwise be "a schema change for a feature with no current caller":

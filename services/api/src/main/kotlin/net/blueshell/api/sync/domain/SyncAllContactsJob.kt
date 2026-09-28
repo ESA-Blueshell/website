@@ -1,8 +1,8 @@
 package net.blueshell.api.sync.domain
 
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
@@ -25,10 +25,8 @@ class SyncAllContactsJob(
     private val jobs: JobQueue,
 ) : AbstractJsonJobHandler<ContactJobs.SyncAllContactsPayload>(
         objectMapper,
-        ContactJobs.SyncAllContacts.payloadType,
+        ContactJobs.SyncAllContacts,
     ) {
-    override val jobType: String = ContactJobs.SyncAllContacts.type
-
     override fun handlePayload(payload: ContactJobs.SyncAllContactsPayload) {
         // The service account is the site itself rather than somebody who reads mail. It owns
         // the files the repository ships with, and syncing it would put an address nobody

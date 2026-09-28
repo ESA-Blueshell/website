@@ -1,7 +1,6 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.RecoveryEmailPreview
@@ -64,8 +63,8 @@ class RecoveryUseCases(
     private fun enqueueRecoveryEmail(dispatch: RecoveryDispatch?) {
         if (dispatch == null) return
         jobs.runAsync(
-            EmailJobs.Recovery,
-            EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
+            AuthJobs.Recovery,
+            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
             JobTrigger.SITE_ACTION,
         )
     }

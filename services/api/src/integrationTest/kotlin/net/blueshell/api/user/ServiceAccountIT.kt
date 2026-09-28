@@ -1,8 +1,8 @@
 package net.blueshell.api.user
 
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.sync.domain.SyncAllContactsJob
 import net.blueshell.api.testsupport.UserTestSupport

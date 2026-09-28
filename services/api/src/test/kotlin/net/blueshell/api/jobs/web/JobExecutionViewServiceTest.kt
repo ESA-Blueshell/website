@@ -2,6 +2,8 @@ package net.blueshell.api.jobs.web
 
 import io.mockk.every
 import io.mockk.mockk
+import net.blueshell.api.jobs.api.JobSubject
+import net.blueshell.api.jobs.api.JobSubjectResolver
 import net.blueshell.api.jobs.persistence.FoldedTrigger
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType

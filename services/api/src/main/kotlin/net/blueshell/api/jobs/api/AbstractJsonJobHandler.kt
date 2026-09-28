@@ -1,18 +1,21 @@
 package net.blueshell.api.jobs.api
 
 import net.blueshell.api.jobs.domain.JobHandler
+import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobEffect
 import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
 
 abstract class AbstractJsonJobHandler<T : Any>(
     private val objectMapper: ObjectMapper,
-    // Not `final`: these handlers are @Transactional, so Spring wraps them in
-    // CGLIB proxies. A final getter can't be intercepted, so reading it on the
-    // proxy returns the proxy's uninitialized (null) field instead of delegating
-    // to the target — which left the job catalog without payload types.
-    override val payloadType: Class<T>,
+    private val definition: JobDefinition<T>,
 ) : JobHandler {
+    // Open getters, not fields: these handlers are @Transactional, so Spring wraps them in CGLIB
+    // proxies, and a proxy's own fields are empty. An open getter delegates to the target.
+    override val jobType: String get() = definition.type
+
+    override val payloadType: Class<T> get() = definition.payloadType
+
     private class Run(
         val executionId: Long?,
         val forced: Boolean,

@@ -1,7 +1,7 @@
 package net.blueshell.api.sync.domain
 
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.ContactJobs
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
@@ -17,10 +17,8 @@ class RemoveContactJob(
     private val contactSync: ContactSyncService,
 ) : AbstractJsonJobHandler<ContactJobs.RemoveContactPayload>(
         objectMapper,
-        ContactJobs.RemoveContact.payloadType,
+        ContactJobs.RemoveContact,
     ) {
-    override val jobType: String = ContactJobs.RemoveContact.type
-
     override fun handlePayload(payload: ContactJobs.RemoveContactPayload) {
         contactSync.remove(payload.userId)
     }

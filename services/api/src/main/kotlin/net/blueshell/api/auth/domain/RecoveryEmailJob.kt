@@ -2,7 +2,6 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
 import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
@@ -17,13 +16,11 @@ class RecoveryEmailJob(
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     private val contacts: SecurityContacts,
-) : AbstractJsonJobHandler<EmailJobs.RecoveryPayload>(
+) : AbstractJsonJobHandler<AuthJobs.RecoveryPayload>(
         objectMapper,
-        EmailJobs.Recovery.payloadType,
+        AuthJobs.Recovery,
     ) {
-    override val jobType: String = EmailJobs.Recovery.type
-
-    override fun handlePayload(payload: EmailJobs.RecoveryPayload) {
+    override fun handlePayload(payload: AuthJobs.RecoveryPayload) {
         val user = requireExists { users.findById(payload.userId) }
         log.info("Sending {} email for user={}", payload.tokenPurpose, payload.userId)
         emails.send(

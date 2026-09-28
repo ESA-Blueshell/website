@@ -1,6 +1,6 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.testsupport.runJob
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq

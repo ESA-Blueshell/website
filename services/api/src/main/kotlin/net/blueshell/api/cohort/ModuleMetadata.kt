@@ -38,10 +38,6 @@ import org.springframework.modulith.PackageInfo
         "contribution :: entities",
         // The team-roster cohort is built from TeamRosterService.
         "esports :: api",
-        // DEBT, not a surface. The cohort job resolvers implement JobSubject and
-        // JobSubjectResolver, which sit under jobs' web package. Pinned in
-        // CrossModuleWebAccessArchitectureTest.
-        "jobs :: legacy-web",
         // Open kernel: the controllers are @AdminOnly.
         "security",
         // Open kernel.

@@ -1,6 +1,5 @@
 package net.blueshell.api.event.domain
 
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.runAsyncFromActor
@@ -22,8 +21,8 @@ class EventJobsListener(
         val e = signUps.findById(evt.signUpId)
         if (e.guest != null) {
             jobs.runAsyncFromActor(
-                EmailJobs.EventSignup,
-                EmailJobs.EventSignupPayload(e.id!!, guestAccessToken),
+                EventJobs.EventSignup,
+                EventJobs.EventSignupPayload(e.id!!, guestAccessToken),
                 JobTrigger.SITE_ACTION,
                 evt,
             )

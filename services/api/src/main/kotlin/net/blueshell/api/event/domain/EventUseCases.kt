@@ -72,12 +72,12 @@ class EventUseCases(
     ): Event {
         refuseEveryone(data)
         val event = service.findById(id)
+        event.requireVersion(version)
         event.applyEditableFields(data, committeeService.findById(data.committeeId))
         applyGames(event, data)
         event.replaceBanner(data.banner?.toEntity(event, fileService, existingBanner = event.banner))
         applySignUpFormUpdate(event, data.signUpForm, surveyFactory)
         event.approved = isBoard() && data.approved
-        event.version = version
         return service.update(event, removeExistingSignUps = removeExistingSignUps)
     }
 

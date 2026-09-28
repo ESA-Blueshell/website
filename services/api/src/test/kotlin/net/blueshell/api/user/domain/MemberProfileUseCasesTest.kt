@@ -73,7 +73,7 @@ class MemberProfileUseCasesTest {
     @Nested
     inner class Update {
         @Test
-        fun `updates member profile fields and version`() {
+        fun `updates member profile fields, keeping the version it was read at`() {
             val profile = profileFor(testUser("john"), studentNumber = "old")
             whenever(memberProfileService.findById(1L)).thenReturn(profile)
             whenever(memberProfileService.update(profile)).thenReturn(profile)
@@ -88,7 +88,7 @@ class MemberProfileUseCasesTest {
                     nationality = "Belgian",
                     bhv = true,
                     ehbo = true,
-                    version = 6L,
+                    version = 0L,
                 )
 
             assertThat(profile.dateOfBirth).isEqualTo(birthDate)
@@ -97,7 +97,7 @@ class MemberProfileUseCasesTest {
             assertThat(profile.nationality).isEqualTo("Belgian")
             assertThat(profile.bhv).isTrue()
             assertThat(profile.ehbo).isTrue()
-            assertThat(profile.version).isEqualTo(6L)
+            assertThat(profile.version).isEqualTo(0L)
             assertThat(result).isSameAs(profile)
         }
     }

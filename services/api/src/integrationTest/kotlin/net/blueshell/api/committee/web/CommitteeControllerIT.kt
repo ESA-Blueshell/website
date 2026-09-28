@@ -242,6 +242,34 @@ class CommitteeControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isNotFound)
         }
+
+        @Test
+        fun `refuses an edit made against a version somebody else has already saved over`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture(name = "Before")
+            val seen = committee.version
+
+            fun save(name: String) =
+                mvc.perform(
+                    put("/committees/{id}", committee.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            committeeRequestFactory.updatePayload(
+                                version = seen,
+                                name = name,
+                                description = "Edited",
+                                members = listOf(CommitteeRequestFactory.MemberInput(board.id!!, "Chair")),
+                            ),
+                        ),
+                )
+
+            save("First edit").andExpect(status().isOk)
+            save("Second edit").andExpect(status().isConflict)
+
+            mvc.perform(get("/committees/{committeeId}", committee.id).with(signedIn(board)))
+                .andExpect(jsonPath("$.name").value("First edit"))
+        }
     }
 
     @Nested

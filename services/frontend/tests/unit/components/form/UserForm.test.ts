@@ -213,6 +213,20 @@ describe("UserForm", () => {
     })
   })
 
+  it("hands back the account as saved, so a second save carries its new version", async () => {
+    mockUpdateUser.mockResolvedValue({id: 12, email: "a@example.com", roles: [], version: 3})
+    const wrapper = mount(UserForm, {
+      props: {
+        modelValue: baseModel({id: 12, version: 2}),
+        "onUpdate:modelValue": vi.fn(),
+        options: {includeMemberProfile: false},
+      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+
+    expect(await (wrapper.vm as any).save()).toMatchObject({id: 12, version: 3})
+  })
+
   it("requires the member fields of a member only, and sends no date where none is given", async () => {
     const mountWith = (required?: boolean) => mount(UserForm, {
       props: {

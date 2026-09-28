@@ -111,6 +111,13 @@ describe("AddressForm", () => {
       expect(mockSaveNewAddress).not.toHaveBeenCalled()
     })
 
+    it("hands back the address as saved, so a second save carries its new version", async () => {
+      mockSaveAddressChange.mockResolvedValue({id: 3, city: "Enschede", version: 2})
+      const wrapper = mount({modelValue: {id: 3, city: "Enschede", version: 1}})
+
+      expect(await (wrapper.vm as any).save()).toMatchObject({id: 3, version: 2})
+    })
+
     it("says so rather than posting an address at nobody", async () => {
       const wrapper = mount({})
 

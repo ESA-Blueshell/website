@@ -92,7 +92,7 @@ class EventUseCasesTest {
     @Nested
     inner class UpdateEvent {
         @Test
-        fun `updates event fields and version`() {
+        fun `updates event fields, keeping the version it was read at`() {
             val existing = eventEntity().apply { version = 1L }
             val committee = mock<Committee>()
             val survey = mock<Survey>()
@@ -111,7 +111,7 @@ class EventUseCasesTest {
                     id = 9L,
                     data = data,
                     removeExistingSignUps = false,
-                    version = 5L,
+                    version = 1L,
                 )
 
             assertThat(existing.committee).isSameAs(committee)
@@ -127,7 +127,7 @@ class EventUseCasesTest {
             assertThat(existing.banner?.file).isSameAs(bannerFile)
             assertThat(existing.signUpForm).isSameAs(survey)
             assertThat(existing.approved).isTrue()
-            assertThat(existing.version).isEqualTo(5L)
+            assertThat(existing.version).isEqualTo(1L)
             assertThat(result).isSameAs(existing)
         }
     }
@@ -182,14 +182,14 @@ class EventUseCasesTest {
             whenever(committeeService.findById(4L)).thenReturn(mock())
             whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
 
-            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L)
+            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 0L)
             assertThat(existing.pingedRoles).containsExactly(PingedRole("901", "Gamers"))
 
             useCases.update(
                 id = 9L,
                 data = updateEventData().copy(pingedRoles = listOf(PingedRoleData("902", "Board"))),
                 removeExistingSignUps = false,
-                version = 1L,
+                version = 0L,
             )
             assertThat(existing.pingedRoles).containsExactly(PingedRole("902", "Board"))
         }
@@ -224,11 +224,11 @@ class EventUseCasesTest {
             whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
             whenever(games.requireNameable(listOf("DOTA_2", "CHESS"), setOf("DOTA_2"))).thenReturn(listOf("DOTA_2", "CHESS"))
 
-            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L)
+            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 0L)
             assertThat(existing.gameCodes).containsExactly("DOTA_2")
 
             val both = updateEventData().copy(gameCodes = listOf("DOTA_2", "CHESS"))
-            useCases.update(id = 9L, data = both, removeExistingSignUps = false, version = 1L)
+            useCases.update(id = 9L, data = both, removeExistingSignUps = false, version = 0L)
             assertThat(existing.gameCodes).containsExactly("DOTA_2", "CHESS")
         }
 

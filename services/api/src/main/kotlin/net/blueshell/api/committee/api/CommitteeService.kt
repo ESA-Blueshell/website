@@ -72,13 +72,13 @@ class CommitteeService
             page: CommitteePage = CommitteePage(),
         ): Committee {
             val committee = findById(id)
+            version?.let(committee::requireVersion)
             val previousMembers = committee.members.associate { it.userId to it.role }
 
             committee.name = name
             committee.description = description
             applyPage(committee, page)
             reconcileMembers(committee, members)
-            version?.let { committee.version = it }
 
             val saved = super.update(committee)
             val currentMembers = saved.members.associate { it.userId to it.role }
@@ -101,11 +101,11 @@ class CommitteeService
             version: Long?,
         ): Committee {
             val committee = findById(id)
+            version?.let(committee::requireVersion)
             committee.description = description
             committee.banner = pictures.of(banner, FileType.COMMITTEE_BANNER)
             committee.icon = pictures.of(icon, FileType.COMMITTEE_ICON)
             applyGames(committee, gameCodes)
-            version?.let { committee.version = it }
             return super.update(committee)
         }
 

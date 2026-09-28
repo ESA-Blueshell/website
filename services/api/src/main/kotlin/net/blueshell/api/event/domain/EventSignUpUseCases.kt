@@ -220,6 +220,8 @@ private fun applySignUp(
     eventRepository: EventRepository,
     questionService: QuestionService,
 ) {
+    // A new sign-up has nothing to be stale against.
+    if (signUp.id != null) data.version?.let(signUp::requireVersion)
     signUp.event = eventRepository.getReferenceById(data.eventId)
     signUp.userId = data.userId
     applyGuest(data.guest, signUp)
@@ -228,8 +230,6 @@ private fun applySignUp(
     val answersSet = signUp.answers as MutableSet
     answersSet.clear()
     answersSet.addAll(mappedAnswers)
-
-    data.version?.let { signUp.version = it }
 }
 
 private fun applyGuest(
@@ -247,11 +247,11 @@ private fun applyGuest(
         return
     }
 
+    data.version?.let(existing::requireVersion)
     existing.name = data.name
     existing.discord = data.discord
     existing.email = data.email
     existing.phoneNumber = data.phoneNumber
-    data.version?.let { existing.version = it }
 }
 
 private fun mapGuest(data: GuestData): Guest {
@@ -264,7 +264,6 @@ private fun mapGuest(data: GuestData): Guest {
             phoneNumber = data.phoneNumber,
             accessToken = rawAccessToken,
         )
-    data.version?.let { guest.version = it }
     return guest
 }
 
@@ -278,6 +277,5 @@ private fun mapAnswer(
             optionSelections = data.optionSelections?.toMutableList(),
             textResponse = data.textResponse,
         )
-    data.version?.let { answer.version = it }
     return answer
 }

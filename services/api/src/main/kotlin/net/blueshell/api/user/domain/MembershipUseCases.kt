@@ -67,11 +67,11 @@ class MembershipUseCases(
     ): Membership {
         validate(MembershipInterval(userId = userId, id = id, startDate = startDate, endDate = endDate))
         val membership = service.findById(id)
+        membership.requireVersion(version)
         memberType?.let { membership.memberType = it }
         membership.startDate = startDate!!
         membership.endDate = endDate
         incasso?.let { membership.incasso = it }
-        membership.version = version
         return service.update(membership)
     }
 

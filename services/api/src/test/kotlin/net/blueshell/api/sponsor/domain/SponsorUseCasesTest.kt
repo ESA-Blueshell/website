@@ -65,7 +65,7 @@ class SponsorUseCasesTest {
     @Nested
     inner class Update {
         @Test
-        fun `updates sponsor fields and version`() {
+        fun `updates sponsor fields, keeping the version it was read at`() {
             val existing = sponsor("Old", "Old Description").apply { version = 1L }
             whenever(sponsorService.findById(9L)).thenReturn(existing)
             whenever(sponsorService.update(existing)).thenReturn(existing)
@@ -75,12 +75,12 @@ class SponsorUseCasesTest {
                     id = 9L,
                     name = "New",
                     description = "New Description",
-                    version = 4L,
+                    version = 1L,
                 )
 
             assertThat(result.name).isEqualTo("New")
             assertThat(result.description).isEqualTo("New Description")
-            assertThat(existing.version).isEqualTo(4L)
+            assertThat(existing.version).isEqualTo(1L)
         }
     }
 }

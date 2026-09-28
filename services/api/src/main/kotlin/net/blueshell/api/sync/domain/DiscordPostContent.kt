@@ -1,8 +1,7 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventPostData
-import net.blueshell.api.shared.model.DESCRIPTION_MAX
-import net.blueshell.api.sync.api.DiscordEmbed
+import net.blueshell.api.sync.api.DISCORD_TEXT_MAX
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordLink
 import net.blueshell.api.sync.api.DiscordPost
@@ -19,6 +18,8 @@ import java.util.Locale
 object DiscordPostContent {
     // Discord's limit on a Discord event's whole description, links included.
     private const val LISTING_DESCRIPTION = 1000
+
+    private const val PARAGRAPH = "\n\n"
 
     // An event with no place is held in the server itself.
     private const val IN_THE_SERVER = "Discord"
@@ -41,7 +42,7 @@ object DiscordPostContent {
         site: String,
     ): DiscordPost {
         val page = pageOf(event.id, site)
-        val fields =
+        val details =
             buildList {
                 add("When" to whenOf(event))
                 event.location?.takeIf { it.isNotBlank() }?.let { add("Where" to it.trim()) }
@@ -52,17 +53,17 @@ object DiscordPostContent {
                 event.signUpDeadline?.takeIf { it != event.startTime }?.let {
                     add("Sign up before" to "`${DAY_AND_TIME.format(it.atZone(DiscordPostSchedule.ZONE))}`")
                 }
-            }
+            }.joinToString("\n") { (label, value) -> "**$label:** $value" }
+        // Mentions last: Discord notifies the roles wherever the text names them.
+        val mentions = event.pingedRoleIds.joinToString(" ") { "<@&$it>" }
+        val heading = "## ${event.title}"
+        val after = listOf(details, mentions).filter { it.isNotEmpty() }
+        // The description takes what the rest leaves: whole but for one near the cap.
+        val room = DISCORD_TEXT_MAX - heading.length - after.sumOf { it.length } - PARAGRAPH.length * (after.size + 1)
+        val description = cut(event.description.orEmpty(), room)
         return DiscordPost(
             pingedRoleIds = event.pingedRoleIds,
-            embed =
-                DiscordEmbed(
-                    title = event.title,
-                    url = page,
-                    // Whole: a description holds no more than an embed does, and the links are buttons.
-                    description = cut(event.description.orEmpty(), DESCRIPTION_MAX),
-                    fields = fields,
-                ),
+            text = (listOf(heading, description) + after).filter { it.isNotEmpty() }.joinToString(PARAGRAPH),
             links = linksOf(event, page),
         )
     }

@@ -2,6 +2,7 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
+import net.blueshell.api.sync.api.DISCORD_TEXT_MAX
 import net.blueshell.api.sync.api.DiscordLink
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -30,25 +31,44 @@ class DiscordPostContentTest {
 
     private val site = "https://esa-blueshell.nl"
 
+    private fun detailsOf(event: EventPostData) =
+        DiscordPostContent
+            .postOf(event, site)
+            .text
+            .lines()
+            .filter { it.startsWith("**") }
+
     @Test
-    fun `says what, when, where and for how much, and links the event page and its sign-up`() {
+    fun `says the title, the description, when, where and for how much, then the roles, and links the event page and its sign-up`() {
         val post = DiscordPostContent.postOf(event, site)
 
         assertThat(post.pingedRoleIds).containsExactly("901", "902")
-        assertThat(post.embed.title).isEqualTo("LAN party")
-        assertThat(post.embed.url).isEqualTo("https://esa-blueshell.nl/events/42")
-        assertThat(post.embed.description).isEqualTo("Bring your own rig.")
+        assertThat(post.text).isEqualTo(
+            """
+            ## LAN party
+
+            Bring your own rig.
+
+            **When:** `10 Oct 2026 - 20:00-23:00`
+            **Where:** Pakhuis
+            **Price:** €5.00 for members, €7.50 for others
+            **Signed up:** 10/30
+            **Sign up before:** `9 Oct 2026 - 00:00`
+
+            <@&901> <@&902>
+            """.trimIndent(),
+        )
         assertThat(post.links).containsExactly(
             DiscordLink("More on the site", "https://esa-blueshell.nl/events/42"),
             DiscordLink("Sign up", "https://esa-blueshell.nl/events/42#signup"),
         )
-        assertThat(post.embed.fields).containsExactly(
-            "When" to "`10 Oct 2026 - 20:00-23:00`",
-            "Where" to "Pakhuis",
-            "Price" to "€5.00 for members, €7.50 for others",
-            "Signed up" to "10/30",
-            "Sign up before" to "`9 Oct 2026 - 00:00`",
-        )
+    }
+
+    @Test
+    fun `leaves out a description and mentions the event does not have`() {
+        val post = DiscordPostContent.postOf(event.copy(description = " ", pingedRoleIds = emptyList()), site)
+
+        assertThat(post.text).startsWith("## LAN party\n\n**When:**").endsWith("**Sign up before:** `9 Oct 2026 - 00:00`")
     }
 
     @Test
@@ -68,19 +88,22 @@ class DiscordPostContentTest {
             )
 
         assertThat(post.links.map { it.label }).containsExactly("More on the site")
-        assertThat(post.embed.fields.map { it.first }).doesNotContain("Signed up")
-        assertThat(post.embed.fields).containsExactly(
-            "When" to "`10 Oct 2026 - 20:00 to 11 Oct 2026 - 14:00`",
-            "Price" to "Free",
-            "Members only" to "Yes",
+        assertThat(post.text.lines().filter { it.startsWith("**") }).containsExactly(
+            "**When:** `10 Oct 2026 - 20:00 to 11 Oct 2026 - 14:00`",
+            "**Price:** Free",
+            "**Members only:** Yes",
         )
     }
 
     @Test
-    fun `says the whole description, however long a description may be`() {
-        val whole = "w".repeat(DESCRIPTION_MAX - 5) + " word"
+    fun `says the whole description where it fits, and cuts one near the cap to what Discord takes, roles kept`() {
+        val whole = "w".repeat(3000) + " word"
+        val long = "word ".repeat(DESCRIPTION_MAX / 5)
 
-        assertThat(DiscordPostContent.postOf(event.copy(description = whole), site).embed.description).isEqualTo(whole)
+        assertThat(DiscordPostContent.postOf(event.copy(description = whole), site).text).contains("\n\n$whole\n\n")
+        val cut = DiscordPostContent.postOf(event.copy(description = long), site).text
+        assertThat(cut.length).isLessThanOrEqualTo(DISCORD_TEXT_MAX).isGreaterThan(DISCORD_TEXT_MAX - 10)
+        assertThat(cut).contains("word…\n\n**When:**").endsWith("<@&901> <@&902>")
     }
 
     @Test
@@ -110,11 +133,9 @@ class DiscordPostContentTest {
 
     @Test
     fun `counts sign-ups against no limit as a bare number, and against a limit of none as full`() {
-        val fields =
-            DiscordPostContent.postOf(event.copy(signUpLimit = null), site).embed.fields +
-                DiscordPostContent.postOf(event.copy(signUpLimit = 0, signUpCount = 3), site).embed.fields
+        val details = detailsOf(event.copy(signUpLimit = null)) + detailsOf(event.copy(signUpLimit = 0, signUpCount = 3))
 
-        assertThat(fields.filter { it.first == "Signed up" }.map { it.second }).containsExactly("10", "3/0")
+        assertThat(details.filter { it.startsWith("**Signed up:**") }).containsExactly("**Signed up:** 10", "**Signed up:** 3/0")
     }
 
     @Test
@@ -127,19 +148,14 @@ class DiscordPostContentTest {
 
     @Test
     fun `leaves out a sign-up deadline that falls at the start`() {
-        val post = DiscordPostContent.postOf(event.copy(signUpDeadline = event.startTime), site)
-
-        assertThat(post.embed.fields.map { it.first }).doesNotContain("Sign up before")
+        assertThat(DiscordPostContent.postOf(event.copy(signUpDeadline = event.startTime), site).text).doesNotContain("Sign up before")
     }
 
     @Test
     fun `writes September as Sept`() {
-        val post =
-            DiscordPostContent.postOf(
-                event.copy(startTime = Instant.parse("2026-09-24T17:00:00Z"), endTime = Instant.parse("2026-09-24T18:00:00Z")),
-                site,
-            )
+        val details =
+            detailsOf(event.copy(startTime = Instant.parse("2026-09-24T17:00:00Z"), endTime = Instant.parse("2026-09-24T18:00:00Z")))
 
-        assertThat(post.embed.fields.first()).isEqualTo("When" to "`24 Sept 2026 - 19:00-20:00`")
+        assertThat(details.first()).isEqualTo("**When:** `24 Sept 2026 - 19:00-20:00`")
     }
 }

@@ -48,9 +48,11 @@ of what it contains.**
   Calendar and link previews name emoji and mentions in words, write
   timestamps as Amsterdam dates, and never show a spoiler's text. No email
   carries a description.
-- A description is capped at 4096 characters, Discord's limit for an embed
-  description, counted as stored. The event post carries its links as buttons,
-  so the embed holds the whole description.
+- A description is capped at 4096 characters, counted as stored. The event
+  post is plain text, sent as a message laid out in components, which holds
+  4000 characters. The title, the details and the mentions come first, and
+  the description takes what they leave: whole, but for one near the cap,
+  which is cut at a word. The post's button leads to the whole text.
 
 ## Consequences
 

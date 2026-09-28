@@ -5,23 +5,22 @@ import java.time.LocalTime
 import java.time.ZoneId
 
 /**
- * Which of the bot's things should stand for an event at a moment. [firstDayHasCome] is when an
- * events-info post due earlier may go out on a change rather than wait for the morning run.
- * [startedBeforeToday] marks an event nothing new is made for: its posts, if any, predate the bot
- * or were made on an earlier day, and what is already out is kept.
+ * Which of the bot's things should stand for an event at a moment. [withinTwoWeeks] governs the
+ * events-info post and the Discord event, [calendarPost] the events-calendar post, which comes down
+ * for good once [calendarPostOver].
  */
 data class DiscordPostsDue(
-    val infoPost: Boolean,
+    val withinTwoWeeks: Boolean,
     val calendarPost: Boolean,
+    val calendarPostOver: Boolean,
     val over: Boolean,
-    val firstDayHasCome: Boolean,
-    val startedBeforeToday: Boolean,
 )
 
 /**
- * When the bot's posts about an event are due, in Amsterdam time: the events-info post and the
- * Discord event at 08:00 two weeks before the event's first day, the events-calendar post from
- * 08:00 on that day until 08:00 the morning after its last.
+ * When the bot's things for an event are due, in Amsterdam time: the events-info post and the
+ * Discord event while the event is within two weeks, from 08:00 fourteen days before its first day
+ * until it is over; the events-calendar post from 08:00 on that day until 08:00 the morning after
+ * its last.
  */
 object DiscordPostSchedule {
     const val ZONE_ID = "Europe/Amsterdam"
@@ -29,7 +28,9 @@ object DiscordPostSchedule {
     private val MORNING: LocalTime = LocalTime.of(8, 0)
     private const val LEAD_DAYS = 14L
 
-    fun infoPostAt(start: Instant): Instant = morningOf(start, -LEAD_DAYS)
+    fun withinTwoWeeksFrom(start: Instant): Instant = morningOf(start, -LEAD_DAYS)
+
+    fun calendarPostFrom(start: Instant): Instant = morningOf(start, 0)
 
     fun due(
         start: Instant,
@@ -37,14 +38,12 @@ object DiscordPostSchedule {
         now: Instant,
     ): DiscordPostsDue {
         val over = !now.isBefore(end)
-        val firstDayHasCome = !now.isBefore(morningOf(start, 0))
-        val startedBeforeToday = start.atZone(ZONE).toLocalDate().isBefore(now.atZone(ZONE).toLocalDate())
+        val calendarPostOver = !now.isBefore(takeDownAt(end))
         return DiscordPostsDue(
-            infoPost = !over && !startedBeforeToday && !now.isBefore(infoPostAt(start)),
-            calendarPost = firstDayHasCome && now.isBefore(takeDownAt(end)),
+            withinTwoWeeks = !over && !now.isBefore(withinTwoWeeksFrom(start)),
+            calendarPost = !now.isBefore(calendarPostFrom(start)) && !calendarPostOver,
+            calendarPostOver = calendarPostOver,
             over = over,
-            firstDayHasCome = firstDayHasCome,
-            startedBeforeToday = startedBeforeToday,
         )
     }
 

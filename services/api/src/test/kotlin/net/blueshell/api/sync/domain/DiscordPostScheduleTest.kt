@@ -21,25 +21,18 @@ class DiscordPostScheduleTest {
     ) = DiscordPostSchedule.due(start, endsAt, at(now))
 
     @Test
-    fun `announces at 08 00 Amsterdam time two weeks before the event's day, and not before`() {
-        assertThat(DiscordPostSchedule.infoPostAt(start)).isEqualTo(at("2026-09-26T08:00"))
-        assertThat(due("2026-09-26T07:59").infoPost).isFalse()
-        assertThat(due("2026-09-26T08:00").infoPost).isTrue()
-        assertThat(due("2026-10-02T08:00").infoPost).isTrue()
+    fun `is within two weeks from 08 00 Amsterdam time fourteen days before the event's day, whatever its hour`() {
+        assertThat(DiscordPostSchedule.withinTwoWeeksFrom(start)).isEqualTo(at("2026-09-26T08:00"))
+        assertThat(due("2026-09-26T07:59").withinTwoWeeks).isFalse()
+        assertThat(due("2026-09-26T08:00").withinTwoWeeks).isTrue()
+        assertThat(due("2026-10-02T14:00").withinTwoWeeks).isTrue()
     }
 
     @Test
     fun `keeps to 08 00 Amsterdam time across the clocks going back`() {
         // Clocks go back on 25 October 2026; an event on 1 November is announced at 08:00 CEST.
         val november = at("2026-11-01T20:00")
-        assertThat(DiscordPostSchedule.infoPostAt(november)).isEqualTo(Instant.parse("2026-10-18T06:00:00Z"))
-    }
-
-    @Test
-    fun `says when the event's own day has come, from 08 00`() {
-        assertThat(due("2026-10-05T10:00").firstDayHasCome).isFalse()
-        assertThat(due("2026-10-10T07:59").firstDayHasCome).isFalse()
-        assertThat(due("2026-10-10T08:00").firstDayHasCome).isTrue()
+        assertThat(DiscordPostSchedule.withinTwoWeeksFrom(november)).isEqualTo(Instant.parse("2026-10-18T06:00:00Z"))
     }
 
     @Test
@@ -62,8 +55,16 @@ class DiscordPostScheduleTest {
     }
 
     @Test
-    fun `posts no events-info post for an event that is over`() {
-        assertThat(due("2026-10-10T23:00").infoPost).isFalse()
+    fun `says when the day post has come down for good`() {
+        assertThat(due("2026-10-05T10:00").calendarPostOver).isFalse()
+        assertThat(due("2026-10-11T07:59").calendarPostOver).isFalse()
+        assertThat(due("2026-10-11T08:00").calendarPostOver).isTrue()
+    }
+
+    @Test
+    fun `is no longer within two weeks once the event is over`() {
+        assertThat(due("2026-10-10T22:59").withinTwoWeeks).isTrue()
+        assertThat(due("2026-10-10T23:00").withinTwoWeeks).isFalse()
     }
 
     @Test
@@ -73,12 +74,10 @@ class DiscordPostScheduleTest {
     }
 
     @Test
-    fun `makes nothing new for an event whose first day is before today`() {
-        // Friday to Sunday: announced up to the Friday, not on the Saturday it is still running.
+    fun `keeps a running event within two weeks and its day post due, on every day it runs`() {
+        // Friday to Sunday: still due on the Saturday, when an event approved then gets its posts.
         val sunday = at("2026-10-12T16:00")
-        assertThat(due("2026-10-10T21:00", endsAt = sunday).infoPost).isTrue()
-        assertThat(due("2026-10-11T09:00", endsAt = sunday).infoPost).isFalse()
-        assertThat(due("2026-10-11T09:00", endsAt = sunday).startedBeforeToday).isTrue()
-        assertThat(due("2026-10-10T09:00", endsAt = sunday).startedBeforeToday).isFalse()
+        assertThat(due("2026-10-11T09:00", endsAt = sunday).withinTwoWeeks).isTrue()
+        assertThat(due("2026-10-11T09:00", endsAt = sunday).calendarPost).isTrue()
     }
 }

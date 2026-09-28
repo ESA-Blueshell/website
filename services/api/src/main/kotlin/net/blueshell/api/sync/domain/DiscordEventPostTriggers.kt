@@ -27,7 +27,7 @@ class DiscordEventPostTriggers(
     internal var clock: Clock = Clock.systemUTC()
 
     @ApplicationModuleListener
-    fun on(event: EventChanged) = queue(event.eventId, morning = false)
+    fun on(event: EventChanged) = queue(event.eventId)
 
     // Only the posts show the count, and only one already out has it to change.
     @ApplicationModuleListener
@@ -55,37 +55,27 @@ class DiscordEventPostTriggers(
     fun runMorning(): Int {
         val now = clock.instant()
         val near = events.approvedOverlapping(now.minus(MORNING_BEHIND), now.plus(MORNING_AHEAD))
-        near.forEach { queue(it, morning = true) }
+        near.forEach(::queue)
         return near.size
     }
 
-    // A late events-info post waits for the next morning run, unless the event's own day has come.
-    private fun queue(
-        eventId: Long,
-        morning: Boolean,
-    ) {
+    private fun queue(eventId: Long) {
         val due =
             events
                 .of(eventId)
                 ?.takeIf { it.live }
                 ?.let { DiscordPostSchedule.due(it.startTime, it.endTime, clock.instant()) }
-        val announced = out(eventId, DiscordArtefact.INFO_POST)
         val payload = DiscordPostJobs.EventPostPayload(eventId)
-        if (announced || mayAnnounce(due, morning)) {
+        if (out(eventId, DiscordArtefact.INFO_POST) || due?.withinTwoWeeks == true) {
             jobs.runAsync(DiscordPostJobs.Announcement, payload)
         }
-        if (out(eventId, DiscordArtefact.CALENDAR_POST) || (due?.calendarPost == true && !due.startedBeforeToday)) {
+        if (out(eventId, DiscordArtefact.CALENDAR_POST) || due?.calendarPost == true) {
             jobs.runAsync(DiscordPostJobs.CalendarPost, payload)
         }
-        if (out(eventId, DiscordArtefact.DISCORD_EVENT) || (announced && due?.over == false)) {
+        if (out(eventId, DiscordArtefact.DISCORD_EVENT) || due?.withinTwoWeeks == true) {
             jobs.runAsync(DiscordPostJobs.DiscordEvent, payload)
         }
     }
-
-    private fun mayAnnounce(
-        due: DiscordPostsDue?,
-        morning: Boolean,
-    ) = due != null && due.infoPost && (morning || due.firstDayHasCome)
 
     private fun out(
         eventId: Long,

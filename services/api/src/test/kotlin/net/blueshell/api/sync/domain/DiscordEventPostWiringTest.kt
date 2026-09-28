@@ -6,7 +6,6 @@ import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.jobs.api.JobOutcome
-import net.blueshell.api.shared.job.DiscordPostJobs
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.QueuedJob
@@ -22,7 +21,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -40,7 +38,7 @@ class DiscordEventPostWiringTest {
     private val mapper = JsonMapper.builder().build()
 
     @Test
-    fun `runs each job on the event it names, queueing the Discord event once the events-info post is up`() {
+    fun `runs each job on the event it names`() {
         val posts: DiscordEventPosts =
             mock {
                 on { keepAnnouncement(42, false) } doReturn Kept(made = true)
@@ -48,10 +46,9 @@ class DiscordEventPostWiringTest {
                 on { keepCalendarPost(42, false) } doReturn Kept()
                 on { keepDiscordEvent(42, false) } doReturn Kept()
             }
-        val jobs: JobQueue = mock()
         val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
         val lock = DiscordEventLock(repository)
-        val announcement = DiscordAnnouncementJob(mapper, posts, lock, jobs)
+        val announcement = DiscordAnnouncementJob(mapper, posts, lock)
         val calendar = DiscordCalendarPostJob(mapper, posts, lock)
         val listing = DiscordEventJob(mapper, posts, lock)
 
@@ -63,8 +60,6 @@ class DiscordEventPostWiringTest {
         verify(posts).keepCalendarPost(42, false)
         verify(posts).keepDiscordEvent(42, false)
         verify(repository, times(4)).releaseNamedLock(any())
-        verify(jobs).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(42))
-        verify(jobs, never()).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(7))
         assertThat(listOf(announcement.jobType, calendar.jobType, listing.jobType))
             .containsExactly("discord.announcement", "discord.post", "discord.event")
         assertThat(listOf(announcement, calendar, listing).map { it.retrySchedule?.maxRetries }).containsOnly(10)
@@ -80,15 +75,13 @@ class DiscordEventPostWiringTest {
             }
         val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
         val lock = DiscordEventLock(repository)
-        val jobs: JobQueue = mock()
 
-        assertThat(DiscordAnnouncementJob(mapper, posts, lock, jobs).runJob("""{"eventId": 42}""", forced = true))
+        assertThat(DiscordAnnouncementJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
             .isEqualTo(JobOutcome.Skipped("The event is over."))
         assertThat(DiscordCalendarPostJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
             .isEqualTo(JobOutcome.Skipped("The event's day is over."))
         assertThat(DiscordEventJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
             .isEqualTo(JobOutcome.Done)
-        verify(jobs, never()).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(42))
     }
 
     private val lan =
@@ -147,10 +140,12 @@ class DiscordEventPostWiringTest {
     }
 
     @Test
-    fun `leaves a late events-info post for the next morning run, unless the event's day has come`() {
-        assertThat(changed("2026-10-05T10:00")).isEmpty()
-        assertThat(changed("2026-10-10T10:00")).containsExactly("discord.announcement", "discord.post")
-        assertThat(changed("2026-10-11T01:00", found = lan.copy(endTime = at("2026-10-11T03:00")))).isEmpty()
+    fun `queues the events-info post and the Discord event at once within two weeks, and the day post from its morning`() {
+        assertThat(changed("2026-09-26T07:59")).isEmpty()
+        assertThat(changed("2026-09-26T08:00")).containsExactly("discord.announcement", "discord.event")
+        assertThat(changed("2026-10-10T10:00")).containsExactly("discord.announcement", "discord.post", "discord.event")
+        assertThat(changed("2026-10-11T01:00", found = lan.copy(endTime = at("2026-10-11T03:00"))))
+            .containsExactly("discord.announcement", "discord.post", "discord.event")
     }
 
     @Test

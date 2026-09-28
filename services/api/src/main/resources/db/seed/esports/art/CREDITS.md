@@ -1,7 +1,7 @@
-# Game art
+# Team posters
 
-The art the site ships with. One file per image, fitted inside 2560x1440, aspect
-ratio untouched and nothing upscaled beyond its original. Converted to WebP at
+The poster each team ships with, per game it played. One file per image, fitted
+inside 2560x1440, aspect ratio untouched and nothing upscaled beyond its original. Converted to WebP at
 quality 82; nothing else was changed.
 
 Cut from the originals in `gameart/` at the repository root, which are the source of
@@ -14,32 +14,16 @@ being another file to keep in step with it.
 
 ## What is here
 
-| Game | Page banner | Team posters |
-|------|-------------|--------------|
-| Valorant | `valorant-banner` | `valorant-1` – `valorant-7` |
-| Counter-Strike 2 | `cs2-1` | `cs2-2`, `cs2-3` |
-| League of Legends | `lol-1` | `lol-1` – `lol-8` |
-| Rocket League | `rocket-league-1` | `rocket-league-1` – `rocket-league-3` |
-| GeoGuessr | `geoguessr-2` | `geoguessr-1` |
-| Trackmania | `trackmania-1` | `trackmania-2` |
-| CS:GO | `csgo-2` | `csgo-1`, `csgo-3` |
-| Super Smash Bros. | `smash-1` | `smash-2` |
-
-The casual games carry a banner and an icon and no team posters:
-
-| Game | Banner | Icon |
-|------|--------|------|
-| Teamfight Tactics | `teamfight-tactics-1` | `teamfight-tactics-icon` |
-| Minecraft | `minecraft-1` | `minecraft-icon` |
-| Pokémon | `pokemon-1` | `pokemon-icon` |
-| Hero shooters | `hero-shooters-1` | `hero-shooters-icon` |
-| Dota 2 | `dota-2-1` | `dota-2-icon` |
-| Overwatch | `overwatch-1` | `hero-shooters-icon` |
-
-Those banners and icons are the frontend's old casual band art (`services/frontend/src/assets`,
-620 pixels wide, the size it always shipped at) converted to WebP, except `overwatch-1`,
-which is cut from `gameart/overwatch-1.webp`. Chess, Fighting games and Wordle have no art
-yet and are drawn with their plate until somebody uploads one.
+| Game | Team posters |
+|------|--------------|
+| Valorant | `valorant-1` – `valorant-7` |
+| Counter-Strike 2 | `cs2-2`, `cs2-3` |
+| League of Legends | `lol-1` – `lol-8` |
+| Rocket League | `rocket-league-1` – `rocket-league-3` |
+| GeoGuessr | `geoguessr-1`, `geoguessr-2` |
+| Trackmania | `trackmania-2` |
+| CS:GO | `csgo-1`, `csgo-3` |
+| Super Smash Bros. | `smash-2` |
 
 `csgo-1` and `csgo-3` are Counter-Strike 2 images on a CS:GO team's poster. CS:GO has
 two originals of its own and fields three pictures, and the two used here are 4K where
@@ -50,8 +34,8 @@ League of Legends and Rocket League field more teams than they have art, so a
 picture there carries more than one team. CS:GO and Super Smash Bros. field nobody
 any more and keep their art for the seasons they played.
 
-Only what `teams.csv` and `banners.csv` name is here. Art held back rather than
-dropped — six further Valorant wallpapers, the smaller Rocket League logo and the
+Only what `teams.csv` names is here; the games' own banners and icons are in
+`db/seed/games/art`. Art held back rather than dropped — six further Valorant wallpapers, the smaller Rocket League logo and the
 remaining Counter-Strike, Smash and Trackmania images — stays in `gameart/` at the
 repository root, ready for a row that names it.
 

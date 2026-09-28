@@ -1,6 +1,5 @@
-package net.blueshell.api.esports.domain
+package net.blueshell.api.shared.seed
 
-import net.blueshell.api.shared.seed.SeedCsv
 import java.nio.charset.StandardCharsets.US_ASCII
 import java.nio.file.Files
 import java.nio.file.Path
@@ -14,18 +13,16 @@ import java.nio.file.Path
  *
  * @param seed the files that name the art.
  * @param resourceRoot where those files live in the source tree, as `src/<set>/resources`.
+ * @param columns each seed file that names art, with the column it names it in.
  */
 class ShippedArtInventory(
     private val seed: SeedCsv,
     private val resourceRoot: String,
+    vararg columns: Pair<String, String>,
 ) {
     /** Every picture a row names, once. */
     val named: Set<String> =
-        (
-            seed.rows("teams.csv").mapNotNull { it["banner"]?.ifBlank { null } } +
-                seed.rows("banners.csv").map { it.getValue("banner") } +
-                seed.rows("icons.csv").map { it.getValue("icon") }
-        ).toSet()
+        columns.flatMap { (csv, column) -> seed.rows(csv).mapNotNull { it[column]?.ifBlank { null } } }.toSet()
 
     /** Named art that nobody committed. */
     fun missing(): List<String> = named.filterNot { exists(it) }.sorted()
@@ -49,6 +46,8 @@ class ShippedArtInventory(
 
     /** The directory the art is read from, for a failure to name. */
     val directory: String get() = "$resourceRoot/${seed.directory}/art"
+
+    override fun toString(): String = directory
 
     private data class Art(
         val name: String,

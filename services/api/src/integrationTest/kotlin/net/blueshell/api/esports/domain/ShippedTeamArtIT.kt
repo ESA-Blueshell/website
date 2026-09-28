@@ -4,15 +4,13 @@ import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.FileService
+import net.blueshell.api.file.api.ShippedPictures
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
-import net.blueshell.api.game.api.GameBlanks
-import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.EsportsSeedFixture
 import net.blueshell.api.testsupport.UserTestSupport
-import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -26,7 +24,7 @@ import java.nio.file.Paths
 import javax.sql.DataSource
 
 /**
- * The art the repository ships lands on the records the seed files name.
+ * The posters the repository ships land on the teams the seed files name.
  *
  * Run against the real converter and the real storage volume, because the point of the step is
  * that the bytes are there and are served at the widths a caller asks for. What a picture is
@@ -38,18 +36,14 @@ import javax.sql.DataSource
  * and the fixture art carries the widths these cases name.
  */
 @SpringBootTest
-class ShippedArtIT : UserTestSupport() {
+class ShippedTeamArtIT : UserTestSupport() {
     @Autowired private lateinit var dataSource: DataSource
 
-    @Autowired private lateinit var users: UserService
+    @Autowired private lateinit var pictures: ShippedPictures
 
     @Autowired private lateinit var teams: TeamRepository
 
     @Autowired private lateinit var fielded: TeamSeasonRepository
-
-    @Autowired private lateinit var games: GameRepository
-
-    @Autowired private lateinit var blanks: GameBlanks
 
     @Autowired private lateinit var files: FileService
 
@@ -59,9 +53,7 @@ class ShippedArtIT : UserTestSupport() {
     private lateinit var storageLocation: String
 
     /** The step under test, reading the fixture seed rather than the one the site ships. */
-    private val art: ShippedArt by lazy {
-        ShippedArt(files, users, teams, fielded, blanks, transactionTemplate, EsportsSeedFixture.files)
-    }
+    private val art: ShippedTeamArt by lazy { ShippedTeamArt(pictures, teams, fielded, EsportsSeedFixture.files) }
 
     @BeforeEach
     fun loadTheRecords() {
@@ -124,7 +116,7 @@ class ShippedArtIT : UserTestSupport() {
 
         val masters =
             stored.findSourcesOfTypes(
-                listOf(FileType.TEAM_BANNER, FileType.GAME_BANNER, FileType.GAME_ICON),
+                listOf(FileType.TEAM_BANNER),
             )
         assertThat(masters).isNotEmpty
 
@@ -143,73 +135,6 @@ class ShippedArtIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game the file gives art to has a banner of its own`() {
-        art.apply()
-
-        val valorant = games.findByCode("ALPHA")
-        assertThat(valorant?.banner).isNotNull
-        assertThat(valorant?.banner?.type).isEqualTo(FileType.GAME_BANNER)
-    }
-
-    @Test
-    fun `a game the file gives an icon to has one of its own`() {
-        art.apply()
-
-        val valorant = games.findByCode("ALPHA")
-        assertThat(valorant?.icon).isNotNull
-        assertThat(valorant?.icon?.type).isEqualTo(FileType.GAME_ICON)
-    }
-
-    @Test
-    fun `an icon is stored at the widths an icon of its kind is served at`() {
-        art.apply()
-
-        val icon = games.findByCode("ALPHA")?.icon!!
-        // The art is 256 wide, so the ladder stops there rather than inventing a 512.
-        assertThat(icon.width).isEqualTo(256)
-        assertThat(icon.renditions.mapNotNull { it.renditionWidth }).containsExactly(128, 256)
-        assertThat(files.findPublicImage(icon.path, FileType.GAME_ICON)).isNotNull
-    }
-
-    /**
-     * Every game, including the one nothing is said about.
-     *
-     * A logo existed in the frontend for each game, and which of them was drawn was a separate
-     * question from which of them had one — some were simply never wired up. Every game the
-     * files list is wired up here.
-     */
-    @Test
-    fun `every game the file names carries an icon`() {
-        art.apply()
-
-        val without = EsportsSeedFixture.GAMES.filter { games.findByCode(it)?.icon == null }
-
-        assertThat(without).describedAs("games the shipped icons did not reach").isEmpty()
-    }
-
-    @Test
-    fun `a game keeps its own icon rather than its predecessor's`() {
-        art.apply()
-
-        // Two games a reader takes for one history are still two logos to draw.
-        assertThat(games.findByCode("ALPHA")?.icon?.path)
-            .isNotEqualTo(games.findByCode("BETA")?.icon?.path)
-    }
-
-    @Test
-    fun `an icon somebody chose is not replaced either`() {
-        art.apply()
-        val chosen = games.findByCode("ALPHA")?.icon!!
-        val gamma = games.findByCode("GAMMA")!!
-        gamma.icon = chosen
-        games.save(gamma)
-
-        art.apply()
-
-        assertThat(games.findByCode("GAMMA")?.icon?.path).isEqualTo(chosen.path)
-    }
-
-    @Test
     fun `two teams given the same picture share one stored file`() {
         art.apply()
 
@@ -225,9 +150,8 @@ class ShippedArtIT : UserTestSupport() {
 
         val second = art.apply()
 
-        assertThat(first.teamPictures).isGreaterThan(0)
-        assertThat(first.gamePictures).isGreaterThan(0)
-        assertThat(second).isEqualTo(ShippedArt.Applied(teamPictures = 0, gamePictures = 0))
+        assertThat(first).isGreaterThan(0)
+        assertThat(second).isZero()
     }
 
     @Test
@@ -243,21 +167,6 @@ class ShippedArtIT : UserTestSupport() {
         // cached, which only holds because the art is stored whether or not a slot wants it.
         assertThat(Files.exists(bytes)).isTrue()
         assertThat(bannerOf("ALPHA", "Nomads")?.path).isEqualTo(banner.path)
-    }
-
-    @Test
-    fun `an icon whose bytes have gone missing is written again at the address it had`() {
-        art.apply()
-        val icon = games.findByCode("ALPHA")?.icon!!
-        val bytes = Paths.get(storageLocation).resolve(icon.path)
-        Files.delete(bytes)
-
-        art.apply()
-
-        // Asked of an icon as well as a banner because the two are stored by separate steps,
-        // and a volume that repairs half of itself leaves the whole site half drawn.
-        assertThat(Files.exists(bytes)).isTrue()
-        assertThat(games.findByCode("ALPHA")?.icon?.path).isEqualTo(icon.path)
     }
 
     @Test
@@ -278,16 +187,6 @@ class ShippedArtIT : UserTestSupport() {
 
         // An admin's choice is later than the import, so the import leaves it alone.
         assertThat(bannerOf("ALPHA", "Nomads")?.path).isEqualTo(chosen.path)
-    }
-
-    @Test
-    fun `a game banner somebody chose is not replaced either`() {
-        art.apply()
-        val before = games.findByCode("BETA")?.banner?.path
-
-        art.apply()
-
-        assertThat(games.findByCode("BETA")?.banner?.path).isEqualTo(before)
     }
 
     private fun pngOf(): ByteArray {

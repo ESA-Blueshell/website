@@ -20,7 +20,7 @@ import org.springframework.modulith.PackageInfo
         "shared",
         // A team, a fielding and a game account point at a game by its code, read through GameService.
         "game :: api",
-        // The public listing maps a Game row, and the shipped art is put on one.
+        // The public listing maps a Game row.
         "game :: entities",
         // Banners and roster icons are uploaded through FileService.
         "file :: api",

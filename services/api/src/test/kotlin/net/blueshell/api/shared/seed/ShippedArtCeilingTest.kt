@@ -1,8 +1,8 @@
-package net.blueshell.api.esports.domain
+package net.blueshell.api.shared.seed
 
-import net.blueshell.api.testsupport.EsportsSeedFixture
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 /**
  * The art a seed ships fits inside 1440p.
@@ -13,13 +13,12 @@ import org.junit.jupiter.api.Test
  * rather than written down somewhere, which is the kind of rule that holds until the next person adds a
  * picture: the failure is a page that weighs more than it should, which nobody notices by eye.
  *
- * The rule is proven against the fixture seed; [ShippedArtRealSeedTest] asks it of what the site ships.
+ * The rule is proven against the fixture seeds; [ShippedArtRealSeedTest] asks it of what the site ships.
  */
 class ShippedArtCeilingTest {
-    private val inventory = ShippedArtInventory(EsportsSeedFixture.files, "src/test/resources")
-
-    @Test
-    fun `no picture is wider or taller than 1440p`() {
+    @ParameterizedTest
+    @MethodSource("net.blueshell.api.shared.seed.ShippedArtFilesTest#inventories")
+    fun `no picture is wider or taller than 1440p`(inventory: ShippedArtInventory) {
         assertThat(inventory.oversized(ShippedArtInventory.MAX_WIDTH, ShippedArtInventory.MAX_HEIGHT))
             .describedAs(
                 "art over %dx%d under %s; fit it inside that box",
@@ -30,8 +29,9 @@ class ShippedArtCeilingTest {
     }
 
     /** A guard on the test above, which passes against a directory it failed to read. */
-    @Test
-    fun `there is art to measure, and every file of it could be read`() {
+    @ParameterizedTest
+    @MethodSource("net.blueshell.api.shared.seed.ShippedArtFilesTest#inventories")
+    fun `there is art to measure, and every file of it could be read`(inventory: ShippedArtInventory) {
         assertThat(inventory.named).isNotEmpty()
         assertThat(inventory.unreadable())
             .describedAs("art whose size could not be read")

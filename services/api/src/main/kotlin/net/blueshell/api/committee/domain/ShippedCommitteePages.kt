@@ -110,7 +110,10 @@ class ShippedCommitteePages(
     }
 }
 
-/** A separate bean so the transaction is opened by the proxy, and a failure never blocks start-up. */
+/**
+ * Loads the committee pages that ship once the application is up. A failure is logged, never thrown, so it
+ * cannot block start-up.
+ */
 @Component
 class ShippedCommitteePagesOnStartup(
     private val pages: ShippedCommitteePages,

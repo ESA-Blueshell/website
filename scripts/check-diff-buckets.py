@@ -174,6 +174,7 @@ FIXTURES = [
     ("gradlew.bat", {"meta"}),
     ("build.gradle.kts", {"meta"}),
     ("settings.gradle.kts", {"meta"}),
+    ("gradle.properties", {"meta"}),
     ("build-logic/src/main/kotlin/blueshell.kotlin-conventions.gradle.kts", {"meta"}),
     # Every script reaches the job that runs it. check-diff-buckets.py is
     # ignored because the `changes` job self-tests it on every pull request.

@@ -11,6 +11,7 @@ meta:
   - 'gradlew.bat'
   - 'build.gradle.kts'
   - 'settings.gradle.kts'
+  - 'gradle.properties'
   - 'build-logic/**'
   - '.github/actions/**'
 

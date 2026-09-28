@@ -69,8 +69,6 @@ env:
   BREVO_API_KEY: something
   BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
 
-  GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
-
 permissions:
   # `packages: read` resolves net.blueshell.clients:{brevo,discord}-client from
   # GitHub Packages, which requires a token even though the packages are public.

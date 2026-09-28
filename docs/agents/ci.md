@@ -52,8 +52,8 @@ Every script reaches the job that runs it, so `check-flux-manifests.sh` is `plat
 
 Three things sit outside the buckets.
 
-**`meta`** is what can change how every suite builds or runs: the Gradle wrapper and build
-logic, and `.github/actions/**`. A match turns on every bucket.
+**`meta`** is what can change how every suite builds or runs: the Gradle wrapper, build
+logic and `gradle.properties`, and `.github/actions/**`. A match turns on every bucket.
 
 **`ignore`** is what no job validates: `docs/**`, `gameart/**`, `infra/dns/**`, the editor and
 Renovate config, and the release-please manifest. A pull request touching only these runs

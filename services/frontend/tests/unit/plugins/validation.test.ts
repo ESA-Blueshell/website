@@ -44,7 +44,7 @@ describe("validation plugin helpers", () => {
   it("applies field errors to vee form context", () => {
     const setFieldError = vi.fn()
     const unattached = apply(
-      {setFieldError, values: {username: ""}} as never,
+      {setFieldError, values: {username: ""}},
       {
         response: {
           status: 400,
@@ -62,15 +62,15 @@ describe("validation plugin helpers", () => {
 
   it("returns null for non-validation errors", () => {
     const setFieldError = vi.fn()
-    expect(apply({setFieldError, values: {}} as never, {response: {status: 500, data: {}}})).toBeNull()
-    expect(apply({setFieldError, values: {}} as never, {foo: "bar"})).toBeNull()
+    expect(apply({setFieldError, values: {}}, {response: {status: 500, data: {}}})).toBeNull()
+    expect(apply({setFieldError, values: {}}, {foo: "bar"})).toBeNull()
     expect(setFieldError).not.toHaveBeenCalled()
   })
 
   it("attaches a nested backend path to the flat field its map names", () => {
     const setFieldError = vi.fn()
     const unattached = apply(
-      {setFieldError, values: {nationality: ""}} as never,
+      {setFieldError, values: {nationality: ""}},
       {
         response: {
           status: 400,
@@ -92,7 +92,7 @@ describe("validation plugin helpers", () => {
   it("never guesses a field from the last segment of a path", () => {
     const setFieldError = vi.fn()
     const unattached = apply(
-      {setFieldError, values: {country: "NL"}} as never,
+      {setFieldError, values: {country: "NL"}},
       {
         response: {
           status: 400,
@@ -113,7 +113,7 @@ describe("validation plugin helpers", () => {
   it("reports a mapped target the form is not rendering", () => {
     const setFieldError = vi.fn()
     const unattached = apply(
-      {setFieldError, values: {street: ""}} as never,
+      {setFieldError, values: {street: ""}},
       {
         response: {
           status: 400,
@@ -133,7 +133,7 @@ describe("validation plugin helpers", () => {
   it("reports an error for a field this form does not render rather than parking it", () => {
     const setFieldError = vi.fn()
     const unattached = apply(
-      {setFieldError, values: {street: ""}} as never,
+      {setFieldError, values: {street: ""}},
       {
         response: {
           status: 400,
@@ -152,7 +152,7 @@ describe("validation plugin helpers", () => {
   it("applies errors to a remapped field name when fieldMap provides a string target", () => {
     const setFieldError = vi.fn()
     apply(
-      {setFieldError, values: {banner: null}} as never,
+      {setFieldError, values: {banner: null}},
       {
         response: {
           status: 400,
@@ -169,7 +169,7 @@ describe("validation plugin helpers", () => {
   it("fans out to multiple frontend fields when fieldMap provides an array target", () => {
     const setFieldError = vi.fn()
     apply(
-      {setFieldError, values: {startDate: "", startTime: ""}} as never,
+      {setFieldError, values: {startDate: "", startTime: ""}},
       {
         response: {
           status: 400,
@@ -190,7 +190,7 @@ describe("validation plugin helpers", () => {
   it("falls back to original field name for unmapped fields even when fieldMap is provided", () => {
     const setFieldError = vi.fn()
     apply(
-      {setFieldError, values: {title: "", startDate: "", startTime: ""}} as never,
+      {setFieldError, values: {title: "", startDate: "", startTime: ""}},
       {
         response: {
           status: 400,

@@ -54,7 +54,7 @@ describe("the server's own emoji", () => {
     const first = emojiCompletion(new CompletionContext(state, 5, false))?.options[0]
 
     expect(first?.apply).toBe("<:POGGERS:657733730491826186>")
-    expect((emojiOption.render(first as never) as HTMLImageElement).getAttribute("src"))
+    expect((emojiOption.render(first!) as HTMLImageElement).getAttribute("src"))
       .toBe("https://cdn.discordapp.com/emojis/657733730491826186.webp?size=48")
   })
 

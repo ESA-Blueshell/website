@@ -87,6 +87,16 @@ export default [
         },
     },
     {
+        // Cast to never, a mocked answer is not checked against the api's types at all.
+        files: ['tests/unit/**/*.ts'],
+        rules: {
+            'no-restricted-syntax': ['error', {
+                selector: 'TSAsExpression > TSNeverKeyword.typeAnnotation',
+                message: 'Build it typed: answer, emptyAnswer or refusal for an SDK call, apiFixtures for a record.',
+            }],
+        },
+    },
+    {
         files: ['vite.config.mjs', 'playwright.config.ts'],
         languageOptions: {
             globals: {

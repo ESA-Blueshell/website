@@ -42,8 +42,8 @@ describe("countries composable helpers", () => {
 
   it("applies custom country filter", () => {
     const nl = cca2Map.get("NL")!
-    const matches = customFilterForCountry("", "dutch", {raw: nl} as never)
-    const misses = customFilterForCountry("", "not-a-country", {raw: nl} as never)
+    const matches = customFilterForCountry("", "dutch", {raw: nl})
+    const misses = customFilterForCountry("", "not-a-country", {raw: nl})
     expect(matches).toBe(true)
     expect(misses).toBe(false)
   })

@@ -278,8 +278,11 @@ function resolveTargets(field: string, fieldMap: FieldMap | undefined, paths: Se
  * not render in a bag that nothing renders, so reporting the attachment is what
  * keeps a rejection the form cannot show from passing as one it did.
  */
+/** The two parts of a form a rejection is written onto. */
+export type RejectableForm = Pick<FormContext, "values" | "setFieldError">
+
 export function apply(
-  formContext: FormContext,
+  formContext: RejectableForm,
   err: unknown,
   fieldMap?: FieldMap
 ): UnattachedErrors | null {

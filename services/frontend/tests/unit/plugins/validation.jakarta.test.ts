@@ -65,7 +65,7 @@ describe("a Jakarta refusal", () => {
   it("puts a nested path on the field that renders it", () => {
     const form = formOn({members: [{userId: 3, role: "Chair"}]})
 
-    const left = apply(form as never, refusal([
+    const left = apply(form, refusal([
       {objectName: "committeeRequest", field: "members[0].userId", message: "must not be null", code: "NotNull"},
     ]))
 
@@ -76,7 +76,7 @@ describe("a Jakarta refusal", () => {
   it("says out loud what names no field of this form, rather than parking it", () => {
     const form = formOn({email: ""})
 
-    const left = apply(form as never, refusal([
+    const left = apply(form, refusal([
       {objectName: "createUserRequest", field: "memberProfile.studyProgramme", message: "must not be blank", code: "NotBlank"},
     ]))
 
@@ -87,7 +87,7 @@ describe("a Jakarta refusal", () => {
   it("says a global refusal out loud, since it names no field at all", () => {
     const form = formOn({startDate: "", endDate: ""})
 
-    const left = apply(form as never, refusal([
+    const left = apply(form, refusal([
       {objectName: "contributionPeriodRequest", field: null, message: "The end cannot precede the start.", code: "ValidPeriod"},
     ]))
 
@@ -104,7 +104,7 @@ describe("a Jakarta refusal", () => {
   it("puts a field the form maps elsewhere on the field it maps to", () => {
     const form = formOn({startDate: "", startTime: ""})
 
-    apply(form as never, refusal([
+    apply(form, refusal([
       {objectName: "eventRequest", field: "startTime", message: "must be in the future", code: "Future"},
     ]), {startTime: ["startDate", "startTime"]})
 
@@ -114,7 +114,7 @@ describe("a Jakarta refusal", () => {
   it("drops a refusal that names neither a field nor a reason", () => {
     const form = formOn({startDate: ""})
 
-    const left = apply(form as never, refusal([
+    const left = apply(form, refusal([
       {objectName: "contributionPeriodRequest", field: null, message: undefined, code: "ValidPeriod"},
     ]))
 

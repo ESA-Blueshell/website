@@ -46,7 +46,20 @@
     "tests/unit/domains/jobs/adapters/triggering.test.ts",
     "tests/unit/domains/jobs/reading.test.ts",
     "tests/unit/domains/auth/refusals.test.ts",
-    "tests/unit/domains/auth/securityEvents.test.ts"
+    "tests/unit/domains/auth/securityEvents.test.ts",
+    "tests/unit/services/api/blueshell.runtime.test.ts",
+    "tests/unit/plugins/store.test.ts",
+    "tests/unit/plugins/validation.test.ts",
+    "tests/unit/plugins/validation.jakarta.test.ts",
+    "tests/unit/plugins/validation.rules.test.ts",
+    "tests/unit/plugins/goto.test.ts",
+    "tests/unit/composables/formUtils.test.ts",
+    "tests/unit/composables/countries.test.ts",
+    "tests/unit/composables/useUserRows.test.ts",
+    "tests/unit/components/form/fields/apiErrors.test.ts",
+    "tests/unit/components/island/BandSwipe.test.ts",
+    "tests/unit/components/island/serverEmoji.test.ts",
+    "tests/unit/pages/Board.test.ts"
   ],
   "exclude": [
     "dist",

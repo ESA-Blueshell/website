@@ -35,7 +35,9 @@ const SECURITY_LOOKS: Record<AccountSecurityStanding, {icon: string; color?: str
 
 export const securityLook = (standing: AccountSecurityStanding) => SECURITY_LOOKS[standing]
 
-export function deriveAccountSecurity(user: EditableUser): AccountSecurityStanding {
+export function deriveAccountSecurity(
+  user: Pick<EditableUser, "locked" | "awaitingReenrolment" | "twoFactorOn">,
+): AccountSecurityStanding {
   if (user.locked) return "locked"
   if (user.awaitingReenrolment) return "awaiting-reenrolment"
   return user.twoFactorOn ? "two-factor" : "no-two-factor"

@@ -1,7 +1,7 @@
 import {computed, ref} from "vue"
 import type {FormContext} from "vee-validate"
 import {useStore} from "vuex"
-import {apply, type FieldMap} from "@/plugins/validation.ts"
+import {apply, type FieldMap, type RejectableForm} from "@/plugins/validation.ts"
 import {$handleNetworkError, $showStatusMessage} from "@/plugins/handleNetworkError.ts"
 import type {CountryCode} from "libphonenumber-js/max"
 import {useIsBoard} from "@/composables/useIsBoard"
@@ -39,7 +39,7 @@ export function useSaving() {
  * where pressing the button appears to do nothing at all.
  */
 export function handleSubmitError(
-  formRef: FormContext | undefined,
+  formRef: RejectableForm | undefined,
   err: unknown,
   fieldMap?: FieldMap
 ): boolean {

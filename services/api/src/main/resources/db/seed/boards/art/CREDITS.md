@@ -83,7 +83,7 @@ portrait uploaded through the api reaches 640 as well.
 
 These are the association's own photographs of its own boards, taken by or for the
 association and published on its own board page since the year each board sat.
-Nothing here is publisher art and none of the notes in `db/seed/esports/art` apply.
+Nothing here is publisher art and none of the notes in `db/seed/esports/art` or `db/seed/games/art` apply.
 
 Each photograph is of identifiable people who are or were members. Somebody asking
 for their portrait to come off the page is asking for a row to be edited and a file

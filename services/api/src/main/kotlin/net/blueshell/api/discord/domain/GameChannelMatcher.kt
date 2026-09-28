@@ -113,7 +113,10 @@ class GameChannelMatcher(
     }
 }
 
-/** A separate bean so the transaction is opened by the proxy, and a failure never blocks start-up. */
+/**
+ * Matches game channels once the application is up and on every reconnect. A failure is logged,
+ * never thrown, so it cannot block start-up.
+ */
 @Component
 class GameChannelMatcherOnStartup(
     private val matcher: GameChannelMatcher,

@@ -1,6 +1,5 @@
 package net.blueshell.api.game.api
 
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameChannel
 import net.blueshell.api.game.persistence.GameRepository
@@ -33,27 +32,5 @@ class GameBlanksTest {
     @Test
     fun `refuses to say anything about the channels of a game nobody holds`() {
         assertThatThrownBy { blanks.hasChannels("PONG", GameChannelKind.CASUAL) }.isInstanceOf(UnknownGameCode::class.java)
-    }
-
-    @Test
-    fun `fills a game's banner and icon where it has none, storing a picture only then`() {
-        whenever(games.findByCode("CHESS")).thenReturn(chess)
-        val picture = mock<File>()
-        var stored = 0
-        val supply = {
-            stored++
-            picture
-        }
-
-        assertThat(blanks.fillBanner("CHESS", supply)).isTrue()
-        assertThat(blanks.fillIcon("CHESS", supply)).isTrue()
-        assertThat(blanks.fillBanner("CHESS", supply)).isFalse()
-        assertThat(blanks.fillIcon("CHESS", supply)).isFalse()
-        assertThat(blanks.fillBanner("PONG", supply)).isFalse()
-        assertThat(blanks.fillIcon("PONG", supply)).isFalse()
-
-        assertThat(chess.banner).isSameAs(picture)
-        assertThat(chess.icon).isSameAs(picture)
-        assertThat(stored).isEqualTo(2)
     }
 }

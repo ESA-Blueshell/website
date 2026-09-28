@@ -1,9 +1,10 @@
 package net.blueshell.api.shared.seed
 
-import net.blueshell.api.board.domain.ShippedBoardArtOnStartup
+import net.blueshell.api.board.domain.ShippedBoardArt
 import net.blueshell.api.board.domain.ShippedBoardsOnStartup
-import net.blueshell.api.esports.domain.ShippedArtOnStartup
 import net.blueshell.api.esports.domain.ShippedEsportsOnStartup
+import net.blueshell.api.esports.domain.ShippedTeamArt
+import net.blueshell.api.game.domain.ShippedGameArt
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.core.annotation.AnnotatedElementUtils
@@ -24,8 +25,9 @@ class SeedStartupOrderTest {
         listOf(
             ShippedBoardsOnStartup::class.java,
             ShippedEsportsOnStartup::class.java,
-            ShippedBoardArtOnStartup::class.java,
-            ShippedArtOnStartup::class.java,
+            ShippedBoardArt::class.java,
+            ShippedTeamArt::class.java,
+            ShippedGameArt::class.java,
         ).forEach { type ->
             assertThat(orderOf(type))
                 .describedAs("%s.onReady must carry @Order; on the class it is ignored", type.simpleName)
@@ -36,7 +38,9 @@ class SeedStartupOrderTest {
     @Test
     fun `records run before the art that hangs on them`() {
         assertThat(SeedOrder.RECORDS).isLessThan(SeedOrder.ART)
-        assertThat(orderOf(ShippedBoardsOnStartup::class.java)).isLessThan(orderOf(ShippedBoardArtOnStartup::class.java))
-        assertThat(orderOf(ShippedEsportsOnStartup::class.java)).isLessThan(orderOf(ShippedArtOnStartup::class.java))
+        assertThat(orderOf(ShippedBoardsOnStartup::class.java)).isLessThan(orderOf(ShippedBoardArt::class.java))
+        assertThat(orderOf(ShippedEsportsOnStartup::class.java)).isLessThan(orderOf(ShippedTeamArt::class.java))
+        // The esports seed is what adds the games their art hangs on.
+        assertThat(orderOf(ShippedEsportsOnStartup::class.java)).isLessThan(orderOf(ShippedGameArt::class.java))
     }
 }

@@ -367,7 +367,8 @@ class ShippedEsports(
 }
 
 /**
- * A separate bean so the transaction is opened by the proxy, and a failure never blocks start-up.
+ * Loads the esports history that ships once the application is up. A failure is logged, never thrown, so it
+ * cannot block start-up.
  */
 @Component
 class ShippedEsportsOnStartup(

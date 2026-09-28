@@ -73,6 +73,7 @@ docs/proposals/**
 # beside the working folder the masters are cut from.
 !gameart/CREDITS.md
 !services/api/src/main/resources/db/seed/esports/art/CREDITS.md
+!services/api/src/main/resources/db/seed/games/art/CREDITS.md
 !services/api/src/main/resources/db/seed/boards/art/CREDITS.md
 .idea
 *dump.sql*

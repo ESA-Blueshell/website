@@ -24,7 +24,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.server.ResponseStatusException
 import java.util.Optional
 
-/** The reads and writes the contribution services took over from BaseModelService. */
+/** The reads and writes the contribution services make against their repositories. */
 class ContributionServicesWriteTest {
     private val manager = mock<EntityManager>()
 

@@ -1,5 +1,7 @@
 package net.blueshell.api.file.api
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import net.blueshell.api.file.domain.ContentAddress
 import net.blueshell.api.file.domain.EmptyFileException
 import net.blueshell.api.file.domain.FileDeleted
@@ -20,7 +22,6 @@ import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
-import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.shared.util.sanitizeForLog
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
@@ -39,7 +40,7 @@ import java.util.Locale
 class FileService
     @Autowired
     constructor(
-        fileRepository: FileRepository,
+        private val repository: FileRepository,
         private val blobs: BlobStore,
         private val scratch: ScratchSpace,
         private val trackedEvents: TrackedEventPublisher,
@@ -48,7 +49,32 @@ class FileService
         private val eventBannerFiles: EventBannerFileLookup,
         private val publicImageUploads: PublicImageUploadPreparer,
         private val imageRenditions: ImageRenditions,
-    ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
+    ) {
+        // Read back after each write, so the columns the database fills are on the answer.
+        @PersistenceContext
+        private lateinit var em: EntityManager
+
+        private fun written(row: File): File = repository.saveAndFlush(row).also(em::refresh)
+
+        // The existence query flushes the session first, which writes what the edit cascades before
+        // the merge; merging it unwritten fails on a lazy owner.
+        private fun rewritten(row: File): File {
+            val id = row.id
+            if (id == null || !repository.existsById(id)) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with id: $id")
+            }
+            return written(row)
+        }
+
+        @Transactional(readOnly = true)
+        fun findById(id: Long): File =
+            repository.findById(id).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with id: $id")
+            }
+
+        @Transactional(readOnly = true)
+        fun existsById(id: Long): Boolean = repository.existsById(id)
+
         @Transactional(readOnly = true)
         fun findByName(name: String): File =
             repository.findByName(name).orElseThrow {
@@ -169,7 +195,7 @@ class FileService
             )
             entity.type = type
 
-            val stored = if (entity.id != null) update(entity) else create(entity)
+            val stored = if (entity.id != null) rewritten(entity) else written(entity)
             // The widths this picture is served at, asked for now rather than at the first
             // request for one: a converter run while somebody is waiting for an image is a
             // request that waits for a subprocess. A picture that moves is queued instead.
@@ -204,8 +230,8 @@ class FileService
         }
 
         @Transactional
-        override fun delete(entity: File) {
-            super.delete(entity)
+        fun delete(entity: File) {
+            repository.delete(entity)
             trackedEvents.publish { actor ->
                 FileDeleted(
                     entity.id!!,
@@ -216,7 +242,7 @@ class FileService
         }
 
         @Transactional
-        override fun deleteById(id: Long) {
+        fun deleteById(id: Long) {
             val file = findById(id)
             delete(file)
         }

@@ -5,7 +5,6 @@ import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -14,13 +13,13 @@ class TeamService(
     private val teams: TeamRepository,
     private val games: GameService,
     private val pictures: StoredPictures,
-) : BaseModelService<Team, Long, TeamRepository>(teams) {
+) {
     /** Every team the association has. The pool is shared, so it is not asked per game. */
     @Transactional(readOnly = true)
     fun pool(): List<Team> = teams.findAllOrderByNameAsc()
 
     @Transactional(readOnly = true)
-    override fun findById(id: Long): Team = teams.findById(id).orElseThrow { TeamNotFoundException(id) }
+    fun findById(id: Long): Team = teams.findById(id).orElseThrow { TeamNotFoundException(id) }
 
     @Transactional(readOnly = true)
     fun findByName(name: String): Team? = teams.findByNameIgnoreCase(name)

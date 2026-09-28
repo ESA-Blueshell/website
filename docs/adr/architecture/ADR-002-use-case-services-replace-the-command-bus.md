@@ -111,9 +111,10 @@ operation. A use-case service works with its repository directly: it reads the r
 once, writes it back, and answers a missing one with its module's refusal rather
 than a sentence in a `ResponseStatusException`.
 
-The board module is the tracer: `BoardService` is folded into `BoardUseCases`. The
-other subclasses follow in batches (#1651, #1652, #1653), and `BaseModelService`
-is deleted once none is left (#1654).
+The board module was the tracer (#1650), with the other subclasses in batches (#1651,
+#1652, #1653). `BaseModelService` is deleted (#1654): a service that other modules call
+keeps its name and works with its repository directly, and one only its own module
+used folds into that module's use cases.
 
 ## Consequences
 

@@ -36,7 +36,6 @@ class SpringPracticesArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.R
                 .resideOutsideOfPackages(
                     *ArchitecturePackages.SERVICE_LAYER,
                     ArchitecturePackages.PLATFORM, // Jobs can be transactional
-                    ArchitecturePackages.SHARED, // BaseModelService in shared
                 ).should()
                 .beAnnotatedWith(Transactional::class.java)
                 .because("ADR-001: Transaction boundaries belong in application/domain service layers")
@@ -48,7 +47,6 @@ class SpringPracticesArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.R
                 .resideOutsideOfPackages(
                     *ArchitecturePackages.SERVICE_LAYER,
                     ArchitecturePackages.PLATFORM, // Jobs can be transactional
-                    ArchitecturePackages.SHARED, // BaseModelService in shared
                 ).should()
                 .beAnnotatedWith(Transactional::class.java)
                 .because("ADR-001: Transaction boundaries belong in application/domain service layers")

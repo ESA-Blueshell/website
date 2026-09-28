@@ -1,23 +1,48 @@
 package net.blueshell.api.email.domain
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import net.blueshell.api.email.persistence.Email
 import net.blueshell.api.email.persistence.EmailRepository
 import net.blueshell.api.email.persistence.EmailSpecifications
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
-import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.util.UUID
 
 @Service
 class EmailService(
-    repository: EmailRepository,
-) : BaseModelService<Email, Long, EmailRepository>(repository) {
+    private val repository: EmailRepository,
+) {
+    // Read back after each write, so the columns the database fills are on the answer.
+    @PersistenceContext
+    private lateinit var em: EntityManager
+
+    private fun written(row: Email): Email = repository.saveAndFlush(row).also(em::refresh)
+
+    // The existence query flushes the session first, which writes what the edit cascades before
+    // the merge; merging it unwritten fails on a lazy owner.
+    private fun rewritten(row: Email): Email {
+        val id = row.id
+        if (id == null || !repository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Email not found with id: $id")
+        }
+        return written(row)
+    }
+
+    @Transactional(readOnly = true)
+    fun findById(id: Long): Email =
+        repository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Email not found with id: $id")
+        }
+
     @Transactional
     fun createPending(
         content: EmailContent,
@@ -36,7 +61,7 @@ class EmailService(
                 jobExecutionId = jobExecutionId,
                 attempts = 0,
             )
-        return super.create(email)
+        return written(email)
     }
 
     @Transactional(readOnly = true)
@@ -56,7 +81,7 @@ class EmailService(
         email.attempts += 1
         email.errorType = null
         email.errorReason = null
-        return super.update(email)
+        return rewritten(email)
     }
 
     @Transactional
@@ -69,14 +94,14 @@ class EmailService(
         email.attempts += 1
         email.errorType = errorType
         email.errorReason = errorReason
-        return super.update(email)
+        return rewritten(email)
     }
 
     @Transactional
     fun markDelivered(email: Email): Email {
         email.deliveryStatus = EmailDeliveryStatus.DELIVERED
         email.deliveredAt = Instant.now()
-        return super.update(email)
+        return rewritten(email)
     }
 
     @Transactional
@@ -84,7 +109,7 @@ class EmailService(
         email.deliveryStatus = EmailDeliveryStatus.OPENED
         if (email.deliveredAt == null) email.deliveredAt = Instant.now()
         email.openedAt = Instant.now()
-        return super.update(email)
+        return rewritten(email)
     }
 
     @Transactional
@@ -94,7 +119,7 @@ class EmailService(
     ): Email {
         email.deliveryStatus = EmailDeliveryStatus.BOUNCED
         email.errorReason = reason
-        return super.update(email)
+        return rewritten(email)
     }
 
     @Transactional(readOnly = true)

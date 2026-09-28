@@ -1,5 +1,7 @@
 package net.blueshell.api.jobs.api
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import net.blueshell.api.jobs.domain.JobExecutionQuery
 import net.blueshell.api.jobs.persistence.FoldedTrigger
 import net.blueshell.api.jobs.persistence.JobEnqueueLocks
@@ -9,12 +11,13 @@ import net.blueshell.api.jobs.persistence.JobExecutionSpecifications
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
-import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.shared.tracking.Actor
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 import java.time.Clock
 import java.time.Instant
 
@@ -30,7 +33,29 @@ data class Enqueued(
 class JobExecutionService(
     private val jobExecutionRepository: JobExecutionRepository,
     private val enqueueLocks: JobEnqueueLocks,
-) : BaseModelService<JobExecution, Long, JobExecutionRepository>(jobExecutionRepository) {
+) {
+    // Read back after each write, so the columns the database fills are on the answer.
+    @PersistenceContext
+    private lateinit var em: EntityManager
+
+    private fun written(row: JobExecution): JobExecution = jobExecutionRepository.saveAndFlush(row).also(em::refresh)
+
+    // The existence query flushes the session first, which writes what the edit cascades before
+    // the merge; merging it unwritten fails on a lazy owner.
+    private fun rewritten(row: JobExecution): JobExecution {
+        val id = row.id
+        if (id == null || !jobExecutionRepository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "JobExecution not found with id: $id")
+        }
+        return written(row)
+    }
+
+    @Transactional(readOnly = true)
+    fun findById(id: Long): JobExecution =
+        jobExecutionRepository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "JobExecution not found with id: $id")
+        }
+
     // Settable for tests only.
     internal var clock: Clock = Clock.systemUTC()
 
@@ -50,7 +75,7 @@ class JobExecutionService(
         queuesBehindRunning: Boolean = false,
         forced: Boolean = false,
     ): Enqueued? {
-        val create = { Enqueued(super.create(newExecution(jobType, payload, actor, trigger, dedupKey, forced)), dispatch = true) }
+        val create = { Enqueued(written(newExecution(jobType, payload, actor, trigger, dedupKey, forced)), dispatch = true) }
         if (dedupKey == null) return create()
         check(enqueueLocks.lock(jobType, dedupKey, ENQUEUE_LOCK_SECONDS)) { "Another enqueue of $jobType kept its lock" }
         val twins = enqueueLocks.activeTwins(jobType, dedupKey)
@@ -80,7 +105,7 @@ class JobExecutionService(
             twin.nextAttemptAt = null
             twin.queuedAt = now
         }
-        return Enqueued(super.update(twin), dispatch = waiting)
+        return Enqueued(rewritten(twin), dispatch = waiting)
     }
 
     private fun newExecution(
@@ -157,7 +182,7 @@ class JobExecutionService(
         execution.status = JobExecutionStatus.QUEUED
         execution.startedAt = null
         execution.queuedAt = Instant.now()
-        return super.update(execution)
+        return rewritten(execution)
     }
 
     @Transactional
@@ -166,7 +191,7 @@ class JobExecutionService(
         execution.startedAt = Instant.now()
         execution.effect = null
         execution.effectLink = null
-        return super.update(execution)
+        return rewritten(execution)
     }
 
     @Transactional
@@ -182,7 +207,7 @@ class JobExecutionService(
         execution.errorMessage = null
         execution.errorType = null
         execution.errorReason = null
-        return super.update(execution)
+        return rewritten(execution)
     }
 
     @Transactional
@@ -196,7 +221,7 @@ class JobExecutionService(
         execution.errorMessage = null
         execution.errorType = null
         execution.errorReason = null
-        return super.update(execution)
+        return rewritten(execution)
     }
 
     @Transactional
@@ -210,7 +235,7 @@ class JobExecutionService(
         execution.status = JobExecutionStatus.FAILED
         execution.finishedAt = Instant.now()
         applyErrorInfo(execution, errorType, errorReason, stackTrace, explained)
-        return super.update(execution)
+        return rewritten(execution)
     }
 
     @Transactional
@@ -223,7 +248,7 @@ class JobExecutionService(
         execution.status = JobExecutionStatus.DEAD
         execution.finishedAt = Instant.now()
         applyErrorInfo(execution, errorType, errorReason, stackTrace)
-        return super.update(execution)
+        return rewritten(execution)
     }
 
     @Transactional
@@ -242,7 +267,7 @@ class JobExecutionService(
         execution.nextAttemptAt = nextAttemptAt
         applyErrorInfo(execution, errorType, errorReason, stackTrace, explained)
         execution.attempts += 1
-        return super.update(execution)
+        return rewritten(execution)
     }
 
     // An explained failure's reason is already a sentence for the jobs page, which its type would only clutter.
@@ -304,7 +329,7 @@ class JobExecutionService(
         execution.skipReason = null
         execution.forced = true
         execution.attempts += 1
-        return super.update(execution)
+        return rewritten(execution)
     }
 
     private companion object {

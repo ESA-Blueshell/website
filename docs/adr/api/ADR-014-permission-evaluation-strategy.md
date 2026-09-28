@@ -58,9 +58,7 @@ CompositePermissionEvaluator (platform/config/permission/)
 
 **BasePermissionEvaluator:**
 ```kotlin
-abstract class BasePermissionEvaluator<T : Identifiable<ID>, ID, S : BaseModelService<T, ID, *>>(
-    protected val service: S
-) {
+abstract class BasePermissionEvaluator<T : Identifiable<ID>, ID : Any> {
     val domainType: Class<T>
 
     init {

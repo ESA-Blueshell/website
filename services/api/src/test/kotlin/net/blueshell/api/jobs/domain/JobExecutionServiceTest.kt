@@ -410,7 +410,7 @@ class JobExecutionServiceTest {
     }
 
     private fun injectEntityManager(service: JobExecutionService) {
-        val field: Field = service.javaClass.superclass.getDeclaredField("em")
+        val field: Field = service.javaClass.getDeclaredField("em")
         field.isAccessible = true
         field.set(service, entityManager)
     }

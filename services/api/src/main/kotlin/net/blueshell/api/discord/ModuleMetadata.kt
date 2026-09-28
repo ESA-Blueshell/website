@@ -20,6 +20,10 @@ import org.springframework.modulith.PackageInfo
         "shared",
         // The bot implements the DiscordPublisher port sync declares.
         "sync :: api",
+        // Games are given the server's channels named for them, through the game module.
+        "game :: api",
+        // GameChannel, the shape a game's channels are handed over in.
+        "game :: entities",
     ],
 )
 class ModuleMetadata

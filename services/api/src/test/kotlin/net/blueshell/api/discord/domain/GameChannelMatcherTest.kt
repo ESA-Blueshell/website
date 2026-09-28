@@ -1,5 +1,10 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.game.api.GameBlanks
+import net.blueshell.api.game.api.GameChannelKind
+import net.blueshell.api.game.api.GameService
+import net.blueshell.api.game.persistence.Game
+import net.blueshell.api.game.persistence.GameChannel
 import net.blueshell.api.shared.seed.SeedDatabase
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -16,13 +21,34 @@ import org.springframework.beans.factory.ObjectProvider
 class GameChannelMatcherTest {
     private val db = SeedDatabase()
     private val offered = mock<DiscordGameChannels>()
-    private val matcher = GameChannelMatcher(offered, db.dataSource, db.transactions)
+    private val standing = mutableListOf<Game>()
+
+    /* The game module as the matcher sees it: the games there are, and their two channel lists. */
+    private val games = mock<GameService> { on { findAll() } doAnswer { standing.toList() } }
+    private val blanks =
+        mock<GameBlanks> {
+            on { hasChannels(any(), any()) } doAnswer { held(it.getArgument(0), it.getArgument(1)).isNotEmpty() }
+            on { addChannels(any(), any(), any()) } doAnswer {
+                val given = it.getArgument<List<GameChannel>>(2)
+                held(it.getArgument(0), it.getArgument(1)).addAll(given)
+                given.size
+            }
+        }
+    private val matcher = GameChannelMatcher(offered, games, blanks, db.dataSource, db.transactions)
+
+    private fun held(
+        code: String,
+        kind: GameChannelKind,
+    ): MutableList<GameChannel> =
+        standing.single { it.code == code }.let { if (kind == GameChannelKind.CASUAL) it.channels else it.esportsChannels }
 
     private fun game(
         code: String,
         name: String,
         slug: String,
-    ) = db.jdbc.update("INSERT INTO game (code, name, slug, sort_index) VALUES (?, ?, ?, 1)", code, name, slug)
+    ) {
+        standing += Game(code = code, name = name, slug = slug)
+    }
 
     private fun rooms(
         games: List<String>,
@@ -33,14 +59,9 @@ class GameChannelMatcherTest {
     }
 
     private fun channels(
-        table: String,
+        kind: GameChannelKind,
         code: String,
-    ): List<String?> =
-        db.jdbc.queryForList(
-            "SELECT c.channel_name FROM $table c JOIN game g ON g.id = c.game_id WHERE g.code = ? ORDER BY 1",
-            String::class.java,
-            code,
-        )
+    ): List<String> = held(code, kind).map { it.channelName }.sorted()
 
     @Test
     fun `gives each game the games channel named for it by slug, name or code, and its esports channels`() {
@@ -56,29 +77,35 @@ class GameChannelMatcherTest {
 
         assertThat(matcher.apply()).isEqualTo(5)
 
-        assertThat(channels("game_channels", "ROCKET_LEAGUE")).containsExactly("rocket-league")
-        assertThat(channels("game_channels", "POKEMON")).containsExactly("pokémon")
-        assertThat(channels("game_channels", "CS2")).containsExactly("counter-strike-2")
-        assertThat(channels("game_esports_channels", "CS2")).containsExactly("counter-strike-2-team", "cs2-scrims")
-        assertThat(channels("game_channels", "CHESS")).isEmpty()
-        assertThat(channels("game_channels", "CSGO")).isEmpty()
+        assertThat(channels(GameChannelKind.CASUAL, "ROCKET_LEAGUE")).containsExactly("rocket-league")
+        assertThat(channels(GameChannelKind.CASUAL, "POKEMON")).containsExactly("pokémon")
+        assertThat(channels(GameChannelKind.CASUAL, "CS2")).containsExactly("counter-strike-2")
+        assertThat(channels(GameChannelKind.COMPETITION, "CS2")).containsExactly("counter-strike-2-team", "cs2-scrims")
+        assertThat(channels(GameChannelKind.CASUAL, "CHESS")).isEmpty()
+        assertThat(channels(GameChannelKind.CASUAL, "CSGO")).isEmpty()
     }
 
     @Test
     fun `matches a game once, and leaves alone a game that has channels or had them taken away`() {
         game("CHESS", "Chess", "chess")
         game("WORDLE", "Wordle", "wordle")
-        db.jdbc.update(
-            "INSERT INTO game_channels (game_id, channel_id, guild_id, channel_name) " +
-                "SELECT id, '9', '324', 'board-games' FROM game WHERE code = 'WORDLE'",
-        )
+        held("WORDLE", GameChannelKind.CASUAL) += GameChannel("9", "324", "board-games")
         rooms(games = listOf("chess", "wordle"))
 
         assertThat(matcher.apply()).isEqualTo(1)
-        db.jdbc.update("DELETE FROM game_channels")
+        standing.forEach { it.channels.clear() }
 
         assertThat(matcher.apply()).isZero()
-        assertThat(db.count("SELECT COUNT(*) FROM game_channels")).isZero()
+        assertThat(standing.flatMap { it.channels }).isEmpty()
+    }
+
+    @Test
+    fun `keeps the ledger keys it has always used, so games matched before stay matched`() {
+        game("CHESS", "Chess", "chess")
+        db.jdbc.update("INSERT INTO seed_applied (seed, record_key) VALUES ('game-channels', 'game_channels|CHESS')")
+        rooms(games = listOf("chess"))
+
+        assertThat(matcher.apply()).isZero()
     }
 
     @Test

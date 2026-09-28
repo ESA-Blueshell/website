@@ -4,7 +4,7 @@ import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.game.persistence.GameRepository
+import net.blueshell.api.game.api.GameBlanks
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.seed.SeedCsv
 import net.blueshell.api.shared.seed.SeedOrder
@@ -36,7 +36,7 @@ class ShippedArt(
     private val users: UserService,
     private val teams: TeamRepository,
     private val fielded: TeamSeasonRepository,
-    private val games: GameRepository,
+    private val games: GameBlanks,
     private val transactions: TransactionTemplate,
     /** Spring has no bean for this, so the shipped seed is the default. Tests pass their own. */
     private val seed: SeedCsv = EsportsSeed.files,
@@ -145,11 +145,7 @@ class ShippedArt(
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int =
         transactions.execute {
-            val record = games.findByCode(game) ?: return@execute 0
-            if (record.banner != null) return@execute 0
-            record.banner = store(art, FileType.GAME_BANNER, owner, stored)
-            games.save(record)
-            1
+            if (games.fillBanner(game) { store(art, FileType.GAME_BANNER, owner, stored) }) 1 else 0
         }
 
     /** The game's own icon, where the game has none. */
@@ -160,11 +156,7 @@ class ShippedArt(
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int =
         transactions.execute {
-            val record = games.findByCode(game) ?: return@execute 0
-            if (record.icon != null) return@execute 0
-            record.icon = store(art, FileType.GAME_ICON, owner, stored)
-            games.save(record)
-            1
+            if (games.fillIcon(game) { store(art, FileType.GAME_ICON, owner, stored) }) 1 else 0
         }
 
     /**

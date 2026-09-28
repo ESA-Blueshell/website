@@ -26,9 +26,9 @@ class DiscordSocketConfigTest {
     }
 
     @Test
-    fun `the discord module reaches only the shared kernel, and the port sync declares for it`() {
+    fun `the discord module reaches the shared kernel, the port sync declares for it, and games through their module`() {
         val module = ModuleMetadata()::class.java.getAnnotation(ApplicationModule::class.java)
 
-        assertThat(module.allowedDependencies).containsExactly("shared", "sync :: api")
+        assertThat(module.allowedDependencies).containsExactly("shared", "sync :: api", "game :: api", "game :: entities")
     }
 }

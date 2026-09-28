@@ -10,6 +10,7 @@ import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
+import net.blueshell.api.game.api.GameBlanks
 import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
@@ -48,6 +49,8 @@ class ShippedArtIT : UserTestSupport() {
 
     @Autowired private lateinit var games: GameRepository
 
+    @Autowired private lateinit var blanks: GameBlanks
+
     @Autowired private lateinit var files: FileService
 
     @Autowired private lateinit var stored: FileRepository
@@ -57,7 +60,7 @@ class ShippedArtIT : UserTestSupport() {
 
     /** The step under test, reading the fixture seed rather than the one the site ships. */
     private val art: ShippedArt by lazy {
-        ShippedArt(files, users, teams, fielded, games, transactionTemplate, EsportsSeedFixture.files)
+        ShippedArt(files, users, teams, fielded, blanks, transactionTemplate, EsportsSeedFixture.files)
     }
 
     @BeforeEach

@@ -5,169 +5,52 @@ import com.tngtech.archunit.core.domain.JavaClasses
 import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
+import com.tngtech.archunit.lang.ArchCondition
+import com.tngtech.archunit.lang.ConditionEvents
+import com.tngtech.archunit.lang.SimpleConditionEvent
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
+import net.blueshell.api.architecture.support.ArchModules
 import net.blueshell.api.architecture.support.DoNotIncludeAotGenerated
 import net.blueshell.api.architecture.support.DoNotIncludeFactory
 import net.blueshell.api.architecture.support.DoNotIncludeTestSources
 import net.blueshell.api.architecture.support.DoNotIncludeTestSupport
 
 /**
- * ArchUnit tests enforcing ADR-018: Data Ownership in Modular Monolith
- *
- * Key Rules:
- * - Cross-domain data access via services, NOT direct repository access
- * - Each domain owns its persistence layer
- * - No direct repository imports across domain boundaries
+ * Api ADR-018: a module owns its persistence, and another module reads that data through the
+ * owner's services. Entities are shared on purpose; repositories are not.
  */
 @AnalyzeClasses(
-    packages = ["net.blueshell.api"],
+    packages = [ArchModules.BASE],
     importOptions = [
         ImportOption.DoNotIncludeTests::class,
         DoNotIncludeTestSources::class,
         DoNotIncludeTestSupport::class,
         DoNotIncludeFactory::class,
         DoNotIncludeAotGenerated::class,
-    ]
+    ],
 )
 class DataOwnershipArchitectureTest {
-
-    /**
-     * ADR-018 Violation 1: Listeners accessing repositories from other domains
-     *
-     * Example violation fixed in Phase 1:
-     * - User domain listener importing CommitteeMemberRepository
-     *
-     * Fix: Use CommitteeMemberService instead
-     */
     @ArchTest
-    fun `listeners should not access repositories from other domains`(classes: JavaClasses) {
-        // User domain listeners should not access Committee repositories
-        noClasses()
-            .that().resideInAPackage("..domain.user.application.listener..")
-            .should().dependOnClassesThat()
-            .resideInAPackage("..domain.committee.persistence.repository..")
-            .allowEmptyShould(true)
-            .check(classes)
-
-        // Committee domain listeners should not access User repositories
-        noClasses()
-            .that().resideInAPackage("..domain.committee.application.listener..")
-            .should().dependOnClassesThat()
-            .resideInAPackage("..domain.user.persistence.repository..")
-            .allowEmptyShould(true)
-            .check(classes)
-
-        // Event domain listeners should not access Survey repositories
-        noClasses()
-            .that().resideInAPackage("..domain.event.application.listener..")
-            .should().dependOnClassesThat(
-                JavaClass.Predicates.resideInAnyPackage("..domain.survey.persistence..", "net.blueshell.api.survey.persistence..")
-                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
-            )
-            .allowEmptyShould(true)
+    fun `no class reaches a repository of a module it is not in`(classes: JavaClasses) {
+        classes()
+            .should(reachOnlyItsOwnRepositories())
+            .because("api ADR-018: a module reaches another module through its services, not its repositories")
             .check(classes)
     }
 
-    /**
-     * ADR-018 Violation 2: application code accessing repositories from other domains
-     *
-     * Example violation fixed in Phase 1:
-     * - EventSignUpUseCases importing QuestionRepository from Survey domain
-     *
-     * Fix: Use QuestionService instead
-     */
-    @ArchTest
-    fun `application code should not access repositories from other domains`(classes: JavaClasses) {
-        // Event domain application code should not access Survey repositories.
-        // The rule is about which repositories event code may reach, not about the
-        // package the caller happens to sit in.
-        noClasses()
-            .that().resideInAnyPackage("..domain.event.application..", "net.blueshell.api.event.domain..", "net.blueshell.api.event.api..")
-            .should().dependOnClassesThat(
-                JavaClass.Predicates.resideInAnyPackage("..domain.survey.persistence..", "net.blueshell.api.survey.persistence..")
-                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
-            )
-            .check(classes)
-
-        // Repositories are named rather than located: the flattened layout keeps them in
-        // the same persistence folder as the entities, which are legitimately reachable.
-        // Survey domain application code should not access Event repositories.
-        // Widened alongside the event half: the survey command package is gone, so
-        // the old pattern matched nothing and the rule passed vacuously.
-        noClasses()
-            .that().resideInAnyPackage(
-                "..domain.survey.application..",
-                "net.blueshell.api.survey.domain..",
-                "net.blueshell.api.survey.api..",
-            )
-            .should().dependOnClassesThat(
-                JavaClass.Predicates.resideInAnyPackage("..domain.event.persistence..", "net.blueshell.api.event.persistence..")
-                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
-            )
-            .check(classes)
-    }
-
-    /**
-     * ADR-018 Violation 3: Web validators accessing repositories directly
-     *
-     * Example violation fixed in Phase 1:
-     * - ValidAnswerValidator importing QuestionRepository
-     *
-     * Fix: Use QuestionService instead
-     * Rationale: ADR-003 says web validators should not access repositories
-     */
-    @ArchTest
-    fun `web validators should use services not repositories`(classes: JavaClasses) {
-        noClasses()
-            .that().resideInAPackage("net.blueshell.api.*.web..")
-            .should().dependOnClassesThat(
-                JavaClass.Predicates.resideInAnyPackage("net.blueshell.api.*.persistence..")
-                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
-            )
-            .because("ADR-003 and ADR-018: Web validators should access data via services, not repositories")
-            .check(classes)
-    }
-
-    /**
-     * General rule: Platform layer should not access domain repositories directly
-     *
-     * Platform should use domain services or ACL adapters
-     */
-    @ArchTest
-    fun `platform should not access domain repositories directly`(classes: JavaClasses) {
-        noClasses()
-            .that().resideInAPackage("..platform..")
-            .should().dependOnClassesThat()
-            .resideInAPackage("..domain.*.persistence.repository..")
-            .because("ADR-018: Platform should access domain data via services, not repositories")
-            .check(classes)
-    }
-
-    /**
-     * Cross-domain repository access is only allowed within the same domain
-     */
-    @ArchTest
-    fun `domains should only access their own repositories`(classes: JavaClasses) {
-        // Each entry names the owning module and the modules whose repositories it may not
-        // reach. Both package layouts are listed so the rule holds while some modules are
-        // flattened and others are not, and repositories are matched by name because the
-        // flattened layout keeps them beside the entities, which are reachable.
-        val forbidden = mapOf(
-            "user" to listOf("committee", "event", "survey", "contribution", "auth"),
-            "event" to listOf("survey", "user", "committee"),
-        )
-        forbidden.forEach { (owner, others) ->
-            noClasses()
-                .that().resideInAnyPackage("..domain.$owner..", "net.blueshell.api.$owner..")
-                .should().dependOnClassesThat(
-                    JavaClass.Predicates.resideInAnyPackage(
-                        *others.flatMap {
-                            listOf("..domain.$it.persistence..", "net.blueshell.api.$it.persistence..")
-                        }.toTypedArray()
-                    ).and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
-                )
-                .because("ADR-018: a module reaches another module through its services, not its repositories")
-                .check(classes)
+    private fun reachOnlyItsOwnRepositories() =
+        object : ArchCondition<JavaClass>("reach no other module's repository") {
+            override fun check(
+                item: JavaClass,
+                events: ConditionEvents,
+            ) {
+                item.directDependenciesFromSelf
+                    .map { it.targetClass }
+                    .filter { ArchModules.reachesForeignRepository(item.packageName, it.packageName, it.simpleName) }
+                    .distinct()
+                    .forEach { target ->
+                        events.add(SimpleConditionEvent.violated(item, "${item.name} reaches ${target.name}"))
+                    }
+            }
         }
-    }
 }

@@ -1,5 +1,9 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.game.api.GameBlanks
+import net.blueshell.api.game.api.GameChannelKind
+import net.blueshell.api.game.api.GameService
+import net.blueshell.api.game.persistence.GameChannel
 import net.blueshell.api.shared.seed.SeedLedger
 import net.blueshell.api.shared.seed.SeedOrder
 import org.slf4j.LoggerFactory
@@ -11,7 +15,6 @@ import org.springframework.core.annotation.Order
 import org.springframework.jdbc.datasource.DataSourceUtils
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
-import java.sql.Connection
 import java.text.Normalizer
 import javax.sql.DataSource
 
@@ -27,19 +30,22 @@ import javax.sql.DataSource
 @Component
 class GameChannelMatcher(
     private val channels: DiscordGameChannels,
+    private val games: GameService,
+    private val blanks: GameBlanks,
     private val dataSource: DataSource,
     private val transactions: TransactionTemplate,
 ) {
     /** How many channels a run gave out, which is none without a bot or once every game has one. */
     @Synchronized
     fun apply(): Int {
-        val games = channels.offered(GameChannelCategory.GAMES).orEmpty()
-        val esports = channels.offered(GameChannelCategory.ESPORTS).orEmpty()
-        if (games.isEmpty() && esports.isEmpty()) return 0
+        val casualRooms = channels.offered(GameChannelCategory.GAMES).orEmpty()
+        val esportsRooms = channels.offered(GameChannelCategory.ESPORTS).orEmpty()
+        if (casualRooms.isEmpty() && esportsRooms.isEmpty()) return 0
         return transactions.execute {
+            // The ledger writes through the transaction's own connection, beside the game module's.
             val connection = DataSourceUtils.getConnection(dataSource)
             try {
-                match(connection, games, esports)
+                match(SeedLedger(connection, SEED), casualRooms, esportsRooms)
             } finally {
                 DataSourceUtils.releaseConnection(connection, dataSource)
             }
@@ -47,17 +53,16 @@ class GameChannelMatcher(
     }
 
     private fun match(
-        connection: Connection,
-        games: List<TextRoom>,
-        esports: List<TextRoom>,
+        ledger: SeedLedger,
+        casualRooms: List<TextRoom>,
+        esportsRooms: List<TextRoom>,
     ): Int {
-        val ledger = SeedLedger(connection, SEED)
-        val standing = standingGames(connection)
-        val casual = games.associateWith { room -> standing.firstOrNull { plain(room.name) in it.keys } }
-        val competition = esports.associateWith { room -> heldBy(room, standing) }
+        val standing = games.findAll().map { game -> StandingGame(game.code, keysOf(game.code, game.name, game.slug)) }
+        val casual = casualRooms.associateWith { room -> standing.firstOrNull { plain(room.name) in it.keys } }
+        val competition = esportsRooms.associateWith { room -> heldBy(room, standing) }
         return standing.sumOf { game ->
-            give(connection, ledger, game, "game_channels", casual.filterValues { it == game }.keys) +
-                give(connection, ledger, game, "game_esports_channels", competition.filterValues { it == game }.keys)
+            give(ledger, game, GameChannelKind.CASUAL, casual.filterValues { it == game }.keys) +
+                give(ledger, game, GameChannelKind.COMPETITION, competition.filterValues { it == game }.keys)
         }
     }
 
@@ -72,58 +77,31 @@ class GameChannelMatcher(
             ?.second
 
     private fun give(
-        connection: Connection,
         ledger: SeedLedger,
         game: StandingGame,
-        table: String,
+        kind: GameChannelKind,
         rooms: Collection<TextRoom>,
     ): Int {
-        if (rooms.isEmpty() || !ledger.toWrite("$table|${game.code}") { holds(connection, table, game.id) }) return 0
-        return rooms.sumOf { room ->
-            connection.prepareStatement("INSERT INTO $table (game_id, channel_id, guild_id, channel_name) VALUES (?, ?, ?, ?)").use {
-                it.setLong(1, game.id)
-                listOf(room.id, room.guildId, room.name).forEachIndexed { at, value -> it.setString(at + 2, value) }
-                it.executeUpdate()
-            }
-        }
+        val key = "${LEDGER_TABLE.getValue(kind)}|${game.code}"
+        if (rooms.isEmpty() || !ledger.toWrite(key) { blanks.hasChannels(game.code, kind) }) return 0
+        return blanks.addChannels(game.code, kind, rooms.map { GameChannel(it.id, it.guildId, it.name) })
     }
 
-    private fun holds(
-        connection: Connection,
-        table: String,
-        gameId: Long,
-    ): Boolean =
-        connection.prepareStatement("SELECT 1 FROM $table WHERE game_id = ?").use { statement ->
-            statement.setLong(1, gameId)
-            statement.executeQuery().use { rows -> rows.next() }
-        }
-
-    private fun standingGames(connection: Connection): List<StandingGame> =
-        connection.prepareStatement("SELECT id, code, name, slug FROM game WHERE $ACTIVE ORDER BY sort_index, id").use { statement ->
-            statement.executeQuery().use { rows ->
-                buildList {
-                    while (rows.next()) {
-                        val code = rows.getString(2)
-                        val keys = listOf(code, rows.getString(3), rows.getString(4)).mapNotNull { it?.let(::plain) }
-                        add(StandingGame(rows.getLong(1), code, keys.filter { it.length >= MIN_KEY }.toSet()))
-                    }
-                }
-            }
-        }
-
     private data class StandingGame(
-        val id: Long,
         val code: String,
         val keys: Set<String>,
     )
 
     private companion object {
-        /** The sentinel a live row carries, as every soft-deleted table here uses it. */
-        const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"
         const val SEED = "game-channels"
+
+        /** The ledger keys each kind by the table it once wrote, so games matched before stay matched. */
+        val LEDGER_TABLE = mapOf(GameChannelKind.CASUAL to "game_channels", GameChannelKind.COMPETITION to "game_esports_channels")
 
         /** Shorter than this, a key is found inside too many channel names that are not the game's. */
         const val MIN_KEY = 3
+
+        fun keysOf(vararg names: String?): Set<String> = names.mapNotNull { it?.let(::plain) }.filter { it.length >= MIN_KEY }.toSet()
 
         /** Pokémon, pokemon and poke-mon are one name: accents, case and punctuation dropped. */
         fun plain(name: String): String =

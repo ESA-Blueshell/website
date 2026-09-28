@@ -11,6 +11,7 @@ import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import net.blueshell.api.file.api.asImage
 import net.blueshell.api.game.api.GameService
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.http.HttpStatus
@@ -90,7 +91,7 @@ class EsportsController(
     ): List<SeasonGameResponse> = views.gamesOf(seasonId, mayEditEsports()).map { it.asResponse() }
 
     /** Records that a game runs in a season, before anybody has been fielded in it. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PutMapping("/seasons/{seasonId}/games/{game}")
     fun enterGame(
         @PathVariable seasonId: Long,
@@ -101,7 +102,7 @@ class EsportsController(
     }
 
     /** Takes a game out of a season, which is only possible while it holds no teams. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @BoardOnly
     @DeleteMapping("/seasons/{seasonId}/games/{game}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun leaveGame(
@@ -121,14 +122,14 @@ class EsportsController(
         return seasons.findAll().map { it.asResponse(played.contains(it.id)) }
     }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PostMapping("/seasons")
     @ResponseStatus(HttpStatus.CREATED)
     fun createSeason(
         @Valid @RequestBody request: SeasonRequest,
     ): SeasonResponse = seasons.create(request.name, request.startDate, request.endDate).asResponse()
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PutMapping("/seasons/{id}")
     fun updateSeason(
         @PathVariable id: Long,
@@ -136,7 +137,7 @@ class EsportsController(
     ): SeasonResponse = seasons.update(id, request.name, request.startDate, request.endDate).asResponse()
 
     /** What a season holds, so the offer to remove it can say what goes with it. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @GetMapping("/seasons/{id}/contents")
     fun findSeasonContents(
         @PathVariable id: Long,
@@ -145,7 +146,7 @@ class EsportsController(
         return SeasonContentsResponse(teams = teams.toInt(), players = players.toInt())
     }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @BoardOnly
     @DeleteMapping("/seasons/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteSeason(
@@ -164,21 +165,21 @@ class EsportsController(
     @PermitAll
     fun findTeams(): List<TeamResponse> = teams.pool().map { it.asResponse() }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PostMapping("/teams")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTeam(
         @Valid @RequestBody request: CreateTeamRequest,
     ): TeamResponse = teams.create(request.name, request.icon).asResponse()
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PutMapping("/teams/{id}")
     fun updateTeam(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateTeamRequest,
     ): TeamResponse = teams.update(id, request.name, request.icon).asResponse()
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @BoardOnly
     @DeleteMapping("/teams/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteTeam(
@@ -194,7 +195,7 @@ class EsportsController(
      * Saying it twice says the same thing, so a repeat answers with the team rather than
      * refusing: an interface that has to check first would race itself.
      */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PutMapping("/seasons/{seasonId}/teams/{teamId}")
     fun fieldTeam(
         @PathVariable seasonId: Long,
@@ -220,7 +221,7 @@ class EsportsController(
     }
 
     /** Stops a team being fielded in a season. The team, and its other seasons, are untouched. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @BoardOnly
     @DeleteMapping("/seasons/{seasonId}/teams/{teamId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun unfieldTeam(
@@ -245,7 +246,7 @@ class EsportsController(
     ): List<FieldingResponse> = fielded.seasonsOf(teamId).map { FieldingResponse(game = it.game, season = it.season.asResponse()) }
 
     /** The admin view of a roster: the same rows the public read has, with the names attached. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @GetMapping("/teams/{teamId}/roster")
     fun findRoster(
         @PathVariable teamId: Long,
@@ -253,7 +254,7 @@ class EsportsController(
         @RequestParam seasonId: Long,
     ): List<RosterEntryResponse> = rosters.findByTeamAndSeason(teamId, game, seasonId).map { it.asResponse() }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PostMapping("/teams/{teamId}/roster")
     @ResponseStatus(HttpStatus.CREATED)
     fun addRosterEntry(
@@ -274,7 +275,7 @@ class EsportsController(
                 icon = request.icon,
             ).asResponse()
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PutMapping("/roster/{id}")
     fun updateRosterEntry(
         @PathVariable id: Long,
@@ -293,14 +294,14 @@ class EsportsController(
             ).asResponse()
 
     /** A null user unlinks: an entry nobody can be attributed to is a roster spot all the same. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     @PutMapping("/roster/{id}/member")
     fun linkRosterEntry(
         @PathVariable id: Long,
         @RequestBody request: LinkRosterEntryRequest,
     ): RosterEntryResponse = rosters.link(id, request.userId).asResponse()
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @BoardOnly
     @DeleteMapping("/roster/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun removeRosterEntry(

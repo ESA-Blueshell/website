@@ -234,7 +234,7 @@ infrastructure/
 - Not tied to HTTP presentation layer
 - Follow hexagonal architecture principles
 
-### When a role check is enough (#1648)
+### When a role check is enough (#1648, #1649)
 
 A rule that asks only which role somebody holds does not need an evaluator. The principal already
 carries its roles as authorities, inherited ones included, so `@BoardOnly` and `@AdminOnly`
@@ -242,7 +242,9 @@ carries its roles as authorities, inherited ones included, so `@BoardOnly` and `
 annotation on the controller or the method. A typo in an entity name is a silent 403 in a
 `hasPermission` string; a misspelt annotation does not compile.
 
-An evaluator stays wherever the rule reads the row: whose sign-up, whose membership, whose account.
+Blogs, boards, contribution periods and reminders, the bulk contribution e-mail, esports, games,
+the outbox manager and telemetry recording are `@BoardOnly`; the job manager is `@AdminOnly`. An
+evaluator stays wherever the rule reads the row: whose sign-up, whose membership, whose account.
 A bare `hasAuthority` in a `@PreAuthorize` string is still refused by `AccessArchitectureTest`, which
 now reads class-level annotations as well as method ones.
 

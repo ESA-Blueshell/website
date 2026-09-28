@@ -20,7 +20,7 @@ import org.springframework.modulith.PackageInfo
         // whether a retry is allowed. That decision belongs behind
         // jobs :: api rather than in a controller reading the row.
         "jobs :: entities",
-        // Open kernel: EmailPermission extends the base evaluator.
+        // Open kernel: the outbox manager is @BoardOnly.
         "security",
         // Open kernel.
         "shared",

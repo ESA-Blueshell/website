@@ -18,7 +18,7 @@ import org.springframework.modulith.PackageInfo
         // Board.picture, BoardMember.picture and BoardDocument.file are owning
         // associations holding the FKs into files.
         "file :: entities",
-        // Open kernel: BoardPermission extends the base evaluator.
+        // Open kernel: the writes are @BoardOnly.
         "security",
         // Open kernel.
         "shared",

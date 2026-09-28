@@ -22,7 +22,8 @@ import org.springframework.modulith.PackageInfo
         // JobSubjectResolver, which sit under jobs' web package. Pinned in
         // CrossModuleWebAccessArchitectureTest.
         "jobs :: legacy-web",
-        // Open kernel: ContributionPermission extends the base evaluator.
+        // Open kernel: ContributionPermission extends the base evaluator, and the
+        // period, reminder and bulk e-mail routes are @BoardOnly.
         "security",
         // Open kernel.
         "shared",

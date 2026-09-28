@@ -5,8 +5,8 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.board.domain.BoardService
 import net.blueshell.api.board.domain.BoardUseCases
+import net.blueshell.api.security.BoardOnly
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -25,7 +25,7 @@ class BoardController(
     private val useCases: BoardUseCases,
 ) {
     @PostMapping
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Board', 'write')")
+    @BoardOnly
     @ResponseStatus(HttpStatus.CREATED)
     fun createBoard(
         @Valid @RequestBody request: CreateBoardRequest,
@@ -56,7 +56,7 @@ class BoardController(
     ): BoardResponse = service.findById(id).asResponse()
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasPermission(#id, 'Board', 'write')")
+    @BoardOnly
     fun updateBoard(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateBoardRequest,
@@ -78,7 +78,7 @@ class BoardController(
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasPermission(#id, 'Board', 'delete')")
+    @BoardOnly
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteBoard(
         @PathVariable id: Long,
@@ -88,7 +88,7 @@ class BoardController(
 
     // Board Member endpoints
     @PostMapping("/{boardId}/members")
-    @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
+    @BoardOnly
     @ResponseStatus(HttpStatus.CREATED)
     fun addMember(
         @PathVariable boardId: Long,
@@ -110,8 +110,8 @@ class BoardController(
     }
 
     @PutMapping("/{boardId}/members/{id}")
-    @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
-    // boardId is read by the @PreAuthorize expression above, not by this body.
+    @BoardOnly
+    // The member id names the row; boardId only keeps the path readable.
     @Suppress("UnusedParameter")
     fun updateMember(
         @PathVariable boardId: Long,
@@ -134,8 +134,8 @@ class BoardController(
 
     /** A null account detaches the membership, leaving the history standing under its own name. */
     @PutMapping("/{boardId}/members/{id}/member")
-    @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
-    // boardId is read by the @PreAuthorize expression above, not by this body.
+    @BoardOnly
+    // The member id names the row; boardId only keeps the path readable.
     @Suppress("UnusedParameter")
     fun linkMember(
         @PathVariable boardId: Long,
@@ -144,9 +144,9 @@ class BoardController(
     ): BoardMemberResponse = useCases.linkMember(id, request.userId).asResponse()
 
     @DeleteMapping("/{boardId}/members/{id}")
-    @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
+    @BoardOnly
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    // boardId is read by the @PreAuthorize expression above, not by this body.
+    // The member id names the row; boardId only keeps the path readable.
     @Suppress("UnusedParameter")
     fun removeMember(
         @PathVariable boardId: Long,

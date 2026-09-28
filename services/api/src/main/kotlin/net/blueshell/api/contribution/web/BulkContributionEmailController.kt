@@ -8,8 +8,8 @@ import net.blueshell.api.contribution.domain.ContributionEmailMessage
 import net.blueshell.api.contribution.domain.ContributionEmailMessageService
 import net.blueshell.api.contribution.domain.ContributionEmailPlan
 import net.blueshell.api.contribution.domain.ContributionEmailResult
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -27,7 +27,7 @@ class BulkContributionEmailController(
     private val useCases: BulkContributionEmailUseCases,
     private val messages: ContributionEmailMessageService,
 ) {
-    @PreAuthorize(BOTH_STATEMENTS)
+    @BoardOnly
     @PostMapping("/contributions/bulk/email/preview")
     fun previewBulkContributionEmail(
         @Valid @RequestBody request: BulkContributionEmailPreviewRequest,
@@ -39,7 +39,7 @@ class BulkContributionEmailController(
             ).asResponse()
 
     /** Reading sends nothing and records nothing. */
-    @PreAuthorize(BOTH_STATEMENTS)
+    @BoardOnly
     @GetMapping("/contributions/bulk/email/message")
     fun readContributionEmail(
         @RequestParam kind: ContributionEmailKind,
@@ -49,7 +49,7 @@ class BulkContributionEmailController(
         @RequestParam(required = false) feeType: BulkFeeType?,
     ): ContributionEmailMessageResponse = messages.render(kind, contributionPeriodId, userId, date, feeType).asResponse()
 
-    @PreAuthorize(BOTH_STATEMENTS)
+    @BoardOnly
     @PostMapping("/contributions/bulk/email/send")
     fun sendPaymentEmails(
         @Valid @RequestBody request: SendPaymentEmailsRequest,
@@ -64,12 +64,6 @@ class BulkContributionEmailController(
                 debitDate = request.debitDate,
                 feeTypeOverrides = request.feeTypeOverrides,
             ).asResponse()
-
-    private companion object {
-        const val BOTH_STATEMENTS =
-            "hasPermission('__NO_TARGET__', 'ContributionReminder', 'write') " +
-                "and hasPermission('__NO_TARGET__', 'IncassoNotification', 'write')"
-    }
 }
 
 private fun ContributionEmailPlan.asResponse() =

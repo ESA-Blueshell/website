@@ -5,10 +5,10 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.blog.domain.BlogService
 import net.blueshell.api.blog.domain.BlogUseCases
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -27,7 +27,7 @@ class BlogController(
     private lateinit var frontendUrl: String
 
     @PostMapping("/blogs")
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Blog', 'write')")
+    @BoardOnly
     @ResponseStatus(HttpStatus.CREATED)
     fun createBlog(
         @Valid @RequestBody request: CreateBlogRequest,
@@ -37,7 +37,7 @@ class BlogController(
     }
 
     @PostMapping("/blogs/{id}")
-    @PreAuthorize("hasPermission(#id, 'Blog', 'write')")
+    @BoardOnly
     fun updateBlog(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateBlogRequest,
@@ -57,7 +57,7 @@ class BlogController(
     ): BlogResponse = service.findById(id).asResponse(frontendUrl)
 
     @DeleteMapping("/blogs/{id}")
-    @PreAuthorize("hasPermission(#id, 'Blog', 'delete')")
+    @BoardOnly
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteById(
         @PathVariable id: Long,

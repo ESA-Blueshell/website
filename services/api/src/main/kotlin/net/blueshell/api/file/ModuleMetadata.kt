@@ -16,6 +16,8 @@ import org.springframework.modulith.PackageInfo
     allowedDependencies = [
         // AbstractJsonJobHandler, which the rendition job extends.
         "jobs :: api",
+        // Open kernel: the team upload is @BoardOnly.
+        "security",
         // Open kernel.
         "shared",
         // The uploader is resolved through UserService.

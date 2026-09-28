@@ -7,6 +7,7 @@ import net.blueshell.api.email.domain.SentEmailPreviewService
 import net.blueshell.api.email.persistence.Email
 import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.api.JobExecutor
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springdoc.core.annotations.ParameterObject
@@ -16,7 +17,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -34,7 +34,7 @@ class EmailManagementController(
     private val jobExecutor: JobExecutor,
 ) {
     @GetMapping
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'read')")
+    @BoardOnly
     fun list(
         @ParameterObject
         @PageableDefault(size = PAGE_SIZE, sort = ["createdAt"], direction = Sort.Direction.DESC)
@@ -48,7 +48,7 @@ class EmailManagementController(
     // Counts over the same rows the listing shows, so they answer to the same permission
     // rather than to a second spelling of it that has to be kept in step.
     @GetMapping("/stats")
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'read')")
+    @BoardOnly
     fun getStats(): EmailStatsDTO =
         EmailStatsDTO(
             totalCount = EmailDeliveryStatus.entries.sumOf { emailService.countByStatus(it) },
@@ -68,7 +68,7 @@ class EmailManagementController(
      * the response leaves here rather than in the browser.
      */
     @GetMapping("/{id}/preview")
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'read')")
+    @BoardOnly
     fun previewSentEmail(
         @PathVariable id: Long,
     ): SentEmailPreviewDTO {
@@ -87,7 +87,7 @@ class EmailManagementController(
     }
 
     @PostMapping("/{id}/retry")
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'retry')")
+    @BoardOnly
     fun retry(
         @PathVariable id: Long,
     ): EmailDTO {

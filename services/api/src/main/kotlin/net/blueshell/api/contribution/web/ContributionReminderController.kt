@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.contribution.domain.ContributionReminderService
 import net.blueshell.api.contribution.domain.ContributionReminderUseCases
+import net.blueshell.api.security.BoardOnly
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -20,7 +20,7 @@ class ContributionReminderController @Autowired constructor(
     private val service: ContributionReminderService,
     private val useCases: ContributionReminderUseCases,
 ) {
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
+    @BoardOnly
     @PostMapping("/contributionReminders")
     @ResponseStatus(HttpStatus.CREATED)
     fun sendContributionReminder(@Valid @RequestBody request: CreateContributionReminderRequest): ContributionReminderResponse {
@@ -28,7 +28,7 @@ class ContributionReminderController @Autowired constructor(
         return reminder.asResponse()
     }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
+    @BoardOnly
     @PostMapping("/contributionReminders/batch")
     @ResponseStatus(HttpStatus.CREATED)
     fun sendContributionReminderBatch(
@@ -38,7 +38,7 @@ class ContributionReminderController @Autowired constructor(
         return reminders.map { it.asResponse() }.toMutableList()
     }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'read')")
+    @BoardOnly
     @GetMapping("/contributionReminders")
     fun findContributionReminders(@RequestParam contributionPeriodId: Long): MutableList<ContributionReminderResponse> {
         val reminders = service.findByContributionPeriodId(contributionPeriodId)

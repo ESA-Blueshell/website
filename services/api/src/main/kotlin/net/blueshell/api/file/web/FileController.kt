@@ -8,6 +8,7 @@ import net.blueshell.api.file.api.Image
 import net.blueshell.api.file.api.PublicFileUrls
 import net.blueshell.api.file.api.asImage
 import net.blueshell.api.file.domain.NotAPublicImageException
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.core.io.Resource
@@ -57,7 +58,7 @@ class FileController(
      */
     @PostMapping(value = [PublicFileUrls.UPLOAD], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @BoardOnly
     fun uploadPublicImage(
         @RequestParam type: FileType,
         @RequestPart("file") @NotNull(message = "File is required") file: MultipartFile,

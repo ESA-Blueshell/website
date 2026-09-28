@@ -45,7 +45,7 @@ class TestFixturesController(
 
     data class CommitteeSeatFixture(
         val username: String,
-        val role: String? = null,
+        val role: String?,
     )
 
     data class ContributionFixture(

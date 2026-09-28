@@ -59,7 +59,7 @@ describe("GuestForm", () => {
     expect(rulesByName(wrapper)).toMatchObject({
       name: "required",
       discord: "required",
-      email: "required|email|noStudentEmail",
+      email: "required|email",
       phoneNumber: "required|phoneMobile:NL",
     })
   })

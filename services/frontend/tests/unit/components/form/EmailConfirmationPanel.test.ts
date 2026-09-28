@@ -131,7 +131,7 @@ describe("EmailConfirmationPanel", () => {
 
       const field = wrapper.findComponent({name: "VvField"})
       expect(field.props("name")).toBe("email")
-      expect(field.props("rules")).toBe("required|email|noStudentEmail")
+      expect(field.props("rules")).toBe("required|email")
     })
 
     it("abandons the correction on cancel", async () => {

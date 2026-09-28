@@ -49,10 +49,8 @@ describe("what a field must hold", () => {
     expect(await said("", "email")).toBeUndefined()
     expect(await said("joris@blueshell.nl", "email")).toBeUndefined()
     expect(await said("joris@blueshell", "email")).toBe("Enter a valid e-mail address")
-    expect(await said("", "noStudentEmail")).toBeUndefined()
-    expect(await said("joris@blueshell.nl", "noStudentEmail")).toBeUndefined()
-    expect(await said("s1234@student.ru.nl", "noStudentEmail"))
-      .toBe("You may not use your student email to sign up")
+    // The api accepts a student address, so the form does too (#1672).
+    expect(await said("s1234@student.utwente.nl", "email")).toBeUndefined()
   })
 
   it("asks a password for each of the four things", async () => {

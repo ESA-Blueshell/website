@@ -83,7 +83,7 @@ defineExpose({validate})
           :component-props="{ hint: `We'll use this to send you a link you can use to edit your sign-up form later` }"
           label="Email*"
           name="email"
-          rules="required|email|noStudentEmail"
+          rules="required|email"
         />
       </v-col>
 

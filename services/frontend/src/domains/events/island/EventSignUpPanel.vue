@@ -219,7 +219,7 @@ async function withdraw() {
   gap: 0.6rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .panel {
     padding: 1.3rem 1.25rem 1.4rem;
   }

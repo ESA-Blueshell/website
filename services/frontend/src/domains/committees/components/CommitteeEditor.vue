@@ -402,7 +402,7 @@ const removeIt = async () => {
   grid-template-columns: minmax(0, 1fr);
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .committee-editor__seat {
     grid-template-columns: minmax(0, 1fr) auto;
   }

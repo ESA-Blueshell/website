@@ -2,6 +2,7 @@ import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
 import {defineComponent, h, nextTick, ref, type Ref} from "vue"
 import SliceBand from "@/components/island/SliceBand.vue"
+import {PHONE} from "@/styles/breakpoints"
 import {provideTravelling} from "@/components/island/bandTravel.ts"
 
 const items = [
@@ -178,7 +179,7 @@ describe("SliceBand", () => {
   it("asks for the width of the window where the slices are stacked", async () => {
     const wide = window.matchMedia
     window.matchMedia = ((query: string) => ({
-      matches: query.includes("max-width: 767px"),
+      matches: query === PHONE,
       media: query,
       addEventListener: () => {},
       removeEventListener: () => {},

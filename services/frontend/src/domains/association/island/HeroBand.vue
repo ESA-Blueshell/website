@@ -126,7 +126,7 @@ const sizes = computed(() => "100vw")
   text-shadow: 0 1px 6px rgb(0 0 0 / 55%);
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .hero-band {
     height: clamp(17rem, 62vw, 24rem);
   }

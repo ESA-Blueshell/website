@@ -73,7 +73,7 @@ const current = computed<string | undefined>(() =>
   box-shadow: inset 0 -2px 0 var(--color-eyebrow);
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .page-tabs__tab {
     padding: 0.85rem 0.9rem;
     font-size: 0.72rem;

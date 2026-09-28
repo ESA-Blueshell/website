@@ -149,7 +149,7 @@ withDefaults(defineProps<{
   gap: 0.6rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .call-band__inner {
     padding: 1.15rem 1.15rem 1.35rem;
   }

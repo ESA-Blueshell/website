@@ -69,7 +69,7 @@ const {asideTitle = ""} = defineProps<{
   color: var(--color-brand-ink);
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .task {
     grid-template-columns: minmax(0, 1fr);
     gap: 1.75rem;

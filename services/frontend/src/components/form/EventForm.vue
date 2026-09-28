@@ -616,7 +616,7 @@ defineExpose({validate, save})
   }
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .event-form__save {
     padding: 0.9rem 1rem;
   }

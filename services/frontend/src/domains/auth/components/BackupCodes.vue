@@ -75,7 +75,7 @@ const copy = async () => {
   gap: 0.6rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .backup-codes__code {
     padding: 0.6rem 0.7rem;
     letter-spacing: 0;

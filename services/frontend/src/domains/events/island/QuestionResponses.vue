@@ -341,7 +341,7 @@ const MISSING = "No answer yet: this person has not edited their sign-up since t
   color: var(--color-ash);
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .question__said-row {
     grid-template-columns: 1fr;
     gap: 0.15rem;

@@ -171,7 +171,7 @@ function onSuccess() {
   padding: 1.5rem 2rem 3rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .edit-event__head {
     padding-top: 0.5rem;
   }

@@ -241,7 +241,7 @@ const JOIN = {
   text-decoration: underline;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .inclusivity-photo {
     max-height: 14rem;
     mask-image: none;

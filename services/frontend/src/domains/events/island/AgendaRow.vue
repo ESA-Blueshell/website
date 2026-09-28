@@ -240,7 +240,7 @@ function signedOut(id: number) {
 }
 
 /* On a phone the state and the actions drop under the title, and nothing is hidden. */
-@media (max-width: 767px) {
+@media (--phone) {
   .row__line {
     grid-template-columns: 3rem 4.25rem minmax(0, 1fr);
     gap: 0 0.85rem;

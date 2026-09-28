@@ -192,7 +192,7 @@ const pages = computed(() => accountFor(reader.value))
   }
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .account__heading {
     font-size: 1.6rem;
   }

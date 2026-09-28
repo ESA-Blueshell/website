@@ -4,8 +4,10 @@ import {defineConfig} from 'vite'
 import {fileURLToPath} from 'node:url'
 import svgLoader from 'vite-svg-loader'
 import tailwind from '@tailwindcss/vite'
+import postcssCustomMedia from 'postcss-custom-media'
 import {existsSync, readFileSync} from 'node:fs'
 import {notoEmoji} from './scripts/notoEmoji.mjs'
+import {PHONE} from './src/styles/breakpoints.ts'
 
 // The api answers at the page's own origin under /api, in development as in
 // production, so nothing has to know the host it is reached on: localhost from
@@ -74,6 +76,13 @@ export default defineConfig({
         },
     },
     css: {
+        postcss: {
+            plugins: [
+                // Every stylesheet may write `@media (--phone)`, so each is given the definition.
+                {postcssPlugin: 'phone-media', Once: root => { root.prepend(`@custom-media --phone ${PHONE};`) }},
+                postcssCustomMedia(),
+            ],
+        },
         preprocessorOptions: {
             scss: {
                 additionalData: `

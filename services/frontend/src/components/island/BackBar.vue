@@ -81,7 +81,7 @@ withDefaults(defineProps<{to: string; label: string; testid?: string; accent?: s
   }
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .back-bar__column {
     padding-inline: 1.25rem;
   }

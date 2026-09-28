@@ -920,7 +920,7 @@ const step = (from: number, by: number) => {
  * need and they stay on the line: both labels travel with their own nodes, which is all the
  * naming a highlighted band needs.
  */
-@media (max-width: 767px) {
+@media (--phone) {
   .timeline {
     --cut: 14px;
   }

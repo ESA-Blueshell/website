@@ -148,7 +148,7 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`])
   color: var(--color-chalk);
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .island-cut {
     padding: 0.55rem 1rem;
     font-size: 0.68rem;

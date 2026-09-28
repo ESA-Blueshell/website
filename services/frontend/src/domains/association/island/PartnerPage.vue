@@ -176,7 +176,7 @@ const {content} = defineProps<{content: PartnerContent}>()
   padding-left: 0.9rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .partner__head {
     grid-template-columns: minmax(0, 1fr);
   }

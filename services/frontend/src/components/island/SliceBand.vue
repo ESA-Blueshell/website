@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {PHONE} from "@/styles/breakpoints"
 import {useTravelling} from "./bandTravel"
 import {coveredWidth} from "./pictures"
 import {useMotionAllowed} from "./useMotionAllowed"
@@ -166,7 +167,7 @@ const tapped = ref<number | null>(null)
 
 /** Stacked, there is no pointer to move across the slices, so the scroll does the choosing. */
 const stacked = () =>
-  typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  typeof window !== "undefined" && window.matchMedia(PHONE).matches
 
 let watcher: IntersectionObserver | null = null
 
@@ -1137,7 +1138,7 @@ watch(open, (index) => {
 }
 
 /* A reveal clipped at its last line is worse than a taller slice. */
-@media (max-width: 767px) {
+@media (--phone) {
   .slice--open .slice__reveal {
     max-height: 22rem;
   }
@@ -1232,7 +1233,7 @@ watch(open, (index) => {
 
 /* Stacked on a narrow screen, where a row of slices would leave each one a sliver. The cut
    turns with them so the seams still read as diagonal. */
-@media (max-width: 767px) {
+@media (--phone) {
   .slices {
     --cut: 22px;
 
@@ -1626,7 +1627,7 @@ watch(open, (index) => {
  * and the words start on the ground it left. A band of faces now makes the same decision,
  * because it is the same decision, and a page no longer contradicts itself one band down.
  */
-@media (max-width: 767px) {
+@media (--phone) {
   /*
    * The slice measures itself, so the picture's height is a proportion of the slice.
    *
@@ -1998,7 +1999,7 @@ watch(open, (index) => {
  * blanket, which is why its figure is a share of `--slice-ease` too: a movement that cannot be
  * switched off by a blanket has to carry the ceiling itself.
  */
-@media (prefers-reduced-motion: reduce) and (max-width: 767px) {
+@media (prefers-reduced-motion: reduce) and (--phone) {
   .slice--aside .slice__body {
     transition: grid-template-rows var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
   }

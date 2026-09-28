@@ -45,7 +45,7 @@ const {name, count} = defineProps<{name: string, count: number}>()
   background: var(--color-hairline);
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .month {
     padding-top: 1.2rem;
   }

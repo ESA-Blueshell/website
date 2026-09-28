@@ -24,7 +24,7 @@ defineOptions({name: "FormFields"})
   grid-column: 1 / -1;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .form-fields {
     grid-template-columns: 1fr;
   }

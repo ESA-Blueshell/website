@@ -137,7 +137,7 @@ const {facts, columns = 3} = defineProps<{
 }
 
 /* Two to a row, the third across the foot, so no value is squeezed to a word a line. */
-@media (max-width: 767px) {
+@media (--phone) {
   .facts--3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

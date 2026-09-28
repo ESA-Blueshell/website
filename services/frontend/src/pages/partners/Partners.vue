@@ -248,7 +248,7 @@ const TALK = {
 }
 
 
-@media (max-width: 767px) {
+@media (--phone) {
   .dsl-logo {
     height: 3rem;
   }

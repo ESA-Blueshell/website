@@ -486,6 +486,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@csstools/cascade-layer-name-parser@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "@csstools/cascade-layer-name-parser@npm:3.0.1"
+  peerDependencies:
+    "@csstools/css-parser-algorithms": ^4.0.1
+    "@csstools/css-tokenizer": ^4.0.2
+  checksum: 10c0/6e1d9fb2a7c4661d10d39a1cd3fcf0c4d00c9e080c2c8990a0ecc508a2b8168d0d03585a5d329230740ac331867ffc5610c2e5bfa3ae4939d558e168c21c9a43
+  languageName: node
+  linkType: hard
+
 "@csstools/color-helpers@npm:^6.1.0":
   version: 6.1.0
   resolution: "@csstools/color-helpers@npm:6.1.0"
@@ -525,6 +535,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@csstools/css-parser-algorithms@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@csstools/css-parser-algorithms@npm:4.0.1"
+  peerDependencies:
+    "@csstools/css-tokenizer": ^4.0.2
+  checksum: 10c0/9acac316cb539a5ec0063d2592c9cb8a4024226b280fafac3c8c62771edde6ea42e65cf123dbc815a6635eedf711cca44ca0b41e4511683eb86989134c04d30e
+  languageName: node
+  linkType: hard
+
 "@csstools/css-syntax-patches-for-csstree@npm:^1.1.7":
   version: 1.1.7
   resolution: "@csstools/css-syntax-patches-for-csstree@npm:1.1.7"
@@ -541,6 +560,23 @@ __metadata:
   version: 4.0.0
   resolution: "@csstools/css-tokenizer@npm:4.0.0"
   checksum: 10c0/669cf3d0f9c8e1ffdf8c9955ad8beba0c8cfe03197fe29a4fcbd9ee6f7a18856cfa42c62670021a75183d9ab37f5d14a866e6a9df753a6c07f59e36797a9ea9f
+  languageName: node
+  linkType: hard
+
+"@csstools/css-tokenizer@npm:^4.0.2":
+  version: 4.0.2
+  resolution: "@csstools/css-tokenizer@npm:4.0.2"
+  checksum: 10c0/748b42450064cca6a54d2bb8a719cb765c6433b8988ed8855f39c9814b8ef30c4daab235ffee9dacb0388916d6e250ec6bee454e8353d06161228e129e4272ae
+  languageName: node
+  linkType: hard
+
+"@csstools/media-query-list-parser@npm:^5.0.1":
+  version: 5.0.1
+  resolution: "@csstools/media-query-list-parser@npm:5.0.1"
+  peerDependencies:
+    "@csstools/css-parser-algorithms": ^4.0.1
+    "@csstools/css-tokenizer": ^4.0.2
+  checksum: 10c0/be72992714666d74b284f1add0ddaad0c548c7f2bb80afe6624929ccff57bee68e180a4f86044231113f578f8c1c4a390f9befa0d9fd8affc32b34ad360c053a
   languageName: node
   linkType: hard
 
@@ -3090,6 +3126,7 @@ __metadata:
     marked: "npm:^18.0.11"
     motion-v: "npm:^2.4.2"
     node-emoji: "npm:^2.2.0"
+    postcss-custom-media: "npm:^12.0.2"
     qrcode: "npm:^1.5.4"
     reka-ui: "npm:^2.10.4"
     roboto-fontface: "npm:^0.10.0"
@@ -6113,6 +6150,20 @@ __metadata:
   version: 5.0.0
   resolution: "pngjs@npm:5.0.0"
   checksum: 10c0/c074d8a94fb75e2defa8021e85356bf7849688af7d8ce9995b7394d57cd1a777b272cfb7c4bce08b8d10e71e708e7717c81fd553a413f21840c548ec9d4893c6
+  languageName: node
+  linkType: hard
+
+"postcss-custom-media@npm:^12.0.2":
+  version: 12.0.2
+  resolution: "postcss-custom-media@npm:12.0.2"
+  dependencies:
+    "@csstools/cascade-layer-name-parser": "npm:^3.0.1"
+    "@csstools/css-parser-algorithms": "npm:^4.0.1"
+    "@csstools/css-tokenizer": "npm:^4.0.2"
+    "@csstools/media-query-list-parser": "npm:^5.0.1"
+  peerDependencies:
+    postcss: ^8.4
+  checksum: 10c0/ef78dc5a5153bebfe53f2c5b36de132f53b57ac6b613d9f68247507c417e0f60ce041224e7e8e414bf73d96004e53cfd39c14c8d11a1c076fac311c0a41ae4e6
   languageName: node
   linkType: hard
 

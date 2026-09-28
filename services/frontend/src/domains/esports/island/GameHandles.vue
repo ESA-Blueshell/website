@@ -224,7 +224,7 @@ onMounted(refresh)
   justify-content: flex-end;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .handle {
     --row-h: 7.4rem;
 

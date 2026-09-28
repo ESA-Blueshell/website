@@ -6,6 +6,7 @@
  */
 import {computed} from "vue"
 import {DateTime} from "luxon"
+import {PHONE} from "@/styles/breakpoints"
 import CutButton from "@/components/island/CutButton.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import PosterArt from "@/components/island/PosterArt.vue"
@@ -121,7 +122,7 @@ const tileOf = (event: EventResponse) => {
                 :banner="tileOf(event).banner"
                 class="archive__art"
                 :height="tileOf(event).height"
-                sizes="(max-width: 767px) 50vw, 12rem"
+                :sizes="`${PHONE} 50vw, 12rem`"
                 :srcset="tileOf(event).srcset"
                 :title="event.title"
                 v-bind="plateOf(event)"
@@ -274,7 +275,7 @@ const tileOf = (event: EventResponse) => {
   }
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .archive__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

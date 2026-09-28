@@ -41,10 +41,10 @@ describe("HomeHero", () => {
   })
 
   it("lights the Discord mark's slot only once there is a count to stand for", () => {
-    expect(mountHero().find("[data-testid=home-discord-live]").exists()).toBe(false)
+    expect(mountHero().find("[data-testid=home-hero-discord-live]").exists()).toBe(false)
 
     const counted = mountHero({online: 42})
-    expect(counted.find("[data-testid=home-discord-live]").exists()).toBe(true)
+    expect(counted.find("[data-testid=home-hero-discord-live]").exists()).toBe(true)
     expect(counted.find(".home-hero__social").attributes("aria-label")).toBe("Discord, 42 online")
   })
 })

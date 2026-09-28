@@ -4,7 +4,7 @@
       class="home-island"
       testid="home-island"
     >
-      <home-hero />
+      <home-hero :online="online" />
       <upcoming-band />
       <casual-band />
       <lineup-band />
@@ -25,7 +25,7 @@
           Become a member
         </cut-button>
       </perk-band>
-      <discord-band />
+      <discord-band @online="online = $event" />
       <partner-wall
         eyebrow="The organisations who make Blueshell possible"
         heading="Our partners"
@@ -45,6 +45,7 @@
 </template>
 
 <script lang="ts" setup>
+import {ref} from "vue"
 import CallBand from "@/components/island/CallBand.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
@@ -56,6 +57,8 @@ import UpcomingBand from "@/domains/association/island/UpcomingBand.vue"
 import {HOME_CALL, HOME_PARTNERS, HOME_PERKS} from "@/domains/association"
 import DiscordBand from "@/domains/discord/island/DiscordBand.vue"
 import LineupBand from "@/domains/esports/island/LineupBand.vue"
+
+const online = ref<number>()
 </script>
 
 <style lang="scss" scoped>

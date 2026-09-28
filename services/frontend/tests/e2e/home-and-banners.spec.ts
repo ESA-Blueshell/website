@@ -15,6 +15,8 @@ test.describe("home page banners", () => {
       .toHaveAttribute("href", "https://discord.com/channels/324285132133629963/1")
     await expect(page.getByTestId("home-discord-room-9")).toHaveCount(0)
     await expect(page.getByTestId("home-discord-live")).toHaveText("2/40 online")
+    // The hero reads the same count from the band rather than asking again.
+    await expect(page.getByTestId("home-hero").getByRole("link", {name: "Discord, 2 online"})).toBeVisible()
     await expect(page.getByTestId("home-partners-El Niño")).toHaveAttribute("href", "/partners/el-nino")
     await expect(page.getByTestId("home-call-discord")).toHaveAttribute("href", /\/api\/discord\/invite\/welcome$/)
     await expect(page.getByText(/SITECIE GANG/i).first()).toBeVisible()

@@ -34,7 +34,7 @@ const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
   ImagePicker, EventGamesPicker, CommitteeSeats, ConfirmDialog, ArtCells, RecordHead, MarkdownEditor,
-  CutButton: {props: ["href", "testid", "disabled"], template: "<a :href='href' :data-testid='testid' :data-disabled='disabled'><slot /></a>"},
+  CutButton: {props: ["href", "testid"], template: "<a :href='href' :data-testid='testid'><slot /></a>"},
 }
 
 const lan = {

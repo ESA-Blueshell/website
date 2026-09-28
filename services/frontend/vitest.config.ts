@@ -104,7 +104,6 @@ export default defineConfig({
         "src/components/island/NoticeBox.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/useAnchoredPanel.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domains/association/island/CasualBand.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
-        "src/domains/association/island/casualGames.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domains/esports/island/LineupBand.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domains/esports/island/lineupSlice.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/BandHead.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
@@ -141,7 +140,6 @@ export default defineConfig({
 
         // The forms these fields went into, held at what they cover today so a port cannot
         // quietly take a form backwards.
-        "src/components/form/CommitteeForm.vue": { lines: 87, branches: 75, functions: 85 },
         "src/components/form/EventForm.vue": { lines: 50, branches: 42, functions: 52 },
         "src/components/form/GuestForm.vue": { lines: 77, branches: 100, functions: 66 },
         "src/components/form/UserForm.vue": { lines: 81, branches: 84, functions: 65 },

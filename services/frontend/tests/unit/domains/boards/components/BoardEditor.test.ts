@@ -27,7 +27,7 @@ describe("the board edit page", () => {
     const stops = () => wrapper.getComponent(editorStubs.Timeline).props("stops") as Array<{id: number}>
 
     expect(wrapper.getComponent(editorStubs.EditPage).props("title")).toBe("Add a board")
-    expect(wrapper.get("[data-testid=board-edit-save]").attributes("data-disabled")).toBe("true")
+    expect(wrapper.get("[data-testid=board-edit-save]").attributes("disabled")).toBeDefined()
     write(wrapper, "board-edit-name", "Orange")
     write(wrapper, "board-edit-cheer", "Forward")
     wrapper.getComponent({name: "ColourControl"}).vm.$emit("update:modelValue", "#ff7a1a")
@@ -129,7 +129,7 @@ describe("the board edit page", () => {
     await flushPromises()
 
     expect(wrapper.getComponent(editorStubs.EditPage).props("accent")).toBe("var(--color-brand)")
-    expect(wrapper.get("[data-testid=board-edit-save]").attributes("data-disabled")).toBe("true")
+    expect(wrapper.get("[data-testid=board-edit-save]").attributes("disabled")).toBeDefined()
     await wrapper.get("form").trigger("submit")
     expect(adapter.saveBoardOrReason).not.toHaveBeenCalled()
   })

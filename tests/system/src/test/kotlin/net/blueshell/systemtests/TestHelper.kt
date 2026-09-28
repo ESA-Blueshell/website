@@ -629,34 +629,6 @@ object TestHelper {
     }
 
     /**
-     * Look up a single membership row by id. Returns null when no
-     * active row exists.
-     */
-    fun findMembership(membershipId: Long): MembershipRow? =
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn
-                .prepareStatement(
-                    "SELECT id, user_id, start_date, end_date, type, incasso " +
-                        "FROM memberships WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
-                ).use { stmt ->
-                    stmt.setLong(1, membershipId)
-                    val rs = stmt.executeQuery()
-                    if (rs.next()) {
-                        MembershipRow(
-                            id = rs.getLong("id"),
-                            userId = rs.getLong("user_id"),
-                            startDate = rs.getDate("start_date").toLocalDate(),
-                            endDate = rs.getDate("end_date")?.toLocalDate(),
-                            type = rs.getString("type"),
-                            incasso = rs.getBoolean("incasso"),
-                        )
-                    } else {
-                        null
-                    }
-                }
-        }
-
-    /**
      * Returns true when a `member_profiles` row exists for the user
      * (the row's primary key IS the user id; the table inherits from
      * the `users` row in the api's JPA hierarchy).
@@ -761,36 +733,6 @@ object TestHelper {
                     if (rs.next()) rs.getInt(1) else 0
                 }
         }
-
-    /** Issue a recovery token straight into the table, to set up a link that is already outstanding. */
-    fun seedRecoveryToken(
-        username: String,
-        type: String,
-    ) {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            val userId = userIdOrThrow(conn, username)
-            // created_at, updated_at, version and deleted_at all carry defaults.
-            conn
-                .prepareStatement(
-                    "INSERT INTO recovery_tokens (user_id, type, selector, verifier_hash, expires_at) " +
-                        "VALUES (?, ?, ?, ?, ?)",
-                ).use { stmt ->
-                    stmt.setLong(1, userId)
-                    stmt.setString(2, type)
-                    stmt.setString(3, UUID.randomUUID().toString().take(24))
-                    stmt.setString(4, "seeded-not-a-real-hash")
-                    stmt.setTimestamp(
-                        5,
-                        java.sql.Timestamp.from(
-                            java.time.Instant
-                                .now()
-                                .plusSeconds(3600),
-                        ),
-                    )
-                    stmt.executeUpdate()
-                }
-        }
-    }
 
     fun firstNameOf(username: String): String? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
@@ -1079,16 +1021,6 @@ object TestHelper {
                     require(keys.next()) { "INSERT contribution_periods produced no id" }
                     keys.getLong(1)
                 }
-        }
-    }
-
-    /** Soft-deletes a contribution period, so a stale selection can name a period that has gone. */
-    fun deleteContributionPeriod(periodId: Long) {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement("UPDATE contribution_periods SET deleted_at = NOW() WHERE id = ?").use { stmt ->
-                stmt.setLong(1, periodId)
-                stmt.executeUpdate()
-            }
         }
     }
 
@@ -1772,15 +1704,6 @@ object TestHelper {
         val toName: String,
         val subject: String,
         val htmlContent: String,
-    )
-
-    data class MembershipRow(
-        val id: Long,
-        val userId: Long,
-        val startDate: java.time.LocalDate,
-        val endDate: java.time.LocalDate?,
-        val type: String,
-        val incasso: Boolean,
     )
 
     data class CommitteeRow(

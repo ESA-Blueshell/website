@@ -27,3 +27,12 @@ class BoardHoldsMembers(
         "That board cannot be removed.",
         mapOf("number" to number, "members" to members),
     )
+
+class BoardNotFound(
+    id: Long,
+) : BoardRefusal(
+        HttpStatus.NOT_FOUND,
+        "BoardNotFound",
+        "That board does not exist.",
+        mapOf("id" to id),
+    )

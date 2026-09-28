@@ -3,6 +3,7 @@ package net.blueshell.api.board.domain
 import net.blueshell.api.board.api.BoardMemberService
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
+import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
@@ -18,23 +19,25 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
+import java.util.Optional
 
 class BoardUseCasesTest {
-    private val boardService = mock<BoardService>()
+    private val boards = mock<BoardRepository>()
     private val pictures = mock<StoredPictures>()
     private val userService = mock<UserService>()
     private val boardMemberService = mock<BoardMemberService>()
-    private val useCases = BoardUseCases(boardService, boardMemberService, pictures, userService)
+    private val useCases = BoardUseCases(boards, boardMemberService, pictures, userService)
 
     @Nested
     inner class CreateBoard {
         @Test
         fun `creates board without picture`() {
             val boardCaptor = argumentCaptor<Board>()
-            whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
+            whenever(boards.saveAndFlush(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
             val result =
                 useCases.create(
@@ -57,7 +60,7 @@ class BoardUseCasesTest {
         @Test
         fun `a board with no name of its own keeps something in the column that duplicates it`() {
             val boardCaptor = argumentCaptor<Board>()
-            whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
+            whenever(boards.saveAndFlush(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
             val result =
                 useCases.create(
@@ -76,7 +79,7 @@ class BoardUseCasesTest {
 
         @Test
         fun `refuses a number another board already holds`() {
-            whenever(boardService.findByNumber(9)).thenReturn(boardEntity())
+            whenever(boards.findByNumber(9)).thenReturn(Optional.of(boardEntity()))
 
             assertThrows<DuplicateBoardException> {
                 useCases.create(
@@ -89,7 +92,7 @@ class BoardUseCasesTest {
                 )
             }
 
-            verify(boardService, never()).create(any())
+            verify(boards, never()).saveAndFlush(any())
         }
 
         @Test
@@ -97,7 +100,7 @@ class BoardUseCasesTest {
             val picture = mock<File>()
             val boardCaptor = argumentCaptor<Board>()
             whenever(pictures.of(PHOTO_PATH, FileType.BOARD_PHOTO)).thenReturn(picture)
-            whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
+            whenever(boards.saveAndFlush(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
             val result =
                 useCases.create(
@@ -114,13 +117,32 @@ class BoardUseCasesTest {
     }
 
     @Nested
+    inner class ReadBoard {
+        @Test
+        fun `refuses a board that does not exist with its own code`() {
+            val refusal = assertThrows<BoardNotFound> { useCases.byId(404L) }
+
+            assertThat(refusal.code).isEqualTo("BoardNotFound")
+            assertThat(refusal.facts).containsEntry("id", 404L)
+        }
+
+        @Test
+        fun `reads every board from the repository`() {
+            val board = boardEntity()
+            whenever(boards.findAll()).thenReturn(mutableListOf(board))
+
+            assertThat(useCases.all()).containsExactly(board)
+        }
+    }
+
+    @Nested
     inner class UpdateBoard {
         @Test
         fun `updates board and clears the photograph when none is named`() {
             val board = boardEntity()
             board.replacePicture(mock())
-            whenever(boardService.findById(7L)).thenReturn(board)
-            whenever(boardService.update(board)).thenReturn(board)
+            whenever(boards.findById(7L)).thenReturn(Optional.of(board))
+            whenever(boards.saveAndFlush(board)).thenReturn(board)
 
             val result =
                 useCases.update(
@@ -136,15 +158,18 @@ class BoardUseCasesTest {
             assertThat(result.name).isEqualTo("Updated Board")
             assertThat(result.candidate).isEqualTo("Updated Candidate")
             assertThat(result.picture).isNull()
+            // One read of the row: no existence check and no refresh after the write.
+            verify(boards, times(1)).findById(7L)
+            verify(boards, never()).existsById(any())
         }
 
         @Test
         fun `updates board and replaces the photograph a stored path names`() {
             val board = boardEntity()
             val picture = mock<File>()
-            whenever(boardService.findById(7L)).thenReturn(board)
+            whenever(boards.findById(7L)).thenReturn(Optional.of(board))
             whenever(pictures.of(PHOTO_PATH, FileType.BOARD_PHOTO)).thenReturn(picture)
-            whenever(boardService.update(board)).thenReturn(board)
+            whenever(boards.saveAndFlush(board)).thenReturn(board)
 
             val result =
                 useCases.update(
@@ -167,7 +192,7 @@ class BoardUseCasesTest {
         fun `adds a member who is not on the board yet`() {
             val board = boardEntity()
             val user = userEntity()
-            whenever(boardService.findById(9L)).thenReturn(board)
+            whenever(boards.findById(9L)).thenReturn(Optional.of(board))
             whenever(userService.findById(11L)).thenReturn(user)
             whenever(boardMemberService.findByBoardAndUser(eq(9L), any())).thenReturn(null)
             val memberCaptor = argumentCaptor<BoardMember>()
@@ -189,7 +214,7 @@ class BoardUseCasesTest {
 
         @Test
         fun `adds somebody with no account under their own name`() {
-            whenever(boardService.findById(9L)).thenReturn(boardEntity())
+            whenever(boards.findById(9L)).thenReturn(Optional.of(boardEntity()))
             val memberCaptor = argumentCaptor<BoardMember>()
             whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
 
@@ -213,7 +238,7 @@ class BoardUseCasesTest {
 
         @Test
         fun `records the nickname beside the name rather than inside it`() {
-            whenever(boardService.findById(9L)).thenReturn(boardEntity())
+            whenever(boards.findById(9L)).thenReturn(Optional.of(boardEntity()))
             val memberCaptor = argumentCaptor<BoardMember>()
             whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
 
@@ -235,7 +260,7 @@ class BoardUseCasesTest {
         @Test
         fun `takes the portrait a stored path names`() {
             val portrait = mock<File>()
-            whenever(boardService.findById(9L)).thenReturn(boardEntity())
+            whenever(boards.findById(9L)).thenReturn(Optional.of(boardEntity()))
             whenever(pictures.of(PORTRAIT_PATH, FileType.BOARD_PORTRAIT)).thenReturn(portrait)
             val memberCaptor = argumentCaptor<BoardMember>()
             whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
@@ -266,7 +291,7 @@ class BoardUseCasesTest {
                     role = "MEMBER",
                     startDate = LocalDate.of(2025, 1, 1),
                 )
-            whenever(boardService.findById(9L)).thenReturn(board)
+            whenever(boards.findById(9L)).thenReturn(Optional.of(board))
             whenever(userService.findById(11L)).thenReturn(user)
             whenever(boardMemberService.findByBoardAndUser(eq(9L), any())).thenReturn(existing)
             whenever(pictures.of(PORTRAIT_PATH, FileType.BOARD_PORTRAIT)).thenReturn(portrait)
@@ -296,7 +321,7 @@ class BoardUseCasesTest {
                     role = "MEMBER",
                     startDate = LocalDate.of(2025, 1, 1),
                 )
-            whenever(boardService.findById(9L)).thenReturn(board)
+            whenever(boards.findById(9L)).thenReturn(Optional.of(board))
             whenever(userService.findById(11L)).thenReturn(user)
             whenever(boardMemberService.findByBoardAndUser(eq(9L), any())).thenReturn(existing)
             whenever(boardMemberService.update(existing)).thenReturn(existing)
@@ -377,6 +402,31 @@ class BoardUseCasesTest {
             assertThat(result.user).isNull()
             assertThat(result.name).isEqualTo("Thijs Lieverse")
             verify(userService, never()).findById(any())
+        }
+    }
+
+    @Nested
+    inner class RemoveBoard {
+        @Test
+        fun `removes a board nobody sits on`() {
+            val board = boardEntity()
+            whenever(boards.findById(9L)).thenReturn(Optional.of(board))
+            whenever(boardMemberService.membersOn(9L)).thenReturn(0L)
+
+            useCases.remove(9L)
+
+            verify(boards).delete(board)
+        }
+
+        @Test
+        fun `refuses a board that still has members, with the count`() {
+            whenever(boards.findById(9L)).thenReturn(Optional.of(boardEntity()))
+            whenever(boardMemberService.membersOn(9L)).thenReturn(3L)
+
+            val refusal = assertThrows<BoardHoldsMembers> { useCases.remove(9L) }
+
+            assertThat(refusal.facts).containsEntry("members", 3L)
+            verify(boards, never()).delete(any<Board>())
         }
     }
 

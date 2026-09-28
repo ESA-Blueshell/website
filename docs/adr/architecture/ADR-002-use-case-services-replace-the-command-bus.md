@@ -101,7 +101,19 @@ Decided, none of it built. Sequenced in
   and their two unit tests are removed outright — verified unused.
 - `shared/command` (3 files, 13 consumer modules) disappears with the bus.
 - `BaseModelService` survives phase 1 unchanged; whether generic CRUD services
-  remain once use-case services exist is deliberately left open.
+  remain once use-case services exist was left open.
+
+### Generic CRUD services go (#1650)
+
+They do not remain. Every aggregate ended up with both an `XService` over
+`BaseModelService` and an `XUseCases`, and the use case is the one that knows the
+operation. A use-case service works with its repository directly: it reads the row
+once, writes it back, and answers a missing one with its module's refusal rather
+than a sentence in a `ResponseStatusException`.
+
+The board module is the tracer: `BoardService` is folded into `BoardUseCases`. The
+other subclasses follow in batches (#1651, #1652, #1653), and `BaseModelService`
+is deleted once none is left (#1654).
 
 ## Consequences
 

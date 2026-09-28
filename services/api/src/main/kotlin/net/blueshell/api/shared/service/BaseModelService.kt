@@ -16,9 +16,10 @@ import java.util.function.Supplier
 /**
  * Generic CRUD over a JPA repository for entity [T] with key [ID] and repository [R].
  *
- * The repository is private, so a subclass cannot reach past these methods to it. Every
- * data-changing operation calls its `pre` / `post` hook, which is where a subclass adds
- * validation, auditing or events.
+ * The repository is protected, so a subclass reaches it directly for its own queries. A missing
+ * row answers 404 through a `ResponseStatusException` naming the entity, unless the subclass
+ * overrides [findById] with its own refusal. Board folds its service into its use cases instead,
+ * and architecture ADR-002 says the rest follow.
  */
 abstract class BaseModelService<T : Identifiable<ID>, ID : Any, R : BaseRepository<T, ID>>(
     protected val repository: R,
@@ -43,12 +44,7 @@ abstract class BaseModelService<T : Identifiable<ID>, ID : Any, R : BaseReposito
      * CREATE
      * ----------------------------------------------------------------- */
 
-    /**
-     * Save a new entity.
-     *
-     * Sequence:&nbsp;
-     * `preCreate → save&flush → refresh → postCreate`
-     */
+    /** Saves a new entity, then reads it back so the columns the database fills are set. */
     @Transactional
     open fun create(entity: T): T {
         var entity = entity
@@ -57,17 +53,8 @@ abstract class BaseModelService<T : Identifiable<ID>, ID : Any, R : BaseReposito
         return entity
     }
 
-    /**
-     * Create a collection of entities.
-     *
-     * Each element is processed individually, so every item still triggers
-     * the pre- / post-hooks and id-existence check.
-     */
-    @Transactional
-    open fun createAll(entities: MutableList<T>): MutableList<T> = entities.map { create(it) }.toMutableList()
-
     /* -----------------------------------------------------------------
-     * UPDATE (single + batch)
+     * UPDATE
      * ----------------------------------------------------------------- */
 
     /**
@@ -86,15 +73,6 @@ abstract class BaseModelService<T : Identifiable<ID>, ID : Any, R : BaseReposito
         em.refresh(entity)
         return entity
     }
-
-    /**
-     * Update a collection of entities.
-     *
-     * Each element is processed individually, so every item still triggers
-     * the pre- / post-hooks and id-existence check.
-     */
-    @Transactional
-    open fun updateAll(entities: MutableList<T>): MutableList<T> = entities.map { this.update(it) }.toMutableList()
 
     /* -----------------------------------------------------------------
      * READ
@@ -172,14 +150,6 @@ abstract class BaseModelService<T : Identifiable<ID>, ID : Any, R : BaseReposito
     @Transactional
     open fun deleteAll(entities: Set<T>) {
         repository.deleteAll(entities)
-    }
-
-    /**
-     * Delete all entities by their ids.
-     */
-    @Transactional
-    open fun deleteAllById(ids: Set<ID>) {
-        repository.deleteAllById(ids)
     }
 
     /* -----------------------------------------------------------------

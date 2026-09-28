@@ -1,10 +1,11 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {fillMentions, forgetMentionNames, nameMentions} from "@/domains/discord"
 import {readMentionNames} from "@/domains/discord/adapters/mentions"
+import type {DiscordMentionsResponse} from "@/services/api"
 
 vi.mock("@/domains/discord/adapters/mentions", () => ({readMentionNames: vi.fn(), listServerChannels: vi.fn()}))
 
-const NAMED = {
+const NAMED: DiscordMentionsResponse = {
   users: [{id: "11", name: "Anna"}],
   roles: [{id: "901", name: "Gamers", colour: 0x3498DB}, {id: "324", name: "@everyone"}],
   channels: [{id: "2", name: "events-info"}],
@@ -12,7 +13,7 @@ const NAMED = {
 
 beforeEach(() => {
   forgetMentionNames()
-  vi.mocked(readMentionNames).mockResolvedValue(NAMED as never)
+  vi.mocked(readMentionNames).mockResolvedValue(NAMED)
 })
 
 describe("the names behind a description's mentions", () => {

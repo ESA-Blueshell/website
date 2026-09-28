@@ -34,7 +34,15 @@
     "tests/unit/domains/esports/island/LineupSource.test.ts",
     "tests/unit/domains/esports/components/SeasonEditor.test.ts",
     "tests/unit/domains/esports/components/TeamEditor.test.ts",
-    "tests/unit/domains/cohorts/adapters/**/*.ts"
+    "tests/unit/domains/cohorts/adapters/**/*.ts",
+    "tests/unit/domains/discord/mentions.test.ts",
+    "tests/unit/domains/discord/rooms.test.ts",
+    "tests/unit/domains/discord/adapters/channels.test.ts",
+    "tests/unit/domains/discord/adapters/emoji.test.ts",
+    "tests/unit/domains/discord/adapters/live.test.ts",
+    "tests/unit/domains/discord/adapters/members.test.ts",
+    "tests/unit/domains/discord/adapters/mentions.test.ts",
+    "tests/unit/domains/discord/adapters/roles.test.ts"
   ],
   "exclude": [
     "dist",

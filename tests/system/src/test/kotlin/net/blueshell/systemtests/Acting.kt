@@ -84,7 +84,8 @@ fun clickUntil(
         val slice = System.currentTimeMillis() + CLICK_RETRY_MS
         while (System.currentTimeMillis() < slice) {
             if (done()) return
-            Thread.sleep(POLL_INTERVAL_MS)
+            // Not Thread.sleep: a `done` fed by a page listener only hears events inside a Playwright call.
+            control.page().waitForTimeout(POLL_INTERVAL_MS.toDouble())
         }
         if (System.currentTimeMillis() >= deadline) break
     }
@@ -122,7 +123,13 @@ fun Page.awaitResponseFromRetried(
     val deadline = System.currentTimeMillis() + timeoutMs
     try {
         clickUntil(control, "the request for $expected", timeoutMs) { request.get() != null }
-        while (response.get() == null && System.currentTimeMillis() < deadline) Thread.sleep(POLL_INTERVAL_MS)
+        // A Playwright call, not a sleep: the Java client only delivers events while it is in one.
+        runCatching {
+            waitForCondition(
+                { response.get() != null },
+                Page.WaitForConditionOptions().setTimeout(maxOf(1L, deadline - System.currentTimeMillis()).toDouble()),
+            )
+        }
         return response.get() ?: throw AssertionError("Expected $expected within ${timeoutMs}ms${whatTheBrowserDid()}")
     } catch (e: AssertionError) {
         val clicks = runCatching { target.evaluate("el => el.__clicks") }.getOrNull()

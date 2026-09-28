@@ -4,7 +4,7 @@
  * Knowledge about jobs rather than about a page, so it sits in the domain and can be checked
  * without mounting anything.
  */
-import type {Job, JobRelatedEntity, JobStats} from "./adapters/jobs"
+import type {Job, JobFoldedTrigger, JobRelatedEntity, JobStats} from "./adapters/jobs"
 import {JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger} from "./adapters/jobs"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
 
@@ -59,6 +59,11 @@ export function triggerLabel(job: Job): string {
   if (!job.trigger) return ""
   const queuedBy = TRIGGERS[job.trigger]
   return job.forced && job.trigger !== JobTrigger.BY_HAND ? `${queuedBy}, run again by hand` : queuedBy
+}
+
+/** A trigger folded into a job, in the words its own trigger would have. */
+export function foldedTriggerLabel(folded: JobFoldedTrigger): string {
+  return TRIGGERS[folded.trigger]
 }
 
 /** What a successful run did to the thing its job keeps; empty where it reported nothing. */

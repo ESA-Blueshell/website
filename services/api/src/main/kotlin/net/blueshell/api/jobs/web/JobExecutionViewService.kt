@@ -83,6 +83,7 @@ class JobExecutionViewService(
             trigger = execution.trigger,
             effect = execution.effect,
             effectLink = execution.effectLink,
+            foldedTriggers = foldedTriggersOf(execution, userCache),
             payload = parsedPayload.raw,
             queuedAt = execution.queuedAt,
             startedAt = execution.startedAt,
@@ -155,20 +156,41 @@ class JobExecutionViewService(
         return "${user.fullName} (@${user.username})"
     }
 
+    private fun foldedTriggersOf(
+        execution: JobExecution,
+        userCache: MutableMap<Long, User?>,
+    ): List<JobFoldedTriggerDTO> =
+        execution.foldedTriggers.map { folded ->
+            val user = folded.actor.userId?.let { id -> getOrPutNullable(userCache, id) { findUserOrNull(id) } }
+            JobFoldedTriggerDTO(
+                trigger = folded.trigger,
+                at = folded.at,
+                initiatedByUserId = folded.actor.userId,
+                initiatedByType = folded.actor.type,
+                initiatedByDisplay = displayOf(folded.actor.type, folded.actor.userId, user),
+            )
+        }
+
     private fun formatInitiator(
         execution: JobExecution,
         user: User?,
+    ): String = displayOf(execution.initiatedByType, execution.initiatedByUserId, user)
+
+    private fun displayOf(
+        type: ActionActorType,
+        userId: Long?,
+        user: User?,
     ): String {
-        if (execution.initiatedByType == ActionActorType.SYSTEM) {
+        if (type == ActionActorType.SYSTEM) {
             return "System"
         }
         if (user != null) {
             return "${user.fullName} (@${user.username})"
         }
-        if (execution.initiatedByUserId != null) {
-            return "User #${execution.initiatedByUserId}"
+        if (userId != null) {
+            return "User #$userId"
         }
-        return execution.initiatedByType.name
+        return type.name
     }
 
     // A category owns its name as a whole type and as a prefix before `.`, `_` or `-`, as the filter does.

@@ -26,6 +26,7 @@ export type {Refused}
 export type Job = JobExecution
 export type JobStats = JobStatsDto
 export type JobRelatedEntity = NonNullable<Job["relatedEntities"]>[number]
+export type JobFoldedTrigger = Job["foldedTriggers"][number]
 export {JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger}
 
 /**

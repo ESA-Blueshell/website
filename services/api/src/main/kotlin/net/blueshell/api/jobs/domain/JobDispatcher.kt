@@ -54,7 +54,7 @@ class JobDispatcher(
     ): JobExecution? {
         val payloadJson = payload?.let { objectMapper.writeValueAsString(it) }
         val resolvedActor = actor ?: actorProvider.currentOrSystem()
-        val execution =
+        val enqueued =
             jobExecutionService.createQueued(
                 jobType = jobType,
                 payload = payloadJson,
@@ -65,8 +65,8 @@ class JobDispatcher(
                 forced = forced,
             ) ?: return null
 
-        if (properties.autoDispatch) {
-            val executionId = execution.id!!
+        if (properties.autoDispatch && enqueued.dispatch) {
+            val executionId = enqueued.execution.id!!
             if (TransactionSynchronizationManager.isSynchronizationActive()) {
                 TransactionSynchronizationManager.registerSynchronization(
                     object : TransactionSynchronization {
@@ -79,6 +79,6 @@ class JobDispatcher(
                 jobExecutor.executeAsync(executionId)
             }
         }
-        return execution
+        return enqueued.execution
     }
 }

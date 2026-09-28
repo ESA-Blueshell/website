@@ -176,6 +176,23 @@ describe("JobManager page", () => {
     expect(wrapper.find('[data-testid="job-trigger-4"]').text()).toBe("Queued by: A change in sign-ups")
   })
 
+  it("lists the triggers folded into a job, with who made them", async () => {
+    mockList.mockResolvedValue(pageOf([job({
+      id: 9,
+      trigger: "EVENT_CREATED",
+      foldedTriggers: [{trigger: "EVENT_UPDATED", at: "2026-10-01T10:00:00Z", initiatedByType: "USER", initiatedByDisplay: "Jane Doe (@jdoe)"}],
+    })]))
+
+    const wrapper = mountJobManager()
+    await settle()
+    await wrapper.find('[data-testid="job-row-9"]').trigger("click")
+    await settle()
+
+    const folded = wrapper.find('[data-testid="job-folded-trigger-9-0"]').text()
+    expect(folded).toContain("Also queued by: Editing the event")
+    expect(folded).toContain("Jane Doe (@jdoe)")
+  })
+
   it("says what a run did, linking to it, and hides skipped runs on request", async () => {
     mockList.mockResolvedValue(pageOf([
       job({id: 6, jobType: "discord.post", effect: "EDITED", effectLink: "https://discord.com/channels/1/2/3"}),

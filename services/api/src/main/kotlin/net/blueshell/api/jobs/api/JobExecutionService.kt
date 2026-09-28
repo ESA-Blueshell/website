@@ -1,6 +1,7 @@
 package net.blueshell.api.jobs.api
 
 import net.blueshell.api.jobs.domain.JobExecutionQuery
+import net.blueshell.api.jobs.persistence.FoldedTrigger
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.jobs.persistence.JobExecutionSpecifications
@@ -13,7 +14,15 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.security.MessageDigest
+import java.time.Clock
 import java.time.Instant
+
+/** What an enqueue came to: a new row, or the queued twin it was folded into, and whether that is to be dispatched now. */
+data class Enqueued(
+    val execution: JobExecution,
+    val dispatch: Boolean,
+)
 
 // One mark per status an execution can reach.
 @Suppress("TooManyFunctions")
@@ -21,6 +30,15 @@ import java.time.Instant
 class JobExecutionService(
     private val jobExecutionRepository: JobExecutionRepository,
 ) : BaseModelService<JobExecution, Long, JobExecutionRepository>(jobExecutionRepository) {
+    // Settable for tests only.
+    internal var clock: Clock = Clock.systemUTC()
+
+    /**
+     * Queues a job, or folds it into its queued twin: one of the same type and dedup key, which
+     * reads what it works on only once it runs. A twin waiting out a retry's backoff is pulled
+     * forward to run now. Null where a running twin makes the job redundant, which it does not
+     * for a job that [queuesBehindRunning].
+     */
     @Transactional
     fun createQueued(
         jobType: String,
@@ -30,37 +48,81 @@ class JobExecutionService(
         dedupKey: String? = null,
         queuesBehindRunning: Boolean = false,
         forced: Boolean = false,
-    ): JobExecution? {
-        if (dedupKey != null) {
-            val twins =
-                if (queuesBehindRunning) {
-                    listOf(JobExecutionStatus.QUEUED)
-                } else {
-                    listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
-                }
-            val active = jobExecutionRepository.existsByJobTypeAndDedupKeyAndStatusIn(jobType, dedupKey, twins)
-            if (active) return null
+    ): Enqueued? {
+        val create = { Enqueued(super.create(newExecution(jobType, payload, actor, trigger, dedupKey, forced)), dispatch = true) }
+        if (dedupKey == null) return create()
+        return holdingEnqueueLock(jobType, dedupKey) {
+            val twins = jobExecutionRepository.findTwinsForUpdate(jobType, dedupKey, ACTIVE)
+            val queued = twins.firstOrNull { it.status == JobExecutionStatus.QUEUED }
+            when {
+                queued != null -> fold(queued, trigger, actor)
+                twins.isNotEmpty() && !queuesBehindRunning -> null
+                else -> create()
+            }
         }
-
-        val execution =
-            JobExecution(
-                jobType = jobType,
-                status = JobExecutionStatus.QUEUED,
-                payload = payload,
-                // The initial enqueue already counts: attempts represents the
-                // upcoming-or-current run number, so a job that hasn't started
-                // yet shows attempts = 1 in the UI rather than 0.
-                attempts = 1,
-                queuedAt = Instant.now(),
-                dedupKey = dedupKey,
-                forced = forced,
-                trigger = trigger,
-                initiatedByUserId = actor.userId,
-                initiatedByType = actor.type,
-                initiatedByRole = actor.role,
-            )
-        return super.create(execution)
     }
+
+    private fun fold(
+        twin: JobExecution,
+        trigger: JobTrigger?,
+        actor: Actor,
+    ): Enqueued {
+        val now = clock.instant()
+        val waiting = twin.nextAttemptAt?.isAfter(now) == true
+        if (trigger != null) twin.foldedTriggers += FoldedTrigger(trigger, actor, now)
+        if (waiting) {
+            // A fresh row's shape: dispatched after this commit, and left alone by both sweeps meanwhile.
+            twin.nextAttemptAt = null
+            twin.queuedAt = now
+        }
+        return Enqueued(super.update(twin), dispatch = waiting)
+    }
+
+    /*
+     * Two first enqueues of one key would each take the locking read's gap lock and then deadlock
+     * on their inserts. The named lock lets one through at a time; the locking read then waits on a
+     * row the other inserted until it commits, so releasing the lock before the commit is safe.
+     */
+    private fun <T> holdingEnqueueLock(
+        jobType: String,
+        dedupKey: String,
+        work: () -> T,
+    ): T {
+        val digest = MessageDigest.getInstance("SHA-256").digest("$jobType|$dedupKey".toByteArray())
+        // MariaDB caps a lock's name at 64 characters.
+        val name = "job-enqueue-" + digest.joinToString("") { "%02x".format(it) }.take(ENQUEUE_LOCK_HEX)
+        check(jobExecutionRepository.acquireNamedLock(name, ENQUEUE_LOCK_SECONDS) == 1) { "Another enqueue of $jobType kept its lock" }
+        try {
+            return work()
+        } finally {
+            jobExecutionRepository.releaseNamedLock(name)
+        }
+    }
+
+    private fun newExecution(
+        jobType: String,
+        payload: String?,
+        actor: Actor,
+        trigger: JobTrigger?,
+        dedupKey: String?,
+        forced: Boolean,
+    ): JobExecution =
+        JobExecution(
+            jobType = jobType,
+            status = JobExecutionStatus.QUEUED,
+            payload = payload,
+            // The initial enqueue already counts: attempts represents the
+            // upcoming-or-current run number, so a job that hasn't started
+            // yet shows attempts = 1 in the UI rather than 0.
+            attempts = 1,
+            queuedAt = clock.instant(),
+            dedupKey = dedupKey,
+            forced = forced,
+            trigger = trigger,
+            initiatedByUserId = actor.userId,
+            initiatedByType = actor.type,
+            initiatedByRole = actor.role,
+        )
 
     @Transactional(readOnly = true)
     fun findByFilter(
@@ -259,5 +321,11 @@ class JobExecutionService(
         execution.forced = true
         execution.attempts += 1
         return super.update(execution)
+    }
+
+    private companion object {
+        val ACTIVE = listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
+        const val ENQUEUE_LOCK_SECONDS = 10
+        const val ENQUEUE_LOCK_HEX = 40
     }
 }

@@ -4,7 +4,7 @@ import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
 import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
-import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
+import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
@@ -612,6 +612,14 @@ onMounted(async () => {
                         class="text-body-2 mb-1"
                       >
                         <strong>Queued by:</strong> {{ triggerLabel(execution) }}
+                      </p>
+                      <p
+                        v-for="(folded, index) in execution.foldedTriggers ?? []"
+                        :key="index"
+                        :data-testid="`job-folded-trigger-${execution.id}-${index}`"
+                        class="text-body-2 mb-1"
+                      >
+                        <strong>Also queued by:</strong> {{ foldedTriggerLabel(folded) }} · {{ folded.initiatedByDisplay }} · {{ formatDate(folded.at) }}
                       </p>
                       <p class="text-body-2 mb-1">
                         <strong>Actor:</strong> {{ actorDisplay(execution) }}

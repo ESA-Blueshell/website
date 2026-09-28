@@ -1650,6 +1650,7 @@ export type JobExecution = {
     errorReason?: string | null;
     errorType?: string | null;
     finishedAt?: string | null;
+    foldedTriggers: Array<JobFoldedTrigger>;
     forced: boolean;
     id?: number | null;
     initiatedByDisplay?: string | null;
@@ -1697,6 +1698,14 @@ export enum JobExecutionStatus {
     FAILED = 'FAILED',
     DEAD = 'DEAD'
 }
+
+export type JobFoldedTrigger = {
+    at: string;
+    initiatedByDisplay: string;
+    initiatedByType: ActionActorType;
+    initiatedByUserId?: number | null;
+    trigger: JobTrigger;
+};
 
 export type JobPayloadField = {
     enumValues?: Array<string> | null;

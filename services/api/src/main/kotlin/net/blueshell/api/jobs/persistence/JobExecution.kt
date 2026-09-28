@@ -1,6 +1,7 @@
 package net.blueshell.api.jobs.persistence
 
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -78,6 +79,9 @@ class JobExecution(
     var effect: JobEffect? = null,
     @Column(name = "effect_link", length = 512)
     var effectLink: String? = null,
+    @Convert(converter = FoldedTriggersConverter::class)
+    @Column(name = "folded_triggers", columnDefinition = "LONGTEXT")
+    var foldedTriggers: List<FoldedTrigger> = emptyList(),
     @Column(name = "initiated_by_user_id")
     var initiatedByUserId: Long? = null,
     @Enumerated(EnumType.STRING)

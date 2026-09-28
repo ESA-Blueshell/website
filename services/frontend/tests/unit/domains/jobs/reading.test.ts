@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import type {Job} from "@/domains/jobs"
+import type {Job, JobFoldedTrigger} from "@/domains/jobs"
 import {
   actorDisplay,
   canRetry,
@@ -20,9 +20,10 @@ import {
   successRate,
   titleCase,
   effectLabel,
+  foldedTriggerLabel,
   triggerLabel,
 } from "@/domains/jobs"
-import {JobEffect, JobTrigger} from "@/services/api"
+import {ActionActorType, JobEffect, JobTrigger} from "@/services/api"
 
 const job = (fields: Partial<Job>): Job => fields as Job
 
@@ -35,6 +36,16 @@ describe("job reading", () => {
     expect(triggerLabel(job({trigger: JobTrigger.BY_HAND, forced: true}))).toBe("The trigger dialog")
     expect(triggerLabel(job({}))).toBe("")
     expect(Object.values(JobTrigger).every(trigger => triggerLabel(job({trigger})) !== "")).toBe(true)
+  })
+
+  it("names a trigger folded into a job in the words its own trigger would have", () => {
+    const folded: JobFoldedTrigger = {
+      trigger: JobTrigger.SIGN_UPS_CHANGED,
+      at: "2026-10-01T10:00:00Z",
+      initiatedByType: ActionActorType.USER,
+      initiatedByDisplay: "Jane Doe (@jdoe)",
+    }
+    expect(foldedTriggerLabel(folded)).toBe("A change in sign-ups")
   })
 
   it("says what a run did to the thing its job keeps", () => {

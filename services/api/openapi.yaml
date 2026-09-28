@@ -3255,6 +3255,10 @@ components:
           type:
           - string
           - 'null'
+        foldedTriggers:
+          items:
+            $ref: '#/components/schemas/JobFoldedTrigger'
+          type: array
         forced:
           type: boolean
         id:
@@ -3344,6 +3348,7 @@ components:
           - 'null'
       required:
       - attempts
+      - foldedTriggers
       - forced
       - jobType
       - relatedEntities
@@ -3382,6 +3387,28 @@ components:
       - FAILED
       - DEAD
       type: string
+    JobFoldedTrigger:
+      properties:
+        at:
+          format: date-time
+          type: string
+        initiatedByDisplay:
+          type: string
+        initiatedByType:
+          $ref: '#/components/schemas/ActionActorType'
+        initiatedByUserId:
+          format: int64
+          type:
+          - integer
+          - 'null'
+        trigger:
+          $ref: '#/components/schemas/JobTrigger'
+      required:
+      - at
+      - initiatedByDisplay
+      - initiatedByType
+      - trigger
+      type: object
     JobPayloadField:
       properties:
         enumValues:

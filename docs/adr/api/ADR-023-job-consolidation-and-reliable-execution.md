@@ -22,9 +22,9 @@ The job system used RabbitMQ for asynchronous job dispatch. This introduced seve
 
 ## Decision
 
-### Replace RabbitMQ with `@Async` + `RetryTemplate`
+### Replace RabbitMQ with `@Async` and retries in the database
 
-Jobs are dispatched by writing a DB row (`JobExecution`) then calling `JobExecutor.executeAsync()`. The executor runs on a Spring `@Async` thread pool (`taskExecutor`: core=2, max=10, queue=500). `RetryTemplate` handles exponential backoff retries on the async thread, not the request thread.
+Jobs are dispatched by writing a DB row (`JobExecution`) then calling `JobExecutor.executeAsync()`. The executor runs on a Spring `@Async` thread pool (`taskExecutor`: core=2, max=10, queue=500). Each run is one attempt: a retryable failure re-queues the row with a `next_attempt_at` from an exponential backoff schedule, and `StaleJobRecovery` picks it up again. The first version retried with a `RetryTemplate` on the async thread; #231 moved the retries into the row, so a restart no longer loses a retry in flight.
 
 ### Exception Classification
 

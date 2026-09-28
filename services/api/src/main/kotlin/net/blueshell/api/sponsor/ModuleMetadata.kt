@@ -13,9 +13,7 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "sponsor",
     allowedDependencies = [
-        // Sponsor.picture is an owning @OneToOne holding the FK into files. Also
-        // DEBT: SponsorRepository.findByPicture takes a File, so the query signature
-        // reaches for the entity where the id would do.
+        // Sponsor.picture is an owning @OneToOne holding the FK into files.
         "file :: entities",
         // Open kernel: SponsorPermission extends the base evaluator.
         "security",

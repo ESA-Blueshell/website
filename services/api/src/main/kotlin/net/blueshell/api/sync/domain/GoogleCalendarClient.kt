@@ -3,17 +3,10 @@ package net.blueshell.api.sync.domain
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.json.gson.GsonFactory
-import com.google.api.client.util.DateTime
 import com.google.api.services.calendar.Calendar
 import com.google.api.services.calendar.CalendarScopes
-import com.google.api.services.calendar.model.EventDateTime
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.GoogleCredentials
-import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension
-import com.vladsch.flexmark.ext.tables.TablesExtension
-import com.vladsch.flexmark.html.HtmlRenderer
-import com.vladsch.flexmark.parser.Parser
-import com.vladsch.flexmark.util.data.MutableDataSet
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -22,7 +15,6 @@ import org.springframework.stereotype.Component
 import java.io.IOException
 import java.security.GeneralSecurityException
 import java.time.Instant
-import java.time.ZoneId
 
 /**
  * Low-level Google Calendar API client.
@@ -41,22 +33,9 @@ class GoogleCalendarClient {
     private lateinit var serviceAccountJson: String
 
     private var service: Calendar? = null
-    private lateinit var htmlRenderer: HtmlRenderer
-    private lateinit var htmlParser: Parser
 
     @PostConstruct
     fun init() {
-        // Markdown → HTML renderer is cheap and has no external deps;
-        // set it up regardless so the no-credentials branch below can
-        // still fail operations with clear errors rather than NPE.
-        val options = MutableDataSet()
-        options.set(
-            Parser.EXTENSIONS,
-            listOf(TablesExtension.create(), StrikethroughExtension.create()),
-        )
-        htmlParser = Parser.builder(options).build()
-        htmlRenderer = HtmlRenderer.builder(options).build()
-
         // Running the prod profile without Google Calendar creds must
         // not block api startup — other features (OIDC, API endpoints,
         // the frontend) should work. Operations that *actually* need
@@ -179,43 +158,10 @@ class GoogleCalendarClient {
         }
     }
 
-    private fun toGoogleEvent(
-        title: String,
-        location: String?,
-        description: String?,
-        startTime: Instant,
-        endTime: Instant,
-    ): com.google.api.services.calendar.model.Event {
-        val googleEvent =
-            com.google.api.services.calendar.model
-                .Event()
-                .setSummary(title)
-                .setLocation(location)
-
-        // Convert Markdown to HTML and clean up
-        description?.let {
-            var preProcessedHtml = htmlRenderer.render(htmlParser.parse(it))
-            preProcessedHtml = preProcessedHtml.replace("<p>", "").replace("</p>", "")
-            googleEvent.description = preProcessedHtml
-        }
-
-        val startDateTime = DateTime(startTime.atZone(ZONE).toEpochSecond() * 1000L)
-        val endDateTime = DateTime(endTime.atZone(ZONE).toEpochSecond() * 1000L)
-
-        val start = EventDateTime().setDateTime(startDateTime).setTimeZone(TZ_ID)
-        val end = EventDateTime().setDateTime(endDateTime).setTimeZone(TZ_ID)
-
-        googleEvent.start = start
-        googleEvent.end = end
-        return googleEvent
-    }
-
     companion object {
         private val log = LoggerFactory.getLogger(GoogleCalendarClient::class.java)
         private const val APPLICATION_NAME = "Blueshell Google Calendar API"
         private val SCOPES: List<String> = listOf(CalendarScopes.CALENDAR_EVENTS)
-        private const val TZ_ID = "Europe/Amsterdam"
-        private val ZONE: ZoneId = ZoneId.of(TZ_ID)
     }
 }
 

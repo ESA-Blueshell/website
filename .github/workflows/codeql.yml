@@ -113,11 +113,8 @@ jobs:
       # compiled, so CodeQL traces nothing and fails with "didn't build any of
       # it". Forcing the compile tasks to rerun guarantees a traced build.
       - name: Build Kotlin sources for analysis
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g"
         run: |
           ./gradlew --no-daemon --rerun-tasks \
-            -Pkotlin.daemon.jvmargs=-Xmx3g \
             :services:api:compileKotlin \
             :libs:kotlin-common:compileKotlin
 

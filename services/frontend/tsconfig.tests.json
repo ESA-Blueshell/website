@@ -33,7 +33,8 @@
     "tests/unit/domains/esports/composables/useEsportsPage.test.ts",
     "tests/unit/domains/esports/island/LineupSource.test.ts",
     "tests/unit/domains/esports/components/SeasonEditor.test.ts",
-    "tests/unit/domains/esports/components/TeamEditor.test.ts"
+    "tests/unit/domains/esports/components/TeamEditor.test.ts",
+    "tests/unit/domains/cohorts/adapters/**/*.ts"
   ],
   "exclude": [
     "dist",

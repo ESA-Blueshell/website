@@ -17,6 +17,7 @@ import type {
   GameResponse,
   GuestResponse,
   Image,
+  JobExecution,
   MemberProfileResponse,
   MembershipResponse,
   QuestionResponse,
@@ -27,7 +28,7 @@ import type {
   TeamResponse,
   UserDetailResponse,
 } from "@/services/api"
-import {EventSignUpKind, MemberType, QuestionType, Role, TeamRole} from "@/services/api"
+import {EventSignUpKind, JobExecutionStatus, MemberType, QuestionType, Role, TeamRole} from "@/services/api"
 
 const stamped = {createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", version: 0}
 
@@ -269,5 +270,16 @@ export const aTeamRoster = (over: Partial<TeamRosterResponse> = {}): TeamRosterR
   id: 1,
   name: "BS Waterboarders",
   members: [],
+  ...over,
+})
+
+export const aJob = (over: Partial<JobExecution> = {}): JobExecution => ({
+  id: 88,
+  jobType: "SYNC_CONTACT",
+  status: JobExecutionStatus.QUEUED,
+  attempts: 0,
+  forced: false,
+  foldedTriggers: [],
+  relatedEntities: [],
   ...over,
 })

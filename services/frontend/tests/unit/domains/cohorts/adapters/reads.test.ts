@@ -11,6 +11,8 @@ import {
   previewInboundReconcile,
   searchCohortTargets,
 } from "@/services/api"
+import {answer} from "../../../helpers/sdkAnswers"
+import {TargetSystem} from "@/services/api"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -30,7 +32,7 @@ describe("cohort reads tell an empty answer from a failed one", () => {
   })
 
   it("an account with no target systems reads as empty", async () => {
-    vi.mocked(listCohortTargetSystems).mockResolvedValue({data: []} as never)
+    vi.mocked(listCohortTargetSystems).mockResolvedValue(answer(listCohortTargetSystems, []))
 
     await expect(fetchTargetDescriptors()).resolves.toEqual([])
     expect(listCohortTargetSystems).toHaveBeenCalledWith({throwOnError: true})
@@ -43,21 +45,21 @@ describe("cohort reads tell an empty answer from a failed one", () => {
   })
 
   it("a system with no targets reads as empty, and a failed search throws", async () => {
-    vi.mocked(searchCohortTargets).mockResolvedValue({data: []} as never)
-    await expect(fetchTargetOptions("BREVO")).resolves.toEqual([])
-    expect(searchCohortTargets).toHaveBeenCalledWith({path: {system: "BREVO"}, throwOnError: true})
+    vi.mocked(searchCohortTargets).mockResolvedValue(answer(searchCohortTargets, []))
+    await expect(fetchTargetOptions(TargetSystem.BREVO)).resolves.toEqual([])
+    expect(searchCohortTargets).toHaveBeenCalledWith({path: {system: TargetSystem.BREVO}, throwOnError: true})
 
     vi.mocked(searchCohortTargets).mockRejectedValue(new Error("boom"))
-    await expect(fetchTargetOptions("BREVO")).rejects.toThrow("boom")
+    await expect(fetchTargetOptions(TargetSystem.BREVO)).rejects.toThrow("boom")
   })
 
   it("a system with no folders reads as empty, and a failed listing throws", async () => {
-    vi.mocked(listCohortTargetFolders).mockResolvedValue({data: []} as never)
-    await expect(fetchTargetFolders("BREVO")).resolves.toEqual([])
-    expect(listCohortTargetFolders).toHaveBeenCalledWith({path: {system: "BREVO"}, throwOnError: true})
+    vi.mocked(listCohortTargetFolders).mockResolvedValue(answer(listCohortTargetFolders, []))
+    await expect(fetchTargetFolders(TargetSystem.BREVO)).resolves.toEqual([])
+    expect(listCohortTargetFolders).toHaveBeenCalledWith({path: {system: TargetSystem.BREVO}, throwOnError: true})
 
     vi.mocked(listCohortTargetFolders).mockRejectedValue(new Error("boom"))
-    await expect(fetchTargetFolders("BREVO")).rejects.toThrow("boom")
+    await expect(fetchTargetFolders(TargetSystem.BREVO)).rejects.toThrow("boom")
   })
 
   it("a reconcile preview that could not be read throws rather than answering nothing", async () => {

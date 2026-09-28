@@ -22,8 +22,13 @@ export function emptyAnswer<F extends SdkCall>(_call: F): Result<F> {
 
 /**
  * What [call] answers when the api refuses, with [error] as the body (null where there is none) and no data.
- * A refusal may carry a code and the facts its sentence reads, which the spec does not describe (api ADR-026).
+ * A refusal may carry a code and the facts its sentence reads, which the spec does not describe (api ADR-026),
+ * and its [status] is on `response` as well, where Axios puts it.
  */
-export function refusal<F extends SdkCall>(_call: F, error: (Refusal<F> & Record<string, unknown>) | null): Result<F> {
-  return {...envelope, status: 400, statusText: "Bad Request", data: undefined, error} as unknown as Result<F>
+export function refusal<F extends SdkCall>(
+  _call: F,
+  error: (Refusal<F> & Record<string, unknown>) | null,
+  status = 400,
+): Result<F> {
+  return {...envelope, status, response: {status, data: error}, data: undefined, error} as unknown as Result<F>
 }

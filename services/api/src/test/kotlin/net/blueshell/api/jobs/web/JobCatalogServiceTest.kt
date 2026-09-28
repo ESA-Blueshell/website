@@ -1,9 +1,9 @@
 package net.blueshell.api.jobs.web
 
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.jobs.persistence.JobExecution
-import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobTrigger
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy

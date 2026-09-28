@@ -4,7 +4,6 @@ import net.blueshell.api.contribution.api.JoiningContributionAsk
 import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.enums.MemberType
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
@@ -61,8 +60,8 @@ class JoiningContributionAskService(
             )
 
         jobs.runAsync(
-            EmailJobs.JoiningContribution,
-            EmailJobs.JoiningContributionPayload(requireNotNull(ask.id)),
+            ContributionJobs.JoiningContribution,
+            ContributionJobs.JoiningContributionPayload(requireNotNull(ask.id)),
             JobTrigger.SITE_ACTION,
         )
     }

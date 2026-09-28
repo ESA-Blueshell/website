@@ -16,7 +16,6 @@ import net.blueshell.api.security.StepUp
 import net.blueshell.api.security.StepUpRequiredException
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
@@ -208,7 +207,7 @@ class AccountSecurityTest {
             verify(tokenFactory).issue(user, TokenPurpose.EMAIL_CHANGE, AccountSecurity.EMAIL_CHANGE_TTL)
             verify(
                 jobs,
-            ).runAsync(EmailJobs.Recovery, EmailJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.EMAIL_CHANGE), JobTrigger.SITE_ACTION)
+            ).runAsync(AuthJobs.Recovery, AuthJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.EMAIL_CHANGE), JobTrigger.SITE_ACTION)
             recorded(SecurityEventKind.EMAIL_CHANGE_REQUESTED)
         }
 
@@ -332,8 +331,8 @@ class AccountSecurityTest {
             verify(
                 jobs,
             ).runAsync(
-                EmailJobs.Recovery,
-                EmailJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT),
+                AuthJobs.Recovery,
+                AuthJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT),
                 JobTrigger.SITE_ACTION,
             )
             recorded(SecurityEventKind.TWO_FACTOR_RESET)

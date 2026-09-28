@@ -79,7 +79,7 @@ on the viewport, which is a difference a visitor can see and cannot explain.
   than the animation in it: without one, every visitor downloads the full-size master.
 - Animated work does not run where somebody is waiting: neither the startup path nor an
   upload request. A still is derived where it was asked for; an animation is queued as one
-  `AsyncJob` per picture (ADR-023's machinery). A still costs one `cwebp` call per width;
+  `ImageJobs.DeriveRenditions` job per picture (ADR-023's machinery). A still costs one `cwebp` call per width;
   an animation costs a subprocess per frame per width, and a long GIF would hold readiness,
   or an upload, for as long as it took.
 - Nothing is part-written in the meantime. A width is addressed by its source's hash and
@@ -107,5 +107,5 @@ instead of only in a log line.
 
 ## Related
 
-- ADR-023: Job Consolidation and Reliable Execution: the `AsyncJob` the animated work runs as
+- ADR-023: Job Consolidation and Reliable Execution: the job queue the animated work runs on
 - `docs/CONTEXT.md`, **Banner and Icon**: master, rendition and animated banner

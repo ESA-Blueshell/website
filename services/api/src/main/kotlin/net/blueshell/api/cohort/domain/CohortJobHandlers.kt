@@ -106,11 +106,9 @@ class CohortJobHandlers(
  */
 open class CohortJobBinding<T : Any>(
     objectMapper: ObjectMapper,
-    private val definition: JobDefinition<T>,
+    definition: JobDefinition<T>,
     private val perform: (T) -> String?,
-) : AbstractJsonJobHandler<T>(objectMapper, definition.payloadType) {
-    override val jobType: String get() = definition.type
-
+) : AbstractJsonJobHandler<T>(objectMapper, definition) {
     override fun handlePayload(payload: T) {
         perform(payload)?.let(::skip)
     }

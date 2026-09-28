@@ -1,10 +1,13 @@
 package net.blueshell.api.email.domain
 
+import net.blueshell.api.auth.domain.AuthJobs
 import net.blueshell.api.auth.domain.RecoveryEmailJob
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.contribution.domain.ContributionJobs
 import net.blueshell.api.contribution.domain.ContributionReminderEmailJob
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
+import net.blueshell.api.event.domain.EventJobs
 import net.blueshell.api.event.domain.EventSignupEmailJob
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
@@ -13,7 +16,6 @@ import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.persistence.User
@@ -63,12 +65,12 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         fun `processes password reset job and sends email`() {
             val user = createAndSaveUser("john.doe", "john@example.com")
             val payload =
-                EmailJobs.RecoveryPayload(
+                AuthJobs.RecoveryPayload(
                     userId = user.id!!,
                     token = "reset-token-123",
                     tokenPurpose = TokenPurpose.PASSWORD_RESET,
                 )
-            val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
+            val jobExecution = createJobExecution(AuthJobs.Recovery.type, payload)
 
             recoveryEmailJob.runJob(jobExecution.payload)
 
@@ -82,12 +84,12 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         fun `processes user activation job and sends email`() {
             val user = createAndSaveUser("jane.smith", "jane@example.com")
             val payload =
-                EmailJobs.RecoveryPayload(
+                AuthJobs.RecoveryPayload(
                     userId = user.id!!,
                     token = "activation-token-456",
                     tokenPurpose = TokenPurpose.USER_ACTIVATION,
                 )
-            val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
+            val jobExecution = createJobExecution(AuthJobs.Recovery.type, payload)
 
             recoveryEmailJob.runJob(jobExecution.payload)
 
@@ -100,12 +102,12 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         fun `processes member activation job and sends email`() {
             val user = createAndSaveUser("board.member", "board@example.com")
             val payload =
-                EmailJobs.RecoveryPayload(
+                AuthJobs.RecoveryPayload(
                     userId = user.id!!,
                     token = "member-token-789",
                     tokenPurpose = TokenPurpose.MEMBER_ACTIVATION,
                 )
-            val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
+            val jobExecution = createJobExecution(AuthJobs.Recovery.type, payload)
 
             recoveryEmailJob.runJob(jobExecution.payload)
 
@@ -116,7 +118,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
 
         @Test
         fun `job type matches Recovery type`() {
-            assertThat(recoveryEmailJob.jobType).isEqualTo(EmailJobs.Recovery.type)
+            assertThat(recoveryEmailJob.jobType).isEqualTo(AuthJobs.Recovery.type)
         }
     }
 
@@ -127,8 +129,8 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             val event = createAndSaveEvent("Test Tournament", "Campus Hall")
             val guestAccessToken = "event-signup-token-${System.currentTimeMillis()}"
             val signUp = createAndSaveSignUp(event, "Guest User", "guest@example.com", guestAccessToken)
-            val payload = EmailJobs.EventSignupPayload(eventSignUpId = signUp.id!!, guestAccessToken = guestAccessToken)
-            val jobExecution = createJobExecution(EmailJobs.EventSignup.type, payload)
+            val payload = EventJobs.EventSignupPayload(eventSignUpId = signUp.id!!, guestAccessToken = guestAccessToken)
+            val jobExecution = createJobExecution(EventJobs.EventSignup.type, payload)
 
             eventSignupEmailJob.runJob(jobExecution.payload)
 
@@ -142,7 +144,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
 
         @Test
         fun `job type matches EventSignup type`() {
-            assertThat(eventSignupEmailJob.jobType).isEqualTo(EmailJobs.EventSignup.type)
+            assertThat(eventSignupEmailJob.jobType).isEqualTo(EventJobs.EventSignup.type)
         }
     }
 
@@ -154,8 +156,8 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             val period = createAndSavePeriod()
             val reminder = createAndSaveReminder(user, period)
 
-            val payload = EmailJobs.ContributionReminderPayload(contributionReminderId = reminder.id!!)
-            val jobExecution = createJobExecution(EmailJobs.ContributionReminder.type, payload)
+            val payload = ContributionJobs.ContributionReminderPayload(contributionReminderId = reminder.id!!)
+            val jobExecution = createJobExecution(ContributionJobs.ContributionReminder.type, payload)
 
             contributionReminderEmailJob.runJob(jobExecution.payload)
 
@@ -168,7 +170,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         @Test
         fun `job type matches ContributionReminder type`() {
             assertThat(contributionReminderEmailJob.jobType)
-                .isEqualTo(EmailJobs.ContributionReminder.type)
+                .isEqualTo(ContributionJobs.ContributionReminder.type)
         }
     }
 
@@ -187,7 +189,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 """.trimIndent()
             val jobExecution =
                 JobExecution().apply {
-                    this.jobType = EmailJobs.Recovery.type
+                    this.jobType = AuthJobs.Recovery.type
                     this.payload = payloadJson
                 }
             persist(jobExecution)
@@ -211,7 +213,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 """.trimIndent()
             val jobExecution =
                 JobExecution().apply {
-                    this.jobType = EmailJobs.EventSignup.type
+                    this.jobType = EventJobs.EventSignup.type
                     this.payload = payloadJson
                 }
             persist(jobExecution)
@@ -235,7 +237,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 """.trimIndent()
             val jobExecution =
                 JobExecution().apply {
-                    this.jobType = EmailJobs.ContributionReminder.type
+                    this.jobType = ContributionJobs.ContributionReminder.type
                     this.payload = payloadJson
                 }
             persist(jobExecution)

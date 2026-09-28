@@ -6,7 +6,6 @@ import io.mockk.slot
 import io.mockk.verify
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.email.EmailContent
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -18,7 +17,7 @@ class EventSignUpRemovedEmailJobTest {
     private val job = EventSignUpRemovedEmailJob(objectMapper, emails, "https://blueshell.test")
 
     private val payload =
-        EmailJobs.EventSignUpRemovedPayload(
+        EventJobs.EventSignUpRemovedPayload(
             recipientEmail = "gordon@example.com",
             recipientName = "Guest Gordon",
             eventTitle = "LAN Party",
@@ -62,6 +61,6 @@ class EventSignUpRemovedEmailJobTest {
 
     @Test
     fun `two removals of the same sign-up are two emails, so nothing is deduplicated`() {
-        assertThat(EmailJobs.EventSignUpRemoved.dedupKey(payload)).isNull()
+        assertThat(EventJobs.EventSignUpRemoved.dedupKey(payload)).isNull()
     }
 }

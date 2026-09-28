@@ -1,7 +1,6 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.user.persistence.User
@@ -42,7 +41,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         listener.onUserCreated(event)
 
         // Then: User activation email job is scheduled
-        val jobs = findJobsByType(EmailJobs.Recovery.type)
+        val jobs = findJobsByType(AuthJobs.Recovery.type)
         assertThat(jobs)
             .describedAs("Should schedule one recovery email job")
             .hasSize(1)
@@ -64,7 +63,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         listener.onUserCreated(event)
 
         // Then: Member activation email job is scheduled
-        val jobs = findJobsByType(EmailJobs.Recovery.type)
+        val jobs = findJobsByType(AuthJobs.Recovery.type)
         assertThat(jobs)
             .describedAs("Should schedule one recovery email job")
             .hasSize(1)
@@ -107,7 +106,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
 
         failing.onUserCreated(UserCreated(user.id!!, createdByBoard = false))
 
-        assertThat(findJobsByType(EmailJobs.Recovery.type)).isEmpty()
+        assertThat(findJobsByType(AuthJobs.Recovery.type)).isEmpty()
     }
 
     private fun createAndSaveUser(

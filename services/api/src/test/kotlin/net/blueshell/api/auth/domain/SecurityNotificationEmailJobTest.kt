@@ -6,7 +6,6 @@ import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.persistence.SecurityEventRepository
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.email.EmailContent
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -41,7 +40,7 @@ class SecurityNotificationEmailJobTest {
         email: String,
     ) = User(username = "u$id", email = email, password = "h", initials = "U", firstName = "U", lastName = "$id").also { it.id = id }
 
-    private fun sent(payload: EmailJobs.SecurityNotificationPayload): EmailContent {
+    private fun sent(payload: AuthJobs.SecurityNotificationPayload): EmailContent {
         val subject = person(7, "person@example.com")
         whenever(events.findWithPeopleById(99)).thenReturn(
             SecurityEvent(subject, subject, SecurityActorKind.PERSON, SecurityEventKind.PASSWORD_CHANGED, null, null, null, Instant.EPOCH),
@@ -49,23 +48,23 @@ class SecurityNotificationEmailJobTest {
         whenever(users.findById(1)).thenReturn(person(1, "admin@example.com"))
         job.handle(mapper.writeValueAsString(payload), 5, forced = false)
         val content = argumentCaptor<EmailContent>()
-        verify(emails, atLeastOnce()).send(content.capture(), eq(EmailJobs.SecurityNotification.type), anyOrNull())
+        verify(emails, atLeastOnce()).send(content.capture(), eq(AuthJobs.SecurityNotification.type), anyOrNull())
         return content.lastValue
     }
 
     @Test
     fun `a notice goes to the person, to the address they left, or to an admin`() {
         assertThat(job.jobType).isEqualTo("email.security-notification")
-        assertThat(sent(EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.PERSON, "s.v")).recipientEmail)
+        assertThat(sent(AuthJobs.SecurityNotificationPayload(99, AuthJobs.SecurityNotificationAudience.PERSON, "s.v")).recipientEmail)
             .isEqualTo("person@example.com")
         assertThat(
             sent(
-                EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.OLD_ADDRESS, "s.v", "old@example.com"),
+                AuthJobs.SecurityNotificationPayload(99, AuthJobs.SecurityNotificationAudience.OLD_ADDRESS, "s.v", "old@example.com"),
             ).recipientEmail,
         ).isEqualTo("old@example.com")
         val toAdmin =
             sent(
-                EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.ADMINISTRATOR, recipientUserId = 1),
+                AuthJobs.SecurityNotificationPayload(99, AuthJobs.SecurityNotificationAudience.ADMINISTRATOR, recipientUserId = 1),
             )
         assertThat(toAdmin.recipientEmail).isEqualTo("admin@example.com")
         assertThat(toAdmin.markdownContent).contains("was locked")
@@ -74,8 +73,8 @@ class SecurityNotificationEmailJobTest {
     @Test
     fun `two notices alike both go out`() {
         assertThat(
-            EmailJobs.SecurityNotification.dedupKey(
-                EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.PERSON, "s.v"),
+            AuthJobs.SecurityNotification.dedupKey(
+                AuthJobs.SecurityNotificationPayload(99, AuthJobs.SecurityNotificationAudience.PERSON, "s.v"),
             ),
         ).isNull()
     }

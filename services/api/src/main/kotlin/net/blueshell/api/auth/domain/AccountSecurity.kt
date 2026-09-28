@@ -12,7 +12,6 @@ import net.blueshell.api.security.SignIns
 import net.blueshell.api.security.StepUp
 import net.blueshell.api.security.StepUpRequiredException
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
@@ -157,7 +156,7 @@ class AccountSecurity(
         user.pendingEmail = address
         users.update(user)
         val token = tokenFactory.issue(user, TokenPurpose.EMAIL_CHANGE, EMAIL_CHANGE_TTL)
-        jobs.runAsync(EmailJobs.Recovery, EmailJobs.RecoveryPayload(userId, token, TokenPurpose.EMAIL_CHANGE), JobTrigger.SITE_ACTION)
+        jobs.runAsync(AuthJobs.Recovery, AuthJobs.RecoveryPayload(userId, token, TokenPurpose.EMAIL_CHANGE), JobTrigger.SITE_ACTION)
         events.record(userId, SecurityEventKind.EMAIL_CHANGE_REQUESTED, note = address)
     }
 
@@ -316,8 +315,8 @@ class AccountSecurity(
     private fun sendReenrolmentLink(user: User) {
         val token = tokenFactory.issue(user, TokenPurpose.TWO_FACTOR_REENROLMENT, REENROLMENT_TTL)
         jobs.runAsync(
-            EmailJobs.Recovery,
-            EmailJobs.RecoveryPayload(requireNotNull(user.id), token, TokenPurpose.TWO_FACTOR_REENROLMENT),
+            AuthJobs.Recovery,
+            AuthJobs.RecoveryPayload(requireNotNull(user.id), token, TokenPurpose.TWO_FACTOR_REENROLMENT),
             JobTrigger.SITE_ACTION,
         )
     }

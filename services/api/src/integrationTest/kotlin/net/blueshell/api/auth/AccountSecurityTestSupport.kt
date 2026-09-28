@@ -1,12 +1,12 @@
 package net.blueshell.api.auth
 
 import jakarta.servlet.http.Cookie
+import net.blueshell.api.auth.domain.AuthJobs
 import net.blueshell.api.auth.domain.twofactor.Base32
 import net.blueshell.api.auth.domain.twofactor.Totp
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
 import net.blueshell.api.auth.web.AuthenticationController
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.BeforeEach
@@ -86,14 +86,14 @@ abstract class AccountSecurityTestSupport : UserTestSupport() {
 
     /** The lock links the security notifications queued for [userId], oldest first. */
     protected fun lockLinks(userId: Long): List<String> =
-        findJobsByType(EmailJobs.SecurityNotification.type)
+        findJobsByType(AuthJobs.SecurityNotification.type)
             .map { mapper.readTree(it.payload) }
             .filter { it.path("audience").asString() != "ADMINISTRATOR" }
             .mapNotNull { payload -> payload.path("lockToken").takeIf { !it.isNull && !it.isMissingNode }?.asString() }
             .filter { recoveryTokens.findBySelector(it.substringBefore(".")).map { t -> t.user.id == userId }.orElse(false) }
 
     protected fun notices(audience: String? = null) =
-        findJobsByType(EmailJobs.SecurityNotification.type)
+        findJobsByType(AuthJobs.SecurityNotification.type)
             .map { mapper.readTree(it.payload) }
             .filter { audience == null || it.path("audience").asString() == audience }
 
@@ -102,7 +102,7 @@ abstract class AccountSecurityTestSupport : UserTestSupport() {
         userId: Long,
         purpose: TokenPurpose,
     ): String =
-        findJobsByType(EmailJobs.Recovery.type)
+        findJobsByType(AuthJobs.Recovery.type)
             .map { mapper.readTree(it.payload) }
             .last { it.path("userId").asLong() == userId && it.path("tokenPurpose").asString() == purpose.name }
             .path("token")

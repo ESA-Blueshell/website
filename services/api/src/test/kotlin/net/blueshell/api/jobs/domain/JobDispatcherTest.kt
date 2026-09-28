@@ -5,10 +5,10 @@ import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.api.JobExecutor
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.JobQueueProperties
-import net.blueshell.api.shared.job.CalendarJobs
-import net.blueshell.api.shared.job.DiscordPostJobs
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.sync.domain.CalendarJobs
+import net.blueshell.api.sync.domain.DiscordPostJobs
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any

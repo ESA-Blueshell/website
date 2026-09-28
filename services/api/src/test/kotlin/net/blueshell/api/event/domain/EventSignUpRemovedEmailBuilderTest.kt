@@ -1,12 +1,11 @@
 package net.blueshell.api.event.domain
 
-import net.blueshell.api.shared.job.EmailJobs
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class EventSignUpRemovedEmailBuilderTest {
     private val payload =
-        EmailJobs.EventSignUpRemovedPayload(
+        EventJobs.EventSignUpRemovedPayload(
             recipientEmail = "gordon@example.com",
             recipientName = "Guest Gordon",
             eventTitle = "LAN Party",

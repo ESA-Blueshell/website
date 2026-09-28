@@ -1,10 +1,9 @@
 package net.blueshell.api.event.domain
 
 import net.blueshell.api.shared.email.EmailContent
-import net.blueshell.api.shared.job.EmailJobs
 
 fun createEventSignUpRemovedEmail(
-    payload: EmailJobs.EventSignUpRemovedPayload,
+    payload: EventJobs.EventSignUpRemovedPayload,
     frontendUrl: String,
 ): EmailContent {
     val markdownContent =

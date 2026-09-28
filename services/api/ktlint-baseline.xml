@@ -285,9 +285,6 @@
         <error line="142" column="5" source="standard:no-consecutive-comments" />
         <error line="158" column="27" source="standard:multiline-expression-wrapping" />
     </file>
-    <file name="src/main/kotlin/net/blueshell/api/file/domain/ImageRenditions.kt">
-        <error line="45" column="47" source="standard:function-signature" />
-    </file>
     <file name="src/main/kotlin/net/blueshell/api/platform/config/OpenApiErrorConfig.kt">
         <error line="25" column="61" source="standard:function-expression-body" />
         <error line="28" column="32" source="standard:multiline-expression-wrapping" />

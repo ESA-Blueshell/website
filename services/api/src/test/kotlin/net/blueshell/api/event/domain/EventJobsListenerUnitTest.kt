@@ -2,7 +2,6 @@ package net.blueshell.api.event.domain
 
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
@@ -28,7 +27,7 @@ class EventJobsListenerUnitTest {
         EventJobsListener(jobs, signUps).onPersist(EventSignUpCreated(11, "access", actor))
         EventJobsListener(jobs, signUps).onPersist(EventSignUpCreated(11, null, actor))
 
-        verify(jobs).runAsync(EmailJobs.EventSignup, EmailJobs.EventSignupPayload(11, "access"), JobTrigger.SITE_ACTION, actor)
+        verify(jobs).runAsync(EventJobs.EventSignup, EventJobs.EventSignupPayload(11, "access"), JobTrigger.SITE_ACTION, actor)
     }
 
     @Test

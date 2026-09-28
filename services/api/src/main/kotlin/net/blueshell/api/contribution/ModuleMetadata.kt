@@ -18,10 +18,6 @@ import org.springframework.modulith.PackageInfo
         "jobs :: api",
         // Contribution reminders go out through EmailSenderService.
         "email :: api",
-        // DEBT, not a surface. The reminder job resolver implements JobSubject and
-        // JobSubjectResolver, which sit under jobs' web package. Pinned in
-        // CrossModuleWebAccessArchitectureTest.
-        "jobs :: legacy-web",
         // Open kernel: ContributionPermission extends the base evaluator, and the
         // period, reminder and bulk e-mail routes are @BoardOnly.
         "security",

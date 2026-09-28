@@ -2,7 +2,6 @@ package net.blueshell.api.file.domain
 
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.ImageJobs
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
@@ -24,10 +23,8 @@ class ImageRenditionsJob(
     private val renditions: ImageRenditionWriter,
 ) : AbstractJsonJobHandler<ImageJobs.DeriveRenditionsPayload>(
         objectMapper,
-        ImageJobs.DeriveRenditions.payloadType,
+        ImageJobs.DeriveRenditions,
     ) {
-    override val jobType: String = ImageJobs.DeriveRenditions.type
-
     override fun handlePayload(payload: ImageJobs.DeriveRenditionsPayload) {
         val source = files.findById(payload.fileId).orElse(null) ?: return skip("The picture has been deleted.")
         renditions.widthsOf(source).none?.let(::skip)

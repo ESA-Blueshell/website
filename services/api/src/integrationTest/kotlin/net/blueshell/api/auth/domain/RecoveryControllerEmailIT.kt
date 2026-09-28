@@ -2,7 +2,6 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -44,7 +43,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
                 .hasSize(1)
@@ -64,7 +63,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             // Then: No jobs scheduled (but attacker doesn't know)
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should not schedule jobs for non-existent users")
                 .isEmpty()
@@ -84,7 +83,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
                 .hasSize(1)
@@ -107,7 +106,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent) // Success response
 
             // Then: No email job scheduled (already enabled)
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should not schedule jobs for already enabled users")
                 .isEmpty()
@@ -133,7 +132,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 ).andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
                 .hasSize(1)
@@ -159,7 +158,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 ).andExpect(status().isForbidden)
 
             // Then: No email job scheduled
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should not allow non-board users to trigger member activation")
                 .isEmpty()
@@ -179,7 +178,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             // Then: Email job is scheduled with correct information
-            val jobs = findJobsByType(EmailJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.Recovery.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
                 .hasSize(1)

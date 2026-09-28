@@ -1,6 +1,5 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.runAsyncFromActor
@@ -49,8 +48,8 @@ open class ActivationEmailDispatcher(
     open fun dispatchFor(event: UserCreated) {
         val dispatch = activationService.issueActivationForNewUser(event.userId, event.createdByBoard == true)
         jobs.runAsyncFromActor(
-            EmailJobs.Recovery,
-            EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
+            AuthJobs.Recovery,
+            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
             JobTrigger.SITE_ACTION,
             event,
         )

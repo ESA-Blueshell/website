@@ -1,9 +1,9 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.auth.domain.AuthJobs.SecurityNotificationAudience
 import net.blueshell.api.auth.persistence.SecurityActorKind
 import net.blueshell.api.auth.persistence.SecurityEvent
 import net.blueshell.api.auth.persistence.SecurityEventKind
-import net.blueshell.api.shared.job.EmailJobs.SecurityNotificationAudience
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

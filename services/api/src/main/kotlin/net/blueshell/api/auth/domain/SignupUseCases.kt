@@ -2,7 +2,6 @@ package net.blueshell.api.auth.domain
 
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.SignupOutcome
@@ -116,8 +115,8 @@ class SignupUseCases(
                 "Expected an activation dispatch for the unconfirmed account ${account.id}"
             }
         jobs.runAsync(
-            EmailJobs.Recovery,
-            EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
+            AuthJobs.Recovery,
+            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
             JobTrigger.SITE_ACTION,
         )
     }

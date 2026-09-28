@@ -5,7 +5,6 @@ import jakarta.persistence.PersistenceContext
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
-import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import org.springframework.beans.factory.annotation.Autowired
@@ -52,8 +51,8 @@ class ContributionReminderService
         fun record(reminder: ContributionReminder): ContributionReminder {
             val written = create(reminder)
             jobs.runAsync(
-                EmailJobs.ContributionReminder,
-                EmailJobs.ContributionReminderPayload(requireNotNull(written.id)),
+                ContributionJobs.ContributionReminder,
+                ContributionJobs.ContributionReminderPayload(requireNotNull(written.id)),
                 JobTrigger.SITE_ACTION,
             )
             return written

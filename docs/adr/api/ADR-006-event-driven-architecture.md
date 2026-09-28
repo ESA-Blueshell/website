@@ -138,8 +138,8 @@ class RecoveryEventListener(
         )
 
         jobDispatcher.runAsync(
-            EmailJobs.Recovery,
-            EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type)
+            AuthJobs.Recovery,
+            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type)
         )
     }
 }
@@ -436,8 +436,8 @@ class RecoveryEventListener(
         )
 
         jobDispatcher.runAsync(
-            EmailJobs.Recovery,
-            EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type)
+            AuthJobs.Recovery,
+            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type)
         )
     }
 }

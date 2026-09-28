@@ -1,14 +1,15 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.shared.refusal.Refusal
 import org.springframework.http.HttpStatus
 
 // TWIN: `services/frontend/src/domains/auth/refusals.ts` writes the sentences. See api ADR-026.
 sealed class AccountSecurityRefusal(
-    val status: HttpStatus,
-    val code: String,
-    val summary: String,
-    val facts: Map<String, Any> = emptyMap(),
-) : RuntimeException(summary)
+    status: HttpStatus,
+    code: String,
+    summary: String,
+    facts: Map<String, Any> = emptyMap(),
+) : Refusal(status, code, summary, facts)
 
 class WrongPassword : AccountSecurityRefusal(HttpStatus.FORBIDDEN, "WrongPassword", "That password is not right.")
 

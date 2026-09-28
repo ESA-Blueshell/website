@@ -1,15 +1,16 @@
 package net.blueshell.api.user.domain
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.refusal.Refusal
 import org.springframework.http.HttpStatus
 
 // A code and the facts, never the sentence: `domains/user/refusals.ts` writes that. See ADR-026.
 sealed class RoleRefusal(
-    val status: HttpStatus,
-    val code: String,
-    val summary: String,
-    val facts: Map<String, Any>,
-) : RuntimeException(summary)
+    status: HttpStatus,
+    code: String,
+    summary: String,
+    facts: Map<String, Any>,
+) : Refusal(status, code, summary, facts)
 
 class RoleNotAssignable(
     role: Role,

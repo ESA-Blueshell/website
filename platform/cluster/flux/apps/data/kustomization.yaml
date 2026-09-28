@@ -5,7 +5,6 @@ resources:
   - namespace.yaml
   - vso-sa.yaml
   - bitnami-source.yaml
-  - bitnami-oci-source.yaml
   - vault
   - mariadb
   - valkey

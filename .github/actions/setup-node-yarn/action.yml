@@ -20,7 +20,6 @@ runs:
 
     - name: Enable Yarn via Corepack
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
       run: |
         corepack enable
         corepack prepare yarn@${{ inputs.yarn-version }} --activate

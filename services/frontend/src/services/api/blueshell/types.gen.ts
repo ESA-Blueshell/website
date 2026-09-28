@@ -1765,6 +1765,35 @@ export type JwtRequest = {
 };
 
 /**
+ * One person on a line-up being saved: an entry kept, or somebody added
+ */
+export type LineupEntryRequest = {
+    /**
+     * A short caption about them, in markdown
+     */
+    description?: string | null;
+    displayName?: string | null;
+    handle: string;
+    /**
+     * Where this entry's picture is stored; nothing takes the picture away
+     */
+    icon?: string | null;
+    /**
+     * The entry this stands for; nothing adds somebody new
+     */
+    id?: number | null;
+    role: TeamRole;
+    /**
+     * What they did in the team's own words, beside the fixed part
+     */
+    roleTitle?: string | null;
+    /**
+     * The member this entry belongs to; nothing leaves it unattributed
+     */
+    userId?: number | null;
+};
+
+/**
  * One line-up of a team's: which game it was played in, and which season
  */
 export type LineupSourceRequest = {
@@ -1982,6 +2011,42 @@ export type PlayedRosterResponse = {
     seasonStart: string;
     teamId: number;
     teamName: string;
+};
+
+/**
+ * A team's whole line-up for a game and a season, saved in one transaction
+ */
+export type PublishLineupRequest = {
+    /**
+     * Where this season's banner is stored; nothing leaves the banner as it is
+     */
+    banner?: string | null;
+    /**
+     * Everybody on the line-up, in the order they are shown
+     */
+    entries: Array<LineupEntryRequest>;
+    game: string;
+    /**
+     * Where the team's icon is stored
+     */
+    icon?: string | null;
+    name: string;
+    /**
+     * Entries taken off the line-up
+     */
+    removed: Array<number>;
+    /**
+     * The team; nothing creates it under the name given
+     */
+    teamId?: number | null;
+};
+
+/**
+ * A line-up as saved: the team as it now stands and its roster in order
+ */
+export type PublishedLineupResponse = {
+    roster: Array<RosterEntryResponse>;
+    team: TeamResponse;
 };
 
 export type QuestionRequest = {
@@ -6121,6 +6186,49 @@ export type EnterGameResponses = {
 };
 
 export type EnterGameResponse = EnterGameResponses[keyof EnterGameResponses];
+
+export type PublishLineupData = {
+    body: PublishLineupRequest;
+    path: {
+        seasonId: number;
+    };
+    query?: never;
+    url: '/esports/seasons/{seasonId}/lineup';
+};
+
+export type PublishLineupErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PublishLineupError = PublishLineupErrors[keyof PublishLineupErrors];
+
+export type PublishLineupResponses = {
+    /**
+     * OK
+     */
+    200: PublishedLineupResponse;
+};
+
+export type PublishLineupResponse = PublishLineupResponses[keyof PublishLineupResponses];
 
 export type UnfieldTeamData = {
     body?: never;

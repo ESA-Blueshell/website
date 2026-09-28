@@ -17,6 +17,41 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
+/** One person on a line-up draft, as the editor writes it: an entry to keep, or somebody new. */
+data class DraftEntry(
+    /** The entry this stands for, or nothing where it is somebody being added. */
+    val id: Long?,
+    val handle: String,
+    val role: TeamRole,
+    val userId: Long?,
+    val displayName: String?,
+    val roleTitle: String?,
+    val description: String?,
+    val icon: String?,
+)
+
+/** A team's whole line-up for a game and a season, as one Save in the editor sends it. */
+data class LineupDraft(
+    /** Nothing where the team does not exist yet. */
+    val teamId: Long?,
+    val name: String,
+    val teamIcon: String?,
+    val game: String,
+    val seasonId: Long,
+    /** The art of this season's fielding, which is why it is not the team's. */
+    val banner: String?,
+    /** Entries taken off. */
+    val removed: List<Long>,
+    /** Everybody on the line-up, in the order they are shown. */
+    val entries: List<DraftEntry>,
+)
+
+/** A published line-up: the team as it now stands and its roster in order. */
+data class PublishedLineup(
+    val team: Team,
+    val roster: List<TeamRosterEntry>,
+)
+
 /** A team fielded in a game in a season, with whatever line-up came across with it. */
 data class FieldedTeam(
     val fielding: TeamSeason,
@@ -166,6 +201,39 @@ class TeamRosterService(
                 )
             }
         return FieldedTeam(fielding, team, season, carried)
+    }
+
+    /**
+     * Writes a line-up draft as one transaction: the team, its fielding, the removals and every
+     * entry in the order given. A refusal anywhere leaves the line-up as it was.
+     */
+    @Transactional
+    fun publish(draft: LineupDraft): PublishedLineup {
+        val team = draft.teamId?.let { teams.update(it, draft.name, draft.teamIcon) } ?: teams.create(draft.name, draft.teamIcon)
+        val teamId = team.id!!
+        fieldWithLineup(teamId, draft.game, draft.seasonId, carryLineup = false, banner = draft.banner)
+        draft.removed.forEach(::remove)
+        val roster =
+            draft.entries.mapIndexed { sortIndex, entry ->
+                if (entry.id == null) {
+                    add(
+                        teamId,
+                        draft.game,
+                        draft.seasonId,
+                        entry.handle,
+                        entry.role,
+                        entry.userId,
+                        entry.displayName,
+                        entry.roleTitle,
+                        entry.description,
+                        entry.icon,
+                    ).also { it.sortIndex = sortIndex }
+                } else {
+                    update(entry.id, entry.handle, entry.role, entry.displayName, sortIndex, entry.roleTitle, entry.description, entry.icon)
+                        .also { it.userId = entry.userId }
+                }
+            }
+        return PublishedLineup(team, roster)
     }
 
     @Transactional

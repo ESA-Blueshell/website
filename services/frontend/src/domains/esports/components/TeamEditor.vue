@@ -38,7 +38,6 @@ import {
   isBlank,
   publishLineup,
   type DraftEntry,
-  type PublishStage,
 } from "../adapters/lineup"
 import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
 import {countOf} from "@/utils/countOf"
@@ -454,22 +453,6 @@ const dropFromSeason = async () => {
   }
 }
 
-/**
- * What a refused publish reads as. The stage says what already landed — the team is written
- * first, so anything after it leaves the rename saved — and the count says how much of the
- * line-up did. Saying which is the honest half of the report; claiming nothing changed would
- * not be.
- */
-const failureOf = (refusal: {reason: string; written: number; stage: PublishStage}): string => {
-  if (refusal.stage === "team" || refusal.stage === "removals") return refusal.reason
-  if (refusal.stage === "fielding") return `${refusal.reason} The team itself is saved.`
-  const written = refusal.written
-  const savedSoFar = written === 0
-    ? "Nothing in the line-up was changed."
-    : `The first ${written} of the line-up ${written === 1 ? "entry is" : "entries are"} saved.`
-  return `${refusal.reason} ${savedSoFar}`
-}
-
 /** The parts a line-up is shown in, in the order the game page shows them. */
 const GROUPS = [
   {role: TeamRoleEnum.PLAYER, one: "Player", many: "Players"},
@@ -526,7 +509,7 @@ const submit = async () => {
       entries: rows.value.map(entryOf),
     })
     if (!done.ok) {
-      failure.value = failureOf(done)
+      failure.value = done.reason
       return
     }
     forgetCompetitionReads()

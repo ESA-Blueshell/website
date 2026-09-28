@@ -110,13 +110,14 @@ test.describe("what the manager used to do, where it happens now", () => {
     await page.getByTestId("lineup-add").click()
     await page.getByTestId("lineup-handle-3").locator("input").fill("newcomer")
 
-    const created = page.waitForRequest(
-      (request) => request.method() === "POST" && /\/esports\/teams\/\d+\/roster$/.test(new URL(request.url()).pathname),
+    const saved = page.waitForRequest(
+      (request) => request.method() === "PUT" && /\/esports\/seasons\/\d+\/lineup$/.test(new URL(request.url()).pathname),
     )
     await page.getByTestId("lineup-save").click()
 
-    const request = await created
-    expect(JSON.parse(request.postData() ?? "{}")).toMatchObject({handle: "newcomer", role: "PLAYER"})
+    const request = await saved
+    const body = JSON.parse(request.postData() ?? "{}") as {entries: Array<Record<string, unknown>>}
+    expect(body.entries.at(-1)).toMatchObject({handle: "newcomer", role: "PLAYER"})
   })
 })
 

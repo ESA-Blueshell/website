@@ -6,25 +6,13 @@ import {
   type DraftEntry,
   type LineupDraft,
 } from "@/domains/esports/adapters/lineup"
-import {
-  addRosterEntry,
-  createTeam,
-  fieldTeam,
-  linkRosterEntry,
-  removeRosterEntry,
-  updateRosterEntry,
-  updateTeam,
-} from "@/services/api"
+import {addRosterEntry, fieldTeam, publishLineup as sendLineup} from "@/services/api"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   addRosterEntry: vi.fn(),
-  createTeam: vi.fn(),
   fieldTeam: vi.fn(),
-  linkRosterEntry: vi.fn(),
-  removeRosterEntry: vi.fn(),
-  updateRosterEntry: vi.fn(),
-  updateTeam: vi.fn(),
+  publishLineup: vi.fn(),
 }))
 
 const entry = (over: Partial<DraftEntry> = {}): DraftEntry => ({
@@ -41,13 +29,9 @@ const draft = (over: Partial<LineupDraft> = {}): LineupDraft => ({
 
 /** Every write answers yes, so a test says which of them it is about by overriding one. */
 const everythingLands = () => {
-  vi.mocked(createTeam).mockResolvedValue({data: {id: 9, name: "Blueshell"}} as never)
-  vi.mocked(updateTeam).mockResolvedValue({data: {id: 7, name: "Blueshell"}} as never)
+  vi.mocked(sendLineup).mockResolvedValue({data: {team: {id: 7}, roster: []}} as never)
   vi.mocked(fieldTeam).mockResolvedValue({data: {team: {id: 7}}} as never)
-  vi.mocked(removeRosterEntry).mockResolvedValue({data: undefined} as never)
   vi.mocked(addRosterEntry).mockResolvedValue({data: {id: 30}} as never)
-  vi.mocked(updateRosterEntry).mockResolvedValue({data: {id: 21}} as never)
-  vi.mocked(linkRosterEntry).mockResolvedValue({data: {id: 21}} as never)
 }
 
 const bodyOf = (call: unknown) => (call as {body: Record<string, unknown>}).body
@@ -58,100 +42,47 @@ beforeEach(() => {
 })
 
 describe("publishLineup", () => {
-  it("writes the team, then the fielding, then the removals, then the roster", async () => {
-    await publishLineup(draft({removed: [21], entries: [entry()]}))
+  const sent = () => vi.mocked(sendLineup).mock.calls[0]?.[0] as {path: {seasonId: number}; body: Record<string, unknown>}
 
-    const order = [updateTeam, fieldTeam, removeRosterEntry, addRosterEntry]
-      .map(one => vi.mocked(one).mock.invocationCallOrder[0])
-    expect(order).toEqual([...order].sort((a, b) => Number(a) - Number(b)))
+  it("sends the whole draft in one request, for the season it is in", async () => {
+    await publishLineup(draft({removed: [21], banner: "banners/b.webp", entries: [entry({id: 22, userId: 4})]}))
+
+    expect(sendLineup).toHaveBeenCalledTimes(1)
+    expect(sent().path).toEqual({seasonId: 3})
+    expect(sent().body).toMatchObject({
+      teamId: 7, name: "Blueshell", game: "VAL", banner: "banners/b.webp", removed: [21],
+      entries: [{id: 22, handle: "nova", role: "PLAYER", userId: 4, roleTitle: null, description: null}],
+    })
   })
 
-  it("makes the team where there is none to save, and writes the line-up against the new one", async () => {
-    await publishLineup(draft({teamId: null, entries: [entry()]}))
+  it("names no team where it does not exist yet, so the api makes it", async () => {
+    await publishLineup(draft({teamId: null}))
 
-    expect(updateTeam).not.toHaveBeenCalled()
-    expect(vi.mocked(addRosterEntry).mock.calls[0]?.[0]).toMatchObject({path: {teamId: 9}})
+    expect(sent().body.teamId).toBeNull()
   })
 
-  // Nothing after the refusal may run: a fielding written against a team that was meant to be
-  // renamed is the half-written state the ordering exists to avoid.
-  it("stops at the first refusal, and says which stage stopped it", async () => {
-    vi.mocked(fieldTeam).mockResolvedValue({error: {detail: "Not this season."}} as never)
-
-    const done = await publishLineup(draft({removed: [21], entries: [entry()]}))
-
-    expect(done).toEqual({ok: false, reason: "Not this season.", written: 0, stage: "fielding"})
-    expect(removeRosterEntry).not.toHaveBeenCalled()
-    expect(addRosterEntry).not.toHaveBeenCalled()
-  })
-
-  it("counts the entries that landed before the one that was refused", async () => {
-    vi.mocked(addRosterEntry)
-      .mockResolvedValueOnce({data: {id: 30}} as never)
-      .mockResolvedValueOnce({error: {detail: "Nope."}} as never)
-
-    const done = await publishLineup(draft({entries: [entry(), entry({handle: "kite"}), entry()]}))
-
-    expect(done).toEqual({ok: false, reason: "Nope.", written: 1, stage: "roster"})
-    expect(addRosterEntry).toHaveBeenCalledTimes(2)
-  })
-
-  // A count of roster entries rather than of requests: a refusal before the roster wrote none
-  // of it, whatever else it wrote.
-  it("counts no entries for a refusal before the roster", async () => {
-    vi.mocked(removeRosterEntry).mockResolvedValue({error: {detail: "Nope."}} as never)
-
-    const done = await publishLineup(draft({removed: [21], entries: [entry()]}))
-
-    expect(done).toMatchObject({written: 0, stage: "removals"})
-  })
-
+  // A blank row is not a place somebody stood, so it is not sent, and the api numbers what is.
   it("leaves out the rows nobody typed into", async () => {
     await publishLineup(draft({entries: [entry(), blank(), entry({handle: "kite"})]}))
 
-    expect(addRosterEntry).toHaveBeenCalledTimes(2)
-    const written = vi.mocked(addRosterEntry).mock.calls.map(call => bodyOf(call[0]).handle)
-    expect(written).toEqual(["nova", "kite"])
+    expect((sent().body.entries as Array<{handle: string}>).map(one => one.handle)).toEqual(["nova", "kite"])
   })
 
-  // A blank row is not a place somebody stood, so it does not take a position with it: the
-  // positions are handed out after the blanks are gone, and run without a gap.
-  it("numbers the entries that remain without a gap", async () => {
-    await publishLineup(draft({
-      entries: [entry({id: 21}), blank(), entry({id: 22, handle: "kite"})],
-    }))
+  // The api applies the draft whole or not at all, so a refusal is only a reason.
+  it("answers a refusal with the api's reason and nothing about what landed", async () => {
+    vi.mocked(sendLineup).mockResolvedValue({error: {detail: "Not this season."}} as never)
 
-    const written = vi.mocked(updateRosterEntry).mock.calls.map(call => bodyOf(call[0]).sortIndex)
-    expect(written).toEqual([0, 1])
+    expect(await publishLineup(draft())).toEqual({ok: false, reason: "Not this season."})
   })
 
-  it("corrects the entries that exist and attaches who they belong to", async () => {
-    await publishLineup(draft({entries: [entry({id: 21, userId: 4})]}))
+  it("answers a throw with the refusal a refused save would have answered with", async () => {
+    vi.mocked(sendLineup).mockRejectedValue(new Error("offline"))
 
-    expect(addRosterEntry).not.toHaveBeenCalled()
-    expect(updateRosterEntry).toHaveBeenCalled()
-    expect(linkRosterEntry).toHaveBeenCalledWith({path: {id: 21}, body: {userId: 4}})
+    expect(await publishLineup(draft())).toEqual({ok: false, reason: "The line-up could not be saved."})
   })
 
-  // The sdk answers a refusal with a body, but a request that never reached it throws. Both
-  // come back as the same refusal, so a caller has one failure to read rather than two.
-  it("answers a throw with the refusal a refused write would have answered with", async () => {
-    vi.mocked(fieldTeam).mockRejectedValue(new Error("offline"))
-
-    const done = await publishLineup(draft({entries: [entry()]}))
-
-    expect(done).toMatchObject({ok: false, stage: "fielding", written: 0})
-    expect((done as {reason: string}).reason).toBe("The line-up could not be saved.")
-  })
-
-  // `ok` promising a team that is not there is how a line-up gets written against nothing.
-  it("refuses a team saved with no answer, rather than writing a line-up against nothing", async () => {
-    vi.mocked(createTeam).mockResolvedValue({data: undefined} as never)
-
-    const done = await publishLineup(draft({teamId: null, entries: [entry()]}))
-
-    expect(done).toMatchObject({ok: false, stage: "team"})
-    expect(fieldTeam).not.toHaveBeenCalled()
+  it("answers a save the api took", async () => {
+    expect(await publishLineup(draft())).toEqual({ok: true})
   })
 })
 

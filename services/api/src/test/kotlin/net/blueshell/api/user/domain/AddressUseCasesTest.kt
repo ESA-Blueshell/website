@@ -4,11 +4,15 @@ import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 
 class AddressUseCasesTest {
     private val userService = mock<UserService>()
@@ -69,6 +73,17 @@ class AddressUseCasesTest {
             assertThat(address.zipCode).isEqualTo("9000")
             assertThat(address.version).isEqualTo(0L)
             assertThat(result).isSameAs(address)
+        }
+
+        @Test
+        fun `refuses an edit made against an older version, before touching a field`() {
+            val address = Address(user = testUser("john")).apply { version = 2L }
+            whenever(addressService.findById(2L)).thenReturn(address)
+
+            assertThatThrownBy { useCases.update(2L, "BE", "Ghent", "River Road", "99", "9000", version = 1L) }
+                .isInstanceOf(OptimisticLockingFailureException::class.java)
+            assertThat(address.city).isNotEqualTo("Ghent")
+            verify(addressService, never()).update(any())
         }
     }
 

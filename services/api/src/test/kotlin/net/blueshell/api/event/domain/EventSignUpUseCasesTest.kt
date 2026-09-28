@@ -7,6 +7,7 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.security.CurrentUser
@@ -14,7 +15,6 @@ import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.survey.persistence.Question
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -30,6 +30,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
@@ -252,6 +253,17 @@ class EventSignUpUseCasesTest {
         }
 
         @Test
+        fun `refuses an own edit made against an older version`() {
+            val existing = emptySignUp().apply { version = 2L }
+            whenever(eventSignUpService.findByUserIdAndEventId(42L, 100L)).thenReturn(existing)
+
+            assertThatThrownBy {
+                useCases.update(100L, EventSignUpData(eventId = 100L, answers = emptyList(), version = 1L), 42L, null)
+            }.isInstanceOf(OptimisticLockingFailureException::class.java)
+            verify(eventSignUpService, never()).update(any())
+        }
+
+        @Test
         fun `updates sign up resolved by guest access token`() {
             val existing = emptySignUp()
             val eventRef = mock<Event>()
@@ -306,13 +318,24 @@ class EventSignUpUseCasesTest {
                     EventSignUpData(
                         eventId = 0L,
                         answers = listOf(AnswerData(questionId = 200L, textResponse = "Rewritten")),
-                        version = 3L,
+                        version = 0L,
                     ),
                 )
 
             assertThat(result.answers).hasSize(1)
             assertThat(result.userId).isEqualTo(7L)
             verify(eventSignUpService).update(signUp)
+        }
+
+        @Test
+        fun `refuses a board edit made against an older version, before looking at a move`() {
+            val signUp = emptySignUp().apply { version = 2L }
+            whenever(eventSignUpService.findById(40L)).thenReturn(signUp)
+
+            assertThatThrownBy {
+                useCases.updateById(40L, EventSignUpData(eventId = 0L, answers = emptyList(), userId = 9L, version = 1L))
+            }.isInstanceOf(OptimisticLockingFailureException::class.java)
+            verify(eventSignUpService, never()).update(any())
         }
 
         @Test

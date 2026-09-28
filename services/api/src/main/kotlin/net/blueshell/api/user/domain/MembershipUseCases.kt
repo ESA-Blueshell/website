@@ -65,9 +65,9 @@ class MembershipUseCases(
         incasso: Boolean?,
         version: Long,
     ): Membership {
-        validate(MembershipInterval(userId = userId, id = id, startDate = startDate, endDate = endDate))
         val membership = service.findById(id)
         membership.requireVersion(version)
+        validate(MembershipInterval(userId = userId, id = id, startDate = startDate, endDate = endDate))
         memberType?.let { membership.memberType = it }
         membership.startDate = startDate!!
         membership.endDate = endDate

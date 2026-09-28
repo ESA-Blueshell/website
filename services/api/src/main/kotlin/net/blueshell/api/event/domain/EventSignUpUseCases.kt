@@ -86,6 +86,7 @@ class EventSignUpUseCases(
             // Guest token flow cannot assign a user id.
             signUpData = data.copy(userId = null)
         }
+        data.version?.let(signUp::requireVersion)
         validate(signUpData)
         applySignUp(signUpData, signUp, eventRepository, questionService)
         return service.update(signUp)
@@ -100,6 +101,7 @@ class EventSignUpUseCases(
         data: EventSignUpData,
     ): EventSignUp {
         val signUp = service.findById(eventSignUpId)
+        data.version?.let(signUp::requireVersion)
         // One direction only: a guest sign-up may move onto an account, never the other way.
         val movingTo = data.userId?.takeIf { signUp.userId == null && signUp.guest != null }
         val retiredGuest = movingTo?.let { checkReassignment(signUp, it) }
@@ -220,8 +222,6 @@ private fun applySignUp(
     eventRepository: EventRepository,
     questionService: QuestionService,
 ) {
-    // A new sign-up has nothing to be stale against.
-    if (signUp.id != null) data.version?.let(signUp::requireVersion)
     signUp.event = eventRepository.getReferenceById(data.eventId)
     signUp.userId = data.userId
     applyGuest(data.guest, signUp)
@@ -247,35 +247,27 @@ private fun applyGuest(
         return
     }
 
-    data.version?.let(existing::requireVersion)
     existing.name = data.name
     existing.discord = data.discord
     existing.email = data.email
     existing.phoneNumber = data.phoneNumber
 }
 
-private fun mapGuest(data: GuestData): Guest {
-    val rawAccessToken = data.accessToken ?: GuestAccessTokenCodec.generate()
-    val guest =
-        Guest.withRawToken(
-            name = data.name,
-            discord = data.discord,
-            email = data.email,
-            phoneNumber = data.phoneNumber,
-            accessToken = rawAccessToken,
-        )
-    return guest
-}
+private fun mapGuest(data: GuestData): Guest =
+    Guest.withRawToken(
+        name = data.name,
+        discord = data.discord,
+        email = data.email,
+        phoneNumber = data.phoneNumber,
+        accessToken = data.accessToken ?: GuestAccessTokenCodec.generate(),
+    )
 
 private fun mapAnswer(
     data: AnswerData,
     questionService: QuestionService,
-): Answer {
-    val answer =
-        Answer(
-            question = questionService.getReferenceById(data.questionId),
-            optionSelections = data.optionSelections?.toMutableList(),
-            textResponse = data.textResponse,
-        )
-    return answer
-}
+): Answer =
+    Answer(
+        question = questionService.getReferenceById(data.questionId),
+        optionSelections = data.optionSelections?.toMutableList(),
+        textResponse = data.textResponse,
+    )

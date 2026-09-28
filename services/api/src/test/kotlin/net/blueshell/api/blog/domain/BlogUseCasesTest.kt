@@ -2,11 +2,16 @@ package net.blueshell.api.blog.domain
 
 import net.blueshell.api.blog.persistence.Blog
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import java.time.Instant
 
 class BlogUseCasesTest {
@@ -80,6 +85,18 @@ class BlogUseCasesTest {
             assertThat(existing.publishedAt).isEqualTo(newPublishedAt)
             assertThat(existing.version).isEqualTo(1L)
             assertThat(result).isSameAs(existing)
+        }
+
+        @Test
+        fun `refuses an edit made against an older version, before touching a field`() {
+            val existing =
+                Blog(title = "Old", html = "<p>Old</p>", publishedAt = Instant.parse("2024-01-01T00:00:00Z")).apply { version = 2L }
+            whenever(blogService.findById(11L)).thenReturn(existing)
+
+            assertThatThrownBy { useCases.update(11L, "New", "<p>New</p>", Instant.parse("2025-06-01T00:00:00Z"), version = 1L) }
+                .isInstanceOf(OptimisticLockingFailureException::class.java)
+            assertThat(existing.title).isEqualTo("Old")
+            verify(blogService, never()).update(any())
         }
     }
 }

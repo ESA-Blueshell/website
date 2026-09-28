@@ -122,8 +122,8 @@ export async function saveCommitteeAsBoard(id: number, version: number, draft: C
   return {ok: true, committee: withArt(res.data)}
 }
 
-export async function saveOwnCommitteePage(id: number, draft: OwnPageDraft): Promise<CommitteeSaved | Refused> {
-  const res = await updateCommitteePage({path: {id}, body: {...draft, banner: draft.banner ?? undefined, icon: draft.icon ?? undefined}})
+export async function saveOwnCommitteePage(id: number, version: number, draft: OwnPageDraft): Promise<CommitteeSaved | Refused> {
+  const res = await updateCommitteePage({path: {id}, body: {...draft, version, banner: draft.banner ?? undefined, icon: draft.icon ?? undefined}})
   if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "The committee could not be saved.")}
   return {ok: true, committee: withArt(res.data)}
 }

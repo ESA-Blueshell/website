@@ -24,6 +24,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import java.util.Optional
 
 class CommitteeServiceTest {
@@ -111,6 +112,18 @@ class CommitteeServiceTest {
         assertThat(saved.description).isEqualTo("LANs, bigger")
         assertThat(saved.gameCodes).containsExactly("CS2")
         assertThat(saved.version).isEqualTo(0)
+    }
+
+    @Test
+    fun `refuses an edit or an own-page edit made against an older version`() {
+        val lan = committee(1, "LanCie", "CS2").apply { version = 2 }
+        stored(lan)
+
+        assertThatThrownBy { service.updateWithMembers(1, "LanCie", "LANs", emptyList(), 1) }
+            .isInstanceOf(OptimisticLockingFailureException::class.java)
+        assertThatThrownBy { service.updateOwnPage(1, "LANs", null, null, null, 1) }
+            .isInstanceOf(OptimisticLockingFailureException::class.java)
+        assertThat(lan.description).isNotEqualTo("LANs")
     }
 
     @Test

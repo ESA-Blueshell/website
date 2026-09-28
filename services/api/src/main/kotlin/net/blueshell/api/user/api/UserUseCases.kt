@@ -96,6 +96,8 @@ class UserUseCases(
         id: Long,
         data: BoardUserData,
     ): User {
+        val before = service.findById(id)
+        before.requireVersion(data.version)
         validate(
             UserUniqueness(
                 subjectId = id,
@@ -105,13 +107,11 @@ class UserUseCases(
                 phoneNumber = data.phoneNumber,
             ),
         )
-        val before = service.findById(id)
         data.memberProfile?.let { validate(it.completenessFor(before.hasRole(Role.MEMBER))) }
         val oldEmail = before.email
         val movesAddress = !data.email.trim().equals(oldEmail, ignoreCase = true)
         // Moving somebody's address moves where their password resets go, so the board member proves it is them.
         if (movesAddress) stepUp.require()
-        before.requireVersion(data.version)
         val user =
             before.apply {
                 username = data.username
@@ -138,9 +138,9 @@ class UserUseCases(
     ): User {
         // Username and email are absent from the self-service shape, so only the
         // two fields it can change are checked.
-        validate(UserUniqueness(subjectId = id, discordId = data.discordId, phoneNumber = data.phoneNumber))
         val found = service.findById(id)
         found.requireVersion(data.version)
+        validate(UserUniqueness(subjectId = id, discordId = data.discordId, phoneNumber = data.phoneNumber))
         data.memberProfile?.let { validate(it.completenessFor(found.hasRole(Role.MEMBER))) }
         val user =
             found.apply {
@@ -186,8 +186,8 @@ internal fun UpsertMemberProfileData.upsertInto(user: User) {
         return
     }
 
-    // The board and self-service payloads both require a version, so this only skips the
-    // check for the signup routes, where the token holder is the only writer.
+    // A body without a version is not checked. The signup routes never send one: the token
+    // holder is the only writer there.
     version?.let(existing::requireVersion)
     existing.dateOfBirth = dateOfBirth
     existing.studentNumber = studentNumber

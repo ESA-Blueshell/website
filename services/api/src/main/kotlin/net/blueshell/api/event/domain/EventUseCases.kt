@@ -70,9 +70,9 @@ class EventUseCases(
         removeExistingSignUps: Boolean,
         version: Long,
     ): Event {
-        refuseEveryone(data)
         val event = service.findById(id)
         event.requireVersion(version)
+        refuseEveryone(data)
         event.applyEditableFields(data, committeeService.findById(data.committeeId))
         applyGames(event, data)
         event.replaceBanner(data.banner?.toEntity(event, fileService, existingBanner = event.banner))

@@ -134,6 +134,7 @@ describe("UserForm", () => {
       expect(mockSignUp).toHaveBeenCalled()
       expect(mockCreateUser).not.toHaveBeenCalled()
       expect(saved.id).toBe(session.userId)
+      expect(saved.password).toBe("")
       expect((wrapper.vm as any).signupSession).toMatchObject({signupToken: "sel.ver"})
     })
 

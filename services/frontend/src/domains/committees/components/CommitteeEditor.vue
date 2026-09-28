@@ -145,7 +145,7 @@ const submit = async () => {
       ? await addCommittee(written)
       : props.asBoard
         ? await saveCommitteeAsBoard(committee.id, committee.version, written)
-        : await saveOwnCommitteePage(committee.id, {description: written.description, banner: written.banner, icon: written.icon, gameCodes: written.gameCodes})
+        : await saveOwnCommitteePage(committee.id, committee.version, {description: written.description, banner: written.banner, icon: written.icon, gameCodes: written.gameCodes})
     if (!result.ok) {
       failure.value = result.reason
       return

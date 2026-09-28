@@ -331,10 +331,11 @@ const save = async (): Promise<EditableUser | null> => {
       signupSession.value = session
       // Nothing authorises an anonymous applicant to read the account back, so the
       // form keeps what was typed and takes the id from the session.
-      user.value = {...user.value, id: session.userId, email: session.email, password: ""}
+      const registered = {...user.value, id: session.userId, email: session.email, password: ""}
+      user.value = registered
       emit("submitted", true)
       setSubmitResult(true)
-      return user.value
+      return registered
     }
 
     const resp = await withSaving(async () => {

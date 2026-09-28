@@ -165,7 +165,7 @@ describe("the committee edit page, for its own members", () => {
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
-    expect(adapter.saveOwnCommitteePage).toHaveBeenCalledWith(1, {description: "LANs, monthly.", banner: "b.webp", icon: "i.webp", gameCodes: ["CS2"]})
+    expect(adapter.saveOwnCommitteePage).toHaveBeenCalledWith(1, 3, {description: "LANs, monthly.", banner: "b.webp", icon: "i.webp", gameCodes: ["CS2"]})
     expect(wrapper.emitted("saved")).toEqual([[lan]])
   })
 

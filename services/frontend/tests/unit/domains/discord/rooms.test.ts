@@ -3,8 +3,7 @@ import {fitting, howFull, liveOf, unlockedFor, POLL_MS, readDiscordRooms, RETRY_
 import {readGuildCounts, readGuildWidget} from "@/domains/discord/adapters/widget"
 import {readLiveServer} from "@/domains/discord/adapters/live"
 import {openLiveSocket} from "@/domains/discord/adapters/liveSocket"
-import type {GuildWidget} from "@/domains/discord/adapters/widget"
-import type {WidgetMember} from "@/services/api"
+import type {GuildWidget, WidgetMember} from "@/domains/discord/adapters/widget"
 import type {DiscordLiveResponse} from "@/services/api"
 
 vi.mock("@/domains/discord/adapters/live", () => ({readLiveServer: vi.fn()}))
@@ -17,7 +16,7 @@ vi.mock("@/domains/discord/adapters/widget", async (importOriginal) => ({
 
 /** One person as the widget lists them; only the name, room and picture matter here. */
 const person = (username: string, channel_id?: string, avatar_url = ""): WidgetMember =>
-  ({id: username, username, channel_id, avatar_url, avatar: false, discriminator: "0000", status: "online"})
+  ({id: username, username, channel_id, avatar_url, status: "online"})
 
 const WIDGET: GuildWidget = {
   id: "324",

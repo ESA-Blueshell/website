@@ -406,6 +406,31 @@ class BoardUseCasesTest {
     }
 
     @Nested
+    inner class RemoveBoard {
+        @Test
+        fun `removes a board nobody sits on`() {
+            val board = boardEntity()
+            whenever(boards.findById(9L)).thenReturn(Optional.of(board))
+            whenever(boardMemberService.membersOn(9L)).thenReturn(0L)
+
+            useCases.remove(9L)
+
+            verify(boards).delete(board)
+        }
+
+        @Test
+        fun `refuses a board that still has members, with the count`() {
+            whenever(boards.findById(9L)).thenReturn(Optional.of(boardEntity()))
+            whenever(boardMemberService.membersOn(9L)).thenReturn(3L)
+
+            val refusal = assertThrows<BoardHoldsMembers> { useCases.remove(9L) }
+
+            assertThat(refusal.facts).containsEntry("members", 3L)
+            verify(boards, never()).delete(any<Board>())
+        }
+    }
+
+    @Nested
     inner class RemoveBoardMember {
         @Test
         fun `deletes the member by their own id`() {

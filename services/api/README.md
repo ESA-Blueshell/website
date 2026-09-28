@@ -220,9 +220,9 @@ curl http://localhost:8080/api/v3/api-docs
 
 ## Policies & Compliance
 
-User-facing policies are documented in `docs/policies/`:
-- Cookie Policy
-- Privacy Policy
+User-facing policies are written in `docs/policies/` (the Cookie Policy and the Privacy Policy, each
+in English and Dutch). `scripts/generate-policy-pdfs.sh` renders them into
+`services/frontend/src/assets/documents/`, the one copy the site serves.
 
 These are referenced in signup flows and user consent workflows.
 

@@ -400,9 +400,9 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 ## Policies & Compliance
 
-User-facing policies are documented in `docs/policies/`:
-- Cookie Policy
-- Privacy Policy
+User-facing policies are written in `docs/policies/` (the Cookie Policy and the Privacy Policy, each
+in English and Dutch). `scripts/generate-policy-pdfs.sh` renders them into
+`services/frontend/src/assets/documents/`, the one copy the site serves.
 
 Refer to these in signup flows, consent workflows, and user-facing documentation.
 

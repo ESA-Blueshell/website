@@ -10,6 +10,8 @@ Usage:
 Options:
   --dir    Directory containing policy markdown files (.md).
            Default: docs/policies
+  --out    Directory the PDFs are written to, which is where the site serves them.
+           Default: services/frontend/src/assets/documents
   --image  Docker image used for Pandoc + LaTeX.
            Default: pandoc/latex:3.1
   -h, --help
@@ -18,6 +20,7 @@ USAGE
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 POLICY_DIR_REL="docs/policies"
+OUT_DIR_REL="services/frontend/src/assets/documents"
 IMAGE="pandoc/latex:3.1"
 BR_FILTER_REL="scripts/pandoc-html-br.lua"
 
@@ -25,6 +28,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --dir)
       POLICY_DIR_REL="${2:-}"
+      shift 2
+      ;;
+    --out)
+      OUT_DIR_REL="${2:-}"
       shift 2
       ;;
     --image)
@@ -74,7 +81,8 @@ echo "Generating PDFs for ${#POLICY_FILES[@]} markdown file(s) from: $POLICY_DIR
 
 for md_abs in "${POLICY_FILES[@]}"; do
   md_rel="${md_abs#$ROOT_DIR/}"
-  pdf_rel="${md_rel%.md}.pdf"
+  md_name="${md_rel##*/}"
+  pdf_rel="$OUT_DIR_REL/${md_name%.md}.pdf"
 
   echo " - $pdf_rel"
   docker run --rm \

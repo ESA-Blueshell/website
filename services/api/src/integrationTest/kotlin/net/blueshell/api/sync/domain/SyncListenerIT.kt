@@ -10,6 +10,7 @@ import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserUpdated
@@ -23,6 +24,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.TestPropertySource
 import org.springframework.transaction.support.TransactionTemplate
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
 /** Verifies that publishing user / event domain events drives the queued sync pipeline end-to-end. */
@@ -39,11 +41,15 @@ class SyncListenerIT : UserTestSupport() {
 
     @Autowired private lateinit var jdbc: JdbcTemplate
 
+    @Autowired private lateinit var unsyncedEvents: SyncUnsyncedEventsJob
+
+    @Autowired private lateinit var objectMapper: ObjectMapper
+
     @Autowired private lateinit var tx: TransactionTemplate
 
     // job_executions / external_id_mapping rows are wiped by TestCleanUpListener
-    // between tests, so this reset only takes care of in-memory adapter state
-    // and the Modulith event_publication outbox. Asserting on the mapping (a
+    // between tests, so this reset only takes care of in-memory adapter state.
+    // Asserting on the mapping (a
     // row only visible AFTER the job's transaction commits) is the test's
     // signal that the whole pipeline ran; mocking the adapter alone is not
     // enough because the mock is touched in-memory before the surrounding
@@ -52,7 +58,6 @@ class SyncListenerIT : UserTestSupport() {
     fun reset() {
         mockContactAdapter.clear()
         mockCalendarAdapter.clear()
-        jdbc.update("DELETE FROM EVENT_PUBLICATION")
     }
 
     @Test
@@ -147,22 +152,13 @@ class SyncListenerIT : UserTestSupport() {
     }
 
     @Test
-    fun `Modulith writes an event_publication row that completes after the listener enqueues`() {
-        val user = createUserWithRole(Role.MEMBER)
-        tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
-        awaitMapping("USER", user.id!!, TargetSystem.BREVO)
+    fun `the calendar sweep syncs an event whose sync never ran`() {
+        val event: Event = createEventFixture()
 
-        val rows =
-            jdbc.queryForList(
-                "SELECT LISTENER_ID, COMPLETION_DATE FROM EVENT_PUBLICATION WHERE EVENT_TYPE = ?",
-                UserCreated::class.java.name,
-            )
-        assertThat(rows).describedAs("Modulith should persist the UserCreated publication").isNotEmpty
-        val contactListenerRow = rows.firstOrNull { (it["LISTENER_ID"] as String).contains("ContactSyncListener") }
-        assertThat(contactListenerRow).describedAs("listener row for ContactSyncListener must exist").isNotNull
-        assertThat(contactListenerRow!!["COMPLETION_DATE"])
-            .describedAs("row should be marked complete after the listener returns")
-            .isNotNull
+        unsyncedEvents.runJob(objectMapper.writeValueAsString(CalendarJobs.SyncUnsyncedEventsPayload()))
+
+        val mapping = awaitMapping("EVENT", event.id!!, TargetSystem.GOOGLE_CALENDAR)
+        assertThat(mockCalendarAdapter.findByExternalId(mapping.externalId!!)).isNotNull
     }
 
     private fun awaitCondition(condition: () -> Boolean) {

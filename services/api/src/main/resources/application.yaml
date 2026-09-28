@@ -77,12 +77,6 @@ spring:
     # A module is a package whose ModuleMetadata carries @ApplicationModule. platform carries
     # none, which keeps the application root out of the module list.
     detection-strategy: explicitly-annotated
-    events:
-      jdbc:
-        schema-initialization:
-          enabled: false        # owned by the schema baseline, not by schema-init
-      republish-outstanding-events-on-restart: true
-      completion-mode: update   # keep completed rows as an audit trail (default 2.0 is DELETE)
 
   mvc:
     dispatch-options-request: true

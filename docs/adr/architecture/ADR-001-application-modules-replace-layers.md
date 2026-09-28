@@ -129,9 +129,14 @@ cycle, and [ADR-006](ADR-006-migration-sequencing.md) names it for each.
 
 Direct calls into another module's internals are replaced by two mechanisms:
 a published type in the callee's `api` package, or a domain event consumed with
-`@ApplicationModuleListener`. The latter runs on the Event Publication Registry —
-transactional, retried, and republished on restart — which is the durable
+`@ApplicationModuleListener`. The latter runs on the Event Publication Registry,
+transactional, retried and republished on restart, which is the durable
 substrate [ADR-004](ADR-004-deferred-execution-surface.md) builds on.
+
+> **Amended** (#1647): the registry was a second outbox in front of the job queue, since
+> every module listener only queued a job. It is gone. A listener of an event published
+> after commit is an `@AfterCommitListener`, a listener whose work belongs to the change
+> queues its job before commit, and the job queue is the one durable substrate.
 
 ### What this replaces
 

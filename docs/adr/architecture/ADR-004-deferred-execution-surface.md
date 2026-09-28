@@ -58,10 +58,10 @@ would re-adopt the mechanism this codebase already abandoned.
 Where the work is a consequence of something that happened rather than a task to
 schedule, the idiomatic form under
 [ADR-001](ADR-001-application-modules-replace-layers.md) is publishing a domain
-event and consuming it with `@ApplicationModuleListener` — durable through the
-Event Publication Registry, with no dispatcher call at all. `runAsync` is for
-work the caller is deliberately deferring; an event is for work another module
-decides to do.
+event, and the module that consumes it queues its own job: `runAsync` is for work
+the caller is deliberately deferring; an event is for work another module decides
+to do. The Event Publication Registry that once carried such events went in #1647;
+the job queue is what makes the work durable.
 
 ### `runIn` gets its own column
 

@@ -26,11 +26,6 @@ spring:
     username: sa
     password: openapi
 
-  sql:
-    init:
-      mode: always
-      data-locations: classpath:openapi-gen-schema.sql
-
   session:
     store-type: none
 

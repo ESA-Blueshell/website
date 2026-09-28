@@ -39,7 +39,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
 | [005](ADR-005-factory-pattern-for-entity-creation.md) | Factory Pattern for Entity Creation | Accepted | Factories for complex object creation workflows |
-| [006](ADR-006-event-driven-architecture.md) | Event-Driven Architecture | Accepted (amended) | Event-based cross-domain coordination, on the Event Publication Registry |
+| [006](ADR-006-event-driven-architecture.md) | Event-Driven Architecture | Accepted (amended) | Event-based cross-domain coordination; durable work is a queued job |
 | [025](ADR-025-membership-commit-rendezvous.md) | Membership Commit Rendezvous | Accepted | Membership commits when the last of email confirmation and application submission lands |
 | [027](ADR-027-joining-asks-for-the-contribution.md) | Joining Asks For The Contribution | Accepted | A membership starting through signup asks the new member to pay, records the ask, and leaves the deadline to the board |
 | [029](ADR-029-animated-gif-banners-convert-to-animated-webp.md) | Animated GIF Banners Convert To Animated WebP | Accepted | A GIF banner is stored and served as an animated WebP at every width, decoded per frame and resized off the startup path |

@@ -1,12 +1,10 @@
 package net.blueshell.api.event.domain
 
+import net.blueshell.api.shared.event.AfterCommitListener
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.runAsyncFromActor
-import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 
 /** Sends the guest signup email after commit. Calendar sync is driven by [CalendarSyncListener]. */
 @Component
@@ -14,8 +12,7 @@ class EventJobsListener(
     private val jobs: JobQueue,
     private val signUps: EventSignUpService,
 ) {
-    @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @AfterCommitListener
     fun onPersist(evt: EventSignUpCreated) {
         val guestAccessToken = evt.guestAccessToken ?: return
         val e = signUps.findById(evt.signUpId)

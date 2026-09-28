@@ -3,19 +3,16 @@ package net.blueshell.api.committee.domain
 import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeMembershipChanged
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.event.AfterCommitListener
 import net.blueshell.api.user.api.UserService
-import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 
 @Component
 class CommitteeMembershipChangedListener(
     private val committeeMemberService: CommitteeMemberService,
     private val users: UserService,
 ) {
-    @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @AfterCommitListener
     fun onChange(event: CommitteeMembershipChanged) {
         if (committeeMemberService.countMembershipsForUser(event.userId) > 0) {
             users.addRole(event.userId, Role.COMMITTEE)

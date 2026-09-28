@@ -73,7 +73,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.session:spring-session-data-redis")
     implementation(platform("org.springframework.modulith:spring-modulith-bom:2.1.1"))
-    implementation("org.springframework.modulith:spring-modulith-starter-jdbc")
+    implementation("org.springframework.modulith:spring-modulith-api")
     // Module detection pulls in ArchUnit, which has no business in the production jar —
     // the detection strategy is only ever instantiated by ApplicationModules in a test.
     compileOnly("org.springframework.modulith:spring-modulith-core")

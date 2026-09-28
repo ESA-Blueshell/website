@@ -1,20 +1,17 @@
 package net.blueshell.api.user.domain
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.event.AfterCommitListener
 import net.blueshell.api.user.api.MembershipChanged
 import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
-import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 
 @Component
 class MembershipEventListener(
     private val users: UserService,
 ) {
-    @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @AfterCommitListener
     fun onChange(evt: MembershipChanged) {
         // The event's `active` flag is recomputed by MembershipService from the
         // user's full membership set, so every change type (create/update/delete)

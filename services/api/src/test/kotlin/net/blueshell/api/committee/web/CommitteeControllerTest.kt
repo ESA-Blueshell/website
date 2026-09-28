@@ -5,10 +5,17 @@ import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.domain.CommitteeSeat
 import net.blueshell.api.committee.domain.CommitteeSeats
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.security.UserPrincipal
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -18,6 +25,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.mock.web.MockMultipartFile
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.context.SecurityContextHolder
 import java.time.Instant
 
 class CommitteeControllerTest {
@@ -103,7 +112,71 @@ class CommitteeControllerTest {
         whenever(service.organisersOf("CS2", setOf(1L))).thenReturn(listOf(lan))
 
         assertThat(controller.archiveCommittee(1, ArchiveCommitteeRequest(true)).archived).isTrue()
-        assertThat(controller.setGameOrganisers("CS2", GameOrganisersRequest(listOf(1L))).map { (it as CommitteeSummaryResponse).slug })
+        assertThat(controller.setGameOrganisers("CS2", GameOrganisersRequest(listOf(1L))).map { it.slug })
             .containsExactly("lan")
+    }
+
+    /** Who sits on a committee is the board's and its own members' to know (#89). */
+    @Nested
+    inner class `who sits on a committee` {
+        private val seated =
+            Committee(name = "Sitecie", description = "The site", slug = "site").apply {
+                id = 2
+                createdAt = Instant.EPOCH
+                updatedAt = Instant.EPOCH
+                replaceMembers(
+                    listOf(
+                        CommitteeMember(committee = this, user = mock<User> { on { id } doReturn 7L }, role = "Chair").apply {
+                            createdAt = Instant.EPOCH
+                            updatedAt = Instant.EPOCH
+                        },
+                    ),
+                )
+            }
+
+        private fun reading(
+            id: Long,
+            vararg roles: Role,
+        ) {
+            val principal = UserPrincipal(id, "reader", "h", true, roles.toSet(), null, null)
+            SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)
+        }
+
+        @AfterEach
+        fun forget() = SecurityContextHolder.clearContext()
+
+        @BeforeEach
+        fun committees() {
+            whenever(service.findAll()).thenReturn(mutableListOf(seated))
+            whenever(service.findById(2)).thenReturn(seated)
+            whenever(service.findAllByUserId(7)).thenReturn(mutableListOf(seated))
+        }
+
+        @Test
+        fun `a visitor reads the committees without their members, and has none of their own`() {
+            assertThat(controller.findCommittees().map { it.members }).containsOnlyNulls()
+            assertThat(controller.findCommitteesByUserId()).isEmpty()
+        }
+
+        @Test
+        fun `a member reads the members of their own committee only`() {
+            reading(7, Role.MEMBER)
+            assertThat(controller.findCommittees().map { it.members }).containsOnlyNulls()
+            assertThat(controller.findCommitteeById(2).members?.map { it.role }).containsExactly("Chair")
+            assertThat(controller.findCommitteesByUserId().single().members).hasSize(1)
+
+            reading(8, Role.MEMBER)
+            assertThat(controller.findCommitteeById(2).members).isNull()
+        }
+
+        @Test
+        fun `the board reads every committee with its members`() {
+            reading(9, Role.BOARD)
+            whenever(service.findAll()).thenReturn(mutableListOf(seated, lan))
+
+            assertThat(controller.findCommittees().map { it.members?.size }).containsExactly(1, 0)
+            assertThat(controller.findCommitteeById(2).members).hasSize(1)
+            assertThat(controller.findCommitteesByUserId().map { it.slug }).containsExactly("site", "lan")
+        }
     }
 }

@@ -116,7 +116,7 @@ const drafted = computed<Committee>(() => ({
   version: 0,
   createdAt: "",
   updatedAt: "",
-}) as Committee)
+}))
 
 const cell = computed(() => [cellOf(drafted.value, codes => codes
   .map(code => games.value.find(game => game.code === code)?.name)

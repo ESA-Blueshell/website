@@ -11,9 +11,10 @@ import Island from "@/components/island/Island.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import {useCommittees} from "@/domains/committees"
-import {cellOf, driftItemOf, reelItemOf, useCasualGames, useMayEditGames, type CasualGame} from "@/domains/games"
+import {cellOf, driftItemOf, reelItemOf, useCasualGames, type CasualGame} from "@/domains/games"
 import ArchiveGameDialog from "@/domains/games/island/ArchiveGameDialog.vue"
 import RemoveGameDialog from "@/domains/games/island/RemoveGameDialog.vue"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 defineOptions({name: "CasualPage"})
 
@@ -23,7 +24,7 @@ defineOptions({name: "CasualPage"})
  */
 const router = useRouter()
 const {games, live, archived, refresh} = useCasualGames()
-const mayEdit = useMayEditGames()
+const mayEdit = useIsBoard()
 
 const {listed: committees} = useCommittees()
 /** The committees that organise events for a game, by name, drawn as its chips. */

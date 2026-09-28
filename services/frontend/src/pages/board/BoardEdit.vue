@@ -2,9 +2,10 @@
 import {computed} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import BoardEditor from "@/domains/boards/components/BoardEditor.vue"
-import {nextBoardNumber, useBoards, useMayEditBoards, type Board} from "@/domains/boards"
+import {nextBoardNumber, useBoards, type Board} from "@/domains/boards"
 import {useReturnTo} from "@/composables/useReturnTo"
 import NotFound from "@/pages/NotFound.vue"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 /** A board added or corrected on its own page, and back to the board page on that board. */
 defineOptions({name: "BoardEditPage"})
@@ -12,7 +13,7 @@ defineOptions({name: "BoardEditPage"})
 const route = useRoute()
 const router = useRouter()
 const {boards, loading, refresh} = useBoards()
-const mayEdit = useMayEditBoards()
+const mayEdit = useIsBoard()
 
 const adding = computed(() => route.params.number == null)
 const board = computed<Board | null>(() => boards.value.find(one => one.number === Number(route.params.number)) ?? null)

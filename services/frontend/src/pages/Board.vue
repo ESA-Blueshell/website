@@ -17,9 +17,9 @@ import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
 import {BOARD_CALL} from "@/domains/boards"
 import {useBoards} from "@/domains/boards"
-import {useMayEditBoards} from "@/domains/boards"
 import {academicYear, boardEyebrow, boardInRoute, boardName, boardsEitherSide, boardStops, membersInOrder, travelBetween} from "@/domains/boards"
 import {memberTitle, type Board, type BoardMember} from "@/domains/boards"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 /**
  * The association's own history, as a line of boards.
@@ -241,7 +241,7 @@ const entrance = computed(() => ({
  * A visitor is shown the years and none of the machinery. The api refuses what it refuses
  * either way: hiding a pencil is not a guard, and this page does not treat it as one.
  */
-const mayEdit = useMayEditBoards()
+const mayEdit = useIsBoard()
 
 const editBoard = (number: number) => void router.push(`/board/${number}/edit`)
 

@@ -4,4 +4,3 @@
  */
 export {cellOf, driftItemOf, forgetCasualGames, initialsOf, reelItemOf, useCasualGames} from "./useCasualGames"
 export {type CasualGame} from "./adapters/games"
-export {useMayEditGames} from "./island/useMayEditGames"

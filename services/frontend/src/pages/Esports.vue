@@ -11,7 +11,6 @@ import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import SeasonTeams from "@/domains/esports/island/SeasonTeams.vue"
-import {useMayEditEsports} from "@/domains/esports"
 import {seasonInRoute} from "@/domains/esports"
 import {useGames} from "@/domains/esports"
 import {useSeasons} from "@/domains/esports"
@@ -21,6 +20,7 @@ import {JOIN_CALL} from "@/domains/esports"
 import {leaveGameInSeason} from "@/domains/esports"
 import {lineupSliceOf} from "@/domains/esports"
 import type {GameCode, Game, Season} from "@/domains/esports"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 defineOptions({name: "EsportsPage"})
 
@@ -164,7 +164,7 @@ const entrance = {
   transition: {duration: motion.duration(0.45), ease: [0.22, 1, 0.36, 1] as const},
 }
 
-const mayEdit = useMayEditEsports()
+const mayEdit = useIsBoard()
 
 /**
  * A visitor's strip carries the seasons something was fielded in; somebody who may edit sees

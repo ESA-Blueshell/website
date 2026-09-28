@@ -26,6 +26,7 @@ vi.mock("vue-router", async (importOriginal) => {
 })
 
 vi.mock("@/plugins/store", () => ({default: {getters, commit: mockCommit}}))
+vi.mock("vuex", async importOriginal => (await import("../../helpers/testUtils")).withVuexUseStore(importOriginal, {getters}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockNetworkError}))
 vi.mock("@/domains/events", async (importOriginal) => ({
   ...(await importOriginal<object>()),

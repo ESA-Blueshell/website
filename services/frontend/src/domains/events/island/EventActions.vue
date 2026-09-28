@@ -8,6 +8,7 @@ import IconButton from "@/components/island/IconButton.vue"
 import store, {type GuestSessionData} from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {deleteEvent, type EventResponse, type EventSignUpResponse, setEventApproved, withdrawSignUp} from ".."
+import {useIsBoard} from "@/composables/useIsBoard"
 
 /**
  * What can be done with one event from where it is listed: signing up, and for its committee
@@ -40,7 +41,7 @@ const signing = defineModel<boolean>("signing", {default: false})
 const router = useRouter()
 
 const isMember = computed<boolean>(() => store.getters.isMember)
-const isBoard = computed<boolean>(() => store.getters.isBoard)
+const isBoard = useIsBoard()
 
 const signUp = computed(() => signUps.find(one => one.eventId === event.id))
 const isSignedUp = computed<boolean>(() => signUp.value?.id !== undefined)

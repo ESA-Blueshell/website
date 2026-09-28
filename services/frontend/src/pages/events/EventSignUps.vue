@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
-import {useStore} from "vuex"
 import CutButton from "@/components/island/CutButton.vue"
 import BandHead from "@/components/island/BandHead.vue"
 import FormControl from "@/components/island/FormControl.vue"
@@ -29,6 +28,7 @@ import {
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {compareSignUpKind, type SignUpRow, signUpPerson, toSignUpRows} from "@/utils/eventSignUpRows"
 import {buildEventSignUpsCsv, eventSignUpsCsvFilename} from "@/utils/eventSignUpsCsv"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 const event = ref<EventResponse>()
 const signUps = ref<EventSignUpResponse[]>([])
@@ -49,9 +49,8 @@ const respondents = computed<RespondentRow[]>(() =>
 )
 
 const route = useRoute()
-const store = useStore()
 
-const mayManageSignUps = computed<boolean>(() => store.getters.isBoard)
+const mayManageSignUps = useIsBoard()
 
 const eventId = computed<number>(() => Number(route.params.id))
 

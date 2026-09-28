@@ -13,8 +13,8 @@ const state = vi.hoisted(() => ({may: true, loading: false, refresh: vi.fn()}))
 vi.mock("@/domains/boards", async importOriginal => ({
   ...(await importOriginal<typeof import("@/domains/boards")>()),
   useBoards: () => ({boards: ref([tenth]), loading: ref(state.loading), refresh: state.refresh}),
-  useMayEditBoards: () => ref(state.may),
 }))
+vi.mock("@/composables/useIsBoard", () => ({useIsBoard: () => ref(state.may)}))
 
 const BoardEditor = {name: "BoardEditor", props: ["board", "boards", "nextNumber", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
 const BoardMemberEditor = {name: "BoardMemberEditor", props: ["board", "member", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}

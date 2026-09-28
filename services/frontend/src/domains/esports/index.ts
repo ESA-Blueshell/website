@@ -6,7 +6,6 @@
 export {JOIN_CALL} from "./island/joinCall"
 export {seasonInRoute} from "./island/seasonInRoute"
 export {useGames} from "./island/useGames"
-export {useMayEditEsports} from "./island/useMayEditEsports"
 export {useSeasonLineup, type LineupEntry} from "./island/useSeasonLineup"
 export {lineupSliceOf} from "./island/lineupSlice"
 export {useSeasons} from "./island/useSeasons"

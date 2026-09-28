@@ -27,6 +27,10 @@ fun Project.executionDataFor(defaultFile: String): Any {
 // Without merged data a report or a floor runs the suite it measures. With it,
 // the suite has already run on the shards and the .exec files are all there is
 // to read, so the fan-in must not re-run anything.
+// Generated code, and the Spring Modulith markers that only carry an annotation: a line in either
+// holds no behaviour, so counting it only asks for a test that can fail by not compiling.
+val notMeasured = listOf("**/generated/**", "**/ModuleMetadata*", "**/PackageMetadata*")
+
 fun Task.dependsOnUnlessMerged(producer: Any) {
     if (mergedExecDir == null) dependsOn(producer)
 }
@@ -86,7 +90,7 @@ tasks.jacocoTestReport {
     sourceDirectories.setFrom(sourceSets.main.get().allSource.srcDirs)
     classDirectories.setFrom(
         files(sourceSets.main.get().output.classesDirs).asFileTree.matching {
-            exclude("**/generated/**")
+            exclude(notMeasured)
         },
     )
     reports {
@@ -109,7 +113,7 @@ tasks.register<JacocoReport>("jacocoIntegrationTestReport") {
     sourceDirectories.setFrom(sourceSets.main.get().allSource.srcDirs)
     classDirectories.setFrom(
         files(sourceSets.main.get().output.classesDirs).asFileTree.matching {
-            exclude("**/generated/**")
+            exclude(notMeasured)
         },
     )
     reports {
@@ -131,7 +135,7 @@ tasks.jacocoTestCoverageVerification {
     sourceDirectories.setFrom(sourceSets.main.get().allSource.srcDirs)
     classDirectories.setFrom(
         files(sourceSets.main.get().output.classesDirs).asFileTree.matching {
-            exclude("**/generated/**")
+            exclude(notMeasured)
         },
     )
     violationRules {
@@ -154,7 +158,7 @@ tasks.register<JacocoCoverageVerification>("jacocoIntegrationTestCoverageVerific
     sourceDirectories.setFrom(sourceSets.main.get().allSource.srcDirs)
     classDirectories.setFrom(
         files(sourceSets.main.get().output.classesDirs).asFileTree.matching {
-            exclude("**/generated/**")
+            exclude(notMeasured)
         },
     )
     violationRules {

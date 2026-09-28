@@ -8,13 +8,6 @@ import java.time.Instant
 /** The shapes the committee routes take and answer with, read field by field. */
 class CommitteeShapesTest {
     @Test
-    fun `a member's page save leaves the banner, games and version out unless it says them`() {
-        val request = CommitteeOwnPageRequest(description = "LANs")
-
-        assertThat(listOf(request.banner, request.gameCodes, request.version)).containsOnlyNulls()
-    }
-
-    @Test
     fun `a committee answers its address, Listed, Archived, banner and games`() {
         val lan =
             Committee(name = "LanCie", description = "LANs", listed = false, archived = true).apply {

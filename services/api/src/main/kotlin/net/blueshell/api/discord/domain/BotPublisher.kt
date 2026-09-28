@@ -270,12 +270,12 @@ class BotPublisher(
             .body(REPLY)!!
             .getValue("id") as String
 
-    private fun channelIdOf(channel: String): String =
-        doors.ifAvailable
-            ?.textRooms()
-            ?.firstOrNull { plain(it.name) == plain(channel) }
-            ?.id
-            ?: error("No Discord text channel is called $channel")
+    // The channel list comes from the gateway, which holds none while it is not connected.
+    private fun channelIdOf(channel: String): String {
+        val rooms = doors.ifAvailable?.textRooms().orEmpty()
+        check(rooms.isNotEmpty()) { "The Discord gateway is not connected, so no channel called $channel can be found yet." }
+        return rooms.firstOrNull { plain(it.name) == plain(channel) }?.id ?: error("No Discord text channel is called $channel")
+    }
 
     private companion object {
         // The only privacy level Discord offers for a server's events.

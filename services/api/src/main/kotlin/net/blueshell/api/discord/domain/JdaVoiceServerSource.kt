@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.events.RawGatewayEvent
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent
 import net.dv8tion.jda.api.events.session.SessionRecreateEvent
+import net.dv8tion.jda.api.events.session.ShutdownEvent
 import net.dv8tion.jda.api.hooks.EventListener
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.MemberCachePolicy
@@ -25,6 +26,8 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * The live server, held by a gateway connection. Discord's REST API cannot list who is in voice,
@@ -34,8 +37,9 @@ import java.util.concurrent.CopyOnWriteArrayList
  * Presence and Server Members are privileged, and a gateway asking for one the application lacks
  * is refused outright, so the application's flags are read first and only granted intents are
  * asked for. Only members in voice are cached. Each api pod holds its own connection; the bot only
- * reads, so two during a rollout is harmless. A refused token or an unreachable Discord leaves
- * [server] null rather than failing the api.
+ * reads, so two during a rollout is harmless. JDA resumes a dropped session itself, but a start
+ * that fails, or a session Discord ends for good, leaves [server] null and is tried again from
+ * scratch, waiting longer each time.
  */
 @Component
 @Profile("!test")
@@ -75,11 +79,26 @@ class JdaVoiceServerSource(
                     }
                 // A resumed session has Discord replay what it missed; a recreated one does not.
                 is GuildReadyEvent, is SessionRecreateEvent -> connected.forEach { it() }
+                is ShutdownEvent -> ended(event.jda)
             }
         }
 
     // Settable so a test can hand over a JDA rather than connect; nothing else changes it.
     internal var connect: (JDABuilder) -> JDA = JDABuilder::build
+
+    @Volatile private var running = false
+
+    @Volatile private var failures = 0
+
+    private val retries =
+        lazy {
+            Executors.newSingleThreadScheduledExecutor { Thread(it, "discord-gateway").apply { isDaemon = true } }
+        }
+
+    // Settable so a test can run the next attempt itself; nothing else changes it.
+    internal var later: (Duration, () -> Unit) -> Unit = { wait, attempt ->
+        retries.value.schedule(attempt, wait.toMillis(), TimeUnit.MILLISECONDS)
+    }
 
     override fun server(): VoiceServer? =
         jda?.getGuildById(guildId)?.let {
@@ -148,25 +167,55 @@ class JdaVoiceServerSource(
             ?.also { invites[channelId] = it }
 
     override fun start() {
+        running = true
+        failures = 0
+        attempt()
+    }
+
+    @Synchronized
+    private fun attempt() {
+        if (!running) return
         granted =
             runCatching { privilegedIntentsOf(discordApi.getMyOauth2Application().flags) }
                 .onFailure { log.warn("Discord application flags could not be read; connecting without privileged intents", it) }
                 .getOrDefault(emptySet())
         jda =
             runCatching { connect(gatewayOf(botToken, granted, relay)) }
-                .onFailure { log.warn("Discord gateway did not start; the band falls back to the public widget", it) }
+                .onSuccess { failures = 0 }
+                .onFailure { log.warn("Discord gateway did not start; the band falls back to the public widget until it does", it) }
                 .getOrNull()
+        if (jda == null) tryAgain()
+    }
+
+    // Discord closed the session with a code JDA will not resume from, such as intents it no longer grants.
+    @Synchronized
+    private fun ended(ended: JDA) {
+        if (!running || ended !== jda) return
+        log.warn("Discord ended the gateway session for good; connecting again from scratch")
+        jda = null
+        tryAgain()
+    }
+
+    private fun tryAgain() {
+        val wait = FIRST_RETRY.multipliedBy(1L shl minOf(failures++, DOUBLINGS)).coerceAtMost(LAST_RETRY)
+        log.info("Trying the Discord gateway again in {}", wait)
+        later(wait, ::attempt)
     }
 
     override fun stop() {
+        running = false
         jda?.shutdown()
         jda = null
+        if (retries.isInitialized()) retries.value.shutdownNow()
     }
 
-    override fun isRunning(): Boolean = jda != null
+    override fun isRunning(): Boolean = running
 
     internal companion object {
         val ACCESS_KEPT_FOR: Duration = Duration.ofMinutes(1)
+        private val FIRST_RETRY: Duration = Duration.ofSeconds(30)
+        private val LAST_RETRY: Duration = Duration.ofMinutes(30)
+        private const val DOUBLINGS = 6
         private val MEMBER_CHANGES = setOf("GUILD_MEMBER_UPDATE", "GUILD_MEMBER_ADD")
         private val log = LoggerFactory.getLogger(JdaVoiceServerSource::class.java)
     }

@@ -175,6 +175,24 @@ class BotPublisherTest {
     }
 
     @Test
+    fun `says the gateway is not connected while it has no channels, and names a channel it cannot find`() {
+        val down: ObjectProvider<DoorSource> =
+            mock {
+                on { ifAvailable } doReturn
+                    object : DoorSource {
+                        override fun textRooms() = emptyList<TextRoom>()
+
+                        override fun invite(channelId: String): String? = null
+                    }
+            }
+
+        assertThatThrownBy { BotPublisher(api, builder.build(), mapper, down, "324").post("events-info", post) }
+            .hasMessage("The Discord gateway is not connected, so no channel called events-info can be found yet.")
+        assertThatThrownBy { publisher.post("events-calendar", post) }.hasMessage("No Discord text channel is called events-calendar")
+        verifyNoInteractions(api)
+    }
+
+    @Test
     fun `posts and edits without the banner where Discord refuses the file, and gives up on anything else`() {
         val message: MessageResponse = mock { on { id } doReturn "m1" }
         whenever(api.createMessage(eq("111"), any())).thenReturn(message)

@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.RawGatewayEvent
+import net.dv8tion.jda.api.events.session.ShutdownEvent
 import net.dv8tion.jda.api.hooks.EventListener
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.requests.restaction.CacheRestAction
@@ -31,8 +32,12 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
+import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class JdaVoiceServerSourceTest {
     private val presences: CacheView.SimpleCacheView<MemberPresenceImpl> = mock { on { size() } doReturn 4L }
@@ -85,15 +90,118 @@ class JdaVoiceServerSourceTest {
         assertThat(source.server()!!.online to source.server()!!.members).isEqualTo(null to null)
     }
 
+    /** Holds each attempt the source asks for, with the wait it asks for, until a test runs it. */
+    private class Later {
+        val waits = mutableListOf<Duration>()
+        private var next: (() -> Unit)? = null
+
+        fun hold(
+            wait: Duration,
+            attempt: () -> Unit,
+        ) {
+            waits += wait
+            next = attempt
+        }
+
+        fun run() = next!!.also { next = null }()
+    }
+
     @Test
-    fun `stays down where the gateway will not start`() {
+    fun `tries again with a growing wait where the gateway will not start, and connects without a restart`() {
+        val later = Later()
+        var tries = 0
         val source = JdaVoiceServerSource("token", "324", applicationWith(0))
+        source.later = later::hold
+        source.connect = { if (++tries < 3) error("unreachable") else jda }
+
+        source.start()
+        assertThat(source.server()).isNull()
+        assertThat(source.textRooms()).isEmpty()
+        later.run()
+        later.run()
+
+        assertThat(later.waits).containsExactly(Duration.ofSeconds(30), Duration.ofMinutes(1))
+        assertThat(source.server()!!.name).isEqualTo("Blueshell")
+        assertThat(source.isRunning).isTrue()
+    }
+
+    @Test
+    fun `waits at most half an hour between attempts`() {
+        val later = Later()
+        val source = JdaVoiceServerSource("token", "324", applicationWith(0))
+        source.later = later::hold
         source.connect = { error("unreachable") }
 
         source.start()
+        repeat(9) { later.run() }
 
-        assertThat(source.isRunning).isFalse()
+        assertThat(later.waits.takeLast(3)).containsOnly(Duration.ofMinutes(30))
+        assertThat(source.isRunning).isTrue()
+    }
+
+    @Test
+    fun `connects again when Discord ends the session for good, reading the intents afresh`() {
+        val later = Later()
+        val api = applicationWith(0)
+        val second: JDA = mock { on { getGuildById("324") } doReturn guild }
+        var connections = 0
+        val source = JdaVoiceServerSource("token", "324", api)
+        source.later = later::hold
+        source.connect = { if (++connections == 1) jda else second }
+        source.start()
+
+        source.relay.onEvent(ShutdownEvent(jda, OffsetDateTime.now(), 4014))
         assertThat(source.server()).isNull()
+        later.run()
+
+        assertThat(later.waits).containsExactly(Duration.ofSeconds(30))
+        assertThat(source.server()!!.name).isEqualTo("Blueshell")
+        verify(api, times(2)).getMyOauth2Application()
+    }
+
+    @Test
+    fun `stops trying once it is stopped, and takes its own shutdown in its stride`() {
+        val later = Later()
+        var tries = 0
+        val source = JdaVoiceServerSource("token", "324", applicationWith(0))
+        source.later = later::hold
+        source.connect = { if (++tries == 1) jda else error("unreachable") }
+        source.start()
+
+        source.stop()
+        source.relay.onEvent(ShutdownEvent(jda, OffsetDateTime.now(), 1000))
+        assertThat(later.waits).isEmpty()
+
+        source.start()
+        source.stop()
+        later.run()
+
+        assertThat(tries).isEqualTo(2)
+        assertThat(source.isRunning).isFalse()
+    }
+
+    @Test
+    fun `takes no notice of a session it no longer holds ending`() {
+        val later = Later()
+        val source = source(applicationWith(0))
+        source.later = later::hold
+        source.start()
+
+        source.relay.onEvent(ShutdownEvent(mock<JDA>(), OffsetDateTime.now(), 4014))
+
+        assertThat(later.waits).isEmpty()
+        assertThat(source.server()).isNotNull()
+    }
+
+    @Test
+    fun `runs an attempt it puts off on a thread of its own`() {
+        val source = JdaVoiceServerSource("token", "324", applicationWith(0))
+        val ran = CountDownLatch(1)
+
+        source.later(Duration.ZERO) { ran.countDown() }
+
+        assertThat(ran.await(5, TimeUnit.SECONDS)).isTrue()
+        source.stop()
     }
 
     @Test

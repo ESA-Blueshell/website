@@ -21,6 +21,11 @@ fi
 
 mkdir -p "$WORK/base" "$(dirname "$OUT")"
 git archive "$BASE" "$REL" | tar -x -C "$WORK/base" --strip-components=7
+# A changeset edited in place is one no release has run yet. The base goes on
+# without it, so its whole SQL renders rather than a checksum failure.
+edited=$(git diff --name-only --diff-filter=M "$BASE...HEAD" -- "$REL/changes" \
+  | grep -E '\.ya?ml$' || true)
+for file in $edited; do rm -f "$WORK/base/changes/${file##*/}"; done
 
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 docker run -d --name "$NAME" -e MARIADB_ROOT_PASSWORD=x -p "$PORT:3306" mariadb:10.11.10 >/dev/null

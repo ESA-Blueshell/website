@@ -494,7 +494,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
  * On a phone the line runs up the left edge and every milestone sits to the right of it:
  * half a screen is not a column, and alternating sides would leave two words per line.
  */
-@media (max-width: 767px) {
+@media (--phone) {
   .history__line {
     gap: 0.75rem;
   }

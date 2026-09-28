@@ -353,7 +353,7 @@ function exportCsv(): void {
   margin-top: 1.5rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .signups-head {
     padding-top: 0.5rem;
   }

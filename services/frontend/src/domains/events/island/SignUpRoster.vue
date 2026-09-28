@@ -251,7 +251,7 @@ const KIND_TONE: Record<string, string> = {MEMBER: "", NON_MEMBER: "roster__kind
 }
 
 /* On a phone a row is a card: name and kind, then each way to reach them, the actions beside. */
-@media (max-width: 767px) {
+@media (--phone) {
   .roster thead th:not(:nth-child(3)) {
     display: none;
   }

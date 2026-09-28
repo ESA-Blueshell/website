@@ -350,7 +350,7 @@ const glyphOf = (room: VoiceRoom) => {
 }
 
 
-@media (max-width: 767px) {
+@media (--phone) {
   .discord-band__inner {
     padding: 1.25rem 1.25rem 1.5rem;
   }

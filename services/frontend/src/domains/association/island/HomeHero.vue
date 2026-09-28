@@ -144,7 +144,7 @@ const discordLabel = computed(() => online === undefined ? "Discord" : `Discord,
   box-shadow: 0 0 0 2px rgb(13 19 25 / 75%);
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .home-hero__word {
     font-size: 2.9rem;
   }

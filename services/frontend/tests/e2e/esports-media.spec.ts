@@ -1,6 +1,7 @@
 import {Buffer} from "node:buffer"
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
+import {PHONE} from "@/styles/breakpoints"
 
 /**
  * Putting pictures on the pages without a deploy.
@@ -501,7 +502,7 @@ test.describe("how large a banner is fetched", {tag: "@phone"}, () => {
     // demands rather than for its share of the row. Where that height decides it, the slice
     // being read and the strips beside it land on the same figure — which is why this is a
     // floor rather than a difference, and why no ceiling is asserted at all.
-    if (await page.evaluate(() => matchMedia("(max-width: 767px)").matches)) {
+    if (await page.evaluate(query => matchMedia(query).matches, PHONE)) {
       // Stacked, a slice is at least the width of the window.
       expect(openly).toBeGreaterThanOrEqual(window)
       others.forEach(one => expect(one).toBeGreaterThanOrEqual(window))

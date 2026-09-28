@@ -469,7 +469,7 @@ const finish = async () => {
   word-break: break-all;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .set-up__steps {
     margin-top: 1.1rem;
   }

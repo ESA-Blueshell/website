@@ -139,7 +139,7 @@ const arcs = computed(() => {
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .reach-chart {
     grid-template-columns: 1fr;
     gap: 1.5rem;

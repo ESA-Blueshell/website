@@ -3,6 +3,7 @@ import BandHead from "@/components/island/BandHead.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import PosterArt from "@/components/island/PosterArt.vue"
 import {srcsetOf} from "@/components/island/pictures"
+import {PHONE} from "@/styles/breakpoints"
 import type {EventResponse} from ".."
 import {plateOf, posterOf, whenOf} from "./eventFacts"
 
@@ -43,7 +44,7 @@ const {events, total} = defineProps<{
           <poster-art
             :alt="event.title"
             :banner="posterOf(event)?.url"
-            sizes="(max-width: 767px) 50vw, 25vw"
+            :sizes="`${PHONE} 50vw, 25vw`"
             :srcset="posterOf(event) ? srcsetOf(posterOf(event)!) : undefined"
             :title="event.title"
             v-bind="plateOf(event)"
@@ -140,7 +141,7 @@ const {events, total} = defineProps<{
   }
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .also {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

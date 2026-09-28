@@ -81,7 +81,7 @@ withDefaults(defineProps<{
 }
 
 /* Two to a row on a phone, so the left of each row opens with no rule in front of it. */
-@media (max-width: 767px) {
+@media (--phone) {
   .number-band__cell:nth-child(odd) {
     padding-inline-start: 0;
   }

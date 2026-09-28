@@ -166,7 +166,7 @@ onMounted(() => load(0))
   margin-top: 1.5rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .log__entry {
     grid-template-columns: 3.4rem minmax(0, 1fr);
     padding-left: 1rem;

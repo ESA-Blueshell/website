@@ -237,7 +237,7 @@ const chooseFielding = (key: string) => void show(played.value.find(one => keyOf
   list-style: none;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .source__list {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -219,7 +219,7 @@ onBeforeUnmount(() => watchBox(null))
 }
 
 /* Stacked, the photograph takes the width and the words sit under it. */
-@media (max-width: 767px) {
+@media (--phone) {
   .board-band__frame {
     flex-direction: column;
   }
@@ -475,7 +475,7 @@ onBeforeUnmount(() => watchBox(null))
  * photograph is small and nearly square. Board V's is 461 by 409 and came out 361 wide in a
  * 390 window.
  */
-@media (max-width: 767px) {
+@media (--phone) {
   .board-band__photo {
     width: 100%;
     height: 100%;

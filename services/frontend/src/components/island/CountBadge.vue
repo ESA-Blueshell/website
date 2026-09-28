@@ -58,7 +58,7 @@ withDefaults(defineProps<{
   white-space: nowrap;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .island-badge__pill {
     margin-left: -0.3rem;
     translate: 0 -0.4rem;

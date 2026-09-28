@@ -178,7 +178,7 @@ const {to = "", meta = "", testid = undefined} = defineProps<{
   color: var(--color-chalk);
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .cut-row {
     --row-h: 4.4rem;
 

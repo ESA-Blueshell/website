@@ -277,7 +277,7 @@ function signedOut(signUpId: number) {
   text-transform: uppercase;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .event-page__wrap {
     padding: 0 1.25rem;
   }

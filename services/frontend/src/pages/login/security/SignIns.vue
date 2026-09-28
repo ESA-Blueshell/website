@@ -248,7 +248,7 @@ onMounted(() => Promise.all([loadSignIns(), loadTrusted()]))
   margin-top: 1.5rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .sign-ins__head {
     flex-direction: column;
     align-items: flex-start;

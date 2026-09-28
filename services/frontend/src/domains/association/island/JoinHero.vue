@@ -199,7 +199,7 @@ const srcset = `${narrow} 800w, ${middle} 1400w, ${wide} 2000w`
   scale: 1 1;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .join-hero__words {
     padding: 1.15rem 1.15rem 2.75rem;
   }

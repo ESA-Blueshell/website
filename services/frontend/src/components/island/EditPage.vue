@@ -230,7 +230,7 @@ const previewShut = ref(false)
   }
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .edit-page__title {
     font-size: 2.4rem;
   }

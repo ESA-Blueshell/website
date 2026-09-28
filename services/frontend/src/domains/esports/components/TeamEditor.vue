@@ -1092,7 +1092,7 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
   gap: 0.5rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .lineup__row {
     padding: 0.9rem 0.9rem 1rem;
   }

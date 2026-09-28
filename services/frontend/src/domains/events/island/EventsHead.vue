@@ -80,7 +80,7 @@ const {eyebrow, heading} = defineProps<{eyebrow: string, heading: string}>()
   gap: 0.6rem;
 }
 
-@media (max-width: 767px) {
+@media (--phone) {
   .events-head {
     padding-top: 0.5rem;
   }

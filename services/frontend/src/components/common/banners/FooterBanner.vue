@@ -264,7 +264,7 @@ const year = new Date().getFullYear()
 }
 
 /* On a phone the three link columns share one row under the lead column. */
-@media (max-width: 767px) {
+@media (--phone) {
   .site-footer__wrap {
     padding: 0 1.25rem;
   }

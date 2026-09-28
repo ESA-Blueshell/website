@@ -1,24 +1,42 @@
 package net.blueshell.api.contribution.domain
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
-import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class ContributionReminderService
     @Autowired
     constructor(
-        repository: ContributionReminderRepository,
+        private val repository: ContributionReminderRepository,
         private val periodService: ContributionPeriodService,
         private val jobs: JobQueue,
-    ) : BaseModelService<ContributionReminder, Long, ContributionReminderRepository>(repository) {
+    ) {
+        // Read back after each write, so the columns the database fills are on the answer.
+        @PersistenceContext
+        private lateinit var em: EntityManager
+
+        private fun written(row: ContributionReminder): ContributionReminder = repository.saveAndFlush(row).also(em::refresh)
+
+        @Transactional(readOnly = true)
+        fun findById(id: Long): ContributionReminder =
+            repository.findById(id).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "ContributionReminder not found with id: $id")
+            }
+
+        @Transactional
+        fun create(reminder: ContributionReminder): ContributionReminder = written(reminder)
+
         @Transactional(readOnly = true)
         fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<ContributionReminder> {
             periodService.findById(contributionPeriodId)

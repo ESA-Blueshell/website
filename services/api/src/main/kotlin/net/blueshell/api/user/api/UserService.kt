@@ -9,7 +9,6 @@ import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.security.UserPrincipalMapper
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.security.CurrentUser
-import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -24,17 +23,21 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.function.Supplier
 import net.blueshell.api.user.domain.UserQuery
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
+import org.springframework.http.HttpStatus
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 // The whole user aggregate's surface. Narrowing it is a refactor with callers
 // to move, not a lint fix.
 @Suppress("TooManyFunctions")
 class UserService @Autowired constructor(
-    repository: UserRepository,
+    private val repository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
     private val trackedEvents: TrackedEventPublisher,
     private val currentUserProvider: CurrentUserProvider
-) : BaseModelService<User, Long, UserRepository>(repository) {
+) {
     @Throws(UsernameNotFoundException::class)
     fun loadUserByUsername(username: String): User {
         return try {
@@ -56,8 +59,8 @@ class UserService @Autowired constructor(
     fun loadUserPrincipalById(id: Long): UserPrincipal = UserPrincipalMapper.fromUser(findById(id))
 
     @Transactional
-    override fun create(entity: User): User {
-        val saved = super.create(entity)
+    fun create(entity: User): User {
+        val saved = written(entity)
         trackedEvents.publish { actor ->
             UserCreated(
                 saved.id!!,
@@ -75,8 +78,8 @@ class UserService @Autowired constructor(
             CacheEvict("users.principalById", key = "#entity.id"),
         ],
     )
-    override fun update(entity: User): User {
-        val saved = super.update(entity)
+    fun update(entity: User): User {
+        val saved = rewritten(entity)
         trackedEvents.publish { actor ->
             UserUpdated(
                 saved.id!!,
@@ -240,4 +243,32 @@ class UserService @Autowired constructor(
     /** The one account answering to [name] as the site writes it, or nobody when none or several do. */
     @Transactional(readOnly = true)
     fun findOnlyByWrittenName(name: String): User? = repository.findAllByWrittenName(name).singleOrNull()
+
+    // Read back after each write, so the columns the database fills are on the answer.
+    @PersistenceContext
+    private lateinit var em: EntityManager
+
+    private fun written(row: User): User = repository.saveAndFlush(row).also(em::refresh)
+
+    // The existence query flushes the session first, which writes what the edit cascades (a new
+    // address on a user, say) before the merge; merging it unwritten fails on the lazy owner.
+    private fun rewritten(row: User): User {
+        val id = row.id
+        if (id == null || !repository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: $id")
+        }
+        return written(row)
+    }
+
+    @Transactional(readOnly = true)
+    fun findById(id: Long): User =
+        repository.findById(id).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: $id")
+        }
+
+    @Transactional(readOnly = true)
+    fun findAll(): List<User> = repository.findAll()
+
+    @Transactional(readOnly = true)
+    fun existsById(id: Long): Boolean = repository.existsById(id)
 }

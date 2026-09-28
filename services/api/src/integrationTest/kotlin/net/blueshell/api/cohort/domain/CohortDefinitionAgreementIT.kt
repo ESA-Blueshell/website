@@ -60,7 +60,7 @@ class CohortDefinitionAgreementIT : UserTestSupport() {
         assertThat(definitions.definitionsFor(id).map { it.key })
             .containsExactlyInAnyOrderElementsOf(claimedBefore.map { it.key })
 
-        users.deleteById(id)
+        userRepository.deleteById(id)
 
         // After: nothing claims them, and no definition's own members include them either.
         assertThat(definitions.definitionsFor(id)).isEmpty()

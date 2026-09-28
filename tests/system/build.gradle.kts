@@ -3,7 +3,6 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     id("kotlin-conventions")
-    id("ktlint-conventions")
     id("test-logging-conventions")
     id("detekt-conventions")
     java

@@ -27,8 +27,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-noarg:2.4.10")
     implementation("org.springframework.boot:spring-boot-gradle-plugin:4.1.1")
     implementation("io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:1.1.7")
-    // ktlint is applied to the three Kotlin subprojects; detekt is still
-    // opt-in per service and applied nowhere.
+    // ktlint comes in through kotlin-conventions, so every Kotlin project is
+    // format-checked without asking; detekt is applied project by project.
     implementation("dev.detekt:detekt-gradle-plugin:2.0.0-alpha.6")
     implementation("org.jlleitschuh.gradle:ktlint-gradle:14.2.0")
     implementation("org.openapitools:openapi-generator-gradle-plugin:7.25.0")

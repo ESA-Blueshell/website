@@ -1,6 +1,8 @@
 import {Buffer} from "node:buffer"
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
+import type {Wire} from "./records"
+import type {CreateEventRequest} from "@/services/api"
 
 test.describe("the event form", () => {
   test("adds an event with a committee picked by typing, beside its preview", async ({page}) => {
@@ -34,7 +36,7 @@ test.describe("the event form", () => {
 
     const created = page.waitForRequest(request => request.method() === "POST" && /\/events$/u.test(new URL(request.url()).pathname))
     await page.getByTestId("event-form-submit-btn").click()
-    const body = (await created).postDataJSON() as Record<string, unknown>
+    const body = (await created).postDataJSON() as Wire<CreateEventRequest>
     expect(body).toMatchObject({title: "Pub quiz", location: "Café De Beiaard", committeeId: 900, approved: true, signUp: true, signUpLimit: 24, gameCodes: ["CHESS"]})
   })
 

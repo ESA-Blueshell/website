@@ -1,5 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsAdmin, loginAsBoard} from "./mocks"
+import {aJob, aUser} from "./records"
 
 test.describe("auth guards", () => {
   test("redirects unauthenticated users to login with redirect query", async ({page}) => {
@@ -24,27 +25,27 @@ test.describe("auth guards", () => {
   test("allows admins to access job manager and retry failed jobs", async ({page}) => {
     await installApiMocks(page, {
       users: [
-        {
+        aUser({
           id: 1,
           fullName: "Admin User",
           username: "admin",
           enabled: true,
           roles: ["ADMIN", "MEMBER"],
-        },
+        }),
       ],
       jobs: [
-        {
+        aJob({
           id: 711,
           jobType: "SYNC_DISCORD",
           status: "FAILED",
           attempts: 2,
-          payload: "{\"scope\":\"members\"}",
+          payload: {scope: "members"},
           errorType: "RuntimeException",
           errorReason: "Temporary failure",
           queuedAt: "2025-01-01T12:00:00.000Z",
           startedAt: "2025-01-01T12:00:10.000Z",
           finishedAt: "2025-01-01T12:00:11.000Z",
-        },
+        }),
       ],
     })
     await loginAsAdmin(page.context())

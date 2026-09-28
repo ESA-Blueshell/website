@@ -2,6 +2,8 @@ import {devices} from "@playwright/test"
 import {expect, test, type Page} from "./test"
 import {chooseBulkAction} from "./bulkActions"
 import {installApiMocks, loginAsBoard} from "./mocks"
+import {aContribution, aContributionPeriod, aMembership, aUser, type Wire} from "./records"
+import type {FieldValidationError} from "@/services/api"
 
 /**
  * Sending a period's payment emails, from the menu to the result. Driven end to end because
@@ -12,7 +14,7 @@ import {installApiMocks, loginAsBoard} from "./mocks"
 /** Dates move with the clock, because every date the wizard accepts sits against the period. */
 const day = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10)
 
-const PERIOD = {
+const PERIOD = aContributionPeriod({
   id: 201,
   startDate: day(-60),
   endDate: day(240),
@@ -20,29 +22,29 @@ const PERIOD = {
   halfYearFee: 10,
   fullYearFee: 20,
   alumniFee: 5,
-}
+})
 
 const DUE_DATE = day(30)
 const DEBIT_DATE = day(45)
 
 /** One who transfers, one on direct debit, an honorary one, and one who has already paid. */
 const MEMBERSHIPS = [
-  {id: 100, userId: 1, memberType: "REGULAR", startDate: "2025-01-01", incasso: false},
-  {id: 101, userId: 2, memberType: "REGULAR", startDate: "2025-02-01", incasso: true},
-  {id: 102, userId: 3, memberType: "HONORARY", startDate: "2025-01-01", incasso: false},
-  {id: 103, userId: 4, memberType: "REGULAR", startDate: "2025-03-01", incasso: false},
+  aMembership({id: 100, userId: 1, memberType: "REGULAR", startDate: "2025-01-01", incasso: false}),
+  aMembership({id: 101, userId: 2, memberType: "REGULAR", startDate: "2025-02-01", incasso: true}),
+  aMembership({id: 102, userId: 3, memberType: "HONORARY", startDate: "2025-01-01", incasso: false}),
+  aMembership({id: 103, userId: 4, memberType: "REGULAR", startDate: "2025-03-01", incasso: false}),
 ]
 
 const USERS = [
-  {id: 1, fullName: "Emma Dokter", username: "lyndisluna", enabled: true, roles: ["MEMBER"]},
-  {id: 2, fullName: "Viktor Petrov", username: "ariosfury", enabled: true, roles: ["MEMBER"]},
-  {id: 3, fullName: "Hanne Erelid", username: "hanne", enabled: true, roles: ["MEMBER"]},
-  {id: 4, fullName: "Sanne Bakker", username: "sanne", enabled: true, roles: ["MEMBER"]},
+  aUser({id: 1, fullName: "Emma Dokter", username: "lyndisluna", enabled: true, roles: ["MEMBER"]}),
+  aUser({id: 2, fullName: "Viktor Petrov", username: "ariosfury", enabled: true, roles: ["MEMBER"]}),
+  aUser({id: 3, fullName: "Hanne Erelid", username: "hanne", enabled: true, roles: ["MEMBER"]}),
+  aUser({id: 4, fullName: "Sanne Bakker", username: "sanne", enabled: true, roles: ["MEMBER"]}),
 ]
 
-const CONTRIBUTIONS = [{id: 300, userId: 4, contributionPeriodId: PERIOD.id}]
+const CONTRIBUTIONS = [aContribution({userId: 4, contributionPeriodId: PERIOD.id})]
 
-type Refusal = {status: number; errors: Array<Record<string, unknown>>}
+type Refusal = {status: number; errors: Wire<FieldValidationError>[]}
 
 async function openPaymentEmails(
   page: Page,

@@ -1,5 +1,7 @@
 import type {Page} from "@playwright/test"
 import {scrolledIn} from "./stripScrolls"
+import type {BoardMemberResponse, BoardResponse} from "@/services/api"
+import {type Wire} from "./records"
 
 /**
  * A line of boards long enough to travel along, and how to watch the strip travel it.
@@ -16,14 +18,14 @@ export const SCROLLER = "[data-testid=\"board-timeline\"] .timeline__scroll"
 
 export {recordScrolls, scrollsAsked} from "./stripScrolls"
 
-const member = (id: number, boardId: number, role: string) => ({
+const member = (id: number, boardId: number, role: string): Wire<BoardMemberResponse> => ({
   id, boardId, userId: null, role, name: `Member ${id}`, nickname: null,
   description: null, portrait: null,
   startDate: "2020-09-01", endDate: "2021-08-31", version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
 })
 
-const board = (number: number, name: string, from: number, members: number) => ({
+const board = (number: number, name: string, from: number, members: number): Wire<BoardResponse> => ({
   id: number, number, name, candidate: `Board ${number}`, cheer: null, accent: null,
   description: null, startDate: `${from}-09-01`,
   // The newest board's term is left open, so it is the one in office whatever day this runs on.

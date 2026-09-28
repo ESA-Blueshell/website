@@ -1,11 +1,12 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsAdmin} from "./mocks"
+import {aContributionPeriod, aMembership, aUser} from "./records"
 
 // Comfortably more members than any window can hold, so a table that mounts them all is
 // unmistakable from one that mounts a screenful.
 const COUNT = 300
 
-const users = Array.from({length: COUNT}, (_, i) => ({
+const users = Array.from({length: COUNT}, (_, i) => aUser({
   id: i + 1,
   // Padded so the default name order matches the numbering, which is what lets the scroll
   // assertion below name a member it expects to find far down the list.
@@ -18,7 +19,7 @@ const users = Array.from({length: COUNT}, (_, i) => ({
   roles: ["MEMBER"],
 }))
 
-const memberships = users.map((user, i) => ({
+const memberships = users.map((user, i) => aMembership({
   id: 1000 + i,
   userId: user.id,
   memberType: "REGULAR",
@@ -27,7 +28,7 @@ const memberships = users.map((user, i) => ({
 }))
 
 const contributionPeriods = [
-  {id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-10-01", halfYearFee: 15, fullYearFee: 30, alumniFee: 10},
+  aContributionPeriod({id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-10-01", halfYearFee: 15, fullYearFee: 30, alumniFee: 10}),
 ]
 
 const renderedRows = (page: import("./test").Page) =>

@@ -1,6 +1,7 @@
 import {readFileSync} from "node:fs"
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
+import {aQuestion, aSignUp, aUserSummary, anAnswer, anEvent} from "./records"
 
 test.describe("events page", () => {
   test("leads with the next event, keeps the calendar a press away, and lets the board add one", async ({page}) => {
@@ -67,7 +68,7 @@ test.describe("events page", () => {
   test("exports the event sign-ups as a CSV download", async ({page}) => {
     await installApiMocks(page, {
       eventDetailsById: {
-        "500": {
+        "500": anEvent({
           id: 500,
           title: "Game Night",
           approved: true,
@@ -78,25 +79,28 @@ test.describe("events page", () => {
             id: 1,
             responseCount: 1,
             questions: [
-              {id: 10, idx: 0, type: "OPEN", label: "Why join", surveyId: 1},
-              {id: 11, idx: 1, type: "CHECKBOX", label: "Snacks", choiceLabels: ["Pizza", "Chips"], surveyId: 1},
+              aQuestion({id: 10, idx: 0, type: "OPEN", label: "Why join", surveyId: 1}),
+              aQuestion({id: 11, idx: 1, type: "CHECKBOX", label: "Snacks", choiceLabels: ["Pizza", "Chips"], surveyId: 1}),
             ],
+            createdAt: "2026-01-01T00:00:00Z",
+            updatedAt: "2026-01-01T00:00:00Z",
+            version: 0,
           },
-        },
+        }),
       },
       eventSignUpsByEventId: {
         "500": [
-          {
+          aSignUp({
             id: 600,
             eventId: 500,
             kind: "MEMBER",
             createdAt: "2026-02-20T12:34:00.000Z",
-            user: {id: 1, fullName: "Ada Lovelace", discord: "ada#0001", email: "ada@example.com", phoneNumber: "0612345678"},
+            user: aUserSummary({id: 1, fullName: "Ada Lovelace", discord: "ada#0001", email: "ada@example.com", phoneNumber: "0612345678"}),
             answers: [
-              {id: 1, questionId: 10, textResponse: "Love games"},
-              {id: 2, questionId: 11, optionSelections: [true, false]},
+              anAnswer({id: 1, questionId: 10, textResponse: "Love games"}),
+              anAnswer({id: 2, questionId: 11, optionSelections: [true, false]}),
             ],
-          },
+          }),
         ],
       },
     })

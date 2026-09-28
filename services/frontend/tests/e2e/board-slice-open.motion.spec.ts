@@ -4,6 +4,8 @@ import type {Page} from "./test"
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 import {pressSlice} from "./sliceBand"
+import type {BoardResponse} from "@/services/api"
+import type {Wire} from "./records"
 
 /**
  * The two movements a member's slice is made of on a phone: the portrait's foot going soft, and
@@ -50,8 +52,8 @@ const portrait = (name: string) => ({
 const CHAIR = 91
 const WATCHED = 92
 
-const twoMembers = [{
-  id: 9, number: 9, name: "Eeveelutions", candidate: null, cheer: null, accent: null,
+const twoMembers: Wire<BoardResponse>[] = [{
+  id: 9, number: 9, name: "Eeveelutions", candidate: "Board 9", cheer: null, accent: null,
   description: null, startDate: "2025-09-01", endDate: null, photo: null, version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
   members: [{

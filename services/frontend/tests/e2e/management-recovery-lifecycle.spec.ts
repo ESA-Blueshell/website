@@ -1,6 +1,7 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 import type {Locator} from "@playwright/test"
+import {aUser} from "./records"
 
 const ensureExpanded = async (toggle: Locator) => {
   if (await toggle.getAttribute("aria-expanded") !== "true") {
@@ -15,7 +16,7 @@ test.describe("management recovery lifecycle", () => {
 
     await installApiMocks(page, {
       users: [
-        {
+        aUser({
           id: targetId,
           fullName: "Lifecycle Target",
           firstName: "Lifecycle",
@@ -27,11 +28,11 @@ test.describe("management recovery lifecycle", () => {
           phoneNumber: "+31612345678",
           newsletter: true,
           enabled: true,
-          roles: ["USER"],
+          roles: ["GUEST"],
           version: 0,
           createdAt: "2025-01-01T00:00:00.000Z",
           updatedAt: "2025-01-01T00:00:00.000Z",
-        },
+        }),
       ],
       deletedUsers: [],
     })

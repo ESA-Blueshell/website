@@ -1,6 +1,7 @@
 import type {Locator, Page} from "@playwright/test"
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
+import {anEsportsGame} from "./records"
 
 /**
  * A row of slices on a screen just wide enough to be a row, where a shut slice is a sliver.
@@ -29,7 +30,7 @@ const games = [
   {code: "ROCKET_LEAGUE", name: "Rocket League", icon: null},
   {code: "OVERWATCH", name: "Overwatch", icon: icon("overwatch")},
   {code: "TRACKMANIA", name: "Trackmania", icon: icon("trackmania")},
-].map((game, index) => ({
+].map((game, index) => anEsportsGame({
   ...game,
   slug: game.code.toLowerCase(),
   accent: null,

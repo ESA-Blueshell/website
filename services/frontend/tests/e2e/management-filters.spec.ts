@@ -1,6 +1,7 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 import type {Locator, Page} from "@playwright/test"
+import {aContributionPeriod, aMembership, aUser, anAddress} from "./records"
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
@@ -33,25 +34,25 @@ test.describe("management filters", () => {
   test("member manager filters users by multiple fields in single table", async ({page}) => {
     await installApiMocks(page, {
       users: [
-        {
+        aUser({
           id: 31,
           fullName: "Nonmember Filter Target",
           firstName: "NonTarget",
           username: "nonmember-target",
           discord: "nonmember-discord",
           enabled: true,
-          roles: ["USER"],
-        },
-        {
+          roles: ["GUEST"],
+        }),
+        aUser({
           id: 32,
           fullName: "Nonmember Filter Other",
           firstName: "NonOther",
           username: "nonmember-other",
           discord: "nonmember-other-discord",
           enabled: true,
-          roles: ["USER"],
-        },
-        {
+          roles: ["GUEST"],
+        }),
+        aUser({
           id: 33,
           fullName: "Member Filter Target",
           firstName: "MemberTarget",
@@ -59,8 +60,8 @@ test.describe("management filters", () => {
           discord: "member-discord",
           enabled: true,
           roles: ["MEMBER"],
-        },
-        {
+        }),
+        aUser({
           id: 34,
           fullName: "Member Filter Other",
           firstName: "MemberOther",
@@ -68,14 +69,14 @@ test.describe("management filters", () => {
           discord: "member-other-discord",
           enabled: true,
           roles: ["MEMBER"],
-        },
+        }),
       ],
       memberships: [
-        {id: 131, userId: 33, startDate: "2025-01-01"},
-        {id: 132, userId: 34, startDate: "2025-01-01"},
+        aMembership({id: 131, userId: 33, startDate: "2025-01-01"}),
+        aMembership({id: 132, userId: 34, startDate: "2025-01-01"}),
       ],
       contributionPeriods: [
-        {id: 231, startDate: "2025-01-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-07-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
+        aContributionPeriod({id: 231, startDate: "2025-01-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-07-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5}),
       ],
     })
     await loginAsBoard(page.context())
@@ -124,9 +125,9 @@ test.describe("management filters", () => {
   test("member manager finds the users with no Discord member linked", async ({page}) => {
     await installApiMocks(page, {
       users: [
-        {id: 51, fullName: "Linked Member", username: "linked", discord: "Nelly B", discordId: "803", enabled: true, roles: ["USER"]},
-        {id: 52, fullName: "Typed Only", username: "typed", discord: "nelly#0001", enabled: true, roles: ["USER"]},
-        {id: 53, fullName: "Nothing Yet", username: "nothing", discord: "", enabled: true, roles: ["USER"]},
+        aUser({id: 51, fullName: "Linked Member", username: "linked", discord: "Nelly B", discordId: "803", enabled: true, roles: ["GUEST"]}),
+        aUser({id: 52, fullName: "Typed Only", username: "typed", discord: "nelly#0001", enabled: true, roles: ["GUEST"]}),
+        aUser({id: 53, fullName: "Nothing Yet", username: "nothing", discord: "", enabled: true, roles: ["GUEST"]}),
       ],
     })
     await loginAsBoard(page.context())
@@ -149,7 +150,7 @@ test.describe("management filters", () => {
   test("address manager filters users with and without address by multiple fields", async ({page}) => {
     await installApiMocks(page, {
       users: [
-        {
+        aUser({
           id: 41,
           fullName: "Addressed Filter Target",
           firstName: "AddressTarget",
@@ -158,8 +159,8 @@ test.describe("management filters", () => {
           addressId: 501,
           enabled: true,
           roles: ["MEMBER"],
-        },
-        {
+        }),
+        aUser({
           id: 42,
           fullName: "Addressed Filter Other",
           firstName: "AddressOther",
@@ -168,8 +169,8 @@ test.describe("management filters", () => {
           addressId: 502,
           enabled: true,
           roles: ["MEMBER"],
-        },
-        {
+        }),
+        aUser({
           id: 43,
           fullName: "No Address Filter Target",
           firstName: "NoAddressTarget",
@@ -177,8 +178,8 @@ test.describe("management filters", () => {
           email: "no.address.target@test.com",
           enabled: true,
           roles: ["MEMBER"],
-        },
-        {
+        }),
+        aUser({
           id: 44,
           fullName: "No Address Filter Other",
           firstName: "NoAddressOther",
@@ -186,11 +187,11 @@ test.describe("management filters", () => {
           email: "no.address.other@test.com",
           enabled: true,
           roles: ["MEMBER"],
-        },
+        }),
       ],
       addresses: [
-        {id: 501, userId: 41, street: "Main", city: "Enschede", zipcode: "1234AB", countryCode: "NL"},
-        {id: 502, userId: 42, street: "Main", city: "Enschede", zipcode: "1234AB", countryCode: "NL"},
+        anAddress({id: 501, userId: 41, street: "Main", city: "Enschede", zipCode: "1234AB", country: "NL"}),
+        anAddress({id: 502, userId: 42, street: "Main", city: "Enschede", zipCode: "1234AB", country: "NL"}),
       ],
     })
     await loginAsBoard(page.context())
@@ -229,7 +230,7 @@ test.describe("management filters", () => {
   test("recovery manager filters inactive and active users by multiple fields", async ({page}) => {
     await installApiMocks(page, {
       users: [
-        {
+        aUser({
           id: 21,
           fullName: "Inactive Filter Target",
           firstName: "InactiveTarget",
@@ -237,8 +238,8 @@ test.describe("management filters", () => {
           email: "inactive.target@test.com",
           enabled: false,
           roles: ["MEMBER"],
-        },
-        {
+        }),
+        aUser({
           id: 22,
           fullName: "Inactive Filter Other",
           firstName: "InactiveOther",
@@ -246,8 +247,8 @@ test.describe("management filters", () => {
           email: "inactive.other@test.com",
           enabled: false,
           roles: ["MEMBER"],
-        },
-        {
+        }),
+        aUser({
           id: 23,
           fullName: "Active Filter Target",
           firstName: "ActiveTarget",
@@ -255,8 +256,8 @@ test.describe("management filters", () => {
           email: "active.target@test.com",
           enabled: true,
           roles: ["MEMBER"],
-        },
-        {
+        }),
+        aUser({
           id: 24,
           fullName: "Active Filter Other",
           firstName: "ActiveOther",
@@ -264,7 +265,7 @@ test.describe("management filters", () => {
           email: "active.other@test.com",
           enabled: true,
           roles: ["MEMBER"],
-        },
+        }),
       ],
     })
     await loginAsBoard(page.context())

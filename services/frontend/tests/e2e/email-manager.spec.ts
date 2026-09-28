@@ -1,5 +1,7 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsAdmin, loginAsBoard, loginAsMember} from "./mocks"
+import {installApiMocks, loginAsAdmin, loginAsBoard, loginAsMember, type Wire} from "./mocks"
+import type {Email} from "@/services/api"
+import {anEmail} from "./records"
 
 const BASE_EMAILS = [
   {
@@ -51,6 +53,7 @@ const BASE_EMAILS = [
     attempts: 1,
     jobExecutionId: null,
     createdAt: "2025-01-01T11:59:00.000Z",
+    previewable: false,
   },
   {
     id: 804,
@@ -66,8 +69,9 @@ const BASE_EMAILS = [
     attempts: 1,
     jobExecutionId: null,
     createdAt: "2025-01-01T13:59:00.000Z",
+    previewable: false,
   },
-]
+] satisfies Wire<Email>[]
 
 test.describe("email manager — access control", () => {
   test("board can access the email manager", async ({page}) => {
@@ -99,11 +103,11 @@ test.describe("email manager — stats panel", () => {
   test("stats panel shows correct counts per status", async ({page}) => {
     await installApiMocks(page, {
       emails: [
-        {...BASE_EMAILS[0], id: 810, deliveryStatus: "DELIVERED"},
-        {...BASE_EMAILS[1], id: 811, deliveryStatus: "FAILED"},
-        {...BASE_EMAILS[2], id: 812, deliveryStatus: "OPENED"},
-        {...BASE_EMAILS[3], id: 813, deliveryStatus: "SENT"},
-        {...BASE_EMAILS[0], id: 814, deliveryStatus: "DELIVERED"},
+        anEmail({...BASE_EMAILS[0], id: 810, deliveryStatus: "DELIVERED"}),
+        anEmail({...BASE_EMAILS[1], id: 811, deliveryStatus: "FAILED"}),
+        anEmail({...BASE_EMAILS[2], id: 812, deliveryStatus: "OPENED"}),
+        anEmail({...BASE_EMAILS[3], id: 813, deliveryStatus: "SENT"}),
+        anEmail({...BASE_EMAILS[0], id: 814, deliveryStatus: "DELIVERED"}),
       ],
     })
     await loginAsAdmin(page.context())
@@ -120,10 +124,10 @@ test.describe("email manager — stats panel", () => {
   test("stats panel shows delivery rate percentage", async ({page}) => {
     await installApiMocks(page, {
       emails: [
-        {...BASE_EMAILS[0], id: 820, deliveryStatus: "DELIVERED"},
-        {...BASE_EMAILS[0], id: 821, deliveryStatus: "DELIVERED"},
-        {...BASE_EMAILS[1], id: 822, deliveryStatus: "FAILED"},
-        {...BASE_EMAILS[3], id: 823, deliveryStatus: "SENT"},
+        anEmail({...BASE_EMAILS[0], id: 820, deliveryStatus: "DELIVERED"}),
+        anEmail({...BASE_EMAILS[0], id: 821, deliveryStatus: "DELIVERED"}),
+        anEmail({...BASE_EMAILS[1], id: 822, deliveryStatus: "FAILED"}),
+        anEmail({...BASE_EMAILS[3], id: 823, deliveryStatus: "SENT"}),
       ],
     })
     await loginAsAdmin(page.context())
@@ -137,10 +141,10 @@ test.describe("email manager — stats panel", () => {
   test("stats panel shows open rate percentage", async ({page}) => {
     await installApiMocks(page, {
       emails: [
-        {...BASE_EMAILS[2], id: 830, deliveryStatus: "OPENED"},
-        {...BASE_EMAILS[0], id: 831, deliveryStatus: "DELIVERED"},
-        {...BASE_EMAILS[0], id: 832, deliveryStatus: "DELIVERED"},
-        {...BASE_EMAILS[1], id: 833, deliveryStatus: "FAILED"},
+        anEmail({...BASE_EMAILS[2], id: 830, deliveryStatus: "OPENED"}),
+        anEmail({...BASE_EMAILS[0], id: 831, deliveryStatus: "DELIVERED"}),
+        anEmail({...BASE_EMAILS[0], id: 832, deliveryStatus: "DELIVERED"}),
+        anEmail({...BASE_EMAILS[1], id: 833, deliveryStatus: "FAILED"}),
       ],
     })
     await loginAsAdmin(page.context())

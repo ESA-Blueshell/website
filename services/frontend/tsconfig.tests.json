@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.typecheck.json",
+  "include": [
+    "env.d.ts",
+    "src/**/*.d.ts",
+    "tests/unit/helpers/sdkAnswers.ts",
+    "tests/unit/domains/boards/adapters/**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
+}

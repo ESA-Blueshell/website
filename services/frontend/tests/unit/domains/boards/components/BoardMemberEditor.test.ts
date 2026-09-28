@@ -28,7 +28,7 @@ const mountEditor = async (member: typeof roos | typeof piet | null, on: Record<
 
 beforeEach(() => {
   Object.values(adapter).forEach(one => one.mockReset())
-  vi.mocked(loadMemberAccounts).mockReset().mockResolvedValue([{id: 2, name: "Roos Kruk", email: "roos@esa.test"}, {id: 3, name: "Mo", email: null}] as never)
+  vi.mocked(loadMemberAccounts).mockReset().mockResolvedValue([{id: 2, name: "Roos Kruk", email: "roos@esa.test"}, {id: 3, name: "Mo", email: null}])
 })
 
 describe("the board member edit page", () => {

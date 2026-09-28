@@ -88,7 +88,7 @@ describe("the board edit page", () => {
   })
 
   it("names the photo by the board alone where its year cannot be read", () => {
-    const wrapper = mountEditor({...tenth, startDate: "unknown"} as never)
+    const wrapper = mountEditor({...tenth, startDate: "unknown"})
 
     expect(wrapper.getComponent(editorStubs.BoardBand).props("label")).toBe("Blue")
   })
@@ -116,7 +116,7 @@ describe("the board edit page", () => {
   })
 
   it("says a board with nobody on it only leaves the timeline, and offers no removal while adding", async () => {
-    const empty = mountEditor({...tenth, members: []} as never)
+    const empty = mountEditor({...tenth, members: []})
     await empty.get("[data-testid=board-edit-remove]").trigger("click")
 
     expect(empty.getComponent(editorStubs.ConfirmDialog).props("question")).toBe("Blue holds no members. Removing it takes it off the timeline.")

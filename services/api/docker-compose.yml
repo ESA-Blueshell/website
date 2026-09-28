@@ -1,6 +1,8 @@
 services:
   db:
-    image: mariadb:10.11.19
+    # Production's version, pinned in platform/cluster/flux/apps/data/mariadb/release.yaml;
+    # CI's service blocks in .github/workflows/validate.yml match it.
+    image: mariadb:10.11.10
     container_name: db
     ports:
       - "3307:3306"

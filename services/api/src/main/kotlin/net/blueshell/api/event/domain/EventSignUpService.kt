@@ -50,7 +50,8 @@ class EventSignUpService
             countMoved(entity.eventId)
         }
 
-        private fun countMoved(eventId: Long) = trackedEvents.publish { actor -> EventSignUpsChanged(eventId, actor) }
+        // Within the change's transaction, like EventChanged: the jobs queued for it commit with it.
+        private fun countMoved(eventId: Long) = trackedEvents.publishWithin { actor -> EventSignUpsChanged(eventId, actor) }
 
         @Transactional
         override fun update(entity: EventSignUp): EventSignUp = super.update(entity)

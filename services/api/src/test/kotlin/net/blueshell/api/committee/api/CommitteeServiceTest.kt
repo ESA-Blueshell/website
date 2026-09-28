@@ -38,14 +38,19 @@ class CommitteeServiceTest {
     private val games = mock<GameService>()
     private val actors = mock<ActorProvider> { on { currentOrSystem() } doReturn Actor.system() }
     private val service =
-        CommitteeService(repository, mock<UserService>(), TrackedEventPublisher(mock<AfterCommitEventPublisher>(), actors), pictures, games)
-            .apply {
-                // The entity manager is injected by field; create and update refresh through it.
-                BaseModelService::class.java
-                    .getDeclaredField("em")
-                    .apply { isAccessible = true }
-                    .set(this, mock<EntityManager>())
-            }
+        CommitteeService(
+            repository,
+            mock<UserService>(),
+            TrackedEventPublisher(mock<AfterCommitEventPublisher>(), actors, mock()),
+            pictures,
+            games,
+        ).apply {
+            // The entity manager is injected by field; create and update refresh through it.
+            BaseModelService::class.java
+                .getDeclaredField("em")
+                .apply { isAccessible = true }
+                .set(this, mock<EntityManager>())
+        }
 
     private fun committee(
         id: Long,

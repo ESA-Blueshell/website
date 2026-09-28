@@ -65,7 +65,7 @@ class DiscordEventPostWiringTest {
         verify(repository, times(4)).releaseNamedLock(any())
         assertThat(listOf(announcement.jobType, calendar.jobType, listing.jobType))
             .containsExactly("discord.announcement", "discord.post", "discord.event")
-        assertThat(listOf(announcement, calendar, listing).map { it.retrySchedule?.maxRetries }).containsOnly(10)
+        assertThat(listOf(announcement, calendar, listing).map { it.retrySchedule.maxRetries }).containsOnly(10)
     }
 
     @Test
@@ -129,42 +129,57 @@ class DiscordEventPostWiringTest {
         out: Set<DiscordArtefact> = emptySet(),
         jobs: JobQueue = Queued(),
     ): DiscordEventPostTriggers {
-        val events: EventPosts = mock { on { of(42) } doReturn found }
+        val events: EventPosts =
+            mock {
+                on { of(42) } doReturn found
+                on { approvedOverlapping(any(), any()) } doReturn listOf(42L)
+            }
         val ledger: PostLedger = mock()
         out.forEach { whenever(ledger.find(42, it)).thenReturn(RecordedArtefact("m", 1)) }
         return DiscordEventPostTriggers(jobs, events, ledger).apply { clock = Clock.fixed(at(now), ZoneOffset.UTC) }
     }
 
-    private fun changed(
+    private fun queuedBy(
         now: String,
         found: EventPostData? = lan,
         out: Set<DiscordArtefact> = emptySet(),
+        run: DiscordEventPostTriggers.() -> Unit,
     ): List<String> {
         val jobs = Queued()
-        triggers(now, found, out, jobs).on(EventChanged(42, EventChange.UPDATED))
+        triggers(now, found, out, jobs).run()
         return jobs.types.map { it.substringBefore(' ') }
     }
 
+    private val all = listOf("discord.announcement", "discord.post", "discord.event")
+
     @Test
-    fun `queues the events-info post and the Discord event at once within two weeks, and the day post from its morning`() {
-        assertThat(changed("2026-09-26T07:59")).isEmpty()
-        assertThat(changed("2026-09-26T08:00")).containsExactly("discord.announcement", "discord.event")
-        assertThat(changed("2026-10-10T10:00")).containsExactly("discord.announcement", "discord.post", "discord.event")
-        assertThat(changed("2026-10-11T01:00", found = lan.copy(endTime = at("2026-10-11T03:00"))))
-            .containsExactly("discord.announcement", "discord.post", "discord.event")
+    fun `queues all three for every change, whatever is due or out, and both posts for a change in sign-ups`() {
+        val changed: DiscordEventPostTriggers.() -> Unit = { on(EventChanged(42, EventChange.UPDATED)) }
+
+        assertThat(queuedBy("2026-08-01T10:00", run = changed)).isEqualTo(all)
+        assertThat(queuedBy("2026-10-10T10:00", found = null, run = changed)).isEqualTo(all)
+        assertThat(queuedBy("2026-10-10T10:00") { on(EventSignUpsChanged(42)) }).containsExactly("discord.announcement", "discord.post")
     }
 
     @Test
-    fun `queues a change for what is out, to edit or remove it`() {
-        val everything = DiscordArtefact.entries.toSet()
+    fun `queues each morning the events-info post and the Discord event within two weeks, and the day post from its morning`() {
+        val morning: DiscordEventPostTriggers.() -> Unit = { runMorning() }
 
-        assertThat(changed("2026-10-05T10:00", out = setOf(DiscordArtefact.INFO_POST)))
-            .containsExactly("discord.announcement", "discord.event")
-        assertThat(changed("2026-10-10T10:00", found = lan.copy(live = false), out = everything))
-            .containsExactly("discord.announcement", "discord.post", "discord.event")
-        assertThat(changed("2026-10-10T23:30", found = null, out = setOf(DiscordArtefact.INFO_POST)))
+        assertThat(queuedBy("2026-09-26T07:59", run = morning)).isEmpty()
+        assertThat(queuedBy("2026-09-26T08:00", run = morning)).containsExactly("discord.announcement", "discord.event")
+        assertThat(queuedBy("2026-10-10T10:00", run = morning)).isEqualTo(all)
+        assertThat(queuedBy("2026-10-11T01:00", found = lan.copy(endTime = at("2026-10-11T03:00")), run = morning)).isEqualTo(all)
+    }
+
+    @Test
+    fun `queues each morning what is out, to edit or remove it`() {
+        val morning: DiscordEventPostTriggers.() -> Unit = { runMorning() }
+
+        assertThat(queuedBy("2026-09-20T08:00", out = setOf(DiscordArtefact.INFO_POST), run = morning))
             .containsExactly("discord.announcement")
-        assertThat(changed("2026-10-10T10:00", found = null)).isEmpty()
+        assertThat(queuedBy("2026-10-10T10:00", found = lan.copy(live = false), out = DiscordArtefact.entries.toSet(), run = morning))
+            .isEqualTo(all)
+        assertThat(queuedBy("2026-10-10T10:00", found = null, run = morning)).isEmpty()
     }
 
     @Test
@@ -212,16 +227,6 @@ class DiscordEventPostWiringTest {
             JobTrigger.EVENT_UNAPPROVED to board,
             JobTrigger.EVENT_DELETED to board,
         )
-    }
-
-    @Test
-    fun `queues an edit of the posts already out when the sign-up count moves`() {
-        val jobs = Queued()
-        triggers("2026-10-10T10:00", out = setOf(DiscordArtefact.INFO_POST, DiscordArtefact.CALENDAR_POST), jobs = jobs)
-            .on(EventSignUpsChanged(42))
-        triggers("2026-10-10T10:00", jobs = jobs).on(EventSignUpsChanged(42))
-
-        assertThat(jobs.types.map { it.substringBefore(' ') }).containsExactly("discord.announcement", "discord.post")
     }
 
     @Test

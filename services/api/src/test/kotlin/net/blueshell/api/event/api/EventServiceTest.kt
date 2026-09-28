@@ -47,7 +47,7 @@ class EventServiceTest {
         service.update(event(edited))
 
         val factory = argumentCaptor<(Actor) -> Any>()
-        verify(published).publish(factory.capture())
+        verify(published).publishWithin(factory.capture())
         return (factory.firstValue(Actor.system()) as EventChanged).changeType
     }
 

@@ -182,7 +182,8 @@ class EventService
             eventId: Long,
             changeType: EventChange,
         ) {
-            trackedEvents.publish { actor ->
+            // Within the change's transaction: the jobs queued for it commit with it.
+            trackedEvents.publishWithin { actor ->
                 EventChanged(eventId, changeType, actor = actor)
             }
         }

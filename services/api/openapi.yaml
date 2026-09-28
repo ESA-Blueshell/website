@@ -4851,39 +4851,13 @@ components:
       type: object
     TargetDescriptor:
       properties:
-        capabilities:
-          items:
-            enum:
-            - CATALOG
-            - CREATE
-            - READ_MEMBERS
-            - WRITE_MEMBERS
-            - DELETE
-            - MOVE
-            type: string
-          type: array
-          uniqueItems: true
-        folderLabel:
-          type:
-          - string
-          - 'null'
-        idLabel:
-          type: string
         kind:
           $ref: '#/components/schemas/CohortKind'
         system:
           $ref: '#/components/schemas/TargetSystem'
-        systemLabel:
-          type: string
-        targetLabel:
-          type: string
       required:
-      - capabilities
-      - idLabel
       - kind
       - system
-      - systemLabel
-      - targetLabel
       type: object
     TargetSystem:
       enum:

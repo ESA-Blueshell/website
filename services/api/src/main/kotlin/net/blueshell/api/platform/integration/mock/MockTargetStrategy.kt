@@ -2,9 +2,9 @@ package net.blueshell.api.platform.integration.mock
 
 import net.blueshell.api.cohort.domain.ExternalMember
 import net.blueshell.api.cohort.domain.ExternalTarget
-import net.blueshell.api.cohort.domain.TargetCapability
 import net.blueshell.api.cohort.domain.TargetDescriptor
 import net.blueshell.api.cohort.domain.TargetStrategy
+import net.blueshell.api.cohort.domain.shownName
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.context.annotation.Primary
@@ -29,18 +29,6 @@ class MockTargetStrategy : TargetStrategy {
         TargetDescriptor(
             system = TargetSystem.BREVO,
             kind = CohortKind.LIST,
-            systemLabel = "Brevo",
-            targetLabel = "Brevo list",
-            idLabel = "List id",
-            folderLabel = "Folder",
-            capabilities =
-                setOf(
-                    TargetCapability.CATALOG,
-                    TargetCapability.CREATE,
-                    TargetCapability.READ_MEMBERS,
-                    TargetCapability.WRITE_MEMBERS,
-                    TargetCapability.DELETE,
-                ),
         )
 
     private val targets = ConcurrentHashMap<String, ExternalTarget>()
@@ -72,7 +60,7 @@ class MockTargetStrategy : TargetStrategy {
                 descriptor.kind,
                 label,
                 folder,
-                path = listOfNotNull(descriptor.systemLabel, folder?.takeIf { it.isNotBlank() }),
+                path = listOfNotNull(system.shownName, folder?.takeIf { it.isNotBlank() }),
             )
         targets[target.externalId] = target
         return target

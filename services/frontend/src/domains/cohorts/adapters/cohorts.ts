@@ -114,16 +114,9 @@ export type TargetMapping = {
 
 export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
 
-export type TargetCapability = ApiTargetDescriptor["capabilities"][number]
-
 export type TargetDescriptor = {
   system: TargetSystem
   kind: ApiTargetDescriptor["kind"]
-  systemLabel: string
-  targetLabel: string
-  idLabel: string
-  folderLabel: string | null
-  capabilities: TargetCapability[]
 }
 
 // Mirrors the API's ExternalTarget. A field added there has to be added here too.
@@ -298,11 +291,6 @@ function toTargetDescriptor(raw: ApiTargetDescriptor): TargetDescriptor {
   return {
     system: raw.system,
     kind: raw.kind,
-    systemLabel: raw.systemLabel,
-    targetLabel: raw.targetLabel,
-    idLabel: raw.idLabel,
-    folderLabel: raw.folderLabel ?? null,
-    capabilities: [...raw.capabilities],
   }
 }
 

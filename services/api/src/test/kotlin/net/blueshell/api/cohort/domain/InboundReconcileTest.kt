@@ -300,10 +300,6 @@ class InboundReconcileTest {
             TargetDescriptor(
                 system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
-                systemLabel = "Brevo",
-                targetLabel = "Brevo list",
-                idLabel = "List id",
-                capabilities = setOf(TargetCapability.READ_MEMBERS),
             )
         var remote: List<ExternalMember> = emptyList()
         var listCalls = 0

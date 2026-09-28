@@ -23,19 +23,6 @@ class BrevoTargetStrategy(
         TargetDescriptor(
             system = TargetSystem.BREVO,
             kind = CohortKind.LIST,
-            systemLabel = "Brevo",
-            targetLabel = "Brevo list",
-            idLabel = "List id",
-            folderLabel = "Folder",
-            capabilities =
-                setOf(
-                    TargetCapability.CATALOG,
-                    TargetCapability.CREATE,
-                    TargetCapability.READ_MEMBERS,
-                    TargetCapability.WRITE_MEMBERS,
-                    TargetCapability.DELETE,
-                    TargetCapability.MOVE,
-                ),
         )
 
     override fun catalog(query: String?): List<ExternalTarget> {
@@ -116,7 +103,7 @@ class BrevoTargetStrategy(
      * Brevo files a list in at most one folder, so a path here is the system and, when there
      * is one, the folder it sits in.
      */
-    private fun pathTo(folder: String?): List<String> = listOfNotNull(descriptor.systemLabel, folder?.takeIf { it.isNotBlank() })
+    private fun pathTo(folder: String?): List<String> = listOfNotNull(TargetSystem.BREVO.shownName, folder?.takeIf { it.isNotBlank() })
 
     private fun ContactListRef.toTarget(folder: String?): ExternalTarget =
         ExternalTarget(

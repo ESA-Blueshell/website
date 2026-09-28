@@ -131,7 +131,7 @@ class CohortSubjectQueryService(
                         // no call to Brevo.
                         path =
                             listOfNotNull(
-                                runCatching { strategies.descriptor(system).systemLabel }
+                                runCatching { strategies.descriptor(system).system.shownName }
                                     .getOrDefault(cohort.system),
                                 cohort.folder?.takeIf { it.isNotBlank() },
                             ),

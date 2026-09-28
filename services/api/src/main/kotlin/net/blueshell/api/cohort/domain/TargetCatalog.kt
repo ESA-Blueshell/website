@@ -18,8 +18,6 @@ class TargetCatalog(
         query: String?,
     ): List<ExternalTarget> {
         val strategy = strategies.require(system)
-        if (!strategy.descriptor.supports(TargetCapability.CATALOG)) return emptyList()
-
         val linked = linkedCohorts(system)
         return strategy.catalog(query).map { target ->
             target.copy(linkedCohortId = linked[target.externalId])
@@ -30,12 +28,7 @@ class TargetCatalog(
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun folders(system: TargetSystem): List<String> = strategies.require(system).folders()
 
-    /**
-     * File a target under another folder.
-     *
-     * A system that cannot move one says so through its capabilities, and asking anyway is a
-     * bad request rather than a fault.
-     */
+    /** File a target under another folder. */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun move(
         system: TargetSystem,
@@ -43,9 +36,6 @@ class TargetCatalog(
         folder: String,
     ): ExternalTarget {
         val strategy = strategies.require(system)
-        require(strategy.descriptor.supports(TargetCapability.MOVE)) {
-            "$system cannot move a target between folders"
-        }
         val target =
             strategy.resolve(externalId)
                 ?: throw IllegalArgumentException("No target $externalId in $system")
@@ -69,10 +59,6 @@ class TargetCatalog(
         folder: String,
     ): BulkTargetMoveResult {
         val strategy = strategies.require(system)
-        require(strategy.descriptor.supports(TargetCapability.MOVE)) {
-            "$system cannot move a target between folders"
-        }
-
         val ids = externalIds.distinct()
         val resolved = ids.associateWith { strategy.resolve(it) }
         val missing = ids.filter { resolved[it] == null }

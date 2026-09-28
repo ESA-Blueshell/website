@@ -2430,13 +2430,8 @@ export type SwitchTarget = {
 };
 
 export type TargetDescriptor = {
-    capabilities: Array<'CATALOG' | 'CREATE' | 'READ_MEMBERS' | 'WRITE_MEMBERS' | 'DELETE' | 'MOVE'>;
-    folderLabel?: string | null;
-    idLabel: string;
     kind: CohortKind;
     system: TargetSystem;
-    systemLabel: string;
-    targetLabel: string;
 };
 
 export enum TargetSystem {

@@ -32,11 +32,6 @@ class TargetFolderMoveTest {
         )
 
     @Test
-    fun `the strategy declares that it can move`() {
-        assertThat(strategy.descriptor.supports(TargetCapability.MOVE)).isTrue()
-    }
-
-    @Test
     fun `a named folder is resolved to the id the system files by`() {
         every { lists.listFolders() } returns mapOf(7L to "Contribution periods", 9L to "Newsletter")
 

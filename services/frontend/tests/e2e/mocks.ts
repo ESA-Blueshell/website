@@ -327,8 +327,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   // Teams written down and fielded during the test, so a page asked again reports them the
   // way the api would rather than forgetting they were added.
   const teamsMade: Array<Record<string, unknown>> = []
-  /** Games added during the test, which every read then reports as one of the games. */
-  const gamesMade: Array<Record<string, string | number | boolean | null>> = []
   const casualEdited = new Map<string, Record<string, unknown>>()
   const casualGone = new Set<string>()
   /**
@@ -337,7 +335,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
    */
   const casualNow = () => {
     const listed: Array<Record<string, unknown>> = fixtures.casualGames ?? casualGames
-    const competition = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+    const competition = (fixtures.esportsGames ?? esportsGames)
       .filter(one => !listed.some(held => held.code === one.code))
       .map(one => casualGame(String(one.code), String(one.name), String(one.slug), Number(one.sortIndex ?? 0), {
         accent: one.accent ?? null, intro: one.intro ?? null, banner: one.banner ?? null, icon: one.icon ?? null,
@@ -359,7 +357,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     competitionIntro: one.competitionIntro ?? null, esportsChannels: one.esportsChannels ?? [],
   })
   /** Games corrected during the test, which every read then reports as corrected. */
-  const gamesEdited = new Map<string, Record<string, unknown>>()
   /** Games removed during the test, which the reads then leave out. */
   const gamesGone = new Set<string>()
   /** Games entered in a season during this test, staffed or not. */
@@ -1435,77 +1432,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       if (board) board.members = membersOf(board).filter((one) => Number(one.id) !== id)
       return route.fulfill({status: 204, body: ""})
     }
-    // A game added during a test is one of the games from then on, the way the api has it.
-    if (method === "POST" && path === "/esports/games") {
-      const body = JSON.parse(request.postData() ?? "{}") as {name?: string; slug?: string}
-      const slug = String(body.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
-      const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
-      const held = known.find(one => one.slug === slug)
-      if (held) {
-        return fulfillJson(route, addressTaken(held.name, slug), 409)
-      }
-      const code = String(body.name ?? "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
-      const made = {
-        code, name: String(body.name ?? ""), slug, accent: null, banner: null, icon: null,
-        intro: null, sortIndex: known.length + 1, current: true,
-      }
-      gamesMade.push(made)
-      return fulfillJson(route, made, 201)
-    }
-    if (method === "GET" && /^\/esports\/games\/[A-Z0-9_]+\/contents$/.test(path)) {
-      const code = path.split("/")[3] as string
-      const held = new Set(fieldedNow.filter(one => one.game === code).map(one => one.teamId))
-      const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
-      return fulfillJson(route, {teams: held.size + seeded, players: (held.size + seeded) * 3})
-    }
-
-    if (method === "DELETE" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
-      const code = path.split("/").pop() as string
-      const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
-      const held = new Set(fieldedNow.filter(one => one.game === code).map(one => one.teamId))
-      const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
-      if (held.size + seeded > 0) {
-        const game = known.find(one => one.code === code)
-        return fulfillJson(route, {
-          detail: "That game cannot be removed.",
-          code: "GameHoldsHistory",
-          gameName: game?.name ?? code,
-          teams: held.size + seeded,
-          players: 6,
-        }, 409)
-      }
-      gamesGone.add(code)
-      return route.fulfill({status: 204, body: ""})
-    }
-
-    // A game corrected during a test reads corrected from then on.
-    if (method === "PUT" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
-      const code = path.split("/").pop() as string
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const slug = String(body.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
-      const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
-      const held = known.find(one => one.slug === slug && one.code !== code)
-      if (held) {
-        return fulfillJson(route, addressTaken(held.name, slug), 409)
-      }
-      const was = known.find(one => one.code === code)
-      const now = {
-        ...(was ?? {code}),
-        name: body.name ?? was?.name ?? code,
-        slug,
-        intro: body.intro ?? null,
-        accent: body.accent ?? null,
-        // Each named by where it is stored and answered as the picture itself, the way the api does.
-        banner: pictureNamed(body.banner) ?? null,
-        icon: pictureNamed(body.icon) ?? null,
-        sortIndex: body.sortIndex ?? was?.sortIndex ?? 0,
-        // Derived by the api from the seasons rather than set here, so a save carries it
-        // through unchanged rather than inventing an answer.
-        current: was?.current ?? true,
-      } as Record<string, unknown>
-      gamesEdited.set(code, now)
-      return fulfillJson(route, now)
-    }
     // The casual games, kept per page so a spec sees its own adds, archives and removals.
     if (method === "GET" && path === "/games") {
       return fulfillJson(route, casualNow())
@@ -1569,8 +1495,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     // The api answers in the order the records put the games in, and so does this.
     if (method === "GET" && path === "/esports/games") {
-      const records = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
-        .map(one => gamesEdited.get(String(one.code)) ?? one)
+      const records = (fixtures.esportsGames ?? esportsGames)
         .map(one => (casualEdited.has(String(one.code)) ? competitionOf(casualEdited.get(String(one.code))!, one) : one))
       const added = [...casualEdited.values()]
         .filter(one => !records.some(held => held.code === one.code))
@@ -1646,7 +1571,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && /^\/esports\/seasons\/\d+\/games$/.test(path)) {
       const seasonId = Number(path.split("/")[3])
       const board = isBoard()
-      const codes = [...new Set([...(fixtures.esportsGames ?? esportsGames), ...gamesMade, ...casualEdited.values()]
+      const codes = [...new Set([...(fixtures.esportsGames ?? esportsGames), ...casualEdited.values()]
         .map(one => String(one.code)))]
         .filter(code => !gamesGone.has(code))
       const played = codes
@@ -1678,7 +1603,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const game = String(parts[5])
       const held = teamsOfGameInSeason(game, seasonId)
       if (held.length > 0) {
-        const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+        const known = (fixtures.esportsGames ?? esportsGames)
           .find(one => one.code === game)
         return fulfillJson(route, {
           detail: "That game cannot be taken out of the season.",

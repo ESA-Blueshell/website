@@ -5,7 +5,6 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.EsportsQueryService
-import net.blueshell.api.esports.domain.FieldedGames
 import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.domain.TeamSeasonService
@@ -48,7 +47,6 @@ class EsportsController(
     private val rosters: TeamRosterService,
     private val fielded: TeamSeasonService,
     private val entered: SeasonGameService,
-    private val holdings: FieldedGames,
 ) {
     /**
      * Whether the caller may edit, which decides what a season's games answer with.
@@ -76,61 +74,6 @@ class EsportsController(
         // read once for the whole list rather than asked of each row.
         val played = fielded.currentlyPlayed()
         return games.findAll().map { it.asResponse(played.contains(it.code)) }
-    }
-
-    /** A game the association has started playing. Its address answers straight away. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @PostMapping("/games")
-    @ResponseStatus(HttpStatus.CREATED)
-    fun createGame(
-        @Valid @RequestBody request: CreateGameRequest,
-    ): GameResponse =
-        games
-            .create(
-                name = request.name,
-                slug = request.slug,
-                intro = request.intro,
-                accent = request.accent,
-                banner = request.banner,
-                icon = request.icon,
-                sortIndex = request.sortIndex,
-            ).asResponse(current = false)
-
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @PutMapping("/games/{game}")
-    fun updateGame(
-        @PathVariable game: String,
-        @Valid @RequestBody request: UpdateGameRequest,
-    ): GameResponse =
-        games
-            .update(
-                game = game,
-                name = request.name,
-                slug = request.slug,
-                intro = request.intro,
-                accent = request.accent,
-                banner = request.banner,
-                icon = request.icon,
-                sortIndex = request.sortIndex,
-            ).asResponse(fielded.currentlyPlayed().contains(game))
-
-    /** What a game holds, so the offer to remove it can say what goes with it. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @GetMapping("/games/{game}/contents")
-    fun findGameContents(
-        @PathVariable game: String,
-    ): GameContentsResponse {
-        val (teams, players) = holdings.contentsOf(game)
-        return GameContentsResponse(teams = teams.toInt(), players = players.toInt())
-    }
-
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
-    @DeleteMapping("/games/{game}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteGame(
-        @PathVariable game: String,
-    ) {
-        games.remove(game, archiveFirst = true)
     }
 
     /**

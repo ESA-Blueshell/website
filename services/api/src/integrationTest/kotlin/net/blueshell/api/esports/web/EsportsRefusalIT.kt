@@ -48,7 +48,7 @@ class EsportsRefusalIT : UserTestSupport() {
         val name = "$stem${System.nanoTime()}"
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$name","slug":"${name.lowercase()}"}"""),
@@ -92,7 +92,7 @@ class EsportsRefusalIT : UserTestSupport() {
 
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"!!!","slug":"pong"}"""),
@@ -108,7 +108,7 @@ class EsportsRefusalIT : UserTestSupport() {
 
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$existing","slug":"pinball-again"}"""),
@@ -128,7 +128,14 @@ class EsportsRefusalIT : UserTestSupport() {
         fielded.field(team.id!!, code, season.id!!)
 
         mvc
-            .perform(delete("/esports/games/{game}", code).with(signedIn(board)))
+            .perform(
+                put("/games/{game}/archived", code)
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"archived":true}"""),
+            ).andExpect(status().isOk)
+        mvc
+            .perform(delete("/games/{game}", code).with(signedIn(board)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
             .andExpect(jsonPath("$.gameName").value(name))
@@ -169,7 +176,7 @@ class EsportsRefusalIT : UserTestSupport() {
 
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Pong","slug":"competitive-scene"}"""),
@@ -186,7 +193,7 @@ class EsportsRefusalIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", "SMASH")
+                put("/games/{game}", "SMASH")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
@@ -238,7 +245,7 @@ class EsportsRefusalIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", "TRACKMANIA")
+                put("/games/{game}", "TRACKMANIA")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(

@@ -1,4 +1,4 @@
-import type {BandDirection, Stop} from "@/components/island/stripAxis"
+import type {Stop} from "@/components/island/stripAxis"
 import {academicYear, boardName} from "./reading"
 import {standingOf, type Termed} from "./standing"
 
@@ -21,29 +21,11 @@ export interface Stopped extends Termed {
 }
 
 /**
- * The order boards read in: oldest first, by the term they ran.
- *
- * One comparator for the module, because the strip's left-to-right order and the direction a
- * board change travels in are the same question asked twice. Two boards recorded with the same
+ * The order boards read in: oldest first, by the term they ran. Two boards recorded with the same
  * start date are ordered by number, so a line drawn twice is drawn the same way.
  */
 const byTerm = (a: Stopped, b: Stopped): number =>
   a.startDate.localeCompare(b.startDate) || a.number - b.number
-
-/**
- * Which way [to] lies from [from]: back down the line, or on up it.
- *
- * The line runs oldest to newest from left to right, so this is also which way the page travels
- * when the board changes. Either end being absent is "same": there is no direction to travel
- * from nowhere, which is what a page arriving for the first time does.
- */
-export function travelBetween(from: Stopped | null, to: Stopped | null): BandDirection {
-  if (!from || !to) return "same"
-  const order = byTerm(to, from)
-  if (order < 0) return "past"
-  if (order > 0) return "future"
-  return "same"
-}
 
 /** What a stop says about a board that is not simply another year: there are two such words. */
 const MARKS = {
@@ -76,31 +58,4 @@ export function boardStops(boards: readonly Stopped[], on?: string): Stop[] {
       accent: board.accent?.trim() || undefined,
     }
   })
-}
-
-/** The boards either side of one, as their numbers, or nothing where the line ends there. */
-export interface BoardsEitherSide {
-  past: number | null
-  future: number | null
-}
-
-/**
- * Which boards lie either side of the board numbered [number] on the line.
- *
- * Asked by the island so a gesture knows what it is dragging towards: which of two boards is the
- * earlier one is knowledge about boards, exactly as the direction of a pass is, so the island is
- * handed the answer rather than working it out from an array it was given in an order it cannot
- * vouch for. Numbers rather than keys, because a stop is a board's number everywhere else on this
- * page. A board nobody has recorded — a stale link, a board just removed — has no sides at all,
- * which is the same answer as a line of one: there is nowhere to drag to.
- */
-export function boardsEitherSide(boards: readonly Stopped[], number: number | null): BoardsEitherSide {
-  if (number == null) return {past: null, future: null}
-  const oldest = [...boards].sort(byTerm)
-  const at = oldest.findIndex(board => board.number === number)
-  if (at < 0) return {past: null, future: null}
-  return {
-    past: oldest[at - 1]?.number ?? null,
-    future: oldest[at + 1]?.number ?? null,
-  }
 }

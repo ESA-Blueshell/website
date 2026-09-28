@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {computed} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
@@ -12,12 +12,11 @@ import MarkdownView from "@/components/island/MarkdownView.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SliceBand from "@/components/island/SliceBand.vue"
 import {sizeOf, srcsetOf} from "@/components/island/pictures"
-import type {BandDirection} from "@/components/island/stripAxis"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
 import {BOARD_CALL} from "@/domains/boards"
 import {useBoards} from "@/domains/boards"
-import {academicYear, boardEyebrow, boardInRoute, boardName, boardsEitherSide, boardStops, membersInOrder, travelBetween} from "@/domains/boards"
+import {academicYear, boardEyebrow, boardInRoute, boardName, boardStops, membersInOrder} from "@/domains/boards"
 import {memberTitle, type Board, type BoardMember} from "@/domains/boards"
 import {useIsBoard} from "@/composables/useIsBoard"
 
@@ -61,6 +60,7 @@ const shown = computed<Board | null>(() => {
 
 /** Every board is a stop, in office and candidate marked, oldest first. */
 const stops = computed(() => boardStops(boards.value))
+const stopIds = computed(() => stops.value.map(stop => stop.id))
 
 /**
  * The board's own colour, or the association's blue where it has none.
@@ -86,16 +86,6 @@ const chooseBoard = (number: number) => {
  * this one is already in hand.
  */
 /**
- * The boards either side of the one being read.
- *
- * The board drawn is the board on screen here, always: `reach` below answers a gesture at once
- * because every board and its members came down in one read, so no board is ever asked for and
- * awaited. The esports pages do wait, and there a gesture has to step from the stop held in
- * front of the reader rather than the one drawn — see `SeasonSwipe`.
- */
-const eitherSide = computed(() => boardsEitherSide(boards.value, shown.value?.number ?? null))
-
-/**
  * The bookkeeping a committed gesture needs, which is the island's rather than this page's.
  *
  * A board asked for is a board arrived at, so nothing here can be refused: every board and its
@@ -110,22 +100,6 @@ const {arrival, travelTo} = useSwipeArrival({
     chooseBoard(number)
     return true
   },
-})
-
-/**
- * Which way the page travels when the board changes, so the band can leave the way the reader
- * is going and the board they chose can arrive from the other side.
- *
- * Set before the swap rather than after it: the swipe reads it while the arriving board is
- * being rendered, since it is what decides which side that board comes in from. Which board is
- * later is the domain's answer, not the island's.
- */
-const travel = ref<BandDirection>("same")
-let travelledTo: Board | null = null
-
-watch(shown, (next) => {
-  travel.value = travelBetween(travelledTo, next)
-  travelledTo = next ?? null
 })
 
 /**
@@ -312,9 +286,7 @@ const addMember = (stop: string | number | null) => {
           held board here would draw the same board in both.
         -->
         <band-swipe
-          :direction="travel"
-          :future="eitherSide.future"
-          :past="eitherSide.past"
+          :stops="stopIds"
           :stop="shown?.number ?? null"
           testid="board-swipe"
           @travel="travelTo"

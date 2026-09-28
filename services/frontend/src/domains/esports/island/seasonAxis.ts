@@ -1,4 +1,4 @@
-import type {BandDirection, Stop} from "@/components/island/stripAxis"
+import type {Stop} from "@/components/island/stripAxis"
 import type {Season} from "../adapters/esports"
 
 /** "Autumn 2025": the half of the year a season runs in, and the year it falls in. */
@@ -7,9 +7,8 @@ const NAME = /^(\p{L}+)\s+(\d{4})$/u
 /**
  * The order seasons read in: oldest first, by the date they start.
  *
- * One comparator for the whole module, because the strip's left-to-right order and the
- * direction a season change travels in are the same question asked twice. Two seasons that
- * start on the same day are ordered by id, so a strip drawn twice is drawn the same way.
+ * One comparator for the whole module. Two seasons that start on the same day are ordered by
+ * id, so a strip drawn twice is drawn the same way.
  */
 const byAge = (a: Season, b: Season): number =>
   a.startDate.localeCompare(b.startDate) || a.id - b.id
@@ -26,22 +25,6 @@ export function newestSeason(seasons: Season[]): Season | null {
     (newest, season) => (newest == null || byAge(season, newest) > 0 ? season : newest),
     null,
   )
-}
-
-/**
- * Which way [to] lies from [from]: back down the strip, or on up it.
- *
- * The island's own answer, in the island's own words: which way a stop lies from another is
- * `BandDirection`, and what makes one season later than another is what this adds. Either end
- * being absent is "same": there is no direction to travel from nowhere, which is what a page
- * arriving for the first time does.
- */
-export function directionBetween(from: Season | null, to: Season | null): BandDirection {
-  if (!from || !to) return "same"
-  const order = byAge(to, from)
-  if (order < 0) return "past"
-  if (order > 0) return "future"
-  return "same"
 }
 
 /**
@@ -75,32 +58,4 @@ export function seasonStops(seasons: Season[]): Stop[] {
       sublabel: parts?.[2] ?? "",
     }
   })
-}
-
-/** The seasons either side of one, or nothing where the strip ends there. */
-export interface SeasonsEitherSide {
-  past: Season | null
-  future: Season | null
-}
-
-/**
- * Which seasons lie either side of [on] among [seasons].
- *
- * Asked by the island so a gesture knows what it is dragging towards: which season is the earlier
- * is knowledge about seasons, so the island is handed the answer rather than reading it off a list
- * whose order it cannot vouch for. `boardsEitherSide` answers this for boards. The season being
- * read counts among them whether listed or not, as `seasonsIncluding` puts it on the strip: a
- * game's page opens on the newest season whether or not that game played it, and without this a
- * page standing on a season it sat out would have no neighbours at all. A season nobody has
- * recorded has no sides, the same answer as a strip of one.
- */
-export function seasonsEitherSide(seasons: Season[], on: Season | null): SeasonsEitherSide {
-  if (on == null) return {past: null, future: null}
-  const oldest = seasonsIncluding(seasons, on)
-  const at = oldest.findIndex(one => one.id === on.id)
-  if (at < 0) return {past: null, future: null}
-  return {
-    past: oldest[at - 1] ?? null,
-    future: oldest[at + 1] ?? null,
-  }
 }

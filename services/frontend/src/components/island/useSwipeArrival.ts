@@ -15,8 +15,6 @@ import type {StripArrival} from "./stripAxis"
 export interface SwipeArrival {
   /** How the stop being read arrived, which is what the strip is told. */
   arrival: ComputedRef<StripArrival>
-  /** The stop a gesture is still waiting on, or nothing once the page has refused it. */
-  pending: ComputedRef<number | null>
   /**
    * The stop a gesture asked for that this page could not show, which is what the band is told.
    *
@@ -94,7 +92,5 @@ export function useSwipeArrival({inRoute, following, reach}: Swiping): SwipeArri
    * drawn, and a further gesture measured from the refused one steps past the stop in front of
    * them — which silently stopped a refused stop from ever being asked for again.
    */
-  const pending = computed(() => (refused.value == null ? swipedTo.value : null))
-
-  return {arrival, refused, pending, asked: computed(() => swipedTo.value), travelTo}
+  return {arrival, refused, asked: computed(() => swipedTo.value), travelTo}
 }

@@ -1,7 +1,7 @@
 package net.blueshell.api.user.api
 
 /**
- * What makes a password acceptable, in one place: four request types and the registration rule
+ * What makes a password acceptable, in one place: the password requests and the registration rule
  * all state it, and a copy that drifts refuses a password the applicant was shown as valid.
  *
  * The complexity rules are a lower bound on what a password must contain, never an upper bound

@@ -3,6 +3,7 @@ package net.blueshell.api.user.web
 import net.blueshell.api.factory.user.web.request.UserRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.api.PasswordPolicy
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.Nested
@@ -96,6 +97,31 @@ class UserControllerValidationIT : UserTestSupport() {
             assertThat(result.response.contentAsString)
                 .doesNotContain("\"rejectedValue\"")
                 .doesNotContain(weakPassword)
+        }
+
+        @Test
+        fun `short password for anonymous registration returns the length message`() {
+            val stamp = System.currentTimeMillis()
+            val username = "shortpass_$stamp"
+            val shortButComplex = "Aa1!"
+
+            mvc
+                .perform(
+                    post("/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            userRequestFactory.createUserPayload(
+                                username = username,
+                                email = "$username@example.com",
+                                discord = "shortpass$stamp",
+                                phoneNumber = "+3164444${stamp.toString().takeLast(4)}",
+                                password = shortButComplex,
+                            ),
+                        ),
+                ).andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[*].message").value(hasItem(PasswordPolicy.LENGTH_MESSAGE)))
+
+            assertThat(userRepository.findByUsername(username)).isEmpty()
         }
 
         @Test

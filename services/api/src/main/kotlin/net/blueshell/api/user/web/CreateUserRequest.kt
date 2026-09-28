@@ -4,8 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
-import jakarta.validation.constraints.Size
-import net.blueshell.api.user.api.PasswordPolicy
 import net.blueshell.api.shared.util.SNOWFLAKE
 
 @Schema(name = "CreateUserRequest")
@@ -34,17 +32,7 @@ class CreateUserRequest(
     var phoneNumber: String,
     @field:Valid
     var memberProfile: UpsertMemberProfileRequest? = null,
-    @field:NotBlank(groups = [Creation::class])
-    @field:Size(
-        min = PasswordPolicy.MIN_LENGTH,
-        max = PasswordPolicy.MAX_LENGTH,
-        message = PasswordPolicy.LENGTH_MESSAGE,
-        groups = [Creation::class],
-    )
-    @field:Pattern(
-        regexp = PasswordPolicy.COMPLEXITY_REGEX,
-        message = PasswordPolicy.COMPLEXITY_MESSAGE,
-        groups = [Creation::class],
-    )
+    // Unconstrained here: the board sends this request with the password empty. `UserRegistration`
+    // holds the password rules for public registration and waives them for the board.
     var password: String? = null,
 )

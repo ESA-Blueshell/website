@@ -226,6 +226,13 @@ class ShippedEsportsTest {
     }
 
     @Test
+    fun `loads the files it was built with where it is given none`() {
+        val loader = ShippedEsports(records, db.dataSource, db.transactions, EsportsSeedFixture.files)
+
+        assertThat(loader.apply().games).isEqualTo(EsportsSeedFixture.GAMES.size)
+    }
+
+    @Test
     fun `a deleted team leaves its line-up out`() {
         load()
         deletedTeams += "Drifters"

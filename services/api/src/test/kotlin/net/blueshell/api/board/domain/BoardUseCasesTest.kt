@@ -22,6 +22,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import java.time.LocalDate
 import java.util.Optional
 
@@ -41,12 +42,15 @@ class BoardUseCasesTest {
 
             val result =
                 useCases.create(
-                    number = 10,
-                    name = "Board 2026",
-                    candidate = "Candidate",
-                    startDate = LocalDate.of(2026, 1, 1),
-                    endDate = LocalDate.of(2026, 12, 31),
-                    photo = null,
+                    input =
+                        BoardInput(
+                            number = 10,
+                            name = "Board 2026",
+                            candidate = "Candidate",
+                            startDate = LocalDate.of(2026, 1, 1),
+                            endDate = LocalDate.of(2026, 12, 31),
+                            photo = null,
+                        ),
                 )
 
             assertThat(result.number).isEqualTo(10)
@@ -64,12 +68,15 @@ class BoardUseCasesTest {
 
             val result =
                 useCases.create(
-                    number = 4,
-                    name = "",
-                    candidate = null,
-                    startDate = LocalDate.of(2020, 9, 1),
-                    endDate = LocalDate.of(2021, 8, 31),
-                    photo = null,
+                    input =
+                        BoardInput(
+                            number = 4,
+                            name = "",
+                            candidate = null,
+                            startDate = LocalDate.of(2020, 9, 1),
+                            endDate = LocalDate.of(2021, 8, 31),
+                            photo = null,
+                        ),
                 )
 
             // A board is free to have no name recorded, and `candidate` is NOT NULL.
@@ -83,12 +90,15 @@ class BoardUseCasesTest {
 
             assertThrows<DuplicateBoardException> {
                 useCases.create(
-                    number = 9,
-                    name = "Eeveelutions",
-                    candidate = null,
-                    startDate = LocalDate.of(2025, 9, 1),
-                    endDate = null,
-                    photo = null,
+                    input =
+                        BoardInput(
+                            number = 9,
+                            name = "Eeveelutions",
+                            candidate = null,
+                            startDate = LocalDate.of(2025, 9, 1),
+                            endDate = null,
+                            photo = null,
+                        ),
                 )
             }
 
@@ -104,12 +114,15 @@ class BoardUseCasesTest {
 
             val result =
                 useCases.create(
-                    number = 10,
-                    name = "Board 2026",
-                    candidate = "Candidate",
-                    startDate = LocalDate.of(2026, 1, 1),
-                    endDate = null,
-                    photo = PHOTO_PATH,
+                    input =
+                        BoardInput(
+                            number = 10,
+                            name = "Board 2026",
+                            candidate = "Candidate",
+                            startDate = LocalDate.of(2026, 1, 1),
+                            endDate = null,
+                            photo = PHOTO_PATH,
+                        ),
                 )
 
             assertThat(result.picture).isSameAs(picture)
@@ -138,6 +151,21 @@ class BoardUseCasesTest {
     @Nested
     inner class UpdateBoard {
         @Test
+        fun `refuses an edit made against a version somebody has saved over`() {
+            val board = boardEntity()
+            whenever(boards.findById(7L)).thenReturn(Optional.of(board))
+
+            assertThrows<OptimisticLockingFailureException> {
+                useCases.update(
+                    id = 7L,
+                    input = BoardInput(10, "Board", null, LocalDate.of(2026, 1, 1), null, null),
+                    version = board.version + 1,
+                )
+            }
+            verify(boards, never()).saveAndFlush(any())
+        }
+
+        @Test
         fun `updates board and clears the photograph when none is named`() {
             val board = boardEntity()
             board.replacePicture(mock())
@@ -147,12 +175,16 @@ class BoardUseCasesTest {
             val result =
                 useCases.update(
                     id = 7L,
-                    number = 10,
-                    name = "Updated Board",
-                    candidate = "Updated Candidate",
-                    startDate = LocalDate.of(2026, 2, 1),
-                    endDate = LocalDate.of(2026, 10, 1),
-                    photo = null,
+                    input =
+                        BoardInput(
+                            number = 10,
+                            name = "Updated Board",
+                            candidate = "Updated Candidate",
+                            startDate = LocalDate.of(2026, 2, 1),
+                            endDate = LocalDate.of(2026, 10, 1),
+                            photo = null,
+                        ),
+                    version = null,
                 )
 
             assertThat(result.name).isEqualTo("Updated Board")
@@ -174,12 +206,16 @@ class BoardUseCasesTest {
             val result =
                 useCases.update(
                     id = 7L,
-                    number = 10,
-                    name = "Updated Board",
-                    candidate = "Updated Candidate",
-                    startDate = LocalDate.of(2026, 2, 1),
-                    endDate = null,
-                    photo = PHOTO_PATH,
+                    input =
+                        BoardInput(
+                            number = 10,
+                            name = "Updated Board",
+                            candidate = "Updated Candidate",
+                            startDate = LocalDate.of(2026, 2, 1),
+                            endDate = null,
+                            photo = PHOTO_PATH,
+                        ),
+                    version = null,
                 )
 
             assertThat(result.picture).isSameAs(picture)
@@ -202,9 +238,7 @@ class BoardUseCasesTest {
                 useCases.addMember(
                     boardId = 9L,
                     userId = 11L,
-                    role = "CHAIR",
-                    startDate = LocalDate.of(2026, 1, 1),
-                    endDate = null,
+                    input = BoardMemberInput(role = "CHAIR", startDate = LocalDate.of(2026, 1, 1), endDate = null),
                 )
 
             assertThat(result.role).isEqualTo("CHAIR")
@@ -222,11 +256,14 @@ class BoardUseCasesTest {
                 useCases.addMember(
                     boardId = 9L,
                     userId = null,
-                    role = "CHAIR",
-                    startDate = LocalDate.of(2018, 9, 1),
-                    endDate = null,
-                    displayName = "Thijs Lieverse",
-                    description = "The first chair.",
+                    input =
+                        BoardMemberInput(
+                            role = "CHAIR",
+                            startDate = LocalDate.of(2018, 9, 1),
+                            endDate = null,
+                            displayName = "Thijs Lieverse",
+                            description = "The first chair.",
+                        ),
                 )
 
             assertThat(result.user).isNull()
@@ -246,11 +283,14 @@ class BoardUseCasesTest {
                 useCases.addMember(
                     boardId = 9L,
                     userId = null,
-                    role = "Commissioner of Internal Affairs",
-                    startDate = LocalDate.of(2022, 9, 1),
-                    endDate = null,
-                    displayName = "Roos Kruk",
-                    nickname = "SkyeWolf",
+                    input =
+                        BoardMemberInput(
+                            role = "Commissioner of Internal Affairs",
+                            startDate = LocalDate.of(2022, 9, 1),
+                            endDate = null,
+                            displayName = "Roos Kruk",
+                            nickname = "SkyeWolf",
+                        ),
                 )
 
             assertThat(result.displayName).isEqualTo("Roos Kruk")
@@ -269,11 +309,14 @@ class BoardUseCasesTest {
                 useCases.addMember(
                     boardId = 9L,
                     userId = null,
-                    role = "Chair",
-                    startDate = LocalDate.of(2022, 9, 1),
-                    endDate = null,
-                    displayName = "Amber Scholtz",
-                    portrait = PORTRAIT_PATH,
+                    input =
+                        BoardMemberInput(
+                            role = "Chair",
+                            startDate = LocalDate.of(2022, 9, 1),
+                            endDate = null,
+                            displayName = "Amber Scholtz",
+                            portrait = PORTRAIT_PATH,
+                        ),
                 )
 
             assertThat(result.picture).isSameAs(portrait)
@@ -301,10 +344,13 @@ class BoardUseCasesTest {
                 useCases.addMember(
                     boardId = 9L,
                     userId = 11L,
-                    role = "TREASURER",
-                    startDate = LocalDate.of(2026, 1, 1),
-                    endDate = null,
-                    portrait = PORTRAIT_PATH,
+                    input =
+                        BoardMemberInput(
+                            role = "TREASURER",
+                            startDate = LocalDate.of(2026, 1, 1),
+                            endDate = null,
+                            portrait = PORTRAIT_PATH,
+                        ),
                 )
 
             assertThat(result.picture).isSameAs(portrait)
@@ -330,9 +376,12 @@ class BoardUseCasesTest {
                 useCases.addMember(
                     boardId = 9L,
                     userId = 11L,
-                    role = "TREASURER",
-                    startDate = LocalDate.of(2026, 1, 1),
-                    endDate = LocalDate.of(2026, 12, 31),
+                    input =
+                        BoardMemberInput(
+                            role = "TREASURER",
+                            startDate = LocalDate.of(2026, 1, 1),
+                            endDate = LocalDate.of(2026, 12, 31),
+                        ),
                 )
 
             assertThat(result.role).isEqualTo("TREASURER")
@@ -354,20 +403,12 @@ class BoardUseCasesTest {
 
             useCases.updateMember(
                 id = 3L,
-                role = "Chair",
-                startDate = LocalDate.of(2022, 9, 1),
-                endDate = null,
-                portrait = PORTRAIT_PATH,
+                input = BoardMemberInput(role = "Chair", startDate = LocalDate.of(2022, 9, 1), endDate = null, portrait = PORTRAIT_PATH),
             )
             assertThat(member.picture).isSameAs(portrait)
 
             // Nothing named, so nothing held: the save carries the whole member every time.
-            useCases.updateMember(
-                id = 3L,
-                role = "Chair",
-                startDate = LocalDate.of(2022, 9, 1),
-                endDate = null,
-            )
+            useCases.updateMember(id = 3L, input = BoardMemberInput(role = "Chair", startDate = LocalDate.of(2022, 9, 1), endDate = null))
             assertThat(member.picture).isNull()
         }
     }

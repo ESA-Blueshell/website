@@ -9,8 +9,8 @@ import net.blueshell.api.shared.web.HEX_COLOUR
 import net.blueshell.api.shared.web.HEX_COLOUR_REFUSED
 import java.time.LocalDate
 
-@Schema(name = "UpdateBoardRequest")
-data class UpdateBoardRequest(
+@Schema(name = "BoardRequest", description = "A board as a write says it stands, whether it makes one or edits one")
+data class BoardRequest(
     @Schema(description = "The board's place in the line; the ninth board is 9")
     @field:Min(value = 1, message = "Board number must be at least 1")
     var number: Int,
@@ -33,5 +33,6 @@ data class UpdateBoardRequest(
     @Schema(description = "Where the board's group photograph is stored; blank leaves it without one")
     @field:Size(max = 255, message = "Photo must be at most 255 characters")
     var photo: String? = null,
-    var version: Long,
+    @Schema(description = "The version the edit was made against; a stale one is refused. Ignored on create")
+    var version: Long? = null,
 )

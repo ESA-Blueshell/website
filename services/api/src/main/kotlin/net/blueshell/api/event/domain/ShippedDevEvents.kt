@@ -1,6 +1,5 @@
 package net.blueshell.api.event.domain
 
-import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
@@ -37,7 +36,6 @@ import java.time.Instant
 @Profile("dev")
 class ShippedDevEvents(
     private val committees: CommitteeService,
-    private val committeeMembers: CommitteeMemberService,
     private val events: EventRepository,
     private val files: FileService,
     private val users: UserService,
@@ -102,27 +100,30 @@ class ShippedDevEvents(
             val name = row.getValue(NAME)
             name to (
                 held[name] ?: transactions.execute {
-                    committees.create(Committee(name = name, description = row[DESCRIPTION].orEmpty())).also { committee ->
-                        seat(committee, row[MEMBERS].orEmpty())
-                    }
+                    val committee = Committee(name = name, description = row[DESCRIPTION].orEmpty())
+                    seat(committee, row[MEMBERS].orEmpty())
+                    committees.create(committee)
                 }
             )
         }
     }
 
     /**
-     * `username[:role]` entries separated by `;`. An account the database does not have is left
-     * out, the way a missing committee leaves an event without one.
+     * `username[:role]` entries separated by `;`, seated before the committee is saved, which
+     * saves its members with it. An account the database does not have is left out, the way a
+     * missing committee leaves an event without one.
      */
     private fun seat(
         committee: Committee,
         members: String,
     ) {
-        members.split(';').map { it.trim() }.filter { it.isNotEmpty() }.forEach { entry ->
-            val user = runCatching { users.findByUsername(entry.substringBefore(':')) }.getOrNull() ?: return@forEach
-            val role = entry.substringAfter(':', "").ifBlank { null }
-            committeeMembers.create(CommitteeMember(committee = committee, user = user, role = role))
-        }
+        val seats =
+            members.split(';').map { it.trim() }.filter { it.isNotEmpty() }.mapNotNull { entry ->
+                val user = runCatching { users.findByUsername(entry.substringBefore(':')) }.getOrNull()
+                val role = entry.substringAfter(':', "").ifBlank { null }
+                user?.let { CommitteeMember(committee = committee, user = it, role = role) }
+            }
+        committee.replaceMembers(seats)
     }
 
     /**

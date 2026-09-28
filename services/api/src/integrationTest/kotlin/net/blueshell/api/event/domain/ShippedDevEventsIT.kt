@@ -1,6 +1,5 @@
 package net.blueshell.api.event.domain
 
-import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.file.api.FileService
@@ -20,15 +19,13 @@ import org.springframework.beans.factory.annotation.Autowired
 class ShippedDevEventsIT : UserTestSupport() {
     @Autowired private lateinit var committees: CommitteeService
 
-    @Autowired private lateinit var committeeMembers: CommitteeMemberService
-
     @Autowired private lateinit var events: EventRepository
 
     @Autowired private lateinit var files: FileService
 
     @Autowired private lateinit var users: UserService
 
-    private fun loader() = ShippedDevEvents(committees, committeeMembers, events, files, users, transactionTemplate)
+    private fun loader() = ShippedDevEvents(committees, events, files, users, transactionTemplate)
 
     @Test
     fun `the events the seed names are written with the committees they were run by`() {

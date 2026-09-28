@@ -1,9 +1,7 @@
 package net.blueshell.api.event.domain
 
-import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.file.api.FileService
@@ -14,6 +12,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -34,7 +33,6 @@ import org.springframework.transaction.support.TransactionTemplate
  */
 class ShippedDevEventsTest {
     private val committees = mock<CommitteeService>()
-    private val committeeMembers = mock<CommitteeMemberService>()
     private val events = mock<EventRepository>()
     private val files = mock<FileService>()
     private val users = mock<UserService>()
@@ -47,7 +45,7 @@ class ShippedDevEventsTest {
         whenever(manager.getTransaction(any())).thenReturn(mock<TransactionStatus>())
     }
 
-    private val loader = ShippedDevEvents(committees, committeeMembers, events, files, users, transactions)
+    private val loader = ShippedDevEvents(committees, events, files, users, transactions)
 
     private val rows = EventSeed.files.rows(EventSeed.EVENTS)
     private val named = EventSeed.files.rows(EventSeed.COMMITTEES)
@@ -80,10 +78,11 @@ class ShippedDevEventsTest {
 
         loader.apply()
 
-        val seated = argumentCaptor<CommitteeMember>()
-        verify(committeeMembers, times(2)).create(seated.capture())
-        val siteCie = seated.allValues.filter { it.committee.name == "SiteCie" }
-        assertThat(siteCie.map { it.user to it.role }).containsExactly(cas to "Chair")
+        val created = argumentCaptor<Committee>()
+        verify(committees, atLeastOnce()).create(created.capture())
+        val siteCie = created.allValues.single { it.name == "SiteCie" }
+        assertThat(siteCie.members.map { it.user to it.role }).containsExactly(cas to "Chair")
+        assertThat(siteCie.members.map { it.committee }).containsOnly(siteCie)
     }
 
     @Test

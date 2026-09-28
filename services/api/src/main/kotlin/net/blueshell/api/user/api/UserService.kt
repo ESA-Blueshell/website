@@ -236,4 +236,8 @@ class UserService @Autowired constructor(
         /** Creation order: the newest accounts land at the end, where they can be found. */
         val DEFAULT_USER_ORDER: Sort = Sort.by(Sort.Direction.ASC, "id")
     }
+
+    /** The one account answering to [name] as the site writes it, or nobody when none or several do. */
+    @Transactional(readOnly = true)
+    fun findOnlyByWrittenName(name: String): User? = repository.findAllByWrittenName(name).singleOrNull()
 }

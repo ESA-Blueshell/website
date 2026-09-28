@@ -115,6 +115,22 @@ interface UserRepository : BaseRepository<User, Long> {
         @Param("userId") userId: Long,
     ): Long?
 
+    /**
+     * Every live account whose name, written the way the site writes it, prefix and all, is
+     * exactly [name]. Native, since JPQL has no `CONCAT_WS` to skip an absent prefix.
+     */
+    @Query(
+        value = """
+            SELECT * FROM users u
+            WHERE TRIM(CONCAT_WS(' ', u.first_name, u.prefix, u.last_name)) = :name
+              AND u.deleted_at = '9999-12-31 23:59:59'
+        """,
+        nativeQuery = true,
+    )
+    fun findAllByWrittenName(
+        @Param("name") name: String,
+    ): List<User>
+
     @Query(
         value = "SELECT id FROM users WHERE id IN (:userIds) AND deleted_at <> '9999-12-31 23:59:59.000000'",
         nativeQuery = true,

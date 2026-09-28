@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
 import java.time.LocalDate
-import javax.sql.DataSource
 
 /**
  * Each case starts from the empty database this suite resets to, loads the seed files, and
@@ -20,7 +19,7 @@ import javax.sql.DataSource
  */
 @SpringBootTest
 class BoardSeedLoadIT : UserTestSupport() {
-    @Autowired private lateinit var dataSource: DataSource
+    @Autowired private lateinit var shipped: ShippedBoards
 
     @Autowired private lateinit var jdbc: JdbcTemplate
 
@@ -469,7 +468,7 @@ class BoardSeedLoadIT : UserTestSupport() {
     private fun membersNamed(name: String): Int =
         jdbc.queryForObject("SELECT COUNT(*) FROM board_members WHERE display_name = ?", Int::class.java, name)!!
 
-    private fun runLoader(): ShippedBoards.Applied = ShippedBoards(dataSource, transactionTemplate).apply()
+    private fun runLoader(): ShippedBoards.Applied = shipped.apply()
 
     private companion object {
         const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"

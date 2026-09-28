@@ -380,21 +380,57 @@ it. Chosen on the event from the server's own roles; never @everyone or @here.
 **A pinged role is not a role.** "Role" alone means a website role (granted, derived
 or implied); a pinged role lives only in Discord and grants nothing on the site.
 
+### Approved
+
+An event the board has let through; only an approved event is listed to everybody and
+posted on Discord. Only a board member approves. An edit by anybody else, a committee
+member included, sends the event back to the board, which approves it again.
+
+_Avoid_: published
+
+### Awaiting re-approval
+
+An event that was approved until an edit by somebody not on the board sent it back.
+What the bot has out for it is **frozen**: it stays as last approved, is neither edited
+nor notified again, and still comes down on time. Re-approved, it is brought up to date
+without notifying; unapproved by the board, it comes down.
+
+**Awaiting re-approval is not unapproved.** An event the board unapproves loses what the
+bot has out; one awaiting re-approval keeps it.
+
+### Within two weeks
+
+An event is within two weeks from 08:00 on the day fourteen days before its first day,
+until it is over. The time of day the event starts plays no part: an event at 20:00 on
+12 October is within two weeks from 08:00 on 28 September. Amsterdam time.
+
+_Avoid_: fourteen days before the start (a rolling window), lead time
+
 ### Events-info post and events-calendar post
 
 The two messages the bot writes about an approved event, named after the Discord
-channels they appear in. The **events-info post** goes out at 08:00 two weeks before
-the event starts and stays; the **events-calendar post** goes out at 08:00 on the day
-the event starts and is taken down at 08:00 the morning after it ends. Both say the
-same, and both notify the event's pinged roles. Times are Amsterdam time.
+channels they appear in. Both say the same, and both notify the event's pinged roles.
+Times are Amsterdam time.
+
+The **events-info post** goes out once the event is approved and within two weeks: at
+08:00 when that begins, or at once when the event is approved, created or moved inside
+it. Once out it stays, and follows every edit, even one that moves the event
+further away. It comes down when the event is deleted or unapproved; approved again, it
+goes out again and notifies again. One somebody removes by hand is put back, and notifies
+again.
+
+The **events-calendar post** is out from 08:00 on the event's first day until 08:00 the
+morning after it ends. An event approved while it runs gets its post at once.
 
 The events-info post is the event's **announcement**, events-info being an announcement
 channel; the events-calendar post, going out again on the day, is its **re-announcement**.
 
 ### Discord event
 
-The event as the association's Discord server lists it, created by the bot beside the
-events-info post. **"Event" alone means the site's event**; the Discord event is its
+The event as the association's Discord server lists it, kept by the bot while the event
+is approved and within two weeks, on the same terms as the events-info post but not
+waiting for it. An event approved while it runs is listed from then until it is over.
+**"Event" alone means the site's event**; the Discord event is its
 listing in the server, kept in step with it and removed with it.
 
 ### Event page

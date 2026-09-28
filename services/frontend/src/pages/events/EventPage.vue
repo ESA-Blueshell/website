@@ -23,6 +23,7 @@ import AlsoComingUp from "@/domains/events/island/AlsoComingUp.vue"
 import EventActions from "@/domains/events/island/EventActions.vue"
 import EventBand from "@/domains/events/island/EventBand.vue"
 import EventSignUpPanel from "@/domains/events/island/EventSignUpPanel.vue"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 defineOptions({name: "EventPage"})
 
@@ -70,8 +71,9 @@ const committee = computed(() => committees.value.find(one => one.id === event.v
 const eyebrow = computed(() => committee.value ?? "Blueshell event")
 const signUp = computed(() => signUps.value.find(one => one.eventId === event.value?.id))
 const others = computed(() => coming.value.filter(one => one.id !== id.value))
+const isBoard = useIsBoard()
 const manages = computed<boolean>(() =>
-  store.getters.isBoard || committees.value.some(one => one.id === event.value?.committeeId))
+  isBoard.value || committees.value.some(one => one.id === event.value?.committeeId))
 
 async function copyLink() {
   await navigator.clipboard.writeText(pageUrlOf(event.value!))

@@ -22,7 +22,7 @@ vi.mock("@/domains/esports/island/useGames", () => ({
 }))
 const seasons = [{id: 3, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31", played: true}, {id: 4, name: "Spring 2026", startDate: "2026-02-01", endDate: "2026-06-30", played: true}]
 vi.mock("@/domains/esports/island/useSeasons", () => ({useSeasons: () => ({seasons: ref(seasons)})}))
-vi.mock("@/domains/esports/island/useMayEditEsports", () => ({useMayEditEsports: () => ref(true)}))
+vi.mock("@/composables/useIsBoard", () => ({useIsBoard: () => ref(true)}))
 vi.mock("@/components/island/useSwipeArrival", () => ({
   useSwipeArrival: () => ({arrival: ref(null), asked: ref(null), pending: ref(false), refused: ref(false), travelTo: vi.fn()}),
 }))

@@ -5,6 +5,7 @@ import type {GuestSessionData, StoredLogin} from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {listCommittees, listMyCommittees} from "@/domains/committees"
 import {type EventSignUpResponse, listOwnSignUps, listSignUpsByAccessToken} from ".."
+import {useIsBoard} from "@/composables/useIsBoard"
 
 export type CommitteeOption = {id: number, name: string}
 
@@ -24,7 +25,7 @@ export function useEventReader(linkedToken: Ref<string | null> = ref(null)): {
   const committees = ref<CommitteeOption[]>([])
 
   const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
-  const isBoard = computed<boolean>(() => store.getters.isBoard)
+  const isBoard = useIsBoard()
   const login = computed<StoredLogin | undefined>(() => store.getters.getLogin)
   const guestToken = computed<string | null>(() =>
     (store.getters.getGuestData as GuestSessionData | null)?.accessToken ?? linkedToken.value)

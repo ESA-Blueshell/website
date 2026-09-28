@@ -3,7 +3,6 @@ import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import {Form} from "vee-validate"
 import SurveyForm from "@/components/form/SurveyForm.vue"
-import {useStore} from "vuex"
 import VvField from "@/components/form/fields/VvField.vue"
 import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
 import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
@@ -36,6 +35,7 @@ import {
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 import {safeFormatISO, toISO} from "@/utils/datetime"
 import type {HandleChange} from "@/types/VVField.types.ts"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 const props = defineProps<{
   modelValue?: EventModel
@@ -87,8 +87,7 @@ function defaultEvent(): EventModel {
 // and template updates in both create mode and edit mode.
 const event = ref<EventModel>(props.modelValue ? {...props.modelValue} : defaultEvent())
 
-const store = useStore()
-const isBoard = computed<boolean>(() => store.getters.isBoard)
+const isBoard = useIsBoard()
 
 const committees = ref<CommitteeOption[]>([])
 const {formRef, validate} = useVeeForm()

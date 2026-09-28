@@ -397,6 +397,7 @@ import {
 import logo from "@/assets/topbarlogo-38.webp"
 import logo2x from "@/assets/topbarlogo-76.webp"
 import logo3x from "@/assets/topbarlogo-114.webp"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 // The bar draws the wordmark 38px tall, so it is shipped at that height and at twice and three times it.
 const logoSrcset = `${logo} 1x, ${logo2x} 2x, ${logo3x} 3x`
@@ -499,9 +500,11 @@ const {live: casualGames} = useCasualGames()
 const store = useStore()
 const route = useRoute()
 
+const isBoard = useIsBoard()
+
 const reader = computed<NavReader>(() => ({
   loggedIn: Boolean(store.getters.isLoggedIn),
-  board: Boolean(store.getters.isBoard),
+  board: isBoard.value,
   admin: Boolean(store.getters.isAdmin),
   addressId: store.getters.getLogin?.addressId ?? null,
 }))

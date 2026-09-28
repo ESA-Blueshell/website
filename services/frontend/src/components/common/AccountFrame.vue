@@ -6,6 +6,7 @@ import HeaderBand from "@/components/island/HeaderBand.vue"
 import Island from "@/components/island/Island.vue"
 import PageTabs from "@/components/island/PageTabs.vue"
 import {accountFor, type NavReader} from "@/components/common/nav"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 /**
  * The head every account page shares: its name, the account tabs and, on a page one step down, a
@@ -27,9 +28,11 @@ const {eyebrow = "Your account", body = "", crumb = undefined, tabs = true, isla
 
 const store = useStore()
 
+const isBoard = useIsBoard()
+
 const reader = computed<NavReader>(() => ({
   loggedIn: Boolean(store.getters.isLoggedIn),
-  board: Boolean(store.getters.isBoard),
+  board: isBoard.value,
   admin: Boolean(store.getters.isAdmin),
   addressId: store.getters.getLogin?.addressId ?? null,
 }))

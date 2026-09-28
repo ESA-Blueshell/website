@@ -15,8 +15,8 @@ import ScopedEvents from "@/domains/events/island/ScopedEvents.vue"
 import type {CasualGame} from "../adapters/games"
 import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
 import RemoveGameDialog from "../island/RemoveGameDialog.vue"
-import {useMayEditGames} from "../island/useMayEditGames"
 import {initialsOf, useCasualGames} from "../useCasualGames"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 defineOptions({name: "CasualGamePage"})
 
@@ -25,7 +25,7 @@ const {game} = defineProps<{game: CasualGame}>()
 const router = useRouter()
 const {refresh} = useCasualGames()
 const {listed: committees} = useCommittees()
-const mayEdit = useMayEditGames()
+const mayEdit = useIsBoard()
 
 const archiving = ref(false)
 const removing = ref(false)

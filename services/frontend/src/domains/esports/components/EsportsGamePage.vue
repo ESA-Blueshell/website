@@ -10,7 +10,6 @@ import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import EsportsGameHead from "@/domains/esports/island/EsportsGameHead.vue"
-import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import TeamRosterDetails from "@/domains/esports/island/TeamRoster.vue"
 import {rosterGroupsOf, teamSliceOf} from "@/domains/esports/island/teamSlice"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
@@ -20,6 +19,7 @@ import {newestSeason, seasonStops, seasonsIncluding} from "@/domains/esports/isl
 import {JOIN_CALL} from "@/domains/esports/island/joinCall"
 import {useEsportsPage} from "../composables/useEsportsPage"
 import type {EsportsPage, GameCode, Season, TeamRoster} from "../adapters/esports"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 defineOptions({name: "EsportsGamePage"})
 
@@ -140,7 +140,7 @@ const entrance = (index: number) => ({
   },
 })
 
-const mayEdit = useMayEditEsports()
+const mayEdit = useIsBoard()
 
 /**
  * A visitor's strip carries the seasons this game played in; there is nothing to say about

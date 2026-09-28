@@ -4,6 +4,7 @@ import {useStore} from "vuex"
 import {apply, type FieldMap} from "@/plugins/validation.ts"
 import {$handleNetworkError, $showStatusMessage} from "@/plugins/handleNetworkError.ts"
 import type {CountryCode} from "libphonenumber-js/max"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 export function useVeeForm() {
   const formRef = ref<FormContext>()
@@ -56,7 +57,7 @@ export function handleSubmitError(
 export function useReadonly() {
   const store = useStore()
   const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
-  const isBoard = computed<boolean>(() => store.getters.isBoard)
+  const isBoard = useIsBoard()
   const isReadonly = computed<boolean>(() => isLoggedIn.value && !isBoard.value)
   return {store, isLoggedIn, isBoard, isReadonly}
 }

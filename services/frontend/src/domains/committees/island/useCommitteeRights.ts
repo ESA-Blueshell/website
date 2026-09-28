@@ -1,6 +1,7 @@
 import {computed, type ComputedRef, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {listMyCommittees} from "../adapters/committees"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 /**
  * What the viewer may do with committees: the board adds, archives and edits all of them, and a
@@ -12,7 +13,7 @@ export function useCommitteeRights(): {
   sitsOn: (committeeId: number) => boolean
 } {
   const store = useStore()
-  const isBoard = computed<boolean>(() => store.getters.isBoard === true)
+  const isBoard = useIsBoard()
   const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn === true)
   const mine = ref<Set<number>>(new Set())
 

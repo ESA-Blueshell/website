@@ -21,10 +21,10 @@
         </p>
         <p v-if="store.getters.isActive">
           With the event manager, you can create and edit an upcoming event for one of the committees you're in. Once an
-          event is created it will have to be approved by board {{ store.getters.isBoard ? "(yes, you)" : "" }} before
+          event is created it will have to be approved by board {{ isBoard ? "(yes, you)" : "" }} before
           it will go public.
         </p>
-        <p v-if="store.getters.isBoard">
+        <p v-if="isBoard">
           Using the committee manager you can manage the committees in the association (duh). You can crate a committee,
           give it a description and add any members to it.
         </p>
@@ -57,9 +57,11 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import UserForm from "@/components/form/UserForm.vue"
 import {readUser} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
+import {useIsBoard} from "@/composables/useIsBoard"
 
 const user = ref<EditableUser>()
 const store = useStore()
+const isBoard = useIsBoard()
 const isMember = computed<boolean>(() => store.getters.isMember)
 
 onMounted(async () => {

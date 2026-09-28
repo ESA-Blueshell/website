@@ -22,6 +22,7 @@ vi.mock("@/domains/events/adapters/signUps", async (importOriginal) => ({
   withdrawSignUp: mockWithdraw,
 }))
 vi.mock("@/plugins/store", () => ({default: {getters, commit: mockCommit}}))
+vi.mock("vuex", async importOriginal => (await import("../../../helpers/testUtils")).withVuexUseStore(importOriginal, {getters}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockNetworkError}))
 vi.mock("vue-router", async (importOriginal) => ({...(await importOriginal<object>()), useRouter: () => ({push: mockPush})}))
 

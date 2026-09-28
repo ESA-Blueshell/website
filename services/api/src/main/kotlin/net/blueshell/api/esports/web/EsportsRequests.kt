@@ -3,12 +3,8 @@ package net.blueshell.api.esports.web
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.enums.TeamRole
-import net.blueshell.api.shared.model.DESCRIPTION_MAX
-import net.blueshell.api.shared.web.HEX_COLOUR
-import net.blueshell.api.shared.web.HEX_COLOUR_REFUSED
 import java.time.LocalDate
 
 @Schema(description = "Create or rename a season")
@@ -141,52 +137,4 @@ data class GameAccountRequest(
     @field:NotBlank(message = "Handle is required")
     @field:Size(min = 1, max = 128, message = "Handle must be 1-128 characters")
     val handle: String,
-)
-
-@Schema(name = "CreateGameRequest", description = "A game the association has started playing")
-data class CreateGameRequest(
-    @field:NotBlank(message = "A game needs a name")
-    @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
-    val name: String,
-    @field:NotBlank(message = "A game's page needs an address")
-    @field:Size(min = 1, max = 64, message = "Address must be 1-64 characters")
-    @field:Schema(description = "The address this game answers to")
-    val slug: String,
-    @field:Size(max = DESCRIPTION_MAX)
-    val intro: String? = null,
-    @field:Pattern(regexp = HEX_COLOUR, message = HEX_COLOUR_REFUSED)
-    @field:Schema(description = "The colour that carries this game, as # and six hex digits, or nothing for the island's own")
-    val accent: String? = null,
-    @field:Size(max = 255)
-    @field:Schema(description = "Where the game's banner is stored")
-    val banner: String? = null,
-    @field:Size(max = 255)
-    @field:Schema(description = "Where the game's icon is stored")
-    val icon: String? = null,
-    @field:Schema(description = "Where it sits among the others; left out, it goes at the end")
-    val sortIndex: Int? = null,
-)
-
-@Schema(name = "UpdateGameRequest", description = "How a game presents itself")
-data class UpdateGameRequest(
-    @field:NotBlank(message = "A game needs a name")
-    @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
-    @field:Schema(description = "What this game is called. Its code is not editable")
-    val name: String,
-    @field:NotBlank
-    @field:Size(max = 64)
-    @field:Schema(description = "The address this game answers to")
-    val slug: String,
-    @field:Size(max = DESCRIPTION_MAX)
-    val intro: String? = null,
-    @field:Pattern(regexp = HEX_COLOUR, message = HEX_COLOUR_REFUSED)
-    @field:Schema(description = "The colour that carries this game, as # and six hex digits, or nothing for the island's own")
-    val accent: String? = null,
-    @field:Size(max = 255)
-    @field:Schema(description = "Where the game's icon is stored; nothing takes the icon away")
-    val icon: String? = null,
-    @field:Size(max = 255)
-    @field:Schema(description = "Where the game's banner is stored; nothing takes the banner away")
-    val banner: String? = null,
-    val sortIndex: Int = 0,
 )

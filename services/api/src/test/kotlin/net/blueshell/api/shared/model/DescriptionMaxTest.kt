@@ -3,8 +3,7 @@ package net.blueshell.api.shared.model
 import jakarta.validation.Validation
 import net.blueshell.api.board.web.AddBoardMemberRequest
 import net.blueshell.api.board.web.UpdateBoardMemberRequest
-import net.blueshell.api.esports.web.CreateGameRequest
-import net.blueshell.api.esports.web.UpdateGameRequest
+import net.blueshell.api.game.web.CasualGameRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -28,10 +27,8 @@ class DescriptionMaxTest {
 
     @Test
     fun `a game's intro holds as much, and leaving it out is fine`() {
-        assertThat(refused(CreateGameRequest(name = "Valorant", slug = "valorant"))).isEmpty()
-        assertThat(refused(CreateGameRequest(name = "Valorant", slug = "valorant", intro = full))).isEmpty()
-        assertThat(refused(CreateGameRequest(name = "Valorant", slug = "valorant", intro = over))).containsExactly("intro")
-        assertThat(refused(UpdateGameRequest(name = "Valorant", slug = "valorant"))).isEmpty()
-        assertThat(refused(UpdateGameRequest(name = "Valorant", slug = "valorant", intro = over))).containsExactly("intro")
+        assertThat(refused(CasualGameRequest(name = "Valorant", slug = "valorant"))).isEmpty()
+        assertThat(refused(CasualGameRequest(name = "Valorant", slug = "valorant", intro = full))).isEmpty()
+        assertThat(refused(CasualGameRequest(name = "Valorant", slug = "valorant", intro = over))).containsExactly("intro")
     }
 }

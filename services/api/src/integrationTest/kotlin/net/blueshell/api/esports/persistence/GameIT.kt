@@ -31,6 +31,20 @@ class GameIT : UserTestSupport() {
 
     @Autowired private lateinit var fielded: TeamSeasonService
 
+    /** Archives [code], which a game must be before it can be removed. */
+    private fun archive(
+        board: User,
+        code: String,
+    ) {
+        mvc
+            .perform(
+                put("/games/{game}/archived", code)
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"archived":true}"""),
+            ).andExpect(status().isOk)
+    }
+
     /**
      * A team fielded in a game, which is what makes a game hold something. A team on its own
      * holds nothing now: it belongs to the association rather than to a game, and the fielding
@@ -68,10 +82,10 @@ class GameIT : UserTestSupport() {
         // Placed first, so it leads a listing it was added to last.
         mvc
             .perform(
-                put("/esports/games/{game}", name.uppercase())
+                put("/games/{game}", name.uppercase())
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"$name","slug":"${name.lowercase()}","sortIndex":0,"fielded":false}"""),
+                    .content("""{"name":"$name","slug":"${name.lowercase()}","sortIndex":0}"""),
             ).andExpect(status().isOk)
 
         mvc
@@ -121,7 +135,7 @@ class GameIT : UserTestSupport() {
         val name = "$stem${System.nanoTime()}"
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$name","slug":"${name.lowercase()}"}"""),
@@ -155,10 +169,10 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", code)
+                put("/games/{game}", code)
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"$name","slug":"${name.lowercase()}","accent":"#ff4655","sortIndex":9,"fielded":true}"""),
+                    .content("""{"name":"$name","slug":"${name.lowercase()}","accent":"#ff4655","sortIndex":9}"""),
             ).andExpect(status().isOk)
 
         mvc
@@ -252,10 +266,10 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", "GEOGUESSR")
+                put("/games/{game}", "GEOGUESSR")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"GeoGuessr","slug":"geoguessr","intro":"Guessing, competitively.","sortIndex":5,"fielded":true}"""),
+                    .content("""{"name":"GeoGuessr","slug":"geoguessr","intro":"Guessing, competitively.","sortIndex":5}"""),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.intro").value("Guessing, competitively."))
 
@@ -270,10 +284,10 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", "SMASH")
+                put("/games/{game}", "SMASH")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Super Smash Bros.","slug":"valorant","intro":null,"sortIndex":8,"fielded":false}"""),
+                    .content("""{"name":"Super Smash Bros.","slug":"valorant","intro":null,"sortIndex":8}"""),
             ).andExpect(status().isConflict)
     }
 
@@ -284,10 +298,10 @@ class GameIT : UserTestSupport() {
         // Saving without changing the address must not read as a clash with itself.
         mvc
             .perform(
-                put("/esports/games/{game}", "TRACKMANIA")
+                put("/games/{game}", "TRACKMANIA")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Trackmania","slug":"trackmania","intro":"Driving, fast.","sortIndex":6,"fielded":true}"""),
+                    .content("""{"name":"Trackmania","slug":"trackmania","intro":"Driving, fast.","sortIndex":6}"""),
             ).andExpect(status().isOk)
     }
 
@@ -297,7 +311,7 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Rocket League 2","slug":"rocket-league-2"}"""),
@@ -310,7 +324,7 @@ class GameIT : UserTestSupport() {
             .andExpect(jsonPath("$.accent").doesNotExist())
             // Nobody has played it, so it is not among the games the association currently
             // plays. It becomes one by having a team fielded in it, not by being created.
-            .andExpect(jsonPath("$.current").value(false))
+            .andExpect(jsonPath("$.inCompetition").value(false))
 
         mvc
             .perform(get("/esports/games"))
@@ -322,7 +336,7 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Pong","slug":"pong"}"""),
@@ -356,7 +370,7 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Valorant Two","slug":"valorant"}"""),
@@ -372,7 +386,7 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Valorant","slug":"valorant-again"}"""),
@@ -385,7 +399,7 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Age of Empires II","slug":"  Age Of Empires II  "}"""),
@@ -401,7 +415,7 @@ class GameIT : UserTestSupport() {
         // It would have a record nothing could reach, because that address is taken.
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Competitive Scene","slug":"competitive-scene"}"""),
@@ -414,7 +428,7 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Pong","slug":"pong"}"""),
@@ -431,14 +445,14 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", "TRACKMANIA")
+                put("/games/{game}", "TRACKMANIA")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
                         {"name":"TrackMania","slug":"trackmania","intro":"Driving, fast.",
                          "accent":"#22d3ee","banner":"$banner","icon":"$icon",
-                         "sortIndex":6,"fielded":true}
+                         "sortIndex":6}
                         """.trimIndent(),
                     ),
             ).andExpect(status().isOk)
@@ -460,13 +474,13 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", "TRACKMANIA")
+                put("/games/{game}", "TRACKMANIA")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
                         {"name":"Trackmania","slug":"trackmania","accent":"#22d3ee",
-                         "icon":"game-icons/nothing-is-stored-here.webp","sortIndex":6,"fielded":true}
+                         "icon":"game-icons/nothing-is-stored-here.webp","sortIndex":6}
                         """.trimIndent(),
                     ),
             ).andExpect(status().isBadRequest)
@@ -478,11 +492,11 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", "VALORANT")
+                put("/games/{game}", "VALORANT")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"name":"Valorant","slug":"valorant","accent":"","banner":"","icon":"","sortIndex":1,"fielded":true}""",
+                        """{"name":"Valorant","slug":"valorant","accent":"","banner":"","icon":"","sortIndex":1}""",
                     ),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.accent").doesNotExist())
@@ -512,10 +526,10 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", "VALORANT")
+                put("/games/{game}", "VALORANT")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"   ","slug":"valorant","sortIndex":1,"fielded":true}"""),
+                    .content("""{"name":"   ","slug":"valorant","sortIndex":1}"""),
             ).andExpect(status().isBadRequest)
     }
 
@@ -524,7 +538,7 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(get("/esports/games/{game}/contents", "VALORANT").with(signedIn(board)))
+            .perform(get("/games/{game}/holdings", "VALORANT").with(signedIn(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams").isNumber)
             .andExpect(jsonPath("$.players").isNumber)
@@ -535,14 +549,15 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         mvc
             .perform(
-                post("/esports/games")
+                post("/games")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Pong","slug":"pong"}"""),
             ).andExpect(status().isCreated)
 
+        archive(board, "PONG")
         mvc
-            .perform(delete("/esports/games/{game}", "PONG").with(signedIn(board)))
+            .perform(delete("/games/{game}", "PONG").with(signedIn(board)))
             .andExpect(status().isNoContent)
 
         mvc.perform(get("/esports/games/{game}", "PONG")).andExpect(status().isBadRequest)
@@ -555,9 +570,10 @@ class GameIT : UserTestSupport() {
     fun `a game with teams recorded in it is refused, and its history stays`() {
         val board = createUserWithRole(Role.BOARD)
         fieldATeamIn("VALORANT")
+        archive(board, "VALORANT")
 
         mvc
-            .perform(delete("/esports/games/{game}", "VALORANT").with(signedIn(board)))
+            .perform(delete("/games/{game}", "VALORANT").with(signedIn(board)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
 
@@ -571,9 +587,10 @@ class GameIT : UserTestSupport() {
     fun `the reason a removal was refused says how much the game holds`() {
         val board = createUserWithRole(Role.BOARD)
         fieldATeamIn("GEOGUESSR")
+        archive(board, "GEOGUESSR")
 
         mvc
-            .perform(delete("/esports/games/{game}", "GEOGUESSR").with(signedIn(board)))
+            .perform(delete("/games/{game}", "GEOGUESSR").with(signedIn(board)))
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
             .andExpect(jsonPath("$.teams").value(1))
     }
@@ -583,7 +600,7 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(delete("/esports/games/{game}", "PONG").with(signedIn(board)))
+            .perform(delete("/games/{game}", "PONG").with(signedIn(board)))
             .andExpect(status().isBadRequest)
     }
 
@@ -592,7 +609,7 @@ class GameIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(delete("/esports/games/{game}", "SMASH").with(signedIn(member)))
+            .perform(delete("/games/{game}", "SMASH").with(signedIn(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -602,10 +619,10 @@ class GameIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/esports/games/{game}", "VALORANT")
+                put("/games/{game}", "VALORANT")
                     .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Valorant","slug":"valorant","intro":"Mine now.","sortIndex":1,"fielded":true}"""),
+                    .content("""{"name":"Valorant","slug":"valorant","intro":"Mine now.","sortIndex":1}"""),
             ).andExpect(status().isForbidden)
     }
 
@@ -614,9 +631,9 @@ class GameIT : UserTestSupport() {
         mvc.perform(get("/esports/games")).andExpect(status().isOk)
         mvc
             .perform(
-                put("/esports/games/{game}", "VALORANT")
+                put("/games/{game}", "VALORANT")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"Valorant","slug":"valorant","intro":null,"sortIndex":1,"fielded":true}"""),
+                    .content("""{"name":"Valorant","slug":"valorant","intro":null,"sortIndex":1}"""),
             ).andExpect(status().isUnauthorized)
     }
 }

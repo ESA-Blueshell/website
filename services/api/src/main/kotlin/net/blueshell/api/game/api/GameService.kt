@@ -136,12 +136,12 @@ class GameService(
         existing.banner = pictures.of(banner, FileType.GAME_BANNER)
         existing.icon = pictures.of(icon, FileType.GAME_ICON)
         existing.sortIndex = sortIndex ?: existing.sortIndex
-        // Nothing sent keeps the channels it has: the esports game endpoints do not edit them.
+        // A save that leaves the channels out keeps the ones the game has.
         channels?.let {
             existing.channels.clear()
             existing.channels.addAll(it.distinctBy(GameChannel::channelId))
         }
-        // Nothing sent keeps what the competition pages carry: the esports game endpoints do not edit it.
+        // A save that leaves the competition part out keeps what the competition pages carry.
         competition?.let { given ->
             existing.competitionIntro = given.intro?.trim()?.ifBlank { null }
             given.channels?.let {
@@ -194,18 +194,13 @@ class GameService(
     /**
      * A game taken off the site: gone from every page, list and picker, its row kept.
      *
-     * Only an archived game can go, so removing is always the second of two steps; [archiveFirst]
-     * takes both at once, for the competition pages, whose own confirmation asks for both. Every
-     * module holding something against it is asked first, and any may refuse: a game that
-     * carries history stays, archived or not, and everything it played stays readable.
+     * Only an archived game can go, so removing is always the second of two steps. Every module
+     * holding something against it is asked first, and any may refuse: a game that carries
+     * history stays, archived or not, and everything it played stays readable.
      */
     @Transactional
-    fun remove(
-        game: String,
-        archiveFirst: Boolean = false,
-    ) {
+    fun remove(game: String) {
         val existing = requireGame(game)
-        if (archiveFirst) existing.archived = true
         if (!existing.archived) throw GameNotArchived(existing.name)
         holdings.orderedStream().forEach { it.refuseRemoval(existing.code) }
         games.remove(existing.id!!)

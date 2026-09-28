@@ -908,34 +908,6 @@ export type CreateEventSignUpRequest = {
     userId?: number | null;
 };
 
-/**
- * A game the association has started playing
- */
-export type CreateGameRequest = {
-    /**
-     * The colour that carries this game, as # and six hex digits, or nothing for the island's own
-     */
-    accent?: string | null;
-    /**
-     * Where the game's banner is stored
-     */
-    banner?: string | null;
-    /**
-     * Where the game's icon is stored
-     */
-    icon?: string | null;
-    intro?: string | null;
-    name: string;
-    /**
-     * The address this game answers to
-     */
-    slug: string;
-    /**
-     * Where it sits among the others; left out, it goes at the end
-     */
-    sortIndex?: number | null;
-};
-
 export type CreateGuestRequest = {
     discord: string;
     email: string;
@@ -1470,20 +1442,6 @@ export type GameChannelResponse = {
     guildId: string;
     id: string;
     name: string;
-};
-
-/**
- * What a game holds, for a removal to say before it happens
- */
-export type GameContentsResponse = {
-    /**
-     * Roster places those teams carry
-     */
-    players: number;
-    /**
-     * Teams recorded in it, across every season
-     */
-    teams: number;
 };
 
 /**
@@ -2662,34 +2620,6 @@ export type UpdateEventSignUpRequest = {
     guest?: CreateGuestRequest | null;
     userId?: number | null;
     version?: number | null;
-};
-
-/**
- * How a game presents itself
- */
-export type UpdateGameRequest = {
-    /**
-     * The colour that carries this game, as # and six hex digits, or nothing for the island's own
-     */
-    accent?: string | null;
-    /**
-     * Where the game's banner is stored; nothing takes the banner away
-     */
-    banner?: string | null;
-    /**
-     * Where the game's icon is stored; nothing takes the icon away
-     */
-    icon?: string | null;
-    intro?: string | null;
-    /**
-     * What this game is called. Its code is not editable
-     */
-    name: string;
-    /**
-     * The address this game answers to
-     */
-    slug: string;
-    sortIndex: number;
 };
 
 export type UpdateMemberProfileRequest = {
@@ -5624,90 +5554,6 @@ export type FindGamesResponses = {
 
 export type FindGamesResponse = FindGamesResponses[keyof FindGamesResponses];
 
-export type CreateGameData = {
-    body: CreateGameRequest;
-    path?: never;
-    query?: never;
-    url: '/esports/games';
-};
-
-export type CreateGameErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateGameError = CreateGameErrors[keyof CreateGameErrors];
-
-export type CreateGameResponses = {
-    /**
-     * Created
-     */
-    201: GameResponse;
-};
-
-export type CreateGameResponse = CreateGameResponses[keyof CreateGameResponses];
-
-export type DeleteGameData = {
-    body?: never;
-    path: {
-        game: string;
-    };
-    query?: never;
-    url: '/esports/games/{game}';
-};
-
-export type DeleteGameErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DeleteGameError = DeleteGameErrors[keyof DeleteGameErrors];
-
-export type DeleteGameResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteGameResponse = DeleteGameResponses[keyof DeleteGameResponses];
-
 export type FindGameData = {
     body?: never;
     path: {
@@ -5752,92 +5598,6 @@ export type FindGameResponses = {
 };
 
 export type FindGameResponse = FindGameResponses[keyof FindGameResponses];
-
-export type UpdateGameData = {
-    body: UpdateGameRequest;
-    path: {
-        game: string;
-    };
-    query?: never;
-    url: '/esports/games/{game}';
-};
-
-export type UpdateGameErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UpdateGameError = UpdateGameErrors[keyof UpdateGameErrors];
-
-export type UpdateGameResponses = {
-    /**
-     * OK
-     */
-    200: GameResponse;
-};
-
-export type UpdateGameResponse = UpdateGameResponses[keyof UpdateGameResponses];
-
-export type FindGameContentsData = {
-    body?: never;
-    path: {
-        game: string;
-    };
-    query?: never;
-    url: '/esports/games/{game}/contents';
-};
-
-export type FindGameContentsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindGameContentsError = FindGameContentsErrors[keyof FindGameContentsErrors];
-
-export type FindGameContentsResponses = {
-    /**
-     * OK
-     */
-    200: GameContentsResponse;
-};
-
-export type FindGameContentsResponse = FindGameContentsResponses[keyof FindGameContentsResponses];
 
 export type RemoveRosterEntryData = {
     body?: never;

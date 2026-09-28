@@ -204,16 +204,12 @@ class GameServiceTest {
     }
 
     @Test
-    fun `refuses to remove a game that is still played, unless told to archive it in the same step`() {
+    fun `refuses to remove a game that is still played`() {
         val chess = game("CHESS")
         whenever(games.findByCode("CHESS")).thenReturn(chess)
 
         assertThatThrownBy { service.remove("CHESS") }.isInstanceOf(GameNotArchived::class.java)
         verify(games, never()).remove(any())
-
-        service.remove("CHESS", archiveFirst = true)
-        assertThat(chess.archived).isTrue()
-        verify(games).remove(1)
     }
 
     @Test

@@ -1,86 +1,94 @@
 package net.blueshell.api.discord.domain
 
-import net.blueshell.clients.discord.api.DiscordApi
-import net.blueshell.clients.discord.model.ChannelPermissionOverwriteResponse
-import net.blueshell.clients.discord.model.ChannelTypes
-import net.blueshell.clients.discord.model.ListGuildChannels200ResponseInner
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.PermissionOverride
+import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.channel.concrete.Category
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
 import org.springframework.beans.factory.ObjectProvider
+import java.util.EnumSet
 
 class DiscordChannelDirectoryTest {
-    private fun rule(
-        deny: Long,
-        on: String = "324",
-    ): ChannelPermissionOverwriteResponse =
+    private val everyone: Role = mock()
+
+    private fun rule(vararg denied: Permission): PermissionOverride {
+        val set = EnumSet.noneOf(Permission::class.java).apply { addAll(denied) }
+        return mock { on { this.denied } doReturn set }
+    }
+
+    private fun category(
+        id: String,
+        name: String,
+        rule: PermissionOverride? = null,
+    ): Category =
         mock {
-            on { id } doReturn on
-            on { this.deny } doReturn deny.toString()
+            on { this.id } doReturn id
+            on { this.name } doReturn name
+            on { getPermissionOverride(everyone) } doReturn rule
         }
 
     private fun channel(
         id: String,
         name: String,
-        position: Int,
-        type: ChannelTypes = ChannelTypes._0,
-        parent: String? = null,
-        rules: List<ChannelPermissionOverwriteResponse>? = null,
-    ): ListGuildChannels200ResponseInner =
+        parent: Category? = null,
+        rule: PermissionOverride? = null,
+    ): TextChannel =
         mock {
             on { this.id } doReturn id
             on { this.name } doReturn name
-            on { this.position } doReturn position
-            on { this.type } doReturn type
-            on { parentId } doReturn parent
-            on { permissionOverwrites } doReturn rules
+            on { parentCategory } doReturn parent
+            on { getPermissionOverride(everyone) } doReturn rule
         }
 
-    private fun directory(api: DiscordApi?): DiscordChannelDirectory {
-        val provider: ObjectProvider<DiscordApi> = mock { on { ifAvailable } doReturn api }
-        return DiscordChannelDirectory(provider, "324")
-    }
+    // Channels are built before the guild's stubbing: a mock made inside another's stubbing leaves it unfinished.
+    private fun guild(vararg channels: GuildChannel): Guild =
+        mock {
+            on { publicRole } doReturn everyone
+            on { this.channels } doReturn channels.toList()
+        }
 
-    private val hidden = DiscordChannelDirectory.VIEW_CHANNEL
+    private fun directory(gateway: GatewayGuild?): DiscordChannelDirectory {
+        val provider: ObjectProvider<GatewayGuild> = mock { on { ifAvailable } doReturn gateway }
+        return DiscordChannelDirectory(provider)
+    }
 
     @Test
     fun `lists the channels everybody can see, in the server's order, categories left out`() {
-        // Built before the stubbing that returns them: a mock made inside another's stubbing leaves it unfinished.
-        val channels =
-            listOf(
-                channel("2", "events-info", 2),
-                channel("1", "general", 1),
-                channel("10", "Board", 0, type = ChannelTypes._4, rules = listOf(rule(hidden))),
-                channel("3", "board-talk", 3, parent = "10"),
-                channel("4", "open-in-board", 4, parent = "10", rules = listOf(rule(0))),
-                channel("5", "secret", 5, rules = listOf(rule(0, on = "901"), rule(hidden))),
-                channel("6", "orphan", 6, parent = "77"),
+        val board = category("10", "Board", rule(Permission.VIEW_CHANNEL))
+        val server =
+            guild(
+                channel("1", "general"),
+                channel("2", "events-info"),
+                channel("5", "secret", rule = rule(Permission.VIEW_CHANNEL)),
+                channel("6", "orphan"),
+                board,
+                channel("3", "board-talk", parent = board),
+                channel("4", "open-in-board", parent = board, rule = rule(Permission.MESSAGE_SEND)),
             )
-        val api: DiscordApi = mock { on { listGuildChannels("324") } doReturn channels }
 
-        assertThat(directory(api).open()!!.map { it.name }).containsExactly("general", "events-info", "open-in-board", "orphan")
+        assertThat(directory { server }.open()!!.map { it.name }).containsExactly("general", "events-info", "orphan", "open-in-board")
     }
 
     @Test
-    fun `keeps the list rather than asking Discord on every read`() {
-        val channels = listOf(channel("1", "general", 1))
-        val api: DiscordApi = mock { on { listGuildChannels("324") } doReturn channels }
-        val directory = directory(api)
+    fun `keeps the last channels while the gateway is away`() {
+        val server = guild(channel("1", "general"))
+        var held: Guild? = server
+        val directory = directory { held }
 
-        directory.open()
         assertThat(directory.open()).containsExactly(DiscordChannel("1", "general"))
-        verify(api, times(1)).listGuildChannels("324")
+        held = null
+        assertThat(directory.open()).containsExactly(DiscordChannel("1", "general"))
     }
 
     @Test
-    fun `lists nothing without a bot, or where Discord never answered`() {
-        val failing: DiscordApi = mock { on { listGuildChannels("324") } doThrow IllegalStateException("down") }
-
+    fun `lists nothing without a bot, or while the gateway has never had the server`() {
         assertThat(directory(null).open()).isNull()
-        assertThat(directory(failing).open()).isNull()
+        assertThat(directory { null }.open()).isNull()
     }
 }

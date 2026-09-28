@@ -62,7 +62,16 @@ class JdaVoiceServerSourceTest {
         val source = source(applicationWith(0))
 
         assertThat(source.server()).isNull()
+        assertThat(source.guild()).isNull()
         assertThat(source.isRunning).isFalse()
+    }
+
+    @Test
+    fun `hands over the server the gateway holds once connected`() {
+        val source = source(applicationWith(0))
+        source.start()
+
+        assertThat(source.guild()).isSameAs(guild)
     }
 
     @Test

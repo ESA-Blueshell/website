@@ -5,6 +5,7 @@ import {
   COOKIE_CONSENT_STORAGE_KEY,
   encodeCookieConsentPayload,
 } from "@/config/policies.ts"
+import {addressOf} from "@/utils/address"
 
 type Fixtures = {
   users?: Array<Record<string, unknown>>
@@ -1088,7 +1089,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "POST" && path === "/committees") {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       const name = String(body.name)
-      const made = committeeRecord(990 + committeesEdited.size, name, String(body.slug ?? "") || name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), body)
+      const made = committeeRecord(990 + committeesEdited.size, name, String(body.slug ?? "") || addressOf(name), body)
       committeesEdited.set(Number(made.id), made)
       return fulfillJson(route, made, 201)
     }

@@ -1121,11 +1121,14 @@ object TestHelper {
         }
     }
 
-    /** The address the api makes from a committee's name. TWIN: `addressOf` in `CommitteeAddress.kt`. */
+    /** The address the api makes from a committee's name. TWIN: `addressOf` in `shared/model/PageAddress.kt`. */
     fun committeeAddressOf(name: String): String =
         name
+            .trim()
             .lowercase()
-            .replace(Regex("[^\\p{L}\\p{N}]+"), "-")
+            .map { if (it.isLetterOrDigit()) it else '-' }
+            .joinToString("")
+            .replace(Regex("-+"), "-")
             .trim('-')
             .take(64)
 

@@ -5,11 +5,11 @@ import net.blueshell.api.committee.domain.CommitteeNotFoundException
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.committee.persistence.CommitteeRepository
-import net.blueshell.api.committee.persistence.addressOf
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.model.addressOf
 import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.user.api.UserService
 import org.springframework.beans.factory.annotation.Autowired

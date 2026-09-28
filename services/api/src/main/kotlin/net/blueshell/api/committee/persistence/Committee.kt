@@ -14,9 +14,11 @@ import jakarta.persistence.PostLoad
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.shared.model.DESCRIPTION_MAX
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.shared.model.ADDRESS_LENGTH
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.DESCRIPTION_MAX
+import net.blueshell.api.shared.model.addressOf
+import net.blueshell.api.user.persistence.User
 import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -31,39 +33,32 @@ import org.hibernate.annotations.SQLRestriction
     indexes = [
         Index(name = "idx_committees_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_committees_name", columnList = "name"),
-    ]
+    ],
 )
 @SQLDelete(sql = "UPDATE committees SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class Committee(
     @Column(name = "name", nullable = false)
     var name: String,
-
     @Column(name = "description", nullable = false, length = DESCRIPTION_MAX)
     var description: String,
-
     /** The address its page answers to. Made from the name unless somebody chose one. */
     @Column(name = "slug", length = ADDRESS_LENGTH)
     var slug: String = addressOf(name),
-
     /** Off for a committee that still runs but is not one to join, such as the board. */
     @Column(name = "listed", nullable = false)
     var listed: Boolean = true,
-
     /** A committee that no longer runs: kept, with its page and its events, but not offered. */
     @Column(name = "archived", nullable = false)
     var archived: Boolean = false,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "banner_file_id")
     var banner: File? = null,
-
     /** Its logo, drawn beside its name and in place of it in a row of marks. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "icon_file_id")
     var icon: File? = null,
 ) : AuditedAutoIdEntity() {
-
     /** The codes of the games the committee organises events for. */
     @ElementCollection
     @CollectionTable(name = "committee_games", joinColumns = [JoinColumn(name = "committee_id")])
@@ -86,13 +81,9 @@ class Committee(
         if (slug == null) slug = addressOf(name)
     }
 
-    fun hasMember(user: User?): Boolean {
-        return hasMember(user?.id)
-    }
+    fun hasMember(user: User?): Boolean = hasMember(user?.id)
 
-    fun hasMember(userId: Long?): Boolean {
-        return userId != null && _members.any { cm -> cm.user.id == userId }
-    }
+    fun hasMember(userId: Long?): Boolean = userId != null && _members.any { cm -> cm.user.id == userId }
 
     fun replaceMembers(members: List<CommitteeMember>) {
         _members.clear()

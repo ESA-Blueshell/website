@@ -228,11 +228,6 @@ class CohortTargetingServiceTest {
             TargetDescriptor(
                 system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
-                systemLabel = "Brevo",
-                targetLabel = "Brevo list",
-                idLabel = "List id",
-                folderLabel = "Folder",
-                capabilities = setOf(TargetCapability.CATALOG, TargetCapability.CREATE, TargetCapability.DELETE),
             )
     }
 }

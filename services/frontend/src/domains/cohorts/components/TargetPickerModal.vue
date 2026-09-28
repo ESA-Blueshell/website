@@ -2,6 +2,7 @@
 import { computed, watch } from "vue"
 import { useTargetPicker } from "@/domains/cohorts/composables/useTargetPicker"
 import type { TargetSystem } from "@/domains/cohorts/adapters/cohorts"
+import { systemLabel } from "@/domains/cohorts/reading"
 
 const props = defineProps<{
   modelValue: boolean
@@ -21,11 +22,8 @@ const {
   loading,
   errorMessage,
   conflict,
-  descriptor,
   filteredOptions,
   folderOptions,
-  hasCatalog,
-  canCreate,
   form,
   reset,
   load,
@@ -33,16 +31,7 @@ const {
   submitSwitch,
 } = useTargetPicker()
 
-const idLabel = computed(() => descriptor.value?.idLabel ?? "External target id")
-const targetLabel = computed(() => descriptor.value?.targetLabel ?? "Target name")
-const folderLabel = computed(() => descriptor.value?.folderLabel ?? null)
-
-/**
- * What the field for choosing an existing target is called. With a catalogue the operator
- * picks a target by its name and folder, so calling the field an id describes neither what
- * is shown nor what is typed; without one they really do type the id.
- */
-const pickLabel = computed(() => (hasCatalog.value ? targetLabel.value : idLabel.value))
+const targetLabel = computed(() => `${systemLabel(props.system)} list`)
 
 /** The create tab asks for a name for something that does not exist yet, so it says so. */
 const newNameLabel = computed(() => `New ${targetLabel.value.toLowerCase()} name`)
@@ -114,7 +103,6 @@ const submit = async () => {
         <!-- Add mode: pick between linking an existing target and creating one. -->
         <template v-if="mode === 'add'">
           <v-tabs
-            v-if="canCreate"
             v-model="form.tab"
             color="primary"
             data-testid="target-picker-tabs"
@@ -129,15 +117,14 @@ const submit = async () => {
 
           <v-window
             v-model="form.tab"
-            :class="{ 'mt-3': canCreate }"
+            class="mt-3"
           >
             <v-window-item value="existing">
               <v-combobox
-                v-if="hasCatalog"
                 v-model="form.externalId"
                 v-model:search="form.search"
                 :items="catalogItems"
-                :label="pickLabel"
+                :label="targetLabel"
                 :loading="loading"
                 data-testid="target-picker-combobox"
                 item-title="title"
@@ -145,17 +132,8 @@ const submit = async () => {
                 no-filter
                 :return-object="false"
               />
-              <v-text-field
-                v-else
-                v-model="form.externalId"
-                data-testid="target-picker-external-id"
-                :label="idLabel"
-              />
             </v-window-item>
-            <v-window-item
-              v-if="canCreate"
-              value="create"
-            >
+            <v-window-item value="create">
               <v-text-field
                 v-model="form.label"
                 data-testid="target-picker-label"
@@ -167,12 +145,11 @@ const submit = async () => {
                 because a combobox otherwise hands back the item rather than its value.
               -->
               <v-combobox
-                v-if="folderLabel"
                 v-model="form.folderHint"
                 class="mt-2"
                 data-testid="target-picker-folder"
                 :items="folderOptions"
-                :label="`${folderLabel} (optional)`"
+                label="Folder (optional)"
                 :return-object="false"
               />
             </v-window-item>
@@ -182,23 +159,16 @@ const submit = async () => {
         <!-- Switch mode: repoint at a different target. -->
         <template v-else>
           <v-combobox
-            v-if="hasCatalog"
             v-model="form.externalId"
             v-model:search="form.search"
             :items="catalogItems"
-            :label="pickLabel"
+            :label="targetLabel"
             :loading="loading"
             data-testid="target-picker-combobox"
             item-title="title"
             item-value="externalId"
             no-filter
             :return-object="false"
-          />
-          <v-text-field
-            v-else
-            v-model="form.externalId"
-            data-testid="target-picker-external-id"
-            :label="idLabel"
           />
           <v-checkbox
             v-model="form.deletePrevious"

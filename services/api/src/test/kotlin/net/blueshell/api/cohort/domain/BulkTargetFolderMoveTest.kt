@@ -36,17 +36,12 @@ class BulkTargetFolderMoveTest {
         folderLabel = "Unfiled",
     )
 
-    private fun catalog(capabilities: Set<TargetCapability> = setOf(TargetCapability.MOVE)): TargetCatalog {
+    private fun catalog(): TargetCatalog {
         every { strategy.system } returns TargetSystem.BREVO
         every { strategy.descriptor } returns
             TargetDescriptor(
                 system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
-                systemLabel = "Brevo",
-                targetLabel = "List",
-                idLabel = "List id",
-                folderLabel = "Folder",
-                capabilities = capabilities,
             )
         return TargetCatalog(TargetStrategies(listOf(strategy)), cohorts)
     }
@@ -155,15 +150,5 @@ class BulkTargetFolderMoveTest {
 
         assertThat(result.moved).hasSize(1)
         verify(exactly = 1) { strategy.move(any(), any()) }
-    }
-
-    @Test
-    fun `a system that cannot move says so instead of being asked`() {
-        assertThatThrownBy {
-            catalog(capabilities = setOf(TargetCapability.CATALOG))
-                .moveAll(TargetSystem.BREVO, listOf("7"), "Committees")
-        }.isInstanceOf(IllegalArgumentException::class.java)
-
-        verify(exactly = 0) { strategy.move(any(), any()) }
     }
 }

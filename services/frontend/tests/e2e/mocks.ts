@@ -1230,18 +1230,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         },
       })
     }
-    // The external target catalogue behind the Brevo targets page. Brevo is the one system
-    // that can file a target elsewhere, so its descriptor is the one carrying MOVE.
+    // The external target catalogue behind the Brevo targets page.
     if (method === "GET" && path === "/management/cohort-targets/systems") {
       return fulfillJson(route, [
         {
           system: "BREVO",
           kind: "LIST",
-          systemLabel: "Brevo",
-          targetLabel: "Brevo list",
-          idLabel: "List id",
-          folderLabel: "Folder",
-          capabilities: ["CATALOG", "CREATE", "MOVE"],
         },
       ])
     }

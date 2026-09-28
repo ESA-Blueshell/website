@@ -41,11 +41,6 @@ class TargetCatalogTest {
             TargetDescriptor(
                 system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
-                systemLabel = "Brevo",
-                targetLabel = "Brevo list",
-                idLabel = "List id",
-                folderLabel = "Folder",
-                capabilities = setOf(TargetCapability.CATALOG),
             )
 
         override fun catalog(query: String?): List<ExternalTarget> {

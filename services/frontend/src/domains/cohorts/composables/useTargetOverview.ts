@@ -52,8 +52,6 @@ export function useTargetOverview() {
   const selectedIds = computed(() => [...selection.value])
   const selectedCount = computed(() => selection.value.size)
 
-  const canMove = computed(() => descriptor.value?.capabilities.includes("MOVE") ?? false)
-
   const matching = computed(() => {
     const query = search.value.trim().toLowerCase()
     if (!query) return targets.value
@@ -125,11 +123,8 @@ export function useTargetOverview() {
     try {
       const descriptors = await fetchTargetDescriptors()
       descriptor.value = descriptors.find((item) => item.system === system) ?? null
-      const hasCatalog = descriptor.value?.capabilities.includes("CATALOG") ?? false
-      targets.value = hasCatalog ? await fetchTargetOptions(system) : []
-      folderNames.value = descriptor.value?.capabilities.includes("MOVE")
-        ? await fetchTargetFolders(system)
-        : []
+      targets.value = await fetchTargetOptions(system)
+      folderNames.value = await fetchTargetFolders(system)
     } catch (err: unknown) {
       errorMessage.value = (err as Error)?.message ?? "Could not load the targets."
     } finally {
@@ -200,7 +195,6 @@ export function useTargetOverview() {
     folders,
     folderNames,
     unlinkedCount,
-    canMove,
     moving,
     selection,
     selectedIds,

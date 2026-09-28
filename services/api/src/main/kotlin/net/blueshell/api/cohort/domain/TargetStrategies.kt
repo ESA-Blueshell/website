@@ -26,5 +26,5 @@ class TargetStrategies(
 
     fun descriptor(system: TargetSystem): TargetDescriptor = require(system).descriptor
 
-    fun descriptors(): List<TargetDescriptor> = bySystem.values.map { it.descriptor }.sortedBy { it.systemLabel }
+    fun descriptors(): List<TargetDescriptor> = bySystem.values.map { it.descriptor }.sortedBy { it.system.shownName }
 }

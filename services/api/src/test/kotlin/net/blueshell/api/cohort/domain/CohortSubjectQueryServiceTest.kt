@@ -38,11 +38,6 @@ class CohortSubjectQueryServiceTest {
                 TargetDescriptor(
                     system = TargetSystem.BREVO,
                     kind = CohortKind.LIST,
-                    systemLabel = "Brevo",
-                    targetLabel = "List",
-                    idLabel = "List id",
-                    folderLabel = "Folder",
-                    capabilities = emptySet(),
                 )
         }
     private val strategies: TargetStrategies = TargetStrategies(listOf(brevo))

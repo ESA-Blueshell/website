@@ -1,13 +1,10 @@
 import { computed, reactive, ref } from "vue"
 import {
   createTargetForSubject,
-  fetchTargetDescriptors,
   fetchTargetOptions,
   linkExistingTargetForSubject,
   switchCohortTarget,
-  type TargetCapability,
   type ExternalTarget,
-  type TargetDescriptor,
   type TargetSystem,
 } from "@/domains/cohorts/adapters/cohorts"
 
@@ -24,8 +21,6 @@ export function useTargetPicker() {
   const loading = ref(false)
   const errorMessage = ref<string | null>(null)
   const conflict = ref(false)
-  const descriptors = ref<TargetDescriptor[]>([])
-  const descriptor = ref<TargetDescriptor | null>(null)
   const options = ref<ExternalTarget[]>([])
 
   const form = reactive({
@@ -51,8 +46,6 @@ export function useTargetPicker() {
     form.reconcileNow = false
   }
 
-  const hasCatalog = computed(() => supports("CATALOG"))
-  const canCreate = computed(() => supports("CREATE"))
   const filteredOptions = computed(() => {
     const q = form.search.trim().toLowerCase()
     if (!q) return options.value
@@ -78,9 +71,7 @@ export function useTargetPicker() {
     loading.value = true
     errorMessage.value = null
     try {
-      if (descriptors.value.length === 0) descriptors.value = await fetchTargetDescriptors()
-      descriptor.value = descriptors.value.find((item) => item.system === system) ?? null
-      options.value = hasCatalog.value ? await fetchTargetOptions(system) : []
+      options.value = await fetchTargetOptions(system)
     } catch (err: unknown) {
       errorMessage.value = (err as Error)?.message ?? "Could not load targets."
     } finally {
@@ -132,10 +123,6 @@ export function useTargetPicker() {
     }
   }
 
-  function supports(capability: TargetCapability): boolean {
-    return descriptor.value?.capabilities.includes(capability) ?? false
-  }
-
   function matches(target: ExternalTarget, query: string): boolean {
     return (
       target.externalId.toLowerCase() === query ||
@@ -149,12 +136,9 @@ export function useTargetPicker() {
     loading,
     errorMessage,
     conflict,
-    descriptor,
     options,
     filteredOptions,
     folderOptions,
-    hasCatalog,
-    canCreate,
     form,
     reset,
     load,

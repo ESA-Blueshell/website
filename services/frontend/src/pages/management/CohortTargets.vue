@@ -3,7 +3,7 @@ import {computed, onMounted, ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import {useTargetOverview} from "@/domains/cohorts"
-import {TargetSystem, type ExternalTarget} from "@/domains/cohorts"
+import {systemLabel, TargetSystem, type ExternalTarget} from "@/domains/cohorts"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 
 defineOptions({name: "CohortTargets"})
@@ -18,7 +18,6 @@ const {
   folders,
   folderNames,
   unlinkedCount,
-  canMove,
   moving,
   selectedCount,
   allMatchingSelected,
@@ -45,12 +44,12 @@ const destination = ref<string | null>(null)
 const moveDialogOpen = computed(() => movingTarget.value !== null || movingSelectionOpen.value)
 const moveBusy = computed(() => moving.value !== null || movingSelection.value)
 
-/** The system's own word for what it holds — Brevo has lists, another system may not. */
-const targetNoun = computed(() => descriptor.value?.targetLabel?.toLowerCase() ?? "target")
+/** What this page lists: Brevo files contacts in lists. */
+const targetNoun = `${systemLabel(TargetSystem.BREVO).toLowerCase()} list`
 
 const moveTitle = computed(() => movingTarget.value
   ? `Move ${movingTarget.value.label}`
-  : `Move ${selectedCount.value} ${targetNoun.value}${selectedCount.value === 1 ? "" : "s"}`)
+  : `Move ${selectedCount.value} ${targetNoun}${selectedCount.value === 1 ? "" : "s"}`)
 
 function openMove(target: ExternalTarget) {
   movingTarget.value = target
@@ -106,7 +105,7 @@ onMounted(() => void load(TargetSystem.BREVO))
             ? 'Nothing was read, so there is nothing to count.'
             : `${targets.length} ${descriptor?.kind === 'LIST' ? 'lists' : 'targets'} in ${folders.length} folder${folders.length === 1 ? '' : 's'} · ${unlinkedCount} linked to nothing`"
           testid="cohort-targets-summary"
-          :title="descriptor?.systemLabel ?? 'Targets'"
+          :title="systemLabel(TargetSystem.BREVO)"
         >
           <template #actions>
             <v-btn
@@ -131,7 +130,6 @@ onMounted(() => void load(TargetSystem.BREVO))
           />
 
           <div
-            v-if="canMove"
             class="selection-bar"
             data-testid="cohort-targets-selection-bar"
           >
@@ -195,10 +193,7 @@ onMounted(() => void load(TargetSystem.BREVO))
               :subtitle="`id ${target.externalId}`"
               :title="target.label"
             >
-              <template
-                v-if="canMove"
-                #prepend
-              >
+              <template #prepend>
                 <v-checkbox-btn
                   :data-testid="`cohort-target-select-${target.externalId}`"
                   :model-value="isSelected(target.externalId)"
@@ -212,7 +207,6 @@ onMounted(() => void load(TargetSystem.BREVO))
                   </span>
                   <!-- A target nothing points at is either finished with or a mistake. -->
                   <v-btn
-                    v-if="canMove"
                     :data-testid="`cohort-target-move-${target.externalId}`"
                     :disabled="moving === target.externalId"
                     :loading="moving === target.externalId"
@@ -261,7 +255,7 @@ onMounted(() => void load(TargetSystem.BREVO))
             v-model="destination"
             data-testid="cohort-target-move-folder"
             :items="folderNames"
-            :label="descriptor?.folderLabel ?? 'Folder'"
+            label="Folder"
           />
 
           <!-- Refused whole: nothing was sent, so the selection is still there to correct. -->

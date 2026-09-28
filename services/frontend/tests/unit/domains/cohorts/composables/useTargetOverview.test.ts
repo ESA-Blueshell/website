@@ -22,15 +22,7 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
   }
 })
 
-const brevo: TargetDescriptor = {
-  system: "BREVO",
-  kind: "LIST",
-  systemLabel: "Brevo",
-  targetLabel: "Brevo list",
-  idLabel: "List id",
-  folderLabel: "Folder",
-  capabilities: ["CATALOG", "CREATE"],
-}
+const brevo: TargetDescriptor = {system: "BREVO", kind: "LIST"}
 
 function target(
   externalId: string,
@@ -58,8 +50,6 @@ async function loaded(targets: ExternalTarget[], descriptor = brevo) {
   await overview.load("BREVO")
   return overview
 }
-
-const movable = {...brevo, capabilities: ["CATALOG", "MOVE"] as typeof brevo.capabilities}
 
 describe("useTargetOverview", () => {
   it("groups targets under their folder, in name order", async () => {
@@ -118,16 +108,6 @@ describe("useTargetOverview", () => {
     expect(o.folders.value.flatMap((f) => f.targets).map((t) => t.label)).toEqual(["Members"])
   })
 
-  it("asks for no catalogue from a system that has none", async () => {
-    vi.mocked(fetchTargetDescriptors).mockResolvedValue([{...brevo, capabilities: []}])
-    const o = useTargetOverview()
-
-    await o.load("BREVO")
-
-    expect(fetchTargetOptions).not.toHaveBeenCalled()
-    expect(o.folders.value).toEqual([])
-  })
-
   it("reports a failure rather than showing an empty account", async () => {
     vi.mocked(fetchTargetDescriptors).mockRejectedValue(new Error("boom"))
     const o = useTargetOverview()
@@ -155,29 +135,15 @@ describe("useTargetOverview", () => {
   })
 
   describe("moving a target to another folder", () => {
-    it("says so only when the system can move one", async () => {
-      const withoutMove = await loaded([target("1", "A", "Newsletter")])
-      expect(withoutMove.canMove.value).toBe(false)
-
-      const withMove = await loaded([target("1", "A", "Newsletter")], movable)
-      expect(withMove.canMove.value).toBe(true)
-    })
-
     it("reads the folders from the system rather than from the targets", async () => {
-      const o = await loaded([target("1", "A", "Newsletter")], movable)
+      const o = await loaded([target("1", "A", "Newsletter")])
 
       // "Contributions" holds no targets here, and is still a place a target can go.
       expect(o.folderNames.value).toEqual(["Contributions", "Newsletter"])
     })
 
-    it("asks for no folders from a system that cannot move", async () => {
-      await loaded([target("1", "A", "Newsletter")])
-
-      expect(fetchTargetFolders).not.toHaveBeenCalled()
-    })
-
     it("takes the row from what the api answered, not from what was asked", async () => {
-      const o = await loaded([target("1", "A", "Newsletter")], movable)
+      const o = await loaded([target("1", "A", "Newsletter")])
       vi.mocked(moveTargetToFolder).mockResolvedValue(target("1", "A", "Contributions"))
 
       const ok = await o.move("BREVO", o.targets.value[0]!, "Contributions")
@@ -188,7 +154,7 @@ describe("useTargetOverview", () => {
     })
 
     it("reports a refusal and leaves the row where it was", async () => {
-      const o = await loaded([target("1", "A", "Newsletter")], movable)
+      const o = await loaded([target("1", "A", "Newsletter")])
       vi.mocked(moveTargetToFolder).mockRejectedValue(new Error("No folder named 'Nowhere'"))
 
       const ok = await o.move("BREVO", o.targets.value[0]!, "Nowhere")
@@ -208,7 +174,7 @@ describe("useTargetOverview", () => {
     ]
 
     it("ticks and unticks a target", async () => {
-      const o = await loaded(three, movable)
+      const o = await loaded(three)
 
       o.toggleSelection("2")
       expect(o.isSelected("2")).toBe(true)
@@ -219,7 +185,7 @@ describe("useTargetOverview", () => {
     })
 
     it("selects everything the search currently shows, not everything there is", async () => {
-      const o = await loaded(three, movable)
+      const o = await loaded(three)
       o.search.value = "Newsletter"
 
       o.toggleAllMatching()
@@ -229,7 +195,7 @@ describe("useTargetOverview", () => {
     })
 
     it("clears the ticks when they are all already ticked", async () => {
-      const o = await loaded(three, movable)
+      const o = await loaded(three)
       o.toggleAllMatching()
       o.toggleAllMatching()
 
@@ -237,7 +203,7 @@ describe("useTargetOverview", () => {
     })
 
     it("moves the ticked targets and takes each row from the api's answer", async () => {
-      const o = await loaded(three, movable)
+      const o = await loaded(three)
       o.toggleSelection("1")
       o.toggleSelection("2")
       vi.mocked(moveTargetsToFolder).mockResolvedValue({
@@ -260,7 +226,7 @@ describe("useTargetOverview", () => {
     })
 
     it("keeps the ticks and the reasons when the api refuses the selection whole", async () => {
-      const o = await loaded(three, movable)
+      const o = await loaded(three)
       o.toggleSelection("1")
       vi.mocked(moveTargetsToFolder).mockResolvedValue({
         status: "refused",
@@ -290,7 +256,7 @@ describe("useTargetOverview", () => {
     })
 
     it("keeps only the failures ticked when the system moved some but not all", async () => {
-      const o = await loaded(three, movable)
+      const o = await loaded(three)
       o.toggleAllMatching()
       vi.mocked(moveTargetsToFolder).mockResolvedValue({
         status: "moved",
@@ -311,14 +277,14 @@ describe("useTargetOverview", () => {
     })
 
     it("sends nothing when nothing is ticked", async () => {
-      const o = await loaded(three, movable)
+      const o = await loaded(three)
 
       expect(await o.moveSelected("BREVO", "Contributions")).toBe(false)
       expect(moveTargetsToFolder).not.toHaveBeenCalled()
     })
 
     it("clearing drops the ticks and the reasons together", async () => {
-      const o = await loaded(three, movable)
+      const o = await loaded(three)
       o.toggleSelection("1")
       o.clearSelection()
 

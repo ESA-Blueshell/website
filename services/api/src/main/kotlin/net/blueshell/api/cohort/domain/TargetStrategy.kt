@@ -3,19 +3,11 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.shared.enums.TargetSystem
 
-enum class TargetCapability { CATALOG, CREATE, READ_MEMBERS, WRITE_MEMBERS, DELETE, MOVE }
-
+/** Which system a strategy speaks for and the kind of cohort it holds there. The words are the screens'. */
 data class TargetDescriptor(
     val system: TargetSystem,
     val kind: CohortKind,
-    val systemLabel: String,
-    val targetLabel: String,
-    val idLabel: String,
-    val folderLabel: String? = null,
-    val capabilities: Set<TargetCapability>,
-) {
-    fun supports(capability: TargetCapability): Boolean = capability in capabilities
-}
+)
 
 data class ExternalTarget(
     val system: TargetSystem,
@@ -89,8 +81,7 @@ interface TargetStrategy {
     /**
      * File a target under another folder, and answer with where it ended up.
      *
-     * Systems that cannot move one say so through [TargetCapability.MOVE] rather than by
-     * failing when asked.
+     * A system that cannot move one keeps this default and refuses.
      */
     fun move(
         target: ExternalTarget,

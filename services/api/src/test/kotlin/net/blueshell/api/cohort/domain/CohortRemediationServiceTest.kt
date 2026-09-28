@@ -287,15 +287,6 @@ class CohortRemediationServiceTest {
             TargetDescriptor(
                 system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
-                systemLabel = "Brevo",
-                targetLabel = "Brevo list",
-                idLabel = "List id",
-                capabilities =
-                    setOf(
-                        TargetCapability.READ_MEMBERS,
-                        TargetCapability.WRITE_MEMBERS,
-                        TargetCapability.DELETE,
-                    ),
             )
         var remote: List<ExternalMember> = emptyList()
         var listCalls = 0

@@ -101,6 +101,9 @@
      is what the site's own light theme already does. */
   --color-brand: #3387fa;
   --color-brand-lit: #6aa8ff;
+  /* The blue where it is read as text. The same as the fill in dark; light needs a darker one,
+     because the fill stays light enough to carry dark ink on a button. */
+  --color-brand-ink: #3387fa;
   --color-acid: #a8ff00;
   /* The accent where it is read rather than washed: acid is 1.2:1 on white. */
   --color-eyebrow: #a8ff00;
@@ -166,7 +169,10 @@
   --header-shade: oklch(0.55 0.06 250 / 16%);
   --color-hairline: oklch(0 0 0 / 18%);
 
-  --color-eyebrow: #1a5cbd;
+  /* #3387fa is 2.8:1 on this ground. These clear AA on the ground, on a panel and over the
+     head's blob. */
+  --color-brand-ink: #1b56b8;
+  --color-eyebrow: #123f86;
 
   --header-blob: 0.45;
 
@@ -210,6 +216,7 @@
   --color-hairline: oklch(1 0 0 / 10%);
   --color-chalk: #f2f4f6;
   --color-ash: #a0a6ac;
+  --color-brand-ink: #3387fa;
 
   /* Anything built out of that family has to be rebuilt here. A custom property is substituted
      where it is declared, not where it is read, so `--band-ground` computed on `.island` keeps
@@ -235,6 +242,7 @@
   --color-chalk: #f2f4f6;
   --color-ash: #a0a6ac;
   --color-eyebrow: #a8ff00;
+  --color-brand-ink: #3387fa;
   --tile-veil: oklch(0.21 0 0 / 76%);
   --band-wash: 10%;
   --band-wash-on: 20%;

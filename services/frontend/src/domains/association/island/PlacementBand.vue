@@ -81,7 +81,7 @@ defineProps<{testid?: string}>()
       </p>
       <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
         Be present all across<br>
-        <span class="text-brand">our association</span>
+        <span class="text-brand-ink">our association</span>
       </h2>
 
       <ul class="placements__grid mt-8">

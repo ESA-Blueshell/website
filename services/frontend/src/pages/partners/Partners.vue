@@ -87,7 +87,7 @@ const TALK = {
       >
         <template #headline>
           Blueshell wants you<br>
-          <span class="text-brand">to be our partner</span>
+          <span class="text-brand-ink">to be our partner</span>
         </template>
       </hero-band>
 
@@ -108,7 +108,7 @@ const TALK = {
           </p>
           <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
             Gaming is one interest<br>
-            <span class="text-brand">shared across every faculty</span>
+            <span class="text-brand-ink">shared across every faculty</span>
           </h2>
           <div class="mt-6 grid gap-8 md:grid-cols-2">
             <p class="font-body text-sm leading-relaxed text-ash sm:text-base">
@@ -179,7 +179,7 @@ const TALK = {
               </p>
               <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
                 Three-time champions<br>
-                <span class="text-brand">of the Dutch Student League</span>
+                <span class="text-brand-ink">of the Dutch Student League</span>
               </h2>
             </div>
           </div>

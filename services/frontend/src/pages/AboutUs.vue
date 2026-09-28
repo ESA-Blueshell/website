@@ -46,7 +46,7 @@ const JOIN = {
       >
         <template #headline>
           The largest gaming association<br>
-          <span class="text-brand">in the Netherlands</span>
+          <span class="text-brand-ink">in the Netherlands</span>
         </template>
       </hero-band>
 
@@ -69,7 +69,7 @@ const JOIN = {
           </p>
           <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
             It started with two students<br>
-            <span class="text-brand">and a bad idea</span>
+            <span class="text-brand-ink">and a bad idea</span>
           </h2>
         </template>
       </header-band>
@@ -177,7 +177,7 @@ const JOIN = {
           </p>
           <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
             Three-time champions<br>
-            <span class="text-brand">of a league we joined for fun</span>
+            <span class="text-brand-ink">of a league we joined for fun</span>
           </h2>
           <p class="mt-3 max-w-2xl font-body text-sm leading-relaxed text-ash">
             We field teams in the Dutch College Esports Series across Valorant, League of Legends,

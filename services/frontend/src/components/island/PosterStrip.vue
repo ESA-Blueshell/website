@@ -474,7 +474,7 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .posters__poster--lit .posters__through {
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
   translate: 3px 0;
 }
 

@@ -388,7 +388,7 @@ const clear = () => {
 }
 
 .island-date__step:hover {
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 .island-date__grid {

@@ -66,7 +66,7 @@ const {asideTitle = ""} = defineProps<{
 }
 
 .task__aside :deep(a) {
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 @media (max-width: 767px) {

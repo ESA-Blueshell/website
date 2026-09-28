@@ -45,7 +45,7 @@ const teamsOf = (game: string | number) => entries.value.find(entry => entry.gam
       heading="Blueshell in competition"
     >
       <template #heading>
-        Blueshell in <span class="text-brand">competition</span>
+        Blueshell in <span class="text-brand-ink">competition</span>
       </template>
       <cut-button
         href="/competition"

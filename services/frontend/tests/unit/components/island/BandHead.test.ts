@@ -41,9 +41,9 @@ describe("BandHead", () => {
   it("takes a heading written as markup", () => {
     const wrapper = mount(BandHead, {
       props: {heading: "unused"},
-      slots: {heading: "Blueshell's <span class=\"text-brand\">Esports</span>"},
+      slots: {heading: "Blueshell's <span class=\"text-brand-ink\">Esports</span>"},
     })
 
-    expect(wrapper.find("h2 .text-brand").text()).toBe("Esports")
+    expect(wrapper.find("h2 .text-brand-ink").text()).toBe("Esports")
   })
 })

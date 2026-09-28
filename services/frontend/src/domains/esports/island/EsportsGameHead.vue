@@ -103,7 +103,7 @@ defineProps<{
 
 .esports-head__channels a:hover,
 .esports-head__channels a:focus-visible {
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 .esports-head__channels-label {

@@ -168,7 +168,7 @@ const reveal = (event: MouseEvent | KeyboardEvent) => {
 }
 
 .markdown-view :deep(a) {
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }

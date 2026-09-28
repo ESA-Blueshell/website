@@ -54,7 +54,7 @@ test.describe("a game's page, by its address", () => {
     await expect(page.getByTestId("esports-game-intro")).toContainText("Two paddles and a ball.")
   })
 
-  test("the navigation lists the games the records report as fielded", async ({page}) => {
+  test("the navigation lists the games the records report as fielded", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page)
 
     await page.goto("/")

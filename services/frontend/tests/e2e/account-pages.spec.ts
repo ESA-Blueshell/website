@@ -24,7 +24,7 @@ test.describe("the account pages", () => {
     await expect(page.locator("h1")).toHaveText("Security")
   })
 
-  test("keep every tab on one row on a phone, scrolling sideways when they do not fit", async ({page}) => {
+  test("keep every tab on one row on a phone, scrolling sideways when they do not fit", {tag: "@phone"}, async ({page}) => {
     await page.setViewportSize(PHONE)
     await installApiMocks(page)
     await preferLightTheme(page)
@@ -39,7 +39,7 @@ test.describe("the account pages", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(PHONE.width)
   })
 
-  test("count sign-ins on their heading, the badge on its last word on a phone", async ({page}) => {
+  test("count sign-ins on their heading, the badge on its last word on a phone", {tag: "@phone"}, async ({page}) => {
     await page.setViewportSize(PHONE)
     await installApiMocks(page)
     await loginAsMember(page.context())

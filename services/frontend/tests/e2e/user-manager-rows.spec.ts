@@ -77,6 +77,7 @@ test.describe("user manager rows", () => {
     expect(centred).toBe("center")
   })
 
+  // Not tagged @phone: it pins a narrow window, and nothing in the list reads touch or density.
   test("the narrow layout renders the mobile row and keeps its tight buttons", async ({page}) => {
     await openTable(page, {narrow: true})
     const id = await rowId(page, "member-manager-mobile-row-")

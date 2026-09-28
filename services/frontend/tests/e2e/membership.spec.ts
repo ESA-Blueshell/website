@@ -8,7 +8,7 @@ import {installApiMocks} from "./mocks"
  * so a band moving, or another one arriving between two of them, is not a failing spec.
  */
 test.describe("membership page", () => {
-  test("stands on the island with its bands meeting", async ({page}) => {
+  test("stands on the island with its bands meeting", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page)
     await page.goto("/membership")
 
@@ -27,7 +27,7 @@ test.describe("membership page", () => {
   })
 
   // The pitch is what a visitor is here for, so it may not be below the fold on a phone.
-  test("shows the pitch and the way in without scrolling", async ({page}) => {
+  test("shows the pitch and the way in without scrolling", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page)
     await page.goto("/membership")
 

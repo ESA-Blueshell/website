@@ -422,9 +422,10 @@ test.describe("banners and icons", () => {
  * A slice is a tall narrow strip and its banner covers it, so the picture is drawn far wider
  * than the strip is: promising the browser the strip's width fetches something blurred to two
  * and a half times its size. So the band is measured before a banner is drawn, and each banner
- * is fetched once, at the width it covers.
+ * is fetched once, at the width it covers. A phone stacks the band and has a density of its
+ * own, and both change the figure.
  */
-test.describe("how large a banner is fetched", () => {
+test.describe("how large a banner is fetched", {tag: "@phone"}, () => {
 
 
   /**

@@ -10,9 +10,10 @@ export default defineConfig({
   },
   fullyParallel: true,
   // CI runs the suite as six `--shard` slices, one job each, so a slice holds
-  // ~150 tests rather than 878. A short slice has no long tail to hide, which
-  // is what oversubscription bought: one worker per runner vCPU is enough, and
-  // it keeps a 0.8s test at 0.8s instead of stretching it toward the 5s cap.
+  // under a hundred tests rather than 567. A short slice has no long tail to
+  // hide, which is what oversubscription bought: one worker per runner vCPU is
+  // enough, and it keeps a 0.8s test at 0.8s instead of stretching it toward
+  // the 5s cap.
   workers: process.env.CI ? 4 : undefined,
   // A retry under four workers would hide a real flake rather than absorb a
   // starved assertion, so a failure is a failure. `trace` below is what makes
@@ -66,9 +67,13 @@ export default defineConfig({
       testIgnore: [/module-smoke\.spec\.ts/, /\.motion\.spec\.ts/],
     },
     {
+      // Only what a phone can break: a test is tagged @phone when the phone's width, touch or
+      // pixel density changes the path it takes or what it asserts. The rest assert data,
+      // permissions and flow, which `chromium` covers.
       name: "mobile-chrome",
       use: {...devices["Pixel 7"], baseURL: "http://127.0.0.1:4173"},
       testIgnore: [/module-smoke\.spec\.ts/, /\.motion\.spec\.ts/],
+      grep: /@phone/,
     },
     {
       // The one project that sees motion. Its specs assert the choreography

@@ -15,7 +15,7 @@ import java.net.http.HttpResponse
 /**
  * actuatorChain keeps CSRF enabled. The management endpoints answer on their
  * own port, which MockMvc never maps, so this drives a real servlet container
- * to prove the probes kubelet, Prometheus and Gatus depend on still pass, and
+ * to prove the probes kubelet and Gatus depend on still pass, and
  * that no request to the management port leaves a servlet session behind.
  */
 @SpringBootTest(

@@ -129,7 +129,7 @@ spec:
         {{ end }}
         Rolling this back is not a revert: the next scan reselects the highest
         released version and writes it again. Suspend the automation first, see
-        "Rolling back under automation" in platform/docs/runbook.md.
+        "Rolling back" in platform/docs/runbook.md.
 
         The trailer below stops CI, because there is nothing to build: the
         images already exist, built and tagged by the release that published

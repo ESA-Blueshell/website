@@ -8,8 +8,7 @@ metadata:
 ---
 # The schema migration for the pinned release. Flux applies this path first
 # and waits for the Job to complete; apps-api depends on it, so no api pod of a
-# release starts before its schema. force, because a Job's pod template is
-# immutable: a new image tag replaces the Job rather than failing the apply.
+# release starts before its schema.
 #
 # A failed Job stays failed, and apps-api stays on the previous release, until
 # a new tag replaces it or a person deletes it to retry the same one.
@@ -20,6 +19,9 @@ metadata:
   namespace: default
 spec:
   backoffLimit: 0
+  # A hung migration fails rather than holding apps-migrate, and the release,
+  # for ever.
+  activeDeadlineSeconds: 600
   template:
     metadata:
       annotations:

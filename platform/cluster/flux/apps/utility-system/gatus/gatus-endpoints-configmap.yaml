@@ -200,8 +200,8 @@ data:
         - "[BODY].version == [CONTEXT].api_version"
         alerts:
         - type: discord
-          # api and frontend roll separately, and an api cold start alone may take
-          # 15 minutes, so the two differ for that long during a release. Four
-          # runs at 5 minutes alert on a release that stays split.
+          # The frontend rolls only once the new api is Ready, so the two differ
+          # for the length of the frontend's rollout. Four runs at 5 minutes alert
+          # on a release that stays split, such as a frontend rollout that stalls.
           failure-threshold: 4
           description: "The API and the frontend report different releases"

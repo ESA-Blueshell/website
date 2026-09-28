@@ -67,7 +67,7 @@ and 3 the new api serves the previous frontend. Gatus alerts if the two report
 different versions for longer than twenty minutes.
 
 ```bash
-flux -n flux-system get kustomizations apps-migrate apps-api apps-frontend
+flux -n flux-system get kustomizations | grep -E 'NAME|apps-(migrate|api|frontend)'
 kubectl -n default get job migrate
 kubectl -n default rollout status deployment/api
 curl -s https://esa-blueshell.nl/api/version; curl -s https://esa-blueshell.nl/version.json
@@ -136,14 +136,21 @@ until its Canaries are gone. So it is done by hand, once, in a quiet window,
 before the change reaches `main`:
 
 ```bash
-# 1. Stop Flux applying main while the ownership moves.
-flux -n flux-system suspend kustomization flux-system apps-stateless apps-delivery
+# 1. Stop Flux applying main while the ownership moves. apps-delivery stays
+#    running: a suspended Kustomization is not pruned when it is deleted, and
+#    step 4 relies on that prune to uninstall Flagger.
+flux -n flux-system suspend kustomization flux-system
+flux -n flux-system suspend kustomization apps-stateless
 
-# 2. Delete the Canaries. revertOnDeletion scales api and frontend back up
-#    and points the Services at them; wait until both serve.
-kubectl -n default delete canary api frontend
-kubectl -n default rollout status deployment/api deployment/frontend
-kubectl -n default get svc api frontend -o wide
+# 2. Delete the Canaries, but not what they own. Flagger created the api and
+#    frontend Services and the -primary Deployments, so they name the Canary as
+#    owner, and a plain delete would take them with it. Orphaned, they keep
+#    serving. revertOnDeletion scales api and frontend back up meanwhile.
+kubectl -n default get svc api frontend \
+  -o jsonpath='{range .items[*]}{.metadata.name}: {.metadata.ownerReferences[*].kind}{"\n"}{end}'
+kubectl -n default delete canary api frontend --cascade=orphan
+kubectl -n default rollout status deployment/api
+kubectl -n default rollout status deployment/frontend
 
 # 3. Orphan what apps-stateless applied, so deleting it deletes nothing.
 kubectl -n flux-system patch kustomization apps-stateless --type=merge -p '{"spec":{"prune":false}}'
@@ -153,9 +160,13 @@ kubectl -n flux-system delete kustomization apps-stateless
 #    uninstalls Flagger, Prometheus and the load tester, and creates the three
 #    new Kustomizations, which adopt the Deployments, Services and storage.
 flux -n flux-system resume kustomization flux-system
-flux -n flux-system get kustomizations apps-migrate apps-api apps-frontend --watch
+flux -n flux-system get kustomizations --watch
 
-# 5. Clear what nothing owns any more.
+# 5. Clear what nothing owns any more, once apps-api and apps-frontend are
+#    Ready and their Services select the api and frontend pods.
+kubectl -n default get svc api frontend -o wide
+kubectl -n default delete deployment api-primary frontend-primary
+kubectl -n default delete svc api-primary api-canary frontend-primary frontend-canary
 kubectl -n default delete cronjob db-migrate
 kubectl -n default get jobs   # delete the old migrate-<tag> Jobs by name; keep `migrate`
 kubectl delete crd canaries.flagger.app metrictemplates.flagger.app alertproviders.flagger.app
@@ -163,7 +174,12 @@ kubectl delete crd canaries.flagger.app metrictemplates.flagger.app alertprovide
 
 Check afterwards that nothing used what went: `kubectl get ns flagger-system`
 reports NotFound, `kubectl -n default get deploy` lists `api` and `frontend`
-with no `-primary`, and the site serves throughout step 4.
+with no `-primary`, and the site serves throughout.
+
+Once, on the next release, check the order holds: while the api rolls,
+`flux -n flux-system get kustomizations` shows `apps-frontend` waiting with
+"dependency 'flux-system/apps-api' is not ready", and `/version.json` still
+reports the previous release.
 
 ## The schema
 
@@ -206,7 +222,9 @@ kubectl -n default logs job/migrate --tail=100
 ```
 
 A failed Job stays failed: Flux reapplies the same spec and finds nothing to
-change. Fix the changeset and cut a new tag, which replaces the Job. Delete
+change. A Job that runs past its ten-minute deadline fails the same way, and
+may leave Liquibase's lock held; release it with the same image before retrying
+(`DATABASECHANGELOGLOCK` shows who holds it). Fix the changeset and cut a new tag, which replaces the Job. Delete
 the failed Job only when you want the same tag retried from scratch, then run
 `flux -n flux-system reconcile kustomization apps-migrate`.
 

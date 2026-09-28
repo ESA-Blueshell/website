@@ -270,7 +270,7 @@ if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
 JSON
   else
     echo "auth/oidc/config write failed (api OIDC discovery URL likely not"
-    echo "reachable yet — fresh cluster, apps-stateless not Ready). Skipping"
+    echo "reachable yet — fresh cluster, apps-api not Ready). Skipping"
     echo "OIDC role write; the next reconcile re-runs this Job idempotently."
   fi
 

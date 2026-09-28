@@ -11,7 +11,7 @@ Flagger read, and a load tester whose `hey` requests at 3 per second were the on
 traffic the canary analysis ever measured. Two `confirm-promotion` gates held each
 canary until the other was ready, and a `pre-rollout` webhook created the schema
 migration from a suspended CronJob. About 17 moving parts, 35 commits in two weeks, 10
-of them fixes, and three changes of mechanism in five days.
+of them fixes and three changes of mechanism in five days.
 
 Three incidents are why any of it exists, and each has to stay covered:
 
@@ -42,7 +42,7 @@ release.
 The incidents stay covered. #1316: one commit pins all three paths and each is Ready
 only at that revision. #1360: one Job migrates, before any api pod of the release
 starts. #1365: the migration still runs before the new api serves, so a changeset must
-still be readable by the release before it (api ADR-026), and the changeset check
+still be readable by the release before it (api ADR-026, the schema starts from a baseline), and the changeset check
 still enforces that.
 
 ## Considered Options
@@ -64,3 +64,8 @@ still enforces that.
   one.
 - Leaving Flagger is a one-time manual cut-over, in the runbook, because removing the
   old Kustomization from Git would otherwise garbage-collect the api's storage claim.
+
+## Related Documentation
+
+- [Platform runbook](../../../platform/docs/runbook.md): releasing, rolling back and the one-time cut-over off Flagger
+- [api ADR-033](../api/ADR-033-the-api-reads-its-secrets-from-vault.md): how the migration and the api log in

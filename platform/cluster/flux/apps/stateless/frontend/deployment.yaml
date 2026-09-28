@@ -6,8 +6,8 @@ metadata:
 spec:
   replicas: 1
   # Surge first, retire the old pod only once the new one is Ready, so a broken
-  # image stalls the rollout instead of taking the site down.
-  #
+  # image stalls the rollout instead of taking the site down. apps-frontend waits
+  # up to its timeout for this rollout, so the deadline stays within it.
   strategy:
     type: RollingUpdate
     rollingUpdate:

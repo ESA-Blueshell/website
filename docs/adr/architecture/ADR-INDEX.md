@@ -30,6 +30,11 @@ stack.
 |---|-------|--------|---------|
 | [009](ADR-009-link-previews-are-included-by-nginx.md) | Link Previews Are Included by nginx | Accepted | nginx SSI includes an event's tags from the api into `index.html`, falling back to generic tags; no user-agent sniffing, no SSR |
 | [010](ADR-010-descriptions-are-written-in-discords-markdown.md) | Descriptions Are Written in Discord's Markdown | Accepted | Discord's dialect on site and in Discord; emoji and mentions stored in Discord's form; Noto art; 4096-character cap |
+
+### Releasing
+
+| # | Title | Status | Summary |
+|---|-------|--------|---------|
 | [011](ADR-011-a-release-is-applied-in-order-by-flux.md) | A Release Is Applied in Order by Flux | Accepted | Three Kustomizations with `wait`: the migration Job, then the api, then the frontend; Flagger, Prometheus and the load tester go |
 
 ### Getting there

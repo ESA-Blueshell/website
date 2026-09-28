@@ -13,7 +13,7 @@ resources:
 # all, which is why the retired pin check reported its version as `-`.
 #
 # To change it by hand, suspend the automation first or the next scan reverts
-# it. See "Rolling back under automation" in the runbook.
+# it. See "Rolling back" in the runbook.
 images:
   - name: ghcr.io/esa-blueshell/stalwart-tools
     newTag: v1.11.0 # {"$imagepolicy": "flux-system:stalwart-tools:tag"}

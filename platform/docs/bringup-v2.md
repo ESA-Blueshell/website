@@ -134,6 +134,14 @@ step 6 in parallel) → `apps-edge` / `apps-vso-secrets` / `apps-mail` /
 `apps-utility-system`, then `apps-migrate` → `apps-api` → `apps-frontend`
 once Vault is unsealed.
 
+A migrate Job that ran before the secrets were seeded fails and stays failed,
+since Flux does not rerun a Job whose spec is unchanged. Once step 6 is done:
+
+```bash
+kubectl -n default delete job migrate
+flux -n flux-system reconcile kustomization apps-migrate
+```
+
 ## 6. Unseal Vault and seed secrets
 
 Before unsealing, gather every external token and dotenv file the seed
@@ -300,8 +308,9 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
 
 - **Apps** (anything under `platform/cluster/flux/`): Flux reconciles
   `main` every minute. A new pinned digest under `apps/stateless/` rolls
-  the schema migration, then the api, then the frontend. Every other image this repository builds is pinned
-  by digest too, so a change in git is the only thing that rolls a pod.
+  the schema migration, then the api, then the frontend. Every other image
+  this repository builds is pinned by digest too, so a change in git is the
+  only thing that rolls a pod.
   That change is written by image-automation-controller when a release
   publishes a new version tag, so cutting a release deploys it. Rolling
   back means suspending the automation first; see the runbook.

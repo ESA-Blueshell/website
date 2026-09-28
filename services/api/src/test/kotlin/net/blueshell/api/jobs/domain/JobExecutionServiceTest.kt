@@ -20,10 +20,12 @@ import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.web.server.ResponseStatusException
 import java.lang.reflect.Field
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.Optional
 
 /**
  * Pure unit tests for [JobExecutionService]. No Spring context.
@@ -141,6 +143,32 @@ class JobExecutionServiceTest {
         assertThat(execution).isNotNull
         assertThat(execution!!.attempts).isEqualTo(1)
         assertThat(execution.status).isEqualTo(JobExecutionStatus.QUEUED)
+    }
+
+    @Test
+    fun `a running execution put back in the queue is written back, and a lost one is refused`() {
+        val execution =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
+                .apply { id = 1L }
+        val lost =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
+                .apply { id = 2L }
+        stubPersistence(execution)
+
+        service.resetRunningToQueued(execution)
+
+        assertThat(execution.status).isEqualTo(JobExecutionStatus.QUEUED)
+        assertThatThrownBy { service.resetRunningToQueued(lost) }.isInstanceOf(ResponseStatusException::class.java)
+    }
+
+    @Test
+    fun `reads an execution, and refuses one that is not there`() {
+        val execution = JobExecution(jobType = "demo").apply { id = 1L }
+        whenever(repository.findById(1L)).thenReturn(Optional.of(execution))
+        whenever(repository.findById(2L)).thenReturn(Optional.empty())
+
+        assertThat(service.findById(1L)).isSameAs(execution)
+        assertThatThrownBy { service.findById(2L) }.isInstanceOf(ResponseStatusException::class.java)
     }
 
     @Test

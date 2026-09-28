@@ -1,6 +1,6 @@
 import {Buffer} from "node:buffer"
 import {expect} from "@playwright/test"
-import type {BrowserContext, Locator, Page, Route} from "@playwright/test"
+import type {BrowserContext, Locator, Page, Request, Route} from "@playwright/test"
 import {
   COOKIE_CONSENT_STORAGE_KEY,
   encodeCookieConsentPayload,
@@ -321,7 +321,37 @@ export async function preferLightTheme(page: Page) {
   await page.addInitScript(() => localStorage.setItem("esa-blueshell.nl:darkMode", "false"))
 }
 
+/** Api calls the stand-in had no answer for, per page; the `test` fixture fails on any. */
+const unmocked = new WeakMap<Page, string[]>()
+/** Api requests sent but not yet answered or handed to the stand-in. */
+const unsettled = new WeakMap<Page, Set<Request>>()
+
+const isApiRequest = (request: Request) => /^http:\/\/(localhost|127\.0\.0\.1):417[34]\/api\//.test(request.url())
+
+/**
+ * The unmocked calls, once every api request in flight has reached the stand-in.
+ *
+ * A test may end on a request it only waited to see sent, before its route reaches a handler.
+ * A request a spec's own route holds open never settles, so the wait gives up after two seconds.
+ */
+export async function unmockedCalls(page: Page): Promise<string[]> {
+  const deadline = Date.now() + 2_000
+  while ((unsettled.get(page)?.size ?? 0) > 0 && Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 20))
+  }
+  return unmocked.get(page) ?? []
+}
+
 export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
+  unmocked.set(page, [])
+  const inFlight = new Set<Request>()
+  const reached = new WeakSet<Request>()
+  unsettled.set(page, inFlight)
+  page.on("request", request => {
+    if (isApiRequest(request) && !reached.has(request)) inFlight.add(request)
+  })
+  page.on("requestfinished", request => inFlight.delete(request))
+  page.on("requestfailed", request => inFlight.delete(request))
   // Seasons written down during the test. The api shows a season that was asked for even
   // where the game fielded nobody in it, and these are exactly those seasons.
   const written = new Map<number, Record<string, unknown>>()
@@ -704,6 +734,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
   const handleApiRoute = async (route: Route) => {
     const request = route.request()
+    reached.add(request)
+    inFlight.delete(request)
     const url = new URL(request.url())
     /**
      * What one game fielded in one season.
@@ -1043,7 +1075,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, [{id: "657733730491826186", name: "POGGERS", animated: false}])
     }
     // No bot in the mocked api: the Discord band falls back to the public widget, mocked below.
-    if (method === "GET" && path === "/discord/live") {
+    if (method === "GET" && (path === "/discord/live" || path === "/discord/live/mine")) {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)
     }
     if (method === "GET" && path === "/events") {
@@ -2170,6 +2202,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && /\/events\/\d+\/banners$/.test(path)) {
       return fulfillJson(route, {}, 404)
     }
+    if (method === "POST" && path === "/events") {
+      const body = route.request().postDataJSON() as Record<string, unknown>
+      return fulfillJson(route, {...baseEvents[0], ...body, id: 501}, 201)
+    }
     if (method === "POST" && path === "/events/banners") {
       return fulfillJson(route, {id: 77})
     }
@@ -2184,7 +2220,41 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, {}, 200)
     }
 
-    return fulfillJson(route, {}, 200)
+    if (method === "GET" && path === "/csrf") {
+      return fulfillJson(route, {token: "e2e-csrf-token"})
+    }
+    if (method === "GET" && path === "/discord/roles") {
+      return fulfillJson(route, [])
+    }
+    if (method === "GET" && path === "/recovery/pending-activations") {
+      return fulfillJson(route, {activations: []})
+    }
+    if (method === "POST" && path === "/recovery/user/activate") {
+      return fulfillJson(route, {membershipStarted: false})
+    }
+    if (method === "DELETE" && /^\/events\/signups\/\d+$/.test(path)) {
+      return route.fulfill({status: 204, contentType: "application/json", body: ""})
+    }
+    const profileOf = /^\/users\/(\d+)\/memberProfiles$/.exec(path)
+    if (method === "GET" && profileOf) {
+      return fulfillJson(route, {
+        id: Number(profileOf[1]), userId: Number(profileOf[1]), bhv: false, ehbo: false, nameOnRosters: true,
+        createdAt: "2024-01-01T00:00:00.000Z", updatedAt: "2024-01-01T00:00:00.000Z", version: 0,
+      })
+    }
+    const addressId = /^\/addresses\/(\d+)$/.exec(path)
+    if (method === "GET" && addressId) {
+      const id = Number(addressId[1])
+      // The login cookie names address 10 as the member's own, which the address list does not hold.
+      const address = baseAddresses.find(one => Number(one.id) === id)
+        ?? (id === 10 ? {id, userId: 1, street: "Main", houseNumber: "1", zipCode: "1234AB", city: "Enschede", country: "NL"} : null)
+      if (!address) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+      return fulfillJson(route, {createdAt: "2024-01-01T00:00:00.000Z", updatedAt: "2024-01-01T00:00:00.000Z", version: 0, ...address})
+    }
+
+    // An empty 200 let a new endpoint pass here and fail far from its cause.
+    unmocked.get(page)?.push(`${method} ${path}`)
+    return fulfillJson(route, {title: `The e2e stand-in has no answer for ${method} ${path}`, status: 501}, 501)
   }
 
   // 4173 is `vite preview`, 4174 the dev server the smoke project drives. Both proxy
@@ -2199,6 +2269,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   for (const glob of apiGlobs) {
     await page.route(glob, handleApiRoute)
   }
+  // page.route never sees a socket, so without this one reaches whatever api the proxy finds.
+  await page.routeWebSocket(/^ws:\/\/(localhost|127\.0\.0\.1):417[34]\/api\//, socket => {
+    const path = new URL(socket.url()).pathname.slice(4)
+    // No bot in the mocked api, which the api says by closing with 1013.
+    if (path === "/discord/live/socket") return socket.close({code: 1013})
+    unmocked.get(page)?.push(`WEBSOCKET ${path}`)
+    return socket.close({code: 1011})
+  })
 
   await page.route("https://discordapp.com/api/guilds/**/widget.json", async (route) => {
     return fulfillJson(route, {

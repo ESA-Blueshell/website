@@ -2,8 +2,8 @@ package net.blueshell.api.auth
 
 import jakarta.servlet.http.Cookie
 import net.blueshell.api.auth.domain.twofactor.Base32
-import net.blueshell.api.auth.persistence.RecoveryTokenRepository
 import net.blueshell.api.auth.domain.twofactor.Totp
+import net.blueshell.api.auth.persistence.RecoveryTokenRepository
 import net.blueshell.api.auth.web.AuthenticationController
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
@@ -68,9 +68,11 @@ abstract class AccountSecurityTestSupport : UserTestSupport() {
                 .perform(json(post("/users/me/two-factor/setup"), """{"password":"Password123!"}""").with(signedIn(user, steppedUp = true)))
                 .andReturn()
         val key = mapper.readTree(setUp.response.contentAsString).path("key").asString()
-        val confirmed = mvc.perform(
-            json(post("/users/me/two-factor/confirm"), """{"code":"${codeFor(key)}"}""").with(signedIn(user)),
-        ).andReturn()
+        val confirmed =
+            mvc
+                .perform(
+                    json(post("/users/me/two-factor/confirm"), """{"code":"${codeFor(key)}"}""").with(signedIn(user)),
+                ).andReturn()
         mvc.perform(post("/users/me/two-factor/saved").with(signedIn(user)))
         nextStep()
         val codes = mapper.readTree(confirmed.response.contentAsString).path("codes")

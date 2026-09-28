@@ -1,15 +1,15 @@
 package net.blueshell.api.file.web
 
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.factory.event.web.request.EventRequestFactory
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import org.springframework.beans.factory.annotation.Autowired
 
 /**
  * Security tests for FileController.
@@ -32,7 +32,6 @@ class FileControllerSecurityTest : UserTestSupport() {
 
     @Nested
     inner class DownloadEventBanner {
-
         @Test
         fun `allows BOARD to download event banners`() {
             val board = createUserWithRole(Role.BOARD)
@@ -40,11 +39,11 @@ class FileControllerSecurityTest : UserTestSupport() {
             attachEventBanner(event)
             val eventId = event.id!!
 
-            mvc.perform(
-                get("/events/{eventId}/banners", eventId)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/events/{eventId}/banners", eventId)
+                        .with(signedIn(board)),
+                ).andExpect(status().isOk)
         }
 
         @Test
@@ -56,11 +55,11 @@ class FileControllerSecurityTest : UserTestSupport() {
             attachEventBanner(event)
             val eventId = event.id!!
 
-            mvc.perform(
-                get("/events/{eventId}/banners", eventId)
-                    .with(signedIn(committeeUser))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/events/{eventId}/banners", eventId)
+                        .with(signedIn(committeeUser)),
+                ).andExpect(status().isOk)
         }
 
         @Test
@@ -68,11 +67,11 @@ class FileControllerSecurityTest : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             val eventId = createEventFixture(approved = false).id!!
 
-            mvc.perform(
-                get("/events/{eventId}/banners", eventId)
-                    .with(signedIn(member))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    get("/events/{eventId}/banners", eventId)
+                        .with(signedIn(member)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
@@ -81,85 +80,84 @@ class FileControllerSecurityTest : UserTestSupport() {
             attachEventBanner(event)
             val eventId = event.id!!
 
-            mvc.perform(get("/events/{eventId}/banners", eventId))
+            mvc
+                .perform(get("/events/{eventId}/banners", eventId))
                 .andExpect(status().isUnauthorized)
         }
     }
 
     @Nested
     inner class UploadEventBanner {
-
         @Test
         fun `allows COMMITTEE to upload banners`() {
             val committee = createUserWithRole(Role.COMMITTEE)
 
-            mvc.perform(
-                multipart("/events/banners")
-                    .file(bannerFile())
-                    .with(signedIn(committee))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    multipart("/events/banners")
+                        .file(bannerFile())
+                        .with(signedIn(committee)),
+                ).andExpect(status().isCreated)
         }
 
         @Test
         fun `allows BOARD to upload banners`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                multipart("/events/banners")
-                    .file(bannerFile())
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    multipart("/events/banners")
+                        .file(bannerFile())
+                        .with(signedIn(board)),
+                ).andExpect(status().isCreated)
         }
 
         @Test
         fun `denies regular user from uploading banners`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                multipart("/events/banners")
-                    .file(bannerFile())
-                    .with(signedIn(member))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    multipart("/events/banners")
+                        .file(bannerFile())
+                        .with(signedIn(member)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `denies GUEST from uploading banners`() {
             val guest = createUserWithRole(Role.GUEST)
 
-            mvc.perform(
-                multipart("/events/banners")
-                    .file(bannerFile())
-                    .with(signedIn(guest))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    multipart("/events/banners")
+                        .file(bannerFile())
+                        .with(signedIn(guest)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            mvc.perform(
+            mvc
+                .perform(
                     multipart("/events/banners")
-                        .file(bannerFile())
-            )
-                .andExpect(status().isUnauthorized)
+                        .file(bannerFile()),
+                ).andExpect(status().isUnauthorized)
         }
     }
 
     @Nested
     inner class RoleHierarchy {
-
         @Test
         fun `ADMIN can perform COMMITTEE operations`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(
-                multipart("/events/banners")
-                    .file(bannerFile())
-                    .with(signedIn(admin))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    multipart("/events/banners")
+                        .file(bannerFile())
+                        .with(signedIn(admin)),
+                ).andExpect(status().isCreated)
         }
     }
 }

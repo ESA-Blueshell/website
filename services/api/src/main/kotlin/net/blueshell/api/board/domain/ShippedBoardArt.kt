@@ -5,9 +5,9 @@ import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.seed.SeedOrder
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.seed.SeedOrder
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener

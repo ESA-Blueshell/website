@@ -57,7 +57,7 @@ class DiscordLiveSocket(
         sessions.removeIf { it.id == session.id }
     }
 
-    /* A proxy drops a connection that says nothing for long enough; a ping keeps each one open. */
+    // A proxy drops a connection that says nothing for long enough; a ping keeps each one open.
     @Scheduled(fixedDelay = PING_EVERY_MS)
     fun ping() = sessions.forEach { session -> runCatching { session.sendMessage(PingMessage()) } }
 

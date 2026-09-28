@@ -55,8 +55,7 @@ class UserErasureDiscordTest {
             90,
         )
 
-    private fun snapshot() =
-        DeletedUser.fromUser(user, Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS))
+    private fun snapshot() = DeletedUser.fromUser(user, Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS))
 
     @Test
     fun `forgets the linked member on the account, and keeps it in the snapshot`() {

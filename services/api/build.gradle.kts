@@ -44,11 +44,12 @@ configurations {
     }
 }
 
-val mockitoAgent = configurations.create("mockitoAgent") {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-    isTransitive = false
-}
+val mockitoAgent =
+    configurations.create("mockitoAgent") {
+        isCanBeConsumed = false
+        isCanBeResolved = true
+        isTransitive = false
+    }
 
 configurations.configureEach {
     attributes.attribute(
@@ -213,9 +214,10 @@ tasks.withType<JavaCompile>().configureEach {
 // Mockito inline-mock-maker requires an agent on JDK 21+.
 tasks.withType<Test>().configureEach {
     systemProperty("spring.profiles.active", "test")
-    jvmArgumentProviders += CommandLineArgumentProvider {
-        listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
-    }
+    jvmArgumentProviders +=
+        CommandLineArgumentProvider {
+            listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
+        }
     testLogging {
         events(
             TestLogEvent.PASSED,
@@ -231,12 +233,13 @@ tasks.withType<Test>().configureEach {
 // The shared convention's project-wide 40% floor cannot fail because of one new
 // package, so the signup classes get their own gate. CLASS element rather than
 // PACKAGE so it picks up new Signup* classes without dragging in existing ones.
-val signupCoverageIncludes = listOf(
-    "net.blueshell.api.auth.domain.Signup*",
-    "net.blueshell.api.auth.web.Signup*",
-    "net.blueshell.api.user.api.Signup*",
-    "net.blueshell.api.user.web.Signup*",
-)
+val signupCoverageIncludes =
+    listOf(
+        "net.blueshell.api.auth.domain.Signup*",
+        "net.blueshell.api.auth.web.Signup*",
+        "net.blueshell.api.user.api.Signup*",
+        "net.blueshell.api.user.web.Signup*",
+    )
 
 /**
  * The one class the integration gate cannot hold to this.
@@ -308,19 +311,20 @@ tasks.register<Test>("discordLiveTest") {
 // Generate OpenAPI spec via in-memory H2 (no MariaDB required).
 // Runs the openapi-gen-tagged test, which writes sorted block YAML to
 // build/openapi.raw.yaml, and copies that to services/api/openapi.yaml.
-val openApiGenTest = tasks.register<Test>("openApiGenTest") {
-    description = "Runs the OpenAPI spec generation test tagged with @Tag(\"openapi-gen\")."
-    group = "verification"
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-    useJUnitPlatform { includeTags("openapi-gen") }
-    // Disable caching so the test always runs and recreates openapi.raw.yaml.
-    // The raw file is not declared as a cacheable output; it's a side effect
-    // of the test used by dumpOpenApiSpec. Always running is fine since this
-    // task only runs when dumpOpenApiSpec is invoked (openapi-sync CI + local regen).
-    outputs.upToDateWhen { false }
-    outputs.cacheIf { false }
-}
+val openApiGenTest =
+    tasks.register<Test>("openApiGenTest") {
+        description = "Runs the OpenAPI spec generation test tagged with @Tag(\"openapi-gen\")."
+        group = "verification"
+        testClassesDirs = sourceSets["test"].output.classesDirs
+        classpath = sourceSets["test"].runtimeClasspath
+        useJUnitPlatform { includeTags("openapi-gen") }
+        // Disable caching so the test always runs and recreates openapi.raw.yaml.
+        // The raw file is not declared as a cacheable output; it's a side effect
+        // of the test used by dumpOpenApiSpec. Always running is fine since this
+        // task only runs when dumpOpenApiSpec is invoked (openapi-sync CI + local regen).
+        outputs.upToDateWhen { false }
+        outputs.cacheIf { false }
+    }
 
 tasks.register("dumpOpenApiSpec") {
     description = "Generates the OpenAPI spec via in-memory H2 without a database, into services/api/openapi.yaml."
@@ -331,7 +335,11 @@ tasks.register("dumpOpenApiSpec") {
     doLast {
         // The generator test already sorts the keys and writes block YAML, so there is
         // nothing to normalise here and no external tool to depend on.
-        val rawFile = layout.buildDirectory.file("openapi.raw.yaml").get().asFile
+        val rawFile =
+            layout.buildDirectory
+                .file("openapi.raw.yaml")
+                .get()
+                .asFile
         val outputFile = File(projectDir, "openapi.yaml")
 
         if (!rawFile.exists()) {
@@ -373,9 +381,15 @@ tasks.register<JavaExec>("classDependencyGraph") {
     classpath = sourceSets["test"].runtimeClasspath
     args(
         "--dot-output",
-        classDependencyOutputDir.get().file("blueshell-api.dot").asFile.absolutePath,
+        classDependencyOutputDir
+            .get()
+            .file("blueshell-api.dot")
+            .asFile.absolutePath,
         "--svg-output",
-        classDependencyOutputDir.get().file("blueshell-api.svg").asFile.absolutePath,
+        classDependencyOutputDir
+            .get()
+            .file("blueshell-api.svg")
+            .asFile.absolutePath,
         "--base-package",
         "net.blueshell.api",
     )

@@ -23,7 +23,12 @@ class DiscordDoorControllerTest {
         assertThat(invite.headers.location.toString()).isEqualTo("https://discord.gg/board")
         assertThat(invite.headers.cacheControl).isEqualTo("max-age=300, public")
 
-        assertThat(controller.channel("suggestions").headers.location.toString()).isEqualTo("https://discord.com/channels/324/102")
+        assertThat(
+            controller
+                .channel("suggestions")
+                .headers.location
+                .toString(),
+        ).isEqualTo("https://discord.com/channels/324/102")
     }
 
     @Test

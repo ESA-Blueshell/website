@@ -196,8 +196,7 @@ class TwoFactor(
         }
     }
 
-    private fun active(userId: Long): TwoFactorSecret? =
-        secrets.findByUserAndState(userId, TwoFactorSecretState.ACTIVE).getOrNull()
+    private fun active(userId: Long): TwoFactorSecret? = secrets.findByUserAndState(userId, TwoFactorSecretState.ACTIVE).getOrNull()
 
     private fun open(secret: TwoFactorSecret): ByteArray = cipher.open(SealedSecret(secret.keyId, secret.ciphertext))
 

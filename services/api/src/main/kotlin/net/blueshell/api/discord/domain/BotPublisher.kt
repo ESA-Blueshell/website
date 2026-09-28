@@ -74,7 +74,7 @@ class BotPublisher(
         }
     }
 
-    /* The attachments listed replace the message's own, so a banner taken off the event leaves the post. */
+    // The attachments listed replace the message's own, so a banner taken off the event leaves the post.
     override fun edit(
         channel: String,
         messageId: String,
@@ -122,7 +122,12 @@ class BotPublisher(
         val row = payload.putArray("components").addObject().put("type", ACTION_ROW)
         val buttons = row.putArray("components")
         for (link in links) {
-            buttons.addObject().put("type", BUTTON).put("style", LINK_STYLE).put("label", link.label).put("url", link.url)
+            buttons
+                .addObject()
+                .put("type", BUTTON)
+                .put("style", LINK_STYLE)
+                .put("label", link.label)
+                .put("url", link.url)
         }
         return payload
     }
@@ -184,7 +189,7 @@ class BotPublisher(
             .filter { (it["description"] as? String).orEmpty().lines().contains(line) }
             .map { it.getValue("id") as String }
 
-    /* Read as maps, so a field the generated models get wrong cannot break a lookup. */
+    // Read as maps, so a field the generated models get wrong cannot break a lookup.
     private fun readAll(
         path: String,
         id: String,
@@ -232,7 +237,7 @@ class BotPublisher(
             guildId,
         )
 
-    /* The shared mapper leaves nulls out, and Discord keeps a cover it is not told is gone. */
+    // The shared mapper leaves nulls out, and Discord keeps a cover it is not told is gone.
     private fun update(
         discordEventId: String,
         listing: DiscordEventListing,
@@ -273,19 +278,19 @@ class BotPublisher(
             ?: error("No Discord text channel is called $channel")
 
     private companion object {
-        /* The only privacy level Discord offers for a server's events. */
+        // The only privacy level Discord offers for a server's events.
         const val GUILD_ONLY = 2
         const val ACTION_ROW = 1
         const val BUTTON = 2
         const val LINK_STYLE = 5
 
-        /* Only the ID is read back, so a field Discord adds or leaves null cannot break it. */
+        // Only the ID is read back, so a field Discord adds or leaves null cannot break it.
         val REPLY = object : ParameterizedTypeReference<Map<String, Any?>>() {}
         val REPLIES = object : ParameterizedTypeReference<List<Map<String, Any?>>>() {}
     }
 }
 
-/* Mentions go in the message text: Discord notifies nobody named only inside an embed. */
+// Mentions go in the message text: Discord notifies nobody named only inside an embed.
 private fun mentionsOf(post: DiscordPost): String? = post.pingedRoleIds.takeIf { it.isNotEmpty() }?.joinToString(" ") { "<@&$it>" }
 
 private fun DiscordEmbed.asRichEmbed() =
@@ -318,7 +323,7 @@ private fun <T> withoutImageIfRefused(
 
 private val IMAGE_REFUSED = setOf(HttpStatus.BAD_REQUEST.value(), HttpStatus.CONTENT_TOO_LARGE.value())
 
-/* Editing what somebody removed by hand answers false, so the caller can make it again. */
+// Editing what somebody removed by hand answers false, so the caller can make it again.
 private fun stillThere(call: () -> Unit): Boolean =
     try {
         call()
@@ -328,7 +333,7 @@ private fun stillThere(call: () -> Unit): Boolean =
         false
     }
 
-/* Removing what is already gone is done. */
+// Removing what is already gone is done.
 private fun gone(call: () -> Unit) {
     try {
         call()

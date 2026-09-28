@@ -9,7 +9,10 @@ class InMemorySignInStore : SignInStore {
     private val signIns = linkedMapOf<String, SignIn>()
     private val stamps = mutableMapOf<Long, Long>()
 
-    override fun save(signIn: SignIn, expiresAt: Instant) {
+    override fun save(
+        signIn: SignIn,
+        expiresAt: Instant,
+    ) {
         signIns[signIn.id] = signIn
     }
 
@@ -19,11 +22,24 @@ class InMemorySignInStore : SignInStore {
         signIns.remove(id)
     }
 
-    override fun unindex(userId: Long, id: String) = Unit
+    override fun unindex(
+        userId: Long,
+        id: String,
+    ) = Unit
 
-    override fun idsOf(userId: Long): Set<String> = signIns.values.filter { it.userId == userId }.map { it.id }.toSet()
+    override fun idsOf(userId: Long): Set<String> =
+        signIns.values
+            .filter { it.userId == userId }
+            .map { it.id }
+            .toSet()
 
-    override fun rotate(id: String, expectedJti: String, newJti: String, at: Instant, expiresAt: Instant): Boolean {
+    override fun rotate(
+        id: String,
+        expectedJti: String,
+        newJti: String,
+        at: Instant,
+        expiresAt: Instant,
+    ): Boolean {
         val signIn = signIns[id]?.takeIf { it.currentJti == expectedJti } ?: return false
         signIns[id] =
             signIn.copy(

@@ -19,8 +19,10 @@ import java.time.Duration
 
 // Half a SHA-256 is still far more than enough to keep applicants apart.
 private const val APPLICANT_KEY_BYTES = 16
+
 // Room for brackets and a port around the longest literal below.
 private const val MAX_RAW_IP_LITERAL_LENGTH = 64
+
 // An IPv4-mapped IPv6 address, the longest form there is.
 private const val MAX_IP_LITERAL_LENGTH = 45
 

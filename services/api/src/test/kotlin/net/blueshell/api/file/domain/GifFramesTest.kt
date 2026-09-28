@@ -110,8 +110,7 @@ class GifFramesTest {
     private fun patchColourOf(frame: FrameSequence.Frame): Color =
         Color(ImageIO.read(frame.bytes.path.toFile()).getRGB(PATCH_SAMPLE, PATCH_SAMPLE))
 
-    private fun gif(bytes: ByteArray): ScratchFile =
-        scratch.cut(".gif").also { file -> Files.write(file.path, bytes) }
+    private fun gif(bytes: ByteArray): ScratchFile = scratch.cut(".gif").also { file -> Files.write(file.path, bytes) }
 
     private companion object {
         /** Inside the 10px patch drawn at (10, 10). */

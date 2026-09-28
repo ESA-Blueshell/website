@@ -11,7 +11,7 @@ class DiscordPostScheduleTest {
 
     private fun at(local: String): Instant = LocalDateTime.parse(local).atZone(amsterdam).toInstant()
 
-    /* Saturday 10 October 2026, 20:00 to 23:00, a fortnight after Saturday 26 September. */
+    // Saturday 10 October 2026, 20:00 to 23:00, a fortnight after Saturday 26 September.
     private val start = at("2026-10-10T20:00")
     private val end = at("2026-10-10T23:00")
 

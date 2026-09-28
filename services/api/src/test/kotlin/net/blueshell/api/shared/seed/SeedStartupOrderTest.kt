@@ -8,7 +8,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.core.annotation.AnnotatedElementUtils
 import org.springframework.core.annotation.Order
-import kotlin.reflect.jvm.javaMethod
 
 /**
  * Spring resolves an @EventListener's order from the method, never the declaring class, so an

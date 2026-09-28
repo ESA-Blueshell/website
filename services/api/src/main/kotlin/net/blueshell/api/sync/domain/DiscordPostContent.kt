@@ -17,12 +17,13 @@ import java.util.Locale
  * two would stand out in another colour.
  */
 object DiscordPostContent {
-    /* Discord's limit on a Discord event's whole description, links included. */
+    // Discord's limit on a Discord event's whole description, links included.
     private const val LISTING_DESCRIPTION = 1000
 
-    /* An event with no place is held in the server itself. */
+    // An event with no place is held in the server itself.
     private const val IN_THE_SERVER = "Discord"
-    /* Spelled out rather than left to the locale data, which abbreviates September as Sep or Sept by JDK. */
+
+    // Spelled out rather than left to the locale data, which abbreviates September as Sep or Sept by JDK.
     private val MONTHS =
         listOf("Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec")
             .withIndex()
@@ -82,10 +83,9 @@ object DiscordPostContent {
         )
     }
 
-    private fun signedUpOf(event: EventPostData) =
-        event.signUpLimit?.let { "${event.signUpCount}/$it" } ?: "${event.signUpCount}"
+    private fun signedUpOf(event: EventPostData) = event.signUpLimit?.let { "${event.signUpCount}/$it" } ?: "${event.signUpCount}"
 
-    /* The sign-up panel carries the `signup` anchor on the event's page. */
+    // The sign-up panel carries the `signup` anchor on the event's page.
     private fun linksOf(
         event: EventPostData,
         page: String,
@@ -103,7 +103,7 @@ object DiscordPostContent {
         site: String,
     ) = "More on the site: ${pageOf(eventId, site)}"
 
-    /* A Discord event's description takes no markdown links, so the addresses stand bare. */
+    // A Discord event's description takes no markdown links, so the addresses stand bare.
     private fun listingLinksOf(
         event: EventPostData,
         site: String,

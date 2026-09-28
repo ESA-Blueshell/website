@@ -107,4 +107,3 @@ class EventPostsTest {
         assertThat(EventPosts(events, blobs).bannerOf(42)!!.bytes).containsExactly(9)
     }
 }
-

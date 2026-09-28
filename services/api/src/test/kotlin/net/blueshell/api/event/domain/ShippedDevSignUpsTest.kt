@@ -105,7 +105,12 @@ class ShippedDevSignUpsTest {
     @Test
     fun `an account the fixtures never seeded leaves its row out`() {
         database()
-        val absent = rosters.first().signUps.first { it.username != null }.username!!
+        val absent =
+            rosters
+                .first()
+                .signUps
+                .first { it.username != null }
+                .username!!
         whenever(users.findByUsername(absent)).thenThrow(RuntimeException("no such user"))
 
         val applied = loader.apply()

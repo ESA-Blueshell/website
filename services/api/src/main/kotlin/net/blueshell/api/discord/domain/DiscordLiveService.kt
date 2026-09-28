@@ -30,7 +30,7 @@ class DiscordLiveService(
     private val counts: ObjectProvider<GuildCountsSource>,
     @Value($$"${discord.baseUrl:https://discord.com/api/v10}") baseUrl: String,
 ) {
-    /* The app's own address for a channel, which is not the api's: https://discord.com/channels. */
+    // The app's own address for a channel, which is not the api's: https://discord.com/channels.
     private val appUrl = baseUrl.substringBefore("/api")
 
     fun live(): DiscordLive? {

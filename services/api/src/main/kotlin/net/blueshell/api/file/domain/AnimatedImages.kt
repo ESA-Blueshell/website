@@ -130,7 +130,12 @@ class AnimatedImages(
             frames.forEach { frame -> runCatching { frame.bytes.close() } }
             throw e
         }
-        val size = frames.first().bytes.open().use(ImageDimensions::of)
+        val size =
+            frames
+                .first()
+                .bytes
+                .open()
+                .use(ImageDimensions::of)
         if (size == null) {
             frames.forEach { frame -> runCatching { frame.bytes.close() } }
             return null

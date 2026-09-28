@@ -81,8 +81,7 @@ class AccountSecurityTest {
             roles = mutableSetOf(Role.MEMBER),
         ).also { it.id = 7 }
 
-    private fun recorded(kind: SecurityEventKind) =
-        verify(events).record(eq(7L), eq(kind), any(), anyOrNull(), anyOrNull(), anyOrNull())
+    private fun recorded(kind: SecurityEventKind) = verify(events).record(eq(7L), eq(kind), any(), anyOrNull(), anyOrNull(), anyOrNull())
 
     private fun token(type: TokenPurpose) = RecoveryToken(user, type, "sel", "hash", clock.instant().plusSeconds(60))
 

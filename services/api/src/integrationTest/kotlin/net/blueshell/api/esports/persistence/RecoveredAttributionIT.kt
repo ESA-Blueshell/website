@@ -1,7 +1,7 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.esports.domain.ShippedEsports
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.EsportsSeedFixture
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User

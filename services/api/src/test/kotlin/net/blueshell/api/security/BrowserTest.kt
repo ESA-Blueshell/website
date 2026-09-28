@@ -24,7 +24,11 @@ class BrowserTest {
             "curl/8.7.1|Unknown browser|unknown system",
         ],
     )
-    fun `a user agent is read as a family and a system, never a version`(ua: String, family: String, platform: String) {
+    fun `a user agent is read as a family and a system, never a version`(
+        ua: String,
+        family: String,
+        platform: String,
+    ) {
         assertThat(Browser.of(ua)).isEqualTo(Browser(family, platform))
     }
 
@@ -38,7 +42,10 @@ class BrowserTest {
     @Test
     fun `the current browser is the one the request came from, and none outside a request`() {
         assertThat(CurrentBrowser.get()).isNull()
-        val request = MockHttpServletRequest().apply { addHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0") }
+        val request =
+            MockHttpServletRequest().apply {
+                addHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0")
+            }
         RequestContextHolder.setRequestAttributes(ServletRequestAttributes(request))
         try {
             assertThat(CurrentBrowser.get()).isEqualTo(Browser("Firefox", "Linux"))

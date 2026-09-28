@@ -29,14 +29,15 @@ class RoleGrantUseCasesTest {
     private val roleChanges = mock<RoleChangeRepository>()
     private val trackedEvents = mock<TrackedEventPublisher>()
     private val jobs = mock<JobQueue>()
-    private val grants = RoleGrantUseCases(
-        users,
-        roleChanges,
-        mock { on { currentUser() } doReturn CurrentUser(1, setOf(Role.ADMIN), null) },
-        jobs,
-        clock,
-        trackedEvents,
-    )
+    private val grants =
+        RoleGrantUseCases(
+            users,
+            roleChanges,
+            mock { on { currentUser() } doReturn CurrentUser(1, setOf(Role.ADMIN), null) },
+            jobs,
+            clock,
+            trackedEvents,
+        )
 
     private fun person(
         id: Long,

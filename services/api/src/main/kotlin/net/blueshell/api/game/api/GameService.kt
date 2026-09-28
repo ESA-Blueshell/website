@@ -29,7 +29,12 @@ class GameService(
     fun findAll(): List<Game> = games.findAllByOrderBySortIndexAsc()
 
     /** The codes of the games in competition now, as the module that fields teams answers. */
-    fun inCompetition(): Set<String> = competition.orderedStream().toList().flatMap { it.currentlyFielded() }.toSet()
+    fun inCompetition(): Set<String> =
+        competition
+            .orderedStream()
+            .toList()
+            .flatMap { it.currentlyFielded() }
+            .toSet()
 
     @Transactional(readOnly = true)
     fun findByCode(code: String): Game = requireGame(code)

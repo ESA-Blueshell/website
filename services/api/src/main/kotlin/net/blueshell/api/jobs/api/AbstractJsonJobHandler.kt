@@ -19,7 +19,7 @@ abstract class AbstractJsonJobHandler<T : Any>(
         var skipped: String? = null
     }
 
-    /* Thread-local is safe because @Async jobs each run on their own thread. */
+    // Thread-local is safe because @Async jobs each run on their own thread.
     private val run = ThreadLocal<Run?>()
 
     /** The execution this run belongs to, for records a downstream service links back to it. */

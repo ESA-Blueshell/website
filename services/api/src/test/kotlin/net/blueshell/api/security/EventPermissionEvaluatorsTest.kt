@@ -15,12 +15,12 @@ import net.blueshell.api.event.persistence.EventSignUp
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.security.authentication.TestingAuthenticationToken
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.security.authentication.TestingAuthenticationToken
 import java.time.Instant
 
 class EventPermissionEvaluatorsTest {

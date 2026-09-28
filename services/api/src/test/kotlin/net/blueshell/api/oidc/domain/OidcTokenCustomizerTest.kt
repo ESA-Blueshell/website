@@ -12,9 +12,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException
 import org.springframework.security.oauth2.core.oidc.OidcScopes
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
 import org.springframework.security.oauth2.jwt.JwsHeader
 import org.springframework.security.oauth2.jwt.JwtClaimsSet
-import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext
 
@@ -49,16 +49,18 @@ class OidcTokenCustomizerTest {
     @Test
     fun `a token says how its sign-in was proved`() {
         admin()
-        val (access, accessClaims) = context(
-            OAuth2TokenType.ACCESS_TOKEN,
-            AuthorizationGrantType.AUTHORIZATION_CODE,
-            SignInDetails("s", setOf("pwd", "otp")),
-        )
-        val (id, idClaims) = context(
-            OAuth2TokenType("id_token"),
-            AuthorizationGrantType.AUTHORIZATION_CODE,
-            SignInDetails("s", setOf("pwd", "otp")),
-        )
+        val (access, accessClaims) =
+            context(
+                OAuth2TokenType.ACCESS_TOKEN,
+                AuthorizationGrantType.AUTHORIZATION_CODE,
+                SignInDetails("s", setOf("pwd", "otp")),
+            )
+        val (id, idClaims) =
+            context(
+                OAuth2TokenType("id_token"),
+                AuthorizationGrantType.AUTHORIZATION_CODE,
+                SignInDetails("s", setOf("pwd", "otp")),
+            )
 
         customizer.customize(access)
         customizer.customize(id)

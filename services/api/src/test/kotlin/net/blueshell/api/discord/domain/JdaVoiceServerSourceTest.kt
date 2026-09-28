@@ -1,28 +1,25 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.clients.discord.api.DiscordApi
-import net.dv8tion.jda.api.Permission
-import net.dv8tion.jda.api.entities.Member
-import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
-import net.dv8tion.jda.api.events.RawGatewayEvent
-import net.dv8tion.jda.api.requests.restaction.CacheRestAction
-import net.dv8tion.jda.api.utils.data.DataObject
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 import net.blueshell.clients.discord.model.PrivateApplicationResponse
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Invite
+import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Role
-import net.dv8tion.jda.api.entities.channel.concrete.NewsChannel
 import net.dv8tion.jda.api.entities.channel.concrete.Category
+import net.dv8tion.jda.api.entities.channel.concrete.NewsChannel
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
 import net.dv8tion.jda.api.events.GenericEvent
+import net.dv8tion.jda.api.events.RawGatewayEvent
 import net.dv8tion.jda.api.hooks.EventListener
 import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.requests.restaction.CacheRestAction
 import net.dv8tion.jda.api.requests.restaction.InviteAction
 import net.dv8tion.jda.api.utils.cache.CacheView
+import net.dv8tion.jda.api.utils.data.DataObject
 import net.dv8tion.jda.internal.entities.GuildImpl
 import net.dv8tion.jda.internal.entities.MemberPresenceImpl
 import org.assertj.core.api.Assertions.assertThat
@@ -33,6 +30,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 
 class JdaVoiceServerSourceTest {
     private val presences: CacheView.SimpleCacheView<MemberPresenceImpl> = mock { on { size() } doReturn 4L }
@@ -48,8 +48,7 @@ class JdaVoiceServerSourceTest {
         }
     private val jda: JDA = mock { on { getGuildById("324") } doReturn guild }
 
-    private fun source(api: DiscordApi): JdaVoiceServerSource =
-        JdaVoiceServerSource("token", "324", api).also { it.connect = { jda } }
+    private fun source(api: DiscordApi): JdaVoiceServerSource = JdaVoiceServerSource("token", "324", api).also { it.connect = { jda } }
 
     private fun applicationWith(flags: Int): DiscordApi {
         val application: PrivateApplicationResponse = mock { on { this.flags } doReturn flags }
@@ -243,4 +242,3 @@ class JdaVoiceServerSourceTest {
         }
     }
 }
-

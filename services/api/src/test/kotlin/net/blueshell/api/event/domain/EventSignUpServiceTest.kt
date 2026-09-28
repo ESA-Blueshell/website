@@ -28,7 +28,10 @@ class EventSignUpServiceTest {
     private val service =
         EventSignUpService(repository, TrackedEventPublisher(published, actors), mock<CurrentUserProvider>()).apply {
             // The entity manager is injected by field; create refreshes the saved row through it.
-            BaseModelService::class.java.getDeclaredField("em").apply { isAccessible = true }.set(this, mock<EntityManager>())
+            BaseModelService::class.java
+                .getDeclaredField("em")
+                .apply { isAccessible = true }
+                .set(this, mock<EntityManager>())
         }
 
     private val event = mock<Event> { on { id } doReturn 100 }

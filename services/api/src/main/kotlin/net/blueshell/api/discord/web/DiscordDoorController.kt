@@ -59,7 +59,7 @@ class DiscordDoorController(
         } ?: ResponseEntity.notFound().build()
 
     private companion object {
-        /* An invite is permanent; a few minutes keeps a renamed channel from lingering long. */
+        // An invite is permanent; a few minutes keeps a renamed channel from lingering long.
         val BROWSER_CACHE: Duration = Duration.ofMinutes(5)
     }
 }

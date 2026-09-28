@@ -23,13 +23,13 @@ class DiscordEventPostTriggers(
     private val events: EventPosts,
     private val ledger: PostLedger,
 ) {
-    /* Settable for tests only. */
+    // Settable for tests only.
     internal var clock: Clock = Clock.systemUTC()
 
     @ApplicationModuleListener
     fun on(event: EventChanged) = queue(event.eventId, morning = false)
 
-    /* Only the posts show the count, and only one already out has it to change. */
+    // Only the posts show the count, and only one already out has it to change.
     @ApplicationModuleListener
     fun on(signUps: EventSignUpsChanged) {
         val payload = DiscordPostJobs.EventPostPayload(signUps.eventId)
@@ -59,7 +59,7 @@ class DiscordEventPostTriggers(
         return near.size
     }
 
-    /* A late events-info post waits for the next morning run, unless the event's own day has come. */
+    // A late events-info post waits for the next morning run, unless the event's own day has come.
     private fun queue(
         eventId: Long,
         morning: Boolean,
@@ -93,10 +93,10 @@ class DiscordEventPostTriggers(
     ) = ledger.find(eventId, artefact) != null
 
     private companion object {
-        /* An events-calendar post comes down the morning after the event ends. */
+        // An events-calendar post comes down the morning after the event ends.
         val MORNING_BEHIND: Duration = Duration.ofDays(2)
 
-        /* The events-info post goes out a fortnight ahead of the event's day. */
+        // The events-info post goes out a fortnight ahead of the event's day.
         val MORNING_AHEAD: Duration = Duration.ofDays(15)
 
         val HOURLY_BEHIND: Duration = Duration.ofHours(2)

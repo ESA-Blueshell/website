@@ -31,7 +31,7 @@ interface ExternalIdMappingRepository : BaseRepository<ExternalIdMapping, Long> 
         externalId: String,
     ): ExternalIdMapping?
 
-    /* One row per aggregate and system is the unique key, so only one caller's insert lands. */
+    // One row per aggregate and system is the unique key, so only one caller's insert lands.
     @Modifying
     @Query(
         value =
@@ -45,7 +45,7 @@ interface ExternalIdMappingRepository : BaseRepository<ExternalIdMapping, Long> 
         @Param("system") system: String,
     ): Int
 
-    /* A claim still empty since [staleBefore] was left by a caller that never finished. */
+    // A claim still empty since [staleBefore] was left by a caller that never finished.
     @Modifying
     @Query(
         value =

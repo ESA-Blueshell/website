@@ -99,5 +99,5 @@ class DiscordDoorService(
     }
 }
 
-/* A channel's name as compared: case, emoji and separators aside, since servers decorate names. */
+// A channel's name as compared: case, emoji and separators aside, since servers decorate names.
 internal fun plain(name: String): String = name.lowercase().filter { it.isLetterOrDigit() }

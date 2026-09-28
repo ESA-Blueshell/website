@@ -2,13 +2,13 @@ package net.blueshell.api.discord.web
 
 import net.blueshell.api.discord.domain.DiscordEmoji
 import net.blueshell.api.discord.domain.DiscordEmojiDirectory
-import net.blueshell.api.discord.domain.DiscordMember
 import net.blueshell.api.discord.domain.DiscordGameChannels
-import net.blueshell.api.discord.domain.GameChannelCategory
+import net.blueshell.api.discord.domain.DiscordMember
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
-import net.blueshell.api.discord.domain.TextRoom
 import net.blueshell.api.discord.domain.DiscordRole
 import net.blueshell.api.discord.domain.DiscordRoleDirectory
+import net.blueshell.api.discord.domain.GameChannelCategory
+import net.blueshell.api.discord.domain.TextRoom
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
@@ -58,7 +58,13 @@ class DiscordMemberControllerTest {
     @Test
     fun `answers the roles an event may ping, or 503 without a bot`() {
         assertThat(controller.roles().body).containsExactly(DiscordRoleResponse("901", "Gamers"))
-        assertThat(controller.roles().body!!.single().let { it.id to it.name }).isEqualTo("901" to "Gamers")
+        assertThat(
+            controller
+                .roles()
+                .body!!
+                .single()
+                .let { it.id to it.name },
+        ).isEqualTo("901" to "Gamers")
 
         val offline: DiscordRoleDirectory = mock { on { pingable() } doReturn null }
         assertThat(DiscordMemberController(directory, offline, channels, emoji).roles().statusCode)
@@ -68,7 +74,13 @@ class DiscordMemberControllerTest {
     @Test
     fun `answers the channels a game may live in, or 503 without a bot`() {
         assertThat(controller.channels(GameChannelCategory.GAMES).body).containsExactly(DiscordChannelResponse("11", "324", "valorant"))
-        assertThat(controller.channels(GameChannelCategory.GAMES).body!!.single().guildId).isEqualTo("324")
+        assertThat(
+            controller
+                .channels(GameChannelCategory.GAMES)
+                .body!!
+                .single()
+                .guildId,
+        ).isEqualTo("324")
         assertThat(controller.channels(GameChannelCategory.ESPORTS).body!!.map { it.name }).containsExactly("valorant-esports")
         val offline: DiscordGameChannels = mock { on { offered(GameChannelCategory.GAMES) } doReturn null }
         assertThat(DiscordMemberController(directory, roles, offline, emoji).channels(GameChannelCategory.GAMES).statusCode)

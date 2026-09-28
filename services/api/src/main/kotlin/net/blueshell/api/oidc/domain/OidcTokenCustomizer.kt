@@ -1,10 +1,10 @@
 package net.blueshell.api.oidc.domain
 
+import net.blueshell.api.security.SignInDetails
+import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.enums.Role
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import net.blueshell.api.security.SignInDetails
-import net.blueshell.api.security.SignIns
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException

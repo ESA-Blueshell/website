@@ -1,7 +1,7 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.testsupport.EsportsSeedFixture
 import net.blueshell.api.esports.domain.ShippedEsports
+import net.blueshell.api.testsupport.EsportsSeedFixture
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -248,8 +248,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
         assertThat(count("team_roster_entry")).isEqualTo(before)
     }
 
-    private fun runLoader(): ShippedEsports.Applied =
-        ShippedEsports(dataSource, transactionTemplate, EsportsSeedFixture.files).apply()
+    private fun runLoader(): ShippedEsports.Applied = ShippedEsports(dataSource, transactionTemplate, EsportsSeedFixture.files).apply()
 
     @AfterEach
     fun forgetTheFixtureGames() {

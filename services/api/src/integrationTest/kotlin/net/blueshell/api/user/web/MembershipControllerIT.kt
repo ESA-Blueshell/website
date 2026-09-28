@@ -1,9 +1,9 @@
 package net.blueshell.api.user.web
 
-import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.MemberRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -16,44 +16,40 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
 
 @SpringBootTest
 class MembershipControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var membershipRepository: MemberRepository
 
     private fun boardCreatePayload(
         userId: Long,
-        startDate: LocalDate = LocalDate.now().minusDays(1)
-    ): String =
-        """{"userId":$userId,"memberType":"REGULAR","startDate":"$startDate","incasso":true}"""
+        startDate: LocalDate = LocalDate.now().minusDays(1),
+    ): String = """{"userId":$userId,"memberType":"REGULAR","startDate":"$startDate","incasso":true}"""
 
     private fun updatePayload(
         userId: Long,
         version: Long,
         startDate: LocalDate = LocalDate.now().minusDays(7),
-        endDate: LocalDate = LocalDate.now().minusDays(1)
+        endDate: LocalDate = LocalDate.now().minusDays(1),
     ): String =
         """{"userId":$userId,"memberType":"ALUMNI","startDate":"$startDate","endDate":"$endDate","incasso":false,"version":$version}"""
 
     @Nested
     inner class FindMemberships {
-
         @Test
         fun `lists memberships`() {
             val board = createUserWithRole(Role.BOARD)
             createMembershipFixture()
 
-            mvc.perform(
-                get("/memberships")
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/memberships")
+                        .with(signedIn(board)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$[0].id").isNumber)
         }
@@ -66,11 +62,11 @@ class MembershipControllerIT : UserTestSupport() {
             val first = createMembershipFixture(user = firstUser)
             val second = createMembershipFixture(user = secondUser)
 
-            mvc.perform(
-                get("/memberships")
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/memberships")
+                        .with(signedIn(board)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$[?(@.id == ${first.id})]").exists())
                 .andExpect(jsonPath("$[?(@.id == ${second.id})]").exists())
         }
@@ -83,12 +79,12 @@ class MembershipControllerIT : UserTestSupport() {
             val targetMembership = createMembershipFixture(user = targetUser)
             val otherMembership = createMembershipFixture(user = otherUser)
 
-            mvc.perform(
-                get("/memberships")
-                    .param("userId", targetUser.id.toString())
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/memberships")
+                        .param("userId", targetUser.id.toString())
+                        .with(signedIn(board)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$[?(@.id == ${targetMembership.id})]").exists())
                 .andExpect(jsonPath("$[?(@.id == ${otherMembership.id})]").doesNotExist())
         }
@@ -96,7 +92,6 @@ class MembershipControllerIT : UserTestSupport() {
 
     @Nested
     inner class CreateMembership {
-
         private val acceptedConditions = """{"conditionsAccepted":true}"""
 
         private fun apply(user: net.blueshell.api.user.persistence.User) =
@@ -104,7 +99,7 @@ class MembershipControllerIT : UserTestSupport() {
                 post("/memberships")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(acceptedConditions)
-                    .with(signedIn(user))
+                    .with(signedIn(user)),
             )
 
         @Test
@@ -156,12 +151,13 @@ class MembershipControllerIT : UserTestSupport() {
         fun `refuses an application that does not accept the conditions and records nothing`(body: String) {
             val guest = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST)))
 
-            mvc.perform(
-                post("/memberships")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body)
-                    .with(signedIn(guest))
-            ).andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/memberships")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body)
+                        .with(signedIn(guest)),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors[0].field").value("conditionsAccepted"))
                 .andExpect(jsonPath("$.errors[0].message").value("The membership conditions must be accepted"))
 
@@ -172,19 +168,18 @@ class MembershipControllerIT : UserTestSupport() {
 
     @Nested
     inner class BoardCreateMembership {
-
         @Test
         fun `board creates membership`() {
             val board = createUserWithRole(Role.BOARD)
             val user = createUserWithRole(Role.GUEST)
 
-            mvc.perform(
-                post("/users/{userId}/memberships", user.id)
-                    .with(signedIn(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(boardCreatePayload(user.id!!))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/users/{userId}/memberships", user.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(boardCreatePayload(user.id!!)),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.memberType").value("REGULAR"))
                 .andExpect(jsonPath("$.incasso").value(true))
@@ -196,31 +191,30 @@ class MembershipControllerIT : UserTestSupport() {
         fun `returns not found when creating membership for unknown user`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                post("/users/{userId}/memberships", 999999L)
-                    .with(signedIn(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(boardCreatePayload(999999L))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    post("/users/{userId}/memberships", 999999L)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(boardCreatePayload(999999L)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class CorrectMembership {
-
         @Test
         fun `corrects membership`() {
             val board = createUserWithRole(Role.BOARD)
             val membership = createMembershipFixture()
 
-            mvc.perform(
-                put("/memberships/{id}", membership.id)
-                    .with(signedIn(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(updatePayload(membership.userId, membership.version))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/memberships/{id}", membership.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload(membership.userId, membership.version)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membership.id))
                 .andExpect(jsonPath("$.userId").value(membership.userId))
                 .andExpect(jsonPath("$.memberType").value("ALUMNI"))
@@ -236,19 +230,18 @@ class MembershipControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val user = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                put("/memberships/{id}", 999999L)
-                    .with(signedIn(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(updatePayload(user.id!!, 0))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    put("/memberships/{id}", 999999L)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload(user.id!!, 0)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class EndMembership {
-
         @Test
         fun `ends an active membership`() {
             val board = createUserWithRole(Role.BOARD)
@@ -256,11 +249,11 @@ class MembershipControllerIT : UserTestSupport() {
             val membership = createMembershipFixture(user = user)
             assertThat(membership.endDate).isNull()
 
-            mvc.perform(
-                post("/memberships/{id}/end", membership.id)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/memberships/{id}/end", membership.id)
+                        .with(signedIn(board)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membership.id))
                 .andExpect(jsonPath("$.endDate").isNotEmpty)
 
@@ -275,28 +268,27 @@ class MembershipControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.GUEST)
             val membership = createMembershipFixture(user = user, startDate = LocalDate.now())
 
-            mvc.perform(
-                post("/memberships/{id}/end", membership.id)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/memberships/{id}/end", membership.id)
+                        .with(signedIn(board)),
+                ).andExpect(status().isBadRequest)
         }
 
         @Test
         fun `returns not found when membership does not exist`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                post("/memberships/{id}/end", 999999L)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    post("/memberships/{id}/end", 999999L)
+                        .with(signedIn(board)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class ReopenMembership {
-
         @Test
         fun `reopens an ended membership`() {
             val board = createUserWithRole(Role.BOARD)
@@ -304,11 +296,11 @@ class MembershipControllerIT : UserTestSupport() {
             val membership = createMembershipFixture(user = user, endDate = LocalDate.now().minusDays(1))
             assertThat(membership.endDate).isNotNull()
 
-            mvc.perform(
-                post("/memberships/{id}/reopen", membership.id)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/memberships/{id}/reopen", membership.id)
+                        .with(signedIn(board)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membership.id))
                 .andExpect(jsonPath("$.endDate").doesNotExist())
 
@@ -323,38 +315,37 @@ class MembershipControllerIT : UserTestSupport() {
             val endedMembership = createMembershipFixture(user = user, endDate = LocalDate.now().minusDays(1))
             createMembershipFixture(user = user)
 
-            mvc.perform(
-                post("/memberships/{id}/reopen", endedMembership.id)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/memberships/{id}/reopen", endedMembership.id)
+                        .with(signedIn(board)),
+                ).andExpect(status().isBadRequest)
         }
 
         @Test
         fun `returns not found when membership does not exist`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                post("/memberships/{id}/reopen", 999999L)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    post("/memberships/{id}/reopen", 999999L)
+                        .with(signedIn(board)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class FindMembershipById {
-
         @Test
         fun `finds membership by id`() {
             val user = createUserWithRole(Role.MEMBER)
             val membership = createMembershipFixture(user = user)
 
-            mvc.perform(
-                get("/memberships/{id}", membership.id)
-                    .with(signedIn(user))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/memberships/{id}", membership.id)
+                        .with(signedIn(user)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membership.id))
                 .andExpect(jsonPath("$.userId").value(user.id))
         }
@@ -363,17 +354,16 @@ class MembershipControllerIT : UserTestSupport() {
         fun `returns not found when membership does not exist`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                get("/memberships/{id}", 999999L)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    get("/memberships/{id}", 999999L)
+                        .with(signedIn(board)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class DeleteMembership {
-
         @Test
         fun `deletes an active membership and hides it from list`() {
             val board = createUserWithRole(Role.BOARD)
@@ -381,17 +371,17 @@ class MembershipControllerIT : UserTestSupport() {
             val membership = createMembershipFixture(user = user)
             val membershipId = membership.id!!
 
-            mvc.perform(
-                delete("/memberships/{id}", membershipId)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/memberships/{id}", membershipId)
+                        .with(signedIn(board)),
+                ).andExpect(status().isNoContent)
 
-            mvc.perform(
-                get("/memberships/{id}", membershipId)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    get("/memberships/{id}", membershipId)
+                        .with(signedIn(board)),
+                ).andExpect(status().isNotFound)
         }
 
         @Test
@@ -401,17 +391,17 @@ class MembershipControllerIT : UserTestSupport() {
             val membership = createMembershipFixture(user = user)
             val membershipId = membership.id!!
 
-            mvc.perform(
-                delete("/memberships/{id}", membershipId)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/memberships/{id}", membershipId)
+                        .with(signedIn(board)),
+                ).andExpect(status().isNoContent)
 
-            mvc.perform(
-                get("/memberships")
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/memberships")
+                        .with(signedIn(board)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$[?(@.id == $membershipId)]").doesNotExist())
         }
 
@@ -419,17 +409,16 @@ class MembershipControllerIT : UserTestSupport() {
         fun `returns not found when membership does not exist`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                delete("/memberships/{id}", 999999L)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    delete("/memberships/{id}", 999999L)
+                        .with(signedIn(board)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class RestoreMembership {
-
         @Test
         fun `restores a deleted membership`() {
             val admin = createUserWithRole(Role.ADMIN)
@@ -437,25 +426,25 @@ class MembershipControllerIT : UserTestSupport() {
             val membership = createMembershipFixture(user = user)
             val membershipId = membership.id!!
 
-            mvc.perform(
-                delete("/memberships/{id}", membershipId)
-                    .with(signedIn(admin))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/memberships/{id}", membershipId)
+                        .with(signedIn(admin)),
+                ).andExpect(status().isNoContent)
 
-            mvc.perform(
-                put("/memberships/{id}/restore", membershipId)
-                    .with(signedIn(admin))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/memberships/{id}/restore", membershipId)
+                        .with(signedIn(admin)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membershipId))
                 .andExpect(jsonPath("$.userId").value(user.id))
 
-            mvc.perform(
-                get("/memberships/{id}", membershipId)
-                    .with(signedIn(admin))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/memberships/{id}", membershipId)
+                        .with(signedIn(admin)),
+                ).andExpect(status().isOk)
         }
 
         @Test
@@ -464,11 +453,11 @@ class MembershipControllerIT : UserTestSupport() {
             val membership = createMembershipFixture()
             val membershipId = membership.id!!
 
-            mvc.perform(
-                put("/memberships/{id}/restore", membershipId)
-                    .with(signedIn(admin))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    put("/memberships/{id}/restore", membershipId)
+                        .with(signedIn(admin)),
+                ).andExpect(status().isNotFound)
         }
 
         @Test
@@ -478,20 +467,20 @@ class MembershipControllerIT : UserTestSupport() {
             val deletedMembership = createMembershipFixture(user = user)
             val membershipId = deletedMembership.id!!
 
-            mvc.perform(
-                delete("/memberships/{id}", membershipId)
-                    .with(signedIn(admin))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/memberships/{id}", membershipId)
+                        .with(signedIn(admin)),
+                ).andExpect(status().isNoContent)
 
             // Create a new active membership for the same user
             createMembershipFixture(user = user)
 
-            mvc.perform(
-                put("/memberships/{id}/restore", membershipId)
-                    .with(signedIn(admin))
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    put("/memberships/{id}/restore", membershipId)
+                        .with(signedIn(admin)),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors").isArray)
                 // Restoring an active membership while another is active trips both the
                 // one-active and overlap rules; violations arrive as an unordered Set, so
@@ -500,16 +489,15 @@ class MembershipControllerIT : UserTestSupport() {
                     jsonPath(
                         "$.errors[*].message",
                         org.hamcrest.Matchers.hasItem(
-                            org.hamcrest.Matchers.containsString("active membership")
-                        )
-                    )
+                            org.hamcrest.Matchers.containsString("active membership"),
+                        ),
+                    ),
                 )
         }
     }
 
     @Nested
     inner class FindDeletedMemberships {
-
         @Test
         fun `lists deleted memberships for a user`() {
             val admin = createUserWithRole(Role.ADMIN)
@@ -518,17 +506,17 @@ class MembershipControllerIT : UserTestSupport() {
             val membership = createMembershipFixture(user = user)
             val membershipId = membership.id!!
 
-            mvc.perform(
-                delete("/memberships/{id}", membershipId)
-                    .with(signedIn(board))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/memberships/{id}", membershipId)
+                        .with(signedIn(board)),
+                ).andExpect(status().isNoContent)
 
-            mvc.perform(
-                get("/users/{userId}/memberships/deleted", user.id)
-                    .with(signedIn(admin))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/users/{userId}/memberships/deleted", user.id)
+                        .with(signedIn(admin)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$[0].id").value(membershipId))
                 .andExpect(jsonPath("$[0].userId").value(user.id))
@@ -539,11 +527,11 @@ class MembershipControllerIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
             val user = createUserWithRole(Role.GUEST)
 
-            mvc.perform(
-                get("/users/{userId}/memberships/deleted", user.id)
-                    .with(signedIn(admin))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/users/{userId}/memberships/deleted", user.id)
+                        .with(signedIn(admin)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$.length()").value(0))
         }

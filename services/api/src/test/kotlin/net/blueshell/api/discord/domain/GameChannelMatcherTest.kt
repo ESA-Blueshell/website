@@ -23,7 +23,7 @@ class GameChannelMatcherTest {
     private val offered = mock<DiscordGameChannels>()
     private val standing = mutableListOf<Game>()
 
-    /* The game module as the matcher sees it: the games there are, and their two channel lists. */
+    // The game module as the matcher sees it: the games there are, and their two channel lists.
     private val games = mock<GameService> { on { findAll() } doAnswer { standing.toList() } }
     private val blanks =
         mock<GameBlanks> {

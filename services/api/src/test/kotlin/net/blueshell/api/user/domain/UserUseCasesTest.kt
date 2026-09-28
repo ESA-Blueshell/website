@@ -3,11 +3,16 @@ package net.blueshell.api.user.domain
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
+import net.blueshell.api.security.StepUp
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.user.api.BoardUserData
 import net.blueshell.api.user.api.MemberProfileCompleteness
 import net.blueshell.api.user.api.NewUserData
 import net.blueshell.api.user.api.SelfUserData
 import net.blueshell.api.user.api.UpsertMemberProfileData
+import net.blueshell.api.user.api.UserEmailChangedByBoard
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.UserUseCases
@@ -18,11 +23,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
-import net.blueshell.api.security.StepUp
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.event.TrackedEventPublisher
-import net.blueshell.api.shared.tracking.Actor
-import net.blueshell.api.user.api.UserEmailChangedByBoard
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
@@ -331,10 +331,15 @@ class UserUseCasesTest {
             val member = testUser("john").apply { roles.add(Role.MEMBER) }
             whenever(userService.findById(2L)).thenReturn(member)
             whenever(userService.update(member)).thenReturn(member)
-            val self = SelfUserData(
-                discord = "upd#0001", phoneNumber = "0633333333", newsletter = true, photoConsent = true, version = 0L,
-                memberProfile = upsertMemberProfileData(version = 0L),
-            )
+            val self =
+                SelfUserData(
+                    discord = "upd#0001",
+                    phoneNumber = "0633333333",
+                    newsletter = true,
+                    photoConsent = true,
+                    version = 0L,
+                    memberProfile = upsertMemberProfileData(version = 0L),
+                )
 
             useCases.update(2L, self)
             member.roles.remove(Role.MEMBER)

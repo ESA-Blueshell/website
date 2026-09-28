@@ -78,7 +78,7 @@ class JdaVoiceServerSource(
             }
         }
 
-    /* Settable so a test can hand over a JDA rather than connect; nothing else changes it. */
+    // Settable so a test can hand over a JDA rather than connect; nothing else changes it.
     internal var connect: (JDABuilder) -> JDA = JDABuilder::build
 
     override fun server(): VoiceServer? =
@@ -125,7 +125,7 @@ class JdaVoiceServerSource(
         return rooms
     }
 
-    /* JDA keeps announcement channels apart from text channels; both take posts and invites. */
+    // JDA keeps announcement channels apart from text channels; both take posts and invites.
     override fun textRooms(): List<TextRoom> =
         jda
             ?.getGuildById(guildId)
@@ -133,7 +133,7 @@ class JdaVoiceServerSource(
             ?.map { TextRoom(it.id, guildId, it.name, it.parentCategory?.name) }
             .orEmpty()
 
-    /* Made once per channel and kept: unique=false has Discord hand back the same invite anyway. */
+    // Made once per channel and kept: unique=false has Discord hand back the same invite anyway.
     override fun invite(channelId: String): String? =
         invites[channelId] ?: runCatching {
             jda
@@ -172,7 +172,7 @@ class JdaVoiceServerSource(
     }
 }
 
-/* The application flags that grant each privileged intent; the _LIMITED ones are how an unverified bot has it. */
+// The application flags that grant each privileged intent; the _LIMITED ones are how an unverified bot has it.
 private const val GATEWAY_PRESENCE = 1 shl 12
 private const val GATEWAY_PRESENCE_LIMITED = 1 shl 13
 private const val GATEWAY_GUILD_MEMBERS = 1 shl 14

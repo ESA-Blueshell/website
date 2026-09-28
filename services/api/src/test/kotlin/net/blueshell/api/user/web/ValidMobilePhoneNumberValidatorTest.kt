@@ -10,7 +10,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class ValidMobilePhoneNumberValidatorTest {
-
     private val phoneNumberUtil = mock<PhoneNumberUtil>()
     private val validator = ValidMobilePhoneNumberValidator(phoneNumberUtil)
     private val context = mock<ConstraintValidatorContext>()

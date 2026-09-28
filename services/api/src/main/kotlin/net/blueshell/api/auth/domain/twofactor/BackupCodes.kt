@@ -15,8 +15,7 @@ object BackupCodes {
     private val random = SecureRandom()
     private val shape = Regex("[a-z0-9]{10}")
 
-    fun generate(): List<String> =
-        generateSequence { code() }.distinct().take(COUNT).toList()
+    fun generate(): List<String> = generateSequence { code() }.distinct().take(COUNT).toList()
 
     fun hash(typed: String): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(normalise(typed).toByteArray())

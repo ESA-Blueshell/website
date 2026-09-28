@@ -37,7 +37,13 @@ class ShippedDevEventsArtFilesTest {
     @Test
     fun `no banner is named by two rows`() {
         // Each stored picture backs one event, storage being content-addressed.
-        val twice = named.groupingBy { it }.eachCount().filterValues { it > 1 }.keys.sorted()
+        val twice =
+            named
+                .groupingBy { it }
+                .eachCount()
+                .filterValues { it > 1 }
+                .keys
+                .sorted()
 
         assertThat(twice).describedAs("art named by more than one event").isEmpty()
     }
@@ -48,8 +54,7 @@ class ShippedDevEventsArtFilesTest {
         assertThat(named).describedAs("events with a banner").hasSize(16)
     }
 
-    private fun exists(art: String): Boolean =
-        javaClass.classLoader.getResource("${EventSeed.files.directory}/art/$art") != null
+    private fun exists(art: String): Boolean = javaClass.classLoader.getResource("${EventSeed.files.directory}/art/$art") != null
 
     /** The committed pictures, read off the source tree: that is what a reviewer sees. */
     private fun shipped(): List<String> {

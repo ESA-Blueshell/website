@@ -8,7 +8,6 @@ import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import org.junit.jupiter.api.Test
@@ -24,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional
  * C specification placement.
  */
 class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
-
     /**
      * A1: Concrete job handlers in ..job.. packages must extend AbstractJsonJobHandler.
      *
@@ -36,10 +34,14 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `job handlers must extend AbstractJsonJobHandler`(): Unit =
         arch("Concrete *Job classes must extend AbstractJsonJobHandler") {
             classes()
-                .that().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
-                .and().haveSimpleNameEndingWith("Job")
-                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .should().beAssignableTo(AbstractJsonJobHandler::class.java)
+                .that()
+                .resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
+                .and()
+                .haveSimpleNameEndingWith("Job")
+                .and()
+                .doNotHaveModifier(JavaModifier.ABSTRACT)
+                .should()
+                .beAssignableTo(AbstractJsonJobHandler::class.java)
                 .because("ADR-022: Job handlers must extend AbstractJsonJobHandler for transactional wrapping and JSON deserialization")
         }
 
@@ -53,10 +55,14 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `job handlers must be annotated with @Component`(): Unit =
         arch("Concrete *Job classes must be @Component") {
             classes()
-                .that().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
-                .and().haveSimpleNameEndingWith("Job")
-                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .should().beAnnotatedWith(Component::class.java)
+                .that()
+                .resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
+                .and()
+                .haveSimpleNameEndingWith("Job")
+                .and()
+                .doNotHaveModifier(JavaModifier.ABSTRACT)
+                .should()
+                .beAnnotatedWith(Component::class.java)
                 .because("ADR-022: Job handlers need Spring-managed lifecycle (@Component)")
         }
 
@@ -70,14 +76,19 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `job handler handlePayload must not be @Transactional`(): Unit =
         arch("handlePayload methods in job handlers must not be @Transactional") {
             methods()
-                .that().haveName("handlePayload")
-                .and().areDeclaredInClassesThat().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
-                .and().areDeclaredInClassesThat()
-                    .areAssignableTo(AbstractJsonJobHandler::class.java)
-                .should().notBeAnnotatedWith(Transactional::class.java)
+                .that()
+                .haveName("handlePayload")
+                .and()
+                .areDeclaredInClassesThat()
+                .resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
+                .and()
+                .areDeclaredInClassesThat()
+                .areAssignableTo(AbstractJsonJobHandler::class.java)
+                .should()
+                .notBeAnnotatedWith(Transactional::class.java)
                 .because(
                     "AbstractJsonJobHandler.handle() is already @Transactional; annotating " +
-                        "handlePayload creates nested-transaction surprises"
+                        "handlePayload creates nested-transaction surprises",
                 )
         }
 
@@ -94,10 +105,14 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `production adapters must declare @Profile`(): Unit =
         arch("Production *Adapter classes must be annotated with @Profile") {
             classes()
-                .that().resideInAnyPackage("${ArchitecturePackages.ROOT}..")
-                .and().haveSimpleNameEndingWith("Adapter")
-                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .and().resideOutsideOfPackages(ArchitecturePackages.PLATFORM_MOCK)
+                .that()
+                .resideInAnyPackage("${ArchitecturePackages.ROOT}..")
+                .and()
+                .haveSimpleNameEndingWith("Adapter")
+                .and()
+                .doNotHaveModifier(JavaModifier.ABSTRACT)
+                .and()
+                .resideOutsideOfPackages(ArchitecturePackages.PLATFORM_MOCK)
                 .should(beAnnotatedWithProfile())
                 .because("ADR-022: Production adapters must have @Profile to avoid test environment pollution")
         }
@@ -115,9 +130,11 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `mock adapters must be @Primary`(): Unit =
         arch("Spring bean classes in platform.integration.mock must be @Primary") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_MOCK)
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.PLATFORM_MOCK)
                 .and(isSpringBean())
-                .should().beAnnotatedWith(Primary::class.java)
+                .should()
+                .beAnnotatedWith(Primary::class.java)
                 .because("ADR-022: Mock adapters need @Primary to override production beans in test/dev profiles")
         }
 
@@ -132,7 +149,8 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `mock adapters must target test or dev profiles`(): Unit =
         arch("Spring bean classes in platform.integration.mock must have @Profile containing 'test' or 'dev'") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_MOCK)
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.PLATFORM_MOCK)
                 .and(isSpringBean())
                 .should(haveTestOrDevProfile())
                 .because("ADR-022: Mock adapters must be scoped to test/dev profiles to prevent production activation")
@@ -148,10 +166,14 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `platform specifications must reside in persistence dot spec packages`(): Unit =
         arch("Platform *Specifications classes must be in ..persistence.spec.. packages") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Specifications")
-                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .should().resideInAnyPackage("${ArchitecturePackages.ROOT}.platform.integration..persistence.spec..")
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
+                .and()
+                .haveSimpleNameEndingWith("Specifications")
+                .and()
+                .doNotHaveModifier(JavaModifier.ABSTRACT)
+                .should()
+                .resideInAnyPackage("${ArchitecturePackages.ROOT}.platform.integration..persistence.spec..")
                 .allowEmptyShould(true)
                 .because("ADR-022: Standard layout requires specifications at ..persistence.spec..")
         }
@@ -164,15 +186,18 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
 
     private fun beAnnotatedWithProfile(): ArchCondition<JavaClass> =
         object : ArchCondition<JavaClass>("be annotated with @Profile") {
-            override fun check(clazz: JavaClass, events: ConditionEvents) {
+            override fun check(
+                clazz: JavaClass,
+                events: ConditionEvents,
+            ) {
                 val hasProfile = clazz.isAnnotatedWith(Profile::class.java)
                 if (!hasProfile) {
                     events.add(
                         SimpleConditionEvent.violated(
                             clazz,
                             "${clazz.name} is missing @Profile — production adapters must declare " +
-                                "a profile to prevent test environment pollution"
-                        )
+                                "a profile to prevent test environment pollution",
+                        ),
                     )
                 }
             }
@@ -180,25 +205,33 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
 
     private fun haveTestOrDevProfile(): ArchCondition<JavaClass> =
         object : ArchCondition<JavaClass>("have @Profile value containing 'test' or 'dev'") {
-            override fun check(clazz: JavaClass, events: ConditionEvents) {
+            override fun check(
+                clazz: JavaClass,
+                events: ConditionEvents,
+            ) {
                 val profileAnnotation = clazz.tryGetAnnotationOfType(Profile::class.java)
                 if (!profileAnnotation.isPresent) {
                     events.add(
                         SimpleConditionEvent.violated(
                             clazz,
-                            "${clazz.name} is missing @Profile — mock adapters must have @Profile('test') or @Profile('test | dev')"
-                        )
+                            "${clazz.name} is missing @Profile — mock adapters must have @Profile('test') or @Profile('test | dev')",
+                        ),
                     )
                     return
                 }
-                val value = profileAnnotation.get().value.joinToString("|").lowercase()
+                val value =
+                    profileAnnotation
+                        .get()
+                        .value
+                        .joinToString("|")
+                        .lowercase()
                 if (!value.contains("test") && !value.contains("dev")) {
                     events.add(
                         SimpleConditionEvent.violated(
                             clazz,
                             "${clazz.name} has @Profile($value) which does not contain 'test' or " +
-                                "'dev' — mock adapters must target test/dev profiles"
-                        )
+                                "'dev' — mock adapters must target test/dev profiles",
+                        ),
                     )
                 }
             }

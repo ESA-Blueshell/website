@@ -1,10 +1,10 @@
 package net.blueshell.api.event.web
 
+import io.mockk.every
+import io.mockk.mockk
 import net.blueshell.api.event.domain.EventSignUpData
 import net.blueshell.api.event.domain.EventSignUpService
 import net.blueshell.api.event.domain.EventSignUpUseCases
-import io.mockk.every
-import io.mockk.mockk
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import org.assertj.core.api.Assertions.assertThat

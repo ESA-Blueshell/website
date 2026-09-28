@@ -3,9 +3,9 @@ package net.blueshell.api.auth.web
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import net.blueshell.api.user.web.UpsertMemberProfileRequest
-import net.blueshell.api.shared.util.SNOWFLAKE
 import jakarta.validation.constraints.Pattern
+import net.blueshell.api.shared.util.SNOWFLAKE
+import net.blueshell.api.user.web.UpsertMemberProfileRequest
 
 /**
  * Everything the first signup step collects except the email address, which

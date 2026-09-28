@@ -40,7 +40,10 @@ class CommitteeServiceTest {
         CommitteeService(repository, mock<UserService>(), TrackedEventPublisher(mock<AfterCommitEventPublisher>(), actors), pictures, games)
             .apply {
                 // The entity manager is injected by field; create and update refresh through it.
-                BaseModelService::class.java.getDeclaredField("em").apply { isAccessible = true }.set(this, mock<EntityManager>())
+                BaseModelService::class.java
+                    .getDeclaredField("em")
+                    .apply { isAccessible = true }
+                    .set(this, mock<EntityManager>())
             }
 
     private fun committee(

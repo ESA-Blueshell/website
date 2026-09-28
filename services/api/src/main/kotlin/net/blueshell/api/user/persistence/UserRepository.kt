@@ -56,7 +56,7 @@ interface UserRepository : BaseRepository<User, Long> {
 
     fun existsByEmail(email: String): Boolean
 
-    /* A bulk update, so neither the version nor the audit columns move: nobody here changed it. */
+    // A bulk update, so neither the version nor the audit columns move: nobody here changed it.
     @Modifying
     @Query("update User u set u.discord = :name where u.discordId = :discordId and (u.discord is null or u.discord <> :name)")
     fun renameDiscordMember(

@@ -3,9 +3,9 @@ package net.blueshell.api.discord.web
 import net.blueshell.api.discord.domain.DiscordLive
 import net.blueshell.api.discord.domain.DiscordLiveService
 import net.blueshell.api.discord.domain.LiveRoom
-import net.blueshell.api.discord.domain.VoicePerson
 import net.blueshell.api.discord.domain.ViewerRoomService
 import net.blueshell.api.discord.domain.ViewerRooms
+import net.blueshell.api.discord.domain.VoicePerson
 import net.blueshell.api.discord.domain.VoiceRoom
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -75,4 +75,3 @@ class DiscordControllerTest {
         assertThat(DiscordController(mock(), offline).mine().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
 }
-

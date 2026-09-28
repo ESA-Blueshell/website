@@ -156,7 +156,7 @@ class CommitteeService
             applyGames(committee, page.gameCodes)
         }
 
-        /* An archived game the committee already names stays named; one cannot be newly picked. */
+        // An archived game the committee already names stays named; one cannot be newly picked.
         private fun applyGames(
             committee: Committee,
             gameCodes: List<String>?,

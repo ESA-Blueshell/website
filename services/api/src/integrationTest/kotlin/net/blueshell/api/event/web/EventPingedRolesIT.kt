@@ -30,7 +30,9 @@ class EventPingedRolesIT : UserTestSupport() {
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.pingedRoles[0].name").value("Alumni"))
                 .andReturn()
-        val id = com.jayway.jsonpath.JsonPath.read<Int>(created.response.contentAsString, "$.id")
+        val id =
+            com.jayway.jsonpath.JsonPath
+                .read<Int>(created.response.contentAsString, "$.id")
 
         mvc
             .perform(get("/events/{id}", id).with(signedIn(board)))

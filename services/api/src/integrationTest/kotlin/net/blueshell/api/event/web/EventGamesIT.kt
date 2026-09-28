@@ -92,8 +92,7 @@ class EventGamesIT : UserTestSupport() {
                         .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventBody(committee.id!!, listOf(dota))),
-                )
-                .andExpect(status().isCreated)
+                ).andExpect(status().isCreated)
                 .andReturn()
         val id = JsonPath.read<Int>(created.response.contentAsString, "$.id")
         archive(board, dota).andExpect(status().isOk)
@@ -104,8 +103,7 @@ class EventGamesIT : UserTestSupport() {
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventBody(committee.id!!, listOf(dota))),
-            )
-            .andExpect(status().isConflict)
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameArchived"))
         val kept = eventBody(committee.id!!, listOf(dota)).replace("\"gameCodes\"", "\"version\": 0, \"gameCodes\"")
         mvc

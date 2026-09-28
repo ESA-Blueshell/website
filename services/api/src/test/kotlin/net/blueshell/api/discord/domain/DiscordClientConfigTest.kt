@@ -23,7 +23,12 @@ class DiscordClientConfigTest {
         val config = DiscordClientConfig()
 
         val rest = config.discordRestClient(builder, JsonMapper.builder().build(), "abc", "https://discord.test")
-        val answer = rest.get().uri("/users/@me").retrieve().body(String::class.java)
+        val answer =
+            rest
+                .get()
+                .uri("/users/@me")
+                .retrieve()
+                .body(String::class.java)
 
         assertThat(answer).contains("\"1\"")
         assertThat(config.discordApi(rest)).isNotNull()

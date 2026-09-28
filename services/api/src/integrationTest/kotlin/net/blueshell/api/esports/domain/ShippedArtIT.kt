@@ -1,9 +1,5 @@
 package net.blueshell.api.esports.domain
 
-import java.io.ByteArrayInputStream
-import java.nio.file.Files
-import java.nio.file.Paths
-import javax.sql.DataSource
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
@@ -24,6 +20,10 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
+import java.io.ByteArrayInputStream
+import java.nio.file.Files
+import java.nio.file.Paths
+import javax.sql.DataSource
 
 /**
  * The art the repository ships lands on the records the seed files name.

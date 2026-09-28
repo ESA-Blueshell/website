@@ -14,7 +14,10 @@ import java.time.Instant
 class ValkeySignInStore(
     private val redis: StringRedisTemplate,
 ) : SignInStore {
-    override fun save(signIn: SignIn, expiresAt: Instant) {
+    override fun save(
+        signIn: SignIn,
+        expiresAt: Instant,
+    ) {
         val key = key(signIn.id)
         redis.opsForHash<String, String>().putAll(key, fieldsOf(signIn))
         signIn.previousJti ?: redis.opsForHash<String, String>().delete(key, PREVIOUS_JTI, PREVIOUS_RETIRED_AT)
@@ -35,13 +38,22 @@ class ValkeySignInStore(
         userId?.let { redis.opsForSet().remove(indexKey(it.toLong()), id) }
     }
 
-    override fun unindex(userId: Long, id: String) {
+    override fun unindex(
+        userId: Long,
+        id: String,
+    ) {
         redis.opsForSet().remove(indexKey(userId), id)
     }
 
     override fun idsOf(userId: Long): Set<String> = redis.opsForSet().members(indexKey(userId)).orEmpty()
 
-    override fun rotate(id: String, expectedJti: String, newJti: String, at: Instant, expiresAt: Instant): Boolean {
+    override fun rotate(
+        id: String,
+        expectedJti: String,
+        newJti: String,
+        at: Instant,
+        expiresAt: Instant,
+    ): Boolean {
         val result =
             redis.execute(
                 ROTATE,
@@ -76,7 +88,10 @@ class ValkeySignInStore(
 
     // A null for each field a hash written before a field existed can lack.
     @Suppress("ReturnCount")
-    private fun signInOf(id: String, fields: Map<String, String>): SignIn? {
+    private fun signInOf(
+        id: String,
+        fields: Map<String, String>,
+    ): SignIn? {
         fun instant(name: String): Instant? = fields[name]?.toLongOrNull()?.let(Instant::ofEpochMilli)
         return SignIn(
             id = id,
@@ -90,7 +105,12 @@ class ValkeySignInStore(
             previousJti = fields[PREVIOUS_JTI],
             previousRetiredAt = instant(PREVIOUS_RETIRED_AT),
             steppedUpAt = instant(STEPPED_UP_AT),
-            methods = fields[METHODS].orEmpty().split(",").filter { it.isNotBlank() }.toSet(),
+            methods =
+                fields[METHODS]
+                    .orEmpty()
+                    .split(",")
+                    .filter { it.isNotBlank() }
+                    .toSet(),
         )
     }
 

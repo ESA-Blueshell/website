@@ -25,7 +25,7 @@ import tools.jackson.databind.json.JsonMapper
 @Profile("!test")
 @ConditionalOnExpression(DISCORD_TOKEN_SET)
 class DiscordClientConfig {
-    /* Also used bare for what the generated client cannot send, such as a message with a file. */
+    // Also used bare for what the generated client cannot send, such as a message with a file.
     @Bean
     fun discordRestClient(
         restClientBuilder: RestClient.Builder,

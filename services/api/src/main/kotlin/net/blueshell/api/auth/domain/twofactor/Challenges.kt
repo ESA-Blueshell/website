@@ -78,7 +78,12 @@ class Challenges(
     fun countFailure(userId: Long): Boolean {
         val key = failuresKey(userId)
         val now = clock.instant()
-        val since = redis.opsForHash<String, String>().get(key, "since")?.toLongOrNull()?.let(Instant::ofEpochMilli)
+        val since =
+            redis
+                .opsForHash<String, String>()
+                .get(key, "since")
+                ?.toLongOrNull()
+                ?.let(Instant::ofEpochMilli)
         if (since == null || !now.isBefore(since.plus(ACCOUNT_WINDOW))) {
             redis.delete(key)
             redis.opsForHash<String, String>().put(key, "since", now.toEpochMilli().toString())

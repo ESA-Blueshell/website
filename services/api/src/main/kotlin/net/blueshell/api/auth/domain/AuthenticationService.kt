@@ -1,12 +1,11 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.domain.twofactor.Challenges
 import net.blueshell.api.auth.domain.twofactor.ThrottledCodes
-import net.blueshell.api.auth.domain.twofactor.Proof
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.auth.domain.twofactor.TwoFactorStanding
+import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.security.Browser
 import net.blueshell.api.security.SignIn
 import net.blueshell.api.security.SignIns

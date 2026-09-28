@@ -1,25 +1,18 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.api.shared.job.ExplainedJobFailure
-import net.blueshell.api.sync.api.DiscordEmbed
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordImage
 import net.blueshell.api.sync.api.DiscordLink
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.clients.discord.api.DiscordApi
-import net.blueshell.clients.discord.model.MessageCreateRequest
-import net.blueshell.clients.discord.model.MessageEditRequestPartial
-import net.blueshell.clients.discord.model.MessageResponse
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.containsString
-import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -65,13 +58,7 @@ class BotPublisherTest {
     private val post =
         DiscordPost(
             pingedRoleIds = listOf("901", "902"),
-            embed =
-                DiscordEmbed(
-                    title = "LAN party",
-                    url = "https://site/events/42",
-                    description = "Bring a rig.",
-                    fields = listOf("When" to "soon"),
-                ),
+            text = "## LAN party\n\nBring a rig.\n\n<@&901> <@&902>",
         )
 
     private val listing =
@@ -93,50 +80,64 @@ class BotPublisherTest {
     }
 
     @Test
-    fun `posts in the channel of that name, naming and notifying only the pinged roles`() {
-        val message: MessageResponse = mock { on { id } doReturn "m1" }
-        whenever(api.createMessage(eq("111"), any())).thenReturn(message)
+    fun `posts plain text in the channel of that name, notifying only the pinged roles`() {
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(header(HttpHeaders.CONTENT_TYPE, containsString("application/json")))
+            .andExpect(jsonPath("$.flags").value(1 shl 15))
+            .andExpect(jsonPath("$.content").value(""))
+            .andExpect(jsonPath("$.embeds").isEmpty())
+            .andExpect(jsonPath("$.attachments").isEmpty())
+            .andExpect(jsonPath("$.components.length()").value(1))
+            .andExpect(jsonPath("$.components[0].type").value(10))
+            .andExpect(jsonPath("$.components[0].content").value(post.text))
+            .andExpect(jsonPath("$.allowed_mentions.parse").isEmpty())
+            .andExpect(jsonPath("$.allowed_mentions.roles", containsInAnyOrder("901", "902")))
+            .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
 
         assertThat(publisher.post("events-info", post)).isEqualTo("111/m1")
 
-        val sent = argumentCaptor<MessageCreateRequest>()
-        verify(api).createMessage(eq("111"), sent.capture())
-        assertThat(sent.firstValue.content).isEqualTo("<@&901> <@&902>")
-        assertThat(sent.firstValue.allowedMentions!!.roles).containsExactlyInAnyOrder("901", "902")
-        assertThat(sent.firstValue.allowedMentions!!.parse).isEmpty()
-        val embed = sent.firstValue.embeds!!.single()
-        assertThat(embed.title).isEqualTo("LAN party")
-        assertThat(embed.image).isNull()
-        assertThat(sent.firstValue.attachments).isEmpty()
-        assertThat(embed.fields!!.single().let { it.name to it.value }).isEqualTo("When" to "soon")
+        discord.verify()
+        verifyNoInteractions(api)
     }
 
     @Test
-    fun `edits without notifying anybody, and posts no mentions where no role is pinged`() {
-        publisher.edit("events-info", "m1", post.copy(pingedRoleIds = emptyList()))
+    fun `edits a post, one made as an embed included, without notifying anybody`() {
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages/m1"))
+            .andExpect(method(HttpMethod.PATCH))
+            .andExpect(jsonPath("$.flags").value(1 shl 15))
+            .andExpect(jsonPath("$.content").value(""))
+            .andExpect(jsonPath("$.embeds").isEmpty())
+            .andExpect(jsonPath("$.attachments").isEmpty())
+            .andExpect(jsonPath("$.components[0].content").value(post.text))
+            .andExpect(jsonPath("$.allowed_mentions.parse").isEmpty())
+            .andExpect(jsonPath("$.allowed_mentions.roles").isEmpty())
+            .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
 
-        val sent = argumentCaptor<MessageEditRequestPartial>()
-        verify(api).updateMessage(eq("111"), eq("m1"), sent.capture())
-        assertThat(sent.firstValue.content).isEmpty()
-        assertThat(sent.firstValue.allowedMentions!!.parse).isEmpty()
-        assertThat(sent.firstValue.allowedMentions!!.roles).isNull()
-        assertThat(sent.firstValue.attachments).isEmpty()
+        assertThat(publisher.edit("events-info", "m1", post)).isTrue()
+
+        discord.verify()
+        verifyNoInteractions(api)
     }
 
     @Test
-    fun `sends the banner as a file above the embed, on a post and on an edit`() {
+    fun `shows the banner above the text, on a post and on an edit`() {
         discord
             .expect(requestTo("https://discord.test/channels/111/messages"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(header(HttpHeaders.CONTENT_TYPE, containsString("multipart/form-data")))
             .andExpect(content().string(containsString("filename=\"banner.webp\"")))
-            .andExpect(content().string(not(containsString("attachment://"))))
+            .andExpect(content().string(containsString("""{"type":12,"items":[{"media":{"url":"attachment://banner.webp"}}]}""")))
+            .andExpect(content().string(containsString(""""attachments":[{"id":"0","filename":"banner.webp"}]""")))
             .andExpect(content().string(containsString("<@&901> <@&902>")))
             .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
         discord
             .expect(requestTo("https://discord.test/channels/111/messages/m1"))
             .andExpect(method(HttpMethod.PATCH))
             .andExpect(content().string(containsString("filename=\"banner.webp\"")))
+            .andExpect(content().string(containsString("attachment://banner.webp")))
             .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
 
         assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("111/m1")
@@ -158,16 +159,15 @@ class BotPublisherTest {
             .expect(requestTo("https://discord.test/channels/111/messages"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(header(HttpHeaders.CONTENT_TYPE, containsString("application/json")))
-            .andExpect(jsonPath("$.components[0].type").value(1))
-            .andExpect(jsonPath("$.components[0].components[0].style").value(5))
-            .andExpect(jsonPath("$.components[0].components[1].label").value("Sign up"))
-            .andExpect(jsonPath("$.components[0].components[1].url").value("https://site/events/42#signup"))
-            .andExpect(jsonPath("$.content").value("<@&901> <@&902>"))
+            .andExpect(jsonPath("$.components[1].type").value(1))
+            .andExpect(jsonPath("$.components[1].components[0].style").value(5))
+            .andExpect(jsonPath("$.components[1].components[1].label").value("Sign up"))
+            .andExpect(jsonPath("$.components[1].components[1].url").value("https://site/events/42#signup"))
             .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
         discord
             .expect(requestTo("https://discord.test/channels/111/messages/m1"))
             .andExpect(method(HttpMethod.PATCH))
-            .andExpect(jsonPath("$.components[0].components[0].label").value("More on the site"))
+            .andExpect(jsonPath("$.components[1].components[0].label").value("More on the site"))
             .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
         discord
             .expect(requestTo("https://discord.test/channels/111/messages"))
@@ -206,28 +206,27 @@ class BotPublisherTest {
 
     @Test
     fun `posts and edits without the banner where Discord refuses the file, and gives up on anything else`() {
-        val message: MessageResponse = mock { on { id } doReturn "m1" }
-        whenever(api.createMessage(eq("111"), any())).thenReturn(message)
         discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withStatus(HttpStatus.CONTENT_TOO_LARGE))
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages"))
+            .andExpect(jsonPath("$.attachments").isEmpty())
+            .andExpect(jsonPath("$.components[0].type").value(10))
+            .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
         discord.expect(requestTo("https://discord.test/channels/111/messages/m1")).andRespond(withStatus(HttpStatus.CONTENT_TOO_LARGE))
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages/m1"))
+            .andExpect(jsonPath("$.attachments").isEmpty())
+            .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
         discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withServerError())
+        discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withBadRequest())
 
         assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("111/m1")
         publisher.edit("events-info", "m1", post.copy(banner = banner))
         assertThatThrownBy { publisher.post("events-info", post.copy(banner = banner)) }
             .isInstanceOf(ExplainedJobFailure::class.java)
             .hasCauseInstanceOf(HttpServerErrorException::class.java)
-
-        val sent = argumentCaptor<MessageCreateRequest>()
-        verify(api).createMessage(eq("111"), sent.capture())
-        assertThat(
-            sent.firstValue.embeds!!
-                .single()
-                .image,
-        ).isNull()
-        verify(api).updateMessage(eq("111"), eq("m1"), any())
-        whenever(api.createMessage(eq("111"), any())).thenThrow(HttpClientErrorException(HttpStatus.BAD_REQUEST))
         assertThatThrownBy { publisher.post("events-info", post) }.isInstanceOf(HttpClientErrorException::class.java)
+        discord.verify()
     }
 
     @Test
@@ -241,10 +240,15 @@ class BotPublisherTest {
 
     @Test
     fun `reaches a message by the channel its reference carries, whatever the channel is called now`() {
+        discord
+            .expect(requestTo("https://discord.test/channels/222/messages/m1"))
+            .andExpect(method(HttpMethod.PATCH))
+            .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
+
         publisher.edit("events-lobby", "222/m1", post)
         publisher.delete("events-lobby", "222/m2")
 
-        verify(api).updateMessage(eq("222"), eq("m1"), any())
+        discord.verify()
         verify(api).deleteMessage("222", "m2")
     }
 
@@ -285,8 +289,8 @@ class BotPublisherTest {
 
     @Test
     fun `says which permission the bot lacks for what it was doing`() {
-        whenever(api.createMessage(eq("111"), any())).thenThrow(HttpClientErrorException(HttpStatus.FORBIDDEN))
         whenever(api.deleteMessage("111", "m1")).thenThrow(HttpClientErrorException(HttpStatus.FORBIDDEN))
+        discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withStatus(HttpStatus.FORBIDDEN))
         whenever(api.deleteGuildScheduledEvent("324", "e1")).thenThrow(HttpClientErrorException(HttpStatus.FORBIDDEN))
         discord.expect(requestTo("https://discord.test/channels/111/messages?limit=100")).andRespond(withStatus(HttpStatus.FORBIDDEN))
         discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events")).andRespond(withStatus(HttpStatus.FORBIDDEN))
@@ -309,16 +313,23 @@ class BotPublisherTest {
 
     @Test
     fun `says Discord refuses a post or a Discord event as too long, and passes on any other refusal`() {
-        val tooLong = """{"code": 50035, "errors": {"embeds": {"0": {"description": {"_errors": [{"code": "BASE_TYPE_MAX_LENGTH"}]}}}}}"""
+        val tooLong = """{"code": 50035, "errors": {"description": {"_errors": [{"code": "BASE_TYPE_MAX_LENGTH"}]}}}"""
+        val textTooLong = """{"errors": {"components": {"_errors": [{"code": "COMPONENT_DISPLAYABLE_TEXT_SIZE_EXCEEDED"}]}}}"""
+        val displayTooLong = """{"errors": {"components": {"0": {"content": {"_errors": [{"code": "BASE_TYPE_BAD_LENGTH"}]}}}}}"""
         discord
             .expect(requestTo("https://discord.test/channels/111/messages"))
-            .andRespond(withBadRequest().body(tooLong).contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withBadRequest().body(textTooLong).contentType(MediaType.APPLICATION_JSON))
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages/m1"))
+            .andRespond(withBadRequest().body(displayTooLong).contentType(MediaType.APPLICATION_JSON))
         discord
             .expect(requestTo("https://discord.test/guilds/324/scheduled-events"))
             .andRespond(withBadRequest().body(tooLong).contentType(MediaType.APPLICATION_JSON))
         discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events")).andRespond(withBadRequest())
 
         assertThatThrownBy { publisher.post("events-info", post.copy(links = listOf(DiscordLink("Sign up", "https://site/events/42")))) }
+            .hasMessage("Discord refuses the #events-info post as too long.")
+        assertThatThrownBy { publisher.edit("events-info", "m1", post) }
             .hasMessage("Discord refuses the #events-info post as too long.")
         assertThatThrownBy { publisher.createDiscordEvent(listing.copy(cover = null)) }
             .hasMessage("Discord refuses the Discord event as too long.")
@@ -391,17 +402,23 @@ class BotPublisherTest {
     }
 
     @Test
-    fun `finds this bot's own posts linking a page, not another bot's, and Discord events naming it on a line`() {
+    fun `finds this bot's own posts linking a page by a button or an embed, not another bot's, and Discord events naming it on a line`() {
         discord
             .expect(requestTo("https://discord.test/channels/111/messages?limit=100"))
             .andRespond(
                 withSuccess(
                     """
                     [
+                      {"id": "m5", "author": {"id": "900", "bot": true}, "embeds": [], "components": [
+                        {"type": 10, "content": "## LAN party"},
+                        {"type": 1, "components": [{"type": 2, "style": 5, "url": "https://site/events/42"}]}
+                      ]},
                       {"id": "m4", "author": {"id": "900", "bot": true}, "embeds": [{"url": "https://site/events/42"}]},
                       {"id": "m3", "author": {"id": "700", "bot": true}, "embeds": [{"url": "https://site/events/42"}]},
                       {"id": "m2", "author": {"id": "701", "bot": false}, "embeds": [{"url": "https://site/events/42"}]},
-                      {"id": "m1", "author": {"id": "900", "bot": true}, "embeds": [{"url": "https://site/events/421"}]},
+                      {"id": "m1", "author": {"id": "900", "bot": true}, "embeds": [{"url": "https://site/events/421"}], "components": [
+                        {"type": 1, "components": [{"type": 2, "style": 5, "url": "https://site/events/421#signup"}]}
+                      ]},
                       {"id": "m0", "author": {"id": "900", "bot": true}}
                     ]
                     """,
@@ -426,7 +443,7 @@ class BotPublisherTest {
                 ),
             )
 
-        assertThat(publisher.findPosts("events-info", "https://site/events/42")).containsExactly("111/m4")
+        assertThat(publisher.findPosts("events-info", "https://site/events/42")).containsExactly("111/m5", "111/m4")
         assertThat(publisher.findDiscordEvents("More on the site: https://site/events/42")).containsExactly("e2")
         discord.verify()
     }
@@ -434,7 +451,10 @@ class BotPublisherTest {
     @Test
     fun `passes a rate limit on rather than dropping the banner, and says when the message was removed by hand`() {
         discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS))
-        whenever(api.updateMessage(eq("111"), eq("m9"), any())).thenThrow(HttpClientErrorException(HttpStatus.NOT_FOUND))
+        discord.expect(requestTo("https://discord.test/channels/111/messages/m9")).andRespond(withStatus(HttpStatus.NOT_FOUND))
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages/m1"))
+            .andRespond(withSuccess("""{"id": "m1"}""", MediaType.APPLICATION_JSON))
 
         assertThatThrownBy { publisher.post("events-info", post.copy(banner = banner)) }
             .hasMessage("Discord is rate limiting the bot.")

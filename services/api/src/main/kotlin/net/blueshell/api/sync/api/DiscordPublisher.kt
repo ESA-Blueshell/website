@@ -2,26 +2,24 @@ package net.blueshell.api.sync.api
 
 import java.time.Instant
 
-/** A message the bot writes: the roles it notifies, then [banner], then an embed, then [links] as buttons. */
+/**
+ * A message the bot writes: [banner], then [text], then [links] as buttons. [text] names the roles
+ * the message notifies, [pingedRoleIds], and holds at most [DISCORD_TEXT_MAX] characters.
+ */
 data class DiscordPost(
     val pingedRoleIds: List<String>,
-    val embed: DiscordEmbed,
+    val text: String,
     val banner: DiscordImage? = null,
     val links: List<DiscordLink> = emptyList(),
 )
+
+/** The most a message's text holds: Discord's limit for a message laid out in components. */
+const val DISCORD_TEXT_MAX = 4000
 
 /** A button under a message that opens [url]. */
 data class DiscordLink(
     val label: String,
     val url: String,
-)
-
-/** A Discord embed: a titled card linking [url], with [fields] as label and value. */
-data class DiscordEmbed(
-    val title: String,
-    val url: String,
-    val description: String,
-    val fields: List<Pair<String, String>>,
 )
 
 /**
@@ -72,8 +70,8 @@ interface DiscordPublisher {
     ): Boolean
 
     /**
-     * This bot's messages among the latest hundred in the channel called [channel] whose embed
-     * links [url], newest first, by reference: what is already out, whether or not it was
+     * This bot's messages among the latest hundred in the channel called [channel] whose buttons
+     * or embed link [url], newest first, by reference: what is already out, whether or not it was
      * recorded. Another bot's message linking the same page is not the bot's to touch.
      */
     fun findPosts(

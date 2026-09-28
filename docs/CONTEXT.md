@@ -407,7 +407,9 @@ _Avoid_: fourteen days before the start (a rolling window), lead time
 
 The two messages the bot writes about an approved event, named after the Discord
 channels they appear in. Both say the same, and both notify the event's pinged roles.
-Times are Amsterdam time.
+A post is plain text: the banner, the title, the description, the details, then the
+mentions of the roles, with buttons to the event page and its sign-up. Times are
+Amsterdam time.
 
 The **events-info post** goes out once the event is approved and within two weeks: at
 08:00 when that begins, or at once when the event is approved, created or moved inside
@@ -442,9 +444,9 @@ The card a chat app draws when somebody pastes a link: a title, a line of text a
 picture. An event page's link preview shows the event. An event that anonymous callers
 may not read gets the site's own link preview, which every other page also has.
 
-**A link preview is not an "embed".** An embed is part of a message the bot posts. A
-link preview is drawn by the app the link was pasted into, from what the page says
-about itself.
+**A link preview is not an "embed".** An embed is a card a bot attaches to a message;
+the bot's posts are plain text and carry none. A link preview is drawn by the app the
+link was pasted into, from what the page says about itself.
 
 ## Committees
 

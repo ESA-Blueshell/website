@@ -1,21 +1,13 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.api.shared.job.ExplainedJobFailure
-import net.blueshell.api.sync.api.DiscordEmbed
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordImage
-import net.blueshell.api.sync.api.DiscordLink
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.api.sync.api.DiscordPublisher
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.CreateGuildScheduledEventRequest
 import net.blueshell.clients.discord.model.GuildScheduledEventEntityTypes
-import net.blueshell.clients.discord.model.MessageAllowedMentionsRequest
-import net.blueshell.clients.discord.model.MessageAttachmentRequest
-import net.blueshell.clients.discord.model.MessageCreateRequest
-import net.blueshell.clients.discord.model.MessageEditRequestPartial
-import net.blueshell.clients.discord.model.RichEmbed
-import net.blueshell.clients.discord.model.RichEmbedField
 import net.blueshell.clients.discord.model.UpdateGuildScheduledEventRequest
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
@@ -33,17 +25,15 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.node.ObjectNode
-import java.net.URI
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 /**
- * The bot's voice: messages through the generated REST client, or as multipart where a banner
- * goes with them, channels found by name among the text channels the gateway holds and a posted
- * message by the channel its reference carries. Mentions
- * notify only when a message is first posted; an edit is sent with no mention allowed, so
- * rewriting a post never pings anybody.
+ * The bot's voice: messages as JSON, or as multipart where a banner goes with them, channels found
+ * by name among the text channels the gateway holds and a posted message by the channel its
+ * reference carries. Mentions notify only when a message is first posted; an edit is sent with no
+ * mention allowed, so rewriting a post never pings anybody.
  */
 @Component
 @Profile("!test")
@@ -64,18 +54,7 @@ class BotPublisher(
             val messageId =
                 withoutImageIfRefused(post.banner != null) { withBanner ->
                     val banner = post.banner?.takeIf { withBanner }
-                    val request =
-                        MessageCreateRequest(
-                            content = mentionsOf(post),
-                            embeds = listOf(post.embed.asRichEmbed()),
-                            allowedMentions = MessageAllowedMentionsRequest(parse = emptySet(), roles = post.pingedRoleIds.toSet()),
-                            attachments = attachmentsOf(banner),
-                        )
-                    if (banner == null && post.links.isEmpty()) {
-                        api.createMessage(channelId, request).id
-                    } else {
-                        sendRaw(HttpMethod.POST, "/channels/{channel}/messages", withLinks(request, post.links), banner, channelId)
-                    }
+                    sendRaw(HttpMethod.POST, "/channels/{channel}/messages", payloadOf(post, banner, post.pingedRoleIds), banner, channelId)
                 }
             "$channelId/$messageId"
         }
@@ -90,64 +69,62 @@ class BotPublisher(
             val (channelId, messageId) = messageOf(channel, reference)
             stillThere {
                 withoutImageIfRefused(post.banner != null) { withBanner ->
-                    send(post, post.banner?.takeIf { withBanner }, channelId, messageId)
+                    val banner = post.banner?.takeIf { withBanner }
+                    val path = "/channels/{channel}/messages/{message}"
+                    sendRaw(HttpMethod.PATCH, path, payloadOf(post, banner, notified = emptyList()), banner, channelId, messageId)
                 }
             }
         }
 
-    private fun send(
+    /*
+     * A message laid out in components, whose text reads as plain text and holds twice what plain
+     * content does. The empty content and embeds let an edit turn a post made as an embed into
+     * one: Discord refuses the flag beside either. Built as raw JSON, as the generated client's
+     * message components hold only text displays, not a gallery or an action row of buttons.
+     */
+    private fun payloadOf(
         post: DiscordPost,
         banner: DiscordImage?,
-        channelId: String,
-        messageId: String,
-    ) {
-        val request =
-            MessageEditRequestPartial(
-                content = mentionsOf(post) ?: "",
-                embeds = listOf(post.embed.asRichEmbed()),
-                allowedMentions = MessageAllowedMentionsRequest(parse = emptySet()),
-                attachments = attachmentsOf(banner),
-            )
-        if (banner == null && post.links.isEmpty()) {
-            api.updateMessage(channelId, messageId, request)
-        } else {
-            val path = "/channels/{channel}/messages/{message}"
-            sendRaw(HttpMethod.PATCH, path, withLinks(request, post.links), banner, channelId, messageId)
-        }
-    }
-
-    /*
-     * Link buttons go as raw JSON: the generated client's message components hold only text
-     * displays, not an action row of buttons.
-     */
-    private fun withLinks(
-        request: Any,
-        links: List<DiscordLink>,
-    ): Any {
-        if (links.isEmpty()) return request
-        val payload = jsonMapper.valueToTree<ObjectNode>(request)
-        val row = payload.putArray("components").addObject().put("type", ACTION_ROW)
-        val buttons = row.putArray("components")
-        for (link in links) {
-            buttons
+        notified: List<String>,
+    ): ObjectNode {
+        val payload = jsonMapper.createObjectNode().put("flags", COMPONENTS_V2).put("content", "")
+        payload.putArray("embeds")
+        val mentions = payload.putObject("allowed_mentions")
+        mentions.putArray("parse")
+        val roles = mentions.putArray("roles")
+        notified.forEach { roles.add(it) }
+        val attachments = payload.putArray("attachments")
+        val components = payload.putArray("components")
+        if (banner != null) {
+            attachments.addObject().put("id", "0").put("filename", banner.fileName)
+            components
                 .addObject()
-                .put("type", BUTTON)
-                .put("style", LINK_STYLE)
-                .put("label", link.label)
-                .put("url", link.url)
+                .put("type", MEDIA_GALLERY)
+                .putArray("items")
+                .addObject()
+                .putObject("media")
+                .put("url", "attachment://${banner.fileName}")
+        }
+        components.addObject().put("type", TEXT_DISPLAY).put("content", post.text)
+        if (post.links.isNotEmpty()) {
+            val buttons = components.addObject().put("type", ACTION_ROW).putArray("components")
+            for (link in post.links) {
+                buttons
+                    .addObject()
+                    .put("type", BUTTON)
+                    .put("style", LINK_STYLE)
+                    .put("label", link.label)
+                    .put("url", link.url)
+            }
         }
         return payload
     }
 
-    /*
-     * A message past the generated client goes as JSON, or as multipart where a banner goes with
-     * it. The banner is the message's attachment rather than the embed's image: Discord draws an
-     * attachment above the embed, and an embed's image under it.
-     */
+    // A message goes as JSON, or as multipart where a banner goes with it.
     private fun sendRaw(
         method: HttpMethod,
         path: String,
-        request: Any,
+        request: ObjectNode,
         banner: DiscordImage?,
         vararg ids: String,
     ): String {
@@ -191,10 +168,8 @@ class BotPublisher(
         explained(reading(channel)) {
             val channelId = channelIdOf(channel)
             readAll("/channels/{channel}/messages?limit=100", channelId)
-                .filter { message ->
-                    (message["embeds"] as? List<*>).orEmpty().any { (it as? Map<*, *>)?.get("url") == url } &&
-                        (message["author"] as? Map<*, *>)?.get("id") == selfId
-                }.map { "$channelId/${it.getValue("id")}" }
+                .filter { message -> url in linksOf(message) && (message["author"] as? Map<*, *>)?.get("id") == selfId }
+                .map { "$channelId/${it.getValue("id")}" }
         }
 
     override fun stillPosted(
@@ -357,8 +332,11 @@ class BotPublisher(
     private companion object {
         // The only privacy level Discord offers for a server's events.
         const val GUILD_ONLY = 2
+        const val COMPONENTS_V2 = 1 shl 15
         const val ACTION_ROW = 1
         const val BUTTON = 2
+        const val TEXT_DISPLAY = 10
+        const val MEDIA_GALLERY = 12
         const val LINK_STYLE = 5
 
         // Only the ID is read back, so a field Discord adds or leaves null cannot break it.
@@ -367,22 +345,17 @@ class BotPublisher(
     }
 }
 
-// Mentions go in the message text: Discord notifies nobody named only inside an embed.
-private fun mentionsOf(post: DiscordPost): String? = post.pingedRoleIds.takeIf { it.isNotEmpty() }?.joinToString(" ") { "<@&$it>" }
+// Where a message's buttons and embeds lead, however deep its components nest: a post made as an embed links its page from there.
+private fun linksOf(message: Map<*, *>): List<Any?> =
+    (message["embeds"] as? List<*>).orEmpty().map { (it as? Map<*, *>)?.get("url") } +
+        (message["components"] as? List<*>).orEmpty().flatMap { buttonLinksOf(it as? Map<*, *>) }
 
-private fun DiscordEmbed.asRichEmbed() =
-    RichEmbed(
-        title = title,
-        url = URI(url),
-        description = description,
-        fields = fields.map { (name, value) -> RichEmbedField(name = name, value = value, inline = true) },
-    )
+private fun buttonLinksOf(component: Map<*, *>?): List<Any?> =
+    listOf(component?.get("url")) + (component?.get("components") as? List<*>).orEmpty().flatMap { buttonLinksOf(it as? Map<*, *>) }
 
 // A reference is the channel's ID and the message's, split by a slash.
 private fun split(reference: String): Pair<String, String>? =
     reference.split('/', limit = 2).takeIf { it.size == 2 }?.let { (channelId, messageId) -> channelId to messageId }
-
-private fun attachmentsOf(banner: DiscordImage?) = listOfNotNull(banner?.let { MessageAttachmentRequest(id = "0", filename = it.fileName) })
 
 private fun Instant.utc(): OffsetDateTime = atOffset(ZoneOffset.UTC)
 
@@ -439,8 +412,8 @@ private val LISTING = Doing("the Discord event", "The bot may not keep the serve
 
 private const val UNAVAILABLE = "Discord is unavailable."
 
-// What Discord says of a field over its limit, and of an embed over its total.
-private val TOO_LONG = listOf("BASE_TYPE_MAX_LENGTH", "Embed size exceeds maximum size")
+// What Discord says of a field over its limit, of one text display over it, and of a message's text over its total.
+private val TOO_LONG = listOf("BASE_TYPE_MAX_LENGTH", "BASE_TYPE_BAD_LENGTH", "COMPONENT_DISPLAYABLE_TEXT_SIZE_EXCEEDED")
 
 /*
  * The refusals the board can act on, in plain words; any other is passed on as it came. Wraps the

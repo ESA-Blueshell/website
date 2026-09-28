@@ -3,6 +3,7 @@ package net.blueshell.api.board.domain
 import net.blueshell.api.board.api.BoardMemberService
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
+import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.user.api.UserService
@@ -10,17 +11,21 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
-/**
- * Board operations that touch more than one collaborator. Reads go straight to
- * [BoardService], whose base class already carries the transaction.
- */
+/** Every board read and write, straight against the repository. */
 @Service
 class BoardUseCases(
-    private val boardService: BoardService,
+    private val boards: BoardRepository,
     private val boardMemberService: BoardMemberService,
     private val pictures: StoredPictures,
     private val userService: UserService,
 ) {
+    /** Every board, newest first. */
+    @Transactional(readOnly = true)
+    fun all(): List<Board> = boards.findAll()
+
+    @Transactional(readOnly = true)
+    fun byId(id: Long): Board = boards.findById(id).orElseThrow { BoardNotFound(id) }
+
     @Transactional
     fun create(
         number: Int,
@@ -33,7 +38,7 @@ class BoardUseCases(
         accent: String? = null,
         description: String? = null,
     ): Board {
-        if (boardService.findByNumber(number) != null) throw DuplicateBoardException(number)
+        if (boards.findByNumber(number).isPresent) throw DuplicateBoardException(number)
         val recorded = name?.ifBlank { null }
         val board =
             Board(
@@ -47,7 +52,7 @@ class BoardUseCases(
                 description = description?.ifBlank { null },
             )
         board.replacePicture(pictures.of(photo, FileType.BOARD_PHOTO))
-        return boardService.create(board)
+        return boards.saveAndFlush(board)
     }
 
     // `version` is deliberately absent: the command carried one and the handler
@@ -65,9 +70,8 @@ class BoardUseCases(
         accent: String? = null,
         description: String? = null,
     ): Board {
-        val board = boardService.findById(id)
-        val holder = boardService.findByNumber(number)
-        if (holder != null && holder.id != id) throw DuplicateBoardException(number)
+        val board = byId(id)
+        if (boards.findByNumber(number).filter { it.id != id }.isPresent) throw DuplicateBoardException(number)
         val recorded = name?.ifBlank { null }
         board.number = number
         board.name = recorded
@@ -78,7 +82,7 @@ class BoardUseCases(
         board.accent = accent?.ifBlank { null }
         board.description = description?.ifBlank { null }
         board.replacePicture(pictures.of(photo, FileType.BOARD_PHOTO))
-        return boardService.update(board)
+        return boards.saveAndFlush(board)
     }
 
     /**
@@ -113,7 +117,7 @@ class BoardUseCases(
         description: String? = null,
         portrait: String? = null,
     ): BoardMember {
-        val board = boardService.findById(boardId)
+        val board = byId(boardId)
         val user = userId?.let { userService.findById(it) }
         val existing = userId?.let { boardMemberService.findByBoardAndUser(boardId, it) }
 
@@ -185,10 +189,10 @@ class BoardUseCases(
      */
     @Transactional
     fun remove(id: Long) {
-        val board = boardService.findById(id)
+        val board = byId(id)
         val members = boardMemberService.membersOn(id)
         if (members > 0) throw BoardHoldsMembers(board.number, members)
-        boardService.deleteById(id)
+        boards.delete(board)
     }
 
     @Transactional

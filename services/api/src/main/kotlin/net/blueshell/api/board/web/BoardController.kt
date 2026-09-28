@@ -3,7 +3,6 @@ package net.blueshell.api.board.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.board.domain.BoardService
 import net.blueshell.api.board.domain.BoardUseCases
 import net.blueshell.api.security.BoardOnly
 import org.springframework.http.HttpStatus
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/boards")
 @Tag(name = "Boards")
 class BoardController(
-    private val service: BoardService,
     private val useCases: BoardUseCases,
 ) {
     @PostMapping
@@ -47,13 +45,13 @@ class BoardController(
 
     @GetMapping
     @PermitAll
-    fun findAllBoards(): List<BoardResponse> = service.findAll().map { it.asResponse() }
+    fun findAllBoards(): List<BoardResponse> = useCases.all().map { it.asResponse() }
 
     @GetMapping("/{id}")
     @PermitAll
     fun findBoardById(
         @PathVariable id: Long,
-    ): BoardResponse = service.findById(id).asResponse()
+    ): BoardResponse = useCases.byId(id).asResponse()
 
     @PutMapping("/{id}")
     @BoardOnly

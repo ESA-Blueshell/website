@@ -65,11 +65,12 @@ Each item below maps to one or more keys in §4.x — gather them once, in
 one local working directory, before starting the seed flow. Missing any
 of them blocks at least one downstream Secret.
 
-- **Old-VPS `.env` files** (operator-controlled, never committed). The
-  repo's `scripts/seed-vault-from-env.sh` reads dotenv-style files;
-  typical inventory:
-  - `services/api/.api.env` — `JWT_SECRET` (Base64, ≥64 bytes), Brevo,
-    Mollie, Google Calendar SA, Facebook, X, Discord tokens.
+- **`.env` files** (operator-controlled, never committed). The
+  repo's `scripts/seed-vault-from-env.sh` reads dotenv-style files named
+  like the repo's examples:
+  - `services/api/.api.env` — `JWT_SECRET` (Base64, ≥64 bytes),
+    `TWO_FACTOR_ENCRYPTION_KEY`, Brevo, Google Calendar SA and Discord tokens,
+    `VAULT_OIDC_CLIENT_SECRET`.
   - `services/api/.db.env` — `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`,
     `MYSQL_PASSWORD`.
 - **Cloudflare DNS API token** with `Zone:DNS:Edit` scope on
@@ -81,7 +82,7 @@ of them blocks at least one downstream Secret.
 - **Discord incoming webhook URL** for the channel that receives Gatus
   uptime alerts and Flagger release events. Optional at day 0 —
   both consumers start without it.
-- **One-shot generated values** (only if missing from the legacy env):
+- **One-shot generated values** (only if missing from the env files):
   - `JWT_SECRET` — `openssl rand -base64 64`.
   - `vault-oidc-client-secret` — `openssl rand -hex 32`.
 
@@ -89,8 +90,8 @@ Sanity-check the env files locally with a dry run *before* unsealing:
 
 ```bash
 scripts/seed-vault-from-env.sh \
-  /path/to/old/.api.env \
-  /path/to/old/.db.env \
+  services/api/.api.env \
+  services/api/.db.env \
   /path/to/extra-tokens.env
 ```
 
@@ -115,23 +116,18 @@ unsealed and the bootstrap Job has wired up the kubernetes auth role
 for VSO, both Secrets materialise in-place and the charts upgrade on
 their own. No manual `kubectl create secret` pre-seed is needed.
 
-If you already have dotenv files from the old VPS and/or the current
-repo-local examples, the repo can translate them into the Vault paths
-below:
+If you have dotenv files named like the repo-local examples, the repo can
+translate them into the Vault paths below:
 
 ```bash
 scripts/seed-vault-from-env.sh \
-  ../blueshell-website-old/.env \
   services/api/.db.env \
   services/api/.api.env
 ```
 
 Preview is the default. Re-run with `--apply` once the mapping looks
 correct. Add `--sync-api` when you want the script to force VSO to pull
-the refreshed `secret/api` values and roll the api pod immediately. The
-script reconstructs `google-calendar-sa-json` automatically from either
-the current single JSON env var or the legacy split `GOOGLE_CALENDAR_*`
-fields.
+the refreshed `secret/api` values and roll the api pod immediately.
 
 ### Cloudflare DNS token (cert-manager + external-dns)
 
@@ -157,9 +153,7 @@ legacy `user` / `password` pair otherwise. `user` / `password` are the
 app credentials the Helm chart keeps stable; `admin-*` is the privileged
 login Vault uses to mint short-lived `database/creds/api` users.
 It is safe to run the Job before seeding — the block short-circuits and
-prints a reminder. If you want to preserve the old Swarm-era database
-login for operator reference, store it separately as
-`legacy-user` / `legacy-password`; the v2 restore flow does not need it.
+prints a reminder.
 
 ### Stalwart mail server
 
@@ -184,15 +178,8 @@ vault kv put secret/api \
   two-factor-encryption-key=$(openssl rand -base64 32) \
   brevo-api-key=<brevo-api-key> \
   brevo-folder-contribution-periods-id=<brevo-folder-id> \
-  mollie-api-key=<mollie-api-key> \
   google-calendar-id=<calendar-id> \
   google-calendar-sa-json=<raw-single-line-service-account-json> \
-  facebook-page-id=<facebook-page-id> \
-  facebook-access-token=<long-lived-page-token> \
-  x-api-key=<x-consumer-key> \
-  x-api-secret=<x-consumer-secret> \
-  x-access-token=<x-access-token> \
-  x-access-secret=<x-access-token-secret> \
   discord-bot-token=<discord-bot-token> \
   discord-guild-id=<discord-guild-id> \
   vault-oidc-client-secret=$(openssl rand -hex 32)
@@ -217,9 +204,7 @@ Notes:
   (`api-secrets` Kubernetes Secret) rather than the Vault Agent template,
   so it must be seeded here even though it is not in the agent template.
 - `google-calendar-sa-json` is the full JSON contents of a Google service
-  account key as raw JSON on one line, not base64. If your legacy env
-  still has split `GOOGLE_CALENDAR_*` fields, the seeding script
-  reconstructs the JSON for you; there is no separate Google-only script.
+  account key as raw JSON on one line, not base64.
 
 ### Transit signing key + Vault OIDC auth method (handled by the bootstrap Job)
 
@@ -384,7 +369,7 @@ Same shape, narrower blast radius:
 | `secret/platform/edge` | cert-manager + external-dns | restarts not usually needed; VSO refreshes the Secret in place |
 | `secret/platform/ghcr` | `imagePullSecrets` plus the Flux registry scan | next image pull picks up the new auth; a scan recovers on its own interval |
 
-For the api's third-party tokens (Brevo, Mollie, etc.),
+For the api's third-party tokens (Brevo, Google Calendar, Discord),
 `scripts/seed-vault-from-env.sh --apply --sync-api` does the
 `vault kv patch` + VSO force-refresh + api pod delete in one step.
 

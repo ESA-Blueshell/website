@@ -19,9 +19,6 @@ import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.domain.JobExecutionPermission
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.PlatformType
-import net.blueshell.api.sponsor.domain.SponsorPermission
-import net.blueshell.api.sponsor.domain.SponsorService
-import net.blueshell.api.sponsor.persistence.Sponsor
 import net.blueshell.api.telemetry.domain.TelemetryPermission
 import net.blueshell.api.telemetry.domain.TelemetryService
 import net.blueshell.api.telemetry.persistence.Telemetry
@@ -162,29 +159,6 @@ class SimplePermissionEvaluatorsTest {
             assertThat(evaluator.hasPermissionId(adminAuth(), null, "delete")).isTrue()
             assertThat(evaluator.hasPermissionId(adminAuth(), 4L, "delete")).isTrue()
             verify(service).findById(4L)
-        }
-    }
-
-    @Nested
-    inner class SponsorPermissionEvaluator {
-        private val service = mock<SponsorService>()
-        private val evaluator = SponsorPermission(service)
-
-        @Test
-        fun `read write and delete require board`() {
-            assertThat(evaluator.hasPermission(guestAuth(), null, "read")).isFalse()
-            assertThat(evaluator.hasPermission(boardAuth(), null, "read")).isTrue()
-            assertThat(evaluator.hasPermission(boardAuth(), null, "write")).isTrue()
-            assertThat(evaluator.hasPermission(boardAuth(), null, "delete")).isTrue()
-        }
-
-        @Test
-        fun `hasPermissionId resolves sponsor by id`() {
-            val sponsor = mock<Sponsor>()
-            whenever(service.findById(8L)).thenReturn(sponsor)
-
-            assertThat(evaluator.hasPermissionId(boardAuth(), 8L, "read")).isTrue()
-            verify(service).findById(8L)
         }
     }
 

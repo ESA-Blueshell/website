@@ -9,7 +9,7 @@ import net.blueshell.api.cohort.domain.CohortRemediation
 import net.blueshell.api.cohort.domain.CohortRepairResult
 import net.blueshell.api.cohort.domain.CohortSummary
 import net.blueshell.api.cohort.persistence.CohortKind
-import org.springframework.security.access.prepost.PreAuthorize
+import net.blueshell.api.security.AdminOnly
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -28,7 +28,7 @@ import java.time.Instant
 @RestController
 @RequestMapping("/management/cohorts")
 @Tag(name = "Cohorts", description = "Admin cohort listings + detail")
-@PreAuthorize("hasAuthority('ADMIN')")
+@AdminOnly
 class CohortController(
     private val cohortQueries: CohortQueryService,
     private val remediation: CohortRemediation,

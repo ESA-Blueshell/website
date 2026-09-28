@@ -7,8 +7,8 @@ import net.blueshell.api.cohort.domain.BulkTargetMoveResult
 import net.blueshell.api.cohort.domain.ExternalTarget
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetDescriptor
+import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.shared.enums.TargetSystem
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/management/cohort-targets")
 @Tag(name = "Cohort Targets", description = "Admin: external cohort target catalog")
-@PreAuthorize("hasAuthority('ADMIN')")
+@AdminOnly
 class CohortTargetController(
     private val catalog: TargetCatalog,
 ) {

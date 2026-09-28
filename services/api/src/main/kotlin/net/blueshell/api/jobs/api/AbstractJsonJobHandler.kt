@@ -41,7 +41,7 @@ abstract class AbstractJsonJobHandler<T : Any>(
     /** Records what the run did to the thing it keeps, and where that thing is. */
     protected fun did(
         effect: JobEffect,
-        link: String? = null,
+        link: String?,
     ) {
         run.get()?.apply {
             this.effect = effect

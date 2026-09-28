@@ -284,9 +284,7 @@ data class Kept(
     val effect: JobEffect? = null,
     val link: String? = null,
     val skipped: String? = null,
-) {
-    val made: Boolean get() = effect == JobEffect.MADE
-}
+)
 
 private val NO_BOT = Kept(skipped = "The Discord bot is not configured.")
 private const val GONE = "The event is deleted or no longer approved."

@@ -100,6 +100,26 @@ class JobExecutorRetryScheduleTest {
     }
 
     @Test
+    fun `fails at once, without a retry, on an error no retry can fix`() {
+        val broken =
+            object : JobHandler {
+                override val jobType = "failing"
+                override val payloadType = String::class.java
+
+                override fun handle(
+                    payload: String?,
+                    executionId: Long?,
+                    forced: Boolean,
+                ): JobOutcome = throw IllegalArgumentException("No such event")
+            }
+
+        run(broken, attempts = 1)
+
+        verify(executions).markFailed(any(), eq("java.lang.IllegalArgumentException"), eq("No such event"), any(), eq(false))
+        verify(executions, never()).markRetryScheduled(any(), any(), any(), any(), any(), any())
+    }
+
+    @Test
     fun `keeps to the queue's schedule for a handler without one`() {
         run(Failing(null), attempts = 4)
 

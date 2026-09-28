@@ -42,5 +42,6 @@ class ImageRenditions(
      * A picture whose bytes are gone has none. It takes the ordinary path, where the writer
      * reports the missing bytes in its own words rather than a job failing to find them.
      */
-    private fun moves(source: File): Boolean = blobs.exists(source.path) && animated.animates(source.mediaType) { blobs.open(source.path) }
+    private fun moves(source: File): Boolean =
+        blobs.exists(source.path) && animated.animates(source.mediaType) { blobs.open(source.path) }
 }

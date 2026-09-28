@@ -209,8 +209,8 @@ class DiscordEventPostsTest {
 
     @Test
     fun `announces the event two weeks ahead with its banner attached, once`() {
-        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42).made).isTrue()
-        assertThat(posts("2026-09-27T08:00").keepAnnouncement(42).made).isFalse()
+        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42).effect).isEqualTo(JobEffect.MADE)
+        assertThat(posts("2026-09-27T08:00").keepAnnouncement(42).effect).isNotEqualTo(JobEffect.MADE)
 
         assertThat(publisher.said).containsExactly("post events-info m1")
         assertThat(publisher.banners).containsExactly("banner.webp")
@@ -219,11 +219,11 @@ class DiscordEventPostsTest {
 
     @Test
     fun `posts nothing before its time or without a bot, and retries later for a claim another run holds`() {
-        assertThat(posts("2026-09-25T08:00").keepAnnouncement(42).made).isFalse()
+        assertThat(posts("2026-09-25T08:00").keepAnnouncement(42).effect).isNotEqualTo(JobEffect.MADE)
         ledger.othersHoldClaims = true
         assertThatThrownBy { posts("2026-09-26T08:00").keepAnnouncement(42) }.hasMessageContaining("Another run")
         ledger.othersHoldClaims = false
-        assertThat(posts("2026-09-26T08:00", bot = null).keepAnnouncement(42).made).isFalse()
+        assertThat(posts("2026-09-26T08:00", bot = null).keepAnnouncement(42).effect).isNotEqualTo(JobEffect.MADE)
         posts("2026-10-10T08:00", bot = null).keepCalendarPost(42)
         posts("2026-09-26T08:00", bot = null).keepDiscordEvent(42)
 
@@ -474,9 +474,9 @@ class DiscordEventPostsTest {
         val weekend = event.copy(endTime = at("2026-10-12T16:00"))
 
         posts("2026-10-11T09:00", found = weekend).run {
-            assertThat(keepAnnouncement(42).made).isTrue()
-            assertThat(keepCalendarPost(42).made).isTrue()
-            assertThat(keepDiscordEvent(42).made).isTrue()
+            assertThat(keepAnnouncement(42).effect).isEqualTo(JobEffect.MADE)
+            assertThat(keepCalendarPost(42).effect).isEqualTo(JobEffect.MADE)
+            assertThat(keepDiscordEvent(42).effect).isEqualTo(JobEffect.MADE)
         }
 
         assertThat(publisher.said).containsExactly("post events-info m1", "post events-calendar m2", "list m3")
@@ -565,9 +565,9 @@ class DiscordEventPostsTest {
     @Test
     fun `a forced run does what it would wait for`() {
         posts("2026-09-20T09:00").run {
-            assertThat(keepDiscordEvent(42, forced = true).made).isTrue()
-            assertThat(keepAnnouncement(42, forced = true).made).isTrue()
-            assertThat(keepCalendarPost(42, forced = true).made).isTrue()
+            assertThat(keepDiscordEvent(42, forced = true).effect).isEqualTo(JobEffect.MADE)
+            assertThat(keepAnnouncement(42, forced = true).effect).isEqualTo(JobEffect.MADE)
+            assertThat(keepCalendarPost(42, forced = true).effect).isEqualTo(JobEffect.MADE)
         }
 
         assertThat(publisher.said).containsExactly("list m1", "post events-info m2", "post events-calendar m3")

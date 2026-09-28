@@ -27,6 +27,12 @@ interface BoardRepository : BaseRepository<Board, Long> {
     @Query("SELECT b FROM Board b WHERE b.startDate <= :date AND (b.endDate IS NULL OR b.endDate >= :date)")
     fun findActiveBoard(date: LocalDate): Optional<Board>
 
+    /** How many boards ever held this number, deleted ones included, which the seed never writes again. */
+    @Query(value = "SELECT COUNT(*) FROM boards WHERE number = :number", nativeQuery = true)
+    fun countEverNumbered(
+        @Param("number") number: Int,
+    ): Long
+
     @Query("SELECT b FROM Board b ORDER BY b.startDate DESC")
     override fun findAll(): MutableList<Board>
 }

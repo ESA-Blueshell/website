@@ -50,14 +50,6 @@ class SeedDatabase {
             CREATE TABLE users (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY, first_name VARCHAR(255), prefix VARCHAR(255),
                 last_name VARCHAR(255), $LIVE);
-            CREATE TABLE boards (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY, number INT NOT NULL, name VARCHAR(255),
-                candidate VARCHAR(255) NOT NULL, cheer VARCHAR(255), accent VARCHAR(255), description TEXT,
-                start_date DATE NOT NULL, end_date DATE, $LIVE);
-            CREATE TABLE board_members (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY, board_id BIGINT NOT NULL, user_id BIGINT,
-                display_name VARCHAR(255), nickname VARCHAR(255), role VARCHAR(255), description TEXT,
-                start_date DATE, end_date DATE, $LIVE);
             CREATE TABLE game (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(32) NOT NULL, name VARCHAR(255),
                 slug VARCHAR(255), accent VARCHAR(255), sort_index INT, intro TEXT,

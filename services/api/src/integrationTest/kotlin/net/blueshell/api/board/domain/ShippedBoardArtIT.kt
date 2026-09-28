@@ -17,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import javax.sql.DataSource
 
 /**
  * The photographs the repository ships land on the boards and members the seed files name.
@@ -29,7 +28,7 @@ import javax.sql.DataSource
  */
 @SpringBootTest
 class ShippedBoardArtIT : UserTestSupport() {
-    @Autowired private lateinit var dataSource: DataSource
+    @Autowired private lateinit var shipped: ShippedBoards
 
     @Autowired private lateinit var art: ShippedBoardArt
 
@@ -46,7 +45,7 @@ class ShippedBoardArtIT : UserTestSupport() {
 
     @BeforeEach
     fun loadTheRecords() {
-        ShippedBoards(dataSource, transactionTemplate).apply()
+        shipped.apply()
     }
 
     /** One board's photograph, read where its widths can still be read. */

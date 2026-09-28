@@ -1,6 +1,7 @@
 package net.blueshell.api.board.persistence
 
 import net.blueshell.api.shared.repository.BaseRepository
+import net.blueshell.api.user.persistence.User
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -19,6 +20,25 @@ interface BoardMemberRepository : BaseRepository<BoardMember, Long> {
     fun findByBoardId(
         @Param("boardId") boardId: Long,
     ): List<BoardMember>
+
+    /** Whether this account holds a place on this board. */
+    fun existsByBoardAndUser(
+        board: Board,
+        user: User,
+    ): Boolean
+
+    /**
+     * How many members of this board were ever recorded under this name, deleted ones included,
+     * which the seed never writes again.
+     */
+    @Query(
+        value = "SELECT COUNT(*) FROM board_members WHERE board_id = :boardId AND display_name = :name",
+        nativeQuery = true,
+    )
+    fun countEverNamedOn(
+        @Param("boardId") boardId: Long,
+        @Param("name") name: String,
+    ): Long
 
     /** How many members a board still has, which is what stands in the way of removing it. */
     @Query("SELECT COUNT(bm) FROM BoardMember bm WHERE bm.board.id = :boardId")

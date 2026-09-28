@@ -49,7 +49,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [025](ADR-025-membership-commit-rendezvous.md) | Membership Commit Rendezvous | Accepted | Membership commits when the last of email confirmation and application submission lands |
 | [027](ADR-027-joining-asks-for-the-contribution.md) | Joining Asks For The Contribution | Accepted | A membership starting through signup asks the new member to pay, records the ask, and leaves the deadline to the board |
 | [029](ADR-029-animated-gif-banners-convert-to-animated-webp.md) | Animated GIF Banners Convert To Animated WebP | Accepted | A GIF banner is stored and served as an animated WebP at every width, decoded per frame and resized off the startup path |
-| [032](ADR-032-an-edit-awaiting-re-approval-freezes-discord.md) | An Edit Awaiting Re-Approval Freezes What the Bot Has Out | Proposed | A non-board edit sends the event back without taking its Discord posts down; they stay as last approved until the board decides |
+| [032](ADR-032-an-edit-awaiting-re-approval-freezes-discord.md) | An Edit Awaiting Re-Approval Freezes What the Bot Has Out | Accepted | A non-board edit sends the event back without taking its Discord posts down; they stay as last approved until the board decides |
 
 ### Security and API
 

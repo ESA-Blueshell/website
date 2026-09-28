@@ -415,6 +415,42 @@ class DiscordEventPostsTest {
     }
 
     @Test
+    fun `freezes what is out while the event awaits re-approval, and brings it up to date once approved again`() {
+        all("2026-10-10T08:00")
+        publisher.said.clear()
+        val waiting = event.copy(live = false, frozen = true, title = "LAN party, typo fixed")
+
+        val kept =
+            posts(
+                "2026-10-10T09:00",
+                found = waiting,
+            ).run { listOf(keepAnnouncement(42), keepCalendarPost(42), keepDiscordEvent(42)) }
+        assertThat(kept.map { it.skipped }.distinct())
+            .containsExactly("The event awaits re-approval, so what is out stays as last approved.")
+        assertThat(publisher.said).isEmpty()
+
+        all("2026-10-10T10:00", found = waiting.copy(live = true, frozen = false))
+        assertThat(publisher.said).containsExactly("edit events-info m1", "edit events-calendar m2", "relist m3")
+    }
+
+    @Test
+    fun `still takes down on time what is frozen, and makes nothing new for it`() {
+        all("2026-10-10T08:00")
+        publisher.said.clear()
+        val waiting = event.copy(live = false, frozen = true)
+
+        all("2026-10-10T23:30", found = waiting)
+        all("2026-10-11T08:00", found = waiting)
+        assertThat(publisher.said).containsExactly("unlist m3", "delete events-calendar m2")
+        assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.INFO_POST)
+
+        ledger.posted.clear()
+        publisher.said.clear()
+        all("2026-10-01T08:00", found = waiting)
+        assertThat(publisher.said).isEmpty()
+    }
+
+    @Test
     fun `says what each run did, with a link to what it did it to`() {
         val made = posts("2026-09-26T08:00").keepAnnouncement(42)
         val unchanged = posts("2026-09-26T09:00").keepAnnouncement(42)

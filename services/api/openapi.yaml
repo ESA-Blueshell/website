@@ -2481,6 +2481,8 @@ components:
       properties:
         approved:
           type: boolean
+        awaitingReapproval:
+          type: boolean
         banner:
           oneOf:
           - $ref: '#/components/schemas/EventBannerResponse'
@@ -2563,6 +2565,7 @@ components:
           type: integer
       required:
       - approved
+      - awaitingReapproval
       - createdAt
       - endTime
       - gameCodes
@@ -3460,6 +3463,7 @@ components:
       - EVENT_CREATED
       - EVENT_UPDATED
       - EVENT_APPROVED
+      - EVENT_SENT_BACK
       - EVENT_UNAPPROVED
       - EVENT_DELETED
       - SIGN_UPS_CHANGED

@@ -43,7 +43,7 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
     }
 
     @Test
-    fun `member edit moves approved event back to awaiting approval`() {
+    fun `member edit sends an approved event back to the board, awaiting re-approval`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
         val committeeId = TestHelper.createCommittee(name = "Reapprove Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
@@ -71,6 +71,7 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
 
         val updated = waitForEvent(eventId) { it.description == "Updated by committee member" }
         assertThat(updated.approved).isFalse()
+        assertThat(updated.awaitingReapproval).isTrue()
         assertThat(updated.description).isEqualTo("Updated by committee member")
     }
 

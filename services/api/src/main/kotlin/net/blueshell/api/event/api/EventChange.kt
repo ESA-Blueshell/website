@@ -5,6 +5,9 @@ enum class EventChange {
     CREATED,
     UPDATED,
     APPROVED,
+
+    /** An edit by somebody not on the board sent the approved event back to it. */
+    SENT_BACK,
     UNAPPROVED,
     DELETED,
 }

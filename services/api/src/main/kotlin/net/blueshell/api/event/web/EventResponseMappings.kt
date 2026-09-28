@@ -20,6 +20,7 @@ fun Event.asResponse(): EventResponse =
         memberPrice = this.memberPrice,
         publicPrice = this.publicPrice,
         approved = this.approved,
+        awaitingReapproval = this.awaitingReapproval,
         membersOnly = this.membersOnly,
         signUp = this.signUp,
         signUpDeadline = this.signUpDeadline,

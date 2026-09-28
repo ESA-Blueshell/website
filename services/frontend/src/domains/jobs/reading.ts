@@ -39,6 +39,7 @@ const TRIGGERS: Record<JobTrigger, string> = {
   [JobTrigger.EVENT_CREATED]: "Creating the event",
   [JobTrigger.EVENT_UPDATED]: "Editing the event",
   [JobTrigger.EVENT_APPROVED]: "Approving the event",
+  [JobTrigger.EVENT_SENT_BACK]: "Sending the event back to the board",
   [JobTrigger.EVENT_UNAPPROVED]: "Unapproving the event",
   [JobTrigger.EVENT_DELETED]: "Deleting the event",
   [JobTrigger.SIGN_UPS_CHANGED]: "A change in sign-ups",

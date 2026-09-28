@@ -28,7 +28,7 @@ object TestHelper {
     private const val SELECTOR_BYTES = 16
     private const val VERIFIER_BYTES = 32
     private const val EVENT_SELECT =
-        "SELECT id, title, description, location, approved, sign_up, members_only, " +
+        "SELECT id, title, description, location, approved, awaiting_reapproval, sign_up, members_only, " +
             "committee_id, sign_up_limit FROM events "
 
     val apiBaseUrl: String get() = TestEnvironment.apiUrl
@@ -1579,6 +1579,7 @@ object TestHelper {
             description = getString("description"),
             location = getString("location"),
             approved = getBoolean("approved"),
+            awaitingReapproval = getBoolean("awaiting_reapproval"),
             signUp = getBoolean("sign_up"),
             membersOnly = getBoolean("members_only"),
             committeeId = getObject("committee_id") as Long?,
@@ -1745,6 +1746,7 @@ object TestHelper {
         val description: String?,
         val location: String?,
         val approved: Boolean,
+        val awaitingReapproval: Boolean,
         val signUp: Boolean,
         val membersOnly: Boolean,
         val committeeId: Long?,

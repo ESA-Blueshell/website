@@ -81,6 +81,9 @@ class Event(
     var googleId: String? = null,
     @Column(name = "approved", nullable = false)
     var approved: Boolean = false,
+    /** Sent back to the board by an edit from anybody else after it was approved. */
+    @Column(name = "awaiting_reapproval", nullable = false)
+    var awaitingReapproval: Boolean = false,
     @Column(name = "members_only", nullable = false)
     var membersOnly: Boolean = false,
     @Column(name = "sign_up", nullable = false)

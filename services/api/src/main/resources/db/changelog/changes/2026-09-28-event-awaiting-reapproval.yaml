@@ -1,0 +1,16 @@
+# An event a non-board edit sent back to the board after it was approved; see api ADR-032.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-28-event-awaiting-reapproval.yaml
+      id: event-awaiting-reapproval
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: events
+            columns:
+              - column: {name: awaiting_reapproval, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+      rollback:
+        - dropColumn:
+            tableName: events
+            columns:
+              - column: {name: awaiting_reapproval}

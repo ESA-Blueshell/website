@@ -52,7 +52,7 @@ class DiscordEventPostTriggers(
     fun hourly() {
         val now = clock.instant()
         events
-            .approvedOverlapping(now.minus(HOURLY_BEHIND), now)
+            .keptOverlapping(now.minus(HOURLY_BEHIND), now)
             .filter { out(it, DiscordArtefact.DISCORD_EVENT) }
             .forEach { jobs.runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(it), JobTrigger.HOURLY_RUN) }
     }
@@ -60,7 +60,7 @@ class DiscordEventPostTriggers(
     /** The morning run; answers how many events it looked at. */
     fun runMorning(): Int {
         val now = clock.instant()
-        val near = events.approvedOverlapping(now.minus(MORNING_BEHIND), now.plus(MORNING_AHEAD))
+        val near = events.keptOverlapping(now.minus(MORNING_BEHIND), now.plus(MORNING_AHEAD))
         near.forEach { queue(it, JobTrigger.MORNING_RUN) }
         return near.size
     }

@@ -1235,6 +1235,7 @@ export type EventBannerResponse = {
 
 export type EventResponse = {
     approved: boolean;
+    awaitingReapproval: boolean;
     banner?: EventBannerResponse | null;
     committeeId?: number | null;
     createdAt: string;
@@ -1729,6 +1730,7 @@ export enum JobTrigger {
     EVENT_CREATED = 'EVENT_CREATED',
     EVENT_UPDATED = 'EVENT_UPDATED',
     EVENT_APPROVED = 'EVENT_APPROVED',
+    EVENT_SENT_BACK = 'EVENT_SENT_BACK',
     EVENT_UNAPPROVED = 'EVENT_UNAPPROVED',
     EVENT_DELETED = 'EVENT_DELETED',
     SIGN_UPS_CHANGED = 'SIGN_UPS_CHANGED',

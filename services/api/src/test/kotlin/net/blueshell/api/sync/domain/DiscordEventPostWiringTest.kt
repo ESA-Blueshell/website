@@ -132,7 +132,7 @@ class DiscordEventPostWiringTest {
         val events: EventPosts =
             mock {
                 on { of(42) } doReturn found
-                on { approvedOverlapping(any(), any()) } doReturn listOf(42L)
+                on { keptOverlapping(any(), any()) } doReturn listOf(42L)
             }
         val ledger: PostLedger = mock()
         out.forEach { whenever(ledger.find(42, it)).thenReturn(RecordedArtefact("m", 1)) }
@@ -187,8 +187,8 @@ class DiscordEventPostWiringTest {
         val jobs = Queued()
         val events: EventPosts =
             mock {
-                on { approvedOverlapping(at("2026-09-24T08:00"), at("2026-10-11T08:00")) } doReturn listOf(42L)
-                on { approvedOverlapping(at("2026-09-26T06:00"), at("2026-09-26T08:00")) } doReturn listOf(42L, 43L)
+                on { keptOverlapping(at("2026-09-24T08:00"), at("2026-10-11T08:00")) } doReturn listOf(42L)
+                on { keptOverlapping(at("2026-09-26T06:00"), at("2026-09-26T08:00")) } doReturn listOf(42L, 43L)
                 on { of(42) } doReturn lan
             }
         val ledger: PostLedger = mock { on { find(42, DiscordArtefact.DISCORD_EVENT) } doReturn RecordedArtefact("e1", 1) }
@@ -218,6 +218,7 @@ class DiscordEventPostWiringTest {
             .on(EventChanged(42, EventChange.UNAPPROVED, board))
         triggers("2026-10-10T10:00", found = null, out = setOf(DiscordArtefact.INFO_POST), jobs = jobs)
             .on(EventChanged(42, EventChange.DELETED, board))
+        triggers("2026-10-10T10:00", jobs = jobs).on(EventChanged(42, EventChange.SENT_BACK, board))
 
         assertThat(jobs.triggers.distinct()).containsExactly(
             JobTrigger.EVENT_APPROVED to board,
@@ -226,6 +227,7 @@ class DiscordEventPostWiringTest {
             JobTrigger.EVENT_UPDATED to board,
             JobTrigger.EVENT_UNAPPROVED to board,
             JobTrigger.EVENT_DELETED to board,
+            JobTrigger.EVENT_SENT_BACK to board,
         )
     }
 

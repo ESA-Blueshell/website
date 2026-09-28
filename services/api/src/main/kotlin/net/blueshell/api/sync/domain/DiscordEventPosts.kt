@@ -44,7 +44,7 @@ class DiscordEventPosts(
         eventId: Long,
         forced: Boolean = false,
     ): Kept =
-        keepPost(eventId, DiscordArtefact.INFO_POST, infoChannel) { event, due, out ->
+        keepPost(eventId, DiscordArtefact.INFO_POST, infoChannel, { null }) { event, due, out ->
             when {
                 out -> null
                 due.over -> OVER
@@ -60,14 +60,20 @@ class DiscordEventPosts(
     fun keepCalendarPost(
         eventId: Long,
         forced: Boolean = false,
-    ): Kept =
-        keepPost(eventId, DiscordArtefact.CALENDAR_POST, calendarChannel) { event, due, out ->
+    ): Kept {
+        val dayOver = "The event's day is over, so its #$calendarChannel post has come down."
+        return keepPost(eventId, DiscordArtefact.CALENDAR_POST, calendarChannel, { due -> dayOver.takeIf { due.calendarPostOver } }) {
+            event,
+            due,
+            out,
+            ->
             when {
-                due.calendarPostOver -> "The event's day is over, so its #$calendarChannel post has come down."
+                due.calendarPostOver -> dayOver
                 due.calendarPost || out || forced -> null
                 else -> "The #$calendarChannel post is not due until ${morningOf(calendarPostFrom(event.startTime))}."
             }
         }
+    }
 
     /**
      * The Discord event, on the same terms as the events-info post but without waiting for it, and
@@ -80,7 +86,10 @@ class DiscordEventPosts(
     ): Kept {
         val bot = publisher.ifAvailable ?: return NO_BOT
         val found = bot.findDiscordEvents(DiscordPostContent.listingLineOf(eventId, site))
-        val event = liveEvent(eventId) ?: return sweep(eventId, DiscordArtefact.DISCORD_EVENT, found, GONE) { bot.deleteDiscordEvent(it) }
+        val stored = events.of(eventId)
+        val unlist: (String) -> Unit = { bot.deleteDiscordEvent(it) }
+        if (stored?.frozen == true) return frozen(eventId, DiscordArtefact.DISCORD_EVENT, found, OVER.takeIf { due(stored).over }, unlist)
+        val event = stored?.takeIf { it.live } ?: return sweep(eventId, DiscordArtefact.DISCORD_EVENT, found, GONE, unlist)
         val due = due(event)
         val refusal =
             when {
@@ -104,16 +113,22 @@ class DiscordEventPosts(
         )
     }
 
-    // [refusal] answers why the post should not stand now, or null where it should.
+    /*
+     * [refusal] answers why the post should not stand now, or null where it should; [downWhileFrozen]
+     * why it comes down by time while the event awaits re-approval, or null where it stays.
+     */
     private fun keepPost(
         eventId: Long,
         artefact: DiscordArtefact,
         channel: String,
+        downWhileFrozen: (DiscordPostsDue) -> String?,
         refusal: (EventPostData, DiscordPostsDue, Boolean) -> String?,
     ): Kept {
         val bot = publisher.ifAvailable ?: return NO_BOT
         val found = bot.findPosts(channel, DiscordPostContent.pageOf(eventId, site))
-        val event = liveEvent(eventId) ?: return sweep(eventId, artefact, found, GONE) { bot.delete(channel, it) }
+        val stored = events.of(eventId)
+        if (stored?.frozen == true) return frozen(eventId, artefact, found, downWhileFrozen(due(stored))) { bot.delete(channel, it) }
+        val event = stored?.takeIf { it.live } ?: return sweep(eventId, artefact, found, GONE) { bot.delete(channel, it) }
         refusal(event, due(event), ledger.find(eventId, artefact) != null)?.let { why ->
             return sweep(eventId, artefact, found, why) { bot.delete(channel, it) }
         }
@@ -130,6 +145,15 @@ class DiscordEventPosts(
             link = { bot.linkOf(channel, it) },
         )
     }
+
+    // What is out while the event awaits re-approval stays as last approved; only what comes down by time goes, [down] saying why.
+    private fun frozen(
+        eventId: Long,
+        artefact: DiscordArtefact,
+        found: List<String>,
+        down: String?,
+        delete: (String) -> Unit,
+    ): Kept = if (down == null) Kept(skipped = FROZEN) else sweep(eventId, artefact, found, down, delete)
 
     /*
      * What should not stand goes, recorded or not: [found] is what the server holds that links the
@@ -211,8 +235,6 @@ class DiscordEventPosts(
         return null
     }
 
-    private fun liveEvent(eventId: Long) = events.of(eventId)?.takeIf { it.live }
-
     private fun due(event: EventPostData) = DiscordPostSchedule.due(event.startTime, event.endTime, clock.instant())
 
     private fun withBanner(
@@ -245,6 +267,7 @@ data class Kept(
 private val NO_BOT = Kept(skipped = "The Discord bot is not configured.")
 private const val GONE = "The event is deleted or no longer approved."
 private const val OVER = "The event is over."
+private const val FROZEN = "The event awaits re-approval, so what is out stays as last approved."
 
 // Room for the request to reach Discord before the start it names.
 private val DISCORD_EVENT_LEAD: Duration = Duration.ofMinutes(1)

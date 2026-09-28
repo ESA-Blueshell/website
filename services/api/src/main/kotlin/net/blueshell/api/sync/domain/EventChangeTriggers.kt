@@ -9,6 +9,7 @@ internal fun EventChange.asTrigger(): JobTrigger =
         EventChange.CREATED -> JobTrigger.EVENT_CREATED
         EventChange.UPDATED -> JobTrigger.EVENT_UPDATED
         EventChange.APPROVED -> JobTrigger.EVENT_APPROVED
+        EventChange.SENT_BACK -> JobTrigger.EVENT_SENT_BACK
         EventChange.UNAPPROVED -> JobTrigger.EVENT_UNAPPROVED
         EventChange.DELETED -> JobTrigger.EVENT_DELETED
     }

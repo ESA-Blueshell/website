@@ -1,7 +1,7 @@
 # ADR-032: An Edit Awaiting Re-Approval Freezes What the Bot Has Out
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 

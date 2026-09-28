@@ -69,6 +69,8 @@ describe("what can be done with an event where it is listed", () => {
     expect((approval.element as HTMLButtonElement).disabled).toBe(true)
     getters.isBoard = true
     expect(mountActions({event: event({approved: true})}).get("[data-testid=event-approve-btn-7]").text()).toBe("Approved")
+    expect(mountActions({event: event({approved: false, awaitingReapproval: true})}).get("[data-testid=event-approve-btn-7]").text())
+      .toBe("Awaiting re-approval")
   })
 
   it("offers nobody outside the committee or the board a way to manage it", () => {

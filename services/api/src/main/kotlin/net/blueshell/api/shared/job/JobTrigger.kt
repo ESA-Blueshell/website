@@ -8,6 +8,9 @@ enum class JobTrigger {
     EVENT_CREATED,
     EVENT_UPDATED,
     EVENT_APPROVED,
+
+    /** An edit by somebody not on the board sent the approved event back to it. */
+    EVENT_SENT_BACK,
     EVENT_UNAPPROVED,
     EVENT_DELETED,
     SIGN_UPS_CHANGED,

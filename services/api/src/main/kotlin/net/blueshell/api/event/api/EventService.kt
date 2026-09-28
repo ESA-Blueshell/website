@@ -58,7 +58,7 @@ class EventService
                 clearSignUpsForEvent(saved.id!!)
             }
 
-            publishEventChanged(saved.id!!, changeOf(previous.approved, saved.approved))
+            publishEventChanged(saved.id!!, changeOf(previous, saved))
             return saved
         }
 
@@ -191,21 +191,24 @@ class EventService
         private data class EventUpdateSnapshot(
             val bannerFileId: Long?,
             val approved: Boolean,
+            val awaitingReapproval: Boolean,
         )
 
         private fun Event.toUpdateSnapshot(): EventUpdateSnapshot =
             EventUpdateSnapshot(
                 bannerFileId = banner?.file?.id,
                 approved = approved,
+                awaitingReapproval = awaitingReapproval,
             )
 
         private fun changeOf(
-            wasApproved: Boolean,
-            approved: Boolean,
+            before: EventUpdateSnapshot,
+            after: Event,
         ): EventChange =
             when {
-                approved == wasApproved -> EventChange.UPDATED
-                approved -> EventChange.APPROVED
-                else -> EventChange.UNAPPROVED
+                after.approved -> if (before.approved) EventChange.UPDATED else EventChange.APPROVED
+                after.awaitingReapproval -> if (before.approved) EventChange.SENT_BACK else EventChange.UPDATED
+                before.approved || before.awaitingReapproval -> EventChange.UNAPPROVED
+                else -> EventChange.UPDATED
             }
     }

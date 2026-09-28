@@ -22,7 +22,6 @@ services:
     environment:
       - TZ=Europe/Amsterdam
       - API_PROXY_TARGET=http://api:8080
-      - VITE_COVERAGE=true
     depends_on:
       api:
         condition: service_healthy

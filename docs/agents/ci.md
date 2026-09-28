@@ -27,7 +27,7 @@ belongs to. There are four, and each one skips work the others run:
 | --- | --- | --- |
 | `platform` | `platform/**` but its docs, the Flux scripts | `NixOS flake check`, `Flux manifests` |
 | `api` | `services/api/**`, `libs/**`, detekt config, the OpenAPI and changeset scripts | api lint, unit, integration and coverage, `Build has no warnings`, schema compatibility, changeset SQL, and everything `app` runs |
-| `frontend` | `services/frontend/**` | frontend unit, e2e and e2e coverage, and everything `app` runs |
+| `frontend` | `services/frontend/**` | frontend unit and e2e, and everything `app` runs |
 | `system` | `tests/**` | api lint, `Build has no warnings`, and everything `app` runs |
 
 `app` is any bucket but `platform`. It runs both compile jobs, the image builds, the system tests

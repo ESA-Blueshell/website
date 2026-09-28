@@ -45,6 +45,12 @@ contributes no uncovered lines, because its code never loads.
 
 ### 2. Istanbul function threshold — did the handlers fire?
 
+> **Superseded** (#1739). The e2e bundle is no longer instrumented and the suite
+> collects no coverage. No step ever read it, instrumenting cost a build per
+> shard, and a run that wrote none failed while every test passed. The route
+> inventory above is what this ADR still asks for; a functions threshold comes
+> back with the instrumentation it needs, not before.
+
 A `functions` threshold on the e2e istanbul output, ratcheting on the
 [ADR-003](ADR-003-coverage-counters-thresholds-and-ratchet.md) dates. Reaching a
 route proves the page renders; executing its functions is what proves the actions
@@ -56,6 +62,8 @@ considered and rejected: it enforces only global watermarks, with no per-file
 threshold.
 
 ### Unit and e2e coverage are gated separately, never merged
+
+> **Superseded** (#1739), with section 2: there is no e2e coverage to merge.
 
 `scripts/convert-frontend-coverage.mjs` merges coverage maps today. That merged
 number must not be gated. The unit suite and the instrumented bundle report
@@ -82,7 +90,7 @@ Decided, none of it built.
   vue-router records and Playwright `goto` calls; no third-party tool does this.
 - The 13 uncovered routes are the starting backlog. The check should land in
   report-only mode and go blocking once they are covered or consciously exempted.
-- `nyc` is not currently a dependency, and no CI step reads `coverage/e2e`.
+- `nyc` is not a dependency, and the e2e suite collects no coverage (#1739).
 - The initial e2e functions percentage is unmeasured. It is set from the first
   report-only run rather than guessed here.
 

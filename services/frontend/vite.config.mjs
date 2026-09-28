@@ -3,7 +3,6 @@ import vuetify from 'vite-plugin-vuetify'
 import {defineConfig} from 'vite'
 import {fileURLToPath} from 'node:url'
 import svgLoader from 'vite-svg-loader'
-import istanbul from 'vite-plugin-istanbul'
 import tailwind from '@tailwindcss/vite'
 import {readFileSync} from 'node:fs'
 import {notoEmoji} from './scripts/notoEmoji.mjs'
@@ -46,10 +45,6 @@ const emitVersion = {
 export default defineConfig({
     build: {
         target: "esnext",
-        // forceBuildInstrument keeps istanbul active in every build, so the
-        // system tests can collect coverage from the built image. The plugin
-        // turns sourcemaps on regardless and announces it on every run;
-        // declaring it is what stops the announcement.
         sourcemap: true,
         // vuetify (~500 kB) and country-data (~615 kB) are legitimately
         // above Vite's 500 kB default; lift the threshold above the floor.
@@ -94,19 +89,6 @@ export default defineConfig({
     plugins: [
         emitVersion,
         notoEmoji(),
-        istanbul({
-            include: ['src/**/*'],
-            exclude: [
-                'node_modules',
-                'src/services/api/**',
-                '**/*.gen.ts',
-            ],
-            extension: ['.js', '.ts', '.vue'],
-            requireEnv: true,
-            cypress: false,
-            checkProd: false,
-            forceBuildInstrument: true,
-        }),
         vue(),
         vuetify({
             autoImport: true,

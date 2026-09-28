@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component
 class GuestPermission
     @Autowired
     constructor(
-        service: GuestService,
-    ) : BasePermissionEvaluator<Guest, Long, GuestService>(service) {
+        private val service: GuestService,
+    ) : BasePermissionEvaluator<Guest, Long>() {
         override fun hasPermission(
             authentication: Authentication?,
             entity: Any?,

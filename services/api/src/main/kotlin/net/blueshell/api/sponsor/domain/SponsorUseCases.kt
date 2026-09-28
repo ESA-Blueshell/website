@@ -1,21 +1,30 @@
 package net.blueshell.api.sponsor.domain
 
+import net.blueshell.api.shared.refusal.Refusal
 import net.blueshell.api.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.persistence.SponsorRepository
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
-/**
- * Write operations on sponsors that build or mutate an entity. Reads and deletes
- * go straight to [SponsorService] from the controller.
- */
+/** Every sponsor read and write, straight against the repository. */
 @Service
 class SponsorUseCases(
-    private val service: SponsorService,
+    private val sponsors: SponsorRepository,
 ) {
+    @Transactional(readOnly = true)
+    fun all(): List<Sponsor> = sponsors.findAll()
+
+    @Transactional(readOnly = true)
+    fun byId(id: Long): Sponsor = sponsors.findById(id).orElseThrow { SponsorNotFound(id) }
+
+    @Transactional
     fun create(
         name: String,
         description: String,
-    ): Sponsor = service.create(Sponsor(name = name, description = description))
+    ): Sponsor = sponsors.saveAndFlush(Sponsor(name = name, description = description))
 
+    @Transactional
     fun update(
         id: Long,
         name: String,
@@ -23,11 +32,18 @@ class SponsorUseCases(
         version: Long,
     ): Sponsor {
         val sponsor =
-            service.findById(id).apply {
+            byId(id).apply {
                 requireVersion(version)
                 this.name = name
                 this.description = description
             }
-        return service.update(sponsor)
+        return sponsors.saveAndFlush(sponsor)
     }
+
+    @Transactional
+    fun remove(id: Long) = sponsors.delete(byId(id))
 }
+
+class SponsorNotFound(
+    id: Long,
+) : Refusal(HttpStatus.NOT_FOUND, "SponsorNotFound", "That sponsor does not exist.", mapOf("id" to id))

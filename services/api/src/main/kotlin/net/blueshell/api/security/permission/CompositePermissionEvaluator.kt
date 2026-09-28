@@ -12,7 +12,7 @@ import java.util.function.Function
 class CompositePermissionEvaluator
     @Autowired
     constructor(
-        private val evaluators: MutableList<BasePermissionEvaluator<*, *, *>>,
+        private val evaluators: MutableList<BasePermissionEvaluator<*, *>>,
     ) : PermissionEvaluator {
         override fun hasPermission(
             authentication: Authentication,

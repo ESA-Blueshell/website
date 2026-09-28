@@ -245,7 +245,7 @@
         <error line="14" column="22" source="standard:annotation" />
         <error line="14" column="33" source="standard:annotation" />
         <error line="14" column="46" source="standard:class-signature" />
-        <error line="14" column="67" source="standard:class-signature" />
+        <error line="14" column="79" source="standard:class-signature" />
         <error line="15" column="5" source="standard:class-signature" />
         <error line="16" column="1" source="standard:indent" />
         <error line="17" column="1" source="standard:indent" />
@@ -531,7 +531,7 @@
         <error line="14" column="21" source="standard:annotation" />
         <error line="14" column="32" source="standard:annotation" />
         <error line="14" column="45" source="standard:class-signature" />
-        <error line="14" column="65" source="standard:class-signature" />
+        <error line="14" column="77" source="standard:class-signature" />
         <error line="15" column="5" source="standard:class-signature" />
         <error line="16" column="1" source="standard:indent" />
         <error line="16" column="32" source="standard:function-signature" />

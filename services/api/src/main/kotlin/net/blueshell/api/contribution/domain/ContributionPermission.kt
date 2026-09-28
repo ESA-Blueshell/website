@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component
 class ContributionPermission
     @Autowired
     constructor(
-        service: ContributionService,
-    ) : BasePermissionEvaluator<Contribution, Contribution.Id, ContributionService>(service) {
+        private val service: ContributionService,
+    ) : BasePermissionEvaluator<Contribution, Contribution.Id>() {
         override fun hasPermission(
             authentication: Authentication?,
             entity: Any?,

@@ -27,3 +27,7 @@ class CommitteeAddressTaken(
 class UnknownCommitteeAddress(
     address: String,
 ) : CommitteeRefusal(HttpStatus.NOT_FOUND, "UnknownCommitteeAddress", "No committee has that address.", mapOf("address" to address))
+
+class CommitteeNotFound(
+    id: Long,
+) : CommitteeRefusal(HttpStatus.NOT_FOUND, "CommitteeNotFound", "That committee does not exist.", mapOf("id" to id))

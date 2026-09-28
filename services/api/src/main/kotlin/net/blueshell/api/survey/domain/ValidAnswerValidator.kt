@@ -19,12 +19,7 @@ class ValidAnswerValidator(
             return true
         }
 
-        val question =
-            try {
-                questions.findById(candidate.questionId)
-            } catch (_: Exception) {
-                return false
-            }
+        val question = questions.find(candidate.questionId) ?: return false
 
         return when (question.type) {
             QuestionType.OPEN -> isValidOpenAnswer(candidate, question)

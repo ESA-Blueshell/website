@@ -1,82 +1,23 @@
 package net.blueshell.api.survey.api
 
-import net.blueshell.api.shared.event.TrackedEventPublisher
-import net.blueshell.api.shared.service.BaseModelService
-import net.blueshell.api.survey.domain.QuestionChange
-import net.blueshell.api.survey.domain.QuestionChanged
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.QuestionRepository
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+/** The questions of a sign-up form, as the modules that answer one read them. */
 @Service
-class QuestionService
-    @Autowired
-    constructor(
-        repository: QuestionRepository,
-        private val trackedEvents: TrackedEventPublisher,
-    ) : BaseModelService<Question, Long, QuestionRepository>(repository) {
-        @Transactional
-        override fun create(entity: Question): Question {
-            val saved = super.create(entity)
-            trackedEvents.publish { actor ->
-                QuestionChanged(
-                    questionId = saved.id!!,
-                    surveyId = saved.surveyId,
-                    type = saved.type,
-                    changeType = QuestionChange.CREATED,
-                    actor = actor,
-                )
-            }
-            return saved
-        }
+class QuestionService(
+    private val questions: QuestionRepository,
+) {
+    /** The question, or nothing where there is none. */
+    @Transactional(readOnly = true)
+    fun find(id: Long): Question? = questions.findById(id).orElse(null)
 
-        @Transactional
-        override fun update(entity: Question): Question {
-            val saved = super.update(entity)
-            trackedEvents.publish { actor ->
-                QuestionChanged(
-                    questionId = saved.id!!,
-                    surveyId = saved.surveyId,
-                    type = saved.type,
-                    changeType = QuestionChange.UPDATED,
-                    dirty = saved.dirty,
-                    dirtyFields = saved.dirtyFields,
-                    hasAnswers = saved.answers.isNotEmpty(),
-                    actor = actor,
-                )
-            }
-            return saved
-        }
-
-        @Transactional
-        override fun delete(entity: Question) {
-            val questionId = entity.id!!
-            super.delete(entity)
-            trackedEvents.publish { actor ->
-                QuestionChanged(
-                    questionId = questionId,
-                    surveyId = entity.surveyId,
-                    type = entity.type,
-                    changeType = QuestionChange.DELETED,
-                    hasAnswers = entity.answers.isNotEmpty(),
-                    actor = actor,
-                )
-            }
-        }
-
-        @Transactional
-        override fun deleteById(id: Long) {
-            val question = findById(id)
-            delete(question)
-        }
-
-        /**
-         * Get a lazy reference to a Question by ID.
-         * Used when only the ID is needed for relationships (e.g., Answer → Question).
-         * Does not trigger database fetch until the entity is actually accessed.
-         */
-        @Transactional(readOnly = true)
-        fun getReferenceById(id: Long): Question = repository.getReferenceById(id)
-    }
+    /**
+     * A lazy reference to a question, for an answer that only needs its id. Nothing is read
+     * until the question itself is.
+     */
+    @Transactional(readOnly = true)
+    fun getReferenceById(id: Long): Question = questions.getReferenceById(id)
+}

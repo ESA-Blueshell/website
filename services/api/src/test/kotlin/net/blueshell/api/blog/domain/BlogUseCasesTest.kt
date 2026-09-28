@@ -1,10 +1,12 @@
 package net.blueshell.api.blog.domain
 
 import net.blueshell.api.blog.persistence.Blog
+import net.blueshell.api.blog.persistence.BlogRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
@@ -13,17 +15,18 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.dao.OptimisticLockingFailureException
 import java.time.Instant
+import java.util.Optional
 
 class BlogUseCasesTest {
-    private val blogService = mock<BlogService>()
-    private val useCases = BlogUseCases(blogService)
+    private val blogs = mock<BlogRepository>()
+    private val useCases = BlogUseCases(blogs)
 
     @Nested
     inner class Create {
         @Test
         fun `creates blog and sanitizes html`() {
             val captured = argumentCaptor<Blog>()
-            whenever(blogService.create(captured.capture())).thenAnswer { captured.firstValue }
+            whenever(blogs.saveAndFlush(captured.capture())).thenAnswer { captured.firstValue }
             val publishedAt = Instant.parse("2025-01-01T00:00:00Z")
 
             val result =
@@ -61,8 +64,8 @@ class BlogUseCasesTest {
                     html = "<p>Old</p>",
                     publishedAt = Instant.parse("2024-01-01T00:00:00Z"),
                 ).apply { version = 1L }
-            whenever(blogService.findById(11L)).thenReturn(existing)
-            whenever(blogService.update(existing)).thenReturn(existing)
+            whenever(blogs.findById(11L)).thenReturn(Optional.of(existing))
+            whenever(blogs.saveAndFlush(existing)).thenReturn(existing)
             val newPublishedAt = Instant.parse("2025-06-01T00:00:00Z")
 
             val result =
@@ -91,12 +94,44 @@ class BlogUseCasesTest {
         fun `refuses an edit made against an older version, before touching a field`() {
             val existing =
                 Blog(title = "Old", html = "<p>Old</p>", publishedAt = Instant.parse("2024-01-01T00:00:00Z")).apply { version = 2L }
-            whenever(blogService.findById(11L)).thenReturn(existing)
+            whenever(blogs.findById(11L)).thenReturn(Optional.of(existing))
 
             assertThatThrownBy { useCases.update(11L, "New", "<p>New</p>", Instant.parse("2025-06-01T00:00:00Z"), version = 1L) }
                 .isInstanceOf(OptimisticLockingFailureException::class.java)
             assertThat(existing.title).isEqualTo("Old")
-            verify(blogService, never()).update(any())
+            verify(blogs, never()).saveAndFlush(any())
+        }
+    }
+
+    @Nested
+    inner class ReadAndRemove {
+        private val existing = Blog(title = "Title", html = "<p>Body</p>", publishedAt = Instant.parse("2024-01-01T00:00:00Z"))
+
+        @Test
+        fun `reads every blog post, and one by id`() {
+            whenever(blogs.findAll()).thenReturn(mutableListOf(existing))
+            whenever(blogs.findById(11L)).thenReturn(Optional.of(existing))
+
+            assertThat(useCases.all()).containsExactly(existing)
+            assertThat(useCases.byId(11L)).isSameAs(existing)
+        }
+
+        @Test
+        fun `refuses a blog post that does not exist`() {
+            whenever(blogs.findById(404L)).thenReturn(Optional.empty())
+
+            val refusal = assertThrows<BlogNotFound> { useCases.byId(404L) }
+
+            assertThat(refusal.code).isEqualTo("BlogNotFound")
+        }
+
+        @Test
+        fun `removes the blog post it read`() {
+            whenever(blogs.findById(11L)).thenReturn(Optional.of(existing))
+
+            useCases.remove(11L)
+
+            verify(blogs).delete(existing)
         }
     }
 }

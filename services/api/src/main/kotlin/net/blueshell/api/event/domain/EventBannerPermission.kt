@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component
 class EventBannerPermission
     @Autowired
     constructor(
-        service: EventBannerService,
+        private val service: EventBannerService,
         private val eventPermission: EventPermission,
-    ) : BasePermissionEvaluator<EventBanner, EventBanner.Id, EventBannerService>(service) {
+    ) : BasePermissionEvaluator<EventBanner, EventBanner.Id>() {
         override fun hasPermission(
             authentication: Authentication?,
             entity: Any?,

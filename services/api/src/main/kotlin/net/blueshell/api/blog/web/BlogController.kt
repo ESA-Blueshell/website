@@ -3,10 +3,8 @@ package net.blueshell.api.blog.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.blog.domain.BlogService
 import net.blueshell.api.blog.domain.BlogUseCases
 import net.blueshell.api.security.BoardOnly
-import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -20,9 +18,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @Tag(name = "Blogs")
 class BlogController(
-    service: BlogService,
     private val useCases: BlogUseCases,
-) : BaseController<BlogService>(service) {
+) {
     @Value($$"${frontend.url}")
     private lateinit var frontendUrl: String
 
@@ -48,13 +45,13 @@ class BlogController(
 
     @GetMapping("/blogs")
     @PermitAll
-    fun findBlogs(): MutableList<BlogResponse> = service.findAll().map { it.asResponse(frontendUrl) }.toMutableList()
+    fun findBlogs(): MutableList<BlogResponse> = useCases.all().map { it.asResponse(frontendUrl) }.toMutableList()
 
     @GetMapping("/blogs/{id}")
     @PermitAll
     fun findBlogById(
         @PathVariable id: Long,
-    ): BlogResponse = service.findById(id).asResponse(frontendUrl)
+    ): BlogResponse = useCases.byId(id).asResponse(frontendUrl)
 
     @DeleteMapping("/blogs/{id}")
     @BoardOnly
@@ -62,6 +59,6 @@ class BlogController(
     fun deleteById(
         @PathVariable id: Long,
     ) {
-        service.deleteById(id)
+        useCases.remove(id)
     }
 }

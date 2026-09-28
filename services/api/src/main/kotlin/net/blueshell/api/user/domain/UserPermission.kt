@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component
 import net.blueshell.api.user.api.UserService
 
 @Component
-class UserPermission @Autowired constructor(service: UserService) :
-    BasePermissionEvaluator<User, Long, UserService>(service) {
+class UserPermission @Autowired constructor(private val service: UserService) :
+    BasePermissionEvaluator<User, Long>() {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) {
             return false

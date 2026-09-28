@@ -252,8 +252,7 @@ class GameService(
         const val CODE_LENGTH = 32
         const val SLUG_LENGTH = 64
 
-        /** Addresses under /esports that are not a game's, so a game claiming one is unreachable. */
-        /* Addresses the site's own pages answer to under /casual and /competition. */
+        /** Addresses the site's own pages answer to under /casual and /competition, so a game claiming one is unreachable. */
         val RESERVED = setOf("competitive-scene", "new", "seasons")
     }
 }

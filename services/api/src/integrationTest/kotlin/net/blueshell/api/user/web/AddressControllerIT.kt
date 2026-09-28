@@ -64,7 +64,10 @@ class AddressControllerIT : UserTestSupport() {
                     .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"userId":${user.id},"country":"NL","city":"","street":"Noorderhagen","houseNumber":"14","zipCode":"7511EL"}"""
+                        """
+                        {"userId":${user.id},"country":"NL","city":"","street":"Noorderhagen",
+                        "houseNumber":"14","zipCode":"7511EL"}
+                        """.trimIndent()
                     )
             )
                 .andExpect(status().isBadRequest)

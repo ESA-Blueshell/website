@@ -15,7 +15,6 @@ import java.util.Optional
 interface UserRepository : BaseRepository<User, Long> {
     fun findByUsername(username: String): Optional<User>
 
-    /** Ids of accounts that have not been activated. Soft-deleted rows are excluded by the entity. */
     /** Every administrator who is a person: the service account holds SYSTEM as well. */
     @Query(
         """

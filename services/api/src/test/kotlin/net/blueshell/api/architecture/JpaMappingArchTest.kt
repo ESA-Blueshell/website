@@ -401,7 +401,8 @@ class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                         item,
                         !explicitlyLazy,
                         "${item.owner.fullName}.${item.name} is inverse @OneToOne(mappedBy='${ann.mappedBy}') " +
-                                "but specifies fetch=LAZY. This is usually ignored; remove it or document a proven strategy (enhancement/vendor-specific)."
+                                "but specifies fetch=LAZY. This is usually ignored; " +
+                                "remove it or document a proven strategy (enhancement/vendor-specific)."
                     )
                 )
             }

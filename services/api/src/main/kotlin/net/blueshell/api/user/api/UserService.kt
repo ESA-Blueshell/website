@@ -127,13 +127,6 @@ class UserService @Autowired constructor(
     fun existsActiveMembershipByUserId(userId: Long): Boolean =
         repository.existsActiveMembershipByUserId(userId)
 
-    /**
-     * Batch lookup. Returns the users whose ids are in [ids] in unspecified
-     * order; ids without a corresponding active user are silently skipped.
-     * Used by cross-domain admin views (e.g. cohort dashboard) that resolve
-     * a list of user ids to display rows in one round trip.
-     */
-    /** Ids of accounts that have not been activated. */
     /** Everybody who opted into the newsletter, whether or not they activated an account. */
     fun findNewsletterSubscriberIds(): Set<Long> = repository.findIdsByNewsletterTrue().toSet()
 
@@ -141,6 +134,7 @@ class UserService @Autowired constructor(
 
     fun findAdministrators(): List<User> = repository.findAdministrators()
 
+    /** One query for all of [ids], in no particular order; an id with no active user is skipped. */
     fun findAllByIds(ids: Collection<Long>): List<User> =
         if (ids.isEmpty()) emptyList() else repository.findAllById(ids).toList()
 

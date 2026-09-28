@@ -5,7 +5,7 @@ import net.blueshell.api.shared.hibernate.DirtyModel
 import net.blueshell.api.shared.model.DirtyAwareModel
 import org.hibernate.Interceptor
 import org.hibernate.type.Type
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
 // A JavaBean reader is named for what it reads, after the prefix.

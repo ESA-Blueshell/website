@@ -5,6 +5,7 @@ import net.blueshell.api.jobs.domain.JobHandler
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.JobQueueProperties
+import net.blueshell.api.shared.job.ExplainedJobFailure
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -52,8 +53,8 @@ class JobExecutorRetryScheduleTest {
         run(Failing(hours), attempts = 5)
 
         val next = argumentCaptor<Instant>()
-        verify(executions).markRetryScheduled(any(), any(), any(), any(), next.capture())
-        verify(executions, never()).markFailed(any(), any(), any(), any())
+        verify(executions).markRetryScheduled(any(), any(), any(), any(), next.capture(), eq(false))
+        verify(executions, never()).markFailed(any(), any(), any(), any(), any())
         // Two minutes doubled four times is 32 minutes.
         assertThat(Duration.between(before, next.firstValue)).isBetween(Duration.ofMinutes(31), Duration.ofMinutes(33))
     }
@@ -63,18 +64,44 @@ class JobExecutorRetryScheduleTest {
         val before = Instant.now()
         run(Failing(hours), attempts = 10)
         val next = argumentCaptor<Instant>()
-        verify(executions).markRetryScheduled(any(), any(), any(), any(), next.capture())
+        verify(executions).markRetryScheduled(any(), any(), any(), any(), next.capture(), eq(false))
         assertThat(Duration.between(before, next.firstValue)).isBetween(Duration.ofMinutes(119), Duration.ofMinutes(121))
 
         run(Failing(hours), attempts = 11)
-        verify(executions).markFailed(any(), eq("java.lang.IllegalStateException"), eq("down"), any())
+        verify(executions).markFailed(any(), eq("java.lang.IllegalStateException"), eq("down"), any(), eq(false))
+    }
+
+    @Test
+    fun `retries a failure that explains itself like any other, and records it as explained`() {
+        val refusing =
+            object : JobHandler {
+                override val jobType = "failing"
+                override val payloadType = String::class.java
+
+                override fun handle(
+                    payload: String?,
+                    executionId: Long?,
+                    forced: Boolean,
+                ): JobOutcome = throw ExplainedJobFailure("Discord is unavailable.")
+            }
+
+        run(refusing, attempts = 1)
+
+        verify(executions).markRetryScheduled(
+            any(),
+            eq("net.blueshell.api.shared.job.ExplainedJobFailure"),
+            eq("Discord is unavailable."),
+            any(),
+            any(),
+            eq(true),
+        )
     }
 
     @Test
     fun `keeps to the queue's schedule for a handler without one`() {
         run(Failing(null), attempts = 4)
 
-        verify(executions).markFailed(any(), any(), any(), any())
+        verify(executions).markFailed(any(), any(), any(), any(), any())
     }
 
     @Test

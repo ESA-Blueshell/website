@@ -118,6 +118,21 @@ class JobExecutionServiceTest {
     }
 
     @Test
+    fun `records an explained failure as its sentence alone, and any other as its type and message`() {
+        val explained = JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING).apply { id = 1L }
+        val plain = JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING).apply { id = 2L }
+        stubPersistence(explained)
+        stubPersistence(plain)
+
+        service.markRetryScheduled(explained, "Refused", "Discord is unavailable.", "trace", java.time.Instant.now(), explained = true)
+        service.markFailed(plain, "SomeError", "boom", "trace")
+
+        assertThat(explained.errorMessage).isEqualTo("Discord is unavailable.")
+        assertThat(explained.errorReason).isEqualTo("trace")
+        assertThat(plain.errorMessage).isEqualTo("SomeError: boom")
+    }
+
+    @Test
     fun `requeue bumps attempts immediately so the count reflects the upcoming run`() {
         val execution =
             JobExecution(jobType = "demo", attempts = 3, status = JobExecutionStatus.FAILED)

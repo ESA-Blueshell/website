@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.shared.job.ExplainedJobFailure
 import net.blueshell.api.sync.api.DiscordEmbed
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordImage
@@ -27,6 +28,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.client.MultipartBodyBuilder
 import org.springframework.stereotype.Component
+import org.springframework.web.client.ResourceAccessException
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
@@ -55,38 +57,40 @@ class BotPublisher(
     override fun post(
         channel: String,
         post: DiscordPost,
-    ): String {
-        val channelId = channelIdOf(channel)
-        return withoutImageIfRefused(post.banner != null) { withBanner ->
-            val banner = post.banner?.takeIf { withBanner }
-            val request =
-                MessageCreateRequest(
-                    content = mentionsOf(post),
-                    embeds = listOf(post.embed.asRichEmbed()),
-                    allowedMentions = MessageAllowedMentionsRequest(parse = emptySet(), roles = post.pingedRoleIds.toSet()),
-                    attachments = attachmentsOf(banner),
-                )
-            if (banner == null && post.links.isEmpty()) {
-                api.createMessage(channelId, request).id
-            } else {
-                sendRaw(HttpMethod.POST, "/channels/{channel}/messages", withLinks(request, post.links), banner, channelId)
+    ): String =
+        explained(posting(channel)) {
+            val channelId = channelIdOf(channel)
+            withoutImageIfRefused(post.banner != null) { withBanner ->
+                val banner = post.banner?.takeIf { withBanner }
+                val request =
+                    MessageCreateRequest(
+                        content = mentionsOf(post),
+                        embeds = listOf(post.embed.asRichEmbed()),
+                        allowedMentions = MessageAllowedMentionsRequest(parse = emptySet(), roles = post.pingedRoleIds.toSet()),
+                        attachments = attachmentsOf(banner),
+                    )
+                if (banner == null && post.links.isEmpty()) {
+                    api.createMessage(channelId, request).id
+                } else {
+                    sendRaw(HttpMethod.POST, "/channels/{channel}/messages", withLinks(request, post.links), banner, channelId)
+                }
             }
         }
-    }
 
     // The attachments listed replace the message's own, so a banner taken off the event leaves the post.
     override fun edit(
         channel: String,
         messageId: String,
         post: DiscordPost,
-    ): Boolean {
-        val channelId = channelIdOf(channel)
-        return stillThere {
-            withoutImageIfRefused(post.banner != null) { withBanner ->
-                send(post, post.banner?.takeIf { withBanner }, channelId, messageId)
+    ): Boolean =
+        explained(posting(channel)) {
+            val channelId = channelIdOf(channel)
+            stillThere {
+                withoutImageIfRefused(post.banner != null) { withBanner ->
+                    send(post, post.banner?.takeIf { withBanner }, channelId, messageId)
+                }
             }
         }
-    }
 
     private fun send(
         post: DiscordPost,
@@ -172,22 +176,26 @@ class BotPublisher(
     override fun delete(
         channel: String,
         messageId: String,
-    ) = gone { api.deleteMessage(channelIdOf(channel), messageId) }
+    ) = explained(removing(channel)) { gone { api.deleteMessage(channelIdOf(channel), messageId) } }
 
     override fun findPosts(
         channel: String,
         url: String,
     ): List<String> =
-        readAll("/channels/{channel}/messages?limit=100", channelIdOf(channel))
-            .filter { message ->
-                (message["author"] as? Map<*, *>)?.get("bot") == true &&
-                    (message["embeds"] as? List<*>).orEmpty().any { (it as? Map<*, *>)?.get("url") == url }
-            }.map { it.getValue("id") as String }
+        explained(reading(channel)) {
+            readAll("/channels/{channel}/messages?limit=100", channelIdOf(channel))
+                .filter { message ->
+                    (message["author"] as? Map<*, *>)?.get("bot") == true &&
+                        (message["embeds"] as? List<*>).orEmpty().any { (it as? Map<*, *>)?.get("url") == url }
+                }.map { it.getValue("id") as String }
+        }
 
     override fun findDiscordEvents(line: String): List<String> =
-        readAll("/guilds/{guild}/scheduled-events", guildId)
-            .filter { (it["description"] as? String).orEmpty().lines().contains(line) }
-            .map { it.getValue("id") as String }
+        explained(LISTING) {
+            readAll("/guilds/{guild}/scheduled-events", guildId)
+                .filter { (it["description"] as? String).orEmpty().lines().contains(line) }
+                .map { it.getValue("id") as String }
+        }
 
     // Read as maps, so a field the generated models get wrong cannot break a lookup.
     private fun readAll(
@@ -202,19 +210,24 @@ class BotPublisher(
             .orEmpty()
 
     override fun createDiscordEvent(listing: DiscordEventListing): String =
-        withoutImageIfRefused(listing.cover != null) { withCover -> create(if (withCover) listing else listing.copy(cover = null)) }
+        explained(LISTING) {
+            withoutImageIfRefused(listing.cover != null) { withCover -> create(if (withCover) listing else listing.copy(cover = null)) }
+        }
 
     override fun updateDiscordEvent(
         discordEventId: String,
         listing: DiscordEventListing,
     ): Boolean =
-        stillThere {
-            withoutImageIfRefused(listing.cover != null) { withCover ->
-                update(discordEventId, if (withCover) listing else listing.copy(cover = null))
+        explained(LISTING) {
+            stillThere {
+                withoutImageIfRefused(listing.cover != null) { withCover ->
+                    update(discordEventId, if (withCover) listing else listing.copy(cover = null))
+                }
             }
         }
 
-    override fun deleteDiscordEvent(discordEventId: String) = gone { api.deleteGuildScheduledEvent(guildId, discordEventId) }
+    override fun deleteDiscordEvent(discordEventId: String) =
+        explained(LISTING) { gone { api.deleteGuildScheduledEvent(guildId, discordEventId) } }
 
     /*
      * Sent bare and only the ID read back: the generated response model wants a cover Discord
@@ -273,8 +286,11 @@ class BotPublisher(
     // The channel list comes from the gateway, which holds none while it is not connected.
     private fun channelIdOf(channel: String): String {
         val rooms = doors.ifAvailable?.textRooms().orEmpty()
-        check(rooms.isNotEmpty()) { "The Discord gateway is not connected, so no channel called $channel can be found yet." }
-        return rooms.firstOrNull { plain(it.name) == plain(channel) }?.id ?: error("No Discord text channel is called $channel")
+        if (rooms.isEmpty()) {
+            throw ExplainedJobFailure("The Discord gateway is not connected, so no channel called #$channel can be found yet.")
+        }
+        return rooms.firstOrNull { plain(it.name) == plain(channel) }?.id
+            ?: throw ExplainedJobFailure("The Discord server has no text channel called #$channel.")
     }
 
     private companion object {
@@ -332,6 +348,67 @@ private fun stillThere(call: () -> Unit): Boolean =
         if (refused.statusCode.value() != HttpStatus.NOT_FOUND.value()) throw refused
         false
     }
+
+/**
+ * What a call to Discord was for, so a refusal can say what the bot may not do and which
+ * permission it lacks; Discord's own answer names neither.
+ */
+private class Doing(
+    val thing: String,
+    val lacking: String,
+)
+
+private fun posting(channel: String) =
+    Doing(
+        "the #$channel post",
+        "The bot may not post in #$channel: it needs Send Messages, Embed Links, Attach Files and Mention All Roles there.",
+    )
+
+private fun reading(channel: String) =
+    Doing("the #$channel post", "The bot may not read #$channel: it needs View Channel and Read Message History there.")
+
+private fun removing(channel: String) =
+    Doing("the #$channel post", "The bot may not remove its post in #$channel: it needs View Channel there.")
+
+private val LISTING = Doing("the Discord event", "The bot may not keep the server's Events list: it needs Create Events.")
+
+private const val UNAVAILABLE = "Discord is unavailable."
+
+// What Discord says of a field over its limit, and of an embed over its total.
+private val TOO_LONG = listOf("BASE_TYPE_MAX_LENGTH", "Embed size exceeds maximum size")
+
+/*
+ * The refusals the board can act on, in plain words; any other is passed on as it came. Wraps the
+ * whole call, outside the handling of a message already gone or an image refused, which are answers.
+ */
+private fun <T> explained(
+    doing: Doing,
+    call: () -> T,
+): T =
+    try {
+        call()
+    } catch (refused: RestClientResponseException) {
+        throw plainly(refused, doing) ?: refused
+    } catch (unreachable: ResourceAccessException) {
+        throw ExplainedJobFailure(UNAVAILABLE, unreachable)
+    }
+
+private fun plainly(
+    refused: RestClientResponseException,
+    doing: Doing,
+): ExplainedJobFailure? {
+    val status = refused.statusCode
+    val sentence =
+        when {
+            status.value() == HttpStatus.FORBIDDEN.value() -> doing.lacking
+            status.value() == HttpStatus.TOO_MANY_REQUESTS.value() -> "Discord is rate limiting the bot."
+            status.is5xxServerError -> UNAVAILABLE
+            status.value() == HttpStatus.BAD_REQUEST.value() && TOO_LONG.any { refused.responseBodyAsString.contains(it) } ->
+                "Discord refuses ${doing.thing} as too long."
+            else -> null
+        }
+    return sentence?.let { ExplainedJobFailure(it, refused) }
+}
 
 // Removing what is already gone is done.
 private fun gone(call: () -> Unit) {

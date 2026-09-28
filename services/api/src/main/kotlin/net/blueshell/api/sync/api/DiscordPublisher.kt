@@ -49,7 +49,8 @@ data class DiscordEventListing(
 /**
  * What the bot can put in the association's Discord server, in this module's terms (ADR-019): the
  * discord module, which holds the bot, implements it. Every call throws when Discord cannot be
- * reached or refuses, so the caller's job can retry it.
+ * reached or refuses, so the caller's job can retry it; a failure the board can act on comes as an
+ * ExplainedJobFailure that says so in plain words.
  */
 interface DiscordPublisher {
     /** Posts [post] in the channel called [channel], notifying its roles; answers the message's ID. */

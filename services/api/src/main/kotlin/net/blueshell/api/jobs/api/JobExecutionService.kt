@@ -150,10 +150,11 @@ class JobExecutionService(
         errorType: String,
         errorReason: String,
         stackTrace: String? = null,
+        explained: Boolean = false,
     ): JobExecution {
         execution.status = JobExecutionStatus.FAILED
         execution.finishedAt = Instant.now()
-        applyErrorInfo(execution, errorType, errorReason, stackTrace)
+        applyErrorInfo(execution, errorType, errorReason, stackTrace, explained)
         return super.update(execution)
     }
 
@@ -177,26 +178,29 @@ class JobExecutionService(
         errorReason: String,
         stackTrace: String? = null,
         nextAttemptAt: Instant,
+        explained: Boolean = false,
     ): JobExecution {
         execution.status = JobExecutionStatus.QUEUED
         execution.queuedAt = Instant.now()
         execution.startedAt = null
         execution.finishedAt = null
         execution.nextAttemptAt = nextAttemptAt
-        applyErrorInfo(execution, errorType, errorReason, stackTrace)
+        applyErrorInfo(execution, errorType, errorReason, stackTrace, explained)
         execution.attempts += 1
         return super.update(execution)
     }
 
+    // An explained failure's reason is already a sentence for the jobs page, which its type would only clutter.
     private fun applyErrorInfo(
         execution: JobExecution,
         errorType: String,
         errorReason: String,
         stackTrace: String?,
+        explained: Boolean = false,
     ) {
         execution.errorType = errorType
         execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
-        execution.errorMessage = "$errorType: $errorReason"
+        execution.errorMessage = if (explained) errorReason else "$errorType: $errorReason"
     }
 
     /**

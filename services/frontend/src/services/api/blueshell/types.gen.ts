@@ -239,6 +239,46 @@ export type BoardMemberResponse = {
     version: number;
 };
 
+/**
+ * A board as a write says it stands, whether it makes one or edits one
+ */
+export type BoardRequest = {
+    /**
+     * The board's own colour; blank means the association's blue
+     */
+    accent?: string | null;
+    /**
+     * Kept for the column behind it; the board's own name is used when blank
+     */
+    candidate?: string | null;
+    /**
+     * The board's shouted line
+     */
+    cheer?: string | null;
+    /**
+     * What the year was about, in the board's own words
+     */
+    description?: string | null;
+    endDate?: string | null;
+    /**
+     * The name the board chose for itself; blank for a board with none
+     */
+    name?: string | null;
+    /**
+     * The board's place in the line; the ninth board is 9
+     */
+    number: number;
+    /**
+     * Where the board's group photograph is stored; blank leaves it without one
+     */
+    photo?: string | null;
+    startDate: string;
+    /**
+     * The version the edit was made against; a stale one is refused. Ignored on create
+     */
+    version?: number | null;
+};
+
 export type BoardResponse = {
     /**
      * The board's own colour; absent means the association's blue
@@ -816,39 +856,6 @@ export type CreateBlogRequest = {
     title: string;
 };
 
-export type CreateBoardRequest = {
-    /**
-     * The board's own colour; blank means the association's blue
-     */
-    accent?: string | null;
-    /**
-     * Kept for the column behind it; the board's own name is used when blank
-     */
-    candidate?: string | null;
-    /**
-     * The board's shouted line
-     */
-    cheer?: string | null;
-    /**
-     * What the year was about, in the board's own words
-     */
-    description?: string | null;
-    endDate?: string | null;
-    /**
-     * The name the board chose for itself; blank for a board with none
-     */
-    name?: string | null;
-    /**
-     * The board's place in the line; the ninth board is 9
-     */
-    number: number;
-    /**
-     * Where the board's group photograph is stored; blank leaves it without one
-     */
-    photo?: string | null;
-    startDate: string;
-};
-
 export type CreateCommitteeRequest = {
     /**
      * Where its stored banner is, or absent for none
@@ -952,17 +959,6 @@ export type CreateTarget = {
     folderHint?: string | null;
     label: string;
     system: TargetSystem;
-};
-
-/**
- * Create a team. A team is the association's rather than a game's, so it names none
- */
-export type CreateTeamRequest = {
-    /**
-     * Where the team's icon is stored; nothing leaves the team without one
-     */
-    icon?: string | null;
-    name: string;
 };
 
 export type CreateTelemetryRequest = {
@@ -2515,6 +2511,17 @@ export enum TargetSystem {
 }
 
 /**
+ * A team as a write says it stands. A team is the association's rather than a game's, so it names none
+ */
+export type TeamRequest = {
+    /**
+     * Where the team's icon is stored; nothing leaves the team without one
+     */
+    icon?: string | null;
+    name: string;
+};
+
+/**
  * A team the association fields in one game
  */
 export type TeamResponse = {
@@ -2641,40 +2648,6 @@ export type UpdateBoardMemberRequest = {
     startDate: string;
 };
 
-export type UpdateBoardRequest = {
-    /**
-     * The board's own colour; blank means the association's blue
-     */
-    accent?: string | null;
-    /**
-     * Kept for the column behind it; the board's own name is used when blank
-     */
-    candidate?: string | null;
-    /**
-     * The board's shouted line
-     */
-    cheer?: string | null;
-    /**
-     * What the year was about, in the board's own words
-     */
-    description?: string | null;
-    endDate?: string | null;
-    /**
-     * The name the board chose for itself; blank for a board with none
-     */
-    name?: string | null;
-    /**
-     * The board's place in the line; the ninth board is 9
-     */
-    number: number;
-    /**
-     * Where the board's group photograph is stored; blank leaves it without one
-     */
-    photo?: string | null;
-    startDate: string;
-    version: number;
-};
-
 export type UpdateCommitteeRequest = {
     /**
      * Where its stored banner is, or absent for none
@@ -2788,17 +2761,6 @@ export type UpdateSponsorRequest = {
     description: string;
     name: string;
     version: number;
-};
-
-/**
- * Rename a team or change its icon. Its banner belongs to the fielding
- */
-export type UpdateTeamRequest = {
-    /**
-     * Where the team's icon is stored; nothing takes the icon away
-     */
-    icon?: string | null;
-    name: string;
 };
 
 export type UpdateUserRequest = {
@@ -3530,7 +3492,7 @@ export type FindAllBoardsResponses = {
 export type FindAllBoardsResponse = FindAllBoardsResponses[keyof FindAllBoardsResponses];
 
 export type CreateBoardData = {
-    body: CreateBoardRequest;
+    body: BoardRequest;
     path?: never;
     query?: never;
     url: '/boards';
@@ -3832,7 +3794,7 @@ export type FindBoardByIdResponses = {
 export type FindBoardByIdResponse = FindBoardByIdResponses[keyof FindBoardByIdResponses];
 
 export type UpdateBoardData = {
-    body: UpdateBoardRequest;
+    body: BoardRequest;
     path: {
         id: number;
     };
@@ -6362,7 +6324,7 @@ export type FindTeamsResponses = {
 export type FindTeamsResponse = FindTeamsResponses[keyof FindTeamsResponses];
 
 export type CreateTeamData = {
-    body: CreateTeamRequest;
+    body: TeamRequest;
     path?: never;
     query?: never;
     url: '/esports/teams';
@@ -6446,7 +6408,7 @@ export type DeleteTeamResponses = {
 export type DeleteTeamResponse = DeleteTeamResponses[keyof DeleteTeamResponses];
 
 export type UpdateTeamData = {
-    body: UpdateTeamRequest;
+    body: TeamRequest;
     path: {
         id: number;
     };

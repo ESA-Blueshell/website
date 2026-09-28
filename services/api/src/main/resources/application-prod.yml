@@ -10,6 +10,10 @@ spring:
       - vault://secret/api
       # Shared with Stalwart, which names its keys `account.<localpart>`.
       - vault://secret/platform/mail?prefix=mail.
+      # The secret backends, of which only the database one is on: a leased
+      # login that DatabaseLoginRotation keeps current past the role's max_ttl.
+      # Optional, because the migrate profile turns that backend off.
+      - optional:vault://
   cloud:
     vault:
       enabled: true
@@ -17,6 +21,12 @@ spring:
       fail-fast: true
       authentication: KUBERNETES
       kubernetes:
+        role: api
+      # Only the paths named above; no default contexts under the application name.
+      kv:
+        enabled: false
+      database:
+        enabled: true
         role: api
   mail:
     password: ${mail.account.api:}

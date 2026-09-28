@@ -1,6 +1,32 @@
 # Moves the schema and exits. The same image the release runs, so the changelog
 # cannot differ from the application that expects it.
+#
+# The migration owns the schema, so it logs in as the stable owner the MariaDB chart
+# keeps, not a leased user: MariaDB records the creating user as a trigger's DEFINER,
+# and a trigger whose definer Vault has dropped fails every write to its table.
+# Its own Vault role, so the api's pods never read the owner's password.
+#
+# Spring Cloud Vault binds its settings once, at the first vault:// location it
+# resolves, and that is this file's import, read before application-prod.yml's
+# settings apply. So every setting it needs is repeated here.
 spring:
+  config:
+    import: vault://secret/platform/mariadb?prefix=mariadb.
+  cloud:
+    vault:
+      enabled: true
+      fail-fast: true
+      authentication: KUBERNETES
+      kubernetes:
+        role: migrate
+      kv:
+        enabled: false
+      database:
+        enabled: false
+  datasource:
+    username: ${mariadb.user}
+    password: ${mariadb.password}
+
   liquibase:
     enabled: true
 

@@ -249,10 +249,8 @@ mariadb_root_password="$(env_value MYSQL_ROOT_PASSWORD)"
 mariadb_user="$(env_value MYSQL_USER)"
 mariadb_password="$(env_value MYSQL_PASSWORD)"
 
-# The app DB login, copied into secret/api under the property names the api
-# reads (api ADR-033), until it takes leased credentials instead.
-append_field secret/api spring.datasource.username "$mariadb_user"
-append_field secret/api spring.datasource.password "$mariadb_password"
+# The login the injector's template renders for the api image already live, kept until
+# the contract step of api ADR-033; the next image leases its own.
 append_field secret/api mysql-user "$mariadb_user"
 append_field secret/api mysql-password "$mariadb_password"
 mariadb_admin_user="$(env_value MARIADB_ADMIN_USER)"

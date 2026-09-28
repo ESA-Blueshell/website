@@ -1,3 +1,11 @@
+# The migration's own identity: Vault's kubernetes auth binds role `migrate` to it,
+# which reads the schema owner's login that the api's role cannot.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: migrate
+  namespace: default
+---
 # The template the pre-rollout webhook instantiates per release. Suspended, and
 # untagged so the images block in ../kustomization.yaml pins it to the release.
 apiVersion: batch/v1
@@ -18,7 +26,7 @@ spec:
       template:
         spec:
           restartPolicy: Never
-          serviceAccountName: api
+          serviceAccountName: migrate
           imagePullSecrets:
             - name: ghcr-pull-secret
           containers:

@@ -85,11 +85,34 @@ path "database/creds/api" {
   capabilities = ["read"]
 }
 
+# A stopping pod revokes its leased database users rather than leaving them to
+# expire. Renewing needs nothing here: the default policy allows it.
+path "sys/leases/revoke" {
+  capabilities = ["update"]
+}
+
 path "transit/sign/api-jwt" {
   capabilities = ["update"]
 }
 
 path "transit/keys/api-jwt" {
+  capabilities = ["read"]
+}
+EOF
+
+# The migrate Job boots the api's configuration, and logs in to MariaDB as the
+# schema's owner rather than a leased user, since MariaDB records the creating user
+# as a trigger's DEFINER. The api's own pods cannot read the owner's password.
+cat <<'EOF' >/tmp/migrate.hcl
+path "secret/data/api" {
+  capabilities = ["read"]
+}
+
+path "secret/data/platform/mail" {
+  capabilities = ["read"]
+}
+
+path "secret/data/platform/mariadb" {
   capabilities = ["read"]
 }
 EOF
@@ -169,6 +192,7 @@ path "secret/data/platform/alerting" {
 EOF
 
 vault policy write api /tmp/api.hcl
+vault policy write migrate /tmp/migrate.hcl
 vault policy write stalwart /tmp/stalwart.hcl
 vault policy write vso /tmp/vso.hcl
 vault policy write admin /tmp/admin.hcl
@@ -179,6 +203,12 @@ vault write auth/kubernetes/role/api \
   bound_service_account_names="api" \
   bound_service_account_namespaces="default" \
   policies="api" \
+  ttl="1h"
+
+vault write auth/kubernetes/role/migrate \
+  bound_service_account_names="migrate" \
+  bound_service_account_namespaces="default" \
+  policies="migrate" \
   ttl="1h"
 
 vault write auth/kubernetes/role/stalwart \

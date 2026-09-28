@@ -48,9 +48,15 @@ previous one in use.
 what it sealed (api ADR-031). A token signed with the previous JWT secret stays valid until it
 expires.
 
-**Database credentials are leased.** The api and the migrate Job take their MariaDB login
-from `database/creds/api`. The lease renews while the pod runs, and the connection pool takes
-a new login before the old one reaches `max_ttl` and is revoked.
+**The api's database login is leased.** The api takes its MariaDB login from
+`database/creds/api`. Spring Cloud Vault renews that lease only up to the role's `max_ttl`,
+so the api also asks for the role as a rotating secret and hands every new login to the
+connection pool before the old one is revoked.
+
+**The migration logs in as the schema's owner.** MariaDB records the creating user as each
+trigger's DEFINER, and a trigger whose definer Vault has dropped fails every write to its
+table. So the migrate Job keeps the stable owner login the MariaDB chart holds, read under a
+Vault role of its own that the api's pods do not have.
 
 **A sealed Vault stops the api from starting.** That is accepted: without Transit the api
 cannot sign an OIDC or forward-auth token anyway. Auto-unseal is a separate question.
@@ -77,6 +83,8 @@ is not how a rotated key reaches the api.
 - **Push instead of poll.** Vault sends nothing to a KV v2 reader when a key changes, so a
   push would need a separate notifier. Polling one path on an interval is cheaper than
   running one.
+- **Lease the migration's login too.** Every trigger and view it creates would name a user
+  Vault drops within minutes of the Job ending.
 
 ## Consequences
 
@@ -94,7 +102,8 @@ is not how a rotated key reaches the api.
 
 ## Implementation status
 
-Kubernetes auth, the KV import, fail-fast and the key names are built (#1682);
-`VaultConfigImportIT` proves the import against a real Vault with the `api` policy. The
-database login is still a static pair in `secret/api` until #1826 leases it, and keys are
-read at start until #1823, #1827 and #1828 make them rotate without a restart.
+Built: Kubernetes auth, the KV import, fail-fast and the key names (#1682), and the leased
+api login with the migration on the owner's (#1826). `VaultConfigImportIT` proves the
+import against a real Vault with the `api` policy, and `DatabaseLoginIT` proves a rotation
+past `max_ttl` against a real MariaDB. Keys are read at start until #1823, #1827 and #1828
+make them rotate without a restart.

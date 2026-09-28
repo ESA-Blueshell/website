@@ -6,57 +6,74 @@ import jakarta.annotation.security.PermitAll
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.core.annotation.AnnotatedElementUtils
-import org.springframework.http.server.PathContainer
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
-import org.springframework.web.util.pattern.PathPatternParser
+import org.springframework.web.method.HandlerMethod
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo
 import java.lang.reflect.Method
 
 /**
- * Who may read without logging in is decided by [SecurityConfig.ANONYMOUS_READS] alone: method
- * security is not set to read `@PermitAll`, so the annotation does nothing at runtime. These keep
- * the two saying the same thing.
+ * The anonymous reads the auth chain is built with: every GET a controller method opens with
+ * `@PermitAll`, and a short list of reads opened for another reason.
  */
 class AnonymousReadsTest {
-    @Test
-    fun `every read a controller opens to anybody is on the anonymous list`() {
-        val missing = openReads.filter { path -> anonymous.none { it.matches(PathContainer.parsePath(path)) } }
+    private class Pages {
+        @PermitAll
+        fun open() = Unit
 
-        assertThat(missing).isEmpty()
+        @PreAuthorize("isAuthenticated()")
+        fun guarded() = Unit
+
+        fun bare() = Unit
+    }
+
+    @PermitAll
+    private class OpenPages {
+        fun open() = Unit
+
+        @PreAuthorize("hasAuthority('BOARD')")
+        fun guarded() = Unit
+    }
+
+    private fun info(
+        path: String,
+        method: RequestMethod = RequestMethod.GET,
+    ) = RequestMappingInfo.paths(path).methods(method).build()
+
+    private fun handler(
+        bean: Any,
+        name: String,
+    ) = HandlerMethod(bean, bean::class.java.getDeclaredMethod(name))
+
+    @Test
+    fun `opens the reads a method or its controller says anybody may make`() {
+        val handlers =
+            mapOf(
+                info("/open/{id}") to handler(Pages(), "open"),
+                info("/pages") to handler(OpenPages(), "open"),
+                info("/guarded") to handler(Pages(), "guarded"),
+                info("/bare") to handler(Pages(), "bare"),
+                info("/board") to handler(OpenPages(), "guarded"),
+                info("/open", RequestMethod.POST) to handler(Pages(), "open"),
+            )
+
+        assertThat(AnonymousReads.permitAllReads(handlers)).containsExactly("/open/{id}", "/pages")
+        assertThat(AnonymousReads.of(handlers)).containsAll(AnonymousReads.OPENED_ELSEWHERE.keys).contains("/open/{id}")
     }
 
     @Test
-    fun `every anonymous read is one a controller opens to anybody, or a route no controller serves`() {
-        val unopened =
-            SecurityConfig.ANONYMOUS_READS.filter { pattern ->
-                pattern !in OPENED_ELSEWHERE &&
-                    openReads.none { parser.parse(pattern).matches(PathContainer.parsePath(it)) }
-            }
-
-        assertThat(unopened).isEmpty()
+    fun `each read opened for another reason is one no @PermitAll handler opens`() {
+        assertThat(AnonymousReads.OPENED_ELSEWHERE.keys.intersect(openReads.toSet())).isEmpty()
     }
 
     @Test
     fun `nothing under management is read anonymously`() {
-        assertThat(SecurityConfig.ANONYMOUS_READS.filter { it.startsWith("/management") }).isEmpty()
+        assertThat((openReads + AnonymousReads.OPENED_ELSEWHERE.keys).filter { it.startsWith("/management") }).isEmpty()
     }
 
     private companion object {
-        val parser = PathPatternParser()
-        val anonymous = SecurityConfig.ANONYMOUS_READS.map(parser::parse)
-
-        /** Anonymous reads that no `@PermitAll` names, and why each is open anyway. */
-        val OPENED_ELSEWHERE =
-            mapOf(
-                "/events/signups/byAccessToken" to "a guest has no login; method security checks the access token sent",
-                "/discord/live/socket" to "the websocket the Discord band follows, not a controller",
-                "/actuator/health" to "actuator, not a controller",
-                "/actuator/health/**" to "actuator, not a controller",
-                "/actuator/prometheus" to "actuator, not a controller",
-            )
-
         /** Every GET path a controller method opens to anybody, path variables left as `{name}`. */
         val openReads: List<String> by lazy {
             ClassFileImporter()

@@ -5,11 +5,13 @@ import net.blueshell.api.security.JwtAuthenticationEntryPoint
 import net.blueshell.api.testsupport.StandInHttpSecurity
 import org.junit.jupiter.api.Test
 import org.mockito.Answers
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping
 
 /**
  * The auth chain's rules, read off a stand-in [HttpSecurity] that hands each DSL block a stand-in
@@ -36,9 +38,11 @@ class AuthChainTest {
     fun `lets anybody make the anonymous reads, and asks everything else to log in`() {
         val http = StandInHttpSecurity.create(registry)
 
-        chain().authChain(http, mock())
+        val handlers = mock<RequestMappingHandlerMapping> { on { handlerMethods } doReturn emptyMap() }
 
-        verify(registry).requestMatchers(HttpMethod.GET, *SecurityConfig.ANONYMOUS_READS)
+        chain().authChain(http, mock(), handlers)
+
+        verify(registry).requestMatchers(HttpMethod.GET, *AnonymousReads.OPENED_ELSEWHERE.keys.toTypedArray())
         verify(registry).anyRequest()
     }
 }

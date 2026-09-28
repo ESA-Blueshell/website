@@ -1,6 +1,7 @@
 package net.blueshell.api.sponsor.domain
 
 import net.blueshell.api.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.persistence.SponsorRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -13,10 +14,11 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.dao.OptimisticLockingFailureException
 import java.time.Instant
+import java.util.Optional
 
 class SponsorUseCasesTest {
-    private val sponsorService = mock<SponsorService>()
-    private val useCases = SponsorUseCases(sponsorService)
+    private val sponsors = mock<SponsorRepository>()
+    private val useCases = SponsorUseCases(sponsors)
 
     private var sponsorIdSequence = 1L
 
@@ -55,7 +57,7 @@ class SponsorUseCasesTest {
         @Test
         fun `creates sponsor from the given fields`() {
             val captured = argumentCaptor<Sponsor>()
-            whenever(sponsorService.create(captured.capture()))
+            whenever(sponsors.saveAndFlush(captured.capture()))
                 .thenReturn(sponsor("Sponsor A", "Description A"))
 
             val result = useCases.create(name = "Sponsor A", description = "Description A")
@@ -72,8 +74,8 @@ class SponsorUseCasesTest {
         @Test
         fun `updates sponsor fields, keeping the version it was read at`() {
             val existing = sponsor("Old", "Old Description").apply { version = 1L }
-            whenever(sponsorService.findById(9L)).thenReturn(existing)
-            whenever(sponsorService.update(existing)).thenReturn(existing)
+            whenever(sponsors.findById(9L)).thenReturn(Optional.of(existing))
+            whenever(sponsors.saveAndFlush(existing)).thenReturn(existing)
 
             val result =
                 useCases.update(
@@ -91,12 +93,42 @@ class SponsorUseCasesTest {
         @Test
         fun `refuses an edit made against an older version, before touching a field`() {
             val existing = sponsor("Old", "Old Description").apply { version = 2L }
-            whenever(sponsorService.findById(9L)).thenReturn(existing)
+            whenever(sponsors.findById(9L)).thenReturn(Optional.of(existing))
 
             assertThatThrownBy { useCases.update(id = 9L, name = "New", description = "New", version = 1L) }
                 .isInstanceOf(OptimisticLockingFailureException::class.java)
             assertThat(existing.name).isEqualTo("Old")
-            verify(sponsorService, never()).update(any())
+            verify(sponsors, never()).saveAndFlush(any())
+        }
+    }
+
+    @Nested
+    inner class ReadAndRemove {
+        @Test
+        fun `reads every sponsor, and one by id`() {
+            val existing = sponsor("Sponsor A", "Description A")
+            whenever(sponsors.findAll()).thenReturn(mutableListOf(existing))
+            whenever(sponsors.findById(existing.id!!)).thenReturn(Optional.of(existing))
+
+            assertThat(useCases.all()).containsExactly(existing)
+            assertThat(useCases.byId(existing.id!!)).isSameAs(existing)
+        }
+
+        @Test
+        fun `refuses a sponsor that does not exist`() {
+            whenever(sponsors.findById(404L)).thenReturn(Optional.empty())
+
+            assertThatThrownBy { useCases.byId(404L) }.isInstanceOf(SponsorNotFound::class.java)
+        }
+
+        @Test
+        fun `removes the sponsor it read`() {
+            val existing = sponsor("Sponsor A", "Description A")
+            whenever(sponsors.findById(existing.id!!)).thenReturn(Optional.of(existing))
+
+            useCases.remove(existing.id!!)
+
+            verify(sponsors).delete(existing)
         }
     }
 }

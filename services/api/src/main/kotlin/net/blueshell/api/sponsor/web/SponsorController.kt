@@ -4,8 +4,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Positive
 import net.blueshell.api.security.BoardOnly
-import net.blueshell.api.shared.web.BaseController
-import net.blueshell.api.sponsor.domain.SponsorService
 import net.blueshell.api.sponsor.domain.SponsorUseCases
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
@@ -25,11 +23,10 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "Sponsors")
 @BoardOnly
 class SponsorController(
-    service: SponsorService,
     private val useCases: SponsorUseCases,
-) : BaseController<SponsorService>(service) {
+) {
     @GetMapping("/sponsors")
-    fun findSponsors(): List<SponsorResponse> = service.findAll().map { it.asResponse() }
+    fun findSponsors(): List<SponsorResponse> = useCases.all().map { it.asResponse() }
 
     @PostMapping("/sponsors")
     @ResponseStatus(HttpStatus.CREATED)
@@ -46,13 +43,13 @@ class SponsorController(
     @GetMapping(value = ["/sponsors/{id}"])
     fun findSponsorById(
         @PathVariable id: Long,
-    ): SponsorResponse = service.findById(id).asResponse()
+    ): SponsorResponse = useCases.byId(id).asResponse()
 
     @DeleteMapping(value = ["/sponsors/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteSponsorById(
         @PathVariable id: Long,
     ) {
-        service.deleteById(id)
+        useCases.remove(id)
     }
 }

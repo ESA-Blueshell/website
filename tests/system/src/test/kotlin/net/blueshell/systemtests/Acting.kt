@@ -3,9 +3,12 @@ package net.blueshell.systemtests
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.PlaywrightException
+import com.microsoft.playwright.Request
 import com.microsoft.playwright.Response
 import com.microsoft.playwright.assertions.LocatorAssertions
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
 import java.util.function.Predicate
 
 /**
@@ -89,6 +92,46 @@ fun clickUntil(
         "Expected $description within ${timeoutMs}ms, over $clicks clicks${whatTheBrowserDid()}",
         lastRefusal,
     )
+}
+
+/**
+ * [awaitResponseFrom] for a control whose click can be lost and whose request is safe to send
+ * twice, such as the read that opens a preview.
+ *
+ * The click is repeated, as [clickUntil] does, until a request [sent] accepts leaves the
+ * browser; the response is then awaited on what is left of the budget. A failure says how many
+ * clicks the control itself received and whether it was still in the page, which tells a click
+ * that missed from a control replaced under it (#1700).
+ */
+fun Page.awaitResponseFromRetried(
+    control: Locator,
+    expected: String,
+    timeoutMs: Long = POLL_TIMEOUT_MS,
+    sent: (Request) -> Boolean,
+    matches: (Response) -> Boolean,
+): Response {
+    control.waitFor()
+    val target = control.elementHandle()
+    target.evaluate("el => { el.__clicks = 0; el.addEventListener('click', () => el.__clicks++, {capture: true}) }")
+    val request = AtomicReference<Request?>()
+    val response = AtomicReference<Response?>()
+    val onRequest = Consumer<Request> { if (sent(it)) request.compareAndSet(null, it) }
+    val onResponse = Consumer<Response> { if (matches(it)) response.compareAndSet(null, it) }
+    onRequest(onRequest)
+    onResponse(onResponse)
+    val deadline = System.currentTimeMillis() + timeoutMs
+    try {
+        clickUntil(control, "the request for $expected", timeoutMs) { request.get() != null }
+        while (response.get() == null && System.currentTimeMillis() < deadline) Thread.sleep(POLL_INTERVAL_MS)
+        return response.get() ?: throw AssertionError("Expected $expected within ${timeoutMs}ms${whatTheBrowserDid()}")
+    } catch (e: AssertionError) {
+        val clicks = runCatching { target.evaluate("el => el.__clicks") }.getOrNull()
+        val attached = runCatching { target.evaluate("el => el.isConnected") }.getOrNull()
+        throw AssertionError("${e.message}; the control received $clicks clicks and is attached=$attached", e)
+    } finally {
+        offRequest(onRequest)
+        offResponse(onResponse)
+    }
 }
 
 /**

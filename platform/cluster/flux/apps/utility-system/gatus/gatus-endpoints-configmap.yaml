@@ -178,3 +178,28 @@ data:
       - "[CONNECTED] == true"
       alerts:
       - type: discord
+
+    # A suite runs its endpoints in order with one shared context, which is how
+    # Gatus compares two responses. Checked from outside, as a visitor reaches both.
+    suites:
+    - name: "Release versions agree"
+      group: "public"
+      interval: "5m"
+      endpoints:
+      - name: "API version"
+        url: "https://esa-blueshell.nl/api/version"
+        conditions:
+        - "[STATUS] == 200"
+        store:
+          api_version: "[BODY].version"
+      - name: "Frontend matches API version"
+        url: "https://esa-blueshell.nl/version.json"
+        conditions:
+        - "[STATUS] == 200"
+        - "[BODY].version == [CONTEXT].api_version"
+        alerts:
+        - type: discord
+          # A release moves the api first and the frontend after it, so the two
+          # differ for a few minutes; four runs at 5m alert on a stuck release only.
+          failure-threshold: 4
+          description: "api and frontend report different releases"

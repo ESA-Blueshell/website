@@ -39,14 +39,11 @@ class MembershipController(
 
     @PreAuthorize("hasPermission(#principal.id, 'User', 'write')")
     @PostMapping("/memberships")
-    // The body is part of the contract and Spring validates it; the application
-    // is made for the authenticated principal.
-    @Suppress("UnusedParameter")
     fun createMembership(
         @Valid @RequestBody request: MembershipApplicationRequest,
         @AuthenticationPrincipal principal: UserPrincipal?,
     ): SignupOutcomeResponse {
-        val outcome = useCases.apply(principal!!.id)
+        val outcome = useCases.apply(principal!!.id, request.conditionsAccepted)
         return SignupOutcomeResponse(outcome.emailConfirmed, outcome.membershipStarted)
     }
 

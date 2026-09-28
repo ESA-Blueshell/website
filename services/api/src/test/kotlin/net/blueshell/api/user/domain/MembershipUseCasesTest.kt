@@ -21,6 +21,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
@@ -81,7 +82,7 @@ class MembershipUseCasesTest {
             whenever(completion.completeIfReady(1L))
                 .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true))
 
-            val outcome = useCases.apply(1L)
+            val outcome = useCases.apply(1L, conditionsAccepted = true)
 
             assertThat(profile.conditionsAcceptedAt).isNotNull()
             verify(memberProfiles).update(profile)
@@ -95,7 +96,7 @@ class MembershipUseCasesTest {
             whenever(completion.completeIfReady(1L))
                 .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = false))
 
-            assertThatThrownBy { useCases.apply(1L) }
+            assertThatThrownBy { useCases.apply(1L, conditionsAccepted = true) }
                 .isInstanceOf(ResponseStatusException::class.java)
                 .hasMessageContaining("Membership application is not complete")
                 .asInstanceOf(
@@ -112,16 +113,32 @@ class MembershipUseCasesTest {
 
             // The sentence has to survive the trip: a security exception is translated
             // outside the dispatch and the applicant sees no reason at all.
-            assertThatThrownBy { useCases.apply(1L) }
+            assertThatThrownBy { useCases.apply(1L, conditionsAccepted = true) }
                 .isInstanceOf(ResponseStatusException::class.java)
                 .hasMessageContaining("Complete profile is required")
+        }
+
+        @Test
+        fun `refuses an application that does not accept the conditions and records nothing`() {
+            val profile = applicantWithProfile()
+
+            assertThatThrownBy { useCases.apply(1L, conditionsAccepted = false) }
+                .isInstanceOf(ResponseStatusException::class.java)
+                .hasMessageContaining("The membership conditions must be accepted")
+                .asInstanceOf(
+                    org.assertj.core.api.InstanceOfAssertFactories
+                        .type(ResponseStatusException::class.java),
+                ).extracting { it.statusCode }
+                .isEqualTo(HttpStatus.BAD_REQUEST)
+            assertThat(profile.conditionsAcceptedAt).isNull()
+            verifyNoInteractions(memberProfiles, completion)
         }
 
         @Test
         fun `refuses an application that would overlap an existing membership`() {
             withViolation()
 
-            assertThatThrownBy { useCases.apply(1L) }
+            assertThatThrownBy { useCases.apply(1L, conditionsAccepted = true) }
                 .isInstanceOf(ConstraintViolationException::class.java)
             verify(memberProfiles, never()).update(any())
         }

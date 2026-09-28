@@ -442,13 +442,13 @@ again, and all must work.
 | `POST` | `/signup` | `@PermitAll` | Body `CreateUserRequest`. Returns `SignupSessionResponse { userId, email, signupToken, expiresAt }`. 10/min per client. |
 | `PATCH` | `/signup/details` | `X-Signup-Token` | Everything the first step collects except email and password. `204`. Refused once confirmed; `409` on a username, Discord name or phone number somebody else holds. 10/min. |
 | `POST` | `/signup/address` | `X-Signup-Token` | Body `SignupAddressRequest` — no `userId`; the account comes from the token. `204`, upsert. 10/min. |
-| `POST` | `/signup/apply` | `X-Signup-Token` | Body `{ conditionsAccepted }`. Records the acceptance, runs `completeIfReady`. Returns `{ emailConfirmed, membershipStarted }`. Idempotent. 10/min. |
+| `POST` | `/signup/apply` | `X-Signup-Token` | Body `{ conditionsAccepted: true }`; `400` when it is false or absent. Records the acceptance, runs `completeIfReady`. Returns `{ emailConfirmed, membershipStarted }`. Idempotent. 10/min. |
 | `PATCH` | `/signup/email` | `X-Signup-Token` | Body `{ email }`. Re-issues the activation token and resends. Refused once the account is enabled. 3/10min per applicant, 20/10min per address. |
 | `GET` | `/signup/session` | `X-Signup-Token` | Returns `SignupResumeResponse` — the fields the first two steps collect, plus `emailConfirmed` and `conditionsAccepted`, which decide the step a reloaded tab lands on. No id, no password. 20/min. |
 | `POST` | `/recovery/user/activate` | `@PermitAll` | Body `{ token }`. Enables the account, runs `completeIfReady`. Returns `{ membershipStarted }`. 10/10min. |
 | `POST` | `/recovery/user/activate/resend/{username}` | `@PermitAll` | Retires the outstanding link and resends to the address on file. 5/10min. |
 | `POST` | `/users` | `hasPermission('__NO_TARGET__', 'User', 'write')` | Board-only account creation. |
-| `POST` | `/memberships` | `hasPermission(#principal.id, 'User', 'write')` | The signed-in applicant's submission. Body `{ conditionsAccepted }`; stamps the acceptance, then runs the same `completeIfReady`. Returns `{ emailConfirmed, membershipStarted }`. |
+| `POST` | `/memberships` | `hasPermission(#principal.id, 'User', 'write')` | The signed-in applicant's submission. Body `{ conditionsAccepted: true }`; `400` when it is false or absent. Stamps the acceptance, then runs the same `completeIfReady`. Returns `{ emailConfirmed, membershipStarted }`. |
 | `PUT` | `/users/{id}` | `hasPermission(#id, 'User', 'write')` | The signed-in applicant's step 1: fills in the member profile on an existing account. |
 | `POST` | `/addresses` | `hasPermission(#request.userId, 'User', 'write')` | The signed-in applicant's step 2. |
 

@@ -107,7 +107,7 @@ class SignupWriteUseCasesTest {
             whenever(completion.completeIfReady(APPLICANT_ID))
                 .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true))
 
-            val outcome = useCases.submitApplication("sel.ver")
+            val outcome = useCases.submitApplication("sel.ver", conditionsAccepted = true)
 
             assertThat(user.memberProfile!!.conditionsAcceptedAt).isNotNull()
             verify(memberProfiles).update(user.memberProfile!!)
@@ -121,7 +121,7 @@ class SignupWriteUseCasesTest {
                 .thenReturn(SignupOutcome(emailConfirmed = false, membershipStarted = false))
 
             // Unlike the signed-in route, not-yet-ready is the normal case here.
-            val outcome = useCases.submitApplication("sel.ver")
+            val outcome = useCases.submitApplication("sel.ver", conditionsAccepted = true)
 
             assertThat(outcome.membershipStarted).isFalse()
         }
@@ -132,7 +132,7 @@ class SignupWriteUseCasesTest {
 
             // Not an AccessDeniedException: that is translated outside the dispatch and
             // answers with no body, so the applicant was told they lacked authority.
-            assertThatThrownBy { useCases.submitApplication("sel.ver") }
+            assertThatThrownBy { useCases.submitApplication("sel.ver", conditionsAccepted = true) }
                 .isInstanceOf(ResponseStatusException::class.java)
                 .hasMessageContaining("did not apply for membership")
                 .asInstanceOf(
@@ -141,6 +141,22 @@ class SignupWriteUseCasesTest {
                 ).extracting { it.statusCode }
                 .isEqualTo(HttpStatus.FORBIDDEN)
             verify(memberProfiles, never()).update(org.mockito.kotlin.any())
+        }
+
+        @Test
+        fun `refuses an application that does not accept the conditions and records nothing`() {
+            val user = applicant(withProfile = true)
+
+            assertThatThrownBy { useCases.submitApplication("sel.ver", conditionsAccepted = false) }
+                .isInstanceOf(ResponseStatusException::class.java)
+                .hasMessageContaining("The membership conditions must be accepted")
+                .asInstanceOf(
+                    org.assertj.core.api.InstanceOfAssertFactories
+                        .type(ResponseStatusException::class.java),
+                ).extracting { it.statusCode }
+                .isEqualTo(HttpStatus.BAD_REQUEST)
+            assertThat(user.memberProfile!!.conditionsAcceptedAt).isNull()
+            verifyNoInteractions(memberProfiles, completion)
         }
     }
 

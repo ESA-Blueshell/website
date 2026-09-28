@@ -9,6 +9,8 @@ import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.MemberRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
@@ -103,8 +105,9 @@ class SignupWritesIT : UserTestSupport() {
         assertThat(memberships.findByUser_Id(user.id!!)).isEmpty()
     }
 
-    @Test
-    fun `refuses an application that says the conditions were not accepted`() {
+    @ParameterizedTest(name = "body {0}")
+    @ValueSource(strings = ["""{"conditionsAccepted":false}""", "{}"])
+    fun `refuses an application that does not accept the conditions and records nothing`(body: String) {
         val user = applicant(enabled = true)
         val token = tokenFor(user)
         saveAddress(token).andExpect(status().isNoContent)
@@ -114,28 +117,13 @@ class SignupWritesIT : UserTestSupport() {
                 post("/signup/apply")
                     .header(SignupController.SIGNUP_TOKEN_HEADER, token)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"conditionsAccepted":false}"""),
+                    .content(body),
             ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.errors[0].field").value("conditionsAccepted"))
+            .andExpect(jsonPath("$.errors[0].message").value("The membership conditions must be accepted"))
 
+        assertThat(memberProfiles.findById(user.id!!).conditionsAcceptedAt).isNull()
         assertThat(memberships.findByUser_Id(user.id!!)).isEmpty()
-    }
-
-    // A trap worth having written down: @AssertTrue passes a null, so a body that omits
-    // the field altogether is not the same refusal as one that sends false. The form's
-    // checkbox is what stands between the applicant and this, not the validator.
-    @Test
-    fun `an omitted acceptance is not refused the way an explicit false is`() {
-        val user = applicant(enabled = true)
-        val token = tokenFor(user)
-        saveAddress(token).andExpect(status().isNoContent)
-
-        mvc
-            .perform(
-                post("/signup/apply")
-                    .header(SignupController.SIGNUP_TOKEN_HEADER, token)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{}"),
-            ).andExpect(status().isOk)
     }
 
     @Test

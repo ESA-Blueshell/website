@@ -227,7 +227,7 @@ class SignupControllerTest {
     inner class Apply {
         @Test
         fun `reports both halves of the outcome`() {
-            whenever(signupUseCases.submitApplication(TOKEN))
+            whenever(signupUseCases.submitApplication(TOKEN, true))
                 .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true))
 
             val response = controller.apply(TOKEN, SignupApplicationRequest(conditionsAccepted = true))
@@ -240,7 +240,7 @@ class SignupControllerTest {
         // membership has not started rather than that the request failed.
         @Test
         fun `reports a membership that has not started yet`() {
-            whenever(signupUseCases.submitApplication(TOKEN))
+            whenever(signupUseCases.submitApplication(TOKEN, true))
                 .thenReturn(SignupOutcome(emailConfirmed = false, membershipStarted = false))
 
             val response = controller.apply(TOKEN, SignupApplicationRequest(conditionsAccepted = true))

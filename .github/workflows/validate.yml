@@ -682,13 +682,9 @@ jobs:
         run: services/frontend/tests/nginx/link-preview.sh blueshell-website/frontend:ci
 
   system-tests:
-    # Shard the system-test class set across N parallel matrix jobs so
-    # the wall-clock cost scales sub-linearly with new classes. The Gradle
-    # config in tests/system/build.gradle.kts reads SHARD_TOTAL
-    # and SHARD_INDEX (1-based) from the env, hashes each test class FQCN,
-    # and includes only its own slice via JUnit's --tests filter. Stable
-    # partition: a class always lands on the same shard, which makes
-    # failure triage easy.
+    # Each shard runs its own slice of the test classes, picked by a stable
+    # hash of the class name, so a class always lands on the same shard. See
+    # `shardByTestClass()` in build-logic/src/main/kotlin/TestSharding.kt.
     name: System tests (shard ${{ matrix.shard }}/6)
     runs-on: ubuntu-latest
     timeout-minutes: 45

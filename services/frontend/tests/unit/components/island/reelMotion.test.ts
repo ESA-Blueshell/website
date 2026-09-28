@@ -137,4 +137,22 @@ describe("ReelMotion", () => {
     expect(motion.position).toBe(1)
     expect(motion.isDragging).toBe(false)
   })
+
+  it("says when it next moves by itself, and that it will not while nothing moves it", () => {
+    const still = new ReelMotion(13, {unit: 300, drift: 0})
+    expect(still.wakeAt(0, false)).toBeNull()
+    still.step(1, 0)
+    expect(still.wakeAt(0, false)).toBe(0)
+    still.press(0, 10)
+    expect(still.wakeAt(10, false)).toBeNull()
+
+    const drifting = new ReelMotion(13, {unit: 300, drift: 0.25})
+    expect(drifting.wakeAt(0, false)).toBe(0)
+    expect(drifting.wakeAt(0, true)).toBeNull()
+    drifting.press(0, 100)
+    drifting.release(100)
+    expect(drifting.wakeAt(200, false)).toBe(100 + REST_MS)
+    drifting.hovered = true
+    expect(drifting.wakeAt(200, false)).toBeNull()
+  })
 })

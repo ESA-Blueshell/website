@@ -208,6 +208,50 @@ describe("FlickReel", () => {
     expect(resting(wrapper)).not.toEqual(["casual-slice-VALORANT"])
   })
 
+  it("asks for no frames once nothing moves, and wakes when something does", async () => {
+    const wrapper = mountReel()
+
+    runFrames(1)
+    expect(frames).toHaveLength(0)
+
+    const [, on] = wrapper.findAllComponents(PanChevron)
+    on.vm.$emit("pan")
+    expect(frames).toHaveLength(1)
+    runFrames(200)
+    expect(frames).toHaveLength(0)
+    await wrapper.vm.$nextTick()
+    expect(resting(wrapper)).toEqual(["casual-slice-CHESS"])
+  })
+
+  it("neither drifts nor asks for frames at rest under reduced motion", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({matches: query.includes("reduce"), addEventListener() {}, removeEventListener() {}}))
+    const wrapper = mountReel({drift: 1})
+
+    runFrames(1)
+    await wrapper.vm.$nextTick()
+
+    expect(frames).toHaveLength(0)
+    expect(resting(wrapper)).toEqual(["casual-slice-VALORANT"])
+  })
+
+  it("waits out the rest after a hand on a timer rather than a frame per tick, then drifts again", async () => {
+    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]})
+    const wrapper = mountReel({drift: 1})
+    const [, on] = wrapper.findAllComponents(PanChevron)
+
+    on.vm.$emit("pan")
+    runFrames(200)
+    expect(frames).toHaveLength(0)
+
+    clock = 5001
+    vi.advanceTimersByTime(5000)
+    expect(frames).toHaveLength(1)
+    runFrames(100)
+    await wrapper.vm.$nextTick()
+    vi.useRealTimers()
+    expect(resting(wrapper)).not.toEqual(["casual-slice-CHESS"])
+  })
+
   it("narrows its slices on a phone-wide band", async () => {
     vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390)
     const wrapper = mountReel()

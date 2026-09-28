@@ -25,6 +25,7 @@ export interface ReelItem {
 <script lang="ts" setup>
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch} from "vue"
 import PanChevron from "./PanChevron.vue"
+import {DRAG} from "./dragAxis"
 import {placeSlices, ReelMotion, type ReelShape} from "./reelMotion"
 import {useMotionAllowed} from "./useMotionAllowed"
 
@@ -49,8 +50,6 @@ const emit = defineEmits<{go: [item: ReelItem]}>()
 
 /** Below this the band is a phone's, and the slices narrow to suit. */
 const NARROW_PX = 600
-/** How far a press may wander before it is a drag rather than a click. */
-const DRAG_PX = 6
 const WIDE: ReelShape & {unit: number} = {rest: 240, open: 608, cut: 30, unit: 300}
 /** The widest the reel is drawn. Wider, it is drawn at this width and scaled up whole. */
 const WIDEST_PX = 1920
@@ -72,6 +71,9 @@ let suppressClick = false
 /** What was last written onto each slice, so a frame writes only what it changes. */
 const written: Record<string, string>[] = []
 let frame = 0
+/** Set while the belt waits out a rest it will drift after, in place of a frame per tick. */
+let alarm = 0
+let last = 0
 let observer: ResizeObserver | null = null
 
 watch(() => [items.map(item => item.id).join(), shape.value.unit] as const, ([, unit]) => {
@@ -79,7 +81,10 @@ watch(() => [items.map(item => item.id).join(), shape.value.unit] as const, ([, 
   // The slices may be other elements now, holding none of what was written.
   written.length = 0
   void nextTick(paint)
+  wake()
 })
+
+watch(motionPolicy.reduced, wake)
 
 
 /* Every write restyles the slice, and `--open` is inherited, so it restyles all it holds: a
@@ -124,6 +129,30 @@ const frameOf = (callback: (now: number) => void) =>
 const cancelFrame = (id: number) =>
   typeof window.cancelAnimationFrame === "function" ? window.cancelAnimationFrame(id) : window.clearTimeout(id)
 
+/**
+ * Runs the belt's clock while it has somewhere to go. At rest it asks for no frames: a frame per
+ * tick while in view held an idle casual page at 11% of a core (#1696).
+ */
+function wake() {
+  if (frame !== 0 || !inView.value) return
+  window.clearTimeout(alarm)
+  alarm = 0
+  last = performance.now()
+  frame = frameOf(tick)
+}
+
+function tick(now: number) {
+  const elapsed = Math.min(48, now - last)
+  last = now
+  frame = 0
+  if (motion.value.tick(elapsed, now, motionPolicy.reduced.value)) paint()
+  if (!inView.value) return
+  const next = motion.value.wakeAt(now, motionPolicy.reduced.value)
+  if (next === null) return
+  if (next <= now) frame = frameOf(tick)
+  else alarm = window.setTimeout(wake, next - now)
+}
+
 function measure() {
   const outer = reel.value?.clientWidth
   if (!outer) return
@@ -138,21 +167,11 @@ onMounted(() => {
     observer.observe(reel.value)
   }
   paint()
-  let last = performance.now()
-  const tick = (now: number) => {
-    const elapsed = Math.min(48, now - last)
-    last = now
-    if (motion.value.tick(elapsed, now, motionPolicy.reduced.value)) paint()
-    frame = inView.value ? frameOf(tick) : 0
-  }
-  frame = frameOf(tick)
+  wake()
   if (typeof IntersectionObserver === "function" && band.value) {
     viewing = new IntersectionObserver(([entry]) => {
       inView.value = entry?.isIntersecting ?? true
-      if (inView.value && frame === 0) {
-        last = performance.now()
-        frame = frameOf(tick)
-      }
+      wake()
     })
     viewing.observe(band.value)
   }
@@ -160,6 +179,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cancelFrame(frame)
+  window.clearTimeout(alarm)
   observer?.disconnect()
   viewing?.disconnect()
 })
@@ -176,7 +196,7 @@ function drag(event: PointerEvent) {
   if (!motion.value.isDragging) return
   motion.value.drag(event.clientX / scale.value, performance.now())
   // Captured only once it is a drag, so a press on a slice still reaches the slice as a click.
-  if (Math.abs(event.clientX - pressedAt) > DRAG_PX && !(event.currentTarget as HTMLElement).hasPointerCapture?.(event.pointerId)) {
+  if (Math.abs(event.clientX - pressedAt) > DRAG.slop && !(event.currentTarget as HTMLElement).hasPointerCapture?.(event.pointerId)) {
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId)
   }
   paint()
@@ -184,6 +204,12 @@ function drag(event: PointerEvent) {
 
 function release() {
   if (motion.value.release(performance.now())) suppressClick = true
+  wake()
+}
+
+function leave() {
+  motion.value.hovered = false
+  wake()
 }
 
 function swipe(event: WheelEvent) {
@@ -191,6 +217,7 @@ function swipe(event: WheelEvent) {
   event.preventDefault()
   motion.value.swipe(event.deltaX / scale.value, performance.now())
   paint()
+  wake()
 }
 
 /** A press anywhere on a slice follows it; the rail is where a slice is brought to the middle. */
@@ -204,8 +231,15 @@ function choose(event: MouseEvent, item: ReelItem) {
   emit("go", item)
 }
 
-const bring = (index: number) => motion.value.bring(index, performance.now())
-const step = (by: number) => motion.value.step(by, performance.now())
+function bring(index: number) {
+  motion.value.bring(index, performance.now())
+  wake()
+}
+
+function step(by: number) {
+  motion.value.step(by, performance.now())
+  wake()
+}
 
 const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.197.373.291a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"
 </script>
@@ -224,7 +258,7 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
         class="flick-reel__band"
         :data-testid="`${testidPrefix}-band`"
         @mouseenter="motion.hovered = true"
-        @mouseleave="motion.hovered = false"
+        @mouseleave="leave"
         @pointercancel="release"
         @pointerdown="press"
         @pointermove="drag"

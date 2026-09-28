@@ -1,3 +1,5 @@
+import {DRAG} from "./dragAxis"
+
 /**
  * The flick reel's arithmetic: where every slice stands for a fractional position, and how that
  * position moves under a hand, a flick, a trackpad and the slow drift. Pure, so the component
@@ -91,7 +93,6 @@ export const SWIPE_SETTLE_MS = 140
 const FLICK_CARRY_MS = 280
 const EASE_PER_MS = 0.989
 const SETTLED = 0.001
-const TAP_TOLERANCE_PX = 6
 
 /**
  * Where the belt is and where it is going.
@@ -150,6 +151,17 @@ export class ReelMotion {
     return this.position !== was
   }
 
+  /**
+   * When the belt next moves by itself: now while it eases or settles, the end of the rest it will
+   * drift after, and null where it stays put until something moves it.
+   */
+  wakeAt(now: number, reduced: boolean): number | null {
+    if (this.dragging) return null
+    if (this.target !== null || this.settleAt !== null) return now
+    if (!this.options.drift || this.hovered || reduced) return null
+    return Math.max(now, this.restUntil)
+  }
+
   press(x: number, now: number): void {
     this.dragging = true
     this.moved = false
@@ -168,7 +180,7 @@ export class ReelMotion {
     this.velocity = this.velocity * 0.6 + (-dx / this.options.unit / Math.max(1, now - this.lastAt)) * 0.4
     this.lastX = x
     this.lastAt = now
-    if (Math.abs(x - this.startX) > TAP_TOLERANCE_PX) this.moved = true
+    if (Math.abs(x - this.startX) > DRAG.slop) this.moved = true
   }
 
   /** Lets go; answers whether the hand dragged at all, as opposed to pressing in place. */

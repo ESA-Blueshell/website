@@ -42,8 +42,6 @@ env:
   # GITHUB_ACTOR is provided by the runner; GITHUB_TOKEN is not on the
   # environment unless it is put there.
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # Yarn reads this for the @esa-blueshell scope (see .yarnrc.yml).
-  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   JAVA_VERSION: '25'
   # Node 22 (not 24) — yarn 4.10 + playwright hit an EBADF fstat
@@ -643,12 +641,11 @@ jobs:
       - name: Build ${{ matrix.service.name }} image
         run: |
           set -euo pipefail
-          # Both images resolve the generated clients from GitHub Packages,
-          # which needs a token even though the packages are public: the
-          # frontend through `yarn install`, the api through Gradle. Passed as
-          # BuildKit secrets rather than build arguments, which would be
-          # recorded in the image history. Each Dockerfile mounts only the one
-          # it needs; an unused secret is harmless.
+          # The api image resolves the generated clients from GitHub Packages
+          # through Gradle, which needs a token even though the packages are
+          # public. Passed as a BuildKit secret rather than a build argument,
+          # which would be recorded in the image history. The frontend image
+          # mounts no secret, and an unused one is harmless.
           printf '%s' "$GITHUB_TOKEN" > /tmp/gh-token
           docker buildx build \
             --progress=plain \
@@ -658,7 +655,6 @@ jobs:
             --cache-from "type=gha,scope=${{ matrix.service.name }}" \
             --cache-to "type=gha,mode=max,scope=${{ matrix.service.name }}" \
             --build-arg "GITHUB_ACTOR=${{ github.actor }}" \
-            --secret "id=node_auth_token,src=/tmp/gh-token" \
             --secret "id=github_token,src=/tmp/gh-token" \
             "${{ matrix.service.context }}"
           rm -f /tmp/gh-token

@@ -48,8 +48,6 @@ env:
   # Read by the GitHub Packages repository credentials in settings.gradle.kts,
   # which resolve the generated Brevo and Discord clients.
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # Yarn reads this for the @esa-blueshell scope (see .yarnrc.yml).
-  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
 
@@ -133,15 +131,13 @@ jobs:
           # build arguments and sources rather than only the final result.
           provenance: mode=max
           sbom: true
-          # The frontend image installs @esa-blueshell/discord-client from
-          # GitHub Packages, which requires a token. Passed as a BuildKit
-          # secret so it is not baked into the image history. Ignored by the
-          # api image, whose Dockerfile does not mount it.
+          # The api image resolves the generated clients from GitHub Packages,
+          # which requires a token. Passed as a BuildKit secret so it is not
+          # baked into the image history.
           build-args: |
             GITHUB_ACTOR=${{ github.actor }}
             APP_VERSION=${{ steps.version.outputs.version }}
           secrets: |
-            node_auth_token=${{ secrets.GITHUB_TOKEN }}
             github_token=${{ secrets.GITHUB_TOKEN }}
 
       - name: Export digest

@@ -70,21 +70,6 @@
       "depTypeTemplate": "first-party-client",
       "versioningTemplate": "semver",
       "extractVersionTemplate": "^v(?<version>.+)$"
-    },
-    {
-      "customType": "regex",
-      "description": "@esa-blueshell/discord-client is served by GitHub Packages, which requires a token even though the package is public, so the npm lookup returns no-result. Follow the source repository's release tags instead.",
-      "managerFilePatterns": [
-        "/^services/frontend/package\\.json$/"
-      ],
-      "matchStrings": [
-        "\"@esa-blueshell/discord-client\":\\s*\"(?<currentValue>[^\"]+)\""
-      ],
-      "datasourceTemplate": "github-tags",
-      "depNameTemplate": "ESA-Blueshell/discord-client",
-      "depTypeTemplate": "first-party-client",
-      "versioningTemplate": "semver",
-      "extractVersionTemplate": "^v(?<version>.+)$"
     }
   ],
   "packageRules": [
@@ -194,16 +179,6 @@
       ],
       "matchPackageNames": [
         "/^net\\.blueshell\\.clients[.:]/"
-      ],
-      "enabled": false
-    },
-    {
-      "description": "@esa-blueshell packages are covered by the custom managers above.",
-      "matchDatasources": [
-        "npm"
-      ],
-      "matchPackageNames": [
-        "/^@esa-blueshell\\//"
       ],
       "enabled": false
     },

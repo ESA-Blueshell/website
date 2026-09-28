@@ -8,7 +8,6 @@ import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
-import net.blueshell.api.shared.service.BaseModelService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
@@ -19,9 +18,9 @@ import org.mockito.kotlin.verify
 class ContributionAsksQueueTheirEmailTest {
     private val jobs: JobQueue = mock()
 
-    private fun <S : BaseModelService<*, *, *>> S.withEntityManager(): S =
+    private fun <S : Any> S.withEntityManager(): S =
         apply {
-            BaseModelService::class.java
+            javaClass
                 .getDeclaredField("em")
                 .apply { isAccessible = true }
                 .set(this, mock<EntityManager>())

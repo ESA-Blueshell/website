@@ -1,24 +1,48 @@
 package net.blueshell.api.contribution.api
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import net.blueshell.api.contribution.domain.ContributionPeriodChanged
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
-import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class ContributionPeriodService
     @Autowired
     constructor(
-        repository: ContributionPeriodRepository,
+        private val repository: ContributionPeriodRepository,
         private val trackedEvents: TrackedEventPublisher,
-    ) : BaseModelService<ContributionPeriod, Long, ContributionPeriodRepository>(repository) {
+    ) {
+        // Read back after each write, so the columns the database fills are on the answer.
+        @PersistenceContext
+        private lateinit var em: EntityManager
+
+        private fun written(row: ContributionPeriod): ContributionPeriod = repository.saveAndFlush(row).also(em::refresh)
+
+        @Transactional(readOnly = true)
+        fun findById(id: Long): ContributionPeriod =
+            repository.findById(id).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "ContributionPeriod not found with id: $id")
+            }
+
+        @Transactional(readOnly = true)
+        fun findAll(): List<ContributionPeriod> = repository.findAll()
+
+        @Transactional(readOnly = true)
+        fun existsById(id: Long): Boolean = repository.existsById(id)
+
         @Transactional
-        override fun create(entity: ContributionPeriod): ContributionPeriod {
-            val saved = super.create(entity)
+        fun deleteById(id: Long) = repository.delete(findById(id))
+
+        @Transactional
+        fun create(entity: ContributionPeriod): ContributionPeriod {
+            val saved = written(entity)
             trackedEvents.publish { actor ->
                 ContributionPeriodChanged(
                     saved.id!!,
@@ -29,8 +53,8 @@ class ContributionPeriodService
         }
 
         @Transactional
-        override fun update(entity: ContributionPeriod): ContributionPeriod {
-            val saved = super.update(entity)
+        fun update(entity: ContributionPeriod): ContributionPeriod {
+            val saved = written(entity)
             trackedEvents.publish { actor ->
                 ContributionPeriodChanged(
                     saved.id!!,

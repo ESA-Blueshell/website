@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test
 import org.springframework.modulith.core.ApplicationModules
 
 /**
- * The module packages are nested, so detection is the part that can silently do nothing:
- * a strategy that nominates no package produces an empty `ApplicationModules` and every
- * later check passes vacuously. This pins the modules by name.
+ * Detection is the part that can silently do nothing: a strategy that nominates no package
+ * produces an empty `ApplicationModules` and every later check passes vacuously. This pins the
+ * modules by name, and a new module joins by carrying `@ApplicationModule` and a line here.
  *
  * `verify()` runs here too: it is the boundary check itself, and it needs the detection above
  * to have found something before it means anything.

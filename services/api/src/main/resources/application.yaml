@@ -74,9 +74,9 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
   modulith:
-    # The modules are nested under domain/, platform/ and infrastructure/ today, so the
-    # default direct-sub-package detection does not find them.
-    detection-strategy: net.blueshell.api.ModuleDetectionStrategy
+    # A module is a package whose ModuleMetadata carries @ApplicationModule. platform carries
+    # none, which keeps the application root out of the module list.
+    detection-strategy: explicitly-annotated
     events:
       jdbc:
         schema-initialization:

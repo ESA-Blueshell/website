@@ -5,60 +5,38 @@ import com.tngtech.archunit.core.domain.JavaClass
 /**
  * Derives the architecture ADR-003 module a type belongs to from its package.
  *
- * Every module is a direct sub-package of the base package. `platform` is not one: its `config`, `web` and
- * `integration.mock` packages are the application root under ADR-003 rules 5 and 6. Types directly under the
- * base package belong to no module — that is where global wiring lives — and [moduleOf] returns null for
- * them.
+ * Every direct sub-package of the base package is a module except `platform`, whose `config`, `web`
+ * and `integration.mock` packages are the application root under ADR-003 rules 5 and 6. Types
+ * directly under the base package belong to no module, since that is where global wiring lives, and
+ * [moduleOf] returns null for them. The modules are read off the packages rather than listed, so a
+ * new module cannot slip past the rules that ask for one.
  */
 object ArchModules {
     const val BASE = "net.blueshell.api"
 
-    /**
-     * The modules, each a direct sub-package of the base package.
-     */
-    private val FLAT_MODULES =
-        setOf(
-            "auth",
-            "blog",
-            "board",
-            "committee",
-            "contribution",
-            "esports",
-            "game",
-            "event",
-            "file",
-            "sponsor",
-            "survey",
-            "telemetry",
-            "user",
-            "cohort",
-            "contact",
-            "email",
-            "jobs",
-            "sync",
-            "discord",
-            "oidc",
-            "security",
-            "shared",
-        )
+    private const val APPLICATION_ROOT = "platform"
 
     fun moduleOf(javaClass: JavaClass): String? = moduleOf(javaClass.packageName)
 
     fun moduleOf(packageName: String): String? {
-        if (packageName != BASE && !packageName.startsWith("$BASE.")) return null
-        val segments =
-            packageName
-                .removePrefix(BASE)
-                .removePrefix(".")
-                .split(".")
-                .filter { it.isNotEmpty() }
-        return when {
-            segments.isEmpty() -> null
-            segments[0] in FLAT_MODULES -> segments[0]
-            // platform/config, platform/web and platform/integration/mock are the
-            // application root under ADR-003 rules 5 and 6, not a module.
-            else -> null
-        }
+        if (!packageName.startsWith("$BASE.")) return null
+        return packageName.removePrefix("$BASE.").substringBefore('.').takeUnless { it == APPLICATION_ROOT }
+    }
+
+    /**
+     * Whether a type in [originPackage] reaching [target] reads another module's data past its
+     * services: [target] is a repository in some module's `persistence` package, and the origin is
+     * outside that module. Api ADR-018.
+     */
+    fun reachesForeignRepository(
+        originPackage: String,
+        targetPackage: String,
+        targetSimpleName: String,
+    ): Boolean {
+        val owner = moduleOf(targetPackage) ?: return false
+        val inPersistence = targetPackage == "$BASE.$owner.persistence" || targetPackage.startsWith("$BASE.$owner.persistence.")
+        val isRepository = inPersistence && targetSimpleName.endsWith("Repository")
+        return isRepository && moduleOf(originPackage) != owner
     }
 
     /**

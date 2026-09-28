@@ -4,7 +4,7 @@ import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
-import net.blueshell.api.user.persistence.RoleChangeRepository
+import net.blueshell.api.user.api.RoleChanges
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -19,7 +19,7 @@ import tools.jackson.databind.ObjectMapper
 @Component
 class RoleChangeEmailJob(
     objectMapper: ObjectMapper,
-    private val roleChanges: RoleChangeRepository,
+    private val roleChanges: RoleChanges,
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
 ) : AbstractJsonJobHandler<EmailJobs.RoleChangePayload>(
@@ -29,7 +29,7 @@ class RoleChangeEmailJob(
     override val jobType: String = EmailJobs.RoleChange.type
 
     override fun handlePayload(payload: EmailJobs.RoleChangePayload) {
-        val change = requireExists { roleChanges.findById(payload.roleChangeId).orElseThrow() }
+        val change = requireExists { roleChanges.find(payload.roleChangeId) }
         emails.send(createRoleChangeEmail(change, frontendUrl), EmailJobs.RoleChange.type, currentExecutionId)
     }
 }

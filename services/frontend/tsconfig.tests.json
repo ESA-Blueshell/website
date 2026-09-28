@@ -42,7 +42,11 @@
     "tests/unit/domains/discord/adapters/live.test.ts",
     "tests/unit/domains/discord/adapters/members.test.ts",
     "tests/unit/domains/discord/adapters/mentions.test.ts",
-    "tests/unit/domains/discord/adapters/roles.test.ts"
+    "tests/unit/domains/discord/adapters/roles.test.ts",
+    "tests/unit/domains/jobs/adapters/triggering.test.ts",
+    "tests/unit/domains/jobs/reading.test.ts",
+    "tests/unit/domains/auth/refusals.test.ts",
+    "tests/unit/domains/auth/securityEvents.test.ts"
   ],
   "exclude": [
     "dist",

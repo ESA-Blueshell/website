@@ -26,6 +26,16 @@ describe("Home page", () => {
     }
   })
 
+  it("shows the Discord band's online count on the hero, without a read of its own", async () => {
+    const wrapper = mountHome()
+    expect(wrapper.findComponent({name: "HomeHero"}).props("online")).toBeUndefined()
+
+    wrapper.findComponent({name: "DiscordBand"}).vm.$emit("online", 269)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findComponent({name: "HomeHero"}).props("online")).toBe(269)
+  })
+
   it("says what membership gets somebody in six ticked points, with the way in beside the heading", () => {
     const perks = mountHome().findComponent({name: "PerkBand"})
 

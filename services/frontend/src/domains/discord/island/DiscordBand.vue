@@ -19,8 +19,12 @@ import VoicePeople from "./VoicePeople.vue"
  * page with rounded corners. It lists only the rooms somebody is in, each joined in Discord
  * itself. Where Discord says nothing, the widget is its head and invite alone.
  */
+/* The hero shows the same count, so the page follows the server once. */
+const emit = defineEmits<{online: [count: number | undefined]}>()
+
 /* Follows the server as the api pushes it. An answer of nothing keeps the last one rather than emptying the widget. */
 const rooms = ref<DiscordRooms | null>(null)
+watch(() => rooms.value?.online, count => emit("online", count))
 
 let stop: () => void
 onMounted(() => {

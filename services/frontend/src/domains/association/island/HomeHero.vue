@@ -74,7 +74,7 @@ const discordLabel = computed(() => online === undefined ? "Discord" : `Discord,
           <span
             v-if="social === SOCIAL_GLYPHS.discord && online !== undefined"
             class="home-hero__live"
-            data-testid="home-discord-live"
+            data-testid="home-hero-discord-live"
           />
         </a>
       </div>

@@ -69,6 +69,16 @@ describe("DiscordBand", () => {
     expect(open.get(".widget__join").attributes("href")).toBe("https://discord.com/channels/g/1")
   })
 
+  it("hands the online count to the page, and again when the server changes", async () => {
+    mockRead.mockResolvedValue(FIXTURE)
+    const wrapper = await mountBand()
+    expect(wrapper.emitted("online")).toEqual([[269]])
+
+    watcher.tell({...FIXTURE, online: 270})
+    await flushPromises()
+    expect(wrapper.emitted("online")).toEqual([[269], [270]])
+  })
+
   it("draws Discord's voice glyph for a room, locked for a members-only one, green since only occupied rooms are listed", async () => {
     mockRead.mockResolvedValue(FIXTURE)
     const wrapper = await mountBand()

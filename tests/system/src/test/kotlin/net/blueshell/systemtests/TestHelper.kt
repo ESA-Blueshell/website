@@ -9,9 +9,11 @@ import java.sql.DriverManager
 import java.util.UUID
 
 /**
- * HTTP and JDBC helper for system tests. Behaviour is driven over HTTP; JDBC fills the gaps the
- * public surface will not — enabling a fresh user, which no admin endpoint exposes, and granting
- * roles, which only a privileged endpoint can do and so needs an admin that does not exist yet.
+ * HTTP and JDBC helper for system tests. Behaviour is driven over HTTP, and committees, events,
+ * contribution periods and contributions are created through the api's test-profile endpoints,
+ * which call the services that own them. JDBC fills the gaps the api will not, and every write
+ * says why. A read (`find*`, `has*` and the like) goes to the table because it asserts what was
+ * stored, which the api answers only shaped for a page.
  *
  * Activation tokens are deliberately not read from the database: only a hashed verifier is
  * stored, so the plaintext in the email cannot be reconstructed from SQL. Tests of the
@@ -24,6 +26,8 @@ object TestHelper {
 
     private const val API_RETRY_ATTEMPTS = 3
     private const val API_RETRY_DELAY_MS = 2_000L
+
+    // TWIN: `SoftDelete.ACTIVE` in the api's `shared/model/SoftDelete.kt`.
     private const val ACTIVE_ROW_PREDICATE = "deleted_at = '9999-12-31 23:59:59'"
     private const val SELECTOR_BYTES = 16
     private const val VERIFIER_BYTES = 32
@@ -41,6 +45,24 @@ object TestHelper {
         get() = System.getProperty("test.db.password", "ci-blueshell")
 
     fun givenApi(): RequestSpecification = given().relaxedHTTPSValidation()
+
+    /** Posts a fixture to the api's test-profile endpoints, which create it through its services. */
+    private fun seed(
+        path: String,
+        body: Map<String, Any?>,
+    ): io.restassured.response.Response {
+        val response =
+            retryOnConnectionFailure {
+                givenApi()
+                    .baseUri(apiBaseUrl)
+                    .contentType(ContentType.JSON)
+                    .body(body)
+                    .`when`()
+                    .post(path)
+            }
+        require(response.statusCode == 200) { "POST $path returned ${response.statusCode}: ${response.asString()}" }
+        return response
+    }
 
     /**
      * Build a request that carries a fresh CSRF round-trip. The api
@@ -315,6 +337,8 @@ object TestHelper {
     /**
      * Toggles `users.enabled`: mints a deliberately disabled account for the login-blocked path,
      * and activates freshly registered users.
+     *
+     * JDBC: the api enables an account only through the activation link, whose token is in the email.
      */
     fun setEnabled(
         username: String,
@@ -338,6 +362,8 @@ object TestHelper {
      * Replace every row in `authorities` for the given user. New users
      * start with `GUEST` only; tests that want exactly `MEMBER` (or
      * any other single role) should call this rather than appending.
+     *
+     * JDBC: only an admin may grant a role, and the first admin a test needs has to come from here.
      */
     fun replaceRoles(
         username: String,
@@ -401,6 +427,8 @@ object TestHelper {
      * Somebody holding a granted role has two-factor, or the role is dormant and allows nothing
      * (api ADR-031). A test of the roles themselves wants them in force, so granting one here
      * records two-factor too; [login] then signs them in through a trusted browser.
+     *
+     * JDBC: the api records two-factor only on a code from an authenticator app.
      */
     private fun giveTwoFactor(
         conn: Connection,
@@ -412,7 +440,11 @@ object TestHelper {
         }
     }
 
-    /** Takes a role out of force by clearing two-factor, for a test of what a dormant role allows. */
+    /**
+     * Takes a role out of force by clearing two-factor, for a test of what a dormant role allows.
+     *
+     * JDBC: the api turns two-factor off only for its owner, signed in, and a test clears it before that.
+     */
     fun withoutTwoFactor(username: String) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement("UPDATE users SET two_factor_since = NULL WHERE id = ?").use { stmt ->
@@ -972,12 +1004,9 @@ object TestHelper {
     }
 
     /**
-     * Get-or-create a `contribution_periods` row for the given date
-     * range and return its id. Idempotent across runs in the same
-     * compose stack: tests that re-use the same fixed start/end dates
-     * (e.g. "today − 15d → today + 345d") would otherwise collide on
-     * `uk_contribution_periods_start_end_deleted_at` once the first
-     * test in the shard had already inserted it.
+     * The contribution period with these dates, created through the api where none exists yet.
+     * Shards reuse the same fixed dates ("today − 15d → today + 345d"), so a second ask answers
+     * the first one's period.
      */
     fun createContributionPeriod(
         startDate: java.time.LocalDate,
@@ -991,54 +1020,25 @@ object TestHelper {
                 java.time.temporal.ChronoUnit.DAYS
                     .between(startDate, endDate) / 2,
             ),
-    ): Long {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn
-                .prepareStatement(
-                    "SELECT id FROM contribution_periods " +
-                        "WHERE start_date = ? AND end_date = ? AND $ACTIVE_ROW_PREDICATE LIMIT 1",
-                ).use { stmt ->
-                    stmt.setDate(1, java.sql.Date.valueOf(startDate))
-                    stmt.setDate(2, java.sql.Date.valueOf(endDate))
-                    val rs = stmt.executeQuery()
-                    if (rs.next()) return rs.getLong("id")
-                }
-            return conn
-                .prepareStatement(
-                    "INSERT INTO contribution_periods " +
-                        "(start_date, end_date, half_year_cutoff_date, half_year_fee, full_year_fee, alumni_fee) " +
-                        "VALUES (?, ?, ?, ?, ?, ?)",
-                    java.sql.Statement.RETURN_GENERATED_KEYS,
-                ).use { stmt ->
-                    stmt.setDate(1, java.sql.Date.valueOf(startDate))
-                    stmt.setDate(2, java.sql.Date.valueOf(endDate))
-                    stmt.setDate(3, java.sql.Date.valueOf(halfYearCutoffDate))
-                    stmt.setDouble(4, halfYearFee)
-                    stmt.setDouble(5, fullYearFee)
-                    stmt.setDouble(6, alumniFee)
-                    stmt.executeUpdate()
-                    val keys = stmt.generatedKeys
-                    require(keys.next()) { "INSERT contribution_periods produced no id" }
-                    keys.getLong(1)
-                }
-        }
-    }
+    ): Long =
+        seed(
+            "/test-support/contribution-periods",
+            mapOf(
+                "startDate" to startDate.toString(),
+                "endDate" to endDate.toString(),
+                "halfYearCutoffDate" to halfYearCutoffDate.toString(),
+                "halfYearFee" to halfYearFee,
+                "fullYearFee" to fullYearFee,
+                "alumniFee" to alumniFee,
+            ),
+        ).asString().toLong()
 
+    /** Records the user's contribution for the period through the api. */
     fun createContribution(
         periodId: Long,
         username: String,
     ) {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            val userId = userIdOrThrow(conn, username)
-            conn
-                .prepareStatement(
-                    "INSERT INTO contributions (user_id, contribution_period_id) VALUES (?, ?)",
-                ).use { stmt ->
-                    stmt.setLong(1, userId)
-                    stmt.setLong(2, periodId)
-                    stmt.executeUpdate()
-                }
-        }
+        seed("/test-support/contribution-periods/$periodId/contributions", mapOf("username" to username))
     }
 
     /**
@@ -1097,29 +1097,11 @@ object TestHelper {
         val paymentDueDate: java.time.LocalDate? = null,
     )
 
-    /**
-     * Insert a `committees` row at the address its name makes. Returns the new committee id.
-     */
+    /** A committee created through the api, at the address its name makes. Returns its id. */
     fun createCommittee(
         name: String = "Committee ${UUID.randomUUID().toString().take(8)}",
         description: String = "Test committee",
-    ): Long {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            return conn
-                .prepareStatement(
-                    "INSERT INTO committees (name, description, slug) VALUES (?, ?, ?)",
-                    java.sql.Statement.RETURN_GENERATED_KEYS,
-                ).use { stmt ->
-                    stmt.setString(1, name)
-                    stmt.setString(2, description)
-                    stmt.setString(3, committeeAddressOf(name))
-                    stmt.executeUpdate()
-                    val keys = stmt.generatedKeys
-                    require(keys.next()) { "INSERT committees produced no id" }
-                    keys.getLong(1)
-                }
-        }
-    }
+    ): Long = seed("/test-support/committees", mapOf("name" to name, "description" to description)).asString().toLong()
 
     /** The address the api makes from a committee's name. TWIN: `addressOf` in `shared/model/PageAddress.kt`. */
     fun committeeAddressOf(name: String): String =
@@ -1132,28 +1114,13 @@ object TestHelper {
             .trim('-')
             .take(64)
 
-    /**
-     * Insert a `committee_members` row linking the given user to a
-     * committee. `role` is optional (matches the entity's nullable
-     * column).
-     */
+    /** Seats the user on the committee through the api. `role` is optional, as on the committee editor. */
     fun addCommitteeMember(
         committeeId: Long,
         username: String,
         role: String? = "Member",
     ) {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            val userId = userIdOrThrow(conn, username)
-            conn
-                .prepareStatement(
-                    "INSERT INTO committee_members (committee_id, user_id, role) VALUES (?, ?, ?)",
-                ).use { stmt ->
-                    stmt.setLong(1, committeeId)
-                    stmt.setLong(2, userId)
-                    stmt.setString(3, role)
-                    stmt.executeUpdate()
-                }
-        }
+        seed("/test-support/committees/$committeeId/members", mapOf("username" to username, "role" to role))
     }
 
     /**
@@ -1246,9 +1213,7 @@ object TestHelper {
                 }
         }
 
-    /**
-     * Insert an `events` row. Returns the new event id.
-     */
+    /** An event created through the api. Returns its id. */
     fun createEvent(
         committeeId: Long?,
         title: String,
@@ -1263,32 +1228,22 @@ object TestHelper {
         signUp: Boolean = false,
         membersOnly: Boolean = false,
         signUpLimit: Int? = null,
-    ): Long {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            return conn
-                .prepareStatement(
-                    "INSERT INTO events (committee_id, title, description, location, start_time, end_time, " +
-                        "approved, members_only, sign_up, sign_up_limit) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    java.sql.Statement.RETURN_GENERATED_KEYS,
-                ).use { stmt ->
-                    if (committeeId != null) stmt.setLong(1, committeeId) else stmt.setNull(1, java.sql.Types.BIGINT)
-                    stmt.setString(2, title)
-                    stmt.setString(3, description)
-                    stmt.setString(4, location)
-                    stmt.setTimestamp(5, java.sql.Timestamp.from(startTime))
-                    stmt.setTimestamp(6, java.sql.Timestamp.from(endTime))
-                    stmt.setBoolean(7, approved)
-                    stmt.setBoolean(8, membersOnly)
-                    stmt.setBoolean(9, signUp)
-                    if (signUpLimit != null) stmt.setInt(10, signUpLimit) else stmt.setNull(10, java.sql.Types.INTEGER)
-                    stmt.executeUpdate()
-                    val keys = stmt.generatedKeys
-                    require(keys.next()) { "INSERT events produced no id" }
-                    keys.getLong(1)
-                }
-        }
-    }
+    ): Long =
+        seed(
+            "/test-support/events",
+            mapOf(
+                "committeeId" to committeeId,
+                "title" to title,
+                "startTime" to startTime.toString(),
+                "endTime" to endTime.toString(),
+                "description" to description,
+                "location" to location,
+                "approved" to approved,
+                "signUp" to signUp,
+                "membersOnly" to membersOnly,
+                "signUpLimit" to signUpLimit,
+            ),
+        ).asString().toLong()
 
     /**
      * Read an `events` row by id. Returns null when the event was
@@ -1401,6 +1356,8 @@ object TestHelper {
      * `surveys.event_id` column was dropped in V24 — the relationship
      * is now one-way from event to survey via `events.survey_id`.
      * Returns the survey id so the caller can attach questions.
+     *
+     * JDBC: the api writes a survey only inside the event editor's whole form.
      */
     fun attachSurveyToEvent(eventId: Long): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
@@ -1428,6 +1385,8 @@ object TestHelper {
      * Insert a `questions` row attached to the given survey. `type` is
      * one of `OPEN`, `RADIO`, `CHECKBOX`; `choiceLabels` is encoded as
      * JSON for RADIO/CHECKBOX. Returns the question id.
+     *
+     * JDBC: the api writes a question only inside the event editor's whole form.
      */
     fun createQuestion(
         surveyId: Long,
@@ -1499,6 +1458,8 @@ object TestHelper {
     /**
      * Insert a guest-backed `event_signups` row. Returns the signup
      * id so the caller can wire answers to it.
+     *
+     * JDBC: a guest sign-up through the api mints its own access token, which a test cannot read back.
      */
     fun createGuestEventSignUp(
         eventId: Long,
@@ -1528,6 +1489,8 @@ object TestHelper {
      * payload (`text_response` / `option_selections`) lives in
      * `answers` keyed by `question_id`. Returns the new
      * `event_sign_up_answers.id`.
+     *
+     * JDBC: the api writes an answer only with the sign-up it belongs to, as the person signing up.
      */
     fun createEventSignUpAnswer(
         eventSignUpId: Long,

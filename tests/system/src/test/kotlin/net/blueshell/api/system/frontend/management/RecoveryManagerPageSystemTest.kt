@@ -6,6 +6,7 @@ import net.blueshell.api.system.frontend.helper.UserManagerHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import net.blueshell.systemtests.awaitResponseFrom
+import net.blueshell.systemtests.awaitResponseFromRetried
 import net.blueshell.systemtests.pollFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
@@ -31,10 +32,12 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         }
 
         // Reading the email is how it is sent: the row button renders it, the dialog sends it.
+        // The preview is a read, so a click that sent nothing is made again (#1700).
         val rendered =
-            page.awaitResponseFrom(
+            page.awaitResponseFromRetried(
                 control = RecoveryManagerHelper.emailButton(page, "USER_ACTIVATION", inactiveId),
                 expected = "GET /recovery/users/*/email-preview",
+                sent = { it.url().contains("/email-preview") },
             ) { it.url().contains("/email-preview") }
         assertThat(rendered.status()).isEqualTo(200)
 
@@ -61,9 +64,10 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         }
 
         val rendered =
-            page.awaitResponseFrom(
+            page.awaitResponseFromRetried(
                 control = RecoveryManagerHelper.emailButton(page, "PASSWORD_RESET", activeId),
                 expected = "GET /recovery/users/*/email-preview",
+                sent = { it.url().contains("/email-preview") },
             ) { it.url().contains("/email-preview") }
         assertThat(rendered.status()).isEqualTo(200)
 
@@ -199,9 +203,10 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(RecoveryManagerHelper.offersEmail(page, "MEMBER_ACTIVATION", inactiveId)).isFalse()
 
         val response =
-            page.awaitResponseFrom(
+            page.awaitResponseFromRetried(
                 control = RecoveryManagerHelper.emailButton(page, "USER_ACTIVATION", inactiveId),
                 expected = "GET /recovery/users/*/email-preview",
+                sent = { it.url().contains("/email-preview") },
             ) { it.url().contains("/email-preview") }
         assertThat(response.status()).isEqualTo(200)
 

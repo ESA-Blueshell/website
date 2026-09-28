@@ -23,7 +23,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.server.ResponseStatusException
 import java.util.Optional
 
-/** The reads and writes the user services took over from BaseModelService. */
+/** The reads and writes the user services make against their repositories. */
 class UserServicesWriteTest {
     private val manager = mock<EntityManager>()
 

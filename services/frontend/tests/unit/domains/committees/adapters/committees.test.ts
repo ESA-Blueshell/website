@@ -14,6 +14,8 @@ import {
   storeCommitteeIcon,
 } from "@/domains/committees/adapters/committees"
 import * as api from "@/services/api"
+import {aCommittee, aCommitteePage, anImage} from "../../../helpers/apiFixtures"
+import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -31,20 +33,20 @@ vi.mock("@/services/api", async (importOriginal) => ({
   setGameOrganisers: vi.fn(),
 }))
 
-const banner = {url: "/files/public/committee-banners/l.webp", path: "committee-banners/l.webp", renditions: [{url: "/files/public/640/l.webp", width: 640}]}
-const lan = {id: 1, name: "LanCie", slug: "lancie", listed: true, archived: false, banner, gameCodes: []}
+const banner = anImage({url: "/files/public/committee-banners/l.webp", path: "committee-banners/l.webp", width: null, height: null, renditions: [{url: "/files/public/640/l.webp", width: 640}]})
+const lan = aCommittee({banner})
 const resolved = "http://localhost:3000/api/files/public/committee-banners/l.webp"
-const draft = {name: "LanCie", slug: "", listed: true, description: "LANs", banner: null, members: [{userId: 4, role: null}], gameCodes: ["CS2"]}
+const draft = {name: "LanCie", slug: "", listed: true, description: "LANs", banner: null, icon: null, members: [{userId: 4, role: null}], gameCodes: ["CS2"]}
 
 beforeEach(() => vi.clearAllMocks())
 
 describe("reading committees", () => {
   it("answers every committee with its banner resolved against the api, and none where there is no body", async () => {
-    vi.mocked(api.findCommittees).mockResolvedValueOnce({data: [lan]} as never).mockResolvedValueOnce({} as never)
+    vi.mocked(api.findCommittees).mockResolvedValueOnce(answer(api.findCommittees, [lan])).mockResolvedValueOnce(emptyAnswer(api.findCommittees))
 
     const [first] = await listCommittees()
-    expect(first.banner?.url).toBe(resolved)
-    expect(first.banner?.renditions[0].url).toBe("http://localhost:3000/api/files/public/640/l.webp")
+    expect(first?.banner?.url).toBe(resolved)
+    expect(first?.banner?.renditions[0]?.url).toBe("http://localhost:3000/api/files/public/640/l.webp")
     await expect(listCommittees()).resolves.toEqual([])
   })
 
@@ -55,21 +57,21 @@ describe("reading committees", () => {
   })
 
   it("answers the committees the account belongs to, and none where there is no body", async () => {
-    vi.mocked(api.findCommitteesByUserId).mockResolvedValueOnce({data: [{id: 2, name: "EventCie"}]} as never).mockResolvedValueOnce({} as never)
+    vi.mocked(api.findCommitteesByUserId).mockResolvedValueOnce(answer(api.findCommitteesByUserId, [aCommittee({id: 2, name: "EventCie"})])).mockResolvedValueOnce(emptyAnswer(api.findCommitteesByUserId))
 
-    await expect(listMyCommittees()).resolves.toEqual([{id: 2, name: "EventCie", banner: null, icon: null}])
+    await expect(listMyCommittees()).resolves.toEqual([aCommittee({id: 2, name: "EventCie", banner: null, icon: null})])
     await expect(listMyCommittees()).resolves.toEqual([])
   })
 
   it("answers nothing, rather than throwing, where the committees pages cannot read them", async () => {
-    vi.mocked(api.findCommittees).mockResolvedValueOnce({data: [lan]} as never).mockResolvedValueOnce({error: {status: 500}} as never)
+    vi.mocked(api.findCommittees).mockResolvedValueOnce(answer(api.findCommittees, [lan])).mockResolvedValueOnce(refusal(api.findCommittees, {status: 500}))
 
-    expect((await loadCommittees())[0].banner?.url).toBe(resolved)
+    expect((await loadCommittees())[0]?.banner?.url).toBe(resolved)
     await expect(loadCommittees()).resolves.toEqual([])
   })
 
   it("answers one committee's page by its address, or null where none answers to it", async () => {
-    vi.mocked(api.findCommitteePage).mockResolvedValueOnce({data: {...lan, members: []}} as never).mockResolvedValueOnce({error: {status: 404}} as never)
+    vi.mocked(api.findCommitteePage).mockResolvedValueOnce(answer(api.findCommitteePage, aCommitteePage({banner}))).mockResolvedValueOnce(refusal(api.findCommitteePage, {status: 404}))
 
     expect((await loadCommitteePage("lancie"))?.banner?.url).toBe(resolved)
     expect(api.findCommitteePage).toHaveBeenCalledWith({path: {address: "lancie"}})
@@ -79,7 +81,7 @@ describe("reading committees", () => {
 
 describe("writing committees", () => {
   it("adds a committee, leaving an empty address for the api to make", async () => {
-    vi.mocked(api.createCommittee).mockResolvedValueOnce({data: lan} as never).mockResolvedValueOnce({error: {code: "CommitteeAddressTaken", address: "lancie", committeeName: "LanCie"}} as never)
+    vi.mocked(api.createCommittee).mockResolvedValueOnce(answer(api.createCommittee, lan)).mockResolvedValueOnce(refusal(api.createCommittee, {code: "CommitteeAddressTaken", address: "lancie", committeeName: "LanCie"}))
 
     expect(await addCommittee(draft)).toMatchObject({ok: true, committee: {id: 1}})
     expect(api.createCommittee).toHaveBeenCalledWith({body: {
@@ -89,7 +91,7 @@ describe("writing committees", () => {
   })
 
   it("saves the board's correction with its version, and a refusal in words", async () => {
-    vi.mocked(api.updateCommittee).mockResolvedValueOnce({data: lan} as never).mockResolvedValueOnce({error: {}} as never)
+    vi.mocked(api.updateCommittee).mockResolvedValueOnce(answer(api.updateCommittee, lan)).mockResolvedValueOnce(refusal(api.updateCommittee, {}))
 
     expect(await saveCommitteeAsBoard(1, 3, {...draft, slug: "lan", banner: "b.webp", members: [{userId: 4, role: "Chair"}]})).toMatchObject({ok: true})
     expect(api.updateCommittee).toHaveBeenCalledWith({path: {id: 1}, body: expect.objectContaining({slug: "lan", banner: "b.webp", version: 3, members: [{userId: 4, role: "Chair"}]})})
@@ -97,16 +99,16 @@ describe("writing committees", () => {
   })
 
   it("saves what a committee's own members change", async () => {
-    vi.mocked(api.updateCommitteePage).mockResolvedValueOnce({data: lan} as never).mockResolvedValueOnce({error: {code: "GameArchived", gameName: "CS:GO"}} as never)
+    vi.mocked(api.updateCommitteePage).mockResolvedValueOnce(answer(api.updateCommitteePage, lan)).mockResolvedValueOnce(refusal(api.updateCommitteePage, {code: "GameArchived", gameName: "CS:GO"}))
 
-    expect(await saveOwnCommitteePage(1, 4, {description: "LANs", banner: null, gameCodes: []})).toMatchObject({ok: true})
+    expect(await saveOwnCommitteePage(1, 4, {description: "LANs", banner: null, icon: null, gameCodes: []})).toMatchObject({ok: true})
     expect(api.updateCommitteePage).toHaveBeenCalledWith({path: {id: 1}, body: {description: "LANs", version: 4, banner: undefined, gameCodes: []}})
-    expect(await saveOwnCommitteePage(1, 4, {description: "LANs", banner: "b.webp", gameCodes: ["CSGO"]}))
+    expect(await saveOwnCommitteePage(1, 4, {description: "LANs", banner: "b.webp", icon: null, gameCodes: ["CSGO"]}))
       .toEqual({ok: false, reason: "CS:GO is archived, so it cannot be newly picked."})
   })
 
   it("archives a committee and brings it back, each refusal said its own way", async () => {
-    vi.mocked(api.archiveCommittee).mockResolvedValueOnce({data: {...lan, archived: true}} as never).mockResolvedValue({error: {}} as never)
+    vi.mocked(api.archiveCommittee).mockResolvedValueOnce(answer(api.archiveCommittee, aCommittee({banner, archived: true}))).mockResolvedValue(refusal(api.archiveCommittee, {}))
 
     expect(await setCommitteeArchived(1, true)).toMatchObject({ok: true, committee: {archived: true}})
     expect(await setCommitteeArchived(1, true)).toEqual({ok: false, reason: "The committee could not be archived."})
@@ -115,8 +117,8 @@ describe("writing committees", () => {
 
   it("stores a banner through the committee's own route, or as a public picture for one being added", async () => {
     const file = new File(["x"], "b.png")
-    vi.mocked(api.uploadCommitteeBanner).mockResolvedValue({data: banner} as never)
-    vi.mocked(api.uploadPublicImage).mockResolvedValueOnce({data: banner} as never).mockResolvedValueOnce({error: {}} as never)
+    vi.mocked(api.uploadCommitteeBanner).mockResolvedValue(answer(api.uploadCommitteeBanner, banner))
+    vi.mocked(api.uploadPublicImage).mockResolvedValueOnce(answer(api.uploadPublicImage, banner)).mockResolvedValueOnce(refusal(api.uploadPublicImage, {}))
 
     expect(await storeCommitteeBanner(file, 1)).toMatchObject({ok: true, picture: {url: resolved}})
     expect(api.uploadCommitteeBanner).toHaveBeenCalledWith({path: {id: 1}, body: {file}})
@@ -127,8 +129,8 @@ describe("writing committees", () => {
 
   it("stores a logo the same two ways", async () => {
     const file = new File(["x"], "i.svg")
-    vi.mocked(api.uploadCommitteeIcon).mockResolvedValueOnce({data: banner} as never).mockResolvedValueOnce({error: {}} as never)
-    vi.mocked(api.uploadPublicImage).mockResolvedValueOnce({data: banner} as never)
+    vi.mocked(api.uploadCommitteeIcon).mockResolvedValueOnce(answer(api.uploadCommitteeIcon, banner)).mockResolvedValueOnce(refusal(api.uploadCommitteeIcon, {}))
+    vi.mocked(api.uploadPublicImage).mockResolvedValueOnce(answer(api.uploadPublicImage, banner))
 
     expect(await storeCommitteeIcon(file, 1)).toMatchObject({ok: true, picture: {url: resolved}})
     expect(await storeCommitteeIcon(file, null)).toMatchObject({ok: true})
@@ -137,7 +139,7 @@ describe("writing committees", () => {
   })
 
   it("sets which committees organise events for a game", async () => {
-    vi.mocked(api.setGameOrganisers).mockResolvedValueOnce({data: []} as never).mockResolvedValueOnce({error: {}} as never)
+    vi.mocked(api.setGameOrganisers).mockResolvedValueOnce(answer(api.setGameOrganisers, [])).mockResolvedValueOnce(refusal(api.setGameOrganisers, {}))
 
     expect(await saveGameOrganisers("CS2", [1, 2])).toEqual({ok: true})
     expect(api.setGameOrganisers).toHaveBeenCalledWith({path: {game: "CS2"}, body: {committeeIds: [1, 2]}})
@@ -145,7 +147,7 @@ describe("writing committees", () => {
   })
 
   it("deletes a committee by its number, or says why not", async () => {
-    vi.mocked(api.deleteCommitteeById).mockResolvedValueOnce({} as never).mockResolvedValueOnce({error: {}} as never)
+    vi.mocked(api.deleteCommitteeById).mockResolvedValueOnce(emptyAnswer(api.deleteCommitteeById)).mockResolvedValueOnce(refusal(api.deleteCommitteeById, {}))
 
     expect(await removeCommittee(5)).toEqual({ok: true})
     expect(api.deleteCommitteeById).toHaveBeenCalledWith({path: {id: 5}})

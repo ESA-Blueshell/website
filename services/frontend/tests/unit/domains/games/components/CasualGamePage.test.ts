@@ -1,6 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount, RouterLinkStub} from "@vue/test-utils"
-import {ref} from "vue"
+import {type Ref, ref} from "vue"
+import type {Committee} from "@/domains/committees/adapters/committees"
+import {aCommittee} from "../../../helpers/apiFixtures"
 import CasualGamePage from "@/domains/games/components/CasualGamePage.vue"
 import type {CasualGame} from "@/domains/games"
 
@@ -14,7 +16,8 @@ vi.mock("@/domains/games/useCasualGames", async importOriginal => ({
   useCasualGames: () => ({refresh}),
 }))
 
-const committees = vi.hoisted(() => ({listed: null as never, refresh: vi.fn()}))
+// The list is made before each test, since a ref cannot be made inside a hoisted factory.
+const committees = vi.hoisted(() => ({refresh: vi.fn()} as {listed: Ref<Committee[]>, refresh: ReturnType<typeof vi.fn>}))
 vi.mock("@/domains/committees", async importOriginal => ({
   ...(await importOriginal<typeof import("@/domains/committees")>()),
   useCommittees: () => committees,
@@ -23,10 +26,11 @@ vi.mock("@/domains/committees", async importOriginal => ({
 const picture = (url: string) => ({url, path: url, width: 1600, height: 900, renditions: [{url: `${url}?w=640`, width: 640}]})
 
 const valorant: CasualGame = {
+  esportsChannels: [],
   code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", intro: "Five-stacks, customs and clips.", sortIndex: 1,
   archived: false, inCompetition: true, channels: [{id: "6322", guildId: "324", name: "valorant"}, {id: "6323", guildId: "324", name: "hero-shooters"}], banner: picture("/v.webp"), icon: picture("/v-icon.webp"),
 }
-const dota: CasualGame = {code: "DOTA_2", name: "Dota 2", slug: "dota-2", accent: null, intro: null, sortIndex: 2, archived: true, inCompetition: false, banner: null, icon: null, channels: []}
+const dota: CasualGame = {esportsChannels: [], code: "DOTA_2", name: "Dota 2", slug: "dota-2", accent: null, intro: null, sortIndex: 2, archived: true, inCompetition: false, banner: null, icon: null, channels: []}
 
 const dialog = (name: string) => ({name, props: ["open", "game"], emits: ["update:open", "saved", "removed"], template: "<div />"})
 const stubs = {
@@ -46,10 +50,10 @@ beforeEach(() => {
   refresh.mockReset().mockResolvedValue([])
   committees.refresh.mockReset().mockResolvedValue([])
   committees.listed = ref([
-    {id: 1, name: "LanCie", slug: "lancie", description: "LANs", listed: true, archived: false, banner: null, gameCodes: ["VALORANT"]},
-    {id: 2, name: "YapCie", slug: "yapcie", description: "Streams", listed: true, archived: false, banner: null, gameCodes: ["VALORANT"]},
-    {id: 3, name: "MCie", slug: "mcie", description: "Blocks", listed: true, archived: false, banner: null, gameCodes: ["MINECRAFT"]},
-  ]) as never
+    aCommittee({id: 1, name: "LanCie", slug: "lancie", description: "LANs", banner: null, gameCodes: ["VALORANT"]}),
+    aCommittee({id: 2, name: "YapCie", slug: "yapcie", description: "Streams", banner: null, gameCodes: ["VALORANT"]}),
+    aCommittee({id: 3, name: "MCie", slug: "mcie", description: "Blocks", banner: null, gameCodes: ["MINECRAFT"]}),
+  ])
 })
 
 describe("one game's page", () => {
@@ -109,7 +113,7 @@ describe("one game's page", () => {
     await wrapper.get("[data-testid=casual-game-organisers-cell-1]").trigger("click", {button: 0})
     expect(router.push).toHaveBeenCalledWith("/committees/lancie")
 
-    committees.listed = ref([{id: 1, name: "LanCie", slug: "lancie", description: "LANs", listed: true, archived: false, banner: null, gameCodes: ["VALORANT"]}]) as never
+    committees.listed = ref([aCommittee({id: 1, name: "LanCie", slug: "lancie", description: "LANs", banner: null, gameCodes: ["VALORANT"]})])
     expect(mountPage(valorant).get("[data-testid=casual-game-committees] .record-fact__label").text()).toBe("Committee")
   })
 

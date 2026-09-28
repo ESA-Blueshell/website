@@ -7,6 +7,9 @@ import type {
   AnswerResponse,
   AssociationStatisticsResponse,
   BlogResponse,
+  CasualGameResponse,
+  CommitteePageResponse,
+  CommitteeResponse,
   ContributionPeriodResponse,
   EventBannerResponse,
   EventResponse,
@@ -183,5 +186,41 @@ export const aSurvey = (over: Partial<SurveyResponse> = {}): SurveyResponse => (
   id: 1,
   questions: [],
   responseCount: 0,
+  ...over,
+})
+
+export const aCommittee = (over: Partial<CommitteeResponse> = {}): CommitteeResponse => ({
+  ...stamped,
+  id: 1,
+  name: "LanCie",
+  slug: "lancie",
+  description: "LANs",
+  listed: true,
+  archived: false,
+  gameCodes: [],
+  ...over,
+})
+
+export const aCommitteePage = (over: Partial<CommitteePageResponse> = {}): CommitteePageResponse => ({
+  id: 1,
+  name: "LanCie",
+  slug: "lancie",
+  description: "LANs",
+  listed: true,
+  archived: false,
+  gameCodes: [],
+  members: [],
+  ...over,
+})
+
+export const aCasualGame = (over: Partial<CasualGameResponse> = {}): CasualGameResponse => ({
+  code: "CS2",
+  name: "Counter-Strike 2",
+  slug: "cs2",
+  sortIndex: 0,
+  archived: false,
+  inCompetition: false,
+  channels: [],
+  esportsChannels: [],
   ...over,
 })

@@ -19,7 +19,12 @@
     "tests/unit/domains/events/island/eventPageParts.test.ts",
     "tests/unit/domains/events/island/ScopedEvents.test.ts",
     "tests/unit/pages/events/EventPage.test.ts",
-    "tests/unit/components/common/modals/EditSignUpDialog.test.ts"
+    "tests/unit/components/common/modals/EditSignUpDialog.test.ts",
+    "tests/unit/domains/committees/adapters/**/*.ts",
+    "tests/unit/domains/committees/components/CommitteeEditor.test.ts",
+    "tests/unit/domains/committees/components/CommitteePage.test.ts",
+    "tests/unit/domains/games/components/CasualGamePage.test.ts",
+    "tests/unit/domains/games/components/GameEditor.test.ts"
   ],
   "exclude": [
     "dist",

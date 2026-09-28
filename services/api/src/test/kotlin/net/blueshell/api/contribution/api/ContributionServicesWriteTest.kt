@@ -103,4 +103,15 @@ class ContributionServicesWriteTest {
         assertThat(notificationService.findById(6)).isSameAs(notification)
         assertThatThrownBy { notificationService.findById(8) }.isInstanceOf(ResponseStatusException::class.java)
     }
+
+    @Test
+    fun `an edit to a period or a contribution the database no longer has is refused`() {
+        val period = mock<ContributionPeriod>().also { whenever(it.id).thenReturn(4) }
+        val contribution = mock<Contribution>().also { whenever(it.id).thenReturn(Contribution.Id(1, 2)) }
+        val periods = ContributionPeriodService(mock<ContributionPeriodRepository>(), mock<TrackedEventPublisher>())
+        val contributions = ContributionService(mock<ContributionRepository>(), mock(), mock(), mock<TrackedEventPublisher>())
+
+        assertThatThrownBy { periods.update(period) }.isInstanceOf(ResponseStatusException::class.java)
+        assertThatThrownBy { contributions.update(contribution) }.isInstanceOf(ResponseStatusException::class.java)
+    }
 }

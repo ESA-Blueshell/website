@@ -113,4 +113,18 @@ class UserServicesWriteTest {
         assertThatThrownBy { addressService.findById(3) }.isInstanceOf(ResponseStatusException::class.java)
         assertThatThrownBy { profileService.findById(9) }.isInstanceOf(ResponseStatusException::class.java)
     }
+
+    @Test
+    fun `an edit to a membership, a profile or an address the database no longer has is refused`() {
+        val membership = mock<Membership>().also { whenever(it.id).thenReturn(1) }
+        val profile = mock<MemberProfile>().also { whenever(it.id).thenReturn(2) }
+        val address = mock<Address>().also { whenever(it.id).thenReturn(3) }
+        val memberships = MembershipService(mock<MemberRepository>(), mock<TrackedEventPublisher>(), mock())
+        val profiles = MemberProfileService(mock<MemberProfileRepository>())
+        val addresses = AddressService(mock<AddressRepository>())
+
+        assertThatThrownBy { memberships.update(membership) }.isInstanceOf(ResponseStatusException::class.java)
+        assertThatThrownBy { profiles.update(profile) }.isInstanceOf(ResponseStatusException::class.java)
+        assertThatThrownBy { addresses.update(address) }.isInstanceOf(ResponseStatusException::class.java)
+    }
 }

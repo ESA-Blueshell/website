@@ -1,0 +1,4 @@
+{"@type":"update","object":"Authentication","value":{"passwordMinLength":1,"passwordMinStrength":"zero"}}
+{"@type":"update","object":"SpamSettings","value":{"enable":false}}
+{"@type":"update","object":"Imap","value":{"allowPlainTextAuth":true}}
+{"@type":"create","object":"NetworkListener","value":{"lsnr-submission":{"name":"submission","protocol":"smtp","bind":{"[::]:587":true},"useTls":false,"tlsImplicit":false},"lsnr-imap":{"name":"imap","protocol":"imap","bind":{"[::]:143":true},"useTls":false,"tlsImplicit":false}}}

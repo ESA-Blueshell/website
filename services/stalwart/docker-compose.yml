@@ -1,10 +1,12 @@
 services:
   stalwart:
-    image: stalwartlabs/stalwart:v0.16.22
+    image: stalwart:dev
+    pull_policy: never
+    build: .
     hostname: mail.dev.local
     environment:
-      STALWART_FALLBACK_ADMIN_USER: ${STALWART_ADMIN_USER:-admin}
-      STALWART_FALLBACK_ADMIN_SECRET: ${STALWART_ADMIN_SECRET:-admin}
+      # Seeds the administrator the entrypoint and the admin UI sign in as.
+      STALWART_RECOVERY_ADMIN: ${STALWART_ADMIN_USER:-admin}:${STALWART_ADMIN_SECRET:-admin}
     ports:
       # Submission + admin UI. IMAP/POP/SMTP(25) stay on the internal network
       # so dev laptops don't collide with a host-level MTA.
@@ -15,80 +17,21 @@ services:
       - "1993:993"
       - "8085:8080"
     volumes:
-      - stalwart-data:/opt/stalwart/data
-      - ./config.dev.toml:/opt/stalwart/etc/config.toml:ro
+      - stalwart-datastore:/var/lib/stalwart
     networks:
       - global_network
     healthcheck:
-      # Stalwart image has no curl/wget. Use a TCP probe on SMTP :25 —
-      # if the listener is up, the server has loaded its config.
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/25"]
+      # Stalwart image has no curl/wget. The marker is written once the first
+      # start has seeded the datastore; the TCP probe on :25 means it listens.
+      test: ["CMD", "bash", "-c", "test -e /var/lib/stalwart/seeded && exec 3<>/dev/tcp/127.0.0.1/25"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 30s
-
-  stalwart-init:
-    image: curlimages/curl:8.22.0
-    depends_on:
-      stalwart:
-        condition: service_healthy
-    restart: "no"
-    environment:
-      STALWART_ADMIN_USER: ${STALWART_ADMIN_USER:-admin}
-      STALWART_ADMIN_SECRET: ${STALWART_ADMIN_SECRET:-admin}
-    networks:
-      - global_network
-    entrypoint: ["sh", "-eu", "-c"]
-    command:
-      - |
-        # Idempotent: a principal that already exists is fine. Stalwart answers
-        # every refusal with a 200 and an error body, so the body is what is read.
-        seed() {
-          answer=$$(curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
-            -H 'Content-Type: application/json' \
-            -X POST http://stalwart:8080/api/principal -d "$$1")
-          case "$$answer" in
-            *'"data":'*|*'"error":"fieldAlreadyExists"'*) ;;
-            *) echo "stalwart-init: $$answer" >&2; exit 1 ;;
-          esac
-        }
-        for _ in $$(seq 1 30); do
-          if curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
-               http://stalwart:8080/api/principal >/dev/null 2>&1; then
-            break
-          fi
-          sleep 2
-        done
-        # A domain before any address in it: Stalwart refuses an address on a
-        # domain it does not host.
-        seed '{"type":"domain","name":"dev.local","description":"Dev mail server"}'
-        seed '{"type":"domain","name":"blueshell.test","description":"Every seeded account"}'
-        seed '{"type":"individual","name":"bounce@dev.local","secrets":["bounce"],"emails":["bounce@dev.local"],"roles":["user"],"description":"Dev bounce inbox"}'
-        # The inbox every @blueshell.test address lands in.
-        seed '{"type":"individual","name":"dev","secrets":["dev"],"emails":["dev@blueshell.test","@blueshell.test"],"roles":["user"],"description":"Dev catch-all"}'
-        # Settings Stalwart keeps in its database rather than in config.toml:
-        # - the internal directory makes @blueshell.test local, and the catch-all
-        #   address above takes every one of them;
-        # - dev mail comes from `localhost` with no SPF, which the spam filter
-        #   would score into Junk;
-        # - there is no certificate, so a mail client logs in over plain IMAP;
-        # - the seed mails every account at once, past five a second per IP.
-        answer=$$(curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
-          -H 'Content-Type: application/json' -X POST http://stalwart:8080/api/settings \
-          -d '[{"type":"insert","prefix":null,"assert_empty":false,"values":[
-                ["session.rcpt.directory","'"'"'internal'"'"'"],
-                ["session.rcpt.catch-all","true"],
-                ["spam-filter.enable","false"],
-                ["imap.auth.allow-plain-text","true"],
-                ["queue.limiter.inbound.ip.enable","false"]]}]')
-        case "$$answer" in '{"data":null}') ;; *) echo "stalwart-init: $$answer" >&2; exit 1 ;; esac
-        curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
-          http://stalwart:8080/api/reload >/dev/null
 
 networks:
   global_network:
     driver: bridge
 
 volumes:
-  stalwart-data:
+  stalwart-datastore:

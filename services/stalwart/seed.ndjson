@@ -1,0 +1,4 @@
+{"@type":"create","object":"Domain","value":{"dom-dev":{"name":"dev.local","description":"Dev mail server"},"dom-test":{"name":"blueshell.test","description":"Every seeded account"}}}
+{"@type":"create","object":"Account","value":{"acct-bounce":{"@type":"User","name":"bounce","domainId":"#dom-dev","description":"Dev bounce inbox","credentials":{"0":{"@type":"Password","secret":"bounce"}}},"acct-dev":{"@type":"User","name":"dev","domainId":"#dom-test","description":"Dev catch-all","credentials":{"0":{"@type":"Password","secret":"dev"}}}}}
+{"@type":"update","object":"Domain","id":"#dom-test","value":{"catchAllAddress":"dev@blueshell.test"}}
+{"@type":"update","object":"SystemSettings","value":{"defaultHostname":"mail.dev.local","defaultDomainId":"#dom-dev"}}

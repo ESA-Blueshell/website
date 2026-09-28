@@ -154,7 +154,7 @@ FIXTURES = [
     ("tests/system/src/test/kotlin/SignUpTest.kt", {"system"}),
     ("docker-compose.yml", {"ignore"}),
     ("docker-compose.oidc-e2e.yml", {"ignore"}),
-    ("services/stalwart/config.dev.toml", {"ignore"}),
+    ("services/stalwart/entrypoint.sh", {"ignore"}),
     ("services/vault/docker-compose.yml", {"ignore"}),
     (".env", {"ignore"}),
     ("dev-setup.sh", {"ignore"}),

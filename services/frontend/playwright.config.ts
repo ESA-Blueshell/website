@@ -38,13 +38,13 @@ export default defineConfig({
   },
   webServer: [
     {
-      // Bulk of the suite: serve a prebuilt, instrumented bundle via
+      // Bulk of the suite: serve a prebuilt bundle via
       // `vite preview` instead of the dev server. The dev server compiles on
       // demand and becomes the bottleneck under parallel workers.
       // `vite preview` (appType: "spa") already serves index.html for unknown
       // deep routes, so no SPA-fallback middleware is needed. The generous
       // timeout covers the one-time production build.
-      command: "VITE_COVERAGE=true yarn build && yarn vite preview --host 127.0.0.1 --port 4173 --strictPort",
+      command: "yarn build && yarn vite preview --host 127.0.0.1 --port 4173 --strictPort",
       url: "http://127.0.0.1:4173",
       reuseExistingServer: true,
       timeout: 300_000,
@@ -52,9 +52,8 @@ export default defineConfig({
     {
       // module-smoke only: it dynamically imports raw /src/* modules in the
       // browser, which only the dev server serves on demand (a static preview
-      // build emits hashed /assets chunks, not source paths). Both servers run
-      // with VITE_COVERAGE, so coverage from this project merges with the rest.
-      command: "VITE_COVERAGE=true yarn dev --host 127.0.0.1 --port 4174",
+      // build emits hashed /assets chunks, not source paths).
+      command: "yarn dev --host 127.0.0.1 --port 4174",
       url: "http://127.0.0.1:4174",
       reuseExistingServer: true,
       timeout: 120_000,

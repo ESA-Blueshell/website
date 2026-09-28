@@ -1,0 +1,79 @@
+# The api's identity, shared by this Job and the api Deployment. It lives here
+# because this path is applied first; Vault's kubernetes auth binds role `api` to it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: api
+  namespace: default
+---
+# The schema migration for the pinned release. Flux applies this path first
+# and waits for the Job to complete; apps-api depends on it, so no api pod of a
+# release starts before its schema. force, because a Job's pod template is
+# immutable: a new image tag replaces the Job rather than failing the apply.
+#
+# A failed Job stays failed, and apps-api stays on the previous release, until
+# a new tag replaces it or a person deletes it to retry the same one.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  namespace: default
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/agent-inject-token: 'true'
+        # An init container rather than a sidecar, so the pod can finish.
+        vault.hashicorp.com/agent-pre-populate-only: 'true'
+        vault.hashicorp.com/role: api
+        vault.hashicorp.com/agent-inject-secret-db.env: secret/data/api
+        # The fields a migration needs, from the path the api reads. The two-factor key
+        # is among them because the Job boots the api's context, and that refuses to
+        # start without it.
+        vault.hashicorp.com/agent-inject-template-db.env: |
+          {{- with secret "secret/data/api" -}}
+          MYSQL_USER='{{ with (index .Data.data "mysql-user") }}{{ . }}{{ end }}'
+          MYSQL_PASSWORD='{{ with (index .Data.data "mysql-password") }}{{ . }}{{ end }}'
+          TWO_FACTOR_ENCRYPTION_KEY='{{ with (index .Data.data "two-factor-encryption-key") }}{{ . }}{{ end }}'
+          {{- end }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: migrate
+          image: ghcr.io/esa-blueshell/api
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              export SPRING_CLOUD_VAULT_TOKEN="$(cat /vault/secrets/token)"
+              set -a
+              . /vault/secrets/db.env
+              set +a
+              exec java -XX:MaxRAMPercentage=75 -jar /app/app.jar
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              # prod first: the Job runs the configuration production runs,
+              # and migrate only changes what it does with it.
+              value: prod,migrate
+            - name: SPRING_CONFIG_IMPORT
+              value: vault://
+            - name: VAULT_ENABLED
+              value: 'true'
+            - name: VAULT_ADDR
+              value: http://vault.data-system.svc.cluster.local:8200
+            - name: MYSQL_HOST
+              value: mariadb.data-system.svc.cluster.local
+            - name: MYSQL_PORT
+              value: '3306'
+          resources:
+            requests:
+              cpu: 250m
+              memory: 768Mi
+            limits:
+              memory: 1536Mi

@@ -1,4 +1,4 @@
-# One Discord webhook, read by Gatus here and by Flagger in flagger-system.
+# One Discord webhook, read by Gatus here and by Flux in flux-system.
 # Gatus reads the key as an env var name, so DISCORD_WEBHOOK_URL is load-bearing.
 apiVersion: v1
 kind: ServiceAccount

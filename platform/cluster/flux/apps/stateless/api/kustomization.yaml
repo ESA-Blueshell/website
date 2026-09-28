@@ -4,5 +4,19 @@ kind: Kustomization
 resources:
   - pvc.yaml
   - deployment.yaml
-  - migrate-job.yaml
-  - canary.yaml
+
+# The deployed version, written by image-automation-controller, not by hand: a
+# release publishes its images and the next scan rewrites every setter naming
+# its policy, here and in ../migrate and ../frontend, in one commit. So the
+# api, its migration and the frontend cannot be pinned to different releases.
+#
+# kustomize renders a tag and a digest together as `image:v1.9.0@sha256:...`,
+# so the version stays readable in Git while the cluster runs an image no later
+# build can move.
+#
+# To change these by hand, suspend the automation first or the next scan
+# reverts it. See "Rolling back" in the runbook.
+images:
+  - name: ghcr.io/esa-blueshell/api
+    newTag: v1.11.0 # {"$imagepolicy": "flux-system:api:tag"}
+    digest: sha256:eaffd5a3357a2f0df52bd0e983e3d16f30b34b549a4b9d81083a858b901e91c6 # {"$imagepolicy": "flux-system:api:digest"}

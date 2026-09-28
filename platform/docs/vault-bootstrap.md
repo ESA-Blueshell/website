@@ -84,8 +84,8 @@ of them blocks at least one downstream Secret.
 - **Stalwart admin user/password** + base64-encoded RSA-2048 DKIM
   private key + bounce mailbox `bounce@esa-blueshell.nl` credentials.
 - **Discord incoming webhook URL** for the channel that receives Gatus
-  uptime alerts and Flagger release events. Optional at day 0 —
-  both consumers start without it.
+  uptime alerts and Flux failures. Optional at day 0: both consumers
+  start without it.
 - **One-shot generated values** (only if missing from the env files):
   - `JWT_SECRET` — `openssl rand -base64 64`.
   - `vault-oidc-client-secret` — `openssl rand -hex 32`.
@@ -278,12 +278,13 @@ re-running the same `kv put` with a new token — VSO re-renders the
 dockerconfigjson within one refresh cycle (1 h) and pods pick up the
 new auth on their next pull.
 
-### Alerting webhook (Gatus + Flagger)
+### Alerting webhook (Gatus + Flux)
 
-Gatus posts uptime alerts and Flagger posts release events to
-the same Discord incoming webhook. VSO materialises
+Gatus posts uptime and release-version alerts and Flux posts failed
+reconciles to the same Discord incoming webhook. VSO materialises
 `utility-system/alerting-discord` with a single key,
-`DISCORD_WEBHOOK_URL`, from this path.
+`DISCORD_WEBHOOK_URL`, and `flux-system/alerting-discord` with `address`,
+from this path.
 
 ```bash
 vault kv put secret/platform/alerting \
@@ -291,14 +292,14 @@ vault kv put secret/platform/alerting \
 ```
 
 Create the webhook under *Server Settings → Integrations → Webhooks*;
-the channel it targets receives both alerts and rollout messages.
+the channel it targets receives both.
 
 The path is optional: both consumers mark their Secret reference
 `optional`, so an unseeded Vault costs notifications but neither the
 status page nor image auto-updates. Seeding it turns both on within one
 refresh cycle (1 h, or force a reconcile). Rotate with the same
 `kv put` — Gatus is restarted by the `rolloutRestartTargets` entry on
-the VaultStaticSecret, Flagger needs no restart.
+the VaultStaticSecret, and Flux needs no restart.
 
 ## 5. Confirm VSO sync
 

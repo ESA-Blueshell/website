@@ -17,7 +17,7 @@ CATALOG=${CATALOG:-https://raw.githubusercontent.com/datreeio/CRDs-catalog/main}
 # Kinds whose schema must actually be found. kubeconform skips a resource it has
 # no schema for, and a skip is silent, so without this list the CRDs we most
 # want checked would pass by not being checked at all.
-REQUIRED_KINDS=${REQUIRED_KINDS:-Canary,IngressRoute,Middleware,VaultStaticSecret,HelmRelease,HelmRepository,Kustomization,GitRepository,ImageRepository,ImagePolicy,ImageUpdateAutomation,Provider,Alert}
+REQUIRED_KINDS=${REQUIRED_KINDS:-IngressRoute,Middleware,VaultStaticSecret,HelmRelease,HelmRepository,Kustomization,GitRepository,ImageRepository,ImagePolicy,ImageUpdateAutomation,Provider,Alert}
 
 command -v kubectl >/dev/null || { echo "::error::kubectl not found"; exit 1; }
 command -v kubeconform >/dev/null || { echo "::error::kubeconform not found"; exit 1; }
@@ -25,7 +25,7 @@ command -v kubeconform >/dev/null || { echo "::error::kubeconform not found"; ex
 RENDER_DIR=$(mktemp -d)
 trap 'rm -rf "$RENDER_DIR"' EXIT
 
-# -strict rejects unknown fields, which is what turns a misspelled Canary key
+# -strict rejects unknown fields, which is what turns a misspelled CRD key
 # into a failed build rather than a field the cluster silently ignores.
 # -verbose because the JSON report otherwise lists only failures, and the
 # summary below needs to see which kinds were validated and which were skipped
@@ -44,33 +44,29 @@ validate() {
 # stopped validating — a lost schema location, an -ignore flag too many — passes
 # every real manifest, so the only way to trust a green run is to keep one
 # manifest that must go red. The fixture lives here rather than in the Flux tree,
-# where an intentionally invalid Canary would read as a mistake.
+# where an intentionally invalid Kustomization would read as a mistake.
 if [[ ${1:-} == "--self-test" ]]; then
-  cat > "$RENDER_DIR/bad-canary.yaml" <<'EOF'
-apiVersion: flagger.app/v1beta1
-kind: Canary
+  cat > "$RENDER_DIR/bad-kustomization.yaml" <<'EOF'
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
 metadata:
   name: deliberately-broken
-  namespace: default
+  namespace: flux-system
 spec:
-  provider: kubernetes
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: api
-  service:
-    port: "8080"
-  analysis:
-    interval: 30s
-    iterations: 4
-    thresholdd: 3
+  interval: 2m0s
+  path: ./platform/cluster/flux/apps/stateless/api
+  prune: "yes"
+  waitt: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
 EOF
-  if validate "$RENDER_DIR/bad-canary.yaml" > "$RENDER_DIR/self-test.log" 2>&1; then
-    echo "::error::the validator accepted a Canary with a misspelled key and a string port; it is not validating CRDs"
+  if validate "$RENDER_DIR/bad-kustomization.yaml" > "$RENDER_DIR/self-test.log" 2>&1; then
+    echo "::error::the validator accepted a Kustomization with a misspelled key and a string boolean; it is not validating CRDs"
     cat "$RENDER_DIR/self-test.log"
     exit 1
   fi
-  echo "Self-test: a malformed Canary is rejected, as it should be."
+  echo "Self-test: a malformed Kustomization is rejected, as it should be."
   sed 's/^/  /' "$RENDER_DIR/self-test.log"
   exit 0
 fi

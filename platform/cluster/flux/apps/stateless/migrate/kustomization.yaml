@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - job.yaml
+
+# The api release this Job migrates to. Written by image-automation-controller
+# in the same commit as the api's and the frontend's; see ../api/kustomization.yaml.
+images:
+  - name: ghcr.io/esa-blueshell/api
+    newTag: v1.11.0 # {"$imagepolicy": "flux-system:api:tag"}
+    digest: sha256:eaffd5a3357a2f0df52bd0e983e3d16f30b34b549a4b9d81083a858b901e91c6 # {"$imagepolicy": "flux-system:api:digest"}

@@ -6,7 +6,7 @@ The `platform/` tree manages the production stack:
 Production runs on a single Contabo VPS (`frankfurt-contabo-1`) under
 `esa-blueshell.nl`. Flux reconciles every manifest from this
 repository against `main`. The api and the frontend are pinned to one
-release tag and promoted as a pair by Flagger (see below). Every image this
+release tag and applied in order: schema, api, frontend (see below). Every image this
 repository builds is pinned by digest in git; nothing polls a moving tag.
 
 Detailed setup guides:
@@ -26,10 +26,13 @@ Detailed setup guides:
 
 ## Releasing api + frontend
 
-Both images are pinned in
-[`apps/stateless/kustomization.yaml`](../cluster/flux/apps/stateless/kustomization.yaml),
-by digest with the release tag beside it, so the cluster runs the image that
-was built rather than whatever the tag points at later.
+Both images are pinned by digest with the release tag beside it, so the
+cluster runs the image that was built rather than whatever the tag points at
+later. The api's pin is written twice, in
+[`stateless/migrate`](../cluster/flux/apps/stateless/migrate/kustomization.yaml)
+and [`stateless/api`](../cluster/flux/apps/stateless/api/kustomization.yaml),
+and the frontend's once, in
+[`stateless/frontend`](../cluster/flux/apps/stateless/frontend/kustomization.yaml).
 
 A version tag is written once, by the build that pushed the manifest and so
 holds the digest it names, and that build refuses to move a tag that already
@@ -39,51 +42,58 @@ which is why `v1.8.1` and `v1.9.0` images exist for releases nobody cut.
 
 Cutting a release is what deploys it. The build publishes the images and
 writes their version tag; image-reflector-controller sees the new tag within
-five minutes, image-automation-controller commits the reference to the overlay
-on main, and kustomize-controller applies it. Nothing in CI writes the pin, and
-no CI commit has to survive release-please regenerating its branch, which is
-what made the old arrangement unmergeable.
+five minutes, image-automation-controller commits the reference to every
+setter on main, and kustomize-controller applies it. Nothing in CI writes the
+pin, and no CI commit has to survive release-please regenerating its branch,
+which is what made the old arrangement unmergeable.
 
 The commit is authored by `flux <flux@esa-blueshell.nl>` and carries
-`[ci skip]`, so it triggers no workflow. api and frontend are written in one
-commit by one automation run, so they cannot reach the cluster apart.
+`[ci skip]`, so it triggers no workflow. All three setters are written in one
+commit by one automation run, so the paths never name different releases.
 
-Flux applies the pair; Flagger turns each one
-into a blue/green rollout and the two `confirm-promotion` gates hold
-each canary until the other is out of `Progressing` and not `Failed`.
-One release of backward compatibility is still the contract: promotion
-copies the canary spec onto the `-primary` Deployment, which then rolls
-normally, so the two apex Services finish flipping seconds apart.
+Flux applies that commit in order, and each step waits for the one before it
+to be Ready at the same revision:
+
+1. `apps-migrate` replaces the `migrate` Job with one on the new api image and
+   waits for it to complete.
+2. `apps-api` rolls the api Deployment, surging a new pod and retiring the old
+   one only once the new one is Ready.
+3. `apps-frontend` rolls the frontend the same way.
+
+So a migration that fails leaves the previous api and frontend serving, and an
+api that does not come up leaves the previous frontend serving. One release of
+backward compatibility is still the contract: for the minutes between steps 2
+and 3 the new api serves the previous frontend. Gatus alerts if the two report
+different versions for longer than twenty minutes.
 
 ```bash
-kubectl -n default get canaries
-kubectl -n default describe canary api | tail -30
-flux -n flux-system get kustomization apps-stateless
+flux -n flux-system get kustomizations apps-migrate apps-api apps-frontend
+kubectl -n default get job migrate
+kubectl -n default rollout status deployment/api
+curl -s https://esa-blueshell.nl/api/version; curl -s https://esa-blueshell.nl/version.json
 ```
 
-Phases: `Initializing` → `Initialized` on first install, then
-`Progressing` → `WaitingPromotion` → `Promoting` → `Succeeded` per
-release. A canary parked in `WaitingPromotion` is waiting for its
-sibling — check the other one's phase before touching anything.
+### Rolling back
 
-`Failed` means the analysis or the acceptance webhook failed; Flagger
-scales the canary down and leaves the primary serving the previous
-release. Recover by reverting the tag in git, not by deleting pods.
-
-### Rolling back under automation
-
-Editing the overlay is no longer enough on its own. The policy selects the
-highest released version, so the next scan writes the new version straight back
-over the edit. Suspend the automation first:
+This is the one way back from a release, whether it failed or shipped
+something wrong. Editing the pins is not enough on its own: the policy selects
+the highest released version, so the next scan writes the new version straight
+back over the edit. Suspend the automation first:
 
 ```bash
 flux -n flux-system suspend image update apps
 ```
 
-Then set both `newTag` values back to the previous release, with the digest
-that release published beside each, and push. Never move one without the other:
-one release of backward compatibility is the contract, and a mismatched pair is
-outside it.
+Then set every setter back to the previous release, with the digest that
+release published beside each: the api in `stateless/migrate` and
+`stateless/api`, the frontend in `stateless/frontend`. Never move one without
+the others; one release of backward compatibility is the contract, and a
+mismatched pair is outside it. Push, and Flux applies the three steps above
+with the previous release.
+
+The migration does not roll back with it: the previous release runs against the
+newer schema, which is what backward compatibility guarantees. Rolling a
+changeset back is a separate, rehearsed step; see "The schema" below.
 
 Resuming re-advances to the newest version, which is the thing you just rolled
 away from. So leave it suspended until the fix is released, and say so in the
@@ -105,25 +115,55 @@ merge is a deploy. Suspend the Kustomization that owns the change
 first, merge, read what it would apply, then resume while watching:
 
 ```bash
-flux -n flux-system suspend kustomization apps-stateless
+flux -n flux-system suspend kustomization apps-api
 # merge, then:
-flux -n flux-system build kustomization apps-stateless --path ./platform/cluster/flux/apps/stateless
-flux -n flux-system resume kustomization apps-stateless
-flux -n flux-system get kustomization apps-stateless --watch
+flux -n flux-system build kustomization apps-api --path ./platform/cluster/flux/apps/stateless/api
+flux -n flux-system resume kustomization apps-api
+flux -n flux-system get kustomization apps-api --watch
 ```
 
 Suspending stops drift correction for that subtree as well, so resume
 the same day. `flux diff kustomization` shows the change against the
 live cluster if you want it before resuming.
 
-### First rollout onto Flagger
+### Leaving Flagger (once)
 
-Expect an outage of roughly one api cold start. Flux prunes the
-hand-written `api` and `frontend` Services in the same apply that
-creates the Canaries, and Flagger only recreates them once its
-`-primary` Deployments are Ready. Do it in a quiet window, with
-`apps-stateless` suspended per the procedure above, and watch
-`kubectl -n default get canaries,svc`.
+The change that introduced `apps-migrate`, `apps-api` and `apps-frontend`
+also removed `apps-stateless` and `apps-delivery`. Removing `apps-stateless`
+from Git would make Flux garbage-collect everything it applied, the api's
+storage claim included, and Flagger owns the `api` and `frontend` Services
+until its Canaries are gone. So it is done by hand, once, in a quiet window,
+before the change reaches `main`:
+
+```bash
+# 1. Stop Flux applying main while the ownership moves.
+flux -n flux-system suspend kustomization flux-system apps-stateless apps-delivery
+
+# 2. Delete the Canaries. revertOnDeletion scales api and frontend back up
+#    and points the Services at them; wait until both serve.
+kubectl -n default delete canary api frontend
+kubectl -n default rollout status deployment/api deployment/frontend
+kubectl -n default get svc api frontend -o wide
+
+# 3. Orphan what apps-stateless applied, so deleting it deletes nothing.
+kubectl -n flux-system patch kustomization apps-stateless --type=merge -p '{"spec":{"prune":false}}'
+kubectl -n flux-system delete kustomization apps-stateless
+
+# 4. Merge the change, then resume. flux-system prunes apps-delivery, which
+#    uninstalls Flagger, Prometheus and the load tester, and creates the three
+#    new Kustomizations, which adopt the Deployments, Services and storage.
+flux -n flux-system resume kustomization flux-system
+flux -n flux-system get kustomizations apps-migrate apps-api apps-frontend --watch
+
+# 5. Clear what nothing owns any more.
+kubectl -n default delete cronjob db-migrate
+kubectl -n default get jobs   # delete the old migrate-<tag> Jobs by name; keep `migrate`
+kubectl delete crd canaries.flagger.app metrictemplates.flagger.app alertproviders.flagger.app
+```
+
+Check afterwards that nothing used what went: `kubectl get ns flagger-system`
+reports NotFound, `kubectl -n default get deploy` lists `api` and `frontend`
+with no `-primary`, and the site serves throughout step 4.
 
 ## The schema
 
@@ -153,27 +193,22 @@ SELECT DISTINCT FILENAME FROM DATABASECHANGELOG;
 
 ### When a release parks on the migration
 
-The api does not migrate at boot. A `pre-rollout` webhook on the api Canary
-creates `migrate-<tag>` from the suspended `db-migrate` CronJob, on the image
-the overlay pins, and waits up to ten minutes for it.
-
-Flagger scales the canary up and waits for it to be Ready before running a
-`pre-rollout` webhook, so by the time the migration runs a canary pod exists.
-It takes no traffic — this is blue/green, and the weight stays at 0 — and
-nothing is promoted until the Job succeeds. A migration that cannot apply
-therefore leaves the previous release serving, with a canary pod idle beside
-it that is scaled away when the analysis gives up.
+The api does not migrate at boot. `apps-migrate` replaces the `migrate` Job
+with one on the new api image and waits up to fifteen minutes for it; nothing
+of the release is applied until it completes. A migration that cannot apply
+leaves the Job Failed, `apps-migrate` not Ready, and the previous api and
+frontend serving.
 
 ```bash
-kubectl -n default get jobs -l job-name --field-selector status.successful=0
-kubectl -n default logs job/migrate-<tag> --tail=100
-kubectl -n default describe canary api | grep -A5 pre-rollout
+flux -n flux-system get kustomization apps-migrate
+kubectl -n default get job migrate
+kubectl -n default logs job/migrate --tail=100
 ```
 
-The Job name comes from the image tag, so re-running the same release reuses
-the existing Job rather than starting a second one. Fix the changeset, cut a
-new tag and let the gate run again; delete the failed Job only once you want
-that tag retried from scratch.
+A failed Job stays failed: Flux reapplies the same spec and finds nothing to
+change. Fix the changeset and cut a new tag, which replaces the Job. Delete
+the failed Job only when you want the same tag retried from scratch, then run
+`flux -n flux-system reconcile kustomization apps-migrate`.
 
 Every changeset carries a rollback, the baseline included. Rolling one back is
 a rehearsed manual step with a backup, never an automatic response to a failed

@@ -3,4 +3,9 @@ kind: Kustomization
 
 resources:
   - deployment.yaml
-  - canary.yaml
+
+# Written in the same commit as ../api and ../migrate; see ../api/kustomization.yaml.
+images:
+  - name: ghcr.io/esa-blueshell/frontend
+    newTag: v1.11.0 # {"$imagepolicy": "flux-system:frontend:tag"}
+    digest: sha256:94fc6756ac933541eaa820714b870888a5ee729de25c8bef0fdcffeeaa009e21 # {"$imagepolicy": "flux-system:frontend:digest"}

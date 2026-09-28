@@ -3,8 +3,8 @@
 Refuses a changeset the previously released version cannot read.
 
 The migration runs before any new pod serves, so the version already in
-production meets the new schema first and keeps serving against it for the
-whole canary analysis. Dropping a column it maps breaks what is serving, and
+production meets the new schema first and keeps serving against it until the
+new api is Ready. Dropping a column it maps breaks what is serving, and
 reverting the release does not undo it.
 
 Reads changeTypes structurally. A `dropTable` inside a `rollback:` block is not

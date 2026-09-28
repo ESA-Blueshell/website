@@ -130,9 +130,9 @@ flux get kustomizations --watch
 
 Reconciliation order: `flux-system` → `apps-core` (2–5 min) →
 `apps-data` (stalls pending Vault unseal — expected, proceed to
-step 6 in parallel) / `apps-delivery` → `apps-edge` /
-`apps-vso-secrets` / `apps-mail` / `apps-stateless` /
-`apps-utility-system`.
+step 6 in parallel) → `apps-edge` / `apps-vso-secrets` / `apps-mail` /
+`apps-utility-system`, then `apps-migrate` → `apps-api` → `apps-frontend`
+once Vault is unsealed.
 
 ## 6. Unseal Vault and seed secrets
 
@@ -299,9 +299,8 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
   post-activation SSH health check fails.
 
 - **Apps** (anything under `platform/cluster/flux/`): Flux reconciles
-  `main` every minute. api + frontend roll together when the pinned
-  digest in `apps/stateless/kustomization.yaml` changes, via paired
-  Flagger canaries. Every other image this repository builds is pinned
+  `main` every minute. A new pinned digest under `apps/stateless/` rolls
+  the schema migration, then the api, then the frontend. Every other image this repository builds is pinned
   by digest too, so a change in git is the only thing that rolls a pod.
   That change is written by image-automation-controller when a release
   publishes a new version tag, so cutting a release deploys it. Rolling

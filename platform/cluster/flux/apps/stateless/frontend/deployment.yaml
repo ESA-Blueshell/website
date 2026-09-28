@@ -4,14 +4,10 @@ metadata:
   name: frontend
   namespace: default
 spec:
-  # No `replicas`: Flagger owns it; see the api Deployment.
-  #
+  replicas: 1
   # Surge first, retire the old pod only once the new one is Ready, so a broken
   # image stalls the rollout instead of taking the site down.
   #
-  # progressDeadlineSeconds matches the api's: the release commit reaches Flux
-  # before the release image is built, so the new pod sits in ImagePullBackOff
-  # first.
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -70,3 +66,17 @@ spec:
             limits:
               cpu: 200m
               memory: 128Mi
+---
+# The IngressRoute sends everything that is not /api here.
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: default
+spec:
+  selector:
+    app.kubernetes.io/name: frontend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

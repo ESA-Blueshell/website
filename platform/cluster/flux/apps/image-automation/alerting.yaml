@@ -1,8 +1,8 @@
 # Flux posts to Discord only when something fails. A release announces itself
-# from CI (release.yml) and a rollout from Flagger, so a success here would be
-# the third message about the same deploy.
+# from CI (release.yml), and Gatus reports when the api and the frontend
+# disagree about which release they run.
 #
-# Same Discord webhook Flagger and Gatus use, from the same Vault path. The
+# Same Discord webhook Gatus uses, from the same Vault path. The
 # vault-secrets-operator ServiceAccount in flux-system is declared next to the
 # ghcr mirror in vso-secrets/ghcr.yaml.
 apiVersion: secrets.hashicorp.com/v1beta1
@@ -73,9 +73,6 @@ spec:
     - kind: HelmRelease
       name: '*'
       namespace: external-dns
-    - kind: HelmRelease
-      name: '*'
-      namespace: flagger-system
     - kind: HelmRelease
       name: '*'
       namespace: ingress-system

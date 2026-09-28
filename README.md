@@ -136,14 +136,10 @@ IntelliJ: **Remote JVM Debug → host: localhost, port: 5005**.
 
 Production runs on a single-node NixOS + k3s + FluxCD stack. Flux reconciles
 manifests from `platform/cluster/flux/` against `main`. The api and the
-frontend run one release tag, pinned in
-`platform/cluster/flux/apps/stateless/kustomization.yaml`. Flagger runs each as
-a blue/green canary and the two `confirm-promotion` gates wait for one another,
-so a release promotes both or neither. Keel still polls `:latest` for the
-remaining images.
-
-That tag is bumped by hand for now. Until the release pipeline writes it
-(#1293), cutting a release publishes images but does not deploy them.
+frontend run one release tag, pinned by digest under
+`platform/cluster/flux/apps/stateless/`. Cutting a release deploys it:
+image-automation-controller commits the new pins, and Flux applies the schema
+migration, then the api, then the frontend, each waiting for the one before.
 
 Runbook: [`platform/docs/runbook.md`](platform/docs/runbook.md).
 

@@ -19,22 +19,12 @@ data class SeasonRequest(
     val endDate: LocalDate,
 )
 
-@Schema(description = "Create a team. A team is the association's rather than a game's, so it names none")
-data class CreateTeamRequest(
+@Schema(description = "A team as a write says it stands. A team is the association's rather than a game's, so it names none")
+data class TeamRequest(
     @field:NotBlank(message = "Team name is required")
     @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")
     val name: String,
     @Schema(description = "Where the team's icon is stored; nothing leaves the team without one")
-    @field:Size(max = 255, message = "Picture must be at most 255 characters")
-    val icon: String? = null,
-)
-
-@Schema(description = "Rename a team or change its icon. Its banner belongs to the fielding")
-data class UpdateTeamRequest(
-    @field:NotBlank(message = "Team name is required")
-    @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")
-    val name: String,
-    @Schema(description = "Where the team's icon is stored; nothing takes the icon away")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val icon: String? = null,
 )

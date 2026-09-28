@@ -3,8 +3,6 @@ package net.blueshell.api.esports.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.esports.api.DraftEntry
-import net.blueshell.api.esports.api.LineupDraft
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.EsportsQueryService
 import net.blueshell.api.esports.domain.SeasonGameService
@@ -129,14 +127,14 @@ class EsportsController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createSeason(
         @Valid @RequestBody request: SeasonRequest,
-    ): SeasonResponse = seasons.create(request.name, request.startDate, request.endDate).asResponse()
+    ): SeasonResponse = seasons.create(request.asInput()).asResponse()
 
     @BoardOnly
     @PutMapping("/seasons/{id}")
     fun updateSeason(
         @PathVariable id: Long,
         @Valid @RequestBody request: SeasonRequest,
-    ): SeasonResponse = seasons.update(id, request.name, request.startDate, request.endDate).asResponse()
+    ): SeasonResponse = seasons.update(id, request.asInput()).asResponse()
 
     /** What a season holds, so the offer to remove it can say what goes with it. */
     @BoardOnly
@@ -171,15 +169,15 @@ class EsportsController(
     @PostMapping("/teams")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTeam(
-        @Valid @RequestBody request: CreateTeamRequest,
-    ): TeamResponse = teams.create(request.name, request.icon).asResponse()
+        @Valid @RequestBody request: TeamRequest,
+    ): TeamResponse = teams.create(request.asInput()).asResponse()
 
     @BoardOnly
     @PutMapping("/teams/{id}")
     fun updateTeam(
         @PathVariable id: Long,
-        @Valid @RequestBody request: UpdateTeamRequest,
-    ): TeamResponse = teams.update(id, request.name, request.icon).asResponse()
+        @Valid @RequestBody request: TeamRequest,
+    ): TeamResponse = teams.update(id, request.asInput()).asResponse()
 
     @BoardOnly
     @DeleteMapping("/teams/{id}")
@@ -233,22 +231,7 @@ class EsportsController(
         @PathVariable seasonId: Long,
         @Valid @RequestBody request: PublishLineupRequest,
     ): PublishedLineupResponse {
-        val published =
-            rosters.publish(
-                LineupDraft(
-                    teamId = request.teamId,
-                    name = request.name,
-                    teamIcon = request.icon,
-                    game = request.game,
-                    seasonId = seasonId,
-                    banner = request.banner,
-                    removed = request.removed,
-                    entries =
-                        request.entries.map {
-                            DraftEntry(it.id, it.handle, it.role, it.userId, it.displayName, it.roleTitle, it.description, it.icon)
-                        },
-                ),
-            )
+        val published = rosters.publish(request.asDraft(seasonId))
         return PublishedLineupResponse(published.team.asResponse(), published.roster.map { it.asResponse() })
     }
 
@@ -292,38 +275,14 @@ class EsportsController(
     fun addRosterEntry(
         @PathVariable teamId: Long,
         @Valid @RequestBody request: AddRosterEntryRequest,
-    ): RosterEntryResponse =
-        rosters
-            .add(
-                teamId = teamId,
-                game = request.game,
-                seasonId = request.seasonId,
-                handle = request.handle,
-                role = request.role,
-                userId = request.userId,
-                displayName = request.displayName,
-                roleTitle = request.roleTitle,
-                description = request.description,
-                icon = request.icon,
-            ).asResponse()
+    ): RosterEntryResponse = rosters.add(teamId, request.game, request.seasonId, request.asInput(), request.userId).asResponse()
 
     @BoardOnly
     @PutMapping("/roster/{id}")
     fun updateRosterEntry(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateRosterEntryRequest,
-    ): RosterEntryResponse =
-        rosters
-            .update(
-                id = id,
-                handle = request.handle,
-                role = request.role,
-                displayName = request.displayName,
-                sortIndex = request.sortIndex,
-                roleTitle = request.roleTitle,
-                description = request.description,
-                icon = request.icon,
-            ).asResponse()
+    ): RosterEntryResponse = rosters.update(id, request.asInput(), request.sortIndex).asResponse()
 
     /** A null user unlinks: an entry nobody can be attributed to is a roster spot all the same. */
     @BoardOnly

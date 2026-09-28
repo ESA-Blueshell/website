@@ -3,6 +3,7 @@ package net.blueshell.api.esports.web
 import net.blueshell.api.esports.api.DraftEntry
 import net.blueshell.api.esports.api.LineupDraft
 import net.blueshell.api.esports.api.PublishedLineup
+import net.blueshell.api.esports.api.RosterEntryInput
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
@@ -54,7 +55,7 @@ class EsportsControllerLineupTest {
         assertThat(draft.firstValue.seasonId).isEqualTo(5)
         assertThat(draft.firstValue.removed).containsExactly(12)
         assertThat(draft.firstValue.entries)
-            .containsExactly(DraftEntry(11, "first", TeamRole.COACH, 42, null, null, null, null))
+            .containsExactly(DraftEntry(11, RosterEntryInput("first", TeamRole.COACH), 42))
         assertThat(answer.team.id).isEqualTo(3)
         assertThat(answer.roster.map { it.handle }).containsExactly("first")
     }

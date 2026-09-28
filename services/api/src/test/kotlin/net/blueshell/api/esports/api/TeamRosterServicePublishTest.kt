@@ -2,6 +2,7 @@ package net.blueshell.api.esports.api
 
 import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.SeasonService
+import net.blueshell.api.esports.domain.TeamInput
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import net.blueshell.api.esports.persistence.Season
@@ -14,7 +15,6 @@ import net.blueshell.api.shared.enums.TeamRole
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -42,8 +42,8 @@ class TeamRosterServicePublishTest {
         }
     private val teams =
         mock<TeamService>().also { mock ->
-            whenever(mock.create(any(), anyOrNull())).thenReturn(team)
-            whenever(mock.update(any(), any(), anyOrNull())).thenReturn(team)
+            whenever(mock.create(any())).thenReturn(team)
+            whenever(mock.update(any(), any())).thenReturn(team)
             whenever(mock.findById(3)).thenReturn(team)
         }
     private val seasons = mock<SeasonService>().also { whenever(it.findById(5)).thenReturn(season) }
@@ -59,14 +59,14 @@ class TeamRosterServicePublishTest {
         id: Long?,
         handle: String,
         userId: Long? = null,
-    ) = DraftEntry(id, handle, TeamRole.PLAYER, userId, null, null, null, null)
+    ) = DraftEntry(id, RosterEntryInput(handle, TeamRole.PLAYER), userId)
 
     @Test
     fun `writes the team, drops who came off and puts everybody else in the order given`() {
         val published = service.publish(draft(3, entry(null, "new"), entry(11, "kept-renamed", userId = 42)))
 
-        verify(teams).update(3, "BS Draft", null)
-        verify(teams, never()).create(any(), anyOrNull())
+        verify(teams).update(3, TeamInput("BS Draft"))
+        verify(teams, never()).create(any())
         verify(entries).delete(gone)
         assertThat(published.team).isSameAs(team)
         assertThat(published.roster.map { it.handle to it.sortIndex }).containsExactly("new" to 0, "kept-renamed" to 1)
@@ -77,6 +77,6 @@ class TeamRosterServicePublishTest {
     fun `a draft with no team makes it under the name given`() {
         service.publish(draft(null))
 
-        verify(teams).create("BS Draft", null)
+        verify(teams).create(TeamInput("BS Draft"))
     }
 }

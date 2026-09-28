@@ -1,5 +1,6 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.api.RosterEntryInput
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.EsportsQueryService
 import net.blueshell.api.esports.domain.TeamSeasonService
@@ -59,7 +60,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val season = season()
         val team = team()
 
-        rosters.add(team.id!!, game, season.id!!, "Handle", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, season.id!!, RosterEntryInput("Handle", TeamRole.PLAYER), null)
 
         // Nobody said the team was being fielded; putting a player on it said it for them.
         assertThat(fielded.isFielded(team.id!!, game, season.id!!)).isTrue()
@@ -128,7 +129,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
     fun `a team fielded again in a season it was dropped from brings its line-up back`() {
         val season = season()
         val team = team("BS Dropped And Restored")
-        rosters.add(team.id!!, game, season.id!!, "returns", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, season.id!!, RosterEntryInput("returns", TeamRole.PLAYER), null)
         fielded.unfield(team.id!!, game, season.id!!)
 
         fielded.field(team.id!!, game, season.id!!)
@@ -157,7 +158,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         // rendered before the change renders the same after it.
         val season = season()
         val team = team("BS Carried Across")
-        rosters.add(team.id!!, game, season.id!!, "Handle", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, season.id!!, RosterEntryInput("Handle", TeamRole.PLAYER), null)
 
         val view = views.rostersOf("TRACKMANIA", season.id)
 

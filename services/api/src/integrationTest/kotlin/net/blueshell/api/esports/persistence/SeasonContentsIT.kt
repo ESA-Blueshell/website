@@ -1,5 +1,6 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.api.RosterEntryInput
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.EsportsQueryService
 import net.blueshell.api.esports.domain.TeamSeasonService
@@ -48,9 +49,9 @@ class SeasonContentsIT : UserTestSupport() {
         val season = season()
         val first = team()
         val second = team()
-        rosters.add(first.id!!, game, season.id!!, "one", TeamRole.PLAYER, null, null)
-        rosters.add(first.id!!, game, season.id!!, "two", TeamRole.SUBSTITUTE, null, null)
-        rosters.add(second.id!!, game, season.id!!, "three", TeamRole.PLAYER, null, null)
+        rosters.add(first.id!!, game, season.id!!, RosterEntryInput("one", TeamRole.PLAYER), null)
+        rosters.add(first.id!!, game, season.id!!, RosterEntryInput("two", TeamRole.SUBSTITUTE), null)
+        rosters.add(second.id!!, game, season.id!!, RosterEntryInput("three", TeamRole.PLAYER), null)
 
         val (teamCount, playerCount) = fielded.contentsOf(season.id!!)
 
@@ -81,8 +82,8 @@ class SeasonContentsIT : UserTestSupport() {
         val kept = season()
         val dropped = season()
         val team = team()
-        rosters.add(team.id!!, game, kept.id!!, "stays", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, game, dropped.id!!, "goes", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, kept.id!!, RosterEntryInput("stays", TeamRole.PLAYER), null)
+        rosters.add(team.id!!, game, dropped.id!!, RosterEntryInput("goes", TeamRole.PLAYER), null)
 
         fielded.unfield(team.id!!, game, dropped.id!!)
 

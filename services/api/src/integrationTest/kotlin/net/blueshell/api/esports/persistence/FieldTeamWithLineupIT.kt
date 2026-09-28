@@ -1,5 +1,6 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.api.RosterEntryInput
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.shared.enums.Role
@@ -47,7 +48,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, game, earlier.id!!, "veteran", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, earlier.id!!, RosterEntryInput("veteran", TeamRole.PLAYER), null)
 
         val result = rosters.fieldWithLineup(team.id!!, game, later.id!!, carryLineup = false)
 
@@ -62,8 +63,8 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, "Sanne Kok")
-        rosters.add(team.id!!, game, earlier.id!!, "reserve", TeamRole.SUBSTITUTE, null, null)
+        rosters.add(team.id!!, game, earlier.id!!, RosterEntryInput("driver", TeamRole.PLAYER, "Sanne Kok"), null)
+        rosters.add(team.id!!, game, earlier.id!!, RosterEntryInput("reserve", TeamRole.SUBSTITUTE), null)
 
         val result = rosters.fieldWithLineup(team.id!!, game, later.id!!, carryLineup = true)
 
@@ -85,8 +86,8 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val oldest = season(LocalDate.of(2029, 2, 1))
         val target = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, game, oldest.id!!, "long-gone", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, game, middle.id!!, "current", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, oldest.id!!, RosterEntryInput("long-gone", TeamRole.PLAYER), null)
+        rosters.add(team.id!!, game, middle.id!!, RosterEntryInput("current", TeamRole.PLAYER), null)
 
         val result = rosters.fieldWithLineup(team.id!!, game, target.id!!, carryLineup = true)
 
@@ -109,7 +110,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, earlier.id!!, RosterEntryInput("driver", TeamRole.PLAYER), null)
         rosters.fieldWithLineup(team.id!!, game, later.id!!, carryLineup = true)
 
         val again = rosters.fieldWithLineup(team.id!!, game, later.id!!, carryLineup = true)
@@ -126,7 +127,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, "Sanne Kok")
+        rosters.add(team.id!!, game, earlier.id!!, RosterEntryInput("driver", TeamRole.PLAYER, "Sanne Kok"), null)
 
         mvc
             .perform(
@@ -149,7 +150,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, earlier.id!!, RosterEntryInput("driver", TeamRole.PLAYER), null)
 
         mvc
             .perform(
@@ -186,8 +187,8 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val recent = season(LocalDate.of(2035, 9, 1))
         val filling = season(LocalDate.of(2036, 2, 1))
         val team = team()
-        rosters.add(team.id!!, game, older.id!!, "whoWeMean", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, game, recent.id!!, "straggler", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, older.id!!, RosterEntryInput("whoWeMean", TeamRole.PLAYER), null)
+        rosters.add(team.id!!, game, recent.id!!, RosterEntryInput("straggler", TeamRole.PLAYER), null)
 
         val result =
             rosters.fieldWithLineup(
@@ -208,7 +209,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val played = season(LocalDate.of(2035, 2, 1))
         val filling = season(LocalDate.of(2035, 9, 1))
         val team = team()
-        rosters.add(team.id!!, "VALORANT", played.id!!, "crossOver", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, "VALORANT", played.id!!, RosterEntryInput("crossOver", TeamRole.PLAYER), null)
 
         val result =
             rosters.fieldWithLineup(
@@ -229,8 +230,8 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val recent = season(LocalDate.of(2035, 9, 1))
         val filling = season(LocalDate.of(2036, 2, 1))
         val team = team()
-        rosters.add(team.id!!, game, older.id!!, "named", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, game, recent.id!!, "mostRecent", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, older.id!!, RosterEntryInput("named", TeamRole.PLAYER), null)
+        rosters.add(team.id!!, game, recent.id!!, RosterEntryInput("mostRecent", TeamRole.PLAYER), null)
 
         val result =
             rosters.fieldWithLineup(
@@ -249,8 +250,8 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val older = season(LocalDate.of(2035, 2, 1))
         val newer = season(LocalDate.of(2035, 9, 1))
         val team = team()
-        rosters.add(team.id!!, "VALORANT", older.id!!, "back-then", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, game, newer.id!!, "right-now", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, "VALORANT", older.id!!, RosterEntryInput("back-then", TeamRole.PLAYER), null)
+        rosters.add(team.id!!, game, newer.id!!, RosterEntryInput("right-now", TeamRole.PLAYER), null)
 
         val played = fielded.seasonsOf(team.id!!)
 

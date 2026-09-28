@@ -2,6 +2,7 @@ package net.blueshell.api.esports.persistence
 
 import net.blueshell.api.esports.domain.SeasonDatesOverlap
 import net.blueshell.api.esports.domain.SeasonEndsBeforeStart
+import net.blueshell.api.esports.domain.SeasonInput
 import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -20,18 +21,14 @@ class SeasonBoundariesIT : UserTestSupport() {
     @Autowired private lateinit var seasons: SeasonService
 
     private fun autumn(year: Int) =
-        seasons.create(
-            "Autumn $year ${System.nanoTime()}",
-            LocalDate.of(year, 9, 1),
-            LocalDate.of(year + 1, 1, 31),
-        )
+        seasons.create(SeasonInput("Autumn $year ${System.nanoTime()}", LocalDate.of(year, 9, 1), LocalDate.of(year + 1, 1, 31)))
 
     @Test
     fun `a season that covers ground another already covers is refused, and says which`() {
         val existing = autumn(2040)
 
         assertThatThrownBy {
-            seasons.create("Clashing", LocalDate.of(2040, 11, 1), LocalDate.of(2041, 3, 31))
+            seasons.create(SeasonInput("Clashing", LocalDate.of(2040, 11, 1), LocalDate.of(2041, 3, 31)))
         }.isInstanceOf(SeasonDatesOverlap::class.java)
             .extracting { (it as SeasonDatesOverlap).facts["seasonName"] }
             .isEqualTo(existing.name)
@@ -41,7 +38,7 @@ class SeasonBoundariesIT : UserTestSupport() {
     fun `a season that meets another without covering it is allowed`() {
         autumn(2041)
 
-        val spring = seasons.create("Spring 2042", LocalDate.of(2042, 2, 1), LocalDate.of(2042, 8, 31))
+        val spring = seasons.create(SeasonInput("Spring 2042", LocalDate.of(2042, 2, 1), LocalDate.of(2042, 8, 31)))
 
         assertThat(spring.id).isNotNull()
     }
@@ -51,7 +48,7 @@ class SeasonBoundariesIT : UserTestSupport() {
         val existing = autumn(2042)
 
         // Renaming without moving must not be read as clashing with itself.
-        val renamed = seasons.update(existing.id!!, "Autumn, renamed", existing.startDate, existing.endDate)
+        val renamed = seasons.update(existing.id!!, SeasonInput("Autumn, renamed", existing.startDate, existing.endDate))
 
         assertThat(renamed.name).isEqualTo("Autumn, renamed")
     }
@@ -59,10 +56,10 @@ class SeasonBoundariesIT : UserTestSupport() {
     @Test
     fun `a season moved onto another is refused`() {
         val autumn = autumn(2043)
-        val spring = seasons.create("Spring 2044", LocalDate.of(2044, 2, 1), LocalDate.of(2044, 8, 31))
+        val spring = seasons.create(SeasonInput("Spring 2044", LocalDate.of(2044, 2, 1), LocalDate.of(2044, 8, 31)))
 
         assertThatThrownBy {
-            seasons.update(spring.id!!, spring.name, autumn.startDate, autumn.endDate)
+            seasons.update(spring.id!!, SeasonInput(spring.name, autumn.startDate, autumn.endDate))
         }.isInstanceOf(SeasonDatesOverlap::class.java)
             .extracting { (it as SeasonDatesOverlap).facts["seasonName"] }
             .isEqualTo(autumn.name)
@@ -71,7 +68,7 @@ class SeasonBoundariesIT : UserTestSupport() {
     @Test
     fun `a season cannot end before it starts`() {
         assertThatThrownBy {
-            seasons.create("Backwards", LocalDate.of(2045, 9, 1), LocalDate.of(2045, 8, 31))
+            seasons.create(SeasonInput("Backwards", LocalDate.of(2045, 9, 1), LocalDate.of(2045, 8, 31)))
         }.isInstanceOf(SeasonEndsBeforeStart::class.java)
     }
 }

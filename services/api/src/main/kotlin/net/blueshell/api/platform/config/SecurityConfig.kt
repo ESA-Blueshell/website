@@ -215,7 +215,6 @@ class SecurityConfig(
             "/telemetry/*",
             "/committeeMembers/committees",
             "/contributionPeriods",
-            "/download/**",
             // Posters, banners and roster icons: the images the public pages draw.
             "/files/public/**",
             // The collection and one game: "/esports/games/*" matches the second only,

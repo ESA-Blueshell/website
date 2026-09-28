@@ -239,7 +239,6 @@ const saidId = `${uid}-said`
 .island-field:has(.island-field__said--wrong) :deep(.island-input),
 .island-field:has(.island-field__said--wrong) :deep(.island-textarea),
 .island-field:has(.island-field__said--wrong) :deep(.island-phone),
-.island-field:has(.island-field__said--wrong) :deep(.island-file),
 .island-field:has(.island-field__said--wrong) :deep(.picker__field) {
   border-bottom-color: var(--color-wrong);
 }

@@ -4,7 +4,6 @@ import CountryFlag from "@/components/island/CountryFlag.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
-import FileInput from "@/components/island/FileInput.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import RadioGroup from "@/components/island/RadioGroup.vue"
 import PanChevron from "@/components/island/PanChevron.vue"
@@ -187,73 +186,6 @@ describe("RadioGroup", () => {
     const wrapper = mount(RadioGroup, {props: {modelValue: null, options, disabled: true}})
 
     expect(wrapper.find("input").attributes("disabled")).toBeDefined()
-  })
-})
-
-describe("FileInput", () => {
-  const paper = (name: string, type: string, size = 10) =>
-    new File(["x".repeat(size)], name, {type})
-
-  it("tells a picture, a pdf, a sheet, a page of text and anything else apart", () => {
-    const shapes: Array<[File, boolean]> = [
-      [paper("a.png", "image/png"), true],
-      [paper("a.pdf", "application/pdf"), false],
-      [paper("a.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"), false],
-      [paper("a.md", "text/markdown"), false],
-      [paper("a.bin", "application/octet-stream"), false],
-    ]
-    for (const [file, isImage] of shapes) {
-      const wrapper = mount(FileInput, {props: {modelValue: file}})
-      expect(wrapper.find("img.island-file__shot").exists()).toBe(isImage)
-    }
-  })
-
-  it("reads a kind off the name where the browser gave none", () => {
-    for (const name of ["rules.pdf", "members.csv", "notes.txt"]) {
-      const wrapper = mount(FileInput, {props: {modelValue: paper(name, "")}})
-      expect(wrapper.find(".island-file__mark").exists()).toBe(true)
-    }
-  })
-
-  it("says how heavy it is, in the unit that suits it", () => {
-    const small = mount(FileInput, {props: {modelValue: paper("a.pdf", "application/pdf", 500)}})
-    const large = mount(FileInput, {
-      props: {modelValue: paper("a.pdf", "application/pdf", 2 * 1024 * 1024)},
-    })
-
-    expect(small.find(".island-file__weight").text()).toBe("1 KB")
-    expect(large.find(".island-file__weight").text()).toBe("2.0 MB")
-  })
-
-  it("asks for a file where it holds none, and is off when the form is", () => {
-    const wrapper = mount(FileInput, {
-      props: {modelValue: null, say: "Choose a poster", disabled: true, accept: "image/*",
-        describedBy: "poster-said", invalid: true},
-    })
-
-    expect(wrapper.find(".island-file__name").text()).toBe("Choose a poster")
-    expect(wrapper.find(".island-file__weight").text()).toBe("Pick one from this machine")
-    expect(wrapper.find("input").attributes("disabled")).toBeDefined()
-    expect(wrapper.find("input").attributes("accept")).toBe("image/*")
-    expect(wrapper.find("input").attributes("aria-describedby")).toBe("poster-said")
-    expect(wrapper.classes()).toContain("island-file--wrong")
-  })
-
-  it("takes the file the browser hands it, and nothing where the dialog was cancelled", async () => {
-    const wrapper = mount(FileInput, {props: {modelValue: null}})
-    const field = wrapper.find("input")
-
-    Object.defineProperty(field.element, "files", {
-      value: [paper("a.png", "image/png")], configurable: true,
-    })
-    await field.trigger("change")
-
-    expect((wrapper.emitted("update:modelValue")?.at(-1)?.[0] as File).name).toBe("a.png")
-
-    Object.defineProperty(field.element, "files", {value: [], configurable: true})
-    await field.trigger("change")
-
-    expect(wrapper.emitted("update:modelValue")?.at(-1)?.[0]).toBeNull()
   })
 })
 

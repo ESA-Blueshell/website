@@ -59,7 +59,7 @@ describe("the page every island field is drawn on", () => {
     // Every field on the page is written into, so the page holds what each one reports rather
     // than drawing them and dropping it.
     const written: Record<string, unknown> = {
-      FormControl: "7", CheckBox: true, RadioGroup: "never", FileInput: null,
+      FormControl: "7", CheckBox: true, RadioGroup: "never",
       UserPicker: 1, UserSelect: 2, CohortPicker: 3, ContributionPeriodPicker: 4,
       EventPicker: 5, MemberTypeSelect: "ALUMNI", EnumPicker: "CONTRIBUTION_PAID",
       CountrySelect: "BE", NationalitySelect: "BE",

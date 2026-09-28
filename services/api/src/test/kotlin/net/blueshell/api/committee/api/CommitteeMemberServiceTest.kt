@@ -1,9 +1,14 @@
 package net.blueshell.api.committee.api
 
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
+import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.committee.persistence.CommitteeMemberRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.tracking.Actor
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -112,5 +117,25 @@ class CommitteeMemberServiceTest {
         every { repository.findWindowsByUserId(1L) } returns emptyList()
 
         assertThat(service.findMembershipWindowsForUser(1L)).isEmpty()
+    }
+
+    @Test
+    fun `gives up every seat a user holds, announcing each one`() {
+        val seats =
+            listOf(1L, 2L).map { committee ->
+                mockk<CommitteeMember> {
+                    every { userId } returns 7L
+                    every { committeeId } returns committee
+                }
+            }
+        val announced = mutableListOf<Any>()
+        every { repository.findByUser_Id(7L) } returns seats
+        every { repository.delete(any<CommitteeMember>()) } just Runs
+        every { trackedEvents.publish(any()) } answers { announced += firstArg<(Actor) -> Any>()(Actor.system()) }
+
+        service.revokeAllSeatsForUser(7L)
+
+        seats.forEach { seat -> verify { repository.delete(seat) } }
+        assertThat(announced).containsExactly(CommitteeMembershipChanged(7L, 1L), CommitteeMembershipChanged(7L, 2L))
     }
 }

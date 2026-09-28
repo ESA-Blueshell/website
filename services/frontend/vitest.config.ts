@@ -87,7 +87,6 @@ export default defineConfig({
         "src/components/island/TimeInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/MoneyInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/FormField.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
-        "src/components/island/FileInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/TextInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/MarkdownEditor.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/PhoneInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },

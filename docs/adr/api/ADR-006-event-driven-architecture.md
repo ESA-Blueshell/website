@@ -5,8 +5,11 @@ Accepted
 
 
 > **Amended** by [architecture ADR-001](../architecture/ADR-001-application-modules-replace-layers.md):
-> events run on Spring Modulith's Event Publication Registry and are the instrument
-> for breaking module dependency cycles.
+> events are the instrument for breaking module dependency cycles.
+>
+> **Amended** (#1647): the Event Publication Registry is gone. A listener of an event
+> published after commit is an `@AfterCommitListener`, which runs it in a transaction of
+> its own, and work that must survive a restart is a queued job.
 
 ## Context
 Applications need to react to state changes across different domains without creating tight coupling. Traditional approaches include:

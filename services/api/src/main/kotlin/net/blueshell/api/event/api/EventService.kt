@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.time.LocalDateTime
 
 @Service
@@ -125,6 +126,10 @@ class EventService
 
         @Transactional(readOnly = true)
         fun findByIdIncludingDeletedOrNull(id: Long): Event? = repository.findByIdIncludingDeleted(id)
+
+        /** The live events that have not ended by [from]. */
+        @Transactional(readOnly = true)
+        fun idsEndingFrom(from: Instant): List<Long> = repository.findIdsEndingFrom(from)
 
         private fun maybeDeleteReplacedBannerFile(
             previousFileId: Long?,

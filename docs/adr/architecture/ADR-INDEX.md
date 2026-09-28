@@ -47,7 +47,7 @@ stack.
 
 ## Amended by this set
 - [API ADR-003: Validation Layer Separation](../api/ADR-003-validation-layer-separation.md) — where database-dependent rules run
-- [API ADR-006: Event-Driven Architecture](../api/ADR-006-event-driven-architecture.md) — events are one cycle-breaking instrument of several, and run on the Event Publication Registry
+- [API ADR-006: Event-Driven Architecture](../api/ADR-006-event-driven-architecture.md) — events are one cycle-breaking instrument of several
 - [API ADR-023: Job Consolidation and Reliable Execution](../api/ADR-023-job-consolidation-and-reliable-execution.md) — gains scheduledFor and the runAsync/runIn surface
 - [API ADR-013: Entity Association Pattern](../api/ADR-013-entity-association-pattern.md) — an owning-side reference may cross a module boundary, a `mappedBy` back-reference may not
 

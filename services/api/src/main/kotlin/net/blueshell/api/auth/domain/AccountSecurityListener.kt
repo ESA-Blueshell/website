@@ -6,13 +6,11 @@ import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.security.SignInEndReason
 import net.blueshell.api.security.SignInEndedAsSuspicious
 import net.blueshell.api.security.SignIns
+import net.blueshell.api.shared.event.AfterCommitListener
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserEmailChangedByBoard
 import net.blueshell.api.user.api.UserRolesChanged
-import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 
 /**
  * Account security's side of things other modules do: a stolen-looking sign-in, an erasure, a board
@@ -26,8 +24,7 @@ class AccountSecurityListener(
     private val trustedBrowsers: TrustedBrowsers,
     private val signIns: SignIns,
 ) {
-    @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @AfterCommitListener
     fun onSuspiciousSignIn(evt: SignInEndedAsSuspicious) {
         val kind =
             when (evt.reason) {
@@ -38,15 +35,13 @@ class AccountSecurityListener(
     }
 
     /** Erasure takes the second factor with it, so a restored account comes back without one. */
-    @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @AfterCommitListener
     fun onUserDeleted(evt: UserDeleted) {
         twoFactor.erase(evt.userId)
         signIns.endAll(evt.userId)
     }
 
-    @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @AfterCommitListener
     fun onEmailChangedByBoard(evt: UserEmailChangedByBoard) {
         trustedBrowsers.forgetAll(evt.userId)
         events.record(
@@ -57,8 +52,7 @@ class AccountSecurityListener(
         )
     }
 
-    @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @AfterCommitListener
     fun onRolesChanged(evt: UserRolesChanged) {
         val actor = evt.actor.userId?.let { SecurityActor.Person(it) } ?: SecurityActor.System
         events.record(evt.userId, SecurityEventKind.ROLES_CHANGED, actor)

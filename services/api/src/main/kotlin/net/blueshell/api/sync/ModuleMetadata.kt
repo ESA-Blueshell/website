@@ -8,10 +8,10 @@ import org.springframework.modulith.PackageInfo
  * resulting external id in `external_id_mapping`: contacts through contact's `ContactAdapter`,
  * events through event's `CalendarAdapter`.
  *
- * Contact and calendar fan-out runs off `@ApplicationModuleListener`s, so a failed push is retried
- * from the event publication registry instead of failing the transaction that caused it. The
- * Discord triggers queue their jobs inside that transaction instead, so a change never commits
- * without them.
+ * Every push runs as a queued job, retried on the job queue's schedule rather than failing the
+ * change that caused it. Calendar and Discord jobs are queued inside that change's transaction;
+ * contact jobs once the user change commits, with a daily sweep for each of contacts and calendar
+ * catching one whose queueing failed.
  */
 @PackageInfo
 @ApplicationModule(

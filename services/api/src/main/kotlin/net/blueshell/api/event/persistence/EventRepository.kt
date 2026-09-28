@@ -36,6 +36,11 @@ interface EventRepository : BaseRepository<Event, Long> {
         @Param("to") to: Instant,
     ): List<Long>
 
+    @Query("select e.id from Event e where e.endTime >= :from")
+    fun findIdsEndingFrom(
+        @Param("from") from: Instant,
+    ): List<Long>
+
     fun existsByTitle(title: String): Boolean
 
     @Query("select count(e) from Event e join e.gameCodes code where code = :code")

@@ -110,4 +110,13 @@ class EventServiceTest {
 
         verify(manager).refresh(event)
     }
+
+    @Test
+    fun `lists the events that have not ended`() {
+        val from = java.time.Instant.parse("2026-10-01T12:00:00Z")
+        val repository: EventRepository = mock { on { findIdsEndingFrom(from) } doReturn listOf(3L) }
+        val service = EventService(repository, mock(), mock(), mock(), mock(), mock())
+
+        assertThat(service.idsEndingFrom(from)).containsExactly(3L)
+    }
 }

@@ -32,6 +32,5 @@ dependencyResolutionManagement {
     }
 }
 
-include(":libs:kotlin-common")
 include(":services:api")
 include(":tests:system")

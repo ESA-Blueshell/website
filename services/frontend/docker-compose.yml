@@ -12,7 +12,6 @@ services:
     volumes:
       - .:/usr/app
       - ../api/openapi.yaml:/usr/api/openapi.yaml:ro
-      - ../../libs/openapi-specs:/libs/openapi-specs:ro
       - /usr/app/.yarn
       - /usr/app/node_modules
     networks:

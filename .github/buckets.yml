@@ -22,10 +22,7 @@ platform:
 api:
   - 'services/api/**'
   - '!services/api/docker-compose.yml'
-  - 'libs/**'
   - 'config/detekt/**'
-  - 'scripts/generate-openapi-local.sh'
-  - 'scripts/openapi-common.sh'
   - 'scripts/scrape-public-events.py'
   - 'scripts/check-changeset-compatibility.py'
   - 'scripts/changeset-sql.sh'

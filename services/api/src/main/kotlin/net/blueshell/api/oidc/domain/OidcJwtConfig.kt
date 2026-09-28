@@ -5,14 +5,10 @@ import com.nimbusds.jose.jwk.JWKSet
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.jwk.source.JWKSource
 import com.nimbusds.jose.proc.SecurityContext
-import net.blueshell.common.vault.SpringVaultTransitClient
-import net.blueshell.common.vault.VaultTransitClient
-import net.blueshell.common.vault.VaultTransitJwtEncoder
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.security.oauth2.jwt.JwtEncoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
@@ -24,11 +20,6 @@ import java.util.UUID
 private const val RSA_KEY_BITS = 2048
 
 @Configuration
-// ApiApplication's @SpringBootApplication default-scans net.blueshell.api only,
-// so @Component classes in libs/kotlin-common (net.blueshell.common.*) never
-// register. Pull SpringVaultTransitClient in explicitly so the transit beans
-// below can find a VaultTransitClient when auth.transit.enabled=true.
-@Import(SpringVaultTransitClient::class)
 class OidcJwtConfig {
     @Bean
     @ConditionalOnProperty("auth.transit.enabled", havingValue = "true")

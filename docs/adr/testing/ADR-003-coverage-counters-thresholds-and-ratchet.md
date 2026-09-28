@@ -48,11 +48,10 @@ by-product of testing the endpoint.
 
 ### Exclusions
 
-Four, and no more:
+Three, and no more:
 
 ```
 **/generated/**              already excluded
-:libs:openapi-specs clients  generated OpenAPI clients
 ApiApplication, ApiApplicationKt
 db/changelog                 Liquibase
 ```

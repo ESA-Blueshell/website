@@ -1,4 +1,4 @@
-package net.blueshell.common.vault
+package net.blueshell.api.oidc.domain
 
 import org.springframework.security.oauth2.jose.jws.JwsAlgorithm
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm

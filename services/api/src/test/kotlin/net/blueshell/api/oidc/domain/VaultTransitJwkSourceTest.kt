@@ -3,8 +3,6 @@ package net.blueshell.api.oidc.domain
 import com.nimbusds.jose.jwk.JWKMatcher
 import com.nimbusds.jose.jwk.JWKSelector
 import com.nimbusds.jose.jwk.RSAKey
-import net.blueshell.common.vault.VaultPublicKey
-import net.blueshell.common.vault.VaultTransitClient
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq

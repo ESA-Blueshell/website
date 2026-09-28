@@ -3700,9 +3700,9 @@ components:
     MembershipApplicationRequest:
       properties:
         conditionsAccepted:
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+      required:
+      - conditionsAccepted
       type: object
     MembershipResponse:
       properties:
@@ -4553,9 +4553,9 @@ components:
     SignupApplicationRequest:
       properties:
         conditionsAccepted:
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+      required:
+      - conditionsAccepted
       type: object
     SignupDetailsRequest:
       properties:

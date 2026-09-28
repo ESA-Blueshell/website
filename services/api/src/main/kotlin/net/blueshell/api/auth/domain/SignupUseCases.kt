@@ -7,6 +7,7 @@ import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.api.MembershipConditions
 import net.blueshell.api.user.api.SignupDetailsData
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.completenessFor
@@ -200,7 +201,11 @@ class SignupUseCases(
      * address may not be confirmed yet.
      */
     @Transactional
-    fun submitApplication(signupToken: String): SignupOutcome {
+    fun submitApplication(
+        signupToken: String,
+        conditionsAccepted: Boolean,
+    ): SignupOutcome {
+        MembershipConditions.requireAccepted(conditionsAccepted)
         val account = signupTokens.resolveAccount(signupToken)
         val profile =
             account.user.memberProfile

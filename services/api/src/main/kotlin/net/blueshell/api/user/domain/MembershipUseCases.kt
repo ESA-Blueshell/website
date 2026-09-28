@@ -5,6 +5,7 @@ import jakarta.validation.Validator
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.api.MembershipConditions
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.SignupCompletion
 import net.blueshell.api.user.api.UserService
@@ -109,7 +110,11 @@ class MembershipUseCases(
      * An explicit application that cannot commit is a refusal, unlike the same
      * call from email confirmation, where not-yet-ready is the normal case.
      */
-    fun apply(userId: Long): SignupOutcome {
+    fun apply(
+        userId: Long,
+        conditionsAccepted: Boolean,
+    ): SignupOutcome {
+        MembershipConditions.requireAccepted(conditionsAccepted)
         validate(MembershipInterval(userId = userId, startDate = LocalDate.now()))
         val profile =
             users.findById(userId).memberProfile

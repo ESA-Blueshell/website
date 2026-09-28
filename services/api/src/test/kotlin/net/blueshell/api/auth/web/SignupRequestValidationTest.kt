@@ -22,11 +22,9 @@ class SignupRequestValidationTest {
             .containsExactly("conditionsAccepted")
     }
 
-    // A trap: @AssertTrue passes a null, so an omitted field is not the same refusal as
-    // an explicit false. The body is nullable to make the false reachable at all.
     @Test
-    fun `the application lets an omitted acceptance through the validator`() {
-        assertThat(messagesFor(SignupApplicationRequest())).isEmpty()
+    fun `the application refuses an omitted acceptance as it refuses a false one`() {
+        assertThat(messagesFor(SignupApplicationRequest())).containsExactly("conditionsAccepted")
     }
 
     @Test

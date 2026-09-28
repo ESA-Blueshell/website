@@ -7,6 +7,8 @@ import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
@@ -149,17 +151,21 @@ class MembershipControllerIT : UserTestSupport() {
             assertThat(membershipRepository.existsByUser_Id(guest.id!!)).isFalse()
         }
 
-        @Test
-        fun `refuses an application that does not accept the conditions`() {
+        @ParameterizedTest(name = "body {0}")
+        @ValueSource(strings = ["""{"conditionsAccepted":false}""", "{}"])
+        fun `refuses an application that does not accept the conditions and records nothing`(body: String) {
             val guest = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST)))
 
             mvc.perform(
                 post("/memberships")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"conditionsAccepted":false}""")
+                    .content(body)
                     .with(signedIn(guest))
-            ).andExpect(status().is4xxClientError)
+            ).andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("conditionsAccepted"))
+                .andExpect(jsonPath("$.errors[0].message").value("The membership conditions must be accepted"))
 
+            assertThat(refreshUser(guest).memberProfile!!.conditionsAcceptedAt).isNull()
             assertThat(membershipRepository.existsByUser_Id(guest.id!!)).isFalse()
         }
     }

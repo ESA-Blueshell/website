@@ -18,6 +18,7 @@ import SubmitButton from "@/components/form/SubmitButton.vue"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 import type {FieldMap} from "@/plugins/validation"
 
+// TWIN: the api's MembershipConditions, which refuses an application that does not accept them.
 defineRule("accepted", (value: unknown) => value === true || "You must accept the membership conditions to continue.")
 
 // The request calls the agreement `conditionsAccepted` and the checkbox that

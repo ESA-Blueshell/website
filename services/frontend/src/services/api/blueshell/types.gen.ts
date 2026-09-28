@@ -1838,7 +1838,7 @@ export enum MemberType {
 }
 
 export type MembershipApplicationRequest = {
-    conditionsAccepted?: boolean | null;
+    conditionsAccepted: boolean;
 };
 
 export type MembershipResponse = {
@@ -2314,7 +2314,7 @@ export type SignupAddressRequest = {
 };
 
 export type SignupApplicationRequest = {
-    conditionsAccepted?: boolean | null;
+    conditionsAccepted: boolean;
 };
 
 export type SignupDetailsRequest = {

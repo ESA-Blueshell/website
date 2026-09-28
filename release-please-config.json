@@ -6,11 +6,6 @@
     ".": {
       "release-type": "simple",
       "changelog-path": "docs/changelogs/08-2026-automated-releases.md",
-      "extra-files": [
-        { "type": "json", "path": "services/frontend/package.json", "jsonpath": "$.version" },
-        "build.gradle.kts",
-        "services/api/build.gradle.kts"
-      ],
       "changelog-sections": [
         { "type": "feat", "section": "Features" },
         { "type": "fix", "section": "Bug Fixes" },

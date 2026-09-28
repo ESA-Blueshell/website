@@ -52,6 +52,7 @@ class JdaVoiceServerSource(
     DoorSource,
     MemberEvents,
     RoomAccess,
+    GatewayGuild,
     SmartLifecycle {
     @Volatile private var jda: JDA? = null
 
@@ -139,6 +140,8 @@ class JdaVoiceServerSource(
                 }.orEmpty()
         }
     }
+
+    override fun guild(): Guild? = jda?.getGuildById(guildId)
 
     // JDA keeps announcement channels apart from text channels; both take posts and invites.
     override fun textRooms(): List<TextRoom> =

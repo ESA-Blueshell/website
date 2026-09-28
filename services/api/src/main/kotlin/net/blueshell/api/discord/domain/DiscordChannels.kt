@@ -1,9 +1,12 @@
 package net.blueshell.api.discord.domain
 
-import net.blueshell.clients.discord.api.DiscordApi
-import net.blueshell.clients.discord.model.ListGuildChannels200ResponseInner
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel
+import net.dv8tion.jda.api.entities.channel.attribute.IPermissionContainer
+import net.dv8tion.jda.api.entities.channel.concrete.Category
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import org.springframework.beans.factory.ObjectProvider
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.Duration
@@ -15,44 +18,34 @@ data class DiscordChannel(
 )
 
 /**
- * The channels everybody in the server can see, in the server's order. A channel hidden from
- * @everyone is never named, so a mention of one reads as Discord shows it to an outsider. Null
- * without a bot, or where Discord did not answer and nothing was kept.
+ * The channels everybody in the server can see, in the order the server lists them, as the gateway
+ * holds them. A channel hidden from @everyone is never named, so a mention of one reads as Discord
+ * shows it to an outsider. Null without a bot, or while the gateway has never had the server; the
+ * last channels it had serve while it is away.
  */
 @Service
 class DiscordChannelDirectory(
-    private val api: ObjectProvider<DiscordApi>,
-    @Value($$"${discord.guildId:}") private val guildId: String,
+    private val gateway: ObjectProvider<GatewayGuild>,
     clock: Clock = Clock.systemUTC(),
 ) {
-    private val kept = KeptRead<List<DiscordChannel>>("Discord channels", KEPT_FOR, clock)
+    private val kept = KeptRead<List<DiscordChannel>>("Discord channels", Duration.ZERO, clock)
 
     fun open(): List<DiscordChannel>? {
-        val client = api.ifAvailable ?: return null
-        return kept.get { seenByEveryone(client.listGuildChannels(guildId)) }
+        val source = gateway.ifAvailable ?: return null
+        return kept.get { source.guild()?.let(::seenByEveryone) }
     }
 
-    private fun seenByEveryone(channels: List<ListGuildChannels200ResponseInner>): List<DiscordChannel> {
-        val byId = channels.associateBy { it.id }
+    private fun seenByEveryone(guild: Guild): List<DiscordChannel> {
+        val everyone = guild.publicRole
 
         // The channel's own rule for @everyone decides; without one, its category's does.
-        fun hidden(channel: ListGuildChannels200ResponseInner): Boolean {
-            val own = channel.permissionOverwrites?.firstOrNull { it.id == guildId }
-            if (own != null) return own.deny.toLong() and VIEW_CHANNEL != 0L
-            val category = channel.parentId?.let(byId::get) ?: return false
-            return category.permissionOverwrites
-                ?.firstOrNull { it.id == guildId }
-                ?.let { it.deny.toLong() and VIEW_CHANNEL != 0L } ?: false
+        fun hidden(channel: GuildChannel): Boolean {
+            val own = (channel as? IPermissionContainer)?.getPermissionOverride(everyone)
+            val rule = own ?: (channel as? ICategorizableChannel)?.parentCategory?.getPermissionOverride(everyone)
+            return rule?.denied?.contains(Permission.VIEW_CHANNEL) ?: false
         }
-        return channels
-            .filter { it.type.value != CATEGORY && !hidden(it) }
-            .sortedBy { it.position }
+        return guild.channels
+            .filter { it !is Category && !hidden(it) }
             .map { DiscordChannel(it.id, it.name) }
-    }
-
-    internal companion object {
-        const val VIEW_CHANNEL = 1L shl 10
-        const val CATEGORY = 4
-        val KEPT_FOR: Duration = Duration.ofMinutes(5)
     }
 }

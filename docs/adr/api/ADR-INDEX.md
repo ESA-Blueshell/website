@@ -64,6 +64,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [028](ADR-028-a-derived-role-is-not-hand-assignable.md) | A Derived Role Is Not Hand-Assignable | Accepted | Board, treasurer and admin are granted; member and committee follow the records that own them |
 | [030](ADR-030-a-sign-in-is-a-server-side-record.md) | A Sign-In Is a Server-Side Record | Accepted | The auth cookie is a rotating view of a Valkey record that ends on age, idleness, a stale copy or another browser |
 | [031](ADR-031-two-factor-authentication.md) | Two-Factor Authentication | Accepted | Authenticator app and backup codes; a granted role waits for two-factor, and its sign-in sets it up without the password again; lock links lock and never revert |
+| [033](ADR-033-the-api-reads-its-secrets-from-vault.md) | The Api Reads Its Secrets From Vault | Accepted | Spring Cloud Vault only, no env file, variable or synced Secret; KV polled and database logins leased, so a rotated key needs no restart |
 
 ### Job System
 

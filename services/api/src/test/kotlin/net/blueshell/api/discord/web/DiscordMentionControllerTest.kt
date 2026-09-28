@@ -4,6 +4,7 @@ import net.blueshell.api.discord.domain.DiscordChannel
 import net.blueshell.api.discord.domain.DiscordChannelDirectory
 import net.blueshell.api.discord.domain.DiscordMember
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
+import net.blueshell.api.discord.domain.DiscordMentionNameSource
 import net.blueshell.api.discord.domain.DiscordRoleDirectory
 import net.blueshell.api.discord.domain.DiscordRoleName
 import org.assertj.core.api.Assertions.assertThat
@@ -20,7 +21,13 @@ class DiscordMentionControllerTest {
     private val roles: DiscordRoleDirectory = mock { on { named(any()) } doReturn listOf(DiscordRoleName("901", "Gamers", 0x3498DB)) }
     private val channels: DiscordChannelDirectory =
         mock { on { open() } doReturn listOf(DiscordChannel("1", "general"), DiscordChannel("2", "events-info")) }
-    private val controller = DiscordMentionController(members, roles, channels)
+    private val controller = controller(members, roles, channels)
+
+    private fun controller(
+        members: DiscordMemberDirectory,
+        roles: DiscordRoleDirectory,
+        channels: DiscordChannelDirectory,
+    ) = DiscordMentionController(DiscordMentionNameSource(members, roles, channels), channels)
 
     @Test
     fun `names what a description mentions`() {
@@ -38,7 +45,7 @@ class DiscordMentionControllerTest {
         val none: DiscordRoleDirectory = mock()
         val shut: DiscordChannelDirectory = mock()
 
-        val named = DiscordMentionController(quiet, none, shut).mentions(emptyList(), emptyList(), emptyList()).body!!
+        val named = controller(quiet, none, shut).mentions(emptyList(), emptyList(), emptyList()).body!!
 
         assertThat(named.users + named.channels).isEmpty()
         assertThat(named.roles).isEmpty()
@@ -49,7 +56,7 @@ class DiscordMentionControllerTest {
     fun `answers 503 where any of them cannot be asked`() {
         val offline: DiscordChannelDirectory = mock { on { open() } doReturn null }
 
-        val answer = DiscordMentionController(members, roles, offline).mentions(listOf("11"), emptyList(), listOf("1"))
+        val answer = controller(members, roles, offline).mentions(listOf("11"), emptyList(), listOf("1"))
 
         assertThat(answer.statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
@@ -59,6 +66,6 @@ class DiscordMentionControllerTest {
         assertThat(controller.channels().body!!.map { it.name }).containsExactly("general", "events-info")
 
         val offline: DiscordChannelDirectory = mock { on { open() } doReturn null }
-        assertThat(DiscordMentionController(members, roles, offline).channels().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+        assertThat(controller(members, roles, offline).channels().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
 }

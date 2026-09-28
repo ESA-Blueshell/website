@@ -9,7 +9,6 @@ import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.CreateGuildScheduledEventRequest
 import net.blueshell.clients.discord.model.GuildScheduledEventEntityTypes
 import net.blueshell.clients.discord.model.UpdateGuildScheduledEventRequest
-import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.context.annotation.Profile
@@ -42,7 +41,7 @@ class BotPublisher(
     private val api: DiscordApi,
     private val discordRestClient: RestClient,
     private val jsonMapper: JsonMapper,
-    private val doors: ObjectProvider<DoorSource>,
+    private val doors: DoorSource,
     @Value($$"${discord.guildId:}") private val guildId: String,
 ) : DiscordPublisher {
     override fun post(
@@ -301,16 +300,16 @@ class BotPublisher(
 
     // The channel list comes from the gateway, which holds none while it is not connected.
     private fun channelIdOf(channel: String): String {
-        if (doors.ifAvailable?.textRooms().isNullOrEmpty()) {
+        if (doors.textRooms().isEmpty()) {
             throw ExplainedJobFailure("The Discord gateway is not connected, so no channel called #$channel can be found yet.")
         }
         return roomIdOf(channel) ?: throw ExplainedJobFailure("The Discord server has no text channel called #$channel.")
     }
 
     private fun roomIdOf(channel: String): String? =
-        doors.ifAvailable
-            ?.textRooms()
-            ?.firstOrNull { plain(it.name) == plain(channel) }
+        doors
+            .textRooms()
+            .firstOrNull { plain(it.name) == plain(channel) }
             ?.id
 
     // A bare message ID, recorded before references carried the channel, is in the channel of that name.

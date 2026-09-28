@@ -8,8 +8,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import net.blueshell.api.discord.domain.DiscordChannelDirectory
-import net.blueshell.api.discord.domain.DiscordMemberDirectory
-import net.blueshell.api.discord.domain.DiscordRoleDirectory
+import net.blueshell.api.discord.domain.DiscordMentionNameSource
+import net.blueshell.api.shared.discord.MentionIds
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -26,8 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/discord")
 class DiscordMentionController(
-    private val members: DiscordMemberDirectory,
-    private val roles: DiscordRoleDirectory,
+    private val names: DiscordMentionNameSource,
     private val channels: DiscordChannelDirectory,
 ) {
     @PermitAll
@@ -43,16 +42,14 @@ class DiscordMentionController(
         @RequestParam(required = false, defaultValue = "") roles: List<String>,
         @RequestParam(required = false, defaultValue = "") channels: List<String>,
     ): ResponseEntity<DiscordMentionsResponse> {
-        val people = if (users.isEmpty()) emptyList() else members.named(asked(users))
-        val ranks = if (roles.isEmpty()) emptyList() else this.roles.named(asked(roles))
-        val wanted = asked(channels)
-        val rooms = if (channels.isEmpty()) emptyList() else this.channels.open()?.filter { it.id in wanted }
-        if (people == null || ranks == null || rooms == null) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        val found =
+            names.mentioned(MentionIds(asked(users), asked(roles), asked(channels)))
+                ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         return ResponseEntity.ok(
             DiscordMentionsResponse(
-                users = people.map { DiscordNameResponse(it.id, it.name) },
-                roles = ranks.map { DiscordRoleNameResponse(it.id, it.name, it.colour) },
-                channels = rooms.map { DiscordNameResponse(it.id, it.name) },
+                users = found.users.map { DiscordNameResponse(it.id, it.name) },
+                roles = found.roles.map { DiscordRoleNameResponse(it.id, it.name, it.colour) },
+                channels = found.channels.map { DiscordNameResponse(it.id, it.name) },
             ),
         )
     }

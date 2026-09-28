@@ -1,6 +1,5 @@
 package net.blueshell.api.discord.domain
 
-import net.blueshell.api.shared.discord.ClaimedDiscordMembers
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.GuildMemberResponse
 import net.blueshell.clients.discord.model.UserResponse
@@ -14,11 +13,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 
 class DiscordMemberDirectoryTest {
     private fun member(
@@ -50,8 +45,7 @@ class DiscordMemberDirectoryTest {
         claimed: Set<String> = emptySet(),
     ): DiscordMemberDirectory {
         val provider: ObjectProvider<DiscordApi> = mock { on { ifAvailable } doReturn api }
-        val linked: ObjectProvider<ClaimedDiscordMembers> = mock { on { ifAvailable } doReturn ClaimedDiscordMembers { claimed } }
-        return DiscordMemberDirectory(provider, linked, "324")
+        return DiscordMemberDirectory(provider, { claimed }, "324")
     }
 
     @Test
@@ -114,20 +108,14 @@ class DiscordMemberDirectoryTest {
     }
 
     @Test
-    fun `keeps the list for a few minutes, and the last one where Discord stops answering`() {
+    fun `keeps the list rather than asking Discord on every read`() {
         val page = listOf(member(id = "5000", username = "anna"))
         val api: DiscordApi = mock { on { listGuildMembers("324", 1000, null) } doReturn page }
         val members = directory(api)
-        val start = Instant.parse("2026-09-24T10:00:00Z")
-        members.clock = Clock.fixed(start, ZoneOffset.UTC)
 
         members.unclaimed()
         assertThat(members.everyoneKept()!!.map { it.username }).containsExactly("anna")
         verify(api, times(1)).listGuildMembers("324", 1000, null)
-
-        members.clock = Clock.fixed(start.plus(DiscordMemberDirectory.KEPT_FOR), ZoneOffset.UTC)
-        whenever(api.listGuildMembers("324", 1000, null)).thenThrow(IllegalStateException("down"))
-        assertThat(members.unclaimed()!!.map { it.username }).containsExactly("anna")
     }
 
     @Test
@@ -151,7 +139,6 @@ class DiscordMemberDirectoryTest {
         val page = listOf(member(id = "5000", username = "anna"))
         val api: DiscordApi = mock { on { listGuildMembers("324", 1000, null) } doReturn page }
         val members = directory(api)
-        members.clock = Clock.fixed(Instant.parse("2026-09-24T10:00:00Z"), ZoneOffset.UTC)
 
         members.unclaimed()
         members.everyoneNow()

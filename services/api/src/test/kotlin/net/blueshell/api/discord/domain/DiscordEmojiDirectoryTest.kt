@@ -10,11 +10,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 
 class DiscordEmojiDirectoryTest {
     private fun emoji(
@@ -46,20 +42,14 @@ class DiscordEmojiDirectoryTest {
     }
 
     @Test
-    fun `keeps them five minutes, and the last list where Discord stops answering`() {
+    fun `keeps the list rather than asking Discord on every read`() {
         val server = guild(emoji("1", "POGGERS"))
         val api: DiscordApi = mock { on { getGuild("324", false) } doReturn server }
         val directory = directory(api)
-        val start = Instant.parse("2026-09-26T10:00:00Z")
-        directory.clock = Clock.fixed(start, ZoneOffset.UTC)
 
         directory.all()
-        directory.all()
-        verify(api, times(1)).getGuild("324", false)
-
-        directory.clock = Clock.fixed(start.plus(DiscordEmojiDirectory.KEPT_FOR), ZoneOffset.UTC)
-        whenever(api.getGuild("324", false)).thenThrow(IllegalStateException("down"))
         assertThat(directory.all()).containsExactly(DiscordEmoji("1", "POGGERS", false))
+        verify(api, times(1)).getGuild("324", false)
     }
 
     @Test

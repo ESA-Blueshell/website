@@ -3,7 +3,6 @@ package net.blueshell.api.committee.domain
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.discord.DiscordFaces
 import net.blueshell.api.shared.discord.defaultAvatarOf
-import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Component
 
 /** One seat as a committee's public page shows it: never the person's name, only their Discord. */
@@ -20,11 +19,11 @@ data class CommitteeSeat(
  */
 @Component
 class CommitteeSeats(
-    private val faces: ObjectProvider<DiscordFaces>,
+    private val faces: DiscordFaces,
 ) {
     fun of(committee: Committee): List<CommitteeSeat> {
         val linked = committee.members.mapNotNull { it.user.discordId }
-        val seen = faces.ifAvailable?.of(linked).orEmpty()
+        val seen = faces.of(linked)
         return committee.members.map { member ->
             val id = member.user.discordId
             val face = id?.let(seen::get)

@@ -1,13 +1,11 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.clients.discord.api.DiscordApi
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 
 /** A picture uploaded to the server, which a description writes as `<:name:id>`. */
 data class DiscordEmoji(
@@ -25,26 +23,22 @@ data class DiscordEmoji(
 class DiscordEmojiDirectory(
     private val api: ObjectProvider<DiscordApi>,
     @Value($$"${discord.guildId:}") private val guildId: String,
-    internal var clock: Clock = Clock.systemUTC(),
+    clock: Clock = Clock.systemUTC(),
 ) {
-    @Volatile private var kept: Pair<Instant, List<DiscordEmoji>>? = null
+    private val kept = KeptRead<List<DiscordEmoji>>("Discord emoji", KEPT_FOR, clock)
 
     fun all(): List<DiscordEmoji>? {
         val client = api.ifAvailable ?: return null
-        val now = clock.instant()
-        kept?.let { (at, emoji) -> if (Duration.between(at, now) < KEPT_FOR) return emoji }
-        return runCatching { client.getGuild(guildId, false) }
-            .onFailure { log.warn("Discord emoji could not be read", it) }
-            .getOrNull()
-            ?.emojis
-            ?.map { DiscordEmoji(it.id, it.name, it.animated) }
-            ?.sortedBy { it.name.lowercase() }
-            ?.also { kept = now to it }
-            ?: kept?.second
+        return kept.get {
+            client
+                .getGuild(guildId, false)
+                .emojis
+                .map { DiscordEmoji(it.id, it.name, it.animated) }
+                .sortedBy { it.name.lowercase() }
+        }
     }
 
     internal companion object {
         val KEPT_FOR: Duration = Duration.ofMinutes(5)
-        private val log = LoggerFactory.getLogger(DiscordEmojiDirectory::class.java)
     }
 }

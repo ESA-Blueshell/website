@@ -16,7 +16,7 @@ class ViewerRoomServiceTest {
         viewer: CurrentUser?,
         links: DiscordLinks = DiscordLinks { if (it == 7L) "803" else null },
         access: RoomAccess? = RoomAccess { if (it == "803") setOf("12") else emptySet() },
-    ) = ViewerRoomService(mock<CurrentUserProvider> { on { currentUser() } doReturn viewer }, provided(links), provided(access))
+    ) = ViewerRoomService(mock<CurrentUserProvider> { on { currentUser() } doReturn viewer }, links, provided(access))
 
     private val member = CurrentUser(id = 7, roles = emptySet(), addressId = null)
 

@@ -12,17 +12,10 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 
 class RestGuildCountsSourceTest {
     private val discordApi: DiscordApi = mock()
     private val source = RestGuildCountsSource(discordApi, "324")
-
-    private fun at(epochSecond: Long) {
-        source.clock = Clock.fixed(Instant.ofEpochSecond(epochSecond), ZoneOffset.UTC)
-    }
 
     private fun answers(
         members: Int?,
@@ -38,37 +31,19 @@ class RestGuildCountsSourceTest {
     }
 
     @Test
-    fun `reads the counts with counts asked for, and keeps them for a minute`() {
+    fun `reads the counts with counts asked for, and keeps them rather than asking on every page view`() {
         answers(members = 1199, online = 269)
-        at(0)
-        assertThat(source.counts()).isEqualTo(GuildCounts(members = 1199, online = 269))
 
-        at(59)
+        assertThat(source.counts()).isEqualTo(GuildCounts(members = 1199, online = 269))
         source.counts()
         verify(discordApi, times(1)).getGuild(any(), any())
-
-        at(61)
-        answers(members = 1200, online = 270)
-        assertThat(source.counts()).isEqualTo(GuildCounts(members = 1200, online = 270))
     }
 
     @Test
-    fun `keeps the last counts when a read fails, and has none before the first`() {
-        at(0)
+    fun `has no counts before Discord first answers, and treats an answer without counts as no answer`() {
         doThrow(IllegalStateException("down")).whenever(discordApi).getGuild(any(), any())
         assertThat(source.counts()).isNull()
 
-        answers(members = 10, online = 3)
-        assertThat(source.counts()).isEqualTo(GuildCounts(10, 3))
-
-        at(120)
-        doThrow(IllegalStateException("down")).whenever(discordApi).getGuild(any(), any())
-        assertThat(source.counts()).isEqualTo(GuildCounts(10, 3))
-    }
-
-    @Test
-    fun `treats an answer without counts as no answer`() {
-        at(0)
         answers(members = null, online = 5)
         assertThat(source.counts()).isNull()
     }

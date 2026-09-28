@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 
 /** A member of the server as a picker shows them: the name the server shows, their username and avatar. */
 data class DiscordMember(
@@ -30,11 +29,11 @@ data class DiscordMember(
 @Service
 class DiscordMemberDirectory(
     private val api: ObjectProvider<DiscordApi>,
-    private val claimed: ObjectProvider<ClaimedDiscordMembers>,
+    private val claimed: ClaimedDiscordMembers,
     @Value($$"${discord.guildId:}") private val guildId: String,
-    internal var clock: Clock = Clock.systemUTC(),
+    clock: Clock = Clock.systemUTC(),
 ) {
-    @Volatile private var kept: Pair<Instant, List<DiscordMember>>? = null
+    private val kept = KeptRead<List<DiscordMember>>("Discord member list", KEPT_FOR, clock)
 
     /** Members whose username or server name starts with [query], ten at most. */
     fun search(query: String): List<DiscordMember>? {
@@ -50,7 +49,7 @@ class DiscordMemberDirectory(
 
     /** Everybody no website account has linked yet, by name. */
     fun unclaimed(): List<DiscordMember>? {
-        val taken = claimed.ifAvailable?.claimedIds().orEmpty()
+        val taken = claimed.claimedIds()
         return everyone()?.filterNot { it.id in taken }?.sortedBy { it.name.lowercase() }
     }
 
@@ -65,13 +64,7 @@ class DiscordMemberDirectory(
 
     private fun everyone(fresh: Boolean = false): List<DiscordMember>? {
         val client = api.ifAvailable ?: return null
-        val now = clock.instant()
-        if (!fresh) kept?.let { (at, members) -> if (Duration.between(at, now) < KEPT_FOR) return members }
-        return runCatching { readAll(client) }
-            .onFailure { log.warn("Discord member list could not be read", it) }
-            .getOrNull()
-            ?.also { kept = now to it }
-            ?: kept?.second
+        return kept.get(again = fresh) { readAll(client) }
     }
 
     private fun readAll(client: DiscordApi): List<DiscordMember> {

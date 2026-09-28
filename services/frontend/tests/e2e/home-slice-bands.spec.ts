@@ -26,7 +26,8 @@ test.describe("the home page's slice bands", () => {
     await expect(band.getByTestId("home-casual-more")).toHaveAttribute("href", "/casual")
   })
 
-  test("brings a game to the middle from the rail, then follows it", async ({page}) => {
+  // Below 600px the reel opens its middle slice to a share of the width, not to the desktop's 608px.
+  test("brings a game to the middle from the rail, then follows it", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page)
     await page.goto("/")
 

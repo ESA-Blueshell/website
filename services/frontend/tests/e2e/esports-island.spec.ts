@@ -30,8 +30,7 @@ test.describe("the esports island", () => {
     await expect(slices.locator('a[href="/competition/valorant?season=20"]')).toHaveCount(1)
   })
 
-  test("a game followed from the index opens on the season that was being read", async ({page}, info) => {
-    test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
+  test("a game followed from the index opens on the season that was being read", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
@@ -63,8 +62,7 @@ test.describe("the esports island", () => {
     await expect(link).toContainText("Valorant in Spring 2025")
   })
 
-  test("the way back is the index on the season that was chosen", async ({page}, info) => {
-    test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
+  test("the way back is the index on the season that was chosen", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()

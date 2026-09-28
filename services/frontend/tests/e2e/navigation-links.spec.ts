@@ -49,7 +49,7 @@ test.describe("navbar route integrity", () => {
     await assertPathRenders(page, "/competition/geoguessr", /GEOGUESSR/i)
   })
 
-  test("committees have a tab of their own, listing the ones running now", async ({page}) => {
+  test("committees have a tab of their own, listing the ones running now", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page)
     await page.goto("/committees/lancie")
 
@@ -71,7 +71,7 @@ test.describe("navbar route integrity", () => {
     await expect(page.locator("a[href='/committees/oldcie']")).toHaveCount(0)
   })
 
-  test("every game played casually has an entry under Casual", async ({page}) => {
+  test("every game played casually has an entry under Casual", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page)
     await page.goto("/casual/chess")
 
@@ -90,7 +90,7 @@ test.describe("navbar route integrity", () => {
     await expect(page.locator("a[href='/casual/dota-2']")).toHaveCount(0)
   })
 
-  test("mobile navbar drawer exposes partner and newsletter links", async ({page}) => {
+  test("mobile navbar drawer exposes partner and newsletter links", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})
     await page.goto("/")

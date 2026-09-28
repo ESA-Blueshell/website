@@ -82,8 +82,7 @@ const seasonSettled = async (page: Page) => {
  * what a click follows, and how much of a long history the strip shows at once.
  */
 test.describe("moving around the esports pages", () => {
-  test("a whole game slice is the way into its page", async ({page}, info) => {
-    test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
+  test("a whole game slice is the way into its page", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
@@ -97,8 +96,7 @@ test.describe("moving around the esports pages", () => {
     await expect(page).toHaveURL(/\/competition\/valorant\?season=20$/)
   })
 
-  test("what was last looked at stays open", async ({page}, info) => {
-    test.skip(info.project.name === "mobile-chrome", "Stacked, the scroll decides what is open.")
+  test("what was last looked at stays open", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
@@ -113,8 +111,7 @@ test.describe("moving around the esports pages", () => {
     await expect(second).toHaveClass(/slice--open/)
   })
 
-  test("a slice's affordances go when the pointer does, and do not latch on a click", async ({page}, info) => {
-    test.skip(info.project.name === "mobile-chrome", "There is no pointer to hover with.")
+  test("a slice's affordances go when the pointer does, and do not latch on a click", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto("/competition/valorant")
@@ -132,8 +129,7 @@ test.describe("moving around the esports pages", () => {
     await expect(pencil).toBeHidden()
   })
 
-  test("a keyboard arriving at a slice reveals its affordances", async ({page}, info) => {
-    test.skip(info.project.name === "mobile-chrome", "The affordances stand, so there is nothing to reveal.")
+  test("a keyboard arriving at a slice reveals its affordances", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto("/competition/valorant")
@@ -153,7 +149,7 @@ test.describe("moving around the esports pages", () => {
     await expect(pencil).toBeHidden()
   })
 
-  test("a tap leaves a slice's affordances standing, having nothing to hover with", async ({page}, info) => {
+  test("a tap leaves a slice's affordances standing, having nothing to hover with", {tag: "@phone"}, async ({page}, info) => {
     test.skip(info.project.name !== "mobile-chrome", "Only a touch screen has nothing to hover with.")
     await installApiMocks(page)
     await loginAsBoard(page.context())
@@ -170,8 +166,7 @@ test.describe("moving around the esports pages", () => {
     await expect(page.getByTestId("team-roster-edit-3")).toBeVisible()
   })
 
-  test("the strip holds a season's width however long the history is", async ({page}, info) => {
-    test.skip(info.project.name === "mobile-chrome", "A phone scrolls the strip by design.")
+  test("the strip holds a season's width however long the history is", async ({page}) => {
     const many = Array.from({length: 12}, (_, i) => ({
       id: 40 + i,
       name: `Season ${2014 + i}/${String(15 + i).padStart(2, "0")}`,
@@ -216,9 +211,10 @@ test.describe("moving around the esports pages", () => {
    * concerned — and a router that opens every page at the top used to throw the reader back
    * up the page each time they picked one, away from the very thing they had scrolled down to
    * read. Asserted on both pages, because the strip is on both and the reader is the same
-   * person either way.
+   * person either way. On a phone the band is stacked and several screens tall, so the reader
+   * has further to be thrown.
    */
-  test("choosing a season on the index leaves the reader where they were reading", async ({page}) => {
+  test("choosing a season on the index leaves the reader where they were reading", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page, evenSeasonFixtures)
     await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
@@ -237,7 +233,7 @@ test.describe("moving around the esports pages", () => {
     expect(Math.abs(await page.evaluate(() => window.scrollY) - standing)).toBeLessThanOrEqual(1)
   })
 
-  test("choosing a season on a game's page leaves the reader where they were reading", async ({page}) => {
+  test("choosing a season on a game's page leaves the reader where they were reading", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page, evenSeasonFixtures)
     await page.goto("/competition/valorant")
     await page.getByTestId("team-roster-101").waitFor()

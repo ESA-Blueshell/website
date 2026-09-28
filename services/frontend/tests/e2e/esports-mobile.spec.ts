@@ -2,7 +2,7 @@ import {expect, test} from "./test"
 import {dragBand} from "./bandSwipe"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
-test.describe("esports mobile layout", () => {
+test.describe("esports mobile layout", {tag: "@phone"}, () => {
   test("opens the first team on arrival, and another on a tap", async ({page}) => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})
@@ -57,7 +57,7 @@ test.describe("esports mobile layout", () => {
  * Unlike the board page, a season is read one season at a time: the season being dragged in does
  * not exist until the gesture asks for it, which is why the last test here counts requests.
  */
-test.describe("travelling between seasons with a finger", () => {
+test.describe("travelling between seasons with a finger", {tag: "@phone"}, () => {
   // The gesture binds where the pointer is coarse, so on the desktop project there is nothing
   // here to observe.
   test.skip(({isMobile}) => !isMobile, "the gesture binds only where the pointer is coarse")
@@ -188,7 +188,7 @@ test.describe("travelling between seasons with a finger", () => {
  * The same gesture on one game's page, which is the other half of the claim that a strip looking
  * identical on two pages behaves identically on both.
  */
-test.describe("travelling between seasons on a game's page", () => {
+test.describe("travelling between seasons on a game's page", {tag: "@phone"}, () => {
   test.skip(({isMobile}) => !isMobile, "the gesture binds only where the pointer is coarse")
 
   test("carries the page to the season before this one", async ({page}) => {

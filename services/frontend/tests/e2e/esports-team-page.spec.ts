@@ -98,7 +98,7 @@ test.describe("editing a line-up on its own page", () => {
     await expect(page.getByTestId("not-found")).toBeVisible()
   })
 
-  test("on a phone the preview sits above the form and folds away", async ({page}) => {
+  test("on a phone the preview sits above the form and folds away", {tag: "@phone"}, async ({page}) => {
     await page.setViewportSize({width: 390, height: 844})
     await installApiMocks(page)
     await loginAsBoard(page.context())

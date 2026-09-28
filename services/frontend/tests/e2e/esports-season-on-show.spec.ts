@@ -84,8 +84,7 @@ test.describe("the season a page opens on", () => {
     await expect(page.getByTestId("esports-season-node-19")).toBeAttached()
   })
 
-  test("keeps the game that was being read open across a season change", async ({page}, info) => {
-    test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
+  test("keeps the game that was being read open across a season change", async ({page}) => {
     await installApiMocks(page)
 
     await page.goto("/competition")

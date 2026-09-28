@@ -169,7 +169,7 @@ test.describe("the season strip", () => {
    * stop and a little of its neighbours — so a strip a desktop reads whole is a strip a phone
    * scrolls, and it has to say so.
    */
-  test("offers the way on a phone, where two seasons are already more than fit", async ({page}) => {
+  test("offers the way on a phone, where two seasons are already more than fit", {tag: "@phone"}, async ({page}) => {
     await page.setViewportSize({width: 390, height: 900})
     await installApiMocks(page)
     await loginAsBoard(page.context())

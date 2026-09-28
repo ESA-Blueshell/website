@@ -20,8 +20,7 @@ const openEditor = async (page: import("@playwright/test").Page, seasonId: numbe
 }
 
 test.describe("editing a season where it is shown", () => {
-  test("the affordance belongs to the season under the pointer", async ({page, browserName}, testInfo) => {
-    test.skip(testInfo.project.name === "mobile-chrome", "There is no pointer to hover with.")
+  test("the affordance belongs to the season under the pointer", async ({page, browserName}) => {
     void browserName
     await installApiMocks(page)
     await loginAsBoard(page.context())
@@ -38,8 +37,7 @@ test.describe("editing a season where it is shown", () => {
     await expect(second).toBeHidden()
   })
 
-  test("the affordance goes when the pointer does, however it was revealed", async ({page}, testInfo) => {
-    test.skip(testInfo.project.name === "mobile-chrome", "There is no pointer to hover with.")
+  test("the affordance goes when the pointer does, however it was revealed", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
@@ -57,8 +55,7 @@ test.describe("editing a season where it is shown", () => {
     await expect(pencil).toBeHidden()
   })
 
-  test("a keyboard reveals the affordance the pointer does, and reaches it", async ({page}, testInfo) => {
-    test.skip(testInfo.project.name === "mobile-chrome", "The affordances stand, so there is nothing to reveal.")
+  test("a keyboard reveals the affordance the pointer does, and reaches it", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
@@ -86,7 +83,7 @@ test.describe("editing a season where it is shown", () => {
     await expect(pencil).toBeHidden()
   })
 
-  test("with no pointer the affordance simply stands", async ({page}, testInfo) => {
+  test("with no pointer the affordance simply stands", {tag: "@phone"}, async ({page}, testInfo) => {
     test.skip(testInfo.project.name !== "mobile-chrome", "Only a touch screen has nothing to hover with.")
     await installApiMocks(page)
     await loginAsBoard(page.context())

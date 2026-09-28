@@ -287,7 +287,7 @@ test.describe("cohort subject detail — drift in the members table", () => {
     await expect(page.getByTestId("cohort-subject-member-link-601")).toBeVisible()
   })
 
-  test("keeps the targets table, and its menus, inside a narrow viewport", async ({page}) => {
+  test("keeps the targets table, and its menus, inside a narrow viewport", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
     await page.setViewportSize({width: 412, height: 839})

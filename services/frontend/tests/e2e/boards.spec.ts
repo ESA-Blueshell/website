@@ -366,7 +366,7 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IV · 2020-2021")
   })
 
-  test("draws the board photograph as a band, and asks for a copy that fits the screen", async ({page}) => {
+  test("draws the board photograph as a band, and asks for a copy that fits the screen", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
 
     const banner = page.getByTestId("board-photo")
@@ -420,7 +420,7 @@ test.describe("board page", () => {
     expect(asked).toBeLessThanOrEqual(2560)
   })
 
-  test("leaves the words' height out of the photograph's promise on a phone", async ({page}) => {
+  test("leaves the words' height out of the photograph's promise on a phone", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
     await expect(page.getByTestId("board-photo")).toBeVisible()
 
@@ -467,7 +467,7 @@ test.describe("board page", () => {
    * `width: 100%` written earlier inside a query. So the picture came out at whatever its own
    * proportions made of the band's height, against a strip of empty ground beside it.
    */
-  test("spans a board's photograph across the page on a phone", async ({page}) => {
+  test("spans a board's photograph across the page on a phone", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page, {boards: nearlySquarePhotograph})
 
     const band = (await page.getByTestId("board-band").boundingBox())!
@@ -487,7 +487,7 @@ test.describe("board page", () => {
    * photograph there is nothing above them to be pulled over, so the lift took them up out of
    * the band and into whatever the band sits under, which is the strip.
    */
-  test("keeps a bare board's words out of the strip on a phone", async ({page}) => {
+  test("keeps a bare board's words out of the strip on a phone", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page, {path: "/board?board=4"})
     await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IV · 2020-2021")
 
@@ -604,7 +604,7 @@ test.describe("board page", () => {
     expect(fetched, "the copy a slice fetched").toMatch(/emma-\d+\.webp$/)
   })
 
-  test("offers an expansion only where something was written about the member", async ({page}) => {
+  test("offers an expansion only where something was written about the member", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
@@ -624,7 +624,8 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-member-blurb-92")).toBeVisible()
   })
 
-  test("opens the chair when a board first appears, and one member at a time", async ({page}) => {
+  // Stacked on a phone, the band opens the chair itself and a press is a tap.
+  test("opens the chair when a board first appears, and one member at a time", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
@@ -732,7 +733,7 @@ test.describe("board page", () => {
    * assertion is of the state the slice settles in, so the suite's reduced motion is the only
    * setting these need.
    */
-  test("stacks a member's portrait over their description on a phone", async ({page}) => {
+  test("stacks a member's portrait over their description on a phone", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
     const member = await openMember(page, 91)
 
@@ -781,7 +782,7 @@ test.describe("board page", () => {
    * scrolls inside it, and prose clipped by the box that holds it keeps its own height and
    * hangs out of the slice instead.
    */
-  test("reads the whole of a long description on a phone", async ({page}) => {
+  test("reads the whole of a long description on a phone", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page, {boards: longWinded})
     const member = await openMember(page, 91)
     const blurb = page.getByTestId("board-member-blurb-91")
@@ -816,7 +817,7 @@ test.describe("board page", () => {
    * Relationships rather than figures: the ceiling is a share of the screen, and the day it is
    * retuned is not a day this test should have an opinion.
    */
-  test("peeks a shut phone portrait and shows the open one whole", async ({page}) => {
+  test("peeks a shut phone portrait and shows the open one whole", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
     const member = await openMember(page, 91)
     const face = member.locator("img")
@@ -867,7 +868,7 @@ test.describe("board page", () => {
    * reader sees of a line 1.5px wide: it runs the width of the slice and is barely tall, rather
    * than running its height and being barely wide.
    */
-  test("leans a phone slice's drawn divider along the seam it is cut on", async ({page}) => {
+  test("leans a phone slice's drawn divider along the seam it is cut on", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
 
     /** The box the divider's sliver is drawn inside, in pixels, out of the clip that shapes it. */
@@ -901,7 +902,7 @@ test.describe("board page", () => {
     expect(inARow.across).toBeLessThan(inARow.down / 4)
   })
 
-  test("dissolves the foot of an open portrait on a phone, and leaves a shut one whole", async ({page}) => {
+  test("dissolves the foot of an open portrait on a phone, and leaves a shut one whole", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
     const member = await openMember(page, 91)
 
@@ -918,7 +919,7 @@ test.describe("board page", () => {
     expect(await mask()).toBe("none")
   })
 
-  test("carries a phone portrait's name on ground of the portrait's own", async ({page}) => {
+  test("carries a phone portrait's name on ground of the portrait's own", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
     const member = await openMember(page, 91)
 
@@ -953,7 +954,7 @@ test.describe("board page", () => {
    * on the slice with `inherits: false` the ground read the registered initial of nothing and
    * never faded at all, which is the state this asserts against.
    */
-  test("fades a phone portrait and the name's ground on the one line", async ({page}) => {
+  test("fades a phone portrait and the name's ground on the one line", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
     const member = await openMember(page, 91)
 
@@ -984,7 +985,7 @@ test.describe("board page", () => {
     expect(await depths()).toEqual([0, 0])
   })
 
-  test("asks for a phone portrait at the width of the slice it fills", async ({page}) => {
+  test("asks for a phone portrait at the width of the slice it fills", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
 
     const face = page.getByTestId("board-member-91").locator("img")
@@ -1003,7 +1004,7 @@ test.describe("board page", () => {
     expect(fetched, "the copy a phone fetched").toMatch(/emma-\d+\.webp$/)
   })
 
-  test("gives a phone band of members with no portraits the height of their names", async ({page}) => {
+  test("gives a phone band of members with no portraits the height of their names", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
     // A slice with a portrait, so the band with none has something of its own page to be a
     // fraction of. There is no figure a portrait's band is: it is the picture's own shape, so a
@@ -1026,7 +1027,7 @@ test.describe("board page", () => {
    * near-white ink whichever theme the reader is on, and a member with no portrait must not,
    * or their name is near-white on the light theme's near-white page.
    */
-  test("stacks a member the same way, and keeps the names legible, on the light theme", async ({page}) => {
+  test("stacks a member the same way, and keeps the names legible, on the light theme", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page, {light: true})
     const member = await openMember(page, 91)
 
@@ -1062,7 +1063,7 @@ test.describe("board page", () => {
    * A comparison rather than two numbers. What is being asserted is that the phone has a size of
    * its own, and the day either figure is retuned is not a day this should have an opinion.
    */
-  test("sets a member's role and words larger on a phone than in the row", async ({page}) => {
+  test("sets a member's role and words larger on a phone than in the row", {tag: "@phone"}, async ({page}) => {
     const size = (locator: Locator) => locator.evaluate(
       (node) => parseFloat(getComputedStyle(node).fontSize),
     )
@@ -1085,7 +1086,7 @@ test.describe("board page", () => {
     expect(onAPhone.words).toBeGreaterThan(inARow.words)
   })
 
-  test("stacks the timeline, the banner and the faces on a phone", async ({page}) => {
+  test("stacks the timeline, the banner and the faces on a phone", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
 
     const boxes = () => Promise.all(["board-timeline", "board-band", "board-members"].map(
@@ -1132,7 +1133,7 @@ test.describe("what the management editor used to do, where it happens now", () 
     await expect(page.getByTestId("not-found")).toBeVisible()
   })
 
-  test("the navigation offers it to nobody, board member or visitor", async ({page}) => {
+  test("the navigation offers it to nobody, board member or visitor", {tag: "@phone"}, async ({page}) => {
     await installApiMocks(page)
     await page.goto("/")
     await expect(page.locator("a[href='/management/boards']")).toHaveCount(0)
@@ -1162,7 +1163,7 @@ test.describe("what the management editor used to do, where it happens now", () 
  *
  * Every board arrives with its members in one read, so nothing is fetched for any of this.
  */
-test.describe("travelling between boards with a finger", () => {
+test.describe("travelling between boards with a finger", {tag: "@phone"}, () => {
   // The gesture binds where the pointer is coarse, so on the desktop project there is nothing
   // here to observe. That a mouse does not drag the band is asserted below, where a mouse is.
   test.skip(({isMobile}) => !isMobile, "the gesture binds only where the pointer is coarse")
@@ -1280,8 +1281,6 @@ test.describe("travelling between boards with a finger", () => {
 })
 
 test.describe("the band and a mouse", () => {
-  test.skip(({isMobile}) => isMobile, "a coarse pointer is what the gesture is for")
-
   test("is not dragged by a mouse, however narrow the window", async ({page}) => {
     // A narrow desktop window is still a desktop: the band is a row of slices that open under a
     // pointer, so a mouse hauled across it would open every one it crossed while the page moved.

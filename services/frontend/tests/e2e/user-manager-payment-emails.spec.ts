@@ -75,7 +75,11 @@ async function openPaymentEmails(
 
 const next = (page: Page) => page.getByTestId("payment-emails-next-btn").click()
 
-/** A step's rows, whichever layout the width is showing them in. */
+/**
+ * A step's rows, whichever layout the width is showing them in.
+ *
+ * Below lg they are a list with controls of its own, so a test reading them is tagged @phone.
+ */
 const rowsOf = (page: Page, step: "members" | "fees" | "review") =>
   page.getByTestId(`payment-emails-${step}-table`).or(page.getByTestId(`payment-emails-${step}-list`))
 
@@ -93,7 +97,7 @@ async function fillDates(page: Page): Promise<void> {
 }
 
 test.describe("step 1, who the batch writes to", () => {
-  test("ticks who the api would write to, and says why the others are not", async ({page}) => {
+  test("ticks who the api would write to, and says why the others are not", {tag: "@phone"}, async ({page}) => {
     await openPaymentEmails(page)
 
     await expect(page.getByTestId("payment-emails-send-to-1").locator("input")).toBeChecked()
@@ -105,7 +109,7 @@ test.describe("step 1, who the batch writes to", () => {
       .toContainText("Already paid this contribution")
   })
 
-  test("counts what is ticked, and moves when a warned member is ticked back in", async ({page}) => {
+  test("counts what is ticked, and moves when a warned member is ticked back in", {tag: "@phone"}, async ({page}) => {
     await openPaymentEmails(page)
 
     await expect(page.getByTestId("payment-emails-count-recipients")).toContainText("2 of 4")
@@ -122,7 +126,7 @@ test.describe("step 1, who the batch writes to", () => {
       .toContainText("2 contribution reminders")
   })
 
-  test("unticking a member drops them from the rest of the wizard", async ({page}) => {
+  test("unticking a member drops them from the rest of the wizard", {tag: "@phone"}, async ({page}) => {
     await openPaymentEmails(page)
 
     await page.getByTestId("payment-emails-send-to-2").locator("input").click()
@@ -150,6 +154,7 @@ test.describe("step 1, who the batch writes to", () => {
   })
 })
 
+// Not tagged @phone: it brings its own phone, so `chromium` already runs it as one.
 test.describe("on a phone", () => {
   // The device's screen, without its defaultBrowserType: that one option inside a describe
   // forces a new worker, which Playwright refuses outright.
@@ -210,7 +215,7 @@ test.describe("on a phone", () => {
   })
 })
 
-test.describe("step 2, the fees and the emails", () => {
+test.describe("step 2, the fees and the emails", {tag: "@phone"}, () => {
   test("moving a member onto the other email warns by name and flags the row", async ({page}) => {
     await openPaymentEmails(page)
     await next(page)
@@ -253,7 +258,7 @@ test.describe("step 2, the fees and the emails", () => {
 })
 
 test.describe("step 3, what will be sent", () => {
-  test("lists each recipient, and previews the email one of them gets", async ({page}) => {
+  test("lists each recipient, and previews the email one of them gets", {tag: "@phone"}, async ({page}) => {
     await openPaymentEmails(page)
     await goToTheLastStep(page)
 
@@ -351,7 +356,7 @@ test.describe("a refusal from the api", () => {
     await expect(dueDate).toHaveClass(/v-input--error/)
   })
 
-  test("puts the treasurer back on the member step with the rows it named", async ({page}) => {
+  test("puts the treasurer back on the member step with the rows it named", {tag: "@phone"}, async ({page}) => {
     await openPaymentEmails(page, {
       refusal: {
         status: 409,

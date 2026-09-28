@@ -17,7 +17,15 @@ plugins {
 }
 
 group = "net.blueshell"
-version = "1.11.0" // x-release-please-version
+
+// The release version's one home is the release-please manifest, which Validate's buckets
+// ignore, so the release pull request runs no suite.
+version =
+    providers
+        .fileContents(rootProject.layout.projectDirectory.file(".release-please-manifest.json"))
+        .asText
+        .map { (groovy.json.JsonSlurper().parseText(it) as Map<*, *>)["."] as String }
+        .get()
 
 description = "The API for the Blueshell Esports website"
 

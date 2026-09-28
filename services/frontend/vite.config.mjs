@@ -4,7 +4,7 @@ import {defineConfig} from 'vite'
 import {fileURLToPath} from 'node:url'
 import svgLoader from 'vite-svg-loader'
 import tailwind from '@tailwindcss/vite'
-import {readFileSync} from 'node:fs'
+import {existsSync, readFileSync} from 'node:fs'
 import {notoEmoji} from './scripts/notoEmoji.mjs'
 
 // The api answers at the page's own origin under /api, in development as in
@@ -29,10 +29,13 @@ const apiProxy = {
     },
 }
 
-// The version the build carries, read from package.json, which release-please
-// bumps. Emitted as /version.json so a person can ask the running site what it
-// is without a console or a cluster.
-const version = JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')).version
+// The version the build carries. Its one home is the release-please manifest at the
+// repo root; the image build, whose context is this directory, is handed it as
+// APP_VERSION. Emitted as /version.json so a person can ask the running site what
+// it is without a console or a cluster.
+const manifest = fileURLToPath(new URL('../../.release-please-manifest.json', import.meta.url))
+const version = process.env.APP_VERSION
+    || (existsSync(manifest) ? JSON.parse(readFileSync(manifest, 'utf8'))['.'] : 'unknown')
 
 const emitVersion = {
     name: 'emit-version-json',

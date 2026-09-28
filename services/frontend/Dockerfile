@@ -28,6 +28,9 @@ COPY . .
 # Nothing tells the bundle where the api is: it always calls
 # `${window.location.origin}/api`, and the runtime serves that (see nginx.conf).
 ENV NODE_ENV=production
+# The release version, which lives in the repo-root release-please manifest outside
+# this context. build.yml reads it and passes it in; vite writes it to /version.json.
+ARG APP_VERSION=""
 RUN yarn build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:442753882674b49ae2c1de83ed67896131c0777f56df5005e356e62bc3f7e7ce AS runtime

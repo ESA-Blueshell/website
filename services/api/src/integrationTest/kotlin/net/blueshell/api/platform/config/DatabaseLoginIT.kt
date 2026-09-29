@@ -1,7 +1,6 @@
 package net.blueshell.api.platform.config
 
 import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -14,37 +13,59 @@ import org.springframework.context.annotation.Import
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
+import java.sql.DriverManager
 import java.time.Duration
+import java.time.Instant
 import javax.sql.DataSource
 
 /**
- * The api logs in to MariaDB with a login Vault leases it, and keeps working past the
- * role's max_ttl; the migration logs in as the schema's stable owner (api ADR-033). A real
- * MariaDB and a real Vault database engine, with a 20 second max_ttl so a rotation and
- * the revocation of the login before it both happen inside the test.
+ * The api's database login is a Vault lease that the pool keeps current past the role's
+ * max_ttl, and the migration logs in as the schema's owner (api ADR-033). A real MariaDB
+ * and a real Vault database engine, with a 20 second max_ttl, so a rotation and the drop
+ * of the user before it both happen inside the test.
  */
 class DatabaseLoginIT {
     @Test
-    fun `the api connects with a leased login and keeps connecting after Vault drops it`() {
-        boot("prod", apiToken).use { context ->
+    fun `the api keeps querying through a rotation, past the moment Vault drops its first login`() {
+        SpringApplicationBuilder(DatabaseOnly::class.java).run(*apiArguments()).use { context ->
             val first = currentUser(context)
             assertThat(first).startsWith("v-")
 
-            await().atMost(Duration.ofSeconds(60)).pollInterval(Duration.ofSeconds(2)).untilAsserted {
-                assertThat(currentUser(context)).startsWith("v-").isNotEqualTo(first)
+            val failures = mutableListOf<Exception>()
+            val deadline = Instant.now().plus(MAX_TTL.multipliedBy(3))
+            while (userExists(first) && Instant.now().isBefore(deadline)) {
+                runCatching { currentUser(context) }.onFailure { failures += it as Exception }
+                Thread.sleep(POLL.toMillis())
             }
-            // Past the first lease's max_ttl, so Vault has dropped that user.
-            Thread.sleep(MAX_TTL.plusSeconds(2).toMillis())
-            assertThat(currentUser(context)).startsWith("v-")
+
+            assertThat(userExists(first)).describedAs("Vault dropped the first leased user").isFalse()
+            assertThat(failures).isEmpty()
+            assertThat(currentUser(context)).startsWith("v-").isNotEqualTo(first)
         }
     }
 
     @Test
     fun `the migration connects as the schema owner, so what it creates outlives any lease`() {
-        boot("prod,migrate", migrateToken).use { context ->
-            assertThat(currentUser(context)).isEqualTo(OWNER)
-        }
+        SpringApplicationBuilder(DatabaseOnly::class.java)
+            .run(*vault.bootArguments("prod,migrate", migrateToken), *databaseArguments())
+            .use { context -> assertThat(currentUser(context)).isEqualTo(OWNER) }
     }
+
+    private fun apiArguments() =
+        arrayOf(
+            *vault.bootArguments("prod", apiToken),
+            *databaseArguments(),
+            "--spring.cloud.vault.config.lifecycle.expiry-threshold=5s",
+            "--spring.cloud.vault.config.lifecycle.min-renewal=1s",
+        )
+
+    private fun databaseArguments() =
+        arrayOf(
+            "--spring.datasource.url=${jdbcUrl()}",
+            "--spring.liquibase.enabled=false",
+        )
+
+    private fun jdbcUrl() = "jdbc:mariadb://${mariadb.host}:${mariadb.getMappedPort(PORT)}/$SCHEMA"
 
     private fun currentUser(context: ConfigurableApplicationContext): String =
         context.getBean(DataSource::class.java).connection.use { connection ->
@@ -54,22 +75,13 @@ class DatabaseLoginIT {
             }
         }
 
-    private fun boot(
-        profiles: String,
-        token: String,
-    ): ConfigurableApplicationContext =
-        SpringApplicationBuilder(DatabaseOnly::class.java).run(
-            // application.yaml sets the servlet type, which outranks the builder.
-            "--spring.main.web-application-type=none",
-            "--spring.profiles.active=$profiles",
-            "--spring.cloud.vault.uri=${vault.uri}",
-            "--spring.cloud.vault.authentication=TOKEN",
-            "--spring.cloud.vault.token=$token",
-            "--spring.cloud.vault.config.lifecycle.expiry-threshold=5s",
-            "--spring.cloud.vault.config.lifecycle.min-renewal=1s",
-            "--spring.datasource.url=jdbc:mariadb://${mariadb.host}:${mariadb.getMappedPort(3306)}/$SCHEMA",
-            "--spring.liquibase.enabled=false",
-        )
+    private fun userExists(user: String): Boolean =
+        DriverManager.getConnection(jdbcUrl(), "root", ROOT_PASSWORD).use { connection ->
+            connection.prepareStatement("SELECT COUNT(*) FROM mysql.user WHERE User = ?").use { statement ->
+                statement.setString(1, user)
+                statement.executeQuery().use { rows -> rows.next() && rows.getInt(1) > 0 }
+            }
+        }
 
     @Configuration(proxyBeanMethods = false)
     @ImportAutoConfiguration(DataSourceAutoConfiguration::class)
@@ -77,11 +89,13 @@ class DatabaseLoginIT {
     class DatabaseOnly
 
     companion object {
+        private const val PORT = 3306
         private const val SCHEMA = "blueshell"
         private const val OWNER = "blueshell"
         private const val OWNER_PASSWORD = "owner-password"
         private const val ROOT_PASSWORD = "root-password"
         private val MAX_TTL: Duration = Duration.ofSeconds(20)
+        private val POLL: Duration = Duration.ofMillis(500)
 
         private val network = Network.newNetwork()
         private val mariadb: GenericContainer<*> =
@@ -92,7 +106,7 @@ class DatabaseLoginIT {
                 .withEnv("MARIADB_DATABASE", SCHEMA)
                 .withEnv("MARIADB_USER", OWNER)
                 .withEnv("MARIADB_PASSWORD", OWNER_PASSWORD)
-                .withExposedPorts(3306)
+                .withExposedPorts(PORT)
                 .waitingFor(Wait.forLogMessage(".*ready for connections.*", 2))
         private val vault = VaultDevServer(network)
         private lateinit var apiToken: String
@@ -106,24 +120,24 @@ class DatabaseLoginIT {
             vault.put("secret/api", "app.two-factor.key=two-factor-from-vault")
             vault.put("secret/platform/mail", "account.api=smtp", "account.bounce=imap")
             vault.put("secret/platform/mariadb", "user=$OWNER", "password=$OWNER_PASSWORD")
-            vault.vault("secrets", "enable", "database")
-            vault.vault(
+            vault.cli("secrets", "enable", "database")
+            vault.cli(
                 "write",
                 "database/config/mariadb",
                 "plugin_name=mysql-database-plugin",
                 "allowed_roles=api",
-                "connection_url={{username}}:{{password}}@tcp(mariadb:3306)/",
+                "connection_url={{username}}:{{password}}@tcp(mariadb:$PORT)/",
                 "username=root",
                 "password=$ROOT_PASSWORD",
             )
-            vault.vault(
+            vault.cli(
                 "write",
                 "database/roles/api",
                 "db_name=mariadb",
                 "default_ttl=10s",
                 "max_ttl=${MAX_TTL.seconds}s",
                 "creation_statements=CREATE USER '{{name}}'@'%' IDENTIFIED BY '{{password}}'; " +
-                    "GRANT ALL ON $SCHEMA.* TO '{{name}}'@'%';",
+                    "GRANT SELECT, INSERT, UPDATE, DELETE, CREATE TEMPORARY TABLES ON $SCHEMA.* TO '{{name}}'@'%';",
             )
             apiToken = vault.tokenFor("api")
             migrateToken = vault.tokenFor("migrate")

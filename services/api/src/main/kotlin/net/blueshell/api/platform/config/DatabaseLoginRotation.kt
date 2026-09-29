@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.config
 
 import com.zaxxer.hikari.HikariDataSource
+import com.zaxxer.hikari.util.Credentials
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -40,8 +41,9 @@ class DatabaseLoginRotation(
         if (event !is SecretLeaseCreatedEvent || event.source.path != path) return
         val username = event.secrets["username"] as? String ?: return
         val password = event.secrets["password"] as? String ?: return
-        pool.hikariConfigMXBean.setUsername(username)
-        pool.hikariConfigMXBean.setPassword(password)
+        // One swap: a connection opened between two setters would pair the new
+        // user with the old password.
+        pool.hikariConfigMXBean.setCredentials(Credentials.of(username, password))
         pool.hikariPoolMXBean?.softEvictConnections()
         log.info("Database login rotated to {}", username)
     }

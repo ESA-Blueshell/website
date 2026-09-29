@@ -44,15 +44,8 @@ class VaultConfigImportIT {
 
     private fun prodEnvironment(assertions: ((String) -> String?) -> Unit) {
         SpringApplicationBuilder(NoBeans::class.java)
-            .run(
-                // application.yaml sets the servlet type, which outranks the builder.
-                "--spring.main.web-application-type=none",
-                "--spring.profiles.active=prod",
-                "--spring.cloud.vault.uri=${vault.uri}",
-                "--spring.cloud.vault.authentication=TOKEN",
-                "--spring.cloud.vault.token=$apiToken",
-                "--spring.cloud.vault.database.enabled=false",
-            ).use { context -> assertions { context.environment.getProperty(it) } }
+            .run(*vault.bootArguments("prod", apiToken), "--spring.cloud.vault.database.enabled=false")
+            .use { context -> assertions { context.environment.getProperty(it) } }
     }
 
     @Configuration(proxyBeanMethods = false)

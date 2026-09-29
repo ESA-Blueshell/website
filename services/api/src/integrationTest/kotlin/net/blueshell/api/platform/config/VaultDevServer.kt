@@ -22,27 +22,43 @@ class VaultDevServer(
             .waitingFor(Wait.forHttp("/v1/sys/health").forStatusCode(200))
             .apply { network?.let(::withNetwork) }
 
-    val uri: String get() = "http://${container.host}:${container.getMappedPort(PORT)}"
-
-    fun start(): VaultDevServer = apply { container.start() }
+    fun start() = container.start()
 
     override fun close() = container.stop()
+
+    /**
+     * Arguments that boot the api's configuration under [profiles] against this Vault,
+     * logged in with [token]. Token auth stands in for the cluster's Kubernetes auth.
+     */
+    fun bootArguments(
+        profiles: String,
+        token: String,
+    ): Array<String> =
+        arrayOf(
+            // application.yaml sets the servlet type, which outranks a builder's.
+            "--spring.main.web-application-type=none",
+            "--spring.profiles.active=$profiles",
+            "--spring.cloud.vault.uri=http://${container.host}:${container.getMappedPort(PORT)}",
+            "--spring.cloud.vault.authentication=TOKEN",
+            "--spring.cloud.vault.token=$token",
+        )
 
     fun put(
         path: String,
         vararg fields: String,
     ) {
-        vault("kv", "put", path, *fields)
+        cli("kv", "put", path, *fields)
     }
 
     /** Writes the named policy exactly as bootstrap-auth.sh does and returns a token holding only it. */
     fun tokenFor(policy: String): String {
         container.copyFileToContainer(Transferable.of(bootstrapPolicy(policy)), "/tmp/$policy.hcl")
-        vault("policy", "write", policy, "/tmp/$policy.hcl")
-        return vault("token", "create", "-policy=$policy", "-field=token").trim()
+        cli("policy", "write", policy, "/tmp/$policy.hcl")
+        return cli("token", "create", "-policy=$policy", "-field=token").trim()
     }
 
-    fun vault(vararg args: String): String {
+    /** Runs the vault CLI as root inside the container. */
+    fun cli(vararg args: String): String {
         val result =
             container.execInContainer(
                 "env",
@@ -66,6 +82,8 @@ class VaultDevServer(
         private const val IMAGE = "hashicorp/vault:1.21.2"
         private const val PORT = 8200
         private const val ROOT_TOKEN = "root"
+
+        // Relative to services/api, where Gradle runs the tests.
         private const val BOOTSTRAP_SCRIPT = "../../platform/cluster/flux/apps/data/vault/bootstrap-auth.sh"
     }
 }

@@ -1,10 +1,8 @@
 # Moves the schema and exits. The same image the release runs, so the changelog
 # cannot differ from the application that expects it.
 #
-# The migration owns the schema, so it logs in as the stable owner the MariaDB chart
-# keeps, not a leased user: MariaDB records the creating user as a trigger's DEFINER,
-# and a trigger whose definer Vault has dropped fails every write to its table.
-# Its own Vault role, so the api's pods never read the owner's password.
+# It logs in as the schema's stable owner, under its own Vault role, not as a leased
+# user: the objects it creates name their creator (api ADR-033).
 #
 # Spring Cloud Vault binds its settings once, at the first vault:// location it
 # resolves, and that is this file's import, read before application-prod.yml's

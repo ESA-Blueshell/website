@@ -100,9 +100,8 @@ path "transit/keys/api-jwt" {
 }
 EOF
 
-# The migrate Job boots the api's configuration, and logs in to MariaDB as the
-# schema's owner rather than a leased user, since MariaDB records the creating user
-# as a trigger's DEFINER. The api's own pods cannot read the owner's password.
+# The migrate Job boots the api's configuration and logs in as the schema's owner,
+# which the api's own pods cannot read (api ADR-033).
 cat <<'EOF' >/tmp/migrate.hcl
 path "secret/data/api" {
   capabilities = ["read"]
@@ -251,11 +250,13 @@ if vault kv get secret/platform/mariadb >/dev/null 2>&1; then
     password="${DB_ADMIN_PASS}" \
     verify_connection=true
 
+  # Data only: a leased user that created a trigger or view would be named its
+  # DEFINER, and Vault drops that user when the lease ends (api ADR-033).
   vault write database/roles/api \
     db_name=mariadb \
     default_ttl="72h" \
     max_ttl="168h" \
-    creation_statements="CREATE USER '{{name}}'@'%' IDENTIFIED BY '{{password}}'; GRANT ALL ON blueshell.* TO '{{name}}'@'%';"
+    creation_statements="CREATE USER '{{name}}'@'%' IDENTIFIED BY '{{password}}'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE TEMPORARY TABLES ON blueshell.* TO '{{name}}'@'%';"
 
   unset DB_ADMIN_USER DB_ADMIN_PASS
 else

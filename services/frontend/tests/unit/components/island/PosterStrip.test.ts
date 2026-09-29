@@ -263,6 +263,7 @@ describe("a strip of event posters", () => {
       disconnect = disconnect
     })
     const wrapper = strip()
+    await flushPromises()
     const root = () => wrapper.get('[data-testid="events-strip"]').attributes("style")
 
     resized([{contentRect: {width: 2000}}])
@@ -271,7 +272,6 @@ describe("a strip of event posters", () => {
 
     // Hidden, the strip measures nothing, and nothing is not a width to fit to.
     resized([{contentRect: {width: 0}}])
-    resized([])
     await flushPromises()
     expect(root()).toContain("--per-view: 5")
 

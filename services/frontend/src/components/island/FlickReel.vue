@@ -23,6 +23,7 @@ export interface ReelItem {
 </script>
 
 <script lang="ts" setup>
+import {useElementSize} from "@vueuse/core"
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch} from "vue"
 import PanChevron from "./PanChevron.vue"
 import {DRAG} from "./dragAxis"
@@ -57,8 +58,10 @@ const WIDEST_PX = 1920
 const reel = ref<HTMLElement | null>(null)
 const band = ref<HTMLElement | null>(null)
 /** How much larger than drawn the reel is shown. Pointer travel is divided by it. */
-const scale = ref(1)
-const width = ref(1440)
+const outer = useElementSize(reel, undefined, {box: "border-box"}).width
+// Before the reel is laid out it measures nothing, and the belt is drawn for a common desktop.
+const scale = computed(() => (outer.value > 0 ? Math.max(1, outer.value / WIDEST_PX) : 1))
+const width = computed(() => (outer.value > 0 ? outer.value / scale.value : 1440))
 const narrow = computed(() => width.value < NARROW_PX)
 const shape = computed<ReelShape & {unit: number}>(() =>
   narrow.value ? {rest: 70, open: Math.min(290, Math.round(width.value * 0.74)), cut: 18, unit: 150} : WIDE)
@@ -74,7 +77,6 @@ let frame = 0
 /** Set while the belt waits out a rest it will drift after, in place of a frame per tick. */
 let alarm = 0
 let last = 0
-let observer: ResizeObserver | null = null
 
 watch(() => [items.map(item => item.id).join(), shape.value.unit] as const, ([, unit]) => {
   motion.value = new ReelMotion(items.length, {unit, drift}, motion.value.position)
@@ -153,19 +155,7 @@ function tick(now: number) {
   else alarm = window.setTimeout(wake, next - now)
 }
 
-function measure() {
-  const outer = reel.value?.clientWidth
-  if (!outer) return
-  scale.value = Math.max(1, outer / WIDEST_PX)
-  width.value = outer / scale.value
-}
-
 onMounted(() => {
-  measure()
-  if (typeof ResizeObserver === "function" && reel.value) {
-    observer = new ResizeObserver(measure)
-    observer.observe(reel.value)
-  }
   paint()
   wake()
   if (typeof IntersectionObserver === "function" && band.value) {
@@ -180,7 +170,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   cancelFrame(frame)
   window.clearTimeout(alarm)
-  observer?.disconnect()
   viewing?.disconnect()
 })
 

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import {onBeforeUnmount, onMounted, ref} from "vue"
+import {useResizeObserver} from "@vueuse/core"
+import {onMounted, ref} from "vue"
 
 /**
  * A part of a public page drawn at the width it has there and shrunk to fit a narrower column,
@@ -26,17 +27,8 @@ const measure = () => {
   height.value = stage.value?.offsetHeight ?? 0
 }
 
-let watcher: ResizeObserver | null = null
-
-onMounted(() => {
-  measure()
-  if (typeof ResizeObserver === "undefined") return
-  watcher = new ResizeObserver(measure)
-  if (frame.value) watcher.observe(frame.value)
-  if (stage.value) watcher.observe(stage.value)
-})
-
-onBeforeUnmount(() => watcher?.disconnect())
+onMounted(measure)
+useResizeObserver([frame, stage], measure)
 </script>
 
 <template>

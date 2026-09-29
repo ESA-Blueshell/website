@@ -4,7 +4,8 @@
  * "and N more". The row is measured rather than capped at a count, so a wide widget names
  * more people than a phone does and neither wraps.
  */
-import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {useResizeObserver} from "@vueuse/core"
+import {computed, nextTick, onMounted, ref, watch} from "vue"
 import {fitting, type VoicePerson} from "../rooms"
 
 defineOptions({name: "VoicePeople"})
@@ -34,15 +35,8 @@ const refit = () => {
   shown.value = fitting(widths, GAP, box.clientWidth, left => (left === 0 ? 0 : more))
 }
 
-let observer: ResizeObserver | undefined
-onMounted(() => {
-  refit()
-  if (typeof ResizeObserver !== "undefined" && row.value) {
-    observer = new ResizeObserver(refit)
-    observer.observe(row.value)
-  }
-})
-onBeforeUnmount(() => observer?.disconnect())
+onMounted(refit)
+useResizeObserver(row, refit)
 watch(() => people, () => void nextTick(refit))
 
 const visible = computed(() => people.slice(0, shown.value))

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {useResizeObserver} from "@vueuse/core"
+import {computed, onMounted, ref, watch} from "vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
 import {coveredWidth, sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
 
@@ -76,29 +77,11 @@ const measure = () => {
 
 const sizes = computed(() => (asked.value > 0 ? `${asked.value}px` : "100vw"))
 
-let observer: ResizeObserver | null = null
-
-/* The box only exists while there is a photograph, so the observer follows the element rather
-   than being attached once: a board given one after mount would otherwise never be measured. */
-const watchBox = (box: HTMLElement | null) => {
-  observer?.disconnect()
-  observer = null
-  if (!box || typeof ResizeObserver === "undefined") return
-  observer = new ResizeObserver(measure)
-  observer.observe(box)
-}
-
-onMounted(() => {
-  measure()
-  watchBox(picture.value)
-})
-
-watch(picture, box => {
-  measure()
-  watchBox(box)
-})
-
-onBeforeUnmount(() => watchBox(null))
+/* The box only exists while there is a photograph, so the observer follows the ref rather than
+   an element: a board given one after mount is measured too. */
+useResizeObserver(picture, measure)
+onMounted(measure)
+watch(picture, measure)
 </script>
 
 <template>

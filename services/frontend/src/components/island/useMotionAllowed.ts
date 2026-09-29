@@ -1,4 +1,5 @@
-import {computed, onScopeDispose, ref, type ComputedRef, type Ref} from "vue"
+import {useMediaQuery} from "@vueuse/core"
+import {computed, type ComputedRef, type Ref} from "vue"
 
 const QUERY = "(prefers-reduced-motion: reduce)"
 
@@ -7,7 +8,7 @@ const REDUCED_CEILING_S = 0.12
 
 export interface MotionPolicy {
   /** True when the visitor has asked for reduced motion. */
-  reduced: Ref<boolean>
+  reduced: Readonly<Ref<boolean>>
   /** Decorative movement — parallax, drift, tilt, counters. False when reduced. */
   decorative: ComputedRef<boolean>
   /** Movement that explains a change. Always allowed, shortened when reduced. */
@@ -25,16 +26,7 @@ export interface MotionPolicy {
  * what changed. Both answers come from one query, so a page can never end up half-animated.
  */
 export function useMotionAllowed(): MotionPolicy {
-  const reduced = ref(prefersReduced())
-
-  if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
-    const media = window.matchMedia(QUERY)
-    const onChange = (event: MediaQueryListEvent) => {
-      reduced.value = event.matches
-    }
-    media.addEventListener("change", onChange)
-    onScopeDispose(() => media.removeEventListener("change", onChange))
-  }
+  const reduced = useMediaQuery(QUERY)
 
   return {
     reduced,
@@ -42,9 +34,4 @@ export function useMotionAllowed(): MotionPolicy {
     explanatory: computed(() => true),
     duration: (seconds: number) => (reduced.value ? Math.min(seconds, REDUCED_CEILING_S) : seconds),
   }
-}
-
-function prefersReduced(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false
-  return window.matchMedia(QUERY).matches
 }

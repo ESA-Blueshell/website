@@ -253,7 +253,7 @@ describe("FlickReel", () => {
   })
 
   it("narrows its slices on a phone-wide band", async () => {
-    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390)
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(390)
     const wrapper = mountReel()
     await wrapper.vm.$nextTick()
 
@@ -262,7 +262,7 @@ describe("FlickReel", () => {
   })
 
   it("is drawn at its widest on a wider band and scaled up, with a drag scaled down to match", async () => {
-    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(3840)
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(3840)
     const wrapper = mountReel()
     await wrapper.vm.$nextTick()
     const band = wrapper.get("[data-testid=casual-band]")

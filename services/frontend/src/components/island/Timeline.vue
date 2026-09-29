@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {useElementSize} from "@vueuse/core"
 import {computed, onBeforeUnmount, onMounted, ref, useId, watch} from "vue"
 import PanChevron from "./PanChevron.vue"
 import {litAt, STRIP, stripAxis, type Stop, type StripArrival} from "./stripAxis"
@@ -75,7 +76,7 @@ const PAN_ZONE_SHARE = 0.18
 
 const strip = ref<HTMLElement | null>(null)
 const scroller = ref<HTMLElement | null>(null)
-const width = ref(0)
+const {width} = useElementSize(strip, undefined, {box: "border-box"})
 const hovered = ref<number | null>(null)
 /**
  * The stop whose affordance was last taken up.
@@ -92,20 +93,8 @@ const uid = useId()
 const fadeId = `${uid}-fade`
 const maskId = `${uid}-ends`
 
-let observer: ResizeObserver | null = null
-onMounted(() => {
-  measureScroll()
-  if (!strip.value || typeof ResizeObserver === "undefined") return
-  observer = new ResizeObserver(entries => {
-    width.value = entries[0]?.contentRect.width ?? 0
-  })
-  observer.observe(strip.value)
-  width.value = strip.value.clientWidth
-})
-onBeforeUnmount(() => {
-  observer?.disconnect()
-  rest()
-})
+onMounted(() => measureScroll())
+onBeforeUnmount(() => rest())
 
 /**
  * The block offering another stop is a band like the rest, so it takes a share of the strip

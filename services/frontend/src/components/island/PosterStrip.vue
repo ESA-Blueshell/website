@@ -38,7 +38,8 @@ export interface PosterEnd {
 </script>
 
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {useElementSize} from "@vueuse/core"
+import {computed, onMounted, ref, watch} from "vue"
 import {RouterLink} from "vue-router"
 import PosterArt from "./PosterArt.vue"
 import {fitAcross} from "./fitAcross"
@@ -92,7 +93,12 @@ const scroller = ref<HTMLElement | null>(null)
 const lit = ref<number | string | null>(null)
 
 /* The window until the row has been laid out, which the strip spans on every page it is on. */
+const measured = useElementSize(scroller, {width: window.innerWidth, height: 0}, {box: "border-box"}).width
 const width = ref(window.innerWidth)
+// A strip that is hidden measures nothing, which is not a width to fit posters to.
+watch(measured, now => {
+  if (now > 0) width.value = now
+})
 
 const perView = computed(() => fitAcross(width.value, narrowest, fewest))
 
@@ -163,22 +169,13 @@ const leadOf = (one: PosterItem): Record<string, string> => {
 
 const sizes = computed<string>(() => `${Math.ceil(width.value / perView.value)}px`)
 
-let observer: ResizeObserver | null = null
-
 const nameMentions = () => void fillMentions(scroller.value as HTMLElement)
 watch(() => items, nameMentions, {flush: "post"})
 
 onMounted(() => {
   nameMentions()
   requestAnimationFrame(measureScroll)
-  // A strip that is hidden measures nothing, which is not a width to fit posters to.
-  observer = new ResizeObserver(entries => {
-    width.value = entries[0]?.contentRect.width || width.value
-  })
-  observer.observe(scroller.value as HTMLElement)
 })
-
-onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>

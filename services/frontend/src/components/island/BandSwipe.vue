@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import {computed, nextTick, onBeforeUnmount, onScopeDispose, ref, watch} from "vue"
+import {useMediaQuery} from "@vueuse/core"
+import {computed, nextTick, onBeforeUnmount, ref, watch} from "vue"
 import {AnimatePresence, Motion} from "motion-v"
 import {provideTravelling} from "./bandTravel"
 import {commits, directionOf, DRAG, follow, paceOf} from "./dragAxis"
@@ -272,11 +273,6 @@ const carry = async () => {
 
 const COARSE = "(pointer: coarse)"
 
-const asks = (query: string): boolean => {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false
-  return window.matchMedia(query).matches
-}
-
 /**
  * Whether the pointer reading this page is a finger.
  *
@@ -285,15 +281,7 @@ const asks = (query: string): boolean => {
  * no hover to lose and nothing else to do with a sideways drag. The strip beside this one already
  * branches on the pointer the same way, for the mirror of the same reason.
  */
-const coarse = ref(asks(COARSE))
-if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
-  const media = window.matchMedia(COARSE)
-  const onChange = (event: MediaQueryListEvent) => {
-    coarse.value = event.matches
-  }
-  media.addEventListener("change", onChange)
-  onScopeDispose(() => media.removeEventListener("change", onChange))
-}
+const coarse = useMediaQuery(COARSE)
 
 /**
  * The stops either side of the one in the window: the one a waiting gesture asked for where there

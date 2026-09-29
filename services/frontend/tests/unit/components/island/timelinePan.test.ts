@@ -46,6 +46,7 @@ describe("the strip on a wide screen", () => {
       disconnect() {}
     })
     const wrapper = mount(Timeline, {props: {stops, selectedId: 6, testidPrefix: "strip"}})
+    await flushPromises()
 
     seen([{contentRect: {width: 3840}}])
     await flushPromises()

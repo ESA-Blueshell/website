@@ -1,4 +1,5 @@
-import {onScopeDispose, readonly, ref, type Ref} from "vue"
+import {useMediaQuery} from "@vueuse/core"
+import type {Ref} from "vue"
 
 /** The width the bar can no longer hold its own entries at, and hands them to the drawer. */
 const NARROW = "(max-width: 1279px)"
@@ -12,21 +13,5 @@ const NARROW = "(max-width: 1279px)"
  * first. The drawer is drawn on the same terms, and for the same reason.
  */
 export function useNarrow(): Readonly<Ref<boolean>> {
-  const narrow = ref(matches())
-
-  if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
-    const media = window.matchMedia(NARROW)
-    const onChange = (event: MediaQueryListEvent) => {
-      narrow.value = event.matches
-    }
-    media.addEventListener("change", onChange)
-    onScopeDispose(() => media.removeEventListener("change", onChange))
-  }
-
-  return readonly(narrow)
-}
-
-function matches(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false
-  return window.matchMedia(NARROW).matches
+  return useMediaQuery(NARROW)
 }

@@ -34,7 +34,11 @@ describe("a preview frame", () => {
 
   it("draws the part at its own size where there is room, or before the column is measured", () => {
     vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(0)
-    vi.stubGlobal("ResizeObserver", undefined)
+    // An observer that has not answered yet, which is every frame before its first layout.
+    vi.stubGlobal("ResizeObserver", class {
+      observe() {}
+      disconnect() {}
+    })
 
     const wrapper = mount(PreviewFrame, {slots: {default: "<div />"}})
 

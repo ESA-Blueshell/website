@@ -87,10 +87,18 @@ Object.defineProperty(globalThis.HTMLElement.prototype, "scrollIntoView", {
   value: vi.fn(),
 })
 
+// Answers `observe` with the element's own size, as a browser does. @vueuse's useElementSize waits
+// for that first answer, so an observer that never calls back leaves every measured width at nothing.
 Object.defineProperty(globalThis, "ResizeObserver", {
   configurable: true,
   value: class {
-    observe() {}
+    constructor(private readonly report: (entries: unknown[]) => void) {}
+
+    observe(target: Element) {
+      const {offsetWidth: width, offsetHeight: height} = target as HTMLElement
+      this.report([{target, contentRect: {width, height}}])
+    }
+
     unobserve() {}
     disconnect() {}
   },

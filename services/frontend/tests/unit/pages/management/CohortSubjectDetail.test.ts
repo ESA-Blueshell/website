@@ -208,18 +208,29 @@ describe("CohortSubjectDetail drift", () => {
     expect(wrapper.get("[data-testid=cohort-subject-success]").text()).toBe("Adopt queued.")
   })
 
-  it("enforces a target from its menu, and says why a switch was refused", async () => {
-    vi.mocked(setTargetEnforced).mockResolvedValueOnce({ok: true}).mockResolvedValueOnce({ok: false, reason: "Only an admin may."})
+  const enforceFromMenu = async () => {
     const wrapper = await open()
     await wrapper.get("[data-testid=cohort-subject-targets] [data-testid=info-box-toggle]").trigger("click")
     await settle()
-
     await press(wrapper, "cohort-subject-target-menu-brevo")
     await click(wrapper, "VListItem", "cohort-subject-enforce-brevo")
+    return wrapper
+  }
+
+  it("enforces a target from its menu", async () => {
+    vi.mocked(setTargetEnforced).mockResolvedValue({ok: true})
+
+    const wrapper = await enforceFromMenu()
+
     expect(setTargetEnforced).toHaveBeenCalledWith(7, 40, true)
     expect(wrapper.get("[data-testid=cohort-subject-success]").text()).toBe("Enforced: each reconcile removes the extra people.")
+  })
 
-    await click(wrapper, "VListItem", "cohort-subject-enforce-brevo")
+  it("says why a switch was refused", async () => {
+    vi.mocked(setTargetEnforced).mockResolvedValue({ok: false, reason: "Only an admin may."})
+
+    const wrapper = await enforceFromMenu()
+
     expect(wrapper.get("[data-testid=cohort-subject-error]").text()).toBe("Only an admin may.")
   })
 

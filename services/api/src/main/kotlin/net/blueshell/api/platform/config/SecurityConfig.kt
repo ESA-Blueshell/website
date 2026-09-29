@@ -40,6 +40,7 @@ private const val CORS_PREFLIGHT_MAX_AGE_SECONDS = 3600L
 
 // A year, which is what the HSTS preload list asks for.
 private const val HSTS_MAX_AGE_SECONDS = 31_536_000L
+private const val HTTPS_PORT = 443
 
 @Configuration
 @EnableMethodSecurity
@@ -139,6 +140,9 @@ class SecurityConfig(
     ): SecurityFilterChain {
         if (requireHttps) {
             http.redirectToHttps(Customizer.withDefaults())
+            // A proxy that ends TLS can hand on port 443 with a plain scheme. The redirect keeps a
+            // port it can map, and the default map knows only 80 and 8080, so 443 threw a 500.
+            http.portMapper { it.http(HTTPS_PORT).mapsTo(HTTPS_PORT) }
             http.headers { headers ->
                 headers.httpStrictTransportSecurity { hsts ->
                     hsts.includeSubDomains(true)

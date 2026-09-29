@@ -6,9 +6,11 @@ import jakarta.mail.Message
 import jakarta.mail.Session
 import jakarta.mail.search.FlagTerm
 import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.RotatingSecret
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.core.env.Environment
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.util.Properties
@@ -28,10 +30,13 @@ class ImapBouncePollingService(
     @param:Value($$"${email.bounce.imap.host:}") private val host: String,
     @param:Value($$"${email.bounce.imap.port:993}") private val port: Int,
     @param:Value($$"${email.bounce.imap.username:}") private val username: String,
-    @param:Value($$"${email.bounce.imap.password:}") private val password: String,
+    environment: Environment,
     @param:Value($$"${email.bounce.imap.folder:INBOX}") private val folder: String,
     @param:Value($$"${email.bounce.imap.tls:true}") private val useTls: Boolean,
 ) {
+    // Read at each connect, so a rotated password is used on the next poll.
+    private val password = RotatingSecret(environment, Credentials.IMAP_PASSWORD)
+
     @Scheduled(fixedDelayString = "\${email.bounce.poll-interval-ms:300000}")
     fun pollBounces() {
         if (host.isBlank() || username.isBlank()) {
@@ -47,7 +52,7 @@ class ImapBouncePollingService(
             )
         try {
             session.getStore(protocol).use { store ->
-                store.connect(host, port, username, password)
+                store.connect(host, port, username, password.current())
                 store.getFolder(folder).use { mailbox ->
                     mailbox.open(Folder.READ_WRITE)
                     val unseen = mailbox.search(FlagTerm(Flags(Flags.Flag.SEEN), false))

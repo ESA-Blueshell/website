@@ -11,7 +11,11 @@ import jakarta.annotation.PostConstruct
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.cloud.context.environment.EnvironmentChangeEvent
+import org.springframework.context.event.EventListener
+import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 import java.io.IOException
 import java.security.GeneralSecurityException
@@ -33,7 +37,10 @@ class GoogleCalendarClient {
     @Value($$"${google.calendar.serviceAccountJson}")
     private lateinit var serviceAccountJson: String
 
-    private var service: Calendar? = null
+    @Autowired
+    private lateinit var environment: Environment
+
+    @Volatile private var service: Calendar? = null
 
     @PostConstruct
     fun init() {
@@ -48,46 +55,58 @@ class GoogleCalendarClient {
             )
             return
         }
+        service = build(serviceAccountJson)
+    }
 
-        // Any init failure below — invalid JSON, bad key material,
-        // TLS trust issues — must degrade calendar sync to a no-op
-        // rather than crashloop the whole api. Operator sees the
-        // warning, other features keep working. `requireService()`
-        // throws with a clear message if something actually tries to
-        // invoke a calendar operation in this state.
+    /**
+     * Takes a service account rotated in Vault while the api runs (api ADR-033). One that does
+     * not build keeps the client in use.
+     */
+    @EventListener(EnvironmentChangeEvent::class)
+    fun onChange(event: EnvironmentChangeEvent) {
+        if (Credentials.GOOGLE_CALENDAR_KEY !in event.keys) return
+        val json = environment.getProperty(Credentials.GOOGLE_CALENDAR_KEY).orEmpty()
+        val rotated = if (json.isBlank()) null else build(json)
+        if (rotated == null) {
+            log.warn("Kept the Google Calendar client in use; the rotated service account did not build")
+            return
+        }
+        service = rotated
+        log.info("Google Calendar service account rotated")
+    }
+
+    // Any failure here (invalid JSON, bad key material, TLS trust) leaves calendar sync off
+    // rather than crashloop the api; requireService() says so if a calendar call is made.
+    private fun build(json: String): Calendar? =
         try {
-            val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
-
             val credentials: GoogleCredentials =
                 GoogleCredentials
-                    .fromStream(serviceAccountJson.byteInputStream())
+                    .fromStream(json.byteInputStream())
                     .createScoped(SCOPES)
-
-            service =
-                Calendar
-                    .Builder(
-                        httpTransport,
-                        GsonFactory.getDefaultInstance(),
-                        HttpCredentialsAdapter(credentials),
-                    ).setApplicationName(APPLICATION_NAME)
-                    .build()
-
-            log.info("Initialized Google Calendar client for calendarId={}", calendarId)
+            Calendar
+                .Builder(
+                    GoogleNetHttpTransport.newTrustedTransport(),
+                    GsonFactory.getDefaultInstance(),
+                    HttpCredentialsAdapter(credentials),
+                ).setApplicationName(APPLICATION_NAME)
+                .build()
+                .also { log.info("Initialized Google Calendar client for calendarId={}", calendarId) }
         } catch (e: GeneralSecurityException) {
             log.warn("Google Calendar client init failed (security); calendar sync disabled: {}", e.message)
+            null
         } catch (e: IOException) {
-            // MalformedJsonException extends IOException — a
-            // placeholder or half-seeded SA JSON lands here.
+            // MalformedJsonException extends IOException: a placeholder or half-seeded SA JSON.
             log.warn("Google Calendar client init failed (invalid JSON / I/O); calendar sync disabled: {}", e.message)
+            null
         } catch (e: RuntimeException) {
             log.warn("Google Calendar client init failed; calendar sync disabled: {}", e.message)
+            null
         }
-    }
 
     private fun requireService(): Calendar =
         service ?: throw IllegalStateException(
-            "Google Calendar client is not configured: seed google.calendar.serviceAccountJson in Vault " +
-                "and restart the api pod before invoking calendar operations.",
+            "Google Calendar client is not configured: seed google.calendar.serviceAccountJson in Vault; " +
+                "the api takes it within one refresh interval.",
         )
 
     /**

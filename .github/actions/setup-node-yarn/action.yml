@@ -1,28 +1,31 @@
 name: Setup Node & Yarn (Corepack)
-description: Install Node with actions/setup-node and activate Yarn via Corepack
-inputs:
-  node-version:
-    description: Node.js version (e.g. "24")
-    required: true
-  yarn-version:
-    description: Yarn version (e.g. "4.9.4")
-    required: true
+description: >-
+  Install the Node the frontend image is built on, and the Yarn its package.json names.
+  services/frontend/Dockerfile is the one place the Node version is set, and packageManager
+  the one place the Yarn version is.
 runs:
   using: "composite"
   steps:
+    - name: Read the Node version from the frontend image
+      id: node
+      shell: bash
+      run: |
+        version=$(sed -n 's/^FROM node:\([0-9][0-9.]*\)-.*/\1/p' services/frontend/Dockerfile | head -1)
+        test -n "$version" || { echo "::error::no FROM node:<version> line in services/frontend/Dockerfile"; exit 1; }
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
     - name: Set up Node
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
-        node-version: ${{ inputs.node-version }}
-        cache-dependency-path: |
-          'services/frontend/yarn.lock'
-          'services/frontend/.yarnrc.yml'
+        node-version: ${{ steps.node.outputs.version }}
 
+    # Node 25 and later ship without Corepack, as the Dockerfile notes too.
     - name: Enable Yarn via Corepack
       shell: bash
+      working-directory: services/frontend
       run: |
+        npm install -g --force corepack@latest
         corepack enable
-        corepack prepare yarn@${{ inputs.yarn-version }} --activate
         echo "Yarn $(yarn --version) activated"
 
     - name: Restore Yarn cache
@@ -35,8 +38,7 @@ runs:
           services/frontend/.yarn/install-state.gz
           services/frontend/.pnp.*
           services/frontend/node_modules
-        key: ${{ runner.os }}-node${{ inputs.node-version }}-yarn${{ inputs.yarn-version }}-${{ hashFiles('services/frontend/yarn.lock', 'services/frontend/.yarnrc.yml') }}
-
+        key: ${{ runner.os }}-node${{ steps.node.outputs.version }}-${{ hashFiles('services/frontend/package.json', 'services/frontend/yarn.lock', 'services/frontend/.yarnrc.yml') }}
 
     - name: Install dependencies
       shell: bash

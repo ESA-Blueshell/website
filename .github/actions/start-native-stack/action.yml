@@ -18,12 +18,6 @@ inputs:
     description: Port the frontend is served on.
     required: false
     default: '3000'
-  node-version:
-    description: Node.js version.
-    required: true
-  yarn-version:
-    description: Yarn version.
-    required: true
 
 runs:
   using: composite
@@ -36,9 +30,6 @@ runs:
 
     - name: Set up Node.js and Yarn
       uses: ./.github/actions/setup-node-yarn
-      with:
-        node-version: ${{ inputs.node-version }}
-        yarn-version: ${{ inputs.yarn-version }}
 
     - name: Download api jar
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8

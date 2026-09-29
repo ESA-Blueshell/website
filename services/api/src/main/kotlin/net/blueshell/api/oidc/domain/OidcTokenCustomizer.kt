@@ -23,7 +23,7 @@ class OidcTokenCustomizer(
     @Bean
     fun tokenCustomizer(): OAuth2TokenCustomizer<JwtEncodingContext> {
         return OAuth2TokenCustomizer { context ->
-            val authentication = context.getPrincipal<Authentication>()
+            val authentication = requireNotNull(context.getPrincipal<Authentication>()) { "A token is minted for a principal" }
             val signIn = authentication.details as? SignInDetails
             // A refresh token renews only while the site sign-in it was issued under lives.
             if (context.authorizationGrantType == AuthorizationGrantType.REFRESH_TOKEN &&

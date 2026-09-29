@@ -35,6 +35,16 @@ class CompositePermissionEvaluatorTest {
 
             assertThat(allowed).isFalse()
         }
+
+        @Test
+        fun `grants nothing on a target that resolved to nothing`() {
+            val telemetryEvaluator = RecordingTelemetryEvaluator().apply { entityResult = true }
+
+            assertThat(
+                CompositePermissionEvaluator(mutableListOf(telemetryEvaluator)).hasPermission(authentication, null, "read"),
+            ).isFalse()
+            assertThat(telemetryEvaluator.entityCalls).isZero()
+        }
     }
 
     @Nested

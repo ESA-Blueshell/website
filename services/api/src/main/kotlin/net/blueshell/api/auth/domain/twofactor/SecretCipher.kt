@@ -18,34 +18,39 @@ data class SealedSecret(
 /**
  * AES-256-GCM under an application key from Vault KV (api ADR-031). The current key seals; the
  * current and every retired key open, so rotating the key is re-sealing rather than an outage.
- * `retired` is `id:base64key` pairs separated by commas.
+ * `retired` is `id:base64key` pairs separated by commas. [rekey] takes a rotated key while the
+ * api runs (api ADR-033).
  */
 @Component
 class SecretCipher(
-    @param:Value($$"${app.two-factor.key-id}") private val currentKeyId: String,
+    @Value($$"${app.two-factor.key-id}") currentKeyId: String,
     @Value($$"${app.two-factor.key}") currentKey: String,
     @Value($$"${app.two-factor.retired-keys:}") retired: String,
 ) {
     private val random = SecureRandom()
-    private val keys: Map<String, SecretKeySpec> =
-        buildMap {
-            retired.split(",").map { it.trim() }.filter { it.isNotEmpty() }.forEach { pair ->
-                val (id, key) = pair.split(":", limit = 2).also { require(it.size == 2) { "A retired key is id:key" } }
-                put(id, keyOf(key))
-            }
-            put(currentKeyId, keyOf(currentKey))
-        }
+
+    @Volatile private var keyring: Keyring = Keyring.of(currentKeyId, currentKey, retired)
+
+    /** Swaps in a new key set; a malformed one throws and leaves the keys in use. */
+    fun rekey(
+        currentKeyId: String,
+        currentKey: String,
+        retired: String,
+    ) {
+        keyring = Keyring.of(currentKeyId, currentKey, retired)
+    }
 
     fun seal(secret: ByteArray): SealedSecret {
+        val ring = keyring
         val nonce = ByteArray(NONCE_BYTES).also(random::nextBytes)
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, keys.getValue(currentKeyId), GCMParameterSpec(TAG_BITS, nonce))
-        cipher.updateAAD(currentKeyId.toByteArray())
-        return SealedSecret(currentKeyId, Base64.getEncoder().encodeToString(nonce + cipher.doFinal(secret)))
+        cipher.init(Cipher.ENCRYPT_MODE, ring.keys.getValue(ring.currentId), GCMParameterSpec(TAG_BITS, nonce))
+        cipher.updateAAD(ring.currentId.toByteArray())
+        return SealedSecret(ring.currentId, Base64.getEncoder().encodeToString(nonce + cipher.doFinal(secret)))
     }
 
     fun open(sealed: SealedSecret): ByteArray {
-        val key = keys[sealed.keyId] ?: error("No key ${sealed.keyId} to open a two-factor secret with")
+        val key = keyring.keys[sealed.keyId] ?: error("No key ${sealed.keyId} to open a two-factor secret with")
         val bytes = Base64.getDecoder().decode(sealed.ciphertext)
         return try {
             val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -54,6 +59,29 @@ class SecretCipher(
             cipher.doFinal(bytes, NONCE_BYTES, bytes.size - NONCE_BYTES)
         } catch (e: GeneralSecurityException) {
             throw IllegalStateException("A two-factor secret failed to open", e)
+        }
+    }
+
+    /** The sealing key's id and every key that opens, swapped as one. */
+    private class Keyring(
+        val currentId: String,
+        val keys: Map<String, SecretKeySpec>,
+    ) {
+        companion object {
+            fun of(
+                currentId: String,
+                current: String,
+                retired: String,
+            ) = Keyring(
+                currentId,
+                buildMap {
+                    retired.split(",").map { it.trim() }.filter { it.isNotEmpty() }.forEach { pair ->
+                        val (id, key) = pair.split(":", limit = 2).also { require(it.size == 2) { "A retired key is id:key" } }
+                        put(id, keyOf(key))
+                    }
+                    put(currentId, keyOf(current))
+                },
+            )
         }
     }
 

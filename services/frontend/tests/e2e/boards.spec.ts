@@ -48,14 +48,19 @@ const restingDissolve = (page: Page): Promise<number> => page.evaluate(() => (
 const MARKER: Rgb = [255, 0, 255]
 
 /**
- * How far the drawn divider on [slice] reaches, read off a screenshot: how many rows and columns
- * it shows in, and how thick it is at its thickest across a row and down a column.
+ * Paints the drawn divider in [MARKER].
  *
  * The divider is a 1.5px sliver a few units off the ground in the dark theme, which is less than
- * the noise text and the scrim add, so it is painted in [MARKER] and found by its tint.
+ * the noise text and the scrim add, so it is found by its tint instead.
+ */
+const paintDivider = (page: Page) =>
+  page.addStyleTag({content: `[data-testid="board-members"] { --color-hairline: rgb(${MARKER.join(", ")}) }`})
+
+/**
+ * How far the drawn divider on [slice] reaches, read off a screenshot: how many rows and columns
+ * it shows in, and how thick it is at its thickest across a row and down a column.
  */
 async function drawnDivider(page: Page, slice: Locator) {
-  await page.addStyleTag({content: `[data-testid="board-members"] { --color-hairline: rgb(${MARKER.join(", ")}) }`})
   const shot = await pixelsOf(page, slice)
   const rows = new Array<number>(shot.height).fill(0)
   const columns = new Array<number>(shot.width).fill(0)
@@ -915,21 +920,27 @@ test.describe("board page", () => {
    */
   test("leans a phone slice's drawn divider along the seam it is cut on", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
+    await paintDivider(page)
     const slice = page.getByTestId("board-member-92")
 
     // Stacked, the line runs across the slice and no column holds more than a sliver of it. Half
-    // the width is plenty: the sliver this replaced ran down a column or two.
-    const stacked = await drawnDivider(page, slice)
-    expect(stacked.columns).toBeGreaterThan(stacked.width / 2)
-    expect(stacked.tallestColumn).toBeLessThanOrEqual(6)
+    // the width is plenty: the sliver this replaced ran down a column or two. Polled, because the
+    // band draws its slices in as it arrives and a loaded runner can read it before the line is on.
+    await expect.poll(async () => {
+      const divider = await drawnDivider(page, slice)
+      return divider.columns / divider.width
+    }, {timeout: 15000}).toBeGreaterThan(0.5)
+    expect((await drawnDivider(page, slice)).tallestColumn).toBeLessThanOrEqual(6)
 
     // And the row still divides the other way round, which is what makes this a turn rather
     // than a correction: the same sliver, on the same cut, read from the other side.
     await page.setViewportSize({width: 1280, height: 900})
     await expect(slice).toBeVisible()
-    const inARow = await drawnDivider(page, slice)
-    expect(inARow.rows).toBeGreaterThan(inARow.height / 2)
-    expect(inARow.widestRow).toBeLessThanOrEqual(6)
+    await expect.poll(async () => {
+      const divider = await drawnDivider(page, slice)
+      return divider.rows / divider.height
+    }, {timeout: 15000}).toBeGreaterThan(0.5)
+    expect((await drawnDivider(page, slice)).widestRow).toBeLessThanOrEqual(6)
   })
 
   /*

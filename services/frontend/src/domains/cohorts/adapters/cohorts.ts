@@ -13,9 +13,9 @@ import {
   deleteExternalTarget,
   enforceTarget,
   enqueue,
-  findCohortSubjectById,
-  findCohortSubjects,
+  findCohortById,
   findCohorts,
+  listTargetOptions,
   linkExistingTarget,
   linkDrift,
   listCohortTargetFolders,
@@ -32,17 +32,17 @@ import {
   switchTarget,
 } from "@/services/api"
 import type {
-  CohortMapping as ApiCohortMapping,
-  CohortSubjectDetail as ApiCohortSubjectDetail,
-  CohortSubjectMember as ApiCohortSubjectMember,
-  CohortSubjectSummary as ApiCohortSubjectSummary,
+  CohortTarget as ApiCohortTarget,
+  CohortDetail as ApiCohortDetail,
+  CohortMember as ApiCohortMember,
   CohortSummary as ApiCohortSummary,
+  TargetOption as ApiTargetOption,
   ExternalTarget as ApiExternalTarget,
   InboundReconcileApplyResponse as ApiInboundReconcileApplyResponse,
   InboundReconcilePreview as ApiInboundReconcilePreview,
   TargetDescriptor as ApiTargetDescriptor,
 } from "@/services/api"
-import {CohortKind, CohortSubjectCategory, CohortSubjectType, DriftResolutionAction, JobTrigger, TargetSystem} from "@/services/api"
+import {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
@@ -52,11 +52,11 @@ import {accepted, refusable} from "@/domains/cohorts/refusals"
  * The enums are re-exported rather than re-declared: what a picker offers and what a category
  * route matches are the values the api declares, and a copy in a page drifts from them.
  */
-export {CohortKind, CohortSubjectCategory, CohortSubjectType, DriftResolutionAction, JobTrigger, TargetSystem}
+export {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem}
 
-export async function triggerReconcile(cohortId: number): Promise<number | null> {
+export async function triggerReconcile(targetId: number): Promise<number | null> {
   const res = await enqueue({
-    body: { jobType: "cohort.reconcile-list", payload: { cohortId, trigger: JobTrigger.BY_HAND } },
+    body: { jobType: "cohort.reconcile-list", payload: { cohortId: targetId, trigger: JobTrigger.BY_HAND } },
     throwOnError: true,
   })
   return res.data?.id ?? null
@@ -70,33 +70,33 @@ export type LinkProposal = {externalUserId: string; label: string | null; userId
 export type LinkOutcome = {linked: number; conflicts: {externalUserId: string; existingUserId: number}[]}
 
 /** Switch whether each reconcile removes the target's theirs-only people. Only an admin may. */
-export async function setTargetEnforced(subjectId: number, cohortId: number, enforced: boolean): Promise<{ok: true} | Refused> {
-  return accepted(enforceTarget({path: {id: subjectId, cohortId}, body: {enforced}}), "The target could not be switched.")
+export async function setTargetEnforced(cohortId: number, targetId: number, enforced: boolean): Promise<{ok: true} | Refused> {
+  return accepted(enforceTarget({path: {id: cohortId, targetId}, body: {enforced}}), "The target could not be switched.")
 }
 
 /** Push each ours-only person to the target; answers how many were still ours only. */
-export async function pushDriftPeople(subjectId: number, cohortId: number, userIds: number[]): Promise<Saved<number> | Refused> {
-  const answer = await refusable(pushDrift({path: {id: subjectId, cohortId}, body: {userIds}}), "They could not be pushed.")
+export async function pushDriftPeople(cohortId: number, targetId: number, userIds: number[]): Promise<Saved<number> | Refused> {
+  const answer = await refusable(pushDrift({path: {id: cohortId, targetId}, body: {userIds}}), "They could not be pushed.")
   return answer.ok ? {ok: true, saved: answer.saved.resolved} : answer
 }
 
 /** Remove each theirs-only person from the target; answers how many were still theirs only. */
 export async function removeDriftPeople(
-  subjectId: number,
   cohortId: number,
+  targetId: number,
   externalUserIds: string[],
 ): Promise<Saved<number> | Refused> {
-  const answer = await refusable(removeDrift({path: {id: subjectId, cohortId}, body: {externalUserIds}}), "They could not be removed.")
+  const answer = await refusable(removeDrift({path: {id: cohortId, targetId}, body: {externalUserIds}}), "They could not be removed.")
   return answer.ok ? {ok: true, saved: answer.saved.resolved} : answer
 }
 
 /** For each theirs-only contact, the account with its address, where there is one. Changes nothing. */
 export async function proposeDriftLinks(
-  subjectId: number,
   cohortId: number,
+  targetId: number,
   externalUserIds: string[],
 ): Promise<Saved<LinkProposal[]> | Refused> {
-  const answer = await refusable(proposeLinks({path: {id: subjectId, cohortId}, body: {externalUserIds}}), "The links could not be found.")
+  const answer = await refusable(proposeLinks({path: {id: cohortId, targetId}, body: {externalUserIds}}), "The links could not be found.")
   if (!answer.ok) return answer
   return {
     ok: true,
@@ -111,18 +111,18 @@ export async function proposeDriftLinks(
 
 /** Link each theirs-only contact to the account chosen for it. */
 export async function linkDriftPeople(
-  subjectId: number,
   cohortId: number,
+  targetId: number,
   links: {externalUserId: string; userId: number}[],
 ): Promise<Saved<LinkOutcome> | Refused> {
-  return refusable(linkDrift({path: {id: subjectId, cohortId}, body: {links}}), "They could not be linked.")
+  return refusable(linkDrift({path: {id: cohortId, targetId}, body: {links}}), "They could not be linked.")
 }
 
-// Mirrors the API's CohortMapping. A field added there has to be added here too.
+// Mirrors the API's CohortTarget. A field added there has to be added here too.
 export type TargetMapping = {
-  cohortId: number
+  targetId: number
   system: TargetSystem
-  kind: CohortKind
+  kind: TargetKind
   externalId: string | null
   label: string
   /** When the target was last confirmed to agree with us, or nothing where it never has. */
@@ -161,7 +161,7 @@ export type ExternalTarget = {
   label: string
   folderLabel: string | null
   memberCount: number | null
-  linkedCohortId: number | null
+  linkedTargetId: number | null
   /** Where the target sits on its system, outside in. Empty when the system files nothing. */
   path: string[]
 }
@@ -169,9 +169,9 @@ export type ExternalTarget = {
 export type InboundReconcilePreview = ApiInboundReconcilePreview
 export type InboundReconcileApplyResponse = ApiInboundReconcileApplyResponse
 
-function toTargetMapping(raw: ApiCohortMapping): TargetMapping {
+function toTargetMapping(raw: ApiCohortTarget): TargetMapping {
   return {
-    cohortId: raw.cohortId,
+    targetId: raw.targetId,
     system: raw.system,
     kind: raw.kind,
     externalId: raw.externalId ?? null,
@@ -195,15 +195,15 @@ function asConflict(err: unknown): AddTargetResult | null {
   return status === 409 ? { type: "conflict" } : null
 }
 
-/** Maps the subject's per-system cohort to an external target that already exists. */
-export async function linkExistingTargetForSubject(
-  subjectId: number,
+/** Maps the cohort's per-system cohort to an external target that already exists. */
+export async function linkExistingTargetForCohort(
+  cohortId: number,
   system: TargetSystem,
   externalId: string,
 ): Promise<AddTargetResult> {
   try {
     const res = await linkExistingTarget({
-      path: { id: subjectId },
+      path: { id: cohortId },
       body: { system, externalId },
       throwOnError: true,
     })
@@ -213,16 +213,16 @@ export async function linkExistingTargetForSubject(
   }
 }
 
-/** Creates a fresh external target and maps the subject's per-system cohort to it. */
-export async function createTargetForSubject(
-  subjectId: number,
+/** Creates a fresh external target and maps the cohort's per-system cohort to it. */
+export async function createTargetForCohort(
+  cohortId: number,
   system: TargetSystem,
   label: string,
   folderHint: string | null,
 ): Promise<AddTargetResult> {
   try {
     const res = await createTarget({
-      path: { id: subjectId },
+      path: { id: cohortId },
       body: { system, label, folderHint: folderHint ?? undefined },
       throwOnError: true,
     })
@@ -234,14 +234,14 @@ export async function createTargetForSubject(
 
 /** Repoints an existing cohort mapping at a different external target. */
 export async function switchCohortTarget(
-  subjectId: number,
   cohortId: number,
+  targetId: number,
   externalId: string,
   deletePrevious: boolean,
   reconcileNow: boolean,
 ): Promise<TargetMapping> {
   const res = await switchTarget({
-    path: { id: subjectId, cohortId },
+    path: { id: cohortId, targetId },
     body: { externalId, deletePrevious, reconcileNow },
     throwOnError: true,
   })
@@ -402,27 +402,27 @@ function toExternalTarget(raw: ApiExternalTarget): ExternalTarget {
     label: raw.label,
     folderLabel: raw.folderLabel ?? null,
     memberCount: raw.memberCount ?? null,
-    linkedCohortId: raw.linkedCohortId ?? null,
+    linkedTargetId: raw.linkedTargetId ?? null,
     path: raw.path ?? [],
   }
 }
 
 export async function fetchInboundReconcilePreview(
-  subjectId: number,
   cohortId: number,
+  targetId: number,
 ): Promise<InboundReconcilePreview> {
-  const res = await previewInboundReconcile({path: {id: subjectId, cohortId}, throwOnError: true})
+  const res = await previewInboundReconcile({path: {id: cohortId, targetId}, throwOnError: true})
   return res.data as InboundReconcilePreview
 }
 
 export async function applyInboundReconcileSelection(
-  subjectId: number,
   cohortId: number,
+  targetId: number,
   previewToken: string,
   selectedExternalUserIds: string[],
 ): Promise<InboundReconcileApplyResponse> {
   const res = await applyInboundReconcile({
-    path: { id: subjectId, cohortId },
+    path: { id: cohortId, targetId },
     body: { previewToken, selectedExternalUserIds },
     throwOnError: true,
   })
@@ -430,12 +430,12 @@ export async function applyInboundReconcileSelection(
 }
 
 /*
- * The subject reads.
+ * The cohort reads.
  *
- * A cohort subject arrives as a transport record with half its fields optional; what a page
+ * A cohort cohort arrives as a transport record with half its fields optional; what a page
  * draws is the shape below, with every absence already decided. Unlike the target reads above
  * these answer with nothing rather than throwing, because that is what their pages have always
- * shown for a subject the api would not give.
+ * shown for a cohort the api would not give.
  */
 
 /** Whether a ledger row agrees with the external system, which is what the Sync column says. */
@@ -446,7 +446,7 @@ export type CohortSyncState = "IN_SYNC" | "ONLY_HERE" | "ONLY_EXTERNAL" | "BROKE
  * target alone knows carries no user, which is why almost everything here may be missing.
  */
 export type CohortMember = {
-  cohortMemberId: number
+  targetMemberId: number
   userId: number | null
   userFullName: string | null
   userEmail: string | null
@@ -461,12 +461,12 @@ export type CohortMember = {
 }
 
 /** A cohort as its page shows it: what it is, where it syncs, and who is in it. */
-export type CohortSubject = {
+export type Cohort = {
   id: number
   label: string
   description: string | null
-  category: CohortSubjectCategory
-  type: CohortSubjectType
+  category: CohortCategory
+  type: CohortType
   /** The definition in code that produces this cohort, or nothing where none does any more. */
   definitionKey: string | null
   orphaned: boolean
@@ -487,21 +487,21 @@ export type DriftResolutionEntry = {
 }
 
 /** A cohort in a listing: enough to put it in a row, not enough to open it. */
-export type CohortSubjectSummary = {
+export type CohortSummary = {
   id: number
   label: string
-  category: CohortSubjectCategory
-  type: CohortSubjectType
+  category: CohortCategory
+  type: CohortType
   memberCount: number
   mappingCount: number
 }
 
 /** One cohort a picker offers, named by where it lives as much as by what it is called. */
-export type CohortOption = {
+export type TargetOption = {
   id: number
   label: string
   system: string
-  kind: CohortKind
+  kind: TargetKind
   memberCount: number
 }
 
@@ -511,7 +511,7 @@ export type CohortOption = {
  * Anything the api does not vouch for reads as broken rather than as healthy: a state it did not
  * send, and any state a later api adds, are both rows nobody can stand behind.
  */
-function toSyncState(state: ApiCohortSubjectMember["state"]): CohortSyncState {
+function toSyncState(state: ApiCohortMember["state"]): CohortSyncState {
   switch (state) {
     case "SYNCED":
     case "VERIFIED":
@@ -525,9 +525,9 @@ function toSyncState(state: ApiCohortSubjectMember["state"]): CohortSyncState {
   }
 }
 
-function toCohortMember(raw: ApiCohortSubjectMember): CohortMember {
+function toCohortMember(raw: ApiCohortMember): CohortMember {
   return {
-    cohortMemberId: raw.cohortMemberId,
+    targetMemberId: raw.targetMemberId,
     userId: raw.userId ?? null,
     userFullName: raw.userFullName ?? null,
     userEmail: raw.userEmail ?? null,
@@ -540,7 +540,7 @@ function toCohortMember(raw: ApiCohortSubjectMember): CohortMember {
   }
 }
 
-function toCohortSubject(raw: ApiCohortSubjectDetail): CohortSubject {
+function toCohort(raw: ApiCohortDetail): Cohort {
   return {
     id: raw.id,
     label: raw.label,
@@ -561,7 +561,7 @@ function toCohortSubject(raw: ApiCohortSubjectDetail): CohortSubject {
   }
 }
 
-function toCohortSubjectSummary(raw: ApiCohortSubjectSummary): CohortSubjectSummary {
+function toCohortSummary(raw: ApiCohortSummary): CohortSummary {
   return {
     id: raw.id,
     label: raw.label,
@@ -573,15 +573,15 @@ function toCohortSubjectSummary(raw: ApiCohortSubjectSummary): CohortSubjectSumm
 }
 
 /** Every cohort the engine holds. An unanswered listing reads as none, as its pages always have. */
-export async function fetchCohortSubjects(): Promise<CohortSubjectSummary[]> {
-  const res = await findCohortSubjects()
-  return (res.data ?? []).map(toCohortSubjectSummary)
+export async function fetchCohorts(): Promise<CohortSummary[]> {
+  const res = await findCohorts()
+  return (res.data ?? []).map(toCohortSummary)
 }
 
 /** One cohort, or nothing where the api named none. */
-export async function fetchCohortSubject(id: number): Promise<CohortSubject | null> {
-  const res = await findCohortSubjectById({path: {id}})
-  return res.data ? toCohortSubject(res.data) : null
+export async function fetchCohort(id: number): Promise<Cohort | null> {
+  const res = await findCohortById({path: {id}})
+  return res.data ? toCohort(res.data) : null
 }
 
 /**
@@ -590,10 +590,10 @@ export async function fetchCohortSubject(id: number): Promise<CohortSubject | nu
  * Sorted here because the order is the same wherever one is picked, and a picker that sorts for
  * itself is a picker that can sort differently from the next one.
  */
-export async function fetchCohortOptions(): Promise<CohortOption[]> {
-  const res = await findCohorts()
+export async function fetchCohortTargets(): Promise<TargetOption[]> {
+  const res = await listTargetOptions()
   return (res.data ?? [])
-    .map((raw: ApiCohortSummary) => ({
+    .map((raw: ApiTargetOption) => ({
       id: raw.id,
       label: raw.label,
       system: raw.system,

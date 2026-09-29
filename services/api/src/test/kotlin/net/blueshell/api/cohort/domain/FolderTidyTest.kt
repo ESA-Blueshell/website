@@ -1,9 +1,9 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
@@ -16,35 +16,35 @@ import org.mockito.kotlin.whenever
 
 class FolderTidyTest {
     private val strategy = mock<TargetStrategy>()
+    private val targets = mock<TargetRepository>()
     private val cohorts = mock<CohortRepository>()
-    private val subjects = mock<CohortSubjectRepository>()
     private val tidy: FolderTidy
 
     init {
         whenever(strategy.system).thenReturn(TargetSystem.BREVO)
-        whenever(strategy.descriptor).thenReturn(TargetDescriptor(TargetSystem.BREVO, CohortKind.LIST))
-        tidy = FolderTidy(TargetStrategies(listOf(strategy)), cohorts, subjects)
+        whenever(strategy.descriptor).thenReturn(TargetDescriptor(TargetSystem.BREVO, TargetKind.LIST))
+        tidy = FolderTidy(TargetStrategies(listOf(strategy)), targets, cohorts)
     }
 
     private fun list(
         id: String,
         label: String,
         folder: String?,
-    ) = ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label, folder)
+    ) = ExternalTarget(TargetSystem.BREVO, id, TargetKind.LIST, label, folder)
 
     private fun given(vararg lists: ExternalTarget) {
         whenever(strategy.catalog(null)).thenReturn(lists.toList())
         whenever(strategy.folders()).thenReturn(listOf("Periods", "Committees"))
-        whenever(subjects.findAll()).thenReturn(
+        whenever(cohorts.findAll()).thenReturn(
             listOf(
-                Entities.cohortSubject(id = 1L, type = CohortSubjectType.PERIOD_PAYERS),
-                Entities.cohortSubject(id = 2L, type = CohortSubjectType.COMMITTEE_MEMBERS),
+                Entities.cohort(id = 1L, type = CohortType.PERIOD_PAYERS),
+                Entities.cohort(id = 2L, type = CohortType.COMMITTEE_MEMBERS),
             ),
         )
-        whenever(cohorts.findAllBySystem("BREVO")).thenReturn(
+        whenever(targets.findAllBySystem("BREVO")).thenReturn(
             listOf(
-                Entities.cohort(id = 10L, subjectId = 1L, externalId = "100"),
-                Entities.cohort(id = 20L, subjectId = 2L, externalId = "200"),
+                Entities.target(id = 10L, cohortId = 1L, externalId = "100"),
+                Entities.target(id = 20L, cohortId = 2L, externalId = "200"),
             ),
         )
     }
@@ -107,13 +107,13 @@ class FolderTidyTest {
 
     @Test
     fun `every cohort type has its folder`() {
-        assertThat(CohortSubjectType.entries.associateWith(CohortFolders::forType)).isEqualTo(
+        assertThat(CohortType.entries.associateWith(CohortFolders::forType)).isEqualTo(
             mapOf(
-                CohortSubjectType.COMMITTEE_MEMBERS to "Committees",
-                CohortSubjectType.PERIOD_PAYERS to "Contribution paid",
-                CohortSubjectType.PERIOD_MEMBERS to "Members",
-                CohortSubjectType.PERIOD_ACTIVE_MEMBERS to "Active members",
-                CohortSubjectType.NEWSLETTER_SUBSCRIBERS to "Newsletter",
+                CohortType.COMMITTEE_MEMBERS to "Committees",
+                CohortType.PERIOD_PAYERS to "Contribution paid",
+                CohortType.PERIOD_MEMBERS to "Members",
+                CohortType.PERIOD_ACTIVE_MEMBERS to "Active members",
+                CohortType.NEWSLETTER_SUBSCRIBERS to "Newsletter",
             ),
         )
     }

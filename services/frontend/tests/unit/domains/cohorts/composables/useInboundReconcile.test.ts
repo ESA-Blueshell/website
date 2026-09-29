@@ -50,7 +50,7 @@ describe("useInboundReconcile", () => {
     expect(reconcile.preview.value?.matched).toEqual([])
   })
 
-  it("does not allow apply when the subject fact has no writer", async () => {
+  it("does not allow apply when the cohort fact has no writer", async () => {
     vi.mocked(fetchInboundReconcilePreview).mockResolvedValue(preview({ writerSupported: false }))
     const reconcile = useInboundReconcile()
 

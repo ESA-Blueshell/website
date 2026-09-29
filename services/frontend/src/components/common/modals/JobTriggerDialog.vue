@@ -3,7 +3,7 @@ import {computed, ref, watch} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {enqueueJob, type JobPayloadField, type JobTypeDescriptor, listJobTypes} from "@/domains/jobs"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
-import CohortPicker from "@/components/form/fields/CohortPicker.vue"
+import TargetPicker from "@/components/form/fields/TargetPicker.vue"
 import EventPicker from "@/components/form/fields/EventPicker.vue"
 import ContributionPeriodPicker from "@/components/form/fields/ContributionPeriodPicker.vue"
 import EnumPicker from "@/components/form/fields/EnumPicker.vue"
@@ -217,7 +217,7 @@ const submit = async () => {
               :required="field.required"
               @update:model-value="fieldValues[field.name] = $event"
             />
-            <CohortPicker
+            <TargetPicker
               v-else-if="pickerForField(field) === 'cohort'"
               :data-testid="`job-trigger-field-${field.name}`"
               :label="humanize(field.name)"

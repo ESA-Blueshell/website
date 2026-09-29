@@ -7,18 +7,18 @@ import net.blueshell.api.sync.persistence.ExternalIdMapping
 
 /**
  * Operator-triggered and scheduled remediation of external-system membership drift. An
- * interface because `CohortController` and `CohortSubjectController` are written against it —
+ * interface because `CohortController` and `CohortController` are written against it —
  * the module publishes this surface to its own web layer.
  */
 interface CohortRemediation {
     /**
-     * Links [externalUserId] on [system] to [userId] for subject [subjectId]. Idempotent for the
+     * Links [externalUserId] on [system] to [userId] for cohort [cohortId]. Idempotent for the
      * same triple, and raises [ExternalIdConflictException] where the external id is somebody
      * else's. A matching stranger row may be folded into the desired row, so the next drift read
      * reflects the claim.
      */
     fun linkUser(
-        subjectId: Long,
+        cohortId: Long,
         userId: Long,
         system: TargetSystem,
         externalUserId: String,
@@ -27,11 +27,11 @@ interface CohortRemediation {
     /**
      * Removes one member from the external target backing [cohortId]
      * and soft-deletes the corresponding stranger row from the
-     * [net.blueshell.api.cohort.persistence.CohortMember]
+     * [net.blueshell.api.cohort.persistence.TargetMember]
      * ledger. Run by the `cohort.remove-external-member` job.
      */
     fun removeExternalMember(
-        cohortId: Long,
+        targetId: Long,
         externalUserId: String,
     )
 
@@ -42,8 +42,8 @@ interface CohortRemediation {
      * per-member sync path establishes health; this only verifies it.
      * Run by the `cohort.reconcile-list` job, which records each run's drift with [trigger].
      */
-    fun verifyCohort(
-        cohortId: Long,
+    fun verifyTarget(
+        targetId: Long,
         trigger: JobTrigger?,
     )
 }

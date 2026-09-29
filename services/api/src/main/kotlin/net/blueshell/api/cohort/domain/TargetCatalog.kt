@@ -1,8 +1,8 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.TargetDeletion
 import net.blueshell.api.cohort.persistence.TargetDeletionRepository
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
@@ -16,7 +16,7 @@ import java.time.Instant
 @Service
 class TargetCatalog(
     private val strategies: TargetStrategies,
-    private val cohorts: CohortRepository,
+    private val targets: TargetRepository,
     private val deletions: TargetDeletionRepository,
     private val actors: ActorProvider,
 ) {
@@ -26,9 +26,9 @@ class TargetCatalog(
         query: String?,
     ): List<ExternalTarget> {
         val strategy = strategies.require(system)
-        val linked = linkedCohorts(system)
-        return strategy.catalog(query).map { target ->
-            target.copy(linkedCohortId = linked[target.externalId])
+        val linked = linkedTargets(system)
+        return strategy.catalog(query).map { external ->
+            external.copy(linkedTargetId = linked[external.externalId])
         }
     }
 
@@ -65,17 +65,17 @@ class TargetCatalog(
         name: String,
     ): ExternalTarget {
         val strategy = strategies.require(system)
-        val target = strategy.resolve(externalId) ?: throw TargetNotFound(system, externalId)
-        val renamed = refusedBy(system) { strategy.rename(target, name) }
-        val linkedId = linkedCohorts(system)[renamed.externalId]
+        val external = strategy.resolve(externalId) ?: throw TargetNotFound(system, externalId)
+        val renamed = refusedBy(system) { strategy.rename(external, name) }
+        val linkedId = linkedTargets(system)[renamed.externalId]
         // A linked cohort names its target by this label, so its page shows the new name.
         linkedId?.let { id ->
-            cohorts.findById(id).ifPresent {
+            targets.findById(id).ifPresent {
                 it.label = name
-                cohorts.save(it)
+                targets.save(it)
             }
         }
-        return renamed.copy(linkedCohortId = linkedId)
+        return renamed.copy(linkedTargetId = linkedId)
     }
 
     /** Make a folder, or find the one already called [name]; answers every folder. */
@@ -95,13 +95,13 @@ class TargetCatalog(
         externalId: String,
     ): ExternalTarget {
         val strategy = strategies.require(system)
-        val target = strategy.resolve(externalId) ?: throw TargetNotFound(system, externalId)
+        val external = strategy.resolve(externalId) ?: throw TargetNotFound(system, externalId)
         val archived =
             refusedBy(system) {
                 strategy.createFolder(ARCHIVE_FOLDER)
-                strategy.move(target, ARCHIVE_FOLDER)
+                strategy.move(external, ARCHIVE_FOLDER)
             }
-        return archived.copy(linkedCohortId = linkedCohorts(system)[archived.externalId])
+        return archived.copy(linkedTargetId = linkedTargets(system)[archived.externalId])
     }
 
     /**
@@ -115,14 +115,14 @@ class TargetCatalog(
         typedName: String,
     ) {
         val strategy = strategies.require(system)
-        val target = strategy.resolve(externalId) ?: throw TargetNotFound(system, externalId)
-        if (linkedCohorts(system).containsKey(externalId)) throw TargetStillLinked(system, externalId)
-        if (typedName != target.label) throw TargetNameMismatch(typedName)
-        refusedBy(system) { strategy.delete(target) }
+        val external = strategy.resolve(externalId) ?: throw TargetNotFound(system, externalId)
+        if (linkedTargets(system).containsKey(externalId)) throw TargetStillLinked(system, externalId)
+        if (typedName != external.label) throw TargetNameMismatch(typedName)
+        refusedBy(system) { strategy.delete(external) }
         deletions.save(
-            TargetDeletion(system.name, externalId, target.label, actors.currentOrSystem().userId, Instant.now()),
+            TargetDeletion(system.name, externalId, external.label, actors.currentOrSystem().userId, Instant.now()),
         )
-        log.info("[cohort] deleted {} target {} '{}'", system, externalId, target.label)
+        log.info("[cohort] deleted {} target {} '{}'", system, externalId, external.label)
     }
 
     // The system's own reason is what the board needs to see; nothing on our side changed.
@@ -148,12 +148,12 @@ class TargetCatalog(
         folder: String,
     ): ExternalTarget {
         val strategy = strategies.require(system)
-        val target =
+        val external =
             strategy.resolve(externalId)
                 ?: throw IllegalArgumentException("No target $externalId in $system")
 
-        val moved = strategy.move(target, folder)
-        return moved.copy(linkedCohortId = linkedCohorts(system)[moved.externalId])
+        val moved = strategy.move(external, folder)
+        return moved.copy(linkedTargetId = linkedTargets(system)[moved.externalId])
     }
 
     /**
@@ -202,18 +202,18 @@ class TargetCatalog(
             }
         if (violations.isNotEmpty()) throw BulkSelectionRejected("BulkMoveTargetsRequest", violations)
 
-        val linked = linkedCohorts(system)
+        val linked = linkedTargets(system)
         val moved = mutableListOf<ExternalTarget>()
         val failed = mutableListOf<FailedTargetMove>()
         for (id in ids) {
-            val target = resolved.getValue(id)!!
+            val external = resolved.getValue(id)!!
             try {
-                val result = strategy.move(target, destination!!)
-                moved += result.copy(linkedCohortId = linked[result.externalId])
+                val result = strategy.move(external, destination!!)
+                moved += result.copy(linkedTargetId = linked[result.externalId])
             } catch (ex: RuntimeException) {
                 // The system refused this one. The moves already made stand, so the id is
                 // reported rather than the whole call failing and hiding them.
-                failed += FailedTargetMove(id, target.label, ex.message ?: "The system refused the move.")
+                failed += FailedTargetMove(id, external.label, ex.message ?: "The system refused the move.")
             }
         }
         return BulkTargetMoveResult(moved = moved, failed = failed)
@@ -221,10 +221,10 @@ class TargetCatalog(
 
     fun descriptors(): List<TargetDescriptor> = strategies.descriptors()
 
-    private fun linkedCohorts(system: TargetSystem): Map<String, Long> =
-        cohorts
+    private fun linkedTargets(system: TargetSystem): Map<String, Long> =
+        targets
             .findAllBySystem(system.name)
-            .mapNotNull { cohort -> cohort.externalId?.takeIf { it.isNotBlank() }?.let { it to cohort.id!! } }
+            .mapNotNull { target -> target.externalId?.takeIf { it.isNotBlank() }?.let { it to target.id!! } }
             .toMap()
 
     companion object {

@@ -4,12 +4,12 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortMemberRepository
-import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.DriftResolution
 import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.cohort.persistence.DriftResolutionRepository
+import net.blueshell.api.cohort.persistence.TargetMember
+import net.blueshell.api.cohort.persistence.TargetMemberRepository
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
@@ -25,28 +25,28 @@ import java.time.LocalDateTime
 import java.util.Optional
 
 class DriftResolutionsTest {
-    private val cohorts: CohortRepository = mockk()
-    private val members: CohortMemberRepository = mockk()
+    private val targets: TargetRepository = mockk()
+    private val members: TargetMemberRepository = mockk()
     private val resolutions: DriftResolutionRepository = mockk(relaxed = true)
     private val remediation: CohortRemediation = mockk(relaxed = true)
     private val users: UserService = mockk()
     private val jobs: JobQueue = mockk(relaxed = true)
     private val actors: ActorProvider = mockk()
-    private val service = DriftResolutions(cohorts, members, resolutions, remediation, users, jobs, actors)
+    private val service = DriftResolutions(targets, members, resolutions, remediation, users, jobs, actors)
 
-    private val subject = Entities.cohortSubject(id = 1L)
-    private val cohort = Entities.cohort(id = 2L, subjectId = 1L, externalId = "list-2")
+    private val cohort = Entities.cohort(id = 1L)
+    private val target = Entities.target(id = 2L, cohortId = 1L, externalId = "list-2")
     private val saved = slot<List<DriftResolution>>()
 
     init {
-        every { cohorts.findById(2L) } returns Optional.of(cohort)
+        every { targets.findById(2L) } returns Optional.of(target)
         every { actors.currentOrSystem() } returns Actor.user(9L, Role.BOARD)
         every { resolutions.saveAll(capture(saved)) } answers { firstArg() }
     }
 
     @Test
     fun `push queues only the ours-only people asked for and records each`() {
-        every { members.findAllByCohortIdAndUserIdIsNotNull(2L) } returns
+        every { members.findAllByTargetIdAndUserIdIsNotNull(2L) } returns
             listOf(
                 row(userId = 5L),
                 row(userId = 6L, syncedAt = NOW),
@@ -65,7 +65,7 @@ class DriftResolutionsTest {
 
     @Test
     fun `remove queues the removal of each theirs-only person and records it`() {
-        every { members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(2L, listOf("ext-1")) } returns
+        every { members.findAllByTargetIdAndExternalUserIdInAndUserIdIsNull(2L, listOf("ext-1")) } returns
             listOf(row(userId = null, externalUserId = "ext-1", label = "c@example.com"))
 
         assertThat(service.remove(1L, 2L, listOf("ext-1"))).isEqualTo(1)
@@ -76,7 +76,7 @@ class DriftResolutionsTest {
 
     @Test
     fun `nothing left to resolve records nothing`() {
-        every { members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(2L, listOf("gone")) } returns emptyList()
+        every { members.findAllByTargetIdAndExternalUserIdInAndUserIdIsNull(2L, listOf("gone")) } returns emptyList()
 
         assertThat(service.remove(1L, 2L, listOf("gone"))).isZero()
         verify(exactly = 0) { resolutions.saveAll(any<List<DriftResolution>>()) }
@@ -84,7 +84,7 @@ class DriftResolutionsTest {
 
     @Test
     fun `a link proposal names the account with the contact's address`() {
-        every { members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(2L, listOf("ext-1", "ext-2")) } returns
+        every { members.findAllByTargetIdAndExternalUserIdInAndUserIdIsNull(2L, listOf("ext-1", "ext-2")) } returns
             listOf(
                 row(userId = null, externalUserId = "ext-1", label = " Ada@Example.com"),
                 row(userId = null, externalUserId = "ext-2", label = "nobody@example.com"),
@@ -102,7 +102,7 @@ class DriftResolutionsTest {
 
     @Test
     fun `a link to a contact another account holds is reported and the rest are linked`() {
-        every { members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(2L, listOf("ext-1", "ext-2")) } returns
+        every { members.findAllByTargetIdAndExternalUserIdInAndUserIdIsNull(2L, listOf("ext-1", "ext-2")) } returns
             listOf(row(userId = null, externalUserId = "ext-2", label = "b@example.com"))
         every { remediation.linkUser(1L, 5L, TargetSystem.BREVO, "ext-1") } throws
             ExternalIdConflictException(4L, TargetSystem.BREVO, "ext-1")
@@ -116,9 +116,9 @@ class DriftResolutionsTest {
 
     @Test
     fun `a target of another cohort, or one not yet created, is refused`() {
-        every { cohorts.findById(3L) } returns Optional.of(Entities.cohort(id = 3L, subjectId = 99L, externalId = "x"))
-        every { cohorts.findById(4L) } returns Optional.of(Entities.cohort(id = 4L, subjectId = 1L))
-        every { cohorts.findById(5L) } returns Optional.empty()
+        every { targets.findById(3L) } returns Optional.of(Entities.target(id = 3L, cohortId = 99L, externalId = "x"))
+        every { targets.findById(4L) } returns Optional.of(Entities.target(id = 4L, cohortId = 1L))
+        every { targets.findById(5L) } returns Optional.empty()
 
         assertThatThrownBy { service.push(1L, 3L, listOf(1L)) }.isInstanceOf(TargetNotOfCohort::class.java)
         assertThatThrownBy { service.push(1L, 5L, listOf(1L)) }.isInstanceOf(TargetNotOfCohort::class.java)
@@ -128,10 +128,10 @@ class DriftResolutionsTest {
     @Test
     fun `enforcing a target switches it, and switching back undoes it`() {
         service.enforce(1L, 2L, true)
-        assertThat(cohort.enforced).isTrue()
+        assertThat(target.enforced).isTrue()
 
         service.enforce(1L, 2L, false)
-        assertThat(cohort.enforced).isFalse()
+        assertThat(target.enforced).isFalse()
     }
 
     private fun row(
@@ -140,7 +140,7 @@ class DriftResolutionsTest {
         syncedAt: LocalDateTime? = null,
         verifiedAt: LocalDateTime? = null,
         label: String? = null,
-    ) = CohortMember(cohort, userId, subject, externalUserId, syncedAt, verifiedAt, label)
+    ) = TargetMember(target, userId, cohort, externalUserId, syncedAt, verifiedAt, label)
 
     private companion object {
         val NOW: LocalDateTime = LocalDateTime.of(2026, 9, 29, 20, 0)

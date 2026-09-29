@@ -2,7 +2,8 @@ package net.blueshell.api.cohort.domain
 
 import io.mockk.every
 import io.mockk.mockk
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortCategory
+import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.api.MembershipService
@@ -27,7 +28,7 @@ class CohortDefinitionsTest {
         val definition = PeriodMembersDefinition(year, memberships)
 
         assertThat(definition.key).isEqualTo("PERIOD_MEMBERS:14")
-        assertThat(definition.type).isEqualTo(CohortSubjectType.PERIOD_MEMBERS)
+        assertThat(definition.type).isEqualTo(CohortType.PERIOD_MEMBERS)
         assertThat(definition.scope).isEqualTo(14L)
         assertThat(definition.label).isEqualTo("Members 2026 - 2026")
     }
@@ -103,5 +104,28 @@ class CohortDefinitionsTest {
         assertThat(PeriodActiveMembersDefinition(year, emptyList()).folder).isEqualTo(CohortFolders.ACTIVE_MEMBERS)
         assertThat(CommitteeMembersDefinition(committee, mockk()).folder).isEqualTo(CohortFolders.COMMITTEES)
         assertThat(NewsletterSubscribersDefinition(mockk()).folder).isEqualTo(CohortFolders.NEWSLETTER)
+    }
+
+    @Test
+    fun `each provider says which type it produces, and each type which category it browses under`() {
+        val providers =
+            listOf(
+                PeriodMembersProvider(mockk(), mockk()),
+                PeriodPayersProvider(mockk(), mockk()),
+                PeriodActiveMembersProvider(mockk(), emptyList()),
+                CommitteeMembersProvider(mockk(), mockk()),
+                NewsletterSubscribersProvider(mockk()),
+            )
+
+        assertThat(providers.map { it.type }).containsExactlyInAnyOrder(*CohortType.entries.toTypedArray())
+        assertThat(CohortType.entries.associateWith { it.category() }).isEqualTo(
+            mapOf(
+                CohortType.COMMITTEE_MEMBERS to CohortCategory.COMMITTEES,
+                CohortType.PERIOD_PAYERS to CohortCategory.PERIODS,
+                CohortType.PERIOD_MEMBERS to CohortCategory.PERIODS,
+                CohortType.PERIOD_ACTIVE_MEMBERS to CohortCategory.PERIODS,
+                CohortType.NEWSLETTER_SUBSCRIBERS to CohortCategory.MEMBERS,
+            ),
+        )
     }
 }

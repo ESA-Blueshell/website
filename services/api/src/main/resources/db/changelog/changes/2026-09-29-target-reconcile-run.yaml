@@ -15,7 +15,7 @@ databaseChangeLog:
                   type: BIGINT
                   autoIncrement: true
                   constraints: {primaryKey: true, primaryKeyName: pk_target_reconcile_run, nullable: false}
-              - column: {name: cohort_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: target_id, type: BIGINT, constraints: {nullable: false}}
               - column: {name: started_at, type: DATETIME(6), constraints: {nullable: false}}
               - column: {name: run_trigger, type: VARCHAR(32)}
               - column: {name: in_sync, type: INT, constraints: {nullable: false}}
@@ -23,9 +23,9 @@ databaseChangeLog:
               - column: {name: theirs_only, type: INT, constraints: {nullable: false}}
         - createIndex:
             tableName: target_reconcile_run
-            indexName: idx_target_reconcile_run_cohort
+            indexName: idx_target_reconcile_run_target
             columns:
-              - column: {name: cohort_id}
+              - column: {name: target_id}
               - column: {name: started_at}
       rollback:
         - dropTable: {tableName: target_reconcile_run}

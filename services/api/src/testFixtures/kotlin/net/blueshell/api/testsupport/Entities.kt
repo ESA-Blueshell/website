@@ -4,9 +4,9 @@ import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortKind
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.contribution.persistence.Contribution
@@ -150,23 +150,23 @@ object Entities {
         file: File = file(),
     ): EventBanner = EventBanner(event = event, file = file)
 
-    fun cohort(
+    fun target(
         id: Long? = null,
         system: String = TargetSystem.BREVO.name,
-        kind: CohortKind = CohortKind.LIST,
+        kind: TargetKind = TargetKind.LIST,
         label: String = "Cohort ${id ?: 0}",
         folder: String? = null,
-        subjectId: Long? = null,
+        cohortId: Long? = null,
         externalId: String? = null,
-    ): Cohort =
-        Cohort(system = system, kind = kind, label = label, folder = folder, subjectId = subjectId, externalId = externalId)
+    ): Target =
+        Target(system = system, kind = kind, label = label, folder = folder, cohortId = cohortId, externalId = externalId)
             .also { it.id = id }
 
-    fun cohortSubject(
+    fun cohort(
         id: Long? = null,
-        type: CohortSubjectType = CohortSubjectType.COMMITTEE_MEMBERS,
-        label: String = "Subject ${id ?: 0}",
-    ): CohortSubject = CohortSubject(type = type, label = label).also { it.id = id }
+        type: CohortType = CohortType.COMMITTEE_MEMBERS,
+        label: String = "Cohort ${id ?: 0}",
+    ): Cohort = Cohort(type = type, label = label).also { it.id = id }
 
     fun recoveryToken(
         id: Long? = null,

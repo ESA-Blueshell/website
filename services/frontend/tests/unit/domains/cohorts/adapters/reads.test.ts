@@ -67,7 +67,7 @@ describe("cohort reads tell an empty answer from a failed one", () => {
 
     await expect(fetchInboundReconcilePreview(1, 2)).rejects.toThrow("boom")
     expect(previewInboundReconcile).toHaveBeenCalledWith({
-      path: {id: 1, cohortId: 2},
+      path: {id: 1, targetId: 2},
       throwOnError: true,
     })
   })

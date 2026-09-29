@@ -1,36 +1,36 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {
-  fetchCohortOptions,
-  fetchCohortSubject,
-  fetchCohortSubjects,
+  fetchCohortTargets,
+  fetchCohort,
+  fetchCohorts,
   queueCohortJob,
 } from "@/domains/cohorts/adapters/cohorts"
-import {enqueue, findCohortSubjectById, findCohortSubjects, findCohorts} from "@/services/api"
+import {enqueue, findCohortById, findCohorts, listTargetOptions} from "@/services/api"
 import {aJob} from "../../../helpers/apiFixtures"
 import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
-import {CohortKind, CohortSubjectCategory, CohortSubjectType, TargetSystem} from "@/services/api"
+import {TargetKind, CohortCategory, CohortType, TargetSystem} from "@/services/api"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   enqueue: vi.fn(),
-  findCohortSubjectById: vi.fn(),
-  findCohortSubjects: vi.fn(),
+  findCohortById: vi.fn(),
   findCohorts: vi.fn(),
+  listTargetOptions: vi.fn(),
 }))
 
 /** A member as the api sends one, with only the fields it always sends. */
 const rawMember = (over: Record<string, unknown> = {}) => ({
-  cohortMemberId: 1,
+  targetMemberId: 1,
   isUserDeleted: false,
   joinedAt: "2026-01-05T10:00:00Z",
   ...over,
 })
 
-const rawSubject = (over: Record<string, unknown> = {}) => ({
+const rawCohort = (over: Record<string, unknown> = {}) => ({
   id: 7,
   label: "Newsletter",
-  category: CohortSubjectCategory.MEMBERS,
-  type: CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
+  category: CohortCategory.MEMBERS,
+  type: CohortType.NEWSLETTER_SUBSCRIBERS,
   orphaned: false,
   mappings: [],
   members: [],
@@ -38,25 +38,25 @@ const rawSubject = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
-describe("a cohort subject arrives with its absences already decided", () => {
+describe("a cohort cohort arrives with its absences already decided", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it("a subject the api would not give reads as nothing rather than as an empty cohort", async () => {
-    vi.mocked(findCohortSubjectById).mockResolvedValue(emptyAnswer(findCohortSubjectById))
+  it("a cohort the api would not give reads as nothing rather than as an empty cohort", async () => {
+    vi.mocked(findCohortById).mockResolvedValue(emptyAnswer(findCohortById))
 
-    await expect(fetchCohortSubject(7)).resolves.toBeNull()
-    expect(findCohortSubjectById).toHaveBeenCalledWith({path: {id: 7}})
+    await expect(fetchCohort(7)).resolves.toBeNull()
+    expect(findCohortById).toHaveBeenCalledWith({path: {id: 7}})
   })
 
   it("every field the api may leave out comes back as nothing, not as undefined", async () => {
-    vi.mocked(findCohortSubjectById).mockResolvedValue(answer(findCohortSubjectById, rawSubject({members: [rawMember({state: "SYNCED"})]})))
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({members: [rawMember({state: "SYNCED"})]})))
 
-    const subject = await fetchCohortSubject(7)
+    const cohort = await fetchCohort(7)
 
-    expect(subject).toMatchObject({description: null, definitionKey: null})
-    expect(subject?.members[0]).toMatchObject({
+    expect(cohort).toMatchObject({description: null, definitionKey: null})
+    expect(cohort?.members[0]).toMatchObject({
       userId: null,
       userFullName: null,
       userEmail: null,
@@ -68,13 +68,13 @@ describe("a cohort subject arrives with its absences already decided", () => {
 
   it("a row the api does not vouch for reads as broken", async () => {
     const states = [undefined, "INVALID", "DESIRED", "STRANGER", "SYNCED", "VERIFIED"]
-    vi.mocked(findCohortSubjectById).mockResolvedValue(answer(findCohortSubjectById, rawSubject({
-        members: states.map((state, index) => rawMember({cohortMemberId: index, state})),
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
+        members: states.map((state, index) => rawMember({targetMemberId: index, state})),
       })))
 
-    const subject = await fetchCohortSubject(7)
+    const cohort = await fetchCohort(7)
 
-    expect(subject?.members.map((member) => member.sync)).toEqual([
+    expect(cohort?.members.map((member) => member.sync)).toEqual([
       "BROKEN",
       "BROKEN",
       "ONLY_HERE",
@@ -96,16 +96,16 @@ describe("a cohort subject arrives with its absences already decided", () => {
   })
 
   it("a target that has never agreed, and one filed nowhere, both read as nothing", async () => {
-    vi.mocked(findCohortSubjectById).mockResolvedValue(answer(findCohortSubjectById, rawSubject({
-        mappings: [{cohortId: 3, system: TargetSystem.BREVO, kind: CohortKind.LIST, label: "Newsletter", path: [], folderKnown: false, runs: [], enforced: false}],
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
+        mappings: [{targetId: 3, system: TargetSystem.BREVO, kind: TargetKind.LIST, label: "Newsletter", path: [], folderKnown: false, runs: [], enforced: false}],
       })))
 
-    const subject = await fetchCohortSubject(7)
+    const cohort = await fetchCohort(7)
 
-    expect(subject?.mappings[0]).toEqual({
-      cohortId: 3,
+    expect(cohort?.mappings[0]).toEqual({
+      targetId: 3,
       system: TargetSystem.BREVO,
-      kind: CohortKind.LIST,
+      kind: TargetKind.LIST,
       label: "Newsletter",
       externalId: null,
       lastReconciledAt: null,
@@ -117,38 +117,38 @@ describe("a cohort subject arrives with its absences already decided", () => {
   })
 
   it("a resolution by the api itself names nobody as its maker", async () => {
-    vi.mocked(findCohortSubjectById).mockResolvedValue(answer(findCohortSubjectById, rawSubject({
-        resolutions: [{cohortId: 3, system: TargetSystem.BREVO, action: "REMOVE", resolvedAt: "2026-09-29T20:00:00Z"}],
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
+        resolutions: [{targetId: 3, system: TargetSystem.BREVO, action: "REMOVE", resolvedAt: "2026-09-29T20:00:00Z"}],
       })))
 
-    const subject = await fetchCohortSubject(7)
+    const cohort = await fetchCohort(7)
 
-    expect(subject?.resolutions).toEqual([
+    expect(cohort?.resolutions).toEqual([
       {system: TargetSystem.BREVO, action: "REMOVE", personName: null, resolvedByName: null, resolvedAt: "2026-09-29T20:00:00Z"},
     ])
   })
 
   it("a listing that came back with nothing reads as no cohorts", async () => {
-    vi.mocked(findCohortSubjects).mockResolvedValue(emptyAnswer(findCohortSubjects))
+    vi.mocked(findCohorts).mockResolvedValue(emptyAnswer(findCohorts))
 
-    await expect(fetchCohortSubjects()).resolves.toEqual([])
+    await expect(fetchCohorts()).resolves.toEqual([])
   })
 
   it("a listed cohort carries only what a row needs", async () => {
-    vi.mocked(findCohortSubjects).mockResolvedValue(answer(findCohortSubjects, [{
+    vi.mocked(findCohorts).mockResolvedValue(answer(findCohorts, [{
         id: 7,
         label: "Newsletter",
-        category: CohortSubjectCategory.MEMBERS,
-        type: CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
+        category: CohortCategory.MEMBERS,
+        type: CohortType.NEWSLETTER_SUBSCRIBERS,
         memberCount: 12,
         mappingCount: 1,
       }]))
 
-    await expect(fetchCohortSubjects()).resolves.toEqual([{
+    await expect(fetchCohorts()).resolves.toEqual([{
       id: 7,
       label: "Newsletter",
-      category: CohortSubjectCategory.MEMBERS,
-      type: CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
+      category: CohortCategory.MEMBERS,
+      type: CohortType.NEWSLETTER_SUBSCRIBERS,
       memberCount: 12,
       mappingCount: 1,
     }])
@@ -161,21 +161,21 @@ describe("the cohorts a picker offers", () => {
   })
 
   it("come by system and then by name, whatever order they were listed in", async () => {
-    vi.mocked(findCohorts).mockResolvedValue(answer(findCohorts, [
-        {id: 1, label: "Zebras", system: TargetSystem.BREVO, kind: CohortKind.LIST, memberCount: 2},
-        {id: 2, label: "Alpacas", system: TargetSystem.GOOGLE_CALENDAR, kind: CohortKind.ROLE, memberCount: 3},
-        {id: 3, label: "Antelopes", system: TargetSystem.BREVO, kind: CohortKind.LIST, memberCount: 4},
+    vi.mocked(listTargetOptions).mockResolvedValue(answer(listTargetOptions, [
+        {id: 1, label: "Zebras", system: TargetSystem.BREVO, kind: TargetKind.LIST, memberCount: 2},
+        {id: 2, label: "Alpacas", system: TargetSystem.GOOGLE_CALENDAR, kind: TargetKind.ROLE, memberCount: 3},
+        {id: 3, label: "Antelopes", system: TargetSystem.BREVO, kind: TargetKind.LIST, memberCount: 4},
       ]))
 
-    const options = await fetchCohortOptions()
+    const options = await fetchCohortTargets()
 
     expect(options.map((option) => option.id)).toEqual([3, 1, 2])
   })
 
   it("read as none where the listing said nothing", async () => {
-    vi.mocked(findCohorts).mockResolvedValue(emptyAnswer(findCohorts))
+    vi.mocked(listTargetOptions).mockResolvedValue(emptyAnswer(listTargetOptions))
 
-    await expect(fetchCohortOptions()).resolves.toEqual([])
+    await expect(fetchCohortTargets()).resolves.toEqual([])
   })
 })
 

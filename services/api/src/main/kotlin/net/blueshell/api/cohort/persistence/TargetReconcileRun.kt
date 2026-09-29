@@ -14,8 +14,8 @@ import java.time.Instant
 @Table(name = "target_reconcile_run")
 class TargetReconcileRun(
     /** The target (a `cohort` row) that was reconciled. */
-    @Column(name = "cohort_id", nullable = false)
-    val cohortId: Long,
+    @Column(name = "target_id", nullable = false)
+    val targetId: Long,
     @Column(name = "started_at", nullable = false)
     val startedAt: Instant,
     /** What queued the reconcile; null for a run queued before runs recorded it. */

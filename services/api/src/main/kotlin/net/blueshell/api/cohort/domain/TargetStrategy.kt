@@ -1,22 +1,22 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortKind
+import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.shared.enums.TargetSystem
 
 /** Which system a strategy speaks for and the kind of cohort it holds there. The words are the screens'. */
 data class TargetDescriptor(
     val system: TargetSystem,
-    val kind: CohortKind,
+    val kind: TargetKind,
 )
 
 data class ExternalTarget(
     val system: TargetSystem,
     val externalId: String,
-    val kind: CohortKind,
+    val kind: TargetKind,
     val label: String,
     val folderLabel: String? = null,
     val memberCount: Long? = null,
-    val linkedCohortId: Long? = null,
+    val linkedTargetId: Long? = null,
     /**
      * Where this target sits on its system, from the outside in: `[Brevo, Periods]` for a
      * list in a folder, `[Brevo]` for one at the top level, and as many entries as a system
@@ -53,15 +53,15 @@ interface TargetStrategy {
 
     fun resolve(externalId: String): ExternalTarget? = catalog(externalId).firstOrNull { it.externalId == externalId }
 
-    fun members(target: ExternalTarget): List<ExternalMember>
+    fun members(external: ExternalTarget): List<ExternalMember>
 
     fun add(
-        target: ExternalTarget,
+        external: ExternalTarget,
         externalUserId: String,
     )
 
     fun remove(
-        target: ExternalTarget,
+        external: ExternalTarget,
         externalUserId: String,
     )
 
@@ -84,18 +84,18 @@ interface TargetStrategy {
      * A system that cannot move one keeps this default and refuses.
      */
     fun move(
-        target: ExternalTarget,
+        external: ExternalTarget,
         folder: String,
     ): ExternalTarget = throw UnsupportedOperationException("$system cannot move a target between folders")
 
     /** Give a target another name. */
     fun rename(
-        target: ExternalTarget,
+        external: ExternalTarget,
         name: String,
     ): ExternalTarget
 
     /** Make a folder by name, or find the one already called that; answers every folder. */
     fun createFolder(name: String): List<String>
 
-    fun delete(target: ExternalTarget)
+    fun delete(external: ExternalTarget)
 }

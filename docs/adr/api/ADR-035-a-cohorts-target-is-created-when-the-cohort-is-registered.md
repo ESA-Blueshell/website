@@ -1,7 +1,7 @@
 # ADR-035: A Cohort's Target Is Created When the Cohort Is Registered
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 

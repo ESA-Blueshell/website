@@ -99,10 +99,23 @@ object CohortJobs {
     }
 
     /**
-     * Stale compatibility job for cohorts that already have a target id.
-     * It returns the existing id or fails terminally when missing; target
-     * creation is now explicit operator action only.
+     * Creates one cohort's external target and links it (api ADR-035), queued when the cohort is
+     * registered. Deduplicated per cohort; a retry never makes a second target.
      */
+    object CreateCohortTarget : JobDefinition<CreateCohortTargetPayload> {
+        override val type: String = "cohort.create-target"
+        override val payloadType: Class<CreateCohortTargetPayload> = CreateCohortTargetPayload::class.java
+
+        override fun dedupKey(payload: CreateCohortTargetPayload): String = "cohort=${payload.cohortId}"
+    }
+
+    /** Queues a [CreateCohortTarget] for every cohort without a target: the backfill for cohorts left unlinked. */
+    object CreateMissingCohortTargets : JobDefinition<CreateMissingCohortTargetsPayload> {
+        override val type: String = "cohort.create-missing-targets"
+        override val payloadType: Class<CreateMissingCohortTargetsPayload> = CreateMissingCohortTargetsPayload::class.java
+    }
+
+    /** Queued by the release before target creation moved; now creates the target like [CreateCohortTarget]. */
     object MaterializeCohortTarget : JobDefinition<MaterializeCohortTargetPayload> {
         override val type: String = "cohort.materialize-target"
         override val payloadType: Class<MaterializeCohortTargetPayload> =
@@ -110,6 +123,14 @@ object CohortJobs {
 
         override fun dedupKey(payload: MaterializeCohortTargetPayload): String = "cohort=${payload.cohortId}"
     }
+
+    data class CreateCohortTargetPayload(
+        val cohortId: Long,
+    )
+
+    data class CreateMissingCohortTargetsPayload(
+        val unused: Unit = Unit,
+    )
 
     data class SyncCohortMembershipPayload(
         val userId: Long,

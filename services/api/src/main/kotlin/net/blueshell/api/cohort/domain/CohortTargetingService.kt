@@ -7,12 +7,14 @@ import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
 
 /**
  * External target creation
@@ -133,23 +135,51 @@ class CohortTargetingService(
         return CohortMappingRow(switched.cohort, externalId)
     }
 
-    override fun materialize(cohortId: Long): CohortTargetRef {
-        // Re-check the id first: the job is cohort-deduped, but a target may have
-        // been recorded (admin link, an earlier run) since this job was enqueued.
-        val prep =
-            readOnlyTransaction.execute {
+    override fun createFor(cohortId: Long): CohortTargetRef {
+        val claim =
+            writeTransaction.execute {
                 val cohort =
                     cohortRepo.findById(cohortId).orElseThrow {
                         NonRetryableJobException("Cohort $cohortId not found")
                     }
-                MaterializePrep(TargetSystem.valueOf(cohort.system), cohort.label, cohort.folder, targetIds.find(cohort))
+                val linked = targetIds.find(cohort)
+                val retry = cohort.targetClaimedAt != null
+                if (linked == null && !retry) {
+                    cohort.targetClaimedAt = Instant.now()
+                    cohortRepo.save(cohort)
+                }
+                Claim(TargetSystem.valueOf(cohort.system), cohort.label, cohort.folder, retry, linked)
             }
-        prep.existingExternalId?.let { return CohortTargetRef(cohortId, it) }
+        claim.linked?.let { return CohortTargetRef(cohortId, it) }
 
-        throw NonRetryableJobException(
-            "Cohort $cohortId has no ${prep.system} target; materialize-target no longer creates targets. " +
-                "Create or link an external target manually.",
-        )
+        val strategy = strategies.require(claim.system)
+        val externalId =
+            outsideTransaction.execute {
+                // An earlier run may have made the target and failed before recording it.
+                val made =
+                    if (claim.retry) {
+                        strategy.catalog(claim.label).firstOrNull { it.label == claim.label && it.folderLabel == claim.folder }
+                    } else {
+                        null
+                    }
+                (made ?: strategy.create(claim.label, claim.folder)).externalId
+            }
+
+        writeTransaction.executeWithoutResult {
+            targetIds.record(cohortRepo.findById(cohortId).orElseThrow(), externalId)
+        }
+        // Pushes that failed while the cohort had no target are made good by the reconcile.
+        jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId), JobTrigger.ANOTHER_JOB)
+        return CohortTargetRef(cohortId, externalId)
+    }
+
+    override fun createMissing(): Int {
+        val missing = readOnlyTransaction.execute { cohortRepo.findAllBySubjectIdIsNotNullAndExternalIdIsNull().mapNotNull { it.id } }
+        missing.forEach {
+            jobs.runAsync(CohortJobs.CreateCohortTarget, CohortJobs.CreateCohortTargetPayload(it), JobTrigger.ANOTHER_JOB)
+        }
+        log.info("[cohort] queued a create-target job for {} cohort(s) without a target", missing.size)
+        return missing.size
     }
 
     override fun deleteTarget(
@@ -220,10 +250,16 @@ class CohortTargetingService(
         val previousExternalId: String?,
     )
 
-    private data class MaterializePrep(
+    private data class Claim(
         val system: TargetSystem,
         val label: String,
         val folder: String?,
-        val existingExternalId: String?,
+        val retry: Boolean,
+        val linked: String?,
     )
+
+
+    companion object {
+        private val log = LoggerFactory.getLogger(CohortTargetingService::class.java)
+    }
 }

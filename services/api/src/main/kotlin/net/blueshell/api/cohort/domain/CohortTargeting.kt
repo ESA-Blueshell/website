@@ -52,12 +52,15 @@ interface CohortTargeting {
     ): CohortMappingRow
 
     /**
-     * Resolves [cohortId]'s external target for stale queued
-     * `cohort.materialize-target` jobs. Idempotent: returns the existing id
-     * when already set; fails terminally when missing. This path never creates
-     * provider targets.
+     * Creates [cohortId]'s external target in its folder and links it (api ADR-035). Idempotent:
+     * returns the id when one is set. The cohort is claimed before the provider is called, and a
+     * run that finds an earlier claim looks the target up by name before making one, so a retry
+     * never makes a second.
      */
-    fun materialize(cohortId: Long): CohortTargetRef
+    fun createFor(cohortId: Long): CohortTargetRef
+
+    /** Queues a create-target job for every cohort without a target, and says how many. */
+    fun createMissing(): Int
 
     /**
      * Deletes an external target. Run by the `cohort.delete-external-target` job; provider
@@ -69,7 +72,7 @@ interface CohortTargeting {
     )
 }
 
-/** Result of [CohortTargeting.materialize]: a cohort and its resolved target id. */
+/** Result of [CohortTargeting.createFor]: a cohort and its target id. */
 data class CohortTargetRef(
     val cohortId: Long,
     val externalId: String,

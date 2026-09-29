@@ -104,31 +104,11 @@ const rosterOf = (teamId: number, shown: Season | null) => {
   return rosterGroupsOf(team)
 }
 
-const NO_SLICES: ReturnType<typeof teamSliceOf>[] = []
-
-/**
- * Each season's teams as slices, built when that season's answer arrives and kept afterwards.
- *
- * The set handed to a band must keep its identity between renders: the band watches it and reads
- * a new one as a different season, dropping what it measured of the art and reconsidering which
- * slice is open — so a neighbour's answer landing mid-drag must not rebuild the season the
- * visitor is looking at. Rebuilt only where the answer it was drawn from is a new one, which a
- * re-read after an edit is, so a corrected roster is drawn afresh.
- */
-const built = new Map<number, {from: TeamRoster[]; slices: ReturnType<typeof teamSliceOf>[]}>()
-
 const loadingFor = (shown: Season | null) => answerAbout(shown) === undefined
 const hasRostersFor = (shown: Season | null) => teamsFor(shown).length > 0
 
-const slicesFor = (shown: Season | null) => {
-  const roster = teamsFor(shown)
-  if (shown == null || roster.length === 0) return NO_SLICES
-  const had = built.get(shown.id)
-  if (had && had.from === roster) return had.slices
-  const slices = roster.map(teamSliceOf)
-  built.set(shown.id, {from: roster, slices})
-  return slices
-}
+/** A season's teams as slices. */
+const slicesFor = (shown: Season | null) => teamsFor(shown).map(teamSliceOf)
 
 const entrance = (index: number) => ({
   initial: motion.decorative.value ? {opacity: 0, y: 14} : {opacity: 1},

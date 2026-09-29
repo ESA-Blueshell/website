@@ -86,6 +86,25 @@ describe("SliceBand", () => {
     expect(slices[0].classes()).not.toContain("slice--open")
   })
 
+  // A page may rebuild its list on every render; the same items are the same band.
+  it("keeps what it asked for and which slice is open through a fresh array of the same items", async () => {
+    const pictured = [
+      {id: 1, title: "One", meta: "", banner: "/a.jpg"},
+      {id: 2, title: "Two", meta: "", banner: "/b.jpg"},
+    ]
+    const wrapper = mount(SliceBand, {props: {items: pictured, accent: "#ff4655", testidPrefix: "team-roster"}})
+    await settled()
+    const asked = (index: number) => wrapper.findAll("section")[index]!.find("img").attributes("sizes")
+    await wrapper.findAll("section")[1]!.trigger("mouseenter")
+    await wrapper.findAll("section")[0]!.trigger("mouseenter")
+
+    await wrapper.setProps({items: pictured.map(item => ({...item}))})
+    await settled()
+
+    expect(asked(1)).toBe("792px")
+    expect(opened(wrapper, 0)).toContain("slice--open")
+  })
+
   it("opens a slice on a click, since a touch screen has no hover to give", async () => {
     const wrapper = mountSlices()
     await settled()

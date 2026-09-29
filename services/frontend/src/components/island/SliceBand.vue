@@ -242,14 +242,12 @@ const releaseTap = () => {
 }
 
 /**
- * The share of the row an open slice takes, which is what `flex-grow` gives it.
- *
- * Kept here as a number because the figure a banner is fetched at is worked out from it: the
- * stylesheet and this have to say the same thing, and there is no way to ask the stylesheet.
+ * The share of the row an open slice takes. Written here and handed to the stylesheet as
+ * `--open-share`, because the figure a banner is fetched at is worked out from it.
  */
 const OPEN_SHARE = 3.4
 
-/** Roughly what the way-in slice takes out of the row, which is `clamp(6.5rem, 11%, 10rem)`. */
+/** What the way-in slice takes out of the row, handed to the stylesheet as `--way-in-share`. */
 const WAY_IN_SHARE = 0.11
 
 /**
@@ -333,6 +331,8 @@ const rowAspect = computed<number | null>(() => {
  */
 const bandStyle = computed<Record<string, string>>(() => ({
   "--accent": props.accent,
+  "--open-share": String(OPEN_SHARE),
+  "--way-in-share": `${WAY_IN_SHARE * 100}%`,
   "--slice-ease": `${motion.duration(OPEN_SECONDS)}s`,
   ...(props.layout === "aside" ? {"--slice-open": `${OPEN_SECONDS}s`} : {}),
   ...(shutShare.value ? {"--share": `${shutShare.value}px`} : {}),
@@ -527,14 +527,19 @@ onBeforeUnmount(() => {
   window.removeEventListener("resize", onResize)
 })
 
-// A change of what is shown brings a different set, so the first of those opens in its turn
-// unless one of them is named, which is the set arriving because that one was just added.
+/**
+ * The items by id, which is what the band starts over on: a page may hand it a fresh array of the
+ * same items on every render without the band dropping what it measured or which slice is open.
+ */
+const itemIds = computed(() => props.items.map(item => String(item.id)).join("\n"))
+
 /**
  * A change of what is shown keeps the slice that was open where the same one is still
  * there. Switching season re-answers with much the same band, and reopening the first of them
  * each time made every switch look like a page rebuilding itself.
  */
-watch(() => props.items, (items, before) => {
+watch(itemIds, (_, beforeIds) => {
+  const items = props.items
   slices.value = []
   // Different pictures, so the figures asked for the last ones say nothing about these.
   askedFor.value = []
@@ -549,8 +554,8 @@ watch(() => props.items, (items, before) => {
     requestAnimationFrame(watchScroll)
     return
   }
-  const held = before?.[open.value ?? -1]?.id
-  const stillThere = held == null ? -1 : items.findIndex(item => item.id === held)
+  const held = beforeIds ? beforeIds.split("\n")[open.value ?? -1] : undefined
+  const stillThere = held == null ? -1 : items.findIndex(item => String(item.id) === held)
   // Only a band that has nothing in common with the one before it opens from nothing, so such
   // a set is offered no fallback at all and a named slice is all that opens.
   const fromNothing = motion.decorative.value && stillThere < 0
@@ -569,7 +574,7 @@ watch(() => props.items, (items, before) => {
  * point the scroll is their intent again. Scrolling to it ourselves would be that scroll,
  * and would hand the choice straight back to whichever slice happened to be in the middle.
  */
-watch([() => props.openId, () => props.items], () => {
+watch([() => props.openId, itemIds], () => {
   // Nothing to open where the named slice has nothing behind it: something was added and has
   // nothing written about it yet, which is the ordinary case for anything just recorded.
   const named = openable(indexOfNamed())
@@ -910,7 +915,7 @@ watch(open, (index) => {
 /* The association's blue, patterned and darkened, which makes the way in the one saturated
    thing on the page in either theme. */
 .slice--add {
-  flex: 0 0 clamp(6.5rem, 11%, 10rem);
+  flex: 0 0 clamp(6.5rem, var(--way-in-share), 10rem);
 
   --color-chalk: #ffffff;
 
@@ -963,7 +968,7 @@ watch(open, (index) => {
 }
 
 .slice--open {
-  flex-grow: 3.4;
+  flex-grow: var(--open-share);
   z-index: 1;
 }
 

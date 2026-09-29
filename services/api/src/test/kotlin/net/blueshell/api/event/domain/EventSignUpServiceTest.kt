@@ -2,13 +2,13 @@ package net.blueshell.api.event.domain
 
 import jakarta.persistence.EntityManager
 import net.blueshell.api.event.api.EventSignUpsChanged
-import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.EventSignUpRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorProvider
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -35,7 +35,7 @@ class EventSignUpServiceTest {
                 .set(this, mock<EntityManager>())
         }
 
-    private val event = mock<Event> { on { id } doReturn 100 }
+    private val event = Entities.event(id = 100)
 
     private fun countsMoved() =
         argumentCaptor<Any>().let { sent ->

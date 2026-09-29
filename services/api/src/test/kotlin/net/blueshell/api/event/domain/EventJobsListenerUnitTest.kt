@@ -5,6 +5,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.testsupport.Entities
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -16,11 +17,7 @@ class EventJobsListenerUnitTest {
 
     @Test
     fun `sends a guest their sign-up email with the access link, and nobody else`() {
-        val guest: EventSignUp =
-            mock {
-                on { id } doReturn 11
-                on { this.guest } doReturn mock()
-            }
+        val guest = Entities.signUp(id = 11, guest = Entities.guest())
         val signUps: EventSignUpService = mock { on { findById(11) } doReturn guest }
         val actor = Actor.user(4, Role.MEMBER)
 
@@ -32,7 +29,7 @@ class EventJobsListenerUnitTest {
 
     @Test
     fun `sends nothing for a sign-up that belongs to an account`() {
-        val member: EventSignUp = mock { on { id } doReturn 12 }
+        val member: EventSignUp = Entities.signUp(id = 12)
         val signUps: EventSignUpService = mock { on { findById(12) } doReturn member }
 
         EventJobsListener(jobs, signUps).onPersist(EventSignUpCreated(12, "access"))

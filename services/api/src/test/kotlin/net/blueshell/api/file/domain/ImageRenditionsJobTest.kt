@@ -3,6 +3,7 @@ package net.blueshell.api.file.domain
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.jobs.api.JobOutcome
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -31,7 +32,7 @@ class ImageRenditionsJobTest {
 
     @Test
     fun `writes the widths of the picture the payload names`() {
-        val source: File = mock()
+        val source: File = Entities.file()
         whenever(files.findById(7L)).thenReturn(Optional.of(source))
         whenever(renditions.widthsOf(source)).thenReturn(ImageRenditionWriter.Widths(emptyList()))
 
@@ -42,7 +43,7 @@ class ImageRenditionsJobTest {
 
     @Test
     fun `a picture that gets no widths is skipped with the writer's reason`() {
-        val source: File = mock()
+        val source: File = Entities.file()
         whenever(files.findById(7L)).thenReturn(Optional.of(source))
         whenever(renditions.widthsOf(source)).thenReturn(ImageRenditionWriter.Widths.none("A vector picture needs no widths."))
 

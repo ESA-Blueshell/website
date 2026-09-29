@@ -22,7 +22,7 @@ class ShippedPicturesTest {
         mock<FileService> {
             on { store(any(), any(), any(), any(), any()) } doAnswer { call ->
                 val name = call.getArgument<String>(1)
-                mock<File> { on { path } doReturn "art/$name" }.also { stored[it.path] = it }
+                Entities.file(path = "art/$name").also { stored[it.path] = it }
             }
             on { findPublicImage(any(), eq(FileType.TEAM_BANNER)) } doAnswer { stored[it.getArgument(0)] }
         }

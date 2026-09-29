@@ -35,9 +35,7 @@ class SignupTokenServiceTest {
         purpose: TokenPurpose = TokenPurpose.SIGNUP_CONTINUATION,
         owner: User = user(),
     ): RecoveryToken {
-        val token = mock<RecoveryToken>()
-        whenever(token.type).thenReturn(purpose)
-        whenever(token.user).thenReturn(owner)
+        val token = Entities.recoveryToken(type = purpose, user = owner)
         return token
     }
 

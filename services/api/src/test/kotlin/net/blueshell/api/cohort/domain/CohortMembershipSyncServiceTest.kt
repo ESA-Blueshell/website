@@ -3,7 +3,6 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.contact.api.ContactJobs
@@ -13,6 +12,7 @@ import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -166,11 +166,11 @@ class CohortMembershipSyncServiceTest {
         system: String,
         label: String,
     ) {
-        val c = mockk<Cohort>()
-        every { c.id } returns id
-        every { c.system } returns system
-        every { c.label } returns label
-        every { c.kind } returns CohortKind.LIST
+        val c = Entities.cohort()
+        c.id = id
+        c.system = system
+        c.label = label
+        c.kind = CohortKind.LIST
         every { cohorts.findById(id) } returns Optional.of(c)
     }
 

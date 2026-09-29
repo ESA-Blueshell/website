@@ -12,6 +12,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -65,9 +66,8 @@ class JobExecutionViewServiceTest {
         name: String,
         username: String,
     ) {
-        val user: User = mockk()
-        every { user.fullName } returns name
-        every { user.username } returns username
+        val user: User =
+            Entities.user(username = username, firstName = name.substringBefore(' '), lastName = name.substringAfter(' '))
         every { users.findById(id) } returns user
     }
 

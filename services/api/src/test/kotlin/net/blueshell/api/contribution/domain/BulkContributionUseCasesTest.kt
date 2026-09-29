@@ -6,6 +6,7 @@ import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.api.UserService
@@ -198,7 +199,7 @@ class BulkContributionUseCasesTest {
 
     private fun membership(memberType: MemberType) =
         Membership(
-            user = mock(),
+            user = Entities.user(),
             startDate = LocalDate.of(2023, 1, 1),
             endDate = null,
             memberType = memberType,

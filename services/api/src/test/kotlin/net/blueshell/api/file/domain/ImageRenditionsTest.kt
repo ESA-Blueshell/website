@@ -1,9 +1,9 @@
 package net.blueshell.api.file.domain
 
 import net.blueshell.api.file.api.BlobStore
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -21,12 +21,7 @@ class ImageRenditionsTest {
 
     @Test
     fun `queues the widths of a picture that moves rather than writing them now`() {
-        val source: File =
-            mock {
-                on { id } doReturn 7
-                on { path } doReturn "banners/party.gif"
-                on { mediaType } doReturn "image/gif"
-            }
+        val source = Entities.file(id = 7, path = "banners/party.gif", mediaType = "image/gif")
 
         assertThat(ImageRenditions(writer, animated, blobs, jobs).request(source)).isEmpty()
 

@@ -10,11 +10,11 @@ import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.testsupport.Entities
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -61,8 +61,8 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `create does not touch the provider when the subject already maps the system`() {
-        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(mock()))
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(mock<Cohort>())
+        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(Entities.cohortSubject(id = 1L)))
+        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(Entities.cohort())
 
         assertThrows<ResponseStatusException> {
             service.create(1L, TargetSystem.BREVO, "Members", null)
@@ -74,8 +74,8 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `create materialises the target and records the id`() {
-        val saved = mock<Cohort> { on { id } doReturn 42L }
-        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(mock()))
+        val saved = Entities.cohort(id = 42L)
+        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(Entities.cohortSubject(id = 1L)))
         whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
         whenever(strategy.create("Members", "Lists")).thenReturn(target("999", "Members", "Lists"))
         whenever(cohortRepo.save(any<Cohort>())).thenReturn(saved)
@@ -90,12 +90,7 @@ class CohortTargetingServiceTest {
     @Test
     fun `materialize without an existing target fails terminally and never creates a provider target`() {
         val cohort =
-            mock<Cohort> {
-                on { id } doReturn 7L
-                on { system } doReturn "BREVO"
-                on { label } doReturn "Members"
-                on { folder } doReturn "Committees"
-            }
+            Entities.cohort(id = 7L, system = "BREVO", label = "Members", folder = "Committees")
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn(null)
 
@@ -110,11 +105,7 @@ class CohortTargetingServiceTest {
     @Test
     fun `materialize is a no-op when the target already exists`() {
         val cohort =
-            mock<Cohort> {
-                on { id } doReturn 7L
-                on { system } doReturn "BREVO"
-                on { label } doReturn "Members"
-            }
+            Entities.cohort(id = 7L, system = "BREVO", label = "Members")
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn("existing")
 
@@ -129,10 +120,7 @@ class CohortTargetingServiceTest {
     fun `linkExisting fills an existing unbound mapping`() {
         val subject = mock<net.blueshell.api.cohort.persistence.CohortSubject>()
         val cohort =
-            mock<Cohort> {
-                on { id } doReturn 7L
-                on { externalId } doReturn null
-            }
+            Entities.cohort(id = 7L, externalId = null)
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
         whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(cohort)
 
@@ -148,7 +136,7 @@ class CohortTargetingServiceTest {
     @Test
     fun `linkExisting allows ids that are not present in the catalog`() {
         val subject = CohortSubject(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "Members")
-        val saved = mock<Cohort> { on { id } doReturn 7L }
+        val saved = Entities.cohort(id = 7L)
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
         whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
         whenever(cohortRepo.save(any<Cohort>())).thenReturn(saved)
@@ -163,10 +151,7 @@ class CohortTargetingServiceTest {
     @Test
     fun `switch enqueues delete-previous and reconcile when asked`() {
         val cohort =
-            mock<Cohort> {
-                on { system } doReturn "BREVO"
-                on { subjectId } doReturn 1L
-            }
+            Entities.cohort(system = "BREVO", subjectId = 1L)
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn("old-list")
 
@@ -191,10 +176,7 @@ class CohortTargetingServiceTest {
     @Test
     fun `switch does not enqueue a delete when there is no previous target`() {
         val cohort =
-            mock<Cohort> {
-                on { system } doReturn "BREVO"
-                on { subjectId } doReturn 1L
-            }
+            Entities.cohort(system = "BREVO", subjectId = 1L)
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn(null)
 
@@ -206,7 +188,7 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `switch rejects a cohort that is not a target of the path subject`() {
-        val cohort = mock<Cohort> { on { subjectId } doReturn 99L }
+        val cohort = Entities.cohort(subjectId = 99L)
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
 
         assertThrows<ResponseStatusException> {

@@ -36,9 +36,7 @@ class UserActivationServiceTest {
         user: User = user(),
         type: TokenPurpose = TokenPurpose.USER_ACTIVATION,
     ): RecoveryToken {
-        val token = mock<RecoveryToken>()
-        whenever(token.user).thenReturn(user)
-        whenever(token.type).thenReturn(type)
+        val token = Entities.recoveryToken(user = user, type = type)
         return token
     }
 

@@ -1,11 +1,9 @@
 package net.blueshell.api.event.api
 
-import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.file.api.BlobStore
-import net.blueshell.api.file.persistence.File
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
@@ -15,26 +13,22 @@ import java.io.ByteArrayInputStream
 import java.time.Instant
 
 class EventPostsTest {
-    private val file: File =
-        mock {
-            on { path } doReturn "events/lan.webp"
-            on { mediaType } doReturn "image/webp"
-        }
-    private val banner: EventBanner = mock { on { this.file } doReturn file }
-    private val event: Event =
-        mock {
-            on { id } doReturn 42
-            on { approved } doReturn true
-            on { isSoftDeleted } doReturn false
-            on { title } doReturn "LAN party"
-            on { signUp } doReturn true
-            on { signUpCount } doReturn 10
-            on { signUpLimit } doReturn 30
-            on { startTime } doReturn Instant.parse("2026-10-10T18:00:00Z")
-            on { endTime } doReturn Instant.parse("2026-10-10T21:00:00Z")
-            on { pingedRoles } doReturn mutableSetOf(PingedRole("901", "Gamers"))
-            on { this.banner } doReturn banner
-        }
+    private val file = Entities.file(path = "events/lan.webp")
+    private val event =
+        Entities
+            .event(
+                id = 42,
+                approved = true,
+                title = "LAN party",
+                signUp = true,
+                signUpCount = 10,
+                startTime = Instant.parse("2026-10-10T18:00:00Z"),
+                endTime = Instant.parse("2026-10-10T21:00:00Z"),
+            ).also {
+                it.signUpLimit = 30
+                it.pingedRoles += PingedRole("901", "Gamers")
+                it.banner = Entities.banner(it, file)
+            }
     private val blobs: BlobStore = mock { on { open("events/lan.webp") } doReturn ByteArrayInputStream(byteArrayOf(1, 2)) }
 
     @Test
@@ -53,16 +47,10 @@ class EventPostsTest {
 
     @Test
     fun `reads an event that was deleted, or never approved, as no longer live`() {
-        val deleted: Event =
-            mock {
-                on { id } doReturn 43
-                on { approved } doReturn true
-                on { isSoftDeleted } doReturn true
-                on { title } doReturn "Gone"
-                on { startTime } doReturn Instant.EPOCH
-                on { endTime } doReturn Instant.EPOCH
-                on { pingedRoles } doReturn mutableSetOf()
-            }
+        val deleted =
+            Entities
+                .event(id = 43, approved = true, title = "Gone", startTime = Instant.EPOCH, endTime = Instant.EPOCH)
+                .also { it.deletedAt = Instant.EPOCH }
         val events: EventRepository = mock { on { findByIdIncludingDeleted(43) } doReturn deleted }
 
         assertThat(EventPosts(events, blobs).of(43)!!.live).isFalse()
@@ -71,22 +59,15 @@ class EventPostsTest {
 
     @Test
     fun `reads an event awaiting re-approval as not live but frozen, unless it is deleted`() {
-        val waiting: Event =
-            mock {
-                on { id } doReturn 45
-                on { approved } doReturn false
-                on { awaitingReapproval } doReturn true
-                on { isSoftDeleted } doReturn false
-                on { title } doReturn "Waiting"
-                on { startTime } doReturn Instant.EPOCH
-                on { endTime } doReturn Instant.EPOCH
-                on { pingedRoles } doReturn mutableSetOf()
-            }
+        val waiting =
+            Entities
+                .event(id = 45, title = "Waiting", startTime = Instant.EPOCH, endTime = Instant.EPOCH)
+                .also { it.awaitingReapproval = true }
         val events: EventRepository = mock { on { findByIdIncludingDeleted(45) } doReturn waiting }
 
         val read = EventPosts(events, blobs).of(45)!!
         assertThat(read.live to read.frozen).isEqualTo(false to true)
-        whenever(waiting.isSoftDeleted).thenReturn(true)
+        waiting.deletedAt = Instant.EPOCH
         assertThat(EventPosts(events, blobs).of(45)!!.frozen).isFalse()
     }
 
@@ -108,20 +89,11 @@ class EventPostsTest {
 
     @Test
     fun `hands over the widest rendition a Discord event's cover takes, not the master`() {
-        val small: File =
-            mock {
-                on { renditionWidth } doReturn 800
-                on { path } doReturn "events/lan-800.webp"
-                on { mediaType } doReturn "image/webp"
-            }
-        val cover: File =
-            mock {
-                on { renditionWidth } doReturn 1600
-                on { path } doReturn "events/lan-1600.webp"
-                on { mediaType } doReturn "image/webp"
-            }
-        val huge: File = mock { on { renditionWidth } doReturn 3200 }
-        whenever(file.renditions).thenReturn(listOf(small, cover, huge))
+        val small = Entities.file(path = "events/lan-800.webp", renditionWidth = 800)
+        val cover = Entities.file(path = "events/lan-1600.webp", renditionWidth = 1600)
+        val huge = Entities.file(renditionWidth = 3200)
+        val file = Entities.file(path = "events/lan.webp", renditions = listOf(small, cover, huge))
+        val event = Entities.event(id = 42).also { it.banner = Entities.banner(it, file) }
         whenever(blobs.open("events/lan-1600.webp")).thenReturn(ByteArrayInputStream(byteArrayOf(9)))
         val events: EventRepository = mock { on { findByIdIncludingDeleted(42) } doReturn event }
 

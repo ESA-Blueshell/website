@@ -29,7 +29,7 @@ class RecoveryTokenFactoryTest {
 
     @Test
     fun `issue deletes existing unconsumed tokens of same type for the user`() {
-        val existingToken = mock<RecoveryToken>()
+        val existingToken = Entities.recoveryToken()
         whenever(repository.findAllUnconsumedByTypeAndUserId(1L, TokenPurpose.PASSWORD_RESET))
             .thenReturn(mutableListOf(existingToken))
         whenever(encoder.encode(any())).thenReturn("hashed-verifier")

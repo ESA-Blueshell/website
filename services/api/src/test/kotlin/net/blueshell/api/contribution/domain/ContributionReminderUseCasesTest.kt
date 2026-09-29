@@ -51,7 +51,7 @@ class ContributionReminderUseCasesTest {
 
     @Test
     fun `builds one reminder per item and records the batch once`() {
-        whenever(users.findById(any())).thenReturn(mock())
+        whenever(users.findById(any())).thenReturn(Entities.user())
         whenever(periods.findById(any())).thenReturn(period())
         val captured = argumentCaptor<List<ContributionReminder>>()
         whenever(service.recordAll(captured.capture())).thenAnswer {

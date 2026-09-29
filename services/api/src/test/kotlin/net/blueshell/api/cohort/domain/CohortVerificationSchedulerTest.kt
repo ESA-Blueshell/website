@@ -8,13 +8,14 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.testsupport.Entities
 import org.junit.jupiter.api.Test
 
 class CohortVerificationSchedulerTest {
     @Test
     fun `queues a check of every cohort bound to an external list, and of no other`() {
-        val bound: Cohort = mockk { every { id } returns 5L }
-        val unbound: Cohort = mockk()
+        val bound: Cohort = Entities.cohort(id = 5L)
+        val unbound: Cohort = Entities.cohort()
         val cohorts: CohortRepository = mockk { every { findAll() } returns mutableListOf(bound, unbound) }
         val targetIds: CohortTargetIds =
             mockk {

@@ -5,8 +5,8 @@ import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -27,13 +27,7 @@ class ContactSyncServiceTest {
     private val userId = 42L
 
     private fun stubUser() {
-        val user =
-            mock<User> {
-                on { email }.thenReturn("a@b.c")
-                on { firstName }.thenReturn("A")
-                on { lastName }.thenReturn("B")
-                on { roles }.thenReturn(mutableSetOf())
-            }
+        val user = Entities.user(email = "a@b.c", firstName = "A", lastName = "B", roles = emptySet())
         whenever(userService.findById(userId)).thenReturn(user)
     }
 

@@ -4,19 +4,17 @@ import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.shared.discord.DiscordFace
 import net.blueshell.api.shared.discord.DiscordFaces
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
 
 class CommitteeSeatsTest {
     private fun user(
         discordId: String?,
         discord: String?,
-    ) = mock<User> {
-        on { this.discordId } doReturn discordId
-        on { this.discord } doReturn discord
+    ) = Entities.user().also {
+        it.discordId = discordId
+        it.discord = discord
     }
 
     private val committee =

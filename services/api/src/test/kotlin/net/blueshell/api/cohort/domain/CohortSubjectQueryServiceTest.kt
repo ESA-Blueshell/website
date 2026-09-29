@@ -15,6 +15,7 @@ import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -393,11 +394,12 @@ class CohortSubjectQueryServiceTest {
         id: Long,
         fullName: String,
     ): User =
-        mockk<User>(relaxed = true).also {
-            every { it.id } returns id
-            every { it.fullName } returns fullName
-            every { it.email } returns "user$id@example.com"
-        }
+        Entities.user(
+            id = id,
+            firstName = fullName.substringBefore(' '),
+            lastName = fullName.substringAfter(' '),
+            email = "user$id@example.com",
+        )
 
     private companion object {
         val NOW: LocalDateTime = LocalDateTime.of(2026, 3, 1, 12, 0)

@@ -6,6 +6,7 @@ import io.mockk.verify
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
@@ -74,7 +75,7 @@ class RecoveryEmailJobTest {
 
     @Test
     fun `a signup continuation token is never emailed`() {
-        every { users.findById(7L) } returns mockk<User>(relaxed = true)
+        every { users.findById(7L) } returns Entities.user()
 
         assertThatThrownBy { run(7L, "selector.verifier", TokenPurpose.SIGNUP_CONTINUATION) }
             .isInstanceOf(IllegalArgumentException::class.java)

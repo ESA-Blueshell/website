@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.telemetry.persistence.Telemetry
 import net.blueshell.api.telemetry.persistence.TelemetryRepository
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -35,7 +36,7 @@ class TelemetryServiceTest {
 
     @Test
     fun `reads a recorded visit, and refuses one that is not there`() {
-        val telemetry = mock<Telemetry>()
+        val telemetry = Entities.telemetry()
         whenever(repository.findById(1)).thenReturn(Optional.of(telemetry))
         whenever(repository.findById(2)).thenReturn(Optional.empty())
 

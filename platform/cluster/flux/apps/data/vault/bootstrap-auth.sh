@@ -222,6 +222,22 @@ vault write auth/kubernetes/role/vso \
   policies="vso" \
   ttl="1h"
 
+# --- The bounce mailbox ------------------------------------------------
+#
+# Stalwart's apply sidecar creates bounce@ from account.bounce, and the api
+# sends and polls as it; without the key there is no mailbox. Seeded once,
+# never overwritten.
+if ! vault kv get -field=account.bounce secret/platform/mail >/dev/null 2>&1; then
+  BOUNCE_PASSWORD=$(head -c 32 /dev/urandom | base64 | tr -d '=+/\n' | head -c 32)
+  if vault kv get secret/platform/mail >/dev/null 2>&1; then
+    vault kv patch secret/platform/mail account.bounce="$BOUNCE_PASSWORD" >/dev/null
+  else
+    vault kv put secret/platform/mail account.bounce="$BOUNCE_PASSWORD" >/dev/null
+  fi
+  unset BOUNCE_PASSWORD
+  echo "Seeded secret/platform/mail account.bounce."
+fi
+
 # --- MariaDB dynamic secrets (database engine) --------------------------
 #
 # The api reads DB creds from Vault via `database/creds/api`. The

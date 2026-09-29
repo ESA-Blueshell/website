@@ -35,23 +35,30 @@ class VaultConfigImportIT {
     }
 
     @Test
-    fun `the prod profile reads the mail passwords from the path Stalwart shares, by Stalwart's names`() {
+    fun `the api sends and polls as the bounce mailbox, so undelivered mail comes back where it looks`() {
         prodEnvironment { property ->
-            assertThat(property("spring.mail.password")).isEqualTo("smtp-from-vault")
-            assertThat(property("email.bounce.imap.password")).isEqualTo("imap-from-vault")
+            assertThat(property("spring.mail.username")).isEqualTo(BOUNCE)
+            assertThat(property("spring.mail.properties.mail.smtp.from")).isEqualTo(BOUNCE)
+            assertThat(property("spring.mail.password")).isEqualTo("bounce-from-vault")
+            assertThat(property("email.bounce.imap.password")).isEqualTo("bounce-from-vault")
         }
     }
 
     private fun prodEnvironment(assertions: ((String) -> String?) -> Unit) {
         SpringApplicationBuilder(NoBeans::class.java)
-            .run(*vault.bootArguments("prod", apiToken), "--spring.cloud.vault.database.enabled=false")
-            .use { context -> assertions { context.environment.getProperty(it) } }
+            .run(
+                *vault.bootArguments("prod", apiToken),
+                "--spring.cloud.vault.database.enabled=false",
+                // The api Deployment names the bounce mailbox.
+                "--email.bounce.imap.username=$BOUNCE",
+            ).use { context -> assertions { context.environment.getProperty(it) } }
     }
 
     @Configuration(proxyBeanMethods = false)
     class NoBeans
 
     companion object {
+        private const val BOUNCE = "bounce@esa-blueshell.nl"
         private val vault = VaultDevServer()
         private lateinit var apiToken: String
 
@@ -67,7 +74,7 @@ class VaultConfigImportIT {
                 """google.calendar.serviceAccountJson={"type":"service_account"}""",
                 "discord.botToken=discord-from-vault",
             )
-            vault.put("secret/platform/mail", "account.api=smtp-from-vault", "account.bounce=imap-from-vault")
+            vault.put("secret/platform/mail", "account.api=api-from-vault", "account.bounce=bounce-from-vault")
             apiToken = vault.tokenFor("api")
         }
 

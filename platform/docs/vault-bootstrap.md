@@ -202,8 +202,11 @@ value: the hardening guard refuses to start without `app.jwt.secret`,
 key leaves that integration off.
 
 The api also reads `secret/platform/mail`, the path Stalwart uses, with the
-prefix `mail.`: `account.api` is its SMTP password and `account.bounce` its
-IMAP bounce password.
+prefix `mail.`. It sends and polls as `bounce@`, with `account.bounce`: the
+envelope sender is the bounce mailbox, so a report of undelivered mail comes back
+where the poller reads, while `From:` stays `no-reply@`. The bootstrap Job seeds
+`account.bounce` when it is missing, and Stalwart's apply sidecar creates the
+mailbox from it on its next start.
 
 Adding or rotating only the Discord bot is a `vault kv patch`, not a `put`:
 see [`discord-bot.md`](discord-bot.md), or run `scripts/discord-bot-check.sh --vault`.

@@ -28,8 +28,14 @@ spring:
       database:
         enabled: true
         role: api
+  # Mail leaves as the bounce mailbox, so a report of undelivered mail comes back to
+  # the mailbox the poller reads. Stalwart refuses an envelope sender the login does
+  # not own, so login and envelope sender are one account; From: stays no-reply@.
   mail:
-    password: ${mail.account.api:}
+    username: ${email.bounce.imap.username}
+    password: ${mail.account.bounce:}
+    properties:
+      mail.smtp.from: ${email.bounce.imap.username}
   datasource:
     username: ""
 

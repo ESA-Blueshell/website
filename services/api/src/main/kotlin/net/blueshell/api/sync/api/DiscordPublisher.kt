@@ -4,7 +4,8 @@ import java.time.Instant
 
 /**
  * A message the bot writes: [banner], then [text], then [links] as buttons. [text] names the roles
- * the message notifies, [pingedRoleIds], and holds at most [DISCORD_TEXT_MAX] characters.
+ * the message notifies, [pingedRoleIds], and holds at most [DISCORD_TEXT_MAX] characters. A member
+ * [text] mentions is never notified.
  */
 data class DiscordPost(
     val pingedRoleIds: List<String>,

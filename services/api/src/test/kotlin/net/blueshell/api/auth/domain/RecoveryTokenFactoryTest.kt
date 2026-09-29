@@ -3,6 +3,7 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -22,8 +23,7 @@ class RecoveryTokenFactoryTest {
     private val factory = RecoveryTokenFactory(repository, encoder, Clock.systemUTC())
 
     private fun user(id: Long = 1L): User {
-        val user = mock<User>()
-        whenever(user.id).thenReturn(id)
+        val user = Entities.user(id = id)
         return user
     }
 

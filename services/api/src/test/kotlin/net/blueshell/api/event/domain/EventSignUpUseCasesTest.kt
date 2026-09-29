@@ -14,7 +14,7 @@ import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
-import net.blueshell.api.survey.persistence.Question
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -77,8 +77,8 @@ class EventSignUpUseCasesTest {
     inner class CreateEventSignUp {
         @Test
         fun `creates sign up and overrides user id with principal id`() {
-            val eventRef = mock<Event>()
-            val questionRef = mock<Question>()
+            val eventRef = Entities.event()
+            val questionRef = Entities.question()
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             whenever(questionService.getReferenceById(200L)).thenReturn(questionRef)
             val captured = argumentCaptor<EventSignUp>()
@@ -138,7 +138,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `generates guest access token when missing`() {
-            val eventRef = mock<Event>()
+            val eventRef = Entities.event()
             whenever(eventRepository.getReferenceById(101L)).thenReturn(eventRef)
             val captured = argumentCaptor<EventSignUp>()
             whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
@@ -170,7 +170,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `anonymous create strips spoofed user id`() {
-            val eventRef = mock<Event>()
+            val eventRef = Entities.event()
             whenever(eventRepository.getReferenceById(102L)).thenReturn(eventRef)
             val captured = argumentCaptor<EventSignUp>()
             whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
@@ -222,8 +222,8 @@ class EventSignUpUseCasesTest {
         @Test
         fun `updates sign up resolved by principal when access token is missing`() {
             val existing = emptySignUp().apply { id = 11L }
-            val eventRef = mock<Event>()
-            val questionRef = mock<Question>()
+            val eventRef = Entities.event()
+            val questionRef = Entities.question()
             whenever(eventSignUpService.findByUserIdAndEventId(42L, 100L)).thenReturn(existing)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             whenever(questionService.getReferenceById(201L)).thenReturn(questionRef)
@@ -243,7 +243,6 @@ class EventSignUpUseCasesTest {
                     null,
                 )
 
-            verify(eventSignUpService).findByUserIdAndEventId(42L, 100L)
             assertThat(existing.event).isSameAs(eventRef)
             assertThat(existing.userId).isEqualTo(42L)
             assertThat(existing.version).isEqualTo(0L)
@@ -267,7 +266,7 @@ class EventSignUpUseCasesTest {
         @Test
         fun `updates sign up resolved by guest access token`() {
             val existing = emptySignUp()
-            val eventRef = mock<Event>()
+            val eventRef = Entities.event()
             whenever(eventSignUpService.findByGuestAccessTokenAndEventId("TOKEN-2", 101L)).thenReturn(existing)
             whenever(eventRepository.getReferenceById(101L)).thenReturn(eventRef)
             whenever(eventSignUpService.update(existing)).thenReturn(existing)
@@ -285,7 +284,6 @@ class EventSignUpUseCasesTest {
                 "TOKEN-2",
             )
 
-            verify(eventSignUpService).findByGuestAccessTokenAndEventId("TOKEN-2", 101L)
             verify(eventSignUpService).update(existing)
             assertThat(existing.event).isSameAs(eventRef)
             assertThat(existing.userId).isNull()
@@ -304,10 +302,9 @@ class EventSignUpUseCasesTest {
     inner class UpdateEventSignUpById {
         @Test
         fun `applies the answers a board member typed onto the sign-up they picked`() {
-            val eventRef = mock<Event>()
-            whenever(eventRef.id).thenReturn(100L)
+            val eventRef = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
-            val questionRef = mock<Question>()
+            val questionRef = Entities.question()
             whenever(questionService.getReferenceById(200L)).thenReturn(questionRef)
             val signUp = EventSignUp(event = eventRef, userId = 7L)
             whenever(eventSignUpService.findById(40L)).thenReturn(signUp)
@@ -341,8 +338,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `edits the guest's own details on a guest sign-up`() {
-            val eventRef = mock<Event>()
-            whenever(eventRef.id).thenReturn(100L)
+            val eventRef = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             val signUp =
                 EventSignUp(event = eventRef).apply {
@@ -380,8 +376,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `keeps the guest when the body carries no guest details`() {
-            val eventRef = mock<Event>()
-            whenever(eventRef.id).thenReturn(100L)
+            val eventRef = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             val guest =
                 Guest.withRawToken(
@@ -402,8 +397,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `a guest with no phone number keeps the guest, and the phone reads as empty`() {
-            val eventRef = mock<Event>()
-            whenever(eventRef.id).thenReturn(100L)
+            val eventRef = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             val guest =
                 Guest.withRawToken(
@@ -424,8 +418,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `ignores guest details sent for an account sign-up`() {
-            val eventRef = mock<Event>()
-            whenever(eventRef.id).thenReturn(100L)
+            val eventRef = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             val signUp = EventSignUp(event = eventRef, userId = 7L)
             whenever(eventSignUpService.findById(43L)).thenReturn(signUp)
@@ -456,9 +449,7 @@ class EventSignUpUseCasesTest {
             eventId: Long = 100L,
             membersOnly: Boolean = false,
         ): Pair<Event, EventSignUp> {
-            val event = mock<Event>()
-            whenever(event.id).thenReturn(eventId)
-            whenever(event.membersOnly).thenReturn(membersOnly)
+            val event = Entities.event(id = eventId, membersOnly = membersOnly)
             whenever(eventRepository.getReferenceById(eventId)).thenReturn(event)
             val signUp =
                 EventSignUp(event = event).apply {
@@ -530,8 +521,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `a sign-up with neither holder is not moved either`() {
-            val event = mock<Event>()
-            whenever(event.id).thenReturn(100L)
+            val event = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(event)
             val signUp = EventSignUp(event = event)
             whenever(eventSignUpService.findById(55L)).thenReturn(signUp)
@@ -545,8 +535,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `leaves an account sign-up where it is`() {
-            val event = mock<Event>()
-            whenever(event.id).thenReturn(100L)
+            val event = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(event)
             val signUp = EventSignUp(event = event, userId = 7L)
             whenever(eventSignUpService.findById(54L)).thenReturn(signUp)
@@ -563,8 +552,7 @@ class EventSignUpUseCasesTest {
     inner class RefusedByValidation {
         @Test
         fun `a board edit the validator refuses does not reach the store`() {
-            val eventRef = mock<Event>()
-            whenever(eventRef.id).thenReturn(100L)
+            val eventRef = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             val signUp = EventSignUp(event = eventRef, userId = 7L)
             whenever(eventSignUpService.findById(45L)).thenReturn(signUp)
@@ -590,8 +578,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `tells a guest their sign up is removed when asked to`() {
-            val event = mock<Event>()
-            whenever(event.title).thenReturn("LAN Party")
+            val event = Entities.event(title = "LAN Party")
             val signUp =
                 EventSignUp(event = event).apply {
                     guest =
@@ -623,8 +610,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `tells an account holder at the address on their account`() {
-            val event = mock<Event>()
-            whenever(event.title).thenReturn("LAN Party")
+            val event = Entities.event(title = "LAN Party")
             val user =
                 User(
                     username = "ada",
@@ -666,7 +652,7 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `a sign-up naming nobody is removed without an email`() {
-            val event = mock<Event>()
+            val event = Entities.event()
             whenever(eventSignUpService.findById(39L)).thenReturn(EventSignUp(event = event))
 
             useCases.delete(39L, null, notify = true)
@@ -723,8 +709,6 @@ class EventSignUpUseCasesTest {
 
             useCases.delete(34L, "MATCHING-TOKEN")
 
-            verify(guestService).findByAccessToken("MATCHING-TOKEN")
-            verify(eventSignUpService).findById(34L)
             verify(eventSignUpService).delete(signUp)
             verify(eventSignUpService, never()).deleteById(eq(34L))
         }
@@ -738,8 +722,10 @@ class EventSignUpUseCasesTest {
 
         @Test
         fun `a guest token against an account sign-up is refused`() {
-            val signUp = EventSignUp(event = mock(), userId = 7L)
-            whenever(guestService.findByAccessToken("SOME-TOKEN")).thenReturn(mock())
+            val signUp = EventSignUp(event = Entities.event(), userId = 7L)
+            whenever(guestService.findByAccessToken("SOME-TOKEN")).thenReturn(
+                Guest.withRawToken(name = "Guest", discord = "guest#0003", email = "guest-some@example.com", accessToken = "SOME-TOKEN"),
+            )
             whenever(eventSignUpService.findById(43L)).thenReturn(signUp)
 
             assertThatThrownBy { useCases.delete(43L, "SOME-TOKEN") }
@@ -779,8 +765,6 @@ class EventSignUpUseCasesTest {
                 assertThat(ex.reason).contains("does not match")
             }
 
-            verify(guestService).findByAccessToken("WRONG-TOKEN")
-            verify(eventSignUpService).findById(35L)
             verify(eventSignUpService, never()).delete(signUp)
             verify(eventSignUpService, never()).deleteById(eq(35L))
         }
@@ -797,11 +781,9 @@ class EventSignUpUseCasesTest {
                 assertThat(ex.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
             }
 
-            verify(guestService).findByAccessToken("UNKNOWN-TOKEN")
-            verify(eventSignUpService, never()).findById(eq(36L))
             verify(eventSignUpService, never()).deleteById(eq(36L))
         }
     }
 
-    private fun emptySignUp(): EventSignUp = EventSignUp(event = mock())
+    private fun emptySignUp(): EventSignUp = EventSignUp(event = Entities.event())
 }

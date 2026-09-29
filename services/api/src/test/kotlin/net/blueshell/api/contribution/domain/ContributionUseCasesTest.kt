@@ -4,8 +4,8 @@ import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
@@ -21,7 +21,7 @@ class ContributionUseCasesTest {
 
     @Test
     fun `resolves both the user and the period before recording`() {
-        val user = mock<User>()
+        val user = Entities.user()
         val period =
             ContributionPeriod(
                 startDate = LocalDate.of(2026, 1, 1),

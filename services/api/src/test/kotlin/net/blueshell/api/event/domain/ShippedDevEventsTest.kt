@@ -5,9 +5,8 @@ import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.file.api.FileService
-import net.blueshell.api.file.persistence.File
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -53,10 +52,10 @@ class ShippedDevEventsTest {
 
     private fun database() {
         whenever(events.count()).thenReturn(0)
-        whenever(users.findByUsername("system")).thenReturn(mock<User>())
+        whenever(users.findByUsername("system")).thenReturn(Entities.user())
         whenever(committees.findAll()).thenReturn(mutableListOf())
         whenever(committees.create(any())).thenAnswer { it.arguments[0] }
-        whenever(files.store(any(), any(), any(), any(), any())).thenReturn(mock<File>())
+        whenever(files.store(any(), any(), any(), any(), any())).thenReturn(Entities.file())
     }
 
     @Test
@@ -72,7 +71,7 @@ class ShippedDevEventsTest {
     @Test
     fun `seats the development accounts the file names, with their roles, and skips one the database lacks`() {
         database()
-        val cas = mock<User>()
+        val cas = Entities.user()
         whenever(users.findByUsername("committee")).thenReturn(cas)
         whenever(users.findByUsername("member.paid")).thenThrow(IllegalStateException("no such account"))
 

@@ -2,7 +2,6 @@ package net.blueshell.api.security
 
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.domain.CommitteePermission
-import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.domain.EventBannerPermission
 import net.blueshell.api.event.domain.EventBannerService
@@ -12,6 +11,7 @@ import net.blueshell.api.event.domain.EventSignUpService
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventSignUp
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -40,8 +40,7 @@ class EventPermissionEvaluatorsTest {
 
         @Test
         fun `entity events permission allows board or committee member`() {
-            val committee = mock<Committee>()
-            whenever(committee.hasMember(44L)).thenReturn(true)
+            val committee = Entities.committee(memberIds = listOf(44L))
             val memberAuth = guestAuth(id = 44L)
 
             assertThat(evaluator.hasPermission(memberAuth, committee, "events")).isTrue()
@@ -56,7 +55,7 @@ class EventPermissionEvaluatorsTest {
 
         @Test
         fun `hasPermissionId supports null-id fallback and service lookup`() {
-            val committee = mock<Committee>()
+            val committee = Entities.committee()
             whenever(service.findById(5L)).thenReturn(committee)
 
             assertThat(evaluator.hasPermissionId(boardAuth(), null, "write")).isTrue()
@@ -131,7 +130,7 @@ class EventPermissionEvaluatorsTest {
         fun `denies when authentication permission or entity is missing`() {
             assertThat(evaluator.hasPermission(null, null, "read")).isFalse()
             assertThat(evaluator.hasPermission(guestAuth(), null, "read")).isFalse()
-            assertThat(evaluator.hasPermission(guestAuth(), mock<EventSignUp>(), null)).isFalse()
+            assertThat(evaluator.hasPermission(guestAuth(), Entities.signUp(), null)).isFalse()
         }
 
         @Test
@@ -226,23 +225,17 @@ class EventPermissionEvaluatorsTest {
             active: Boolean,
             eventId: Long,
         ): EventSignUp {
-            val committee = mock<Committee>()
-            if (committeeMemberId != null) {
-                whenever(committee.hasMember(committeeMemberId)).thenReturn(true)
-            }
+            val committee = Entities.committee(memberIds = listOfNotNull(committeeMemberId))
 
-            val signUpEvent = mock<Event>()
-            whenever(signUpEvent.committee).thenReturn(committee)
+            val signUpEvent = Entities.event(id = eventId, committee = committee)
 
-            val activeStateEvent = mock<Event>()
-            whenever(activeStateEvent.endTime).thenReturn(
-                if (active) Instant.now().plusSeconds(7200) else Instant.now().minusSeconds(7200),
-            )
+            val activeStateEvent =
+                Entities.event(
+                    endTime = if (active) Instant.now().plusSeconds(7200) else Instant.now().minusSeconds(7200),
+                    startTime = Instant.now().minusSeconds(10800),
+                )
 
-            val signUp = mock<EventSignUp>()
-            whenever(signUp.userId).thenReturn(signUpUserId)
-            whenever(signUp.event).thenReturn(signUpEvent)
-            whenever(signUp.eventId).thenReturn(eventId)
+            val signUp = Entities.signUp(userId = signUpUserId, event = signUpEvent)
 
             whenever(events.findById(eventId)).thenReturn(activeStateEvent)
             return signUp
@@ -266,9 +259,8 @@ class EventPermissionEvaluatorsTest {
         @Test
         fun `entity permissions delegate to event permission with expected verbs`() {
             val auth = guestAuth()
-            val event = mock<Event>()
-            val banner = mock<EventBanner>()
-            whenever(banner.event).thenReturn(event)
+            val event = Entities.event()
+            val banner = Entities.banner(event)
             whenever(eventPermission.hasPermission(auth, event, "read")).thenReturn(true)
             whenever(eventPermission.hasPermission(auth, event, "write")).thenReturn(false)
 
@@ -283,9 +275,8 @@ class EventPermissionEvaluatorsTest {
 
         @Test
         fun `hasPermissionId supports null-id fallback and id lookup`() {
-            val event = mock<Event>()
-            val banner = mock<EventBanner>()
-            whenever(banner.event).thenReturn(event)
+            val event = Entities.event()
+            val banner = Entities.banner(event)
             whenever(service.findById(EventBanner.Id(eventId = 7L, fileId = 8L))).thenReturn(banner)
             whenever(eventPermission.hasPermission(boardAuth(), event, "write")).thenReturn(true)
 
@@ -309,19 +300,14 @@ class EventPermissionEvaluatorsTest {
         active: Boolean,
         committeeMemberId: Long?,
     ): Event {
-        val committee = mock<Committee>()
-        if (committeeMemberId != null) {
-            whenever(committee.hasMember(committeeMemberId)).thenReturn(true)
-        }
+        val committee = Entities.committee(memberIds = listOfNotNull(committeeMemberId))
 
-        val event = mock<Event>()
-        whenever(event.committee).thenReturn(committee)
-        whenever(event.approved).thenReturn(approved)
-        whenever(event.membersOnly).thenReturn(membersOnly)
-        whenever(event.endTime).thenReturn(
-            if (active) Instant.now().plusSeconds(3600) else Instant.now().minusSeconds(3600),
+        return Entities.event(
+            committee = committee,
+            approved = approved,
+            membersOnly = membersOnly,
+            startTime = Instant.now().minusSeconds(7200),
+            endTime = if (active) Instant.now().plusSeconds(3600) else Instant.now().minusSeconds(3600),
         )
-
-        return event
     }
 }

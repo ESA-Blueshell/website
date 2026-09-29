@@ -1,17 +1,17 @@
 package net.blueshell.api.game.domain
 
 import net.blueshell.api.file.api.shippedPicturesOf
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameRepository
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 
 class ShippedGameArtTest {
-    private val picture = mock<File>()
-    private val chosen = mock<File>()
+    private val picture = Entities.file()
+    private val chosen = Entities.file()
     private val alpha = Game(code = "ALPHA", name = "Alpha", slug = "alpha")
     private val beta = Game(code = "BETA", name = "Beta", slug = "beta").apply { banner = chosen }
     private val games =

@@ -5,9 +5,9 @@ import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.file.api.StoredPictures
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -107,7 +107,7 @@ class BoardUseCasesTest {
 
         @Test
         fun `takes the photograph a stored path names`() {
-            val picture = mock<File>()
+            val picture = Entities.file()
             val boardCaptor = argumentCaptor<Board>()
             whenever(pictures.of(PHOTO_PATH, FileType.BOARD_PHOTO)).thenReturn(picture)
             whenever(boards.saveAndFlush(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
@@ -198,7 +198,7 @@ class BoardUseCasesTest {
         @Test
         fun `updates board and replaces the photograph a stored path names`() {
             val board = boardEntity()
-            val picture = mock<File>()
+            val picture = Entities.file()
             whenever(boards.findById(7L)).thenReturn(Optional.of(board))
             whenever(pictures.of(PHOTO_PATH, FileType.BOARD_PHOTO)).thenReturn(picture)
             whenever(boards.saveAndFlush(board)).thenReturn(board)
@@ -299,7 +299,7 @@ class BoardUseCasesTest {
 
         @Test
         fun `takes the portrait a stored path names`() {
-            val portrait = mock<File>()
+            val portrait = Entities.file()
             whenever(boards.findById(9L)).thenReturn(Optional.of(boardEntity()))
             whenever(pictures.of(PORTRAIT_PATH, FileType.BOARD_PORTRAIT)).thenReturn(portrait)
             val memberCaptor = argumentCaptor<BoardMember>()
@@ -326,7 +326,7 @@ class BoardUseCasesTest {
         fun `a membership somebody already holds takes the portrait too`() {
             val board = boardEntity()
             val user = userEntity()
-            val portrait = mock<File>()
+            val portrait = Entities.file()
             val existing =
                 BoardMember(
                     board = board,
@@ -396,7 +396,7 @@ class BoardUseCasesTest {
         @Test
         fun `a corrected member keeps the portrait it is given and loses one it is not`() {
             val member = memberEntity()
-            val portrait = mock<File>()
+            val portrait = Entities.file()
             whenever(boardMemberService.findMember(3L)).thenReturn(member)
             whenever(pictures.of(PORTRAIT_PATH, FileType.BOARD_PORTRAIT)).thenReturn(portrait)
             whenever(boardMemberService.update(member)).thenReturn(member)

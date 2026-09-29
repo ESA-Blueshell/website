@@ -2,6 +2,7 @@ package net.blueshell.api.user.api
 
 import jakarta.persistence.EntityManager
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.domain.AddressService
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.AddressRepository
@@ -37,7 +38,7 @@ class UserServicesWriteTest {
 
     @Test
     fun `an account is read, listed, checked for and written back`() {
-        val user = mock<User>().also { whenever(it.id).thenReturn(3) }
+        val user = Entities.user(id = 3)
         val repository =
             mock<UserRepository> {
                 on { saveAndFlush(any<User>()) } doAnswer { it.getArgument(0) }
@@ -60,7 +61,7 @@ class UserServicesWriteTest {
 
     @Test
     fun `an edit to an account the database no longer has is refused before anything is written`() {
-        val user = mock<User>().also { whenever(it.id).thenReturn(5) }
+        val user = Entities.user(id = 5)
         val repository = mock<UserRepository>()
         val service = UserService(repository, mock(), mock<TrackedEventPublisher>(), mock()).withEntityManager()
 

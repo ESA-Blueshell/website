@@ -16,9 +16,9 @@ import net.blueshell.api.game.api.ShippedGame
 import net.blueshell.api.game.api.ShippedGames
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.shared.seed.SeedDatabase
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.testsupport.EsportsSeedFixture
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -205,7 +205,7 @@ class ShippedEsportsTest {
 
     @Test
     fun `a place new to the files is attached to its player, who takes up the handle they last played`() {
-        val player = mock<User>().also { whenever(it.id).thenReturn(41L) }
+        val player = Entities.user(id = 41L)
         whenever(users.findOnlyByWrittenName("Player Four")).thenReturn(player)
 
         load()
@@ -216,7 +216,7 @@ class ShippedEsportsTest {
 
     @Test
     fun `a handle a member already set is left alone`() {
-        val player = mock<User>().also { whenever(it.id).thenReturn(41L) }
+        val player = Entities.user(id = 41L)
         whenever(users.findOnlyByWrittenName("Player Four")).thenReturn(player)
         accounts += UserGameAccount(userId = 41L, game = "GAMMA", handle = "chosen")
 

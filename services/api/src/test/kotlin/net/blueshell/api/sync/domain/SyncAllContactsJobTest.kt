@@ -3,6 +3,7 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
@@ -24,8 +25,8 @@ class SyncAllContactsJobTest {
     private val job = SyncAllContactsJob(objectMapper, userService, jobs)
 
     private fun userWithId(id: Long): User =
-        mock<User>().also {
-            whenever(it.id).thenReturn(id)
+        Entities.user().also {
+            it.id = id
         }
 
     @Test

@@ -6,6 +6,7 @@ import net.blueshell.api.board.persistence.BoardMemberRepository
 import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.file.api.shippedPicturesOf
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -18,7 +19,7 @@ import java.util.Optional
 class ShippedBoardArtTest {
     private val fresh = mock<File> { on { id } doReturn 1L }
     private val taken = mock<File> { on { id } doReturn 2L }
-    private val chosen = mock<File>()
+    private val chosen = Entities.file()
 
     private val ninth = board(9, 90L)
     private val eighth = board(8, 80L, picture = chosen)

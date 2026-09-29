@@ -5,8 +5,8 @@ import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.board.persistence.BoardMemberRepository
 import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.shared.seed.SeedDatabase
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -106,7 +106,7 @@ class ShippedBoardsTest {
     @Test
     fun `a line new to the files is added and attached to the one account that answers to it`() {
         load()
-        val louis = mock<User>()
+        val louis = Entities.user()
         whenever(users.findOnlyByWrittenName("Louis Hu")).thenReturn(louis)
         seated.removeIf { it.displayName == "Louis Hu" }
         forget("member|%|Louis Hu")
@@ -118,7 +118,7 @@ class ShippedBoardsTest {
     @Test
     fun `an account already on the board is not attached a second time`() {
         load()
-        val louis = mock<User>()
+        val louis = Entities.user()
         whenever(users.findOnlyByWrittenName("Louis Hu")).thenReturn(louis)
         val board = seated.single { it.displayName == "Louis Hu" }.board
         seated.removeIf { it.displayName == "Louis Hu" }

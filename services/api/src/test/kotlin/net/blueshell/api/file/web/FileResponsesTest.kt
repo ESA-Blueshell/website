@@ -4,12 +4,11 @@ import net.blueshell.api.file.api.InMemoryBlobStore
 import net.blueshell.api.file.domain.FileNotFoundException
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
 
 /**
  * What a request for stored bytes gets back, and which store answered.
@@ -139,7 +138,7 @@ class FileResponsesTest {
     ) = File(
         name = name,
         path = path,
-        uploader = mock<User>(),
+        uploader = Entities.user(),
         mediaType = mediaType,
         type = FileType.TEAM_BANNER,
     )

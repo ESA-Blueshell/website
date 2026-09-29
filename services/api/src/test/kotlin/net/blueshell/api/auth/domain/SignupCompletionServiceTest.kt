@@ -2,8 +2,10 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.contribution.api.JoiningContributionAsk
 import net.blueshell.api.shared.model.SignupOutcome
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
@@ -33,17 +35,10 @@ class SignupCompletionServiceTest {
         hasAddress: Boolean = true,
         alreadyMember: Boolean = false,
     ): User {
-        val user = mock<User>()
-        whenever(user.id).thenReturn(USER_ID)
-        whenever(user.enabled).thenReturn(enabled)
-        whenever(user.addressId).thenReturn(if (hasAddress) 99L else null)
-        if (hasProfile) {
-            val profile = mock<MemberProfile>()
-            whenever(profile.conditionsAcceptedAt).thenReturn(conditionsAcceptedAt)
-            whenever(user.memberProfile).thenReturn(profile)
-        } else {
-            whenever(user.memberProfile).thenReturn(null)
-        }
+        val user = Entities.user(id = USER_ID, enabled = enabled)
+        user.address = if (hasAddress) Address(user = user).also { it.id = 99L } else null
+        user.memberProfile =
+            if (hasProfile) MemberProfile(user = user, bhv = false, ehbo = false, conditionsAcceptedAt = conditionsAcceptedAt) else null
         whenever(users.findById(USER_ID)).thenReturn(user)
         whenever(memberships.existsActiveMembershipByUserId(USER_ID)).thenReturn(alreadyMember)
         return user

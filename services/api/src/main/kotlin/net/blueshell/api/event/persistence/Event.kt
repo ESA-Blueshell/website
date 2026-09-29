@@ -15,7 +15,6 @@ import jakarta.persistence.NamedSubgraph
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
@@ -29,9 +28,6 @@ import java.time.Instant
 @Entity
 @Table(
     name = "events",
-    uniqueConstraints = [
-        UniqueConstraint(name = "uk_events_google_id_deleted_at", columnNames = ["google_id", "deleted_at"]),
-    ],
     indexes = [
         Index(name = "idx_events_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_events_committee_id", columnList = "committee_id"),

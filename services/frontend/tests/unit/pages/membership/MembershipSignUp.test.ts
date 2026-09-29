@@ -85,6 +85,23 @@ function byLabel(wrapper: VueWrapper<any>, text: string) {
   return wrapper.get(`#${label.attributes("for")}`)
 }
 
+/** The steps the stepper offers, without the mark on the one it stands on. */
+const stepTitles = (wrapper: VueWrapper<any>) => steps(wrapper).map((step) => step.replace(/\*$/, ""))
+
+/**
+ * Another tab announcing that this account was activated.
+ *
+ * Assembled rather than through the StorageEvent constructor, whose init dictionary CodeQL
+ * models as a superfluous argument.
+ */
+async function anotherTabActivates() {
+  window.dispatchEvent(Object.assign(new Event("storage"), {
+    key: "account:activation:announced",
+    newValue: JSON.stringify({at: Date.now()}),
+  }))
+  await settle()
+}
+
 const field = (wrapper: VueWrapper<any>, testid: string) =>
   wrapper.get(`[data-testid="${testid}"] input`).element as HTMLInputElement
 
@@ -160,7 +177,7 @@ describe("an applicant whose tab reloaded", () => {
 
     const wrapper = await mount()
 
-    expect(steps(wrapper).map((step) => step.replace("*", ""))).toEqual(["Your details", "Address", "Membership"])
+    expect(stepTitles(wrapper)).toEqual(["Your details", "Address", "Membership"])
   })
 
   it("says so and starts over when the token is no longer good", async () => {
@@ -210,7 +227,7 @@ describe("an applicant who is already signed in", () => {
   it("is shown three steps, with nothing to confirm", async () => {
     const wrapper = await signedIn()
 
-    expect(steps(wrapper).map((step) => step.replace("*", ""))).toEqual(["Your details", "Address", "Membership"])
+    expect(stepTitles(wrapper)).toEqual(["Your details", "Address", "Membership"])
   })
 
   it("loads the account on file into the form", async () => {
@@ -404,13 +421,9 @@ describe("an applicant carrying on from where they were", () => {
     vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, resumed))
     const wrapper = await mount()
 
-    window.dispatchEvent(new StorageEvent("storage", {
-      key: "account:activation:announced",
-      newValue: JSON.stringify({at: Date.now()}),
-    }))
-    await settle()
+    await anotherTabActivates()
 
-    expect(steps(wrapper).map((step) => step.replace("*", ""))).toEqual(["Your details", "Address", "Membership"])
+    expect(stepTitles(wrapper)).toEqual(["Your details", "Address", "Membership"])
     expect(store.state.statusSnackbarMessage).toContain("confirmed")
   })
 
@@ -434,10 +447,7 @@ describe("an applicant carrying on from where they were", () => {
     vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, conditionsAccepted: true, address: onFile}))
     await mount()
 
-    window.dispatchEvent(new StorageEvent("storage", {
-      key: "account:activation:announced",
-      newValue: JSON.stringify({at: Date.now()}),
-    }))
+    await anotherTabActivates()
 
     await vi.waitFor(() => expect(router.currentRoute.value.name).toBe("login"))
     expect(store.state.statusSnackbarMessage).toContain("membership started")

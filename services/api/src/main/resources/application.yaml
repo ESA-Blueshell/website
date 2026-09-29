@@ -33,7 +33,6 @@ spring:
   datasource:
     host: ${MYSQL_HOST:localhost}
     username: ${MYSQL_USER:root}
-    password: ""
     driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mariadb://${spring.datasource.host}:${MYSQL_PORT:3306}/${spring.application.db}
     hikari:
@@ -225,7 +224,6 @@ spring.mail:
   host: ${SMTP_HOST:stalwart}
   port: ${SMTP_PORT:587}
   username: ${SMTP_USERNAME:}
-  password: ""
   protocol: ${SMTP_PROTOCOL:smtp}
   properties:
     mail.smtp.auth: ${SMTP_AUTH:true}
@@ -247,7 +245,6 @@ email:
       host: ${EMAIL_BOUNCE_IMAP_HOST:}
       port: ${EMAIL_BOUNCE_IMAP_PORT:993}
       username: ${EMAIL_BOUNCE_IMAP_USERNAME:}
-      password: ""
       folder: ${EMAIL_BOUNCE_IMAP_FOLDER:INBOX}
       tls: ${EMAIL_BOUNCE_IMAP_TLS:true}
 

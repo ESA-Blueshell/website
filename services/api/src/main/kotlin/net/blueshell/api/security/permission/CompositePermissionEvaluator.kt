@@ -16,9 +16,11 @@ class CompositePermissionEvaluator
     ) : PermissionEvaluator {
         override fun hasPermission(
             authentication: Authentication,
-            targetDomainObject: Any,
+            targetDomainObject: Any?,
             permission: Any,
         ): Boolean {
+            // An expression over a target that resolved to nothing grants nothing.
+            targetDomainObject ?: return false
             val domainClass = ClassUtils.getUserClass(targetDomainObject.javaClass)
             return evaluators
                 .stream()

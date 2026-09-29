@@ -7,6 +7,8 @@ import net.blueshell.api.user.api.UserNotFoundException
 import net.blueshell.api.user.api.UserService
 import org.springframework.http.HttpHeaders
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.FactorGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.context.SecurityContextRepository
 import org.springframework.stereotype.Component
@@ -61,7 +63,7 @@ class JwtAuthFilter(
             }
         // A lock ends every sign-in, and nothing may open a new one while it holds.
         if (!principal.isAccountNonLocked) return
-        val auth = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)
+        val auth = UsernamePasswordAuthenticationToken(principal, null, principal.authorities + factorsOf(signIn))
         auth.details = SignInDetails(signIn.id, signIn.methods)
         val context = SecurityContextHolder.createEmptyContext()
         context.authentication = auth
@@ -72,6 +74,19 @@ class JwtAuthFilter(
         request.setAttribute(SignInContext.ATTRIBUTE, signIn)
         resolution.rotated?.let { authTokenCookieService.writeAuthCookie(response, it.token, it.cookieTtl.toMillis()) }
     }
+
+    /**
+     * How this sign-in was proved, and when. The authorization server reads the latest of these as
+     * the id token's `auth_time`, and refuses to mint one without it.
+     */
+    private fun factorsOf(signIn: SignIn): List<GrantedAuthority> =
+        signIn.methods.map { method ->
+            when (method) {
+                SignIn.METHOD_OTP ->
+                    FactorGrantedAuthority.withFactor("OTP").issuedAt(signIn.steppedUpAt ?: signIn.startedAt).build()
+                else -> FactorGrantedAuthority.withAuthority(FactorGrantedAuthority.PASSWORD_AUTHORITY).issuedAt(signIn.startedAt).build()
+            }
+        }
 
     private companion object {
         val UNROTATED_PATHS = setOf("/auth", "/auth/logout", "/oauth2/forward-auth")

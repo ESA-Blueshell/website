@@ -16,6 +16,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
+import org.springframework.security.core.authority.FactorGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository
 import java.time.Duration
@@ -63,6 +64,25 @@ class JwtAuthFilterTest {
         assertThat((SecurityContextHolder.getContext().authentication?.details as SignInDetails).signInId)
             .isEqualTo(issued.signIn.id)
         assertThat(request.getAttribute(SignInContext.ATTRIBUTE)).isEqualTo(issued.signIn)
+    }
+
+    @Test
+    fun `the authentication says how the sign-in was proved and when, for the id token's auth_time`() {
+        val issued = signIns.start(7, Browser.UNKNOWN)
+        clock.advance(Duration.ofMinutes(3))
+        signIns.recordStepUp(issued.signIn.id, SignIn.METHOD_OTP)
+
+        filter.doFilter(request(issued.token), MockHttpServletResponse(), chain)
+
+        val factors =
+            SecurityContextHolder
+                .getContext()
+                .authentication!!
+                .authorities
+                .filterIsInstance<FactorGrantedAuthority>()
+                .associate { it.authority to it.issuedAt }
+        assertThat(factors).containsEntry(FactorGrantedAuthority.PASSWORD_AUTHORITY, Instant.parse("2026-09-24T12:00:00Z"))
+        assertThat(factors).containsEntry("FACTOR_OTP", Instant.parse("2026-09-24T12:03:00Z"))
     }
 
     @Test

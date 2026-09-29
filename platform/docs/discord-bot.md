@@ -106,7 +106,7 @@ vault kv patch secret/api discord-bot-token=- discord-guild-id=<server-id> # the
 kubectl -n default rollout restart deployment/api
 ```
 
-The api reads the first pair from `secret/api` at start (api ADR-033), which is why it is restarted. The second pair feeds the Vault Agent template until the api Deployment stops using it.
+The api re-reads `secret/api` every five minutes (api ADR-033): a token that changes reaches the REST client on its next call and reconnects the gateway, so rotating one needs no restart. The restart is for a token set where none was before, since the bot's beans only exist when the api starts with one. The second pair feeds the Vault Agent template until the api Deployment stops using it.
 
 `./gradlew :services:api:discordLiveTest` with `DISCORD_BOT_TOKEN` set calls Discord once as the bot, as a second check.
 

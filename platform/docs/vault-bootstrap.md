@@ -372,6 +372,12 @@ none of these needs `kubectl rollout restart`. Write each rotation as one
   vault kv patch secret/api google.calendar.serviceAccountJson=@service-account.json
   ```
 
+- **Discord bot token.** The REST client sends it on its next call and the
+  gateway connects again under it; pages fall back as when Discord is down
+  until the new session is up. A token set where none was before needs a
+  restart, since the bot's beans only exist when the api starts with one. See
+  [`discord-bot.md`](discord-bot.md).
+
 - **Bounce mailbox password** (`account.bounce` in `secret/platform/mail`). The
   api sends and polls with it, and reads it at each send and each poll.
   Stalwart takes it when VSO restarts it, within the Secret's refresh, so for up

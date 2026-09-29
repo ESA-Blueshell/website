@@ -1,6 +1,7 @@
 package net.blueshell.api.contact.domain
 
 import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.RotatingHeader
 import net.blueshell.api.shared.credentials.RotatingSecret
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.clients.brevo.BrevoClient
@@ -38,7 +39,7 @@ class BrevoClientConfig {
             .using(
                 restClientBuilder
                     .baseUrl(baseUrl)
-                    .requestInterceptor(BrevoApiKeyHeader(RotatingSecret(environment, Credentials.BREVO)))
+                    .requestInterceptor(RotatingHeader("api-key", RotatingSecret(environment, Credentials.BREVO)))
                     .configureMessageConverters {
                         it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))
                     }.build(),

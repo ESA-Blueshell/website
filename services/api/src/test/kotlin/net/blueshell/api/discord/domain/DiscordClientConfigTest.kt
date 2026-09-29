@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.mock.env.MockEnvironment
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.header
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
@@ -22,7 +23,8 @@ class DiscordClientConfigTest {
             .andRespond(withSuccess("""{"id": "1"}""", MediaType.APPLICATION_JSON))
         val config = DiscordClientConfig()
 
-        val rest = config.discordRestClient(builder, JsonMapper.builder().build(), "abc", "https://discord.test")
+        val environment = MockEnvironment().withProperty("discord.botToken", "abc")
+        val rest = config.discordRestClient(builder, JsonMapper.builder().build(), environment, "https://discord.test")
         val answer =
             rest
                 .get()

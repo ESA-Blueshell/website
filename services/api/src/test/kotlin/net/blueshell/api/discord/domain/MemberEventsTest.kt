@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.springframework.mock.env.MockEnvironment
 
 class MemberEventsTest {
     private fun payload(json: String) = DataObject.fromJson(json)
@@ -33,7 +34,7 @@ class MemberEventsTest {
 
     @Test
     fun `passes on member changes and fresh connections, and nothing else`() {
-        val source = JdaVoiceServerSource("token", "324", mock<DiscordApi>())
+        val source = JdaVoiceServerSource(MockEnvironment().withProperty("discord.botToken", "token"), "324", mock<DiscordApi>())
         val heard = mutableListOf<String>()
         source.onMemberNamed { id, name -> heard += "$id=$name" }
         source.onConnected { heard += "connected" }

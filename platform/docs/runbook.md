@@ -164,6 +164,11 @@ nothing is promoted until the Job succeeds. A migration that cannot apply
 therefore leaves the previous release serving, with a canary pod idle beside
 it that is scaled away when the analysis gives up.
 
+A second `pre-rollout` webhook, `warm-the-canary`, then sends the canary the
+read-only load for about 50 seconds. The analysis reads a rate over a minute of
+the canary's own requests, scraped every 15 seconds, so without it the first
+check finds no data and spends one of the three failures the analysis allows.
+
 ```bash
 kubectl -n default get jobs -l job-name --field-selector status.successful=0
 kubectl -n default logs job/migrate-<tag> --tail=100

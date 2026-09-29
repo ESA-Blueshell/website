@@ -1,9 +1,9 @@
 # Secrets come from Vault, read by Spring Cloud Vault as the api's own
 # ServiceAccount (api ADR-033).
-# An import outranks this file and application.yaml, so a key in Vault wins over
-# any development default there. The secrets application.yaml gives a development
-# value are blanked below, so a key missing from Vault is refused by the hardening
-# guard or the first connection instead of running on that value.
+# An import outranks this file and application.yaml, which holds no secret, so a key
+# missing from Vault is blank and refused by the hardening guard or the first
+# connection. The database user is blanked below for the same reason: its
+# development default is root.
 spring:
   config:
     import:
@@ -47,19 +47,12 @@ email:
       username: ${EMAIL_BOUNCE_IMAP_USERNAME}
       password: ${mail.account.bounce:}
 
-auth:
-  clients:
-    vault:
-      secret: ""
-
 app:
   security:
     require-https: true
   # How often the api re-reads its Vault KV paths; a rotated key is live within this.
   vault:
     refresh-interval: 5m
-  jwt:
-    secret: ""
 
 security:
   openapi:

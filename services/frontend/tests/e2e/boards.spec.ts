@@ -6,6 +6,7 @@ import {installApiMocks, loginAsBoard, preferLightTheme} from "./mocks"
 import {pressSlice, pressSliceEdit} from "./sliceBand"
 import type {BoardMemberResponse, BoardResponse} from "@/services/api"
 import {type Wire} from "./records"
+import {distance, type Pixels, pixelsOf, type Rgb} from "./pixels"
 
 /** The phone the stacked band is read on. */
 const PHONE = {width: 390, height: 900}
@@ -43,19 +44,65 @@ const restingDissolve = (page: Page): Promise<number> => page.evaluate(() => (
   parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--photo-dissolve")) / 100
 ))
 
+/** A colour nothing on the board page is drawn in, which the divider is painted to be found. */
+const MARKER: Rgb = [255, 0, 255]
+
 /**
- * A mask the browser computed that fades downwards, which is what a stacked portrait's does.
+ * How far the drawn divider on [slice] reaches, read off a screenshot: how many rows and columns
+ * it shows in, and how thick it is at its thickest across a row and down a column.
  *
- * A gradient running downwards is the default, so the browser leaves the direction out of what
- * it computes. A named direction in here at all is a picture fading the wrong way — to the
- * right, across the reading direction, which is the shape this one replaced.
- *
- * The depth is left loose on purpose. The dissolve is eased even under the reduced ceiling, so
- * the depth read a moment after a press is wherever it had got to, and a whole number of percent
- * is a coin toss on how busy the machine is. Where it comes to rest is asserted frame by frame in
- * the motion spec, which is the layer that can watch it.
+ * The divider is a 1.5px sliver a few units off the ground in the dark theme, which is less than
+ * the noise text and the scrim add, so it is painted in [MARKER] and found by its tint.
  */
-const DOWNWARDS = /^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+(?:\.\d+)?%, rgba\(0, 0, 0, 0\) 100%\)$/
+async function drawnDivider(page: Page, slice: Locator) {
+  await page.addStyleTag({content: `[data-testid="board-members"] { --color-hairline: rgb(${MARKER.join(", ")}) }`})
+  const shot = await pixelsOf(page, slice)
+  const rows = new Array<number>(shot.height).fill(0)
+  const columns = new Array<number>(shot.width).fill(0)
+  for (let y = 0; y < shot.height; y++) {
+    for (let x = 0; x < shot.width; x++) {
+      const [red, green, blue] = shot.at(x, y)
+      // Tinted rather than equal: a sliver this thin on a lean is mostly edge, blended with the ground.
+      if (red - green < 40 || blue - green < 40) continue
+      rows[y]++
+      columns[x]++
+    }
+  }
+  return {
+    width: shot.width,
+    height: shot.height,
+    rows: rows.filter((count) => count > 0).length,
+    columns: columns.filter((count) => count > 0).length,
+    widestRow: Math.max(...rows),
+    tallestColumn: Math.max(...columns),
+  }
+}
+
+/** A screenshot of [member] with where its portrait stands inside it, in the screenshot's points. */
+async function portraitIn(page: Page, member: Locator): Promise<{shot: Pixels, top: number, height: number}> {
+  const slice = (await member.boundingBox())!
+  const face = (await member.locator("img").boundingBox())!
+  return {shot: await pixelsOf(page, member), top: face.y - slice.y, height: face.height}
+}
+
+/**
+ * The sharpest change of colour down the right-hand edge of a portrait's lower half and just past
+ * its foot, between rows three apart.
+ *
+ * A picture that dissolves into the ground under it changes gently all the way down; one that
+ * ends on the band's diagonal changes at once. The right-hand edge, because the name sits on the
+ * left.
+ */
+async function sharpestStepAtFoot(page: Page, member: Locator): Promise<number> {
+  const {shot, top, height} = await portraitIn(page, member)
+  const x = shot.width - 8
+  const end = Math.min(shot.height - 1, top + height + 10)
+  let sharpest = 0
+  for (let y = top + height / 2; y + 3 <= end; y++) {
+    sharpest = Math.max(sharpest, distance(shot.at(x, y), shot.at(x, y + 3)))
+  }
+  return sharpest
+}
 
 /**
  * The board page on a phone, which every test of the stacked band starts from.
@@ -865,91 +912,73 @@ test.describe("board page", () => {
    * boundary is a slice's leaning left edge and the sliver is tall and thin; stacked it is the
    * leaning *top* edge, and the sliver left as it was ran down the inside of every slice,
    * crossing the words rather than dividing anything from anything.
-   *
-   * Read out of the clip and turned back into a box, which is the closest a test gets to what a
-   * reader sees of a line 1.5px wide: it runs the width of the slice and is barely tall, rather
-   * than running its height and being barely wide.
    */
   test("leans a phone slice's drawn divider along the seam it is cut on", {tag: "@phone"}, async ({page}) => {
     await boardOnAPhone(page)
+    const slice = page.getByTestId("board-member-92")
 
-    /** The box the divider's sliver is drawn inside, in pixels, out of the clip that shapes it. */
-    const sliver = (slice: Locator) => slice.evaluate((el) => {
-      const clip = getComputedStyle(el, "::after").clipPath
-      const box = el.getBoundingClientRect()
-      const points = [...clip.matchAll(/(-?[\d.]+)(px|%)\s+(-?[\d.]+)(px|%)/g)].map((at) => ({
-        x: at[2] === "%" ? (Number(at[1]) / 100) * box.width : Number(at[1]),
-        y: at[4] === "%" ? (Number(at[3]) / 100) * box.height : Number(at[3]),
-      }))
-      const xs = points.map((point) => point.x)
-      const ys = points.map((point) => point.y)
-      return {
-        across: Math.max(...xs) - Math.min(...xs),
-        down: Math.max(...ys) - Math.min(...ys),
-        slice: {width: box.width, height: box.height},
-      }
-    })
-
-    // Not the first: there is nothing above it to divide it from.
-    const stacked = await sliver(page.getByTestId("board-member-92"))
-    expect(stacked.across).toBeCloseTo(stacked.slice.width, 0)
-    expect(stacked.down).toBeLessThan(stacked.across / 4)
+    // Stacked, the line runs across the slice and no column holds more than a sliver of it. Half
+    // the width is plenty: the sliver this replaced ran down a column or two.
+    const stacked = await drawnDivider(page, slice)
+    expect(stacked.columns).toBeGreaterThan(stacked.width / 2)
+    expect(stacked.tallestColumn).toBeLessThanOrEqual(6)
 
     // And the row still divides the other way round, which is what makes this a turn rather
     // than a correction: the same sliver, on the same cut, read from the other side.
     await page.setViewportSize({width: 1280, height: 900})
-    await expect(page.getByTestId("board-member-92")).toBeVisible()
-    const inARow = await sliver(page.getByTestId("board-member-92"))
-    expect(inARow.down).toBeCloseTo(inARow.slice.height, 0)
-    expect(inARow.across).toBeLessThan(inARow.down / 4)
+    await expect(slice).toBeVisible()
+    const inARow = await drawnDivider(page, slice)
+    expect(inARow.rows).toBeGreaterThan(inARow.height / 2)
+    expect(inARow.widestRow).toBeLessThanOrEqual(6)
   })
 
+  /*
+   * Read in the light theme, where the ground is far from the picture. The mocked portrait
+   * darkens toward its own foot, so on the dark ground a picture that ended on an edge would
+   * already look dissolved.
+   */
   test("dissolves the foot of an open portrait on a phone, and leaves a shut one whole", {tag: "@phone"}, async ({page}) => {
-    await boardOnAPhone(page)
+    await boardOnAPhone(page, {light: true})
     const member = await openMember(page, 91)
 
-    const mask = () => member.locator("img").evaluate((img) => getComputedStyle(img).maskImage)
-
     // Downwards into the words, the way the board photograph in the band above already fades on
-    // a narrow screen, rather than to the right across the reading direction.
-    expect(await mask()).toMatch(DOWNWARDS)
+    // a narrow screen. The dissolve is eased, so it is polled until it comes to rest.
+    await expect.poll(() => sharpestStepAtFoot(page, member), {timeout: 5000}).toBeLessThan(40)
 
     // Shut there is nothing for the picture to be joined to, so it ends on the band's own
     // diagonal rather than melting into the face after it.
     await openMember(page, 92)
     await expect(member.getByRole("button")).toHaveAttribute("aria-expanded", "false")
-    expect(await mask()).toBe("none")
+    await expect.poll(() => sharpestStepAtFoot(page, member), {timeout: 5000}).toBeGreaterThan(100)
   })
 
   test("carries a phone portrait's name on ground of the portrait's own", {tag: "@phone"}, async ({page}) => {
-    await boardOnAPhone(page)
+    await boardOnAPhone(page, {light: true})
     const member = await openMember(page, 91)
 
-    const ground = (id: number) => page.getByTestId(`board-member-${id}`).locator(".slice__body")
-      .evaluate((body) => {
-        const scrim = getComputedStyle(body, "::before")
-        return {display: scrim.display, height: parseFloat(scrim.height)}
-      })
-    const face = (await member.locator("img").boundingBox())!
+    // The name's ground belongs to the picture and not the foot of the slice, which after the
+    // restack is below the description: left there it would draw a dark band under the prose.
+    // So the ground under the picture is one flat light colour from its first row.
+    const {shot, top, height} = await portraitIn(page, member)
+    const x = shot.width - 8
+    const ground = shot.at(x, top + height + 30)
+    expect(Math.min(...ground)).toBeGreaterThan(150)
+    for (const below of [2, 6, 12]) expect(distance(shot.at(x, top + height + below), ground)).toBeLessThan(16)
 
-    // The scrim is the picture's band and not the foot of the slice, which after the restack is
-    // below the description: left there it would draw a dark band under the prose.
-    const carried = await ground(91)
-    expect(carried.display).not.toBe("none")
-    expect(carried.height).toBeCloseTo(face.height, 0)
-
-    // Twenty-six of the forty-six members in the history have no portrait. A scrim with no
-    // photograph under it is a dark fade up the page and nothing else, so it is not drawn.
-    expect((await ground(92)).display).toBe("none")
+    // Twenty-six of the forty-six members in the history have no portrait. A ground with no
+    // photograph over it is a dark fade up the page and nothing else, so it is not drawn.
+    const bare = await pixelsOf(page, await openMember(page, 92))
+    const column = [0.1, 0.25, 0.4, 0.55, 0.7].map((at) => bare.at(bare.width - 8, bare.height * at))
+    for (const colour of column) expect(distance(colour, column[0])).toBeLessThan(24)
   })
 
   /*
    * One line, not two.
    *
    * The name has come down into the picture's last stretch, which is the stretch the photograph
-   * itself goes soft over — so the ground under the name has to go soft over exactly that
+   * itself goes soft over, so the ground under the name has to go soft over exactly that
    * stretch too, or a reader is shown a dark band standing where the picture has already gone.
-   * In the light half that is a smear across the page.
+   * In the light half that is a smear across the page, which is where this is read.
    *
    * Which is why the eased depth is declared on the slice and inherited: the picture and the
    * name's ground are siblings, and one depth read by both is what keeps them on one line. Held
@@ -957,34 +986,19 @@ test.describe("board page", () => {
    * never faded at all, which is the state this asserts against.
    */
   test("fades a phone portrait and the name's ground on the one line", {tag: "@phone"}, async ({page}) => {
-    await boardOnAPhone(page)
+    await boardOnAPhone(page, {light: true})
     const member = await openMember(page, 91)
 
-    /*
-     * How far down each of the two has gone, as a percentage of the picture's band.
-     *
-     * Both read inside one `evaluate`, so both are the same frame's answer. The dissolve is eased
-     * even under the reduced ceiling, so the depth a moment after a press is wherever it had got
-     * to — which is exactly why the two have to be read together and why the pair is polled until
-     * it settles rather than sampled once.
-     */
-    const depths = () => member.locator(".slice__body").evaluate((body) => {
-      const depth = (style: CSSStyleDeclaration) => {
-        const stop = /(\d+(?:\.\d+)?)%/.exec(style.maskImage)
-        return stop ? Math.round(100 - Number(stop[1])) : 0
-      }
-      const picture = body.parentElement!.querySelector("img")!
-      return [depth(getComputedStyle(picture)), depth(getComputedStyle(body, "::before"))]
-    })
+    /** How far the foot of the picture, name's ground and all, stands from the ground under it. */
+    const darkestAtFoot = async () => {
+      const {shot, top, height} = await portraitIn(page, member)
+      const ground = shot.at(shot.width - 8, top + height + 30)
+      let darkest = 0
+      for (let x = 8; x < shot.width - 8; x += 16) darkest = Math.max(darkest, distance(shot.at(x, top + height - 2), ground))
+      return darkest
+    }
 
-    const resting = Math.round((await restingDissolve(page)) * 100)
-    await expect.poll(depths, {timeout: 5000}).toEqual([resting, resting])
-
-    // And shut, neither of them carries a mask: there is nothing under a shut slice for either
-    // to be joined to, and the picture ends on the band's own diagonal instead.
-    await openMember(page, 92)
-    await expect(member.getByRole("button")).toHaveAttribute("aria-expanded", "false")
-    expect(await depths()).toEqual([0, 0])
+    await expect.poll(darkestAtFoot, {timeout: 5000}).toBeLessThan(90)
   })
 
   test("asks for a phone portrait at the width of the slice it fills", {tag: "@phone"}, async ({page}) => {
@@ -1042,7 +1056,6 @@ test.describe("board page", () => {
     expect(face.height / face.width).toBeCloseTo(await decodedAspect(member.locator("img")), 1)
     expect(blurb.y).toBeGreaterThanOrEqual(face.y + face.height - 1)
     expect(blurb.width).toBeGreaterThan(slice.width * 0.8)
-    expect(await member.locator("img").evaluate((img) => getComputedStyle(img).maskImage)).toMatch(DOWNWARDS)
 
     const ink = (id: number, name: string) => page.getByTestId(`board-member-${id}`)
       .getByText(name).evaluate((node) => getComputedStyle(node).color)

@@ -17,9 +17,6 @@ spring:
           min-renewal: 10s
           expiry-threshold: 60s
           lease-endpoints: Leases
-      database:
-        enabled: ${VAULT_DB_ENABLED:false}
-        role: api
 
   application:
     name: BlueshellAPI

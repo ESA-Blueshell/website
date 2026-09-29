@@ -193,9 +193,7 @@ vault kv put secret/api \
   google.calendar.serviceAccountJson=<raw-single-line-service-account-json> \
   discord.botToken=<discord-bot-token> \
   discord.guildId=<discord-guild-id> \
-  auth.clients.vault.secret=$(openssl rand -hex 32) \
-  spring.datasource.username=blueshell \
-  spring.datasource.password=<app-password>
+  auth.clients.vault.secret=$(openssl rand -hex 32)
 ```
 
 A missing key is blank in production, never `application.yaml`'s development
@@ -227,8 +225,8 @@ Notes:
   key to configure that method.
 - `google.calendar.serviceAccountJson` is the full JSON contents of a Google
   service account key as raw JSON on one line, not base64.
-- `spring.datasource.username` and `password` are the api's MariaDB login, the
-  same pair `secret/platform/mariadb` holds as `user` and `password`.
+- There is no database login here: the api leases one from Vault. See
+  "MariaDB logins" below.
 
 ### Transit signing key + Vault OIDC auth method (handled by the bootstrap Job)
 
@@ -355,28 +353,38 @@ Spring, and none of them reloads it on its own. The api reads its paths from
 Vault at start. So the rotation pattern is: *update Vault, then restart
 the consumer.*
 
-### MariaDB password (api + Bitnami chart)
+### MariaDB logins (api, migrate Job and Bitnami chart)
 
-The api reads its login from `secret/api` as `spring.datasource.username` and
-`password`. The Bitnami MariaDB chart reads the same value from
-`secret/platform/mariadb` via VSO. Keep the two fields in lockstep:
+The api does not keep a MariaDB password. Its prod profile leases a login from
+`database/creds/api` (72h default, 168h max), which Vault creates as a user of
+its own, and `DatabaseLoginRotation` asks for a fresh one before each lease runs
+out and hands it to the connection pool. A stopping pod revokes its leases.
+Nothing to rotate by hand.
+
+The migrate Job logs in as `blueshell`, the stable owner the chart keeps, read
+from `secret/platform/mariadb` through its own Vault role `migrate`. It owns the
+schema because MariaDB records the creating user as each trigger's DEFINER, and a
+trigger whose definer Vault has dropped fails every write to its table. Rotate
+the owner the way the chart expects, then nothing restarts: the next migrate Job
+reads the new value.
 
 ```bash
 NEW=<new-password>
-vault kv patch secret/api               spring.datasource.password="$NEW"
 vault kv patch secret/platform/mariadb  password="$NEW"
 
 ROOT=$(vault kv get -field=root-password secret/platform/mariadb)
 kubectl -n data-system exec mariadb-0 -- \
   mysql -uroot -p"$ROOT" -e \
   "ALTER USER 'blueshell'@'%' IDENTIFIED BY '$NEW'; FLUSH PRIVILEGES;"
-
-kubectl -n default rollout restart deployment/api
 ```
 
 The `mariadb-credentials` k8s Secret picks up the new value on VSO's
 next refresh (within 1 h, or trigger immediately with the
 `vso.secrets.hashicorp.com/force-refresh` annotation).
+
+Rotating `admin-user` / `admin-password`, the login Vault creates the leased
+users with, needs the bootstrap Job to run again so `database/config/mariadb`
+takes it: `flux reconcile kustomization apps-data`.
 
 ### Other Vault paths
 
@@ -392,16 +400,3 @@ Same shape, narrower blast radius:
 For the api's third-party tokens (Brevo, Google Calendar, Discord),
 `scripts/seed-vault-from-env.sh --apply --sync-api` writes Vault and
 restarts the api in one step.
-
-### Future: Spring Cloud Vault dynamic MariaDB creds
-
-`bootstrap-auth.sh` already configures the MariaDB dynamic-secrets
-engine (`database/config/mariadb`) and role
-(`database/roles/api`, 72h default / 168h max). Once
-`spring.cloud.vault.database.enabled=true` correctly rebinds
-`spring.datasource.{username,password}` (currently broken in our
-Spring Cloud Vault version), drop `spring.datasource.username` and
-`password` from `secret/api` and set
-`spring.cloud.vault.database.enabled=true` in the prod profile. Vault then mints a
-short-lived MariaDB user per pod and rotates it without operator
-involvement.

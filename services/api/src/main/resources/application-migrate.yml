@@ -1,6 +1,30 @@
 # Moves the schema and exits. The same image the release runs, so the changelog
 # cannot differ from the application that expects it.
+#
+# It logs in as the schema's stable owner, under its own Vault role, not as a leased
+# user: the objects it creates name their creator (api ADR-033).
+#
+# Spring Cloud Vault binds its settings once, at the first vault:// location it
+# resolves, and that is this file's import, read before application-prod.yml's
+# settings apply. So every setting it needs is repeated here.
 spring:
+  config:
+    import: vault://secret/platform/mariadb?prefix=mariadb.
+  cloud:
+    vault:
+      enabled: true
+      fail-fast: true
+      authentication: KUBERNETES
+      kubernetes:
+        role: migrate
+      kv:
+        enabled: false
+      database:
+        enabled: false
+  datasource:
+    username: ${mariadb.user}
+    password: ${mariadb.password}
+
   liquibase:
     enabled: true
 

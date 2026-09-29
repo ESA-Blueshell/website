@@ -85,11 +85,33 @@ path "database/creds/api" {
   capabilities = ["read"]
 }
 
+# A stopping pod revokes its leased database users rather than leaving them to
+# expire. Renewing needs nothing here: the default policy allows it.
+path "sys/leases/revoke" {
+  capabilities = ["update"]
+}
+
 path "transit/sign/api-jwt" {
   capabilities = ["update"]
 }
 
 path "transit/keys/api-jwt" {
+  capabilities = ["read"]
+}
+EOF
+
+# The migrate Job boots the api's configuration and logs in as the schema's owner,
+# which the api's own pods cannot read (api ADR-033).
+cat <<'EOF' >/tmp/migrate.hcl
+path "secret/data/api" {
+  capabilities = ["read"]
+}
+
+path "secret/data/platform/mail" {
+  capabilities = ["read"]
+}
+
+path "secret/data/platform/mariadb" {
   capabilities = ["read"]
 }
 EOF
@@ -169,6 +191,7 @@ path "secret/data/platform/alerting" {
 EOF
 
 vault policy write api /tmp/api.hcl
+vault policy write migrate /tmp/migrate.hcl
 vault policy write stalwart /tmp/stalwart.hcl
 vault policy write vso /tmp/vso.hcl
 vault policy write admin /tmp/admin.hcl
@@ -179,6 +202,12 @@ vault write auth/kubernetes/role/api \
   bound_service_account_names="api" \
   bound_service_account_namespaces="default" \
   policies="api" \
+  ttl="1h"
+
+vault write auth/kubernetes/role/migrate \
+  bound_service_account_names="migrate" \
+  bound_service_account_namespaces="default" \
+  policies="migrate" \
   ttl="1h"
 
 vault write auth/kubernetes/role/stalwart \
@@ -221,11 +250,13 @@ if vault kv get secret/platform/mariadb >/dev/null 2>&1; then
     password="${DB_ADMIN_PASS}" \
     verify_connection=true
 
+  # Data only: a leased user that created a trigger or view would be named its
+  # DEFINER, and Vault drops that user when the lease ends (api ADR-033).
   vault write database/roles/api \
     db_name=mariadb \
     default_ttl="72h" \
     max_ttl="168h" \
-    creation_statements="CREATE USER '{{name}}'@'%' IDENTIFIED BY '{{password}}'; GRANT ALL ON blueshell.* TO '{{name}}'@'%';"
+    creation_statements="CREATE USER '{{name}}'@'%' IDENTIFIED BY '{{password}}'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE TEMPORARY TABLES ON blueshell.* TO '{{name}}'@'%';"
 
   unset DB_ADMIN_USER DB_ADMIN_PASS
 else

@@ -78,6 +78,9 @@ dependencies {
     // the detection strategy is only ever instantiated by ApplicationModules in a test.
     compileOnly("org.springframework.modulith:spring-modulith-core")
     implementation("org.springframework.cloud:spring-cloud-starter-vault-config:5.0.2")
+    // The database secret backend is its own module; without it
+    // spring.cloud.vault.database.enabled is a property nothing reads.
+    implementation("org.springframework.cloud:spring-cloud-vault-config-databases:5.0.2")
     implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-mail")

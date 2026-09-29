@@ -447,6 +447,22 @@ describe("App navbar behavior", () => {
     expect(mockTheme.change).toHaveBeenCalledWith("dark")
   })
 
+  it("shows a status message and clears it once the snackbar closes itself", async () => {
+    // The store here is a plain object, so the message is in place before the page reads it.
+    mockStore.state.statusSnackbarMessage = "Saved"
+    const wrapper = mount(App)
+    await settle()
+
+    const status = wrapper.findAllComponents({name: "VSnackbar"}).find((bar) => bar.props("timeout") === "10000")!
+    expect(status.props("modelValue")).toBe(true)
+
+    // Reopening leaves the message alone; only closing clears it.
+    status.vm.$emit("update:modelValue", true)
+    expect(mockStore.state.statusSnackbarMessage).toBe("Saved")
+    status.vm.$emit("update:modelValue", false)
+    expect(mockStore.state.statusSnackbarMessage).toBe("")
+  })
+
   it("accepts cookies and closes the cookie snackbar", async () => {
     const wrapper = mount(App)
     await settle()

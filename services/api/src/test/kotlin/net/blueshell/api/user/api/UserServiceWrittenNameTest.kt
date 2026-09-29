@@ -1,6 +1,6 @@
 package net.blueshell.api.user.api
 
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.persistence.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -8,7 +8,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 
 class UserServiceWrittenNameTest {
-    private val roos = mock<User>()
+    private val roos = Entities.user()
     private val repository: UserRepository =
         mock {
             on { findAllByWrittenName("Roos Kruk") } doReturn listOf(roos)

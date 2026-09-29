@@ -1,11 +1,11 @@
 package net.blueshell.api.game.api
 
 import net.blueshell.api.file.api.StoredPictures
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameChannel
 import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -83,7 +83,7 @@ class GameServiceTest {
 
     @Test
     fun `adds a game with a code made from its name, placed after the last one`() {
-        val banner = mock<File>()
+        val banner = Entities.file()
         whenever(pictures.of("games/b.webp", FileType.GAME_BANNER)).thenReturn(banner)
         whenever(games.findAllByOrderBySortIndexAsc()).thenReturn(listOf(game("CHESS", sortIndex = 4)))
 

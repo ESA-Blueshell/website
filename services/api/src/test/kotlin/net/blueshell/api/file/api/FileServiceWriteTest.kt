@@ -3,6 +3,7 @@ package net.blueshell.api.file.api
 import jakarta.persistence.EntityManager
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -46,7 +47,7 @@ class FileServiceWriteTest {
 
     @Test
     fun `reads a file, says whether one exists, and refuses one that is not there`() {
-        val file = mock<File>()
+        val file = Entities.file()
         whenever(repository.findById(1)).thenReturn(Optional.of(file))
         whenever(repository.findById(2)).thenReturn(Optional.empty())
         whenever(repository.existsById(1)).thenReturn(true)
@@ -58,8 +59,8 @@ class FileServiceWriteTest {
 
     @Test
     fun `a new file is written and a stored one written back, each read back after`() {
-        val fresh = mock<File>()
-        val stored = mock<File>().also { whenever(it.id).thenReturn(3) }
+        val fresh = Entities.file()
+        val stored = Entities.file(id = 3)
         whenever(repository.existsById(3)).thenReturn(true)
 
         assertThat(save("create", fresh)).isSameAs(fresh)
@@ -71,7 +72,7 @@ class FileServiceWriteTest {
 
     @Test
     fun `a file the database no longer has is not written back`() {
-        val lost = mock<File>().also { whenever(it.id).thenReturn(4) }
+        val lost = Entities.file(id = 4)
 
         assertThatThrownBy { save("update", lost) }.isInstanceOf(ResponseStatusException::class.java)
     }
@@ -79,9 +80,9 @@ class FileServiceWriteTest {
     @Test
     fun `a file is removed, by itself or by its id, and says so`() {
         val file =
-            mock<File>().also {
-                whenever(it.id).thenReturn(5)
-                whenever(it.path).thenReturn("ab/cd")
+            Entities.file().also {
+                it.id = 5
+                it.path = "ab/cd"
             }
         whenever(repository.findById(5)).thenReturn(Optional.of(file))
 

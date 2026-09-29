@@ -1,12 +1,10 @@
 package net.blueshell.api.event.domain
 
 import net.blueshell.api.committee.api.CommitteeService
-import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.file.api.FileService
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.game.api.GameArchived
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.QuestionType
@@ -17,6 +15,7 @@ import net.blueshell.api.survey.api.QuestionData
 import net.blueshell.api.survey.api.SurveyData
 import net.blueshell.api.survey.api.SurveyFactory
 import net.blueshell.api.survey.persistence.Survey
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -44,10 +43,9 @@ class EventUseCasesTest {
     inner class CreateEvent {
         @Test
         fun `creates event with mapped fields for board user`() {
-            val committee = mock<Committee>()
+            val committee = Entities.committee()
             val survey = mock<Survey>()
-            val bannerFile = mock<File>()
-            whenever(bannerFile.id).thenReturn(77L)
+            val bannerFile = Entities.file(id = 77L)
             whenever(committeeService.findById(3L)).thenReturn(committee)
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
             whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(survey)
@@ -76,8 +74,8 @@ class EventUseCasesTest {
 
         @Test
         fun `forces event approval to false for non board user`() {
-            val committee = mock<Committee>()
-            val bannerFile = mock<File>()
+            val committee = Entities.committee()
+            val bannerFile = Entities.file()
             whenever(committeeService.findById(3L)).thenReturn(committee)
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(2L, setOf(Role.MEMBER), null))
             whenever(fileService.findById(77L)).thenReturn(bannerFile)
@@ -95,10 +93,9 @@ class EventUseCasesTest {
         @Test
         fun `updates event fields, keeping the version it was read at`() {
             val existing = eventEntity().apply { version = 1L }
-            val committee = mock<Committee>()
+            val committee = Entities.committee()
             val survey = mock<Survey>()
-            val bannerFile = mock<File>()
-            whenever(bannerFile.id).thenReturn(88L)
+            val bannerFile = Entities.file(id = 88L)
             whenever(eventService.findById(9L)).thenReturn(existing)
             whenever(committeeService.findById(4L)).thenReturn(committee)
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
@@ -144,8 +141,7 @@ class EventUseCasesTest {
                     this.approved = approved
                     awaitingReapproval = awaiting
                 }
-            val bannerFile = mock<File>()
-            whenever(bannerFile.id).thenReturn(88L)
+            val bannerFile = Entities.file(id = 88L)
             whenever(eventService.findById(9L)).thenReturn(existing)
             whenever(committeeService.findById(4L)).thenReturn(mock())
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(2L, setOf(role), null))
@@ -186,7 +182,7 @@ class EventUseCasesTest {
     inner class PingedRoles {
         private fun asBoard() {
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
-            whenever(fileService.findById(any())).thenReturn(mock<File>())
+            whenever(fileService.findById(any())).thenReturn(Entities.file())
             whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(mock<Survey>())
         }
 
@@ -250,7 +246,7 @@ class EventUseCasesTest {
     inner class Games {
         private fun asBoard() {
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
-            whenever(fileService.findById(any())).thenReturn(mock<File>())
+            whenever(fileService.findById(any())).thenReturn(Entities.file())
             whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(mock<Survey>())
             whenever(committeeService.findById(any())).thenReturn(mock())
         }

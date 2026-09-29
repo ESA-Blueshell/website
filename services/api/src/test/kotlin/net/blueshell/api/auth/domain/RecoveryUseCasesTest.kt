@@ -5,9 +5,9 @@ import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.SignupOutcome
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -79,8 +79,7 @@ class RecoveryUseCasesTest {
     inner class UserActivate {
         @Test
         fun `activates the account and reports whether the membership started`() {
-            val user = mock<User>()
-            whenever(user.id).thenReturn(4L)
+            val user = Entities.user(id = 4L)
             whenever(activationService.activateUser("sel.ver")).thenReturn(user)
             whenever(completion.completeIfReady(4L))
                 .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true))

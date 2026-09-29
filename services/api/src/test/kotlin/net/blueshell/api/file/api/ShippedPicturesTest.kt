@@ -2,9 +2,9 @@ package net.blueshell.api.file.api
 
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.testsupport.EsportsSeedFixture
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -26,7 +26,7 @@ class ShippedPicturesTest {
             }
             on { findPublicImage(any(), eq(FileType.TEAM_BANNER)) } doAnswer { stored[it.getArgument(0)] }
         }
-    private val users = mock<UserService> { on { findByUsername("system") } doReturn mock<User>() }
+    private val users = mock<UserService> { on { findByUsername("system") } doReturn Entities.user() }
     private val transactions =
         mock<TransactionTemplate> {
             on { execute(any<TransactionCallback<Boolean>>()) } doAnswer {

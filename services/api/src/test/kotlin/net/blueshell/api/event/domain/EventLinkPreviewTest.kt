@@ -8,11 +8,10 @@ import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.discord.DiscordMentionNames
 import net.blueshell.api.shared.discord.MentionNames
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
 import java.time.Instant
 
 class EventLinkPreviewTest {
@@ -142,7 +141,7 @@ class EventLinkPreviewTest {
                 File(
                     name = "art.webp",
                     path = "event-banners/art.webp",
-                    uploader = mock<User>(),
+                    uploader = Entities.user(),
                     mediaType = "image/webp",
                     width = 1000,
                     height = 500,

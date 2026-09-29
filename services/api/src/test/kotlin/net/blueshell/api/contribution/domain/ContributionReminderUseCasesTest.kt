@@ -3,8 +3,8 @@ package net.blueshell.api.contribution.domain
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -33,7 +33,7 @@ class ContributionReminderUseCasesTest {
 
     @Test
     fun `persists the reminder before sending it`() {
-        val user = mock<User>()
+        val user = Entities.user()
         whenever(users.findById(3L)).thenReturn(user)
         whenever(periods.findById(9L)).thenReturn(period())
         val captured = argumentCaptor<ContributionReminder>()

@@ -6,6 +6,7 @@ import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.EventSignUpRepository
 import net.blueshell.api.survey.api.SurveyFactory
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -50,7 +51,7 @@ class ShippedDevSignUpsTest {
 
     private var nextId = 1L
 
-    private fun account(id: Long): User = mock<User>().also { whenever(it.id).thenReturn(id) }
+    private fun account(id: Long): User = Entities.user(id = id)
 
     private fun written(): List<EventSignUp> {
         val captor = argumentCaptor<EventSignUp>()

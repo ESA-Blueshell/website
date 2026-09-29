@@ -3,7 +3,6 @@ package net.blueshell.api.committee.api
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeRepository
 import net.blueshell.api.file.api.StoredPictures
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.game.api.GameArchived
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.FileType
@@ -11,6 +10,7 @@ import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorProvider
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -74,7 +74,7 @@ class CommitteeServiceTest {
 
     @Test
     fun `adds a committee at an address made from its name, listed, with its banner and games`() {
-        val banner = mock<File>()
+        val banner = Entities.file()
         whenever(pictures.of("b.webp", FileType.COMMITTEE_BANNER)).thenReturn(banner)
         whenever(games.requireNameable(listOf("CHESS"), emptySet())).thenReturn(listOf("CHESS"))
 

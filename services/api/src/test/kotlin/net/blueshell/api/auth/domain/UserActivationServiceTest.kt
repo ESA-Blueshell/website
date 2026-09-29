@@ -2,6 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserNotFoundException
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
@@ -27,9 +28,7 @@ class UserActivationServiceTest {
         id: Long = 1L,
         enabled: Boolean = false,
     ): User {
-        val user = mock<User>()
-        whenever(user.id).thenReturn(id)
-        whenever(user.enabled).thenReturn(enabled)
+        val user = Entities.user(id = id, enabled = enabled)
         return user
     }
 

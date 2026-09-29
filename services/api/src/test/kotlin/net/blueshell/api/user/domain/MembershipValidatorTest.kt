@@ -3,6 +3,7 @@ package net.blueshell.api.user.domain
 import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder
 import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
@@ -45,7 +46,7 @@ class MembershipValidatorTest {
         id: Long,
         start: LocalDate,
         end: LocalDate?,
-    ): Membership = Membership(user = mock<User>(), startDate = start, endDate = end).apply { this.id = id }
+    ): Membership = Membership(user = Entities.user(), startDate = start, endDate = end).apply { this.id = id }
 
     private fun ownedBy(userId: Long): Membership {
         val user =

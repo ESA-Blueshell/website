@@ -10,6 +10,7 @@ import FormField from "@/components/island/FormField.vue"
 import IconButton from "@/components/island/IconButton.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import {findMemberAccounts, readUser, type UserDetailResponse} from "@/domains/user"
+import {latestWins} from "@/utils/latestWins"
 
 /**
  * Who sits on a committee, as the board sets it: each person by name with the role they hold, a
@@ -30,7 +31,7 @@ const found = ref<UserDetailResponse[] | null>([])
 const typed = ref("")
 const searching = ref(false)
 let settling: ReturnType<typeof setTimeout> | undefined
-let latest = 0
+const latest = latestWins()
 
 const nameOf = (user: UserDetailResponse) => user.fullName || user.email || `Account ${user.id}`
 const shownName = (userId: number) => names.value.get(userId) ?? "…"
@@ -44,13 +45,13 @@ watch(() => seats.value.map(one => one.userId), async ids => {
 }, {immediate: true})
 
 const ask = async (term: string) => {
-  const mine = ++latest
+  const newest = latest.begin()
   searching.value = true
   try {
     const answer = await findMemberAccounts(term, PAGE)
-    if (mine === latest) found.value = answer
+    if (newest()) found.value = answer
   } finally {
-    if (mine === latest) searching.value = false
+    if (newest()) searching.value = false
   }
 }
 
@@ -58,7 +59,7 @@ const onSearch = (term: string) => {
   typed.value = term.trim()
   if (settling) clearTimeout(settling)
   if (typed.value === "") {
-    latest++
+    latest.drop()
     found.value = []
     searching.value = false
     return

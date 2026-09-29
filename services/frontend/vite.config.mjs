@@ -65,12 +65,12 @@ export default defineConfig({
                     if (!/[\\/](?:node_modules|\.yarn[\\/]cache)[\\/]/.test(id)) return
                     if (/[\\/]vuetify[\\/]/.test(id)) return 'vuetify'
                     if (/[\\/]libphonenumber-js[\\/]/.test(id)) return 'libphonenumber'
-                    if (/[\\/](?:world-countries|countries-list|i18n-nationality)[\\/]/.test(id)) return 'country-data'
+                    if (/[\\/]world-countries[\\/]/.test(id)) return 'country-data'
                     if (/[\\/](?:v-phone-input|flag-icons)[\\/]/.test(id)) return 'phone-input'
-                    if (/[\\/](?:vue|@vue|vue-router|vuex|vue-axios)[\\/]/.test(id)) return 'vue-core'
+                    if (/[\\/](?:vue|@vue|vue-router|vuex)[\\/]/.test(id)) return 'vue-core'
                     if (/[\\/]luxon[\\/]/.test(id)) return 'datetime'
                     if (/[\\/](?:reka-ui|motion-v|motion-dom|@vueuse)[\\/]/.test(id)) return 'island'
-                    if (/[\\/](?:marked|dompurify|xss|node-emoji)[\\/]/.test(id)) return 'markup'
+                    if (/[\\/](?:marked|dompurify|node-emoji)[\\/]/.test(id)) return 'markup'
                 },
             },
         },

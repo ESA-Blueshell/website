@@ -8,6 +8,7 @@ import SearchPicker from "@/components/island/SearchPicker.vue"
 import {nameOf, termsFor} from "@/components/form/fields/userTerms"
 import {searchMemberAccounts} from "@/domains/user"
 import type {UserDetailResponse} from "@/domains/user"
+import {latestWins} from "@/utils/latestWins"
 
 const props = withDefaults(defineProps<{
   modelValue?: number | undefined
@@ -36,7 +37,7 @@ const held = ref<UserDetailResponse[]>([...props.users])
 const picked = ref<UserDetailResponse | undefined>(props.users.find(one => one.id === props.modelValue))
 const loading = ref(false)
 let settling: ReturnType<typeof setTimeout> | undefined
-let latest = 0
+const latest = latestWins()
 
 /** The chosen member stays in the list whatever the search answered, or the field draws empty. */
 const withPicked = (list: UserDetailResponse[]): UserDetailResponse[] => {
@@ -63,15 +64,15 @@ watch(() => props.users, (list) => {
 })
 
 const ask = async (term: string): Promise<void> => {
-  const mine = ++latest
+  const newest = latest.begin()
   loading.value = true
   try {
     const found = await searchMemberAccounts(term, PAGE)
     // An older answer must not overwrite a newer one: the reader has typed since.
-    if (mine !== latest) return
+    if (!newest()) return
     held.value = withPicked(found)
   } finally {
-    if (mine === latest) loading.value = false
+    if (newest()) loading.value = false
   }
 }
 

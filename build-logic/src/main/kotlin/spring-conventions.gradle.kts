@@ -7,7 +7,8 @@ plugins {
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.3")
+        // The plugin's own BOM, so the managed versions move with the plugin a bot bumps.
+        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
         mavenBom("tools.jackson:jackson-bom:3.1.0")
         mavenBom("org.testcontainers:testcontainers-bom:2.0.5")
     }

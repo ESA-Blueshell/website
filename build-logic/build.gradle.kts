@@ -25,7 +25,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.10")
     implementation("org.jetbrains.kotlin:kotlin-allopen:2.4.10")
     implementation("org.jetbrains.kotlin:kotlin-noarg:2.4.10")
-    implementation("org.springframework.boot:spring-boot-gradle-plugin:4.1.1")
+    implementation("org.springframework.boot:spring-boot-gradle-plugin:4.0.3")
     implementation("io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:1.1.7")
     // ktlint comes in through kotlin-conventions, so every Kotlin project is
     // format-checked without asking; detekt is applied project by project.

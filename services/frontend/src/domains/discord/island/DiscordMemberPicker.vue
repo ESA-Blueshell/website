@@ -18,6 +18,7 @@ import FormField from "@/components/island/FormField.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import {type DiscordMemberResponse, listUnclaimedMembers, searchServerMembers} from "../index"
+import {latestWins} from "@/utils/latestWins"
 
 const props = withDefaults(defineProps<{
   modelValue?: string | null
@@ -53,7 +54,7 @@ const loading = ref(false)
 /* Only a search Discord answered can say somebody is not there; one character asks nothing. */
 const nobodyFound = ref(false)
 let settling: ReturnType<typeof setTimeout> | undefined
-let latest = 0
+const latest = latestWins()
 
 /* Who is linked, kept for their avatar: a later search need not find them again. */
 const linked = ref<DiscordMemberResponse | null>(null)
@@ -68,17 +69,17 @@ onMounted(async () => {
 onBeforeUnmount(() => clearTimeout(settling))
 
 const ask = async (term: string): Promise<void> => {
-  const mine = ++latest
+  const newest = latest.begin()
   loading.value = true
   try {
     const answer = await searchServerMembers(term)
     // An older answer must not overwrite a newer one: the reader has typed since.
-    if (mine !== latest) return
+    if (!newest()) return
     if (answer === null) available.value = false
     else found.value = answer
     nobodyFound.value = answer !== null && answer.length === 0
   } finally {
-    if (mine === latest) loading.value = false
+    if (newest()) loading.value = false
   }
 }
 
@@ -91,7 +92,7 @@ const fromUnclaimed = (term: string): DiscordMemberResponse[] => {
 
 const onSearch = (term: string) => {
   clearTimeout(settling)
-  latest++
+  latest.drop()
   loading.value = false
   nobodyFound.value = false
   if (term.length < MIN_QUERY) {

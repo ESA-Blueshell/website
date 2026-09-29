@@ -6,6 +6,7 @@ import type {EventQuery} from "../adapters/events"
 import type {EventResponse} from ".."
 import {monthsOf} from "./eventFacts"
 import type {CommitteeOption} from "./useEventReader"
+import {latestWins} from "@/utils/latestWins"
 
 /** Six across on a desktop, four rows of them a page. */
 export const PAST_PAGE = 24
@@ -79,11 +80,11 @@ export function usePastEvents(now: DateTime = DateTime.now()): {
 
   /* A read that a newer one overtook is dropped, so a slow first answer never lands over the
      filter chosen after it. */
-  let asked = 0
+  const asked = latestWins()
   const read = async (at: number) => {
-    const mine = ++asked
+    const newest = asked.begin()
     const found = await readEventPage(queryFor(at))
-    if (mine !== asked) return
+    if (!newest()) return
     events.value = at === 0 ? found.events : [...events.value, ...found.events]
     total.value = found.page?.totalElements ?? events.value.length
     page.value = at

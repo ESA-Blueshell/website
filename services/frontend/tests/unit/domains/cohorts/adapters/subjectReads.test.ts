@@ -83,6 +83,17 @@ describe("a cohort subject arrives with its absences already decided", () => {
     ])
   })
 
+  it("a target's runs keep their counts, and a run too old to say what started it names nothing", async () => {
+    vi.mocked(findCohortSubjectById).mockResolvedValue(answer(findCohortSubjectById, rawSubject({
+        mappings: [{cohortId: 3, system: TargetSystem.BREVO, kind: CohortKind.LIST, label: "Newsletter", path: [], folderKnown: true,
+          runs: [{startedAt: "2026-09-29T03:00:00Z", inSync: 40, oursOnly: 1, theirsOnly: 2}]}],
+      })))
+
+    const subject = await fetchCohortSubject(7)
+
+    expect(subject?.mappings[0]?.runs).toEqual([{startedAt: "2026-09-29T03:00:00Z", trigger: null, inStep: 40, missing: 1, extra: 2}])
+  })
+
   it("a target that has never agreed, and one filed nowhere, both read as nothing", async () => {
     vi.mocked(findCohortSubjectById).mockResolvedValue(answer(findCohortSubjectById, rawSubject({
         mappings: [{cohortId: 3, system: TargetSystem.BREVO, kind: CohortKind.LIST, label: "Newsletter", path: [], folderKnown: false, runs: []}],

@@ -44,7 +44,7 @@ interface CohortRemediation {
      */
     fun verifyCohort(
         cohortId: Long,
-        trigger: JobTrigger? = null,
+        trigger: JobTrigger?,
     )
 
     /**

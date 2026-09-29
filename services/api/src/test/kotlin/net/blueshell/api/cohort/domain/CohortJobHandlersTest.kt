@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
@@ -107,5 +108,23 @@ class CohortJobHandlersTest {
         }
         assertThat(CohortJobs.CreateCohortTarget.dedupKey(CohortJobs.CreateCohortTargetPayload(5L))).isEqualTo("cohort=5")
         assertThat(CohortJobs.CreateMissingCohortTargetsPayload().unused).isEqualTo(Unit)
+    }
+
+    @Test
+    fun `a reconcile job hands its target and trigger to the remediation`() {
+        val remediation = mockk<CohortRemediation>(relaxed = true)
+        val bound =
+            CohortJobHandlers(
+                objectMapper,
+                reconciliation = mockk(relaxed = true),
+                membership = mockk(relaxed = true),
+                targeting = mockk(relaxed = true),
+                remediation = remediation,
+                inbound = mockk(relaxed = true),
+            )
+
+        bound.reconcileListHandler().runJob("""{"cohortId":4,"trigger":"BY_HAND"}""")
+
+        io.mockk.verify { remediation.verifyCohort(4L, JobTrigger.BY_HAND) }
     }
 }

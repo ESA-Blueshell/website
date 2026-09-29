@@ -86,5 +86,6 @@ class CohortSubjectControllerTest {
                 .runs
 
         assertThat(runs).containsExactly(ReconcileRunResponse(run.startedAt, JobTrigger.SCHEDULED_RUN, 188, 2, 1))
+        assertThat(runs.single().trigger).isEqualTo(JobTrigger.SCHEDULED_RUN)
     }
 }

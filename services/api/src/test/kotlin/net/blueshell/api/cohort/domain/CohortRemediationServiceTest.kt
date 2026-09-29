@@ -118,7 +118,7 @@ class CohortRemediationServiceTest {
         every { members.findAllByCohortIdAndUserIdIsNull(99L) } returns listOf(staleStranger)
         every { members.save(any<CohortMember>()) } answers { firstArg() }
 
-        service.verifyCohort(99L)
+        service.verifyCohort(99L, null)
 
         assertThat(port.listCalls).isEqualTo(1)
         assertThat(port.lastExternalCohortId).isEqualTo("list-99")
@@ -375,5 +375,9 @@ class CohortRemediationServiceTest {
         assertThat(saved.captured.cohortId).isEqualTo(99L)
         assertThat(saved.captured.trigger).isEqualTo(JobTrigger.SCHEDULED_RUN)
         assertThat(listOf(saved.captured.inSync, saved.captured.oursOnly, saved.captured.theirsOnly)).containsExactly(1, 2, 1)
+
+        // A reconcile queued before runs recorded their trigger names none.
+        service.verifyCohort(99L, null)
+        assertThat(saved.captured.trigger).isNull()
     }
 }

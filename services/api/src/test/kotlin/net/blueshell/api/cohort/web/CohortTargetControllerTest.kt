@@ -19,6 +19,7 @@ class CohortTargetControllerTest {
         whenever(catalog.create(TargetSystem.BREVO, "Pub quiz", "Projects")).thenReturn(list)
 
         assertThat(controller.create(TargetSystem.BREVO, CreateExternalTargetRequest(" Pub quiz ", " Projects "))).isEqualTo(list)
+        assertThat(CreateExternalTargetRequest("Pub quiz").folder).isNull()
     }
 
     @Test

@@ -240,4 +240,15 @@ class BrevoListAdapterTest {
         assertThat(adapter.createFolder("archive")).isEqualTo(9L)
         verify(contactsApi, never()).createFolder(any())
     }
+
+    @Test
+    fun `a folder Brevo refuses to make is reported with its reason`() {
+        whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC)))
+            .thenReturn(GetFolders200Response(count = 0L, folders = emptyList()))
+        whenever(contactsApi.createFolder(any())).thenThrow(error(400, """{"code":"invalid_parameter"}"""))
+
+        assertThatThrownBy { adapter.createFolder("Archive") }
+            .isInstanceOf(ContactServiceException::class.java)
+            .hasMessageStartingWith("Failed to create folder")
+    }
 }

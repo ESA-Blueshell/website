@@ -8,12 +8,13 @@ import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import {cellOf, driftItemOf, reelItemOf, useCommitteeRights, useCommittees, type Committee} from "@/domains/committees"
 import ArchiveCommitteeDialog from "@/domains/committees/island/ArchiveCommitteeDialog.vue"
 import {useCasualGames} from "@/domains/games"
+import {BRAND_ACCENT} from "@/utils/brand"
 
 defineOptions({name: "CommitteesPage"})
 
 /**
- * The committees index: the committees that run on the reel, the ones we used to have drifting
- * past under it, and then every listed committee. Unlisted committees appear nowhere here.
+ * The committees index: the listed committees that run on the reel, every one we used to have
+ * drifting past under it, and then all of those as cells.
  */
 const {committees, live, archived, refresh} = useCommittees()
 const {games} = useCasualGames()
@@ -24,7 +25,12 @@ const gameNames = (codes: string[]) => codes
   .map(code => games.value.find(game => game.code === code)?.name)
   .filter(name => name !== undefined)
 
-const reel = computed<ReelItem[]>(() => live.value.map(committee => reelItemOf(committee, gameNames)))
+/** The way to add a committee rides the reel as its last slice, for whoever may add one. */
+const ADD: ReelItem = {id: "add", title: "Add a committee", href: "/committees/new", accent: BRAND_ACCENT, initials: "+", plus: true}
+const reel = computed<ReelItem[]>(() => [
+  ...live.value.map(committee => reelItemOf(committee, gameNames)),
+  ...(isBoard.value ? [ADD] : []),
+])
 // The committees that run first, then the archived ones, each in their own order.
 const every = computed<ArtCell[]>(() => [...live.value, ...archived.value].map(committee => cellOf(committee, gameNames)))
 
@@ -59,13 +65,6 @@ const committeeOf = (id: string | number) => committees.value.find(committee => 
           tone="solid"
         >
           Ask on Discord
-        </cut-button>
-        <cut-button
-          v-if="isBoard"
-          href="/committees/new"
-          testid="committees-add"
-        >
-          Add a committee
         </cut-button>
       </template>
 

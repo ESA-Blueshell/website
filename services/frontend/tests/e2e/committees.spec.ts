@@ -12,7 +12,7 @@ test.describe("the committees pages", () => {
     await expect(page.getByTestId("committees-every-cell-903")).toContainText("Archived")
     await expect(page.getByTestId("committees-every-cell-900")).toContainText("Chess")
     await expect(page.getByTestId("committees-every-cell-902")).toHaveCount(0)
-    await expect(page.getByTestId("committees-add")).toHaveCount(0)
+    await expect(page.getByTestId("committees-slice-add")).toHaveCount(0)
   })
 
   test("a committee's page names its members by Discord and its games, and a visitor gets no buttons", async ({page}) => {
@@ -58,7 +58,7 @@ test.describe("the committees pages", () => {
     await loginAsBoard(context)
     await page.goto("/committees")
 
-    await page.getByTestId("committees-add").click()
+    await page.getByTestId("committees-slice-add").click()
     await expect(page).toHaveURL(/\/committees\/new$/)
     await page.getByTestId("committee-edit-name").locator("input").fill("Quiz Cie")
     await expect(page.getByTestId("committee-edit-slug").locator("input")).toHaveValue("quiz-cie")

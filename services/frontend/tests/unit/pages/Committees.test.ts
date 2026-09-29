@@ -87,14 +87,34 @@ describe("the committees page", () => {
     expect(wrapper.find("[data-testid=committees-ask]").exists()).toBe(true)
   })
 
-  it("offers the board a committee to add on its own page, and archiving from a cell", async () => {
+  it("shows everybody the archived committees that are unlisted, so anyone can ask for them back", async () => {
+    findCommittees.mockResolvedValue({data: [committee(1, "LanCie"), committee(5, "RotaCie", {listed: false, archived: true})]})
+    const wrapper = await mountPage()
+
+    expect(wrapper.getComponent({name: "DriftRow"}).props("items").map((one: {id: number}) => one.id)).toEqual([5])
+    expect(wrapper.get("[data-testid=committees-olden]").text()).toContain("Want to bring one back")
+    expect(wrapper.getComponent({name: "ArtCells"}).props("cells").map((one: {id: number}) => one.id)).toEqual([1, 5])
+  })
+
+  it("runs the reel for the board with nothing on it but the way to add a committee", async () => {
+    findCommittees.mockResolvedValue({data: []})
+    store.getters.isBoard = true
+    const wrapper = await mountPage()
+
+    expect(wrapper.getComponent({name: "FlickReel"}).props("items").map((one: {id: string}) => one.id)).toEqual(["add"])
+  })
+
+  it("offers the board a committee to add as the reel's last slice, and archiving from a cell", async () => {
+    const ids = (wrapper: Awaited<ReturnType<typeof mountPage>>) =>
+      wrapper.getComponent({name: "FlickReel"}).props("items").map((one: {id: number | string}) => one.id)
     const plain = await mountPage()
-    expect(plain.find("[data-testid=committees-add]").exists()).toBe(false)
+    expect(ids(plain)).not.toContain("add")
     expect(plain.find("[data-testid=committees-every-archive-1]").exists()).toBe(false)
 
     store.getters.isBoard = true
     const wrapper = await mountPage()
-    expect(wrapper.get("[data-testid=committees-add]").attributes("href")).toBe("/committees/new")
+    expect(wrapper.getComponent({name: "FlickReel"}).props("items").at(-1))
+      .toMatchObject({id: "add", title: "Add a committee", href: "/committees/new", plus: true})
 
     expect(wrapper.get("[data-testid=committees-every-archive-3]").text()).toBe("Bring back")
     await wrapper.get("[data-testid=committees-every-archive-1]").trigger("click")

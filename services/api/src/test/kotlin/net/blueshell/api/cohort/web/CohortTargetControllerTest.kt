@@ -7,6 +7,7 @@ import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class CohortTargetControllerTest {
@@ -31,5 +32,15 @@ class CohortTargetControllerTest {
 
         assertThat(renamed.label).isEqualTo("Pub quiz 2026")
         assertThat(folders).containsExactly("Members", "Projects")
+    }
+
+    @Test
+    fun `archiving answers the list in its new folder, and a delete passes the typed name on`() {
+        whenever(catalog.archive(TargetSystem.BREVO, "9")).thenReturn(list.copy(folderLabel = "Archive"))
+
+        assertThat(controller.archive(TargetSystem.BREVO, "9").folderLabel).isEqualTo("Archive")
+        controller.delete(TargetSystem.BREVO, "9", DeleteExternalTargetRequest("Pub quiz"))
+
+        verify(catalog).delete(TargetSystem.BREVO, "9", "Pub quiz")
     }
 }

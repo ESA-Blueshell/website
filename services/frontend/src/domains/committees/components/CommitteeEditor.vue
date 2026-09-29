@@ -21,7 +21,6 @@ import {useCasualGames} from "@/domains/games"
 import {
   addCommittee,
   type Committee,
-  type CommitteeDraft,
   listCommittees,
   removeCommittee,
   saveCommitteeAsBoard,
@@ -123,9 +122,9 @@ const cell = computed(() => [cellOf(drafted.value, codes => codes
   .map(code => games.value.find(game => game.code === code)?.name)
   .filter(one => one !== undefined))])
 
-const draft = (): CommitteeDraft => ({
+const draft = () => ({
   name: name.value.trim(),
-  slug: slug.value.trim(),
+  slug: slug.value.trim() || undefined,
   listed: listed.value,
   description: description.value.trim(),
   banner: banner.value?.path ?? null,
@@ -144,13 +143,19 @@ const submit = async () => {
     const result = committee == null
       ? await addCommittee(written)
       : props.asBoard
-        ? await saveCommitteeAsBoard(committee.id, committee.version, written)
-        : await saveOwnCommitteePage(committee.id, committee.version, {description: written.description, banner: written.banner, icon: written.icon, gameCodes: written.gameCodes})
+        ? await saveCommitteeAsBoard(committee.id, {...written, version: committee.version})
+        : await saveOwnCommitteePage(committee.id, {
+          description: written.description,
+          banner: written.banner,
+          icon: written.icon,
+          gameCodes: written.gameCodes,
+          version: committee.version,
+        })
     if (!result.ok) {
       failure.value = result.reason
       return
     }
-    emit("saved", result.committee)
+    emit("saved", result.saved)
   } finally {
     saving.value = false
   }

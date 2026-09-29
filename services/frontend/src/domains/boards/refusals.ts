@@ -17,4 +17,4 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   BoardHoldsMembers: r => boardHoldsMembers(r.number ?? 0, r.members ?? 0),
 }
 
-export const {sentenceFor, reasonFor} = refusalReader(sentences)
+export const {sentenceFor, reasonFor, refusable, accepted} = refusalReader(sentences)

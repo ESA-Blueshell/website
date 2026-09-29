@@ -32,8 +32,8 @@ describe("the games adapter", () => {
     api.createCasualGame.mockResolvedValueOnce({data: game}).mockResolvedValueOnce(refused)
     api.updateCasualGame.mockResolvedValueOnce({data: game}).mockResolvedValueOnce({error: {}})
 
-    expect(await addCasualGame(draft)).toMatchObject({ok: true, game: {banner: {url: "http://localhost:3000/api/files/public/b.webp"}}})
-    expect(api.createCasualGame).toHaveBeenCalledWith({body: {name: "Chess", slug: "chess", intro: undefined, accent: "#b58863", banner: undefined, icon: "i.webp", channels: [{id: "900", guildId: "324", name: "chess"}]}})
+    expect(await addCasualGame(draft)).toMatchObject({ok: true, saved: {banner: {url: "http://localhost:3000/api/files/public/b.webp"}}})
+    expect(api.createCasualGame).toHaveBeenCalledWith({body: draft})
     expect(await addCasualGame(draft)).toEqual({ok: false, reason: "The address 'chess' is already used by Go."})
     expect(await saveCasualGame("CHESS", draft)).toMatchObject({ok: true})
     expect(await saveCasualGame("CHESS", draft)).toEqual({ok: false, reason: "The game could not be saved."})
@@ -44,7 +44,7 @@ describe("the games adapter", () => {
     api.findGameHoldings.mockResolvedValueOnce({data: {channels: 1, committees: 0, events: 2, teams: 0, players: 0}}).mockResolvedValueOnce({})
     api.removeGame.mockResolvedValueOnce({}).mockResolvedValueOnce({error: {code: "GameNotArchived", gameName: "Chess"}})
 
-    expect(await setGameArchived("CHESS", true)).toMatchObject({ok: true, game: {archived: true}})
+    expect(await setGameArchived("CHESS", true)).toMatchObject({ok: true, saved: {archived: true}})
     expect(await setGameArchived("CHESS", true)).toEqual({ok: false, reason: "The game could not be archived."})
     expect(await setGameArchived("CHESS", false)).toEqual({ok: false, reason: "The game could not be brought back."})
     expect(await loadGameHoldings("CHESS")).toEqual({channels: 1, committees: 0, events: 2, teams: 0, players: 0})
@@ -57,7 +57,7 @@ describe("the games adapter", () => {
     const file = new File(["x"], "b.png")
     api.uploadPublicImage.mockResolvedValueOnce({data: {url: "/files/public/b.webp", path: "b.webp", renditions: []}}).mockResolvedValueOnce({error: {code: "PictureNotStored"}})
 
-    expect(await storeGameBanner(file)).toMatchObject({ok: true, picture: {path: "b.webp"}})
+    expect(await storeGameBanner(file)).toMatchObject({ok: true, saved: {path: "b.webp"}})
     expect(api.uploadPublicImage).toHaveBeenCalledWith({query: {type: "GAME_BANNER"}, body: {file}})
     expect(await storeGameIcon(file)).toEqual({ok: false, reason: "That picture is not in storage."})
   })

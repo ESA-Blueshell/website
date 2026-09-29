@@ -103,7 +103,7 @@ const address = ref<EmailAddressResponse | null>(null)
 const newEmail = ref("")
 const twoFactorOn = ref(false)
 
-const move = async (to: string): Promise<Written<unknown>> => {
+const move = async (to: string): Promise<Written> => {
   const result = await askToMoveEmail(to)
   if (result.ok) {
     tell(`A confirmation link is on its way to ${to}.`)

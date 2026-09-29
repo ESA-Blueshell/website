@@ -15,4 +15,4 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
     + "so that nobody is locked out of the site.",
 }
 
-export const {sentenceFor, reasonFor} = refusalReader(sentences)
+export const {refusable} = refusalReader(sentences)

@@ -18,6 +18,7 @@ import {
 } from "@/services/api"
 import type {PageOf, PageQuery} from "@/composables/usePagedTable"
 import type {Refused} from "@/types/api"
+import {readOr} from "@/utils/answers"
 import {refusalReader} from "@/utils/refusals"
 
 // Re-exported so this adapter still answers for its own surface, while the type has one definition.
@@ -33,7 +34,7 @@ export {JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger}
  * The api declares no refusal codes for this module, so a refused job write reads as whatever
  * detail it carried; the sentence map stays empty rather than inventing codes it does not send.
  */
-const {reasonFor} = refusalReader({})
+const {refusable} = refusalReader({})
 
 /** What the manager narrows a page of jobs by. Everything is optional: none is the whole list. */
 export interface JobFilter {
@@ -58,7 +59,7 @@ const emptyPage: PageOf<Job> = {rows: [], totalElements: 0, totalPages: 1}
  * the difference.
  */
 export async function loadJobPage(query: PageQuery, filter: JobFilter = {}): Promise<PageOf<Job>> {
-  const res = await list({
+  const page = await readOr(list({
     query: {
       page: query.page,
       size: query.size,
@@ -68,10 +69,10 @@ export async function loadJobPage(query: PageQuery, filter: JobFilter = {}): Pro
       ...(filter.hideSkipped ? {hideSkipped: true} : {}),
       ...(query.search ? {search: query.search} : {}),
     },
-  })
-  if (res.error || !res.data) return emptyPage
+  }), null)
+  if (!page) return emptyPage
 
-  const data = res.data as unknown
+  const data = page as unknown
   if (Array.isArray(data)) {
     const all = data as Job[]
     const start = query.page * query.size
@@ -82,20 +83,17 @@ export async function loadJobPage(query: PageQuery, filter: JobFilter = {}): Pro
     }
   }
 
-  const rows = res.data.content ?? []
-  const totalElements = res.data.page?.totalElements ?? rows.length
+  const rows = page.content ?? []
+  const totalElements = page.page?.totalElements ?? rows.length
   return {
     rows,
     totalElements,
-    totalPages: Math.max(1, res.data.page?.totalPages ?? Math.ceil(totalElements / query.size)),
+    totalPages: Math.max(1, page.page?.totalPages ?? Math.ceil(totalElements / query.size)),
   }
 }
 
 /** The counts behind the stats panel, or nothing where they could not be read — it is supplementary. */
-export async function loadJobStats(): Promise<JobStats | null> {
-  const res = await getStats()
-  return res.error ? null : res.data ?? null
-}
+export const loadJobStats = (): Promise<JobStats | null> => readOr(getStats(), null)
 
 /**
  * Queues a failed job for another attempt.
@@ -103,13 +101,8 @@ export async function loadJobStats(): Promise<JobStats | null> {
  * Answers with the api's own words when it says no, because pressing Retry and being told
  * nothing is indistinguishable from pressing nothing at all.
  */
-export async function retryJob(id: number): Promise<{ok: true} | Refused> {
-  const res = await retry({path: {id}})
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFor(res.error, "That job could not be retried.")}
-  }
-  return {ok: true}
-}
+export const retryJob = (id: number): Promise<{ok: true} | Refused> =>
+  refusable(retry({path: {id}}), "That job could not be retried.")
 
 /** Every job that can be triggered by hand, with the payload each one takes. Throws on a refusal. */
 export async function listJobTypes(): Promise<JobTypeDescriptor[]> {
@@ -123,13 +116,5 @@ export async function listJobTypes(): Promise<JobTypeDescriptor[]> {
  * Answers with the api's own words when it says no, as retrying does: pressing Trigger and
  * being told nothing is indistinguishable from pressing nothing at all.
  */
-export async function enqueueJob(
-  jobType: string,
-  payload: Record<string, unknown>,
-): Promise<{ok: true} | Refused> {
-  const res = await enqueue({body: {jobType, payload}})
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFor(res.error, "That job could not be triggered.")}
-  }
-  return {ok: true}
-}
+export const enqueueJob = (jobType: string, payload: Record<string, unknown>): Promise<{ok: true} | Refused> =>
+  refusable(enqueue({body: {jobType, payload}}), "That job could not be triggered.")

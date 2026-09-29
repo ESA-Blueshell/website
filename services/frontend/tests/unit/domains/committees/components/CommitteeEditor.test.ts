@@ -61,7 +61,7 @@ const seats = (wrapper: ReturnType<typeof mountEditor>) => wrapper.getComponent(
 
 describe("the committee edit page, for the board", () => {
   it("adds a committee with its address following its name, its members, and previews its head and cell", async () => {
-    adapter.addCommittee.mockResolvedValue({ok: true, committee: lan})
+    adapter.addCommittee.mockResolvedValue({ok: true, saved: lan})
     const wrapper = mountEditor(null, true)
     await flushPromises()
 
@@ -105,13 +105,13 @@ describe("the committee edit page, for the board", () => {
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
-    expect(adapter.saveCommitteeAsBoard).toHaveBeenCalledWith(1, 3, expect.objectContaining({slug: "lancie", banner: "b.webp", members: [{userId: 9, role: null}]}))
+    expect(adapter.saveCommitteeAsBoard).toHaveBeenCalledWith(1, expect.objectContaining({version: 3, slug: "lancie", banner: "b.webp", members: [{userId: 9, role: null}]}))
     expect(wrapper.get("[data-testid=committee-edit-failure]").text()).toBe("The address 'lancie' is already used by LanCie.")
     expect(wrapper.emitted("saved")).toBeUndefined()
   })
 
   it("saves a committee with nobody on it, and stores its pictures against the committee they are for", async () => {
-    adapter.saveCommitteeAsBoard.mockResolvedValue({ok: true, committee: lan})
+    adapter.saveCommitteeAsBoard.mockResolvedValue({ok: true, saved: lan})
     const wrapper = mountEditor({...lan, members: []}, true)
     await flushPromises()
     const file = new File(["x"], "b.png")
@@ -127,7 +127,7 @@ describe("the committee edit page, for the board", () => {
     expect(adapter.storeCommitteeBanner).toHaveBeenCalledWith(file, 1)
     expect(adapter.storeCommitteeIcon).toHaveBeenCalledWith(file, 1)
     expect(adapter.listCommittees).not.toHaveBeenCalled()
-    expect(adapter.saveCommitteeAsBoard).toHaveBeenCalledWith(1, 3, expect.objectContaining({banner: null, icon: null, members: []}))
+    expect(adapter.saveCommitteeAsBoard).toHaveBeenCalledWith(1, expect.objectContaining({version: 3, banner: null, icon: null, members: []}))
   })
 
   it("deletes a committee once asked, and says why where the api would not", async () => {
@@ -154,7 +154,7 @@ describe("the committee edit page, for the board", () => {
 
 describe("the committee edit page, for its own members", () => {
   it("locks the board's fields, and saves the description, banner and games", async () => {
-    adapter.saveOwnCommitteePage.mockResolvedValue({ok: true, committee: lan})
+    adapter.saveOwnCommitteePage.mockResolvedValue({ok: true, saved: lan})
     const wrapper = mountEditor({...lan, listed: false}, false)
     await flushPromises()
 
@@ -168,7 +168,7 @@ describe("the committee edit page, for its own members", () => {
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
-    expect(adapter.saveOwnCommitteePage).toHaveBeenCalledWith(1, 3, {description: "LANs, monthly.", banner: "b.webp", icon: "i.webp", gameCodes: ["CS2"]})
+    expect(adapter.saveOwnCommitteePage).toHaveBeenCalledWith(1, {description: "LANs, monthly.", banner: "b.webp", icon: "i.webp", gameCodes: ["CS2"], version: 3})
     expect(wrapper.emitted("saved")).toEqual([[lan]])
   })
 

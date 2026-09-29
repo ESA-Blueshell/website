@@ -135,8 +135,7 @@ const submit = async () => {
   saving.value = true
   failure.value = null
   try {
-    const result = await saveBoardOrReason({
-      id: props.board?.id,
+    const result = await saveBoardOrReason(props.board?.id, {
       number: numbered.value,
       name: name.value.trim() || null,
       cheer: cheer.value.trim() || null,
@@ -151,7 +150,7 @@ const submit = async () => {
       failure.value = result.reason
       return
     }
-    emit("saved", result.board)
+    emit("saved", result.saved)
   } finally {
     saving.value = false
   }

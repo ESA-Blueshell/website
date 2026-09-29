@@ -10,39 +10,25 @@ import {
   setUserRoles,
   type UserRolesResponse,
 } from "@/services/api"
-import {reasonFor} from "../refusals"
+import type {Refused} from "@/types/api"
+import {readOr} from "@/utils/answers"
+import type {Saved} from "@/utils/refusals"
+import {refusable} from "../refusals"
 
 export type RoleStanding = UserRolesResponse
 export type RoleChange = RoleChangeResponse
 
-export type SaveRolesResult =
-  | {ok: true; standing: RoleStanding}
-  | {ok: false; reason: string}
+export type SaveRolesResult = Saved<RoleStanding> | Refused
 
-export async function readRoleStanding(userId: number): Promise<RoleStanding | null> {
-  const res = await findUserRoles({path: {userId}})
-  if (res.error || !res.data) return null
-  return res.data
-}
+export const readRoleStanding = (userId: number): Promise<RoleStanding | null> =>
+  readOr(findUserRoles({path: {userId}}), null)
 
-export async function listRoleChanges(userId: number): Promise<RoleChange[] | null> {
-  const res = await findUserRoleChanges({path: {userId}})
-  if (res.error || !res.data) return null
-  return res.data
-}
+export const listRoleChanges = (userId: number): Promise<RoleChange[] | null> =>
+  readOr(findUserRoleChanges({path: {userId}}), null)
 
 /**
  * Sets the whole granted set. The request states the end state, so saving the same thing twice
  * is safe and two admins editing one person cannot toggle past each other.
  */
-export async function saveRolesOrReason(
-  userId: number,
-  roles: Role[],
-  note: string | null,
-): Promise<SaveRolesResult> {
-  const res = await setUserRoles({path: {userId}, body: {roles, note}})
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFor(res.error, "Those roles could not be saved.")}
-  }
-  return {ok: true, standing: res.data}
-}
+export const saveRolesOrReason = (userId: number, roles: Role[], note: string | null): Promise<SaveRolesResult> =>
+  refusable(setUserRoles({path: {userId}, body: {roles, note}}), "Those roles could not be saved.")

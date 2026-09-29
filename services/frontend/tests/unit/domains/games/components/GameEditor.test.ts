@@ -69,7 +69,7 @@ beforeEach(() => {
 
 describe("the game edit page", () => {
   it("adds a game from the casual pages, its address following its name, previewed as the casual head and cell", async () => {
-    adapter.addCasualGame.mockResolvedValue({ok: true, game: chess})
+    adapter.addCasualGame.mockResolvedValue({ok: true, saved: chess})
     const wrapper = mountEditor(null)
     expect(wrapper.get("[data-testid=casual-head]").text()).toContain("None yet")
 
@@ -97,7 +97,7 @@ describe("the game edit page", () => {
   })
 
   it("adds a game from the competition pages and enters it in the season it came from, previewed as the competition head and slice", async () => {
-    adapter.addCasualGame.mockResolvedValue({ok: true, game: chess})
+    adapter.addCasualGame.mockResolvedValue({ok: true, saved: chess})
     esports.enterGameInSeason.mockResolvedValueOnce({ok: false, reason: "Refused."}).mockResolvedValueOnce({ok: true})
     const wrapper = mountEditor(null, "competition", 4)
 
@@ -115,7 +115,7 @@ describe("the game edit page", () => {
   })
 
   it("corrects a game, its channels, order and committees, keeping what was typed when refused", async () => {
-    adapter.saveCasualGame.mockResolvedValueOnce({ok: false, reason: "The address 'chess' is already used by Go."}).mockResolvedValue({ok: true, game: chess})
+    adapter.saveCasualGame.mockResolvedValueOnce({ok: false, reason: "The address 'chess' is already used by Go."}).mockResolvedValue({ok: true, saved: chess})
     committees.saveGameOrganisers.mockResolvedValueOnce({ok: false, reason: "Refused."}).mockResolvedValue({ok: true})
     const wrapper = mountEditor(chess)
 
@@ -168,7 +168,7 @@ describe("the game edit page", () => {
   })
 
   it("writes the competition pages' own intro and esports channels, previewed with the casual intro as fallback", async () => {
-    adapter.saveCasualGame.mockResolvedValue({ok: true, game: chess})
+    adapter.saveCasualGame.mockResolvedValue({ok: true, saved: chess})
     const wrapper = mountEditor({...chess, competitionIntro: null, esportsChannels: []})
     const head = () => wrapper.getComponent(stubs.EsportsGameHead)
     const esports = wrapper.findAllComponents(stubs.GameChannelPicker).find(one => one.props("testid") === "game-edit-esports-channels")!
@@ -189,7 +189,7 @@ describe("the game edit page", () => {
   })
 
   it("takes an emptied order as last", async () => {
-    adapter.saveCasualGame.mockResolvedValue({ok: true, game: chess})
+    adapter.saveCasualGame.mockResolvedValue({ok: true, saved: chess})
     const wrapper = mountEditor(chess, "competition")
 
     expect(wrapper.getComponent(stubs.EditPage).props("back")).toEqual({to: "/competition", label: "Competition"})

@@ -11,7 +11,8 @@ import {
   SignInStatus,
   stepUp as stepUpCall,
 } from "@/services/api"
-import {codeOf, reasonFor} from "../refusals"
+import type {Refused} from "@/types/api"
+import {accepted, codeOf, reasonFor} from "../refusals"
 
 /**
  * What came of the password step, as the login form has to tell them apart: a wrong password is
@@ -55,11 +56,8 @@ export async function reenrol(token: string, username: string, password: string)
 }
 
 /** Proves the reader inside their sign-in: a code where two-factor is on, the password where not. */
-export async function stepUp(proof: {code?: string; password?: string}): Promise<{ok: true} | {ok: false; reason: string}> {
-  const response = await stepUpCall({body: proof})
-  if (!response.error) return {ok: true}
-  return {ok: false, reason: reasonFor(response.error, "That could not be checked. Try again.")}
-}
+export const stepUp = (proof: {code?: string; password?: string}): Promise<{ok: true} | Refused> =>
+  accepted(stepUpCall({body: proof}), "That could not be checked. Try again.")
 
 /** Ends this sign-in at the api, and says whether it did. The local state is the caller's to clear either way. */
 export async function signOut(): Promise<boolean> {

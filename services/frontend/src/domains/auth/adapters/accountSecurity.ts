@@ -39,17 +39,31 @@ import {
   twoFactorStanding,
   unlock,
 } from "@/services/api"
-import {needsStepUp, reasonFor} from "../refusals"
+import type {Refused} from "@/types/api"
+import type {Answer} from "@/utils/answers"
+import type {Saved} from "@/utils/refusals"
+import {accepted, needsStepUp, refusable} from "../refusals"
+
+/** A refused write, and whether proving the reader again would clear it. */
+export type StepRefused = Refused & {needsStepUp: boolean}
 
 /** A write that went through, or the refusal to show and whether a step-up would clear it. */
-export type Written<T = void> =
-  | {ok: true; value: T}
-  | {ok: false; reason: string; needsStepUp: boolean}
+export type Written = {ok: true} | StepRefused
 
-function written<T>(error: unknown, value: () => T, fallback: string): Written<T> {
-  if (!error) return {ok: true, value: value()}
-  return {ok: false, reason: reasonFor(error, fallback), needsStepUp: needsStepUp(error)}
+async function stepRefusable<T>(call: Promise<Answer<T>>, fallback: string): Promise<Saved<T> | StepRefused> {
+  const res = await call
+  const said = await refusable(Promise.resolve(res), fallback)
+  return said.ok ? said : {...said, needsStepUp: needsStepUp(res.error)}
 }
+
+async function stepAccepted(call: Promise<Answer<unknown>>, fallback: string): Promise<Written> {
+  const res = await call
+  const said = await accepted(Promise.resolve(res), fallback)
+  return said.ok ? said : {...said, needsStepUp: needsStepUp(res.error)}
+}
+
+const codes = (said: Saved<{codes: string[]}> | StepRefused): Saved<string[]> | StepRefused =>
+  said.ok ? {ok: true, saved: said.saved.codes} : said
 
 export async function readTwoFactor(): Promise<TwoFactorStanding | null> {
   const response = await twoFactorStanding()
@@ -57,54 +71,36 @@ export async function readTwoFactor(): Promise<TwoFactorStanding | null> {
 }
 
 /** Without a password only a granted role waiting on two-factor gets a secret, on a sign-in it just opened. */
-export async function startTwoFactorSetUp(password?: string): Promise<Written<TwoFactorSetupResponse>> {
-  const {data, error} = await setUpTwoFactor({body: password ? {password} : {}})
-  return written(error, () => data as TwoFactorSetupResponse, "Setting up two-factor failed.")
-}
+export const startTwoFactorSetUp = (password?: string): Promise<Saved<TwoFactorSetupResponse> | StepRefused> =>
+  stepRefusable(setUpTwoFactor({body: password ? {password} : {}}), "Setting up two-factor failed.")
 
-export async function confirmTwoFactorCode(code: string): Promise<Written<string[]>> {
-  const {data, error} = await confirmTwoFactor({body: {code}})
-  return written(error, () => data?.codes ?? [], "That code could not be checked.")
-}
+export const confirmTwoFactorCode = async (code: string): Promise<Saved<string[]> | StepRefused> =>
+  codes(await stepRefusable(confirmTwoFactor({body: {code}}), "That code could not be checked."))
 
-export async function finishTwoFactorSetUp(): Promise<Written> {
-  const {error} = await twoFactorSaved()
-  return written(error, () => undefined, "Two-factor could not be turned on.")
-}
+export const finishTwoFactorSetUp = (): Promise<Written> =>
+  stepAccepted(twoFactorSaved(), "Two-factor could not be turned on.")
 
-export async function removeTwoFactor(): Promise<Written> {
-  const {error} = await turnOffTwoFactor()
-  return written(error, () => undefined, "Two-factor could not be turned off.")
-}
+export const removeTwoFactor = (): Promise<Written> =>
+  stepAccepted(turnOffTwoFactor(), "Two-factor could not be turned off.")
 
-export async function newBackupCodes(): Promise<Written<string[]>> {
-  const {data, error} = await regenerateBackupCodes()
-  return written(error, () => data?.codes ?? [], "New backup codes could not be made.")
-}
+export const newBackupCodes = async (): Promise<Saved<string[]> | StepRefused> =>
+  codes(await stepRefusable(regenerateBackupCodes(), "New backup codes could not be made."))
 
-export async function answerOffer(): Promise<Written> {
-  const {error} = await answerTwoFactorOffer()
-  return written(error, () => undefined, "The answer could not be saved.")
-}
+export const answerOffer = (): Promise<Written> =>
+  stepAccepted(answerTwoFactorOffer(), "The answer could not be saved.")
 
-export async function savePassword(currentPassword: string, newPassword: string): Promise<Written> {
-  const {error} = await changePassword({body: {currentPassword, newPassword}})
-  return written(error, () => undefined, "The password could not be changed.")
-}
+export const savePassword = (currentPassword: string, newPassword: string): Promise<Written> =>
+  stepAccepted(changePassword({body: {currentPassword, newPassword}}), "The password could not be changed.")
 
 export async function readEmailAddress(): Promise<EmailAddressResponse | null> {
   return (await emailAddress()).data ?? null
 }
 
-export async function askToMoveEmail(email: string): Promise<Written> {
-  const {error} = await requestEmailChange({body: {email}})
-  return written(error, () => undefined, "The address could not be changed.")
-}
+export const askToMoveEmail = (email: string): Promise<Written> =>
+  stepAccepted(requestEmailChange({body: {email}}), "The address could not be changed.")
 
-export async function confirmNewEmail(token: string): Promise<Written> {
-  const {error} = await confirmEmailChange({body: {token}})
-  return written(error, () => undefined, "That link does not work any more.")
-}
+export const confirmNewEmail = (token: string): Promise<Written> =>
+  stepAccepted(confirmEmailChange({body: {token}}), "That link does not work any more.")
 
 /** Follows a lock link; answers who to contact, the same whatever the link was. */
 export async function lockAccount(token: string): Promise<string | null> {
@@ -116,34 +112,24 @@ export async function listSignIns(): Promise<SignInResponse[]> {
   return (await signIns()).data ?? []
 }
 
-export async function endOneSignIn(id: string): Promise<Written> {
-  const {error} = await endSignIn({path: {signInId: id}})
-  return written(error, () => undefined, "That sign-in could not be ended.")
-}
+export const endOneSignIn = (id: string): Promise<Written> =>
+  stepAccepted(endSignIn({path: {signInId: id}}), "That sign-in could not be ended.")
 
-export async function endEverySignIn(): Promise<Written> {
-  const {error} = await signOutEverywhere()
-  return written(error, () => undefined, "Signing out everywhere failed.")
-}
+export const endEverySignIn = (): Promise<Written> =>
+  stepAccepted(signOutEverywhere(), "Signing out everywhere failed.")
 
-export async function endOtherSignIns(): Promise<Written> {
-  const {error} = await signOutElsewhere()
-  return written(error, () => undefined, "The other sign-ins could not be ended.")
-}
+export const endOtherSignIns = (): Promise<Written> =>
+  stepAccepted(signOutElsewhere(), "The other sign-ins could not be ended.")
 
 export async function listTrustedBrowsers(): Promise<TrustedBrowserResponse[]> {
   return (await trustedBrowsers()).data ?? []
 }
 
-export async function forgetOneTrustedBrowser(id: number): Promise<Written> {
-  const {error} = await forgetTrustedBrowser({path: {id}})
-  return written(error, () => undefined, "That browser could not be forgotten.")
-}
+export const forgetOneTrustedBrowser = (id: number): Promise<Written> =>
+  stepAccepted(forgetTrustedBrowser({path: {id}}), "That browser could not be forgotten.")
 
-export async function forgetEveryTrustedBrowser(): Promise<Written> {
-  const {error} = await forgetTrustedBrowsers()
-  return written(error, () => undefined, "The browsers could not be forgotten.")
-}
+export const forgetEveryTrustedBrowser = (): Promise<Written> =>
+  stepAccepted(forgetTrustedBrowsers(), "The browsers could not be forgotten.")
 
 export async function readMySecurityLog(page = 0): Promise<SecurityEventPageResponse | null> {
   return (await mySecurityEvents({query: {page, size: 20}})).data ?? null
@@ -157,10 +143,8 @@ export async function readAccountStanding(userId: number): Promise<AccountStandi
   return (await accountStanding({path: {userId}})).data ?? null
 }
 
-export async function resetTwoFactorOf(userId: number, reason: string): Promise<Written> {
-  const {error} = await resetTwoFactor({path: {userId}, body: {reason}})
-  return written(error, () => undefined, "Two-factor could not be reset.")
-}
+export const resetTwoFactorOf = (userId: number, reason: string): Promise<Written> =>
+  stepAccepted(resetTwoFactor({path: {userId}, body: {reason}}), "Two-factor could not be reset.")
 
 /** The re-enrolment email as the person would receive it, with an inert link. */
 export async function previewReenrolment(userId: number): Promise<RecoveryEmailPreviewResponse | null> {
@@ -168,12 +152,8 @@ export async function previewReenrolment(userId: number): Promise<RecoveryEmailP
   return data ?? null
 }
 
-export async function resendReenrolment(userId: number): Promise<Written> {
-  const {error} = await resendReenrolmentLink({path: {userId}})
-  return written(error, () => undefined, "The link could not be sent.")
-}
+export const resendReenrolment = (userId: number): Promise<Written> =>
+  stepAccepted(resendReenrolmentLink({path: {userId}}), "The link could not be sent.")
 
-export async function unlockAccount(userId: number, reason: string, email?: string): Promise<Written> {
-  const {error} = await unlock({path: {userId}, body: {reason, email: email || undefined}})
-  return written(error, () => undefined, "The account could not be unlocked.")
-}
+export const unlockAccount = (userId: number, reason: string, email?: string): Promise<Written> =>
+  stepAccepted(unlock({path: {userId}, body: {reason, email: email || undefined}}), "The account could not be unlocked.")

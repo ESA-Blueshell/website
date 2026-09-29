@@ -13,4 +13,4 @@ export const stepUpStub = {
 }
 
 export const refused = (reason: string, needsStepUp = false) => ({ok: false, reason, needsStepUp})
-export const ok = <T>(value?: T) => ({ok: true, value})
+export const ok = <T>(saved?: T) => (saved === undefined ? {ok: true} : {ok: true, saved})

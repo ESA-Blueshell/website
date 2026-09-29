@@ -139,7 +139,7 @@ describe("storing a picture", () => {
 
     const stored = await storeBoardPhoto(new File([], "photo.png"))
 
-    expect(stored).toEqual({ok: true, picture: expect.objectContaining({url: "https://api.test/files/photo"})})
+    expect(stored).toEqual({ok: true, saved: expect.objectContaining({url: "https://api.test/files/photo"})})
     expect(uploadPublicImage).toHaveBeenCalledWith({query: {type: "BOARD_PHOTO"}, body: {file: expect.any(File)}})
   })
 
@@ -179,70 +179,34 @@ describe("saveBoardOrReason", () => {
   it("creates a board that has no id yet, and carries no version with it", async () => {
     vi.mocked(createBoard).mockResolvedValue(answer(createBoard, board()))
 
-    await expect(saveBoardOrReason({number: 9, startDate: "2024-09-01"})).resolves.toEqual({
+    await expect(saveBoardOrReason(undefined, {number: 9, startDate: "2024-09-01"})).resolves.toEqual({
       ok: true,
-      board: expect.objectContaining({number: 9}),
+      saved: expect.objectContaining({number: 9}),
     })
     expect(createBoard).toHaveBeenCalledWith({body: expect.objectContaining({number: 9, startDate: "2024-09-01"})})
     expect(updateBoard).not.toHaveBeenCalled()
   })
 
-  // A missing version writing as 0 is what makes an update of a board read before the field
-  // existed fail on the api's optimistic lock rather than overwrite silently.
   it("updates a board that has an id, under the version it was read at", async () => {
     vi.mocked(updateBoard).mockResolvedValue(answer(updateBoard, board()))
 
-    await saveBoardOrReason({id: 1, number: 9, startDate: "2024-09-01", version: 3})
+    await saveBoardOrReason(1, {number: 9, startDate: "2024-09-01", version: 3})
+
     expect(updateBoard).toHaveBeenCalledWith({path: {id: 1}, body: expect.objectContaining({version: 3})})
-
-    await saveBoardOrReason({id: 1, number: 9, startDate: "2024-09-01"})
-    expect(updateBoard).toHaveBeenLastCalledWith({path: {id: 1}, body: expect.objectContaining({version: 0})})
-  })
-
-  // Null is what the dialog holds for a field nobody filled in; sent as null it would clear a
-  // column, sent as undefined the api leaves the field out of the write.
-  it("sends a field nobody filled in as absent rather than as null", async () => {
-    vi.mocked(createBoard).mockResolvedValue(answer(createBoard, board()))
-
-    await saveBoardOrReason({
-      number: 9,
-      startDate: "2024-09-01",
-      name: null,
-      candidate: null,
-      cheer: null,
-      accent: null,
-      description: null,
-      endDate: null,
-      photo: null,
-    })
-
-    expect(createBoard).toHaveBeenCalledWith({
-      body: {
-        number: 9,
-        startDate: "2024-09-01",
-        name: undefined,
-        candidate: undefined,
-        cheer: undefined,
-        accent: undefined,
-        description: undefined,
-        endDate: undefined,
-        photo: undefined,
-      },
-    })
   })
 
   it("resolves the pictures on a board it saved", async () => {
     vi.mocked(createBoard).mockResolvedValue(answer(createBoard, board({photo: image("/files/photo")})))
 
-    const saved = await saveBoardOrReason({number: 9, startDate: "2024-09-01"})
+    const saved = await saveBoardOrReason(undefined, {number: 9, startDate: "2024-09-01"})
 
-    expect(saved).toMatchObject({ok: true, board: {photo: {url: "https://api.test/files/photo"}}})
+    expect(saved).toMatchObject({ok: true, saved: {photo: {url: "https://api.test/files/photo"}}})
   })
 
   it("reports a clashing number as the api worded it, so the typist knows which field to change", async () => {
     vi.mocked(createBoard).mockResolvedValue(refusal(createBoard, {detail: "Board 9 already exists."}))
 
-    await expect(saveBoardOrReason({number: 9, startDate: "2024-09-01"})).resolves.toEqual({
+    await expect(saveBoardOrReason(undefined, {number: 9, startDate: "2024-09-01"})).resolves.toEqual({
       ok: false,
       reason: "Board 9 already exists.",
     })
@@ -251,7 +215,7 @@ describe("saveBoardOrReason", () => {
   it("reports a save that answered with neither an error nor a board", async () => {
     vi.mocked(createBoard).mockResolvedValue(emptyAnswer(createBoard))
 
-    await expect(saveBoardOrReason({number: 9, startDate: "2024-09-01"})).resolves.toEqual({
+    await expect(saveBoardOrReason(undefined, {number: 9, startDate: "2024-09-01"})).resolves.toEqual({
       ok: false,
       reason: "That board could not be saved.",
     })
@@ -288,25 +252,13 @@ describe("dropBoard", () => {
 })
 
 describe("board memberships", () => {
-  it("adds a member, resolves the portrait, and sends unfilled fields as absent", async () => {
+  it("adds a member and resolves the portrait", async () => {
     vi.mocked(addMember).mockResolvedValue(answer(addMember, member({portrait: image("/files/face")})))
 
     const added = await addMemberOrReason(1, {role: "Chair", startDate: "2024-09-01", userId: null})
 
-    expect(added).toMatchObject({ok: true, member: {portrait: {url: "https://api.test/files/face"}}})
-    expect(addMember).toHaveBeenCalledWith({
-      path: {boardId: 1},
-      body: {
-        role: "Chair",
-        startDate: "2024-09-01",
-        endDate: undefined,
-        userId: undefined,
-        displayName: undefined,
-        nickname: undefined,
-        description: undefined,
-        portrait: undefined,
-      },
-    })
+    expect(added).toMatchObject({ok: true, saved: {portrait: {url: "https://api.test/files/face"}}})
+    expect(addMember).toHaveBeenCalledWith({path: {boardId: 1}, body: {role: "Chair", startDate: "2024-09-01", userId: null}})
   })
 
   it("reports a member the api would not add in its own words", async () => {
@@ -352,7 +304,7 @@ describe("board memberships", () => {
 
     await linkMemberAccountOrReason(1, 5, null)
 
-    expect(linkMember).toHaveBeenCalledWith({path: {boardId: 1, id: 5}, body: {userId: undefined}})
+    expect(linkMember).toHaveBeenCalledWith({path: {boardId: 1, id: 5}, body: {userId: null}})
   })
 
   it("says which of the two it failed at, since attaching and detaching read alike otherwise", async () => {

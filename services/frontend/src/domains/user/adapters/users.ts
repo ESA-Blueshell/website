@@ -33,6 +33,7 @@ import {
   type UserDetailResponse,
 } from "@/services/api"
 import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
+import {readOr} from "@/utils/answers"
 
 /**
  * An account here, as the thing attaching one needs to name it: who it belongs to, and how to
@@ -58,9 +59,9 @@ export interface MemberAccount {
 export async function loadMemberAccounts(): Promise<MemberAccount[] | null> {
   // No size: this wants the whole listing, and a size that named a bound never gave one — it
   // was answered with everybody anyway (#1145). Saying so beats a number that did nothing.
-  const res = await findUsers({})
-  if (res.error || !res.data?.content) return null
-  return res.data.content
+  const page = await readOr(findUsers({}), null)
+  if (!page?.content) return null
+  return page.content
     .filter(user => user.id != null)
     .map(user => ({
       id: user.id as number,
@@ -80,9 +81,8 @@ export async function searchMemberAccounts(term: string, size: number): Promise<
 
 /** The same search, answering nothing where the api refused it rather than an empty page. */
 export async function findMemberAccounts(term: string, size: number): Promise<UserDetailResponse[] | null> {
-  const res = await findUsers({query: {search: term, page: 0, size}})
-  if (res.error) return null
-  return res.data?.content ?? []
+  const page = await readOr(findUsers({query: {search: term, page: 0, size}}), null)
+  return page ? page.content ?? [] : null
 }
 
 /**

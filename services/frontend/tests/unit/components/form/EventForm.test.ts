@@ -332,7 +332,7 @@ describe("EventForm", () => {
     const poster = new File(["art"], "poster.gif", {type: "image/gif"})
 
     const stored = await input.props("store")(poster)
-    input.vm.$emit("update:picture", stored.ok ? stored.picture : null)
+    input.vm.$emit("update:picture", stored.ok ? stored.saved : null)
     await settle()
 
     expect(mockUploadEventBanner).not.toHaveBeenCalled()

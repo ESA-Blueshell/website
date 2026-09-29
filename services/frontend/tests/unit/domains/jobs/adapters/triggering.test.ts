@@ -28,7 +28,7 @@ describe("enqueueJob", () => {
   it("queues the job with the payload it was given", async () => {
     vi.mocked(enqueue).mockResolvedValue(answer(enqueue, aJob({id: 5})))
 
-    await expect(enqueueJob("contact.sync", {userId: 7})).resolves.toEqual({ok: true})
+    await expect(enqueueJob("contact.sync", {userId: 7})).resolves.toMatchObject({ok: true})
     expect(enqueue).toHaveBeenCalledWith({body: {jobType: "contact.sync", payload: {userId: 7}}})
   })
 

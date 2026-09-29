@@ -12,10 +12,7 @@ const emit = defineEmits<{
   (event: "saved", committee: Committee): void
 }>()
 
-const save = async (archived: boolean) => {
-  const result = await setCommitteeArchived(props.committee.id, archived)
-  return result.ok ? {ok: true as const, saved: result.committee} : result
-}
+const save = (archived: boolean) => setCommitteeArchived(props.committee.id, archived)
 </script>
 
 <template>

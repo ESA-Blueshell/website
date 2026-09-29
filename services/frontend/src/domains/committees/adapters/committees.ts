@@ -6,9 +6,11 @@
 import {
   apiUrl,
   archiveCommittee,
+  type CommitteeOwnPageRequest,
   type CommitteePageResponse,
   type CommitteeResponse,
   createCommittee,
+  type CreateCommitteeRequest,
   deleteCommitteeById,
   FileType,
   findCommitteePage,
@@ -17,6 +19,7 @@ import {
   type Image,
   setGameOrganisers,
   updateCommittee,
+  type UpdateCommitteeRequest,
   updateCommitteePage,
   uploadCommitteeBanner,
   uploadCommitteeIcon,
@@ -24,39 +27,18 @@ import {
 } from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
 import type {Refused} from "@/types/api"
-import {reasonFor} from "../refusals"
+import type {Saved} from "@/utils/refusals"
+import {accepted, refusable} from "../refusals"
 
 /** A committee as every reader gets it; its members only where the board or its own members read it. */
 export type Committee = CommitteeResponse
 export type CommitteePage = CommitteePageResponse
 
-/** What the board writes about a committee: everything but its archived state. */
-export interface CommitteeDraft {
-  name: string
-  slug: string
-  listed: boolean
-  description: string
-  banner: string | null
-  icon: string | null
-  members: {userId: number; role: string | null}[]
-  gameCodes: string[]
-}
-
-/** What a committee's own members write about it. */
-export interface OwnPageDraft {
-  description: string
-  banner: string | null
-  icon: string | null
-  gameCodes: string[]
-}
-
-export interface CommitteeSaved {
-  ok: true
-  committee: Committee
-}
-
 const image = (one?: Image | null): Image | null =>
   one ? {...one, url: apiUrl(one.url), renditions: one.renditions.map(copy => ({...copy, url: apiUrl(copy.url)}))} : null
+
+const pictured = (stored: Saved<Image> | Refused): Saved<Picture> | Refused =>
+  stored.ok ? {ok: true, saved: image(stored.saved) as Picture} : stored
 
 const withArt = <T extends {banner?: Image | null; icon?: Image | null}>(committee: T): T =>
   ({...committee, banner: image(committee.banner), icon: image(committee.icon)})
@@ -93,73 +75,51 @@ export async function loadCommitteePage(address: string): Promise<CommitteePage 
 }
 
 /** Deletes the committee, or says why the api would not. */
-export async function removeCommittee(id: number): Promise<{ok: true} | Refused> {
-  const res = await deleteCommitteeById({path: {id}})
-  if (res.error) return {ok: false, reason: reasonFor(res.error, "The committee could not be deleted.")}
-  return {ok: true}
-}
+export const removeCommittee = (id: number): Promise<{ok: true} | Refused> =>
+  accepted(deleteCommitteeById({path: {id}}), "The committee could not be deleted.")
 
-const boardBody = (draft: CommitteeDraft) => ({
-  name: draft.name,
-  slug: draft.slug || undefined,
-  listed: draft.listed,
-  description: draft.description,
-  banner: draft.banner ?? undefined,
-  icon: draft.icon ?? undefined,
-  members: draft.members.map(member => ({userId: member.userId, role: member.role ?? undefined})),
-  gameCodes: draft.gameCodes,
-})
+const withArtSaved = (saved: Saved<Committee> | Refused): Saved<Committee> | Refused =>
+  saved.ok ? {ok: true, saved: withArt(saved.saved)} : saved
 
-export async function addCommittee(draft: CommitteeDraft): Promise<CommitteeSaved | Refused> {
-  const res = await createCommittee({body: boardBody(draft)})
-  if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "The committee could not be added.")}
-  return {ok: true, committee: withArt(res.data)}
-}
+export const addCommittee = async (body: CreateCommitteeRequest): Promise<Saved<Committee> | Refused> =>
+  withArtSaved(await refusable(createCommittee({body}), "The committee could not be added."))
 
-export async function saveCommitteeAsBoard(id: number, version: number, draft: CommitteeDraft): Promise<CommitteeSaved | Refused> {
-  const res = await updateCommittee({path: {id}, body: {...boardBody(draft), version}})
-  if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "The committee could not be saved.")}
-  return {ok: true, committee: withArt(res.data)}
-}
+export const saveCommitteeAsBoard = async (id: number, body: UpdateCommitteeRequest): Promise<Saved<Committee> | Refused> =>
+  withArtSaved(await refusable(updateCommittee({path: {id}, body}), "The committee could not be saved."))
 
-export async function saveOwnCommitteePage(id: number, version: number, draft: OwnPageDraft): Promise<CommitteeSaved | Refused> {
-  const res = await updateCommitteePage({path: {id}, body: {...draft, version, banner: draft.banner ?? undefined, icon: draft.icon ?? undefined}})
-  if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "The committee could not be saved.")}
-  return {ok: true, committee: withArt(res.data)}
-}
+/** What a committee's own members write about it: its page, not its name, address or seats. */
+export const saveOwnCommitteePage = async (id: number, body: CommitteeOwnPageRequest): Promise<Saved<Committee> | Refused> =>
+  withArtSaved(await refusable(updateCommitteePage({path: {id}, body}), "The committee could not be saved."))
 
-export async function setCommitteeArchived(id: number, archived: boolean): Promise<CommitteeSaved | Refused> {
-  const res = await archiveCommittee({path: {id}, body: {archived}})
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFor(res.error, archived ? "The committee could not be archived." : "The committee could not be brought back.")}
-  }
-  return {ok: true, committee: withArt(res.data)}
-}
+export const setCommitteeArchived = async (id: number, archived: boolean): Promise<Saved<Committee> | Refused> =>
+  withArtSaved(await refusable(
+    archiveCommittee({path: {id}, body: {archived}}),
+    archived ? "The committee could not be archived." : "The committee could not be brought back.",
+  ))
 
 /**
  * Stores a banner somebody chose: through the committee's own route where it exists already, so
  * its members may, and as a public picture for one the board is still adding.
  */
-export async function storeCommitteeBanner(file: File, committeeId: number | null): Promise<{ok: true; picture: Picture} | Refused> {
-  const res = committeeId == null
-    ? await uploadPublicImage({query: {type: FileType.COMMITTEE_BANNER}, body: {file}})
-    : await uploadCommitteeBanner({path: {id: committeeId}, body: {file}})
-  if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "That picture could not be stored.")}
-  return {ok: true, picture: image(res.data) as Picture}
+export async function storeCommitteeBanner(file: File, committeeId: number | null): Promise<Saved<Picture> | Refused> {
+  return pictured(await refusable(
+    committeeId == null
+      ? uploadPublicImage({query: {type: FileType.COMMITTEE_BANNER}, body: {file}})
+      : uploadCommitteeBanner({path: {id: committeeId}, body: {file}}),
+    "That picture could not be stored.",
+  ))
 }
 
 /** Stores a logo somebody chose, the way [storeCommitteeBanner] stores a banner. */
-export async function storeCommitteeIcon(file: File, committeeId: number | null): Promise<{ok: true; picture: Picture} | Refused> {
-  const res = committeeId == null
-    ? await uploadPublicImage({query: {type: FileType.COMMITTEE_ICON}, body: {file}})
-    : await uploadCommitteeIcon({path: {id: committeeId}, body: {file}})
-  if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "That picture could not be stored.")}
-  return {ok: true, picture: image(res.data) as Picture}
+export async function storeCommitteeIcon(file: File, committeeId: number | null): Promise<Saved<Picture> | Refused> {
+  return pictured(await refusable(
+    committeeId == null
+      ? uploadPublicImage({query: {type: FileType.COMMITTEE_ICON}, body: {file}})
+      : uploadCommitteeIcon({path: {id: committeeId}, body: {file}}),
+    "That picture could not be stored.",
+  ))
 }
 
 /** Sets which committees organise events for a game, from the game's own form. */
-export async function saveGameOrganisers(code: string, committeeIds: number[]): Promise<{ok: true} | Refused> {
-  const res = await setGameOrganisers({path: {game: code}, body: {committeeIds}})
-  if (res.error) return {ok: false, reason: reasonFor(res.error, "The committees could not be saved.")}
-  return {ok: true}
-}
+export const saveGameOrganisers = (code: string, committeeIds: number[]): Promise<{ok: true} | Refused> =>
+  accepted(setGameOrganisers({path: {game: code}, body: {committeeIds}}), "The committees could not be saved.")

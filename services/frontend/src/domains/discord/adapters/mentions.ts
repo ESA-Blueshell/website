@@ -4,6 +4,7 @@
  */
 import {type DiscordMentionsResponse, type DiscordNameResponse, listDiscordChannels, readDiscordMentions}
   from "@/services/api"
+import {readOr} from "@/utils/answers"
 
 export interface MentionIds {
   users: string[]
@@ -11,12 +12,8 @@ export interface MentionIds {
   channels: string[]
 }
 
-export async function readMentionNames(ids: MentionIds): Promise<DiscordMentionsResponse | null> {
-  const {data, error} = await readDiscordMentions({query: ids})
-  return error || !data ? null : data
-}
+export const readMentionNames = (ids: MentionIds): Promise<DiscordMentionsResponse | null> =>
+  readOr(readDiscordMentions({query: ids}), null)
 
-export async function listServerChannels(): Promise<DiscordNameResponse[] | null> {
-  const {data, error} = await listDiscordChannels()
-  return error || !data ? null : data
-}
+export const listServerChannels = (): Promise<DiscordNameResponse[] | null> =>
+  readOr(listDiscordChannels(), null)

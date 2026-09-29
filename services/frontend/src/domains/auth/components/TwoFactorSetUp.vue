@@ -302,8 +302,8 @@ const start = async () => {
     }
     return
   }
-  pending.value = result.value
-  qr.value = await QRCode.toDataURL(result.value.otpauthUri, {margin: 1, width: 208})
+  pending.value = result.saved
+  qr.value = await QRCode.toDataURL(result.saved.otpauthUri, {margin: 1, width: 208})
   password.value = ""
   stage.value = "scan"
 }
@@ -326,7 +326,7 @@ const confirm = async () => {
     error.value = result.reason
     return
   }
-  codesToSave.value = result.value
+  codesToSave.value = result.saved
   stage.value = "codes"
 }
 

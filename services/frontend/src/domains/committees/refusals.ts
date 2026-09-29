@@ -17,4 +17,4 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   PictureNotStored: () => "That picture is not in storage.",
 }
 
-export const {sentenceFor, reasonFor} = refusalReader(sentences)
+export const {sentenceFor, refusable, accepted} = refusalReader(sentences)

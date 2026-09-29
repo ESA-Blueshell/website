@@ -16,7 +16,7 @@ beforeEach(() => Object.values(adapter).forEach(one => one.mockReset()))
 
 describe("archiving a game", () => {
   it("says what archiving does, and does it once confirmed", async () => {
-    adapter.setGameArchived.mockResolvedValue({ok: true, game: archived})
+    adapter.setGameArchived.mockResolvedValue({ok: true, saved: archived})
     const wrapper = mount(ArchiveGameDialog, {props: {open: true, game: chess}, global: {stubs: {ConfirmDialog}}})
     const confirm = wrapper.getComponent(ConfirmDialog)
 

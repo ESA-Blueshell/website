@@ -4,14 +4,11 @@
  * query asks nothing of Discord, so it tells whether the bot is there at all.
  */
 import {type DiscordMemberResponse, listUnclaimedDiscordMembers, searchDiscordMembers} from "@/services/api"
+import {readOr} from "@/utils/answers"
 
-export async function searchServerMembers(query: string): Promise<DiscordMemberResponse[] | null> {
-  const {data, error} = await searchDiscordMembers({query: {query}})
-  return error || !data ? null : data
-}
+export const searchServerMembers = (query: string): Promise<DiscordMemberResponse[] | null> =>
+  readOr(searchDiscordMembers({query: {query}}), null)
 
 /** Everybody in the server no website account has linked yet, by name; null as above. */
-export async function listUnclaimedMembers(): Promise<DiscordMemberResponse[] | null> {
-  const {data, error} = await listUnclaimedDiscordMembers()
-  return error || !data ? null : data
-}
+export const listUnclaimedMembers = (): Promise<DiscordMemberResponse[] | null> =>
+  readOr(listUnclaimedDiscordMembers(), null)

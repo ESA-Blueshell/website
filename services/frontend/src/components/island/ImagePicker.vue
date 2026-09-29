@@ -93,7 +93,7 @@ const choose = async (event: Event) => {
       failure.value = stored.reason
       return
     }
-    emit("update:picture", stored.picture)
+    emit("update:picture", stored.saved)
   } finally {
     uploading.value = false
   }

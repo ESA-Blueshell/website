@@ -115,7 +115,7 @@ describe("storePicture", () => {
     const stored = await storePicture(new File([], "banner.png"), FileType.GAME_BANNER)
 
     expect(stored).toMatchObject({ok: true})
-    expect((stored as {picture: {url: string}}).picture.url).toBe(apiUrl("/media/banner.png"))
+    expect((stored as {saved: {url: string}}).saved.url).toBe(apiUrl("/media/banner.png"))
   })
 
   // "Something went wrong" does not tell somebody to pick another file.

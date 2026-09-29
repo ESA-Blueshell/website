@@ -20,7 +20,7 @@ const failed = {error: {code: "WrongPassword"}}
 describe("account security writes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    for (const call of Object.values(api)) call.mockResolvedValue({data: undefined})
+    for (const call of Object.values(api)) call.mockResolvedValue({data: {codes: []}})
   })
 
   const writes: [string, string, () => Promise<unknown>, unknown][] = [
@@ -59,9 +59,9 @@ describe("account security writes", () => {
     api.confirmTwoFactor.mockResolvedValue({data: {codes: ["a"]}})
     api.regenerateBackupCodes.mockResolvedValue({data: {codes: ["b"]}})
 
-    await expect(security.startTwoFactorSetUp("pw")).resolves.toEqual({ok: true, value: {otpauthUri: "otpauth://x", key: "K"}})
-    await expect(security.confirmTwoFactorCode("1")).resolves.toEqual({ok: true, value: ["a"]})
-    await expect(security.newBackupCodes()).resolves.toEqual({ok: true, value: ["b"]})
+    await expect(security.startTwoFactorSetUp("pw")).resolves.toEqual({ok: true, saved: {otpauthUri: "otpauth://x", key: "K"}})
+    await expect(security.confirmTwoFactorCode("1")).resolves.toEqual({ok: true, saved: ["a"]})
+    await expect(security.newBackupCodes()).resolves.toEqual({ok: true, saved: ["b"]})
   })
 })
 

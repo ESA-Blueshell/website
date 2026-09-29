@@ -17,7 +17,7 @@ describe("confirming a new email address", () => {
 
   it("says the account uses the new address once the link is confirmed", async () => {
     mockToken.mockReturnValue("s.v")
-    mockConfirm.mockResolvedValue({ok: true, value: undefined})
+    mockConfirm.mockResolvedValue({ok: true})
     const wrapper = mountInApp(ConfirmEmail)
     await settle()
 

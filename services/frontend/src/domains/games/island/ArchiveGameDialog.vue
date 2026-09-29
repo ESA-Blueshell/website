@@ -12,10 +12,7 @@ const emit = defineEmits<{
   (event: "saved", game: CasualGame): void
 }>()
 
-const save = async (archived: boolean) => {
-  const result = await setGameArchived(props.game.code, archived)
-  return result.ok ? {ok: true as const, saved: result.game} : result
-}
+const save = (archived: boolean) => setGameArchived(props.game.code, archived)
 </script>
 
 <template>

@@ -15,10 +15,18 @@ import {
   updateMember,
   uploadPublicImage,
 } from "@/services/api"
-import type {BoardMemberResponse, BoardResponse, Image} from "@/services/api"
+import type {
+  AddBoardMemberRequest,
+  BoardMemberResponse,
+  BoardRequest,
+  BoardResponse,
+  Image,
+  UpdateBoardMemberRequest,
+} from "@/services/api"
 import type {PictureStore} from "@/components/island/pictures"
-import {reasonFor} from "../refusals"
+import {accepted, refusable} from "../refusals"
 import type {Refused} from "@/types/api"
+import type {Saved} from "@/utils/refusals"
 
 // Re-exported so this adapter still answers for its own surface, while the type has one definition.
 export type {Refused}
@@ -61,12 +69,8 @@ const withPortrait = (member: BoardMember): BoardMember =>
  * chose it can act on.
  */
 const storePicture = (kind: FileType): PictureStore => async (file: File) => {
-  const res = await uploadPublicImage({query: {type: kind}, body: {file}})
-  if (res.error || !res.data) {
-    const body = res.error as {detail?: string; title?: string} | null
-    return {ok: false, reason: body?.detail || body?.title || "That picture could not be stored."}
-  }
-  return {ok: true, picture: picture(res.data)}
+  const stored = await refusable(uploadPublicImage({query: {type: kind}, body: {file}}), "That picture could not be stored.")
+  return stored.ok ? {ok: true, saved: picture(stored.saved)} : stored
 }
 
 /** A board's group photograph, and one board member's portrait. Two kinds, so two stores. */
@@ -94,132 +98,47 @@ export async function loadBoards(): Promise<Board[]> {
 }
 
 /**
- * A board as it is written down: everything the api records, and the key where one exists.
- *
- * `candidate` is passed through rather than composed here. The column is `NOT NULL`, nothing
- * reads it, and the api fills it with the board's name, or with its number where there is no
- * name, for a write that carries none. A second copy of that rule on this side would be a
- * second thing to keep in step.
- */
-export interface BoardWrite {
-  id?: number
-  number: number
-  name?: string | null
-  candidate?: string | null
-  cheer?: string | null
-  accent?: string | null
-  description?: string | null
-  startDate: string
-  endDate?: string | null
-  photo?: string | null
-  version?: number
-}
-
-/**
  * A board written down, or the api's own words for why it was not.
  *
  * A clashing number is the refusal this exists for: the api answers "Board 9 already exists",
  * and a dialog that could only report that something went wrong would leave whoever typed it
  * guessing at which field to change.
  */
-export async function saveBoardOrReason(
-  board: BoardWrite,
-): Promise<{ok: true; board: Board} | Refused> {
-  const body = {
-    number: board.number,
-    name: board.name ?? undefined,
-    candidate: board.candidate ?? undefined,
-    cheer: board.cheer ?? undefined,
-    accent: board.accent ?? undefined,
-    description: board.description ?? undefined,
-    startDate: board.startDate,
-    endDate: board.endDate ?? undefined,
-    photo: board.photo ?? undefined,
-  }
-  const res = board.id == null
-    ? await createBoard({body})
-    : await updateBoard({path: {id: board.id}, body: {...body, version: board.version ?? 0}})
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFor(res.error, "That board could not be saved.")}
-  }
-  return {ok: true, board: withPictures(res.data)}
+export async function saveBoardOrReason(id: number | undefined, body: BoardRequest): Promise<Saved<Board> | Refused> {
+  const saved = await refusable(
+    id == null ? createBoard({body}) : updateBoard({path: {id}, body}),
+    "That board could not be saved.",
+  )
+  return saved.ok ? {ok: true, saved: withPictures(saved.saved)} : saved
 }
 
 /** A board with members on it is refused, and the refusal says how many are in the way. */
-export async function dropBoard(id: number): Promise<{ok: true} | Refused> {
-  const res = await deleteBoard({path: {id}})
-  if (res.error) return {ok: false, reason: reasonFor(res.error, "The board could not be removed.")}
-  return {ok: true}
-}
+export const dropBoard = (id: number): Promise<{ok: true} | Refused> =>
+  accepted(deleteBoard({path: {id}}), "The board could not be removed.")
+
+const portrayed = (saved: Saved<BoardMember> | Refused): Saved<BoardMember> | Refused =>
+  saved.ok ? {ok: true, saved: withPortrait(saved.saved)} : saved
 
 /**
- * A board membership as it is written down: the role it held, who held it, and when.
+ * A board membership written down, or the api's own words for why it was not.
  *
  * `displayName` is the name the membership stands under rather than the account's. Most of the
  * people who have held one never had an account here, so the name is the membership's own and an
  * account is something it may additionally have.
  */
-export interface BoardMemberWrite {
-  role: string
-  startDate: string
-  endDate?: string | null
-  userId?: number | null
-  displayName?: string | null
-  nickname?: string | null
-  description?: string | null
-  portrait?: string | null
-}
-
-/**
- * A board membership written down, or the api's own words for why it was not.
- *
- * The sdk hands a refusal back as a body rather than throwing, so a dialog that only read
- * `data` could not tell a rejected date or a rejected upload from a save that worked.
- */
 export async function addMemberOrReason(
   boardId: number,
-  one: BoardMemberWrite,
-): Promise<{ok: true; member: BoardMember} | Refused> {
-  const res = await addMember({
-    path: {boardId},
-    body: {
-      role: one.role,
-      startDate: one.startDate,
-      endDate: one.endDate ?? undefined,
-      userId: one.userId ?? undefined,
-      displayName: one.displayName ?? undefined,
-      nickname: one.nickname ?? undefined,
-      description: one.description ?? undefined,
-      portrait: one.portrait ?? undefined,
-    },
-  })
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFor(res.error, "That member could not be added.")}
-  }
-  return {ok: true, member: withPortrait(res.data)}
+  body: AddBoardMemberRequest,
+): Promise<Saved<BoardMember> | Refused> {
+  return portrayed(await refusable(addMember({path: {boardId}, body}), "That member could not be added."))
 }
 
 export async function saveMemberOrReason(
   boardId: number,
   id: number,
-  one: Omit<BoardMemberWrite, "userId">,
-): Promise<{ok: true; member: BoardMember} | Refused> {
-  const res = await updateMember({
-    path: {boardId, id},
-    body: {
-      role: one.role,
-      startDate: one.startDate,
-      endDate: one.endDate ?? undefined,
-      displayName: one.displayName ?? undefined,
-      nickname: one.nickname ?? undefined,
-      description: one.description ?? undefined,
-      portrait: one.portrait ?? undefined,
-    },
-  })
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFor(res.error, "That member could not be saved.")}
-  }
-  return {ok: true, member: withPortrait(res.data)}
+  body: UpdateBoardMemberRequest,
+): Promise<Saved<BoardMember> | Refused> {
+  return portrayed(await refusable(updateMember({path: {boardId, id}, body}), "That member could not be saved."))
 }
 
 /** A null account detaches the membership, which keeps standing under its own name. */
@@ -227,21 +146,11 @@ export async function linkMemberAccountOrReason(
   boardId: number,
   id: number,
   userId: number | null,
-): Promise<{ok: true; member: BoardMember} | Refused> {
-  const res = await linkMember({path: {boardId, id}, body: {userId: userId ?? undefined}})
-  if (res.error || !res.data) {
-    const what = userId == null ? "detached" : "linked to that account"
-    return {ok: false, reason: reasonFor(res.error, `That member could not be ${what}.`)}
-  }
-  return {ok: true, member: withPortrait(res.data)}
+): Promise<Saved<BoardMember> | Refused> {
+  const what = userId == null ? "detached" : "linked to that account"
+  return portrayed(await refusable(linkMember({path: {boardId, id}, body: {userId}}), `That member could not be ${what}.`))
 }
 
 /** A membership is somebody's place in the association's history, so a refusal is worth reporting. */
-export async function dropMemberOrReason(
-  boardId: number,
-  id: number,
-): Promise<{ok: true} | Refused> {
-  const res = await removeMember({path: {boardId, id}})
-  if (res.error) return {ok: false, reason: reasonFor(res.error, "That member could not be removed.")}
-  return {ok: true}
-}
+export const dropMemberOrReason = (boardId: number, id: number): Promise<{ok: true} | Refused> =>
+  accepted(removeMember({path: {boardId, id}}), "That member could not be removed.")

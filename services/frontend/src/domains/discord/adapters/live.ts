@@ -4,14 +4,11 @@
  * answers null so the band falls back to Discord's public widget.
  */
 import {type DiscordLiveResponse, type DiscordViewerRoomsResponse, readDiscordLive, readMyDiscordRooms} from "@/services/api"
+import {readOr} from "@/utils/answers"
 
-export async function readLiveServer(): Promise<DiscordLiveResponse | null> {
-  const {data, error} = await readDiscordLive()
-  return error || !data ? null : data
-}
+export const readLiveServer = (): Promise<DiscordLiveResponse | null> =>
+  readOr(readDiscordLive(), null)
 
 /** The rooms the viewer's own Discord member may join; null where the api cannot say. */
-export async function readMyRooms(): Promise<DiscordViewerRoomsResponse | null> {
-  const {data, error} = await readMyDiscordRooms()
-  return error || !data ? null : data
-}
+export const readMyRooms = (): Promise<DiscordViewerRoomsResponse | null> =>
+  readOr(readMyDiscordRooms(), null)

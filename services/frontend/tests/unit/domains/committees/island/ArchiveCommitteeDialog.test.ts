@@ -13,7 +13,7 @@ beforeEach(() => adapter.setCommitteeArchived.mockReset())
 
 describe("archiving a committee", () => {
   it("says what archiving does, and does it once confirmed", async () => {
-    adapter.setCommitteeArchived.mockResolvedValue({ok: true, committee: {...lan, archived: true}})
+    adapter.setCommitteeArchived.mockResolvedValue({ok: true, saved: {...lan, archived: true}})
     const wrapper = mount(ArchiveCommitteeDialog, {props: {open: true, committee: lan}, global: {stubs: {ConfirmDialog}}})
     const confirm = wrapper.getComponent(ConfirmDialog)
 

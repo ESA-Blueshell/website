@@ -52,7 +52,7 @@ describe("an admin's account security dialog", () => {
     security.readAccountStanding.mockResolvedValue({twoFactorOn: true, awaitingReenrolment: true, locked: true})
     security.readSecurityLogOf.mockResolvedValue({events: [event, {...event, id: 2, browser: null, platform: null, note: null}]})
     for (const write of [security.unlockAccount, security.resetTwoFactorOf, security.resendReenrolment]) {
-      write.mockResolvedValue({ok: true, value: undefined})
+      write.mockResolvedValue({ok: true})
     }
     security.previewReenrolment.mockResolvedValue(email)
   })

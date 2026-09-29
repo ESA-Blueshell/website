@@ -87,11 +87,11 @@ async function save(): Promise<void> {
       failure.value = result.reason
       return
     }
-    standing.value = result.standing
-    chosen.value = [...result.standing.granted]
+    standing.value = result.saved
+    chosen.value = [...result.saved.granted]
     note.value = ""
     history.value = (await listRoleChanges(props.userId)) ?? history.value
-    emit("changed", result.standing)
+    emit("changed", result.saved)
   } finally {
     saving.value = false
   }

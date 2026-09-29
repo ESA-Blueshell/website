@@ -169,7 +169,7 @@ const loadTrusted = async () => {
   trusted.value = await listTrustedBrowsers()
 }
 
-const said = (result: Written<unknown>) => {
+const said = (result: Written) => {
   if (!result.ok) tell(result.reason)
 }
 

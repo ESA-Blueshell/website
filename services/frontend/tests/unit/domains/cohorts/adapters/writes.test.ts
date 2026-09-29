@@ -380,6 +380,15 @@ describe("archiving and deleting lists", () => {
     expect(deleteExternalTarget).toHaveBeenCalledWith({path: {system: TargetSystem.BREVO, externalId: "17"}, body: {name: "Paid members"}})
   })
 
+  it("says a mistyped name is why a delete was refused", async () => {
+    vi.mocked(deleteExternalTarget).mockResolvedValue(refusal(deleteExternalTarget, {code: "TargetNameMismatch", name: "paid"}, 400))
+
+    await expect(deleteTarget(TargetSystem.BREVO, "17", "paid")).resolves.toEqual({
+      ok: false,
+      reason: "That is not the list's name; type it exactly to delete it.",
+    })
+  })
+
   it("answers that the delete went through", async () => {
     vi.mocked(deleteExternalTarget).mockResolvedValue(emptyAnswer(deleteExternalTarget))
 

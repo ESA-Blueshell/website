@@ -117,6 +117,28 @@ describe("CohortTargets", () => {
     expect(wrapper.find("[data-testid=cohort-target-7]").exists()).toBe(false)
   })
 
+  it("keeps a refused delete open with the reason, and closes it on cancel", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(deleteTarget).mockResolvedValue({ok: false, reason: "A list linked to a cohort is archived, not deleted."})
+
+    await wrapper.get("[data-testid=cohort-target-delete-7]").trigger("click")
+    await flushPromises()
+    await wrapper.get("[data-testid=cohort-target-delete-name] input").setValue("Guests")
+    modal(wrapper, "cohort-target-delete-dialog").vm.$emit("save")
+    await flushPromises()
+
+    expect(wrapper.get("[data-testid=cohort-target-write-refusal]").text()).toBe("A list linked to a cohort is archived, not deleted.")
+    modal(wrapper, "cohort-target-delete-dialog").vm.$emit("cancel")
+    await flushPromises()
+    expect(modal(wrapper, "cohort-target-delete-dialog").props("modelValue")).toBe(false)
+
+    await wrapper.get("[data-testid=cohort-target-delete-7]").trigger("click")
+    await flushPromises()
+    modal(wrapper, "cohort-target-delete-dialog").vm.$emit("update:modelValue", false)
+    await flushPromises()
+    expect(modal(wrapper, "cohort-target-delete-dialog").props("modelValue")).toBe(false)
+  })
+
   it("archives a list from its row, and says so when Brevo refuses", async () => {
     const wrapper = await mountPage()
     vi.mocked(archiveTarget).mockResolvedValue({ok: false, reason: "Brevo refused it: down"})

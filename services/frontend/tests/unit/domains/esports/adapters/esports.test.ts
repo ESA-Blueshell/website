@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {
   addToRoster,
-  dropGameAccount,
   enterGameInSeason,
   fieldTeamInSeason,
   leaveGameInSeason,
@@ -12,14 +11,12 @@ import {
   loadSeasonContents,
   loadSeasonGames,
   loadTeams,
-  saveGameAccount,
   saveSeasonOrReason,
   storePicture,
 } from "@/domains/esports/adapters/esports"
 import {
   addRosterEntry,
   apiUrl,
-  clearGameAccount,
   createSeason,
   enterGame,
   fieldTeam,
@@ -31,7 +28,6 @@ import {
   findSeasonGames,
   findTeams,
   leaveGame,
-  setGameAccount,
   uploadPublicImage,
 } from "@/services/api"
 import type {Image} from "@/services/api"
@@ -42,7 +38,6 @@ import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   addRosterEntry: vi.fn(),
-  clearGameAccount: vi.fn(),
   createSeason: vi.fn(),
   enterGame: vi.fn(),
   fieldTeam: vi.fn(),
@@ -54,7 +49,6 @@ vi.mock("@/services/api", async (importOriginal) => ({
   findSeasonGames: vi.fn(),
   findTeams: vi.fn(),
   leaveGame: vi.fn(),
-  setGameAccount: vi.fn(),
   uploadPublicImage: vi.fn(),
 }))
 
@@ -161,8 +155,8 @@ describe("saveSeasonOrReason", () => {
   it("writes a season that has no id yet, and corrects one that has", async () => {
     vi.mocked(createSeason).mockResolvedValue(answer(createSeason, aSeason({id: 21})))
 
-    await expect(saveSeasonOrReason({name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}))
-      .resolves.toEqual({ok: true, season: aSeason({id: 21})})
+    await expect(saveSeasonOrReason(undefined, {name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}))
+      .resolves.toEqual({ok: true, saved: aSeason({id: 21})})
 
     expect(createSeason).toHaveBeenCalled()
   })
@@ -170,14 +164,14 @@ describe("saveSeasonOrReason", () => {
   it("answers with the api's own account of dates that overlap another season", async () => {
     vi.mocked(createSeason).mockResolvedValue(refusal(createSeason, {code: "SeasonDatesOverlap", seasonName: "Spring 2025"}))
 
-    await expect(saveSeasonOrReason({name: "Autumn 2025", startDate: "2025-01-01", endDate: "2026-01-31"}))
+    await expect(saveSeasonOrReason(undefined, {name: "Autumn 2025", startDate: "2025-01-01", endDate: "2026-01-31"}))
       .resolves.toEqual({ok: false, reason: "Those dates overlap Spring 2025."})
   })
 
   it("counts an answer carrying no season as a refusal, not as a write that landed", async () => {
     vi.mocked(createSeason).mockResolvedValue(emptyAnswer(createSeason))
 
-    await expect(saveSeasonOrReason({name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}))
+    await expect(saveSeasonOrReason(undefined, {name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}))
       .resolves.toEqual({ok: false, reason: "The season could not be saved."})
   })
 })
@@ -201,7 +195,7 @@ describe("enterGameInSeason", () => {
     vi.mocked(enterGame).mockResolvedValue(answer(enterGame, {game: "VAL", public: false, teams: []}))
 
     await expect(enterGameInSeason(20, "VAL"))
-      .resolves.toEqual({ok: true, entered: {game: "VAL", teams: [], public: false}})
+      .resolves.toEqual({ok: true, saved: {game: "VAL", teams: [], public: false}})
   })
 
   it("answers with the api's account of why the entry was refused", async () => {
@@ -235,7 +229,7 @@ describe("fieldTeamInSeason", () => {
   it("brings the line-up across from the fielding that was chosen", async () => {
     vi.mocked(fieldTeam).mockResolvedValue(answer(fieldTeam, {team: aTeam({id: 7}), game: "VAL", season: aSeason({id: 20}), carried: []}))
 
-    await fieldTeamInSeason(7, "VAL", 20, true, null, {game: "CS2", seasonId: 19})
+    await fieldTeamInSeason(7, 20, {game: "VAL", carryLineup: true, carryFrom: {game: "CS2", seasonId: 19}})
 
     expect(optionsOf(vi.mocked(fieldTeam).mock.calls[0]?.[0]).body)
       .toMatchObject({game: "VAL", carryLineup: true, carryFrom: {game: "CS2", seasonId: 19}})
@@ -246,7 +240,7 @@ describe("fieldTeamInSeason", () => {
   it("says nothing about the banner where none was named, rather than taking it away", async () => {
     vi.mocked(fieldTeam).mockResolvedValue(answer(fieldTeam, {team: aTeam({id: 7}), game: "VAL", season: aSeason({id: 20}), carried: []}))
 
-    await fieldTeamInSeason(7, "VAL", 20, false)
+    await fieldTeamInSeason(7, 20, {game: "VAL", carryLineup: false})
 
     expect(optionsOf(vi.mocked(fieldTeam).mock.calls[0]?.[0]).body.banner).toBeUndefined()
   })
@@ -256,7 +250,7 @@ describe("fieldTeamInSeason", () => {
   it("refuses a fielding the api answered with nothing at all", async () => {
     vi.mocked(fieldTeam).mockResolvedValue(emptyAnswer(fieldTeam))
 
-    await expect(fieldTeamInSeason(7, "VAL", 20, false))
+    await expect(fieldTeamInSeason(7, 20, {game: "VAL", carryLineup: false}))
       .resolves.toEqual({ok: false, reason: "That team could not be fielded this season."})
   })
 })
@@ -302,17 +296,3 @@ describe("loadGameAccounts", () => {
   })
 })
 
-describe("a member's game handle", () => {
-  // These two throw rather than answering a shrug: a discarded refusal left the handle looking
-  // saved, with only the still-enabled button to hint otherwise.
-  it("asks the sdk to throw, so the editor's own catch is the thing that reports a refusal", async () => {
-    vi.mocked(setGameAccount).mockResolvedValue(answer(setGameAccount, {id: 3, userId: 5, game: "VAL", handle: "nova"}))
-    vi.mocked(clearGameAccount).mockResolvedValue(emptyAnswer(clearGameAccount))
-
-    await saveGameAccount(5, "VAL", "nova")
-    await dropGameAccount(5, "VAL")
-
-    expect(optionsOf(vi.mocked(setGameAccount).mock.calls[0]?.[0]).throwOnError).toBe(true)
-    expect(optionsOf(vi.mocked(clearGameAccount).mock.calls[0]?.[0]).throwOnError).toBe(true)
-  })
-})

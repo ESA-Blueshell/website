@@ -59,7 +59,7 @@ beforeEach(() => {
 
 describe("the season edit page", () => {
   it("adds a season, previewing it on the strip among the others as it is typed", async () => {
-    adapter.saveSeasonOrReason.mockResolvedValue({ok: true, season: {...spring, id: 9}})
+    adapter.saveSeasonOrReason.mockResolvedValue({ok: true, saved: {...spring, id: 9}})
     const wrapper = await mountEditor(null)
     const strip = () => wrapper.getComponent(stubs.Timeline)
 
@@ -74,7 +74,7 @@ describe("the season edit page", () => {
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
-    expect(adapter.saveSeasonOrReason).toHaveBeenCalledWith({id: undefined, name: "Autumn 2026", startDate: "2026-09-01", endDate: "2027-01-31"})
+    expect(adapter.saveSeasonOrReason).toHaveBeenCalledWith(undefined, {name: "Autumn 2026", startDate: "2026-09-01", endDate: "2027-01-31"})
     expect(seasonsStore.refresh).toHaveBeenCalled()
     expect(wrapper.emitted("saved")).toEqual([[{...spring, id: 9}]])
   })

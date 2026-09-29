@@ -14,7 +14,7 @@ import {
   type GameCode,
   type TeamRole,
 } from "./esports"
-import {reasonFor} from "../refusals"
+import {accepted, reasonFor} from "../refusals"
 
 /**
  * One person on a line-up being written, held as what a write names rather than as what a form
@@ -103,7 +103,7 @@ const bodyOf = (entry: DraftEntry) => ({
  */
 export async function publishLineup(draft: LineupDraft): Promise<{ok: true} | Refused> {
   try {
-    const res = await sendLineup({
+    return await accepted(sendLineup({
       path: {seasonId: draft.seasonId},
       body: {
         teamId: draft.teamId,
@@ -116,9 +116,7 @@ export async function publishLineup(draft: LineupDraft): Promise<{ok: true} | Re
           .filter(entry => !isBlank(entry))
           .map(entry => ({id: entry.id, ...bodyOf(entry), userId: entry.userId})),
       },
-    })
-    if (res.error) return {ok: false, reason: reasonFor(res.error, "The line-up could not be saved.")}
-    return {ok: true}
+    }), "The line-up could not be saved.")
   } catch (error) {
     return {ok: false, reason: reasonFor(error, "The line-up could not be saved.")}
   }
@@ -154,8 +152,9 @@ export async function fieldExistingTeam(input: TeamFielding): Promise<Published<
   let written = 0
   try {
     const whole = input.from != null && input.entries.length === input.sourceSize
-    const fielded = await fieldTeamInSeason(
-      input.teamId, input.game, input.seasonId, false, null, whole ? input.from : null)
+    const fielded = await fieldTeamInSeason(input.teamId, input.seasonId, {
+      game: input.game, carryLineup: false, carryFrom: whole ? input.from : undefined,
+    })
     if (!fielded.ok) return refused(fielded.reason, stage)
     if (whole) return {ok: true}
 

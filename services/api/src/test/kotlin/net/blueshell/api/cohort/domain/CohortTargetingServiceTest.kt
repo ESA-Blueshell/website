@@ -62,11 +62,15 @@ class CohortTargetingServiceTest {
     @Test
     fun `create does not touch the provider when the subject already maps the system`() {
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(Entities.cohortSubject(id = 1L)))
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(Entities.cohort())
+        val linked = Entities.cohort()
+        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(linked)
+        whenever(targetIds.find(linked)).thenReturn("list-1")
 
-        assertThrows<ResponseStatusException> {
-            service.create(1L, TargetSystem.BREVO, "Members", null)
-        }
+        val refused =
+            assertThrows<ResponseStatusException> {
+                service.create(1L, TargetSystem.BREVO, "Members", null)
+            }
+        assert(refused.reason!!.contains("switch it instead"))
 
         verify(strategy, never()).create(any(), any())
         verify(cohortRepo, never()).save(any())
@@ -84,6 +88,21 @@ class CohortTargetingServiceTest {
 
         verify(strategy).create("Members", "Lists")
         verify(targetIds).record(saved, "999")
+        assert(row.externalId == "999")
+    }
+
+    @Test
+    fun `create fills a registered target that has no list yet, in its type's folder`() {
+        val unlinked = Entities.cohort(id = 42L, system = "BREVO", label = "Paid 2026-2027", folder = "Contribution paid")
+        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(Entities.cohortSubject(id = 1L)))
+        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(unlinked)
+        whenever(cohortRepo.findById(42L)).thenReturn(Optional.of(unlinked))
+        whenever(strategy.create("Paid 2026-2027", "Contribution paid")).thenReturn(target("999", "Paid 2026-2027", "Contribution paid"))
+
+        val row = service.create(1L, TargetSystem.BREVO, "Paid 2026-2027", null)
+
+        verify(cohortRepo, never()).save(any())
+        verify(targetIds).record(unlinked, "999")
         assert(row.externalId == "999")
     }
 

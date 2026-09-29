@@ -1,5 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsAdmin} from "./mocks"
+import type {EnqueueJobRequest} from "@/services/api"
 
 test.describe("job manager trigger modal", () => {
   test("admin opens the modal, picks a user via the UserPicker and triggers a job", async ({page}) => {
@@ -33,7 +34,7 @@ test.describe("job manager trigger modal", () => {
     const response = await enqueueResponse
     expect(response.status()).toBe(200)
 
-    const body = response.request().postDataJSON() as {jobType: string; payload: Record<string, unknown>}
+    const body = response.request().postDataJSON() as EnqueueJobRequest
     expect(body.jobType).toBe("contact.sync")
     expect(body.payload).toEqual({userId: 1})
 

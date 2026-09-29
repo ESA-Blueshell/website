@@ -1,10 +1,11 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
+import {anEvent} from "./records"
 
 /* Thirty events a week apart, the newest yesterday: more than one page of the archive. */
 const past = Array.from({length: 30}, (_, i) => {
   const at = new Date(Date.now() - (1 + i * 7) * 86_400_000)
-  return {
+  return anEvent({
     id: 700 + i,
     title: i === 0 ? "4Funcie Pooling" : `Game night ${i}`,
     startTime: at.toISOString(),
@@ -15,7 +16,7 @@ const past = Array.from({length: 30}, (_, i) => {
     signUpCount: 0,
     membersOnly: false,
     committeeId: i % 2 === 0 ? 900 : null,
-  }
+  })
 })
 
 test.describe("the past events archive", () => {

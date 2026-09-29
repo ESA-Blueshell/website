@@ -166,7 +166,7 @@ test.describe("dragging a game's page between seasons", () => {
     // the block's height so the page does not shorten under the reader meanwhile.
     await page.waitForTimeout(1000)
     const waiting = Math.round((await band.boundingBox())!.height)
-    expect(Math.abs(parseFloat((await heldHeight(page, SWIPE)) ?? "0") - waiting)).toBeLessThanOrEqual(1)
+    expect(Math.abs(((await heldHeight(page, SWIPE)) ?? 0) - waiting)).toBeLessThanOrEqual(1)
 
     // Then the answer lands, and moves the height itself by more than a rounding error.
     answer.release()

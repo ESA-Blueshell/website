@@ -2,6 +2,8 @@ import {Buffer} from "node:buffer"
 import type {Locator, Page} from "@playwright/test"
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, loginAsMember, preferLightTheme, writeMarkdown} from "./mocks"
+import type {BoardMemberResponse, BoardResponse} from "@/services/api"
+import {type Wire} from "./records"
 
 /**
  * A board written down and corrected on the page it is read on.
@@ -24,14 +26,14 @@ const photo = (name: string) => ({
   })),
 })
 
-const member = (id: number, boardId: number, name: string, role: string) => ({
+const member = (id: number, boardId: number, name: string, role: string): Wire<BoardMemberResponse> => ({
   id, boardId, userId: null, role, name, nickname: null,
   description: null, portrait: null,
   startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
 })
 
-const board = (over: Record<string, unknown>) => ({
+const board = (over: Partial<Wire<BoardResponse>>): Wire<BoardResponse> => ({
   id: 1, number: 1, name: null, candidate: "Board", cheer: null, accent: null, description: null,
   startDate: "2017-09-01", endDate: "2018-08-31", photo: null, version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", members: [],

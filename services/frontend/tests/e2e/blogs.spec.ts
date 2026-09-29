@@ -1,22 +1,23 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
+import {aBlog} from "./records"
 
 test.describe("blogs pages", () => {
   test("renders blog list and navigates to selected blog details", async ({page}) => {
     await installApiMocks(page, {
       blogs: [
-        {
+        aBlog({
           id: 42,
           title: "Community Wrap-up",
           publishedAt: "2025-01-10T12:00:00.000Z",
           html: "<h1>Community Wrap-up</h1><p>Highlights from this month.</p>",
-        },
-        {
+        }),
+        aBlog({
           id: 43,
           title: "Events Preview",
           publishedAt: "2025-01-15T12:00:00.000Z",
           html: "<h1>Events Preview</h1><p>What is coming next.</p>",
-        },
+        }),
       ],
     })
 

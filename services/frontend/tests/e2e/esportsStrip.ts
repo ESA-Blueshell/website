@@ -1,3 +1,6 @@
+import type {GameRostersResponse} from "@/services/api"
+import {aSeason, type Wire} from "./records"
+
 /**
  * Eight seasons of one game, for the specs that are about the strip itself.
  *
@@ -5,21 +8,20 @@
  * which the two the rest of the suite gets never do. They live here rather than in either
  * spec because the deterministic half and the motion half both read them.
  */
-export const eightSeasons = Array.from({length: 8}, (_, i) => ({
+export const eightSeasons = Array.from({length: 8}, (_, i) => aSeason({
   id: 60 + i,
   name: `${i % 2 === 0 ? "Autumn" : "Spring"} ${2018 + i}/${19 + i}`,
   startDate: `${2018 + i}-09-01`,
   endDate: `${2019 + i}-01-31`,
 }))
 
-const pageOf = (index: number, teamId: number, teamName: string) => ({
+const pageOf = (index: number, teamId: number, teamName: string): Wire<GameRostersResponse> => ({
   game: "VALORANT",
   season: eightSeasons[index],
   seasons: eightSeasons,
   teams: [{
     id: teamId,
     name: teamName,
-    image: "valorantesports1.jpg",
     members: [{role: "PLAYER", handle: "AriosFury"}],
   }],
 })
@@ -50,15 +52,14 @@ export const eightSeasonFixtures = {
  */
 export const everySeasonFixtures = {
   esportsSeasons: eightSeasons,
-  esportsPages: Object.fromEntries(eightSeasons.map((season, index) => [String(season.id), {
+  esportsPages: Object.fromEntries(eightSeasons.map((season, index): [string, Wire<GameRostersResponse>] => [String(season.id), {
     game: "VALORANT",
     season,
     seasons: eightSeasons,
     teams: [{
       id: 70 + index,
       name: `BS ${season.name}`,
-      image: "valorantesports1.jpg",
-      members: [{role: "PLAYER", handle: "AriosFury"}],
+        members: [{role: "PLAYER", handle: "AriosFury"}],
     }],
   }])),
 }

@@ -1,5 +1,7 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
+import type {Wire} from "./records"
+import type {PublishLineupRequest} from "@/services/api"
 
 test.describe("esports pages", () => {
   test("shows the teams of the season on offer, with their handles", async ({page}) => {
@@ -116,7 +118,7 @@ test.describe("what the manager used to do, where it happens now", () => {
     await page.getByTestId("lineup-save").click()
 
     const request = await saved
-    const body = JSON.parse(request.postData() ?? "{}") as {entries: Array<Record<string, unknown>>}
+    const body = JSON.parse(request.postData() ?? "{}") as Wire<PublishLineupRequest>
     expect(body.entries.at(-1)).toMatchObject({handle: "newcomer", role: "PLAYER"})
   })
 })

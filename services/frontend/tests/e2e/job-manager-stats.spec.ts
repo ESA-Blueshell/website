@@ -1,14 +1,15 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsAdmin, loginAsBoard} from "./mocks"
+import {aJob} from "./records"
 
 test.describe("job manager stats panel", () => {
   test("stats panel shows correct total and status counts", async ({page}) => {
     await installApiMocks(page, {
       jobs: [
-        {id: 1, jobType: "email.send", status: "SUCCESS", attempts: 1},
-        {id: 2, jobType: "calendar.sync", status: "SUCCESS", attempts: 1},
-        {id: 3, jobType: "contact.sync", status: "FAILED", attempts: 3},
-        {id: 4, jobType: "email.send", status: "DEAD", attempts: 5},
+        aJob({id: 1, jobType: "email.send", status: "SUCCESS", attempts: 1}),
+        aJob({id: 2, jobType: "calendar.sync", status: "SUCCESS", attempts: 1}),
+        aJob({id: 3, jobType: "contact.sync", status: "FAILED", attempts: 3}),
+        aJob({id: 4, jobType: "email.send", status: "DEAD", attempts: 5}),
       ],
     })
     await loginAsAdmin(page.context())
@@ -24,10 +25,10 @@ test.describe("job manager stats panel", () => {
   test("stats panel shows success rate percentage", async ({page}) => {
     await installApiMocks(page, {
       jobs: [
-        {id: 1, jobType: "email.send", status: "SUCCESS", attempts: 1},
-        {id: 2, jobType: "calendar.sync", status: "SUCCESS", attempts: 1},
-        {id: 3, jobType: "contact.sync", status: "SUCCESS", attempts: 1},
-        {id: 4, jobType: "email.send", status: "FAILED", attempts: 3},
+        aJob({id: 1, jobType: "email.send", status: "SUCCESS", attempts: 1}),
+        aJob({id: 2, jobType: "calendar.sync", status: "SUCCESS", attempts: 1}),
+        aJob({id: 3, jobType: "contact.sync", status: "SUCCESS", attempts: 1}),
+        aJob({id: 4, jobType: "email.send", status: "FAILED", attempts: 3}),
       ],
     })
     await loginAsAdmin(page.context())

@@ -1,5 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
+import {anEsportsGame} from "./records"
 
 /**
  * What a game is called, the colour it carries, its icon and its banner all come from its
@@ -38,8 +39,8 @@ test.describe("a game as its record has it", () => {
   test("draws a game nobody has chosen art for on the island's own colour", async ({page}) => {
     await installApiMocks(page, {
       esportsGames: [
-        {code: "VALORANT", name: "Valorant", slug: "valorant", accent: null, banner: null, icon: null,
-          intro: "Nothing drawn for it.", sortIndex: 1, current: true},
+        anEsportsGame({code: "VALORANT", name: "Valorant", slug: "valorant", accent: null, banner: null, icon: null,
+          intro: "Nothing drawn for it.", sortIndex: 1, current: true}),
       ],
     })
 
@@ -57,8 +58,8 @@ test.describe("a game as its record has it", () => {
   test("a game renamed in its record is renamed on its page", async ({page}) => {
     await installApiMocks(page, {
       esportsGames: [
-        {code: "VALORANT", name: "Valorant Reborn", slug: "valorant", accent: "#ff4655",
-          banner: null, icon: null, intro: "Renamed.", sortIndex: 1, current: true},
+        anEsportsGame({code: "VALORANT", name: "Valorant Reborn", slug: "valorant", accent: "#ff4655",
+          banner: null, icon: null, intro: "Renamed.", sortIndex: 1, current: true}),
       ],
     })
 

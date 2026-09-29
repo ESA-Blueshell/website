@@ -2,6 +2,8 @@ import {Buffer} from "node:buffer"
 import type {Page} from "@playwright/test"
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
+import type {Wire} from "./records"
+import type {AddBoardMemberRequest, LinkBoardMemberRequest, UpdateBoardMemberRequest} from "@/services/api"
 
 /** A portrait as the api answers with one, at the widths one is stored at. */
 const portrait = (name: string) => ({
@@ -113,7 +115,7 @@ test.describe("a member filled in on the page", () => {
         && /\/boards\/9\/members$/.test(new URL(request.url()).pathname),
     )
     await page.getByTestId("board-member-edit-save").click()
-    const body = JSON.parse((await written).postData() ?? "{}") as Record<string, unknown>
+    const body = JSON.parse((await written).postData() ?? "{}") as Wire<AddBoardMemberRequest>
 
     expect(body.displayName).toBe("Roos Kruk")
     // Recorded apart from the name rather than typed into the middle of it.
@@ -174,7 +176,7 @@ test.describe("a member filled in on the page", () => {
         && /\/boards\/9\/members\/91$/.test(new URL(request.url()).pathname),
     )
     await page.getByTestId("board-member-edit-save").click()
-    const body = JSON.parse((await written).postData() ?? "{}") as Record<string, unknown>
+    const body = JSON.parse((await written).postData() ?? "{}") as Wire<UpdateBoardMemberRequest>
 
     expect(body.nickname).toBe("LyndisLuna")
     expect(body.displayName).toBe("Emma Dokter")
@@ -212,7 +214,7 @@ test.describe("a member filled in on the page", () => {
         && /\/boards\/9\/members\/92$/.test(new URL(request.url()).pathname),
     )
     await page.getByTestId("board-member-edit-save").click()
-    const body = JSON.parse((await written).postData() ?? "{}") as Record<string, unknown>
+    const body = JSON.parse((await written).postData() ?? "{}") as Wire<UpdateBoardMemberRequest>
 
     // The save names where the bytes are stored rather than carrying them.
     expect(String(body.portrait)).toMatch(/mock-\d+\.webp$/)
@@ -239,7 +241,7 @@ test.describe("a member filled in on the page", () => {
         && /\/boards\/9\/members\/92\/member$/.test(new URL(request.url()).pathname),
     )
     await page.getByTestId("board-member-edit-save").click()
-    const body = JSON.parse((await linked).postData() ?? "{}") as Record<string, unknown>
+    const body = JSON.parse((await linked).postData() ?? "{}") as Wire<LinkBoardMemberRequest>
 
     expect(body.userId).toBe(2)
   })
@@ -260,7 +262,7 @@ test.describe("a member filled in on the page", () => {
         && /\/boards\/9\/members\/91\/member$/.test(new URL(request.url()).pathname),
     )
     await page.getByTestId("board-member-edit-save").click()
-    const body = JSON.parse((await detached).postData() ?? "{}") as Record<string, unknown>
+    const body = JSON.parse((await detached).postData() ?? "{}") as Wire<LinkBoardMemberRequest>
 
     // A null member detaches, and the member is still on the page under its own name.
     expect(body.userId).toBeUndefined()
@@ -286,7 +288,7 @@ test.describe("a member filled in on the page", () => {
         && /\/boards\/9\/members$/.test(new URL(request.url()).pathname),
     )
     await page.getByTestId("board-member-edit-save").click()
-    const body = JSON.parse((await written).postData() ?? "{}") as Record<string, unknown>
+    const body = JSON.parse((await written).postData() ?? "{}") as Wire<AddBoardMemberRequest>
 
     // What the cohort module reads to answer "was on the board that year".
     expect(body.startDate).toBe("2026-02-01")

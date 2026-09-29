@@ -6,40 +6,99 @@ import {
   encodeCookieConsentPayload,
 } from "@/config/policies.ts"
 import {addressOf} from "@/utils/address"
+import type {
+  AddBoardMemberRequest,
+  AddRosterEntryRequest,
+  AddressResponse,
+  AssociationStatisticsResponse,
+  BlogResponse,
+  BoardMemberResponse,
+  BoardRequest,
+  BoardResponse,
+  CasualGameRequest,
+  CasualGameResponse,
+  CohortSubjectDetail,
+  CohortSubjectSummary,
+  CommitteeOwnPageRequest,
+  CommitteeResponse,
+  CreateCommitteeRequest,
+  CreateContributionPeriodRequest,
+  CreateEventRequest,
+  CreateUserRequest,
+  ContributionPeriodResponse,
+  ContributionResponse,
+  Email,
+  ExternalTarget,
+  Image,
+  EventResponse,
+  EventSignUpResponse,
+  FieldTeamRequest,
+  FieldValidationError,
+  GameResponse,
+  GameRostersResponse,
+  JobExecution,
+  LinkBoardMemberRequest,
+  LinkRosterEntryRequest,
+  MembershipResponse,
+  PublishLineupRequest,
+  Role,
+  RosterEntryResponse,
+  RosterMemberResponse,
+  SeasonRequest,
+  SignupAddressRequest,
+  SignupResumeResponse,
+  SeasonResponse,
+  TeamRequest,
+  TeamRosterResponse,
+  TeamResponse,
+  TwoFactorStanding,
+  UpdateBoardMemberRequest,
+  UpdateCommitteeRequest,
+  UpdateContributionPeriodRequest,
+  UpdateRosterEntryRequest,
+  UserDetailResponse,
+} from "@/services/api"
+import type * as sdk from "@/services/api/blueshell/sdk.gen"
+import type {WidgetResponse} from "@/domains/discord/adapters/widget"
+import {aBlog, aCommittee, aContribution, aContributionPeriod, aJob, aMembership, anAddress, anEmail, anEsportsGame, anEvent, aSeason, aSignUp, aUser, type Wire} from "./records"
+
+const stampedAt = {createdAt: "2025-01-01T00:00:00Z", updatedAt: "2025-01-01T00:00:00Z", version: 0}
+
+export type {Wire}
 
 type Fixtures = {
-  users?: Array<Record<string, unknown>>
-  deletedUsers?: Array<Record<string, unknown>>
-  memberships?: Array<Record<string, unknown>>
-  contributionPeriods?: Array<Record<string, unknown>>
+  users?: Wire<UserDetailResponse>[]
+  deletedUsers?: Wire<UserDetailResponse>[]
+  memberships?: Wire<MembershipResponse>[]
+  contributionPeriods?: Wire<ContributionPeriodResponse>[]
   /** The period the membership page and the signup form quote, or null where none is recorded. */
-  currentContributionPeriod?: Record<string, unknown> | null
+  currentContributionPeriod?: Wire<ContributionPeriodResponse> | null
   /** The association's own numbers, or null where the endpoint refuses to say. */
-  associationStatistics?: Record<string, unknown> | null
-  contributions?: Array<Record<string, unknown>>
-  addresses?: Array<Record<string, unknown>>
-  events?: Array<Record<string, unknown>>
-  eventSignUps?: Array<Record<string, unknown>>
-  eventDetailsById?: Record<string, Record<string, unknown>>
-  eventSignUpsByEventId?: Record<string, Array<Record<string, unknown>>>
-  committees?: Array<Record<string, unknown>>
-  blogs?: Array<Record<string, unknown>>
-  blogsById?: Record<string, Record<string, unknown>>
+  associationStatistics?: Wire<AssociationStatisticsResponse> | null
+  contributions?: Wire<ContributionResponse>[]
+  addresses?: Wire<AddressResponse>[]
+  events?: Wire<EventResponse>[]
+  eventSignUps?: Wire<EventSignUpResponse>[]
+  eventDetailsById?: Record<string, Wire<EventResponse>>
+  eventSignUpsByEventId?: Record<string, Wire<EventSignUpResponse>[]>
+  committees?: Wire<CommitteeResponse>[]
+  blogs?: Wire<BlogResponse>[]
+  blogsById?: Record<string, Wire<BlogResponse>>
   blogStatusById?: Record<string, number>
-  jobs?: Array<Record<string, unknown>>
-  emails?: Array<Record<string, unknown>>
-  cohortSubjects?: Array<Record<string, unknown>>
-  cohortMembers?: Array<Record<string, unknown>>
-  esportsPages?: Record<string, Record<string, unknown>>
-  esportsSeasons?: Array<Record<string, unknown>>
-  esportsTeams?: Array<Record<string, unknown>>
-  esportsRoster?: Array<Record<string, unknown>>
-  esportsGames?: Array<Record<string, unknown>>
-  casualGames?: Array<Record<string, unknown>>
-  boards?: Array<Record<string, unknown>>
-  cohortSubjectDetail?: Record<string, unknown>
+  jobs?: Wire<JobExecution>[]
+  emails?: Wire<Email>[]
+  cohortSubjects?: Wire<CohortSubjectSummary>[]
+  cohortMembers?: Wire<CohortSubjectDetail["members"]>
+  esportsPages?: Record<string, Wire<GameRostersResponse>>
+  esportsSeasons?: Wire<SeasonResponse>[]
+  esportsTeams?: Wire<TeamResponse>[]
+  esportsRoster?: Wire<RosterEntryResponse>[]
+  esportsGames?: Wire<GameResponse>[]
+  casualGames?: Wire<CasualGameResponse>[]
+  boards?: Wire<BoardResponse>[]
+  cohortSubjectDetail?: Partial<CohortSubjectDetail>
   /** A refusal the payment-email send answers with instead of accepting the batch. */
-  paymentEmailRefusal?: {status: number; errors: Array<Record<string, unknown>>}
+  paymentEmailRefusal?: {status: number; errors: Wire<FieldValidationError>[]}
 }
 
 /** What Brevo reports it holds, for the target catalogue page. */
@@ -50,7 +109,7 @@ type Fixtures = {
  */
 export const BULK_MEMBERSHIP_EFFECTIVE_DATE = "2026-08-31"
 
-const brevoTargets = [
+const brevoTargets: Wire<ExternalTarget>[] = [
   {system: "BREVO", externalId: "7", kind: "LIST", label: "Members 2025-2026", folderLabel: "Contribution periods", path: ["Brevo", "Contribution periods"], memberCount: 2, linkedCohortId: 1},
   {system: "BREVO", externalId: "33", kind: "LIST", label: "Web Cmte", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 1, linkedCohortId: 2},
   {system: "BREVO", externalId: "34", kind: "LIST", label: "Board", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 5, linkedCohortId: null},
@@ -71,30 +130,29 @@ const addressTaken = (gameName: string, address: string) => ({
 })
 
 const esportsGames = [
-  {code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, current: true},
-  {code: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, current: true},
-  {code: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: "A special place.", sortIndex: 3, current: true},
-  {code: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", banner: null, icon: null, intro: "Football, with rocket cars.", sortIndex: 4, current: true},
-  {code: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", banner: null, icon: null, intro: "Guessing where.", sortIndex: 5, current: true},
+  anEsportsGame({code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, current: true}),
+  anEsportsGame({code: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, current: true}),
+  anEsportsGame({code: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: "A special place.", sortIndex: 3, current: true}),
+  anEsportsGame({code: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", banner: null, icon: null, intro: "Football, with rocket cars.", sortIndex: 4, current: true}),
+  anEsportsGame({code: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", banner: null, icon: null, intro: "Guessing where.", sortIndex: 5, current: true}),
   // No accent has ever been written for Trackmania: it reads on the island's own blue.
-  {code: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, current: true},
-  {code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, current: false},
+  anEsportsGame({code: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, current: true}),
+  anEsportsGame({code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, current: false}),
 ]
 
 /**
  * The games as the casual pages read them: every one, the archived ones included, each saying
  * whether a team is fielded in it this season. No art, so a page is seen drawing its plates.
  */
-const casualGame = (code: string, name: string, slug: string, sortIndex: number, extra: Record<string, unknown> = {}) => ({
+const casualGame = (
+  code: string, name: string, slug: string, sortIndex: number, extra: Partial<Wire<CasualGameResponse>> = {},
+): Wire<CasualGameResponse> => ({
   code, name, slug, accent: null, intro: null, banner: null, icon: null, sortIndex, archived: false, inCompetition: false, channels: [],
   competitionIntro: null, esportsChannels: [], ...extra,
 })
 
 /** What the game edit page sends. */
-type CasualGameBody = {
-  name: string, slug: string, intro?: string, accent?: string, banner?: string, icon?: string, sortIndex?: number,
-  channels?: Array<Record<string, string>>, competitionIntro?: string, esportsChannels?: Array<Record<string, string>>,
-}
+type CasualGameBody = Wire<CasualGameRequest>
 
 const casualGames = [
   casualGame("VALORANT", "Valorant", "valorant", 1, {accent: "#ff4655", intro: "Five-stacks, customs and clips.", inCompetition: true, channels: [{id: "6322", guildId: "324", name: "valorant"}]}),
@@ -108,11 +166,11 @@ const casualGames = [
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
 const esportsSeasons = [
-  {id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31", played: true},
-  {id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31", played: true},
+  aSeason({id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}),
+  aSeason({id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31"}),
 ]
 
-const esportsPageBySeason: Record<string, Record<string, unknown>> = {
+const esportsPageBySeason: Record<string, Wire<GameRostersResponse>> = {
   "20": {
     game: "VALORANT",
     season: esportsSeasons[0],
@@ -152,7 +210,7 @@ const esportsPageBySeason: Record<string, Record<string, unknown>> = {
 }
 
 /** Two boards, so the page has one in office and one to expand. */
-const boardFixtures = [
+const boardFixtures: Wire<BoardResponse>[] = [
   {
     id: 9,
     number: 9,
@@ -279,6 +337,15 @@ async function fulfillJson(route: Route, data: unknown, status = 200) {
   })
 }
 
+/** The body an SDK operation answers with, as it crosses the wire. */
+type Answered<K extends keyof typeof sdk> =
+  Wire<NonNullable<Extract<Awaited<ReturnType<(typeof sdk)[K]>>, {error: undefined}>["data"]>>
+
+/** Answers as [operation] does, so what the stand-in sends is checked against the api's own type. */
+async function answer<K extends keyof typeof sdk>(route: Route, _operation: K, data: Answered<K>, status = 200) {
+  await fulfillJson(route, data, status)
+}
+
 const NO_TWO_FACTOR_ASKED = {on: true, backupCodesLeft: 10, required: false, offered: false, mayTurnOff: false}
 
 async function loginAsRoles(context: BrowserContext, roles: string[], twoFactor = NO_TWO_FACTOR_ASKED) {
@@ -354,21 +421,21 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   page.on("requestfailed", request => inFlight.delete(request))
   // Seasons written down during the test. The api shows a season that was asked for even
   // where the game fielded nobody in it, and these are exactly those seasons.
-  const written = new Map<number, Record<string, unknown>>()
+  const written = new Map<number, Wire<SeasonResponse>>()
   // Teams written down and fielded during the test, so a page asked again reports them the
   // way the api would rather than forgetting they were added.
-  const teamsMade: Array<Record<string, unknown>> = []
-  const casualEdited = new Map<string, Record<string, unknown>>()
+  const teamsMade: Wire<TeamResponse>[] = []
+  const casualEdited = new Map<string, Wire<CasualGameResponse>>()
   const casualGone = new Set<string>()
   /**
    * Every game as the casual pages read it. A game is one record, so one the competition pages
    * know and the casual list does not name is answered here too, as the api would.
    */
   const casualNow = () => {
-    const listed: Array<Record<string, unknown>> = fixtures.casualGames ?? casualGames
+    const listed: Wire<CasualGameResponse>[] = fixtures.casualGames ?? casualGames
     const competition = (fixtures.esportsGames ?? esportsGames)
       .filter(one => !listed.some(held => held.code === one.code))
-      .map(one => casualGame(String(one.code), String(one.name), String(one.slug), Number(one.sortIndex ?? 0), {
+      .map(one => casualGame(one.code, one.name, one.slug, one.sortIndex, {
         accent: one.accent ?? null, intro: one.intro ?? null, banner: one.banner ?? null, icon: one.icon ?? null,
         inCompetition: one.current === true,
       }))
@@ -382,7 +449,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return held.size + (code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0)
   }
   /** A game as the competition pages read it, from what the casual pages last wrote about it. */
-  const competitionOf = (one: Record<string, unknown>, was?: Record<string, unknown>) => ({
+  const competitionOf = (one: Wire<CasualGameResponse>, was?: Wire<GameResponse>): Wire<GameResponse> => ({
     code: one.code, name: one.name, slug: one.slug, accent: one.accent ?? null, intro: one.intro ?? null,
     banner: one.banner ?? null, icon: one.icon ?? null, sortIndex: one.sortIndex ?? 0, current: was?.current ?? false,
     competitionIntro: one.competitionIntro ?? null, esportsChannels: one.esportsChannels ?? [],
@@ -396,18 +463,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     seasonId: number
     teamId: number
     game: string
-    members: Array<Record<string, unknown>>
+    members: Wire<RosterMemberResponse>[]
   }> = []
   // The signup as the api would still be holding it, so a reloaded tab can read it
   // back on its token the way the real GET /signup/session answers.
-  let signupInProgress: Record<string, unknown> | null = null
+  let signupInProgress: Wire<SignupResumeResponse> | null = null
   let nextTeamId = 70
   let nextEntryId = 200
   /** Seasons and fieldings taken away during the test, which the reads then leave out. */
   const gone = new Set<number>()
   const dropped: Array<{seasonId: number; teamId: number}> = []
   /** Teams renamed or removed during the test, which the reads then reflect. */
-  const renamed = new Map<number, {name: unknown; banner: unknown; icon: unknown}>()
+  const renamed = new Map<number, {name: string; banner: Wire<Image> | null; icon: Wire<Image> | null}>()
   const goneTeams = new Set<number>()
   /**
    * The uploaded images, held as the api holds them: a reference per owner rather than bytes.
@@ -465,12 +532,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
    * Boards written down, corrected and removed during a test, so a page that reads again is
    * answered the way the api would rather than told the history never changed.
    */
-  const boardsMade: Array<Record<string, unknown>> = []
-  const boardsEdited = new Map<number, Record<string, unknown>>()
+  const boardsMade: Wire<BoardResponse>[] = []
+  const boardsEdited = new Map<number, Wire<BoardResponse>>()
   const boardsGone = new Set<number>()
   let nextBoardId = 700
   /** Every board as it now stands: the fixtures, corrected, plus whatever was added. */
-  const boardsNow = (): Array<Record<string, unknown>> =>
+  const boardsNow = (): Wire<BoardResponse>[] =>
     [...(fixtures.boards ?? boardFixtures), ...boardsMade]
       .filter(one => !boardsGone.has(Number(one.id)))
       .map(one => ({...one, ...(boardsEdited.get(Number(one.id)) ?? {})}))
@@ -483,11 +550,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
    * resolved here exactly as the api resolves it; naming none clears the photograph.
    */
   const boardWritten = (
-    base: Record<string, unknown>,
-    body: Record<string, unknown>,
-  ): Record<string, unknown> => ({
+    base: Pick<Wire<BoardResponse>, "id" | "members" | "version" | "createdAt">,
+    body: Wire<BoardRequest>,
+  ): Wire<BoardResponse> => ({
     ...base,
-    ...body,
+    number: body.number,
+    startDate: body.startDate,
     name: body.name ?? null,
     // `NOT NULL` and nothing reads it: filled from the name, or from the number where a board
     // has none, for a write that carries no candidate of its own.
@@ -504,7 +572,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
    * that team's members from it, so an edit here is visible there — which is the whole of
    * what "the slice shows the change" means.
    */
-  const roster: Array<Record<string, unknown>> = [
+  const roster: Wire<RosterEntryResponse>[] = [
     {id: 21, teamId: 1, seasonId: 20, role: "PLAYER", handle: "AriosFury", displayName: "Viktor Petrov", userId: 1, sortIndex: 0, roleTitle: "Captain", description: "Holds the **middle** together."},
     {id: 22, teamId: 1, seasonId: 20, role: "PLAYER", handle: "Loafine", displayName: null, userId: null, sortIndex: 1, roleTitle: null, description: null},
     {id: 23, teamId: 1, seasonId: 20, role: "SUBSTITUTE", handle: "Blackout", displayName: null, userId: null, sortIndex: 2, roleTitle: null, description: null},
@@ -512,7 +580,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     {id: 11, teamId: 3, seasonId: 19, role: "PLAYER", handle: "AriosFury", displayName: "Viktor Petrov", userId: 1, sortIndex: 0, roleTitle: null, description: null},
     {id: 12, teamId: 3, seasonId: 19, role: "SUBSTITUTE", handle: "Blackout", displayName: null, userId: null, sortIndex: 1, roleTitle: null, description: null},
   ]
-  const asMember = (entry: Record<string, unknown>) => ({
+  const asMember = (entry: Wire<RosterEntryResponse>): Wire<RosterMemberResponse> => ({
     role: entry.role,
     handle: entry.handle,
     name: entry.userId != null ? entry.displayName : null,
@@ -534,55 +602,49 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   })
 
   // TWIN: `GrantedRoles.ASSIGNABLE` in the api. Change one, change the other.
-  const ASSIGNABLE_ROLES = ["BOARD", "TREASURER", "ADMIN"]
+  const ASSIGNABLE_ROLES: Wire<Role>[] = ["BOARD", "TREASURER", "ADMIN"]
 
-  const baseUsers = fixtures.users ?? [
-    {id: 1, fullName: "Emma Dokter", username: "lyndisluna", enabled: true, roles: ["MEMBER"]},
-    {id: 2, fullName: "Viktor Petrov", username: "ariosfury", enabled: false, roles: ["USER"]},
+  const baseUsers: Wire<UserDetailResponse>[] = fixtures.users ?? [
+    aUser({id: 1, fullName: "Emma Dokter", username: "lyndisluna", email: "emma@example.com", roles: ["MEMBER"]}),
+    aUser({id: 2, fullName: "Viktor Petrov", username: "ariosfury", email: "viktor@example.com", enabled: false, roles: ["GUEST"]}),
   ]
 
-  const baseDeletedUsers = fixtures.deletedUsers ?? [
-    {
-      id: 9,
-      fullName: "Deleted User",
-      username: "deleted-user",
-      email: "deleted@example.com",
-      enabled: false,
-    },
+  const baseDeletedUsers: Wire<UserDetailResponse>[] = fixtures.deletedUsers ?? [
+    aUser({id: 9, fullName: "Deleted User", username: "deleted-user", email: "deleted@example.com", enabled: false, roles: ["GUEST"]}),
   ]
 
-  const baseMemberships = fixtures.memberships ?? [
-    {id: 100, userId: 1, memberType: "REGULAR", startDate: "2025-01-01"},
+  const baseMemberships: Wire<MembershipResponse>[] = fixtures.memberships ?? [
+    aMembership({id: 100, userId: 1, memberType: "REGULAR", startDate: "2025-01-01"}),
   ]
 
-  const basePeriods = fixtures.contributionPeriods ?? [
-    {id: 200, startDate: "2025-01-01", endDate: "2025-06-30", halfYearCutoffDate: "2025-04-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5, contactListId: 7, version: 3},
-    {id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-10-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5, contactListId: 8, version: 4},
+  const basePeriods: Wire<ContributionPeriodResponse>[] = fixtures.contributionPeriods ?? [
+    aContributionPeriod({id: 200, startDate: "2025-01-01", endDate: "2025-06-30", halfYearCutoffDate: "2025-04-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5, contactListId: 7, version: 3}),
+    aContributionPeriod({id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-10-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5, contactListId: 8, version: 4}),
   ]
 
   // What the association says about itself in numbers, which the membership page upgrades to.
-  const baseStatistics = "associationStatistics" in fixtures ? fixtures.associationStatistics : {
+  const baseStatistics: Wire<AssociationStatisticsResponse> | null | undefined = "associationStatistics" in fixtures ? fixtures.associationStatistics : {
     boards: 9, committees: 15, eventsLastYear: 63,
     gamesPlayed: 5, seasonsPlayed: 12, teamsThisSeason: 13,
   }
 
   // The period the fees are quoted from. Its own amounts, so a spec asserting a price is not
   // asserting one of the periods the management pages edit.
-  const baseCurrentPeriod = "currentContributionPeriod" in fixtures ? fixtures.currentContributionPeriod : {
+  const baseCurrentPeriod: Wire<ContributionPeriodResponse> | null | undefined = "currentContributionPeriod" in fixtures ? fixtures.currentContributionPeriod : aContributionPeriod({
     id: 210, startDate: "2025-09-01", endDate: "2026-08-31", halfYearCutoffDate: "2026-02-01",
     halfYearFee: 15, fullYearFee: 25, alumniFee: 12.5, contactListId: 9, version: 1,
-  }
+  })
 
-  const baseContributions = fixtures.contributions ?? [
-    {id: 300, userId: 1, contributionPeriodId: 201},
+  const baseContributions: Wire<ContributionResponse>[] = fixtures.contributions ?? [
+    aContribution({userId: 1, contributionPeriodId: 201}),
   ]
 
-  const baseAddresses = fixtures.addresses ?? [
-    {id: 400, userId: 1, street: "Main", city: "Enschede", zipcode: "1234AB", countryCode: "NL"},
+  const baseAddresses: Wire<AddressResponse>[] = fixtures.addresses ?? [
+    anAddress({id: 400, userId: 1, street: "Main", city: "Enschede", zipCode: "1234AB", country: "NL"}),
   ]
 
-  const baseEvents = fixtures.events ?? [
-    {
+  const baseEvents: Wire<EventResponse>[] = fixtures.events ?? [
+    anEvent({
       id: 500,
       title: "Mock Event",
       description: "Mock event description",
@@ -594,40 +656,60 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       signUpCount: 1,
       membersOnly: false,
       committeeId: 900,
-      banner: false,
+      banner: null,
       gameCodes: ["VALORANT"],
-    },
+    }),
   ]
 
-  const baseEventSignUps = fixtures.eventSignUps ?? [
-    {id: 600, eventId: 500, userId: 1, kind: "MEMBER"},
+  const baseEventSignUps: Wire<EventSignUpResponse>[] = fixtures.eventSignUps ?? [
+    aSignUp({id: 600, eventId: 500, kind: "MEMBER", user: {id: 1, fullName: "Emma Dokter", email: "emma@example.com", ...stampedAt}}),
   ]
 
-  const committeeRecord = (id: number, name: string, slug: string, extra: Record<string, unknown> = {}) => ({
-    id, name, slug, description: `${name} runs things.`, listed: true, archived: false, banner: null, gameCodes: [] as string[],
-    version: 0, members: [] as Array<Record<string, unknown>>, createdAt: "2025-01-01T00:00:00Z", updatedAt: "2025-01-01T00:00:00Z", ...extra,
-  })
-  const baseCommittees = fixtures.committees ?? [
-    committeeRecord(900, "Events Committee", "events-committee", {description: "Runs the events.", gameCodes: ["CHESS"], members: [{userId: 1, committeeId: 900, role: "Chair"}]}),
+  const committeeRecord = (id: number, name: string, slug: string, extra: Partial<Wire<CommitteeResponse>> = {}) =>
+    aCommittee({id, name, slug, description: `${name} runs things.`, banner: null, members: [], ...extra})
+  const baseCommittees: Wire<CommitteeResponse>[] = fixtures.committees ?? [
+    committeeRecord(900, "Events Committee", "events-committee", {description: "Runs the events.", gameCodes: ["CHESS"], members: [{userId: 1, committeeId: 900, role: "Chair", ...stampedAt}]}),
     committeeRecord(901, "LanCie", "lancie", {gameCodes: ["VALORANT"]}),
     committeeRecord(902, "Board", "board", {listed: false}),
     committeeRecord(903, "OldCie", "oldcie", {archived: true}),
   ]
   // The committees, kept per page so a spec sees its own adds, edits and archives.
-  const committeesEdited = new Map<number, Record<string, unknown>>()
+  const committeesEdited = new Map<number, Wire<CommitteeResponse>>()
   const committeesNow = () => {
     const known = baseCommittees.map(one => committeesEdited.get(Number(one.id)) ?? one)
     const added = [...committeesEdited.values()].filter(one => !known.some(k => k.id === one.id))
-    return [...known, ...added] as Array<Record<string, unknown>>
+    return [...known, ...added]
   }
+  /** A picture a save names by path: one stored during the test, or the one already held. */
+  const pictureKept = (named: string | null | undefined, held: Wire<Image> | null | undefined): Wire<Image> | null =>
+    named == null ? null : pictureNamed(named) ?? (held?.path === named ? held : null)
+  /** The committee a save leaves, answered the way the api answers it rather than as the request. */
+  const committeeSaved = (
+    held: Wire<CommitteeResponse>,
+    body: Partial<Omit<Wire<UpdateCommitteeRequest>, "version">>,
+    version: number,
+  ): Wire<CommitteeResponse> => ({
+    ...held,
+    name: body.name ?? held.name,
+    slug: body.slug || held.slug,
+    description: body.description ?? held.description,
+    listed: body.listed ?? held.listed,
+    gameCodes: body.gameCodes ?? held.gameCodes,
+    banner: body.banner === undefined ? held.banner : pictureKept(body.banner, held.banner),
+    icon: body.icon === undefined ? held.icon : pictureKept(body.icon, held.icon),
+    members: body.members
+      ? body.members.map(one => ({...stampedAt, committeeId: held.id, userId: one.userId, role: one.role ?? null}))
+      : held.members,
+    version,
+  })
 
-  const baseBlogs = fixtures.blogs ?? [
-    {
+  const baseBlogs: Wire<BlogResponse>[] = fixtures.blogs ?? [
+    aBlog({
       id: 1,
       title: "Mock Newsletter",
       publishedAt: "2025-01-01T12:00:00.000Z",
       html: "<h1>Mock Newsletter</h1><p>Welcome to Blueshell.</p>",
-    },
+    }),
   ]
 
   const blogsById = fixtures.blogsById ?? Object.fromEntries(
@@ -636,23 +718,23 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       .map((blog) => [String(blog.id), blog]),
   )
 
-  const baseJobs = fixtures.jobs ?? [
-    {
+  const baseJobs: Wire<JobExecution>[] = fixtures.jobs ?? [
+    aJob({
       id: 700,
       jobType: "SYNC_DISCORD",
       status: "FAILED",
       attempts: 1,
-      payload: "{\"scope\":\"members\"}",
+      payload: {scope: "members"},
       errorType: "RuntimeException",
       errorReason: "Temporary failure",
       queuedAt: "2025-01-01T12:00:00.000Z",
       startedAt: "2025-01-01T12:00:10.000Z",
       finishedAt: "2025-01-01T12:00:11.000Z",
-    },
+    }),
   ]
 
-  const baseEmails = fixtures.emails ?? [
-    {
+  const baseEmails: Wire<Email>[] = fixtures.emails ?? [
+    anEmail({
       id: 800,
       recipientEmail: "alice@example.com",
       recipientName: "Alice Example",
@@ -667,7 +749,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       jobExecutionId: 700,
       createdAt: "2025-01-01T11:59:00.000Z",
       previewable: true,
-    },
+    }),
   ]
 
   const toSearchableString = (value: unknown): string => {
@@ -676,7 +758,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return ""
   }
 
-  const jobCategory = (job: Record<string, unknown>): string => {
+  const jobCategory = (job: Wire<JobExecution>): string => {
     const raw = toSearchableString(job.category).trim().toLowerCase()
     if (raw) return raw
 
@@ -687,18 +769,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return type.slice(0, Math.min(...separatorPositions))
   }
 
-  const matchesSearch = (job: Record<string, unknown>, query: string): boolean => {
-    const relatedEntities = Array.isArray(job.relatedEntities)
-      ? job.relatedEntities
-        .map((value) => {
-          if (value == null || typeof value !== "object") return ""
-          return toSearchableString((value as Record<string, unknown>).label)
-        })
-        .join(" ")
-      : ""
+  const matchesSearch = (job: Wire<JobExecution>, query: string): boolean => {
+    const relatedEntities = job.relatedEntities.map(one => one.label).join(" ")
 
     const haystack = [
-      toSearchableString(job.summary),
       toSearchableString(job.jobType),
       toSearchableString(job.errorType),
       toSearchableString(job.errorMessage),
@@ -719,13 +793,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return Number.isFinite(id) ? id : null
   }
 
-  const parseCookieLogin = (cookieHeader: string): {userId: number; roles: string[]; twoFactor?: unknown} | null => {
+  const parseCookieLogin = (cookieHeader: string): {userId: number; roles: Wire<Role>[]; twoFactor?: Wire<TwoFactorStanding>} | null => {
     try {
       const match = cookieHeader.match(/(?:^|;\s*)login=([^;]+)/)
       if (!match) return null
       const data = JSON.parse(decodeURIComponent(match[1]))
       const userId = Number(data?.userId)
-      const roles = Array.isArray(data?.roles) ? (data.roles as string[]) : null
+      const roles = Array.isArray(data?.roles) ? (data.roles as Wire<Role>[]) : null
       return Number.isFinite(userId) && roles ? {userId, roles, twoFactor: data?.twoFactor} : null
     } catch {
       return null
@@ -743,7 +817,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
      * Shared by a game's own page and by a season's band, because the two answering
      * differently about the same game in the same season is the bug this would otherwise hide.
      */
-    const teamsOfGameInSeason = (game: string, seasonId: number): Array<Record<string, unknown>> => {
+    const teamsOfGameInSeason = (game: string, seasonId: number): Wire<TeamRosterResponse>[] => {
       const page = fixtures.esportsPages?.[String(seasonId)] ?? esportsPageBySeason[String(seasonId)]
       // Teams fielded during this test belong to a season the same way the seeded ones do.
       // Which game a team played is the fielding's to say, not the team's.
@@ -758,14 +832,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           members: row.one.members,
         }))
       const fieldsThis = game === "VALORANT" || game === "CS2" || (game === "CSGO" && seasonId === 19)
-      const stillFielded = (team: Record<string, unknown>) =>
+      const stillFielded = (team: Wire<TeamRosterResponse>) =>
         !dropped.some(one => one.seasonId === seasonId && one.teamId === team.id)
         && !goneTeams.has(Number(team.id))
-      const named = (team: Record<string, unknown>) => {
+      const named = (team: Wire<TeamRosterResponse>): Wire<TeamRosterResponse> => {
         const change = renamed.get(Number(team.id))
         return change ? {...team, name: change.name, icon: change.icon} : team
       }
-      const seeded = (fieldsThis && page ? page.teams as Array<Record<string, unknown>> : [])
+      const seeded = (fieldsThis && page ? page.teams : [])
         .filter(stillFielded).map(named).map(team => (
           team.id === 1
             ? {...team, members: roster
@@ -778,8 +852,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       // wider banner for either to be resolved against.
       return [...seeded, ...extra].map(team => ({
         ...team,
-        banner: teamBanners.get(Number((team as {id: number}).id)) ?? null,
-        icon: teamIcons.get(Number((team as {id: number}).id)) ?? null,
+        banner: teamBanners.get(team.id) ?? null,
+        icon: teamIcons.get(team.id) ?? null,
       }))
     }
 
@@ -804,70 +878,72 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     const cookieLogin = parseCookieLogin(request.headers()["cookie"] ?? "")
 
     if (method === "GET" && path === "/users") {
-      return fulfillJson(route, {content: baseUsers})
+      return answer(route, "findUsers", {content: baseUsers})
     }
     if (method === "GET" && path === "/users/me/two-factor") {
-      return fulfillJson(route, cookieLogin?.twoFactor ?? NO_TWO_FACTOR_ASKED)
+      return answer(route, "twoFactorStanding", cookieLogin?.twoFactor ?? NO_TWO_FACTOR_ASKED)
     }
     if (method === "GET" && path === "/users/me/sign-ins") {
       const now = new Date().toISOString()
-      return fulfillJson(route, [{id: "here", browser: "Chrome", platform: "Linux", signedInAt: now, lastSeenAt: now, current: true}])
+      return answer(route, "signIns", [{id: "here", browser: "Chrome", platform: "Linux", signedInAt: now, lastSeenAt: now, current: true}])
     }
     if (method === "GET" && path === "/users/me/trusted-browsers") {
-      return fulfillJson(route, [])
+      return answer(route, "trustedBrowsers", [])
     }
     if (method === "POST" && path === "/users/me/two-factor/setup") {
-      return fulfillJson(route, {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})
+      return answer(route, "setUpTwoFactor", {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})
     }
     if (method === "GET" && path === "/users/me/email") {
-      return fulfillJson(route, {email: "mock-user@example.com", pendingEmail: null})
+      return answer(route, "emailAddress", {email: "mock-user@example.com", pendingEmail: null})
     }
     if (method === "GET" && path === "/users/me/security-events") {
-      return fulfillJson(route, {events: [], page: 0, totalPages: 0, totalElements: 0})
+      return answer(route, "mySecurityEvents", {events: [], page: 0, totalPages: 0, totalElements: 0})
     }
     if (method === "GET" && path === "/users/deleted") {
-      return fulfillJson(route, {content: baseDeletedUsers})
+      return answer(route, "findDeletedUsers", {content: baseDeletedUsers})
     }
     if (method === "GET" && /^\/users\/\d+$/.test(path)) {
       const id = Number(path.split("/").at(-1))
       const user = baseUsers.find((candidate) => Number(candidate.id) === id)
       // Reflect the logged-in user's actual roles so App.vue doesn't overwrite the store with stale mock data
-      const roles = (cookieLogin?.userId === id ? cookieLogin.roles : null) ?? (user?.roles as string[] | undefined) ?? ["MEMBER"]
+      const roles = (cookieLogin?.userId === id ? cookieLogin.roles : null) ?? user?.roles ?? ["MEMBER"]
       if (user != null) {
-        return fulfillJson(route, {...user, roles})
+        return answer(route, "findUserById", {...user, roles})
       }
-      return fulfillJson(route, {id, roles})
+      return answer(route, "findUserById", aUser({id, roles}))
     }
     if (method === "GET" && /^\/users\/\d+\/roles$/.test(path)) {
       const id = parseUserId(path, /^\/users\/(\d+)\/roles$/) ?? 0
       const user = baseUsers.find((candidate) => Number(candidate.id) === id)
-      const held = (user?.roles as string[] | undefined) ?? ["MEMBER"]
-      return fulfillJson(route, {
+      const held: Wire<Role>[] = user?.roles ?? ["MEMBER"]
+      return answer(route, "findUserRoles", {
         userId: id,
         roles: held,
         granted: held.filter((role) => ASSIGNABLE_ROLES.includes(role)),
-        derived: held.filter((role) => role === "MEMBER").map((role) => ({role, source: "MEMBERSHIP"})),
+        derived: held.filter((role) => role === "MEMBER").map((role) => ({role, source: "MEMBERSHIP" as const})),
         implied: [],
+        dormant: [],
         assignable: ASSIGNABLE_ROLES,
       })
     }
     if (method === "PUT" && /^\/users\/\d+\/roles$/.test(path)) {
       const id = parseUserId(path, /^\/users\/(\d+)\/roles$/) ?? 0
-      const granted = ((request.postDataJSON() as {roles?: string[]} | null)?.roles) ?? []
+      const granted = ((request.postDataJSON() as {roles?: Wire<Role>[]} | null)?.roles) ?? []
       const user = baseUsers.find((candidate) => Number(candidate.id) === id)
-      const derived = ((user?.roles as string[] | undefined) ?? []).filter((role) => role === "MEMBER")
+      const derived = (user?.roles ?? []).filter((role) => role === "MEMBER")
       if (user != null) user.roles = [...derived, ...granted]
-      return fulfillJson(route, {
+      return answer(route, "setUserRoles", {
         userId: id,
         roles: [...derived, ...granted],
         granted,
-        derived: derived.map((role) => ({role, source: "MEMBERSHIP"})),
+        derived: derived.map((role) => ({role, source: "MEMBERSHIP" as const})),
         implied: [],
+        dormant: [],
         assignable: ASSIGNABLE_ROLES,
       })
     }
     if (method === "GET" && /^\/users\/\d+\/role-changes$/.test(path)) {
-      return fulfillJson(route, [])
+      return answer(route, "findUserRoleChanges", [])
     }
     if (method === "DELETE" && /^\/users\/\d+$/.test(path)) {
       const id = parseUserId(path, /^\/users\/(\d+)$/)
@@ -883,7 +959,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           }
         }
       }
-      return fulfillJson(route, {}, 204)
+      return answer(route, "deleteUserById", {}, 204)
     }
     if (method === "PUT" && /^\/users\/\d+\/restore$/.test(path)) {
       const id = parseUserId(path, /^\/users\/(\d+)\/restore$/)
@@ -899,10 +975,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           }
         }
       }
-      return fulfillJson(route, {}, 204)
+      return answer(route, "restoreDeletedUserById", {}, 204)
     }
     if (method === "GET" && path === "/memberships") {
-      return fulfillJson(route, baseMemberships)
+      return answer(route, "findMemberships", baseMemberships)
     }
     // The bulk membership actions ask the api what they would do before doing it, so the
     // preview decides the rows here the way the server would: a member with an open
@@ -915,20 +991,20 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const included = selected.filter((userId) => (starting ? !isActive(userId) : isActive(userId)))
 
       if (path.endsWith("/preview")) {
-        return fulfillJson(route, {
+        return answer(route, starting ? "previewBulkStart" : "previewBulkEnd", {
           effectiveDate: BULK_MEMBERSHIP_EFFECTIVE_DATE,
           rows: selected.map((userId) => {
             const include = included.includes(userId)
-            if (include) return {userId, disposition: "INCLUDED", reason: starting ? "WILL_START_NEW" : null}
+            if (include) return {userId, disposition: "INCLUDED" as const, reason: starting ? "WILL_START_NEW" as const : null}
             return {
               userId,
-              disposition: "SKIPPED",
-              reason: starting ? "ALREADY_ACTIVE" : "NO_ACTIVE_MEMBERSHIP",
+              disposition: "SKIPPED" as const,
+              reason: starting ? "ALREADY_ACTIVE" as const : "NO_ACTIVE_MEMBERSHIP" as const,
             }
           }),
         })
       }
-      return fulfillJson(route, {
+      return answer(route, starting ? "startMemberships" : "endMemberships", {
         applied: included.length,
         skipped: selected.length - included.length,
         queued: 0,
@@ -943,14 +1019,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           .filter((c) => c.contributionPeriodId === body.contributionPeriodId)
           .map((c) => c.userId),
       )
-      const rows = body.userIds.map((userId) => {
+      const rows = body.userIds.map((userId): Answered<"previewBulkContributionEmail">["rows"][number] => {
         const membership = baseMemberships.find((m) => m.userId === userId)
         const honorary = membership?.memberType === "HONORARY"
         const [disposition, reason] = honorary
-          ? ["EXCLUDED", "HONORARY"]
+          ? ["EXCLUDED", "HONORARY"] as const
           : paid.has(userId)
-            ? ["WARNING", "ALREADY_PAID"]
-            : ["INCLUDED", null]
+            ? ["WARNING", "ALREADY_PAID"] as const
+            : ["INCLUDED", null] as const
         return {
           userId,
           name: baseUsers.find((u) => Number(u.id) === userId)?.fullName ?? `#${userId}`,
@@ -965,14 +1041,15 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           lastNotifiedOn: null,
         }
       })
-      return fulfillJson(route, {contributionPeriodId: body.contributionPeriodId, rows, unknownUserIds: []})
+      return answer(route, "previewBulkContributionEmail", {contributionPeriodId: body.contributionPeriodId, rows, unknownUserIds: []})
     }
     if (method === "GET" && path === "/contributions/bulk/email/message") {
       const params = new URL(route.request().url()).searchParams
       const incasso = params.get("kind") === "INCASSO_NOTIFICATION"
-      return fulfillJson(route, {
-        kind: params.get("kind") ?? "REMINDER",
-        feeType: params.get("feeType") ?? "FULL_YEAR_FEE",
+      const feeTypes = ["FULL_YEAR_FEE", "HALF_YEAR_FEE", "ALUMNI_FEE"] as const
+      return answer(route, "readContributionEmail", {
+        kind: incasso ? "INCASSO_NOTIFICATION" : "REMINDER",
+        feeType: feeTypes.find(one => one === params.get("feeType")) ?? "FULL_YEAR_FEE",
         subject: incasso
           ? "Your Blueshell contribution will be collected automatically (2025)"
           : "Please pay your Blueshell contribution (2025)",
@@ -991,7 +1068,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         )
       }
       const body = route.request().postDataJSON() as {userIds: number[]}
-      return fulfillJson(route, {
+      return answer(route, "sendPaymentEmails", {
         remindersSent: body.userIds.length,
         incassoNotificationsSent: 0,
         notWrittenTo: 0,
@@ -1001,26 +1078,26 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       // A fixture set to null is a year nobody has recorded a fee for yet, which the api
       // answers with no content rather than with a period.
       if (!baseCurrentPeriod) return route.fulfill({status: 204, contentType: "application/json", body: ""})
-      return fulfillJson(route, baseCurrentPeriod)
+      return answer(route, "findCurrentContributionPeriod", baseCurrentPeriod)
     }
     if (method === "GET" && path === "/statistics/association") {
       // Set to null by a spec that wants the read refused, so the page falls back on its floors.
       if (!baseStatistics) return fulfillJson(route, {title: "Server error", status: 500}, 500)
-      return fulfillJson(route, baseStatistics)
+      return answer(route, "associationStatistics", baseStatistics)
     }
     if (method === "GET" && path === "/contributionPeriods") {
-      return fulfillJson(route, basePeriods)
+      return answer(route, "findContributionPeriods", basePeriods)
     }
     if (method === "POST" && path === "/contributionPeriods") {
-      const body = route.request().postDataJSON() as Record<string, unknown>
-      const created = {...body, id: 202, version: 0}
+      const body = route.request().postDataJSON() as Wire<CreateContributionPeriodRequest>
+      const created = aContributionPeriod({...body, id: 202, version: 0})
       // Held, so the list the page reloads after a save shows what was just created.
       basePeriods.push(created)
-      return fulfillJson(route, created, 201)
+      return answer(route, "createContributionPeriod", created, 201)
     }
     if (method === "PUT" && /^\/contributionPeriods\/\d+$/.test(path)) {
       const id = Number(path.split("/")[2])
-      const body = route.request().postDataJSON() as Record<string, unknown>
+      const body = route.request().postDataJSON() as Wire<UpdateContributionPeriodRequest>
       const period = basePeriods.find((p) => p.id === id)
       // A version the row does not hold is what optimistic locking refuses, so the mock
       // refuses it the way OptimisticLockingProblemDetailsAdvice does.
@@ -1038,41 +1115,41 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           409,
         )
       }
-      Object.assign(period, body, {version: (period.version as number) + 1})
-      return fulfillJson(route, period)
+      Object.assign(period, body, {version: period.version + 1})
+      return answer(route, "updateContributionPeriod", period)
     }
     if (method === "GET" && /\/contributionPeriods\/\d+\/contributions$/.test(path)) {
-      return fulfillJson(route, baseContributions)
+      return answer(route, "findContributionsByPeriodId", baseContributions)
     }
     if (method === "GET" && path === "/addresses") {
-      return fulfillJson(route, baseAddresses)
+      return answer(route, "findAllAddresses", baseAddresses)
     }
     // No bot in the mocked api: the Discord field stays the text field it always was.
     if (method === "GET" && path === "/discord/members") {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)
     }
     if (method === "GET" && path === "/discord/mentions") {
-      return fulfillJson(route, {users: [], roles: [], channels: []})
+      return answer(route, "readDiscordMentions", {users: [], roles: [], channels: []})
     }
     if (method === "GET" && path === "/discord/channels") {
-      return fulfillJson(route, [{id: "323456789012345602", name: "events-info"}])
+      return answer(route, "listDiscordChannels", [{id: "323456789012345602", name: "events-info"}])
     }
     // The games category's channels, and the esports category's where those are asked for.
     if (method === "GET" && path === "/discord/game-channels" && url.searchParams.get("category") === "ESPORTS") {
-      return fulfillJson(route, [
+      return answer(route, "listGameChannels", [
         {id: "7322", guildId: "324", name: "valorant-esports"},
         {id: "7323", guildId: "324", name: "scrims"},
       ])
     }
     if (method === "GET" && path === "/discord/game-channels") {
-      return fulfillJson(route, [
+      return answer(route, "listGameChannels", [
         {id: "6322", guildId: "324", name: "valorant"},
         {id: "6323", guildId: "324", name: "chess"},
         {id: "6324", guildId: "324", name: "fighting-games"},
       ])
     }
     if (method === "GET" && path === "/discord/emojis") {
-      return fulfillJson(route, [{id: "657733730491826186", name: "POGGERS", animated: false}])
+      return answer(route, "listDiscordEmojis", [{id: "657733730491826186", name: "POGGERS", animated: false}])
     }
     // No bot in the mocked api: the Discord band falls back to the public widget, mocked below.
     if (method === "GET" && (path === "/discord/live" || path === "/discord/live/mine")) {
@@ -1096,76 +1173,78 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)) * (newestFirst ? -1 : 1))
       const size = Number(params.get("size") ?? found.length)
       const at = Number(params.get("page") ?? "0") * size
-      return fulfillJson(route, {content: found.slice(at, at + size), page: {totalElements: found.length}})
+      return answer(route, "findEvents", {content: found.slice(at, at + size), page: {totalElements: found.length}})
     }
     if (method === "GET" && path === "/events/signups") {
-      return fulfillJson(route, baseEventSignUps)
+      return answer(route, "findEventSignUps", baseEventSignUps)
     }
     if (method === "GET" && (path === "/events/signups/byAccessToken" || path.startsWith("/events/signups/byAccessToken/"))) {
-      return fulfillJson(route, baseEventSignUps)
+      return answer(route, "findEventSignUpsByAccessToken", baseEventSignUps)
     }
     if (method === "GET" && /^\/events\/\d+\/signups$/.test(path)) {
       const eventId = path.split("/")[2]
-      return fulfillJson(route, fixtures.eventSignUpsByEventId?.[eventId] ?? [])
+      return answer(route, "findEventSignUpsByEventId", fixtures.eventSignUpsByEventId?.[eventId] ?? [])
     }
     if (method === "GET" && /^\/events\/\d+$/.test(path)) {
       const eventId = Number(path.split("/").at(-1))
       const detail = fixtures.eventDetailsById?.[String(eventId)]
         ?? baseEvents.find((candidate) => Number(candidate.id) === eventId)
-        ?? {id: eventId}
-      return fulfillJson(route, detail)
+      if (!detail) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+      return answer(route, "findEventById", detail)
     }
     if (method === "GET" && path === "/committees") {
-      return fulfillJson(route, committeesNow())
+      return answer(route, "findCommittees", committeesNow())
     }
     if (method === "POST" && path === "/committees") {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const name = String(body.name)
-      const made = committeeRecord(990 + committeesEdited.size, name, String(body.slug ?? "") || addressOf(name), body)
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<CreateCommitteeRequest>
+      const made = committeeSaved(committeeRecord(990 + committeesEdited.size, body.name, body.slug || addressOf(body.name)), body, 0)
       committeesEdited.set(Number(made.id), made)
-      return fulfillJson(route, made, 201)
+      return answer(route, "createCommittee", made, 201)
     }
     const committeeAddress = /^\/committees\/address\/([^/]+)$/.exec(path)
     if (method === "GET" && committeeAddress) {
       const found = committeesNow().find(one => one.slug === decodeURIComponent(committeeAddress[1]!).toLowerCase())
       if (!found) return fulfillJson(route, {code: "UnknownCommitteeAddress", address: committeeAddress[1]}, 404)
-      const seats = ((found.members as Array<Record<string, unknown>>) ?? []).map((member, at) => (at === 0
+      const seats = (found.members ?? []).map((member, at) => (at === 0
         ? {discordName: "Nelly B", avatar: "https://cdn.discordapp.com/embed/avatars/1.png", role: member.role ?? null}
         : {discordName: null, avatar: null, role: member.role ?? null}))
-      return fulfillJson(route, {...found, members: seats})
+      return answer(route, "findCommitteePage", {...found, members: seats})
     }
     const committeeOwn = /^\/committees\/(\d+)\/(page|archived)$/.exec(path)
     if (method === "PUT" && committeeOwn) {
       const id = Number(committeeOwn[1])
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const body = JSON.parse(request.postData() ?? "{}") as Partial<Wire<CommitteeOwnPageRequest>> & {archived?: boolean}
       const stored = committeesNow().find(one => Number(one.id) === id) ?? committeeRecord(id, `Committee ${id}`, `committee-${id}`)
-      const changed = {...stored, ...body, banner: stored.banner, version: Number(stored.version ?? 0) + 1}
+      const changed = {
+        ...committeeSaved(stored, {...body, banner: undefined}, stored.version + 1),
+        archived: body.archived ?? stored.archived,
+      }
       committeesEdited.set(id, changed)
-      return fulfillJson(route, changed)
+      return answer(route, committeeOwn[2] === "page" ? "updateCommitteePage" : "archiveCommittee", changed)
     }
     const committeeGame = /^\/committees\/games\/([A-Z0-9_]+)$/.exec(path)
     if (method === "PUT" && committeeGame) {
       const code = committeeGame[1]!
       const {committeeIds} = JSON.parse(request.postData() ?? "{}") as {committeeIds: number[]}
       committeesNow().forEach(one => {
-        const codes = (one.gameCodes as string[]).filter(held => held !== code)
+        const codes = one.gameCodes.filter(held => held !== code)
         committeesEdited.set(Number(one.id), {...one, gameCodes: committeeIds.includes(Number(one.id)) ? [...codes, code] : codes})
       })
-      return fulfillJson(route, committeesNow().filter(one => (one.gameCodes as string[]).includes(code)))
+      return answer(route, "setGameOrganisers", committeesNow().filter(one => one.gameCodes.includes(code)))
     }
     if (method === "PUT" && /^\/committees\/\d+$/.test(path)) {
       const id = Number(path.split("/").at(-1))
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const stored = committeesNow().find((candidate) => Number(candidate.id) === id) ?? {id}
-      const changed = {...stored, ...body, id, version: Number(body.version ?? 0) + 1}
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<UpdateCommitteeRequest>
+      const stored = committeesNow().find((candidate) => Number(candidate.id) === id) ?? committeeRecord(id, body.name, body.slug || addressOf(body.name))
+      const changed = committeeSaved(stored, body, body.version + 1)
       committeesEdited.set(id, changed)
-      return fulfillJson(route, changed)
+      return answer(route, "updateCommittee", changed)
     }
     if (method === "GET" && path === "/committeeMembers/committees") {
-      return fulfillJson(route, baseCommittees)
+      return answer(route, "findCommitteesByUserId", baseCommittees)
     }
     if (method === "GET" && path === "/blogs") {
-      return fulfillJson(route, baseBlogs)
+      return answer(route, "findBlogs", baseBlogs)
     }
     if (method === "GET" && /^\/blogs\/[^/]+$/.test(path)) {
       const id = path.split("/").at(-1) ?? ""
@@ -1175,7 +1254,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       const blog = blogsById[id]
       if (blog != null) {
-        return fulfillJson(route, blog)
+        return answer(route, "findBlogById", blog)
       }
       return fulfillJson(route, {status: 404, detail: "Blog not found"}, 404)
     }
@@ -1185,7 +1264,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         const s = toSearchableString(job.status).toUpperCase()
         if (s in counts) counts[s] = (counts[s] ?? 0) + 1
       }
-      return fulfillJson(route, {
+      return answer(route, "getStats", {
         totalCount: baseJobs.length,
         successCount: counts["SUCCESS"],
         skippedCount: counts["SKIPPED"],
@@ -1200,25 +1279,25 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       })
     }
     if (method === "GET" && path === "/management/jobs/types") {
-      return fulfillJson(route, [
+      return answer(route, "jobTypes", [
         {type: "contact.sync-all", payloadFields: []},
-        {type: "contact.sync", payloadFields: [{name: "userId", type: "Long", required: true}]},
+        {type: "contact.sync", payloadFields: [{name: "userId", type: "Long", kind: "PRIMITIVE", required: true}]},
         {type: "email.recovery", payloadFields: [
-          {name: "userId", type: "Long", required: true},
-          {name: "token", type: "String", required: false},
+          {name: "userId", type: "Long", kind: "PRIMITIVE", required: true},
+          {name: "token", type: "String", kind: "PRIMITIVE", required: false},
         ]},
       ])
     }
     if (method === "POST" && path === "/management/jobs/enqueue") {
       const body = (route.request().postDataJSON() ?? {}) as {jobType?: string}
-      const enqueued = {
+      const enqueued = aJob({
         id: 9000 + baseJobs.length,
         jobType: body.jobType ?? "contact.sync",
         status: "QUEUED",
         attempts: 1,
-      }
+      })
       baseJobs.unshift(enqueued)
-      return fulfillJson(route, enqueued)
+      return answer(route, "enqueue", enqueued)
     }
     if (method === "GET" && path === "/management/jobs") {
       const page = Number(url.searchParams.get("page") ?? "0")
@@ -1250,7 +1329,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const start = safePage * safeSize
       const content = filtered.slice(start, start + safeSize)
 
-      return fulfillJson(route, {
+      return answer(route, "list", {
         content,
         page: {
           number: safePage,
@@ -1262,7 +1341,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     // The external target catalogue behind the Brevo targets page.
     if (method === "GET" && path === "/management/cohort-targets/systems") {
-      return fulfillJson(route, [
+      return answer(route, "listCohortTargetSystems", [
         {
           system: "BREVO",
           kind: "LIST",
@@ -1271,7 +1350,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/management/cohort-targets/BREVO/folders") {
       // Includes a folder holding nothing, which is exactly where a target tends to head.
-      return fulfillJson(route, ["Committees", "Contribution periods", "Archive"])
+      return answer(route, "listCohortTargetFolders", ["Committees", "Contribution periods", "Archive"])
     }
     if (method === "PUT" && path === "/management/cohort-targets/BREVO/folder") {
       const body = request.postDataJSON() as {externalIds: string[]; folder: string}
@@ -1293,41 +1372,42 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         }, 409)
       }
       const moved = body.externalIds.map((id) => ({
-        system: "BREVO",
+        system: "BREVO" as const,
         externalId: id,
-        kind: "LIST",
+        kind: "LIST" as const,
         label: brevoTargets.find((t) => t.externalId === id)?.label ?? `List ${id}`,
         folderLabel: body.folder,
         path: ["Brevo", body.folder].filter(Boolean),
         memberCount: brevoTargets.find((t) => t.externalId === id)?.memberCount ?? null,
         linkedCohortId: brevoTargets.find((t) => t.externalId === id)?.linkedCohortId ?? null,
       }))
-      return fulfillJson(route, {moved, failed: []})
+      return answer(route, "moveCohortTargets", {moved, failed: []})
     }
     if (method === "GET" && path === "/management/cohort-targets/BREVO") {
-      return fulfillJson(route, brevoTargets)
+      return answer(route, "searchCohortTargets", brevoTargets)
     }
     // Legacy /management/cohorts list (still used by CohortPicker until
     // the engine is fully on subjects).
     if (method === "GET" && path === "/management/cohorts") {
-      return fulfillJson(route, [
+      return answer(route, "findCohorts", [
         {id: 1, system: "BREVO", kind: "LIST", label: "Members 2025-2026", memberCount: 2, externalId: "7", folder: "Periods"},
         {id: 2, system: "BREVO", kind: "LIST", label: "Web Cmte", memberCount: 1, externalId: "33", folder: "Committees"},
       ])
     }
     if (method === "GET" && path === "/boards") {
-      return fulfillJson(route, boardsNow())
+      return answer(route, "findAllBoards", boardsNow())
     }
     if (method === "GET" && /^\/boards\/\d+$/.test(path)) {
       const id = Number(path.split("/")[2])
       const board = boardsNow().find((b) => Number(b.id) === id)
-      return fulfillJson(route, board ?? {}, board ? 200 : 404)
+      if (!board) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+      return answer(route, "findBoardById", board)
     }
     // A board's number is its identity, so the api refuses a number another board holds and
     // says which one it is — the refusal a dialog has to be able to report.
     if ((method === "PUT" || method === "POST") && /^\/boards(\/\d+)?$/.test(path)) {
       const id = method === "PUT" ? Number(path.split("/")[2]) : null
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<BoardRequest>
       const taken = boardsNow().some(
         (b) => Number(b.number) === Number(body.number) && Number(b.id) !== id,
       )
@@ -1339,9 +1419,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       if (id != null) {
         const board = boardsNow().find((b) => Number(b.id) === id)
-        const saved = {...boardWritten(board ?? {}, body), id, version: 1}
+        const held = board ?? {id, members: [], version: 0, createdAt: "2026-01-02T00:00:00Z"}
+        const saved = {...boardWritten(held, body), id, version: 1}
         boardsEdited.set(id, saved)
-        return fulfillJson(route, saved)
+        return answer(route, "updateBoard", saved)
       }
       nextBoardId += 1
       const made = boardWritten({
@@ -1351,7 +1432,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         createdAt: "2026-01-02T00:00:00Z",
       }, body)
       boardsMade.push(made)
-      return fulfillJson(route, made, 201)
+      return answer(route, "createBoard", made, 201)
     }
     if (method === "DELETE" && /^\/boards\/\d+$/.test(path)) {
       const id = Number(path.split("/")[2])
@@ -1359,7 +1440,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const held = board?.members
       const members = Array.isArray(held) ? held.length : 0
       if (members > 0) {
-        return fulfillJson(route, {
+        return answer(route, "deleteBoard", {
           detail: "That board cannot be removed.",
           code: "BoardHoldsMembers",
           number: board?.number,
@@ -1382,14 +1463,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
      * pushed onto a copy's `members` would reach the board it belongs to and one removed
      * from one would not, because a removal replaces the list rather than adding to it.
      */
-    const boardHolding = (boardId: number): Record<string, unknown> | undefined =>
+    const boardHolding = (boardId: number): Wire<BoardResponse> | undefined =>
       [...(fixtures.boards ?? boardFixtures), ...boardsMade]
         .find((b) => Number(b.id) === boardId)
 
-    const membersOf = (board: Record<string, unknown>): Array<Record<string, unknown>> => {
-      if (!Array.isArray(board.members)) board.members = []
-      return board.members as Array<Record<string, unknown>>
-    }
+    const membersOf = (board: Wire<BoardResponse> | undefined): Wire<BoardMemberResponse>[] => board?.members ?? []
 
     /**
      * A member as the api answers with one after a write.
@@ -1400,9 +1478,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
      * `displayName` and is answered as `name`, which is the api's own asymmetry.
      */
     const memberWritten = (
-      base: Record<string, unknown>,
-      body: Record<string, unknown>,
-    ): Record<string, unknown> => ({
+      base: Pick<Wire<BoardMemberResponse>, "id" | "boardId" | "userId" | "version" | "createdAt">,
+      body: Wire<UpdateBoardMemberRequest>,
+    ): Wire<BoardMemberResponse> => ({
       ...base,
       role: body.role,
       name: body.displayName ?? null,
@@ -1416,7 +1494,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
     if (method === "POST" && /^\/boards\/\d+\/members$/.test(path)) {
       const boardId = Number(path.split("/")[2])
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<AddBoardMemberRequest>
       nextMemberId += 1
       const made = memberWritten({
         id: nextMemberId,
@@ -1426,31 +1504,31 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         createdAt: "2026-01-02T00:00:00Z",
       }, body)
       const board = boardHolding(boardId)
-      if (board) membersOf(board).push(made)
-      return fulfillJson(route, made, 201)
+      board?.members.push(made)
+      return answer(route, "addMember", made, 201)
     }
     if (method === "PUT" && /^\/boards\/\d+\/members\/\d+$/.test(path)) {
       const boardId = Number(path.split("/")[2])
       const id = Number(path.split("/")[4])
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const members = membersOf(boardHolding(boardId) ?? {})
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<UpdateBoardMemberRequest>
+      const members = membersOf(boardHolding(boardId))
       const at = members.findIndex((one) => Number(one.id) === id)
       if (at === -1) return fulfillJson(route, {detail: "No such member."}, 404)
       const saved = {...memberWritten(members[at]!, body), version: 1}
       members[at] = saved
-      return fulfillJson(route, saved)
+      return answer(route, "updateMember", saved)
     }
     // A null account detaches the member, which keeps standing under its own name.
     if (method === "PUT" && /^\/boards\/\d+\/members\/\d+\/member$/.test(path)) {
       const boardId = Number(path.split("/")[2])
       const id = Number(path.split("/")[4])
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const members = membersOf(boardHolding(boardId) ?? {})
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<LinkBoardMemberRequest>
+      const members = membersOf(boardHolding(boardId))
       const at = members.findIndex((one) => Number(one.id) === id)
       if (at === -1) return fulfillJson(route, {detail: "No such member."}, 404)
       const linked = {...members[at]!, userId: body.userId ?? null, version: 1}
       members[at] = linked
-      return fulfillJson(route, linked)
+      return answer(route, "linkMember", linked)
     }
     if (method === "DELETE" && /^\/boards\/\d+\/members\/\d+$/.test(path)) {
       const boardId = Number(path.split("/")[2])
@@ -1461,7 +1539,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     // The casual games, kept per page so a spec sees its own adds, archives and removals.
     if (method === "GET" && path === "/games") {
-      return fulfillJson(route, casualNow())
+      return answer(route, "findCasualGames", casualNow())
     }
     if (method === "POST" && path === "/games") {
       const body = JSON.parse(request.postData() ?? "{}") as CasualGameBody
@@ -1474,7 +1552,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         competitionIntro: body.competitionIntro ?? null, esportsChannels: body.esportsChannels ?? [],
       })
       casualEdited.set(code, made)
-      return fulfillJson(route, made, 201)
+      return answer(route, "createCasualGame", made, 201)
     }
     const casualArchive = /^\/games\/([A-Z0-9_]+)\/archived$/.exec(path)
     if (method === "PUT" && casualArchive) {
@@ -1484,12 +1562,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const {archived} = JSON.parse(request.postData() ?? "{}") as {archived: boolean}
       const changed = {...now, archived}
       casualEdited.set(code, changed)
-      return fulfillJson(route, changed)
+      return answer(route, "archiveGame", changed)
     }
     const casualHoldings = /^\/games\/([A-Z0-9_]+)\/holdings$/.exec(path)
     if (method === "GET" && casualHoldings) {
       const teams = teamsHeldBy(casualHoldings[1]!)
-      return fulfillJson(route, {channels: 1, committees: 0, events: 2, teams, players: teams * 3})
+      return answer(route, "findGameHoldings", {channels: 1, committees: 0, events: 2, teams, players: teams * 3})
     }
     const casualOne = /^\/games\/([A-Z0-9_]+)$/.exec(path)
     if (method === "PUT" && casualOne) {
@@ -1506,7 +1584,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         competitionIntro: body.competitionIntro ?? null, esportsChannels: body.esportsChannels ?? now.esportsChannels,
       }
       casualEdited.set(code, changed)
-      return fulfillJson(route, changed)
+      return answer(route, "updateCasualGame", changed)
     }
     if (method === "DELETE" && casualOne) {
       const teams = teamsHeldBy(casualOne[1]!)
@@ -1528,19 +1606,19 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         .filter(one => !records.some(held => held.code === one.code))
         .map(one => competitionOf(one))
       const all = [...records, ...added].filter(one => !gamesGone.has(String(one.code)) && !casualGone.has(String(one.code)))
-      return fulfillJson(route, all)
+      return answer(route, "findGames", all)
     }
     // [A-Z0-9_]+ rather than [A-Z_]+: a game's enum name can carry a digit, and
     // CS2 is one. With the digit excluded this route never matched, so every CS2
     // page in the suite silently rendered as having no teams.
     if (method === "GET" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
-      const game = path.split("/").pop()
+      const game = path.split("/").pop() ?? ""
       const requested = url.searchParams.get("seasonId")
       const fresh = requested != null ? written.get(Number(requested)) : undefined
       if (fresh) {
         // Nobody has been fielded in it yet, which is the answer rather than a reason to
         // show a different season's teams.
-        return fulfillJson(route, {game, season: fresh, seasons: esportsSeasons, teams: []})
+        return answer(route, "findGame", {game, season: fresh, seasons: esportsSeasons, teams: []})
       }
       // Asked about no season in particular, the api answers with the newest season *this
       // game* was fielded in — which is a different season per game, and the whole reason a
@@ -1550,28 +1628,28 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const page = fixtures.esportsPages?.[requested ?? ownNewest]
         ?? esportsPageBySeason[requested ?? ownNewest]
         ?? esportsPageBySeason["20"]
-      const offered = (page.seasons as Array<{id: number}>)
+      const offered = page.seasons
         .filter(one => !gone.has(one.id))
         .filter(one => game !== "CSGO" || one.id === 19)
-      const shownSeason = Number((page.season as {id: number} | undefined)?.id ?? requested ?? 20)
-      return fulfillJson(route, {
+      const shownSeason = Number(page.season?.id ?? requested ?? 20)
+      return answer(route, "findGame", {
         ...page,
         game,
         seasons: offered,
-        teams: teamsOfGameInSeason(String(game), shownSeason),
+        teams: teamsOfGameInSeason(game, shownSeason),
       })
     }
     if (method === "POST" && path === "/esports/seasons") {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const season = {id: 41, ...body}
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<SeasonRequest>
+      const season = aSeason({...body, id: 41})
       written.set(41, season)
-      return fulfillJson(route, season, 201)
+      return answer(route, "createSeason", season, 201)
     }
     if (method === "GET" && /^\/esports\/seasons\/\d+\/contents$/.test(path)) {
       const seasonId = Number(path.split("/")[3])
       const held = roster.filter(one => one.seasonId === seasonId)
       const teamsHeld = new Set(held.map(one => one.teamId))
-      return fulfillJson(route, {teams: teamsHeld.size, players: held.length})
+      return answer(route, "findSeasonContents", {teams: teamsHeld.size, players: held.length})
     }
     if (method === "DELETE" && /^\/esports\/seasons\/\d+$/.test(path)) {
       const seasonId = Number(path.split("/").pop())
@@ -1588,10 +1666,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return route.fulfill({status: 204, body: ""})
     }
     if (method === "PUT" && /^\/esports\/seasons\/\d+$/.test(path)) {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const season = {id: Number(path.split("/").pop()), ...body}
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<SeasonRequest>
+      const season = aSeason({...body, id: Number(path.split("/").pop())})
       written.set(season.id, season)
-      return fulfillJson(route, season)
+      return answer(route, "updateSeason", season)
     }
     // The band: the games of one season, and whether a visitor sees each. The rule turns on
     // who is asking, exactly as the api has it.
@@ -1605,12 +1683,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         .map(code => ({game: code, teams: teamsOfGameInSeason(code, seasonId)}))
         .filter(one => one.teams.length > 0)
         .map(one => ({...one, public: true}))
-      if (!board) return fulfillJson(route, played)
+      if (!board) return answer(route, "findSeasonGames", played)
       const shown = new Set(played.map(one => one.game))
       const quiet = gamesEntered
         .filter(one => one.seasonId === seasonId && !shown.has(one.game) && !gamesGone.has(one.game))
-        .map(one => ({game: one.game, teams: [] as unknown[], public: false}))
-      return fulfillJson(route, [...played, ...quiet].sort(
+        .map(one => ({game: one.game, teams: [], public: false}))
+      return answer(route, "findSeasonGames", [...played, ...quiet].sort(
         (a, b) => codes.indexOf(a.game) - codes.indexOf(b.game),
       ))
     }
@@ -1622,7 +1700,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         gamesEntered.push({seasonId, game})
       }
       const teams = teamsOfGameInSeason(game, seasonId)
-      return fulfillJson(route, {game, teams, public: teams.length > 0})
+      return answer(route, "enterGame", {game, teams, public: teams.length > 0})
     }
     if (method === "DELETE" && /^\/esports\/seasons\/\d+\/games\/[A-Z0-9_]+$/.test(path)) {
       const parts = path.split("/")
@@ -1632,7 +1710,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       if (held.length > 0) {
         const known = (fixtures.esportsGames ?? esportsGames)
           .find(one => one.code === game)
-        return fulfillJson(route, {
+        return answer(route, "leaveGame", {
           detail: "That game cannot be taken out of the season.",
           code: "GameFieldedInSeason",
           gameName: known?.name ?? game,
@@ -1646,20 +1724,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/esports/seasons") {
       // A season saved over a fixture one takes its place rather than joining it.
       const all = [
-        ...(fixtures.esportsSeasons ?? esportsSeasons).filter(one => !written.has(Number((one as {id: number}).id))),
+        ...(fixtures.esportsSeasons ?? esportsSeasons).filter(one => !written.has(one.id)),
         ...written.values(),
       ]
-      return fulfillJson(route, all
-        .filter(one => !gone.has(Number((one as {id: number}).id)))
-        // Whether anything was played in a season is the api's answer, and a visitor's strip
-        // carries those. A fixture season is one the association played unless it says not.
-        .map(one => ({played: true, ...(one as Record<string, unknown>)})))
+      return answer(route, "findSeasons", all.filter(one => !gone.has(one.id)))
     }
     if (method === "POST" && path === "/files/images") {
       // What was chosen, read out of the multipart body: the api tells a vector from a bitmap
       // and answers differently, so a mock that answered the same for both would hide it.
       const chose = request.postDataBuffer()?.includes("image/svg+xml") ?? false
-      return fulfillJson(route, storePicture(url.searchParams.get("type") ?? "", chose), 201)
+      return answer(route, "uploadPublicImage", storePicture(url.searchParams.get("type") ?? "", chose), 201)
     }
     // A real image rather than an empty body: a url that resolves to nothing still sets an
     // `src`, so only an image that actually decodes proves the page is pointing at the api.
@@ -1722,30 +1796,28 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         {id: 2, name: "BS SpicyWater", icon: null},
         {id: 3, name: "BS Old Guard", icon: null},
       ]
-      return fulfillJson(route, [...known, ...teamsMade])
+      return answer(route, "findTeams", [...known, ...teamsMade])
     }
     if (method === "POST" && path === "/esports/teams") {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<TeamRequest>
       nextTeamId += 1
-      const banner = pictureNamed(body.banner)
       const icon = pictureNamed(body.icon)
       const team = {id: nextTeamId, name: body.name, icon: icon ?? null}
       teamsMade.push(team)
-      if (banner) teamBanners.set(nextTeamId, banner)
       if (icon) teamIcons.set(nextTeamId, icon)
-      return fulfillJson(route, team, 201)
+      return answer(route, "createTeam", team, 201)
     }
     // The logo is part of this write, so a save naming none takes the team's away — which is
     // what the picker's Remove means once the dialog around it is saved. The banner is not
     // here: it belongs to the fielding, and is written with the season.
     if (method === "PUT" && /^\/esports\/teams\/\d+$/.test(path)) {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<TeamRequest>
       const id = Number(path.split("/").pop())
       const icon = pictureNamed(body.icon)
       renamed.set(id, {name: body.name, banner: teamBanners.get(id) ?? null, icon: icon ?? null})
       if (icon) teamIcons.set(id, icon)
       else teamIcons.delete(id)
-      return fulfillJson(route, {id, name: body.name, icon: icon ?? null})
+      return answer(route, "updateTeam", {id, name: body.name, icon: icon ?? null})
     }
     if (method === "DELETE" && /^\/esports\/teams\/\d+$/.test(path)) {
       goneTeams.add(Number(path.split("/").pop()))
@@ -1755,21 +1827,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       // Only the one team in these fixtures has a line-up behind it to carry from. A fielding
       // rather than a season, because a team that played two games in one season has two.
       const teamId = Number(path.split("/")[3])
-      return fulfillJson(route, teamId === 3 ? [{game: "VALORANT", season: esportsSeasons[1]}] : [])
+      return answer(route, "findTeamSeasons", teamId === 3 ? [{game: "VALORANT", season: esportsSeasons[1]}] : [])
     }
     // One Save: the team, this season's art, the entries taken off and everybody else in order,
     // applied whole as the api does.
     if (method === "PUT" && /^\/esports\/seasons\/\d+\/lineup$/.test(path)) {
       const seasonId = Number(path.split("/")[3])
-      const body = JSON.parse(request.postData() ?? "{}") as {
-        teamId?: number | null
-        name?: string
-        icon?: string | null
-        game?: string
-        banner?: string | null
-        removed?: number[]
-        entries?: Array<Record<string, unknown>>
-      }
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<PublishLineupRequest>
       const icon = pictureNamed(body.icon)
       let teamId = body.teamId ?? null
       if (teamId == null) {
@@ -1793,30 +1857,32 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         if (at >= 0) roster.splice(at, 1)
       }
       const saved = (body.entries ?? []).map((entry, sortIndex) => {
-        let row = entry.id == null ? undefined : roster.find(one => one.id === entry.id)
-        if (!row) {
-          nextEntryId += 1
-          row = {id: nextEntryId, teamId, seasonId}
-          roster.push(row)
-          seated?.members.push({role: entry.role, handle: entry.handle, name: null})
-        }
-        Object.assign(row, {
+        const fields = {
           handle: entry.handle, role: entry.role, displayName: entry.displayName ?? null,
           userId: entry.userId ?? null, sortIndex, roleTitle: entry.roleTitle ?? null,
           description: entry.description ?? null,
-        })
+        }
+        let row = entry.id == null ? undefined : roster.find(one => one.id === entry.id)
+        if (row) {
+          Object.assign(row, fields)
+        } else {
+          nextEntryId += 1
+          row = {id: nextEntryId, teamId, seasonId, ...fields}
+          roster.push(row)
+          seated?.members.push({role: entry.role, handle: entry.handle, name: null})
+        }
         const picture = pictureNamed(entry.icon)
         if (picture) icons.set(Number(row.id), picture)
         else icons.delete(Number(row.id))
         return {...row, icon: picture ?? null}
       })
-      return fulfillJson(route, {team: {id: teamId, name: body.name, icon: icon ?? null}, roster: saved})
+      return answer(route, "publishLineup", {team: {id: teamId, name: body.name, icon: icon ?? null}, roster: saved})
     }
     if (method === "PUT" && /^\/esports\/seasons\/\d+\/teams\/\d+$/.test(path)) {
       const parts = path.split("/")
       const seasonId = Number(parts[3])
       const teamId = Number(parts[5])
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<FieldTeamRequest>
       const team = [...(fixtures.esportsTeams ?? []), ...teamsMade,
         {id: 1, name: "BS Waterboarders"},
         {id: 2, name: "BS SpicyWater"},
@@ -1828,7 +1894,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       // What comes across is the line-up that was asked for, read from the same rows the
       // picker reads. A named source wins over "the most recent in this game"; carrying a
       // line-up the picker showed and a different one arriving is the bug this would hide.
-      const from = body.carryFrom as {game?: string; seasonId?: number} | undefined
+      const from = body.carryFrom
       const source = from?.seasonId != null
         ? roster.filter(one => one.teamId === teamId && one.seasonId === from.seasonId)
         : body.carryLineup === true
@@ -1836,7 +1902,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           : []
       const carried = source.map(asMember)
       fieldedNow.push({seasonId, teamId, game: String(body.game ?? "VALORANT"), members: carried})
-      return fulfillJson(route, {
+      return answer(route, "fieldTeam", {
         team,
         game: body.game ?? "VALORANT",
         banner: teamBanners.get(teamId) ?? null,
@@ -1848,15 +1914,15 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       })
     }
     if (method === "GET" && /^\/esports\/teams\/\d+\/roster$/.test(path)) {
-      if (fixtures.esportsRoster) return fulfillJson(route, fixtures.esportsRoster)
+      if (fixtures.esportsRoster) return answer(route, "findRoster", fixtures.esportsRoster)
       const teamId = Number(path.split("/")[3])
       const seasonId = Number(url.searchParams.get("seasonId"))
-      return fulfillJson(route, roster
+      return answer(route, "findRoster", roster
         .filter(one => one.teamId === teamId && one.seasonId === seasonId)
         .map(one => ({...one, icon: icons.get(Number(one.id)) ?? null})))
     }
     if (method === "PUT" && /^\/esports\/roster\/\d+$/.test(path)) {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<UpdateRosterEntryRequest>
       const id = Number(path.split("/").pop())
       const entry = roster.find(one => one.id === id)
       if (entry) Object.assign(entry, {
@@ -1866,7 +1932,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const icon = pictureNamed(body.icon)
       if (icon) icons.set(id, icon)
       else icons.delete(id)
-      return fulfillJson(route, {...(entry ?? {}), icon})
+      if (!entry) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+      return answer(route, "updateRosterEntry", {...entry, icon})
     }
     if (method === "DELETE" && /^\/esports\/roster\/\d+$/.test(path)) {
       const id = Number(path.split("/").pop())
@@ -1875,47 +1942,49 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return route.fulfill({status: 204, body: ""})
     }
     if (method === "POST" && /^\/esports\/teams\/\d+\/roster$/.test(path)) {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<AddRosterEntryRequest>
       const teamId = Number(path.split("/")[3])
       nextEntryId += 1
       const seated = fieldedNow.find(one => one.teamId === teamId && one.seasonId === body.seasonId)
       seated?.members.push({role: body.role, handle: body.handle, name: null})
-      roster.push({
+      const added = {
         id: nextEntryId, teamId, seasonId: body.seasonId, role: body.role, handle: body.handle,
         displayName: body.displayName ?? null, userId: body.userId ?? null,
-        sortIndex: body.sortIndex ?? roster.length, roleTitle: body.roleTitle ?? null,
+        sortIndex: roster.length, roleTitle: body.roleTitle ?? null,
         description: body.description ?? null,
-      })
+      }
+      roster.push(added)
       const icon = pictureNamed(body.icon)
       if (icon) icons.set(nextEntryId, icon)
-      return fulfillJson(route, {id: nextEntryId, teamId, seasonId: body.seasonId, role: body.role, handle: body.handle, displayName: body.displayName ?? null, userId: null, sortIndex: 2, icon}, 201)
+      return answer(route, "addRosterEntry", {...added, icon}, 201)
     }
     if (method === "PUT" && /^\/esports\/roster\/\d+\/member$/.test(path)) {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const body = JSON.parse(request.postData() ?? "{}") as Wire<LinkRosterEntryRequest>
       const id = Number(path.split("/")[3])
       const entry = roster.find(one => one.id === id)
-      if (entry) entry.userId = body.userId ?? null
-      return fulfillJson(route, entry ?? {id, userId: body.userId ?? null})
+      if (!entry) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+      entry.userId = body.userId ?? null
+      return answer(route, "linkRosterEntry", entry)
     }
     if (method === "GET" && /^\/users\/\d+\/rosters$/.test(path)) {
-      return fulfillJson(route, [
+      return answer(route, "findPlayedRosters", [
         {game: "VALORANT", seasonId: 1, seasonName: "Spring 2026", seasonStart: "2026-02-01", teamId: 3, teamName: "Blue Shells", role: "PLAYER", roleTitle: "Captain"},
       ])
     }
     if (method === "PUT" && /^\/users\/\d+\/name-on-rosters$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as {shown?: boolean}
       const id = Number(path.split("/")[2])
-      return fulfillJson(route, {id, fullName: "Mock User", roles: cookieLogin?.roles ?? ["MEMBER"], nameOnRosters: body.shown === true})
+      return answer(route, "setNameOnRosters", aUser({id, fullName: "Mock User", roles: cookieLogin?.roles ?? ["MEMBER"], nameOnRosters: body.shown === true}))
     }
     if (method === "GET" && /^\/users\/\d+\/game-accounts$/.test(path)) {
-      return fulfillJson(route, [{id: 5, userId: 1, game: "VALORANT", handle: "AriosFury"}])
+      return answer(route, "findGameAccounts", [{id: 5, userId: 1, game: "VALORANT", handle: "AriosFury"}])
     }
     if (method === "PUT" && /^\/users\/\d+\/game-accounts\/[A-Z0-9_]+$/.test(path)) {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      return fulfillJson(route, {id: 5, userId: 1, game: path.split("/").pop(), handle: body.handle})
+      const body = JSON.parse(request.postData() ?? "{}") as {handle: string}
+      return answer(route, "setGameAccount", {id: 5, userId: 1, game: path.split("/").pop() ?? "", handle: body.handle})
     }
     if (method === "GET" && path === "/management/cohort-subjects") {
-      return fulfillJson(route, fixtures.cohortSubjects ?? [
+      return answer(route, "findCohortSubjects", fixtures.cohortSubjects ?? [
         {
           id: 101,
           type: "PERIOD_MEMBERS",
@@ -1937,7 +2006,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && /^\/management\/cohort-subjects\/\d+$/.test(path)) {
       const id = Number(path.split("/")[3] ?? "0")
       const isCommittee = id === 102
-      return fulfillJson(route, {
+      return answer(route, "findCohortSubjectById", {
         id,
         type: isCommittee ? "COMMITTEE_MEMBERS" : "PERIOD_MEMBERS",
         category: isCommittee ? "COMMITTEES" : "PERIODS",
@@ -2016,8 +2085,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const id = Number(rawId)
       const index = baseJobs.findIndex((job) => Number(job.id) === id)
       const existing = index >= 0 ? baseJobs[index] : undefined
-      const retried = {
-        ...(existing ?? {id, jobType: "SYNC_DISCORD"}),
+      const retried: Wire<JobExecution> = {
+        ...(existing ?? aJob({id, jobType: "SYNC_DISCORD"})),
         status: "RUNNING",
         attempts: Number(existing?.attempts ?? 0) + 1,
         errorType: null,
@@ -2029,7 +2098,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       } else {
         baseJobs.unshift(retried)
       }
-      return fulfillJson(route, retried)
+      return answer(route, "retry", retried)
     }
     if (method === "GET" && path === "/management/emails/stats") {
       const counts: Record<string, number> = {PENDING: 0, SENT: 0, DELIVERED: 0, OPENED: 0, BOUNCED: 0, FAILED: 0}
@@ -2037,7 +2106,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         const s = toSearchableString(email.deliveryStatus).toUpperCase()
         if (s in counts) counts[s] = (counts[s] ?? 0) + 1
       }
-      return fulfillJson(route, {
+      return answer(route, "getStats1", {
         totalCount: baseEmails.length,
         pendingCount: counts["PENDING"],
         sentCount: counts["SENT"],
@@ -2049,16 +2118,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && /^\/management\/emails\/\d+\/preview$/.test(path)) {
       const id = Number(path.replace(/\D+/g, ""))
-      const email = baseEmails.find((candidate) => Number(candidate["id"]) === id)
-      if (!email || email["previewable"] === false) {
+      const email = baseEmails.find((candidate) => candidate.id === id)
+      if (!email || !email.previewable) {
         return fulfillJson(route, {message: "No stored body"}, 404)
       }
       // As the api answers: already rendered, and already stripped of its urls.
-      return fulfillJson(route, {
-        subject: email["subject"],
-        html: `<html><body><p>Hello ${email["recipientName"]}</p><a href="">Activate your account</a></body></html>`,
-        recipientEmail: email["recipientEmail"],
-        recipientName: email["recipientName"],
+      return answer(route, "previewSentEmail", {
+        subject: email.subject ?? "",
+        html: `<html><body><p>Hello ${email.recipientName}</p><a href="">Activate your account</a></body></html>`,
+        recipientEmail: email.recipientEmail ?? "",
+        recipientName: email.recipientName ?? "",
         linksRedacted: true,
       })
     }
@@ -2095,7 +2164,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const start = safePage * safeSize
       const content = filtered.slice(start, start + safeSize)
 
-      return fulfillJson(route, {
+      return answer(route, "list1", {
         content,
         page: {
           number: safePage,
@@ -2113,62 +2182,61 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       if (existing == null) {
         return fulfillJson(route, {detail: "Not found"}, 404)
       }
-      const retried = {
+      const retried: Wire<Email> = {
         ...existing,
         deliveryStatus: "SENT",
         errorType: null,
         errorReason: null,
       }
       baseEmails.splice(index, 1, retried)
-      return fulfillJson(route, retried)
+      return answer(route, "retry1", retried)
     }
     if (method === "GET" && path === "/signup/session") {
       if (!signupInProgress) return fulfillJson(route, {status: 404, detail: "Invalid or expired recovery token.", code: "RecoveryTokenUnusable"}, 404)
-      return fulfillJson(route, signupInProgress)
+      return answer(route, "resumeSignup", signupInProgress)
     }
     if (method === "POST" && path === "/signup") {
-      const payload = route.request().postDataJSON() as Record<string, unknown> | null
-      const profile = (payload?.memberProfile ?? {}) as Record<string, unknown>
+      const payload = route.request().postDataJSON() as Wire<CreateUserRequest>
+      const profile = payload.memberProfile
       signupInProgress = {
         userId: 9999,
-        email: String(payload?.email ?? "applicant@example.com"),
-        username: String(payload?.username ?? "new-applicant"),
-        initials: String(payload?.initials ?? ""),
-        firstName: String(payload?.firstName ?? ""),
-        prefix: (payload?.prefix ?? null) as string | null,
-        lastName: String(payload?.lastName ?? ""),
-        discord: (payload?.discord ?? null) as string | null,
-        phoneNumber: (payload?.phoneNumber ?? null) as string | null,
-        newsletter: payload?.newsletter === true,
-        photoConsent: payload?.photoConsent === true,
+        email: payload.email,
+        username: payload.username,
+        initials: payload.initials,
+        firstName: payload.firstName,
+        prefix: payload.prefix ?? null,
+        lastName: payload.lastName,
+        discord: payload.discord,
+        phoneNumber: payload.phoneNumber,
+        newsletter: payload.newsletter,
+        photoConsent: payload.photoConsent === true,
         emailConfirmed: false,
         conditionsAccepted: false,
         memberProfile: {
-          dateOfBirth: (profile.dateOfBirth ?? null) as string | null,
-          studentNumber: (profile.studentNumber ?? null) as string | null,
-          gender: (profile.gender ?? null) as string | null,
-          nationality: (profile.nationality ?? "NL") as string,
-          bhv: profile.bhv === true,
-          ehbo: profile.ehbo === true,
-          nameOnRosters: profile.nameOnRosters === true,
+          dateOfBirth: profile?.dateOfBirth ?? null,
+          studentNumber: profile?.studentNumber ?? null,
+          gender: profile?.gender ?? null,
+          nationality: profile?.nationality ?? "NL",
+          bhv: profile?.bhv === true,
+          ehbo: profile?.ehbo === true,
+          nameOnRosters: profile?.nameOnRosters === true,
         },
         address: null,
       }
-      const applicant = {
+      const applicant = aUser({
         id: 9999,
-        username: String(payload?.username ?? "new-applicant"),
-        email: String(payload?.email ?? "applicant@example.com"),
+        username: payload.username,
+        email: payload.email,
         discord: "",
         phoneNumber: "",
         newsletter: true,
-        consentPrivacy: true,
         photoConsent: false,
         roles: ["GUEST"],
         enabled: false,
         version: 0,
-      }
+      })
       baseUsers.push(applicant)
-      return fulfillJson(route, {
+      return answer(route, "signUp", {
         userId: applicant.id,
         email: applicant.email,
         signupToken: "e2e-selector.e2e-verifier",
@@ -2176,68 +2244,73 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }, 201)
     }
     if (method === "POST" && path === "/signup/address") {
-      const body = route.request().postDataJSON() as Record<string, unknown> | null
-      if (signupInProgress && body) signupInProgress.address = body
-      return fulfillJson(route, {}, 204)
+      const body = route.request().postDataJSON() as Wire<SignupAddressRequest>
+      if (signupInProgress) signupInProgress.address = body
+      return route.fulfill({status: 204, body: ""})
     }
     if (method === "POST" && path === "/signup/apply") {
       if (signupInProgress) signupInProgress.conditionsAccepted = true
-      return fulfillJson(route, {emailConfirmed: false, membershipStarted: false})
+      return answer(route, "apply", {emailConfirmed: false, membershipStarted: false})
     }
     if (method === "PATCH" && path === "/signup/details") {
-      return fulfillJson(route, {}, 204)
+      return route.fulfill({status: 204, body: ""})
     }
     if (method === "PATCH" && path === "/signup/email") {
-      return fulfillJson(route, {}, 204)
+      return route.fulfill({status: 204, body: ""})
     }
     if (method === "POST" && path === "/users") {
-      return fulfillJson(route, {id: 999, username: "new-user", email: "new@example.com", discord: "", phoneNumber: "", newsletter: true, consentPrivacy: true, photoConsent: false, roles: ["USER"], enabled: false, version: 0})
+      return answer(route, "createUser", aUser({id: 999, username: "new-user", email: "new@example.com", discord: "", phoneNumber: "", newsletter: true, photoConsent: false, roles: ["GUEST"], enabled: false, version: 0}))
     }
     if (method === "PUT" && path.endsWith("/approve")) {
-      return fulfillJson(route, {...baseEvents[0], approved: true})
+      return answer(route, "approveEvent", {...baseEvents[0], approved: true})
     }
     if (method === "DELETE" && /\/events\/\d+$/.test(path)) {
-      return fulfillJson(route, {}, 204)
+      return route.fulfill({status: 204, body: ""})
     }
     if (method === "GET" && /\/events\/\d+\/banners$/.test(path)) {
       return fulfillJson(route, {}, 404)
     }
     if (method === "POST" && path === "/events") {
-      const body = route.request().postDataJSON() as Record<string, unknown>
-      return fulfillJson(route, {...baseEvents[0], ...body, id: 501}, 201)
+      // The request's banner, form and roles are written differently from how they are answered.
+      const {banner: _banner, signUpForm: _form, pingedRoles: _roles, ...fields} =
+        route.request().postDataJSON() as Wire<CreateEventRequest>
+      return answer(route, "createEvent", {...baseEvents[0]!, ...fields, id: 501}, 201)
     }
     if (method === "POST" && path === "/events/banners") {
-      return fulfillJson(route, {id: 77})
+      return answer(route, "uploadEventBanner", {
+        id: 77, name: "banner.png", path: "files/banner.png", mediaType: "image/png", type: "EVENT_BANNER",
+        createdAt: "2025-01-01T00:00:00Z", updatedAt: "2025-01-01T00:00:00Z", version: 0,
+      })
     }
     if (method === "POST" && /^\/recovery\/users\/\d+\/resend\/recovery$/.test(path)) {
       return route.fulfill({status: 204, contentType: "application/json", body: ""})
     }
 
     if (method === "POST" && /\/recovery\/user\/activate\/resend\//.test(path)) {
-      return fulfillJson(route, {}, 200)
+      return route.fulfill({status: 204, body: ""})
     }
     if (method === "POST" && /\/recovery\/password\/reset\//.test(path)) {
-      return fulfillJson(route, {}, 200)
+      return route.fulfill({status: 204, body: ""})
     }
 
     if (method === "GET" && path === "/csrf") {
-      return fulfillJson(route, {token: "e2e-csrf-token"})
+      return answer(route, "csrf", {token: "e2e-csrf-token"})
     }
     if (method === "GET" && path === "/discord/roles") {
-      return fulfillJson(route, [])
+      return answer(route, "listDiscordRoles", [])
     }
     if (method === "GET" && path === "/recovery/pending-activations") {
-      return fulfillJson(route, {activations: []})
+      return answer(route, "pendingActivations", {activations: []})
     }
     if (method === "POST" && path === "/recovery/user/activate") {
-      return fulfillJson(route, {membershipStarted: false})
+      return answer(route, "userActivate", {membershipStarted: false})
     }
     if (method === "DELETE" && /^\/events\/signups\/\d+$/.test(path)) {
       return route.fulfill({status: 204, contentType: "application/json", body: ""})
     }
     const profileOf = /^\/users\/(\d+)\/memberProfiles$/.exec(path)
     if (method === "GET" && profileOf) {
-      return fulfillJson(route, {
+      return answer(route, "findMemberProfileByUserId", {
         id: Number(profileOf[1]), userId: Number(profileOf[1]), bhv: false, ehbo: false, nameOnRosters: true,
         createdAt: "2024-01-01T00:00:00.000Z", updatedAt: "2024-01-01T00:00:00.000Z", version: 0,
       })
@@ -2246,10 +2319,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && addressId) {
       const id = Number(addressId[1])
       // The login cookie names address 10 as the member's own, which the address list does not hold.
-      const address = baseAddresses.find(one => Number(one.id) === id)
-        ?? (id === 10 ? {id, userId: 1, street: "Main", houseNumber: "1", zipCode: "1234AB", city: "Enschede", country: "NL"} : null)
+      const address = baseAddresses.find(one => one.id === id)
+        ?? (id === 10 ? anAddress({id, userId: 1, street: "Main", houseNumber: "1", zipCode: "1234AB", city: "Enschede", country: "NL"}) : null)
       if (!address) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
-      return fulfillJson(route, {createdAt: "2024-01-01T00:00:00.000Z", updatedAt: "2024-01-01T00:00:00.000Z", version: 0, ...address})
+      return answer(route, "findAddressById", address)
     }
 
     // An empty 200 let a new endpoint pass here and fail far from its cause.
@@ -2280,13 +2353,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
   await page.route("https://discordapp.com/api/guilds/**/widget.json", async (route) => {
     return fulfillJson(route, {
+      id: "324285132133629963",
+      name: "ESA Blueshell",
+      instant_invite: null,
       presence_count: 2,
       channels: [{id: "9", name: "AFK", position: 0}, {id: "1", name: "General", position: 1}],
       members: [
-        {username: "Emma", status: "online", avatar_url: "", channel_id: "1"},
-        {username: "Viktor", status: "idle", avatar_url: "", channel_id: "1"},
+        {id: "0", username: "Emma", status: "online", avatar_url: "", channel_id: "1"},
+        {id: "1", username: "Viktor", status: "idle", avatar_url: "", channel_id: "1"},
       ],
-    })
+    } satisfies WidgetResponse)
   })
 
   await page.route("https://discord.com/api/v10/invites/**", async (route) => {

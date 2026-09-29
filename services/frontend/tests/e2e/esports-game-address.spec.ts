@@ -1,5 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
+import {anEsportsGame} from "./records"
 
 /**
  * One page serves every game, found by the address its record names. A game used to gain a page
@@ -43,8 +44,8 @@ test.describe("a game's page, by its address", () => {
   test("a game gains a page by having a record, with no route written for it", async ({page}) => {
     await installApiMocks(page, {
       esportsGames: [
-        {code: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
-          intro: "Two paddles and a ball.", sortIndex: 1, current: true},
+        anEsportsGame({code: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
+          intro: "Two paddles and a ball.", sortIndex: 1, current: true}),
       ],
     })
 

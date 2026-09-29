@@ -1,5 +1,7 @@
 import {expect, test, type Page} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
+import {aSeason, type Wire} from "./records"
+import type {TeamRosterResponse} from "@/services/api"
 
 /**
  * Two seasons of the same size, for the specs about where the reader is left standing.
@@ -13,13 +15,13 @@ import {installApiMocks, loginAsBoard} from "./mocks"
  * that left.
  */
 const evenSeasons = [
-  {id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"},
-  {id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31"},
+  aSeason({id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}),
+  aSeason({id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31"}),
 ]
 
 // Never id 1: that team's line-up is answered from the roster the admin specs write, which
 // would make one of the four a different height from the other three.
-const squad = (id: number, name: string) => ({
+const squad = (id: number, name: string): Wire<TeamRosterResponse> => ({
   id,
   name: `BS ${name}`,
   banner: null,
@@ -167,7 +169,7 @@ test.describe("moving around the esports pages", () => {
   })
 
   test("the strip holds a season's width however long the history is", async ({page}) => {
-    const many = Array.from({length: 12}, (_, i) => ({
+    const many = Array.from({length: 12}, (_, i) => aSeason({
       id: 40 + i,
       name: `Season ${2014 + i}/${String(15 + i).padStart(2, "0")}`,
       startDate: `${2014 + i}-09-01`,

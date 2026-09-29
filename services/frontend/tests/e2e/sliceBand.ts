@@ -134,7 +134,9 @@ export async function landingFrom(
     const handle = await page.waitForFunction(() => (window as unknown as {
       __landing?: {open: boolean, panels: number}
     }).__landing ?? null)
-    return handle.jsonValue()
+    const landed = await handle.jsonValue()
+    if (!landed) throw new Error("the slice was not seen landing")
+    return landed
   }
 }
 

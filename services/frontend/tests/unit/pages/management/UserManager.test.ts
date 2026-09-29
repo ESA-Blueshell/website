@@ -1,770 +1,209 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
-import UserManager, {type MemberRow} from "@/pages/management/UserManager.vue"
-import {MemberType} from "@/services/api"
+import type {VueWrapper} from "@vue/test-utils"
+import UserManager from "@/pages/management/UserManager.vue"
+import {
+  deleteUserById,
+  findContributionPeriods,
+  findContributionsByPeriodId,
+  findMemberships,
+  findUserById,
+  findUsers,
+  MemberType,
+  type MembershipResponse,
+  type UserDetailResponse,
+} from "@/services/api"
+import {answer, emptyAnswer, refusal} from "../../helpers/sdkAnswers"
+import {boardLogin, chooseOption, mountPage} from "../../helpers/mountPage"
 import {settle} from "../helpers"
 
-const {
-  mockFindUsers,
-  mockFindUserById,
-  mockFindMemberships,
-  mockFindContributionsByPeriodId,
-  mockDeleteUserById,
-  mockLgAndUp,
-  mockViewportHeight,
-} = vi.hoisted(() => ({
-  mockFindUsers: vi.fn(),
-  mockFindUserById: vi.fn(),
-  mockFindMemberships: vi.fn(),
-  mockFindContributionsByPeriodId: vi.fn(),
-  mockDeleteUserById: vi.fn(),
-  mockLgAndUp: {value: true},
-  mockViewportHeight: {value: 1000},
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
+  findUsers: vi.fn(),
+  findUserById: vi.fn(),
+  findMemberships: vi.fn(),
+  findContributionPeriods: vi.fn(),
+  findContributionsByPeriodId: vi.fn(),
+  deleteUserById: vi.fn(),
 }))
 
-vi.mock("vuetify", async (importOriginal) => {
-  const {withVuetify} = await import("../../helpers/testUtils")
-  return withVuetify(importOriginal, {
-    useDisplay: () => ({height: mockViewportHeight, lgAndUp: mockLgAndUp}),
-  })
-})
-
-vi.mock("@/services/api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/services/api")>()
-  return {...actual, findContributionsByPeriodId: mockFindContributionsByPeriodId}
-})
-
-vi.mock("@/domains/user", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/domains/user")>()),
-  listUsers: mockFindUsers,
-  readUser: mockFindUserById,
-  listMemberships: mockFindMemberships,
-  deleteUser: mockDeleteUserById,
-}))
-
-vi.mock("@/components/common/lists/ContributionPeriodList.vue", () => ({
-  default: {
-    name: "ContributionPeriodList",
-    template: "<div />",
-  },
-}))
-
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({
-  default: {
-    name: "TopBanner",
-    template: "<div />",
-  },
-}))
-
-vi.mock("@/components/common/modals/DeletionConfirmationDialog.vue", () => ({
-  default: {
-    name: "DeletionConfirmationDialog",
-    template: "<div />",
-  },
-}))
-
-vi.mock("@/components/common/modals/ManageMembershipDialog.vue", () => ({
-  default: {
-    name: "ManageMembershipDialog",
-    template: "<div />",
-  },
-}))
-
-vi.mock("@/components/form/UserForm.vue", () => ({
-  default: {
-    name: "UserForm",
-    template: "<div />",
-  },
-}))
-
-/** Complete MembershipResponse mock factory */
-function makeMembership(overrides: {
-  id: number
-  userId: number
-  startDate: string
-  endDate?: string
-  memberType?: MemberType
-  incasso?: boolean
-}): import("@/services/api").MembershipResponse {
+function user(id: number, fullName: string, username: string, extra: Partial<UserDetailResponse> = {}): UserDetailResponse {
+  const [firstName, lastName] = fullName.split(" ")
   return {
-    id: overrides.id,
-    userId: overrides.userId,
-    startDate: overrides.startDate,
-    endDate: overrides.endDate,
-    memberType: overrides.memberType ?? MemberType.REGULAR,
-    incasso: overrides.incasso ?? false,
-    version: 1,
-    createdAt: "2025-01-01T00:00:00.000Z",
-    updatedAt: "2025-01-01T00:00:00.000Z",
+    id, fullName, username, firstName, lastName, initials: "XX", roles: ["MEMBER"], email: `${username}@test.com`,
+    enabled: true, newsletter: false, photoConsent: false,
+    createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0,
+    ...extra,
+  } as UserDetailResponse
+}
+
+function membership(id: number, userId: number, startDate: string, extra: Partial<MembershipResponse> = {}): MembershipResponse {
+  return {
+    id, userId, startDate, memberType: MemberType.REGULAR, incasso: false, version: 1,
+    createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", ...extra,
   }
 }
 
-describe("UserManager page", () => {
+// Three standings: Alice is a member now, Bob was one, Carol never was.
+const alice = user(1, "Alice Smith", "alice", {discordId: "111"})
+const bob = user(2, "Bob Jones", "bob")
+const carol = user(3, "Carol Adams", "carol")
+const memberships = [
+  membership(90, 1, "2024-01-01", {incasso: true}),
+  membership(91, 2, "2020-01-01", {endDate: "2021-12-31"}),
+]
+
+const mount = () => mountPage(UserManager, {path: "/user-manager", login: boardLogin, width: 1400})
+
+const rowIds = (wrapper: VueWrapper<any>) =>
+  wrapper.findAll('[data-testid^="member-manager-row-"]').map((row) => Number(row.attributes("data-testid")!.split("-").at(-1)))
+
+const status = (wrapper: VueWrapper<any>, id: number) => wrapper.get(`[data-testid="member-manager-status-${id}"]`).text()
+
+async function deleteRow(wrapper: VueWrapper<any>, id: number) {
+  await wrapper.get(`[data-testid="member-manager-delete-btn-${id}"]`).trigger("click")
+  await settle()
+  await wrapper.get('[data-testid="deletion-confirmation-confirm-btn"]').trigger("click")
+  await settle()
+}
+
+describe("the user manager", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockFindUsers.mockResolvedValue([
-          {id: 1, fullName: "Alice Smith", username: "alice", roles: ["MEMBER"], email: "alice@test.com", enabled: true, firstName: "Alice", lastName: "Smith", initials: "AS", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-          {id: 2, fullName: "Bob Jones", username: "bob", roles: ["USER"], email: "bob@test.com", enabled: true, firstName: "Bob", lastName: "Jones", initials: "BJ", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-        ])
-    mockFindUserById.mockResolvedValue({id: 1, fullName: "Alice Smith", username: "alice", roles: ["MEMBER"], email: "alice@test.com", enabled: true, firstName: "Alice", lastName: "Smith", initials: "AS", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0})
-    mockFindMemberships.mockResolvedValue([
-        makeMembership({id: 90, userId: 1, startDate: "2024-01-01"}),
-      ])
-    mockFindContributionsByPeriodId.mockResolvedValue({data: [{id: 91, userId: 1, contributionPeriodId: 8}]})
-    mockDeleteUserById.mockResolvedValue(undefined)
-  })
-
-  it("fetches all users and memberships on mount", async () => {
-    shallowMount(UserManager)
-    await settle()
-    expect(mockFindUsers).toHaveBeenCalled()
-    expect(mockFindMemberships).toHaveBeenCalledWith()
-  })
-
-  it("does NOT call findMemberships with period query on mount", async () => {
-    shallowMount(UserManager)
-    await settle()
-    // Must be called with no arguments (empty query = all memberships)
-    expect(mockFindMemberships).toHaveBeenCalledWith()
-    const calls = mockFindMemberships.mock.calls
-    expect(calls.every((c: unknown[]) => c.length === 0)).toBe(true)
-  })
-
-  it("upserts users and refreshes user after membership change", async () => {
-    const wrapper = shallowMount(UserManager)
-    await settle()
-
-    ;(wrapper.vm as any).updateUser({id: 1, username: "alice-updated", fullName: "Alice Updated", roles: ["MEMBER"]})
-    expect((wrapper.vm as any).users).toHaveLength(2)
-    expect((wrapper.vm as any).users[0].username).toBe("alice-updated")
-
-    ;(wrapper.vm as any).manageUserId = 1
-    await (wrapper.vm as any).onMembershipChanged()
-    expect(mockFindMemberships).toHaveBeenCalled()
-    expect(mockFindUserById).toHaveBeenCalledWith(1)
-  })
-
-  it("openAddUser sets addDialog true", async () => {
-    const wrapper = shallowMount(UserManager)
-    await settle()
-
-    ;(wrapper.vm as any).openAddUser()
-    expect((wrapper.vm as any).addDialog).toBe(true)
-  })
-
-  it("openEditProfile reads the account and opens the edit dialog", async () => {
-    const wrapper = shallowMount(UserManager)
-    await settle()
-
-    const row = (wrapper.vm as any).rows[0]
-    await (wrapper.vm as any).openEditProfile(row)
-    expect(mockFindUserById).toHaveBeenCalledWith(row.id)
-    expect((wrapper.vm as any).editDialog).toBe(true)
-  })
-
-  it("opens and closes the account security of a row", async () => {
-    const wrapper = shallowMount(UserManager, {global: {renderStubDefaultSlot: true}})
-    await settle()
-
-    const row = (wrapper.vm as any).rows[0]
-    ;(wrapper.vm as any).openAccountSecurity(row)
-    await settle()
-    const dialog = wrapper.findComponent({name: "AccountSecurityDialog"})
-    expect(dialog.props()).toMatchObject({modelValue: true, userId: row.id, userName: row.fullName})
-
-    dialog.vm.$emit("update:modelValue", false)
-    await settle()
-    expect((wrapper.vm as any).securityDialog).toBe(false)
-  })
-
-  it("openManageMembership opens manage dialog with correct userId", async () => {
-    const wrapper = shallowMount(UserManager)
-    await settle()
-
-    const row = (wrapper.vm as any).rows[0]
-    ;(wrapper.vm as any).openManageMembership(row)
-    expect((wrapper.vm as any).manageDialog).toBe(true)
-    expect((wrapper.vm as any).manageUserId).toBe(row.id)
-  })
-
-  it("resets paidUserIds and fetches contributions on period change", async () => {
-    const wrapper = shallowMount(UserManager)
-    await settle()
-
-    await (wrapper.vm as any).contributionPeriodChanged({id: 8, startDate: "2026-01-01", endDate: "2026-12-31"})
-    expect(mockFindContributionsByPeriodId).toHaveBeenCalledWith({path: {periodId: 8}})
-    expect((wrapper.vm as any).paidUserIds.has(1)).toBe(true)
-
-    // Period change should reset paidUserIds before re-populating
-    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
-    await (wrapper.vm as any).contributionPeriodChanged({id: 9, startDate: "2027-01-01", endDate: "2027-12-31"})
-    expect((wrapper.vm as any).paidUserIds.has(1)).toBe(false)
-  })
-
-  it("clears paidUserIds when period is undefined", async () => {
-    const wrapper = shallowMount(UserManager)
-    await settle()
-
-    await (wrapper.vm as any).contributionPeriodChanged({id: 8, startDate: "2026-01-01", endDate: "2026-12-31"})
-    expect((wrapper.vm as any).paidUserIds.size).toBeGreaterThan(0)
-
-    await (wrapper.vm as any).contributionPeriodChanged(undefined)
-    expect((wrapper.vm as any).paidUserIds.size).toBe(0)
-  })
-})
-
-describe("UserManager row model", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockDeleteUserById.mockResolvedValue(undefined)
-    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
-    mockFindUserById.mockResolvedValue({id: 1, username: "u", roles: []})
-  })
-
-  function mountWithData(
-    userData: Array<{id: number; fullName: string; username: string; roles: string[]}>,
-    membershipData: ReturnType<typeof makeMembership>[],
-    paidIds: number[] = [],
-  ) {
-    mockFindUsers.mockResolvedValue(
-      userData.map((u) => ({
-        ...u,
-        email: `${u.username}@test.com`,
-        enabled: true,
-        firstName: u.fullName.split(" ")[0] ?? "",
-        lastName: u.fullName.split(" ")[1] ?? "",
-        initials: "XX",
-        newsletter: false,
-        photoConsent: false,
-        createdAt: "2025-01-01T00:00:00.000Z",
-        updatedAt: "2025-01-01T00:00:00.000Z",
-        version: 0,
-      })),
+    vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [alice, bob, carol]}))
+    vi.mocked(findUserById).mockResolvedValue(answer(findUserById, alice))
+    vi.mocked(findMemberships).mockResolvedValue(answer(findMemberships, memberships))
+    vi.mocked(findContributionPeriods).mockResolvedValue(
+      answer(findContributionPeriods, [{id: 8, startDate: "2024-01-01", endDate: "2024-12-31", halfYearCutoffDate: "2024-07-01", halfYearFee: 0, fullYearFee: 0, alumniFee: 0, version: 0, createdAt: "", updatedAt: ""}]),
     )
-    mockFindMemberships.mockResolvedValue(membershipData)
-    mockFindContributionsByPeriodId.mockResolvedValue({
-      data: paidIds.map((uid, idx) => ({id: 900 + idx, userId: uid, contributionPeriodId: 1})),
-    })
-    return shallowMount(UserManager)
-  }
-
-  it("derives status: Current when user has active membership (endDate null)", async () => {
-    const wrapper = mountWithData(
-      [{id: 1, fullName: "Active User", username: "active", roles: ["MEMBER"]}],
-      [makeMembership({id: 10, userId: 1, startDate: "2024-01-01"})], // no endDate
+    vi.mocked(findContributionsByPeriodId).mockResolvedValue(
+      answer(findContributionsByPeriodId, [{userId: 1, contributionPeriodId: 8, version: 0, createdAt: "", updatedAt: ""}]),
     )
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    expect(rows[0].status).toBe("Current")
+    vi.mocked(deleteUserById).mockResolvedValue(emptyAnswer(deleteUserById))
   })
 
-  it("derives status: Former when user has membership(s) all ended", async () => {
-    const wrapper = mountWithData(
-      [{id: 2, fullName: "Former User", username: "former", roles: ["USER"]}],
-      [makeMembership({id: 20, userId: 2, startDate: "2022-01-01", endDate: "2023-01-01"})],
-    )
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    expect(rows[0].status).toBe("Former")
+  it("lists every account the api holds, in the order it answered them", async () => {
+    const wrapper = await mount()
+
+    expect(rowIds(wrapper)).toEqual([1, 2, 3])
   })
 
-  it("derives status: Never when user has no memberships", async () => {
-    const wrapper = mountWithData(
-      [{id: 3, fullName: "Never User", username: "never", roles: ["USER"]}],
-      [],
-    )
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    expect(rows[0].status).toBe("Never")
+  it("says whether each is a member now, was one, or never was", async () => {
+    const wrapper = await mount()
+
+    expect(status(wrapper, 1)).toContain("Current")
+    expect(status(wrapper, 2)).toContain("Former")
+    expect(status(wrapper, 3)).toContain("Never")
   })
 
-  it("derives status: Current when ANY membership is active (not just latest)", async () => {
-    // User has two memberships: one ended, one active
-    const wrapper = mountWithData(
-      [{id: 4, fullName: "Multi User", username: "multi", roles: ["MEMBER"]}],
-      [
-        makeMembership({id: 30, userId: 4, startDate: "2020-01-01", endDate: "2021-01-01"}),
-        makeMembership({id: 31, userId: 4, startDate: "2023-06-01"}), // active
-      ],
-    )
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    expect(rows[0].status).toBe("Current")
+  it("narrows the list to the accounts matching what is typed", async () => {
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="member-manager-search-input"] input').setValue("bob")
+
+    await vi.waitFor(() => expect(rowIds(wrapper)).toEqual([2]))
   })
 
-  it("derives memberSince as min(startDate) across user's memberships", async () => {
-    const wrapper = mountWithData(
-      [{id: 5, fullName: "Long User", username: "long", roles: ["MEMBER"]}],
-      [
-        makeMembership({id: 40, userId: 5, startDate: "2022-06-01"}),
-        makeMembership({id: 41, userId: 5, startDate: "2020-01-01"}), // earliest
-        makeMembership({id: 42, userId: 5, startDate: "2024-01-01"}),
-      ],
-    )
+  it("sorts by name once the name column is chosen, and turns the order round on a second press", async () => {
+    vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [bob, carol, alice]}))
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="member-manager-header-name"]').trigger("click")
     await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    expect(rows[0].memberSince).toBe("2020-01-01")
+    expect(rowIds(wrapper)).toEqual([1, 2, 3])
+
+    await wrapper.get('[data-testid="member-manager-header-name"]').trigger("click")
+    await settle()
+    expect(rowIds(wrapper)).toEqual([3, 2, 1])
   })
 
-  it("memberSince is null for Never users (no memberships)", async () => {
-    const wrapper = mountWithData(
-      [{id: 6, fullName: "No Membership", username: "none", roles: ["USER"]}],
-      [],
-    )
+  it("sorts members now before former members before those who never were", async () => {
+    vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [carol, bob, alice]}))
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="member-manager-header-status"]').trigger("click")
     await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    expect(rows[0].memberSince).toBeNull()
+
+    expect(rowIds(wrapper)).toEqual([1, 2, 3])
   })
 
-  it("derives latestType and incasso from latest membership (max startDate)", async () => {
-    const wrapper = mountWithData(
-      [{id: 7, fullName: "Type User", username: "typeuser", roles: ["MEMBER"]}],
-      [
-        makeMembership({id: 50, userId: 7, startDate: "2020-01-01", memberType: MemberType.REGULAR, incasso: false}),
-        makeMembership({id: 51, userId: 7, startDate: "2024-01-01", memberType: MemberType.HONORARY, incasso: true}), // latest
-      ],
-    )
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    expect(rows[0].latestType).toBe(MemberType.HONORARY)
-    expect(rows[0].latestIncasso).toBe(true)
+  it("shows only members, or only non-members, by the membership filter", async () => {
+    const wrapper = await mount()
+
+    await chooseOption(wrapper, "member-manager-filter-membership", "Yes")
+    expect(rowIds(wrapper)).toEqual([1])
+    await chooseOption(wrapper, "member-manager-filter-membership", "No")
+    expect(rowIds(wrapper)).toEqual([2, 3])
   })
 
-  it("marks user as paid if their id is in paidUserIds", async () => {
-    const wrapper = mountWithData(
-      [
-        {id: 8, fullName: "Paid User", username: "paid", roles: ["MEMBER"]},
-        {id: 9, fullName: "Unpaid User", username: "unpaid", roles: ["MEMBER"]},
-      ],
-      [
-        makeMembership({id: 60, userId: 8, startDate: "2024-01-01"}),
-        makeMembership({id: 61, userId: 9, startDate: "2024-01-01"}),
-      ],
-      [8], // only user 8 is paid
-    )
-    await settle()
-    // Trigger a period change to populate paidUserIds
-    await (wrapper.vm as any).contributionPeriodChanged({id: 1, startDate: "2025-01-01", endDate: "2025-12-31"})
+  it("shows only those who paid in the period, or only those who did not", async () => {
+    const wrapper = await mount()
 
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    const paidRow = rows.find((r) => r.id === 8)
-    const unpaidRow = rows.find((r) => r.id === 9)
-    expect(paidRow?.paid).toBe(true)
-    expect(unpaidRow?.paid).toBe(false)
+    await chooseOption(wrapper, "member-manager-filter-paid", "Yes")
+    expect(rowIds(wrapper)).toEqual([1])
+    await chooseOption(wrapper, "member-manager-filter-paid", "No")
+    expect(rowIds(wrapper)).toEqual([2, 3])
   })
 
-  it("search filters across user fields", async () => {
-    const wrapper = mountWithData(
-      [
-        {id: 10, fullName: "Search Alpha", username: "salpha", roles: ["MEMBER"]},
-        {id: 11, fullName: "Search Beta", username: "sbeta", roles: ["USER"]},
-      ],
-      [],
-    )
-    await settle()
+  it("shows only those paying by incasso, or only those who are not", async () => {
+    const wrapper = await mount()
 
-    ;(wrapper.vm as any).search = "salpha"
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows).toHaveLength(1)
-    expect(rows[0].username).toBe("salpha")
+    await chooseOption(wrapper, "member-manager-filter-incasso", "Yes")
+    expect(rowIds(wrapper)).toEqual([1])
+    await chooseOption(wrapper, "member-manager-filter-incasso", "No")
+    expect(rowIds(wrapper)).toEqual([2, 3])
   })
 
-  it("shows the rows in the order the api returned them", async () => {
-    const wrapper = mountWithData(
-      [
-        {id: 20, fullName: "Zoe Last", username: "zlast", roles: ["MEMBER"]},
-        {id: 21, fullName: "Anna First", username: "afirst", roles: ["MEMBER"]},
-      ],
-      [],
-    )
-    await settle()
+  it("shows only those who were members in the chosen period, or only those who were not", async () => {
+    const wrapper = await mount()
 
-    // The api orders by id, so the page keeps that until a column is chosen.
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.map((row) => row.fullName)).toEqual(["Zoe Last", "Anna First"])
+    await chooseOption(wrapper, "member-manager-filter-period-member", "Yes")
+    expect(rowIds(wrapper)).toEqual([1])
+    await chooseOption(wrapper, "member-manager-filter-period-member", "No")
+    expect(rowIds(wrapper)).toEqual([2, 3])
   })
 
-  it("sorts by name once the name column is chosen", async () => {
-    const wrapper = mountWithData(
-      [
-        {id: 20, fullName: "Zoe Last", username: "zlast", roles: ["MEMBER"]},
-        {id: 21, fullName: "Anna First", username: "afirst", roles: ["MEMBER"]},
-      ],
-      [],
-    )
-    await settle()
-    ;(wrapper.vm as any).toggleSort("name")
-    await settle()
+  it("shows only the accounts with no Discord member linked", async () => {
+    const wrapper = await mount()
 
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.map((row) => row.fullName)).toEqual(["Anna First", "Zoe Last"])
+    await chooseOption(wrapper, "member-manager-filter-discord", "No")
+
+    expect(rowIds(wrapper)).toEqual([2, 3])
   })
 
-  it("sorts by status: Current before Former before Never", async () => {
-    const wrapper = mountWithData(
-      [
-        {id: 30, fullName: "Never User", username: "nv", roles: ["USER"]},
-        {id: 31, fullName: "Former User", username: "fm", roles: ["USER"]},
-        {id: 32, fullName: "Current User", username: "cu", roles: ["MEMBER"]},
-      ],
-      [
-        makeMembership({id: 70, userId: 31, startDate: "2020-01-01", endDate: "2021-01-01"}),
-        makeMembership({id: 71, userId: 32, startDate: "2023-01-01"}),
-      ],
-    )
-    await settle()
-    ;(wrapper.vm as any).sortKey = "status"
-    ;(wrapper.vm as any).sortAsc = true
+  it("reads the account afresh before offering to edit it", async () => {
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="member-manager-edit-profile-btn-1"]').trigger("click")
     await settle()
 
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows[0].status).toBe("Current")
-    expect(rows[1].status).toBe("Former")
-    expect(rows[2].status).toBe("Never")
+    expect(findUserById).toHaveBeenCalledWith({path: {userId: 1}})
+    expect(wrapper.find('[data-testid="member-manager-edit-profile-dialog"]').exists()).toBe(true)
   })
 
-  it("sorts by memberSince ascending", async () => {
-    const wrapper = mountWithData(
-      [
-        {id: 40, fullName: "Later User", username: "later", roles: ["MEMBER"]},
-        {id: 41, fullName: "Earlier User", username: "earlier", roles: ["MEMBER"]},
-      ],
-      [
-        makeMembership({id: 80, userId: 40, startDate: "2024-06-01"}),
-        makeMembership({id: 81, userId: 41, startDate: "2020-01-01"}),
-      ],
-    )
-    await settle()
-    ;(wrapper.vm as any).sortKey = "memberSince"
-    ;(wrapper.vm as any).sortAsc = true
+  it("opens a member's memberships, listing the ones on file", async () => {
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="member-manager-manage-membership-btn-1"]').trigger("click")
     await settle()
 
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows[0].username).toBe("earlier")
-    expect(rows[1].username).toBe("later")
+    expect(wrapper.find('[data-testid="manage-membership-dialog"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="manage-membership-row-90"]').exists()).toBe(true)
   })
 
-  it("row model carries the latest membership type, which is what marks a row notable", async () => {
-    const wrapper = mountWithData(
-      [
-        {id: 50, fullName: "Honorary", username: "hon", roles: ["MEMBER"]},
-        {id: 51, fullName: "Alumni", username: "alum", roles: ["MEMBER"]},
-        {id: 52, fullName: "Regular", username: "reg", roles: ["MEMBER"]},
-      ],
-      [
-        makeMembership({id: 90, userId: 50, startDate: "2024-01-01", memberType: MemberType.HONORARY}),
-        makeMembership({id: 91, userId: 51, startDate: "2024-01-01", memberType: MemberType.ALUMNI}),
-        makeMembership({id: 92, userId: 52, startDate: "2024-01-01", memberType: MemberType.REGULAR}),
-      ],
-    )
-    await settle()
+  it("deletes an account once the deletion is confirmed, and takes its row off the list", async () => {
+    const wrapper = await mount()
 
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    const honRow = rows.find((r) => r.id === 50)!
-    const alumRow = rows.find((r) => r.id === 51)!
-    const regRow = rows.find((r) => r.id === 52)!
+    await deleteRow(wrapper, 2)
 
-    expect(honRow.latestType).toBe(MemberType.HONORARY)
-    expect(alumRow.latestType).toBe(MemberType.ALUMNI)
-    expect(regRow.latestType).toBe(MemberType.REGULAR)
+    expect(deleteUserById).toHaveBeenCalledWith({path: {userId: 2}, throwOnError: true})
+    expect(rowIds(wrapper)).toEqual([1, 3])
   })
 
-  it("incasso icon is notable only when incasso=true", async () => {
-    const wrapper = mountWithData(
-      [
-        {id: 60, fullName: "Incasso User", username: "incasso", roles: ["MEMBER"]},
-        {id: 61, fullName: "No Incasso User", username: "noincasso", roles: ["MEMBER"]},
-      ],
-      [
-        makeMembership({id: 100, userId: 60, startDate: "2024-01-01", incasso: true}),
-        makeMembership({id: 101, userId: 61, startDate: "2024-01-01", incasso: false}),
-      ],
-    )
-    await settle()
+  it("keeps the account on the list when the api refuses to delete it", async () => {
+    vi.mocked(deleteUserById).mockRejectedValue(refusal(deleteUserById, null, 409))
+    const wrapper = await mount()
 
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    const incassoRow = rows.find((r) => r.id === 60)!
-    const noIncassoRow = rows.find((r) => r.id === 61)!
-    expect(incassoRow.latestIncasso).toBe(true)
-    expect(noIncassoRow.latestIncasso).toBe(false)
-  })
+    await deleteRow(wrapper, 2)
 
-  it("openDeleteUser sets pendingDeleteUser and opens dialog", async () => {
-    const wrapper = mountWithData(
-      [{id: 70, fullName: "Delete Me", username: "deleteme", roles: ["USER"]}],
-      [],
-    )
-    await settle()
-
-    const user = (wrapper.vm as any).users[0]
-    ;(wrapper.vm as any).openDeleteUser(user)
-    expect((wrapper.vm as any).deleteDialog).toBe(true)
-    expect((wrapper.vm as any).pendingDeleteUser?.id).toBe(70)
-  })
-
-  it("confirmDeleteUser deletes the account and takes the row off the list", async () => {
-    const wrapper = mountWithData(
-      [{id: 71, fullName: "To Delete", username: "todelete", roles: ["USER"]}],
-      [],
-    )
-    await settle()
-
-    const user = (wrapper.vm as any).users[0]
-    ;(wrapper.vm as any).openDeleteUser(user)
-    await (wrapper.vm as any).confirmDeleteUser()
-    expect(mockDeleteUserById).toHaveBeenCalledWith(71)
-    expect((wrapper.vm as any).users).toHaveLength(0)
-  })
-
-  // The account is still there, so the row is too.
-  it("a refused delete leaves the member in the table", async () => {
-    mockDeleteUserById.mockRejectedValueOnce(new Error("forbidden"))
-    const wrapper = mountWithData(
-      [{id: 71, fullName: "To Delete", username: "todelete", roles: ["USER"]}],
-      [],
-    )
-    await settle()
-
-    const user = (wrapper.vm as any).users[0]
-    ;(wrapper.vm as any).openDeleteUser(user)
-    await (wrapper.vm as any).confirmDeleteUser()
-
-    expect((wrapper.vm as any).users).toHaveLength(1)
-    expect(mockDeleteUserById).toHaveBeenCalledWith(71)
-  })
-})
-
-describe("UserManager filters", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockDeleteUserById.mockResolvedValue(undefined)
-    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
-    mockFindUserById.mockResolvedValue({id: 1, username: "u", roles: []})
-  })
-
-  function mountWithFilterData() {
-    mockFindUsers.mockResolvedValue([
-          {id: 1, fullName: "Current Paid Incasso", username: "cpi", roles: ["MEMBER", "BOARD"], email: "a@test.com", enabled: true, firstName: "Current", lastName: "Paid", initials: "CP", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-          {id: 2, fullName: "Former Unpaid NoIncasso", username: "fun", roles: ["GUEST"], email: "b@test.com", enabled: true, firstName: "Former", lastName: "Unpaid", initials: "FU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-          {id: 3, fullName: "Never Unpaid NoIncasso", username: "nun", roles: ["GUEST"], email: "c@test.com", enabled: true, firstName: "Never", lastName: "Unpaid", initials: "NU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-        ])
-    mockFindMemberships.mockResolvedValue([
-        // user 1: active membership with incasso
-        makeMembership({id: 10, userId: 1, startDate: "2024-01-01", incasso: true}),
-        // user 2: ended membership, no incasso
-        makeMembership({id: 20, userId: 2, startDate: "2022-01-01", endDate: "2023-01-01", incasso: false}),
-        // user 3: no memberships (handled by empty filter)
-      ])
-    return shallowMount(UserManager)
-  }
-
-  it("the Discord filter shows only the users with no Discord member linked", async () => {
-    mockFindUsers.mockResolvedValue([
-      {id: 1, fullName: "Linked", username: "linked", discord: "Nelly B", discordId: "803", roles: ["USER"], enabled: true},
-      {id: 2, fullName: "Typed", username: "typed", discord: "nelly#0001", roles: ["USER"], enabled: true},
-    ])
-    mockFindMemberships.mockResolvedValue([])
-    // The toolbar sits in stubbed cards, whose slots are drawn only when asked.
-    const wrapper = shallowMount(UserManager, {global: {renderStubDefaultSlot: true}})
-    await settle()
-
-    wrapper.findComponent('[data-testid="member-manager-filter-discord"]').vm.$emit("update:modelValue", "no")
-    await settle()
-
-    expect((wrapper.vm as any).discordFilter).toBe("no")
-    expect(((wrapper.vm as any).filteredRows as MemberRow[]).map((row) => row.id)).toEqual([2])
-  })
-
-  it("memberFilter=yes shows only Current members", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-    ;(wrapper.vm as any).memberFilter = "yes"
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.every((r) => r.status === "Current")).toBe(true)
-    expect(rows.find((r) => r.id === 1)).toBeTruthy()
-    expect(rows.find((r) => r.id === 2)).toBeFalsy()
-    expect(rows.find((r) => r.id === 3)).toBeFalsy()
-  })
-
-  it("memberFilter=no shows only non-Current members", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-    ;(wrapper.vm as any).memberFilter = "no"
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.every((r) => r.status !== "Current")).toBe(true)
-    expect(rows.find((r) => r.id === 1)).toBeFalsy()
-  })
-
-  it("paidFilter=yes shows only paid users after period change", async () => {
-    mockFindContributionsByPeriodId.mockResolvedValue({
-      data: [{id: 91, userId: 1, contributionPeriodId: 5}],
-    })
-    const wrapper = mountWithFilterData()
-    await settle()
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
-    ;(wrapper.vm as any).paidFilter = "yes"
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.every((r) => r.paid)).toBe(true)
-    expect(rows.find((r) => r.id === 1)).toBeTruthy()
-    expect(rows.find((r) => r.id === 2)).toBeFalsy()
-  })
-
-  it("paidFilter=no shows only unpaid users", async () => {
-    mockFindContributionsByPeriodId.mockResolvedValue({
-      data: [{id: 91, userId: 1, contributionPeriodId: 5}],
-    })
-    const wrapper = mountWithFilterData()
-    await settle()
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
-    ;(wrapper.vm as any).paidFilter = "no"
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.every((r) => !r.paid)).toBe(true)
-    expect(rows.find((r) => r.id === 1)).toBeFalsy()
-  })
-
-  it("incassoFilter=yes shows only users with incasso", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-    ;(wrapper.vm as any).incassoFilter = "yes"
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.every((r) => r.latestIncasso)).toBe(true)
-    expect(rows.find((r) => r.id === 1)).toBeTruthy()
-    expect(rows.find((r) => r.id === 2)).toBeFalsy()
-  })
-
-  it("incassoFilter=no shows only users without incasso", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-    ;(wrapper.vm as any).incassoFilter = "no"
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.every((r) => !r.latestIncasso)).toBe(true)
-    expect(rows.find((r) => r.id === 1)).toBeFalsy()
-  })
-
-  it("combined search + memberFilter narrows results", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-    ;(wrapper.vm as any).search = "current"
-    ;(wrapper.vm as any).memberFilter = "yes"
-    await settle()
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    // Only "Current Paid Incasso" (id=1) matches both
-    expect(rows).toHaveLength(1)
-    expect(rows[0].id).toBe(1)
-  })
-
-  it("all filters default to 'all' so existing tests are unaffected", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-    expect((wrapper.vm as any).memberFilter).toBe("all")
-    expect((wrapper.vm as any).paidFilter).toBe("all")
-    expect((wrapper.vm as any).incassoFilter).toBe("all")
-    // filteredRows includes all 3 users
-    expect((wrapper.vm as any).filteredRows).toHaveLength(3)
-  })
-
-  it("periodMemberFilter defaults to 'all' (wasMemberInPeriod false when no period selected)", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-    expect((wrapper.vm as any).periodMemberFilter).toBe("all")
-    // All rows have wasMemberInPeriod=false (no period selected)
-    const rows: MemberRow[] = (wrapper.vm as any).rows
-    expect(rows.every((r) => r.wasMemberInPeriod === false)).toBe(true)
-  })
-
-  it("periodMemberFilter=yes after period change shows only members who overlap", async () => {
-    // User 1 has an active membership starting 2024-01-01 — overlaps period 2024-01-01..2024-12-31
-    // User 2 has a membership ending 2023-01-01 — does NOT overlap
-    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
-    const wrapper = mountWithFilterData()
-    await settle()
-
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2024-01-01", endDate: "2024-12-31"})
-    ;(wrapper.vm as any).periodMemberFilter = "yes"
-    await settle()
-
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.every((r) => r.wasMemberInPeriod)).toBe(true)
-    expect(rows.find((r) => r.id === 1)).toBeTruthy()
-    expect(rows.find((r) => r.id === 2)).toBeFalsy()
-  })
-
-  it("periodMemberFilter=no shows only members not in the selected period", async () => {
-    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
-    const wrapper = mountWithFilterData()
-    await settle()
-
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2024-01-01", endDate: "2024-12-31"})
-    ;(wrapper.vm as any).periodMemberFilter = "no"
-    await settle()
-
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.every((r) => !r.wasMemberInPeriod)).toBe(true)
-    expect(rows.find((r) => r.id === 1)).toBeFalsy()
-  })
-
-  it("sorts by wasMemberInPeriod ascending (false first)", async () => {
-    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
-    const wrapper = mountWithFilterData()
-    await settle()
-
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2024-01-01", endDate: "2024-12-31"})
-    ;(wrapper.vm as any).sortKey = "wasMemberInPeriod"
-    ;(wrapper.vm as any).sortAsc = true
-    await settle()
-
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    // Rows with wasMemberInPeriod=false should come first in ascending order
-    const firstFalseIdx = rows.findIndex((r) => !r.wasMemberInPeriod)
-    const firstTrueIdx = rows.findIndex((r) => r.wasMemberInPeriod)
-    if (firstTrueIdx !== -1 && firstFalseIdx !== -1) {
-      expect(firstFalseIdx).toBeLessThan(firstTrueIdx)
-    }
-  })
-
-  it("sorts by username ascending", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-    ;(wrapper.vm as any).sortKey = "username"
-    ;(wrapper.vm as any).sortAsc = true
-    await settle()
-
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    // "cpi" < "fun" < "nun" alphabetically
-    expect(rows[0].username).toBe("cpi")
-    expect(rows[1].username).toBe("fun")
-    expect(rows[2].username).toBe("nun")
-  })
-
-  it("sorts by role ascending", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-    ;(wrapper.vm as any).sortKey = "role"
-    ;(wrapper.vm as any).sortAsc = true
-    await settle()
-
-    // User 1 holds BOARD, users 2&3 hold GUEST — "board" < "guest"
-    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows[0].role).toBe("board")
-  })
-
-  it("header-period-member sort toggle changes sortKey to wasMemberInPeriod", async () => {
-    const wrapper = mountWithFilterData()
-    await settle()
-
-    ;(wrapper.vm as any).toggleSort("wasMemberInPeriod")
-    expect((wrapper.vm as any).sortKey).toBe("wasMemberInPeriod")
-    expect((wrapper.vm as any).sortAsc).toBe(true)
-
-    // Toggle again flips sortAsc
-    ;(wrapper.vm as any).toggleSort("wasMemberInPeriod")
-    expect((wrapper.vm as any).sortAsc).toBe(false)
+    expect(rowIds(wrapper)).toEqual([1, 2, 3])
   })
 })

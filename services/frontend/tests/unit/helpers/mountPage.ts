@@ -33,3 +33,15 @@ export const boardLogin: StoredLogin = {
   roles: ["BOARD"] as StoredLogin["roles"],
   twoFactor: {backupCodesLeft: 0, mayTurnOff: false, offered: false, on: true, required: false},
 }
+
+/** Picks [title] in the select marked [testid], opening it and pressing the option as a reader does. */
+export async function chooseOption(wrapper: VueWrapper<any>, testid: string, title: string): Promise<void> {
+  await wrapper.get(`[data-testid="${testid}"] .v-field`).trigger("mousedown")
+  await settle()
+  const option = wrapper.findAll(".v-list-item").find((item) => item.text() === title)
+  if (!option) throw new Error(`${testid} offers no option "${title}"`)
+  await option.trigger("click")
+  // The select closes on one tick and the filter it feeds re-renders on the next.
+  await settle()
+  await settle()
+}

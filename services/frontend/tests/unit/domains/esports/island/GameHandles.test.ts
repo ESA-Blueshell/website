@@ -5,7 +5,7 @@ import GameHandles from "@/domains/esports/island/GameHandles.vue"
 import {settle} from "../../../pages/helpers"
 
 const {mockAdapters, mockNetworkError, games} = vi.hoisted(() => ({
-  mockAdapters: {loadGameAccounts: vi.fn(), saveGameAccount: vi.fn(), dropGameAccount: vi.fn()},
+  mockAdapters: {loadGameAccounts: vi.fn(), setGameAccount: vi.fn(), clearGameAccount: vi.fn()},
   mockNetworkError: vi.fn(),
   games: [
     {code: "VALORANT", name: "Valorant", current: true},
@@ -43,8 +43,8 @@ const submit = async (wrapper: Handles, code: string) => {
 describe("the game handles", () => {
   beforeEach(() => {
     mockAdapters.loadGameAccounts.mockResolvedValue([{game: "VALORANT", handle: "alice#EUW"}])
-    mockAdapters.saveGameAccount.mockResolvedValue(null)
-    mockAdapters.dropGameAccount.mockResolvedValue(undefined)
+    mockAdapters.setGameAccount.mockResolvedValue({})
+    mockAdapters.clearGameAccount.mockResolvedValue({})
   })
 
   it("lists the games fielded now before the rest, each with its handle", async () => {
@@ -68,7 +68,7 @@ describe("the game handles", () => {
     expect(saveButton(wrapper, "league").exists()).toBe(true)
     await submit(wrapper, "league")
 
-    expect(mockAdapters.saveGameAccount).toHaveBeenCalledWith(7, "LEAGUE", "Alice")
+    expect(mockAdapters.setGameAccount).toHaveBeenCalledWith({path: {userId: 7, game: "LEAGUE"}, body: {handle: "Alice"}, throwOnError: true})
     expect(saveButton(wrapper, "league").exists()).toBe(false)
     expect(wrapper.text()).toContain("Saved")
 
@@ -80,15 +80,15 @@ describe("the game handles", () => {
     const wrapper = await open()
 
     await submit(wrapper, "league")
-    expect(mockAdapters.saveGameAccount).not.toHaveBeenCalled()
+    expect(mockAdapters.setGameAccount).not.toHaveBeenCalled()
 
     await field(wrapper, "valorant").setValue("")
     await submit(wrapper, "valorant")
-    expect(mockAdapters.dropGameAccount).toHaveBeenCalledWith(7, "VALORANT")
+    expect(mockAdapters.clearGameAccount).toHaveBeenCalledWith({path: {userId: 7, game: "VALORANT"}, throwOnError: true})
   })
 
   it("reports a refused save or read", async () => {
-    mockAdapters.saveGameAccount.mockRejectedValue(new Error("refused"))
+    mockAdapters.setGameAccount.mockRejectedValue(new Error("refused"))
     const wrapper = await open()
 
     await field(wrapper, "league").setValue("Alice")

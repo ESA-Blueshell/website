@@ -6,7 +6,7 @@ import FormField from "@/components/island/FormField.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {dropGameAccount, type Game, loadGameAccounts, saveGameAccount, type GameCode} from "../adapters/esports"
+import {clearGameAccount, type Game, loadGameAccounts, setGameAccount, type GameCode} from "../adapters/esports"
 import {useGames} from "./useGames"
 
 /**
@@ -49,8 +49,8 @@ const save = async (game: GameCode) => {
   const value = (draft.value[game] ?? "").trim()
   saving.value = game
   try {
-    if (value === "") await dropGameAccount(userId, game)
-    else await saveGameAccount(userId, game, value)
+    if (value === "") await clearGameAccount({path: {userId, game}, throwOnError: true})
+    else await setGameAccount({path: {userId, game}, body: {handle: value}, throwOnError: true})
     await refresh()
     saved.value = game
   } catch (error) {

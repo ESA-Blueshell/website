@@ -10,7 +10,6 @@
 import {
   addRosterEntry,
   apiUrl,
-  clearGameAccount,
   createSeason,
   deleteSeason,
   deleteTeam,
@@ -24,7 +23,6 @@ import {
   findSeasons,
   findTeamSeasons,
   findTeams,
-  setGameAccount,
   unfieldTeam,
   findSeasonGames,
   enterGame,
@@ -33,21 +31,25 @@ import {
   uploadPublicImage,
 } from "@/services/api"
 import type {
-  PlayedRosterResponse,
-  FileType,
-  GameRostersResponse,
-  Image,
+  AddRosterEntryRequest,
   FieldedTeamResponse,
+  FieldTeamRequest,
+  FileType,
   GameAccountResponse,
   GameResponse,
+  GameRostersResponse,
+  Image,
+  PlayedRosterResponse,
   RosterEntryResponse,
+  SeasonRequest,
   SeasonResponse,
   TeamResponse,
   TeamRole as ApiTeamRole,
   TeamRosterResponse,
 } from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
-import {reasonFor} from "@/domains/esports/refusals"
+import {accepted, refusable} from "@/domains/esports/refusals"
+import type {Saved} from "@/utils/refusals"
 import type {Refused} from "@/types/api"
 
 // Re-exported so this adapter still answers for its own surface, while the type has one definition.
@@ -121,11 +123,8 @@ export async function storePicture(
   file: File,
   kind: FileType,
 ): Promise<PictureStored | Refused> {
-  const res = await uploadPublicImage({query: {type: kind}, body: {file}})
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFrom(res.error, "That picture could not be stored.")}
-  }
-  return {ok: true, picture: image(res.data)}
+  const stored = await refusable(uploadPublicImage({query: {type: kind}, body: {file}}), "That picture could not be stored.")
+  return stored.ok ? {ok: true, picture: image(stored.saved)} : stored
 }
 
 const imageOrNone = (one?: Image | null): Image | null => (one ? image(one) : null)
@@ -162,39 +161,17 @@ export async function loadSeasons(): Promise<Season[]> {
   return res.data ?? []
 }
 
-export interface RosterEntrySaved {
-  ok: true
-  entry: RosterEntry
-}
-
-/**
- * The season as it now stands. `ok` carries it rather than perhaps carrying it: a caller shows
- * the saved season back to the reader, and a success carrying nothing leaves it second-guessing
- * the envelope.
- */
-export interface SeasonSaved {
-  ok: true
-  season: Season
-}
-
 /**
  * A season written, or the api's own account of why not.
  *
  * The body is what says the write landed; an empty answer says nothing, so it is a refusal.
  */
-export async function saveSeasonOrReason(
-  season: {id?: number; name: string; startDate: string; endDate: string},
-): Promise<SeasonSaved | Refused> {
-  const body = {name: season.name, startDate: season.startDate, endDate: season.endDate}
-  const res = season.id == null
-    ? await createSeason({body})
-    : await updateSeason({path: {id: season.id}, body})
-  if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error)}
-  return {ok: true, season: res.data}
+export async function saveSeasonOrReason(id: number | undefined, body: SeasonRequest): Promise<Saved<Season> | Refused> {
+  return refusable(
+    id == null ? createSeason({body}) : updateSeason({path: {id}, body}),
+    "The season could not be saved.",
+  )
 }
-
-const reasonFrom = (error: unknown, fallback = "The season could not be saved."): string =>
-  reasonFor(error, fallback)
 
 export async function loadSeasonContents(id: number): Promise<SeasonContents> {
   const res = await findSeasonContents({path: {id}})
@@ -210,11 +187,7 @@ export async function unfieldTeamFromSeason(
   game: GameCode,
   seasonId: number,
 ): Promise<{ok: true} | Refused> {
-  const res = await unfieldTeam({path: {seasonId, teamId}, query: {game}})
-  if (res.error) {
-    return {ok: false, reason: reasonFrom(res.error, "The team could not be dropped from the season.")}
-  }
-  return {ok: true}
+  return accepted(unfieldTeam({path: {seasonId, teamId}, query: {game}}), "The team could not be dropped from the season.")
 }
 
 /** A game that ran in one season, with what it fielded. */
@@ -243,16 +216,6 @@ export async function loadSeasonGames(seasonId: number): Promise<SeasonGame[]> {
 }
 
 /**
- * The game as it now stands in the season. `ok` carries it rather than perhaps carrying it: a
- * caller draws the game it has just entered, and a success carrying nothing leaves it
- * second-guessing the envelope.
- */
-export interface GameEntered {
-  ok: true
-  entered: SeasonGame
-}
-
-/**
  * Records that a game runs in a season, before anybody is fielded in it.
  *
  * A refusal comes back in the api's own words: a board member told only that nothing happened
@@ -261,12 +224,9 @@ export interface GameEntered {
 export async function enterGameInSeason(
   seasonId: number,
   game: GameCode,
-): Promise<GameEntered | Refused> {
-  const res = await enterGame({path: {seasonId, game}})
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFrom(res.error, "That game could not be put into the season.")}
-  }
-  return {ok: true, entered: {game: res.data.game, teams: [], public: res.data.public}}
+): Promise<Saved<SeasonGame> | Refused> {
+  const entered = await refusable(enterGame({path: {seasonId, game}}), "That game could not be put into the season.")
+  return entered.ok ? {ok: true, saved: {game: entered.saved.game, teams: [], public: entered.saved.public}} : entered
 }
 
 /** Same reason as the others: a refusal comes back as a body rather than as a thrown error. */
@@ -274,16 +234,11 @@ export async function leaveGameInSeason(
   seasonId: number,
   game: GameCode,
 ): Promise<{ok: true} | Refused> {
-  const res = await leaveGame({path: {seasonId, game}})
-  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The game could not be taken out.")}
-  return {ok: true}
+  return accepted(leaveGame({path: {seasonId, game}}), "The game could not be taken out.")
 }
 
-// Answers the refusal: the generated client returns an error object, it does not throw.
 export async function dropSeasonOrReason(id: number): Promise<{ok: true} | Refused> {
-  const res = await deleteSeason({path: {id}})
-  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The season could not be removed.")}
-  return {ok: true}
+  return accepted(deleteSeason({path: {id}}), "The season could not be removed.")
 }
 
 /**
@@ -298,9 +253,7 @@ export async function loadTeams(): Promise<Team[]> {
 }
 
 export async function dropTeam(id: number): Promise<{ok: true} | Refused> {
-  const res = await deleteTeam({path: {id}})
-  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be removed.")}
-  return {ok: true}
+  return accepted(deleteTeam({path: {id}}), "The team could not be removed.")
 }
 
 /**
@@ -320,31 +273,17 @@ export async function loadTeamSeasons(teamId: number): Promise<Fielding[]> {
 }
 
 /**
- * Fields a team in a season, optionally bringing across the line-up it last had.
- *
- * Answers with what came with it, so a caller can show the roster it is about to publish.
+ * Fields a team in a season, optionally bringing across the line-up it last had. Naming no banner
+ * leaves the art alone: a team is re-fielded to say it plays this season as often as to change its
+ * picture. The body is what says the fielding happened, so an empty answer is refused, and the
+ * roster writes that follow it do not land on a fielding nobody confirmed.
  */
 export async function fieldTeamInSeason(
   teamId: number,
-  game: GameCode,
   seasonId: number,
-  carryLineup: boolean,
-  banner?: string | null,
-  /** Which of the team's line-ups to bring, where one was chosen rather than assumed. */
-  carryFrom?: {game: GameCode; seasonId: number} | null,
-): Promise<{ok: true; team: FieldedTeam} | Refused> {
-  const res = await fieldTeam({
-    path: {seasonId, teamId},
-    // Naming no banner leaves the art alone rather than taking it away: a team is re-fielded
-    // to say it plays this season as often as to change its picture.
-    body: {game, carryLineup, banner: banner ?? undefined, carryFrom: carryFrom ?? undefined},
-  })
-  // The body is what says the fielding happened; an empty answer says nothing, and the roster
-  // writes that follow it would land on a fielding nobody confirmed.
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFrom(res.error, "That team could not be fielded this season.")}
-  }
-  return {ok: true, team: res.data}
+  body: FieldTeamRequest,
+): Promise<Saved<FieldedTeam> | Refused> {
+  return refusable(fieldTeam({path: {seasonId, teamId}, body}), "That team could not be fielded this season.")
 }
 
 /**
@@ -364,38 +303,9 @@ export async function loadRoster(
   return res.data.map(withIcon)
 }
 
-export async function addToRoster(
-  teamId: number,
-  entry: {
-    game: GameCode
-    seasonId: number
-    handle: string
-    role: TeamRole
-    userId?: number | null
-    displayName?: string | null
-    roleTitle?: string | null
-    description?: string | null
-    icon?: string | null
-  },
-): Promise<RosterEntrySaved | Refused> {
-  const res = await addRosterEntry({
-    path: {teamId},
-    body: {
-      game: entry.game,
-      seasonId: entry.seasonId,
-      handle: entry.handle,
-      role: entry.role,
-      userId: entry.userId ?? undefined,
-      displayName: entry.displayName ?? undefined,
-      roleTitle: entry.roleTitle ?? undefined,
-      description: entry.description ?? undefined,
-      icon: entry.icon ?? undefined,
-    },
-  })
-  if (res.error || !res.data) {
-    return {ok: false, reason: reasonFrom(res.error, "That person could not be put on the roster.")}
-  }
-  return {ok: true, entry: withIcon(res.data)}
+export async function addToRoster(teamId: number, entry: AddRosterEntryRequest): Promise<Saved<RosterEntry> | Refused> {
+  const added = await refusable(addRosterEntry({path: {teamId}, body: entry}), "That person could not be put on the roster.")
+  return added.ok ? {ok: true, saved: withIcon(added.saved)} : added
 }
 
 /** Every roster spot somebody held, newest season first; nothing where the read failed. */
@@ -410,19 +320,7 @@ export async function loadGameAccounts(userId: number): Promise<GameAccount[]> {
 }
 
 /**
- * Both throw rather than answering a shrug: the editor's own catch reports the failure,
- * and a discarded refusal here left the handle looking saved with only the still-enabled
- * button to hint otherwise.
+ * A member's handle for a game, written and cleared by the sdk's own calls. The editor asks them to
+ * throw, so its own catch reports a refusal: a discarded one left the handle looking saved.
  */
-export async function saveGameAccount(
-  userId: number,
-  game: GameCode,
-  handle: string,
-): Promise<GameAccount | null> {
-  const res = await setGameAccount({path: {userId, game}, body: {handle}, throwOnError: true})
-  return res.data ?? null
-}
-
-export async function dropGameAccount(userId: number, game: GameCode): Promise<void> {
-  await clearGameAccount({path: {userId, game}, throwOnError: true})
-}
+export {clearGameAccount, setGameAccount} from "@/services/api"

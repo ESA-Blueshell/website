@@ -77,7 +77,7 @@ const games = [
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadSeasonGames: vi.fn(async () => seasonGames),
   loadGames: vi.fn(async () => games),
-  saveSeasonOrReason: vi.fn(async () => ({ok: true, season: seasons[0]})),
+  saveSeasonOrReason: vi.fn(async () => ({ok: true, saved: seasons[0]})),
   leaveGameInSeason: vi.fn(async () => ({ok: true})),
   // Every season written down, which is more than the games were fielded in.
   loadSeasons: vi.fn(async () => [...seasons, emptySeason]),

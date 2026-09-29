@@ -108,6 +108,33 @@ function scopeAfter(source: string, from: number, binding: string): string {
   return rebound === -1 ? window : window.slice(0, rebound)
 }
 
+/**
+ * The name of the call whose argument list this call sits in, or null at the top of a statement.
+ *
+ * A write handed straight to an envelope helper is checked inside the helper, and a ternary
+ * between a create and an update has no brackets of its own, so the nearest unclosed parenthesis
+ * is the helper's.
+ */
+function enclosingCall(source: string, callStart: number): string | null {
+  let depth = 0
+  for (let at = callStart - 1; at >= 0; at--) {
+    const char = source[at]
+    if (CLOSERS.includes(char)) depth++
+    else if (OPENERS.includes(char)) {
+      if (depth > 0) {
+        depth--
+        continue
+      }
+      if (char !== "(") return null
+      return source.slice(0, at).match(/([\w$]+)\s*$/)?.[1] ?? null
+    }
+  }
+  return null
+}
+
+/** `utils/refusals` and `utils/answers` read the refusal, and a domain's own wrapper keeps the name. */
+const ENVELOPE = /(?:refusable|accepted|readOr)$/i
+
 const BINDING = /(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=[^=][\s\S]*$/
 const PROPAGATED = /\breturn\b[^\n]*$|=>\s*$/
 const INSPECTED = /^\s*\)*\s*\??\.\s*(?:error|data)\b/
@@ -158,6 +185,7 @@ export function findUncheckedWrites(source: string, mutators: Set<string>): Writ
     const args = text.slice(open, end)
     if (/throwOnError\s*:\s*true/.test(args)) continue
     if (INSPECTED.test(text.slice(end))) continue
+    if (ENVELOPE.test(enclosingCall(text, start) ?? "")) continue
 
     const prefix = receivingPrefix(text, start)
     if (PROPAGATED.test(prefix)) continue

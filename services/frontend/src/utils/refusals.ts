@@ -1,6 +1,20 @@
+import type {Refused} from "@/types/api"
+
 /** The one key the reader itself reads; a domain's body type adds the facts its own codes name. */
 export interface RefusalCode {
   code?: string
+}
+
+/** A write that landed, carrying what the api answered with. */
+export interface Saved<T> {
+  ok: true
+  saved: T
+}
+
+/** What an sdk call resolves to: a body where it landed, an error where it was refused. */
+interface Answer<T> {
+  data?: T
+  error?: unknown
 }
 
 export interface RefusalReader {
@@ -8,6 +22,13 @@ export interface RefusalReader {
   sentenceFor: (body: unknown) => string | null
   /** The sentence a reader sees for a refused write. */
   reasonFor: (error: unknown, fallback: string) => string
+  /**
+   * A write that answers with a record, as its envelope. An answer carrying no record is refused
+   * too: a caller handed nothing would go on to write against nothing.
+   */
+  refusable: <T>(call: Promise<Answer<T>>, fallback: string) => Promise<Saved<T> | Refused>
+  /** A write whose success carries nothing, a removal or a drop, as its envelope. */
+  accepted: (call: Promise<Answer<unknown>>, fallback: string) => Promise<{ok: true} | Refused>
 }
 
 /**
@@ -38,5 +59,17 @@ export function refusalReader<B extends RefusalCode>(
     return sentenceFor(error) || fields || body?.detail || body?.title || fallback
   }
 
-  return {sentenceFor, reasonFor}
+  const refusable = async <T>(call: Promise<Answer<T>>, fallback: string): Promise<Saved<T> | Refused> => {
+    const res = await call
+    if (res.error || res.data == null) return {ok: false, reason: reasonFor(res.error, fallback)}
+    return {ok: true, saved: res.data}
+  }
+
+  const accepted = async (call: Promise<Answer<unknown>>, fallback: string): Promise<{ok: true} | Refused> => {
+    const res = await call
+    if (res.error) return {ok: false, reason: reasonFor(res.error, fallback)}
+    return {ok: true}
+  }
+
+  return {sentenceFor, reasonFor, refusable, accepted}
 }

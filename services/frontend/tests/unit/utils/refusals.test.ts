@@ -6,7 +6,7 @@ interface Body {
   what?: string
 }
 
-const {sentenceFor, reasonFor} = refusalReader<Body>({
+const {sentenceFor, reasonFor, refusable, accepted} = refusalReader<Body>({
   ThingHeldBack: r => `The ${r.what} is held back.`,
 })
 
@@ -56,5 +56,37 @@ describe("reasonFor", () => {
   it("falls back to the given sentence when the body says nothing", () => {
     expect(reasonFor(null, "The board could not be removed.")).toBe("The board could not be removed.")
     expect(reasonFor({}, "The board could not be removed.")).toBe("The board could not be removed.")
+  })
+})
+
+describe("refusable", () => {
+  it("hands back what the api saved", async () => {
+    await expect(refusable(Promise.resolve({data: {id: 3}}), "fallback")).resolves.toEqual({ok: true, saved: {id: 3}})
+  })
+
+  it("reads the refusal in the domain's words", async () => {
+    const said = await refusable(Promise.resolve({error: {code: "ThingHeldBack", what: "team"}}), "fallback")
+
+    expect(said).toEqual({ok: false, reason: "The team is held back."})
+  })
+
+  it("refuses an answer that saved nothing", async () => {
+    await expect(refusable(Promise.resolve({}), "Nothing came back.")).resolves.toEqual({
+      ok: false,
+      reason: "Nothing came back.",
+    })
+  })
+})
+
+describe("accepted", () => {
+  it("accepts an answer with no body", async () => {
+    await expect(accepted(Promise.resolve({}), "fallback")).resolves.toEqual({ok: true})
+  })
+
+  it("reads the refusal when the api says no", async () => {
+    await expect(accepted(Promise.resolve({error: {title: "Conflict"}}), "fallback")).resolves.toEqual({
+      ok: false,
+      reason: "Conflict",
+    })
   })
 })

@@ -83,8 +83,7 @@ const submit = async () => {
   saving.value = true
   failure.value = null
   try {
-    const result = await saveSeasonOrReason({
-      id: props.season?.id,
+    const result = await saveSeasonOrReason(props.season?.id, {
       name: name.value.trim(),
       startDate: startDate.value,
       endDate: endDate.value,
@@ -95,7 +94,7 @@ const submit = async () => {
     }
     forgetCompetitionReads()
     await refreshSeasons()
-    emit("saved", result.season)
+    emit("saved", result.saved)
   } finally {
     saving.value = false
   }

@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import com.fasterxml.jackson.annotation.Nulls
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.RotatingHeader
 import net.blueshell.api.shared.credentials.RotatingSecret
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.web.client.RestClient
+import tools.jackson.databind.cfg.EnumFeature
 import tools.jackson.databind.json.JsonMapper
 
 /**
@@ -40,9 +42,20 @@ class DiscordClientConfig {
             .requestInterceptor(RotatingHeader("Authorization", RotatingSecret(environment, Credentials.DISCORD_BOT), prefix = "Bot "))
             .requestInterceptor(RateLimitPause())
             .configureMessageConverters {
-                it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))
+                it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(discordMapper(jsonMapper)))
             }.build()
 
     @Bean
     fun discordApi(discordRestClient: RestClient): DiscordApi = DiscordClient.using(discordRestClient)
+
+    // Discord adds values to its enums (a guild feature, a locale) without a new API version, and
+    // the generated enums refuse a value they do not know, so one would fail the whole read. In
+    // Discord's answers only, it reads as null and drops out of a list or set; the api's own
+    // requests still refuse an unknown value.
+    private fun discordMapper(jsonMapper: JsonMapper): JsonMapper =
+        jsonMapper
+            .rebuild()
+            .enable(EnumFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
+            .changeDefaultNullHandling { it.withContentNulls(Nulls.SKIP) }
+            .build()
 }

@@ -126,15 +126,9 @@ class CohortSubjectQueryService(
                                 .mapNotNull { it.verifiedAt }
                                 .maxOrNull()
                                 ?.toInstant(ZoneOffset.UTC),
-                        // Where the target sits, from what was recorded when it was linked or moved.
-                        // Read from the row rather than from the system, so drawing this page costs
-                        // no call to Brevo.
-                        path =
-                            listOfNotNull(
-                                runCatching { strategies.descriptor(system).system.shownName }
-                                    .getOrDefault(cohort.system),
-                                cohort.folder?.takeIf { it.isNotBlank() },
-                            ),
+                        // The system only: the folder is read from the system by the caller, outside
+                        // this transaction, since a list moved in Brevo is somewhere its row cannot say.
+                        path = listOf(runCatching { strategies.descriptor(system).system.shownName }.getOrDefault(cohort.system)),
                     )
                 }.sortedBy { it.cohort.system }
 

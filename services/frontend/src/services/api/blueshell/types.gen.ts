@@ -583,6 +583,10 @@ export enum CohortKind {
 export type CohortMapping = {
     cohortId: number;
     externalId?: string | null;
+    /**
+     * False when the system could not say which folder the target is in
+     */
+    folderKnown: boolean;
     kind: CohortKind;
     label: string;
     /**
@@ -590,7 +594,7 @@ export type CohortMapping = {
      */
     lastReconciledAt?: string | null;
     /**
-     * Where the target sits on its system, outside in: the system, then any folder holding it. Read from what was recorded when the target was linked or moved, so a page costs no call to the system.
+     * Where the target sits on its system, outside in: the system, then any folder holding it, read from the system itself.
      */
     path: Array<string>;
     /**

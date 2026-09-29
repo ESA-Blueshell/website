@@ -72,4 +72,22 @@ class TargetCatalogTest {
             label: String,
         ) = ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label)
     }
+
+    @Test
+    fun `a target's place is read from its system, folder and all`() {
+        whenever(strategy.resolve("10")).thenReturn(
+            ExternalTarget(TargetSystem.BREVO, "10", CohortKind.LIST, "Sitecie", "Committees", path = listOf("Brevo", "Committees")),
+        )
+
+        assertThat(catalog.placeOf(TargetSystem.BREVO, "10")).isEqualTo(TargetPlace(listOf("Brevo", "Committees"), folderKnown = true))
+    }
+
+    @Test
+    fun `a target's folder is unknown when its system cannot say where it is`() {
+        whenever(strategy.resolve("10")).thenThrow(IllegalStateException("Brevo is down"))
+        whenever(strategy.resolve("11")).thenReturn(null)
+
+        assertThat(catalog.placeOf(TargetSystem.BREVO, "10")).isEqualTo(TargetPlace(listOf("Brevo"), folderKnown = false))
+        assertThat(catalog.placeOf(TargetSystem.BREVO, "11")).isEqualTo(TargetPlace(listOf("Brevo"), folderKnown = false))
+    }
 }

@@ -1062,6 +1062,9 @@ components:
           type:
           - string
           - 'null'
+        folderKnown:
+          description: False when the system could not say which folder the target is in
+          type: boolean
         kind:
           $ref: '#/components/schemas/CohortKind'
         label:
@@ -1073,7 +1076,7 @@ components:
           - string
           - 'null'
         path:
-          description: 'Where the target sits on its system, outside in: the system, then any folder holding it. Read from what was recorded when the target was linked or moved, so a page costs no call to the system.'
+          description: 'Where the target sits on its system, outside in: the system, then any folder holding it, read from the system itself.'
           items:
             type: string
           type: array
@@ -1082,6 +1085,7 @@ components:
           description: External system this mapping targets
       required:
       - cohortId
+      - folderKnown
       - kind
       - label
       - path

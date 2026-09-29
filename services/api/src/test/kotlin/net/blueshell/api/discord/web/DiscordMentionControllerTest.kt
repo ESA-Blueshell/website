@@ -67,6 +67,7 @@ class DiscordMentionControllerTest {
             DiscordMentionChannelResponse("1", "general", null),
             DiscordMentionChannelResponse("2", "events-info", "Events"),
         )
+        assertThat(controller.channels().body!!.map { it.category }).containsExactly(null, "Events")
 
         val offline: DiscordChannelDirectory = mock { on { open() } doReturn null }
         assertThat(controller(members, roles, offline).channels().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)

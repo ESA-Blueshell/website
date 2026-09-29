@@ -62,6 +62,7 @@ class DiscordMemberControllerTest {
     fun `answers the roles an event may ping with their colours, or 503 without a bot`() {
         assertThat(controller.roles().body)
             .containsExactly(DiscordRoleResponse("901", "Gamers", 0x3498DB), DiscordRoleResponse("902", "Board", null))
+        assertThat(controller.roles().body!!.map { it.colour }).containsExactly(0x3498DB, null)
 
         val offline: DiscordRoleDirectory = mock { on { pingable() } doReturn null }
         assertThat(DiscordMemberController(directory, offline, channels, emoji).roles().statusCode)

@@ -37,7 +37,7 @@ const games = [
   banner: null,
   intro: null,
   sortIndex: index + 1,
-  current: true,
+  inCompetition: true,
 }))
 
 /** The season's band, holding every one of [games] and nothing the shared mocks field. */

@@ -1203,18 +1203,6 @@ export type EnqueueJobRequest = {
     } | null;
 };
 
-/**
- * A Discord channel a game's esports players meet in, with its name as last known
- */
-export type EsportsChannelResponse = {
-    /**
-     * The server the channel is in, which a link into it needs
-     */
-    guildId: string;
-    id: string;
-    name: string;
-};
-
 export type EventBannerRequest = {
     fileId: number;
     version?: number | null;
@@ -1482,56 +1470,6 @@ export type GameHoldingsResponse = {
 
 export type GameOrganisersRequest = {
     committeeIds: Array<number>;
-};
-
-/**
- * A game: what it is called, the art it is drawn with, and how it is presented
- */
-export type GameResponse = {
-    /**
-     * The colour that carries this game, where one has been chosen
-     */
-    accent?: string | null;
-    /**
-     * The game's own image
-     */
-    banner?: Image | null;
-    /**
-     * The identifier teams, rosters and game accounts reference. Never changes
-     */
-    code: string;
-    /**
-     * What the competition pages say instead of the intro, where anything is said
-     */
-    competitionIntro?: string | null;
-    /**
-     * Whether the association currently plays it: a team played it this season or last
-     */
-    current: boolean;
-    /**
-     * The Discord channels its esports players meet in, in the order chosen
-     */
-    esportsChannels: Array<EsportsChannelResponse>;
-    /**
-     * The game's own icon
-     */
-    icon?: Image | null;
-    /**
-     * What is said about the game, where anything is said
-     */
-    intro?: string | null;
-    /**
-     * What this game is called
-     */
-    name: string;
-    /**
-     * The address this game answers to
-     */
-    slug: string;
-    /**
-     * Where the game sits among the others
-     */
-    sortIndex: number;
 };
 
 /**
@@ -5591,47 +5529,6 @@ export type ListDiscordRolesResponses = {
 };
 
 export type ListDiscordRolesResponse = ListDiscordRolesResponses[keyof ListDiscordRolesResponses];
-
-export type FindGamesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/esports/games';
-};
-
-export type FindGamesErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindGamesError = FindGamesErrors[keyof FindGamesErrors];
-
-export type FindGamesResponses = {
-    /**
-     * OK
-     */
-    200: Array<GameResponse>;
-};
-
-export type FindGamesResponse = FindGamesResponses[keyof FindGamesResponses];
 
 export type FindGameData = {
     body?: never;

@@ -27,7 +27,7 @@ import {
   fieldTeam,
   findGame,
   findGameAccounts,
-  findGames,
+  findCasualGames,
   findPlayedRosters,
   findSeasonContents,
   findSeasonGames,
@@ -37,7 +37,7 @@ import {
   uploadPublicImage,
 } from "@/services/api"
 import type {Image} from "@/services/api"
-import {FileType, TeamRole, type GameResponse} from "@/services/api"
+import {FileType, TeamRole, type CasualGameResponse} from "@/services/api"
 import {aGame, aSeason, aTeam} from "../../../helpers/apiFixtures"
 import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 
@@ -52,7 +52,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   findGame: vi.fn(),
   findGameAccounts: vi.fn(),
   findPlayedRosters: vi.fn(),
-  findGames: vi.fn(),
+  findCasualGames: vi.fn(),
   findSeasonContents: vi.fn(),
   findSeasonGames: vi.fn(),
   findTeams: vi.fn(),
@@ -78,7 +78,7 @@ beforeEach(() => {
 
 describe("loadGames", () => {
   it("answers with the games it read, drawn against the api rather than the page's own origin", async () => {
-    vi.mocked(findGames).mockResolvedValue(answer(findGames, [aGame({code: "VAL", name: "Valorant", banner: picture("/media/val.png"), icon: null})]))
+    vi.mocked(findCasualGames).mockResolvedValue(answer(findCasualGames, [aGame({code: "VAL", name: "Valorant", banner: picture("/media/val.png"), icon: null})]))
 
     const [game] = await loadGames()
 
@@ -89,7 +89,7 @@ describe("loadGames", () => {
   // Every page asks for this, including ones served before the api is reachable, so a body that
   // is not the list it was promised reads as no games rather than taking the navigation down.
   it("answers with no games at all where the body was not a list", async () => {
-    vi.mocked(findGames).mockResolvedValue(answer(findGames, {message: "no"} as unknown as GameResponse[]))
+    vi.mocked(findCasualGames).mockResolvedValue(answer(findCasualGames, {message: "no"} as unknown as CasualGameResponse[]))
 
     await expect(loadGames()).resolves.toEqual([])
   })

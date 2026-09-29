@@ -21,7 +21,7 @@ test.describe("a game as its record has it", () => {
 
     await page.goto("/competition/valorant")
 
-    await expect(page.getByTestId("esports-game-intro")).toContainText("Shooters, and plenty of them.")
+    await expect(page.getByTestId("esports-game-intro")).toContainText("Five-stacks, customs and clips.")
   })
 
   test("carries the record's accent across the page", async ({page}) => {
@@ -40,7 +40,7 @@ test.describe("a game as its record has it", () => {
     await installApiMocks(page, {
       esportsGames: [
         anEsportsGame({code: "VALORANT", name: "Valorant", slug: "valorant", accent: null, banner: null, icon: null,
-          intro: "Nothing drawn for it.", sortIndex: 1, current: true}),
+          intro: "Nothing drawn for it.", sortIndex: 1, inCompetition: true}),
       ],
     })
 
@@ -59,7 +59,7 @@ test.describe("a game as its record has it", () => {
     await installApiMocks(page, {
       esportsGames: [
         anEsportsGame({code: "VALORANT", name: "Valorant Reborn", slug: "valorant", accent: "#ff4655",
-          banner: null, icon: null, intro: "Renamed.", sortIndex: 1, current: true}),
+          banner: null, icon: null, intro: "Renamed.", sortIndex: 1, inCompetition: true}),
       ],
     })
 

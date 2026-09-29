@@ -2,6 +2,7 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
+import net.blueshell.api.game.api.GameHeld
 import net.blueshell.api.game.api.GameHoldings
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.game.api.GamesInCompetition
@@ -28,9 +29,9 @@ class FieldedGames(
         return fielded.countTeamsByGame(code) to entries.countByGame(code)
     }
 
-    override fun heldAgainst(code: String): Map<String, Long> {
+    override fun heldAgainst(code: String): GameHeld {
         val (teams, players) = contentsOf(code)
-        return mapOf("teams" to teams, "players" to players)
+        return GameHeld(teams = teams, players = players)
     }
 
     override fun refuseRemoval(code: String) {

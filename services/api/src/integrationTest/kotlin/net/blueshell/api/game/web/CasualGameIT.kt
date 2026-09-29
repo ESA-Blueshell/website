@@ -205,7 +205,7 @@ class CasualGameIT : UserTestSupport() {
 
         val code = name.uppercase()
         mvc
-            .perform(get("/esports/games"))
+            .perform(get("/games"))
             .andExpect(jsonPath("$[?(@.code == '$code')].intro").value("Lines"))
             .andExpect(jsonPath("$[?(@.code == '$code')].competitionIntro").value("Ranked"))
             .andExpect(jsonPath("$[?(@.code == '$code')].esportsChannels[0].id").value("902"))

@@ -25,7 +25,7 @@ class EsportsControllerWriteTest {
     private val seasons = mock<SeasonService>()
     private val teams = mock<TeamService>()
     private val rosters = mock<TeamRosterService>()
-    private val controller = EsportsController(mock(), seasons, teams, mock(), rosters, mock(), mock())
+    private val controller = EsportsController(mock(), seasons, teams, rosters, mock(), mock())
 
     private val start = LocalDate.of(2030, 9, 1)
     private val end = LocalDate.of(2031, 1, 31)

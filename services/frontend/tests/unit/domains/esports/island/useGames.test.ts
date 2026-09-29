@@ -15,13 +15,13 @@ const art = (path: string) => ({
 })
 
 const VALORANT = {
-  code: "VAL", name: "Valorant", slug: "valorant", current: true,
+  code: "VAL", name: "Valorant", slug: "valorant", inCompetition: true,
   accent: "#ff4655", banner: art("/media/val.png"), icon: art("/media/val-icon.png"),
   esportsChannels: [{id: "7", guildId: "324", name: "valorant-esports"}],
 } as unknown as Game
 
 const CSGO = {
-  code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", current: false,
+  code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", inCompetition: false,
   accent: null, banner: null, icon: null,
 } as unknown as Game
 

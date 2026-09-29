@@ -21,7 +21,7 @@ import java.time.LocalDate
 
 class EsportsControllerLineupTest {
     private val rosters = mock<TeamRosterService>()
-    private val controller = EsportsController(mock(), mock(), mock(), mock(), rosters, mock(), mock())
+    private val controller = EsportsController(mock(), mock(), mock(), rosters, mock(), mock())
 
     @Test
     fun `hands the whole draft to one publish and answers with the team and its roster`() {

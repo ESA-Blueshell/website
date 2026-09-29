@@ -2,6 +2,7 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
+import net.blueshell.api.game.api.GameHeld
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.game.persistence.Game
 import org.assertj.core.api.Assertions.assertThat
@@ -43,7 +44,7 @@ class FieldedGamesTest {
         whenever(fielded.countTeamsByGame("VALORANT")).thenReturn(3L)
         whenever(entries.countByGame("VALORANT")).thenReturn(14L)
 
-        assertThat(holdings.heldAgainst("VALORANT")).isEqualTo(mapOf("teams" to 3L, "players" to 14L))
+        assertThat(holdings.heldAgainst("VALORANT")).isEqualTo(GameHeld(teams = 3, players = 14))
     }
 
     @Test

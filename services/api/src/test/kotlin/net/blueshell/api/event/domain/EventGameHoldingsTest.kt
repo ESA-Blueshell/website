@@ -1,6 +1,7 @@
 package net.blueshell.api.event.domain
 
 import net.blueshell.api.event.persistence.EventRepository
+import net.blueshell.api.game.api.GameHeld
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
@@ -11,7 +12,7 @@ class EventGameHoldingsTest {
     fun `counts the events that name a game, and never refuses its removal`() {
         val holdings = EventGameHoldings(mock<EventRepository> { on { countNamingGame("CHESS") } doReturn 3 })
 
-        assertThat(holdings.heldAgainst("CHESS")).isEqualTo(mapOf("events" to 3L))
+        assertThat(holdings.heldAgainst("CHESS")).isEqualTo(GameHeld(events = 3))
         holdings.refuseRemoval("CHESS")
     }
 }

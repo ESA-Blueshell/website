@@ -34,7 +34,6 @@ import type {
   EventSignUpResponse,
   FieldTeamRequest,
   FieldValidationError,
-  GameResponse,
   GameRostersResponse,
   JobExecution,
   LinkBoardMemberRequest,
@@ -93,7 +92,7 @@ type Fixtures = {
   esportsSeasons?: Wire<SeasonResponse>[]
   esportsTeams?: Wire<TeamResponse>[]
   esportsRoster?: Wire<RosterEntryResponse>[]
-  esportsGames?: Wire<GameResponse>[]
+  esportsGames?: Wire<CasualGameResponse>[]
   casualGames?: Wire<CasualGameResponse>[]
   boards?: Wire<BoardResponse>[]
   cohortSubjectDetail?: Partial<CohortSubjectDetail>
@@ -130,14 +129,14 @@ const addressTaken = (gameName: string, address: string) => ({
 })
 
 const esportsGames = [
-  anEsportsGame({code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, current: true}),
-  anEsportsGame({code: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, current: true}),
-  anEsportsGame({code: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: "A special place.", sortIndex: 3, current: true}),
-  anEsportsGame({code: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", banner: null, icon: null, intro: "Football, with rocket cars.", sortIndex: 4, current: true}),
-  anEsportsGame({code: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", banner: null, icon: null, intro: "Guessing where.", sortIndex: 5, current: true}),
+  anEsportsGame({code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, inCompetition: true}),
+  anEsportsGame({code: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, inCompetition: true}),
+  anEsportsGame({code: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: "A special place.", sortIndex: 3, inCompetition: true}),
+  anEsportsGame({code: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", banner: null, icon: null, intro: "Football, with rocket cars.", sortIndex: 4, inCompetition: true}),
+  anEsportsGame({code: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", banner: null, icon: null, intro: "Guessing where.", sortIndex: 5, inCompetition: true}),
   // No accent has ever been written for Trackmania: it reads on the island's own blue.
-  anEsportsGame({code: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, current: true}),
-  anEsportsGame({code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, current: false}),
+  anEsportsGame({code: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, inCompetition: true}),
+  anEsportsGame({code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, inCompetition: false}),
 ]
 
 /**
@@ -432,13 +431,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
    * know and the casual list does not name is answered here too, as the api would.
    */
   const casualNow = () => {
-    const listed: Wire<CasualGameResponse>[] = fixtures.casualGames ?? casualGames
+    // A spec's own competition games are the records it is about, so they win over the defaults.
+    const listed: Wire<CasualGameResponse>[] = (fixtures.casualGames ?? casualGames)
+      .map(one => fixtures.esportsGames?.find(held => held.code === one.code) ?? one)
     const competition = (fixtures.esportsGames ?? esportsGames)
       .filter(one => !listed.some(held => held.code === one.code))
-      .map(one => casualGame(one.code, one.name, one.slug, one.sortIndex, {
-        accent: one.accent ?? null, intro: one.intro ?? null, banner: one.banner ?? null, icon: one.icon ?? null,
-        inCompetition: one.current === true,
-      }))
     const known = [...listed, ...competition].map(one => casualEdited.get(String(one.code)) ?? one)
     const added = [...casualEdited.values()].filter(one => !known.some(k => k.code === one.code))
     return [...known, ...added].filter(one => !casualGone.has(String(one.code)) && !gamesGone.has(String(one.code)))
@@ -448,12 +445,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     const held = new Set(fieldedNow.filter(one => one.game === code).map(one => one.teamId))
     return held.size + (code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0)
   }
-  /** A game as the competition pages read it, from what the casual pages last wrote about it. */
-  const competitionOf = (one: Wire<CasualGameResponse>, was?: Wire<GameResponse>): Wire<GameResponse> => ({
-    code: one.code, name: one.name, slug: one.slug, accent: one.accent ?? null, intro: one.intro ?? null,
-    banner: one.banner ?? null, icon: one.icon ?? null, sortIndex: one.sortIndex ?? 0, current: was?.current ?? false,
-    competitionIntro: one.competitionIntro ?? null, esportsChannels: one.esportsChannels ?? [],
-  })
   /** Games corrected during the test, which every read then reports as corrected. */
   /** Games removed during the test, which the reads then leave out. */
   const gamesGone = new Set<string>()
@@ -1597,16 +1588,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       casualGone.add(casualOne[1]!)
       gamesGone.add(casualOne[1]!)
       return route.fulfill({status: 204, body: ""})
-    }
-    // The api answers in the order the records put the games in, and so does this.
-    if (method === "GET" && path === "/esports/games") {
-      const records = (fixtures.esportsGames ?? esportsGames)
-        .map(one => (casualEdited.has(String(one.code)) ? competitionOf(casualEdited.get(String(one.code))!, one) : one))
-      const added = [...casualEdited.values()]
-        .filter(one => !records.some(held => held.code === one.code))
-        .map(one => competitionOf(one))
-      const all = [...records, ...added].filter(one => !gamesGone.has(String(one.code)) && !casualGone.has(String(one.code)))
-      return answer(route, "findGames", all)
     }
     // [A-Z0-9_]+ rather than [A-Z_]+: a game's enum name can carry a digit, and
     // CS2 is one. With the digit excluded this route never matched, so every CS2

@@ -8,9 +8,9 @@ const {mockAdapters, mockNetworkError, games} = vi.hoisted(() => ({
   mockAdapters: {loadGameAccounts: vi.fn(), setGameAccount: vi.fn(), clearGameAccount: vi.fn()},
   mockNetworkError: vi.fn(),
   games: [
-    {code: "VALORANT", name: "Valorant", current: true},
-    {code: "LEAGUE", name: "League of Legends", current: true},
-    {code: "CSGO", name: "CS:GO", current: false},
+    {code: "VALORANT", name: "Valorant", inCompetition: true},
+    {code: "LEAGUE", name: "League of Legends", inCompetition: true},
+    {code: "CSGO", name: "CS:GO", inCompetition: false},
   ],
 }))
 

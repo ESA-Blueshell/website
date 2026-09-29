@@ -258,7 +258,6 @@ class CohortTargetingService(
         val linked: String?,
     )
 
-
     companion object {
         private val log = LoggerFactory.getLogger(CohortTargetingService::class.java)
     }

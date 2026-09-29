@@ -19,7 +19,7 @@ vi.mock("@/services/api", async importOriginal => ({
 }))
 
 const committee = (id: number, name: string, over: Record<string, unknown> = {}) => ({
-  id, name, slug: name.toLowerCase(), description: `${name} runs things.`, listed: true, archived: false, banner: null, gameCodes: [],
+  id, name, slug: name.toLowerCase(), description: `${name} runs things.`, archived: false, banner: null, gameCodes: [],
   version: 0, createdAt: "", updatedAt: "", ...over,
 })
 
@@ -48,23 +48,23 @@ beforeEach(() => {
   findCasualGames.mockResolvedValue({data: [{code: "CS2", name: "Counter-Strike 2", slug: "cs2", channels: [], archived: false}]})
   findCommittees.mockResolvedValue({data: [
     committee(1, "LanCie", {gameCodes: ["CS2", "GONE"]}),
-    committee(2, "Board", {listed: false}),
+    committee(2, "Board"),
     committee(3, "OldCie", {archived: true}),
     committee(4, "YapCie"),
   ]})
 })
 
 describe("the committees page", () => {
-  it("puts the committees that run on the reel and the archived ones in the drifting band, unlisted ones nowhere", async () => {
+  it("puts the committees that run on the reel and the archived ones in the drifting band", async () => {
     const wrapper = await mountPage()
 
-    expect(wrapper.getComponent({name: "FlickReel"}).props("items").map((one: {id: number}) => one.id)).toEqual([1, 4])
+    expect(wrapper.getComponent({name: "FlickReel"}).props("items").map((one: {id: number}) => one.id)).toEqual([1, 2, 4])
     expect(wrapper.getComponent({name: "FlickReel"}).props("items")[0].chips).toEqual(["Counter-Strike 2"])
     expect(wrapper.getComponent({name: "DriftRow"}).props("items").map((one: {id: number}) => one.id)).toEqual([3])
     expect(wrapper.get("[data-testid=committees-olden]").text()).toContain("The committees we used to have")
     expect(wrapper.get("[data-testid=committees-olden]").text()).toContain("any member can run a one-off event as a member's initiative")
     expect(wrapper.getComponent({name: "ArtCells"}).props("cells").map((one: {id: number, archived: boolean}) => [one.id, one.archived]))
-      .toEqual([[1, false], [4, false], [3, true]])
+      .toEqual([[1, false], [2, false], [4, false], [3, true]])
   })
 
   it("follows a committee from the reel, the drifting band or the cells to its page", async () => {
@@ -87,14 +87,25 @@ describe("the committees page", () => {
     expect(wrapper.find("[data-testid=committees-ask]").exists()).toBe(true)
   })
 
-  it("offers the board a committee to add on its own page, and archiving from a cell", async () => {
+  it("runs the reel for the board with nothing on it but the way to add a committee", async () => {
+    findCommittees.mockResolvedValue({data: []})
+    store.getters.isBoard = true
+    const wrapper = await mountPage()
+
+    expect(wrapper.getComponent({name: "FlickReel"}).props("items").map((one: {id: string}) => one.id)).toEqual(["add"])
+  })
+
+  it("offers the board a committee to add as the reel's last slice, and archiving from a cell", async () => {
+    const ids = (wrapper: Awaited<ReturnType<typeof mountPage>>) =>
+      wrapper.getComponent({name: "FlickReel"}).props("items").map((one: {id: number | string}) => one.id)
     const plain = await mountPage()
-    expect(plain.find("[data-testid=committees-add]").exists()).toBe(false)
+    expect(ids(plain)).not.toContain("add")
     expect(plain.find("[data-testid=committees-every-archive-1]").exists()).toBe(false)
 
     store.getters.isBoard = true
     const wrapper = await mountPage()
-    expect(wrapper.get("[data-testid=committees-add]").attributes("href")).toBe("/committees/new")
+    expect(wrapper.getComponent({name: "FlickReel"}).props("items").at(-1))
+      .toMatchObject({id: "add", title: "Add a committee", href: "/committees/new", plus: true})
 
     expect(wrapper.get("[data-testid=committees-every-archive-3]").text()).toBe("Bring back")
     await wrapper.get("[data-testid=committees-every-archive-1]").trigger("click")

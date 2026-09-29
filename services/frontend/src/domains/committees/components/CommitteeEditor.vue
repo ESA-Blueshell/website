@@ -3,7 +3,6 @@ import {refreshSharedLists} from "@/utils/sharedLists"
 import {addressOf} from "@/utils/address"
 import {computed, ref, watch} from "vue"
 import ArtCells from "@/components/island/ArtCells.vue"
-import CheckBox from "@/components/island/CheckBox.vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import EditPage from "@/components/island/EditPage.vue"
@@ -57,7 +56,6 @@ const emit = defineEmits<{
 const adding = computed(() => props.committee == null)
 const name = ref("")
 const slug = ref("")
-const listed = ref(true)
 const description = ref("")
 const banner = ref<Picture | null>(null)
 const icon = ref<Picture | null>(null)
@@ -69,7 +67,6 @@ const saving = ref(false)
 watch(() => props.committee, async committee => {
   name.value = committee?.name ?? ""
   slug.value = committee?.slug ?? ""
-  listed.value = committee?.listed ?? true
   description.value = committee?.description ?? ""
   banner.value = (committee?.banner as Picture | null | undefined) ?? null
   icon.value = (committee?.icon as Picture | null | undefined) ?? null
@@ -109,7 +106,6 @@ const drafted = computed<Committee>(() => ({
   name: name.value.trim() || "New committee",
   slug: slug.value,
   description: description.value,
-  listed: listed.value,
   archived: props.committee?.archived ?? false,
   banner: banner.value,
   icon: icon.value,
@@ -126,7 +122,6 @@ const cell = computed(() => [cellOf(drafted.value, codes => codes
 const draft = () => ({
   name: name.value.trim(),
   slug: slug.value.trim() || undefined,
-  listed: listed.value,
   description: description.value.trim(),
   banner: banner.value?.path ?? null,
   icon: icon.value?.path ?? null,
@@ -255,14 +250,6 @@ const removeIt = async () => {
             @update:model-value="typeSlug"
           />
           <div class="form-span">
-            <check-box
-              v-model="listed"
-              :disabled="!asBoard"
-              label="Show on the committees page and in the menu"
-              testid="committee-edit-listed"
-            />
-          </div>
-          <div class="form-span">
             <event-games-picker
               v-model="gameCodes"
               testid="committee-edit-games"
@@ -282,7 +269,7 @@ const removeIt = async () => {
           class="committee-editor__note"
           data-testid="committee-edit-fixed"
         >
-          The board changes the name, address, listing and members.
+          The board changes the name, address and members.
         </p>
       </form-section>
 

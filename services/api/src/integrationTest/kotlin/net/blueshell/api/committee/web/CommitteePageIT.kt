@@ -66,7 +66,7 @@ class CommitteePageIT : UserTestSupport() {
                 .perform(get("/committees/address/{address}", committee.slug.uppercase()))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.name").value(committee.name))
-                .andExpect(jsonPath("$.listed").value(true))
+                .andExpect(jsonPath("$.listed").doesNotExist())
                 .andReturn()
                 .response.contentAsString
 

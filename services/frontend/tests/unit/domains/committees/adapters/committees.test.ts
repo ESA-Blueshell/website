@@ -36,7 +36,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 const banner = anImage({url: "/files/public/committee-banners/l.webp", path: "committee-banners/l.webp", width: null, height: null, renditions: [{url: "/files/public/640/l.webp", width: 640}]})
 const lan = aCommittee({banner})
 const resolved = "http://localhost:3000/api/files/public/committee-banners/l.webp"
-const draft = {name: "LanCie", slug: "", listed: true, description: "LANs", banner: null, icon: null, members: [{userId: 4, role: null}], gameCodes: ["CS2"]}
+const draft = {name: "LanCie", slug: "", description: "LANs", banner: null, icon: null, members: [{userId: 4, role: null}], gameCodes: ["CS2"]}
 
 beforeEach(() => vi.clearAllMocks())
 

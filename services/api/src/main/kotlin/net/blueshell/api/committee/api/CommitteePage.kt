@@ -8,7 +8,6 @@ package net.blueshell.api.committee.api
  */
 data class CommitteePage(
     val address: String? = null,
-    val listed: Boolean = true,
     val banner: String? = null,
     val icon: String? = null,
     val gameCodes: List<String>? = null,

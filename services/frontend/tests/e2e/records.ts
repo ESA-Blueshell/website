@@ -121,7 +121,6 @@ export const aCommittee = (over: Partial<Wire<CommitteeResponse>> = {}): Wire<Co
   name: "Events Committee",
   slug: "events-committee",
   description: "Runs things.",
-  listed: true,
   archived: false,
   gameCodes: [],
   ...over,

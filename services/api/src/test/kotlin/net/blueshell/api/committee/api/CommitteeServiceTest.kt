@@ -73,7 +73,7 @@ class CommitteeServiceTest {
     }
 
     @Test
-    fun `adds a committee at an address made from its name, listed, with its banner and games`() {
+    fun `adds a committee at an address made from its name, with its banner and games`() {
         val banner = Entities.file()
         whenever(pictures.of("b.webp", FileType.COMMITTEE_BANNER)).thenReturn(banner)
         whenever(games.requireNameable(listOf("CHESS"), emptySet())).thenReturn(listOf("CHESS"))
@@ -82,7 +82,6 @@ class CommitteeServiceTest {
         val made = service.createWithMembers("Member's initiative", "Anything", emptyList(), page)
 
         assertThat(made.slug).isEqualTo("member-s-initiative")
-        assertThat(made.listed).isTrue()
         assertThat(made.banner).isSameAs(banner)
         assertThat(made.gameCodes).containsExactly("CHESS")
     }
@@ -105,10 +104,9 @@ class CommitteeServiceTest {
         stored(lan)
         whenever(repository.findBySlug("lan")).thenReturn(lan)
 
-        val saved = service.updateWithMembers(1, "LanCie", "LANs, bigger", emptyList(), 0, CommitteePage(address = "lan", listed = false))
+        val saved = service.updateWithMembers(1, "LanCie", "LANs, bigger", emptyList(), 0, CommitteePage(address = "lan"))
 
         assertThat(saved.slug).isEqualTo("lan")
-        assertThat(saved.listed).isFalse()
         assertThat(saved.description).isEqualTo("LANs, bigger")
         assertThat(saved.gameCodes).containsExactly("CS2")
         assertThat(saved.version).isEqualTo(0)
@@ -143,13 +141,12 @@ class CommitteeServiceTest {
     }
 
     @Test
-    fun `adds and corrects a committee listed at an address from its name where nothing else is said`() {
+    fun `adds and corrects a committee at an address from its name where nothing else is said`() {
         val lan = committee(1, "LanCie")
         stored(lan)
 
         assertThat(service.createWithMembers("Pub Quiz", "Questions", emptyList()).slug).isEqualTo("pub-quiz")
         assertThat(service.updateWithMembers(1, "LAN Cie", "LANs", emptyList(), null).slug).isEqualTo("lan-cie")
-        assertThat(lan.listed).isTrue()
     }
 
     @Test

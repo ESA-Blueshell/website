@@ -1,4 +1,4 @@
-name,listed,games
-Board,false,
-LanCie,true,ALPHA BETA
-Gone,true,ALPHA
+name,games
+Board,
+LanCie,ALPHA BETA
+Gone,ALPHA

@@ -16,7 +16,7 @@ const stubs = {
   NotFound: {name: "NotFound", template: "<div data-testid=missing />"},
 }
 
-const lan = {id: 7, name: "LanCie", slug: "lancie", description: "", listed: true, archived: false, banner: null, gameCodes: [], members: []}
+const lan = {id: 7, name: "LanCie", slug: "lancie", description: "", archived: false, banner: null, gameCodes: [], members: []}
 
 beforeEach(() => {
   route.params.address = "lancie"

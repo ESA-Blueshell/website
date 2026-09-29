@@ -21,7 +21,7 @@ defineOptions({name: "CasualPage"})
 const {games, live, archived, refresh} = useCasualGames()
 const mayEdit = useIsBoard()
 
-const {listed: committees} = useCommittees()
+const {committees} = useCommittees()
 /** The committees that organise events for a game, by name, drawn as its chips. */
 const organisersOf = (code: string) => committees.value.filter(committee => committee.gameCodes.includes(code)).map(committee => committee.name)
 

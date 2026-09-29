@@ -8,7 +8,7 @@ vi.mock("@/services/api", async importOriginal => ({
 }))
 
 const committee = (id: number, name: string, over: Record<string, unknown> = {}) => ({
-  id, name, slug: name.toLowerCase(), description: `${name} runs things.`, listed: true, archived: false, banner: null, gameCodes: [],
+  id, name, slug: name.toLowerCase(), description: `${name} runs things.`, archived: false, banner: null, gameCodes: [],
   version: 0, createdAt: "", updatedAt: "", ...over,
 })
 
@@ -18,16 +18,15 @@ beforeEach(() => {
 })
 
 describe("the committees", () => {
-  it("reads them once, leaves the unlisted ones out, and splits the archived ones off", async () => {
-    findCommittees.mockResolvedValue({data: [committee(1, "LanCie"), committee(2, "Board", {listed: false}), committee(3, "OldCie", {archived: true})]})
-    const {committees, listed, live, archived, ready} = useCommittees()
+  it("reads them once and splits the archived ones off", async () => {
+    findCommittees.mockResolvedValue({data: [committee(1, "LanCie"), committee(2, "Board"), committee(3, "OldCie", {archived: true})]})
+    const {committees, live, archived, ready} = useCommittees()
     await ready
     useCommittees()
 
     expect(findCommittees).toHaveBeenCalledTimes(1)
     expect(committees.value).toHaveLength(3)
-    expect(listed.value.map(one => one.id)).toEqual([1, 3])
-    expect(live.value.map(one => one.id)).toEqual([1])
+    expect(live.value.map(one => one.id)).toEqual([1, 2])
     expect(archived.value.map(one => one.id)).toEqual([3])
   })
 

@@ -453,18 +453,12 @@ link was pasted into, from what the page says about itself.
 
 ## Committees
 
-### Listed
-
-Whether a committee appears on the committees pages at all. Board and One-Of-Committee are
-not listed: they are committees in the data, with seats and events, but not ones a member
-joins. An unlisted committee still has its page.
-
 ### Archived committee
 
 A committee that no longer runs. It leaves the committees reel and the pickers, keeps its
-page and its past events, and appears among the committees we used to have. Distinct from
-**unlisted**, which hides a committee that still runs, and from a deleted committee, which
-is gone.
+page and its past events, and appears among the committees we used to have, where anyone
+can ask for it back. Archiving is the only way a committee leaves the committees pages:
+there is no hiding one that still runs. Distinct from a deleted committee, which is gone.
 
 ## Contributions
 

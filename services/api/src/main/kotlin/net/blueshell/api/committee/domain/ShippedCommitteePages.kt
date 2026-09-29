@@ -15,8 +15,8 @@ import org.springframework.transaction.support.TransactionTemplate
 import javax.sql.DataSource
 
 /**
- * Says once, from `db/seed/committees/pages.csv`, which committees are unlisted and which games
- * each organises events for. Each fact is written once, on the first start that finds both the
+ * Says once, from `db/seed/committees/pages.csv`, which games each committee organises events
+ * for. Each fact is written once, on the first start that finds both the
  * committee and the game standing (see [SeedLedger]), so the board's later edits outlive it.
  */
 @Component
@@ -43,10 +43,6 @@ class ShippedCommitteePages(
             val name = row.getValue("name")
             val committee = committees.findByName(name) ?: return@sumOf 0
             var written = 0
-            if (!row.getValue("listed").toBoolean() && ledger.toWrite("committee-unlisted|$name") { false }) {
-                committee.listed = false
-                written++
-            }
             row.getValue("games").split(' ').filter { it.isNotBlank() }.forEach { code ->
                 if (games.stands(code) && ledger.toWrite("committee-game|$name|$code") { code in committee.gameCodes }) {
                     committee.gameCodes.add(code)

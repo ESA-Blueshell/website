@@ -26,7 +26,7 @@ const {game} = defineProps<{game: CasualGame}>()
 
 const router = useRouter()
 const {refresh} = useCasualGames()
-const {listed: committees} = useCommittees()
+const {committees} = useCommittees()
 const mayEdit = useIsBoard()
 
 const archiving = ref(false)

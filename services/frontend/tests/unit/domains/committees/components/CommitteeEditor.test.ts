@@ -76,7 +76,6 @@ describe("the committee edit page, for the board", () => {
     await input(wrapper, "slug").setValue("quiz")
     await input(wrapper, "name").setValue("Pub Quiz Cie")
     describe_(wrapper, "Questions.")
-    await wrapper.get("input[data-testid=committee-edit-listed]").setValue(false)
     expect(seats(wrapper).props("modelValue")).toEqual([])
     seats(wrapper).vm.$emit("update:modelValue", [{userId: 4, role: " Chair "}])
     await flushPromises()
@@ -88,7 +87,7 @@ describe("the committee edit page, for the board", () => {
     await flushPromises()
 
     expect(adapter.addCommittee).toHaveBeenCalledWith({
-      name: "Pub Quiz Cie", slug: "quiz", listed: false, description: "Questions.", banner: null, icon: null, members: [{userId: 4, role: "Chair"}], gameCodes: ["CHESS"],
+      name: "Pub Quiz Cie", slug: "quiz", description: "Questions.", banner: null, icon: null, members: [{userId: 4, role: "Chair"}], gameCodes: ["CHESS"],
     })
     expect(wrapper.emitted("saved")).toEqual([[lan]])
   })
@@ -160,15 +159,14 @@ describe("the committee edit page, for the board", () => {
 describe("the committee edit page, for its own members", () => {
   it("locks the board's fields, and saves the description, banner and games", async () => {
     adapter.saveOwnCommitteePage.mockResolvedValue({ok: true, saved: lan})
-    const wrapper = mountEditor({...lan, listed: false}, false)
+    const wrapper = mountEditor(lan, false)
     await flushPromises()
 
     expect(input(wrapper, "name").attributes("disabled")).toBeDefined()
     expect(input(wrapper, "slug").attributes("disabled")).toBeDefined()
-    expect(wrapper.get("input[data-testid=committee-edit-listed]").attributes("disabled")).toBeDefined()
     expect(wrapper.find("[data-testid=committee-edit-member]").exists()).toBe(false)
     expect(wrapper.find("[data-testid=committee-edit-remove]").exists()).toBe(false)
-    expect(wrapper.get("[data-testid=committee-edit-fixed]").text()).toBe("The board changes the name, address, listing and members.")
+    expect(wrapper.get("[data-testid=committee-edit-fixed]").text()).toBe("The board changes the name, address and members.")
     describe_(wrapper, "LANs, monthly.")
     await wrapper.get("form").trigger("submit")
     await flushPromises()

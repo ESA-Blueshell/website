@@ -43,8 +43,8 @@ beforeEach(() => {
   forgetCasualGames()
   forgetCommittees()
   findCommittees.mockResolvedValue({data: [
-    {id: 1, name: "LegaCie", slug: "legacie", description: "", listed: true, archived: false, banner: null, gameCodes: ["CHESS"]},
-    {id: 2, name: "Board", slug: "board", description: "", listed: false, archived: false, banner: null, gameCodes: ["CHESS"]},
+    {id: 1, name: "LegaCie", slug: "legacie", description: "", archived: false, banner: null, gameCodes: ["CHESS"]},
+    {id: 2, name: "Board", slug: "board", description: "", archived: false, banner: null, gameCodes: ["CHESS"]},
   ]})
   push.mockReset()
   findCasualGames.mockResolvedValue({data: [game("CHESS", "Chess"), game("DOTA_2", "Dota 2", true), game("WORDLE", "Wordle")]})
@@ -67,10 +67,10 @@ describe("the casual page", () => {
       .toEqual([["CHESS", false], ["WORDLE", false], ["DOTA_2", true]])
   })
 
-  it("names the listed committees behind a game as chips, on the reel and on its cell", async () => {
+  it("names the committees behind a game as chips, on the reel and on its cell", async () => {
     const wrapper = await mountPage()
 
-    expect(wrapper.getComponent({name: "FlickReel"}).props("items")[0].chips).toEqual(["LegaCie"])
+    expect(wrapper.getComponent({name: "FlickReel"}).props("items")[0].chips).toEqual(["LegaCie", "Board"])
     expect(wrapper.getComponent({name: "ArtCells"}).props("cells")[1].chips).toEqual([])
   })
 

@@ -90,6 +90,23 @@ describe("findUncheckedWrites", () => {
     expect(offendersIn("async function save() {\n  return await createBoard({body})\n}")).toEqual([])
   })
 
+  it("accepts a write handed to an envelope helper, a ternary between two of them included", () => {
+    const source = [
+      "const dropped = accepted(deleteBoard({path: {id}}), \"The board could not be removed.\")",
+      "const saved = await refusable(",
+      "  id == null ? createBoard({body}) : deleteBoard({path: {id}}),",
+      "  \"That board could not be saved.\",",
+      ")",
+    ].join("\n")
+
+    expect(offendersIn(source)).toEqual([])
+  })
+
+  it("reports a write handed to a call that is not an envelope helper", () => {
+    expect(offendersIn("await Promise.all([deleteBoard({path: {id: 1}})])")).toEqual(["deleteBoard:1"])
+    expect(offendersIn("await settle(deleteBoard({path: {id: 1}}))")).toEqual(["deleteBoard:1"])
+  })
+
   it("ignores a same-named method on some other object", () => {
     expect(offendersIn("await api.deleteBoard({path: {id: 1}})")).toEqual([])
   })

@@ -46,16 +46,4 @@ interface CohortRemediation {
         cohortId: Long,
         trigger: JobTrigger?,
     )
-
-    /**
-     * Operator-triggered repair for a bound cohort after a target has been
-     * linked manually. Re-enqueues ADD jobs for desired rows that are not
-     * currently synced so no-op rule evaluation does not strand them.
-     */
-    fun repairMissingAdds(cohortId: Long): CohortRepairResult
 }
-
-data class CohortRepairResult(
-    val cohortId: Long,
-    val enqueuedAdds: Int,
-)

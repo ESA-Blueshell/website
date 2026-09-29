@@ -147,27 +147,6 @@ class CohortRemediationService(
         )
     }
 
-    override fun repairMissingAdds(cohortId: Long): CohortRepairResult =
-        writeTransaction.execute {
-            val cohort =
-                cohortRepo.findById(cohortId).orElseThrow {
-                    NonRetryableJobException("Cohort $cohortId not found")
-                }
-            targetIds.require(cohort)
-            val rows =
-                memberRepo
-                    .findAllByCohortIdAndUserIdIsNotNull(cohortId)
-                    .filter { it.syncedAt == null }
-            rows.forEach { row ->
-                jobs.runAsync(
-                    CohortJobs.SyncCohortMembership,
-                    CohortJobs.SyncCohortMembershipPayload(row.userId!!, cohortId, SyncCohortMembershipIntent.ADD),
-                    JobTrigger.SITE_ACTION,
-                )
-            }
-            CohortRepairResult(cohortId, rows.size)
-        }
-
     private fun loadPlan(cohortId: Long): ReconcilePlan {
         val cohort =
             cohortRepo.findById(cohortId).orElseThrow {

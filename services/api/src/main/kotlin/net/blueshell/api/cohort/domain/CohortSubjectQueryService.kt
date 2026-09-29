@@ -12,10 +12,12 @@ import net.blueshell.api.cohort.persistence.DriftResolutionRepository
 import net.blueshell.api.cohort.persistence.TargetReconcileRun
 import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.state
+import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -94,6 +96,16 @@ class CohortSubjectQueryService(
             }
         return byExternalId
     }
+
+    /** Every target with how many of our people it holds, for the pickers. */
+    @Transactional(readOnly = true)
+    fun targets(): List<TargetSummary> =
+        cohorts.findAll().map { cohort ->
+            TargetSummary(
+                cohort = cohort,
+                memberCount = cohortMembers.countByCohortIdAndUserIdIsNotNull(cohort.id!!).toInt(),
+            )
+        }
 
     @Transactional(readOnly = true)
     // Assembles one view out of six repositories; each block reads one of them.
@@ -210,6 +222,12 @@ class CohortSubjectQueryService(
     }
 }
 
+/** A target and how many of our people it holds. */
+data class TargetSummary(
+    val cohort: Cohort,
+    val memberCount: Int,
+)
+
 /** Read-model projection for the dashboard's top-level list. */
 data class CohortSubjectSummary(
     val subject: CohortSubject,
@@ -251,4 +269,32 @@ data class CohortMappingRow(
     val path: List<String> = emptyList(),
     /** The target's recent reconciles, newest first; the first is its current drift. */
     val runs: List<TargetReconcileRun> = emptyList(),
+)
+
+/**
+ * One ledger row on a cohort's page, with the joined user record
+ * if the user is still active. [isUserDeleted] is true when the user
+ * has been soft-deleted but the cohort_member row was retained for
+ * historical stats — the admin UI renders these in a muted style with
+ * a "Deleted" badge instead of the active user details.
+ */
+data class CohortMemberRow(
+    val member: CohortMember,
+    val user: User?,
+    val isUserDeleted: Boolean = false,
+    /**
+     * Which system's ledger this row belongs to. A row is per (cohort, user), and a cohort is
+     * per system, so a subject with two targets holds two rows for the same person.
+     */
+    val system: TargetSystem? = null,
+    /**
+     * The state the row is in. Defaulted so the older per-cohort projection, which does not
+     * report it, is unaffected.
+     */
+    val state: CohortMemberState? = null,
+    /**
+     * For a row present externally but not desired locally: the account behind that external
+     * id, once resolved. Null when nothing local matches it.
+     */
+    val resolvedUserId: Long? = null,
 )

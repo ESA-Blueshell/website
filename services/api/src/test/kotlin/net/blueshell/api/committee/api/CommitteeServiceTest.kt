@@ -21,6 +21,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.dao.OptimisticLockingFailureException
@@ -35,11 +36,12 @@ class CommitteeServiceTest {
     private val pictures = mock<StoredPictures>()
     private val games = mock<GameService>()
     private val actors = mock<ActorProvider> { on { currentOrSystem() } doReturn Actor.system() }
+    private val afterCommit = mock<AfterCommitEventPublisher>()
     private val service =
         CommitteeService(
             repository,
             mock<UserService>(),
-            TrackedEventPublisher(mock<AfterCommitEventPublisher>(), actors, mock()),
+            TrackedEventPublisher(afterCommit, actors, mock()),
             pictures,
             games,
         )
@@ -205,5 +207,13 @@ class CommitteeServiceTest {
         service.deleteById(1)
 
         verify(repository).delete(lan)
+    }
+
+    @Test
+    fun `a new committee announces itself, with or without members`() {
+        service.createWithMembers("Registratiecie", "Checks its cohort", emptyList())
+        service.create(Committee(name = "Quizcie", description = "Questions"))
+
+        verify(afterCommit, times(2)).publish(CommitteeCreated(9, Actor.system()))
     }
 }

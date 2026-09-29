@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.context.annotation.Bean
 import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 
 /**
  * A job type whose definition loses its binding stops being handled silently — the queue marks its
@@ -77,5 +78,34 @@ class CohortJobHandlersTest {
         assertThat(bound.syncCohortMembershipHandler().runJob("""{"userId":1,"cohortId":10,"intent":"REMOVE"}"""))
             .isEqualTo(JobOutcome.Skipped("The cohort has no BREVO list linked."))
         assertThat(bound.evaluateUserCohortsHandler().runJob("""{"userId":1}""")).isEqualTo(JobOutcome.Done())
+    }
+
+    @Test
+    fun `the create-target jobs make the cohort's target, and the backfill says when it found nothing to do`() {
+        val targeting = mockk<CohortTargeting>(relaxed = true)
+        every { targeting.createMissing() } returnsMany listOf(0, 2)
+        val bound =
+            CohortJobHandlers(
+                // The app's mapper knows Kotlin defaults, which the backfill's empty payload needs.
+                JsonMapper.builder().findAndAddModules().build(),
+                reconciliation = mockk(relaxed = true),
+                membership = mockk(relaxed = true),
+                targeting = targeting,
+                remediation = mockk(relaxed = true),
+                inbound = mockk(relaxed = true),
+            )
+
+        bound.createCohortTargetHandler().runJob("""{"cohortId":5}""")
+        bound.materializeCohortTargetHandler().runJob("""{"cohortId":6}""")
+        val backfill = bound.createMissingCohortTargetsHandler()
+
+        assertThat(backfill.runJob("{}")).isEqualTo(JobOutcome.Skipped("Every cohort has its target"))
+        assertThat(backfill.runJob("{}")).isEqualTo(JobOutcome.Done())
+        io.mockk.verify {
+            targeting.createFor(5L)
+            targeting.createFor(6L)
+        }
+        assertThat(CohortJobs.CreateCohortTarget.dedupKey(CohortJobs.CreateCohortTargetPayload(5L))).isEqualTo("cohort=5")
+        assertThat(CohortJobs.CreateMissingCohortTargetsPayload().unused).isEqualTo(Unit)
     }
 }

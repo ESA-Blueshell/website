@@ -2,10 +2,14 @@ package net.blueshell.api.cohort.web
 
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
+import net.blueshell.api.cohort.persistence.CohortMember
+import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
+import net.blueshell.api.cohort.persistence.DriftResolutionRepository
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
@@ -33,6 +37,12 @@ class CohortSubjectControllerIT : UserTestSupport() {
 
     @Autowired
     private lateinit var externalIds: ExternalIdMappingRepository
+
+    @Autowired
+    private lateinit var members: CohortMemberRepository
+
+    @Autowired
+    private lateinit var resolutions: DriftResolutionRepository
 
     @Autowired
     private lateinit var contactListAdapters: List<ContactListAdapter>
@@ -105,25 +115,74 @@ class CohortSubjectControllerIT : UserTestSupport() {
     }
 
     @Test
-    fun `admin link of an external id owned by another user returns 409`() {
+    fun `linking a contact owned by another account reports the conflict and links the rest`() {
         val admin = createUserWithRole(Role.ADMIN)
         val owner = createUserWithRole(Role.MEMBER)
         val claimant = createUserWithRole(Role.MEMBER)
+        val other = createUserWithRole(Role.MEMBER)
         val subject = newSubject()
-        externalIds.saveAndFlush(
-            ExternalIdMapping("USER", owner.id!!, TargetSystem.BREVO.name, "ext-conflict"),
-        )
+        val cohort = newCohort(subject, externalId = "list-9")
+        members.save(CohortMember(cohort, null, subject, externalUserId = "ext-conflict", label = "a@example.com"))
+        members.save(CohortMember(cohort, null, subject, externalUserId = "ext-free", label = "b@example.com"))
+        externalIds.saveAndFlush(ExternalIdMapping("USER", owner.id!!, TargetSystem.BREVO.name, "ext-conflict"))
 
         mvc
             .perform(
-                post("/management/cohort-subjects/{id}/drift/link-user", subject.id)
+                post("/management/cohort-subjects/{id}/targets/{cohortId}/drift/link", subject.id, cohort.id)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"userId":${claimant.id},"system":"BREVO","externalUserId":"ext-conflict"}""",
+                        """{"links":[{"externalUserId":"ext-conflict","userId":${claimant.id}},""" +
+                            """{"externalUserId":"ext-free","userId":${other.id}}]}""",
                     ).with(signedIn(admin)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.linked").value(1))
+            .andExpect(jsonPath("$.conflicts[0].externalUserId").value("ext-conflict"))
+            .andExpect(jsonPath("$.conflicts[0].existingUserId").value(owner.id!!.toInt()))
+
+        mvc
+            .perform(get("/management/cohort-subjects/{id}", subject.id).with(signedIn(admin)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.resolutions.length()").value(1))
+            .andExpect(jsonPath("$.resolutions[0].action").value("LINK"))
+            .andExpect(jsonPath("$.resolutions[0].externalUserId").value("ext-free"))
+            .andExpect(jsonPath("$.resolutions[0].resolvedByName").value(admin.fullName))
+    }
+
+    @Test
+    fun `removing theirs-only people records each removal`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+        val cohort = newCohort(subject, externalId = "list-10")
+        members.save(CohortMember(cohort, null, subject, externalUserId = "ext-1", label = "c@example.com"))
+
+        mvc
+            .perform(
+                post("/management/cohort-subjects/{id}/targets/{cohortId}/drift/remove", subject.id, cohort.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"externalUserIds":["ext-1","ext-unknown"]}""")
+                    .with(signedIn(admin)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.resolved").value(1))
+
+        assertThat(resolutions.findTop20ByCohortIdInOrderByResolvedAtDesc(listOf(cohort.id!!)))
+            .singleElement()
+            .satisfies({ assertThat(it.action).isEqualTo(DriftResolutionAction.REMOVE) })
+    }
+
+    @Test
+    fun `resolving drift on a target not yet created is refused`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+        val cohort = newCohort(subject)
+
+        mvc
+            .perform(
+                post("/management/cohort-subjects/{id}/targets/{cohortId}/drift/push", subject.id, cohort.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"userIds":[1]}""")
+                    .with(signedIn(admin)),
             ).andExpect(status().isConflict)
-            .andExpect(jsonPath("$.existingUserId").value(owner.id!!.toInt()))
-            .andExpect(jsonPath("$.system").value(TargetSystem.BREVO.name))
+            .andExpect(jsonPath("$.code").value("TargetNotCreated"))
     }
 
     @Test

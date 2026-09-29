@@ -34,6 +34,7 @@ const rawSubject = (over: Record<string, unknown> = {}) => ({
   orphaned: false,
   mappings: [],
   members: [],
+  resolutions: [],
   ...over,
 })
 
@@ -112,6 +113,18 @@ describe("a cohort subject arrives with its absences already decided", () => {
       folderKnown: false,
       runs: [],
     })
+  })
+
+  it("a resolution by the api itself names nobody as its maker", async () => {
+    vi.mocked(findCohortSubjectById).mockResolvedValue(answer(findCohortSubjectById, rawSubject({
+        resolutions: [{cohortId: 3, system: TargetSystem.BREVO, action: "REMOVE", resolvedAt: "2026-09-29T20:00:00Z"}],
+      })))
+
+    const subject = await fetchCohortSubject(7)
+
+    expect(subject?.resolutions).toEqual([
+      {system: TargetSystem.BREVO, action: "REMOVE", personName: null, resolvedByName: null, resolvedAt: "2026-09-29T20:00:00Z"},
+    ])
   })
 
   it("a listing that came back with nothing reads as no cohorts", async () => {

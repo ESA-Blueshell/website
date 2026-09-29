@@ -9,10 +9,12 @@ import {
   createTargetForSubject,
   deleteTarget,
   linkExistingTargetForSubject,
-  linkUserToExternal,
+  linkDriftPeople,
   moveTargetToFolder,
   moveTargetsToFolder,
-  removeExternalMember,
+  proposeDriftLinks,
+  pushDriftPeople,
+  removeDriftPeople,
   renameTarget,
   switchCohortTarget,
   triggerReconcile,
@@ -27,10 +29,13 @@ import {
   deleteExternalTarget,
   enqueue,
   linkExistingTarget,
-  linkUser,
+  linkDrift,
   moveCohortTarget,
   moveCohortTargets,
   previewFolderTidy,
+  proposeLinks,
+  pushDrift,
+  removeDrift,
   renameExternalTarget,
   switchTarget,
 } from "@/services/api"
@@ -52,7 +57,10 @@ vi.mock("@/services/api", async (importOriginal) => ({
   renameExternalTarget: vi.fn(),
   enqueue: vi.fn(),
   linkExistingTarget: vi.fn(),
-  linkUser: vi.fn(),
+  linkDrift: vi.fn(),
+  proposeLinks: vi.fn(),
+  pushDrift: vi.fn(),
+  removeDrift: vi.fn(),
   moveCohortTarget: vi.fn(),
   moveCohortTargets: vi.fn(),
   switchTarget: vi.fn(),
@@ -81,16 +89,6 @@ describe("enqueued cohort work", () => {
     })
   })
 
-  it("names the member to drop in the job's own payload", async () => {
-    vi.mocked(enqueue).mockResolvedValue(answer(enqueue, aJob({id: 89})))
-
-    await expect(removeExternalMember(4, "ext-1")).resolves.toBe(89)
-    expect(enqueue).toHaveBeenCalledWith({
-      body: {jobType: "cohort.remove-external-member", payload: {cohortId: 4, externalUserId: "ext-1"}},
-      throwOnError: true,
-    })
-  })
-
   it("answers with no job where the api named none", async () => {
     vi.mocked(enqueue).mockResolvedValue(emptyAnswer(enqueue))
 
@@ -98,49 +96,44 @@ describe("enqueued cohort work", () => {
   })
 })
 
-/**
- * A 409 here means the external account is already somebody else's, which is a thing the
- * operator resolves rather than an error. Anything else stays an error.
- */
-describe("linkUserToExternal", () => {
-  it("answers that the link was made", async () => {
-    vi.mocked(linkUser).mockResolvedValue(emptyAnswer(linkUser))
+describe("resolving drift", () => {
+  it("pushes and removes people, answering how many were still drifting", async () => {
+    vi.mocked(pushDrift).mockResolvedValue(answer(pushDrift, {resolved: 2}))
+    vi.mocked(removeDrift).mockResolvedValue(answer(removeDrift, {resolved: 1}))
 
-    await expect(linkUserToExternal(1, 2, TargetSystem.BREVO, "ext-1")).resolves.toEqual({type: "ok"})
-    expect(linkUser).toHaveBeenCalledWith({
-      path: {id: 1},
-      body: {userId: 2, system: TargetSystem.BREVO, externalUserId: "ext-1"},
-      throwOnError: true,
-    })
+    await expect(pushDriftPeople(1, 4, [5, 6])).resolves.toEqual({ok: true, saved: 2})
+    await expect(removeDriftPeople(1, 4, ["ext-1"])).resolves.toEqual({ok: true, saved: 1})
+    expect(pushDrift).toHaveBeenCalledWith({path: {id: 1, cohortId: 4}, body: {userIds: [5, 6]}})
+    expect(removeDrift).toHaveBeenCalledWith({path: {id: 1, cohortId: 4}, body: {externalUserIds: ["ext-1"]}})
   })
 
-  it("answers with the account already holding the external id", async () => {
-    vi.mocked(linkUser).mockRejectedValue(
-      thrown(409, {existingUserId: 7, system: TargetSystem.BREVO, existingUserFullName: "Roos Kruk"}),
-    )
+  it("says why a target not yet created refuses", async () => {
+    vi.mocked(pushDrift).mockResolvedValue(refusal(pushDrift, {code: "TargetNotCreated", cohortId: 4}, 409))
+    vi.mocked(removeDrift).mockResolvedValue(refusal(removeDrift, {code: "TargetNotOfCohort", cohortId: 4}, 404))
 
-    await expect(linkUserToExternal(1, 2, TargetSystem.BREVO, "ext-1")).resolves.toEqual({
-      type: "conflict",
-      conflict: {existingUserId: 7, system: TargetSystem.BREVO, existingUserFullName: "Roos Kruk"},
-    })
+    await expect(pushDriftPeople(1, 4, [5])).resolves.toEqual({ok: false, reason: "The target has not been created yet."})
+    await expect(removeDriftPeople(1, 4, ["x"])).resolves.toEqual({ok: false, reason: "That target is not this cohort's; reload the page."})
   })
 
-  it("reports a conflict with an account nobody named a name for", async () => {
-    vi.mocked(linkUser).mockRejectedValue(thrown(409, {existingUserId: 7, system: TargetSystem.BREVO}))
+  it("proposes the account for each contact, and links the chosen ones", async () => {
+    vi.mocked(proposeLinks).mockResolvedValue(answer(proposeLinks, [{externalUserId: "a", label: "a@example.com", userId: 5, userFullName: "Ada"}, {externalUserId: "b"}]))
+    vi.mocked(linkDrift).mockResolvedValue(answer(linkDrift, {linked: 1, conflicts: []}))
 
-    await expect(linkUserToExternal(1, 2, TargetSystem.BREVO, "ext-1")).resolves.toMatchObject({
-      conflict: {existingUserFullName: null},
+    await expect(proposeDriftLinks(1, 4, ["a", "b"])).resolves.toEqual({
+      ok: true,
+      saved: [
+        {externalUserId: "a", label: "a@example.com", userId: 5, userFullName: "Ada"},
+        {externalUserId: "b", label: null, userId: null, userFullName: null},
+      ],
     })
+    await expect(linkDriftPeople(1, 4, [{externalUserId: "a", userId: 5}])).resolves.toEqual({ok: true, saved: {linked: 1, conflicts: []}})
+    expect(linkDrift).toHaveBeenCalledWith({path: {id: 1, cohortId: 4}, body: {links: [{externalUserId: "a", userId: 5}]}})
   })
 
-  it("leaves anything that is not a conflict to the caller's error path", async () => {
-    vi.mocked(linkUser).mockRejectedValue(thrown(500))
-    await expect(linkUserToExternal(1, 2, TargetSystem.BREVO, "ext-1")).rejects.toMatchObject({response: {status: 500}})
+  it("answers a refused proposal as refused", async () => {
+    vi.mocked(proposeLinks).mockResolvedValue(refusal(proposeLinks, {code: "TargetNotCreated", cohortId: 4}, 409))
 
-    // A 409 without a body says nothing about who holds the id, so it is not a conflict
-    // the operator can act on either.
-    vi.mocked(linkUser).mockRejectedValue(thrown(409))
-    await expect(linkUserToExternal(1, 2, TargetSystem.BREVO, "ext-1")).rejects.toMatchObject({response: {status: 409}})
+    await expect(proposeDriftLinks(1, 4, ["a"])).resolves.toMatchObject({ok: false})
   })
 })
 

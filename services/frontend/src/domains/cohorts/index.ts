@@ -26,17 +26,19 @@ export type {
   CohortSubject,
   CohortSubjectSummary,
   CohortSyncState,
+  DriftResolutionEntry,
   ExternalTarget,
+  LinkOutcome,
+  LinkProposal,
   ReconcileRun,
   TargetMapping,
 } from "./adapters/cohorts"
-export {CohortKind, CohortSubjectCategory, CohortSubjectType, TargetSystem} from "./adapters/cohorts"
-export {type ExternalUserConflict} from "./adapters/cohorts"
+export {CohortKind, CohortSubjectCategory, CohortSubjectType, DriftResolutionAction, TargetSystem} from "./adapters/cohorts"
 export {fetchCohortOptions} from "./adapters/cohorts"
 export {fetchCohortSubject} from "./adapters/cohorts"
 export {fetchCohortSubjects} from "./adapters/cohorts"
-export {linkUserToExternal} from "./adapters/cohorts"
+export {linkDriftPeople, proposeDriftLinks, pushDriftPeople, removeDriftPeople} from "./adapters/cohorts"
 export {queueCohortJob} from "./adapters/cohorts"
-export {removeExternalMember} from "./adapters/cohorts"
 export {triggerReconcile} from "./adapters/cohorts"
+export {useDriftResolution} from "./composables/useDriftResolution"
 export {useTargetOverview} from "./composables/useTargetOverview"

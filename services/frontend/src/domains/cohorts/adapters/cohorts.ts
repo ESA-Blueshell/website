@@ -16,13 +16,16 @@ import {
   findCohortSubjects,
   findCohorts,
   linkExistingTarget,
-  linkUser,
+  linkDrift,
   listCohortTargetFolders,
   listCohortTargetSystems,
   moveCohortTarget,
   moveCohortTargets,
   previewFolderTidy,
   previewInboundReconcile,
+  proposeLinks,
+  pushDrift,
+  removeDrift,
   renameExternalTarget,
   searchCohortTargets,
   switchTarget,
@@ -38,7 +41,7 @@ import type {
   InboundReconcilePreview as ApiInboundReconcilePreview,
   TargetDescriptor as ApiTargetDescriptor,
 } from "@/services/api"
-import {CohortKind, CohortSubjectCategory, CohortSubjectType, JobTrigger, TargetSystem} from "@/services/api"
+import {CohortKind, CohortSubjectCategory, CohortSubjectType, DriftResolutionAction, JobTrigger, TargetSystem} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
@@ -48,13 +51,7 @@ import {accepted, refusable} from "@/domains/cohorts/refusals"
  * The enums are re-exported rather than re-declared: what a picker offers and what a category
  * route matches are the values the api declares, and a copy in a page drifts from them.
  */
-export {CohortKind, CohortSubjectCategory, CohortSubjectType, JobTrigger, TargetSystem}
-
-export type ExternalUserConflict = {
-  existingUserId: number
-  system: string
-  existingUserFullName: string | null
-}
+export {CohortKind, CohortSubjectCategory, CohortSubjectType, DriftResolutionAction, JobTrigger, TargetSystem}
 
 export async function triggerReconcile(cohortId: number): Promise<number | null> {
   const res = await enqueue({
@@ -64,49 +61,55 @@ export async function triggerReconcile(cohortId: number): Promise<number | null>
   return res.data?.id ?? null
 }
 
-export async function removeExternalMember(
-  cohortId: number,
-  externalUserId: string,
-): Promise<number | null> {
-  const res = await enqueue({
-    body: { jobType: "cohort.remove-external-member", payload: { cohortId, externalUserId } },
-    throwOnError: true,
-  })
-  return res.data?.id ?? null
+
+/** A theirs-only contact, and the account holding the address the target calls them by. */
+export type LinkProposal = {externalUserId: string; label: string | null; userId: number | null; userFullName: string | null}
+
+/** How many contacts were linked, and those another account already holds. */
+export type LinkOutcome = {linked: number; conflicts: {externalUserId: string; existingUserId: number}[]}
+
+/** Push each ours-only person to the target; answers how many were still ours only. */
+export async function pushDriftPeople(subjectId: number, cohortId: number, userIds: number[]): Promise<Saved<number> | Refused> {
+  const answer = await refusable(pushDrift({path: {id: subjectId, cohortId}, body: {userIds}}), "They could not be pushed.")
+  return answer.ok ? {ok: true, saved: answer.saved.resolved} : answer
 }
 
-export type LinkUserResult = { type: "ok" } | { type: "conflict"; conflict: ExternalUserConflict }
-
-export async function linkUserToExternal(
+/** Remove each theirs-only person from the target; answers how many were still theirs only. */
+export async function removeDriftPeople(
   subjectId: number,
-  userId: number,
-  system: TargetSystem,
-  externalUserId: string,
-): Promise<LinkUserResult> {
-  try {
-    // `throwOnError` is what makes the conflict below reachable: without it the client
-    // resolves with the refusal and the caller reports a link that never happened.
-    await linkUser({
-      path: { id: subjectId },
-      body: { userId, system, externalUserId },
-      throwOnError: true,
-    })
-    return { type: "ok" }
-  } catch (err: unknown) {
-    const resp = (err as { response?: { status?: number; data?: Record<string, unknown> } })?.response
-    if (resp?.status === 409 && resp.data) {
-      const d = resp.data
-      return {
-        type: "conflict",
-        conflict: {
-          existingUserId: d["existingUserId"] as number,
-          system: d["system"] as string,
-          existingUserFullName: (d["existingUserFullName"] as string | null) ?? null,
-        },
-      }
-    }
-    throw err
+  cohortId: number,
+  externalUserIds: string[],
+): Promise<Saved<number> | Refused> {
+  const answer = await refusable(removeDrift({path: {id: subjectId, cohortId}, body: {externalUserIds}}), "They could not be removed.")
+  return answer.ok ? {ok: true, saved: answer.saved.resolved} : answer
+}
+
+/** For each theirs-only contact, the account with its address, where there is one. Changes nothing. */
+export async function proposeDriftLinks(
+  subjectId: number,
+  cohortId: number,
+  externalUserIds: string[],
+): Promise<Saved<LinkProposal[]> | Refused> {
+  const answer = await refusable(proposeLinks({path: {id: subjectId, cohortId}, body: {externalUserIds}}), "The links could not be found.")
+  if (!answer.ok) return answer
+  return {
+    ok: true,
+    saved: answer.saved.map((p) => ({
+      externalUserId: p.externalUserId,
+      label: p.label ?? null,
+      userId: p.userId ?? null,
+      userFullName: p.userFullName ?? null,
+    })),
   }
+}
+
+/** Link each theirs-only contact to the account chosen for it. */
+export async function linkDriftPeople(
+  subjectId: number,
+  cohortId: number,
+  links: {externalUserId: string; userId: number}[],
+): Promise<Saved<LinkOutcome> | Refused> {
+  return refusable(linkDrift({path: {id: subjectId, cohortId}, body: {links}}), "They could not be linked.")
 }
 
 // Mirrors the API's CohortMapping. A field added there has to be added here too.
@@ -460,6 +463,18 @@ export type CohortSubject = {
   orphaned: boolean
   mappings: TargetMapping[]
   members: CohortMember[]
+  /** The latest drift resolutions across the cohort's targets, newest first. */
+  resolutions: DriftResolutionEntry[]
+}
+
+/** One person's drift on a target, resolved, and by whom. */
+export type DriftResolutionEntry = {
+  system: TargetSystem
+  action: DriftResolutionAction
+  personName: string | null
+  /** Null when the api resolved it on its own behalf. */
+  resolvedByName: string | null
+  resolvedAt: string
 }
 
 /** A cohort in a listing: enough to put it in a row, not enough to open it. */
@@ -527,6 +542,13 @@ function toCohortSubject(raw: ApiCohortSubjectDetail): CohortSubject {
     orphaned: raw.orphaned,
     mappings: raw.mappings.map(toTargetMapping),
     members: raw.members.map(toCohortMember),
+    resolutions: raw.resolutions.map((r) => ({
+      system: r.system,
+      action: r.action,
+      personName: r.personName ?? null,
+      resolvedByName: r.resolvedByName ?? null,
+      resolvedAt: r.resolvedAt,
+    })),
   }
 }
 

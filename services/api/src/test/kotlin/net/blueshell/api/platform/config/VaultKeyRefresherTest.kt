@@ -117,4 +117,17 @@ class VaultKeyRefresherTest {
         verify(events, never()).publishEvent(any<Any>())
         verify(api, times(2)).get("api")
     }
+
+    @Test
+    fun `the paths come from the profile's import list even where the environment sets its own`() {
+        // What the api Deployment sets until the contract step of api ADR-033.
+        environment.propertySources.addFirst(MapPropertySource("env", mapOf("spring.config.import" to "vault://")))
+        vaultHolds(mapOf("brevo.apiKey" to "old-brevo"))
+        val refresher = refresher()
+
+        vaultHolds(mapOf("brevo.apiKey" to "new-brevo"))
+        refresher.refresh()
+
+        assertThat(environment.getProperty("brevo.apiKey")).isEqualTo("new-brevo")
+    }
 }

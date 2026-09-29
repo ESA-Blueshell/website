@@ -19,8 +19,14 @@ class VaultKeyRefresherIT {
     @Test
     fun `a Brevo key and a mail password rotated in Vault reach the running api`() {
         SpringApplicationBuilder(RefresherOnly::class.java)
-            .run(*vault.bootArguments("prod", vault.tokenFor("api")), "--spring.cloud.vault.database.enabled=false")
-            .use { context ->
+            .run(
+                *vault.bootArguments("prod", vault.tokenFor("api")),
+                "--spring.cloud.vault.database.enabled=false",
+                // An import list that outranks the profile's, as the api Deployment sets until the
+                // contract step of api ADR-033. Optional here only because this test runs no database.
+                "--spring.config.import=optional:vault://",
+                "--VAULT_ENABLED=true",
+            ).use { context ->
                 vault.put("secret/api", "brevo.apiKey=rotated-brevo", "app.two-factor.key=two-factor")
                 vault.put("secret/platform/mail", "account.api=rotated-smtp", "account.bounce=imap")
                 context.getBean(VaultKeyRefresher::class.java).refresh()

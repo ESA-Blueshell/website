@@ -2,11 +2,10 @@ package net.blueshell.api.platform.config
 
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.context.properties.bind.Bindable
-import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.core.env.ConfigurableEnvironment
+import org.springframework.core.env.EnumerablePropertySource
 import org.springframework.core.env.MapPropertySource
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -91,14 +90,20 @@ class VaultKeyRefresher(
         private val log = LoggerFactory.getLogger(VaultKeyRefresher::class.java)
         const val SOURCE_NAME = "vault-refreshed"
         private const val SCHEME = "vault://"
+        private const val IMPORT = "spring.config.import"
 
-        // The bare `vault://` import is the secret backends, which lease rather than poll.
+        // The bare `vault://` import is the secret backends, which lease rather than poll. Every
+        // source's list is read, not only the winning one: the api Deployment sets its own
+        // SPRING_CONFIG_IMPORT until the contract step of api ADR-033, and it would hide the profile's.
         fun importedPaths(environment: ConfigurableEnvironment): List<ImportedPath> =
-            Binder
-                .get(environment)
-                .bind("spring.config.import", Bindable.listOf(String::class.java))
-                .orElse(emptyList())
-                .orEmpty()
+            environment.propertySources
+                .filterIsInstance<EnumerablePropertySource<*>>()
+                .flatMap { source ->
+                    source.propertyNames
+                        .filter { it == IMPORT || it.startsWith("$IMPORT[") }
+                        .flatMap { source.getProperty(it).toString().split(',') }
+                }.map { it.trim() }
+                .distinct()
                 .map { it.removePrefix("optional:") }
                 .filter { it.startsWith(SCHEME) && it.length > SCHEME.length }
                 .map { location ->

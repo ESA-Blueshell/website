@@ -79,22 +79,30 @@ class CohortSubjectControllerTest {
         whenever(queries.detail(9L)).thenReturn(
             CohortSubjectDetail(
                 subject = Entities.cohortSubject(id = 9L),
-                mappings = listOf(CohortMappingRow(Entities.cohort(id = 3L), null, path = listOf("Brevo"), runs = listOf(run))),
+                mappings =
+                    listOf(
+                        CohortMappingRow(
+                            Entities.cohort(id = 3L).apply { enforced = true },
+                            null,
+                            path = listOf("Brevo"),
+                            runs = listOf(run),
+                        ),
+                    ),
                 members = emptyList(),
                 definitionKey = null,
                 orphaned = false,
             ),
         )
 
-        val runs =
+        val mapping =
             controller
                 .findCohortSubjectById(9L)
                 .mappings
                 .single()
-                .runs
 
-        assertThat(runs).containsExactly(ReconcileRunResponse(run.startedAt, JobTrigger.SCHEDULED_RUN, 188, 2, 1))
-        assertThat(runs.single().trigger).isEqualTo(JobTrigger.SCHEDULED_RUN)
+        assertThat(mapping.runs).containsExactly(ReconcileRunResponse(run.startedAt, JobTrigger.SCHEDULED_RUN, 188, 2, 1))
+        assertThat(mapping.enforced).isTrue()
+        assertThat(mapping.runs.single().trigger).isEqualTo(JobTrigger.SCHEDULED_RUN)
     }
 
     @Test
@@ -110,6 +118,8 @@ class CohortSubjectControllerTest {
         assertThat(controller.removeDrift(1L, 2L, ExternalDriftRequest(listOf("x"))).resolved).isEqualTo(1)
         assertThat(controller.proposeLinks(1L, 2L, ExternalDriftRequest(listOf("x")))).containsExactly(proposal)
         assertThat(controller.linkDrift(1L, 2L, LinkDriftRequest(listOf(LinkChoice("x", 5L))))).isEqualTo(outcome)
+        controller.enforceTarget(1L, 2L, EnforceTargetRequest(true))
+        verify(resolutions).enforce(1L, 2L, true)
     }
 
     @Test

@@ -589,6 +589,10 @@ export enum CohortKind {
 
 export type CohortMapping = {
     cohortId: number;
+    /**
+     * Whether each reconcile removes the target's theirs-only people
+     */
+    enforced: boolean;
     externalId?: string | null;
     /**
      * False when the system could not say which folder the target is in
@@ -1203,7 +1207,8 @@ export enum DriftResolutionAction {
     PUSH = 'PUSH',
     REMOVE = 'REMOVE',
     LINK = 'LINK',
-    ADOPT = 'ADOPT'
+    ADOPT = 'ADOPT',
+    ENFORCED_REMOVE = 'ENFORCED_REMOVE'
 }
 
 export type DriftResolutionEntry = {
@@ -1279,6 +1284,13 @@ export type EmailStats = {
     pendingCount: number;
     sentCount: number;
     totalCount: number;
+};
+
+export type EnforceTarget = {
+    /**
+     * Whether each reconcile removes the target's theirs-only people
+     */
+    enforced: boolean;
 };
 
 export type EnqueueJobRequest = {
@@ -8168,6 +8180,50 @@ export type RemoveDriftResponses = {
 };
 
 export type RemoveDriftResponse = RemoveDriftResponses[keyof RemoveDriftResponses];
+
+export type EnforceTargetData = {
+    body: EnforceTarget;
+    path: {
+        id: number;
+        cohortId: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}/targets/{cohortId}/enforced';
+};
+
+export type EnforceTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EnforceTargetError = EnforceTargetErrors[keyof EnforceTargetErrors];
+
+export type EnforceTargetResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type EnforceTargetResponse = EnforceTargetResponses[keyof EnforceTargetResponses];
 
 export type ApplyInboundReconcileData = {
     body: InboundReconcileApplyRequest;

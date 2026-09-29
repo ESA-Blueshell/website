@@ -186,6 +186,31 @@ class CohortSubjectControllerIT : UserTestSupport() {
     }
 
     @Test
+    fun `only an admin enforces a target`() {
+        val board = createUserWithRole(Role.BOARD)
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+        val cohort = newCohort(subject, externalId = "list-11")
+
+        mvc
+            .perform(
+                put("/management/cohort-subjects/{id}/targets/{cohortId}/enforced", subject.id, cohort.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"enforced":true}""")
+                    .with(signedIn(board)),
+            ).andExpect(status().isForbidden)
+        mvc
+            .perform(
+                put("/management/cohort-subjects/{id}/targets/{cohortId}/enforced", subject.id, cohort.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"enforced":true}""")
+                    .with(signedIn(admin)),
+            ).andExpect(status().isNoContent)
+
+        assertThat(cohorts.findById(cohort.id!!).orElseThrow().enforced).isTrue()
+    }
+
+    @Test
     fun `non-admin is forbidden from creating a target`() {
         val member = createUserWithRole(Role.MEMBER)
         val subject = newSubject()

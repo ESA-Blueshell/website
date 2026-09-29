@@ -123,6 +123,16 @@ class DriftResolutions(
         return LinkOutcome(linked.size, conflicts)
     }
 
+    /** Switches whether each reconcile of the target removes its theirs-only people. */
+    @Transactional
+    fun enforce(
+        subjectId: Long,
+        cohortId: Long,
+        enforced: Boolean,
+    ) {
+        target(subjectId, cohortId).enforced = enforced
+    }
+
     /** Records [people] as resolved by [action] on [cohortId], by whoever is acting now. */
     fun record(
         cohortId: Long,

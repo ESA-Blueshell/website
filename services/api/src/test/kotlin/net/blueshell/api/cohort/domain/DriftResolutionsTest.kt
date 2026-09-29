@@ -125,6 +125,15 @@ class DriftResolutionsTest {
         assertThatThrownBy { service.remove(1L, 4L, listOf("x")) }.isInstanceOf(TargetNotCreated::class.java)
     }
 
+    @Test
+    fun `enforcing a target switches it, and switching back undoes it`() {
+        service.enforce(1L, 2L, true)
+        assertThat(cohort.enforced).isTrue()
+
+        service.enforce(1L, 2L, false)
+        assertThat(cohort.enforced).isFalse()
+    }
+
     private fun row(
         userId: Long?,
         externalUserId: String? = null,

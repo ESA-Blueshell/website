@@ -1,12 +1,15 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.RotatingHeader
+import net.blueshell.api.shared.credentials.RotatingSecret
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.clients.discord.DiscordClient
 import net.blueshell.clients.discord.api.DiscordApi
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
@@ -29,12 +32,12 @@ class DiscordClientConfig {
     fun discordRestClient(
         restClientBuilder: RestClient.Builder,
         jsonMapper: JsonMapper,
-        @Value($$"${discord.botToken:}") botToken: String,
+        environment: Environment,
         @Value($$"${discord.baseUrl:https://discord.com/api/v10}") baseUrl: String,
     ): RestClient =
         restClientBuilder
             .baseUrl(baseUrl)
-            .defaultHeader("Authorization", "Bot $botToken")
+            .requestInterceptor(RotatingHeader("Authorization", RotatingSecret(environment, Credentials.DISCORD_BOT), prefix = "Bot "))
             .requestInterceptor(RateLimitPause())
             .configureMessageConverters {
                 it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))

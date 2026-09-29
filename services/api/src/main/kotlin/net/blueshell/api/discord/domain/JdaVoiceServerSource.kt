@@ -1,6 +1,7 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.RotatingSecret
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.clients.discord.api.DiscordApi
 import net.dv8tion.jda.api.JDA
@@ -19,7 +20,9 @@ import net.dv8tion.jda.api.utils.data.DataObject
 import net.dv8tion.jda.internal.entities.GuildImpl
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.cloud.context.environment.EnvironmentChangeEvent
 import org.springframework.context.SmartLifecycle
+import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
@@ -43,7 +46,7 @@ import java.util.concurrent.TimeUnit
 @Component
 @WhenCredentialsSet(Credentials.DISCORD_BOT)
 class JdaVoiceServerSource(
-    @Value($$"${discord.botToken:}") private val botToken: String,
+    environment: Environment,
     @Value($$"${discord.guildId:}") private val guildId: String,
     private val discordApi: DiscordApi,
     private val clock: Clock = Clock.systemUTC(),
@@ -54,6 +57,13 @@ class JdaVoiceServerSource(
     GatewayGuild,
     SmartLifecycle {
     @Volatile private var jda: JDA? = null
+
+    private val token = RotatingSecret(environment, Credentials.DISCORD_BOT)
+
+    @Volatile private var connectedWith = ""
+
+    /** The token the gateway last connected with. */
+    internal val tokenInUse: String get() = connectedWith
 
     @Volatile private var granted: Set<GatewayIntent> = emptySet()
 
@@ -172,13 +182,15 @@ class JdaVoiceServerSource(
 
     @Synchronized
     private fun attempt() {
-        if (!running) return
+        // A retry queued before a reconnect finds the new session up and leaves it alone.
+        if (!running || jda != null) return
         granted =
             runCatching { privilegedIntentsOf(discordApi.getMyOauth2Application().flags) }
                 .onFailure { log.warn("Discord application flags could not be read; connecting without privileged intents", it) }
                 .getOrDefault(emptySet())
+        connectedWith = token.current()
         jda =
-            runCatching { connect(gatewayOf(botToken, granted, relay)) }
+            runCatching { connect(gatewayOf(connectedWith, granted, relay)) }
                 .onSuccess { failures = 0 }
                 .onFailure { log.warn("Discord gateway did not start; the band falls back to the public widget until it does", it) }
                 .getOrNull()
@@ -198,6 +210,22 @@ class JdaVoiceServerSource(
         val wait = FIRST_RETRY.multipliedBy(1L shl minOf(failures++, DOUBLINGS)).coerceAtMost(LAST_RETRY)
         log.info("Trying the Discord gateway again in {}", wait)
         later(wait, ::attempt)
+    }
+
+    /**
+     * Reconnects the gateway under a token rotated in Vault while the api runs. Reads fall back
+     * as when Discord is unreachable until the new session is up.
+     */
+    @org.springframework.context.event.EventListener(EnvironmentChangeEvent::class)
+    @Synchronized
+    fun onTokenRotated(event: EnvironmentChangeEvent) {
+        if (Credentials.DISCORD_BOT !in event.keys || !running || token.current() == connectedWith) return
+        log.info("Discord bot token rotated; connecting the gateway again")
+        val ended = jda
+        jda = null
+        ended?.shutdown()
+        failures = 0
+        attempt()
     }
 
     override fun stop() {

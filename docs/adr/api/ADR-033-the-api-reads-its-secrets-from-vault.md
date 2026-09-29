@@ -109,5 +109,8 @@ is not how a rotated key reaches the api.
 Built: Kubernetes auth, the KV import, fail-fast and the key names (#1682), and the leased
 api login with the migration on the owner's (#1826). `VaultConfigImportIT` proves the
 import against a real Vault with the `api` policy, and `DatabaseLoginIT` proves a rotation
-past `max_ttl` against a real MariaDB. Keys are read at start until #1823, #1827 and #1828
-make them rotate without a restart.
+past `max_ttl` against a real MariaDB. The poll (#1823) reaches every consumer: Brevo,
+Google Calendar, the mail sender and the bounce poller (#1823), the two-factor key, the JWT
+secret and the Vault OIDC client secret (#1827), and the Discord REST client and gateway
+(#1828). Until the contract step removes the api Deployment's `EMAIL_BOUNCE_IMAP_PASSWORD`,
+that variable outranks Vault for the bounce password.

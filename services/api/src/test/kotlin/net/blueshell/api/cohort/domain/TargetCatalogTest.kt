@@ -129,7 +129,7 @@ class TargetCatalogTest {
         val brevo = placingStrategy()
         whenever(brevo.createFolder("Archief")).thenReturn(listOf("Archief", "Committees"))
 
-        assertThat(TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).createFolder(TargetSystem.BREVO, "Archief"))
+        assertThat(catalogWith(brevo).createFolder(TargetSystem.BREVO, "Archief"))
             .containsExactly("Archief", "Committees")
     }
 

@@ -9,26 +9,25 @@ import {type EditorView, keymap} from "@codemirror/view"
 import {tags} from "@lezer/highlight"
 import {discordDialect, spoilerTag, subtextTag, underlineTag} from "@/components/island/markdownDialect"
 import {emojiOnClose} from "@/components/island/markdownEmoji"
-import {emojiLive, markdownLive, wrapWith} from "@/components/island/markdownLive"
+import {CODE_FONT, emojiLive, markdownLive, wrapWith} from "@/components/island/markdownLive"
 
-/* What markdown looks like once it is being read rather than typed. */
+/* What markdown looks like once it is being read rather than typed: as the Discord client draws
+   it, since that is where a description is also read. */
 const look = HighlightStyle.define([
-  {tag: tags.heading1, fontSize: "1.55rem", fontFamily: "var(--font-display)", lineHeight: "1.25"},
-  {tag: tags.heading2, fontSize: "1.3rem", fontFamily: "var(--font-display)", lineHeight: "1.3"},
-  {tag: [tags.heading3, tags.heading4, tags.heading5, tags.heading6], fontSize: "1.1rem",
-    fontFamily: "var(--font-display)"},
+  {tag: tags.heading1, fontSize: "1.5em", fontWeight: "700", lineHeight: "1.3"},
+  {tag: tags.heading2, fontSize: "1.25em", fontWeight: "700", lineHeight: "1.3"},
+  {tag: [tags.heading3, tags.heading4, tags.heading5, tags.heading6], fontWeight: "700"},
   {tag: tags.strong, fontWeight: "700"},
   {tag: tags.emphasis, fontStyle: "italic"},
   {tag: tags.strikethrough, textDecoration: "line-through", color: "var(--color-ash)"},
   {tag: tags.link, color: "var(--color-brand-lit)", textDecoration: "underline"},
   {tag: tags.url, color: "var(--color-ash)"},
-  {tag: tags.monospace, fontFamily: "var(--font-bitmap)", color: "var(--color-eyebrow)"},
-  {tag: tags.quote, color: "var(--color-ash)", fontStyle: "italic"},
+  {tag: tags.monospace, fontFamily: CODE_FONT, fontSize: "0.85em"},
   {tag: tags.processingInstruction, color: "var(--color-ash)"},
   {tag: underlineTag, textDecoration: "underline", textUnderlineOffset: "3px"},
-  // Readable while it is written: the dark bar says it is a spoiler without hiding it.
-  {tag: spoilerTag, backgroundColor: "color-mix(in oklab, var(--color-chalk) 12%, var(--color-void))",
-    borderRadius: "3px"},
+  // Readable while it is written: the dark block says it is a spoiler without hiding it.
+  {tag: spoilerTag, backgroundColor: "color-mix(in oklab, var(--color-void) 75%, transparent)",
+    borderRadius: "3px", padding: "0 0.15em"},
   {tag: subtextTag, fontSize: "0.8em", color: "var(--color-ash)"},
 ])
 

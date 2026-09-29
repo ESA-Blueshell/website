@@ -80,7 +80,7 @@ class DiscordMemberController(
     @ApiResponse(responseCode = "503", description = "The bot is not set up, or Discord did not answer", content = [Content()])
     fun roles(): ResponseEntity<List<DiscordRoleResponse>> {
         val found = pingableRoles.pingable() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        return ResponseEntity.ok(found.map { DiscordRoleResponse(it.id, it.name) })
+        return ResponseEntity.ok(found.map { DiscordRoleResponse(it.id, it.name, it.colour) })
     }
 
     // What a game may be put in, for whoever edits games, so it needs a login.

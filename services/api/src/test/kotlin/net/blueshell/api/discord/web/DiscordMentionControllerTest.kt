@@ -5,8 +5,8 @@ import net.blueshell.api.discord.domain.DiscordChannelDirectory
 import net.blueshell.api.discord.domain.DiscordMember
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
 import net.blueshell.api.discord.domain.DiscordMentionNameSource
+import net.blueshell.api.discord.domain.DiscordRole
 import net.blueshell.api.discord.domain.DiscordRoleDirectory
-import net.blueshell.api.discord.domain.DiscordRoleName
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -18,9 +18,9 @@ import org.springframework.http.HttpStatus
 class DiscordMentionControllerTest {
     private val members: DiscordMemberDirectory =
         mock { on { named(any()) } doReturn listOf(DiscordMember("11", "Anna", "anna", "https://cdn/anna.png")) }
-    private val roles: DiscordRoleDirectory = mock { on { named(any()) } doReturn listOf(DiscordRoleName("901", "Gamers", 0x3498DB)) }
+    private val roles: DiscordRoleDirectory = mock { on { named(any()) } doReturn listOf(DiscordRole("901", "Gamers", 0x3498DB)) }
     private val channels: DiscordChannelDirectory =
-        mock { on { open() } doReturn listOf(DiscordChannel("1", "general"), DiscordChannel("2", "events-info")) }
+        mock { on { open() } doReturn listOf(DiscordChannel("1", "general", null), DiscordChannel("2", "events-info", "Events")) }
     private val controller = controller(members, roles, channels)
 
     private fun controller(
@@ -62,8 +62,12 @@ class DiscordMentionControllerTest {
     }
 
     @Test
-    fun `lists the channels a description may mention, or 503 without a bot`() {
-        assertThat(controller.channels().body!!.map { it.name }).containsExactly("general", "events-info")
+    fun `lists the channels a description may mention with their categories, or 503 without a bot`() {
+        assertThat(controller.channels().body).containsExactly(
+            DiscordMentionChannelResponse("1", "general", null),
+            DiscordMentionChannelResponse("2", "events-info", "Events"),
+        )
+        assertThat(controller.channels().body!!.map { it.category }).containsExactly(null, "Events")
 
         val offline: DiscordChannelDirectory = mock { on { open() } doReturn null }
         assertThat(controller(members, roles, offline).channels().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)

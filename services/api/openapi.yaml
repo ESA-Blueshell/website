@@ -2144,6 +2144,22 @@ components:
       - name
       - username
       type: object
+    DiscordMentionChannelResponse:
+      description: A channel everybody in the Discord server can see, which a description may mention
+      properties:
+        category:
+          description: The category the server files the channel under, where it has one
+          type:
+          - string
+          - 'null'
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      - name
+      type: object
     DiscordMentionsResponse:
       description: 'What a description''s mentions name: the members, roles and channels the server has'
       properties:
@@ -2195,6 +2211,12 @@ components:
     DiscordRoleResponse:
       description: A role in the Discord server an event may ping
       properties:
+        colour:
+          description: The role's colour as 0xRRGGBB, where it has one
+          format: int32
+          type:
+          - integer
+          - 'null'
         id:
           type: string
         name:
@@ -11664,7 +11686,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/DiscordNameResponse'
+                  $ref: '#/components/schemas/DiscordMentionChannelResponse'
                 type: array
           description: OK
         '400':

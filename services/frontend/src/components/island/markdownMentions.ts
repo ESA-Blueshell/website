@@ -1,12 +1,12 @@
 import type {Completion, CompletionContext, CompletionResult} from "@codemirror/autocomplete"
-import {type DiscordNameResponse, type DiscordRoleResponse, listServerChannels, listServerRoles, searchServerMembers}
+import {type DiscordMentionChannelResponse, type DiscordRoleResponse, listServerChannels, listServerRoles, searchServerMembers}
   from "@/domains/discord"
 
 /* A description holds a mention as Discord writes it: `<@id>`, `<@&id>` or `<#id>`. */
 
 /* Read once an editor asks, and kept: roles and channels change rarely. */
 let roles: Promise<DiscordRoleResponse[]> | undefined
-let channels: Promise<DiscordNameResponse[]> | undefined
+let channels: Promise<DiscordMentionChannelResponse[]> | undefined
 const serverRoles = () => (roles ??= listServerRoles().then(listed => listed ?? []))
 const serverChannels = () => (channels ??= listServerChannels().then(listed => listed ?? []))
 
@@ -19,7 +19,19 @@ export const forgetMentionLists = (): void => {
 /* Discord searches members from two letters on. */
 const SEARCHED_FROM = 2
 
-/** `@` and a name: the members the server finds by it, then the roles whose name holds it. */
+/** A row of the `@` list: a member with their avatar, or a role with its colour. */
+interface MentionOption extends Completion {
+  avatar?: string
+  colour?: number
+}
+
+const hex = (colour: number): string => `#${colour.toString(16).padStart(6, "0")}`
+
+/**
+ * `@` and a name: the members the server finds by it, then the roles whose name holds it. The
+ * server matches usernames and nicknames the row does not show, so the editor's own filter is off
+ * and each letter typed asks again.
+ */
 export const mentionCompletion = async (context: CompletionContext): Promise<CompletionResult | null> => {
   const started = context.matchBefore(/(?<=^|\s)@[\w.-]*/)
   if (!started) return null
@@ -30,34 +42,61 @@ export const mentionCompletion = async (context: CompletionContext): Promise<Com
     asked.length >= SEARCHED_FROM ? searchServerMembers(asked) : Promise.resolve([]),
     serverRoles(),
   ])
-  const options: Completion[] = [
-    ...(people ?? []).map(one => ({label: `@${one.name}`, detail: one.username, apply: `<@${one.id}>`, type: "member"})),
-    ...ranks.filter(one => one.name.toLowerCase().includes(asked))
-      .map(one => ({label: `@${one.name}`, detail: "role", apply: `<@&${one.id}>`, type: "role"})),
+  const options: MentionOption[] = [
+    ...(people ?? []).map(one => ({label: one.name, detail: one.username, apply: `<@${one.id}>`, type: "member", avatar: one.avatar})),
+    ...ranks.filter(one => one.name.toLowerCase().includes(asked)).map(one => ({
+      label: `@${one.name}`,
+      apply: `<@&${one.id}>`,
+      type: "role",
+      ...(one.colour ? {colour: one.colour} : {}),
+    })),
   ]
   if (options.length === 0) return null
-  return {
-    from: started.from,
-    options,
-    // Typing on narrows what the search found; a search from fewer letters found no members yet.
-    validFor: text => asked.length >= SEARCHED_FROM && text.toLowerCase().startsWith(`@${asked}`),
-  }
+  return {from: started.from, options, filter: false}
+}
+
+/** A role's row hides the label CodeMirror draws, which cannot take a colour per role. */
+export const mentionOptionClass = (completion: Completion): string => (completion.type === "role" ? "cm-option-role" : "")
+
+/** Draws a member's avatar before their name, and a role's name in its colour in place of the label. */
+export const mentionOption = {
+  position: 20,
+  render: (completion: Completion): Node | null => {
+    const {type, avatar, colour} = completion as MentionOption
+    if (type === "member" && avatar) {
+      const drawn = document.createElement("img")
+      drawn.className = "cm-avatar"
+      drawn.src = avatar
+      drawn.alt = ""
+      return drawn
+    }
+    if (type === "role") {
+      const named = document.createElement("span")
+      named.className = "cm-role"
+      named.textContent = completion.label
+      if (colour) named.style.setProperty("--mention", hex(colour))
+      return named
+    }
+    return null
+  },
 }
 
 /**
- * `#` and a name, in the middle of a line: the channels everybody can see. At the start of a
- * line `#` is a heading, so nothing is offered there.
+ * `#` and a name: the channels everybody can see, with the category each is filed under. At the
+ * start of a line only `#` right before a letter asks, since `# ` there begins a heading.
  */
 export const channelCompletion = async (context: CompletionContext): Promise<CompletionResult | null> => {
   const started = context.matchBefore(/#[\w-]*/)
   if (!started) return null
   const line = context.state.doc.lineAt(started.from)
-  if (!/\S\s+$/.test(line.text.slice(0, started.from - line.from))) return null
+  const before = line.text.slice(0, started.from - line.from)
+  if (!/(^|\s)$/.test(before)) return null
   const asked = started.text.slice(1).toLowerCase()
+  if (before.trim() === "" && !/^[^\W_]/.test(asked)) return null
 
   const options = (await serverChannels())
     .filter(one => one.name.toLowerCase().includes(asked))
-    .map(one => ({label: `#${one.name}`, apply: `<#${one.id}>`, type: "channel"}))
+    .map(one => ({label: `#${one.name}`, apply: `<#${one.id}>`, type: "channel", ...(one.category ? {detail: one.category} : {})}))
   if (options.length === 0) return null
   return {from: started.from, options, validFor: /^#[\w-]*$/}
 }

@@ -67,10 +67,11 @@ describe("the emoji completion", () => {
     expect(first?.apply).toBe("🔥")
   })
 
-  it("draws each entry's emoji as the page will", () => {
-    const drawn = emojiOption.render({label: ":fire:", apply: "🔥"}) as HTMLImageElement
+  it("draws each entry's emoji as the page will, and nothing beside a row that is not an emoji", () => {
+    const drawn = emojiOption.render({label: ":fire:", apply: "🔥", type: "emoji"}) as HTMLImageElement
 
     expect(drawn.getAttribute("src")).toBe("/emoji/1f525.svg")
+    expect(emojiOption.render({label: "@Board", apply: "<@&901>", type: "role"})).toBeNull()
   })
 
   it("says nothing about a colon that starts no name", () => {

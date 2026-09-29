@@ -173,10 +173,15 @@ vault kv put secret/platform/mail \
 
 The api reads `secret/api` itself. In the prod profile Spring Cloud Vault logs
 in with Kubernetes auth as role `api`, bound to the `api` ServiceAccount, and
-imports the path as configuration (api ADR-033). Nothing renders these into a
-file, an environment variable or a Kubernetes Secret, and the api reads them at
-start. Each key is named for the Spring property it fills, so a new one is one
-KV write and one property.
+imports the path as configuration (api ADR-033), and reads it at start. Each
+key is named for the Spring property it fills, so a new one is one KV write and
+one property.
+
+Until the contract step of api ADR-033, the api Deployment still runs the Vault
+Agent injector, which renders the same values under their older kebab-case names
+(`jwt-secret`, `brevo-api-key`, `mysql-user`, ...), and the `api-secrets` Secret
+still syncs. So `secret/api` holds both sets, and the seed script writes both.
+The api image reads the property names; the older ones only feed the template.
 
 ```bash
 vault kv put secret/api \
@@ -323,6 +328,7 @@ After seeding, force a VSO reconcile and verify secrets appear:
 flux reconcile kustomization apps-vso-secrets --timeout=3m
 kubectl get secret -n cert-manager cloudflare-api-token
 kubectl get secret -n data-system  mariadb-credentials
+kubectl get secret -n default      api-secrets
 kubectl get secret -n mail-system  stalwart-secrets
 ```
 

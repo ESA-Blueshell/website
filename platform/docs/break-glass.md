@@ -22,12 +22,14 @@ A locked account with two-factor usually needs both, `UNLOCK` first.
 ## Running it
 
 The api image runs the action and stops when it is given the `break-glass` profile. Run it
-inside a live api pod, whose ServiceAccount is what the prod profile logs in to Vault as, with
-a small heap and no web server so it leaves the pod's own process alone:
+inside a live api pod, which already holds the Vault secrets it needs, with a small heap and
+no web server so it leaves the pod's own process alone:
 
 ```bash
 POD=$(kubectl -n default get pods -l app.kubernetes.io/name=api -o jsonpath='{.items[0].metadata.name}')
 kubectl -n default exec "$POD" -c api -- /bin/sh -ec '
+  export SPRING_CLOUD_VAULT_TOKEN="$(cat /vault/secrets/token)"
+  set -a; . /vault/secrets/api.env; set +a
   SPRING_PROFILES_ACTIVE=prod,break-glass exec java -XX:MaxRAMPercentage=20 -jar /app/app.jar \
     --spring.main.web-application-type=none \
     --break-glass.action=RESET_TWO_FACTOR \

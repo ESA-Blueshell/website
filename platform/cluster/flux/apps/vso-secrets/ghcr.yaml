@@ -16,15 +16,6 @@
 # anonymous pulls return 401 from the registry and the Deployments
 # hit ImagePullBackOff on first rollout. This Secret plus the two
 # imagePullSecrets references in the Deployments closes that gap.
-#
-# VSO looks up the ServiceAccount the VaultAuth names in the namespace of the
-# VaultStaticSecret, so `default` needs one.
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: vault-secrets-operator
-  namespace: default
----
 apiVersion: secrets.hashicorp.com/v1beta1
 kind: VaultStaticSecret
 metadata:

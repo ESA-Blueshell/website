@@ -165,7 +165,7 @@ every VaultStaticSecret as a Kubernetes Secret:
 kubectl get vaultstaticsecret -A
 ```
 ```bash
-kubectl get secret -A | grep -E 'stalwart-secrets|cloudflare'
+kubectl get secret -A | grep -E 'api-secrets|stalwart-secrets|cloudflare'
 ```
 
 ## 7. Wait for the wildcard cert + IngressRoutes

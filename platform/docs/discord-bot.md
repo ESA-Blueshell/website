@@ -102,10 +102,11 @@ By hand, it is always `patch`, never `put`. `vault kv put secret/api …` replac
 
 ```bash
 vault kv patch secret/api discord.botToken=- discord.guildId=<server-id>   # the token on stdin
+vault kv patch secret/api discord-bot-token=- discord-guild-id=<server-id> # the injector's names, again on stdin
 kubectl -n default rollout restart deployment/api
 ```
 
-The api reads both keys from `secret/api` at start (api ADR-033), which is why it is restarted.
+The api reads the first pair from `secret/api` at start (api ADR-033), which is why it is restarted. The second pair feeds the Vault Agent template until the api Deployment stops using it.
 
 `./gradlew :services:api:discordLiveTest` with `DISCORD_BOT_TOKEN` set calls Discord once as the bot, as a second check.
 

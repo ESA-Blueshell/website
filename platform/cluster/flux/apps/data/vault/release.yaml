@@ -16,10 +16,28 @@ spec:
   values:
     ui:
       enabled: true
-    # Nothing uses the agent injector: the api reads Vault through Spring Cloud
-    # Vault (api ADR-033), and the rest through VSO.
     injector:
-      enabled: false
+      enabled: true
+      # One replica (the chart default) plus the chart's *required*
+      # pod anti-affinity is a rolling update that cannot finish on a
+      # single node: the replacement pod may not sit beside the pod it
+      # replaces, so it stays Pending with `FailedScheduling: didn't
+      # match pod anti-affinity rules` and the release stalls. It had
+      # been stalled that way since 2026-08-13.
+      #
+      # maxSurge 0 retires the old pod before the replacement is
+      # scheduled, which is what the anti-affinity needs. `Recreate`
+      # expresses the same intent and cannot be applied: the live
+      # Deployment carries a rollingUpdate block, and the API refuses
+      # `spec.strategy.rollingUpdate: Forbidden: may not be specified
+      # when strategy `type` is 'Recreate'`. The injector is a
+      # mutating webhook for new pods, so the gap delays pod admission
+      # rather than breaking traffic.
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 1
     csi:
       enabled: true
     server:

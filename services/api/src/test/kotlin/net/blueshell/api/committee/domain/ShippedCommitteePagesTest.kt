@@ -27,20 +27,16 @@ class ShippedCommitteePagesTest {
     private fun committee(name: String) = Committee(name = name, description = "").also { held[name] = it }
 
     @Test
-    fun `unlists a committee and links its games once, and the board's later edits outlive the next run`() {
-        val board = committee("Board")
+    fun `links a committee's games once, and the board's later edits outlive the next run`() {
         val lanCie = committee("LanCie")
         standing += listOf("ALPHA", "BETA")
 
-        assertThat(pages.apply()).isEqualTo(3)
-        assertThat(board.listed).isFalse()
+        assertThat(pages.apply()).isEqualTo(2)
         assertThat(lanCie.gameCodes).containsExactly("ALPHA", "BETA")
 
-        board.listed = true
         lanCie.gameCodes.remove("BETA")
 
         assertThat(pages.apply()).isZero()
-        assertThat(board.listed).isTrue()
         assertThat(lanCie.gameCodes).containsExactly("ALPHA")
     }
 
@@ -67,8 +63,9 @@ class ShippedCommitteePagesTest {
         val failing = mock<ShippedCommitteePages> { on { apply() } doThrow IllegalStateException("down") }
         ShippedCommitteePagesOnStartup(failing).onReady()
 
-        val board = committee("Board")
+        val lanCie = committee("LanCie")
+        standing += "ALPHA"
         ShippedCommitteePagesOnStartup(pages).onReady()
-        assertThat(board.listed).isFalse()
+        assertThat(lanCie.gameCodes).containsExactly("ALPHA")
     }
 }

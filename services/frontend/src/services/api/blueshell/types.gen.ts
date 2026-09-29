@@ -727,7 +727,6 @@ export type CommitteePageResponse = {
      */
     icon?: Image | null;
     id: number;
-    listed: boolean;
     members: Array<CommitteeSeatResponse>;
     name: string;
     slug: string;
@@ -750,10 +749,6 @@ export type CommitteeResponse = {
      */
     icon?: Image | null;
     id: number;
-    /**
-     * Whether the committee is shown among the committees to join
-     */
-    listed: boolean;
     /**
      * Who sits on it, for the board and its own members; absent for anybody else
      */
@@ -867,7 +862,6 @@ export type CreateCommitteeRequest = {
      * Where its stored logo is, or absent for none
      */
     icon?: string | null;
-    listed: boolean;
     members: Array<CommitteeMemberRequest>;
     name: string;
     /**
@@ -2613,7 +2607,6 @@ export type UpdateCommitteeRequest = {
      * Where its stored logo is, or absent for none
      */
     icon?: string | null;
-    listed: boolean;
     members: Array<CommitteeMemberRequest>;
     name: string;
     /**

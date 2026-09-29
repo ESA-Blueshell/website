@@ -10,7 +10,7 @@ vi.mock("@/services/api", async importOriginal => ({
 }))
 
 const committee = (id: number, name: string, over: Record<string, unknown> = {}) =>
-  ({id, name, slug: name.toLowerCase(), description: "", listed: true, archived: false, banner: null, gameCodes: [], ...over})
+  ({id, name, slug: name.toLowerCase(), description: "", archived: false, banner: null, gameCodes: [], ...over})
 
 const throughField = {template: "<div><slot :control-id=\"'c'\" :label-id=\"'l'\" /></div>"}
 
@@ -25,7 +25,7 @@ const picker = (wrapper: Awaited<ReturnType<typeof mountPicker>>) => wrapper.fin
 describe("the committees that organise events for a game", () => {
   beforeEach(() => {
     forgetCommittees()
-    findCommittees.mockResolvedValue({data: [committee(1, "LanCie"), committee(2, "YapCie"), committee(3, "OldCie", {archived: true}), committee(4, "Board", {listed: false})]})
+    findCommittees.mockResolvedValue({data: [committee(1, "LanCie"), committee(2, "YapCie"), committee(3, "OldCie", {archived: true})]})
   })
 
   it("offers the committees that run, and adds the ones picked", async () => {

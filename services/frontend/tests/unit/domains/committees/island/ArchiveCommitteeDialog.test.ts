@@ -7,7 +7,7 @@ vi.mock("@/domains/committees/adapters/committees", () => adapter)
 
 const ConfirmDialog = {name: "ConfirmDialog", props: ["open", "title", "question", "confirmLabel", "workingLabel", "failure", "working", "testid"], emits: ["confirm", "update:open"], template: "<div />"}
 
-const lan = {id: 1, name: "LanCie", archived: false, listed: true}
+const lan = {id: 1, name: "LanCie", archived: false}
 
 beforeEach(() => adapter.setCommitteeArchived.mockReset())
 
@@ -44,11 +44,5 @@ describe("archiving a committee", () => {
     expect(confirm.props("failure")).toBe("The committee could not be brought back.")
     confirm.vm.$emit("update:open", false)
     expect(wrapper.emitted("update:open")).toEqual([[false]])
-  })
-
-  it("tells the board an unlisted committee it brings back stays off the reel", () => {
-    const wrapper = mount(ArchiveCommitteeDialog, {props: {open: true, committee: {...lan, archived: true, listed: false}}, global: {stubs: {ConfirmDialog}}})
-
-    expect(wrapper.getComponent(ConfirmDialog).props("question")).toContain("stays off the reel and the menu until it is listed on its edit page")
   })
 })

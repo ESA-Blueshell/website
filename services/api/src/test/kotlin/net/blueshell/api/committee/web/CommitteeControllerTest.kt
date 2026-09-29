@@ -34,7 +34,7 @@ class CommitteeControllerTest {
     private val controller = CommitteeController(service, seats, files)
 
     private val lan =
-        Committee(name = "LanCie", description = "LANs", slug = "lan", listed = false, archived = true).apply {
+        Committee(name = "LanCie", description = "LANs", slug = "lan", archived = true).apply {
             id = 1
             gameCodes += listOf("VALORANT", "CS2")
             createdAt = Instant.EPOCH
@@ -54,7 +54,6 @@ class CommitteeControllerTest {
                 name = "LanCie",
                 slug = "lan",
                 description = "LANs",
-                listed = false,
                 archived = true,
                 banner = null,
                 icon = null,
@@ -68,8 +67,8 @@ class CommitteeControllerTest {
     fun `passes the board's page fields through on a new committee and on a correction`() {
         whenever(service.createWithMembers(any(), any(), any(), any())).thenReturn(lan)
         whenever(service.updateWithMembers(any(), any(), any(), any(), anyOrNull(), any())).thenReturn(lan)
-        val create = CreateCommitteeRequest("LanCie", "LANs", slug = "lan", listed = false, banner = "b.webp", gameCodes = listOf("CS2"))
-        val update = UpdateCommitteeRequest("LanCie", "LANs", version = 2, slug = "lan", listed = false)
+        val create = CreateCommitteeRequest("LanCie", "LANs", slug = "lan", banner = "b.webp", gameCodes = listOf("CS2"))
+        val update = UpdateCommitteeRequest("LanCie", "LANs", version = 2, slug = "lan")
 
         val made = controller.createCommittee(create)
         controller.updateCommittee(1, update)
@@ -81,10 +80,10 @@ class CommitteeControllerTest {
                 eq("LanCie"),
                 eq("LANs"),
                 eq(mutableListOf()),
-                eq(CommitteePage("lan", false, "b.webp", gameCodes = listOf("CS2"))),
+                eq(CommitteePage("lan", "b.webp", gameCodes = listOf("CS2"))),
             )
         verify(service)
-            .updateWithMembers(eq(1), eq("LanCie"), eq("LANs"), eq(mutableListOf()), eq(2), eq(CommitteePage("lan", false)))
+            .updateWithMembers(eq(1), eq("LanCie"), eq("LANs"), eq(mutableListOf()), eq(2), eq(CommitteePage("lan")))
     }
 
     @Test

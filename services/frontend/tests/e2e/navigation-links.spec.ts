@@ -66,8 +66,8 @@ test.describe("navbar route integrity", () => {
 
     await expect(page.locator("a[href='/committees/events-committee']").first()).toBeAttached()
     await expect(page.locator("a[href='/committees/lancie']").first()).toBeAttached()
-    // Unlisted and archived committees keep their pages but are not offered here.
-    await expect(page.locator("a[href='/committees/board']")).toHaveCount(0)
+    await expect(page.locator("a[href='/committees/board']").first()).toBeAttached()
+    // Archived committees keep their pages but are not offered here.
     await expect(page.locator("a[href='/committees/oldcie']")).toHaveCount(0)
   })
 

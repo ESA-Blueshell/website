@@ -8,9 +8,9 @@ import java.time.Instant
 /** The shapes the committee routes take and answer with, read field by field. */
 class CommitteeShapesTest {
     @Test
-    fun `a committee answers its address, Listed, Archived, banner and games`() {
+    fun `a committee answers its address, Archived, banner and games`() {
         val lan =
-            Committee(name = "LanCie", description = "LANs", listed = false, archived = true).apply {
+            Committee(name = "LanCie", description = "LANs", archived = true).apply {
                 id = 1
                 gameCodes += "CS2"
                 createdAt = Instant.EPOCH
@@ -20,8 +20,8 @@ class CommitteeShapesTest {
         val summary = lan.asResponse(withMembers = false)
         val seat = CommitteeSeatResponse(discordName = "nelly", avatar = "https://cdn/n.png", role = "Chair")
 
-        assertThat(listOf(summary.slug, summary.listed, summary.archived, summary.banner, summary.gameCodes))
-            .containsExactly("lancie", false, true, null, listOf("CS2"))
+        assertThat(listOf(summary.slug, summary.archived, summary.banner, summary.gameCodes))
+            .containsExactly("lancie", true, null, listOf("CS2"))
         assertThat(listOf(seat.discordName, seat.avatar, seat.role)).containsExactly("nelly", "https://cdn/n.png", "Chair")
         assertThat(listOf(summary.icon, summary.members, lan.asPageResponse(emptyList()).icon)).containsOnlyNulls()
     }

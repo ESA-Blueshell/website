@@ -10,7 +10,6 @@ data class CommitteePageResponse(
     val name: String,
     val slug: String,
     val description: String,
-    val listed: Boolean,
     val archived: Boolean,
     val banner: Image?,
     @field:Schema(description = "Its logo, absent for none")

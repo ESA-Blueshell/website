@@ -12,7 +12,7 @@ fun CommitteeMemberRequest.asData(): CommitteeMemberData =
     )
 
 fun CreateCommitteeRequest.page(): CommitteePage =
-    CommitteePage(address = slug, listed = listed, banner = banner, icon = icon, gameCodes = gameCodes)
+    CommitteePage(address = slug, banner = banner, icon = icon, gameCodes = gameCodes)
 
 fun UpdateCommitteeRequest.page(): CommitteePage =
-    CommitteePage(address = slug, listed = listed, banner = banner, icon = icon, gameCodes = gameCodes)
+    CommitteePage(address = slug, banner = banner, icon = icon, gameCodes = gameCodes)

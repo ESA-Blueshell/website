@@ -15,8 +15,6 @@ data class CommitteeResponse(
     var description: String,
     @field:Schema(description = "The address the committee's page answers to")
     var slug: String,
-    @field:Schema(description = "Whether the committee is shown among the committees to join")
-    var listed: Boolean,
     @field:Schema(description = "Whether the committee no longer runs")
     var archived: Boolean,
     var banner: Image?,

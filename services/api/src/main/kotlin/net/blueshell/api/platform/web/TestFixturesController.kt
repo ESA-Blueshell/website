@@ -96,7 +96,7 @@ class TestFixturesController(
             committee.description,
             seated + CommitteeMemberData(userId, fixture.role),
             version = null,
-            page = CommitteePage(address = committee.slug, listed = committee.listed),
+            page = CommitteePage(address = committee.slug),
         )
     }
 

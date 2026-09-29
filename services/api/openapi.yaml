@@ -1383,8 +1383,6 @@ components:
         id:
           format: int64
           type: integer
-        listed:
-          type: boolean
         members:
           items:
             $ref: '#/components/schemas/CommitteeSeatResponse'
@@ -1398,7 +1396,6 @@ components:
       - description
       - gameCodes
       - id
-      - listed
       - members
       - name
       - slug
@@ -1430,9 +1427,6 @@ components:
         id:
           format: int64
           type: integer
-        listed:
-          description: Whether the committee is shown among the committees to join
-          type: boolean
         members:
           description: Who sits on it, for the board and its own members; absent for anybody else
           items:
@@ -1457,7 +1451,6 @@ components:
       - description
       - gameCodes
       - id
-      - listed
       - name
       - slug
       - updatedAt
@@ -1700,8 +1693,6 @@ components:
           type:
           - string
           - 'null'
-        listed:
-          type: boolean
         members:
           items:
             $ref: '#/components/schemas/CommitteeMemberRequest'
@@ -1720,7 +1711,6 @@ components:
       required:
       - description
       - gameCodes
-      - listed
       - members
       - name
       type: object
@@ -5243,8 +5233,6 @@ components:
           type:
           - string
           - 'null'
-        listed:
-          type: boolean
         members:
           items:
             $ref: '#/components/schemas/CommitteeMemberRequest'
@@ -5265,7 +5253,6 @@ components:
           type: integer
       required:
       - description
-      - listed
       - members
       - name
       - version

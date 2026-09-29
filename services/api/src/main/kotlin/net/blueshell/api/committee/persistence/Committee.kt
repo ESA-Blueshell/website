@@ -46,9 +46,6 @@ class Committee(
     /** The address its page answers to. Made from the name unless somebody chose one. */
     @Column(name = "slug", length = ADDRESS_LENGTH)
     var slug: String = addressOf(name),
-    /** Off for a committee that still runs but is not one to join, such as the board. */
-    @Column(name = "listed", nullable = false)
-    var listed: Boolean = true,
     /** A committee that no longer runs: kept, with its page and its events, but not offered. */
     @Column(name = "archived", nullable = false)
     var archived: Boolean = false,

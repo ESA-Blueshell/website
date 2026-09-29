@@ -2,16 +2,16 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, loginAsMember, writeMarkdown} from "./mocks"
 
 test.describe("the committees pages", () => {
-  test("the index runs the committees on the reel, the archived ones past it, and every listed one below", async ({page}) => {
+  test("the index runs the committees on the reel, the archived ones past it, and every one below", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/committees")
 
-    await expect(page.getByTestId("committees-reel").locator('[data-testid^="committees-rail-"]')).toHaveCount(2)
+    await expect(page.getByTestId("committees-reel").locator('[data-testid^="committees-rail-"]')).toHaveCount(3)
     await expect(page.getByTestId("committees-olden")).toContainText("The committees we used to have")
     await expect(page.getByTestId("committees-olden-tile-903")).toHaveAttribute("href", "/committees/oldcie")
     await expect(page.getByTestId("committees-every-cell-903")).toContainText("Archived")
     await expect(page.getByTestId("committees-every-cell-900")).toContainText("Chess")
-    await expect(page.getByTestId("committees-every-cell-902")).toHaveCount(0)
+    await expect(page.getByTestId("committees-every-cell-902")).toContainText("Board")
     await expect(page.getByTestId("committees-slice-add")).toHaveCount(0)
   })
 
@@ -40,7 +40,7 @@ test.describe("the committees pages", () => {
     await expect(page.getByTestId("committee-add-event")).toBeVisible()
     await page.getByTestId("committee-edit").click()
     await expect(page).toHaveURL(/\/committees\/events-committee\/edit$/)
-    await expect(page.getByTestId("committee-edit-fixed")).toHaveText("The board changes the name, address, listing and members.")
+    await expect(page.getByTestId("committee-edit-fixed")).toHaveText("The board changes the name, address and members.")
     await expect(page.getByTestId("committee-edit-name").locator("input")).toBeDisabled()
     await expect(page.getByTestId("committee-edit-member")).toHaveCount(0)
     const saved = page.waitForRequest(request => request.method() === "PUT" && /\/committees\/900\/page$/u.test(new URL(request.url()).pathname))
@@ -58,6 +58,8 @@ test.describe("the committees pages", () => {
     await loginAsBoard(context)
     await page.goto("/committees")
 
+    // On a short reel the add slice starts behind the others; its rail cell brings it forward.
+    await page.getByTestId("committees-rail-add").click()
     await page.getByTestId("committees-slice-add").click()
     await expect(page).toHaveURL(/\/committees\/new$/)
     await page.getByTestId("committee-edit-name").locator("input").fill("Quiz Cie")

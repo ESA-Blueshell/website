@@ -13,8 +13,8 @@ import {BRAND_ACCENT} from "@/utils/brand"
 defineOptions({name: "CommitteesPage"})
 
 /**
- * The committees index: the listed committees that run on the reel, every one we used to have
- * drifting past under it, and then all of those as cells.
+ * The committees index: the committees that run on the reel, the ones we used to have drifting
+ * past under it, and then every committee as a cell.
  */
 const {committees, live, archived, refresh} = useCommittees()
 const {games} = useCasualGames()

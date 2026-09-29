@@ -17,7 +17,7 @@ vi.mock("@/domains/games/useCasualGames", async importOriginal => ({
 }))
 
 // The list is made before each test, since a ref cannot be made inside a hoisted factory.
-const committees = vi.hoisted(() => ({refresh: vi.fn()} as {listed: Ref<Committee[]>, refresh: ReturnType<typeof vi.fn>}))
+const committees = vi.hoisted(() => ({refresh: vi.fn()} as {committees: Ref<Committee[]>, refresh: ReturnType<typeof vi.fn>}))
 vi.mock("@/domains/committees", async importOriginal => ({
   ...(await importOriginal<typeof import("@/domains/committees")>()),
   useCommittees: () => committees,
@@ -49,7 +49,7 @@ beforeEach(() => {
   router.replace.mockReset()
   refresh.mockReset().mockResolvedValue([])
   committees.refresh.mockReset().mockResolvedValue([])
-  committees.listed = ref([
+  committees.committees = ref([
     aCommittee({id: 1, name: "LanCie", slug: "lancie", description: "LANs", banner: null, gameCodes: ["VALORANT"]}),
     aCommittee({id: 2, name: "YapCie", slug: "yapcie", description: "Streams", banner: null, gameCodes: ["VALORANT"]}),
     aCommittee({id: 3, name: "MCie", slug: "mcie", description: "Blocks", banner: null, gameCodes: ["MINECRAFT"]}),
@@ -113,7 +113,7 @@ describe("one game's page", () => {
     await wrapper.get("[data-testid=casual-game-organisers-cell-1]").trigger("click", {button: 0})
     expect(router.push).toHaveBeenCalledWith("/committees/lancie")
 
-    committees.listed = ref([aCommittee({id: 1, name: "LanCie", slug: "lancie", description: "LANs", banner: null, gameCodes: ["VALORANT"]})])
+    committees.committees = ref([aCommittee({id: 1, name: "LanCie", slug: "lancie", description: "LANs", banner: null, gameCodes: ["VALORANT"]})])
     expect(mountPage(valorant).get("[data-testid=casual-game-committees] .record-fact__label").text()).toBe("Committee")
   })
 

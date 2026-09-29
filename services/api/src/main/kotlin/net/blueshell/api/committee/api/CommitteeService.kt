@@ -91,7 +91,7 @@ class CommitteeService
 
         /**
          * What a committee's own members may change: its description, its pictures and its games.
-         * The name, the address, Listed and the members stay the board's.
+         * The name, the address and the members stay the board's.
          */
         @Transactional
         fun updateOwnPage(
@@ -152,7 +152,6 @@ class CommitteeService
             page: CommitteePage,
         ) {
             committee.slug = addressFor(page.address ?: committee.name, committee)
-            committee.listed = page.listed
             committee.banner = pictures.of(page.banner, FileType.COMMITTEE_BANNER)
             committee.icon = pictures.of(page.icon, FileType.COMMITTEE_ICON)
             applyGames(committee, page.gameCodes)

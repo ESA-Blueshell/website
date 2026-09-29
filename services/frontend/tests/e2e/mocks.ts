@@ -661,7 +661,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const baseCommittees: Wire<CommitteeResponse>[] = fixtures.committees ?? [
     committeeRecord(900, "Events Committee", "events-committee", {description: "Runs the events.", gameCodes: ["CHESS"], members: [{userId: 1, committeeId: 900, role: "Chair", ...stampedAt}]}),
     committeeRecord(901, "LanCie", "lancie", {gameCodes: ["VALORANT"]}),
-    committeeRecord(902, "Board", "board", {listed: false}),
+    committeeRecord(902, "Board", "board"),
     committeeRecord(903, "OldCie", "oldcie", {archived: true}),
   ]
   // The committees, kept per page so a spec sees its own adds, edits and archives.
@@ -684,7 +684,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     name: body.name ?? held.name,
     slug: body.slug || held.slug,
     description: body.description ?? held.description,
-    listed: body.listed ?? held.listed,
     gameCodes: body.gameCodes ?? held.gameCodes,
     banner: body.banner === undefined ? held.banner : pictureKept(body.banner, held.banner),
     icon: body.icon === undefined ? held.icon : pictureKept(body.icon, held.icon),

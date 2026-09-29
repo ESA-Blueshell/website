@@ -55,22 +55,19 @@ const records = list.records
 /**
  * The committees, read once and shared by the committees pages and the game pages.
  *
- * Unlisted committees are left out of [listed] and [live], but [archived] holds every archived
- * one, so any of them can be asked back; [refresh] asks again, for a page that has just changed one.
+ * [live] holds the ones that run and [archived] the ones that no longer do; [refresh] asks again,
+ * for a page that has just changed one.
  */
 export function useCommittees(): {
   committees: Ref<Committee[]>
-  listed: ComputedRef<Committee[]>
   live: ComputedRef<Committee[]>
   archived: ComputedRef<Committee[]>
   ready: Promise<Committee[]>
   refresh: () => Promise<Committee[]>
 } {
-  const listed = computed(() => records.value.filter(committee => committee.listed))
   return {
     committees: records,
-    listed,
-    live: computed(() => listed.value.filter(committee => !committee.archived)),
+    live: computed(() => records.value.filter(committee => !committee.archived)),
     archived: computed(() => records.value.filter(committee => committee.archived)),
     ready: list.read(),
     refresh: list.refresh,

@@ -43,7 +43,7 @@ class TestFixturesControllerTest {
             lastName = "Ser",
         ).also { it.id = id }
 
-    private fun committee(id: Long) = Committee(name = "Sitecie", description = "Site", listed = false).also { it.id = id }
+    private fun committee(id: Long) = Committee(name = "Sitecie", description = "Site").also { it.id = id }
 
     private val start = LocalDate.of(2026, 9, 1)
     private val end = LocalDate.of(2027, 8, 31)
@@ -73,7 +73,7 @@ class TestFixturesControllerTest {
             eq("Site"),
             seats.capture(),
             isNull(),
-            eq(CommitteePage(address = "sitecie", listed = false)),
+            eq(CommitteePage(address = "sitecie")),
         )
         assertThat(seats.firstValue).containsExactly(CommitteeMemberData(1, "Chair"), CommitteeMemberData(2, "Member"))
     }

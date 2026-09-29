@@ -13,6 +13,17 @@ class CohortRecordsTest {
     fun `Hibernate can build each append-only cohort record to load a row into`() {
         assertThat(loaded<TargetDeletion>().id).isNull()
         assertThat(loaded<TargetReconcileRun>().id).isNull()
+        assertThat(loaded<DriftResolution>().id).isNull()
+    }
+
+    @Test
+    fun `a drift resolution keeps who it concerned and who made it`() {
+        val at = Instant.parse("2026-09-29T20:00:00Z")
+        val resolution = DriftResolution(3L, DriftResolutionAction.LINK, 5L, "ext-5", "ada@example.com", 9L, at)
+
+        assertThat(listOf(resolution.cohortId, resolution.action, resolution.userId)).containsExactly(3L, DriftResolutionAction.LINK, 5L)
+        assertThat(listOf(resolution.externalUserId, resolution.label)).containsExactly("ext-5", "ada@example.com")
+        assertThat(listOf(resolution.resolvedBy, resolution.resolvedAt)).containsExactly(9L, at)
     }
 
     @Test

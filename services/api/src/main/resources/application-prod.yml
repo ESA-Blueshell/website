@@ -1,6 +1,43 @@
+# Secrets come from Vault, read by Spring Cloud Vault as the api's own
+# ServiceAccount (api ADR-033).
+# An import outranks this file and application.yaml, so a key in Vault wins over
+# any development default there. The secrets application.yaml gives a development
+# value are blanked below, so a key missing from Vault is refused by the hardening
+# guard or the first connection instead of running on that value.
+spring:
+  config:
+    import:
+      - vault://secret/api
+      # Shared with Stalwart, which names its keys `account.<localpart>`.
+      - vault://secret/platform/mail?prefix=mail.
+  cloud:
+    vault:
+      enabled: true
+      # A read Vault refuses stops the start, rather than leaving a key empty.
+      fail-fast: true
+      authentication: KUBERNETES
+      kubernetes:
+        role: api
+  mail:
+    password: ${mail.account.api:}
+  datasource:
+    username: ""
+
+email:
+  bounce:
+    imap:
+      password: ${mail.account.bounce:}
+
+auth:
+  clients:
+    vault:
+      secret: ""
+
 app:
   security:
     require-https: true
+  jwt:
+    secret: ""
 
 security:
   openapi:

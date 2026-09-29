@@ -44,7 +44,7 @@ class GoogleCalendarClient {
         if (serviceAccountJson.isBlank()) {
             log.warn(
                 "google.calendar.serviceAccountJson is blank; calendar sync is disabled. " +
-                    "Seed secret/api.google-calendar-sa-json in Vault to enable it.",
+                    "Seed google.calendar.serviceAccountJson in Vault secret/api to enable it.",
             )
             return
         }
@@ -86,7 +86,7 @@ class GoogleCalendarClient {
 
     private fun requireService(): Calendar =
         service ?: throw IllegalStateException(
-            "Google Calendar client is not configured — seed google-calendar-sa-json in Vault " +
+            "Google Calendar client is not configured: seed google.calendar.serviceAccountJson in Vault " +
                 "and restart the api pod before invoking calendar operations.",
         )
 

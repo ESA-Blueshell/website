@@ -11,6 +11,9 @@ private const val HS512_MIN_KEY_BYTES = 64
 
 private const val TWO_FACTOR_KEY_BYTES = 32
 
+// application.yaml's fallback for local runs; production must never boot on it.
+private const val DEVELOPMENT_CLIENT_SECRET = "changeme"
+
 /**
  * Fail-fast guardrails for production-like environments.
  * Prevents booting with weak JWT secrets or insecure exposure toggles.
@@ -22,6 +25,7 @@ class ProductionSecurityHardeningGuard(
     @param:Value("\${app.security.require-https:true}") private val requireHttps: Boolean,
     @param:Value("\${security.openapi.public.enabled:false}") private val openApiPublicEnabled: Boolean,
     @param:Value("\${app.two-factor.key:}") private val twoFactorKey: String = "",
+    @param:Value("\${auth.clients.vault.secret:}") private val vaultClientSecret: String = "",
 ) {
     @PostConstruct
     fun validate() {
@@ -44,6 +48,10 @@ class ProductionSecurityHardeningGuard(
 
         require(decoded.size >= HS512_MIN_KEY_BYTES) {
             "app.jwt.secret must decode to at least $HS512_MIN_KEY_BYTES bytes for HS512"
+        }
+
+        require(vaultClientSecret.isNotBlank() && vaultClientSecret != DEVELOPMENT_CLIENT_SECRET) {
+            "auth.clients.vault.secret must be set, and not to its development default"
         }
 
         val twoFactorKeyBytes = runCatching { Decoders.BASE64.decode(twoFactorKey) }.getOrNull()

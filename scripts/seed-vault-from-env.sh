@@ -21,8 +21,8 @@ Examples:
 
 If no env files are given, the current shell environment is used.
 Without --apply the script prints the Vault paths/fields it would write.
-`--sync-api` forces VSO to refresh `default/api-secrets` and restarts
-the api pod after `secret/api` changes land in Vault.
+`--sync-api` restarts the api after `secret/api` changes land in Vault,
+since it reads them at start.
 EOF
 }
 
@@ -159,57 +159,12 @@ write_path() {
   fi
 }
 
-sync_api_secret() {
-  local args=("$@")
-  local pair field expected_value current_value
-  local pending_fields=()
-
+restart_api() {
   export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/blueshell.yaml}"
-
-  echo "Forcing VSO refresh on vaultstaticsecret/api-secrets..."
-  kubectl -n default annotate vaultstaticsecret api-secrets \
-    vso.secrets.hashicorp.com/force-refresh="$(date +%s)" --overwrite >/dev/null
-
-  echo "Waiting for api-secrets to refresh all written fields (up to 60s)..."
-  local synced=0
-  for i in $(seq 1 12); do
-    pending_fields=()
-    for pair in "${args[@]}"; do
-      field="${pair%%=*}"
-      expected_value="${pair#*=}"
-      current_value="$(
-        kubectl -n default get secret api-secrets \
-          -o jsonpath="{.data.$field}" 2>/dev/null \
-          | base64 -d 2>/dev/null || true
-      )"
-      if [[ "$current_value" != "$expected_value" ]]; then
-        pending_fields+=("$field")
-      fi
-    done
-    if (( ${#pending_fields[@]} == 0 )); then
-      echo "  VSO synced all fields (attempt $i)."
-      synced=1
-      break
-    fi
-    echo "  Still waiting on: ${pending_fields[*]}"
-    sleep 5
-  done
-
-  # Don't roll the api pod on a stale Secret — rolling forward with old
-  # values is the failure mode that dragged out the last cutover by
-  # hours. If VSO didn't confirm, exit loud; the operator can fix VSO
-  # (usually vault-auth permissions) and re-run with --sync-api.
-  if [[ "$synced" -ne 1 ]]; then
-    echo "  VSO did not confirm fresh values for: ${pending_fields[*]}" >&2
-    echo "  within 60s. Not restarting the" >&2
-    echo "  api pod — doing so now would roll it onto a stale Secret." >&2
-    echo "  Check: kubectl -n default describe vaultstaticsecret api-secrets" >&2
-    exit 1
-  fi
-
-  echo "Deleting api pod so it reads the refreshed /vault/secrets/api.env..."
-  kubectl -n default delete pod -l app.kubernetes.io/name=api --wait=false >/dev/null
-  echo "Watch rollout: kubectl -n default get pod -l app.kubernetes.io/name=api -w"
+  # The api reads secret/api at start, so a restart is what makes it see the write.
+  # api-primary serves; restarting the Canary's target would start a release.
+  kubectl -n default rollout restart deployment/api-primary >/dev/null
+  echo "Restarted the api. Watch: kubectl -n default rollout status deployment/api-primary"
 }
 
 APPLY=0
@@ -242,9 +197,7 @@ fi
 
 command -v vault >/dev/null 2>&1 || { echo "missing command: vault" >&2; exit 1; }
 if [[ "$SYNC_API" -eq 1 ]]; then
-  for cmd in kubectl base64; do
-    command -v "$cmd" >/dev/null 2>&1 || { echo "missing command: $cmd" >&2; exit 1; }
-  done
+  command -v kubectl >/dev/null 2>&1 || { echo "missing command: kubectl" >&2; exit 1; }
 fi
 
 if (( ${#FILES[@]} > 0 )); then
@@ -270,6 +223,18 @@ if [[ "$jwt_secret" =~ ^[0-9A-Fa-f]{64}$ ]]; then
   echo "Warning: JWT_SECRET looks like a 32-byte hex string. Production expects Base64 that decodes to at least 64 bytes." >&2
 fi
 
+append_field secret/api app.jwt.secret "$jwt_secret"
+append_field secret/api app.two-factor.key "$(env_value TWO_FACTOR_ENCRYPTION_KEY)"
+append_field secret/api brevo.apiKey "$(env_value BREVO_API_KEY)"
+append_field secret/api brevo.folders.contributionPeriodsId "$(env_value BREVO_FOLDER_CONTRIBUTION_PERIODS_ID)"
+append_field secret/api google.calendar.id "$(env_value GOOGLE_CALENDAR_ID)"
+append_field secret/api google.calendar.serviceAccountJson "$(env_value GOOGLE_CALENDAR_SA_JSON)"
+append_field secret/api discord.botToken "$(env_value DISCORD_BOT_TOKEN)"
+append_field secret/api discord.guildId "$(env_value DISCORD_GUILD_ID)"
+append_field secret/api auth.clients.vault.secret "$(env_value VAULT_OIDC_CLIENT_SECRET)"
+
+# The names the injector's template reads, kept until the contract step of api ADR-033
+# removes the injector: the api image already live reads these.
 append_field secret/api jwt-secret "$jwt_secret"
 append_field secret/api two-factor-encryption-key "$(env_value TWO_FACTOR_ENCRYPTION_KEY)"
 append_field secret/api brevo-api-key "$(env_value BREVO_API_KEY)"
@@ -284,12 +249,11 @@ mariadb_root_password="$(env_value MYSQL_ROOT_PASSWORD)"
 mariadb_user="$(env_value MYSQL_USER)"
 mariadb_password="$(env_value MYSQL_PASSWORD)"
 
-# Mirror the app DB user + password into secret/api so the Vault Agent
-# template in apps/stateless/api/deployment.yaml can render them
-# alongside the rest of the api config (no separate Vault path, no
-# policy expansion). Drop these once Spring Cloud Vault dynamic
-# creds (`spring.cloud.vault.database.enabled=true`) are working.
-append_field secret/api mysql-user     "$mariadb_user"
+# The app DB login, copied into secret/api under the property names the api
+# reads (api ADR-033), until it takes leased credentials instead.
+append_field secret/api spring.datasource.username "$mariadb_user"
+append_field secret/api spring.datasource.password "$mariadb_password"
+append_field secret/api mysql-user "$mariadb_user"
 append_field secret/api mysql-password "$mariadb_password"
 mariadb_admin_user="$(env_value MARIADB_ADMIN_USER)"
 mariadb_admin_password="$(env_value MARIADB_ADMIN_PASSWORD)"
@@ -339,6 +303,6 @@ if [[ "$SYNC_API" -eq 1 ]]; then
     echo
     echo "Skipping --sync-api because no secret/api fields were written."
   else
-    sync_api_secret "${API_ARGS[@]}"
+    restart_api
   fi
 fi

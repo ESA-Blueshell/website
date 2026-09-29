@@ -53,6 +53,11 @@ path "secret/data/api/*" {
   capabilities = ["read"]
 }
 
+# The mail passwords, from the path Stalwart shares (api ADR-033).
+path "secret/data/platform/mail" {
+  capabilities = ["read"]
+}
+
 # Spring Cloud Vault's KV backend probes secret/<spring.application.name>
 # (= "BlueshellAPI"), secret/<...>/<active-profile>, secret/application,
 # and secret/application/<active-profile> on every startup. None of those
@@ -232,12 +237,14 @@ fi
 # Short-circuit when the client secret is unseeded so a fresh Vault
 # install doesn't fail the Job on an unsatisfiable precondition.
 
-if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
+# The key's name before api ADR-033, read until the contract step drops it.
+OIDC_CLIENT_SECRET=$(vault kv get -field=auth.clients.vault.secret secret/api 2>/dev/null ||
+  vault kv get -field=vault-oidc-client-secret secret/api 2>/dev/null || true)
+
+if [ -n "$OIDC_CLIENT_SECRET" ]; then
   if ! vault auth list -format=json | grep -q '"oidc/"'; then
     vault auth enable oidc
   fi
-
-  OIDC_CLIENT_SECRET=$(vault kv get -field=vault-oidc-client-secret secret/api)
 
   # `oidc_discovery_url` is validated at write time. Tolerate failure
   # for the first run on a cold cluster (api not yet Ready); the next
@@ -276,6 +283,6 @@ JSON
 
   unset OIDC_CLIENT_SECRET
 else
-  echo "secret/api:vault-oidc-client-secret not seeded yet — skipping OIDC auth method."
+  echo "secret/api:auth.clients.vault.secret not seeded yet; skipping OIDC auth method."
   echo "Seed with: scripts/seed-vault-from-env.sh --apply <env-files...> (then re-run this Job via flux reconcile kustomization apps-data)."
 fi

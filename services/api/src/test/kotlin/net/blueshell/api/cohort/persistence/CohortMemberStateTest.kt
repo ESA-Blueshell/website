@@ -1,15 +1,14 @@
 package net.blueshell.api.cohort.persistence
 
-import io.mockk.every
-import io.mockk.mockk
 import net.blueshell.api.shared.enums.CohortMemberState
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
 class CohortMemberStateTest {
-    private val cohort: Cohort = mockk { every { id } returns 1L }
-    private val subject: CohortSubject = mockk()
+    private val cohort: Cohort = Entities.cohort(id = 1L)
+    private val subject: CohortSubject = Entities.cohortSubject()
     private val at: LocalDateTime = LocalDateTime.parse("2026-06-01T10:00:00")
 
     @Test

@@ -5,9 +5,9 @@ import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.UserUpdated
-import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.Test
 
 class CommitteeSeatRevocationListenerTest {
@@ -17,8 +17,7 @@ class CommitteeSeatRevocationListenerTest {
 
     @Test
     fun `committee authority satisfies member prerequisite and keeps committee seats`() {
-        val user = mockk<User>()
-        every { user.hasAuthority(Role.MEMBER) } returns true
+        val user = Entities.user(id = 42L, roles = setOf(Role.MEMBER))
         every { users.findById(42L) } returns user
 
         listener.onUpdate(UserUpdated(42L))
@@ -28,8 +27,7 @@ class CommitteeSeatRevocationListenerTest {
 
     @Test
     fun `losing the member role gives up every seat the user holds`() {
-        val user = mockk<User>()
-        every { user.hasAuthority(Role.MEMBER) } returns false
+        val user = Entities.user(id = 42L, roles = setOf(Role.GUEST))
         every { users.findById(42L) } returns user
 
         listener.onUpdate(UserUpdated(42L))

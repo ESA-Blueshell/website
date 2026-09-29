@@ -6,12 +6,11 @@ import net.blueshell.api.contribution.domain.IncassoNotificationService
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
-import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.contribution.persistence.ContributionRepository
-import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -38,7 +37,7 @@ class ContributionServicesWriteTest {
 
     @Test
     fun `a period is read, listed, written back and removed`() {
-        val period = mock<ContributionPeriod>().also { whenever(it.id).thenReturn(4) }
+        val period = Entities.period(id = 4)
         val repository =
             mock<ContributionPeriodRepository> {
                 on { saveAndFlush(any<ContributionPeriod>()) } doAnswer { it.getArgument(0) }
@@ -63,7 +62,7 @@ class ContributionServicesWriteTest {
     @Test
     fun `a contribution is written back and removed, by itself or by its id`() {
         val id = Contribution.Id(1, 2)
-        val contribution = mock<Contribution>().also { whenever(it.id).thenReturn(id) }
+        val contribution = Entities.contribution(id = id)
         val repository =
             mock<ContributionRepository> {
                 on { saveAndFlush(any<Contribution>()) } doAnswer { it.getArgument(0) }
@@ -86,12 +85,12 @@ class ContributionServicesWriteTest {
     @Test
     fun `a reminder and a pre-notification are read by id`() {
         val reminders = mock<ContributionReminderRepository>()
-        val reminder = mock<ContributionReminder>()
+        val reminder = Entities.reminder()
         whenever(reminders.findById(7)).thenReturn(Optional.of(reminder))
         whenever(reminders.findById(9)).thenReturn(Optional.empty())
         whenever(reminders.saveAndFlush(reminder)).thenReturn(reminder)
         val notifications = mock<IncassoNotificationRepository>()
-        val notification = mock<IncassoNotification>()
+        val notification = Entities.incassoNotification()
         whenever(notifications.findById(8)).thenReturn(Optional.empty())
         whenever(notifications.findById(6)).thenReturn(Optional.of(notification))
         val reminderService = ContributionReminderService(reminders, mock(), mock()).withEntityManager()
@@ -106,8 +105,8 @@ class ContributionServicesWriteTest {
 
     @Test
     fun `an edit to a period or a contribution the database no longer has is refused`() {
-        val period = mock<ContributionPeriod>().also { whenever(it.id).thenReturn(4) }
-        val contribution = mock<Contribution>().also { whenever(it.id).thenReturn(Contribution.Id(1, 2)) }
+        val period = Entities.period(id = 4)
+        val contribution = Entities.contribution(id = Contribution.Id(1, 2))
         val periods = ContributionPeriodService(mock<ContributionPeriodRepository>(), mock<TrackedEventPublisher>())
         val contributions = ContributionService(mock<ContributionRepository>(), mock(), mock(), mock<TrackedEventPublisher>())
 

@@ -11,7 +11,6 @@ import net.blueshell.api.user.domain.AddressService
 import net.blueshell.api.user.domain.MembershipPermission
 import net.blueshell.api.user.domain.UserPermission
 import net.blueshell.api.user.persistence.Address
-import net.blueshell.api.user.persistence.Membership
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -70,7 +69,7 @@ class OwnershipPermissionEvaluatorsTest {
     inner class MembershipPermissionEvaluator {
         private val service = mock<MembershipService>()
         private val evaluator = MembershipPermission(service)
-        private val membership = mock<Membership>()
+        private val membership = Entities.membership()
 
         @Test
         fun `null entity path is board only`() {
@@ -83,7 +82,7 @@ class OwnershipPermissionEvaluatorsTest {
 
         @Test
         fun `entity read allows owner while write delete stay board only`() {
-            whenever(membership.userId).thenReturn(12L)
+            membership.user = Entities.user(id = 12L)
             val owner = guestAuth(id = 12L)
             val other = guestAuth(id = 13L)
 
@@ -97,7 +96,7 @@ class OwnershipPermissionEvaluatorsTest {
 
         @Test
         fun `hasPermissionId supports null id fallback and loaded membership path`() {
-            whenever(membership.userId).thenReturn(22L)
+            membership.user = Entities.user(id = 22L)
             whenever(service.findById(22L)).thenReturn(membership)
 
             assertThat(evaluator.hasPermissionId(boardAuth(), null, "read")).isTrue()
@@ -110,7 +109,7 @@ class OwnershipPermissionEvaluatorsTest {
     inner class ContributionPermissionEvaluator {
         private val service = mock<ContributionService>()
         private val evaluator = ContributionPermission(service)
-        private val contribution = mock<Contribution>()
+        private val contribution = Entities.contribution()
 
         @Test
         fun `null entity path is board only for all operations`() {
@@ -123,7 +122,7 @@ class OwnershipPermissionEvaluatorsTest {
 
         @Test
         fun `entity read allows board or owner while write delete remain board only`() {
-            whenever(contribution.userId).thenReturn(32L)
+            contribution.user = Entities.user(id = 32L)
             val owner = guestAuth(id = 32L)
 
             assertThat(evaluator.hasPermission(owner, contribution, "read")).isTrue()
@@ -138,7 +137,7 @@ class OwnershipPermissionEvaluatorsTest {
         @Test
         fun `hasPermissionId requires a non-null contribution id and resolves service path`() {
             val id = Contribution.Id(userId = 32L, contributionPeriodId = 5L)
-            whenever(contribution.userId).thenReturn(32L)
+            contribution.user = Entities.user(id = 32L)
             whenever(service.findById(id)).thenReturn(contribution)
 
             assertThat(evaluator.hasPermissionId(boardAuth(), null, "read")).isFalse()

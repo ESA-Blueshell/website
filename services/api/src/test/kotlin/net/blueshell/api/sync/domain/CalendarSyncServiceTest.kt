@@ -3,9 +3,9 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.event.api.CalendarAdapter
 import net.blueshell.api.event.api.CalendarEventRef
 import net.blueshell.api.event.api.EventService
-import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -28,13 +28,13 @@ class CalendarSyncServiceTest {
         deletedAt: Instant = Instant.parse("9999-12-31T23:59:59Z"),
     ) {
         val event =
-            mock<Event> {
-                on { this.approved }.thenReturn(approved)
-                on { this.deletedAt }.thenReturn(deletedAt)
-                on { title }.thenReturn("LAN")
-                on { startTime }.thenReturn(Instant.parse("2026-10-01T18:00:00Z"))
-                on { endTime }.thenReturn(Instant.parse("2026-10-01T23:00:00Z"))
-            }
+            Entities
+                .event(
+                    approved = approved,
+                    title = "LAN",
+                    startTime = Instant.parse("2026-10-01T18:00:00Z"),
+                    endTime = Instant.parse("2026-10-01T23:00:00Z"),
+                ).also { it.deletedAt = deletedAt }
         whenever(events.findByIdIncludingDeletedOrNull(7L)).thenReturn(event)
     }
 

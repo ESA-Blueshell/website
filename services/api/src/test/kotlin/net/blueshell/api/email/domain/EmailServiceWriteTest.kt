@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager
 import net.blueshell.api.email.persistence.Email
 import net.blueshell.api.email.persistence.EmailRepository
 import net.blueshell.api.shared.email.EmailContent
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -29,7 +30,7 @@ class EmailServiceWriteTest {
 
     @Test
     fun `reads an email, and refuses one that is not there`() {
-        val email = mock<Email>()
+        val email = Entities.email()
         whenever(repository.findById(1)).thenReturn(Optional.of(email))
         whenever(repository.findById(2)).thenReturn(Optional.empty())
 
@@ -39,8 +40,8 @@ class EmailServiceWriteTest {
 
     @Test
     fun `a delivery is written back, and one for an email the database lost is refused`() {
-        val email = mock<Email>().also { whenever(it.id).thenReturn(3) }
-        val lost = mock<Email>().also { whenever(it.id).thenReturn(4) }
+        val email = Entities.email(id = 3)
+        val lost = Entities.email(id = 4)
         whenever(repository.existsById(3)).thenReturn(true)
 
         assertThat(service.markDelivered(email)).isSameAs(email)
@@ -50,7 +51,7 @@ class EmailServiceWriteTest {
 
     @Test
     fun `a pending email is written, and each mark on a stored one is written back`() {
-        val email = mock<Email>().also { whenever(it.id).thenReturn(3) }
+        val email = Entities.email(id = 3)
         whenever(repository.existsById(3)).thenReturn(true)
 
         val pending = service.createPending(EmailContent("a@b.nl", "A", "Hi", "Body"), "TEST", null)

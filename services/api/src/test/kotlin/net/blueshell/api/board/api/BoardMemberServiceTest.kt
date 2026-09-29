@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager
 import net.blueshell.api.board.domain.BoardMemberNotFoundException
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.board.persistence.BoardMemberRepository
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -30,7 +31,7 @@ class BoardMemberServiceTest {
 
     @Test
     fun `a member is written, written back and removed`() {
-        val member = mock<BoardMember>().also { whenever(it.id).thenReturn(4) }
+        val member = Entities.boardMember(id = 4)
         whenever(repository.existsById(4)).thenReturn(true)
         whenever(repository.findById(4)).thenReturn(Optional.of(member))
 
@@ -44,7 +45,7 @@ class BoardMemberServiceTest {
 
     @Test
     fun `an edit or a removal of a member who is not there is refused`() {
-        val gone = mock<BoardMember>().also { whenever(it.id).thenReturn(5) }
+        val gone = Entities.boardMember(id = 5)
         whenever(repository.findById(5)).thenReturn(Optional.empty())
 
         assertThatThrownBy { service.update(gone) }.isInstanceOf(ResponseStatusException::class.java)

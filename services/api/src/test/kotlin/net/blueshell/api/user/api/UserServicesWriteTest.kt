@@ -4,9 +4,7 @@ import jakarta.persistence.EntityManager
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.domain.AddressService
-import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.AddressRepository
-import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.MemberProfileRepository
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.Membership
@@ -70,7 +68,7 @@ class UserServicesWriteTest {
 
     @Test
     fun `a membership is written back and removed, by itself or by its id`() {
-        val membership = mock<Membership>().also { whenever(it.id).thenReturn(6) }
+        val membership = Entities.membership(id = 6)
         val repository =
             mock<MemberRepository> {
                 on { saveAndFlush(any<Membership>()) } doAnswer { it.getArgument(0) }
@@ -92,12 +90,12 @@ class UserServicesWriteTest {
 
     @Test
     fun `a profile and an address are read and written back`() {
-        val profile = mock<MemberProfile>().also { whenever(it.id).thenReturn(1) }
+        val profile = Entities.memberProfile(id = 1)
         val profiles = mock<MemberProfileRepository> { on { saveAndFlush(profile) } doAnswer { it.getArgument(0) } }
         whenever(profiles.findById(1)).thenReturn(Optional.of(profile))
         whenever(profiles.findById(9)).thenReturn(Optional.empty())
         whenever(profiles.existsById(1)).thenReturn(true)
-        val address = mock<Address>().also { whenever(it.id).thenReturn(2) }
+        val address = Entities.address(id = 2)
         val addresses = mock<AddressRepository> { on { saveAndFlush(address) } doAnswer { it.getArgument(0) } }
         whenever(addresses.findAll()).thenReturn(mutableListOf(address))
         whenever(addresses.findById(2)).thenReturn(Optional.of(address))
@@ -117,9 +115,9 @@ class UserServicesWriteTest {
 
     @Test
     fun `an edit to a membership, a profile or an address the database no longer has is refused`() {
-        val membership = mock<Membership>().also { whenever(it.id).thenReturn(1) }
-        val profile = mock<MemberProfile>().also { whenever(it.id).thenReturn(2) }
-        val address = mock<Address>().also { whenever(it.id).thenReturn(3) }
+        val membership = Entities.membership(id = 1)
+        val profile = Entities.memberProfile(id = 2)
+        val address = Entities.address(id = 3)
         val memberships = MembershipService(mock<MemberRepository>(), mock<TrackedEventPublisher>(), mock())
         val profiles = MemberProfileService(mock<MemberProfileRepository>())
         val addresses = AddressService(mock<AddressRepository>())

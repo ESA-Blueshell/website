@@ -11,6 +11,7 @@ import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.state
 import net.blueshell.api.shared.enums.CohortMemberState
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -25,8 +26,8 @@ class CohortLedgerTest {
         every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(any(), any()) } returns null
     }
 
-    private val cohort: Cohort = mockk { every { id } returns 99L }
-    private val subject: CohortSubject = mockk()
+    private val cohort: Cohort = Entities.cohort(id = 99L)
+    private val subject: CohortSubject = Entities.cohortSubject()
     private val now: LocalDateTime = LocalDateTime.parse("2026-06-01T10:00:00")
 
     @Test

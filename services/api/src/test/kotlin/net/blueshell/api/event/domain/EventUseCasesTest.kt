@@ -14,7 +14,6 @@ import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.QuestionData
 import net.blueshell.api.survey.api.SurveyData
 import net.blueshell.api.survey.api.SurveyFactory
-import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -44,7 +43,7 @@ class EventUseCasesTest {
         @Test
         fun `creates event with mapped fields for board user`() {
             val committee = Entities.committee()
-            val survey = mock<Survey>()
+            val survey = Entities.survey()
             val bannerFile = Entities.file(id = 77L)
             whenever(committeeService.findById(3L)).thenReturn(committee)
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
@@ -94,7 +93,7 @@ class EventUseCasesTest {
         fun `updates event fields, keeping the version it was read at`() {
             val existing = eventEntity().apply { version = 1L }
             val committee = Entities.committee()
-            val survey = mock<Survey>()
+            val survey = Entities.survey()
             val bannerFile = Entities.file(id = 88L)
             whenever(eventService.findById(9L)).thenReturn(existing)
             whenever(committeeService.findById(4L)).thenReturn(committee)
@@ -143,9 +142,9 @@ class EventUseCasesTest {
                 }
             val bannerFile = Entities.file(id = 88L)
             whenever(eventService.findById(9L)).thenReturn(existing)
-            whenever(committeeService.findById(4L)).thenReturn(mock())
+            whenever(committeeService.findById(4L)).thenReturn(Entities.committee(id = 4L))
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(2L, setOf(role), null))
-            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(mock())
+            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(Entities.survey())
             whenever(fileService.findById(88L)).thenReturn(bannerFile)
             whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
             return useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L)
@@ -183,13 +182,13 @@ class EventUseCasesTest {
         private fun asBoard() {
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
             whenever(fileService.findById(any())).thenReturn(Entities.file())
-            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(mock<Survey>())
+            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(Entities.survey())
         }
 
         @Test
         fun `keeps the roles an event pings, with each one's name`() {
             asBoard()
-            whenever(committeeService.findById(3L)).thenReturn(mock())
+            whenever(committeeService.findById(3L)).thenReturn(Entities.committee(id = 3L))
             val captured = argumentCaptor<Event>()
             whenever(eventService.create(captured.capture())).thenAnswer { captured.firstValue }
 
@@ -226,7 +225,7 @@ class EventUseCasesTest {
             asBoard()
             val existing = eventEntity().apply { pingedRoles += PingedRole("901", "Gamers") }
             whenever(eventService.findById(9L)).thenReturn(existing)
-            whenever(committeeService.findById(4L)).thenReturn(mock())
+            whenever(committeeService.findById(4L)).thenReturn(Entities.committee(id = 4L))
             whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
 
             useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 0L)
@@ -247,8 +246,8 @@ class EventUseCasesTest {
         private fun asBoard() {
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
             whenever(fileService.findById(any())).thenReturn(Entities.file())
-            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(mock<Survey>())
-            whenever(committeeService.findById(any())).thenReturn(mock())
+            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(Entities.survey())
+            whenever(committeeService.findById(any())).thenReturn(Entities.committee())
         }
 
         @Test

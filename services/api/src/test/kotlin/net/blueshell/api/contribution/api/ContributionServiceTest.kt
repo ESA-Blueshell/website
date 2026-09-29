@@ -8,8 +8,8 @@ import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.dao.DataIntegrityViolationException
@@ -36,7 +36,7 @@ class ContributionServiceTest {
 
     @Test
     fun `ensurePaid creates missing contribution row`() {
-        val user = mockk<User>()
+        val user = Entities.user()
         val period = ContributionPeriod(LocalDate.parse("2026-01-01"), LocalDate.parse("2026-12-31"), LocalDate.parse("2026-07-01"))
         every { repository.existsById(Contribution.Id(7L, 12L)) } returns false
         every { users.findById(7L) } returns user
@@ -58,7 +58,7 @@ class ContributionServiceTest {
 
     @Test
     fun `ensurePaid treats duplicate create as already paid`() {
-        val user = mockk<User>()
+        val user = Entities.user()
         val period = ContributionPeriod(LocalDate.parse("2026-01-01"), LocalDate.parse("2026-12-31"), LocalDate.parse("2026-07-01"))
         every { repository.existsById(Contribution.Id(7L, 12L)) } returnsMany listOf(false, true)
         every { users.findById(7L) } returns user

@@ -16,6 +16,7 @@ import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -288,13 +289,7 @@ class InboundReconcileTest {
     private fun user(
         id: Long,
         email: String,
-    ): User {
-        val user = mockk<User>()
-        every { user.id } returns id
-        every { user.fullName } returns "User $id"
-        every { user.email } returns email
-        return user
-    }
+    ): User = Entities.user(id = id, firstName = "User", lastName = "$id", email = email)
 
     private class RecordingTargetStrategy : TargetStrategy {
         override val descriptor =

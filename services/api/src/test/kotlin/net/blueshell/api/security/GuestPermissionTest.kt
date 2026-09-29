@@ -2,7 +2,7 @@ package net.blueshell.api.security
 
 import net.blueshell.api.event.domain.GuestPermission
 import net.blueshell.api.event.domain.GuestService
-import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -15,7 +15,7 @@ class GuestPermissionTest {
 
     @Test
     fun `guest permissions require auth entity and permission and only allow read write`() {
-        val guest = mock<Guest>()
+        val guest = Entities.guest()
         assertThat(evaluator.hasPermission(null, guest, "read")).isFalse()
         assertThat(evaluator.hasPermission(guestAuth(), null, "read")).isFalse()
         assertThat(evaluator.hasPermission(guestAuth(), guest, null)).isFalse()
@@ -26,7 +26,7 @@ class GuestPermissionTest {
 
     @Test
     fun `hasPermissionId resolves guest via access token`() {
-        val guest = mock<Guest>()
+        val guest = Entities.guest()
         whenever(service.findByAccessToken("token-123")).thenReturn(guest)
 
         assertThat(evaluator.hasPermissionId(guestAuth(), null, "read")).isFalse()

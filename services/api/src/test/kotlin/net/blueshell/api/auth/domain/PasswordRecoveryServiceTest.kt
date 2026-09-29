@@ -1,7 +1,6 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
-import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.enums.TokenPurpose
@@ -63,8 +62,7 @@ class PasswordRecoveryServiceTest {
     @Test
     fun `setPassword verifies token and updates password`() {
         val user = user(id = 10L)
-        val token = mock<RecoveryToken>()
-        whenever(token.user).thenReturn(user)
+        val token = Entities.recoveryToken(user = user)
         whenever(tokenValidator.verify("sel.ver", TokenPurpose.PASSWORD_RESET)).thenReturn(token)
 
         service.setPassword("sel.ver", "NewPass123!")
@@ -75,8 +73,7 @@ class PasswordRecoveryServiceTest {
     @Test
     fun `setPassword consumes token after successful password update`() {
         val user = user(id = 10L)
-        val token = mock<RecoveryToken>()
-        whenever(token.user).thenReturn(user)
+        val token = Entities.recoveryToken(user = user)
         whenever(tokenValidator.verify("sel.ver", TokenPurpose.PASSWORD_RESET)).thenReturn(token)
 
         service.setPassword("sel.ver", "NewPass123!")
@@ -87,8 +84,7 @@ class PasswordRecoveryServiceTest {
     @Test
     fun `setPassword ends every sign-in the person holds`() {
         val user = user(id = 10L)
-        val token = mock<RecoveryToken>()
-        whenever(token.user).thenReturn(user)
+        val token = Entities.recoveryToken(user = user)
         whenever(tokenValidator.verify("sel.ver", TokenPurpose.PASSWORD_RESET)).thenReturn(token)
 
         service.setPassword("sel.ver", "NewPass123!")

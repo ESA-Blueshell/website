@@ -7,6 +7,7 @@ import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
@@ -27,7 +28,7 @@ class ContributionAsksQueueTheirEmailTest {
 
     @Test
     fun `a reminder queues its own email`() {
-        val reminder: ContributionReminder = mock { on { id } doReturn 5 }
+        val reminder = Entities.reminder(id = 5)
         val repository: ContributionReminderRepository = mock { on { saveAndFlush(reminder) } doReturn reminder }
 
         val written = ContributionReminderService(repository, mock(), jobs).withEntityManager().record(reminder)
@@ -42,7 +43,7 @@ class ContributionAsksQueueTheirEmailTest {
 
     @Test
     fun `a pre-notification queues its own email`() {
-        val notification: IncassoNotification = mock { on { id } doReturn 6 }
+        val notification = Entities.incassoNotification(id = 6)
         val repository: IncassoNotificationRepository = mock { on { saveAndFlush(notification) } doReturn notification }
 
         val written = IncassoNotificationService(repository, mock(), jobs).withEntityManager().record(notification)

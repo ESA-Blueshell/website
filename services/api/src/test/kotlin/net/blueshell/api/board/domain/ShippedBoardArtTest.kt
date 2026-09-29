@@ -1,7 +1,5 @@
 package net.blueshell.api.board.domain
 
-import net.blueshell.api.board.persistence.Board
-import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.board.persistence.BoardMemberRepository
 import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.file.api.shippedPicturesOf
@@ -12,13 +10,12 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import java.util.Optional
 
 class ShippedBoardArtTest {
-    private val fresh = mock<File> { on { id } doReturn 1L }
-    private val taken = mock<File> { on { id } doReturn 2L }
+    private val fresh = Entities.file(id = 1L)
+    private val taken = Entities.file(id = 2L)
     private val chosen = Entities.file()
 
     private val ninth = board(9, 90L)
@@ -64,9 +61,9 @@ class ShippedBoardArtTest {
     @Test
     fun `puts a photograph and a portrait on the board and member that have none`() {
         assertThat(art.apply()).isEqualTo(ShippedBoardArt.Applied(photos = 1, portraits = 1))
-        verify(ninth).replacePicture(fresh)
+        assertThat(ninth.picture).isSameAs(fresh)
         verify(boards).save(ninth)
-        verify(roos).replacePicture(fresh)
+        assertThat(roos.picture).isSameAs(fresh)
         verify(members).save(roos)
     }
 
@@ -74,29 +71,25 @@ class ShippedBoardArtTest {
     fun `leaves a chosen picture, one another record holds, and a record that is gone`() {
         art.onReady()
 
-        verify(eighth, never()).replacePicture(any())
-        verify(seventh, never()).replacePicture(any())
-        verify(mo, never()).replacePicture(any())
-        verify(nel, never()).replacePicture(any())
+        assertThat(eighth.picture).isSameAs(chosen)
+        assertThat(seventh.picture).isNull()
+        assertThat(mo.picture).isSameAs(chosen)
+        assertThat(nel.picture).isNull()
     }
 
     private fun board(
         number: Int,
         id: Long,
         picture: File? = null,
-    ) = mock<Board> {
-        on { this.number } doReturn number
-        on { this.id } doReturn id
-        on { this.picture } doReturn picture
-    }
+    ) = Entities.board(id = id, number = number).also { it.picture = picture }
 
     private fun member(
         id: Long,
         name: String,
         picture: File? = null,
-    ) = mock<BoardMember> {
-        on { this.id } doReturn id
-        on { displayName } doReturn name
-        on { this.picture } doReturn picture
+    ) = Entities.boardMember().also {
+        it.id = id
+        it.displayName = name
+        it.picture = picture
     }
 }

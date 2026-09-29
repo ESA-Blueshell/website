@@ -1,9 +1,7 @@
 package net.blueshell.api.user.web
 
-import io.mockk.every
-import io.mockk.mockk
 import net.blueshell.api.shared.enums.MemberType
-import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -23,16 +21,12 @@ class MembershipResponseMappingsTest {
         val updatedAt = Instant.parse("2024-06-01T00:00:00Z")
 
         val membership =
-            mockk<Membership> {
-                every { this@mockk.userId } returns userId
-                every { this@mockk.id } returns id
-                every { this@mockk.memberType } returns memberType
-                every { this@mockk.startDate } returns startDate
-                every { this@mockk.endDate } returns endDate
-                every { this@mockk.incasso } returns incasso
-                every { this@mockk.version } returns version
-                every { this@mockk.createdAt } returns createdAt
-                every { this@mockk.updatedAt } returns updatedAt
+            Entities.membership(id = id, user = Entities.user(id = userId), startDate = startDate, endDate = endDate).also {
+                it.memberType = memberType
+                it.incasso = incasso
+                it.version = version
+                it.createdAt = createdAt
+                it.updatedAt = updatedAt
             }
 
         val response = membership.asResponse()
@@ -51,16 +45,10 @@ class MembershipResponseMappingsTest {
     @Test
     fun `asResponse maps null endDate`() {
         val membership =
-            mockk<Membership> {
-                every { userId } returns 1L
-                every { id } returns 2L
-                every { memberType } returns MemberType.ALUMNI
-                every { startDate } returns LocalDate.of(2023, 1, 1)
-                every { endDate } returns null
-                every { incasso } returns false
-                every { version } returns 0L
-                every { createdAt } returns Instant.now()
-                every { updatedAt } returns Instant.now()
+            Entities.membership(id = 2L, user = Entities.user(id = 1L), startDate = LocalDate.of(2023, 1, 1)).also {
+                it.memberType = MemberType.ALUMNI
+                it.createdAt = Instant.now()
+                it.updatedAt = Instant.now()
             }
 
         val response = membership.asResponse()

@@ -7,11 +7,10 @@ import net.blueshell.api.committee.domain.CommitteeSeats
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.file.api.FileService
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal
-import net.blueshell.api.user.persistence.User
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -92,7 +90,7 @@ class CommitteeControllerTest {
     @Test
     fun `lets the committee's own members save its page and store its banner and its logo`() {
         whenever(service.updateOwnPage(1, "LANs, monthly", "b.webp", "i.webp", listOf("CS2"), 3)).thenReturn(lan)
-        val stored = mock<File> { on { path } doReturn "committee-banners/b.webp" }
+        val stored = Entities.file(path = "committee-banners/b.webp")
         val upload = MockMultipartFile("file", "b.png", "image/png", byteArrayOf(1))
         whenever(files.storeMultipart(upload, FileType.COMMITTEE_BANNER)).thenReturn(stored)
         whenever(files.storeMultipart(upload, FileType.COMMITTEE_ICON)).thenReturn(stored)
@@ -126,7 +124,7 @@ class CommitteeControllerTest {
                 updatedAt = Instant.EPOCH
                 replaceMembers(
                     listOf(
-                        CommitteeMember(committee = this, user = mock<User> { on { id } doReturn 7L }, role = "Chair").apply {
+                        CommitteeMember(committee = this, user = Entities.user(id = 7L), role = "Chair").apply {
                             createdAt = Instant.EPOCH
                             updatedAt = Instant.EPOCH
                         },

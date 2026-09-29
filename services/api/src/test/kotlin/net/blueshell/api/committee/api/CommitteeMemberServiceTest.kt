@@ -9,6 +9,7 @@ import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.committee.persistence.CommitteeMemberRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -123,10 +124,7 @@ class CommitteeMemberServiceTest {
     fun `gives up every seat a user holds, announcing each one`() {
         val seats =
             listOf(1L, 2L).map { committee ->
-                mockk<CommitteeMember> {
-                    every { userId } returns 7L
-                    every { committeeId } returns committee
-                }
+                CommitteeMember(committee = Entities.committee(id = committee), user = Entities.user(id = 7L))
             }
         val announced = mutableListOf<Any>()
         every { repository.findByUser_Id(7L) } returns seats

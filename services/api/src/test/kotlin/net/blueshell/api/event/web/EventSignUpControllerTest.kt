@@ -1,12 +1,11 @@
 package net.blueshell.api.event.web
 
-import io.mockk.every
-import io.mockk.mockk
 import net.blueshell.api.event.domain.EventSignUpData
 import net.blueshell.api.event.domain.EventSignUpService
 import net.blueshell.api.event.domain.EventSignUpUseCases
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -26,30 +25,26 @@ class EventSignUpControllerTest {
     private val useCases = mock<EventSignUpUseCases>()
     private val controller = EventSignUpController(service, useCases)
 
-    // Stubbed rather than constructed: the audit fields Hibernate fills are lateinit, and a
-    // response reads all of them.
+    // The audit fields Hibernate fills are lateinit, and a response reads all of them.
     private fun guestSignUp(): EventSignUp {
         val stamp = Instant.parse("2026-02-20T12:34:00Z")
         val storedGuest =
-            mockk<Guest> {
-                every { id } returns 7L
-                every { name } returns "Guest Gordon"
-                every { discord } returns "gordon#0001"
-                every { email } returns "gordon@example.com"
-                every { phoneNumber } returns "0611111111"
-                every { version } returns 1L
-                every { createdAt } returns stamp
-                every { updatedAt } returns stamp
+            Guest(
+                name = "Guest Gordon",
+                discord = "gordon#0001",
+                email = "gordon@example.com",
+                phoneNumber = "0611111111",
+                accessTokenHash = "hash",
+            ).also {
+                it.id = 7L
+                it.version = 1L
+                it.createdAt = stamp
+                it.updatedAt = stamp
             }
-        return mockk {
-            every { id } returns 44L
-            every { eventId } returns 100L
-            every { answers } returns emptySet()
-            every { guest } returns storedGuest
-            every { user } returns null
-            every { version } returns 3L
-            every { createdAt } returns stamp
-            every { updatedAt } returns stamp
+        return Entities.signUp(id = 44L, event = Entities.event(id = 100L), guest = storedGuest).also {
+            it.version = 3L
+            it.createdAt = stamp
+            it.updatedAt = stamp
         }
     }
 

@@ -10,7 +10,6 @@ import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.UserGameAccount
 import net.blueshell.api.file.api.asImage
-import net.blueshell.api.game.persistence.Game
 
 fun Season.asResponse(played: Boolean = false) =
     SeasonResponse(
@@ -87,21 +86,6 @@ fun UserGameAccount.asResponse() =
         userId = userId,
         game = game,
         handle = handle,
-    )
-
-fun Game.asResponse(current: Boolean = false): GameResponse =
-    GameResponse(
-        code = code,
-        name = name,
-        slug = slug,
-        accent = accent,
-        banner = banner?.asImage(),
-        icon = icon?.asImage(),
-        intro = intro,
-        sortIndex = sortIndex,
-        current = current,
-        competitionIntro = competitionIntro,
-        esportsChannels = esportsChannels.map { EsportsChannelResponse(it.channelId, it.guildId, it.channelName) },
     )
 
 fun SeasonGameView.asResponse() =

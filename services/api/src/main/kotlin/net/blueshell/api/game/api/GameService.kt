@@ -183,13 +183,10 @@ class GameService(
      * channels among them. Read so the offer to remove it can say so before it is agreed to.
      */
     @Transactional(readOnly = true)
-    fun heldAgainst(game: String): Map<String, Long> {
+    fun heldAgainst(game: String): GameHeld {
         val existing = requireGame(game)
-        val code = existing.code
-        val own = mapOf("channels" to existing.channels.size.toLong())
-        return holdings.orderedStream().toList().fold(own) { held, module ->
-            held + module.heldAgainst(code).mapValues { (kind, count) -> (held[kind] ?: 0) + count }
-        }
+        val own = GameHeld(channels = existing.channels.size.toLong())
+        return holdings.orderedStream().toList().fold(own) { held, module -> held + module.heldAgainst(existing.code) }
     }
 
     /**

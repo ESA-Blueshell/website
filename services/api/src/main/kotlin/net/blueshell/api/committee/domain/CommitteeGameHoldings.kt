@@ -1,6 +1,7 @@
 package net.blueshell.api.committee.domain
 
 import net.blueshell.api.committee.persistence.CommitteeRepository
+import net.blueshell.api.game.api.GameHeld
 import net.blueshell.api.game.api.GameHoldings
 import org.springframework.stereotype.Component
 
@@ -9,5 +10,5 @@ import org.springframework.stereotype.Component
 class CommitteeGameHoldings(
     private val committees: CommitteeRepository,
 ) : GameHoldings {
-    override fun heldAgainst(code: String): Map<String, Long> = mapOf("committees" to committees.countNamingGame(code))
+    override fun heldAgainst(code: String): GameHeld = GameHeld(committees = committees.countNamingGame(code))
 }

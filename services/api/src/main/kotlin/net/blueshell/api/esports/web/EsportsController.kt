@@ -10,7 +10,6 @@ import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import net.blueshell.api.file.api.asImage
-import net.blueshell.api.game.api.GameService
 import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
@@ -44,7 +43,6 @@ class EsportsController(
     private val views: EsportsQueryService,
     private val seasons: SeasonService,
     private val teams: TeamService,
-    private val games: GameService,
     private val rosters: TeamRosterService,
     private val fielded: TeamSeasonService,
     private val entered: SeasonGameService,
@@ -63,19 +61,6 @@ class EsportsController(
         @PathVariable game: String,
         @RequestParam(required = false) seasonId: Long?,
     ): GameRostersResponse = views.rostersOf(game, seasonId).asResponse()
-
-    /**
-     * Every game the association has fielded a team in, present or past, in the order they are
-     * shown. Public, as the games themselves are.
-     */
-    @PermitAll
-    @GetMapping("/games")
-    fun findGames(): List<GameResponse> {
-        // Which games the association currently plays is derived rather than stored, so it is
-        // read once for the whole list rather than asked of each row.
-        val played = fielded.currentlyPlayed()
-        return games.findAll().map { it.asResponse(played.contains(it.code)) }
-    }
 
     /**
      * Every game that ran in one season, with what it fielded.

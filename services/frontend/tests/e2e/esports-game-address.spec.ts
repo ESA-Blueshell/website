@@ -45,7 +45,7 @@ test.describe("a game's page, by its address", () => {
     await installApiMocks(page, {
       esportsGames: [
         anEsportsGame({code: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
-          intro: "Two paddles and a ball.", sortIndex: 1, current: true}),
+          intro: "Two paddles and a ball.", sortIndex: 1, inCompetition: true}),
       ],
     })
 

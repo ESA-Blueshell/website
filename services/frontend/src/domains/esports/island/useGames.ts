@@ -69,7 +69,7 @@ export function useGames(): {
 
   return {
     games: records,
-    current: computed(() => records.value.filter(one => one.current)),
+    current: computed(() => records.value.filter(one => one.inCompetition)),
     ready: asked,
     identityOf: (game) => {
       const record = recordOf(game)

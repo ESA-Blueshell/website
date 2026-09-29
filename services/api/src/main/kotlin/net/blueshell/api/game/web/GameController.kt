@@ -98,11 +98,11 @@ class GameController(
     ): GameHoldingsResponse {
         val held = games.heldAgainst(game)
         return GameHoldingsResponse(
-            channels = held["channels"] ?: 0,
-            committees = held["committees"] ?: 0,
-            events = held["events"] ?: 0,
-            teams = held["teams"] ?: 0,
-            players = held["players"] ?: 0,
+            channels = held.channels,
+            committees = held.committees,
+            events = held.events,
+            teams = held.teams,
+            players = held.players,
         )
     }
 

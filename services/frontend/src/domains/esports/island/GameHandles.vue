@@ -27,8 +27,8 @@ const saving = ref<GameCode | null>(null)
 const saved = ref<GameCode | null>(null)
 const loaded = ref(false)
 
-const fielded = computed<Game[]>(() => games.value.filter(one => one.current))
-const others = computed<Game[]>(() => games.value.filter(one => !one.current))
+const fielded = computed<Game[]>(() => games.value.filter(one => one.inCompetition))
+const others = computed<Game[]>(() => games.value.filter(one => !one.inCompetition))
 
 const dirty = (game: GameCode) => (draft.value[game] ?? "").trim() !== (stored.value[game] ?? "")
 

@@ -6,6 +6,7 @@
 import type {
   AddressResponse,
   AnswerResponse,
+  CasualGameResponse,
   BlogResponse,
   CommitteeResponse,
   ContributionPeriodResponse,
@@ -13,7 +14,6 @@ import type {
   Email,
   EventResponse,
   EventSignUpResponse,
-  GameResponse,
   JobExecution,
   MembershipResponse,
   QuestionResponse,
@@ -166,12 +166,18 @@ export const aSeason = (over: Partial<Wire<SeasonResponse>> & {id: number}): Wir
   ...over,
 })
 
-/** A game as the esports pages read it. */
-export const anEsportsGame = (over: Partial<Wire<GameResponse>> & {code: string}): Wire<GameResponse> => ({
+/** A game the association plays in competition, which the esports pages read. */
+export const anEsportsGame = (over: Partial<Wire<CasualGameResponse>> & {code: string}): Wire<CasualGameResponse> => ({
   name: over.code,
   slug: over.code.toLowerCase(),
+  accent: null,
+  intro: null,
+  banner: null,
+  icon: null,
   sortIndex: 0,
-  current: true,
+  archived: false,
+  inCompetition: true,
+  channels: [],
   esportsChannels: [],
   ...over,
 })

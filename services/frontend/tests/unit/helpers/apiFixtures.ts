@@ -14,7 +14,6 @@ import type {
   EventBannerResponse,
   EventResponse,
   EventSignUpResponse,
-  GameResponse,
   GuestResponse,
   Image,
   JobExecution,
@@ -231,15 +230,9 @@ export const aCasualGame = (over: Partial<CasualGameResponse> = {}): CasualGameR
   ...over,
 })
 
-export const aGame = (over: Partial<GameResponse> = {}): GameResponse => ({
-  code: "VALORANT",
-  name: "Valorant",
-  slug: "valorant",
-  sortIndex: 0,
-  current: true,
-  esportsChannels: [],
-  ...over,
-})
+/** A game the association plays in competition, as the esports pages read it. */
+export const aGame = (over: Partial<CasualGameResponse> = {}): CasualGameResponse =>
+  aCasualGame({code: "VALORANT", name: "Valorant", slug: "valorant", inCompetition: true, ...over})
 
 export const aSeason = (over: Partial<SeasonResponse> = {}): SeasonResponse => ({
   id: 19,

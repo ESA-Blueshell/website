@@ -231,16 +231,16 @@ class GameServiceTest {
         whenever(games.findByCode("CHESS")).thenReturn(game("CHESS"))
         val teams =
             object : GameHoldings {
-                override fun heldAgainst(code: String) = mapOf("teams" to 2L, "players" to 9L)
+                override fun heldAgainst(code: String) = GameHeld(teams = 2, players = 9)
             }
         val events =
             object : GameHoldings {
-                override fun heldAgainst(code: String) = mapOf("events" to 4L, "teams" to 1L)
+                override fun heldAgainst(code: String) = GameHeld(events = 4, teams = 1)
             }
         val counting = GameService(games, pictures, provider(teams, events), provider())
 
-        assertThat(counting.heldAgainst("CHESS")).isEqualTo(mapOf("channels" to 0L, "teams" to 3L, "players" to 9L, "events" to 4L))
-        assertThat(service.heldAgainst("CHESS")).isEqualTo(mapOf("channels" to 0L))
+        assertThat(counting.heldAgainst("CHESS")).isEqualTo(GameHeld(teams = 3, players = 9, events = 4))
+        assertThat(service.heldAgainst("CHESS")).isEqualTo(GameHeld())
     }
 
     @Test
@@ -287,7 +287,7 @@ class GameServiceTest {
         assertThat(game.channels).containsExactly(valorant)
         service.update("VALORANT", "Valorant", "valorant", null, null, null, null, null, listOf(heroes, heroes))
         assertThat(game.channels).containsExactly(heroes)
-        assertThat(service.heldAgainst("VALORANT")).containsEntry("channels", 1L)
+        assertThat(service.heldAgainst("VALORANT").channels).isEqualTo(1L)
     }
 
     @Test

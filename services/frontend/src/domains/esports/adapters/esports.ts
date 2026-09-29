@@ -17,7 +17,7 @@ import {
   findGame,
   findGameAccounts,
   findPlayedRosters,
-  findGames,
+  findCasualGames,
   findRoster,
   findSeasonContents,
   findSeasons,
@@ -32,11 +32,11 @@ import {
 } from "@/services/api"
 import type {
   AddRosterEntryRequest,
+  CasualGameResponse,
   FieldedTeamResponse,
   FieldTeamRequest,
   FileType,
   GameAccountResponse,
-  GameResponse,
   GameRostersResponse,
   Image,
   PlayedRosterResponse,
@@ -68,7 +68,7 @@ export type TeamRoster = TeamRosterResponse
 export type RosterEntry = RosterEntryResponse
 export type GameAccount = GameAccountResponse
 /** A game itself: what it is called, the art it is drawn with, and how its page presents it. */
-export type Game = GameResponse
+export type Game = CasualGameResponse
 export type FieldedTeam = FieldedTeamResponse
 
 /** What a season holds, so an offer to remove it can say what goes with it. */
@@ -85,7 +85,7 @@ export interface SeasonContents {
  * games rather than take the navigation down with it.
  */
 export async function loadGames(): Promise<Game[]> {
-  const res = await findGames()
+  const res = await findCasualGames()
   return Array.isArray(res.data) ? res.data.map(withArt) : []
 }
 

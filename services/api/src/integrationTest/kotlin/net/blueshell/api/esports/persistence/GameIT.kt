@@ -89,7 +89,7 @@ class GameIT : UserTestSupport() {
             ).andExpect(status().isOk)
 
         mvc
-            .perform(get("/esports/games"))
+            .perform(get("/games"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].code").value(name.uppercase()))
     }
@@ -150,9 +150,9 @@ class GameIT : UserTestSupport() {
         // game is still answered for. What the rule answers once games have been played is
         // asserted in CurrentlyPlayedIT, which builds the seasons it needs.
         mvc
-            .perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.code == 'CSGO')].current").value(false))
-            .andExpect(jsonPath("$[?(@.code == 'VALORANT')].current").value(false))
+            .perform(get("/games"))
+            .andExpect(jsonPath("$[?(@.code == 'CSGO')].inCompetition").value(false))
+            .andExpect(jsonPath("$[?(@.code == 'VALORANT')].inCompetition").value(false))
             .andExpect(jsonPath("$[?(@.code == 'VALORANT')].name").value("Valorant"))
     }
 
@@ -176,7 +176,7 @@ class GameIT : UserTestSupport() {
             ).andExpect(status().isOk)
 
         mvc
-            .perform(get("/esports/games"))
+            .perform(get("/games"))
             .andExpect(jsonPath("$[?(@.code == '$code')].accent").value("#ff4655"))
     }
 
@@ -188,7 +188,7 @@ class GameIT : UserTestSupport() {
         val code = name.uppercase()
 
         mvc
-            .perform(get("/esports/games"))
+            .perform(get("/games"))
             .andExpect(jsonPath("$[?(@.code == '$code')].name").value(name))
             .andExpect(jsonPath("$[?(@.code == '$code')].accent").doesNotExist())
             .andExpect(jsonPath("$[?(@.code == '$code')].icon").doesNotExist())
@@ -274,7 +274,7 @@ class GameIT : UserTestSupport() {
             .andExpect(jsonPath("$.intro").value("Guessing, competitively."))
 
         mvc
-            .perform(get("/esports/games"))
+            .perform(get("/games"))
             .andExpect(jsonPath("$[?(@.code == 'GEOGUESSR')].intro").value("Guessing, competitively."))
     }
 
@@ -327,7 +327,7 @@ class GameIT : UserTestSupport() {
             .andExpect(jsonPath("$.inCompetition").value(false))
 
         mvc
-            .perform(get("/esports/games"))
+            .perform(get("/games"))
             .andExpect(jsonPath("$[?(@.slug == 'rocket-league-2')].name").value("Rocket League 2"))
     }
 
@@ -509,8 +509,8 @@ class GameIT : UserTestSupport() {
         // There is no act that retires a game any more. It stops being current by not being
         // entered, and everything it ever played stays exactly where it was.
         mvc
-            .perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.code == 'CSGO')].current").value(false))
+            .perform(get("/games"))
+            .andExpect(jsonPath("$[?(@.code == 'CSGO')].inCompetition").value(false))
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].name").value("CS:GO"))
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].slug").value("counter-strike-global-offensive"))
 
@@ -562,7 +562,7 @@ class GameIT : UserTestSupport() {
 
         mvc.perform(get("/esports/games/{game}", "PONG")).andExpect(status().isBadRequest)
         mvc
-            .perform(get("/esports/games"))
+            .perform(get("/games"))
             .andExpect(jsonPath("$[?(@.code == 'PONG')]").doesNotExist())
     }
 
@@ -579,7 +579,7 @@ class GameIT : UserTestSupport() {
 
         // Nothing went: the game and its team are both still there.
         mvc
-            .perform(get("/esports/games"))
+            .perform(get("/games"))
             .andExpect(jsonPath("$[?(@.code == 'VALORANT')].name").value("Valorant"))
     }
 
@@ -628,7 +628,7 @@ class GameIT : UserTestSupport() {
 
     @Test
     fun `an anonymous visitor may read the games but not change one`() {
-        mvc.perform(get("/esports/games")).andExpect(status().isOk)
+        mvc.perform(get("/games")).andExpect(status().isOk)
         mvc
             .perform(
                 put("/games/{game}", "VALORANT")

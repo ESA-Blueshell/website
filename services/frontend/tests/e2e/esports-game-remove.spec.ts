@@ -26,9 +26,9 @@ test.describe("removing a game", () => {
   const PONG_ONLY = {
     esportsGames: [
       anEsportsGame({code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null,
-        intro: null, sortIndex: 1, current: true}),
+        intro: null, sortIndex: 1, inCompetition: true}),
       anEsportsGame({code: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
-        intro: null, sortIndex: 2, current: true}),
+        intro: null, sortIndex: 2, inCompetition: true}),
     ],
     esportsTeams: [],
   }

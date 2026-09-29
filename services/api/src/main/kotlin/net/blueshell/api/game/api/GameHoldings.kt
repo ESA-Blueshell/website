@@ -8,8 +8,8 @@ package net.blueshell.api.game.api
  * touches and decides whether that stops it. This module never learns what a team or an event is.
  */
 interface GameHoldings {
-    /** What this module holds against [code], by what it is called on screen, such as `teams`. */
-    fun heldAgainst(code: String): Map<String, Long> = emptyMap()
+    /** What this module holds against [code], in the counts it knows. */
+    fun heldAgainst(code: String): GameHeld = GameHeld()
 
     /** Refuses, by throwing, when what this module holds against [code] stops its removal. */
     fun refuseRemoval(code: String) = Unit

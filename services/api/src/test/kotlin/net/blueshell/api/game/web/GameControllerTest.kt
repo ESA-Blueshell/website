@@ -1,6 +1,7 @@
 package net.blueshell.api.game.web
 
 import net.blueshell.api.game.api.GameCompetition
+import net.blueshell.api.game.api.GameHeld
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameChannel
@@ -81,7 +82,7 @@ class GameControllerTest {
     fun `archives a game and removes it, answering what the removal would touch first`() {
         whenever(games.archive("CHESS", true)).thenReturn(chess.apply { archived = true })
         whenever(games.inCompetition()).thenReturn(emptySet())
-        whenever(games.heldAgainst("CHESS")).thenReturn(mapOf("events" to 3L, "committees" to 1L))
+        whenever(games.heldAgainst("CHESS")).thenReturn(GameHeld(events = 3, committees = 1))
 
         assertThat(controller.archiveGame("CHESS", ArchiveGameRequest(archived = true)).archived).isTrue()
         assertThat(controller.findGameHoldings("CHESS"))

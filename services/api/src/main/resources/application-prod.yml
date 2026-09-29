@@ -46,6 +46,9 @@ auth:
 app:
   security:
     require-https: true
+  # How often the api re-reads its Vault KV paths; a rotated key is live within this.
+  vault:
+    refresh-interval: 5m
   jwt:
     secret: ""
 

@@ -7,6 +7,8 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.DriftResolution
+import net.blueshell.api.cohort.persistence.DriftResolutionRepository
 import net.blueshell.api.cohort.persistence.TargetReconcileRun
 import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.state
@@ -39,6 +41,7 @@ class CohortSubjectQueryService(
     private val definitions: CohortDefinitionRegistry,
     private val strategies: TargetStrategies,
     private val runs: TargetReconcileRunRepository,
+    private val resolutions: DriftResolutionRepository,
 ) {
     @Transactional(readOnly = true)
     fun summaries(): List<CohortSubjectSummary> {
@@ -152,7 +155,12 @@ class CohortSubjectQueryService(
         // account that id belongs to, if any, which is what turns it into a name.
         val ownerByExternalId = resolveStrangerOwners(members, systemByCohortId)
 
-        val userIds = (members.mapNotNull { it.userId } + ownerByExternalId.values).distinct()
+        val recentResolutions = resolutions.findTop20ByCohortIdInOrderByResolvedAtDesc(systemByCohortId.keys)
+        val userIds =
+            (
+                members.mapNotNull { it.userId } + ownerByExternalId.values +
+                    recentResolutions.flatMap { listOfNotNull(it.userId, it.resolvedBy) }
+            ).distinct()
         val userById = users.findAllByIds(userIds).associateBy { it.id }
         val softDeletedIds =
             userIds
@@ -185,6 +193,15 @@ class CohortSubjectQueryService(
             // Derived rather than stored: a definition appearing or disappearing is a code
             // change, and a column recording it would be one deploy behind the truth.
             orphaned = subject.definitionKey?.let { definitions.byKey(it) } == null,
+            resolutions =
+                recentResolutions.map { resolution ->
+                    DriftResolutionRow(
+                        resolution = resolution,
+                        system = systemByCohortId.getValue(resolution.cohortId),
+                        personName = resolution.userId?.let { userById[it]?.fullName } ?: resolution.label,
+                        resolvedByName = resolution.resolvedBy?.let { userById[it]?.fullName },
+                    )
+                },
         )
     }
 
@@ -211,6 +228,17 @@ data class CohortSubjectDetail(
     val definitionKey: String?,
     /** True when no definition produces this cohort any more — a disbanded committee, say. */
     val orphaned: Boolean,
+    /** The latest drift resolutions across the subject's targets, newest first. */
+    val resolutions: List<DriftResolutionRow> = emptyList(),
+)
+
+/** One recorded resolution, with the names of the person it concerned and of who resolved it. */
+data class DriftResolutionRow(
+    val resolution: DriftResolution,
+    val system: TargetSystem,
+    val personName: String?,
+    /** Null when the api resolved it on its own behalf, or the account is gone. */
+    val resolvedByName: String?,
 )
 
 /** One per-system mapping under a subject, with its external id resolved. */

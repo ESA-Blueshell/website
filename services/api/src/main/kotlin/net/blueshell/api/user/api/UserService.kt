@@ -271,4 +271,9 @@ class UserService @Autowired constructor(
 
     @Transactional(readOnly = true)
     fun existsById(id: Long): Boolean = repository.existsById(id)
+
+    /** The accounts holding any of [emails], matched without regard to case. */
+    @Transactional(readOnly = true)
+    fun findAllByEmails(emails: Collection<String>): List<User> =
+        if (emails.isEmpty()) emptyList() else repository.findAllByEmailIn(emails.map { it.trim().lowercase() }.toSet())
 }

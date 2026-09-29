@@ -2017,6 +2017,17 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         ],
         definitionKey: isCommittee ? "COMMITTEE_MEMBERS:42" : "PERIOD_MEMBERS:1",
         orphaned: false,
+        resolutions: [
+          {
+            cohortId: isCommittee ? 2 : 1,
+            system: "BREVO",
+            action: "REMOVE",
+            externalUserId: "ext-9",
+            personName: "old@example.com",
+            resolvedByName: "Board Member",
+            resolvedAt: "2026-02-10T10:00:00Z",
+          },
+        ],
         ...(fixtures.cohortSubjectDetail ?? {}),
         // One of each state the page draws: in sync, ours-but-not-pushed, and two rows the
         // target has that we do not — one we can name, one we cannot.

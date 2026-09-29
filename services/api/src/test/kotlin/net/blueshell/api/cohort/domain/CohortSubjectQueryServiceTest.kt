@@ -11,6 +11,9 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.DriftResolution
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
+import net.blueshell.api.cohort.persistence.DriftResolutionRepository
 import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
@@ -21,6 +24,7 @@ import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Optional
@@ -44,6 +48,7 @@ class CohortSubjectQueryServiceTest {
         }
     private val strategies: TargetStrategies = TargetStrategies(listOf(brevo))
     private val runs: TargetReconcileRunRepository = mockk(relaxed = true)
+    private val resolutions: DriftResolutionRepository = mockk(relaxed = true)
     private val service =
         CohortSubjectQueryService(
             subjects,
@@ -55,6 +60,7 @@ class CohortSubjectQueryServiceTest {
             definitions,
             strategies,
             runs,
+            resolutions,
         )
 
     @Test
@@ -349,6 +355,28 @@ class CohortSubjectQueryServiceTest {
                 .single()
                 .lastReconciledAt,
         ).isNull()
+    }
+
+    @Test
+    fun `detail names who each recent resolution concerned and who made it`() {
+        val subject = subject(26L)
+        val cohort = cohort(260L)
+        stubDetail(subject, cohort, emptyList())
+        val at = Instant.parse("2026-09-29T20:00:00Z")
+        every { resolutions.findTop20ByCohortIdInOrderByResolvedAtDesc(setOf(260L)) } returns
+            listOf(
+                DriftResolution(260L, DriftResolutionAction.PUSH, 5L, null, null, 9L, at),
+                DriftResolution(260L, DriftResolutionAction.REMOVE, null, "ext-1", "c@example.com", null, at),
+            )
+        every { users.findAllByIds(listOf(5L, 9L)) } returns listOf(user(5L, "Ada Lovelace"), user(9L, "Board Member"))
+        every { users.isSoftDeleted(any()) } returns false
+        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+
+        val rows = service.detail(26L).resolutions
+
+        assertThat(rows.map { it.personName }).containsExactly("Ada Lovelace", "c@example.com")
+        assertThat(rows.map { it.resolvedByName }).containsExactly("Board Member", null)
+        assertThat(rows.map { it.system }).containsOnly(TargetSystem.BREVO)
     }
 
     private fun stubNoUsers() {

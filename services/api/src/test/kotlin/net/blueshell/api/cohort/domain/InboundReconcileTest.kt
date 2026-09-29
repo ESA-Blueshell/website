@@ -11,6 +11,7 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.QueuedJob
@@ -40,6 +41,7 @@ class InboundReconcileTest {
     private val contributionWriter: MembershipWriter = mockk()
     private val definitions: CohortDefinitionRegistry = mockk()
     private val jobs: JobQueue = mockk(relaxed = true)
+    private val resolutions: DriftResolutions = mockk(relaxed = true)
     private val strategy = RecordingTargetStrategy()
     private val service =
         InboundReconcile(
@@ -52,6 +54,7 @@ class InboundReconcileTest {
             definitions = definitions,
             jobs = jobs,
             strategies = TargetStrategies(listOf(strategy)),
+            resolutions = resolutions,
             transactionManager = ImmediateTransactionManager(),
         )
 
@@ -195,6 +198,9 @@ class InboundReconcileTest {
             )
         }
         verify(exactly = 0) { externalIds.linkUser(any(), any(), any()) }
+        verify {
+            resolutions.record(20L, DriftResolutionAction.ADOPT, listOf(DriftResolutions.Person(2L, "ext-2", "Mapped Two")))
+        }
     }
 
     @Test

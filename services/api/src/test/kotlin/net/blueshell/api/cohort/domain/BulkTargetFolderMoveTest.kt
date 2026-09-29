@@ -43,7 +43,7 @@ class BulkTargetFolderMoveTest {
                 system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
             )
-        return TargetCatalog(TargetStrategies(listOf(strategy)), cohorts)
+        return TargetCatalog(TargetStrategies(listOf(strategy)), cohorts, mockk(relaxed = true), mockk(relaxed = true))
     }
 
     @Test

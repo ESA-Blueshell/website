@@ -1,8 +1,10 @@
 import {describe, expect, it, vi} from "vitest"
 import {useTargetOverview} from "@/domains/cohorts/composables/useTargetOverview"
 import {
+  archiveTarget,
   createFolderInSystem,
   createListInSystem,
+  deleteTarget,
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
@@ -25,6 +27,8 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
     createListInSystem: vi.fn(),
     createFolderInSystem: vi.fn(),
     renameTarget: vi.fn(),
+    archiveTarget: vi.fn(),
+    deleteTarget: vi.fn(),
   }
 })
 
@@ -346,5 +350,32 @@ describe("useTargetOverview", () => {
     expect(await o.rename("BREVO", o.targets.value[0]!, "Alpha 2026")).toBe(false)
     expect(o.writeRefusal.value).toBe("Brevo has no list 1; reload the lists.")
     expect(o.targets.value[0]!.label).toBe("Alpha")
+  })
+
+  it("archives a list and shows it in the archive folder", async () => {
+    const o = await loaded([target("1", "Alpha", "Newsletter")])
+    vi.mocked(archiveTarget).mockResolvedValue({ok: true, saved: target("1", "Alpha", "Archive")})
+
+    expect(await o.archive("BREVO", o.targets.value[0]!)).toBe(true)
+    expect(o.targets.value[0]!.folderLabel).toBe("Archive")
+  })
+
+  it("keeps the reason when archiving is refused", async () => {
+    const o = await loaded([target("1", "Alpha", "Newsletter")])
+    vi.mocked(archiveTarget).mockResolvedValue({ok: false, reason: "Brevo refused it: down"})
+
+    expect(await o.archive("BREVO", o.targets.value[0]!)).toBe(false)
+    expect(o.writeRefusal.value).toBe("Brevo refused it: down")
+  })
+
+  it("drops a deleted list, and keeps one whose delete was refused", async () => {
+    const o = await loaded([target("1", "Alpha", null), target("2", "Beta", null)])
+    vi.mocked(deleteTarget).mockResolvedValueOnce({ok: true}).mockResolvedValueOnce({ok: false, reason: "That is not the list's name; type it exactly to delete it."})
+
+    expect(await o.remove("BREVO", o.targets.value[0]!, "Alpha")).toBe(true)
+    expect(await o.remove("BREVO", o.targets.value[0]!, "beta")).toBe(false)
+
+    expect(o.targets.value.map((t) => t.externalId)).toEqual(["2"])
+    expect(o.writeRefusal.value).toBe("That is not the list's name; type it exactly to delete it.")
   })
 })

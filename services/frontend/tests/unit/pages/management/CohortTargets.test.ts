@@ -4,8 +4,10 @@ import CohortTargets from "@/pages/management/CohortTargets.vue"
 import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import {
+  archiveTarget,
   createFolderInSystem,
   createListInSystem,
+  deleteTarget,
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
@@ -21,6 +23,8 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   createListInSystem: vi.fn(),
   createFolderInSystem: vi.fn(),
   renameTarget: vi.fn(),
+  archiveTarget: vi.fn(),
+  deleteTarget: vi.fn(),
 }))
 
 const modal = (wrapper: Awaited<ReturnType<typeof mountPage>>, testid: string) =>
@@ -94,5 +98,33 @@ describe("CohortTargets", () => {
     expect(renameTarget).toHaveBeenCalledWith("BREVO", "7", "Guests 2026")
     expect(modal(wrapper, "cohort-target-rename-dialog").props("modelValue")).toBe(true)
     expect(wrapper.text()).toContain("Brevo refused it: Bad Request")
+  })
+
+  it("deletes an unlinked list only once its name is typed exactly", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(deleteTarget).mockResolvedValue({ok: true})
+
+    await wrapper.get("[data-testid=cohort-target-delete-7]").trigger("click")
+    await flushPromises()
+    await wrapper.get("[data-testid=cohort-target-delete-name] input").setValue("guests")
+    expect(modal(wrapper, "cohort-target-delete-dialog").props("saveDisabled")).toBe(true)
+    await wrapper.get("[data-testid=cohort-target-delete-name] input").setValue("Guests")
+    expect(modal(wrapper, "cohort-target-delete-dialog").props("saveDisabled")).toBe(false)
+    modal(wrapper, "cohort-target-delete-dialog").vm.$emit("save")
+    await flushPromises()
+
+    expect(deleteTarget).toHaveBeenCalledWith("BREVO", "7", "Guests")
+    expect(wrapper.find("[data-testid=cohort-target-7]").exists()).toBe(false)
+  })
+
+  it("archives a list from its row, and says so when Brevo refuses", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(archiveTarget).mockResolvedValue({ok: false, reason: "Brevo refused it: down"})
+
+    await wrapper.get("[data-testid=cohort-target-archive-7]").trigger("click")
+    await flushPromises()
+
+    expect(archiveTarget).toHaveBeenCalledWith("BREVO", "7")
+    expect(wrapper.get("[data-testid=cohort-targets-write-refusal]").text()).toContain("Brevo refused it: down")
   })
 })

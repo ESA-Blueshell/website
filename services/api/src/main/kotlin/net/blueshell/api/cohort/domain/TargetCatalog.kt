@@ -1,6 +1,7 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
 import org.slf4j.LoggerFactory
@@ -41,6 +42,53 @@ class TargetCatalog(
                 .getOrNull()
         return found?.let { TargetPlace(it.path, folderKnown = true) } ?: TargetPlace(listOf(system.shownName), folderKnown = false)
     }
+
+    /** Make a target linked to no cohort, in [folder] or at the top level. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun create(
+        system: TargetSystem,
+        name: String,
+        folder: String?,
+    ): ExternalTarget = refusedBy(system) { strategies.require(system).create(name, folder?.takeIf { it.isNotBlank() }) }
+
+    /** Give a target, linked or not, another name on its system. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun rename(
+        system: TargetSystem,
+        externalId: String,
+        name: String,
+    ): ExternalTarget {
+        val strategy = strategies.require(system)
+        val target = strategy.resolve(externalId) ?: throw TargetNotFound(system, externalId)
+        val renamed = refusedBy(system) { strategy.rename(target, name) }
+        val linkedId = linkedCohorts(system)[renamed.externalId]
+        // A linked cohort names its target by this label, so its page shows the new name.
+        linkedId?.let { id ->
+            cohorts.findById(id).ifPresent {
+                it.label = name
+                cohorts.save(it)
+            }
+        }
+        return renamed.copy(linkedCohortId = linkedId)
+    }
+
+    /** Make a folder, or find the one already called [name]; answers every folder. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun createFolder(
+        system: TargetSystem,
+        name: String,
+    ): List<String> = refusedBy(system) { strategies.require(system).createFolder(name) }
+
+    // The system's own reason is what the board needs to see; nothing on our side changed.
+    private fun <T> refusedBy(
+        system: TargetSystem,
+        call: () -> T,
+    ): T =
+        try {
+            call()
+        } catch (e: ContactServiceException) {
+            throw TargetSystemRefused(system, e.message ?: "no reason given").apply { initCause(e) }
+        }
 
     /** Every folder the system has, so a destination can be chosen rather than typed. */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)

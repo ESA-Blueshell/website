@@ -3,8 +3,10 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -100,4 +102,57 @@ class TargetCatalogTest {
             whenever(it.system).thenReturn(TargetSystem.BREVO)
             whenever(it.descriptor).thenReturn(strategy.descriptor)
         }
+
+    @Test
+    fun `a new list is made on the system and comes back unlinked`() {
+        val brevo = placingStrategy()
+        val made = ExternalTarget(TargetSystem.BREVO, "12", CohortKind.LIST, "Pub quiz", "Committees")
+        whenever(brevo.create("Pub quiz", "Committees")).thenReturn(made)
+
+        val created = TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).create(TargetSystem.BREVO, "Pub quiz", "Committees")
+
+        assertThat(created.linkedCohortId).isNull()
+        assertThat(created.externalId).isEqualTo("12")
+    }
+
+    @Test
+    fun `renaming a linked list renames its cohort too`() {
+        val brevo = placingStrategy()
+        val target = ExternalTarget(TargetSystem.BREVO, "2", CohortKind.LIST, "Members")
+        whenever(brevo.resolve("2")).thenReturn(target)
+        whenever(brevo.rename(target, "Members 2026")).thenReturn(target.copy(label = "Members 2026"))
+        val linked =
+            Cohort("BREVO", CohortKind.LIST, "Members").apply {
+                id = 42L
+                externalId = "2"
+            }
+        whenever(cohorts.findAllBySystem("BREVO")).thenReturn(listOf(linked))
+        whenever(cohorts.findById(42L)).thenReturn(java.util.Optional.of(linked))
+
+        val renamed = TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).rename(TargetSystem.BREVO, "2", "Members 2026")
+
+        assertThat(renamed.label).isEqualTo("Members 2026")
+        assertThat(renamed.linkedCohortId).isEqualTo(42L)
+        assertThat(linked.label).isEqualTo("Members 2026")
+    }
+
+    @Test
+    fun `a refused call says the system's reason and changes nothing here`() {
+        val brevo = placingStrategy()
+        whenever(brevo.createFolder("Archief")).thenThrow(ContactServiceException("Failed to create folder: Bad Request"))
+
+        assertThatThrownBy { TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).createFolder(TargetSystem.BREVO, "Archief") }
+            .isInstanceOf(TargetSystemRefused::class.java)
+            .extracting("facts")
+            .isEqualTo(mapOf("system" to "Brevo", "reason" to "Failed to create folder: Bad Request"))
+    }
+
+    @Test
+    fun `renaming a list the system does not have is refused as not found`() {
+        val brevo = placingStrategy()
+        whenever(brevo.resolve("404")).thenReturn(null)
+
+        assertThatThrownBy { TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).rename(TargetSystem.BREVO, "404", "Gone") }
+            .isInstanceOf(TargetNotFound::class.java)
+    }
 }

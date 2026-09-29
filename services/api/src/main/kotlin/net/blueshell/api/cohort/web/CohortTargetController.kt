@@ -11,6 +11,7 @@ import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -48,6 +49,28 @@ class CohortTargetController(
         @PathVariable externalId: String,
         @Valid @RequestBody request: MoveTargetRequest,
     ): ExternalTarget = catalog.move(system, externalId, request.folder)
+
+    @PostMapping("/{system}")
+    @Operation(operationId = "createExternalTarget")
+    fun create(
+        @PathVariable system: TargetSystem,
+        @Valid @RequestBody request: CreateExternalTargetRequest,
+    ): ExternalTarget = catalog.create(system, request.name.trim(), request.folder?.trim())
+
+    @PutMapping("/{system}/{externalId}/name")
+    @Operation(operationId = "renameExternalTarget")
+    fun rename(
+        @PathVariable system: TargetSystem,
+        @PathVariable externalId: String,
+        @Valid @RequestBody request: RenameExternalTargetRequest,
+    ): ExternalTarget = catalog.rename(system, externalId, request.name.trim())
+
+    @PostMapping("/{system}/folders")
+    @Operation(operationId = "createTargetFolder")
+    fun createFolder(
+        @PathVariable system: TargetSystem,
+        @Valid @RequestBody request: CreateTargetFolderRequest,
+    ): List<String> = catalog.createFolder(system, request.name.trim())
 
     @PutMapping("/{system}/folder")
     @Operation(operationId = "moveCohortTargets")

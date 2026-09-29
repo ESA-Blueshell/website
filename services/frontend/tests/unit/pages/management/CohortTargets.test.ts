@@ -3,7 +3,14 @@ import {flushPromises} from "@vue/test-utils"
 import CohortTargets from "@/pages/management/CohortTargets.vue"
 import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
-import {fetchTargetDescriptors, fetchTargetFolders, fetchTargetOptions} from "@/domains/cohorts/adapters/cohorts"
+import {
+  createFolderInSystem,
+  createListInSystem,
+  fetchTargetDescriptors,
+  fetchTargetFolders,
+  fetchTargetOptions,
+  renameTarget,
+} from "@/domains/cohorts/adapters/cohorts"
 import {mountInApp} from "../helpers"
 
 vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
@@ -11,7 +18,13 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   fetchTargetDescriptors: vi.fn(),
   fetchTargetOptions: vi.fn(),
   fetchTargetFolders: vi.fn(),
+  createListInSystem: vi.fn(),
+  createFolderInSystem: vi.fn(),
+  renameTarget: vi.fn(),
 }))
+
+const modal = (wrapper: Awaited<ReturnType<typeof mountPage>>, testid: string) =>
+  wrapper.findAllComponents(BaseModal).find((m) => m.props("testid") === testid)!
 
 const mountPage = async () => {
   vi.mocked(fetchTargetDescriptors).mockResolvedValue([{system: "BREVO", kind: "LIST"}])
@@ -42,6 +55,44 @@ describe("CohortTargets", () => {
     await wrapper.get("[data-testid=cohort-targets-move-selected]").trigger("click")
     await flushPromises()
 
-    expect(wrapper.getComponent(BaseModal).props("title")).toBe("Move 1 brevo list")
+    expect(modal(wrapper, "cohort-target-move-dialog").props("title")).toBe("Move 1 brevo list")
+  })
+
+  it("makes a list in a new folder from the new-list dialog", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(createFolderInSystem).mockResolvedValue({ok: true, saved: ["Newsletter", "Projects"]})
+    vi.mocked(createListInSystem).mockResolvedValue({ok: true, saved: {
+      system: "BREVO", externalId: "9", kind: "LIST", label: "Pub quiz", folderLabel: "Projects",
+      memberCount: 0, linkedCohortId: null, path: ["Brevo", "Projects"],
+    }})
+
+    await wrapper.get("[data-testid=cohort-targets-create]").trigger("click")
+    await flushPromises()
+    await wrapper.get("[data-testid=cohort-target-create-name] input").setValue("Pub quiz")
+    const dialog = wrapper.findAllComponents({name: "VSelect"}).find((c) => c.attributes("data-testid") === "cohort-target-create-folder")!
+    dialog.vm.$emit("update:modelValue", "__new__")
+    await flushPromises()
+    await wrapper.get("[data-testid=cohort-target-create-folder-name] input").setValue("Projects")
+    modal(wrapper, "cohort-target-create-dialog").vm.$emit("save")
+    await flushPromises()
+
+    expect(createFolderInSystem).toHaveBeenCalledWith("BREVO", "Projects")
+    expect(createListInSystem).toHaveBeenCalledWith("BREVO", "Pub quiz", "Projects")
+    expect(wrapper.find("[data-testid=cohort-target-9]").exists()).toBe(true)
+  })
+
+  it("shows the system's reason when a rename is refused, and keeps the dialog open", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(renameTarget).mockResolvedValue({ok: false, reason: "Brevo refused it: Bad Request"})
+
+    await wrapper.get("[data-testid=cohort-target-rename-7]").trigger("click")
+    await flushPromises()
+    await wrapper.get("[data-testid=cohort-target-rename-name] input").setValue("Guests 2026")
+    modal(wrapper, "cohort-target-rename-dialog").vm.$emit("save")
+    await flushPromises()
+
+    expect(renameTarget).toHaveBeenCalledWith("BREVO", "7", "Guests 2026")
+    expect(modal(wrapper, "cohort-target-rename-dialog").props("modelValue")).toBe(true)
+    expect(wrapper.text()).toContain("Brevo refused it: Bad Request")
   })
 })

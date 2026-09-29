@@ -101,20 +101,8 @@ spec:
               value: Blueshell
             - name: EMAIL_REPLY_TO_ADDRESS
               value: sitecie@esa-blueshell.nl
-            # Mail principal credentials follow the
-            # `account.<localpart>` convention. The username is the
-            # full email derived from the localPart; the password
-            # lives at Vault key `account.<localpart>`.
-            #
-            # An api image with the prod profile of #1868 sends and polls as
-            # bounce@ and ignores SMTP_USERNAME and SMTP_PASSWORD; they serve
-            # the image before it and go in the contract step of #1824.
-            - name: SMTP_USERNAME
-              value: api@esa-blueshell.nl
-            # IMAP bounce poller — disabled by default; flip the flag once
-            # the bounce mailbox is provisioned.
-            - name: EMAIL_BOUNCE_IMAP_ENABLED
-              value: 'false'
+            # The bounce mailbox: the api sends and polls as it, with its
+            # password from Vault, so undelivered mail comes back here (#1868).
             - name: EMAIL_BOUNCE_IMAP_HOST
               value: mail.esa-blueshell.nl
             - name: EMAIL_BOUNCE_IMAP_PORT

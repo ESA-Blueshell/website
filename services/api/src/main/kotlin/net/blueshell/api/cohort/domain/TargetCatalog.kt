@@ -1,18 +1,24 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.TargetDeletion
+import net.blueshell.api.cohort.persistence.TargetDeletionRepository
 import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.tracking.ActorProvider
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
 class TargetCatalog(
     private val strategies: TargetStrategies,
     private val cohorts: CohortRepository,
+    private val deletions: TargetDeletionRepository,
+    private val actors: ActorProvider,
 ) {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun search(
@@ -78,6 +84,46 @@ class TargetCatalog(
         system: TargetSystem,
         name: String,
     ): List<String> = refusedBy(system) { strategies.require(system).createFolder(name) }
+
+    /**
+     * Move a target into the archive folder, made when it is missing. It keeps its contacts and
+     * its link to a cohort, and is moved back like any other move.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun archive(
+        system: TargetSystem,
+        externalId: String,
+    ): ExternalTarget {
+        val strategy = strategies.require(system)
+        val target = strategy.resolve(externalId) ?: throw TargetNotFound(system, externalId)
+        val archived =
+            refusedBy(system) {
+                strategy.createFolder(ARCHIVE_FOLDER)
+                strategy.move(target, ARCHIVE_FOLDER)
+            }
+        return archived.copy(linkedCohortId = linkedCohorts(system)[archived.externalId])
+    }
+
+    /**
+     * Delete a target for good. Only one linked to no cohort, only when [typedName] is its name
+     * exactly, and every delete is recorded with who made it.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun delete(
+        system: TargetSystem,
+        externalId: String,
+        typedName: String,
+    ) {
+        val strategy = strategies.require(system)
+        val target = strategy.resolve(externalId) ?: throw TargetNotFound(system, externalId)
+        if (linkedCohorts(system).containsKey(externalId)) throw TargetStillLinked(system, externalId)
+        if (typedName != target.label) throw TargetNameMismatch(typedName)
+        refusedBy(system) { strategy.delete(target) }
+        deletions.save(
+            TargetDeletion(system.name, externalId, target.label, actors.currentOrSystem().userId, Instant.now()),
+        )
+        log.info("[cohort] deleted {} target {} '{}'", system, externalId, target.label)
+    }
 
     // The system's own reason is what the board needs to see; nothing on our side changed.
     private fun <T> refusedBy(
@@ -182,6 +228,8 @@ class TargetCatalog(
             .toMap()
 
     companion object {
+        /** Where archived lists go; Brevo cannot undo a delete, so archiving is the everyday action. */
+        const val ARCHIVE_FOLDER = "Archive"
         private val log = LoggerFactory.getLogger(TargetCatalog::class.java)
     }
 }

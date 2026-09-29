@@ -1,7 +1,9 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.committee.api.CommitteeCreated
 import net.blueshell.api.committee.api.CommitteeMembershipChanged
 import net.blueshell.api.contribution.api.ContributionChanged
+import net.blueshell.api.contribution.api.ContributionPeriodChanged
 import net.blueshell.api.shared.event.AfterCommitListener
 import net.blueshell.api.user.api.MembershipChanged
 import net.blueshell.api.user.api.UserCreated
@@ -50,6 +52,19 @@ class CohortRuleListener(
         // A committee seated for the first time has a definition but no record yet.
         registrar.register()
         updater.updateMember(evt.userId)
+    }
+
+    // Only the event's type matters: a new committee or period brings a definition to register.
+    @Suppress("UnusedParameter")
+    @AfterCommitListener
+    fun onCommitteeCreated(evt: CommitteeCreated) {
+        registrar.register()
+    }
+
+    @Suppress("UnusedParameter")
+    @AfterCommitListener
+    fun onContributionPeriodChanged(evt: ContributionPeriodChanged) {
+        registrar.register()
     }
 
     @AfterCommitListener

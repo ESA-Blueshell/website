@@ -45,7 +45,10 @@ class CommitteeService
 
         /** A committee as given, members and all: they are saved with it. */
         @Transactional
-        fun create(committee: Committee): Committee = repository.saveAndFlush(committee)
+        fun create(committee: Committee): Committee =
+            repository.saveAndFlush(committee).also { saved ->
+                trackedEvents.publish { actor -> CommitteeCreated(saved.id!!, actor = actor) }
+            }
 
         @Transactional
         fun deleteById(id: Long) = repository.delete(findById(id))
@@ -66,6 +69,7 @@ class CommitteeService
             applyPage(committee, page)
             reconcileMembers(committee, members)
             val saved = repository.saveAndFlush(committee)
+            trackedEvents.publish { actor -> CommitteeCreated(saved.id!!, actor = actor) }
             publishMembershipChanges(saved.id!!, saved.members.map { it.userId }.toSet())
             return saved
         }

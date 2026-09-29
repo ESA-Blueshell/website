@@ -605,6 +605,10 @@ export type CohortMapping = {
      */
     path: Array<string>;
     /**
+     * The target's recent reconciles, newest first; the first is its current drift
+     */
+    runs: Array<ReconcileRun>;
+    /**
      * External system this mapping targets
      */
     system: TargetSystem;
@@ -2059,6 +2063,20 @@ export enum QuestionType {
 
 export type ReasonRequest = {
     reason: string;
+};
+
+/**
+ * One reconcile of a target and the drift it found.
+ */
+export type ReconcileRun = {
+    inSync: number;
+    oursOnly: number;
+    startedAt: string;
+    theirsOnly: number;
+    /**
+     * What queued it; null for a run queued before runs recorded it
+     */
+    trigger?: JobTrigger | null;
 };
 
 /**

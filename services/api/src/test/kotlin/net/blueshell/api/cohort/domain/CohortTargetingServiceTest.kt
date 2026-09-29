@@ -120,7 +120,7 @@ class CohortTargetingServiceTest {
         verify(targetIds).record(cohort, "55")
         verify(jobs).runAsync(
             eq(CohortJobs.ReconcileList),
-            eq(CohortJobs.ReconcileListPayload(7L)),
+            eq(CohortJobs.ReconcileListPayload(7L, JobTrigger.ANOTHER_JOB)),
             eq(JobTrigger.ANOTHER_JOB),
             anyOrNull(),
         )
@@ -237,7 +237,7 @@ class CohortTargetingServiceTest {
         )
         verify(jobs).runAsync(
             eq(CohortJobs.ReconcileList),
-            eq(CohortJobs.ReconcileListPayload(7L)),
+            eq(CohortJobs.ReconcileListPayload(7L, JobTrigger.SITE_ACTION)),
             eq(JobTrigger.SITE_ACTION),
             anyOrNull(),
         )

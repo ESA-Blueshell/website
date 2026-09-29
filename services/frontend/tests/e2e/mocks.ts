@@ -2002,6 +2002,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             externalId: isCommittee ? "33" : "7",
             lastReconciledAt: "2026-02-10T09:00:00Z",
             folderKnown: true,
+            runs: [
+              {startedAt: "2026-02-10T09:00:00Z", trigger: "SCHEDULED_RUN", inSync: 40, oursOnly: 1, theirsOnly: 2},
+              {startedAt: "2026-02-09T09:00:00Z", trigger: "SCHEDULED_RUN", inSync: 38, oursOnly: 3, theirsOnly: 2},
+            ],
           },
         ],
         definitionKey: isCommittee ? "COMMITTEE_MEMBERS:42" : "PERIOD_MEMBERS:1",

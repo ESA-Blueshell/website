@@ -38,7 +38,7 @@ import type {
   InboundReconcilePreview as ApiInboundReconcilePreview,
   TargetDescriptor as ApiTargetDescriptor,
 } from "@/services/api"
-import {CohortKind, CohortSubjectCategory, CohortSubjectType, TargetSystem} from "@/services/api"
+import {CohortKind, CohortSubjectCategory, CohortSubjectType, JobTrigger, TargetSystem} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
@@ -48,7 +48,7 @@ import {accepted, refusable} from "@/domains/cohorts/refusals"
  * The enums are re-exported rather than re-declared: what a picker offers and what a category
  * route matches are the values the api declares, and a copy in a page drifts from them.
  */
-export {CohortKind, CohortSubjectCategory, CohortSubjectType, TargetSystem}
+export {CohortKind, CohortSubjectCategory, CohortSubjectType, JobTrigger, TargetSystem}
 
 export type ExternalUserConflict = {
   existingUserId: number
@@ -58,7 +58,7 @@ export type ExternalUserConflict = {
 
 export async function triggerReconcile(cohortId: number): Promise<number | null> {
   const res = await enqueue({
-    body: { jobType: "cohort.reconcile-list", payload: { cohortId } },
+    body: { jobType: "cohort.reconcile-list", payload: { cohortId, trigger: JobTrigger.BY_HAND } },
     throwOnError: true,
   })
   return res.data?.id ?? null
@@ -122,6 +122,17 @@ export type TargetMapping = {
   path: string[]
   /** False when the system could not say which folder the target is in. */
   folderKnown: boolean
+  /** Recent reconciles, newest first; the first is the target's current drift. */
+  runs: ReconcileRun[]
+}
+
+/** One reconcile of a target: how many were in step, missing from it and extra on it. */
+export type ReconcileRun = {
+  startedAt: string
+  trigger: string | null
+  inStep: number
+  missing: number
+  extra: number
 }
 
 export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
@@ -157,6 +168,13 @@ function toTargetMapping(raw: ApiCohortMapping): TargetMapping {
     lastReconciledAt: raw.lastReconciledAt ?? null,
     path: raw.path ?? [],
     folderKnown: raw.folderKnown,
+    runs: raw.runs.map((run) => ({
+      startedAt: run.startedAt,
+      trigger: run.trigger ?? null,
+      inStep: run.inSync,
+      missing: run.oursOnly,
+      extra: run.theirsOnly,
+    })),
   }
 }
 

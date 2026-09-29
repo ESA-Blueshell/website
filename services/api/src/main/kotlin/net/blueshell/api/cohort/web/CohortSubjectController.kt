@@ -23,6 +23,7 @@ import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobTrigger
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -169,6 +170,18 @@ data class CohortMappingResponse(
     val path: List<String>,
     @param:Schema(description = "False when the system could not say which folder the target is in")
     val folderKnown: Boolean = true,
+    @param:Schema(description = "The target's recent reconciles, newest first; the first is its current drift")
+    val runs: List<ReconcileRunResponse> = emptyList(),
+)
+
+@Schema(name = "ReconcileRun", description = "One reconcile of a target and the drift it found.")
+data class ReconcileRunResponse(
+    val startedAt: Instant,
+    @param:Schema(description = "What queued it; null for a run queued before runs recorded it")
+    val trigger: JobTrigger?,
+    val inSync: Int,
+    val oursOnly: Int,
+    val theirsOnly: Int,
 )
 
 @Schema(name = "CohortSubjectMember")
@@ -259,6 +272,7 @@ private fun CohortMappingRow.toResponse(): CohortMappingResponse =
         externalId = externalId,
         lastReconciledAt = lastReconciledAt,
         path = path,
+        runs = runs.map { ReconcileRunResponse(it.startedAt, it.trigger, it.inSync, it.oursOnly, it.theirsOnly) },
     )
 
 private fun CohortMemberRow.toMemberResponse(): CohortSubjectMemberResponse =

@@ -8,9 +8,12 @@
  */
 export {
   categoryLabel,
+  driftLabel,
+  earlierDrift,
   isMember,
   memberName,
   memberSystemLabel,
+  runStartedBy,
   syncChipColour,
   syncLabel,
   systemLabel,
@@ -24,6 +27,7 @@ export type {
   CohortSubjectSummary,
   CohortSyncState,
   ExternalTarget,
+  ReconcileRun,
   TargetMapping,
 } from "./adapters/cohorts"
 export {CohortKind, CohortSubjectCategory, CohortSubjectType, TargetSystem} from "./adapters/cohorts"

@@ -85,7 +85,7 @@ describe("a cohort subject arrives with its absences already decided", () => {
 
   it("a target that has never agreed, and one filed nowhere, both read as nothing", async () => {
     vi.mocked(findCohortSubjectById).mockResolvedValue(answer(findCohortSubjectById, rawSubject({
-        mappings: [{cohortId: 3, system: TargetSystem.BREVO, kind: CohortKind.LIST, label: "Newsletter", path: [], folderKnown: false}],
+        mappings: [{cohortId: 3, system: TargetSystem.BREVO, kind: CohortKind.LIST, label: "Newsletter", path: [], folderKnown: false, runs: []}],
       })))
 
     const subject = await fetchCohortSubject(7)
@@ -99,6 +99,7 @@ describe("a cohort subject arrives with its absences already decided", () => {
       lastReconciledAt: null,
       path: [],
       folderKnown: false,
+      runs: [],
     })
   })
 

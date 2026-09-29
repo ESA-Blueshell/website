@@ -5,7 +5,9 @@ import net.blueshell.api.cohort.domain.CohortSubjectDetail
 import net.blueshell.api.cohort.domain.CohortSubjectQueryService
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetPlace
+import net.blueshell.api.cohort.persistence.TargetReconcileRun
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -13,6 +15,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.time.Instant
 
 class CohortSubjectControllerTest {
     private val queries = mock<CohortSubjectQueryService>()
@@ -60,5 +63,28 @@ class CohortSubjectControllerTest {
 
         val mapping = controller.findCohortSubjectById(8L).mappings.single()
         assertThat(mapping.folderKnown).isFalse()
+    }
+
+    @Test
+    fun `a mapping carries its recent reconciles, newest first`() {
+        val run = TargetReconcileRun(3L, Instant.parse("2026-09-29T03:00:00Z"), JobTrigger.SCHEDULED_RUN, 188, 2, 1)
+        whenever(queries.detail(9L)).thenReturn(
+            CohortSubjectDetail(
+                subject = Entities.cohortSubject(id = 9L),
+                mappings = listOf(CohortMappingRow(Entities.cohort(id = 3L), null, path = listOf("Brevo"), runs = listOf(run))),
+                members = emptyList(),
+                definitionKey = null,
+                orphaned = false,
+            ),
+        )
+
+        val runs =
+            controller
+                .findCohortSubjectById(9L)
+                .mappings
+                .single()
+                .runs
+
+        assertThat(runs).containsExactly(ReconcileRunResponse(run.startedAt, JobTrigger.SCHEDULED_RUN, 188, 2, 1))
     }
 }

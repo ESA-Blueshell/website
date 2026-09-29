@@ -4,6 +4,8 @@ import net.blueshell.api.cohort.domain.CohortLedger.DesiredConfirmation
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.TargetReconcileRun
+import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.state
 import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.enums.CohortMemberState
@@ -20,6 +22,7 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
+import java.time.Instant
 import java.time.LocalDateTime
 
 /**
@@ -41,6 +44,7 @@ class CohortRemediationService(
     private val targetIds: CohortTargetIds,
     private val strategies: TargetStrategies,
     private val jobs: JobQueue,
+    private val runs: TargetReconcileRunRepository,
     transactionManager: PlatformTransactionManager,
 ) : CohortRemediation {
     private val readOnlyTransaction = TransactionTemplate(transactionManager).apply { isReadOnly = true }
@@ -87,11 +91,37 @@ class CohortRemediationService(
      * the ledger against it. One network call per run; runs the fetch
      * outside any DB transaction.
      */
-    override fun verifyCohort(cohortId: Long) {
+    override fun verifyCohort(
+        cohortId: Long,
+        trigger: JobTrigger?,
+    ) {
+        val startedAt = Instant.now()
         val plan = readOnlyTransaction.execute { loadPlan(cohortId) }
         val strategy = strategies.requireForJob(plan.system)
         val remote = outsideTransaction.execute { strategy.members(strategy.handle(plan.externalCohortId)) }
-        writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }
+        writeTransaction.executeWithoutResult {
+            applySnapshot(plan, remote)
+            recordRun(cohortId, startedAt, trigger)
+        }
+    }
+
+    // The ledger after the snapshot is the drift: confirmed present, ours only, theirs only.
+    private fun recordRun(
+        cohortId: Long,
+        startedAt: Instant,
+        trigger: JobTrigger?,
+    ) {
+        val states = memberRepo.findAllByCohortId(cohortId).groupingBy { it.state }.eachCount()
+        runs.save(
+            TargetReconcileRun(
+                cohortId = cohortId,
+                startedAt = startedAt,
+                trigger = trigger,
+                inSync = states[CohortMemberState.VERIFIED] ?: 0,
+                oursOnly = (states[CohortMemberState.DESIRED] ?: 0) + (states[CohortMemberState.SYNCED] ?: 0),
+                theirsOnly = states[CohortMemberState.STRANGER] ?: 0,
+            ),
+        )
     }
 
     override fun repairMissingAdds(cohortId: Long): CohortRepairResult =

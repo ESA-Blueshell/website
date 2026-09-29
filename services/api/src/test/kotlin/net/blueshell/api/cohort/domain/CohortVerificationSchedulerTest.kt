@@ -27,6 +27,7 @@ class CohortVerificationSchedulerTest {
         CohortVerificationScheduler(cohorts, targetIds, jobs).verifyAllCohorts()
 
         verify(exactly = 1) { jobs.runAsync(any<JobDefinition<CohortJobs.ReconcileListPayload>>(), any(), any(), any()) }
-        verify { jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(5L), JobTrigger.SCHEDULED_RUN) }
+        val payload = CohortJobs.ReconcileListPayload(5L, JobTrigger.SCHEDULED_RUN)
+        verify { jobs.runAsync(CohortJobs.ReconcileList, payload, JobTrigger.SCHEDULED_RUN) }
     }
 }

@@ -1,0 +1,41 @@
+# Signatures left the site long ago, but their rows stayed in files as type SIGNATURE, which
+# FileType no longer holds, so a query that loads one fails (#1942). They leave, with the
+# renditions made from them, which carry the same type.
+#
+# A changeset cannot reach the blob store, so the paths only they use wait in blobs_to_delete
+# until the api deletes the bytes at start (QueuedBlobDeletions). Deleting the rows is the
+# point, so a rollback cannot bring them back: it only takes back the queued paths.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-29-signature-files-leave.yaml
+      id: blobs-to-delete
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: blobs_to_delete
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_blobs_to_delete, nullable: false}
+              - column: {name: path, type: LONGTEXT, constraints: {nullable: false}}
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-29-signature-files-leave.yaml
+      id: signature-files-leave
+      author: blueshell
+      changes:
+        - sql:
+            sql: >-
+              INSERT INTO blobs_to_delete (path)
+              SELECT DISTINCT f.path FROM files f
+              WHERE f.type = 'SIGNATURE'
+              AND NOT EXISTS (SELECT 1 FROM files o WHERE o.path = f.path AND o.type <> 'SIGNATURE')
+        # A rendition before its source: fk_files_source refuses the other order.
+        - sql:
+            sql: DELETE FROM files WHERE type = 'SIGNATURE' AND source_file_id IS NOT NULL
+        - sql:
+            sql: DELETE FROM files WHERE type = 'SIGNATURE'
+      rollback:
+        - sql:
+            sql: DELETE FROM blobs_to_delete

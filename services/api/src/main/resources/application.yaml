@@ -1,4 +1,12 @@
 spring:
+  # Secrets live in Vault in production and nowhere in this file. Everywhere else they come
+  # from the environment, and application-secrets-from-env.yml is the one place that says so.
+  profiles:
+    group:
+      dev: secrets-from-env
+      test: secrets-from-env
+      brevo-live: secrets-from-env
+      discord-live: secrets-from-env
   servlet:
     multipart:
       max-file-size: 50MB
@@ -25,7 +33,6 @@ spring:
   datasource:
     host: ${MYSQL_HOST:localhost}
     username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:}
     driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mariadb://${spring.datasource.host}:${MYSQL_PORT:3306}/${spring.application.db}
     hikari:
@@ -110,11 +117,11 @@ app:
   # A rotated-out key moves to retired-keys as `id:key`, so what it sealed still opens.
   two-factor:
     key-id: ${TWO_FACTOR_KEY_ID:1}
-    key: ${TWO_FACTOR_ENCRYPTION_KEY:}
-    retired-keys: ${TWO_FACTOR_RETIRED_KEYS:}
+    key: ""
+    retired-keys: ""
     issuer: ESA Blueshell
   jwt:
-    secret: ${JWT_SECRET:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh}
+    secret: ""
     issuer: ${JWT_ISSUER:blueshell-api}
     audience: ${JWT_AUDIENCE:blueshell-web}
   # A sign-in ends this long after it began however much it is used, or after `idle` unused
@@ -160,13 +167,13 @@ storage:
   location: ${STORAGE_LOCATION:./storage}
 
 brevo:
-  apiKey: ${BREVO_API_KEY:}
+  apiKey: ""
   baseUrl: ${BREVO_BASE_URL:https://api.brevo.com/v3}
   folders:
     contributionPeriodsId: ${BREVO_FOLDER_CONTRIBUTION_PERIODS_ID:0}
 
 discord:
-  botToken: ${DISCORD_BOT_TOKEN:}
+  botToken: ""
   guildId: ${DISCORD_GUILD_ID:}
   baseUrl: ${DISCORD_BASE_URL:https://discord.com/api/v10}
   # Where the bot posts events, by channel name.
@@ -177,7 +184,7 @@ discord:
 google:
   calendar:
     id: ${GOOGLE_CALENDAR_ID:}
-    serviceAccountJson: ${GOOGLE_CALENDAR_SA_JSON:}
+    serviceAccountJson: ""
 
 server:
   error:
@@ -217,7 +224,6 @@ spring.mail:
   host: ${SMTP_HOST:stalwart}
   port: ${SMTP_PORT:587}
   username: ${SMTP_USERNAME:}
-  password: ${SMTP_PASSWORD:}
   protocol: ${SMTP_PROTOCOL:smtp}
   properties:
     mail.smtp.auth: ${SMTP_AUTH:true}
@@ -239,7 +245,6 @@ email:
       host: ${EMAIL_BOUNCE_IMAP_HOST:}
       port: ${EMAIL_BOUNCE_IMAP_PORT:993}
       username: ${EMAIL_BOUNCE_IMAP_USERNAME:}
-      password: ${EMAIL_BOUNCE_IMAP_PASSWORD:}
       folder: ${EMAIL_BOUNCE_IMAP_FOLDER:INBOX}
       tls: ${EMAIL_BOUNCE_IMAP_TLS:true}
 
@@ -287,4 +292,4 @@ auth:
     jwks-refresh-ms: ${AUTH_TRANSIT_JWKS_REFRESH_MS:300000}
   clients:
     vault:
-      secret: ${VAULT_OIDC_CLIENT_SECRET:changeme}
+      secret: ""

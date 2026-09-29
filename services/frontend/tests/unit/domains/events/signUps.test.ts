@@ -39,10 +39,10 @@ describe("listEventSignUps", () => {
     await expect(listEventSignUps(55)).resolves.toBeNull()
   })
 
-  it("answers an empty list when the api sent no body", async () => {
+  it("answers nothing when the api sent no body", async () => {
     mockFindEventSignUpsByEventId.mockResolvedValue({data: undefined})
 
-    await expect(listEventSignUps(55)).resolves.toEqual([])
+    await expect(listEventSignUps(55)).resolves.toBeNull()
   })
 })
 

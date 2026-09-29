@@ -22,7 +22,7 @@ beforeEach(() => Object.values(adapter).forEach(one => one.mockReset()))
 
 describe("the board edit page", () => {
   it("adds a board on the suggested number, previewed on the timeline and in its band as it is typed", async () => {
-    adapter.saveBoardOrReason.mockResolvedValue({ok: true, board: {...tenth, id: 11, number: 11}})
+    adapter.saveBoardOrReason.mockResolvedValue({ok: true, saved: {...tenth, id: 11, number: 11}})
     const wrapper = mountEditor(null)
     const stops = () => wrapper.getComponent(editorStubs.Timeline).props("stops") as Array<{id: number}>
 
@@ -43,8 +43,8 @@ describe("the board edit page", () => {
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
-    expect(adapter.saveBoardOrReason).toHaveBeenCalledWith({
-      id: undefined, number: 11, name: "Orange", cheer: "Forward", accent: "#ff7a1a", description: "The eleventh.",
+    expect(adapter.saveBoardOrReason).toHaveBeenCalledWith(undefined, {
+      number: 11, name: "Orange", cheer: "Forward", accent: "#ff7a1a", description: "The eleventh.",
       startDate: "2025-09-01", endDate: "2026-08-31", photo: null, version: undefined,
     })
     expect(wrapper.emitted("saved")).toEqual([[{...tenth, id: 11, number: 11}]])
@@ -66,7 +66,7 @@ describe("the board edit page", () => {
     await flushPromises()
 
     expect(adapter.storeBoardPhoto).toHaveBeenCalledWith(file)
-    expect(adapter.saveBoardOrReason).toHaveBeenCalledWith(expect.objectContaining({id: 10, number: 9, name: null, photo: null, version: 2}))
+    expect(adapter.saveBoardOrReason).toHaveBeenCalledWith(10, expect.objectContaining({number: 9, name: null, photo: null, version: 2}))
     expect(wrapper.get("[data-testid=board-edit-failure]").text()).toBe("Board 9 already exists.")
     expect(wrapper.emitted("saved")).toBeUndefined()
     expect(wrapper.getComponent(editorStubs.BoardBand).props("label")).toBe("Board IX, 2024-2025")

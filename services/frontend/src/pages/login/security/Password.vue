@@ -95,7 +95,7 @@ const newPassword = ref("")
 const twoFactorOn = ref(false)
 const address = ref("")
 
-const change = async (): Promise<Written<unknown>> => {
+const change = async (): Promise<Written> => {
   const result = await savePassword(currentPassword.value, newPassword.value)
   if (result.ok) {
     currentPassword.value = ""

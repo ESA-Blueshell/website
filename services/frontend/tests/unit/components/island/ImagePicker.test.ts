@@ -7,7 +7,7 @@ const held: Picture = {path: "art/1.webp", url: "/art/1.webp", width: 800, heigh
 const stored: Picture = {path: "art/2.webp", url: "/art/2.webp", renditions: []}
 
 const picker = (props: Record<string, unknown> = {}) => mount(ImagePicker, {
-  props: {label: "Banner", testid: "art", store: vi.fn<PictureStore>(async () => ({ok: true, picture: stored})), ...props},
+  props: {label: "Banner", testid: "art", store: vi.fn<PictureStore>(async () => ({ok: true, saved: stored})), ...props},
 })
 
 const choose = async (wrapper: ReturnType<typeof picker>, file: File) => {
@@ -57,7 +57,7 @@ describe("ImagePicker", () => {
   })
 
   it("stores a chosen file and hands on the picture it became", async () => {
-    const store = vi.fn<PictureStore>(async () => ({ok: true, picture: stored}))
+    const store = vi.fn<PictureStore>(async () => ({ok: true, saved: stored}))
     const wrapper = picker({store})
     const file = new File(["art"], "art.png", {type: "image/png"})
 
@@ -112,7 +112,7 @@ describe("ImagePicker", () => {
     expect(wrapper.text()).toContain("Uploading")
     expect(input.attributes("disabled")).toBeDefined()
 
-    finish({ok: true, picture: stored})
+    finish({ok: true, saved: stored})
     await flushPromises()
     expect(wrapper.text()).not.toContain("Uploading")
 

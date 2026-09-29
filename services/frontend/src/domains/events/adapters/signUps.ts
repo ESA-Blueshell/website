@@ -14,6 +14,7 @@ import {
   updateEventSignUpById,
   type UpdateEventSignUpRequest,
 } from "@/services/api"
+import {readOr} from "@/utils/answers"
 
 /** The header a guest is known by, having no account to be known by instead. */
 const GUEST_ACCESS_HEADER = "X-Guest-Access-Token"
@@ -22,11 +23,8 @@ const GUEST_ACCESS_HEADER = "X-Guest-Access-Token"
 export type SavedSignUp = {signUp: EventSignUpResponse; guestAccessToken: string | null}
 
 /** The sign-ups of one event, or null where the api would not say. */
-export async function listEventSignUps(eventId: number): Promise<EventSignUpResponse[] | null> {
-  const {data, error} = await findEventSignUpsByEventId({path: {eventId}})
-  if (error) return null
-  return data ?? []
-}
+export const listEventSignUps = (eventId: number): Promise<EventSignUpResponse[] | null> =>
+  readOr(findEventSignUpsByEventId({path: {eventId}}), null)
 
 /** What one account has signed up for, from the moment named. Throws on a refusal. */
 export async function listOwnSignUps(userId: number, from: string): Promise<EventSignUpResponse[]> {

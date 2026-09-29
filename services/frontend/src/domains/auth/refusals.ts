@@ -25,7 +25,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   EmailTaken: () => "That address belongs to another account.",
 }
 
-export const {sentenceFor, reasonFor} = refusalReader(sentences)
+export const {sentenceFor, reasonFor, refusable, accepted} = refusalReader(sentences)
 
 export const codeOf = (body: unknown): string | undefined => (body as RefusalCode | null | undefined)?.code
 

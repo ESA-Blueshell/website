@@ -5,6 +5,7 @@
 import {apiUrl, associationStatistics, findCurrentContributionPeriod, findEvents} from "@/services/api"
 import type {AssociationStatisticsResponse, ContributionPeriodResponse, EventResponse} from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
+import {readOr} from "@/utils/answers"
 
 /** What the association can say about itself in numbers. */
 export type AssociationNumbers = AssociationStatisticsResponse
@@ -16,14 +17,9 @@ export type ContributionPeriod = ContributionPeriodResponse
  * The association's own numbers, or nothing where the api would not say.
  *
  * Nothing rather than a throw, and nothing rather than zeroes: the page these feed shows honest
- * floors until real figures land, and a zero would read as a fact. The generated client resolves
- * on 4xx and 5xx with an `error` instead of throwing, so the error is checked rather than caught.
+ * floors until real figures land, and a zero would read as a fact.
  */
-export async function loadAssociationNumbers(): Promise<AssociationNumbers | null> {
-  const res = await associationStatistics()
-  if (res.error || !res.data) return null
-  return res.data
-}
+export const loadAssociationNumbers = (): Promise<AssociationNumbers | null> => readOr(associationStatistics(), null)
 
 /**
  * The contribution period the association is charging for, or nothing where none is recorded.
@@ -31,11 +27,8 @@ export async function loadAssociationNumbers(): Promise<AssociationNumbers | nul
  * The same read the signup form's fee component makes, so both pages quote one source. An
  * empty answer is a period nobody has written down yet, which is a fact the page can state.
  */
-export async function loadCurrentContributionPeriod(): Promise<ContributionPeriod | null> {
-  const res = await findCurrentContributionPeriod()
-  if (res.error || !res.data) return null
-  return res.data
-}
+export const loadCurrentContributionPeriod = (): Promise<ContributionPeriod | null> =>
+  readOr(findCurrentContributionPeriod(), null)
 
 type StoredImage = NonNullable<NonNullable<EventResponse["banner"]>["image"]>
 
@@ -122,12 +115,12 @@ export interface UpcomingPage {
  * them is held. A refused read is an empty page: the band that asks hides rather than erring.
  */
 export async function loadUpcomingEvents(size: number, page = 0): Promise<UpcomingPage> {
-  const answered = await findEvents({
+  const answered = await readOr(findEvents({
     query: {approved: true, from: new Date().toISOString(), page, size, sort: ["startTime,asc"]},
-  })
-  if (answered.error || !answered.data) return {events: [], total: 0}
+  }), null)
+  if (!answered) return {events: [], total: 0}
 
-  const events = (answered.data.content ?? []).map((one): UpcomingEvent => {
+  const events = (answered.content ?? []).map((one): UpcomingEvent => {
     return {
       id: one.id,
       title: one.title,
@@ -143,5 +136,5 @@ export async function loadUpcomingEvents(size: number, page = 0): Promise<Upcomi
       banner: pictureOf(one.banner?.image),
     }
   })
-  return {events, total: answered.data.page?.totalElements ?? events.length}
+  return {events, total: answered.page?.totalElements ?? events.length}
 }

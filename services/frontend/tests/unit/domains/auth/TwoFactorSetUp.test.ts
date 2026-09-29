@@ -30,9 +30,9 @@ const submit = async (wrapper: SetUp) => {
 
 describe("setting up two-factor", () => {
   beforeEach(() => {
-    mockStart.mockResolvedValue({ok: true, value: {otpauthUri: "otpauth://totp/x", key: "ABCD"}})
-    mockConfirm.mockResolvedValue({ok: true, value: ["aaaaa-bbbbb"]})
-    mockFinish.mockResolvedValue({ok: true, value: undefined})
+    mockStart.mockResolvedValue({ok: true, saved: {otpauthUri: "otpauth://totp/x", key: "ABCD"}})
+    mockConfirm.mockResolvedValue({ok: true, saved: ["aaaaa-bbbbb"]})
+    mockFinish.mockResolvedValue({ok: true})
   })
 
   afterEach(() => vi.unstubAllGlobals())
@@ -124,12 +124,12 @@ describe("setting up two-factor", () => {
 
 describe("the set-up a granted role is sent to at sign-in", () => {
   beforeEach(() => {
-    mockConfirm.mockResolvedValue({ok: true, value: ["aaaaa-bbbbb"]})
-    mockFinish.mockResolvedValue({ok: true, value: undefined})
+    mockConfirm.mockResolvedValue({ok: true, saved: ["aaaaa-bbbbb"]})
+    mockFinish.mockResolvedValue({ok: true})
   })
 
   it("opens at the phone, three steps, on the proof of the sign-in", async () => {
-    mockStart.mockResolvedValue({ok: true, value: {otpauthUri: "otpauth://totp/x", key: "ABCD"}})
+    mockStart.mockResolvedValue({ok: true, saved: {otpauthUri: "otpauth://totp/x", key: "ABCD"}})
     const wrapper = setUp({mode: "required"})
     await settle()
 
@@ -144,7 +144,7 @@ describe("the set-up a granted role is sent to at sign-in", () => {
   it("asks for the password once the step-up window has passed", async () => {
     mockStart
       .mockResolvedValueOnce({ok: false, reason: "Confirm it is you", needsStepUp: true})
-      .mockResolvedValue({ok: true, value: {otpauthUri: "otpauth://totp/x", key: "ABCD"}})
+      .mockResolvedValue({ok: true, saved: {otpauthUri: "otpauth://totp/x", key: "ABCD"}})
     const wrapper = setUp({mode: "required"})
     await settle()
 

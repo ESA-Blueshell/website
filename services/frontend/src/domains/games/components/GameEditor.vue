@@ -24,7 +24,7 @@ import {GameChannelCategory} from "@/domains/discord"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
 import {enterGameInSeason, forgetCompetitionReads, useGames as useCompetitionGames} from "@/domains/esports"
 import EsportsGameHead from "@/domains/esports/island/EsportsGameHead.vue"
-import {addCasualGame, saveCasualGame, storeGameBanner, storeGameIcon, type CasualGame, type CasualGameDraft, type GameChannel} from "../adapters/games"
+import {addCasualGame, saveCasualGame, storeGameBanner, storeGameIcon, type CasualGame, type GameChannel} from "../adapters/games"
 import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
 import RemoveGameDialog from "../island/RemoveGameDialog.vue"
 import {cellOf, useCasualGames} from "../useCasualGames"
@@ -130,7 +130,7 @@ const slice = computed(() => [{
   accent: accent.value,
 }])
 
-const draft = (): CasualGameDraft => ({
+const draft = () => ({
   name: name.value.trim(),
   slug: slug.value.trim(),
   intro: intro.value.trim() || null,
@@ -155,25 +155,25 @@ const submit = async () => {
     }
     const same = organisers.value.length === organisersBefore.value.length && organisers.value.every(id => organisersBefore.value.includes(id))
     if (!same) {
-      const linked = await saveGameOrganisers(result.game.code, organisers.value)
+      const linked = await saveGameOrganisers(result.saved.code, organisers.value)
       if (!linked.ok) {
-        failure.value = `${result.game.name} is saved, but its committees are not. ${linked.reason}`
+        failure.value = `${result.saved.name} is saved, but its committees are not. ${linked.reason}`
         return
       }
     }
     // A new game is recorded, then entered in the season it was added from: two requests behind
     // one Save. A refusal on the second is said rather than closed over.
     if (adding.value && props.enterIn != null) {
-      const entered = await enterGameInSeason(props.enterIn, result.game.code)
+      const entered = await enterGameInSeason(props.enterIn, result.saved.code)
       if (!entered.ok) {
-        failure.value = `${result.game.name} is recorded, but it could not be entered in the season. `
+        failure.value = `${result.saved.name} is recorded, but it could not be entered in the season. `
           + `${entered.reason} Enter it from the season itself.`
         return
       }
     }
     forgetCompetitionReads()
     await Promise.all([refreshCasual(), refreshCompetition(), refreshCommittees()])
-    emit("saved", result.game)
+    emit("saved", result.saved)
   } finally {
     saving.value = false
   }

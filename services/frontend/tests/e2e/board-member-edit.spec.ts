@@ -123,7 +123,7 @@ test.describe("a member filled in on the page", () => {
     expect(body.role).toBe("Secretary and Commissioner of the Esports Lounge")
     expect(body.description).toBe("Ran the lounge.")
     // Nobody was picked, so no account is sent: the member stands under the name it was given.
-    expect(body.userId).toBeUndefined()
+    expect(body.userId).toBeNull()
 
     await expect(page.getByTestId("board-member-edit")).toHaveCount(0)
     // And the page reads again, so the member is on it: the name with the nickname back inside.
@@ -265,7 +265,7 @@ test.describe("a member filled in on the page", () => {
     const body = JSON.parse((await detached).postData() ?? "{}") as Wire<LinkBoardMemberRequest>
 
     // A null member detaches, and the member is still on the page under its own name.
-    expect(body.userId).toBeUndefined()
+    expect(body.userId).toBeNull()
     await expect(page.getByTestId("board-member-91")).toContainText('Emma "Emmz" Dokter')
   })
 

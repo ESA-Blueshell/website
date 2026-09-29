@@ -9,6 +9,9 @@
  * four numbers and a url (frontend ADR-001).
  */
 
+import type {Refused} from "@/types/api"
+import type {Saved} from "@/utils/refusals"
+
 /**
  * An image a page draws: where it is served, how large it is, and the widths it is stored at.
  *
@@ -37,7 +40,7 @@ export interface Picture {
  * control that belongs to one domain. A refusal comes back in words, because a picture the
  * converter cannot read is the one thing whoever chose it can act on.
  */
-export type PictureStore = (file: File) => Promise<{ok: true; picture: Picture} | {ok: false; reason: string}>
+export type PictureStore = (file: File) => Promise<Saved<Picture> | Refused>
 
 /**
  * The `srcset` for a picture, or nothing where there is only one of it.

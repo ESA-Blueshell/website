@@ -49,6 +49,7 @@ import type {
 } from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
 import {accepted, refusable} from "@/domains/esports/refusals"
+import {readOr} from "@/utils/answers"
 import type {Saved} from "@/utils/refusals"
 import type {Refused} from "@/types/api"
 
@@ -104,11 +105,6 @@ const image = (one: Image): Image => ({
   renditions: one.renditions.map(rendition => ({...rendition, url: apiUrl(rendition.url)})),
 })
 
-export interface PictureStored {
-  ok: true
-  picture: Picture
-}
-
 /**
  * A picture put into storage, ready for a save to name it.
  *
@@ -122,9 +118,9 @@ export interface PictureStored {
 export async function storePicture(
   file: File,
   kind: FileType,
-): Promise<PictureStored | Refused> {
+): Promise<Saved<Picture> | Refused> {
   const stored = await refusable(uploadPublicImage({query: {type: kind}, body: {file}}), "That picture could not be stored.")
-  return stored.ok ? {ok: true, picture: image(stored.saved)} : stored
+  return stored.ok ? {ok: true, saved: image(stored.saved)} : stored
 }
 
 const imageOrNone = (one?: Image | null): Image | null => (one ? image(one) : null)
@@ -298,9 +294,8 @@ export async function loadRoster(
   game: GameCode,
   seasonId: number,
 ): Promise<RosterEntry[] | null> {
-  const res = await findRoster({path: {teamId}, query: {game, seasonId}})
-  if (res.error || !res.data) return null
-  return res.data.map(withIcon)
+  const roster = await readOr(findRoster({path: {teamId}, query: {game, seasonId}}), null)
+  return roster?.map(withIcon) ?? null
 }
 
 export async function addToRoster(teamId: number, entry: AddRosterEntryRequest): Promise<Saved<RosterEntry> | Refused> {

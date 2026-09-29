@@ -80,37 +80,36 @@ describe("reading committees", () => {
 })
 
 describe("writing committees", () => {
-  it("adds a committee, leaving an empty address for the api to make", async () => {
+  it("adds a committee, and says why the api would not", async () => {
     vi.mocked(api.createCommittee).mockResolvedValueOnce(answer(api.createCommittee, lan)).mockResolvedValueOnce(refusal(api.createCommittee, {code: "CommitteeAddressTaken", address: "lancie", committeeName: "LanCie"}))
 
-    expect(await addCommittee(draft)).toMatchObject({ok: true, committee: {id: 1}})
-    expect(api.createCommittee).toHaveBeenCalledWith({body: {
-      name: "LanCie", slug: undefined, listed: true, description: "LANs", banner: undefined, members: [{userId: 4, role: undefined}], gameCodes: ["CS2"],
-    }})
+    expect(await addCommittee(draft)).toMatchObject({ok: true, saved: {id: 1}})
+    expect(api.createCommittee).toHaveBeenCalledWith({body: draft})
     expect(await addCommittee(draft)).toEqual({ok: false, reason: "The address 'lancie' is already used by LanCie."})
   })
 
   it("saves the board's correction with its version, and a refusal in words", async () => {
     vi.mocked(api.updateCommittee).mockResolvedValueOnce(answer(api.updateCommittee, lan)).mockResolvedValueOnce(refusal(api.updateCommittee, {}))
 
-    expect(await saveCommitteeAsBoard(1, 3, {...draft, slug: "lan", banner: "b.webp", members: [{userId: 4, role: "Chair"}]})).toMatchObject({ok: true})
+    expect(await saveCommitteeAsBoard(1, {...draft, slug: "lan", banner: "b.webp", members: [{userId: 4, role: "Chair"}], version: 3})).toMatchObject({ok: true})
     expect(api.updateCommittee).toHaveBeenCalledWith({path: {id: 1}, body: expect.objectContaining({slug: "lan", banner: "b.webp", version: 3, members: [{userId: 4, role: "Chair"}]})})
-    expect(await saveCommitteeAsBoard(1, 3, draft)).toEqual({ok: false, reason: "The committee could not be saved."})
+    expect(await saveCommitteeAsBoard(1, {...draft, version: 3})).toEqual({ok: false, reason: "The committee could not be saved."})
   })
 
   it("saves what a committee's own members change", async () => {
     vi.mocked(api.updateCommitteePage).mockResolvedValueOnce(answer(api.updateCommitteePage, lan)).mockResolvedValueOnce(refusal(api.updateCommitteePage, {code: "GameArchived", gameName: "CS:GO"}))
 
-    expect(await saveOwnCommitteePage(1, 4, {description: "LANs", banner: null, icon: null, gameCodes: []})).toMatchObject({ok: true})
-    expect(api.updateCommitteePage).toHaveBeenCalledWith({path: {id: 1}, body: {description: "LANs", version: 4, banner: undefined, gameCodes: []}})
-    expect(await saveOwnCommitteePage(1, 4, {description: "LANs", banner: "b.webp", icon: null, gameCodes: ["CSGO"]}))
+    const page = {description: "LANs", banner: null, icon: null, gameCodes: [], version: 4}
+    expect(await saveOwnCommitteePage(1, page)).toMatchObject({ok: true})
+    expect(api.updateCommitteePage).toHaveBeenCalledWith({path: {id: 1}, body: page})
+    expect(await saveOwnCommitteePage(1, {...page, banner: "b.webp", gameCodes: ["CSGO"]}))
       .toEqual({ok: false, reason: "CS:GO is archived, so it cannot be newly picked."})
   })
 
   it("archives a committee and brings it back, each refusal said its own way", async () => {
     vi.mocked(api.archiveCommittee).mockResolvedValueOnce(answer(api.archiveCommittee, aCommittee({banner, archived: true}))).mockResolvedValue(refusal(api.archiveCommittee, {}))
 
-    expect(await setCommitteeArchived(1, true)).toMatchObject({ok: true, committee: {archived: true}})
+    expect(await setCommitteeArchived(1, true)).toMatchObject({ok: true, saved: {archived: true}})
     expect(await setCommitteeArchived(1, true)).toEqual({ok: false, reason: "The committee could not be archived."})
     expect(await setCommitteeArchived(1, false)).toEqual({ok: false, reason: "The committee could not be brought back."})
   })
@@ -120,7 +119,7 @@ describe("writing committees", () => {
     vi.mocked(api.uploadCommitteeBanner).mockResolvedValue(answer(api.uploadCommitteeBanner, banner))
     vi.mocked(api.uploadPublicImage).mockResolvedValueOnce(answer(api.uploadPublicImage, banner)).mockResolvedValueOnce(refusal(api.uploadPublicImage, {}))
 
-    expect(await storeCommitteeBanner(file, 1)).toMatchObject({ok: true, picture: {url: resolved}})
+    expect(await storeCommitteeBanner(file, 1)).toMatchObject({ok: true, saved: {url: resolved}})
     expect(api.uploadCommitteeBanner).toHaveBeenCalledWith({path: {id: 1}, body: {file}})
     expect(await storeCommitteeBanner(file, null)).toMatchObject({ok: true})
     expect(api.uploadPublicImage).toHaveBeenCalledWith({query: {type: "COMMITTEE_BANNER"}, body: {file}})
@@ -132,7 +131,7 @@ describe("writing committees", () => {
     vi.mocked(api.uploadCommitteeIcon).mockResolvedValueOnce(answer(api.uploadCommitteeIcon, banner)).mockResolvedValueOnce(refusal(api.uploadCommitteeIcon, {}))
     vi.mocked(api.uploadPublicImage).mockResolvedValueOnce(answer(api.uploadPublicImage, banner))
 
-    expect(await storeCommitteeIcon(file, 1)).toMatchObject({ok: true, picture: {url: resolved}})
+    expect(await storeCommitteeIcon(file, 1)).toMatchObject({ok: true, saved: {url: resolved}})
     expect(await storeCommitteeIcon(file, null)).toMatchObject({ok: true})
     expect(api.uploadPublicImage).toHaveBeenCalledWith({query: {type: "COMMITTEE_ICON"}, body: {file}})
     expect(await storeCommitteeIcon(file, 1)).toEqual({ok: false, reason: "That picture could not be stored."})

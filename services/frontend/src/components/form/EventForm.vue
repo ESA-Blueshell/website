@@ -199,7 +199,7 @@ const showPoster = (file: File | null) => {
 const holdPoster: PictureStore = async (file) => {
   if (file.size > POSTER_MAX_BYTES) return {ok: false, reason: "A poster is at most 10 MB."}
   posterChosen = file
-  return {ok: true, picture: {path: "", url: "", renditions: []}}
+  return {ok: true, saved: {path: "", url: "", renditions: []}}
 }
 
 function onPoster(picture: Picture | null) {

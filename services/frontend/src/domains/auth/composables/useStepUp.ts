@@ -14,7 +14,7 @@ export function useStepUp(onRefused: (reason: string) => void) {
     open.value = true
   }
 
-  const attempt = async (write: () => Promise<Written<unknown>>): Promise<void> => {
+  const attempt = async (write: () => Promise<Written>): Promise<void> => {
     const result = await write()
     if (result.ok) return
     if (result.needsStepUp) ask(() => void attempt(write))

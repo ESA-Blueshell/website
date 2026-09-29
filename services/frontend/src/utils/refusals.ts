@@ -1,4 +1,5 @@
 import type {Refused} from "@/types/api"
+import type {Answer} from "@/utils/answers"
 
 /** The one key the reader itself reads; a domain's body type adds the facts its own codes name. */
 export interface RefusalCode {
@@ -9,12 +10,6 @@ export interface RefusalCode {
 export interface Saved<T> {
   ok: true
   saved: T
-}
-
-/** What an sdk call resolves to: a body where it landed, an error where it was refused. */
-interface Answer<T> {
-  data?: T
-  error?: unknown
 }
 
 export interface RefusalReader {

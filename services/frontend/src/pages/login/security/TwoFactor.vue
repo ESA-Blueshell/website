@@ -173,16 +173,16 @@ const refresh = async () => {
   if (standing.value) store.commit("setTwoFactor", standing.value)
 }
 
-const makeNewCodes = async (): Promise<Written<unknown>> => {
+const makeNewCodes = async (): Promise<Written> => {
   const result = await newBackupCodes()
   if (result.ok) {
-    freshCodes.value = result.value
+    freshCodes.value = result.saved
     await refresh()
   }
   return result
 }
 
-const turnOff = async (): Promise<Written<unknown>> => {
+const turnOff = async (): Promise<Written> => {
   const result = await removeTwoFactor()
   if (result.ok) {
     await refresh()

@@ -111,20 +111,29 @@ class CohortJobHandlersTest {
     }
 
     @Test
-    fun `a reconcile job hands its target and trigger to the remediation`() {
+    fun `the per-target jobs hand their stored target to the service`() {
         val remediation = mockk<CohortRemediation>(relaxed = true)
+        val targeting = mockk<CohortTargeting>(relaxed = true)
         val bound =
             CohortJobHandlers(
                 objectMapper,
                 reconciliation = mockk(relaxed = true),
                 membership = mockk(relaxed = true),
-                targeting = mockk(relaxed = true),
+                targeting = targeting,
                 remediation = remediation,
                 inbound = mockk(relaxed = true),
             )
 
         bound.reconcileListHandler().runJob("""{"cohortId":4,"trigger":"BY_HAND"}""")
+        bound.removeExternalMemberHandler().runJob("""{"cohortId":4,"externalUserId":"x"}""")
+        bound.createCohortTargetHandler().runJob("""{"cohortId":5}""")
+        bound.materializeCohortTargetHandler().runJob("""{"cohortId":6}""")
 
-        io.mockk.verify { remediation.verifyCohort(4L, JobTrigger.BY_HAND) }
+        io.mockk.verify {
+            remediation.verifyTarget(4L, JobTrigger.BY_HAND)
+            remediation.removeExternalMember(4L, "x")
+            targeting.createFor(5L)
+            targeting.createFor(6L)
+        }
     }
 }

@@ -1,9 +1,9 @@
 package net.blueshell.api.cohort.web
 
-import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortKind
-import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.Target
 import net.blueshell.api.cohort.persistence.TargetDeletionRepository
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest
 class CohortTargetWritesIT : UserTestSupport() {
     @Autowired
-    private lateinit var cohorts: CohortRepository
+    private lateinit var targets: TargetRepository
 
     @Autowired
     private lateinit var contactListAdapters: List<ContactListAdapter>
@@ -69,7 +69,7 @@ class CohortTargetWritesIT : UserTestSupport() {
     fun `renaming a linked list renames it in Brevo and on its cohort`() {
         val admin = createUserWithRole(Role.ADMIN)
         val listId = contactLists.createList("Members", "Members")
-        val linked = cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Members", externalId = listId.toString()))
+        val linked = targets.save(Target(TargetSystem.BREVO.name, TargetKind.LIST, "Members", externalId = listId.toString()))
 
         mvc
             .perform(
@@ -82,7 +82,7 @@ class CohortTargetWritesIT : UserTestSupport() {
             .andExpect(jsonPath("$.linkedCohortId").value(linked.id!!))
 
         assertThat(contactLists.listAll().single { it.externalListId == listId }.name).isEqualTo("Members 2026-2027")
-        assertThat(cohorts.findById(linked.id!!).orElseThrow().label).isEqualTo("Members 2026-2027")
+        assertThat(targets.findById(linked.id!!).orElseThrow().label).isEqualTo("Members 2026-2027")
     }
 
     @Test
@@ -116,7 +116,7 @@ class CohortTargetWritesIT : UserTestSupport() {
     fun `archiving files a list in the archive folder and keeps its contacts and link`() {
         val admin = createUserWithRole(Role.ADMIN)
         val listId = contactLists.createList("Paid 2024-2025", "Contribution paid")
-        val linked = cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Paid 2024-2025", externalId = listId.toString()))
+        val linked = targets.save(Target(TargetSystem.BREVO.name, TargetKind.LIST, "Paid 2024-2025", externalId = listId.toString()))
 
         mvc
             .perform(post("/management/cohort-targets/{system}/{externalId}/archive", "BREVO", listId).with(signedIn(admin)))
@@ -151,7 +151,7 @@ class CohortTargetWritesIT : UserTestSupport() {
     fun `a linked list is not deleted, nor one whose name was mistyped`() {
         val admin = createUserWithRole(Role.ADMIN)
         val linkedId = contactLists.createList("Members", null)
-        cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Members", externalId = linkedId.toString()))
+        targets.save(Target(TargetSystem.BREVO.name, TargetKind.LIST, "Members", externalId = linkedId.toString()))
         val looseId = contactLists.createList("Loose", null)
 
         mvc

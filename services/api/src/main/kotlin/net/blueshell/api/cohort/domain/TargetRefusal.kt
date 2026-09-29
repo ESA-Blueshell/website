@@ -52,19 +52,19 @@ class TargetNameMismatch(
     )
 
 class TargetNotOfCohort(
-    cohortId: Long,
+    targetId: Long,
 ) : TargetRefusal(
         HttpStatus.NOT_FOUND,
         "TargetNotOfCohort",
         "The cohort has no such target.",
-        mapOf("cohortId" to cohortId),
+        mapOf("cohortId" to targetId),
     )
 
 class TargetNotCreated(
-    cohortId: Long,
+    targetId: Long,
 ) : TargetRefusal(
         HttpStatus.CONFLICT,
         "TargetNotCreated",
         "The target has not been created yet.",
-        mapOf("cohortId" to cohortId),
+        mapOf("cohortId" to targetId),
     )

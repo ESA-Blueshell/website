@@ -3,7 +3,7 @@ import {computed, onMounted, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {CohortSubjectCategory, fetchCohortSubjects, type CohortSubjectSummary} from "@/domains/cohorts"
+import {CohortCategory, fetchCohorts, type CohortSummary} from "@/domains/cohorts"
 import {COHORT_TYPE_ORDER, categoryLabel, cohortTypeLabel} from "@/domains/cohorts"
 import {useTableSort} from "@/composables/useTableSort"
 import store from "@/plugins/store"
@@ -13,13 +13,13 @@ defineOptions({name: "CohortCategoryPage"})
 const route = useRoute()
 const router = useRouter()
 
-const subjects = ref<CohortSubjectSummary[]>([])
+const cohorts = ref<CohortSummary[]>([])
 const loading = ref<boolean>(false)
 
-const category = computed<CohortSubjectCategory | null>(() => {
+const category = computed<CohortCategory | null>(() => {
   const raw = String(route.params.category ?? "").toUpperCase()
-  return (Object.values(CohortSubjectCategory) as string[]).includes(raw)
-    ? (raw as CohortSubjectCategory)
+  return (Object.values(CohortCategory) as string[]).includes(raw)
+    ? (raw as CohortCategory)
     : null
 })
 
@@ -34,13 +34,13 @@ const heading = computed<string>(() =>
  * same words on screen twice. Unsorted, the rows read in the order the kinds are declared and
  * then by name; a column sort replaces that only once one is asked for.
  */
-type CohortRow = CohortSubjectSummary & {typeLabel: string}
+type CohortRow = CohortSummary & {typeLabel: string}
 
 const rows = computed<CohortRow[]>(() => {
   if (category.value == null) return []
-  return subjects.value
-    .filter((subject) => subject.category === category.value)
-    .map((subject) => ({...subject, typeLabel: cohortTypeLabel(subject.type)}))
+  return cohorts.value
+    .filter((cohort) => cohort.category === category.value)
+    .map((cohort) => ({...cohort, typeLabel: cohortTypeLabel(cohort.type)}))
     .sort((left, right) => {
       const byType = COHORT_TYPE_ORDER.indexOf(left.type) - COHORT_TYPE_ORDER.indexOf(right.type)
       return byType !== 0 ? byType : left.label.localeCompare(right.label)
@@ -66,7 +66,7 @@ const COLUMNS: ReadonlyArray<{label: string; sortKey: SortKey; align?: string; w
 const refresh = async () => {
   loading.value = true
   try {
-    subjects.value = await fetchCohortSubjects()
+    cohorts.value = await fetchCohorts()
   } catch (error) {
     $handleNetworkError(error)
   } finally {
@@ -74,8 +74,8 @@ const refresh = async () => {
   }
 }
 
-const openSubject = (subject: CohortSubjectSummary) => {
-  void router.push({name: "cohortSubjectDetail", params: {id: subject.id}})
+const openCohort = (cohort: CohortSummary) => {
+  void router.push({name: "cohortDetail", params: {id: cohort.id}})
 }
 
 onMounted(async () => {
@@ -112,7 +112,7 @@ watch(category, async (next) => {
 
         <v-card
           class="manager-card"
-          data-testid="cohort-subject-list"
+          data-testid="cohort-list"
           rounded="lg"
           variant="flat"
         >
@@ -123,7 +123,7 @@ watch(category, async (next) => {
               <v-badge
                 color="primary"
                 :content="rows.length"
-                data-testid="cohort-subject-count"
+                data-testid="cohort-count"
               >
                 <h2 class="ma-0">
                   {{ heading }} &ndash; Cohorts
@@ -160,27 +160,27 @@ watch(category, async (next) => {
 
                 <tbody>
                   <tr
-                    v-for="subject in sortedItems"
-                    :key="subject.id"
+                    v-for="cohort in sortedItems"
+                    :key="cohort.id"
                     class="manager-table__row"
-                    :data-testid="`cohort-subject-row-${subject.id}`"
+                    :data-testid="`cohort-row-${cohort.id}`"
                     role="button"
                     tabindex="0"
-                    @click="openSubject(subject)"
-                    @keydown.enter.prevent="openSubject(subject)"
-                    @keydown.space.prevent="openSubject(subject)"
+                    @click="openCohort(cohort)"
+                    @keydown.enter.prevent="openCohort(cohort)"
+                    @keydown.space.prevent="openCohort(cohort)"
                   >
                     <td class="font-weight-medium">
-                      {{ subject.label }}
+                      {{ cohort.label }}
                     </td>
                     <td class="text-medium-emphasis">
-                      {{ subject.typeLabel }}
+                      {{ cohort.typeLabel }}
                     </td>
                     <td class="text-right">
-                      {{ subject.memberCount }}
+                      {{ cohort.memberCount }}
                     </td>
                     <td class="text-right">
-                      {{ subject.mappingCount }}
+                      {{ cohort.mappingCount }}
                     </td>
                     <td class="text-right">
                       <v-icon

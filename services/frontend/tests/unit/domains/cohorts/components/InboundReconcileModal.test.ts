@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
-import {fetchInboundReconcilePreview, type InboundReconcilePreview} from "@/domains/cohorts/adapters/cohorts"
+import {applyInboundReconcileSelection, fetchInboundReconcilePreview, type InboundReconcilePreview} from "@/domains/cohorts/adapters/cohorts"
 import {settle} from "../../../pages/helpers"
 
 vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
@@ -30,7 +30,7 @@ function preview(overrides: Partial<InboundReconcilePreview> = {}): InboundRecon
 
 async function open(answer: InboundReconcilePreview) {
   vi.mocked(fetchInboundReconcilePreview).mockResolvedValue(answer)
-  const wrapper = mount(InboundReconcileModal, {...inline, props: {modelValue: false, subjectId: 10, cohortId: 20}})
+  const wrapper = mount(InboundReconcileModal, {...inline, props: {modelValue: false, cohortId: 10, targetId: 20}})
   await wrapper.setProps({modelValue: true})
   await settle()
   return wrapper
@@ -51,5 +51,16 @@ describe("the inbound reconcile modal", () => {
 
     expect(wrapper.get('[data-testid="inbound-reconcile-unsupported"]').text())
       .toContain("Paid this year cannot be written from inbound reconcile.")
+  })
+
+  it("applies the selection for the cohort and target it was opened for", async () => {
+    vi.mocked(applyInboundReconcileSelection).mockResolvedValue({jobId: 3, acceptedCount: 1, skippedCount: 1})
+    const wrapper = await open(preview())
+
+    await wrapper.get('[data-testid="inbound-reconcile-apply"]').trigger("click")
+    await settle()
+
+    expect(vi.mocked(applyInboundReconcileSelection).mock.calls[0]?.slice(0, 2)).toEqual([10, 20])
+    expect(wrapper.emitted("applied")).toHaveLength(1)
   })
 })

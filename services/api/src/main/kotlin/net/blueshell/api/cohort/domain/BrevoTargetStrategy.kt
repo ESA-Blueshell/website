@@ -1,6 +1,6 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortKind
+import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.TargetSystem
@@ -20,7 +20,7 @@ class BrevoTargetStrategy(
     override val descriptor =
         TargetDescriptor(
             system = TargetSystem.BREVO,
-            kind = CohortKind.LIST,
+            kind = TargetKind.LIST,
         )
 
     override fun catalog(query: String?): List<ExternalTarget> {
@@ -46,29 +46,29 @@ class BrevoTargetStrategy(
             path = pathTo(folder),
         )
 
-    override fun members(target: ExternalTarget): List<ExternalMember> =
+    override fun members(external: ExternalTarget): List<ExternalMember> =
         lists
-            .listMembers(target.externalId.toBrevoId("externalId", "members"))
+            .listMembers(external.externalId.toBrevoId("externalId", "members"))
             .map { ExternalMember(it.externalUserId.toString(), it.email) }
             .filter { it.externalUserId.isNotBlank() }
 
     override fun add(
-        target: ExternalTarget,
+        external: ExternalTarget,
         externalUserId: String,
     ) {
         lists.addToList(
             externalUserId.toBrevoId("externalUserId", "add"),
-            target.externalId.toBrevoId("externalId", "add"),
+            external.externalId.toBrevoId("externalId", "add"),
         )
     }
 
     override fun remove(
-        target: ExternalTarget,
+        external: ExternalTarget,
         externalUserId: String,
     ) {
         lists.removeFromList(
             externalUserId.toBrevoId("externalUserId", "remove"),
-            target.externalId.toBrevoId("externalId", "remove"),
+            external.externalId.toBrevoId("externalId", "remove"),
         )
     }
 
@@ -76,7 +76,7 @@ class BrevoTargetStrategy(
     override fun folders(): List<String> = lists.listFolders().values.sorted()
 
     override fun move(
-        target: ExternalTarget,
+        external: ExternalTarget,
         folder: String,
     ): ExternalTarget {
         // Brevo files by folder id, so a name has to name a folder that exists. Refusing an
@@ -89,16 +89,16 @@ class BrevoTargetStrategy(
                 ?.key
                 ?: throw IllegalArgumentException("No folder named '$folder'")
 
-        lists.moveList(target.externalId.toBrevoId("externalId", "move"), folderId)
-        return target.copy(folderLabel = folder, path = pathTo(folder))
+        lists.moveList(external.externalId.toBrevoId("externalId", "move"), folderId)
+        return external.copy(folderLabel = folder, path = pathTo(folder))
     }
 
     override fun rename(
-        target: ExternalTarget,
+        external: ExternalTarget,
         name: String,
     ): ExternalTarget {
-        lists.renameList(target.externalId.toBrevoId("externalId", "rename"), name)
-        return target.copy(label = name)
+        lists.renameList(external.externalId.toBrevoId("externalId", "rename"), name)
+        return external.copy(label = name)
     }
 
     override fun createFolder(name: String): List<String> {
@@ -106,8 +106,8 @@ class BrevoTargetStrategy(
         return folders()
     }
 
-    override fun delete(target: ExternalTarget) {
-        lists.deleteList(target.externalId.toBrevoId("externalId", "delete"))
+    override fun delete(external: ExternalTarget) {
+        lists.deleteList(external.externalId.toBrevoId("externalId", "delete"))
     }
 
     /**

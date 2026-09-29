@@ -3,8 +3,8 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.cohort.persistence.CohortKind
-import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
@@ -19,24 +19,24 @@ import org.junit.jupiter.api.Test
 import java.util.Optional
 
 class CohortMembershipSyncServiceTest {
-    private val cohorts: CohortRepository = mockk()
+    private val targets: TargetRepository = mockk()
     private val ledger: CohortLedger = mockk(relaxed = true)
-    private val target42 = ExternalTarget(TargetSystem.BREVO, "42", CohortKind.LIST, "42")
+    private val target42 = ExternalTarget(TargetSystem.BREVO, "42", TargetKind.LIST, "42")
     private val brevoTarget: TargetStrategy =
         mockk(relaxed = true) {
             every { system } returns TargetSystem.BREVO
             every { handle("42") } returns target42
         }
     private val externalIds: ExternalIdMappingService = mockk(relaxed = true)
-    private val targetIds: CohortTargetIds = mockk(relaxed = true)
+    private val targetExternalIds: CohortTargetIds = mockk(relaxed = true)
     private val jobs: JobQueue = mockk(relaxed = true)
     private val service =
         CohortMembershipSyncService(
-            cohorts = cohorts,
+            targets = targets,
             ledger = ledger,
             strategies = TargetStrategies(listOf(brevoTarget)),
             externalIds = externalIds,
-            targetIds = targetIds,
+            targetExternalIds = targetExternalIds,
             jobs = jobs,
             // A relaxed manager still runs the TransactionTemplate callbacks; the
             // real no-active-transaction guarantee is asserted in
@@ -50,23 +50,23 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `ADD calls the strategy when both external ids exist`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenTarget(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
-        every { targetIds.find(any()) } returns "42"
+        every { targetExternalIds.find(any()) } returns "42"
 
-        service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
+        service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD)
 
         verify { brevoTarget.add(target42, "777") }
     }
 
     @Test
     fun `ADD without a cohort target fails terminally and does not enqueue materialization`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenTarget(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
-        every { targetIds.find(any()) } returns null
+        every { targetExternalIds.find(any()) } returns null
 
         assertThatThrownBy {
-            service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
+            service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD)
         }.isInstanceOf(NonRetryableJobException::class.java)
             .hasMessageContaining("cohort 10 has no BREVO target")
 
@@ -79,23 +79,35 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `ADD marks the desired row pushed after a successful external add`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenTarget(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
-        every { targetIds.find(any()) } returns "42"
+        every { targetExternalIds.find(any()) } returns "42"
 
-        service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
+        service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD)
 
         verify { brevoTarget.add(target42, "777") }
         verify { ledger.markPushed(10L, 1L, "777", any()) }
     }
 
     @Test
+    fun `ADD whose desired row is gone by the time it lands still pushes, and stamps nothing`() {
+        givenTarget(id = 10L, system = "BREVO", label = "Members")
+        every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
+        every { targetExternalIds.find(any()) } returns "42"
+        every { ledger.markPushed(10L, 1L, "777", any()) } returns false
+
+        service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD)
+
+        verify { brevoTarget.add(target42, "777") }
+    }
+
+    @Test
     fun `ADD without a user external id enqueues SyncContact and throws retryable`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenTarget(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns null
 
         assertThatThrownBy {
-            service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
+            service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD)
         }.isInstanceOf(CohortMembershipNotReadyException::class.java)
 
         verify {
@@ -106,25 +118,25 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `REMOVE calls the strategy when both external ids exist`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenTarget(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
-        every { targetIds.find(any()) } returns "42"
+        every { targetExternalIds.find(any()) } returns "42"
 
-        assertThat(service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE)).isNull()
+        assertThat(service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.REMOVE)).isNull()
 
         verify { brevoTarget.remove(target42, "777") }
     }
 
     @Test
     fun `REMOVE is a no-op when an external id is missing, and says which`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenTarget(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns null
-        every { targetIds.find(any()) } returns null
+        every { targetExternalIds.find(any()) } returns null
 
-        assertThat(service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE))
+        assertThat(service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.REMOVE))
             .isEqualTo("The user has no BREVO contact, so is on no BREVO list.")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
-        assertThat(service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE))
+        assertThat(service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.REMOVE))
             .isEqualTo("The cohort has no BREVO list linked.")
 
         verify(exactly = 0) { brevoTarget.remove(any(), any()) }
@@ -133,45 +145,45 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `unknown cohort id throws NonRetryableJobException`() {
-        every { cohorts.findById(10L) } returns Optional.empty()
+        every { targets.findById(10L) } returns Optional.empty()
 
         assertThatThrownBy {
-            service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
+            service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD)
         }.isInstanceOf(NonRetryableJobException::class.java)
     }
 
     @Test
     fun `unknown system on cohort throws NonRetryableJobException`() {
-        givenCohort(id = 10L, system = "MARS_NETWORK", label = "Settlers")
+        givenTarget(id = 10L, system = "MARS_NETWORK", label = "Settlers")
 
         assertThatThrownBy {
-            service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
+            service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD)
         }.isInstanceOf(NonRetryableJobException::class.java)
     }
 
     @Test
     fun `cohort whose system has no registered strategy throws NonRetryableJobException`() {
-        // Cohort's system is a valid TargetSystem value but no matching TargetStrategy bean
+        // Target's system is a valid TargetSystem value but no matching TargetStrategy bean
         // exists (GOOGLE_CALENDAR has none yet).
-        givenCohort(id = 10L, system = "GOOGLE_CALENDAR", label = "events")
+        givenTarget(id = 10L, system = "GOOGLE_CALENDAR", label = "events")
 
         assertThatThrownBy {
-            service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
+            service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD)
         }.isInstanceOf(NonRetryableJobException::class.java)
             .hasMessageContaining("No TargetStrategy")
     }
 
-    private fun givenCohort(
+    private fun givenTarget(
         id: Long,
         system: String,
         label: String,
     ) {
-        val c = Entities.cohort()
+        val c = Entities.target()
         c.id = id
         c.system = system
         c.label = label
-        c.kind = CohortKind.LIST
-        every { cohorts.findById(id) } returns Optional.of(c)
+        c.kind = TargetKind.LIST
+        every { targets.findById(id) } returns Optional.of(c)
     }
 
     private fun mapping(

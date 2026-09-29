@@ -51,7 +51,7 @@ function target(
     label,
     folderLabel,
     memberCount: null,
-    linkedCohortId: null,
+    linkedTargetId: null,
     ...extra,
   }
 }
@@ -100,7 +100,7 @@ describe("useTargetOverview", () => {
 
   it("counts what a folder has linked, and what nothing points at", async () => {
     const o = await loaded([
-      target("1", "Linked", "Newsletter", {linkedCohortId: 7}),
+      target("1", "Linked", "Newsletter", {linkedTargetId: 7}),
       target("2", "Orphan", "Newsletter"),
       target("3", "Also orphan", "Contributions"),
     ])

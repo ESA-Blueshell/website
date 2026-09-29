@@ -5,7 +5,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
 import TargetPath from "@/domains/cohorts/components/TargetPath.vue"
-import {DriftResolutionAction, TargetSystem, fetchCohortSubject, queueCohortJob, setTargetEnforced, triggerReconcile, useDriftResolution, type CohortMember, type CohortSubject, type CohortSyncState, type TargetMapping} from "@/domains/cohorts"
+import {DriftResolutionAction, TargetSystem, fetchCohort, queueCohortJob, setTargetEnforced, triggerReconcile, useDriftResolution, type CohortMember, type Cohort, type CohortSyncState, type TargetMapping} from "@/domains/cohorts"
 import {categoryLabel, driftLabel, earlierDrift, isMember, memberName, memberSystemLabel, syncChipColour, syncLabel, systemLabel} from "@/domains/cohorts"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
@@ -14,12 +14,12 @@ import {filtersFor, useRowFilters} from "@/composables/useRowFilters"
 import {useTableSort} from "@/composables/useTableSort"
 import store from "@/plugins/store"
 
-defineOptions({name: "CohortSubjectDetailPage"})
+defineOptions({name: "CohortDetailPage"})
 
 const route = useRoute()
 const router = useRouter()
 
-const subject = ref<CohortSubject | null>(null)
+const cohort = ref<Cohort | null>(null)
 const loading = ref<boolean>(false)
 const triggering = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
@@ -29,11 +29,11 @@ const activeTab = ref<string>("")
 const pickerOpen = ref<boolean>(false)
 const pickerMode = ref<"add" | "switch">("add")
 const pickerSystem = ref<TargetSystem>(TargetSystem.BREVO)
-const pickerCohortId = ref<number | undefined>(undefined)
+const pickerTargetId = ref<number | undefined>(undefined)
 const inboundOpen = ref<boolean>(false)
-const inboundCohortId = ref<number | undefined>(undefined)
+const inboundTargetId = ref<number | undefined>(undefined)
 
-const subjectId = computed<number | null>(() => {
+const cohortId = computed<number | null>(() => {
   const raw = route.params.id
   const value = typeof raw === "string" ? Number(raw) : Number(Array.isArray(raw) ? raw[0] : raw)
   return Number.isFinite(value) ? value : null
@@ -43,13 +43,13 @@ const subjectId = computed<number | null>(() => {
 const folderSteps = (mapping: TargetMapping): string[] => mapping.path.slice(1)
 
 const load = async () => {
-  if (subjectId.value == null) return
+  if (cohortId.value == null) return
   loading.value = true
   try {
-    subject.value = await fetchCohortSubject(subjectId.value)
-    activeTab.value = subject.value?.mappings[0]?.system ?? ""
+    cohort.value = await fetchCohort(cohortId.value)
+    activeTab.value = cohort.value?.mappings[0]?.system ?? ""
   } catch (error) {
-    subject.value = null
+    cohort.value = null
     $handleNetworkError(error)
   } finally {
     loading.value = false
@@ -90,7 +90,7 @@ const formatJoinedAt = (value: string): string => {
 // it is, so nobody has to open a second panel and match ids by eye.
 
 /** Every ledger row the page holds: our members, and the rows only the target knows. */
-const allRows = computed<CohortMember[]>(() => subject.value?.members ?? [])
+const allRows = computed<CohortMember[]>(() => cohort.value?.members ?? [])
 
 /** The badge beside the cohort's name: people, not rows. */
 const memberCount = computed(() => allRows.value.filter(isMember).length)
@@ -175,8 +175,8 @@ const MEMBER_COLUMNS: ReadonlyArray<{label: string; sortKey: MemberSortKey; widt
 ]
 
 const drift = useDriftResolution(
-  subjectId,
-  computed(() => subject.value?.mappings ?? []),
+  cohortId,
+  computed(() => cohort.value?.mappings ?? []),
   load,
 )
 
@@ -188,7 +188,7 @@ const hasRowActions = (member: CohortMember): boolean =>
   canReevaluate(member) || drift.canResolve("push", member) || drift.canResolve("remove", member) || drift.canResolve("link", member)
 
 /** The ticked rows the page shows; a filtered-out row stays ticked but is not acted on. */
-const selectedRows = computed(() => sortedMembers.value.filter((member) => drift.selection.value.has(member.cohortMemberId)))
+const selectedRows = computed(() => sortedMembers.value.filter((member) => drift.selection.value.has(member.targetMemberId)))
 
 const PLAN_TITLES: Record<string, (count: number) => string> = {
   push: (count) => `Push ${count} to the target`,
@@ -246,10 +246,10 @@ const submitLinkUser = async () => {
 
 const reconciling = ref<number | null>(null)
 
-const reconcileTarget = async (cohortId: number) => {
-  reconciling.value = cohortId
+const reconcileTarget = async (targetId: number) => {
+  reconciling.value = targetId
   try {
-    await triggerReconcile(cohortId)
+    await triggerReconcile(targetId)
     successMessage.value = "Reconcile enqueued."
   } catch (error) {
     errorMessage.value = (error as Error)?.message ?? "Could not enqueue a reconcile."
@@ -261,8 +261,8 @@ const reconcileTarget = async (cohortId: number) => {
 
 /** Enforcing, or no longer enforcing, a target; the row reloads to show which it is. */
 const toggleEnforced = async (mapping: TargetMapping) => {
-  if (subjectId.value == null) return
-  const answer = await setTargetEnforced(subjectId.value, mapping.cohortId, !mapping.enforced)
+  if (cohortId.value == null) return
+  const answer = await setTargetEnforced(cohortId.value, mapping.targetId, !mapping.enforced)
   if (!answer.ok) {
     errorMessage.value = answer.reason
     return
@@ -286,14 +286,14 @@ const lastReconciledLabel = (mapping: TargetMapping): string => {
 const openAddTarget = () => {
   pickerMode.value = "add"
   pickerSystem.value = TargetSystem.BREVO
-  pickerCohortId.value = undefined
+  pickerTargetId.value = undefined
   pickerOpen.value = true
 }
 
-const openSwitchTarget = (cohortId: number, system: TargetSystem) => {
+const openSwitchTarget = (targetId: number, system: TargetSystem) => {
   pickerMode.value = "switch"
   pickerSystem.value = system
-  pickerCohortId.value = cohortId
+  pickerTargetId.value = targetId
   pickerOpen.value = true
 }
 
@@ -302,8 +302,8 @@ const onTargetSaved = () => {
   void load()
 }
 
-const openInboundReconcile = (cohortId: number) => {
-  inboundCohortId.value = cohortId
+const openInboundReconcile = (targetId: number) => {
+  inboundTargetId.value = targetId
   inboundOpen.value = true
 }
 
@@ -312,10 +312,10 @@ const onInboundApplied = () => {
 }
 
 const backToCategory = () => {
-  if (subject.value == null) return
+  if (cohort.value == null) return
   void router.push({
     name: "cohortCategory",
-    params: {category: subject.value.category.toLowerCase()},
+    params: {category: cohort.value.category.toLowerCase()},
   })
 }
 
@@ -327,31 +327,31 @@ onMounted(async () => {
   await load()
 })
 
-watch(subjectId, () => void load())
+watch(cohortId, () => void load())
 </script>
 
 <template>
   <v-main>
-    <top-banner :title="subject?.label ?? 'Cohort'" />
+    <top-banner :title="cohort?.label ?? 'Cohort'" />
 
     <v-container>
-      <div class="mx-auto my-3 subject-page">
+      <div class="mx-auto my-3 cohort-page">
         <v-btn
-          v-if="subject"
+          v-if="cohort"
           class="mb-3"
-          data-testid="cohort-subject-back"
+          data-testid="cohort-detail-back"
           prepend-icon="mdi-arrow-left"
           size="small"
           variant="text"
           @click="backToCategory"
         >
-          {{ categoryLabel(subject.category) }}
+          {{ categoryLabel(cohort.category) }}
         </v-btn>
 
         <v-alert
           v-if="errorMessage"
           class="mb-3"
-          data-testid="cohort-subject-error"
+          data-testid="cohort-detail-error"
           density="compact"
           type="error"
         >
@@ -378,7 +378,7 @@ watch(subjectId, () => void load())
         <v-alert
           v-if="successMessage"
           class="mb-3"
-          data-testid="cohort-subject-success"
+          data-testid="cohort-detail-success"
           density="compact"
           type="success"
         >
@@ -388,9 +388,9 @@ watch(subjectId, () => void load())
         <!-- One card. This was four, each with its own heading and its own count line under
              it, which said the cohort's name three times before saying anything about it. -->
         <v-card
-          v-if="subject"
+          v-if="cohort"
           class="manager-card"
-          data-testid="cohort-subject-identity"
+          data-testid="cohort-detail-identity"
           rounded="lg"
           variant="flat"
         >
@@ -399,44 +399,44 @@ watch(subjectId, () => void load())
               <v-badge
                 color="primary"
                 :content="memberCount"
-                data-testid="cohort-subject-member-count"
+                data-testid="cohort-detail-member-count"
               >
-                <h2 class="ma-0 subject-label">
-                  {{ subject.label }}
+                <h2 class="ma-0 cohort-label">
+                  {{ cohort.label }}
                 </h2>
               </v-badge>
             </div>
 
             <p
-              v-if="subject.description"
+              v-if="cohort.description"
               class="text-body-2 text-medium-emphasis mb-0"
             >
-              {{ subject.description }}
+              {{ cohort.description }}
             </p>
 
             <!-- Three boxes saying what they hold, opened when the reader wants the detail.
                  Members starts open: it is what the page is for. -->
-            <div class="subject-boxes mt-4">
+            <div class="cohort-boxes mt-4">
               <!-- What decides who belongs. It is a definition in code now, so there is a
                    name to read rather than a rule to interpret — and a warning when the code
                    that produced this cohort is gone. -->
               <div
-                class="subject-definition"
-                data-testid="cohort-subject-definition"
+                class="cohort-definition"
+                data-testid="cohort-detail-definition"
               >
-                <span class="subject-definition__label">Defined by</span>
+                <span class="cohort-definition__label">Defined by</span>
                 <code
-                  v-if="subject.definitionKey"
-                  class="subject-definition__key"
-                >{{ subject.definitionKey }}</code>
+                  v-if="cohort.definitionKey"
+                  class="cohort-definition__key"
+                >{{ cohort.definitionKey }}</code>
                 <span
                   v-else
                   class="text-medium-emphasis"
                 >nothing any more</span>
                 <v-chip
-                  v-if="subject.orphaned"
+                  v-if="cohort.orphaned"
                   color="warning"
-                  data-testid="cohort-subject-orphaned"
+                  data-testid="cohort-detail-orphaned"
                   size="small"
                   variant="flat"
                 >
@@ -446,15 +446,15 @@ watch(subjectId, () => void load())
 
               <info-box
                 expandable
-                :count="subject.mappings.length"
+                :count="cohort.mappings.length"
                 label="Sync targets"
-                testid="cohort-subject-targets"
+                testid="cohort-detail-targets"
               >
                 <!-- A row per target, in the table idiom the rest of these pages use: what
                      it is, where it points, when it last agreed, and one menu of actions. -->
                 <v-table
                   class="manager-table"
-                  data-testid="cohort-subject-target-list"
+                  data-testid="cohort-detail-target-list"
                   density="compact"
                 >
                   <thead>
@@ -489,7 +489,7 @@ watch(subjectId, () => void load())
                               <v-btn
                                 v-bind="menuProps"
                                 aria-label="Sync target actions"
-                                data-testid="cohort-subject-targets-menu"
+                                data-testid="cohort-detail-targets-menu"
                                 icon="mdi-dots-vertical"
                                 size="small"
                                 variant="text"
@@ -500,7 +500,7 @@ watch(subjectId, () => void load())
                               min-width="200"
                             >
                               <v-list-item
-                                data-testid="cohort-subject-add-target"
+                                data-testid="cohort-detail-add-target"
                                 prepend-icon="mdi-plus"
                                 title="Add target"
                                 @click="openAddTarget"
@@ -512,7 +512,7 @@ watch(subjectId, () => void load())
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-if="!subject.mappings.length">
+                    <tr v-if="!cohort.mappings.length">
                       <td
                         class="text-medium-emphasis"
                         colspan="6"
@@ -522,16 +522,16 @@ watch(subjectId, () => void load())
                       </td>
                     </tr>
                     <tr
-                      v-for="mapping in subject.mappings"
+                      v-for="mapping in cohort.mappings"
                       :key="mapping.system"
-                      :data-testid="`cohort-subject-target-${mapping.system.toLowerCase()}`"
+                      :data-testid="`cohort-detail-target-${mapping.system.toLowerCase()}`"
                     >
                       <td class="font-weight-medium">
                         {{ systemLabel(mapping.system) }}
                         <v-chip
                           v-if="mapping.enforced"
                           class="ml-1"
-                          :data-testid="`cohort-subject-target-enforced-${mapping.system.toLowerCase()}`"
+                          :data-testid="`cohort-detail-target-enforced-${mapping.system.toLowerCase()}`"
                           size="x-small"
                           variant="tonal"
                         >
@@ -551,7 +551,7 @@ watch(subjectId, () => void load())
                         <span
                           v-if="!mapping.folderKnown"
                           class="text-caption"
-                          :data-testid="`cohort-subject-target-folder-unknown-${mapping.system.toLowerCase()}`"
+                          :data-testid="`cohort-detail-target-folder-unknown-${mapping.system.toLowerCase()}`"
                         >Folder unknown</span>
                       </td>
                       <td class="text-monospace text-medium-emphasis targets-col-detail">
@@ -559,13 +559,13 @@ watch(subjectId, () => void load())
                       </td>
                       <td
                         class="text-medium-emphasis"
-                        :data-testid="`cohort-subject-target-reconciled-${mapping.system.toLowerCase()}`"
+                        :data-testid="`cohort-detail-target-reconciled-${mapping.system.toLowerCase()}`"
                       >
                         {{ lastReconciledLabel(mapping) }}
                         <div
                           v-if="driftLabel(mapping)"
                           class="text-caption"
-                          :data-testid="`cohort-subject-target-drift-${mapping.system.toLowerCase()}`"
+                          :data-testid="`cohort-detail-target-drift-${mapping.system.toLowerCase()}`"
                         >
                           {{ driftLabel(mapping) }}
                         </div>
@@ -573,7 +573,7 @@ watch(subjectId, () => void load())
                           v-for="(line, index) in earlierDrift(mapping)"
                           :key="index"
                           class="text-caption text-medium-emphasis"
-                          :data-testid="`cohort-subject-target-drift-history-${mapping.system.toLowerCase()}`"
+                          :data-testid="`cohort-detail-target-drift-history-${mapping.system.toLowerCase()}`"
                         >
                           {{ line }}
                         </div>
@@ -584,7 +584,7 @@ watch(subjectId, () => void load())
                             <v-btn
                               v-bind="menuProps"
                               :aria-label="`${systemLabel(mapping.system)} target actions`"
-                              :data-testid="`cohort-subject-target-menu-${mapping.system.toLowerCase()}`"
+                              :data-testid="`cohort-detail-target-menu-${mapping.system.toLowerCase()}`"
                               icon="mdi-dots-vertical"
                               size="small"
                               variant="text"
@@ -595,31 +595,31 @@ watch(subjectId, () => void load())
                             min-width="220"
                           >
                             <v-list-item
-                              :data-testid="`cohort-subject-reconcile-${mapping.system.toLowerCase()}`"
+                              :data-testid="`cohort-detail-reconcile-${mapping.system.toLowerCase()}`"
                               :disabled="!mapping.externalId || reconciling != null"
                               prepend-icon="mdi-sync"
                               title="Reconcile now"
-                              @click="reconcileTarget(mapping.cohortId)"
+                              @click="reconcileTarget(mapping.targetId)"
                             />
                             <v-list-item
-                              :data-testid="`cohort-subject-inbound-reconcile-${mapping.system.toLowerCase()}`"
+                              :data-testid="`cohort-detail-inbound-reconcile-${mapping.system.toLowerCase()}`"
                               :disabled="!mapping.externalId"
                               prepend-icon="mdi-import"
                               title="Adopt"
-                              @click="openInboundReconcile(mapping.cohortId)"
+                              @click="openInboundReconcile(mapping.targetId)"
                             />
                             <v-list-item
-                              :data-testid="`cohort-subject-enforce-${mapping.system.toLowerCase()}`"
+                              :data-testid="`cohort-detail-enforce-${mapping.system.toLowerCase()}`"
                               :disabled="!mapping.externalId"
                               prepend-icon="mdi-shield-check-outline"
                               :title="mapping.enforced ? 'Stop enforcing' : 'Enforce'"
                               @click="toggleEnforced(mapping)"
                             />
                             <v-list-item
-                              :data-testid="`cohort-subject-switch-target-${mapping.system.toLowerCase()}`"
+                              :data-testid="`cohort-detail-switch-target-${mapping.system.toLowerCase()}`"
                               prepend-icon="mdi-swap-horizontal"
                               title="Switch target"
-                              @click="openSwitchTarget(mapping.cohortId, mapping.system)"
+                              @click="openSwitchTarget(mapping.targetId, mapping.system)"
                             />
                           </v-list>
                         </v-menu>
@@ -629,7 +629,7 @@ watch(subjectId, () => void load())
                 </v-table>
               </info-box>
 
-              <div data-testid="cohort-subject-members">
+              <div data-testid="cohort-detail-members">
                 <p
                   v-if="allRows.length === 0"
                   class="text-body-2 text-medium-emphasis mb-0"
@@ -686,7 +686,7 @@ watch(subjectId, () => void load())
 
                   <v-table
                     class="manager-table"
-                    data-testid="cohort-subject-member-list"
+                    data-testid="cohort-detail-member-list"
                     density="compact"
                   >
                     <thead>
@@ -717,16 +717,16 @@ watch(subjectId, () => void load())
                     <tbody>
                       <tr
                         v-for="member in sortedMembers"
-                        :key="member.cohortMemberId"
-                        :class="{'subject-member--deleted': member.isUserDeleted}"
-                        :data-testid="`cohort-subject-member-${member.cohortMemberId}`"
+                        :key="member.targetMemberId"
+                        :class="{'cohort-member--deleted': member.isUserDeleted}"
+                        :data-testid="`cohort-detail-member-${member.targetMemberId}`"
                       >
                         <td>
                           <v-checkbox-btn
                             :aria-label="`Select ${memberName(member)}`"
-                            :data-testid="`cohort-subject-member-select-${member.cohortMemberId}`"
+                            :data-testid="`cohort-detail-member-select-${member.targetMemberId}`"
                             density="compact"
-                            :model-value="drift.selection.value.has(member.cohortMemberId)"
+                            :model-value="drift.selection.value.has(member.targetMemberId)"
                             @update:model-value="drift.toggle(member)"
                           />
                         </td>
@@ -749,7 +749,7 @@ watch(subjectId, () => void load())
                         <td class="text-medium-emphasis">
                           {{ isMember(member) ? formatJoinedAt(member.joinedAt) : "—" }}
                         </td>
-                        <td :data-testid="`cohort-subject-member-sync-${member.cohortMemberId}`">
+                        <td :data-testid="`cohort-detail-member-sync-${member.targetMemberId}`">
                           <!-- Only the exceptions are chipped: a table of healthy rows spends
                              its colour on nothing, and the faults stop standing out. -->
                           <v-chip
@@ -773,7 +773,7 @@ watch(subjectId, () => void load())
                               <v-btn
                                 v-bind="menuProps"
                                 aria-label="Row actions"
-                                :data-testid="`cohort-subject-member-menu-${member.cohortMemberId}`"
+                                :data-testid="`cohort-detail-member-menu-${member.targetMemberId}`"
                                 :disabled="!hasRowActions(member) || !!triggering"
                                 icon="mdi-dots-vertical"
                                 size="small"
@@ -786,21 +786,21 @@ watch(subjectId, () => void load())
                             >
                               <v-list-item
                                 v-if="canReevaluate(member)"
-                                :data-testid="`cohort-subject-member-reeval-${member.userId}`"
+                                :data-testid="`cohort-detail-member-reeval-${member.userId}`"
                                 prepend-icon="mdi-refresh"
                                 title="Re-evaluate"
                                 @click="reevaluateMember(member.userId!)"
                               />
                               <v-list-item
                                 v-if="drift.canResolve('push', member)"
-                                :data-testid="`cohort-subject-member-push-${member.cohortMemberId}`"
+                                :data-testid="`cohort-detail-member-push-${member.targetMemberId}`"
                                 prepend-icon="mdi-upload"
                                 title="Push to the target"
                                 @click="drift.prepare('push', [member])"
                               />
                               <v-list-item
                                 v-if="drift.canResolve('link', member)"
-                                :data-testid="`cohort-subject-member-link-${member.cohortMemberId}`"
+                                :data-testid="`cohort-detail-member-link-${member.targetMemberId}`"
                                 prepend-icon="mdi-account-arrow-left"
                                 title="Link to a user"
                                 @click="openLinkUser(member)"
@@ -808,7 +808,7 @@ watch(subjectId, () => void load())
                               <v-list-item
                                 v-if="drift.canResolve('remove', member)"
                                 base-color="error"
-                                :data-testid="`cohort-subject-member-remove-${member.cohortMemberId}`"
+                                :data-testid="`cohort-detail-member-remove-${member.targetMemberId}`"
                                 prepend-icon="mdi-close-circle-outline"
                                 :title="`Remove from ${memberSystemLabel(member)}`"
                                 @click="drift.prepare('remove', [member])"
@@ -823,17 +823,17 @@ watch(subjectId, () => void load())
               </div>
 
               <info-box
-                v-if="subject.resolutions.length > 0"
+                v-if="cohort.resolutions.length > 0"
                 expandable
-                :count="subject.resolutions.length"
+                :count="cohort.resolutions.length"
                 label="Resolved"
-                testid="cohort-subject-resolutions"
+                testid="cohort-detail-resolutions"
               >
                 <v-list density="compact">
                   <v-list-item
-                    v-for="(resolution, index) in subject.resolutions"
+                    v-for="(resolution, index) in cohort.resolutions"
                     :key="index"
-                    :data-testid="`cohort-subject-resolution-${index}`"
+                    :data-testid="`cohort-detail-resolution-${index}`"
                     :subtitle="`${resolution.resolvedByName ?? 'The site'} · ${formatJoinedAt(resolution.resolvedAt)}`"
                     :title="`${resolution.personName ?? 'Someone'} ${RESOLUTION_VERBS[resolution.action]} ${systemLabel(resolution.system)}`"
                   />
@@ -849,11 +849,11 @@ watch(subjectId, () => void load())
         />
 
         <target-picker-modal
-          v-if="subjectId != null"
+          v-if="cohortId != null"
           v-model="pickerOpen"
-          :cohort-id="pickerCohortId"
+          :target-id="pickerTargetId"
           :mode="pickerMode"
-          :subject-id="subjectId"
+          :cohort-id="cohortId"
           :system="pickerSystem"
           @saved="onTargetSaved"
         />
@@ -897,7 +897,7 @@ watch(subjectId, () => void load())
               </v-btn>
               <v-btn
                 color="primary"
-                data-testid="cohort-subject-link-confirm"
+                data-testid="cohort-detail-link-confirm"
                 :disabled="linkUserId == null || linkSubmitting"
                 :loading="linkSubmitting"
                 variant="flat"
@@ -923,11 +923,11 @@ watch(subjectId, () => void load())
               <v-list density="compact">
                 <template
                   v-for="group in drift.plan.value.groups"
-                  :key="group.cohortId"
+                  :key="group.targetId"
                 >
                   <v-list-item
                     v-for="person in group.people"
-                    :key="person.cohortMemberId"
+                    :key="person.targetMemberId"
                     :subtitle="drift.plan.value.action === 'link' ? proposalFor(person) : undefined"
                     :title="memberName(person)"
                   />
@@ -956,10 +956,10 @@ watch(subjectId, () => void load())
         </v-dialog>
 
         <inbound-reconcile-modal
-          v-if="subjectId != null && inboundCohortId != null"
+          v-if="cohortId != null && inboundTargetId != null"
           v-model="inboundOpen"
-          :cohort-id="inboundCohortId"
-          :subject-id="subjectId"
+          :target-id="inboundTargetId"
+          :cohort-id="cohortId"
           @applied="onInboundApplied"
         />
       </div>
@@ -968,12 +968,12 @@ watch(subjectId, () => void load())
 </template>
 
 <style lang="scss" scoped>
-.subject-page {
+.cohort-page {
   max-width: 980px;
 }
 
 // The heading the badge hangs off, sized like the other managers' headings.
-.subject-label {
+.cohort-label {
   margin: 0;
   font-size: 22px;
   font-weight: 600;
@@ -1012,8 +1012,8 @@ watch(subjectId, () => void load())
   // What is left may wrap, and sits in tighter gutters. Vuetify keeps a header on one line and
   // pads for a desktop, either of which is enough on its own to push the four remaining
   // columns past the width of a phone.
-  [data-testid="cohort-subject-target-list"] th,
-  [data-testid="cohort-subject-target-list"] td {
+  [data-testid="cohort-detail-target-list"] th,
+  [data-testid="cohort-detail-target-list"] td {
     padding-inline: 8px;
     white-space: normal;
   }
@@ -1022,14 +1022,14 @@ watch(subjectId, () => void load())
 // The boxes stack with a gap rather than each carrying its own card and margin.
 // The definition reads as one line above the boxes: it is what the cohort *is*, not a
 // section of it.
-.subject-definition {
+.cohort-definition {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 10px;
 }
 
-.subject-definition__label {
+.cohort-definition__label {
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -1037,12 +1037,12 @@ watch(subjectId, () => void load())
   color: rgba(var(--v-theme-on-surface), 0.7);
 }
 
-.subject-definition__key {
+.cohort-definition__key {
   font-size: 0.875rem;
   opacity: 0.9;
 }
 
-.subject-boxes {
+.cohort-boxes {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1078,11 +1078,11 @@ watch(subjectId, () => void load())
 
 // The members table is the page's own content, so it sits on the card; the two boxes above it
 // are asides and keep their tint.
-.subject-boxes > [data-testid="cohort-subject-members"] {
+.cohort-boxes > [data-testid="cohort-detail-members"] {
   margin-top: 4px;
 }
 
-.subject-member--deleted {
+.cohort-member--deleted {
   opacity: 0.6;
 }
 </style>

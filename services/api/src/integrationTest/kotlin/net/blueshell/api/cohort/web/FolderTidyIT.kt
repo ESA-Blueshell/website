@@ -1,11 +1,11 @@
 package net.blueshell.api.cohort.web
 
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
@@ -25,10 +25,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest
 class FolderTidyIT : UserTestSupport() {
     @Autowired
-    private lateinit var cohorts: CohortRepository
+    private lateinit var targets: TargetRepository
 
     @Autowired
-    private lateinit var subjects: CohortSubjectRepository
+    private lateinit var cohorts: CohortRepository
 
     @Autowired
     private lateinit var contactListAdapters: List<ContactListAdapter>
@@ -40,8 +40,8 @@ class FolderTidyIT : UserTestSupport() {
         val admin = createUserWithRole(Role.ADMIN)
         val listId = contactLists.createList("Tidy me", "Old stuff").toString()
         val loose = contactLists.createList("Leave me", "Old stuff").toString()
-        val subject = subjects.save(CohortSubject(type = CohortSubjectType.PERIOD_ACTIVE_MEMBERS, label = "Tidy me"))
-        cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Tidy me", subjectId = subject.id, externalId = listId))
+        val cohort = cohorts.save(Cohort(type = CohortType.PERIOD_ACTIVE_MEMBERS, label = "Tidy me"))
+        targets.save(Target(TargetSystem.BREVO.name, TargetKind.LIST, "Tidy me", cohortId = cohort.id, externalId = listId))
 
         mvc
             .perform(get("/management/cohort-targets/{system}/tidy", "BREVO").with(signedIn(admin)))

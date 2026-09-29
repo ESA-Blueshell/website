@@ -4,18 +4,19 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortKind
-import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortMemberRepository
+import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.DriftResolution
 import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.cohort.persistence.DriftResolutionRepository
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetMember
+import net.blueshell.api.cohort.persistence.TargetMemberRepository
 import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
-import net.blueshell.api.shared.enums.CohortMemberState
+import net.blueshell.api.cohort.persistence.TargetRepository
+import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
@@ -29,12 +30,12 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Optional
 
-class CohortSubjectQueryServiceTest {
-    private val subjects: CohortSubjectRepository = mockk()
+class CohortQueryServiceTest {
     private val cohorts: CohortRepository = mockk()
-    private val cohortMembers: CohortMemberRepository = mockk()
+    private val targets: TargetRepository = mockk()
+    private val targetMembers: TargetMemberRepository = mockk()
     private val users: UserService = mockk()
-    private val targetIds: CohortTargetIds = mockk()
+    private val targetExternalIds: CohortTargetIds = mockk()
     private val externalIds: ExternalIdMappingService = mockk()
     private val definitions: CohortDefinitionRegistry = mockk()
     private val brevo: TargetStrategy =
@@ -43,19 +44,19 @@ class CohortSubjectQueryServiceTest {
             every { it.descriptor } returns
                 TargetDescriptor(
                     system = TargetSystem.BREVO,
-                    kind = CohortKind.LIST,
+                    kind = TargetKind.LIST,
                 )
         }
     private val strategies: TargetStrategies = TargetStrategies(listOf(brevo))
     private val runs: TargetReconcileRunRepository = mockk(relaxed = true)
     private val resolutions: DriftResolutionRepository = mockk(relaxed = true)
     private val service =
-        CohortSubjectQueryService(
-            subjects,
+        CohortQueryService(
             cohorts,
-            cohortMembers,
+            targets,
+            targetMembers,
             users,
-            targetIds,
+            targetExternalIds,
             externalIds,
             definitions,
             strategies,
@@ -65,29 +66,29 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `summaries returns memberCount and mappingCount from count methods not findAll`() {
-        val subject = subject(1L)
-        every { subjects.findAll() } returns listOf(subject)
-        every { cohortMembers.countBySubjectIdAndUserIdIsNotNull(1L) } returns 4L
-        every { cohorts.countBySubjectId(1L) } returns 2L
+        val cohort = cohort(1L)
+        every { cohorts.findAll() } returns listOf(cohort)
+        every { targetMembers.countByCohortIdAndUserIdIsNotNull(1L) } returns 4L
+        every { targets.countByCohortId(1L) } returns 2L
 
         val result = service.summaries()
 
         assertThat(result).hasSize(1)
         assertThat(result[0].memberCount).isEqualTo(4)
         assertThat(result[0].mappingCount).isEqualTo(2)
-        verify(exactly = 1) { cohortMembers.countBySubjectIdAndUserIdIsNotNull(1L) }
-        verify(exactly = 1) { cohorts.countBySubjectId(1L) }
-        verify(exactly = 0) { cohortMembers.findAllBySubjectIdAndUserIdIsNotNull(any()) }
-        verify(exactly = 0) { cohorts.findAllBySubjectId(any()) }
+        verify(exactly = 1) { targetMembers.countByCohortIdAndUserIdIsNotNull(1L) }
+        verify(exactly = 1) { targets.countByCohortId(1L) }
+        verify(exactly = 0) { targetMembers.findAllByCohortIdAndUserIdIsNotNull(any()) }
+        verify(exactly = 0) { targets.findAllByCohortId(any()) }
     }
 
     @Test
     fun `summaries excludes stranger rows (userId == null) from memberCount`() {
-        val subject = subject(2L)
-        every { subjects.findAll() } returns listOf(subject)
+        val cohort = cohort(2L)
+        every { cohorts.findAll() } returns listOf(cohort)
         // 1 desired member; stranger rows (null userId) are excluded by the count predicate
-        every { cohortMembers.countBySubjectIdAndUserIdIsNotNull(2L) } returns 1L
-        every { cohorts.countBySubjectId(2L) } returns 3L
+        every { targetMembers.countByCohortIdAndUserIdIsNotNull(2L) } returns 1L
+        every { targets.countByCohortId(2L) } returns 3L
 
         val result = service.summaries()
 
@@ -96,31 +97,49 @@ class CohortSubjectQueryServiceTest {
     }
 
     @Test
-    fun `summaries returns empty list when no subjects exist`() {
-        every { subjects.findAll() } returns emptyList()
+    fun `targets count our people on each, and a summary browses under its type's category`() {
+        every { targets.findAll() } returns listOf(target(5L))
+        every { targetMembers.countByTargetIdAndUserIdIsNotNull(5L) } returns 3L
+        every { cohorts.findAll() } returns listOf(cohort(6L))
+        every { targetMembers.countByCohortIdAndUserIdIsNotNull(6L) } returns 0L
+        every { targets.countByCohortId(6L) } returns 1L
+
+        assertThat(service.targets().single().memberCount).isEqualTo(3)
+        assertThat(
+            service
+                .targets()
+                .single()
+                .target.id,
+        ).isEqualTo(5L)
+        assertThat(service.summaries().single().category).isEqualTo(CohortCategory.MEMBERS)
+    }
+
+    @Test
+    fun `summaries returns empty list when no cohorts exist`() {
+        every { cohorts.findAll() } returns emptyList()
 
         val result = service.summaries()
 
         assertThat(result).isEmpty()
-        verify(exactly = 0) { cohortMembers.countBySubjectIdAndUserIdIsNotNull(any()) }
-        verify(exactly = 0) { cohorts.countBySubjectId(any()) }
+        verify(exactly = 0) { targetMembers.countByCohortIdAndUserIdIsNotNull(any()) }
+        verify(exactly = 0) { targets.countByCohortId(any()) }
     }
 
     @Test
-    fun `summaries aggregates counts across multiple subjects`() {
-        val subjectA = subject(10L)
-        val subjectB = subject(11L)
-        every { subjects.findAll() } returns listOf(subjectA, subjectB)
-        every { cohortMembers.countBySubjectIdAndUserIdIsNotNull(10L) } returns 7L
-        every { cohortMembers.countBySubjectIdAndUserIdIsNotNull(11L) } returns 0L
-        every { cohorts.countBySubjectId(10L) } returns 1L
-        every { cohorts.countBySubjectId(11L) } returns 2L
+    fun `summaries aggregates counts across multiple cohorts`() {
+        val cohortA = cohort(10L)
+        val cohortB = cohort(11L)
+        every { cohorts.findAll() } returns listOf(cohortA, cohortB)
+        every { targetMembers.countByCohortIdAndUserIdIsNotNull(10L) } returns 7L
+        every { targetMembers.countByCohortIdAndUserIdIsNotNull(11L) } returns 0L
+        every { targets.countByCohortId(10L) } returns 1L
+        every { targets.countByCohortId(11L) } returns 2L
 
         val result = service.summaries()
 
         assertThat(result).hasSize(2)
-        val a = result.first { it.subject.id == 10L }
-        val b = result.first { it.subject.id == 11L }
+        val a = result.first { it.cohort.id == 10L }
+        val b = result.first { it.cohort.id == 11L }
         assertThat(a.memberCount).isEqualTo(7)
         assertThat(a.mappingCount).isEqualTo(1)
         assertThat(b.memberCount).isEqualTo(0)
@@ -134,12 +153,12 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail reports the state each row is in`() {
-        val subject = subject(20L)
-        val cohort = cohort(200L)
-        val desired = member(cohort, subject, userId = 5L)
-        val synced = member(cohort, subject, userId = 6L, syncedAt = NOW)
-        val verified = member(cohort, subject, userId = 7L, syncedAt = NOW, verifiedAt = NOW)
-        stubDetail(subject, cohort, listOf(desired, synced, verified))
+        val cohort = cohort(20L)
+        val target = target(200L)
+        val desired = member(target, cohort, userId = 5L)
+        val synced = member(target, cohort, userId = 6L, syncedAt = NOW)
+        val verified = member(target, cohort, userId = 7L, syncedAt = NOW, verifiedAt = NOW)
+        stubDetail(cohort, target, listOf(desired, synced, verified))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
         every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
@@ -149,20 +168,20 @@ class CohortSubjectQueryServiceTest {
         // The page reads whether a row is in step with the target off the row itself, rather
         // than from a second call that classifies the same rows again.
         assertThat(detail.members.map { it.state }).containsExactlyInAnyOrder(
-            CohortMemberState.DESIRED,
-            CohortMemberState.SYNCED,
-            CohortMemberState.VERIFIED,
+            TargetMemberState.DESIRED,
+            TargetMemberState.SYNCED,
+            TargetMemberState.VERIFIED,
         )
         assertThat(detail.members.map { it.system }.distinct()).containsExactly(TargetSystem.BREVO)
     }
 
     @Test
     fun `detail returns rows present externally with no local account`() {
-        val subject = subject(24L)
-        val cohort = cohort(240L)
-        val member = member(cohort, subject, userId = 5L)
-        val stranger = member(cohort, subject, userId = null, externalUserId = "ext-9", verifiedAt = NOW, label = "someone@example.com")
-        stubDetail(subject, cohort, listOf(member, stranger))
+        val cohort = cohort(24L)
+        val target = target(240L)
+        val member = member(target, cohort, userId = 5L)
+        val stranger = member(target, cohort, userId = null, externalUserId = "ext-9", verifiedAt = NOW, label = "someone@example.com")
+        stubDetail(cohort, target, listOf(member, stranger))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
         every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
@@ -173,17 +192,17 @@ class CohortSubjectQueryServiceTest {
         // that makes them worth showing.
         assertThat(rows).hasSize(2)
         val strangerRow = rows.single { it.member.userId == null }
-        assertThat(strangerRow.state).isEqualTo(CohortMemberState.STRANGER)
+        assertThat(strangerRow.state).isEqualTo(TargetMemberState.STRANGER)
         assertThat(strangerRow.member.externalUserId).isEqualTo("ext-9")
         assertThat(strangerRow.member.label).isEqualTo("someone@example.com")
     }
 
     @Test
     fun `detail names the account behind a stranger's external id`() {
-        val subject = subject(21L)
-        val cohort = cohort(210L)
-        val stranger = member(cohort, subject, userId = null, externalUserId = "ext-42", verifiedAt = NOW)
-        stubDetail(subject, cohort, listOf(stranger))
+        val cohort = cohort(21L)
+        val target = target(210L)
+        val stranger = member(target, cohort, userId = null, externalUserId = "ext-42", verifiedAt = NOW)
+        stubDetail(cohort, target, listOf(stranger))
         every { externalIds.findByExternalIds(any(), "BREVO", setOf("ext-42")) } returns
             listOf(ExternalIdMapping(aggregateType = "USER", aggregateId = 77L, system = "BREVO", externalId = "ext-42"))
         every { users.findAllByIds(listOf(77L)) } returns listOf(user(77L, "Emma Dokter"))
@@ -198,9 +217,9 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail leaves a stranger nameless when no account claims its external id`() {
-        val subject = subject(25L)
-        val cohort = cohort(250L)
-        stubDetail(subject, cohort, listOf(member(cohort, subject, userId = null, externalUserId = "ext-unknown", verifiedAt = NOW)))
+        val cohort = cohort(25L)
+        val target = target(250L)
+        stubDetail(cohort, target, listOf(member(target, cohort, userId = null, externalUserId = "ext-unknown", verifiedAt = NOW)))
         every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
@@ -213,11 +232,11 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail reports a mapping's newest confirmation as when it was last reconciled`() {
-        val subject = subject(22L)
-        val cohort = cohort(220L)
-        val older = member(cohort, subject, userId = 1L, syncedAt = NOW, verifiedAt = NOW.minusDays(3))
-        val newest = member(cohort, subject, userId = 2L, syncedAt = NOW, verifiedAt = NOW)
-        stubDetail(subject, cohort, listOf(older, newest))
+        val cohort = cohort(22L)
+        val target = target(220L)
+        val older = member(target, cohort, userId = 1L, syncedAt = NOW, verifiedAt = NOW.minusDays(3))
+        val newest = member(target, cohort, userId = 2L, syncedAt = NOW, verifiedAt = NOW)
+        stubDetail(cohort, target, listOf(older, newest))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
         every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
@@ -229,9 +248,9 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail places a mapping under its system only, never the folder its row was created for`() {
-        val subject = subject(26L)
-        val cohort = cohort(260L).apply { folder = "Committees" }
-        stubDetail(subject, cohort, emptyList())
+        val cohort = cohort(26L)
+        val target = target(260L).apply { folder = "Committees" }
+        stubDetail(cohort, target, emptyList())
         stubNoUsers()
 
         val mapping = service.detail(26L).mappings.single()
@@ -242,9 +261,9 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail places an unfiled mapping directly under its system`() {
-        val subject = subject(27L)
-        val cohort = cohort(270L).apply { folder = null }
-        stubDetail(subject, cohort, emptyList())
+        val cohort = cohort(27L)
+        val target = target(270L).apply { folder = null }
+        stubDetail(cohort, target, emptyList())
         stubNoUsers()
 
         // No folder is not an anonymous folder: the path is one step, not two.
@@ -259,9 +278,9 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail ignores a folder recorded as blank`() {
-        val subject = subject(28L)
-        val cohort = cohort(280L).apply { folder = "   " }
-        stubDetail(subject, cohort, emptyList())
+        val cohort = cohort(28L)
+        val target = target(280L).apply { folder = "   " }
+        stubDetail(cohort, target, emptyList())
         stubNoUsers()
 
         assertThat(
@@ -275,11 +294,11 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail still names a system that has no strategy registered`() {
-        val subject = subject(29L)
-        val cohort =
-            Cohort(system = "GOOGLE_CALENDAR", kind = CohortKind.LIST, label = "Gone")
+        val cohort = cohort(29L)
+        val target =
+            Target(system = "GOOGLE_CALENDAR", kind = TargetKind.LIST, label = "Gone")
                 .apply { id = 290L }
-        stubDetail(subject, cohort, emptyList())
+        stubDetail(cohort, target, emptyList())
         stubNoUsers()
 
         // A cohort can outlive the adapter that made it. Without a strategy there is no
@@ -296,36 +315,36 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail leaves out a cohort pointing at a system this build does not have`() {
-        val subject = subject(30L)
-        val known = cohort(300L)
+        val cohort = cohort(30L)
+        val known = target(300L)
         val unknown =
-            Cohort(system = "DISCORD", kind = CohortKind.LIST, label = "Gone")
+            Target(system = "DISCORD", kind = TargetKind.LIST, label = "Gone")
                 .apply { id = 301L }
-        every { subjects.findById(30L) } returns Optional.of(subject)
-        every { cohorts.findAllBySubjectId(30L) } returns listOf(known, unknown)
-        every { targetIds.find(known) } returns "external-1"
-        every { cohortMembers.findAllBySubjectId(30L) } returns emptyList()
-        every { cohortMembers.findAllByCohortId(any()) } returns emptyList()
+        every { cohorts.findById(30L) } returns Optional.of(cohort)
+        every { targets.findAllByCohortId(30L) } returns listOf(known, unknown)
+        every { targetExternalIds.find(known) } returns "external-1"
+        every { targetMembers.findAllByCohortId(30L) } returns emptyList()
+        every { targetMembers.findAllByTargetId(any()) } returns emptyList()
         stubNoUsers()
 
         val detail = service.detail(30L)
 
         // Nothing on that row would work without its system, and one dead row is not worth
         // the whole page.
-        assertThat(detail.mappings).extracting<Long> { it.cohort.id }.containsExactly(300L)
+        assertThat(detail.mappings).extracting<Long> { it.target.id }.containsExactly(300L)
     }
 
     @Test
     fun `detail still lists the members of a cohort whose system is gone`() {
-        val subject = subject(31L)
+        val cohort = cohort(31L)
         val unknown =
-            Cohort(system = "DISCORD", kind = CohortKind.LIST, label = "Gone")
+            Target(system = "DISCORD", kind = TargetKind.LIST, label = "Gone")
                 .apply { id = 310L }
-        val row = member(unknown, subject, userId = 1L)
-        every { subjects.findById(31L) } returns Optional.of(subject)
-        every { cohorts.findAllBySubjectId(31L) } returns listOf(unknown)
-        every { cohortMembers.findAllBySubjectId(31L) } returns listOf(row)
-        every { cohortMembers.findAllByCohortId(any()) } returns listOf(row)
+        val row = member(unknown, cohort, userId = 1L)
+        every { cohorts.findById(31L) } returns Optional.of(cohort)
+        every { targets.findAllByCohortId(31L) } returns listOf(unknown)
+        every { targetMembers.findAllByCohortId(31L) } returns listOf(row)
+        every { targetMembers.findAllByTargetId(any()) } returns listOf(row)
         every { users.findAllByIds(any()) } returns listOf(user(1L, "Emma Dokter"))
         every { users.isSoftDeleted(any()) } returns false
         every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
@@ -341,9 +360,9 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail leaves last reconciled null for a cohort never confirmed`() {
-        val subject = subject(23L)
-        val cohort = cohort(230L)
-        stubDetail(subject, cohort, listOf(member(cohort, subject, userId = 1L)))
+        val cohort = cohort(23L)
+        val target = target(230L)
+        stubDetail(cohort, target, listOf(member(target, cohort, userId = 1L)))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
         every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
@@ -359,11 +378,11 @@ class CohortSubjectQueryServiceTest {
 
     @Test
     fun `detail names who each recent resolution concerned and who made it`() {
-        val subject = subject(26L)
-        val cohort = cohort(260L)
-        stubDetail(subject, cohort, emptyList())
+        val cohort = cohort(26L)
+        val target = target(260L)
+        stubDetail(cohort, target, emptyList())
         val at = Instant.parse("2026-09-29T20:00:00Z")
-        every { resolutions.findTop20ByCohortIdInOrderByResolvedAtDesc(setOf(260L)) } returns
+        every { resolutions.findTop20ByTargetIdInOrderByResolvedAtDesc(setOf(260L)) } returns
             listOf(
                 DriftResolution(260L, DriftResolutionAction.PUSH, 5L, null, null, 9L, at),
                 DriftResolution(260L, DriftResolutionAction.REMOVE, null, "ext-1", "c@example.com", null, at),
@@ -386,35 +405,34 @@ class CohortSubjectQueryServiceTest {
     }
 
     private fun stubDetail(
-        subject: CohortSubject,
         cohort: Cohort,
-        rows: List<CohortMember>,
+        target: Target,
+        rows: List<TargetMember>,
     ) {
-        every { subjects.findById(subject.id!!) } returns Optional.of(subject)
-        every { cohorts.findAllBySubjectId(subject.id!!) } returns listOf(cohort)
-        every { targetIds.find(cohort) } returns "external-1"
-        every { cohortMembers.findAllBySubjectId(subject.id!!) } returns rows
-        every { cohortMembers.findAllByCohortId(cohort.id!!) } returns rows
+        every { cohorts.findById(cohort.id!!) } returns Optional.of(cohort)
+        every { targets.findAllByCohortId(cohort.id!!) } returns listOf(target)
+        every { targetExternalIds.find(target) } returns "external-1"
+        every { targetMembers.findAllByCohortId(cohort.id!!) } returns rows
+        every { targetMembers.findAllByTargetId(target.id!!) } returns rows
     }
 
-    private fun subject(id: Long): CohortSubject =
-        CohortSubject(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "Test Subject $id").apply { this.id = id }
+    private fun cohort(id: Long): Cohort = Cohort(CohortType.NEWSLETTER_SUBSCRIBERS, "Test cohort $id").apply { this.id = id }
 
-    private fun cohort(id: Long): Cohort = Cohort(system = "BREVO", kind = CohortKind.LIST, label = "Cohort $id").apply { this.id = id }
+    private fun target(id: Long): Target = Target(system = "BREVO", kind = TargetKind.LIST, label = "Cohort $id").apply { this.id = id }
 
     private fun member(
+        target: Target,
         cohort: Cohort,
-        subject: CohortSubject,
         userId: Long?,
         externalUserId: String? = null,
         syncedAt: LocalDateTime? = null,
         verifiedAt: LocalDateTime? = null,
         label: String? = null,
-    ): CohortMember =
-        CohortMember(
-            cohort = cohort,
+    ): TargetMember =
+        TargetMember(
+            target = target,
             userId = userId,
-            subject = subject,
+            cohort = cohort,
             externalUserId = externalUserId,
             syncedAt = syncedAt,
             verifiedAt = verifiedAt,

@@ -1,6 +1,6 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import org.slf4j.LoggerFactory
@@ -16,15 +16,15 @@ import org.springframework.stereotype.Component
  */
 @Component
 class CohortVerificationScheduler(
-    private val cohorts: CohortRepository,
-    private val targetIds: CohortTargetIds,
+    private val targets: TargetRepository,
+    private val targetExternalIds: CohortTargetIds,
     private val jobs: JobQueue,
 ) {
     @Scheduled(cron = "\${cohort.verify-cron:0 0 3 * * *}")
-    fun verifyAllCohorts() {
+    fun verifyAllTargets() {
         val mapped =
-            cohorts.findAll().filter { cohort ->
-                targetIds.find(cohort) != null
+            targets.findAll().filter { target ->
+                targetExternalIds.find(target) != null
             }
         log.info("Scheduling reconcile for {} externally-mapped cohorts", mapped.size)
         mapped.forEach { jobs.reconcileTarget(it.id!!, JobTrigger.SCHEDULED_RUN) }

@@ -1,18 +1,18 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortMemberRepository
+import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectCategory
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.DriftResolution
 import net.blueshell.api.cohort.persistence.DriftResolutionRepository
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetMember
+import net.blueshell.api.cohort.persistence.TargetMemberRepository
 import net.blueshell.api.cohort.persistence.TargetReconcileRun
 import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.cohort.persistence.state
-import net.blueshell.api.shared.enums.CohortMemberState
+import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
@@ -26,19 +26,14 @@ import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.time.ZoneOffset
 
-/**
- * Read-side service for the new admin Subjects dashboard. Mirrors the
- * existing [CohortQueryService] but operates on [CohortSubject]s — the
- * logical entities the engine syncs — and exposes the per-system
- * [Cohort] rows as nested "mappings" on each subject.
- */
+/** What the cohort pages read: the cohorts, each with the targets that mirror it and its ledger rows. */
 @Service
-class CohortSubjectQueryService(
-    private val subjects: CohortSubjectRepository,
+class CohortQueryService(
     private val cohorts: CohortRepository,
-    private val cohortMembers: CohortMemberRepository,
+    private val targets: TargetRepository,
+    private val targetMembers: TargetMemberRepository,
     private val users: UserService,
-    private val targetIds: CohortTargetIds,
+    private val targetExternalIds: CohortTargetIds,
     private val externalIds: ExternalIdMappingService,
     private val definitions: CohortDefinitionRegistry,
     private val strategies: TargetStrategies,
@@ -46,22 +41,22 @@ class CohortSubjectQueryService(
     private val resolutions: DriftResolutionRepository,
 ) {
     @Transactional(readOnly = true)
-    fun summaries(): List<CohortSubjectSummary> {
-        val allSubjects = subjects.findAll()
-        if (allSubjects.isEmpty()) return emptyList()
+    fun summaries(): List<CohortSummary> {
+        val allCohorts = cohorts.findAll()
+        if (allCohorts.isEmpty()) return emptyList()
 
         // Batch-loading counts + cohort labels would be nicer; for ~50
-        // subjects the per-row queries are still cheap and readable.
-        return allSubjects
-            .map { subject ->
-                val subjectId = subject.id!!
-                CohortSubjectSummary(
-                    subject = subject,
-                    memberCount = cohortMembers.countBySubjectIdAndUserIdIsNotNull(subjectId).toInt(),
-                    mappingCount = cohorts.countBySubjectId(subjectId).toInt(),
+        // cohorts the per-row queries are still cheap and readable.
+        return allCohorts
+            .map { cohort ->
+                val cohortId = cohort.id!!
+                CohortSummary(
+                    cohort = cohort,
+                    memberCount = targetMembers.countByCohortIdAndUserIdIsNotNull(cohortId).toInt(),
+                    mappingCount = targets.countByCohortId(cohortId).toInt(),
                 )
             }.sortedWith(
-                compareBy({ it.subject.type.category() }, { it.subject.type.name }, { it.subject.label.lowercase() }),
+                compareBy({ it.cohort.type.category() }, { it.cohort.type.name }, { it.cohort.label.lowercase() }),
             )
     }
 
@@ -77,14 +72,14 @@ class CohortSubjectQueryService(
      * Grouped by system because an external id only means anything within one.
      */
     private fun resolveStrangerOwners(
-        members: List<CohortMember>,
-        systemByCohortId: Map<Long, TargetSystem>,
+        members: List<TargetMember>,
+        systemByTargetId: Map<Long, TargetSystem>,
     ): Map<String, Long> {
         val byExternalId = mutableMapOf<String, Long>()
         members
             .filter { it.userId == null }
             .mapNotNull { row ->
-                val system = systemByCohortId[row.cohort.id] ?: return@mapNotNull null
+                val system = systemByTargetId[row.target.id] ?: return@mapNotNull null
                 row.externalUserId?.let { system to it }
             }.groupBy({ it.first }, { it.second })
             .forEach { (system, externalUserIds) ->
@@ -100,74 +95,74 @@ class CohortSubjectQueryService(
     /** Every target with how many of our people it holds, for the pickers. */
     @Transactional(readOnly = true)
     fun targets(): List<TargetSummary> =
-        cohorts.findAll().map { cohort ->
+        targets.findAll().map { target ->
             TargetSummary(
-                cohort = cohort,
-                memberCount = cohortMembers.countByCohortIdAndUserIdIsNotNull(cohort.id!!).toInt(),
+                target = target,
+                memberCount = targetMembers.countByTargetIdAndUserIdIsNotNull(target.id!!).toInt(),
             )
         }
 
     @Transactional(readOnly = true)
     // Assembles one view out of six repositories; each block reads one of them.
     @Suppress("LongMethod")
-    fun detail(subjectId: Long): CohortSubjectDetail {
-        val subject =
-            subjects.findById(subjectId).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "Subject $subjectId not found")
+    fun detail(cohortId: Long): CohortDetail {
+        val cohort =
+            cohorts.findById(cohortId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
             }
         val mappings =
-            cohorts
-                .findAllBySubjectId(subjectId)
-                .mapNotNull { cohort ->
+            targets
+                .findAllByCohortId(cohortId)
+                .mapNotNull { target ->
                     // A cohort can outlive the system it points at. Nothing on its row would work
                     // without that system — reconciling, switching and importing all need its
                     // strategy — so the row is left out and said out loud rather than taking the
                     // whole page down with it.
-                    val system = targetSystemOrNull(cohort.system)
+                    val system = targetSystemOrNull(target.system)
                     if (system == null) {
                         log.warn(
-                            "[cohort] subject={} cohort={} points at '{}', which is not a system this build knows",
-                            subjectId,
-                            cohort.id,
-                            cohort.system,
+                            "[cohort] cohort={} target={} points at '{}', which is not a system this build knows",
+                            cohortId,
+                            target.id,
+                            target.system,
                         )
                         return@mapNotNull null
                     }
-                    CohortMappingRow(
-                        cohort = cohort,
-                        externalId = targetIds.find(cohort),
+                    CohortTargetRow(
+                        target = target,
+                        externalId = targetExternalIds.find(target),
                         // The newest confirmation across this cohort's rows is when it was last seen
                         // to agree with the external system.
                         lastReconciledAt =
-                            cohortMembers
-                                .findAllByCohortId(cohort.id!!)
+                            targetMembers
+                                .findAllByTargetId(target.id!!)
                                 .mapNotNull { it.verifiedAt }
                                 .maxOrNull()
                                 ?.toInstant(ZoneOffset.UTC),
                         // The system only: the folder is read from the system by the caller, outside
                         // this transaction, since a list moved in Brevo is somewhere its row cannot say.
-                        path = listOf(runCatching { strategies.descriptor(system).system.shownName }.getOrDefault(cohort.system)),
-                        runs = runs.findTop10ByCohortIdOrderByStartedAtDesc(cohort.id!!),
+                        path = listOf(runCatching { strategies.descriptor(system).system.shownName }.getOrDefault(target.system)),
+                        runs = runs.findTop10ByTargetIdOrderByStartedAtDesc(target.id!!),
                     )
-                }.sortedBy { it.cohort.system }
+                }.sortedBy { it.target.system }
 
         // Every ledger row, not only the ones with a user. A row present externally and not
         // desired locally has no userId by definition, and it is exactly the row somebody
         // opens this page to find.
-        val members = cohortMembers.findAllBySubjectId(subjectId)
+        val members = targetMembers.findAllByCohortId(cohortId)
         // Every row here came through the filter above, so every system named is one that
         // exists.
-        val systemByCohortId =
+        val systemByTargetId =
             mappings
                 .mapNotNull { row ->
-                    targetSystemOrNull(row.cohort.system)?.let { row.cohort.id!! to it }
+                    targetSystemOrNull(row.target.system)?.let { row.target.id!! to it }
                 }.toMap()
 
         // Those rows carry an external id and nothing else. The mapping table knows which
         // account that id belongs to, if any, which is what turns it into a name.
-        val ownerByExternalId = resolveStrangerOwners(members, systemByCohortId)
+        val ownerByExternalId = resolveStrangerOwners(members, systemByTargetId)
 
-        val recentResolutions = resolutions.findTop20ByCohortIdInOrderByResolvedAtDesc(systemByCohortId.keys)
+        val recentResolutions = resolutions.findTop20ByTargetIdInOrderByResolvedAtDesc(systemByTargetId.keys)
         val userIds =
             (
                 members.mapNotNull { it.userId } + ownerByExternalId.values +
@@ -180,18 +175,18 @@ class CohortSubjectQueryService(
                 .filter { users.isSoftDeleted(it) }
                 .toSet()
 
-        return CohortSubjectDetail(
-            subject = subject,
+        return CohortDetail(
+            cohort = cohort,
             mappings = mappings,
             members =
                 members
                     .map { member ->
                         val ownerId = member.userId ?: member.externalUserId?.let { ownerByExternalId[it] }
-                        CohortMemberRow(
+                        TargetMemberRow(
                             member = member,
                             user = ownerId?.let { userById[it] },
                             isUserDeleted = ownerId != null && userById[ownerId] == null && softDeletedIds.contains(ownerId),
-                            system = systemByCohortId[member.cohort.id],
+                            system = systemByTargetId[member.target.id],
                             state = member.state,
                             resolvedUserId = if (member.userId == null) ownerId else null,
                         )
@@ -201,15 +196,15 @@ class CohortSubjectQueryService(
                             { it.user?.fullName?.lowercase() ?: "~~~" },
                         ),
                     ),
-            definitionKey = subject.definitionKey,
+            definitionKey = cohort.definitionKey,
             // Derived rather than stored: a definition appearing or disappearing is a code
             // change, and a column recording it would be one deploy behind the truth.
-            orphaned = subject.definitionKey?.let { definitions.byKey(it) } == null,
+            orphaned = cohort.definitionKey?.let { definitions.byKey(it) } == null,
             resolutions =
                 recentResolutions.map { resolution ->
                     DriftResolutionRow(
                         resolution = resolution,
-                        system = systemByCohortId.getValue(resolution.cohortId),
+                        system = systemByTargetId.getValue(resolution.targetId),
                         personName = resolution.userId?.let { userById[it]?.fullName } ?: resolution.label,
                         resolvedByName = resolution.resolvedBy?.let { userById[it]?.fullName },
                     )
@@ -218,35 +213,35 @@ class CohortSubjectQueryService(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(CohortSubjectQueryService::class.java)
+        private val log = LoggerFactory.getLogger(CohortQueryService::class.java)
     }
 }
 
 /** A target and how many of our people it holds. */
 data class TargetSummary(
-    val cohort: Cohort,
+    val target: Target,
     val memberCount: Int,
 )
 
 /** Read-model projection for the dashboard's top-level list. */
-data class CohortSubjectSummary(
-    val subject: CohortSubject,
+data class CohortSummary(
+    val cohort: Cohort,
     val memberCount: Int,
     val mappingCount: Int,
 ) {
-    val category: CohortSubjectCategory get() = subject.type.category()
+    val category: CohortCategory get() = cohort.type.category()
 }
 
-/** Detail view: subject + its per-system mappings + the rule it carries + members. */
-data class CohortSubjectDetail(
-    val subject: CohortSubject,
-    val mappings: List<CohortMappingRow>,
-    val members: List<CohortMemberRow>,
+/** Detail view: cohort + its per-system mappings + the rule it carries + members. */
+data class CohortDetail(
+    val cohort: Cohort,
+    val mappings: List<CohortTargetRow>,
+    val members: List<TargetMemberRow>,
     /** Which definition in code produces this cohort; null once nothing does. */
     val definitionKey: String?,
     /** True when no definition produces this cohort any more — a disbanded committee, say. */
     val orphaned: Boolean,
-    /** The latest drift resolutions across the subject's targets, newest first. */
+    /** The latest drift resolutions across the cohort's targets, newest first. */
     val resolutions: List<DriftResolutionRow> = emptyList(),
 )
 
@@ -259,9 +254,9 @@ data class DriftResolutionRow(
     val resolvedByName: String?,
 )
 
-/** One per-system mapping under a subject, with its external id resolved. */
-data class CohortMappingRow(
-    val cohort: Cohort,
+/** One per-system mapping under a cohort, with its external id resolved. */
+data class CohortTargetRow(
+    val target: Target,
     val externalId: String?,
     /** Newest confirmation across the cohort's rows; null when it has never been confirmed. */
     val lastReconciledAt: Instant? = null,
@@ -278,20 +273,20 @@ data class CohortMappingRow(
  * historical stats — the admin UI renders these in a muted style with
  * a "Deleted" badge instead of the active user details.
  */
-data class CohortMemberRow(
-    val member: CohortMember,
+data class TargetMemberRow(
+    val member: TargetMember,
     val user: User?,
     val isUserDeleted: Boolean = false,
     /**
      * Which system's ledger this row belongs to. A row is per (cohort, user), and a cohort is
-     * per system, so a subject with two targets holds two rows for the same person.
+     * per system, so a cohort with two targets holds two rows for the same person.
      */
     val system: TargetSystem? = null,
     /**
      * The state the row is in. Defaulted so the older per-cohort projection, which does not
      * report it, is unaffected.
      */
-    val state: CohortMemberState? = null,
+    val state: TargetMemberState? = null,
     /**
      * For a row present externally but not desired locally: the account behind that external
      * id, once resolved. Null when nothing local matches it.

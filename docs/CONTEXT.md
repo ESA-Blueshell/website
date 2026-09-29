@@ -608,8 +608,7 @@ contribution period, everyone holding a seat on one committee. Nobody is added t
 by hand; a person is in it because the rule says so.
 
 The management pages do not show the word; they say what a list, role or group
-**follows**. `CohortSubject` in the code until the rename lands, where `Cohort` still names
-the target.
+**follows**.
 
 _Avoid_: audience, segment, list (a list is one kind of target).
 

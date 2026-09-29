@@ -46,15 +46,15 @@ import java.time.LocalDateTime
 )
 @SQLDelete(sql = "UPDATE cohort_member SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction(SoftDelete.ACTIVE)
-class CohortMember(
+class TargetMember(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cohort_id", nullable = false)
-    val cohort: Cohort,
+    val target: Target,
     @Column(name = "user_id", nullable = true)
     val userId: Long?,
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subject_id", nullable = false)
-    val subject: CohortSubject,
+    val cohort: Cohort,
     @Column(name = "external_user_id", nullable = true)
     var externalUserId: String? = null,
     @Column(name = "synced_at", nullable = true)

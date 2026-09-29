@@ -89,7 +89,7 @@ export function useTargetOverview() {
         memberCount: group.every((t) => t.memberCount == null)
           ? null
           : group.reduce((sum, t) => sum + (t.memberCount ?? 0), 0),
-        linkedCount: group.filter((t) => t.linkedCohortId != null).length,
+        linkedCount: group.filter((t) => t.linkedTargetId != null).length,
       }))
   })
 
@@ -123,7 +123,7 @@ export function useTargetOverview() {
   }
 
   /** Targets nothing points at: either finished with, or made by mistake. */
-  const unlinkedCount = computed(() => targets.value.filter((t) => t.linkedCohortId == null).length)
+  const unlinkedCount = computed(() => targets.value.filter((t) => t.linkedTargetId == null).length)
 
   async function load(system: TargetSystem): Promise<void> {
     loading.value = true

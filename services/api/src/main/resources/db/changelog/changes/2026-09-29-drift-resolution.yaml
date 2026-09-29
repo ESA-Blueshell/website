@@ -14,7 +14,7 @@ databaseChangeLog:
                   type: BIGINT
                   autoIncrement: true
                   constraints: {primaryKey: true, primaryKeyName: pk_drift_resolution, nullable: false}
-              - column: {name: cohort_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: target_id, type: BIGINT, constraints: {nullable: false}}
               - column: {name: action, type: VARCHAR(16), constraints: {nullable: false}}
               - column: {name: user_id, type: BIGINT}
               - column: {name: external_user_id, type: VARCHAR(255)}
@@ -23,9 +23,9 @@ databaseChangeLog:
               - column: {name: resolved_at, type: DATETIME(6), constraints: {nullable: false}}
         - createIndex:
             tableName: drift_resolution
-            indexName: idx_drift_resolution_cohort
+            indexName: idx_drift_resolution_target
             columns:
-              - column: {name: cohort_id}
+              - column: {name: target_id}
               - column: {name: resolved_at}
       rollback:
         - dropTable: {tableName: drift_resolution}

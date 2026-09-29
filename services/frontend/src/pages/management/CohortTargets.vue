@@ -332,7 +332,7 @@ onMounted(() => void load(TargetSystem.BREVO))
                   </v-btn>
                   <!-- Brevo cannot undo a delete, so only a list linked to nothing offers one. -->
                   <v-btn
-                    v-if="target.linkedCohortId == null"
+                    v-if="target.linkedTargetId == null"
                     color="error"
                     :data-testid="`cohort-target-delete-${target.externalId}`"
                     size="small"
@@ -352,12 +352,12 @@ onMounted(() => void load(TargetSystem.BREVO))
                     Move
                   </v-btn>
                   <v-chip
-                    :color="target.linkedCohortId == null ? undefined : 'primary'"
+                    :color="target.linkedTargetId == null ? undefined : 'primary'"
                     :data-testid="`cohort-target-link-${target.externalId}`"
                     size="small"
                     variant="tonal"
                   >
-                    {{ target.linkedCohortId == null ? "Unlinked" : "Linked" }}
+                    {{ target.linkedTargetId == null ? "Unlinked" : "Linked" }}
                   </v-chip>
                 </div>
               </template>

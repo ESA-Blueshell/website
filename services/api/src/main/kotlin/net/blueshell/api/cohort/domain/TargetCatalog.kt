@@ -3,6 +3,7 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -22,6 +23,23 @@ class TargetCatalog(
         return strategy.catalog(query).map { target ->
             target.copy(linkedCohortId = linked[target.externalId])
         }
+    }
+
+    /**
+     * Where a target sits on its system right now, read from the system itself: a moved target
+     * shows its new folder. When the system cannot be reached, or no longer has the target, the
+     * folder is unknown rather than guessed.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun placeOf(
+        system: TargetSystem,
+        externalId: String,
+    ): TargetPlace {
+        val found =
+            runCatching { strategies.require(system).resolve(externalId) }
+                .onFailure { log.warn("[cohort] could not read where {} target {} is: {}", system, externalId, it.message) }
+                .getOrNull()
+        return found?.let { TargetPlace(it.path, folderKnown = true) } ?: TargetPlace(listOf(system.shownName), folderKnown = false)
     }
 
     /** Every folder the system has, so a destination can be chosen rather than typed. */
@@ -114,4 +132,14 @@ class TargetCatalog(
             .findAllBySystem(system.name)
             .mapNotNull { cohort -> cohort.externalId?.takeIf { it.isNotBlank() }?.let { it to cohort.id!! } }
             .toMap()
+
+    companion object {
+        private val log = LoggerFactory.getLogger(TargetCatalog::class.java)
+    }
 }
+
+/** A target's path on its system, outside in, and whether its folder could be read. */
+data class TargetPlace(
+    val path: List<String>,
+    val folderKnown: Boolean,
+)

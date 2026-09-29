@@ -524,6 +524,11 @@ watch(subjectId, () => void load())
                           :leaf="mapping.label"
                           :path="folderSteps(mapping)"
                         />
+                        <span
+                          v-if="!mapping.folderKnown"
+                          class="text-caption"
+                          :data-testid="`cohort-subject-target-folder-unknown-${mapping.system.toLowerCase()}`"
+                        >Folder unknown</span>
                       </td>
                       <td class="text-monospace text-medium-emphasis targets-col-detail">
                         {{ mapping.externalId ?? "—" }}

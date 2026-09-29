@@ -1,7 +1,9 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import {h} from "vue"
+import {h, type VNode} from "vue"
 import CommitteeEditor from "@/domains/committees/components/CommitteeEditor.vue"
+import type {Committee} from "@/domains/committees/adapters/committees"
+import {aCommittee, anImage} from "../../../helpers/apiFixtures"
 
 const adapter = vi.hoisted(() => ({
   addCommittee: vi.fn(),
@@ -21,7 +23,7 @@ vi.mock("@/domains/games", async importOriginal => {
   }
 })
 
-const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
+const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, (() => VNode[]) | undefined>}) =>
   () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()])})
 const ImagePicker = {name: "ImagePicker", props: ["label", "picture", "store", "testid"], emits: ["update:picture"], template: "<div />"}
 const EventGamesPicker = {name: "EventGamesPicker", props: ["modelValue", "testid"], emits: ["update:modelValue"], template: "<div />"}
@@ -37,13 +39,14 @@ const stubs = {
   CutButton: {props: ["href", "testid"], template: "<a :href='href' :data-testid='testid'><slot /></a>"},
 }
 
-const lan = {
-  id: 1, name: "LanCie", slug: "lancie", description: "LANs", listed: true, archived: false, version: 3,
-  banner: {url: "/b.webp", path: "b.webp", renditions: []}, icon: {url: "/i.webp", path: "i.webp", renditions: []},
-  gameCodes: ["CS2"], createdAt: "", updatedAt: "",
-}
+const lan = aCommittee({
+  version: 3,
+  banner: anImage({url: "/b.webp", path: "b.webp", width: null, height: null, renditions: []}),
+  icon: anImage({url: "/i.webp", path: "i.webp", width: null, height: null, renditions: []}),
+  gameCodes: ["CS2"],
+})
 
-const mountEditor = (committee: typeof lan | null, asBoard: boolean) =>
+const mountEditor = (committee: Committee | null, asBoard: boolean) =>
   mount(CommitteeEditor, {props: {committee, asBoard, back: "/committees"}, global: {stubs}})
 
 const input = (wrapper: ReturnType<typeof mountEditor>, id: string) => wrapper.get(`[data-testid=committee-edit-${id}] input`)
@@ -109,7 +112,7 @@ describe("the committee edit page, for the board", () => {
 
   it("saves a committee with nobody on it, and stores its pictures against the committee they are for", async () => {
     adapter.saveCommitteeAsBoard.mockResolvedValue({ok: true, committee: lan})
-    const wrapper = mountEditor({...lan, members: []} as never, true)
+    const wrapper = mountEditor({...lan, members: []}, true)
     await flushPromises()
     const file = new File(["x"], "b.png")
 
@@ -129,7 +132,7 @@ describe("the committee edit page, for the board", () => {
 
   it("deletes a committee once asked, and says why where the api would not", async () => {
     adapter.removeCommittee.mockResolvedValueOnce({ok: false, reason: "The committee could not be deleted."}).mockResolvedValueOnce({ok: true})
-    const wrapper = mountEditor({...lan, members: []} as never, true)
+    const wrapper = mountEditor({...lan, members: []}, true)
     await flushPromises()
     const dialog = wrapper.getComponent(ConfirmDialog)
 

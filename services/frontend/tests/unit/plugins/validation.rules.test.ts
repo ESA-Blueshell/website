@@ -66,7 +66,7 @@ describe("validation rules messages", () => {
   it("returns cross-field mismatch message", async () => {
     const mismatch = await validate("Secret#123", "match:@password", {
       values: {password: "Other#123"},
-    } as never)
+    })
 
     expect(mismatch.valid).toBe(false)
     expect(mismatch.errors[0]).toBe("Values do not match")

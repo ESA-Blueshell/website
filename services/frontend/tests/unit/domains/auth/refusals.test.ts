@@ -1,6 +1,10 @@
 import {describe, expect, it} from "vitest"
 import {codeOf, needsStepUp, reasonFor} from "@/domains/auth/refusals"
 import {describeSecurityEvent} from "@/domains/auth/securityEvents"
+import {type SecurityEventResponse, SecurityActorKind, SecurityEventKind} from "@/services/api"
+
+const event = (over: Partial<SecurityEventResponse>): SecurityEventResponse =>
+  ({id: 1, kind: SecurityEventKind.SIGNED_IN, actorKind: SecurityActorKind.PERSON, occurredAt: "2026-09-24T09:00:00", ...over})
 
 describe("account security refusals", () => {
   it.each([
@@ -37,10 +41,11 @@ describe("account security refusals", () => {
   })
 
   it("names who did something when it was not the person", () => {
-    expect(describeSecurityEvent({kind: "ACCOUNT_LOCKED", actorKind: "PERSON"} as never)).toBe("Account locked")
-    expect(describeSecurityEvent({kind: "BREAK_GLASS", actorKind: "OPERATOR"} as never)).toBe("Break-glass command used, by an operator")
-    expect(describeSecurityEvent({kind: "ACCOUNT_UNLOCKED", actorKind: "PERSON", actorName: "Ro Ot"} as never))
+    expect(describeSecurityEvent(event({kind: SecurityEventKind.ACCOUNT_LOCKED}))).toBe("Account locked")
+    expect(describeSecurityEvent(event({kind: SecurityEventKind.BREAK_GLASS, actorKind: SecurityActorKind.OPERATOR}))).toBe("Break-glass command used, by an operator")
+    expect(describeSecurityEvent(event({kind: SecurityEventKind.ACCOUNT_UNLOCKED, actorName: "Ro Ot"})))
       .toBe("Account unlocked, by Ro Ot")
-    expect(describeSecurityEvent({kind: "SOMETHING_NEW", actorKind: "SYSTEM"} as never)).toBe("SOMETHING_NEW")
+    // A kind the api added after this page was built.
+    expect(describeSecurityEvent(event({kind: "SOMETHING_NEW" as SecurityEventKind, actorKind: SecurityActorKind.SYSTEM}))).toBe("SOMETHING_NEW")
   })
 })

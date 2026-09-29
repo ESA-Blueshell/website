@@ -1,17 +1,18 @@
 import {describe, expect, it, vi} from "vitest"
 import {useTeamToEdit} from "@/domains/esports"
 import {loadEsportsPage} from "@/domains/esports/adapters/esports"
+import {aSeason, aTeamRoster} from "../../../helpers/apiFixtures"
 
 vi.mock("@/domains/esports/adapters/esports", async importOriginal => ({
   ...(await importOriginal<typeof import("@/domains/esports/adapters/esports")>()),
   loadEsportsPage: vi.fn(),
 }))
 
-const season = {id: 4, name: "Spring 2026", startDate: "2026-02-01", endDate: "2026-06-30", played: true}
+const season = aSeason({id: 4, name: "Spring 2026", startDate: "2026-02-01", endDate: "2026-06-30", played: true})
 
 describe("what a team's edit page reads", () => {
   it("reads the season, the teams fielded in it and the one being edited", async () => {
-    vi.mocked(loadEsportsPage).mockResolvedValue({game: "VAL", season, seasons: [season], teams: [{id: 9, name: "Blueshell"}, {id: 10, name: "Two"}]} as never)
+    vi.mocked(loadEsportsPage).mockResolvedValue({game: "VAL", season, seasons: [season], teams: [aTeamRoster({id: 9, name: "Blueshell"}), aTeamRoster({id: 10, name: "Two"})]})
 
     const read = useTeamToEdit("VAL", 9, 4)
     await read.answered

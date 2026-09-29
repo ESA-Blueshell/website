@@ -13,6 +13,18 @@ import {
   findCurrentContributionPeriod,
   updateContributionPeriod,
 } from "@/services/api"
+import type {CreateContributionPeriodRequest} from "@/services/api"
+import {aContributionPeriod} from "../../../helpers/apiFixtures"
+import {answer, emptyAnswer} from "../../../helpers/sdkAnswers"
+
+const terms: CreateContributionPeriodRequest = {
+  startDate: "2026-01-01",
+  endDate: "2026-12-31",
+  halfYearCutoffDate: "2026-07-01",
+  fullYearFee: 20,
+  halfYearFee: 12,
+  alumniFee: 10,
+}
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -25,15 +37,15 @@ vi.mock("@/services/api", async (importOriginal) => ({
 
 describe("readCurrentPeriod", () => {
   it("answers with the period being charged over", async () => {
-    vi.mocked(findCurrentContributionPeriod).mockResolvedValue({
-      data: {id: 1, startDate: "2026-01-01", endDate: "2026-12-31"},
-    } as never)
+    vi.mocked(findCurrentContributionPeriod).mockResolvedValue(
+      answer(findCurrentContributionPeriod, aContributionPeriod({id: 1})),
+    )
 
     await expect(readCurrentPeriod()).resolves.toMatchObject({id: 1})
   })
 
   it("answers with nothing where there is no open period", async () => {
-    vi.mocked(findCurrentContributionPeriod).mockResolvedValue({} as never)
+    vi.mocked(findCurrentContributionPeriod).mockResolvedValue(emptyAnswer(findCurrentContributionPeriod))
 
     await expect(readCurrentPeriod()).resolves.toBeNull()
   })
@@ -47,13 +59,15 @@ describe("readCurrentPeriod", () => {
 
 describe("listPeriods", () => {
   it("answers with every period on file", async () => {
-    vi.mocked(findContributionPeriods).mockResolvedValue({data: [{id: 1}, {id: 2}]} as never)
+    vi.mocked(findContributionPeriods).mockResolvedValue(
+      answer(findContributionPeriods, [aContributionPeriod({id: 1}), aContributionPeriod({id: 2})]),
+    )
 
     await expect(listPeriods()).resolves.toHaveLength(2)
   })
 
   it("answers with an empty listing where the api named no periods", async () => {
-    vi.mocked(findContributionPeriods).mockResolvedValue({} as never)
+    vi.mocked(findContributionPeriods).mockResolvedValue(emptyAnswer(findContributionPeriods))
 
     await expect(listPeriods()).resolves.toEqual([])
   })
@@ -67,11 +81,11 @@ describe("listPeriods", () => {
 
 describe("saveNewPeriod", () => {
   it("answers with the recorded period", async () => {
-    vi.mocked(createContributionPeriod).mockResolvedValue({data: {id: 11}} as never)
+    vi.mocked(createContributionPeriod).mockResolvedValue(answer(createContributionPeriod, aContributionPeriod({id: 11})))
 
-    await expect(saveNewPeriod({startDate: "2026-01-01"} as never)).resolves.toMatchObject({id: 11})
+    await expect(saveNewPeriod(terms)).resolves.toMatchObject({id: 11})
     expect(createContributionPeriod).toHaveBeenCalledWith({
-      body: {startDate: "2026-01-01"},
+      body: terms,
       throwOnError: true,
     })
   })
@@ -79,12 +93,12 @@ describe("saveNewPeriod", () => {
 
 describe("savePeriod", () => {
   it("names the period on the path and answers with the change", async () => {
-    vi.mocked(updateContributionPeriod).mockResolvedValue({data: {id: 22}} as never)
+    vi.mocked(updateContributionPeriod).mockResolvedValue(answer(updateContributionPeriod, aContributionPeriod({id: 22})))
 
-    await expect(savePeriod(22, {version: 1} as never)).resolves.toMatchObject({id: 22})
+    await expect(savePeriod(22, {...terms, version: 1})).resolves.toMatchObject({id: 22})
     expect(updateContributionPeriod).toHaveBeenCalledWith({
       path: {id: 22},
-      body: {version: 1},
+      body: {...terms, version: 1},
       throwOnError: true,
     })
   })
@@ -92,7 +106,7 @@ describe("savePeriod", () => {
 
 describe("deletePeriod", () => {
   it("removes the period", async () => {
-    vi.mocked(deleteContributionPeriodById).mockResolvedValue({} as never)
+    vi.mocked(deleteContributionPeriodById).mockResolvedValue(emptyAnswer(deleteContributionPeriodById))
 
     await expect(deletePeriod(3)).resolves.toBeUndefined()
     expect(deleteContributionPeriodById).toHaveBeenCalledWith({path: {id: 3}, throwOnError: true})

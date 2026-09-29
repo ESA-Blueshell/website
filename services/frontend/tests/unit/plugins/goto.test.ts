@@ -19,7 +19,8 @@ describe("goto plugin", () => {
 
   it("opens external urls in a new tab", () => {
     const focus = vi.fn()
-    const open = vi.spyOn(window, "open").mockReturnValue({focus} as never)
+    // Only the opened tab's focus is called.
+    const open = vi.spyOn(window, "open").mockReturnValue({focus} as unknown as Window)
 
     $goto("https://example.com")
 

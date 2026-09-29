@@ -1,8 +1,16 @@
 import {type Component, h, nextTick} from "vue"
 import {flushPromises, mount, type VueWrapper} from "@vue/test-utils"
 import {VApp} from "vuetify/components"
+import {DateTime} from "luxon"
 
 type ImportOriginal = <T = unknown>() => Promise<T>
+
+/** A fixed moment for a test's clock, typed as the valid DateTime the code under test asks for. */
+export function moment(iso: string): DateTime<true> {
+  const at = DateTime.fromISO(iso)
+  if (!at.isValid) throw new Error(`${iso} is not a moment`)
+  return at
+}
 
 export async function settle(): Promise<void> {
   await flushPromises()
@@ -29,7 +37,8 @@ export function unmountAll(wrappers: VueWrapper[], suite: string): void {
 }
 
 export function hrefs(wrapper: VueWrapper<any>): string[] {
-  return wrapper.findAll("a[href]").map((node) => node.attributes("href"))
+  // The selector only matches anchors that carry one.
+  return wrapper.findAll("a[href]").map((node) => node.attributes("href") ?? "")
 }
 
 export async function withVuexUseStore(

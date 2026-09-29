@@ -13,7 +13,8 @@ beforeEach(() => {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   }))
-  Element.prototype.animate = vi.fn(() => ({finished: Promise.resolve(), cancel: vi.fn()})) as never
+  // jsdom has no Web Animations, and only an animation's finish and cancel are read.
+  Element.prototype.animate = vi.fn(() => ({finished: Promise.resolve(), cancel: vi.fn()}) as unknown as Animation)
   Element.prototype.setPointerCapture = vi.fn()
 })
 

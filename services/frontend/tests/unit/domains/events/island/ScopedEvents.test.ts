@@ -1,11 +1,15 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import {ref} from "vue"
+import {type Ref, ref} from "vue"
+import type {EventSignUpResponse} from "@/services/api"
+import type {CommitteeOption} from "@/domains/events/island/useEventReader"
+import {aSignUp} from "../../../helpers/apiFixtures"
 import ScopedEvents from "@/domains/events/island/ScopedEvents.vue"
 
 const adapter = vi.hoisted(() => ({listEvents: vi.fn(), readEventPage: vi.fn(), eventFileUrl: (url: string) => url}))
 vi.mock("@/domains/events/adapters/events", () => adapter)
-const reader = vi.hoisted(() => ({signUps: null as never, committees: null as never}))
+// Filled in before each test, since a ref cannot be made inside the hoisted factory.
+const reader = vi.hoisted(() => ({} as {signUps: Ref<EventSignUpResponse[]>, committees: Ref<CommitteeOption[]>}))
 vi.mock("@/domains/events/island/useEventReader", () => ({useEventReader: () => reader}))
 
 const EventAgenda = {
@@ -33,8 +37,8 @@ const mountEvents = async (props: Record<string, unknown> = {}) => {
 beforeEach(() => {
   adapter.listEvents.mockReset().mockResolvedValue([])
   adapter.readEventPage.mockReset().mockResolvedValue({events: []})
-  reader.signUps = ref([{id: 40, eventId: 1}]) as never
-  reader.committees = ref([{id: 2, name: "LanCie"}]) as never
+  reader.signUps = ref([aSignUp({id: 40, eventId: 1})])
+  reader.committees = ref([{id: 2, name: "LanCie"}])
 })
 
 describe("the events of one game or committee", () => {

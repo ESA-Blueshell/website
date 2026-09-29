@@ -1,20 +1,24 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount, RouterLinkStub} from "@vue/test-utils"
-import {ref} from "vue"
+import {type ComputedRef, type Ref, ref} from "vue"
+import type {Committee, CommitteePage as Page} from "@/domains/committees/adapters/committees"
+import type {CasualGame} from "@/domains/games/adapters/games"
+import {aCasualGame, aCommittee, aCommitteePage} from "../../../helpers/apiFixtures"
 import CommitteePage from "@/domains/committees/components/CommitteePage.vue"
 
 const router = vi.hoisted(() => ({push: vi.fn(), replace: vi.fn()}))
 vi.mock("vue-router", async importOriginal => ({...(await importOriginal<typeof import("vue-router")>()), useRouter: () => router}))
-const committees = vi.hoisted(() => ({committees: null as never, refresh: vi.fn()}))
+// The refs are made before each test, since a ref cannot be made inside a hoisted factory.
+const committees = vi.hoisted(() => ({refresh: vi.fn()} as {committees: Ref<Committee[]>, refresh: ReturnType<typeof vi.fn>}))
 vi.mock("@/domains/committees/useCommittees", async importOriginal => ({
   ...(await importOriginal<typeof import("@/domains/committees/useCommittees")>()),
   useCommittees: () => committees,
 }))
-const rights = vi.hoisted(() => ({isBoard: null as never, sits: false}))
+const rights = vi.hoisted(() => ({sits: false} as {isBoard: ComputedRef<boolean> | Ref<boolean>, sits: boolean}))
 vi.mock("@/domains/committees/island/useCommitteeRights", () => ({
   useCommitteeRights: () => ({isBoard: rights.isBoard, sitsOn: () => rights.sits}),
 }))
-const games = vi.hoisted(() => ({games: null as never}))
+const games = vi.hoisted(() => ({} as {games: Ref<CasualGame[]>}))
 vi.mock("@/domains/games", async importOriginal => ({
   ...(await importOriginal<typeof import("@/domains/games")>()),
   useCasualGames: () => games,
@@ -28,23 +32,23 @@ const stubs = {
   ArchiveCommitteeDialog: dialog("ArchiveCommitteeDialog"),
 }
 
-const page = (over: Record<string, unknown> = {}) => ({
-  id: 7, name: "LanCie", slug: "lancie", description: "LanCie **runs** the LANs.", listed: true, archived: false, banner: null,
+const page = (over: Partial<Page> = {}): Page => aCommitteePage({
+  id: 7, description: "LanCie **runs** the LANs.", banner: null,
   gameCodes: ["CS2", "GONE"],
   members: [{discordName: "Nelly B", avatar: "https://cdn/n.png", role: "Chair"}, {discordName: null, avatar: null, role: null}],
   ...over,
 })
 
-const mountPage = (over: Record<string, unknown> = {}) => mount(CommitteePage, {props: {page: page(over)}, global: {stubs}})
+const mountPage = (over: Partial<Page> = {}) => mount(CommitteePage, {props: {page: page(over)}, global: {stubs}})
 
 beforeEach(() => {
   router.push.mockReset()
   router.replace.mockReset()
   committees.refresh.mockReset().mockResolvedValue([])
-  committees.committees = ref([{...page(), members: undefined, version: 4, createdAt: "", updatedAt: ""}]) as never
-  rights.isBoard = ref(false) as never
+  committees.committees = ref([aCommittee({id: 7, description: "LanCie **runs** the LANs.", banner: null, gameCodes: ["CS2", "GONE"], version: 4})])
+  rights.isBoard = ref(false)
   rights.sits = false
-  games.games = ref([{code: "CS2", name: "Counter-Strike 2", slug: "cs2", channels: [], archived: false, accent: null, banner: null, icon: null}]) as never
+  games.games = ref([aCasualGame({accent: null, banner: null, icon: null})])
 })
 
 describe("one committee's page", () => {
@@ -90,7 +94,7 @@ describe("one committee's page", () => {
     expect(member.findComponent({name: "ArchiveCommitteeDialog"}).exists()).toBe(false)
 
     rights.sits = false
-    rights.isBoard = ref(true) as never
+    rights.isBoard = ref(true)
     const board = mountPage()
     await board.get("[data-testid=committee-archive]").trigger("click")
     expect(board.getComponent({name: "ArchiveCommitteeDialog"}).props("open")).toBe(true)
@@ -110,8 +114,8 @@ describe("one committee's page", () => {
   })
 
   it("reads the committee again once it is archived or brought back", async () => {
-    rights.isBoard = ref(true) as never
-    committees.committees = ref([]) as never
+    rights.isBoard = ref(true)
+    committees.committees = ref([])
     const wrapper = mountPage()
 
     wrapper.getComponent({name: "ArchiveCommitteeDialog"}).vm.$emit("saved", page())

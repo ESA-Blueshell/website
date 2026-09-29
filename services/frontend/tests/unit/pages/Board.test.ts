@@ -88,7 +88,8 @@ const mountPage = async () => {
   })
   await flushPromises()
   await nextTick()
-  return wrapper.vm as never as Page
+  // The page exposes nothing, so what it holds is read off the instance.
+  return wrapper.vm as unknown as Page
 }
 
 describe("Board page", () => {

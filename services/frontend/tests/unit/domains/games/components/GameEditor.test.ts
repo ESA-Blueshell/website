@@ -1,6 +1,9 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import {h, ref} from "vue"
+import {h, type Ref, ref, type VNode} from "vue"
+import type {Committee} from "@/domains/committees/adapters/committees"
+import type {CasualGame} from "@/domains/games/adapters/games"
+import {aCasualGame, aCommittee, anImage} from "../../../helpers/apiFixtures"
 import GameEditor from "@/domains/games/components/GameEditor.vue"
 import "@/plugins/validation"
 
@@ -11,7 +14,10 @@ vi.mock("@/domains/games/useCasualGames", async importOriginal => ({
   ...(await importOriginal<typeof import("@/domains/games/useCasualGames")>()),
   useCasualGames: () => casual,
 }))
-const committees = vi.hoisted(() => ({saveGameOrganisers: vi.fn(), refresh: vi.fn(), committees: null as never}))
+// The list is made before each test, since a ref cannot be made inside a hoisted factory.
+const committees = vi.hoisted(() => ({saveGameOrganisers: vi.fn(), refresh: vi.fn()} as {
+  saveGameOrganisers: ReturnType<typeof vi.fn>, refresh: ReturnType<typeof vi.fn>, committees: Ref<Committee[]>,
+}))
 vi.mock("@/domains/committees", () => ({
   saveGameOrganisers: committees.saveGameOrganisers,
   useCommittees: () => ({committees: committees.committees, refresh: committees.refresh}),
@@ -19,7 +25,7 @@ vi.mock("@/domains/committees", () => ({
 const esports = vi.hoisted(() => ({enterGameInSeason: vi.fn(), refresh: vi.fn()}))
 vi.mock("@/domains/esports", () => ({enterGameInSeason: esports.enterGameInSeason, forgetCompetitionReads: vi.fn(), useGames: () => ({refresh: esports.refresh})}))
 
-const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
+const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, (() => VNode[]) | undefined>}) =>
   () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()])})
 const picker = (name: string) => ({name, props: ["modelValue", "testid"], emits: ["update:modelValue"], template: "<div />"})
 const dialog = (name: string) => ({name, props: ["open", "game"], emits: ["update:open", "saved", "removed"], template: "<div />"})
@@ -38,16 +44,17 @@ const stubs = {
   CutButton: {props: ["href", "testid"], template: "<a :href='href' :data-testid='testid'><slot /></a>"},
 }
 
-const chess = {
-  code: "CHESS", name: "Chess", slug: "chess", accent: "#b58863", intro: "Blitz", sortIndex: 4, archived: false, inCompetition: true,
-  banner: {url: "/b.webp", path: "b.webp", renditions: []}, icon: null, channels: [{id: "900", guildId: "324", name: "chess"}],
-}
+const chess = aCasualGame({
+  code: "CHESS", name: "Chess", slug: "chess", accent: "#b58863", intro: "Blitz", sortIndex: 4, inCompetition: true,
+  banner: anImage({url: "/b.webp", path: "b.webp", width: null, height: null, renditions: []}), icon: null,
+  channels: [{id: "900", guildId: "324", name: "chess"}],
+})
 
 const field = (wrapper: ReturnType<typeof mountEditor>, id: string) => wrapper.get(`[data-testid=game-edit-${id}] input`)
 const write = (wrapper: ReturnType<typeof mountEditor>, name: string, value: unknown) =>
   wrapper.findAllComponents({name: "VvField"}).find(one => one.props("name") === name)!.vm.$emit("update:modelValue", value)
 
-const mountEditor = (game: typeof chess | null, area: "casual" | "competition" = "casual", enterIn: number | null = null) =>
+const mountEditor = (game: CasualGame | null, area: "casual" | "competition" = "casual", enterIn: number | null = null) =>
   mount(GameEditor, {props: {game, area, enterIn, back: `/${area}`}, global: {stubs}})
 
 beforeEach(() => {
@@ -57,7 +64,7 @@ beforeEach(() => {
   esports.enterGameInSeason.mockReset()
   committees.saveGameOrganisers.mockReset()
   committees.refresh.mockReset().mockResolvedValue([])
-  committees.committees = ref([{id: 1, name: "LegaCie", gameCodes: ["CHESS"]}, {id: 2, name: "LanCie", gameCodes: []}]) as never
+  committees.committees = ref([aCommittee({id: 1, name: "LegaCie", gameCodes: ["CHESS"]}), aCommittee({id: 2, name: "LanCie", gameCodes: []})])
 })
 
 describe("the game edit page", () => {
@@ -162,7 +169,7 @@ describe("the game edit page", () => {
 
   it("writes the competition pages' own intro and esports channels, previewed with the casual intro as fallback", async () => {
     adapter.saveCasualGame.mockResolvedValue({ok: true, game: chess})
-    const wrapper = mountEditor({...chess, competitionIntro: null, esportsChannels: []} as never)
+    const wrapper = mountEditor({...chess, competitionIntro: null, esportsChannels: []})
     const head = () => wrapper.getComponent(stubs.EsportsGameHead)
     const esports = wrapper.findAllComponents(stubs.GameChannelPicker).find(one => one.props("testid") === "game-edit-esports-channels")!
 
@@ -196,6 +203,7 @@ describe("the game edit page", () => {
   it("stores each picture as its kind, and never saves without a name", async () => {
     const wrapper = mountEditor(null)
     const [banner, icon] = wrapper.findAllComponents(stubs.ImagePicker)
+    if (!banner || !icon) throw new Error("the editor draws a banner picker and an icon picker")
     const file = new File(["x"], "a.png")
 
     await banner.props("store")(file)

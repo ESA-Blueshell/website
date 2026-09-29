@@ -125,7 +125,7 @@ describe("deriveLatestMembership", () => {
 })
 
 describe("isNotableType / typeIcon / typeLabel / statusColor", () => {
-  const honRow: MemberRow = {id: 1, fullName: "A", username: "a", role: "", status: "Current", memberSince: null, latestType: MemberType.HONORARY, latestIncasso: false, paid: false, wasMemberInPeriod: false}
+  const honRow: MemberRow = {id: 1, fullName: "A", username: "a", role: "", status: "Current", memberSince: null, latestType: MemberType.HONORARY, latestIncasso: false, paid: false, paidKnown: true, wasMemberInPeriod: false, discordLinked: false, security: "no-two-factor"}
   const alumRow: MemberRow = {...honRow, latestType: MemberType.ALUMNI}
   const regRow: MemberRow = {...honRow, latestType: MemberType.REGULAR}
   const noneRow: MemberRow = {...honRow, latestType: null}
@@ -269,9 +269,9 @@ describe("useUserRows", () => {
 
 describe("deriveAccountSecurity", () => {
   it("puts a lock first, then a reset waiting on the person, then whether two-factor is on", () => {
-    expect(deriveAccountSecurity({locked: true, awaitingReenrolment: true, twoFactorOn: true} as never)).toBe("locked")
-    expect(deriveAccountSecurity({awaitingReenrolment: true} as never)).toBe("awaiting-reenrolment")
-    expect(deriveAccountSecurity({twoFactorOn: true} as never)).toBe("two-factor")
-    expect(deriveAccountSecurity({} as never)).toBe("no-two-factor")
+    expect(deriveAccountSecurity({locked: true, awaitingReenrolment: true, twoFactorOn: true})).toBe("locked")
+    expect(deriveAccountSecurity({locked: false, awaitingReenrolment: true, twoFactorOn: true})).toBe("awaiting-reenrolment")
+    expect(deriveAccountSecurity({locked: false, awaitingReenrolment: false, twoFactorOn: true})).toBe("two-factor")
+    expect(deriveAccountSecurity({locked: false, awaitingReenrolment: false, twoFactorOn: false})).toBe("no-two-factor")
   })
 })

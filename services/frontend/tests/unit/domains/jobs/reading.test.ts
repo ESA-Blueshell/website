@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import type {Job, JobFoldedTrigger} from "@/domains/jobs"
+import type {Job, JobFoldedTrigger, JobRelatedEntity} from "@/domains/jobs"
 import {
   actorDisplay,
   canRetry,
@@ -23,7 +23,7 @@ import {
   foldedTriggerLabel,
   triggerLabel,
 } from "@/domains/jobs"
-import {ActionActorType, JobEffect, JobTrigger} from "@/services/api"
+import {ActionActorType, JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger} from "@/services/api"
 
 const job = (fields: Partial<Job>): Job => fields as Job
 
@@ -79,21 +79,21 @@ describe("job reading", () => {
   })
 
   it("offers a run again only for a job that stopped without doing its work", () => {
-    expect(canRetry(job({id: 1, status: "FAILED"}))).toBe(true)
-    expect(canRetry(job({id: 1, status: "DEAD"}))).toBe(true)
-    expect(canRetry(job({id: 1, status: "SKIPPED"}))).toBe(true)
-    expect(retryLabel(job({id: 1, status: "SKIPPED"}))).toBe("Run anyway")
-    expect(retryLabel(job({id: 1, status: "FAILED"}))).toBe("Retry")
-    expect(canRetry(job({id: 1, status: "SUCCESS"}))).toBe(false)
+    expect(canRetry(job({id: 1, status: JobExecutionStatus.FAILED}))).toBe(true)
+    expect(canRetry(job({id: 1, status: JobExecutionStatus.DEAD}))).toBe(true)
+    expect(canRetry(job({id: 1, status: JobExecutionStatus.SKIPPED}))).toBe(true)
+    expect(retryLabel(job({id: 1, status: JobExecutionStatus.SKIPPED}))).toBe("Run anyway")
+    expect(retryLabel(job({id: 1, status: JobExecutionStatus.FAILED}))).toBe("Retry")
+    expect(canRetry(job({id: 1, status: JobExecutionStatus.SUCCESS}))).toBe(false)
     // Nothing to point a retry at.
-    expect(canRetry(job({status: "FAILED"}))).toBe(false)
+    expect(canRetry(job({status: JobExecutionStatus.FAILED}))).toBe(false)
   })
 
   it("names whoever asked for the job, at two lengths", () => {
     expect(actorDisplay(job({initiatedByDisplay: "Admin User"}))).toBe("Admin User")
     expect(actorDisplay(job({initiatedByFullName: "John Doe", initiatedByUsername: "jdoe"})))
       .toBe("John Doe (@jdoe)")
-    expect(actorDisplay(job({initiatedByType: "SYSTEM"}))).toBe("System")
+    expect(actorDisplay(job({initiatedByType: ActionActorType.SYSTEM}))).toBe("System")
     expect(actorDisplay(job({initiatedByUserId: 42}))).toBe("User #42")
     expect(actorDisplay(job({}))).toBe("System")
 
@@ -104,9 +104,9 @@ describe("job reading", () => {
   })
 
   it("falls back to the category where the catalog knows nothing about the type", () => {
-    expect(previewTitle(job({jobType: "not.a.known.job", category: "contact"})))
+    expect(previewTitle(job({jobType: "not.a.known.job", category: JobExecutionCategory.CONTACT})))
       .toContain("Not A Known Job")
-    expect(previewTitle(job({jobType: "", category: "cohort"}))).toBe("Cohort job")
+    expect(previewTitle(job({jobType: "", category: JobExecutionCategory.COHORT}))).toBe("Cohort job")
   })
 
   it("reads a stack trace out of whichever field carried it", () => {
@@ -133,7 +133,8 @@ describe("job reading", () => {
 
   it("names a related entity, falling back to its type and id", () => {
     expect(relatedEntityLabel({type: "user", id: 3, label: "Jo Jonkers"})).toBe("Jo Jonkers")
-    expect(relatedEntityLabel({type: "event_sign_up", id: 3} as never))
+    // The api always names the entity now; the fallback is for a row that does not.
+    expect(relatedEntityLabel({type: "event_sign_up", id: 3} as JobRelatedEntity))
       .toBe("Event Sign Up #3")
   })
 

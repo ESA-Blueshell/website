@@ -40,7 +40,7 @@ describe("store plugin", () => {
       username: "emma",
       roles: ["MEMBER"],
       expiration: Date.now() + 100_000,
-    } as never)
+    })
 
     expect(store.getters.isLoggedIn).toBe(true)
     expect(mockWriteJsonCookie).toHaveBeenCalledWith("login", expect.objectContaining({username: "emma"}))
@@ -55,7 +55,7 @@ describe("store plugin", () => {
       userId: 7,
       roles: ["MEMBER"],
       expiration: Date.now() + 100_000,
-    } as never)
+    })
 
     const written = mockWriteJsonCookie.mock.calls.at(-1)![1] as Record<string, unknown>
     expect(Object.keys(written)).not.toContain("expiration")
@@ -69,7 +69,7 @@ describe("store plugin", () => {
       username: "emma",
       roles: ["MEMBER"],
       expiration: Date.now() + 100_000,
-    } as never)
+    })
 
     store.commit("logout")
     expect(store.getters.isLoggedIn).toBe(false)
@@ -87,7 +87,7 @@ describe("store plugin", () => {
       username: "emma",
       roles: ["MEMBER"],
       expiration: Date.now() - 100_000,
-    } as never)
+    })
 
     expect(store.getters.isLoggedIn).toBe(true)
   })
@@ -97,7 +97,7 @@ describe("store plugin", () => {
       username: "board-admin",
       roles: ["BOARD", "ADMIN", "MEMBER"],
       expiration: Date.now() + 100_000,
-    } as never)
+    })
 
     expect(store.getters.isBoard).toBe(true)
     expect(store.getters.isAdmin).toBe(true)
@@ -110,7 +110,7 @@ describe("store plugin", () => {
     store.commit("setTwoFactor", standing)
     expect(store.getters.getLogin).toBeNull()
 
-    store.commit("setLoginState", {username: "emma", roles: ["MEMBER"]} as never)
+    store.commit("setLoginState", {username: "emma", roles: ["MEMBER"]})
     store.commit("setTwoFactor", standing)
     expect(store.getters.getLogin.twoFactor).toEqual(standing)
     expect(mockWriteJsonCookie).toHaveBeenLastCalledWith("login", expect.objectContaining({twoFactor: standing}))

@@ -104,7 +104,7 @@ describe("blueshell runtime csrf behavior", () => {
       return {data: {token: "csrf-token"}}
     })
 
-    createClientConfig({} as never)
+    createClientConfig({})
     const interceptor = runtimeState.requestInterceptor
     expect(interceptor).toBeTypeOf("function")
 
@@ -124,7 +124,7 @@ describe("blueshell runtime csrf behavior", () => {
   })
 
   it("disables axios automatic xsrf header behavior", () => {
-    createClientConfig({} as never)
+    createClientConfig({})
 
     expect(mockAxiosCreate).toHaveBeenCalledWith(expect.objectContaining({
       withXSRFToken: false,
@@ -134,7 +134,7 @@ describe("blueshell runtime csrf behavior", () => {
   it("does not bootstrap csrf token for safe methods", async () => {
     document.cookie = "XSRF-TOKEN=existing-token"
 
-    createClientConfig({} as never)
+    createClientConfig({})
     const interceptor = runtimeState.requestInterceptor
     expect(interceptor).toBeTypeOf("function")
 
@@ -154,7 +154,7 @@ describe("blueshell runtime csrf behavior", () => {
   it("uses token from csrf bootstrap response body when cookie is not readable", async () => {
     mockAxiosGet.mockResolvedValue({data: {token: "body-token"}})
 
-    createClientConfig({} as never)
+    createClientConfig({})
     const interceptor = runtimeState.requestInterceptor
     expect(interceptor).toBeTypeOf("function")
 
@@ -178,7 +178,7 @@ describe("blueshell runtime csrf behavior", () => {
       return {data: {token: "CM47rb-bXq-e_fmcGrFD4tQ-n-9abFagWJr2D_H-N9y97I-RPfgOz9uibs6zzcH9LZx3hrELstZsWTeNO6KTNsWYDrncjeug"}}
     })
 
-    createClientConfig({} as never)
+    createClientConfig({})
     const interceptor = runtimeState.requestInterceptor
     expect(interceptor).toBeTypeOf("function")
 
@@ -200,7 +200,7 @@ describe("blueshell runtime csrf behavior", () => {
   it("refreshes csrf token for each mutating request", async () => {
     mockAxiosGet.mockResolvedValue({data: {token: "fresh-token"}})
 
-    createClientConfig({} as never)
+    createClientConfig({})
     const interceptor = runtimeState.requestInterceptor
     expect(interceptor).toBeTypeOf("function")
 
@@ -219,7 +219,7 @@ describe("blueshell runtime csrf behavior", () => {
     mockStore.getters.getXsrfToken = "stored-token"
     mockAxiosGet.mockRejectedValue(new Error("bootstrap failed"))
 
-    createClientConfig({} as never)
+    createClientConfig({})
     const interceptor = runtimeState.requestInterceptor
     expect(interceptor).toBeTypeOf("function")
 
@@ -236,7 +236,7 @@ describe("blueshell runtime csrf behavior", () => {
   })
 
   it("removes stale authorization header when user has no login token", async () => {
-    createClientConfig({} as never)
+    createClientConfig({})
     const interceptor = runtimeState.requestInterceptor
     expect(interceptor).toBeTypeOf("function")
 

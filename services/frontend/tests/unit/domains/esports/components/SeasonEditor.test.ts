@@ -1,6 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import {h, ref} from "vue"
+import {h, type Ref, ref, type VNode} from "vue"
+import type {Season} from "@/domains/esports/adapters/esports"
+import {aSeason, aTeamRoster} from "../../../helpers/apiFixtures"
 import SeasonEditor from "@/domains/esports/components/SeasonEditor.vue"
 
 const adapter = vi.hoisted(() => ({
@@ -12,7 +14,8 @@ const adapter = vi.hoisted(() => ({
   saveSeasonOrReason: vi.fn(),
 }))
 vi.mock("@/domains/esports/adapters/esports", () => adapter)
-const seasonsStore = vi.hoisted(() => ({seasons: null as never, refresh: vi.fn()}))
+// The list is made before each test, since a ref cannot be made inside a hoisted factory.
+const seasonsStore = vi.hoisted(() => ({refresh: vi.fn()} as {seasons: Ref<Season[]>, refresh: ReturnType<typeof vi.fn>}))
 vi.mock("@/domains/esports/island/useSeasons", () => ({useSeasons: () => seasonsStore}))
 vi.mock("@/domains/esports/island/useGames", () => ({
   useGames: () => ({
@@ -21,10 +24,10 @@ vi.mock("@/domains/esports/island/useGames", () => ({
   }),
 }))
 
-const autumn = {id: 3, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31", played: true}
-const spring = {id: 4, name: "Spring 2026", startDate: "2026-02-01", endDate: "2026-06-30", played: false}
+const autumn = aSeason({id: 3, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31", played: true})
+const spring = aSeason({id: 4, name: "Spring 2026", startDate: "2026-02-01", endDate: "2026-06-30", played: false})
 
-const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
+const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, (() => VNode[]) | undefined>}) =>
   () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()])})
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid"]},
@@ -41,7 +44,7 @@ const write = async (wrapper: Awaited<ReturnType<typeof mountEditor>>, testid: s
   await flushPromises()
 }
 
-const mountEditor = async (season: typeof autumn | null) => {
+const mountEditor = async (season: Season | null) => {
   const wrapper = mount(SeasonEditor, {props: {season, back: "/competition"}, global: {stubs}})
   await flushPromises()
   return wrapper
@@ -49,8 +52,8 @@ const mountEditor = async (season: typeof autumn | null) => {
 
 beforeEach(() => {
   Object.values(adapter).forEach(one => one.mockReset())
-  adapter.loadSeasonGames.mockResolvedValue([{game: "VAL", teams: [{id: 1}], public: true}, {game: "LOL", teams: [], public: false}])
-  seasonsStore.seasons = ref([autumn, spring]) as never
+  adapter.loadSeasonGames.mockResolvedValue([{game: "VAL", teams: [aTeamRoster()], public: true}, {game: "LOL", teams: [], public: false}])
+  seasonsStore.seasons = ref([autumn, spring])
   seasonsStore.refresh.mockReset().mockResolvedValue([])
 })
 

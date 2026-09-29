@@ -49,7 +49,7 @@ export function findTopMatch(query: string, source: Country[]): Country | null {
   return source.find((c) => partsFor(c).some((p) => p.includes(q))) ?? null
 }
 
-export function customFilterForCountry(_itemText: string, queryText: string, item: InternalItem<Country>) {
+export function customFilterForCountry(_itemText: string, queryText: string, item: Pick<InternalItem<Country>, "raw">) {
   const c = item.raw
   const q = deburrLower(queryText.trim())
   if (!q) return true

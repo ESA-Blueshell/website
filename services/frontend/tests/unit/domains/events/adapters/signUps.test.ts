@@ -13,6 +13,8 @@ import {
   findEventSignUpsByAccessToken,
   updateEventSignUp,
 } from "@/services/api"
+import {aSignUp} from "../../../helpers/apiFixtures"
+import {answer, emptyAnswer} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -27,7 +29,7 @@ beforeEach(() => vi.clearAllMocks())
 
 describe("listOwnSignUps", () => {
   it("asks for what one account signed up for from the moment named", async () => {
-    vi.mocked(findEventSignUps).mockResolvedValue({data: [{id: 1}]} as never)
+    vi.mocked(findEventSignUps).mockResolvedValue(answer(findEventSignUps, [aSignUp({id: 1})]))
 
     await expect(listOwnSignUps(9, "2026-01-01")).resolves.toHaveLength(1)
     expect(findEventSignUps).toHaveBeenCalledWith({
@@ -37,7 +39,7 @@ describe("listOwnSignUps", () => {
   })
 
   it("answers with an empty listing where the api named none", async () => {
-    vi.mocked(findEventSignUps).mockResolvedValue({} as never)
+    vi.mocked(findEventSignUps).mockResolvedValue(emptyAnswer(findEventSignUps))
 
     await expect(listOwnSignUps(9, "2026-01-01")).resolves.toEqual([])
   })
@@ -45,7 +47,7 @@ describe("listOwnSignUps", () => {
 
 describe("listSignUpsByAccessToken", () => {
   it("carries the guest header, since nothing else says who is asking", async () => {
-    vi.mocked(findEventSignUpsByAccessToken).mockResolvedValue({data: [{id: 2}]} as never)
+    vi.mocked(findEventSignUpsByAccessToken).mockResolvedValue(answer(findEventSignUpsByAccessToken, [aSignUp({id: 2})]))
 
     await expect(listSignUpsByAccessToken("tok")).resolves.toHaveLength(1)
     expect(findEventSignUpsByAccessToken).toHaveBeenCalledWith({
@@ -55,7 +57,7 @@ describe("listSignUpsByAccessToken", () => {
   })
 
   it("answers with an empty listing where the api named none", async () => {
-    vi.mocked(findEventSignUpsByAccessToken).mockResolvedValue({} as never)
+    vi.mocked(findEventSignUpsByAccessToken).mockResolvedValue(emptyAnswer(findEventSignUpsByAccessToken))
 
     await expect(listSignUpsByAccessToken("tok")).resolves.toEqual([])
   })
@@ -69,13 +71,10 @@ describe("listSignUpsByAccessToken", () => {
 
 describe("signUpForEvent", () => {
   it("answers with the sign-up and the token a guest is remembered by", async () => {
-    vi.mocked(createEventSignup).mockResolvedValue({
-      data: {id: 5},
-      headers: {"x-guest-access-token": "guest-token"},
-    } as never)
+    vi.mocked(createEventSignup).mockResolvedValue(answer(createEventSignup, aSignUp(), {"x-guest-access-token": "guest-token"}))
 
-    await expect(signUpForEvent(500, {answers: []} as never)).resolves.toEqual({
-      signUp: {id: 5},
+    await expect(signUpForEvent(500, {answers: []})).resolves.toEqual({
+      signUp: aSignUp(),
       guestAccessToken: "guest-token",
     })
     expect(createEventSignup).toHaveBeenCalledWith({
@@ -86,50 +85,41 @@ describe("signUpForEvent", () => {
   })
 
   it("reads the token whichever casing the header came in", async () => {
-    vi.mocked(createEventSignup).mockResolvedValue({
-      data: {id: 5},
-      headers: {"X-Guest-Access-Token": "cased"},
-    } as never)
+    vi.mocked(createEventSignup).mockResolvedValue(answer(createEventSignup, aSignUp(), {"X-Guest-Access-Token": "cased"}))
 
-    await expect(signUpForEvent(500, {} as never)).resolves.toMatchObject({
+    await expect(signUpForEvent(500, {})).resolves.toMatchObject({
       guestAccessToken: "cased",
     })
   })
 
   it("reads the first value where the header came as a list", async () => {
-    vi.mocked(createEventSignup).mockResolvedValue({
-      data: {id: 5},
-      headers: {"x-guest-access-token": ["listed", "second"]},
-    } as never)
+    vi.mocked(createEventSignup).mockResolvedValue(answer(createEventSignup, aSignUp(), {"x-guest-access-token": ["listed", "second"]}))
 
-    await expect(signUpForEvent(500, {} as never)).resolves.toMatchObject({
+    await expect(signUpForEvent(500, {})).resolves.toMatchObject({
       guestAccessToken: "listed",
     })
   })
 
   it("answers with no token where an account signed itself up", async () => {
-    vi.mocked(createEventSignup).mockResolvedValue({data: {id: 5}, headers: {}} as never)
+    vi.mocked(createEventSignup).mockResolvedValue(answer(createEventSignup, aSignUp(), {}))
 
-    await expect(signUpForEvent(500, {} as never)).resolves.toMatchObject({
+    await expect(signUpForEvent(500, {})).resolves.toMatchObject({
       guestAccessToken: null,
     })
   })
 
   it("answers with no token where the api sent no headers at all", async () => {
-    vi.mocked(createEventSignup).mockResolvedValue({data: {id: 5}} as never)
+    vi.mocked(createEventSignup).mockResolvedValue(answer(createEventSignup, aSignUp()))
 
-    await expect(signUpForEvent(500, {} as never)).resolves.toMatchObject({
+    await expect(signUpForEvent(500, {})).resolves.toMatchObject({
       guestAccessToken: null,
     })
   })
 
   it("answers with no token where the header carried an empty list", async () => {
-    vi.mocked(createEventSignup).mockResolvedValue({
-      data: {id: 5},
-      headers: {"x-guest-access-token": []},
-    } as never)
+    vi.mocked(createEventSignup).mockResolvedValue(answer(createEventSignup, aSignUp(), {"x-guest-access-token": []}))
 
-    await expect(signUpForEvent(500, {} as never)).resolves.toMatchObject({
+    await expect(signUpForEvent(500, {})).resolves.toMatchObject({
       guestAccessToken: null,
     })
   })
@@ -137,10 +127,10 @@ describe("signUpForEvent", () => {
 
 describe("changeOwnSignUp", () => {
   it("carries the guest token, because nothing else says the sign-up is theirs", async () => {
-    vi.mocked(updateEventSignUp).mockResolvedValue({data: {id: 5}, headers: {}} as never)
+    vi.mocked(updateEventSignUp).mockResolvedValue(answer(updateEventSignUp, aSignUp(), {}))
 
-    await expect(changeOwnSignUp(500, {version: 1} as never, "held")).resolves.toEqual({
-      signUp: {id: 5},
+    await expect(changeOwnSignUp(500, {version: 1}, "held")).resolves.toEqual({
+      signUp: aSignUp(),
       guestAccessToken: "held",
     })
     expect(updateEventSignUp).toHaveBeenCalledWith({
@@ -152,9 +142,9 @@ describe("changeOwnSignUp", () => {
   })
 
   it("sends no header for an account, which the api knows by its login", async () => {
-    vi.mocked(updateEventSignUp).mockResolvedValue({data: {id: 5}, headers: {}} as never)
+    vi.mocked(updateEventSignUp).mockResolvedValue(answer(updateEventSignUp, aSignUp(), {}))
 
-    await expect(changeOwnSignUp(500, {} as never)).resolves.toMatchObject({
+    await expect(changeOwnSignUp(500, {})).resolves.toMatchObject({
       guestAccessToken: null,
     })
     expect(updateEventSignUp).toHaveBeenCalledWith(
@@ -163,12 +153,9 @@ describe("changeOwnSignUp", () => {
   })
 
   it("prefers a fresh token over the one that was held", async () => {
-    vi.mocked(updateEventSignUp).mockResolvedValue({
-      data: {id: 5},
-      headers: {"x-guest-access-token": "fresh"},
-    } as never)
+    vi.mocked(updateEventSignUp).mockResolvedValue(answer(updateEventSignUp, aSignUp(), {"x-guest-access-token": "fresh"}))
 
-    await expect(changeOwnSignUp(500, {} as never, "held")).resolves.toMatchObject({
+    await expect(changeOwnSignUp(500, {}, "held")).resolves.toMatchObject({
       guestAccessToken: "fresh",
     })
   })
@@ -176,7 +163,7 @@ describe("changeOwnSignUp", () => {
 
 describe("withdrawSignUp", () => {
   it("carries the guest token where a guest is withdrawing", async () => {
-    vi.mocked(deleteEventSignup).mockResolvedValue({} as never)
+    vi.mocked(deleteEventSignup).mockResolvedValue(emptyAnswer(deleteEventSignup))
 
     await expect(withdrawSignUp(44, "held")).resolves.toBeUndefined()
     expect(deleteEventSignup).toHaveBeenCalledWith({
@@ -187,7 +174,7 @@ describe("withdrawSignUp", () => {
   })
 
   it("sends no header for an account", async () => {
-    vi.mocked(deleteEventSignup).mockResolvedValue({} as never)
+    vi.mocked(deleteEventSignup).mockResolvedValue(emptyAnswer(deleteEventSignup))
 
     await withdrawSignUp(44)
     expect(deleteEventSignup).toHaveBeenCalledWith(

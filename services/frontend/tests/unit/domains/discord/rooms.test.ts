@@ -3,6 +3,8 @@ import {fitting, howFull, liveOf, unlockedFor, POLL_MS, readDiscordRooms, RETRY_
 import {readGuildCounts, readGuildWidget} from "@/domains/discord/adapters/widget"
 import {readLiveServer} from "@/domains/discord/adapters/live"
 import {openLiveSocket} from "@/domains/discord/adapters/liveSocket"
+import type {GuildWidget, WidgetMember} from "@/domains/discord/adapters/widget"
+import type {DiscordLiveResponse} from "@/services/api"
 
 vi.mock("@/domains/discord/adapters/live", () => ({readLiveServer: vi.fn()}))
 vi.mock("@/domains/discord/adapters/liveSocket", () => ({openLiveSocket: vi.fn()}))
@@ -12,22 +14,28 @@ vi.mock("@/domains/discord/adapters/widget", async (importOriginal) => ({
   readGuildCounts: vi.fn(),
 }))
 
-const WIDGET = {
+/** One person as the widget lists them; only the name, room and picture matter here. */
+const person = (username: string, channel_id?: string, avatar_url = ""): WidgetMember =>
+  ({id: username, username, channel_id, avatar_url, status: "online"})
+
+const WIDGET: GuildWidget = {
+  id: "324",
   name: "Blueshell Esports",
+  instant_invite: null,
   presence_count: 42,
   channels: [
-    {id: "357", name: "AFK"},
+    {id: "357", name: "AFK", position: 0},
     {id: "2", name: "Public Voice 2", position: 2},
     {id: "1", name: "Public Voice 1", position: 1},
     {id: "134", name: "➕ Create Public VC", position: 3},
     {id: "3", name: "Public Voice 3", position: 4},
   ],
   members: [
-    {username: "Emma", channel_id: "1", avatar_url: "https://cdn.discordapp.com/widget-avatars/emma"},
-    {username: "Viktor", channel_id: "2", avatar_url: ""},
-    {username: "Mo", channel_id: "2", avatar_url: ""},
-    {username: "Sleepy", channel_id: "357", avatar_url: ""},
-    {username: "Idle"},
+    person("Emma", "1", "https://cdn.discordapp.com/widget-avatars/emma"),
+    person("Viktor", "2"),
+    person("Mo", "2"),
+    person("Sleepy", "357"),
+    person("Idle"),
   ],
 }
 
@@ -39,7 +47,7 @@ describe("the Discord's voice rooms", () => {
   })
 
   it("lists the rooms somebody is in, the fullest first, then the room-maker, and never another empty room or AFK", async () => {
-    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET as never)
+    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET)
     vi.mocked(readGuildCounts).mockResolvedValue({members: 1199, online: 269})
 
     expect(await readDiscordRooms()).toEqual({
@@ -101,13 +109,13 @@ describe("the Discord's voice rooms", () => {
     expect(bare?.members).toBeUndefined()
 
     vi.mocked(readLiveServer).mockRejectedValueOnce(new Error("offline"))
-    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET as never)
+    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET)
     vi.mocked(readGuildCounts).mockResolvedValue({members: 1199, online: 269})
     expect((await readDiscordRooms())?.members).toBe(1199)
   })
 
   it("counts from the widget alone where the invite would not say", async () => {
-    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET as never)
+    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET)
     vi.mocked(readGuildCounts).mockRejectedValue(new Error("refused"))
 
     const rooms = await readDiscordRooms()
@@ -148,15 +156,16 @@ describe("the Discord's voice rooms", () => {
 })
 
 describe("following the Discord server", () => {
-  const LIVE = {
+  const LOUNGE = {id: "3", name: "Members lounge", locked: true, href: "https://discord.com/channels/324/3", people: [{name: "Mo", avatar: null}]}
+  const LIVE: DiscordLiveResponse = {
     server: "Blueshell Esports",
     online: 269,
     members: 1199,
-    rooms: [{id: "3", name: "Members lounge", locked: true, href: "https://discord.com/channels/324/3", people: [{name: "Mo", avatar: null}]}],
+    rooms: [LOUNGE],
   }
 
   /* Each socket the watch opens, with the two ways the api talks back and whether it was closed. */
-  let sockets: {live: (live: typeof LIVE) => void, gone: () => void, close: ReturnType<typeof vi.fn>}[]
+  let sockets: {live: (live: DiscordLiveResponse) => void, gone: () => void, close: ReturnType<typeof vi.fn>}[]
   /* Every watch a test starts, stopped after it so none keeps listening to the document. */
   let stops: (() => void)[]
   const watch = (onRooms: Parameters<typeof watchDiscordRooms>[0]) => {
@@ -172,11 +181,11 @@ describe("following the Discord server", () => {
     stops = []
     vi.mocked(openLiveSocket).mockImplementation((live, gone) => {
       const close = vi.fn()
-      sockets.push({live: live as never, gone, close})
+      sockets.push({live, gone, close})
       return close
     })
     vi.mocked(readLiveServer).mockResolvedValue(null)
-    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET as never)
+    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET)
     vi.mocked(readGuildCounts).mockResolvedValue({members: 1199, online: 269})
     vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible")
   })
@@ -191,24 +200,24 @@ describe("following the Discord server", () => {
     const heard = vi.fn()
     const stop = watch(heard)
 
-    sockets[0].live(LIVE)
-    sockets[0].live({...LIVE, online: 270})
+    sockets[0]?.live(LIVE)
+    sockets[0]?.live({...LIVE, online: 270})
     await vi.advanceTimersByTimeAsync(POLL_MS * 3)
 
     expect(heard.mock.calls.map(([rooms]) => rooms.online)).toEqual([269, 270])
-    expect(heard.mock.calls[0][0]).toMatchObject({server: "Blueshell", rooms: [{name: "Members lounge", locked: true, people: [{name: "Mo"}]}]})
+    expect(heard.mock.calls[0]?.[0]).toMatchObject({server: "Blueshell", rooms: [{name: "Members lounge", locked: true, people: [{name: "Mo"}]}]})
     expect(readGuildWidget).not.toHaveBeenCalled()
     stop()
-    expect(sockets[0].close).toHaveBeenCalledOnce()
+    expect(sockets[0]?.close).toHaveBeenCalledOnce()
   })
 
   it("drops a room the moment its last person leaves, or Discord deletes it", async () => {
     const heard = vi.fn()
     watch(heard)
 
-    sockets[0].live(LIVE)
-    sockets[0].live({...LIVE, rooms: [{...LIVE.rooms[0], people: []}]})
-    sockets[0].live({...LIVE, rooms: []})
+    sockets[0]?.live(LIVE)
+    sockets[0]?.live({...LIVE, rooms: [{...LOUNGE, people: []}]})
+    sockets[0]?.live({...LIVE, rooms: []})
 
     expect(heard.mock.calls.map(([rooms]) => rooms.rooms.length)).toEqual([1, 0, 0])
   })
@@ -217,14 +226,14 @@ describe("following the Discord server", () => {
     const heard = vi.fn()
     watch(heard)
 
-    sockets[0].gone()
+    sockets[0]?.gone()
     await vi.advanceTimersByTimeAsync(0)
     expect(heard).toHaveBeenCalledOnce()
-    expect(heard.mock.calls[0][0].online).toBe(269)
+    expect(heard.mock.calls[0]?.[0].online).toBe(269)
 
     await vi.advanceTimersByTimeAsync(RETRY_MS)
     expect(sockets).toHaveLength(2)
-    sockets[1].gone()
+    sockets[1]?.gone()
     await vi.advanceTimersByTimeAsync(RETRY_MS * 2 - 1)
     expect(sockets).toHaveLength(2)
     await vi.advanceTimersByTimeAsync(1)
@@ -234,10 +243,10 @@ describe("following the Discord server", () => {
     expect(heard).toHaveBeenCalledTimes(2)
 
     // Back on the socket: the asking stops, and the next failure waits the shortest time again.
-    sockets[2].live(LIVE)
+    sockets[2]?.live(LIVE)
     await vi.advanceTimersByTimeAsync(POLL_MS * 2)
     expect(heard).toHaveBeenCalledTimes(3)
-    sockets[2].gone()
+    sockets[2]?.gone()
     await vi.advanceTimersByTimeAsync(RETRY_MS)
     expect(sockets).toHaveLength(4)
   })
@@ -263,7 +272,7 @@ describe("following the Discord server", () => {
     document.dispatchEvent(new Event("visibilitychange"))
     expect(sockets).toHaveLength(1)
 
-    sockets[0].gone()
+    sockets[0]?.gone()
     vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden")
     document.dispatchEvent(new Event("visibilitychange"))
     await vi.advanceTimersByTimeAsync(RETRY_MAX_MS)

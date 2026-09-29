@@ -1,5 +1,8 @@
 import {describe, expect, it, vi, beforeEach, afterEach} from "vitest"
 import {nextTick} from "vue"
+import type {FormContext} from "vee-validate"
+
+const form = () => ({values: {}, setFieldError: vi.fn()})
 
 const {mockApply, mockHandleNetworkError, mockShowStatusMessage, mockStore} = vi.hoisted(() => ({
   mockApply: vi.fn(),
@@ -45,9 +48,10 @@ describe("formUtils composables", () => {
 
   it("validates vee form through formRef", async () => {
     const {formRef, validate} = useVeeForm()
+    // Only validate is read; the rest of a vee-validate form has no part in this.
     formRef.value = {
       validate: vi.fn().mockResolvedValue({valid: true}),
-    } as never
+    } as unknown as FormContext
 
     await expect(validate()).resolves.toBe(true)
   })
@@ -63,7 +67,7 @@ describe("formUtils composables", () => {
 
   it("delegates submit errors to field validation first", () => {
     mockApply.mockReturnValue({messages: []})
-    handleSubmitError({} as never, new Error("x"))
+    handleSubmitError(form(), new Error("x"))
     expect(mockApply).toHaveBeenCalled()
     expect(mockHandleNetworkError).not.toHaveBeenCalled()
     expect(mockShowStatusMessage).not.toHaveBeenCalled()
@@ -72,13 +76,13 @@ describe("formUtils composables", () => {
   it("falls back to network error handler when the error is not a field validation one", () => {
     mockApply.mockReturnValue(null)
     const error = new Error("x")
-    handleSubmitError({} as never, error)
+    handleSubmitError(form(), error)
     expect(mockHandleNetworkError).toHaveBeenCalledWith(error)
   })
 
   it("says out loud what it could not attach to a field", () => {
     mockApply.mockReturnValue({messages: ["Username is taken.", "Email is taken."]})
-    handleSubmitError({} as never, new Error("x"))
+    handleSubmitError(form(), new Error("x"))
     expect(mockHandleNetworkError).not.toHaveBeenCalled()
     expect(mockShowStatusMessage).toHaveBeenCalledWith("Username is taken. Email is taken.")
   })

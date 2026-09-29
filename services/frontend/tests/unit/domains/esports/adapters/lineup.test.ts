@@ -7,6 +7,9 @@ import {
   type LineupDraft,
 } from "@/domains/esports/adapters/lineup"
 import {addRosterEntry, fieldTeam, publishLineup as sendLineup} from "@/services/api"
+import {TeamRole} from "@/services/api"
+import {aRosterEntry, aSeason, aTeam} from "../../../helpers/apiFixtures"
+import {answer, refusal} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -16,7 +19,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 }))
 
 const entry = (over: Partial<DraftEntry> = {}): DraftEntry => ({
-  id: null, handle: "nova", role: "PLAYER", roleTitle: "", description: "", userId: null,
+  id: null, handle: "nova", role: TeamRole.PLAYER, roleTitle: "", description: "", userId: null,
   displayName: "", icon: null, ...over,
 })
 
@@ -29,9 +32,9 @@ const draft = (over: Partial<LineupDraft> = {}): LineupDraft => ({
 
 /** Every write answers yes, so a test says which of them it is about by overriding one. */
 const everythingLands = () => {
-  vi.mocked(sendLineup).mockResolvedValue({data: {team: {id: 7}, roster: []}} as never)
-  vi.mocked(fieldTeam).mockResolvedValue({data: {team: {id: 7}}} as never)
-  vi.mocked(addRosterEntry).mockResolvedValue({data: {id: 30}} as never)
+  vi.mocked(sendLineup).mockResolvedValue(answer(sendLineup, {team: aTeam({id: 7}), roster: []}))
+  vi.mocked(fieldTeam).mockResolvedValue(answer(fieldTeam, {team: aTeam({id: 7}), game: "VAL", season: aSeason({id: 3}), carried: []}))
+  vi.mocked(addRosterEntry).mockResolvedValue(answer(addRosterEntry, aRosterEntry({id: 30})))
 }
 
 const bodyOf = (call: unknown) => (call as {body: Record<string, unknown>}).body
@@ -70,7 +73,7 @@ describe("publishLineup", () => {
 
   // The api applies the draft whole or not at all, so a refusal is only a reason.
   it("answers a refusal with the api's reason and nothing about what landed", async () => {
-    vi.mocked(sendLineup).mockResolvedValue({error: {detail: "Not this season."}} as never)
+    vi.mocked(sendLineup).mockResolvedValue(refusal(sendLineup, {detail: "Not this season."}))
 
     expect(await publishLineup(draft())).toEqual({ok: false, reason: "Not this season."})
   })
@@ -121,8 +124,8 @@ describe("fieldExistingTeam", () => {
 
   it("says how many were carried across before the one that was refused", async () => {
     vi.mocked(addRosterEntry)
-      .mockResolvedValueOnce({data: {id: 30}} as never)
-      .mockResolvedValueOnce({error: {detail: "Nope."}} as never)
+      .mockResolvedValueOnce(answer(addRosterEntry, aRosterEntry({id: 30})))
+      .mockResolvedValueOnce(refusal(addRosterEntry, {detail: "Nope."}))
 
     const done = await fieldExistingTeam(fielding({sourceSize: 3}))
 
@@ -130,7 +133,7 @@ describe("fieldExistingTeam", () => {
   })
 
   it("carries nobody where the fielding itself was refused", async () => {
-    vi.mocked(fieldTeam).mockResolvedValue({error: {detail: "Not this season."}} as never)
+    vi.mocked(fieldTeam).mockResolvedValue(refusal(fieldTeam, {detail: "Not this season."}))
 
     const done = await fieldExistingTeam(fielding({sourceSize: 3}))
 

@@ -5,7 +5,7 @@ import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import EnumPicker from "@/components/form/fields/EnumPicker.vue"
-import {apply} from "@/plugins/validation"
+import {apply, type RejectableForm} from "@/plugins/validation"
 
 /** What the api sends when it refuses a field: ADR-026's shape, as the forms receive it. */
 const refusal = (field: string, said: string) => ({
@@ -19,16 +19,16 @@ const refusal = (field: string, said: string) => ({
  * A form holding one island field, with a handle on the vee-validate context, which is what
  * `handleSubmitError` reaches for when the api refuses a save.
  */
-const formWith = (name: string, control: Record<string, unknown>) => {
+const formWith = (name: string, control: {componentProps?: Record<string, unknown>}) => {
   const held = ref("")
-  let context: {setFieldError: (f: string, m: string[]) => void} | undefined
+  let context: RejectableForm | undefined
   const wrapper = mount(defineComponent({
     setup() {
       return () => h(Form, null, {
-        default: (slot: {setFieldError: (f: string, m: string[]) => void}) => {
+        default: (slot: RejectableForm) => {
           context = slot
-          return h(VvField, {modelValue: held.value, "onUpdate:modelValue": (v: string) => {
-            held.value = v
+          return h(VvField, {modelValue: held.value, "onUpdate:modelValue": (v: unknown) => {
+            held.value = String(v)
           }, name, label: "Country", ...control})
         },
       })
@@ -41,7 +41,7 @@ describe("an api refusal", () => {
   it("is shown under the field it names", async () => {
     const {wrapper, context} = formWith("country", {componentProps: {kind: "country"}})
 
-    apply(context() as never, refusal("country", "We do not ship there."))
+    apply(context(), refusal("country", "We do not ship there."))
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 
@@ -52,7 +52,7 @@ describe("an api refusal", () => {
   it("reaches a text field the same way", async () => {
     const {wrapper, context} = formWith("username", {})
 
-    apply(context() as never, refusal("username", "That name is taken."))
+    apply(context(), refusal("username", "That name is taken."))
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 

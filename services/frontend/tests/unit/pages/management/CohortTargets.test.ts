@@ -4,6 +4,7 @@ import CohortTargets from "@/pages/management/CohortTargets.vue"
 import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import {
+  applyTidy,
   archiveTarget,
   createFolderInSystem,
   createListInSystem,
@@ -207,5 +208,46 @@ describe("CohortTargets", () => {
     await flushPromises()
 
     expect(wrapper.find("[data-testid=cohort-targets-tidy-nothing]").exists()).toBe(true)
+  })
+
+  it("moves the picked lists, keeps the dialog open over a failure, and closes it when all moved", async () => {
+    const wrapper = await mountPage()
+    const move = {externalId: "7", label: "Guests", from: "Newsletter", to: "Members"}
+    vi.mocked(fetchTidyPlan).mockResolvedValue({moves: [move], foldersToCreate: []})
+    vi.mocked(applyTidy)
+      .mockResolvedValueOnce({moved: [], failed: [{externalId: "7", label: "Guests", message: "Brevo said no"}]})
+      .mockResolvedValueOnce({moved: [], failed: []})
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+    await wrapper.get("[data-testid=cohort-targets-tidy-pick-7] input").setValue(false)
+    await wrapper.get("[data-testid=cohort-targets-tidy-pick-7] input").setValue(true)
+    modal(wrapper, "cohort-targets-tidy-dialog").vm.$emit("save")
+    await flushPromises()
+
+    expect(applyTidy).toHaveBeenCalledWith("BREVO", ["7"])
+    expect(wrapper.get("[data-testid=cohort-targets-tidy-failures]").text()).toBe("Guests: Brevo said no")
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("modelValue")).toBe(true)
+
+    modal(wrapper, "cohort-targets-tidy-dialog").vm.$emit("save")
+    await flushPromises()
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("modelValue")).toBe(false)
+  })
+
+  it("closes the tidy on cancel and when dismissed", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(fetchTidyPlan).mockResolvedValue({moves: [], foldersToCreate: []})
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+    modal(wrapper, "cohort-targets-tidy-dialog").vm.$emit("cancel")
+    await flushPromises()
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("modelValue")).toBe(false)
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+    modal(wrapper, "cohort-targets-tidy-dialog").vm.$emit("update:modelValue", false)
+    await flushPromises()
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("modelValue")).toBe(false)
   })
 })

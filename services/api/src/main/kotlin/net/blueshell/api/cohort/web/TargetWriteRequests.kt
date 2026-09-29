@@ -33,3 +33,8 @@ data class DeleteExternalTargetRequest(
     @field:NotBlank(message = "Type the list's name to delete it")
     val name: String,
 )
+
+@Schema(name = "ApplyTidyRequest", description = "The lists picked out of the tidy's preview.")
+data class ApplyTidyRequest(
+    val externalIds: List<String>,
+)

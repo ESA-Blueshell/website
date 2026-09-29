@@ -73,6 +73,13 @@ class TargetCatalogTest {
             id: String,
             label: String,
         ) = ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label)
+
+        override fun rename(
+            target: ExternalTarget,
+            name: String,
+        ): ExternalTarget = error("not used")
+
+        override fun createFolder(name: String): List<String> = error("not used")
     }
 
     @Test

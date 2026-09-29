@@ -112,5 +112,10 @@ import against a real Vault with the `api` policy, and `DatabaseLoginIT` proves 
 past `max_ttl` against a real MariaDB. The poll (#1823) reaches every consumer: Brevo,
 Google Calendar, the mail sender and the bounce poller (#1823), the two-factor key, the JWT
 secret and the Vault OIDC client secret (#1827), and the Discord REST client and gateway
-(#1828). Until the contract step removes the api Deployment's `EMAIL_BOUNCE_IMAP_PASSWORD`,
-that variable outranks Vault for the bounce password.
+(#1828).
+
+It landed in two steps so each could merge without breaking what ran. The expand step
+changed the api and added to Vault while the api Deployment still ran the injector, so the
+release after it carried an image that read Vault directly. The contract step, after that
+release, removed the injector, its env, the `api-secrets` Secret, the older key names and
+the grants only the older image needed.

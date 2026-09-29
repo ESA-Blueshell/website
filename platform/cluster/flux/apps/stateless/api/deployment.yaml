@@ -35,50 +35,6 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: api
-      annotations:
-        vault.hashicorp.com/agent-inject: 'true'
-        vault.hashicorp.com/agent-inject-token: 'true'
-        vault.hashicorp.com/agent-pre-populate-only: 'true'
-        vault.hashicorp.com/role: api
-        vault.hashicorp.com/agent-inject-secret-api.env: secret/data/api
-        # Every value is single-quoted and wrapped in
-        # `{{ with (index .Data.data "...") }}{{ . }}{{ end }}` so a
-        # missing KV field renders as `KEY=''` instead of the literal
-        # `<no value>` consul-template default — `<` / `>` are shell
-        # redirection and would crash `. /vault/secrets/api.env` with
-        # `syntax error: unexpected newline`. Single quotes also tame
-        # any `=`, `{`, `}`, `"`, `\n` etc. that legit values carry
-        # (Brevo keys, Google service-account JSON). Google-generated
-        # JSON doesn't contain raw single quotes; if a future rotation
-        # does, base64-encode that one field in Vault and decode in
-        # the start script.
-        #
-        # `with` over `| default ""` because Vault Agent's bundled
-        # consul-template strips the Sprig `default` function for
-        # security — `template: function "default" not defined` is the
-        # error otherwise. `with` is a built-in Go-template action,
-        # always available.
-        #
-        # MYSQL_USER / MYSQL_PASSWORD live in `secret/api` as
-        # `mysql-user` / `mysql-password` (mirrored by
-        # scripts/seed-vault-from-env.sh from the same MYSQL_USER /
-        # MYSQL_PASSWORD env vars that feed `secret/platform/mariadb`).
-        # Future work: re-enable Spring Cloud Vault dynamic creds
-        # (`spring.cloud.vault.database.enabled=true`) once that
-        # integration is fixed and drop these two fields again.
-        vault.hashicorp.com/agent-inject-template-api.env: |
-          {{- with secret "secret/data/api" -}}
-          JWT_SECRET='{{ with (index .Data.data "jwt-secret") }}{{ . }}{{ end }}'
-          TWO_FACTOR_ENCRYPTION_KEY='{{ with (index .Data.data "two-factor-encryption-key") }}{{ . }}{{ end }}'
-          BREVO_API_KEY='{{ with (index .Data.data "brevo-api-key") }}{{ . }}{{ end }}'
-          BREVO_FOLDER_CONTRIBUTION_PERIODS_ID='{{ with (index .Data.data "brevo-folder-contribution-periods-id") }}{{ . }}{{ end }}'
-          GOOGLE_CALENDAR_ID='{{ with (index .Data.data "google-calendar-id") }}{{ . }}{{ end }}'
-          GOOGLE_CALENDAR_SA_JSON='{{ with (index .Data.data "google-calendar-sa-json") }}{{ . }}{{ end }}'
-          DISCORD_BOT_TOKEN='{{ with (index .Data.data "discord-bot-token") }}{{ . }}{{ end }}'
-          DISCORD_GUILD_ID='{{ with (index .Data.data "discord-guild-id") }}{{ . }}{{ end }}'
-          MYSQL_USER='{{ with (index .Data.data "mysql-user") }}{{ . }}{{ end }}'
-          MYSQL_PASSWORD='{{ with (index .Data.data "mysql-password") }}{{ . }}{{ end }}'
-          {{- end }}
     spec:
       serviceAccountName: api
       # ghcr.io/esa-blueshell/api is a private package; the pull secret
@@ -92,37 +48,17 @@ spec:
           image: ghcr.io/esa-blueshell/api
           imagePullPolicy: IfNotPresent
           command:
-            - /bin/sh
-            - -ec
-            - |
-              export SPRING_CLOUD_VAULT_TOKEN="$(cat /vault/secrets/token)"
-              set -a
-              . /vault/secrets/api.env
-              set +a
-              exec java \
-                -XX:+UseZGC \
-                -XX:+AlwaysPreTouch \
-                -XX:MaxRAMPercentage=75 \
-                -jar /app/app.jar
+            - java
+            - -XX:+UseZGC
+            - -XX:+AlwaysPreTouch
+            - -XX:MaxRAMPercentage=75
+            - -jar
+            - /app/app.jar
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
-            - name: SPRING_CONFIG_IMPORT
-              value: vault://
-            - name: VAULT_ENABLED
-              value: 'true'
-            # VAULT_DB_ENABLED intentionally omitted (defaults to false
-            # via application.yaml). Spring Cloud Vault dynamic MariaDB
-            # creds (`database/creds/api`) are wired up by
-            # bootstrap-auth.sh and the Vault role works end-to-end,
-            # but `spring.cloud.vault.database.enabled=true` does not
-            # actually rebind `spring.datasource.{username,password}`
-            # in the version we ship — the api falls back to the
-            # `${MYSQL_USER:root}` placeholder default and connects
-            # with no password. Static creds via the Vault Agent
-            # template (MYSQL_USER / MYSQL_PASSWORD fields above) are
-            # the path used today; flip this back on once the dynamic-
-            # creds integration is debugged.
+            # Secrets are not set here: the prod profile reads them from Vault as
+            # this pod's ServiceAccount (api ADR-033).
             - name: MYSQL_HOST
               value: mariadb.data-system.svc.cluster.local
             - name: MYSQL_PORT
@@ -165,26 +101,8 @@ spec:
               value: Blueshell
             - name: EMAIL_REPLY_TO_ADDRESS
               value: sitecie@esa-blueshell.nl
-            # Mail principal credentials follow the
-            # `account.<localpart>` convention. The username is the
-            # full email derived from the localPart; the password
-            # lives at Vault key `account.<localpart>`.
-            #
-            # An api image with the prod profile of #1868 sends and polls as
-            # bounce@ and ignores SMTP_USERNAME and SMTP_PASSWORD; they serve
-            # the image before it and go in the contract step of #1824.
-            - name: SMTP_USERNAME
-              value: api@esa-blueshell.nl
-            - name: SMTP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: stalwart-secrets
-                  key: account.api
-                  optional: true
-            # IMAP bounce poller — disabled by default; flip the flag once
-            # the bounce mailbox is provisioned.
-            - name: EMAIL_BOUNCE_IMAP_ENABLED
-              value: 'false'
+            # The bounce mailbox: the api sends and polls as it, with its
+            # password from Vault, so undelivered mail comes back here (#1868).
             - name: EMAIL_BOUNCE_IMAP_HOST
               value: mail.esa-blueshell.nl
             - name: EMAIL_BOUNCE_IMAP_PORT
@@ -195,23 +113,10 @@ spec:
               value: INBOX
             - name: EMAIL_BOUNCE_IMAP_USERNAME
               value: bounce@esa-blueshell.nl
-            - name: EMAIL_BOUNCE_IMAP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: stalwart-secrets
-                  key: account.bounce
-                  optional: true
             - name: AUTH_TRANSIT_ENABLED
               value: 'true'
-            - name: VAULT_ADDR
-              value: http://vault.data-system.svc.cluster.local:8200
             - name: AUTH_TRANSIT_KEY_NAME
               value: api-jwt
-            - name: VAULT_OIDC_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: api-secrets
-                  key: vault-oidc-client-secret
           ports:
             - containerPort: 8080
               name: http

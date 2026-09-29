@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.PrivateApplicationResponse
 import net.dv8tion.jda.api.JDA
@@ -53,11 +54,11 @@ class JdaVoiceServerSourceTest {
         }
     private val jda: JDA = mock { on { getGuildById("324") } doReturn guild }
 
-    private val environment = MockEnvironment().withProperty("discord.botToken", "token")
+    private val environment = MockEnvironment().withProperty(Credentials.DISCORD_BOT, "token")
 
     private fun source(api: DiscordApi): JdaVoiceServerSource = JdaVoiceServerSource(environment, "324", api).also { it.connect = { jda } }
 
-    private fun tokenRotated() = EnvironmentChangeEvent(setOf("discord.botToken"))
+    private fun tokenRotated() = EnvironmentChangeEvent(setOf(Credentials.DISCORD_BOT))
 
     private fun applicationWith(flags: Int): DiscordApi {
         val application: PrivateApplicationResponse = mock { on { this.flags } doReturn flags }
@@ -123,7 +124,7 @@ class JdaVoiceServerSourceTest {
     fun `tries again with a growing wait where the gateway will not start, and connects without a restart`() {
         val later = Later()
         var tries = 0
-        val source = JdaVoiceServerSource(MockEnvironment().withProperty("discord.botToken", "token"), "324", applicationWith(0))
+        val source = JdaVoiceServerSource(environment, "324", applicationWith(0))
         source.later = later::hold
         source.connect = { if (++tries < 3) error("unreachable") else jda }
 
@@ -141,7 +142,7 @@ class JdaVoiceServerSourceTest {
     @Test
     fun `waits at most half an hour between attempts`() {
         val later = Later()
-        val source = JdaVoiceServerSource(MockEnvironment().withProperty("discord.botToken", "token"), "324", applicationWith(0))
+        val source = JdaVoiceServerSource(environment, "324", applicationWith(0))
         source.later = later::hold
         source.connect = { error("unreachable") }
 
@@ -158,7 +159,7 @@ class JdaVoiceServerSourceTest {
         val api = applicationWith(0)
         val second: JDA = mock { on { getGuildById("324") } doReturn guild }
         var connections = 0
-        val source = JdaVoiceServerSource(MockEnvironment().withProperty("discord.botToken", "token"), "324", api)
+        val source = JdaVoiceServerSource(environment, "324", api)
         source.later = later::hold
         source.connect = { if (++connections == 1) jda else second }
         source.start()
@@ -176,7 +177,7 @@ class JdaVoiceServerSourceTest {
     fun `stops trying once it is stopped, and takes its own shutdown in its stride`() {
         val later = Later()
         var tries = 0
-        val source = JdaVoiceServerSource(MockEnvironment().withProperty("discord.botToken", "token"), "324", applicationWith(0))
+        val source = JdaVoiceServerSource(environment, "324", applicationWith(0))
         source.later = later::hold
         source.connect = { if (++tries == 1) jda else error("unreachable") }
         source.start()
@@ -208,7 +209,7 @@ class JdaVoiceServerSourceTest {
 
     @Test
     fun `runs an attempt it puts off on a thread of its own`() {
-        val source = JdaVoiceServerSource(MockEnvironment().withProperty("discord.botToken", "token"), "324", applicationWith(0))
+        val source = JdaVoiceServerSource(environment, "324", applicationWith(0))
         val ran = CountDownLatch(1)
 
         source.later(Duration.ZERO) { ran.countDown() }
@@ -369,12 +370,32 @@ class JdaVoiceServerSourceTest {
         val source = source(applicationWith(0)).also { it.connect = { sessions.removeFirst() } }
         source.start()
 
-        environment.setProperty("discord.botToken", "rotated")
+        environment.setProperty(Credentials.DISCORD_BOT, "rotated")
         source.onTokenRotated(tokenRotated())
 
         verify(jda).shutdown()
         assertThat(sessions).isEmpty()
-        assertThat(source.guild()).isSameAs(guild)
+        assertThat(source.tokenInUse).isEqualTo("rotated")
+    }
+
+    @Test
+    fun `a retry queued before the rotation finds the new session up and opens no second one`() {
+        val retries = mutableListOf<() -> Unit>()
+        var connects = 0
+        val source =
+            source(applicationWith(0)).also {
+                it.later = { _, attempt -> retries += attempt }
+                it.connect = { if (connects++ == 0) throw IllegalStateException("gateway down") else jda }
+            }
+        source.start()
+        assertThat(retries).hasSize(1)
+
+        environment.setProperty(Credentials.DISCORD_BOT, "rotated")
+        source.onTokenRotated(tokenRotated())
+        retries.forEach { it() }
+
+        assertThat(connects).isEqualTo(2)
+        assertThat(source.tokenInUse).isEqualTo("rotated")
     }
 
     @Test
@@ -383,9 +404,9 @@ class JdaVoiceServerSourceTest {
         source.start()
 
         source.onTokenRotated(tokenRotated())
-        environment.setProperty("discord.botToken", "")
+        environment.setProperty(Credentials.DISCORD_BOT, "")
         source.onTokenRotated(tokenRotated())
-        environment.setProperty("discord.botToken", "rotated")
+        environment.setProperty(Credentials.DISCORD_BOT, "rotated")
         source.onTokenRotated(EnvironmentChangeEvent(setOf("brevo.apiKey")))
 
         verify(jda, never()).shutdown()

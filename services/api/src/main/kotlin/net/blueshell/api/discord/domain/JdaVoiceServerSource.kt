@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import org.springframework.context.event.EventListener as OnApplicationEvent
 
 /**
  * The live server, held by a gateway connection. Discord's REST API cannot list who is in voice,
@@ -59,10 +58,12 @@ class JdaVoiceServerSource(
     SmartLifecycle {
     @Volatile private var jda: JDA? = null
 
-    // Read at each connect; a rotated token reconnects the gateway (api ADR-033).
     private val token = RotatingSecret(environment, Credentials.DISCORD_BOT)
 
     @Volatile private var connectedWith = ""
+
+    /** The token the gateway last connected with. */
+    internal val tokenInUse: String get() = connectedWith
 
     @Volatile private var granted: Set<GatewayIntent> = emptySet()
 
@@ -181,7 +182,8 @@ class JdaVoiceServerSource(
 
     @Synchronized
     private fun attempt() {
-        if (!running) return
+        // A retry queued before a reconnect finds the new session up and leaves it alone.
+        if (!running || jda != null) return
         granted =
             runCatching { privilegedIntentsOf(discordApi.getMyOauth2Application().flags) }
                 .onFailure { log.warn("Discord application flags could not be read; connecting without privileged intents", it) }
@@ -214,7 +216,7 @@ class JdaVoiceServerSource(
      * Reconnects the gateway under a token rotated in Vault while the api runs. Reads fall back
      * as when Discord is unreachable until the new session is up.
      */
-    @OnApplicationEvent(EnvironmentChangeEvent::class)
+    @org.springframework.context.event.EventListener(EnvironmentChangeEvent::class)
     @Synchronized
     fun onTokenRotated(event: EnvironmentChangeEvent) {
         if (Credentials.DISCORD_BOT !in event.keys || !running || token.current() == connectedWith) return

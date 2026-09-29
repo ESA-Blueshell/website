@@ -375,7 +375,8 @@ none of these needs `kubectl rollout restart`. Write each rotation as one
 - **Discord bot token.** The REST client sends it on its next call and the
   gateway connects again under it; pages fall back as when Discord is down
   until the new session is up. A token set where none was before needs a
-  restart, since the bot's beans only exist when the api starts with one. See
+  restart, since the bot's beans only exist when the api starts with one.
+  `scripts/discord-bot-check.sh --guild <server-id> --vault` patches it; see
   [`discord-bot.md`](discord-bot.md).
 
 - **Bounce mailbox password** (`account.bounce` in `secret/platform/mail`). The

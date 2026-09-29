@@ -92,7 +92,7 @@ scripts/discord-bot-check.sh --guild <test-server-id> --dev
 docker compose up -d api
 ```
 
-**Production**, which patches `secret/api` and restarts the api. It needs the `vault` CLI logged in and `kubectl` on the cluster:
+**Production**, which patches `secret/api` and restarts the api (only a first token needs that). It needs the `vault` CLI logged in and `kubectl` on the cluster:
 
 ```bash
 scripts/discord-bot-check.sh --guild <server-id> --vault
@@ -103,7 +103,7 @@ By hand, it is always `patch`, never `put`. `vault kv put secret/api …` replac
 ```bash
 vault kv patch secret/api discord.botToken=- discord.guildId=<server-id>   # the token on stdin
 vault kv patch secret/api discord-bot-token=- discord-guild-id=<server-id> # the injector's names, again on stdin
-kubectl -n default rollout restart deployment/api
+kubectl -n default rollout restart deployment/api   # only where no token was set before
 ```
 
 The api re-reads `secret/api` every five minutes (api ADR-033): a token that changes reaches the REST client on its next call and reconnects the gateway, so rotating one needs no restart. The restart is for a token set where none was before, since the bot's beans only exist when the api starts with one. The second pair feeds the Vault Agent template until the api Deployment stops using it.

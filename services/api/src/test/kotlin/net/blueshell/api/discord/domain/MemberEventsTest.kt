@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.clients.discord.api.DiscordApi
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.RawGatewayEvent
@@ -34,7 +35,7 @@ class MemberEventsTest {
 
     @Test
     fun `passes on member changes and fresh connections, and nothing else`() {
-        val source = JdaVoiceServerSource(MockEnvironment().withProperty("discord.botToken", "token"), "324", mock<DiscordApi>())
+        val source = JdaVoiceServerSource(MockEnvironment().withProperty(Credentials.DISCORD_BOT, "token"), "324", mock<DiscordApi>())
         val heard = mutableListOf<String>()
         source.onMemberNamed { id, name -> heard += "$id=$name" }
         source.onConnected { heard += "connected" }

@@ -1,897 +1,480 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
+import type {VueWrapper} from "@vue/test-utils"
 import MembershipSignUp from "@/pages/membership/MembershipSignUp.vue"
-import {mountInApp, settle} from "../helpers"
+import router from "@/plugins/router.ts"
+import store, {type StoredLogin} from "@/plugins/store"
+import {
+  apply,
+  correctEmail,
+  findAddressById,
+  findCurrentContributionPeriod,
+  findMemberProfileByUserId,
+  findUserById,
+  resumeSignup,
+  saveAddress,
+  type SignupResumeResponse,
+  updateDetails,
+  type UserDetailResponse,
+} from "@/services/api"
+import {answer, emptyAnswer} from "../../helpers/sdkAnswers"
+import {mountPage} from "../../helpers/mountPage"
+import {settle} from "../helpers"
 
-const {
-  mockRouterReplace,
-  mockStore,
-  mockReadUser,
-  mockReadAddress,
-  mockCorrectEmail,
-  mockResumeSignupSession,
-  mockHandleNetworkError,
-  mockShowStatusMessage,
-  mockGoto,
-} = vi.hoisted(() => ({
-  mockRouterReplace: vi.fn(),
-  mockStore: {
-    getters: {isLoggedIn: false, getLogin: null as null | Record<string, unknown>},
-    commit: vi.fn(),
-  },
-  mockReadUser: vi.fn(),
-  mockReadAddress: vi.fn(),
-  mockCorrectEmail: vi.fn(),
-  mockResumeSignupSession: vi.fn(),
-  mockHandleNetworkError: vi.fn(),
-  mockShowStatusMessage: vi.fn(),
-  mockGoto: vi.fn(),
-}))
-
-// Filled by the page's own subscriptions, so a test can speak as the other tab.
-const activationHandlers: Array<(activation: {at: number}) => void> = []
-const rejectionHandlers: Array<() => void> = []
-
-vi.mock("@/plugins/router.ts", () => ({
-  default: {push: vi.fn(), replace: mockRouterReplace},
-}))
-vi.mock("@/plugins/store", () => ({default: mockStore}))
-vi.mock("@/plugins/handleNetworkError", () => ({
-  $handleNetworkError: mockHandleNetworkError,
-  $showStatusMessage: mockShowStatusMessage,
-}))
-vi.mock("@/plugins/goto", () => ({$goto: mockGoto}))
-
-vi.mock("@/plugins/signupContinuation", () => ({
-  SIGNUP_TOKEN_HEADER: "X-Signup-Token",
-  readSignupToken: () => sessionStorage.getItem("signup:continuation:token") ?? undefined,
-  rememberSignupToken: (token: string) =>
-    sessionStorage.setItem("signup:continuation:token", token),
-  forgetSignupToken: () => sessionStorage.removeItem("signup:continuation:token"),
-  onAccountActivated: (handler: (activation: {at: number}) => void) => {
-    activationHandlers.push(handler)
-    return () => activationHandlers.splice(activationHandlers.indexOf(handler), 1)
-  },
-  onSignupTokenRejected: (handler: () => void) => {
-    rejectionHandlers.push(handler)
-    return () => rejectionHandlers.splice(rejectionHandlers.indexOf(handler), 1)
-  },
-}))
-
-vi.mock("@/services/api", () => ({
-  correctEmail: mockCorrectEmail,
-}))
-
-vi.mock("@/domains/user", () => ({
-  readUser: mockReadUser,
-  readAddress: mockReadAddress,
-  resumeSignupSession: mockResumeSignupSession,
-  Role: {MEMBER: "MEMBER"},
-}))
-
-vi.mock("@/components/form/UserForm.vue", () => ({
-  default: {name: "UserForm", template: "<div />"},
-}))
-vi.mock("@/components/form/AddressForm.vue", () => ({
-  default: {name: "AddressForm", template: "<div />"},
-}))
-vi.mock("@/components/form/MembershipForm.vue", () => ({
-  default: {name: "MembershipForm", template: "<div />"},
-}))
-vi.mock("@/components/form/EmailConfirmationPanel.vue", () => ({
-  default: {
-    name: "EmailConfirmationPanel",
-    props: {
-      email: String,
-      username: String,
-      continuationToken: String,
-      confirmationConsequence: String,
-    },
-    emits: ["email-corrected", "back"],
-    template: "<div data-testid='email-confirm-step' />",
-  },
-}))
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({
-  default: {name: "TopBanner", template: "<div />"},
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
+  resumeSignup: vi.fn(),
+  updateDetails: vi.fn(),
+  saveAddress: vi.fn(),
+  apply: vi.fn(),
+  correctEmail: vi.fn(),
+  findCurrentContributionPeriod: vi.fn(),
+  findUserById: vi.fn(),
+  findAddressById: vi.fn(),
+  findMemberProfileByUserId: vi.fn(),
 }))
 
 const SIGNUP_TOKEN_KEY = "signup:continuation:token"
 
-const mountPage = async () => {
-  const wrapper = mountInApp(MembershipSignUp, {
-    global: {stubs: {UserForm: true, AddressForm: true, MembershipForm: true, TopBanner: true}},
-  })
-  await settle()
-  return wrapper
-}
-
-// VStepper renders only the slot for the active step, so a stub that forwards every
-// item slot is what makes the step bodies assertable at all.
-const allStepsStub = {
-  name: "VStepper",
-  template: `<div>
-    <slot name="item.1" /><slot name="item.2" /><slot name="item.3" /><slot name="item.4" />
-  </div>`,
-}
-
-const mountWithStepBodies = async () => {
-  const wrapper = mountInApp(MembershipSignUp, {
-    global: {
-      stubs: {
-        VStepper: allStepsStub,
-        UserForm: true,
-        AddressForm: true,
-        MembershipForm: true,
-        TopBanner: true,
-      },
-    },
-  })
-  await settle()
-  return wrapper
-}
-
-const nextButton = (wrapper: {get: (selector: string) => {element: Element}}) =>
-  wrapper.get('[data-testid="membership-details-next-btn"]').element as HTMLButtonElement
-
-/** Reaches into the component to install stub refs, since the forms are stubbed out. */
-const installRefs = (
-  wrapper: Awaited<ReturnType<typeof mountPage>>,
-  refs: {
-    userSave?: unknown
-    signupSession?: {signupToken: string} | undefined
-    addressSave?: unknown
-    membershipSave?: unknown
+const resumed: SignupResumeResponse = {
+  userId: 42,
+  email: "lena@example.com",
+  username: "lena",
+  initials: "L",
+  firstName: "Lena",
+  prefix: null,
+  lastName: "de Vries",
+  discord: "lena#1",
+  phoneNumber: "0612345678",
+  newsletter: true,
+  photoConsent: false,
+  emailConfirmed: false,
+  conditionsAccepted: false,
+  memberProfile: {
+    dateOfBirth: "1999-02-03", studentNumber: "s123", gender: "X", nationality: "NL", bhv: false, ehbo: true, nameOnRosters: false,
   },
-) => {
-  const vm = wrapper.vm as unknown as {
-    userRef: unknown
-    addressRef: unknown
-    membershipRef: unknown
-  }
-  // `in` rather than ?? so an explicit null means "saving failed" instead of
-  // silently falling back to a successful save.
-  vm.userRef = {
-    save: vi.fn().mockResolvedValue(
-      "userSave" in refs ? refs.userSave : {id: 1, email: "lena@example.com"},
-    ),
-    signupSession: refs.signupSession,
-  }
-  vm.addressRef = {
-    save: vi.fn().mockResolvedValue("addressSave" in refs ? refs.addressSave : {id: 2}),
-  }
-  vm.membershipRef = {
-    save: vi.fn().mockResolvedValue("membershipSave" in refs ? refs.membershipSave : null),
-  }
+  address: null,
 }
+const onFile = {country: "NL", city: "Enschede", street: "Straat", houseNumber: "1", zipCode: "7500AA"}
 
-describe("MembershipSignUp page", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    sessionStorage.clear()
-    activationHandlers.length = 0
-    rejectionHandlers.length = 0
-    mockStore.getters.isLoggedIn = false
-    mockStore.getters.getLogin = null
-    mockReadUser.mockResolvedValue(null)
-    mockReadAddress.mockResolvedValue(null)
-    mockCorrectEmail.mockResolvedValue({data: undefined})
-    mockResumeSignupSession.mockResolvedValue(null)
+const mount = () => mountPage(MembershipSignUp, {path: "/membership/signup"})
+
+/** The steps the stepper offers, and which one it stands on, marked with a star. */
+const steps = (wrapper: VueWrapper<any>) =>
+  wrapper.findAll(".v-stepper-item").map((item) => {
+    const title = item.find(".v-stepper-item__title").text()
+    return item.classes().includes("v-stepper-item--selected") ? `${title}*` : title
   })
 
-  // A tab that reloaded holds the token and nothing else. It used to come up empty and
-  // register again on the applicant's own name, which nothing after that could undo.
-  describe("an applicant whose tab reloaded", () => {
-    const resumed = {
-      userId: 42,
-      email: "lena@example.com",
-      username: "lena",
-      initials: "L",
-      firstName: "Lena",
-      prefix: null,
-      lastName: "de Vries",
-      discord: "lena#1",
-      phoneNumber: "0612345678",
-      newsletter: true,
-      photoConsent: false,
-      emailConfirmed: false,
-      conditionsAccepted: false,
-      memberProfile: {
-        dateOfBirth: "1999-02-03",
-        studentNumber: "s123",
-        gender: "X",
-        nationality: "NL",
-        bhv: false,
-        ehbo: true,
-        nameOnRosters: false,
-      },
-      address: null,
+// The details form reads the profile of any account it holds, a resumed one included.
+beforeEach(() => {
+  vi.mocked(findMemberProfileByUserId).mockResolvedValue(emptyAnswer(findMemberProfileByUserId))
+  vi.mocked(findCurrentContributionPeriod).mockResolvedValue(emptyAnswer(findCurrentContributionPeriod))
+  store.commit("setStatusSnackbarMessage", null)
+})
+
+async function press(wrapper: VueWrapper<any>, testid: string) {
+  await wrapper.get(`[data-testid="${testid}"]`).trigger("click")
+  await settle()
+  await settle()
+}
+
+/** The control a field's label names; the fields carry no name of their own in the DOM. */
+function byLabel(wrapper: VueWrapper<any>, text: string) {
+  const label = wrapper.findAll("label").find((candidate) => candidate.text().startsWith(text))
+  if (!label) throw new Error(`no field labelled "${text}"`)
+  return wrapper.get(`#${label.attributes("for")}`)
+}
+
+/** The steps the stepper offers, without the mark on the one it stands on. */
+const stepTitles = (wrapper: VueWrapper<any>) => steps(wrapper).map((step) => step.replace(/\*$/, ""))
+
+/**
+ * Another tab announcing that this account was activated.
+ *
+ * Assembled rather than through the StorageEvent constructor, whose init dictionary CodeQL
+ * models as a superfluous argument.
+ */
+async function anotherTabActivates() {
+  window.dispatchEvent(Object.assign(new Event("storage"), {
+    key: "account:activation:announced",
+    newValue: JSON.stringify({at: Date.now()}),
+  }))
+  await settle()
+}
+
+const field = (wrapper: VueWrapper<any>, testid: string) =>
+  wrapper.get(`[data-testid="${testid}"] input`).element as HTMLInputElement
+
+describe("an applicant whose tab reloaded", () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
+  })
+
+  it("reads the signup back on the token it still holds", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, resumed))
+
+    await mount()
+
+    expect(resumeSignup).toHaveBeenCalledWith(expect.objectContaining({headers: {"X-Signup-Token": "sel.ver"}}))
+  })
+
+  it("starts on the details step, empty, when the api says nothing about the session", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, undefined as unknown as SignupResumeResponse))
+
+    const wrapper = await mount()
+
+    expect(steps(wrapper)[0]).toBe("Your details*")
+    expect(field(wrapper, "user-form-username-field").value).toBe("")
+  })
+
+  it("puts the details back and carries on at the address step", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, resumed))
+
+    const wrapper = await mount()
+
+    expect(steps(wrapper)).toEqual(["Your details", "Address*", "Membership", "Confirm email"])
+    expect(field(wrapper, "user-form-username-field").value).toBe("lena")
+  })
+
+  it("carries on at the membership step once an address is saved", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, address: onFile}))
+
+    const wrapper = await mount()
+
+    expect(steps(wrapper)).toContain("Membership*")
+  })
+
+  it("carries on at the confirmation step once the application is in", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, conditionsAccepted: true, address: onFile}))
+
+    const wrapper = await mount()
+
+    expect(steps(wrapper)).toContain("Confirm email*")
+  })
+
+  it("asks for the address first even when the conditions were already agreed to", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, conditionsAccepted: true}))
+
+    const wrapper = await mount()
+
+    expect(steps(wrapper)).toContain("Address*")
+  })
+
+  it("hands over to login when everything is in and the membership still did not start", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(
+      answer(resumeSignup, {...resumed, conditionsAccepted: true, emailConfirmed: true, address: onFile}),
+    )
+
+    await mount()
+
+    await vi.waitFor(() => expect(router.currentRoute.value.name).toBe("login"), {timeout: 5000})
+    expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
+  })
+
+  it("drops the confirmation step when the address was confirmed meanwhile", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, emailConfirmed: true}))
+
+    const wrapper = await mount()
+
+    expect(stepTitles(wrapper)).toEqual(["Your details", "Address", "Membership"])
+  })
+
+  it("says so and starts over when the token is no longer good", async () => {
+    vi.mocked(resumeSignup).mockRejectedValue(new Error("gone"))
+
+    const wrapper = await mount()
+
+    expect(store.state.statusSnackbarMessage).toBeTruthy()
+    expect(steps(wrapper)[0]).toBe("Your details*")
+  })
+
+  it("offers nothing to submit while the signup is still coming back", async () => {
+    let release: (value: Awaited<ReturnType<typeof resumeSignup>>) => void = () => undefined
+    vi.mocked(resumeSignup).mockReturnValue(new Promise((resolve) => {
+      release = resolve
+    }))
+
+    const wrapper = await mount()
+    const next = () => wrapper.get('[data-testid="membership-details-next-btn"]').attributes("disabled")
+
+    expect(next()).toBeDefined()
+    release(answer(resumeSignup, resumed))
+    await settle()
+    expect(wrapper.find('[data-testid="membership-address-next-btn"]').exists()).toBe(true)
+  })
+})
+
+describe("an applicant who is already signed in", () => {
+  const account = {
+    id: 7, username: "sam", fullName: "Sam Tester", firstName: "Sam", lastName: "Tester", initials: "S",
+    email: "sam@example.com", roles: ["GUEST"], enabled: true, newsletter: false, photoConsent: false,
+    createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0,
+  } as UserDetailResponse
+  const login = {
+    userId: 7, username: "sam", roles: ["GUEST"], addressId: 3,
+    twoFactor: {backupCodesLeft: 0, mayTurnOff: false, offered: false, on: false, required: false},
+  } as StoredLogin
+
+  const signedIn = () => mountPage(MembershipSignUp, {path: "/membership/signup", login})
+
+  beforeEach(() => {
+    sessionStorage.clear()
+    vi.mocked(findUserById).mockResolvedValue(answer(findUserById, account))
+    vi.mocked(findAddressById).mockResolvedValue(answer(findAddressById, {id: 3, userId: 7, ...onFile, version: 0, createdAt: "", updatedAt: ""}))
+  })
+
+  it("is shown three steps, with nothing to confirm", async () => {
+    const wrapper = await signedIn()
+
+    expect(stepTitles(wrapper)).toEqual(["Your details", "Address", "Membership"])
+  })
+
+  it("loads the account on file into the form", async () => {
+    const wrapper = await signedIn()
+
+    expect(findUserById).toHaveBeenCalledWith({path: {userId: 7}})
+    expect(field(wrapper, "user-form-first-name-field").value).toBe("Sam")
+  })
+
+  it("says the account could not be read rather than offering an empty form", async () => {
+    vi.mocked(findUserById).mockResolvedValue(emptyAnswer(findUserById))
+
+    await signedIn()
+
+    expect(store.state.statusSnackbarMessage).toContain("could not read your account")
+  })
+
+  it("reads no address when the account has none on file", async () => {
+    await mountPage(MembershipSignUp, {path: "/membership/signup", login: {...login, addressId: undefined}})
+
+    expect(findAddressById).not.toHaveBeenCalled()
+  })
+
+  it("says so when the account cannot be read, and reads no address after it", async () => {
+    vi.mocked(findUserById).mockRejectedValue(new Error("down"))
+
+    await signedIn()
+
+    expect(findAddressById).not.toHaveBeenCalled()
+    expect(store.state.statusSnackbarMessage).toBeTruthy()
+  })
+
+  it("says so when the address on file cannot be read", async () => {
+    vi.mocked(findAddressById).mockRejectedValue(new Error("down"))
+
+    await signedIn()
+
+    expect(store.state.statusSnackbarMessage).toBeTruthy()
+  })
+
+  it("is sent away when already a member", async () => {
+    vi.mocked(findUserById).mockResolvedValue(answer(findUserById, {...account, roles: ["MEMBER"]} as UserDetailResponse))
+
+    await signedIn()
+
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe("/"), {timeout: 5000})
+  })
+})
+
+describe("an applicant carrying on from where they were", () => {
+  it("leaves blank what the resumed session has no answer for", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {
+      ...resumed,
+      discord: null,
+      phoneNumber: null,
+      memberProfile: {dateOfBirth: null, studentNumber: null, gender: null, nationality: null, bhv: false, ehbo: false, nameOnRosters: false},
+    }))
+    const wrapper = await mount()
+
+    await press(wrapper, "membership-address-back-btn")
+
+    expect(field(wrapper, "user-form-discord-field").value).toBe("")
+    expect(field(wrapper, "user-form-student-number-field").value).toBe("")
+  })
+
+  beforeEach(() => {
+    sessionStorage.clear()
+    sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
+    vi.mocked(updateDetails).mockResolvedValue(emptyAnswer(updateDetails))
+    vi.mocked(saveAddress).mockResolvedValue(emptyAnswer(saveAddress))
+  })
+
+  it("saves the details step on the token and moves on to the address", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, resumed))
+    const wrapper = await mount()
+    await press(wrapper, "membership-address-back-btn")
+    expect(steps(wrapper)[0]).toBe("Your details*")
+
+    await press(wrapper, "membership-details-next-btn")
+
+    expect(updateDetails).toHaveBeenCalledWith(expect.objectContaining({headers: {"X-Signup-Token": "sel.ver"}}))
+    expect(steps(wrapper)).toContain("Address*")
+  })
+
+  async function backToAddress() {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, address: onFile}))
+    const wrapper = await mount()
+    await press(wrapper, "membership-conditions-back-btn")
+    return wrapper
+  }
+
+  it("saves the address on the token and moves on to the membership step", async () => {
+    const wrapper = await backToAddress()
+
+    await byLabel(wrapper, "Street").setValue("Hengelosestraat")
+    await press(wrapper, "membership-address-next-btn")
+
+    expect(saveAddress).toHaveBeenCalledWith(expect.objectContaining({
+      headers: {"X-Signup-Token": "sel.ver"},
+      body: expect.objectContaining({street: "Hengelosestraat", city: "Enschede"}),
+    }))
+    expect(steps(wrapper)).toContain("Membership*")
+  })
+
+  it("stays on the address step when saving the address fails", async () => {
+    vi.mocked(saveAddress).mockRejectedValue(new Error("down"))
+    const wrapper = await backToAddress()
+
+    await byLabel(wrapper, "Street").setValue("Hengelosestraat")
+    await press(wrapper, "membership-address-next-btn")
+
+    expect(steps(wrapper)).toContain("Address*")
+  })
+
+  it("keeps the saved address when going back to it", async () => {
+    const wrapper = await backToAddress()
+    await byLabel(wrapper, "Street").setValue("Hengelosestraat")
+    await press(wrapper, "membership-address-next-btn")
+
+    await press(wrapper, "membership-conditions-back-btn")
+
+    expect(steps(wrapper)).toContain("Address*")
+    expect((byLabel(wrapper, "Street").element as HTMLInputElement).value).toBe("Hengelosestraat")
+  })
+
+  describe("on the membership step", () => {
+    beforeEach(() => {
+      vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, address: onFile}))
+    })
+
+    async function agreeAndSubmit(wrapper: VueWrapper<any>) {
+      await byLabel(wrapper, "I confirm that I have read").setValue(true)
+      await press(wrapper, "membership-conditions-submit-btn")
     }
 
-    beforeEach(() => {
-      sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
+    it("asks for the address confirmation when the application goes in first", async () => {
+      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: false, membershipStarted: false}))
+      const wrapper = await mount()
+
+      await agreeAndSubmit(wrapper)
+
+      expect(apply).toHaveBeenCalledWith(expect.objectContaining({body: {conditionsAccepted: true}}))
+      expect(steps(wrapper)).toContain("Confirm email*")
+      expect(wrapper.get('[data-testid="email-confirm-step"]').text()).toContain("lena@example.com")
     })
 
-    it("reads the signup back on the token it still holds", async () => {
-      mockResumeSignupSession.mockResolvedValue(resumed)
+    it("says the membership started when the address was confirmed already", async () => {
+      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: true, membershipStarted: true}))
+      const wrapper = await mount()
 
-      await mountPage()
+      await agreeAndSubmit(wrapper)
 
-      expect(mockResumeSignupSession).toHaveBeenCalledWith("sel.ver")
-    })
-
-    it("leaves the form as it found it when the api says nothing about the session", async () => {
-      mockResumeSignupSession.mockResolvedValue(null)
-
-      const wrapper = await mountPage()
-
-      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(1)
-      expect((wrapper.vm as unknown as {user?: {id?: number}}).user?.id).toBeUndefined()
-    })
-
-    it("puts the details back into the form", async () => {
-      mockResumeSignupSession.mockResolvedValue(resumed)
-
-      const wrapper = await mountPage()
-
-      const user = (wrapper.vm as unknown as {user: Record<string, unknown>}).user
-      expect(user).toMatchObject({id: 42, username: "lena", email: "lena@example.com"})
-      expect((user.memberProfile as Record<string, unknown>).studentNumber).toBe("s123")
-    })
-
-    it("lands on the address step, which is the one they had reached", async () => {
-      mockResumeSignupSession.mockResolvedValue(resumed)
-
-      const wrapper = await mountPage()
-
-      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(2)
-    })
-
-    it("puts an address already saved back and lands on the membership step", async () => {
-      mockResumeSignupSession.mockResolvedValue(
-        {...resumed, address: {country: "NL", city: "Enschede", street: "Straat", houseNumber: "1", zipCode: "7500AA"}},
-      )
-
-      const wrapper = await mountPage()
-
-      expect((wrapper.vm as unknown as {address: Record<string, unknown>}).address)
-        .toMatchObject({city: "Enschede", zipCode: "7500AA"})
-      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(3)
-    })
-
-    it("lands on the confirmation step when the application is already in", async () => {
-      mockResumeSignupSession.mockResolvedValue(
-        {...resumed, conditionsAccepted: true, address: {country: "NL", city: "Enschede", street: "S", houseNumber: "1", zipCode: "7500AA"}},
-      )
-
-      const wrapper = await mountPage()
-
-      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(4)
-      expect((wrapper.vm as unknown as {applicationSubmitted: boolean}).applicationSubmitted).toBe(true)
-    })
-
-    // Without an address the membership cannot start, so a step past it would offer a
-    // button that could only fail. The agreement is not lost by walking back through it.
-    it("asks for the address first even when the conditions were already agreed to", async () => {
-      mockResumeSignupSession.mockResolvedValue({...resumed, conditionsAccepted: true, address: null})
-
-      const wrapper = await mountPage()
-
-      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(2)
-      expect((wrapper.vm as unknown as {applicationSubmitted: boolean}).applicationSubmitted).toBe(true)
-    })
-
-    // Both facts in and an address on file, and the token still alive, is the api saying
-    // a membership already exists. There is nothing here to press.
-    it("hands over to login when everything is in and the membership still did not start", async () => {
-      mockResumeSignupSession.mockResolvedValue(
-        {
-          ...resumed,
-          conditionsAccepted: true,
-          emailConfirmed: true,
-          address: {country: "NL", city: "Enschede", street: "S", houseNumber: "1", zipCode: "7500AA"},
-        },
-      )
-
-      await mountPage()
-      await settle()
-
-      expect(mockRouterReplace).toHaveBeenCalledWith({name: "login"})
+      expect(wrapper.find('[data-testid="membership-complete-panel"]').exists()).toBe(true)
       expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
     })
 
-    it("retires the confirmation step when the address was confirmed meanwhile", async () => {
-      mockResumeSignupSession.mockResolvedValue({...resumed, emailConfirmed: true})
+    it("hands over to sign in when the application goes in on an account that is a member already", async () => {
+      vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, emailConfirmed: true, address: onFile}))
+      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: true, membershipStarted: false}))
+      const wrapper = await mount()
 
-      const wrapper = await mountPage()
+      await agreeAndSubmit(wrapper)
 
-      const items = (wrapper.vm as unknown as {stepItems: Array<{title: string}>}).stepItems
-      expect(items.map((i) => i.title)).toEqual(["Your details", "Address", "Membership"])
-    })
-
-    it("says so and starts over when the token is no longer good", async () => {
-      mockResumeSignupSession.mockRejectedValue(new Error("gone"))
-
-      const wrapper = await mountPage()
-
-      expect(mockHandleNetworkError).toHaveBeenCalled()
-      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(1)
-    })
-
-    it("offers nothing to submit while the signup is still coming back", async () => {
-      let release: (v: unknown) => void = () => undefined
-      mockResumeSignupSession.mockReturnValue(new Promise((resolve) => {
-        release = resolve
-      }))
-
-      const wrapper = mountInApp(MembershipSignUp, {
-        global: {stubs: {UserForm: true, AddressForm: true, MembershipForm: true, TopBanner: true}},
-      })
-
-      expect((wrapper.vm as unknown as {preparing: boolean}).preparing).toBe(true)
-      release(resumed)
-      await settle()
-      expect((wrapper.vm as unknown as {preparing: boolean}).preparing).toBe(false)
-    })
-  })
-
-  // Pressing a button that re-posts to the same refusal is not a way forward, and the
-  // only cause is a membership that already exists, which login is the answer to.
-  describe("when the membership cannot start here", () => {
-    it("hands over to login rather than offering the same button again", async () => {
-      mockStore.getters.isLoggedIn = true
-      mockStore.getters.getLogin = {userId: 5}
-      mockReadUser.mockResolvedValue({id: 5, email: "l@example.com", roles: [], version: 0})
-      const wrapper = await mountPage()
-      installRefs(wrapper, {membershipSave: {emailConfirmed: true, membershipStarted: false}})
-
-      await (wrapper.vm as unknown as {submitApplication: () => Promise<void>}).submitApplication()
-      await settle()
-
-      expect(mockRouterReplace).toHaveBeenCalledWith({name: "login"})
-      expect((wrapper.vm as unknown as {finished: boolean}).finished).toBe(false)
-    })
-  })
-
-  describe("a step that cannot save", () => {
-    it("says so rather than leaving a button that does nothing", async () => {
-      const wrapper = await mountPage()
-      const vm = wrapper.vm as unknown as {
-        addressRef: unknown
-        currentStep: number
-        saveAddressStep: () => Promise<void>
-      }
-      vm.addressRef = undefined
-      vm.currentStep = 2
-
-      await vm.saveAddressStep()
-
-      expect(mockStore.commit).toHaveBeenCalledWith(
-        "setStatusSnackbarMessage",
-        expect.stringContaining("reload"),
-      )
-      expect(vm.currentStep).toBe(2)
-    })
-  })
-
-  describe("an applicant with no signup to resume", () => {
-    it("does not ask for one", async () => {
-      await mountPage()
-
-      expect(mockResumeSignupSession).not.toHaveBeenCalled()
-    })
-  })
-
-  describe("a new applicant", () => {
-    it("is shown four steps", async () => {
-      const wrapper = await mountPage()
-
-      const items = (wrapper.vm as unknown as {stepItems: Array<{title: string}>}).stepItems
-      expect(items.map((i) => i.title)).toEqual([
-        "Your details",
-        "Address",
-        "Membership",
-        "Confirm email",
-      ])
-    })
-
-    it("keeps the signup token handed back by the details step", async () => {
-      const wrapper = await mountPage()
-      installRefs(wrapper, {signupSession: {signupToken: "sel.ver"}})
-
-      await (wrapper.vm as unknown as {saveDetails: () => Promise<void>}).saveDetails()
-
-      expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBe("sel.ver")
-      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(2)
-    })
-
-    it("stays on the details step when saving fails", async () => {
-      const wrapper = await mountPage()
-      installRefs(wrapper, {userSave: null})
-
-      await (wrapper.vm as unknown as {saveDetails: () => Promise<void>}).saveDetails()
-
-      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(1)
-    })
-
-    it("stays on the address step when saving the address fails", async () => {
-      const wrapper = await mountPage()
-      installRefs(wrapper, {addressSave: null})
-      const vm = wrapper.vm as unknown as {
-        currentStep: number
-        saveAddressStep: () => Promise<void>
-      }
-      vm.currentStep = 2
-
-      await vm.saveAddressStep()
-
-      expect(vm.currentStep).toBe(2)
-    })
-
-    it("keeps what the address step saved, so going back does not lose it", async () => {
-      const wrapper = await mountPage()
-      installRefs(wrapper, {addressSave: {id: 2, city: "Enschede", street: "Drienerlolaan"}})
-      const vm = wrapper.vm as unknown as {
-        currentStep: number
-        saveAddressStep: () => Promise<void>
-        address: {city?: string} | undefined
-      }
-      vm.currentStep = 2
-
-      await vm.saveAddressStep()
-
-      // The stepper unmounts the step it leaves, so the page has to hold this.
-      expect(vm.address?.city).toBe("Enschede")
-    })
-
-    it("keeps what the details step saved", async () => {
-      const wrapper = await mountPage()
-      installRefs(wrapper, {userSave: {id: 1, email: "lena@example.com", firstName: "Lena"}})
-      const vm = wrapper.vm as unknown as {
-        saveDetails: () => Promise<void>
-        user: {firstName?: string} | undefined
-      }
-
-      await vm.saveDetails()
-
-      expect(vm.user?.firstName).toBe("Lena")
-    })
-
-    it("advances to the membership step once the address is saved", async () => {
-      const wrapper = await mountPage()
-      installRefs(wrapper, {})
-      const vm = wrapper.vm as unknown as {
-        currentStep: number
-        saveAddressStep: () => Promise<void>
-      }
-      vm.currentStep = 2
-
-      await vm.saveAddressStep()
-
-      expect(vm.currentStep).toBe(3)
-    })
-
-    it("asks for confirmation when the application is submitted first", async () => {
-      const wrapper = await mountPage()
-      installRefs(wrapper, {
-        membershipSave: {emailConfirmed: false, membershipStarted: false},
-      })
-
-      await (wrapper.vm as unknown as {submitApplication: () => Promise<void>}).submitApplication()
-
-      const vm = wrapper.vm as unknown as {currentStep: number; finished: boolean}
-      expect(vm.currentStep).toBe(4)
-      expect(vm.finished).toBe(false)
-    })
-
-    it("says the membership started when confirmation already happened", async () => {
-      const wrapper = await mountPage()
-      sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
-      installRefs(wrapper, {
-        membershipSave: {emailConfirmed: true, membershipStarted: true},
-      })
-
-      await (wrapper.vm as unknown as {submitApplication: () => Promise<void>}).submitApplication()
-
-      expect((wrapper.vm as unknown as {finished: boolean}).finished).toBe(true)
-      // The session is spent, so it must not linger in storage.
-      expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
+      await vi.waitFor(() => expect(router.currentRoute.value.name).toBe("login"))
+      expect(store.state.statusSnackbarMessage).toContain("already a member")
     })
 
     it("stays on the membership step when the application is refused", async () => {
-      const wrapper = await mountPage()
-      installRefs(wrapper, {membershipSave: null})
-      const vm = wrapper.vm as unknown as {
-        currentStep: number
-        finished: boolean
-        submitApplication: () => Promise<void>
-      }
-      vm.currentStep = 3
+      vi.mocked(apply).mockRejectedValue(new Error("refused"))
+      const wrapper = await mount()
 
-      await vm.submitApplication()
+      await agreeAndSubmit(wrapper)
 
-      expect(vm.currentStep).toBe(3)
-      expect(vm.finished).toBe(false)
-    })
-
-    /** Puts the page in the state it reaches once the application has been sent. */
-    const afterSubmitting = async () => {
-      const wrapper = await mountWithStepBodies()
-      const vm = wrapper.vm as unknown as {
-        applicationSubmitted: boolean
-        signupToken: string | undefined
-        currentStep: number
-        user: {email: string; username: string} | undefined
-      }
-      vm.applicationSubmitted = true
-      vm.signupToken = "sel.ver"
-      vm.user = {email: "lena@example.com", username: "lena"}
-      await settle()
-      return {wrapper, vm}
-    }
-
-    it("hands the confirmation panel the address and the token it must use", async () => {
-      const {wrapper} = await afterSubmitting()
-
-      const panel = wrapper.findComponent({name: "EmailConfirmationPanel"})
-      expect(panel.props("continuationToken")).toBe("sel.ver")
-      expect(panel.props("email")).toBe("lena@example.com")
-      expect(panel.props("username")).toBe("lena")
-    })
-
-    it("keeps the corrected address the panel reports", async () => {
-      const {wrapper, vm} = await afterSubmitting()
-
-      await wrapper.findComponent({name: "EmailConfirmationPanel"})
-        .vm.$emit("email-corrected", "corrected@example.com")
-
-      expect(vm.user?.email).toBe("corrected@example.com")
-    })
-
-    it("locks the agreement once the application is in", async () => {
-      const {wrapper} = await afterSubmitting()
-
-      // The applicant may still edit, but not un-agree: the form gives way to a
-      // record of the agreement, and the submit button to a way onward.
-      expect(wrapper.find('[data-testid="membership-conditions-accepted"]').exists()).toBe(true)
-      expect(wrapper.find('[data-testid="membership-conditions-submit-btn"]').exists()).toBe(false)
-      expect(wrapper.find('[data-testid="membership-conditions-continue-btn"]').exists()).toBe(true)
-    })
-
-    it("steps back from the confirmation step like any other step", async () => {
-      const {wrapper, vm} = await afterSubmitting()
-
-      await wrapper.findComponent({name: "EmailConfirmationPanel"}).vm.$emit("back")
-
-      // One step back, to the agreement, from where Previous reaches the address
-      // and the details in turn.
-      expect(vm.currentStep).toBe(3)
-    })
-
-    it("still offers the conditions form before anything is submitted", async () => {
-      const wrapper = await mountWithStepBodies()
-
-      expect(wrapper.find('[data-testid="membership-conditions-submit-btn"]').exists()).toBe(true)
-      expect(wrapper.find('[data-testid="membership-conditions-accepted"]').exists()).toBe(false)
+      expect(steps(wrapper)).toContain("Membership*")
     })
   })
 
-  describe("an applicant who is already signed in", () => {
-    beforeEach(() => {
-      mockStore.getters.isLoggedIn = true
-      mockStore.getters.getLogin = {userId: 5, addressId: 9}
-      mockReadUser.mockResolvedValue({id: 5, email: "lena@example.com", roles: [], version: 0})
-      mockReadAddress.mockResolvedValue({id: 9, city: "Enschede"})
-    })
+  it("holds the agreement once the application is in, rather than asking again", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, conditionsAccepted: true, address: onFile}))
+    const wrapper = await mount()
 
-    it("is shown three steps, with nothing to confirm", async () => {
-      const wrapper = await mountPage()
+    await press(wrapper, "email-confirm-back-btn")
 
-      const items = (wrapper.vm as unknown as {stepItems: Array<{title: string}>}).stepItems
-      expect(items.map((i) => i.title)).toEqual(["Your details", "Address", "Membership"])
-    })
-
-    it("loads the account and the address already on file", async () => {
-      await mountPage()
-
-      expect(mockReadUser).toHaveBeenCalledWith(5)
-      expect(mockReadAddress).toHaveBeenCalledWith(9)
-    })
-
-    it("says the account could not be read rather than offering an empty form", async () => {
-      mockReadUser.mockResolvedValue(null)
-
-      const wrapper = await mountPage()
-
-      expect(mockShowStatusMessage)
-        .toHaveBeenCalledWith("We could not read your account. Please reload and try again.")
-      expect((wrapper.vm as unknown as {address: unknown}).address).toBeUndefined()
-    })
-
-    it("reports an address that could not be read rather than leaving the step blank", async () => {
-      mockReadAddress.mockRejectedValue({response: {status: 500}})
-
-      const wrapper = await mountPage()
-
-      expect(mockHandleNetworkError).toHaveBeenCalled()
-      expect((wrapper.vm as unknown as {address: unknown}).address).toBeUndefined()
-    })
-
-    it("finishes on the membership step because the address is already confirmed", async () => {
-      const wrapper = await mountPage()
-      installRefs(wrapper, {
-        membershipSave: {emailConfirmed: true, membershipStarted: true},
-      })
-
-      await (wrapper.vm as unknown as {submitApplication: () => Promise<void>}).submitApplication()
-
-      expect((wrapper.vm as unknown as {finished: boolean}).finished).toBe(true)
-    })
-
-    it("is redirected away when they are already a member", async () => {
-      mockReadUser.mockResolvedValue({id: 5, email: "lena@example.com", roles: ["MEMBER"], version: 0})
-
-      await mountPage()
-      await settle()
-
-      expect(mockRouterReplace).toHaveBeenCalledWith("/")
-      expect(mockStore.commit).toHaveBeenCalledWith(
-        "setStatusSnackbarMessage",
-        "you are already a member",
-      )
-    })
+    expect(steps(wrapper)).toContain("Membership*")
+    expect(wrapper.find('[data-testid="membership-conditions-accepted"]').exists()).toBe(true)
+    await press(wrapper, "membership-conditions-continue-btn")
+    expect(steps(wrapper)).toContain("Confirm email*")
   })
 
-  describe("what the applicant can see and press", () => {
-    it("shows the confirmation panel on the last step", async () => {
-      const wrapper = await mountWithStepBodies()
+  it("drops the confirmation step when another tab confirms the address first", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, resumed))
+    const wrapper = await mount()
 
-      expect(wrapper.findComponent({name: "EmailConfirmationPanel"}).exists()).toBe(true)
-    })
+    await anotherTabActivates()
 
-    it("shows the step navigation buttons for the address and membership steps", async () => {
-      const wrapper = await mountWithStepBodies()
-
-      expect(wrapper.find('[data-testid="membership-details-next-btn"]').exists()).toBe(true)
-      expect(wrapper.find('[data-testid="membership-address-back-btn"]').exists()).toBe(true)
-      expect(wrapper.find('[data-testid="membership-address-next-btn"]').exists()).toBe(true)
-      expect(wrapper.find('[data-testid="membership-conditions-back-btn"]').exists()).toBe(true)
-      expect(wrapper.find('[data-testid="membership-conditions-submit-btn"]').exists()).toBe(true)
-    })
-
-    it("steps back from the membership step to the address step", async () => {
-      const wrapper = await mountWithStepBodies()
-      const vm = wrapper.vm as unknown as {currentStep: number}
-      vm.currentStep = 3
-      await settle()
-
-      await wrapper.find('[data-testid="membership-conditions-back-btn"]').trigger("click")
-
-      expect(vm.currentStep).toBe(2)
-    })
-
-    it("steps back from the address step to the details step", async () => {
-      const wrapper = await mountWithStepBodies()
-      const vm = wrapper.vm as unknown as {currentStep: number}
-      vm.currentStep = 2
-      await settle()
-
-      await wrapper.find('[data-testid="membership-address-back-btn"]').trigger("click")
-
-      expect(vm.currentStep).toBe(1)
-    })
-
-    it("shows the completed panel once the membership has started", async () => {
-      const wrapper = await mountWithStepBodies()
-      const vm = wrapper.vm as unknown as {finished: boolean}
-      vm.finished = true
-      await settle()
-
-      expect(wrapper.find('[data-testid="membership-complete-panel"]').exists()).toBe(true)
-      expect(wrapper.text()).toContain("You're a member")
-      expect(wrapper.find('[data-testid="membership-signup-stepper"]').exists()).toBe(false)
-    })
+    expect(stepTitles(wrapper)).toEqual(["Your details", "Address", "Membership"])
+    expect(store.state.statusSnackbarMessage).toContain("confirmed")
   })
 
-  describe("when loading the signed-in applicant goes wrong", () => {
-    beforeEach(() => {
-      mockStore.getters.isLoggedIn = true
-      mockStore.getters.getLogin = {userId: 5, addressId: 9}
+  it("gives up the signup and sends the applicant to sign in once the api refuses its token", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, address: onFile}))
+    vi.mocked(saveAddress).mockRejectedValue({
+      response: {status: 400, data: {code: "RecoveryTokenUnusable"}},
+      config: {headers: {"X-Signup-Token": "sel.ver"}},
     })
+    const wrapper = await mount()
+    await press(wrapper, "membership-conditions-back-btn")
 
-    it("surfaces a failure to load the account and stops", async () => {
-      mockReadUser.mockRejectedValue(new Error("boom"))
+    await press(wrapper, "membership-address-next-btn")
 
-      await mountPage()
-
-      expect(mockHandleNetworkError).toHaveBeenCalled()
-      expect(mockReadAddress).not.toHaveBeenCalled()
-    })
-
-    it("surfaces a failure to load the address", async () => {
-      mockReadUser.mockResolvedValue({id: 5, email: "a@b.c", roles: [], version: 0})
-      mockReadAddress.mockRejectedValue(new Error("boom"))
-
-      await mountPage()
-
-      expect(mockHandleNetworkError).toHaveBeenCalled()
-    })
-
-    it("does not look for an address when none is on file", async () => {
-      mockStore.getters.getLogin = {userId: 5}
-      mockReadUser.mockResolvedValue({id: 5, email: "a@b.c", roles: [], version: 0})
-
-      await mountPage()
-
-      expect(mockReadAddress).not.toHaveBeenCalled()
-    })
+    await vi.waitFor(() => expect(router.currentRoute.value.name).toBe("login"))
+    expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
+    expect(store.state.statusSnackbarMessage).toContain("signup expired")
   })
 
-  describe("the first step while the account is still loading", () => {
-    /**
-     * A fetch held open so the loading state can be observed, and released before
-     * the test ends: a promise that never settles leaves a mounted page waiting on
-     * it for the rest of the run.
-     */
-    const heldLoad = () => {
-      mockStore.getters.isLoggedIn = true
-      mockStore.getters.getLogin = {userId: 5}
-      let release: () => void = () => undefined
-      mockReadUser.mockReturnValue(
-        new Promise((resolve) => {
-          release = () => resolve({id: 5, email: "a@b.c", roles: [], version: 0})
-        }),
-      )
-      return async () => {
-        release()
-        await settle()
-      }
-    }
+  it("sends the applicant to sign in when another tab confirms the address after the application is in", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, conditionsAccepted: true, address: onFile}))
+    await mount()
 
-    it("offers nothing to submit until the details arrive", async () => {
-      const releaseLoad = heldLoad()
+    await anotherTabActivates()
 
-      const wrapper = await mountWithStepBodies()
-
-      expect(wrapper.find('[data-testid="membership-details-loading"]').exists()).toBe(true)
-      expect(wrapper.findComponent({name: "UserForm"}).exists()).toBe(false)
-      expect(nextButton(wrapper).disabled).toBe(true)
-
-      await releaseLoad()
-      expect(wrapper.find('[data-testid="membership-details-loading"]').exists()).toBe(false)
-    })
-
-    it("offers the form once they have", async () => {
-      mockStore.getters.isLoggedIn = true
-      mockStore.getters.getLogin = {userId: 5}
-      mockReadUser.mockResolvedValue({id: 5, email: "a@b.c", roles: [], version: 0})
-
-      const wrapper = await mountWithStepBodies()
-
-      expect(wrapper.find('[data-testid="membership-details-loading"]').exists()).toBe(false)
-      expect(nextButton(wrapper).disabled).toBe(false)
-    })
-
-    // Pressing it anyway saves nothing, so a click landing in the gap before the
-    // button disables cannot submit a form standing in for absent data.
-    it("saves nothing if it is pressed while they are still coming", async () => {
-      const releaseLoad = heldLoad()
-      const wrapper = await mountWithStepBodies()
-      installRefs(wrapper, {signupSession: {signupToken: "sel.ver"}})
-
-      await (wrapper.vm as unknown as {saveDetails: () => Promise<void>}).saveDetails()
-      await settle()
-
-      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(1)
-      await releaseLoad()
-    })
+    await vi.waitFor(() => expect(router.currentRoute.value.name).toBe("login"))
+    expect(store.state.statusSnackbarMessage).toContain("membership started")
   })
 
-  describe("another tab finishes the signup", () => {
-    // The page subscribes on mount, so the handlers it registered are what a test
-    // has to fire to stand in for the other tab.
-    const fireActivation = () => activationHandlers.forEach((handler) => handler({at: 1}))
-    const fireRejection = () => rejectionHandlers.forEach((handler) => handler())
+  it("hands over to sign in when the application is in but the account is a member already", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, emailConfirmed: true, conditionsAccepted: true, address: onFile}))
 
-    it("retires the confirmation step and lets an applicant who has not applied carry on", async () => {
-      const wrapper = await mountPage()
+    await mount()
 
-      fireActivation()
-      await settle()
-
-      const vm = wrapper.vm as unknown as {stepItems: Array<{title: string}>}
-      expect(vm.stepItems.map((i) => i.title)).toEqual(["Your details", "Address", "Membership"])
-      expect(mockRouterReplace).not.toHaveBeenCalledWith({name: "login"})
-    })
-
-    it("brings the applicant back off a step that no longer exists", async () => {
-      const wrapper = await mountPage()
-      const vm = wrapper.vm as unknown as {currentStep: number}
-      vm.currentStep = 4
-
-      fireActivation()
-      await settle()
-
-      expect(vm.currentStep).toBe(3)
-    })
-
-    it("hands over to login once the application is in, since the token is retired", async () => {
-      const wrapper = await mountPage()
-      sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
-      ;(wrapper.vm as unknown as {applicationSubmitted: boolean}).applicationSubmitted = true
-
-      fireActivation()
-      await settle()
-
-      expect(mockRouterReplace).toHaveBeenCalledWith({name: "login"})
-      expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
-    })
-
-    /**
-     * Confirming mid-form retires the confirmation step, and the application then
-     * going in is what used to reveal a button pointing straight at it. The step
-     * list and that button read one condition so they cannot disagree.
-     */
-    it("offers no way to the confirmation step it has retired", async () => {
-      const wrapper = await mountWithStepBodies()
-      const vm = wrapper.vm as unknown as {applicationSubmitted: boolean}
-
-      fireActivation()
-      await settle()
-      vm.applicationSubmitted = true
-      await settle()
-
-      expect(wrapper.find('[data-testid="membership-conditions-continue-btn"]').exists()).toBe(false)
-    })
-
-    it("offers that way while the confirmation step is still there", async () => {
-      const wrapper = await mountWithStepBodies()
-      ;(wrapper.vm as unknown as {applicationSubmitted: boolean}).applicationSubmitted = true
-      await settle()
-
-      expect(wrapper.find('[data-testid="membership-conditions-continue-btn"]').exists()).toBe(true)
-    })
-
-    it("says nothing more once the membership is finished here", async () => {
-      const wrapper = await mountPage()
-      ;(wrapper.vm as unknown as {finished: boolean}).finished = true
-
-      fireActivation()
-      await settle()
-
-      expect(mockRouterReplace).not.toHaveBeenCalledWith({name: "login"})
-    })
-
-    it("gives up the token and the page when the api refuses it", async () => {
-      await mountPage()
-      sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
-
-      fireRejection()
-      await settle()
-
-      expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
-      expect(mockRouterReplace).toHaveBeenCalledWith({name: "login"})
-    })
-
-    it("stops listening once the page is gone", async () => {
-      const wrapper = await mountPage()
-      expect(activationHandlers.length).toBe(1)
-
-      wrapper.unmount()
-
-      expect(activationHandlers.length).toBe(0)
-      expect(rejectionHandlers.length).toBe(0)
-    })
+    await vi.waitFor(() => expect(router.currentRoute.value.name).toBe("login"))
+    expect(store.state.statusSnackbarMessage).toContain("already a member")
   })
 
-  describe("leaving the page", () => {
-    it("sends a new member to the homepage", async () => {
-      const wrapper = await mountWithStepBodies()
-      ;(wrapper.vm as unknown as {finished: boolean}).finished = true
-      await settle()
+  it("sends the confirmation to a corrected address and names that address from then on", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, conditionsAccepted: true, address: onFile}))
+    vi.mocked(correctEmail).mockResolvedValue(emptyAnswer(correctEmail))
+    const wrapper = await mount()
 
-      await wrapper.find('[data-testid="membership-home-btn"]').trigger("click")
+    await press(wrapper, "email-confirm-correct-btn")
+    await wrapper.get('[data-testid="email-confirm-address-field"] input').setValue("lena@elsewhere.com")
+    await press(wrapper, "email-confirm-address-submit-btn")
 
-      expect(mockGoto).toHaveBeenCalledWith("/")
-    })
-
+    expect(correctEmail).toHaveBeenCalledWith(expect.objectContaining({
+      headers: {"X-Signup-Token": "sel.ver"},
+      body: {email: "lena@elsewhere.com"},
+    }))
+    expect(wrapper.get('[data-testid="email-confirm-step"]').text()).toContain("lena@elsewhere.com")
   })
 })

@@ -34,12 +34,12 @@ const LINE_MARKS = new Set(["HeaderMark", "QuoteMark", "SubtextMark"])
 /** Discord's code face, which the site has none of its own for. */
 export const CODE_FONT = "ui-monospace, SFMono-Regular, Consolas, monospace"
 
-/** Blocks drawn line by line, as Discord draws a quote with its bar and code in its box. */
-const BLOCK_LINES: Record<string, Decoration> = {
-  Blockquote: Decoration.line({class: "cm-quote"}),
-  FencedCode: Decoration.line({class: "cm-codeblock"}),
-  CodeBlock: Decoration.line({class: "cm-codeblock"}),
-}
+/** Code blocks drawn line by line, as Discord draws code in its box. */
+const CODE_BLOCKS = new Set(["FencedCode", "CodeBlock"])
+const codeLine = Decoration.line({class: "cm-codeblock"})
+
+/* Discord quotes only a line that starts with `>`, where markdown runs a quote on into the next. */
+const quoteLine = Decoration.line({class: "cm-quote"})
 
 const inlineCode = Decoration.mark({class: "cm-code"})
 
@@ -238,6 +238,7 @@ const decorate = (view: EditorView): DecorationSet => {
   const ranges = selectionIn(view)
   const openLines = linesOf(state, ranges)
   const marks: Range<Decoration>[] = []
+  const quoted = new Set<number>()
 
   for (const {from, to} of view.visibleRanges) {
     syntaxTree(state).iterate({
@@ -246,13 +247,14 @@ const decorate = (view: EditorView): DecorationSet => {
       enter: (ref) => {
         const {node} = ref
 
-        const block = BLOCK_LINES[node.name]
-        if (block) {
+        if (CODE_BLOCKS.has(node.name)) {
           const last = state.doc.lineAt(node.to).number
           for (let line = state.doc.lineAt(node.from).number; line <= last; line++) {
-            marks.push(block.range(state.doc.line(line).from))
+            marks.push(codeLine.range(state.doc.line(line).from))
           }
         }
+        // `>>` is two marks on one line, and the line takes one bar.
+        if (node.name === "QuoteMark") quoted.add(state.doc.lineAt(node.from).from)
         if (node.name === "InlineCode") marks.push(inlineCode.range(node.from, node.to))
 
         // A bullet even on the line being written: nobody needs reminding they typed a dash.
@@ -291,7 +293,8 @@ const decorate = (view: EditorView): DecorationSet => {
     })
   }
   return Decoration.set(
-    [...marks, ...serverEmojiIn(view, ranges), ...mentionsIn(view, ranges)], true)
+    [...marks, ...[...quoted].map(at => quoteLine.range(at)), ...serverEmojiIn(view, ranges), ...mentionsIn(view, ranges)],
+    true)
 }
 
 /** Hides the marks, and redraws whenever the document, the view or the cursor moves. */

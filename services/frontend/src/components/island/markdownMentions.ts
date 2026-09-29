@@ -20,7 +20,7 @@ export const forgetMentionLists = (): void => {
 const SEARCHED_FROM = 2
 
 /** A row of the `@` list: a member with their avatar, or a role with its colour. */
-interface Mentioned extends Completion {
+interface MentionOption extends Completion {
   avatar?: string
   colour?: number
 }
@@ -42,7 +42,7 @@ export const mentionCompletion = async (context: CompletionContext): Promise<Com
     asked.length >= SEARCHED_FROM ? searchServerMembers(asked) : Promise.resolve([]),
     serverRoles(),
   ])
-  const options: Mentioned[] = [
+  const options: MentionOption[] = [
     ...(people ?? []).map(one => ({label: one.name, detail: one.username, apply: `<@${one.id}>`, type: "member", avatar: one.avatar})),
     ...ranks.filter(one => one.name.toLowerCase().includes(asked)).map(one => ({
       label: `@${one.name}`,
@@ -55,16 +55,14 @@ export const mentionCompletion = async (context: CompletionContext): Promise<Com
   return {from: started.from, options, filter: false}
 }
 
-/**
- * Draws a member's avatar before their name, and a role's name in its colour. The row's own label
- * cannot take a colour per role, so a role's row hides it (`cm-option-role`) for this one.
- */
-export const mentionRow = (completion: Completion): string => (completion.type === "role" ? "cm-option-role" : "")
+/** A role's row hides the label CodeMirror draws, which cannot take a colour per role. */
+export const mentionOptionClass = (completion: Completion): string => (completion.type === "role" ? "cm-option-role" : "")
 
+/** Draws a member's avatar before their name, and a role's name in its colour in place of the label. */
 export const mentionOption = {
   position: 20,
   render: (completion: Completion): Node | null => {
-    const {type, avatar, colour} = completion as Mentioned
+    const {type, avatar, colour} = completion as MentionOption
     if (type === "member" && avatar) {
       const drawn = document.createElement("img")
       drawn.className = "cm-avatar"
@@ -94,7 +92,7 @@ export const channelCompletion = async (context: CompletionContext): Promise<Com
   const before = line.text.slice(0, started.from - line.from)
   if (!/(^|\s)$/.test(before)) return null
   const asked = started.text.slice(1).toLowerCase()
-  if (asked === "" && before.trim() === "" && !context.explicit) return null
+  if (before.trim() === "" && !/^[^\W_]/.test(asked)) return null
 
   const options = (await serverChannels())
     .filter(one => one.name.toLowerCase().includes(asked))

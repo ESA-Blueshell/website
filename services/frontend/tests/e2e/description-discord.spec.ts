@@ -6,12 +6,16 @@ import {installApiMocks, loginAsBoard} from "./mocks"
 async function withTheBot(page: Page) {
   await installApiMocks(page)
   await page.route("**/api/discord/members?**", route => route.fulfill({json: [
-    {id: "120951017700327425", name: "The Old Man - Joris", username: "extratoast", avatar: "https://cdn.discordapp.com/embed/avatars/0.png"},
+    {id: "123456789012345611", name: "Sam Rivers", username: "extrabyte", avatar: "https://cdn.discordapp.com/embed/avatars/0.png"},
   ]}))
   await page.route("**/api/discord/roles", route => route.fulfill({json: [
-    {id: "901", name: "Board", colour: 0xE91E63},
-    {id: "902", name: "Gamers"},
+    {id: "223456789012345901", name: "Board", colour: 0xE91E63},
+    {id: "223456789012345902", name: "Gamers"},
   ]}))
+  await page.route("**/api/discord/mentions?**", route => route.fulfill({json: {users: [], channels: [], roles: [
+    {id: "223456789012345901", name: "Board", colour: 0xE91E63},
+    {id: "223456789012345902", name: "Gamers"},
+  ]}}))
   await page.route("**/api/discord/channels", route => route.fulfill({json: [
     {id: "323456789012345602", name: "events-info", category: "Events"},
     {id: "323456789012345603", name: "general"},
@@ -34,21 +38,26 @@ test.describe("a description's Discord names", () => {
     await typeInDescription(page, "hi @ext")
 
     await expect(listed(page)).toHaveCount(1)
-    await expect(listed(page).first()).toContainText("The Old Man - Joris")
-    await expect(listed(page).first()).toContainText("extratoast")
+    await expect(listed(page).first()).toContainText("Sam Rivers")
+    await expect(listed(page).first()).toContainText("extrabyte")
     await expect(listed(page).first().locator("img")).toHaveAttribute("src", /avatars\/0\.png$/u)
   })
 
-  test("names roles in their own colour, with no picture beside them", async ({page}) => {
+  test("names roles in the colour their pills take, the mention's own where a role has none, with no picture", async ({page}) => {
     await withTheBot(page)
+    await typeInDescription(page, "<@&223456789012345901> <@&223456789012345902> ok\n")
+    const pill = (name: string) => page.locator(".cm-content").getByText(name, {exact: true})
+    await expect(pill("@Board")).toBeVisible()
+    const pillColour = async (name: string) => pill(name).evaluate(one => getComputedStyle(one).color)
+    const [boardPill, gamersPill] = [await pillColour("@Board"), await pillColour("@Gamers")]
+    expect(boardPill).not.toBe(gamersPill)
 
-    await typeInDescription(page, "hi @")
+    await page.keyboard.type("hi @", {delay: 30})
     await page.keyboard.press("Control+Space")
 
-    const board = listed(page).filter({hasText: "@Board"})
-    await expect(board).toHaveCount(1)
-    await expect(board.getByText("@Board").filter({visible: true})).toHaveCSS("color", "rgb(233, 30, 99)")
-    await expect(listed(page).filter({hasText: "@Gamers"})).toHaveCount(1)
+    const row = (name: string) => listed(page).filter({hasText: name}).getByText(name).filter({visible: true})
+    await expect(row("@Board")).toHaveCSS("color", boardPill)
+    await expect(row("@Gamers")).toHaveCSS("color", gamersPill)
     await expect(listed(page).filter({hasText: "@"}).locator("img")).toHaveCount(0)
   })
 

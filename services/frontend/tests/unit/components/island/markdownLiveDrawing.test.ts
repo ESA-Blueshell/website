@@ -42,6 +42,12 @@ describe("what the editor draws", () => {
     expect(lines[7]?.code).toBe("this")
   })
 
+  it("ends a quote's bar where its `>` lines end, as Discord does, though markdown runs the quote on", () => {
+    const lines = linesOn("> one\n>> two\nlazy")
+
+    expect(lines.map(line => line.classes.replace("cm-line", "").trim())).toEqual(["cm-quote", "cm-quote", ""])
+  })
+
   it("hides the marks on every line while nobody is writing in it", () => {
     const said = drawnOn("## Heading\n\nSome **bold** and *italic* and `code`.")
 

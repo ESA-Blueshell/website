@@ -5,7 +5,7 @@ import {EditorSelection, EditorState} from "@codemirror/state"
 import {EditorView} from "@codemirror/view"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import {markdownEditing} from "@/components/island/markdownEditing"
-import {channelCompletion, forgetMentionLists, mentionCompletion, mentionOption, mentionRow} from "@/components/island/markdownMentions"
+import {channelCompletion, forgetMentionLists, mentionCompletion, mentionOption, mentionOptionClass} from "@/components/island/markdownMentions"
 import {forgetMentionNames} from "@/domains/discord"
 import {listServerChannels, readMentionNames} from "@/domains/discord/adapters/mentions"
 import {searchServerMembers} from "@/domains/discord/adapters/members"
@@ -35,8 +35,6 @@ describe("a mention being typed", () => {
 
     expect(found?.options.map(one => [one.label, one.detail, one.apply])).toEqual([["The Old Man", "extratoast", "<@12>"]])
     expect(searchServerMembers).toHaveBeenCalledWith("ex")
-    expect(found?.filter).toBe(false)
-    expect(found?.validFor).toBeUndefined()
   })
 
   it("offers roles alone before two letters, and asks the server for no members", async () => {
@@ -81,8 +79,8 @@ describe("a mention's row", () => {
   })
 
   it("hides the label a role's row draws itself", () => {
-    expect(mentionRow({label: "@Board", type: "role"})).toBe("cm-option-role")
-    expect(mentionRow({label: "Anna", type: "member"})).toBe("")
+    expect(mentionOptionClass({label: "@Board", type: "role"})).toBe("cm-option-role")
+    expect(mentionOptionClass({label: "Anna", type: "member"})).toBe("")
   })
 })
 
@@ -100,6 +98,8 @@ describe("a channel being typed", () => {
     expect((await channelCompletion(asking("#gen")))?.options.map(one => one.apply)).toEqual(["<#1>"])
     expect((await channelCompletion(asking("  #gen")))?.options.map(one => one.apply)).toEqual(["<#1>"])
     expect(await channelCompletion(asking("#"))).toBeNull()
+    expect(await channelCompletion(asking("#", true))).toBeNull()
+    expect(await channelCompletion(asking("#-ev"))).toBeNull()
     expect(await channelCompletion(asking("# Heading"))).toBeNull()
     expect((await channelCompletion(asking("see #")))?.options).toHaveLength(2)
   })

@@ -22,7 +22,10 @@ class DiscordMemberControllerTest {
             on { search("off") } doReturn null
             on { unclaimed() } doReturn listOf(DiscordMember("804", "Anna", "anna", "https://cdn/anna.png"))
         }
-    private val roles: DiscordRoleDirectory = mock { on { pingable() } doReturn listOf(DiscordRole("901", "Gamers", 0x3498DB)) }
+    private val roles: DiscordRoleDirectory =
+        mock {
+            on { pingable() } doReturn listOf(DiscordRole("901", "Gamers", 0x3498DB), DiscordRole("902", "Board", null))
+        }
     private val channels: DiscordGameChannels =
         mock {
             on { offered(GameChannelCategory.GAMES) } doReturn listOf(TextRoom("11", "324", "valorant", "Games"))
@@ -57,7 +60,8 @@ class DiscordMemberControllerTest {
 
     @Test
     fun `answers the roles an event may ping with their colours, or 503 without a bot`() {
-        assertThat(controller.roles().body).containsExactly(DiscordRoleResponse("901", "Gamers", 0x3498DB))
+        assertThat(controller.roles().body)
+            .containsExactly(DiscordRoleResponse("901", "Gamers", 0x3498DB), DiscordRoleResponse("902", "Board", null))
 
         val offline: DiscordRoleDirectory = mock { on { pingable() } doReturn null }
         assertThat(DiscordMemberController(directory, offline, channels, emoji).roles().statusCode)

@@ -9,7 +9,7 @@ import {CODE_FONT} from "@/components/island/markdownLive"
 import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import DateTimeInput from "@/components/island/DateTimeInput.vue"
 import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
-import {channelCompletion, mentionCompletion, mentionOption, mentionRow} from "@/components/island/markdownMentions"
+import {channelCompletion, mentionCompletion, mentionOption, mentionOptionClass} from "@/components/island/markdownMentions"
 import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 import {TIME_STYLES, timestampText, type TimeStyle} from "@/plugins/discordTime"
 import {BRAND_ACCENT} from "@/utils/brand"
@@ -173,7 +173,6 @@ const dress = EditorView.theme({
     margin: "0 0.05em",
     verticalAlign: "-0.3em",
   },
-  // Discord's quote: a bar at its left, the words upright.
   ".cm-quote": {
     borderLeft: "4px solid color-mix(in oklab, var(--color-chalk) 30%, transparent)",
     paddingLeft: "0.75rem",
@@ -227,7 +226,7 @@ onMounted(() => {
           icons: false,
           activateOnTyping: true,
           addToOptions: [emojiOption, mentionOption],
-          optionClass: mentionRow,
+          optionClass: mentionOptionClass,
         }),
         showPlaceholder(placeholder),
         EditorView.lineWrapping,
@@ -522,9 +521,9 @@ onBeforeUnmount(() => {
   border-radius: 50%;
 }
 
-/* Discord names a role in its own colour; one without a colour takes the mention's. */
+/* The colour the role's pill takes, so the row and what it writes look alike. */
 .island-markdown :deep(.cm-tooltip-autocomplete .cm-role) {
-  color: var(--mention, var(--color-brand-lit));
+  color: color-mix(in oklab, var(--mention, var(--color-brand-lit)) 70%, var(--color-chalk));
   font-weight: 600;
 }
 

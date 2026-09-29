@@ -45,14 +45,8 @@ describe("what the editor draws", () => {
     expect(drawnOn("1. first\n2. second")).toContain("1.")
   })
 
-  it("draws a shortcode as the emoji it names, and leaves an unknown one alone", () => {
-    const view = new EditorView({
-      parent: document.body,
-      state: EditorState.create({doc: "we are :fire: about it", extensions: [markdown({base: markdownLanguage}), markdownLive]}),
-    })
-    expect(view.contentDOM.querySelector<HTMLImageElement>("img.cm-emoji")?.getAttribute("src")).toBe("/emoji/1f525.svg")
-    view.destroy()
-    expect(drawnOn("we are :notanemoji: about it")).toContain(":notanemoji:")
+  it("leaves a shortcode as the text it is, as Discord does", () => {
+    expect(drawnOn("we are :fire: about it")).toContain(":fire:")
   })
 
   it("hides a link's address but keeps what it says", () => {

@@ -99,14 +99,9 @@ describe("marks shown per span", () => {
     expect(drawn(view)).toContain("```js")
   })
 
-  it("never draws a shortcode inside code or an address", () => {
-    expect(drawn(open("`:fire:` and https://x.io/a:fire:b and :fire:", 10)))
-      .toBe(":fire: and https://x.io/a:fire:b and 🔥")
-  })
-
-  it("shows a shortcode's colons while the cursor is in it, and the emoji once it leaves", () => {
+  it("leaves a shortcode as the text it is wherever the cursor is", () => {
     expect(drawn(open("hot :fire: take", 7))).toBe("hot :fire: take")
-    expect(drawn(open("hot :fire: take", 1))).toBe("hot 🔥 take")
+    expect(drawn(open("hot :fire: take", 1))).toBe("hot :fire: take")
   })
 })
 

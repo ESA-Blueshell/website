@@ -79,11 +79,11 @@ describe("emoji in a description", () => {
     expect(drawn.alt).toBe("🔥")
   })
 
-  it("draws a shortcode written before they became emoji as they were typed", () => {
-    expect(read(":rocket:")).toContain("src=\"/emoji/1f680.svg\"")
+  it("leaves a shortcode as the text it is, as Discord does", () => {
+    expect(read(":rocket:")).toBe("<p>:rocket:</p>")
   })
 
-  it("never draws one inside code or an address", () => {
+  it("never draws an emoji inside code or an address", () => {
     const html = read("`:fire: 🔥` and https://x.io/a:fire:b")
     expect(html).toContain("<code>:fire: 🔥</code>")
     expect(html).toContain(">https://x.io/a:fire:b</a>")

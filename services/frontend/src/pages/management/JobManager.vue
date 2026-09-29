@@ -474,7 +474,7 @@ onMounted(async () => {
 
             <template
               v-for="execution in executions"
-              :key="execution.id"
+              :key="execution.id ?? undefined"
             >
               <v-list-item
                 :data-testid="`job-row-${execution.id}`"

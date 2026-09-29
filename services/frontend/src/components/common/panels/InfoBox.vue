@@ -52,7 +52,7 @@ const bodyShown = computed(() => !props.expandable || open.value)
       :class="{'info-box__header--clickable': canToggle}"
       :role="canToggle ? 'button' : undefined"
       :tabindex="canToggle ? 0 : undefined"
-      :aria-expanded="canToggle ? String(open) : undefined"
+      :aria-expanded="canToggle ? (open ? 'true' : 'false') : undefined"
       @click="canToggle && (open = !open)"
       @keydown.enter="canToggle && (open = !open)"
       @keydown.space.prevent="canToggle && (open = !open)"

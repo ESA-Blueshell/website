@@ -243,7 +243,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
           <p class="history__summary">
             <span class="history__written">{{ lineSoFar(index).written }}</span><span
               v-if="lineSoFar(index).landing"
-              :key="typed"
+              :key="progress[index]"
               class="history__landing"
             >{{ lineSoFar(index).landing }}</span><span
               v-if="isWriting(index)"

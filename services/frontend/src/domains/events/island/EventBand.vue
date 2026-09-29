@@ -42,13 +42,13 @@ const deadline = computed(() => deadlineOf(event))
       :alt="event.title"
       :banner="poster?.url"
       class="band__art"
-      :height="poster?.height"
+      :height="poster?.height ?? undefined"
       sizes="(max-width: 1023px) 100vw, 36rem"
       :srcset="poster ? srcsetOf(poster) : undefined"
       :title="event.title"
       v-bind="plateOf(event)"
       :where="event.location ?? undefined"
-      :width="poster?.width"
+      :width="poster?.width ?? undefined"
     />
 
     <div class="band__body">

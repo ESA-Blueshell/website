@@ -24,7 +24,8 @@ vi.mock("vue-router", async (importOriginal) => {
 
 vi.mock("vee-validate", () => ({
   Form: {
-    template: "<form @submit.prevent><slot :meta='{ valid: true }' /></form>",
+    emits: ["submit"],
+    template: "<form @submit.prevent=\"$emit('submit', {})\"><slot :meta='{ valid: true }' /></form>",
   },
   useForm: () => ({
     setFieldValue: mockSetFieldValue,
@@ -53,7 +54,8 @@ describe("ForgotPassword page", () => {
     expect(mockSetFieldValue).toHaveBeenCalledWith("username", "alice")
     expect((wrapper.vm as any).form.username).toBe("alice")
 
-    await (wrapper.vm as any).onSubmit()
+    await wrapper.get('[data-testid="forgot-password-form"]').trigger("submit")
+    await settle()
 
     expect(mockRequestPasswordReset).toHaveBeenCalledWith("alice")
     expect(wrapper.text()).toContain("you’ll receive an email")

@@ -107,7 +107,7 @@ onBeforeUnmount(() => {
       <div class="submit-btn__content">
         <v-icon
           v-if="showContentIcon"
-          :icon="icon"
+          :icon="icon ?? undefined"
           class="submit-btn__icon"
         />
 
@@ -128,7 +128,7 @@ onBeforeUnmount(() => {
         class="submit-btn__status-overlay"
       >
         <v-icon
-          :icon="statusIcon"
+          :icon="statusIcon ?? undefined"
           class="submit-btn__status-overlay-icon"
         />
       </div>

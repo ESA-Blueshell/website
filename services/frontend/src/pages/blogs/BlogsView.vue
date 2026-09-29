@@ -19,7 +19,7 @@ onMounted(async () => {
   }
 })
 
-const navigateToBlog = (blogId: string) => {
+const navigateToBlog = (blogId: number) => {
   router.push(`/blogs/${blogId}`)
 }
 </script>
@@ -60,7 +60,7 @@ const navigateToBlog = (blogId: string) => {
           :value="blog.id"
           class="px-0"
           ripple
-          @click="navigateToBlog(blog.id as string)"
+          @click="navigateToBlog(blog.id)"
         >
           <v-divider />
           <div class="flex-grow-1 ml-3 my-1">

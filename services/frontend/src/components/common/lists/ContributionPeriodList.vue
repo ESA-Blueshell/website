@@ -83,7 +83,7 @@
 
       <contribution-period-dialog
         v-model:show-dialog="showAddPeriodDialog"
-        :contribution-period="selectedPeriod"
+        :contribution-period="selectedPeriod ?? undefined"
         @changed="onPeriodChanged"
         @delete="deleteContributionPeriod"
       />

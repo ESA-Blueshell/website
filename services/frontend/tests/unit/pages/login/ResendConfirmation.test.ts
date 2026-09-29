@@ -26,7 +26,8 @@ vi.mock("vue-router", async (importOriginal) => {
 
 vi.mock("vee-validate", () => ({
   Form: {
-    template: "<form @submit.prevent><slot :meta='{ valid: true }' /></form>",
+    emits: ["submit"],
+    template: "<form @submit.prevent=\"$emit('submit', {})\"><slot :meta='{ valid: true }' /></form>",
   },
   useForm: () => ({
     setFieldValue: mockSetFieldValue,
@@ -63,7 +64,8 @@ describe("ResendConfirmation page", () => {
     const wrapper = mountPage()
     await settle()
 
-    await (wrapper.vm as any).onSubmit()
+    await wrapper.get('[data-testid="resend-confirmation-form"]').trigger("submit")
+    await settle()
 
     expect(mockResendActivation).toHaveBeenCalledWith("alice")
   })

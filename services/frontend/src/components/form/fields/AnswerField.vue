@@ -16,18 +16,18 @@ const answer = defineModel<AnswerRequest>({
 
 const required = computed(() => props.question.required === true)
 
-const requireText = (val: string | undefined | null) => {
+const requireText = (val: unknown) => {
   if (!required.value) return true
   return (typeof val === "string" && val.trim().length > 0) || "This field is required"
 }
 
-const requireAtLeastOneSelection = (selections: boolean[] | undefined | null) => {
+const requireAtLeastOneSelection = (selections: unknown) => {
   if (!required.value) return true
   const arr = Array.isArray(selections) ? selections : []
   return arr.some(Boolean) || "Select at least one option"
 }
 
-const requireExactlyOneSelection = (selections: boolean[] | undefined | null) => {
+const requireExactlyOneSelection = (selections: unknown) => {
   const arr = Array.isArray(selections) ? selections : []
   const chosen = arr.filter(Boolean).length
   if (chosen > 1) return "Select exactly one option"

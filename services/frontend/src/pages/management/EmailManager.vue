@@ -360,7 +360,7 @@ onMounted(async () => {
 
             <template
               v-for="email in emails"
-              :key="email.id"
+              :key="email.id ?? undefined"
             >
               <v-list-item
                 :data-testid="`email-row-${email.id}`"

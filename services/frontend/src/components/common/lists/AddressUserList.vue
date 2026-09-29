@@ -5,7 +5,7 @@
   >
     <div
       :aria-controls="panelId"
-      :aria-expanded="String(isOpen)"
+      :aria-expanded="isOpen ? 'true' : 'false'"
       class="px-5 py-3 d-flex align-center justify-space-between"
       :data-testid="`address-user-list-toggle-${resolvedPanelKey}`"
       role="button"

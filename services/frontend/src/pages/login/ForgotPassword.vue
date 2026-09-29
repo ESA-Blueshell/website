@@ -27,7 +27,7 @@
             v-slot="{ meta }"
             as="form"
             data-testid="forgot-password-form"
-            @submit="onSubmit"
+            @submit="() => onSubmit()"
           >
             <v-row>
               <v-col cols="12">

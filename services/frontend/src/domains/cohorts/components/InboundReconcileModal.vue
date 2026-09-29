@@ -60,7 +60,7 @@ async function confirm() {
           density="compact"
           type="warning"
         >
-          {{ reconcile.preview.value.fact.kind }} cannot be written from inbound reconcile.
+          {{ reconcile.preview.value.cohortLabel }} cannot be written from inbound reconcile.
         </v-alert>
         <v-alert
           v-if="reconcile.applyResult.value"
@@ -139,11 +139,11 @@ async function confirm() {
                 </td>
                 <td>
                   <v-chip
-                    :color="row.alreadyTrue ? 'success' : 'primary'"
+                    :color="row.alreadyMember ? 'success' : 'primary'"
                     size="x-small"
                     variant="tonal"
                   >
-                    {{ row.alreadyTrue ? "Already true" : "Writable" }}
+                    {{ row.alreadyMember ? "Already a member" : "Writable" }}
                   </v-chip>
                 </td>
               </tr>

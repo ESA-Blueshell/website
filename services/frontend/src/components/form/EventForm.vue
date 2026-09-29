@@ -50,7 +50,9 @@ const emit = defineEmits<{
 }>()
 
 type CommitteeOption = Pick<Committee, "id" | "name">
-type EventModel = Omit<CreateEventRequest, "committeeId" | "banner" | "signUpForm"> & {
+// An event read back may carry no description, so the model takes what the api answers with.
+type EventModel = Omit<CreateEventRequest, "committeeId" | "banner" | "signUpForm" | "description"> & {
+  description?: string | null;
   committeeId?: number | null;
   id?: number;
   version?: number;
@@ -460,7 +462,7 @@ defineExpose({validate, save})
             <VvField
               v-model="event.signUpDeadline"
               :component-props="{type: 'datetime-local'}"
-              :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
+              :display="(v?: string | null) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
               label="Sign-ups close*"
               name="signUpDeadline"
               :rules="`required|dateTimeNotAfter:@endTime`"
@@ -510,7 +512,7 @@ defineExpose({validate, save})
 
       <event-preview
         class="event-form__preview"
-        :location="event.location"
+        :location="event.location ?? undefined"
         :poster="bannerFile"
         :start-time="event.startTime"
         :title="event.title"

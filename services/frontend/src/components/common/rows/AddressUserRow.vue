@@ -24,12 +24,12 @@
             style="width: 80px"
             variant="flat"
           >
-            {{ user.roles.at(-1).toLocaleLowerCase() }}
+            {{ user.roles.at(-1)?.toLocaleLowerCase() }}
           </v-chip>
 
           <v-btn
             v-if="hasAddress"
-            :disabled="user?.roles?.includes('MEMBER')"
+            :disabled="user?.roles?.includes(Role.MEMBER)"
             class="btn-tight"
             color="red"
             :data-testid="`address-user-delete-btn-${user.id}`"
@@ -85,7 +85,7 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {computed, ref} from "vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import {type AddressResponse, deleteAddress, type UserDetailResponse} from "@/domains/user"
+import {type AddressResponse, deleteAddress, Role, type UserDetailResponse} from "@/domains/user"
 
 type ManagedUser = UserDetailResponse & { addressId?: number | null }
 type ManagedAddress = AddressResponse & { userId?: number | null }

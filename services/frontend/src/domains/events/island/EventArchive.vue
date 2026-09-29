@@ -34,8 +34,8 @@ const tileOf = (event: EventResponse) => {
   return {
     banner: poster?.url,
     srcset: poster ? srcsetOf(poster) : undefined,
-    width: poster?.width,
-    height: poster?.height,
+    width: poster?.width ?? undefined,
+    height: poster?.height ?? undefined,
   }
 }
 </script>

@@ -124,6 +124,25 @@ test.describe("the esports island", () => {
     expect(outsideParagraph).not.toBe("0px")
   })
 
+  // A Tailwind utility matches only inside an island root, so outside one a class means what
+  // Vuetify says it means: `hidden` is not Vuetify's, so it hides nothing there.
+  test("a utility class outside the island is Vuetify's, and inside it is Tailwind's", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/contact")
+
+    const displayOf = (inside: boolean) => page.evaluate(within => {
+      const probe = document.createElement("div")
+      probe.className = "hidden"
+      ;(within ? document.querySelector(".island")! : document.body).append(probe)
+      const display = getComputedStyle(probe).display
+      probe.remove()
+      return display
+    }, inside)
+
+    expect(await displayOf(false)).toBe("block")
+    expect(await displayOf(true)).toBe("none")
+  })
+
   test("a management page still renders its Vuetify furniture", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())

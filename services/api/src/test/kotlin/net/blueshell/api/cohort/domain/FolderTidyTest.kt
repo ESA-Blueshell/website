@@ -84,6 +84,15 @@ class FolderTidyTest {
 
         verify(strategy, never()).move(paid, "Contribution paid")
         assertThat(result.failed).containsExactly(FailedTargetMove("200", "Sitecie", "Brevo said no"))
+
+        whenever(strategy.move(paid, "Contribution paid")).thenReturn(paid.copy(folderLabel = "Contribution paid"))
+        assertThat(
+            tidy
+                .apply(TargetSystem.BREVO, listOf("100"))
+                .moved
+                .single()
+                .folderLabel,
+        ).isEqualTo("Contribution paid")
     }
 
     @Test

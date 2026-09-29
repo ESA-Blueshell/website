@@ -57,7 +57,8 @@ data class JwtRequest(
 
 **Frontend TypeScript Client:**
 ```bash
-./scripts/generate-openapi-local.sh
+./gradlew :services:api:dumpOpenApiSpec
+yarn --cwd services/frontend gen:blueshell
 ```
 
 This starts the api on an in-memory H2 database, which CI does too, and writes:

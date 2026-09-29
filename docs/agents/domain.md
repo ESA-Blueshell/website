@@ -33,7 +33,6 @@ actually get resolved.
 │       ├── frontend/ADR-INDEX.md      ← ADR-001…  numbered independently
 │       ├── testing/ADR-INDEX.md       ← ADR-001…  numbered independently
 │       └── {api,frontend}/superseded/ ← replaced decisions, kept for history
-├── libs/                              ← shared Kotlin code and vendored OpenAPI specs
 ├── platform/                          ← cluster manifests, Nix hosts and their docs
 ├── services/{api,frontend,stalwart,vault}/
 └── tests/system/                      ← the Kotlin Playwright suite

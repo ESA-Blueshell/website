@@ -27,9 +27,6 @@
 - glob: "**/gradle.lockfile"
   bucket: build
 
-- glob: "libs/openapi-specs/**"
-  bucket: build
-
 # --- api ---
 - glob: "services/api/src/integrationTest/**"
   bucket: tests
@@ -62,10 +59,6 @@
 # --- system tests ---
 - glob: "tests/**"
   bucket: tests
-
-# --- libs ---
-- glob: "libs/**"
-  bucket: libs
 
 # --- platform and infrastructure ---
 - glob: "platform/**"

@@ -78,7 +78,6 @@ dependencies {
     // the detection strategy is only ever instantiated by ApplicationModules in a test.
     compileOnly("org.springframework.modulith:spring-modulith-core")
     implementation("org.springframework.cloud:spring-cloud-starter-vault-config:5.0.2")
-    implementation(project(":libs:kotlin-common"))
     implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-mail")

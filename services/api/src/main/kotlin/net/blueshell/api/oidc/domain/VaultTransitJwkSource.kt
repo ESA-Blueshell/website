@@ -8,7 +8,6 @@ import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.jwk.source.JWKSource
 import com.nimbusds.jose.proc.SecurityContext
 import jakarta.annotation.PostConstruct
-import net.blueshell.common.vault.VaultTransitClient
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import java.util.concurrent.atomic.AtomicReference

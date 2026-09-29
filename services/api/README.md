@@ -87,7 +87,8 @@ services/api/src/main/kotlin/net/blueshell/api/
 
 ```bash
 # From project root
-./scripts/generate-openapi-local.sh
+./gradlew :services:api:dumpOpenApiSpec
+yarn --cwd services/frontend gen:blueshell
 ```
 
 This:
@@ -198,8 +199,7 @@ rm -rf .gradle
 
 ### OpenAPI client generation fails
 
-`./scripts/generate-openapi-local.sh` starts the api on an in-memory H2 database, so it needs no
-running stack. Where it fails, the api failed to start: its output names why.
+`dumpOpenApiSpec` starts the api on an in-memory H2 database, so it needs no running stack. Where it fails, the api failed to start: its output names why.
 
 ## Policies & Compliance
 
@@ -214,7 +214,7 @@ These are referenced in signup flows and user consent workflows.
 1. Follow the architecture patterns in AGENTS.md and the ADRs
 2. Reference ADRs when making design decisions
 3. Run tests and architecture checks before committing
-4. Update OpenAPI spec when API changes (`./scripts/generate-openapi-local.sh`)
+4. Update OpenAPI spec when API changes (`./gradlew :services:api:dumpOpenApiSpec`, then `yarn --cwd services/frontend gen:blueshell`)
 5. Keep changes within bounded contexts
 
 See [AGENTS.md](../../AGENTS.md) for detailed development guidelines.

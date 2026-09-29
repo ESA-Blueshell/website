@@ -31,5 +31,4 @@ dependencies {
     // format-checked without asking; detekt is applied project by project.
     implementation("dev.detekt:detekt-gradle-plugin:2.0.0-alpha.6")
     implementation("org.jlleitschuh.gradle:ktlint-gradle:14.2.0")
-    implementation("org.openapitools:openapi-generator-gradle-plugin:7.25.0")
 }

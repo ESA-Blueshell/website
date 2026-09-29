@@ -56,12 +56,12 @@ JACOCO_COUNTERS = {
     "LINE": "lines",
 }
 
-BUCKET_ORDER = ["api", "frontend", "libs", "tests", "platform", "build", "docs", "other"]
+BUCKET_ORDER = ["api", "frontend", "tests", "platform", "build", "docs", "other"]
 BUCKET_LABELS = {
     "build": "build & config",
     "other": "unclassified",
 }
-PROD_BUCKETS = {"api", "frontend", "libs"}
+PROD_BUCKETS = {"api", "frontend"}
 TEST_BUCKETS = {"tests"}
 
 # The unit suites only: a number read off the slower layers rewards a test for

@@ -1,4 +1,4 @@
-package net.blueshell.common.vault
+package net.blueshell.api.oidc.domain
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component

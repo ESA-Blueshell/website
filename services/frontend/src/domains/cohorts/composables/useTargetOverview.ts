@@ -1,7 +1,9 @@
 import {computed, ref} from "vue"
 import {
+  archiveTarget,
   createFolderInSystem,
   createListInSystem,
+  deleteTarget,
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
@@ -234,7 +236,43 @@ export function useTargetOverview() {
     }
   }
 
+  /** File a list in the archive folder; the row shows where it went. */
+  async function archive(system: TargetSystem, target: ExternalTarget): Promise<boolean> {
+    writing.value = true
+    writeRefusal.value = null
+    try {
+      const archived = await archiveTarget(system, target.externalId)
+      if (!archived.ok) {
+        writeRefusal.value = archived.reason
+        return false
+      }
+      targets.value = targets.value.map((t) => (t.externalId === archived.saved.externalId ? archived.saved : t))
+      return true
+    } finally {
+      writing.value = false
+    }
+  }
+
+  /** Delete an unlinked list for good, by its name typed exactly. */
+  async function remove(system: TargetSystem, target: ExternalTarget, typedName: string): Promise<boolean> {
+    writing.value = true
+    writeRefusal.value = null
+    try {
+      const deleted = await deleteTarget(system, target.externalId, typedName)
+      if (!deleted.ok) {
+        writeRefusal.value = deleted.reason
+        return false
+      }
+      targets.value = targets.value.filter((t) => t.externalId !== target.externalId)
+      return true
+    } finally {
+      writing.value = false
+    }
+  }
+
   return {
+    archive,
+    remove,
     writeRefusal,
     writing,
     createList,

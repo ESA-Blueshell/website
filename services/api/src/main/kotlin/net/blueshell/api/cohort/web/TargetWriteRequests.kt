@@ -27,3 +27,9 @@ data class CreateTargetFolderRequest(
     @field:Size(max = 64)
     val name: String,
 )
+
+@Schema(name = "DeleteExternalTargetRequest", description = "The list's name, typed exactly, to confirm a delete Brevo cannot undo.")
+data class DeleteExternalTargetRequest(
+    @field:NotBlank(message = "Type the list's name to delete it")
+    val name: String,
+)

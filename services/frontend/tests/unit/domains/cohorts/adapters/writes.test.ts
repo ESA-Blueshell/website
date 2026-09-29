@@ -1,9 +1,11 @@
 import {describe, expect, it, vi} from "vitest"
 import {
   applyInboundReconcileSelection,
+  archiveTarget,
   createFolderInSystem,
   createListInSystem,
   createTargetForSubject,
+  deleteTarget,
   linkExistingTargetForSubject,
   linkUserToExternal,
   moveTargetToFolder,
@@ -15,9 +17,11 @@ import {
 } from "@/domains/cohorts/adapters/cohorts"
 import {
   applyInboundReconcile,
+  archiveExternalTarget,
   createExternalTarget,
   createTarget,
   createTargetFolder,
+  deleteExternalTarget,
   enqueue,
   linkExistingTarget,
   linkUser,
@@ -34,6 +38,8 @@ import {CohortKind, TargetSystem} from "@/services/api"
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   applyInboundReconcile: vi.fn(),
+  archiveExternalTarget: vi.fn(),
+  deleteExternalTarget: vi.fn(),
   createExternalTarget: vi.fn(),
   createTarget: vi.fn(),
   createTargetFolder: vi.fn(),
@@ -352,5 +358,31 @@ describe("making and renaming lists on the system", () => {
     vi.mocked(createTargetFolder).mockResolvedValue(answer(createTargetFolder, ["Members", "Projects"]))
 
     await expect(createFolderInSystem(TargetSystem.BREVO, "Projects")).resolves.toEqual({ok: true, saved: ["Members", "Projects"]})
+  })
+})
+
+describe("archiving and deleting lists", () => {
+  it("answers with the list in its archive folder", async () => {
+    vi.mocked(archiveExternalTarget).mockResolvedValue(answer(archiveExternalTarget, target({folderLabel: "Archive"})))
+
+    await expect(archiveTarget(TargetSystem.BREVO, "17")).resolves.toMatchObject({ok: true, saved: {folderLabel: "Archive"}})
+  })
+
+  it("says why a linked list cannot be deleted", async () => {
+    vi.mocked(deleteExternalTarget).mockResolvedValue(
+      refusal(deleteExternalTarget, {code: "TargetStillLinked", system: "Brevo", externalId: "17"}, 409),
+    )
+
+    await expect(deleteTarget(TargetSystem.BREVO, "17", "Paid members")).resolves.toEqual({
+      ok: false,
+      reason: "A list linked to a cohort is archived, not deleted.",
+    })
+    expect(deleteExternalTarget).toHaveBeenCalledWith({path: {system: TargetSystem.BREVO, externalId: "17"}, body: {name: "Paid members"}})
+  })
+
+  it("answers that the delete went through", async () => {
+    vi.mocked(deleteExternalTarget).mockResolvedValue(emptyAnswer(deleteExternalTarget))
+
+    await expect(deleteTarget(TargetSystem.BREVO, "18", "Loose")).resolves.toEqual({ok: true})
   })
 })

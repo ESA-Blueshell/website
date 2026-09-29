@@ -1,11 +1,12 @@
 package net.blueshell.api.contact.domain
 
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.clients.brevo.BrevoClient
 import net.blueshell.clients.brevo.api.ContactsApi
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
@@ -22,7 +23,7 @@ import tools.jackson.databind.json.JsonMapper
  * auto-configuration attached — stays in the request path.
  */
 @Configuration
-@Profile("!test & !dev")
+@WhenCredentialsSet(Credentials.BREVO)
 class BrevoClientConfig {
     @Bean
     fun brevoContactsApi(

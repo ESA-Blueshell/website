@@ -8,9 +8,10 @@ import com.google.api.services.calendar.CalendarScopes
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.GoogleCredentials
 import jakarta.annotation.PostConstruct
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.io.IOException
 import java.security.GeneralSecurityException
@@ -24,7 +25,7 @@ import java.time.Instant
  * domain concepts and this client's Google-specific operations.
  */
 @Component
-@Profile("!test & !dev")
+@WhenCredentialsSet(Credentials.GOOGLE_CALENDAR_ID, Credentials.GOOGLE_CALENDAR_KEY)
 class GoogleCalendarClient {
     @Value($$"${google.calendar.id}")
     private lateinit var calendarId: String

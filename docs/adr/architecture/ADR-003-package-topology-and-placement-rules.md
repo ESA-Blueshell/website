@@ -200,10 +200,11 @@ package across 653 files buys nothing but appearance.
 4. **Authorization lives beside what it authorizes.** `BlogPermission` in
    `blog`, `EventPermission` in `event`. The abstract base and the composite
    evaluator stay in `security`, which is what genuinely serves everyone.
-5. **A fake adapter lives beside the port it replaces.** The seven
-   `@Profile("test | dev")` doubles in `platform/integration/mock` are real
-   adapters, correctly in main sources so the dev profile can reach them — but
-   `InMemoryEmailClient` belongs in `email`, next to the client it stands in for.
+5. **A fake adapter lives beside the port it replaces.** The doubles once in
+   `platform/integration/mock` are real adapters, correctly in main sources so
+   dev can reach them, and each now sits beside its port: `InMemoryEmailClient`
+   in `email`, `MockContactAdapter` in `contact`, `MockCalendarAdapter` in `event`
+   (#1660).
 6. **Global wiring with no owning module → the application root.**
 
 Rules 4 and 5 are the same rule as 3, applied to things that were centralised by

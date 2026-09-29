@@ -4,7 +4,6 @@ import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.TargetSystem
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 
 /**
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service
  * beyond the numeric id its lists are keyed by (API ADR-019).
  */
 @Service
-@Profile("!test & !dev")
 class BrevoTargetStrategy(
     contactListAdapters: List<ContactListAdapter>,
 ) : TargetStrategy {

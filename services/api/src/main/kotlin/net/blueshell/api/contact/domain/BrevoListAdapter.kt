@@ -1,19 +1,20 @@
 package net.blueshell.api.contact.domain
 
+import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.contact.api.ContactServiceException
-import net.blueshell.api.contact.api.ContactListAdapter
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.CreateListRequest
-import net.blueshell.clients.brevo.model.UpdateListRequest
 import net.blueshell.clients.brevo.model.GetContactsSortParameter
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
+import net.blueshell.clients.brevo.model.UpdateListRequest
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
@@ -32,7 +33,7 @@ import tools.jackson.databind.json.JsonMapper
  * not in the list is a no-op.
  */
 @Service
-@Profile("!test & !dev")
+@WhenCredentialsSet(Credentials.BREVO)
 class BrevoListAdapter(
     private val contactsApi: ContactsApi,
     private val jsonMapper: JsonMapper,

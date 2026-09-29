@@ -1,6 +1,7 @@
-package net.blueshell.api.platform.integration.mock
+package net.blueshell.api.contact.domain
 
 import net.blueshell.api.contact.api.ContactData
+import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactServiceException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -185,6 +186,19 @@ class MockContactAdapterTest {
         assertThat(adapter.getMemberships()).isEmpty()
     }
 
+    @Test
+    fun `listMembers names each member of the list by contact id and email, and no one else`() {
+        val ada = adapter.createContact(contactData(email = "ada@example.com"))
+        val bob = adapter.createContact(contactData(email = "bob@example.com"))
+        val members = adapter.createList("Members", null)
+        val board = adapter.createList("Board", null)
+        adapter.addToList(ada, members)
+        adapter.addToList(bob, board)
+
+        assertThat(adapter.listMembers(members)).containsExactly(ContactListMember(ada, "ada@example.com"))
+        assertThat(adapter.transactionActiveDuringCalls).isNotEmpty.containsOnly(false)
+    }
+
     private fun contactData(
         email: String = "test@example.com",
         firstName: String = "First",
@@ -203,4 +217,27 @@ class MockContactAdapterTest {
             isMember = isMember,
             attributes = attributes,
         )
+
+    @Test
+    fun `a list filed in a folder lists with its folder and moves to another`() {
+        val first = adapter.createList("Members 2026", "Contribution periods")
+        adapter.createList("Board", "Committees")
+        val folders = adapter.listFolders()
+        val committees = folders.entries.single { it.value == "Committees" }.key
+
+        assertThat(folders.values).containsExactlyInAnyOrder("Contribution periods", "Committees")
+        assertThat(adapter.listAll().single { it.externalListId == first }.memberCount).isZero()
+
+        adapter.moveList(first, committees)
+
+        assertThat(adapter.listAll().single { it.externalListId == first }.folderId).isEqualTo(committees)
+    }
+
+    @Test
+    fun `moving refuses a list or a folder that does not exist`() {
+        val list = adapter.createList("Board", null)
+
+        assertThatThrownBy { adapter.moveList(999, 1) }.isInstanceOf(ContactServiceException::class.java)
+        assertThatThrownBy { adapter.moveList(list, 999) }.isInstanceOf(ContactServiceException::class.java)
+    }
 }

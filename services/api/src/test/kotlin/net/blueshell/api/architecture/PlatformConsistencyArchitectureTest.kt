@@ -10,9 +10,9 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.shared.credentials.WhenCredentialsMissing
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import org.junit.jupiter.api.Test
-import org.springframework.context.annotation.Primary
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -93,89 +93,37 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
         }
 
     /**
-     * B1: Production adapters (ending with 'Adapter') must declare @Profile.
+     * B1: An adapter says which credentials switch it on, or which ones it stands in for.
      *
-     * Rationale: without @Profile, a production adapter (real external API) activates in test
-     * environments, causing integration test pollution.
-     *
-     * Note: only targets *Adapter (not *Client) because clients are lower-level infrastructure
-     * wired via @Bean methods on @Configuration classes that themselves carry @Profile.
+     * Rationale: a vendor client and its in-memory stand-in are switched by one rule, so exactly
+     * one of the two exists wherever the api runs. An adapter carrying neither would run beside
+     * its twin, or in place of it.
      */
     @Test
-    fun `production adapters must declare @Profile`(): Unit =
-        arch("Production *Adapter classes must be annotated with @Profile") {
+    fun `adapters are switched by their credentials`(): Unit =
+        arch("Spring bean *Adapter classes carry @WhenCredentialsSet or @WhenCredentialsMissing") {
             classes()
                 .that()
-                .resideInAnyPackage("${ArchitecturePackages.ROOT}..")
-                .and()
                 .haveSimpleNameEndingWith("Adapter")
                 .and()
                 .doNotHaveModifier(JavaModifier.ABSTRACT)
-                .and()
-                .resideOutsideOfPackages(ArchitecturePackages.PLATFORM_MOCK)
-                .should(beAnnotatedWithProfile())
-                .because("ADR-022: Production adapters must have @Profile to avoid test environment pollution")
-        }
-
-    /**
-     * B2: Mock adapters in platform.integration.mock must be annotated with @Primary.
-     *
-     * Rationale: without @Primary, Spring throws NoUniqueBeanDefinitionException at test startup
-     * when both real and mock implementations are on the classpath.
-     *
-     * Only targets Spring bean classes (@Service/@Component) — excludes helper data classes,
-     * companion objects, and nested data classes defined alongside the mock adapters.
-     */
-    @Test
-    fun `mock adapters must be @Primary`(): Unit =
-        arch("Spring bean classes in platform.integration.mock must be @Primary") {
-            classes()
-                .that()
-                .resideInAnyPackage(ArchitecturePackages.PLATFORM_MOCK)
                 .and(isSpringBean())
-                .should()
-                .beAnnotatedWith(Primary::class.java)
-                .because("ADR-022: Mock adapters need @Primary to override production beans in test/dev profiles")
+                .should(beSwitchedByCredentials())
+                .because("API ADR-019: a vendor client is real where its credentials are set, and its stand-in otherwise")
         }
 
     /**
-     * B3: Mock adapters must target test or dev profiles.
-     *
-     * Rationale: a mock without a test-scoped profile would silently discard real calls in production.
-     *
-     * Only targets Spring bean classes (@Service/@Component) — see B2.
+     * B2: A stand-in names the same credentials as the real implementation of its port, so the
+     * two can never both be missing or both be present.
      */
     @Test
-    fun `mock adapters must target test or dev profiles`(): Unit =
-        arch("Spring bean classes in platform.integration.mock must have @Profile containing 'test' or 'dev'") {
+    fun `stand-ins mirror the credentials of their real twin`(): Unit =
+        arch("A @WhenCredentialsMissing bean has a @WhenCredentialsSet twin on the same port with the same properties") {
             classes()
                 .that()
-                .resideInAnyPackage(ArchitecturePackages.PLATFORM_MOCK)
-                .and(isSpringBean())
-                .should(haveTestOrDevProfile())
-                .because("ADR-022: Mock adapters must be scoped to test/dev profiles to prevent production activation")
-        }
-
-    /**
-     * C2: Platform specifications must reside in ..persistence.spec.. packages.
-     *
-     * Rationale: mirrors the existing domain pattern and ensures the SPECIFICATION
-     * constant applies consistently to all specs.
-     */
-    @Test
-    fun `platform specifications must reside in persistence dot spec packages`(): Unit =
-        arch("Platform *Specifications classes must be in ..persistence.spec.. packages") {
-            classes()
-                .that()
-                .resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and()
-                .haveSimpleNameEndingWith("Specifications")
-                .and()
-                .doNotHaveModifier(JavaModifier.ABSTRACT)
-                .should()
-                .resideInAnyPackage("${ArchitecturePackages.ROOT}.platform.integration..persistence.spec..")
-                .allowEmptyShould(true)
-                .because("ADR-022: Standard layout requires specifications at ..persistence.spec..")
+                .areAnnotatedWith(WhenCredentialsMissing::class.java)
+                .should(haveARealTwin())
+                .because("API ADR-019: exactly one of a vendor client and its stand-in exists")
         }
 
     /** Matches classes that are Spring-managed beans (@Component or @Service). */
@@ -184,55 +132,33 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
             clazz.isAnnotatedWith(Component::class.java) || clazz.isAnnotatedWith(Service::class.java)
         }
 
-    private fun beAnnotatedWithProfile(): ArchCondition<JavaClass> =
-        object : ArchCondition<JavaClass>("be annotated with @Profile") {
+    private fun beSwitchedByCredentials(): ArchCondition<JavaClass> =
+        object : ArchCondition<JavaClass>("be annotated with @WhenCredentialsSet or @WhenCredentialsMissing") {
             override fun check(
                 clazz: JavaClass,
                 events: ConditionEvents,
             ) {
-                val hasProfile = clazz.isAnnotatedWith(Profile::class.java)
-                if (!hasProfile) {
-                    events.add(
-                        SimpleConditionEvent.violated(
-                            clazz,
-                            "${clazz.name} is missing @Profile — production adapters must declare " +
-                                "a profile to prevent test environment pollution",
-                        ),
-                    )
+                if (!clazz.isAnnotatedWith(WhenCredentialsSet::class.java) && !clazz.isAnnotatedWith(WhenCredentialsMissing::class.java)) {
+                    events.add(SimpleConditionEvent.violated(clazz, "${clazz.name} names no credentials"))
                 }
             }
         }
 
-    private fun haveTestOrDevProfile(): ArchCondition<JavaClass> =
-        object : ArchCondition<JavaClass>("have @Profile value containing 'test' or 'dev'") {
+    private fun haveARealTwin(): ArchCondition<JavaClass> =
+        object : ArchCondition<JavaClass>("have a real twin with the same credentials") {
             override fun check(
                 clazz: JavaClass,
                 events: ConditionEvents,
             ) {
-                val profileAnnotation = clazz.tryGetAnnotationOfType(Profile::class.java)
-                if (!profileAnnotation.isPresent) {
-                    events.add(
-                        SimpleConditionEvent.violated(
-                            clazz,
-                            "${clazz.name} is missing @Profile — mock adapters must have @Profile('test') or @Profile('test | dev')",
-                        ),
-                    )
-                    return
-                }
-                val value =
-                    profileAnnotation
-                        .get()
-                        .value
-                        .joinToString("|")
-                        .lowercase()
-                if (!value.contains("test") && !value.contains("dev")) {
-                    events.add(
-                        SimpleConditionEvent.violated(
-                            clazz,
-                            "${clazz.name} has @Profile($value) which does not contain 'test' or " +
-                                "'dev' — mock adapters must target test/dev profiles",
-                        ),
-                    )
+                val wanted = clazz.getAnnotationOfType(WhenCredentialsMissing::class.java).properties.toSet()
+                val ports = clazz.allRawInterfaces.filter { it.packageName.startsWith(ArchitecturePackages.ROOT) }
+                val twin =
+                    ports.flatMap { it.allSubclasses }.any { real ->
+                        real.isAnnotatedWith(WhenCredentialsSet::class.java) &&
+                            real.getAnnotationOfType(WhenCredentialsSet::class.java).properties.toSet() == wanted
+                    }
+                if (!twin) {
+                    events.add(SimpleConditionEvent.violated(clazz, "${clazz.name} has no real twin switched on $wanted"))
                 }
             }
         }

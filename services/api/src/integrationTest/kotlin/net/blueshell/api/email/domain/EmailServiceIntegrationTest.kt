@@ -12,7 +12,6 @@ import net.blueshell.api.event.domain.EventSignupEmailJob
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
-import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.NonRetryableJobException

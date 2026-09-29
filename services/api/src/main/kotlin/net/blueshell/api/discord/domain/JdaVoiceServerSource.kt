@@ -1,5 +1,7 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.clients.discord.api.DiscordApi
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
@@ -17,9 +19,7 @@ import net.dv8tion.jda.api.utils.data.DataObject
 import net.dv8tion.jda.internal.entities.GuildImpl
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.context.SmartLifecycle
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
@@ -41,8 +41,7 @@ import java.util.concurrent.TimeUnit
  * scratch, waiting longer each time.
  */
 @Component
-@Profile("!test")
-@ConditionalOnExpression(DISCORD_TOKEN_SET)
+@WhenCredentialsSet(Credentials.DISCORD_BOT)
 class JdaVoiceServerSource(
     @Value($$"${discord.botToken:}") private val botToken: String,
     @Value($$"${discord.guildId:}") private val guildId: String,

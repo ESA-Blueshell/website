@@ -5,10 +5,10 @@ import jakarta.mail.Folder
 import jakarta.mail.Message
 import jakarta.mail.Session
 import jakarta.mail.search.FlagTerm
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.util.Properties
@@ -17,13 +17,12 @@ import java.util.Properties
  * Scans the IMAP bounce mailbox for new DSNs, looks each up by `Message-ID` on the outbox and
  * marks the matching record bounced.
  *
- * Disabled unless `email.bounce.imap.enabled` is set, so dev and test JVMs stay quiet, and
- * paced by `email.bounce.poll-interval-ms`. Parsing lives in [BounceMessageParser], where it
+ * Runs where the bounce mailbox's host, username and password are all set, so dev and test JVMs
+ * stay quiet, and is paced by `email.bounce.poll-interval-ms`. Parsing lives in [BounceMessageParser], where it
  * can be exercised on its own.
  */
 @Service
-@Profile("!test")
-@ConditionalOnProperty(prefix = "email.bounce.imap", name = ["enabled"], havingValue = "true")
+@WhenCredentialsSet(Credentials.IMAP_HOST, Credentials.IMAP_USERNAME, Credentials.IMAP_PASSWORD)
 class ImapBouncePollingService(
     private val emailService: EmailService,
     @param:Value($$"${email.bounce.imap.host:}") private val host: String,

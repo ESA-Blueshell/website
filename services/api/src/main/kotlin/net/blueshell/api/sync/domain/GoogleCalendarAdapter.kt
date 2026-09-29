@@ -4,12 +4,12 @@ import net.blueshell.api.event.api.CalendarAdapter
 import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.event.api.CalendarEventRef
 import net.blueshell.api.event.api.CalendarServiceException
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.api.shared.discord.DiscordMarkdown
 import net.blueshell.api.shared.discord.DiscordMentionNames
 import net.blueshell.api.shared.discord.MentionNames
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Primary
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import java.io.IOException
 
@@ -20,8 +20,7 @@ import java.io.IOException
  * domain as a domain exception and nothing above here knows Google's data model.
  */
 @Service
-@Primary
-@Profile("!test & !dev")
+@WhenCredentialsSet(Credentials.GOOGLE_CALENDAR_ID, Credentials.GOOGLE_CALENDAR_KEY)
 class GoogleCalendarAdapter(
     private val googleCalendarClient: GoogleCalendarClient,
     private val names: DiscordMentionNames,

@@ -1,5 +1,7 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.api.shared.job.ExplainedJobFailure
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordImage
@@ -10,8 +12,6 @@ import net.blueshell.clients.discord.model.CreateGuildScheduledEventRequest
 import net.blueshell.clients.discord.model.GuildScheduledEventEntityTypes
 import net.blueshell.clients.discord.model.UpdateGuildScheduledEventRequest
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
-import org.springframework.context.annotation.Profile
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.HttpMethod
@@ -35,8 +35,7 @@ import java.time.ZoneOffset
  * mention allowed, so rewriting a post never pings anybody.
  */
 @Component
-@Profile("!test")
-@ConditionalOnExpression(DISCORD_TOKEN_SET)
+@WhenCredentialsSet(Credentials.DISCORD_BOT)
 class BotPublisher(
     private val api: DiscordApi,
     private val discordRestClient: RestClient,

@@ -1,12 +1,12 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.clients.discord.DiscordClient
 import net.blueshell.clients.discord.api.DiscordApi
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
@@ -22,8 +22,7 @@ import tools.jackson.databind.json.JsonMapper
  * — stays in the request path.
  */
 @Configuration
-@Profile("!test")
-@ConditionalOnExpression(DISCORD_TOKEN_SET)
+@WhenCredentialsSet(Credentials.DISCORD_BOT)
 class DiscordClientConfig {
     // Also used bare for what the generated client cannot send, such as a message with a file.
     @Bean
@@ -44,6 +43,3 @@ class DiscordClientConfig {
     @Bean
     fun discordApi(discordRestClient: RestClient): DiscordApi = DiscordClient.using(discordRestClient)
 }
-
-/** Whether a bot token is configured: the one switch every Discord bean hangs off. */
-internal const val DISCORD_TOKEN_SET = "'\${discord.botToken:}' != ''"

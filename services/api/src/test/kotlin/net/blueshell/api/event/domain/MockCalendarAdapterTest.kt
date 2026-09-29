@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.integration.mock
+package net.blueshell.api.event.domain
 
 import net.blueshell.api.event.api.CalendarEventData
 import org.assertj.core.api.Assertions.assertThat

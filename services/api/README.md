@@ -123,8 +123,8 @@ Auto-generated from `@Tag`, `@Operation`, and parameter annotations.
 
 ## External Integrations
 
-The API reaches each external service through an adapter in the module that uses it, with an
-in-memory fake in `platform/integration/mock/` for the `test` and `dev` profiles:
+The API reaches each external service through an adapter in the module that uses it. Where the
+service's credentials are not set, an in-memory stand-in beside the port takes its place:
 
 - **Google Calendar**: approved events, pushed by the `sync` module
 - **Brevo**: contacts and cohort lists, through the `contact` and `cohort` modules

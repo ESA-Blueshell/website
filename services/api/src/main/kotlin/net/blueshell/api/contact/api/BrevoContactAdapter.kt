@@ -9,13 +9,14 @@ import net.blueshell.api.contact.domain.DUPLICATE_PARAMETER
 import net.blueshell.api.contact.domain.ExternalContactGoneException
 import net.blueshell.api.contact.domain.INVALID_PARAMETER
 import net.blueshell.api.contact.domain.parseBrevoError
+import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.CreateContactRequest
 import net.blueshell.clients.brevo.model.CreateContactRequestAttributesValue
 import net.blueshell.clients.brevo.model.UpdateContactRequest
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
@@ -26,7 +27,7 @@ import tools.jackson.databind.json.JsonMapper
  * is wired by [BrevoClientConfig] so this class holds no HTTP setup.
  */
 @Service
-@Profile("!test & !dev")
+@WhenCredentialsSet(Credentials.BREVO)
 class BrevoContactAdapter(
     private val contactsApi: ContactsApi,
     private val jsonMapper: JsonMapper,

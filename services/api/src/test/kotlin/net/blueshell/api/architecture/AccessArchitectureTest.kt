@@ -63,7 +63,6 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .byAnyPackage(
                     *ArchitecturePackages.SERVICE_LAYER, // job handlers included: they live here now
                     ArchitecturePackages.MODULE_PERSISTENCE,
-                    ArchitecturePackages.PLATFORM_MOCK, // Mock job handlers in test/dev profile
                 ).because("ADR-016: Repositories are inner layer; only application/domain services access them")
         }
 

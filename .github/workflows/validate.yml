@@ -59,7 +59,6 @@ env:
 
   STORAGE_LOCATION: ./storage
 
-  BREVO_API_KEY: something
   BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
 
 permissions:

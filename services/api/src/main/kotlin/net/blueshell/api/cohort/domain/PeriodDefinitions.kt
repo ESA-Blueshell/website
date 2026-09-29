@@ -8,7 +8,6 @@ import net.blueshell.api.user.api.MembershipService
 import org.springframework.stereotype.Component
 
 /** Where a period's cohorts are filed on the external system. */
-const val PERIOD_FOLDER = "Periods"
 
 private fun ContributionPeriod.years(): String = "${startDate.year} - ${endDate.year}"
 
@@ -30,7 +29,7 @@ class PeriodMembersDefinition(
     override val type = CohortSubjectType.PERIOD_MEMBERS
     override val scope = period.id
     override val label = "Members ${period.years()}"
-    override val folder = PERIOD_FOLDER
+    override val folder = CohortFolders.MEMBERS
 
     override fun members(): Set<Long> = memberships.findUserIdsOverlapping(period.startDate, period.endDate)
 
@@ -61,7 +60,7 @@ class PeriodPayersDefinition(
     override val type = CohortSubjectType.PERIOD_PAYERS
     override val scope = period.id
     override val label = "Contribution Paid ${period.years()}"
-    override val folder = PERIOD_FOLDER
+    override val folder = CohortFolders.CONTRIBUTION_PAID
 
     override fun members(): Set<Long> = contributions.findByContributionPeriodId(period.id!!).map { it.userId }.toSet()
 

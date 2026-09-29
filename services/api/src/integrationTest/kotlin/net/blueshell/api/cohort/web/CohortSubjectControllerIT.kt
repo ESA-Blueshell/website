@@ -169,10 +169,31 @@ class CohortSubjectControllerIT : UserTestSupport() {
     }
 
     @Test
+    fun `creating a list for a registered cohort with no list fills its target, in its folder`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+        val unlinked = newCohort(subject, folder = "Newsletter")
+
+        mvc
+            .perform(
+                post("/management/cohort-subjects/{id}/targets/new", subject.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"system":"BREVO","label":"Members"}""")
+                    .with(signedIn(admin)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.externalId").isNotEmpty)
+
+        val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO.name)!!
+        assertThat(cohort.id).isEqualTo(unlinked.id)
+        assertThat(cohort.folder).isEqualTo("Newsletter")
+        assertThat(cohort.externalId).isNotBlank()
+    }
+
+    @Test
     fun `creating a second target for a system the subject already maps returns 409`() {
         val admin = createUserWithRole(Role.ADMIN)
         val subject = newSubject()
-        newCohort(subject)
+        newCohort(subject, externalId = "list-1")
 
         mvc
             .perform(

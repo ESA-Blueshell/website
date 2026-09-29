@@ -4,6 +4,9 @@ import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
+import net.blueshell.clients.brevo.model.CreateFolder201Response
+import net.blueshell.clients.brevo.model.CreateListRequest
+import net.blueshell.clients.brevo.model.CreateUpdateFolder
 import net.blueshell.clients.brevo.model.GetContactInfo200Response
 import net.blueshell.clients.brevo.model.GetContactInfo200ResponseAllOfStatistics
 import net.blueshell.clients.brevo.model.GetContactsSortParameter
@@ -20,6 +23,8 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
@@ -176,4 +181,37 @@ class BrevoListAdapterTest {
             whatsappBlacklisted = false,
             statistics = GetContactInfo200ResponseAllOfStatistics(),
         )
+
+    @Test
+    fun `a new list goes into the folder named for it, whatever its case`() {
+        whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC)))
+            .thenReturn(GetFolders200Response(count = 1L, folders = listOf(folder(3L, "Committees"))))
+        whenever(contactsApi.createList(any())).thenReturn(CreateFolder201Response(40L))
+
+        assertThat(adapter.createList("Sitecie", "committees")).isEqualTo(40L)
+
+        verify(contactsApi).createList(CreateListRequest(folderId = 3L, name = "Sitecie"))
+        verify(contactsApi, never()).createFolder(any())
+    }
+
+    @Test
+    fun `a missing folder is created by name before the list goes into it`() {
+        whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC)))
+            .thenReturn(GetFolders200Response(count = 0L, folders = emptyList()))
+        whenever(contactsApi.createFolder(CreateUpdateFolder(name = "Contribution paid"))).thenReturn(CreateFolder201Response(12L))
+        whenever(contactsApi.createList(any())).thenReturn(CreateFolder201Response(41L))
+
+        adapter.createList("Paid 2026-2027", "Contribution paid")
+
+        verify(contactsApi).createList(CreateListRequest(folderId = 12L, name = "Paid 2026-2027"))
+    }
+
+    @Test
+    fun `a list with no folder named goes into the configured one`() {
+        whenever(contactsApi.createList(any())).thenReturn(CreateFolder201Response(42L))
+
+        adapter.createList("Loose", null)
+
+        verify(contactsApi).createList(CreateListRequest(folderId = 7L, name = "Loose"))
+    }
 }

@@ -1,6 +1,7 @@
 package net.blueshell.api.contact.domain
 
 import net.blueshell.api.contact.api.ContactData
+import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactServiceException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -183,6 +184,19 @@ class MockContactAdapterTest {
         assertThat(adapter.getAllContacts()).isEmpty()
         assertThat(adapter.getAllLists()).isEmpty()
         assertThat(adapter.getMemberships()).isEmpty()
+    }
+
+    @Test
+    fun `listMembers names each member of the list by contact id and email, and no one else`() {
+        val ada = adapter.createContact(contactData(email = "ada@example.com"))
+        val bob = adapter.createContact(contactData(email = "bob@example.com"))
+        val members = adapter.createList("Members", null)
+        val board = adapter.createList("Board", null)
+        adapter.addToList(ada, members)
+        adapter.addToList(bob, board)
+
+        assertThat(adapter.listMembers(members)).containsExactly(ContactListMember(ada, "ada@example.com"))
+        assertThat(adapter.transactionActiveDuringCalls).isNotEmpty.containsOnly(false)
     }
 
     private fun contactData(

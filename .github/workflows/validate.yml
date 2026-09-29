@@ -246,6 +246,11 @@ jobs:
       - name: Run ESLint
         run: yarn lint --max-warnings=0
 
+      # The unit suite runs on `frontend` alone, and this pairing reads the api's sources, so an
+      # api pull request that registers a job the catalogue does not name went green (#1852).
+      - name: Check the job catalogue names every job the api registers
+        run: yarn vitest run tests/unit/utils/jobCatalog.test.ts
+
       - name: Build the production bundle
         # Nothing tells the bundle where the api is: it always calls
         # `${window.location.origin}/api`. Setting VITE_APP_URL here would break

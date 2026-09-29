@@ -35,6 +35,10 @@ and the acceptance features, because the system tests drive the api through the 
 change on either side can break them. `Validate OpenAPI client generation` and `Changed lines are
 covered` run on `api` or `frontend`. `Workflow checks` runs on every pull request.
 
+`Frontend typecheck, lint and build` also runs the job-catalogue test, which holds
+`src/utils/jobCatalog.ts` to the job types the api's sources register. The frontend unit job runs
+on `frontend` alone, so an api pull request adding a job needs the check on the `app` side.
+
 Two things sit outside the four.
 
 **`ignore`** is what no suite reads: `docs/**`, `gameart/**`, `infra/dns/**`, the editor and

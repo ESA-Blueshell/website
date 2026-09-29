@@ -21,6 +21,9 @@ object DiscordPostContent {
 
     private const val PARAGRAPH = "\n\n"
 
+    // About sixty mentions, so a full event leaves the description most of the post.
+    private const val GOING_MAX = 1500
+
     // An event with no place is held in the server itself.
     private const val IN_THE_SERVER = "Discord"
 
@@ -57,7 +60,7 @@ object DiscordPostContent {
         // Mentions last: Discord notifies the roles wherever the text names them.
         val mentions = event.pingedRoleIds.joinToString(" ") { "<@&$it>" }
         val heading = "## ${event.title}"
-        val after = listOf(details, mentions).filter { it.isNotEmpty() }
+        val after = listOf(details, goingOf(event), mentions).filter { it.isNotEmpty() }
         // The description takes what the rest leaves: whole but for one near the cap.
         val room = DISCORD_TEXT_MAX - heading.length - after.sumOf { it.length } - PARAGRAPH.length * (after.size + 1)
         val description = cut(event.description.orEmpty(), room)
@@ -82,6 +85,31 @@ object DiscordPostContent {
             end = event.endTime,
             cover = cover,
         )
+    }
+
+    /*
+     * Who is going, by mention, first sign-up first; guests, accounts without Discord and whoever
+     * does not fit in GOING_MAX are counted instead. Nobody named here is notified: the bot allows
+     * only the pinged roles to be.
+     */
+    private fun goingOf(event: EventPostData): String {
+        if (!event.signUp || event.goingDiscordIds.isEmpty()) return ""
+        val named = mutableListOf<String>()
+        var length = 0
+        for (id in event.goingDiscordIds) {
+            val mention = "<@$id>"
+            if (length + mention.length + ", ".length > GOING_MAX) break
+            named += mention
+            length += mention.length + ", ".length
+        }
+        val others = event.signUpCount - named.size
+        val rest =
+            when {
+                others <= 0 -> ""
+                others == 1L -> " and 1 other"
+                else -> " and $others others"
+            }
+        return "**Going:** ${named.joinToString(", ")}$rest"
     }
 
     private fun signedUpOf(event: EventPostData) = event.signUpLimit?.let { "${event.signUpCount}/$it" } ?: "${event.signUpCount}"

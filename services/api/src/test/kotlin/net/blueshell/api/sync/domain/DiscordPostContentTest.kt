@@ -65,6 +65,36 @@ class DiscordPostContentTest {
     }
 
     @Test
+    fun `lists who is going by mention after the details, and counts guests and accounts without Discord`() {
+        val post = DiscordPostContent.postOf(event.copy(goingDiscordIds = listOf("111", "222")), site)
+
+        assertThat(post.text)
+            .contains("**Sign up before:** `9 Oct 2026 - 00:00`\n\n**Going:** <@111>, <@222> and 8 others\n\n<@&901> <@&902>")
+        assertThat(DiscordPostContent.postOf(event.copy(signUpCount = 3, goingDiscordIds = listOf("111", "222")), site).text)
+            .contains("**Going:** <@111>, <@222> and 1 other\n")
+        assertThat(DiscordPostContent.postOf(event.copy(signUpCount = 2, goingDiscordIds = listOf("111", "222")), site).text)
+            .contains("**Going:** <@111>, <@222>\n")
+    }
+
+    @Test
+    fun `lists nobody where nobody linked is going or nobody signs up on the site`() {
+        assertThat(DiscordPostContent.postOf(event, site).text).doesNotContain("Going")
+        assertThat(DiscordPostContent.postOf(event.copy(signUp = false, goingDiscordIds = listOf("111")), site).text)
+            .doesNotContain("Going")
+    }
+
+    @Test
+    fun `counts whoever does not fit in the list, so a full event keeps its description`() {
+        val ids = List(200) { "8035111022467891${it.toString().padStart(3, '0')}" }
+        val text = DiscordPostContent.postOf(event.copy(signUpCount = 250, goingDiscordIds = ids), site).text
+        val going = text.lines().single { it.startsWith("**Going:**") }
+
+        assertThat(going.length).isLessThan(1600)
+        assertThat(going).endsWith(" and ${250 - Regex("<@\\d+>").findAll(going).count()} others")
+        assertThat(text).contains("Bring your own rig.")
+    }
+
+    @Test
     fun `leaves out a description and mentions the event does not have`() {
         val post = DiscordPostContent.postOf(event.copy(description = " ", pingedRoleIds = emptyList()), site)
 

@@ -58,6 +58,18 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
         @Param("eventId") eventId: Long,
     ): MutableList<EventSignUp>
 
+    /** The Discord IDs linked to [eventId]'s sign-ups, first sign-up first; guests and unlinked accounts have none. */
+    @Query(
+        """
+        SELECT u.discordId FROM EventSignUp es JOIN es.user u
+        WHERE es.event.id = :eventId AND u.discordId IS NOT NULL AND u.discordId <> ''
+        ORDER BY es.id
+        """,
+    )
+    fun findLinkedDiscordIds(
+        @Param("eventId") eventId: Long,
+    ): List<String>
+
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     fun findByGuestAccessTokenHashAndEvent_Id(
         accessTokenHash: String,

@@ -407,8 +407,11 @@ _Avoid_: fourteen days before the start (a rolling window), lead time
 
 The two messages the bot writes about an approved event, named after the Discord
 channels they appear in. Both say the same, and both notify the event's pinged roles.
-A post is plain text: the banner, the title, the description, the details, then the
-mentions of the roles, with buttons to the event page and its sign-up. Times are
+A post is plain text: the banner, the title, the description, the details, who is
+going, then the mentions of the roles, with buttons to the event page and its sign-up.
+**Who is going** mentions everybody signed up whose account has Discord linked, first
+sign-up first, and counts the rest as "and 4 others". It changes by an edit as people
+sign up, and nobody it names is notified. Times are
 Amsterdam time.
 
 The **events-info post** goes out once the event is approved and within two weeks: at

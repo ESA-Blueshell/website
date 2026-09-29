@@ -1,6 +1,7 @@
 package net.blueshell.api.event.api
 
 import net.blueshell.api.event.persistence.EventRepository
+import net.blueshell.api.event.persistence.EventSignUpRepository
 import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.file.api.BlobStore
 import net.blueshell.api.testsupport.Entities
@@ -30,18 +31,20 @@ class EventPostsTest {
                 it.banner = Entities.banner(it, file)
             }
     private val blobs: BlobStore = mock { on { open("events/lan.webp") } doReturn ByteArrayInputStream(byteArrayOf(1, 2)) }
+    private val signUps: EventSignUpRepository = mock { on { findLinkedDiscordIds(42) } doReturn listOf("111", "222") }
 
     @Test
     fun `reads an event as the bot posts it, with its pinged roles and its banner's public path`() {
         val events: EventRepository = mock { on { findByIdIncludingDeleted(42) } doReturn event }
 
-        val read = EventPosts(events, blobs).of(42)!!
+        val read = EventPosts(events, signUps, blobs).of(42)!!
 
         assertThat(read.live).isTrue()
         assertThat(read.title).isEqualTo("LAN party")
         assertThat(read.signUp).isTrue()
         assertThat(read.signUpCount to read.signUpLimit).isEqualTo(10L to 30)
         assertThat(read.pingedRoleIds).containsExactly("901")
+        assertThat(read.goingDiscordIds).containsExactly("111", "222")
         assertThat(read.bannerPath).isEqualTo("/files/public/events/lan.webp")
     }
 
@@ -53,8 +56,8 @@ class EventPostsTest {
                 .also { it.deletedAt = Instant.EPOCH }
         val events: EventRepository = mock { on { findByIdIncludingDeleted(43) } doReturn deleted }
 
-        assertThat(EventPosts(events, blobs).of(43)!!.live).isFalse()
-        assertThat(EventPosts(events, blobs).of(44)).isNull()
+        assertThat(EventPosts(events, signUps, blobs).of(43)!!.live).isFalse()
+        assertThat(EventPosts(events, signUps, blobs).of(44)).isNull()
     }
 
     @Test
@@ -65,10 +68,10 @@ class EventPostsTest {
                 .also { it.awaitingReapproval = true }
         val events: EventRepository = mock { on { findByIdIncludingDeleted(45) } doReturn waiting }
 
-        val read = EventPosts(events, blobs).of(45)!!
+        val read = EventPosts(events, signUps, blobs).of(45)!!
         assertThat(read.live to read.frozen).isEqualTo(false to true)
         waiting.deletedAt = Instant.EPOCH
-        assertThat(EventPosts(events, blobs).of(45)!!.frozen).isFalse()
+        assertThat(EventPosts(events, signUps, blobs).of(45)!!.frozen).isFalse()
     }
 
     @Test
@@ -79,12 +82,12 @@ class EventPostsTest {
                 on { findKeptIdsOverlapping(Instant.EPOCH, Instant.MAX) } doReturn listOf(42L)
             }
 
-        val image = EventPosts(events, blobs).bannerOf(42)!!
+        val image = EventPosts(events, signUps, blobs).bannerOf(42)!!
 
         assertThat(image.mediaType).isEqualTo("image/webp")
         assertThat(image.bytes).containsExactly(1, 2)
-        assertThat(EventPosts(events, blobs).bannerOf(44)).isNull()
-        assertThat(EventPosts(events, blobs).keptOverlapping(Instant.EPOCH, Instant.MAX)).containsExactly(42L)
+        assertThat(EventPosts(events, signUps, blobs).bannerOf(44)).isNull()
+        assertThat(EventPosts(events, signUps, blobs).keptOverlapping(Instant.EPOCH, Instant.MAX)).containsExactly(42L)
     }
 
     @Test
@@ -97,6 +100,6 @@ class EventPostsTest {
         whenever(blobs.open("events/lan-1600.webp")).thenReturn(ByteArrayInputStream(byteArrayOf(9)))
         val events: EventRepository = mock { on { findByIdIncludingDeleted(42) } doReturn event }
 
-        assertThat(EventPosts(events, blobs).bannerOf(42)!!.bytes).containsExactly(9)
+        assertThat(EventPosts(events, signUps, blobs).bannerOf(42)!!.bytes).containsExactly(9)
     }
 }

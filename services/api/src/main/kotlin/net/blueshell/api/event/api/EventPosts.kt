@@ -2,6 +2,7 @@ package net.blueshell.api.event.api
 
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
+import net.blueshell.api.event.persistence.EventSignUpRepository
 import net.blueshell.api.file.api.BlobStore
 import net.blueshell.api.file.api.PublicFileUrls
 import org.springframework.stereotype.Service
@@ -30,6 +31,8 @@ data class EventPostData(
     val signUpLimit: Int?,
     val signUpDeadline: Instant?,
     val pingedRoleIds: List<String>,
+    /** The Discord IDs of those signed up whose account has Discord linked, first sign-up first. */
+    val goingDiscordIds: List<String> = emptyList(),
     /** The banner's public path, new with every banner; null without one. */
     val bannerPath: String?,
     val frozen: Boolean = false,
@@ -48,10 +51,14 @@ data class EventBannerImage(
 @Service
 class EventPosts(
     private val events: EventRepository,
+    private val signUps: EventSignUpRepository,
     private val blobs: BlobStore,
 ) {
     @Transactional(readOnly = true)
-    fun of(eventId: Long): EventPostData? = events.findByIdIncludingDeleted(eventId)?.asPostData()
+    fun of(eventId: Long): EventPostData? =
+        events.findByIdIncludingDeleted(eventId)?.let { event ->
+            event.asPostData(if (event.signUp) signUps.findLinkedDiscordIds(eventId) else emptyList())
+        }
 
     /** Events whose Discord things the bot keeps, approved or awaiting re-approval, any part of which falls between [from] and [to]. */
     @Transactional(readOnly = true)
@@ -74,7 +81,7 @@ class EventPosts(
 }
 
 // A soft-deleted row is read by the native query, which the entity's restriction does not filter.
-private fun Event.asPostData() =
+private fun Event.asPostData(goingDiscordIds: List<String>) =
     EventPostData(
         id = id!!,
         live = approved && !isSoftDeleted,
@@ -91,6 +98,7 @@ private fun Event.asPostData() =
         signUpLimit = signUpLimit,
         signUpDeadline = signUpDeadline,
         pingedRoleIds = pingedRoles.map { it.roleId },
+        goingDiscordIds = goingDiscordIds,
         bannerPath = banner?.file?.let(PublicFileUrls::of),
         frozen = awaitingReapproval && !isSoftDeleted,
     )

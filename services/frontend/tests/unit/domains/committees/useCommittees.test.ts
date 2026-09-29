@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {cellOf, driftItemOf, forgetCommittees, initialsOf, openingLineOf, reelItemOf, useCommittees} from "@/domains/committees"
+import {cellOf, driftItemOf, forgetCommittees, openingLineOf, reelItemOf, useCommittees} from "@/domains/committees"
 
 const findCommittees = vi.fn()
 vi.mock("@/services/api", async importOriginal => ({
@@ -67,10 +67,9 @@ describe("a committee as the pages draw it", () => {
     expect(cellOf(committee(3, "OldCie", {archived: true}))).toMatchObject({sub: "OldCie runs things.", archived: true, chips: [], banner: null})
   })
 
-  it("cuts a long opening line at a word, and makes plate letters from the first two words", () => {
+  it("cuts a long opening line at a word", () => {
     expect(openingLineOf("one two three four", 12)).toBe("one two...")
     expect(openingLineOf("one, two three", 5)).toBe("one...")
     expect(openingLineOf("")).toBe("")
-    expect(initialsOf("One-Of-Committee (Member's Iniative)")).toBe("OM")
   })
 })

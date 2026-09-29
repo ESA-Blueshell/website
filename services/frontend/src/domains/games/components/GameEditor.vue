@@ -27,7 +27,8 @@ import EsportsGameHead from "@/domains/esports/island/EsportsGameHead.vue"
 import {addCasualGame, saveCasualGame, storeGameBanner, storeGameIcon, type CasualGame, type CasualGameDraft, type GameChannel} from "../adapters/games"
 import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
 import RemoveGameDialog from "../island/RemoveGameDialog.vue"
-import {cellOf, initialsOf, useCasualGames} from "../useCasualGames"
+import {cellOf, useCasualGames} from "../useCasualGames"
+import {initialsOf} from "@/utils/initials"
 import {BRAND_ACCENT} from "@/utils/brand"
 
 /**

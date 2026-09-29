@@ -5,17 +5,7 @@ import type {ReelItem} from "@/components/island/FlickReel.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {loadCasualGames, type CasualGame} from "./adapters/games"
 import {BRAND_ACCENT} from "@/utils/brand"
-
-/** The letters a game's plate carries where it has no banner: the first of its first two words. */
-export function initialsOf(name: string): string {
-  return name
-    .replace(/[^\p{L}\p{N}\s]/gu, "")
-    .split(/\s+/u)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(word => word.charAt(0).toUpperCase())
-    .join("")
-}
+import {initialsOf} from "@/utils/initials"
 
 /** The channels a game is played in, as a line: "#fighting-games · #valorant". */
 const channelLine = (game: CasualGame): string | undefined =>

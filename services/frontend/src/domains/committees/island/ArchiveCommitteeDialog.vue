@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
-import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
+import ArchiveDialog from "@/components/island/ArchiveDialog.vue"
 import {setCommitteeArchived, type Committee} from "../adapters/committees"
 
-/** Archiving a committee, or bringing one back, said plainly before it happens. */
+/** Archiving a committee, or bringing one back. */
 defineOptions({name: "ArchiveCommitteeDialog"})
 
 const props = defineProps<{open: boolean; committee: Pick<Committee, "id" | "name" | "archived">}>()
@@ -13,46 +12,22 @@ const emit = defineEmits<{
   (event: "saved", committee: Committee): void
 }>()
 
-const working = ref(false)
-const failure = ref<string | null>(null)
-watch(() => props.open, open => { if (open) failure.value = null })
-
-const archiving = computed(() => !props.committee.archived)
-
-const question = computed(() =>
-  archiving.value
-    ? `${props.committee.name} leaves the reel and the pickers, keeps its page and its events and joins the committees we used to have.`
-    : `${props.committee.name} goes back on the reel and into the pickers, among the committees that run.`)
-
-const confirm = async () => {
-  if (working.value) return
-  working.value = true
-  failure.value = null
-  try {
-    const result = await setCommitteeArchived(props.committee.id, archiving.value)
-    if (!result.ok) {
-      failure.value = result.reason
-      return
-    }
-    emit("saved", result.committee)
-    emit("update:open", false)
-  } finally {
-    working.value = false
-  }
+const save = async (archived: boolean) => {
+  const result = await setCommitteeArchived(props.committee.id, archived)
+  return result.ok ? {ok: true as const, saved: result.committee} : result
 }
 </script>
 
 <template>
-  <confirm-dialog
-    :confirm-label="archiving ? 'Archive' : 'Bring it back'"
-    :failure="failure"
+  <archive-dialog
+    :archived="committee.archived"
+    :leaving="`${committee.name} leaves the reel and the pickers, keeps its page and its events and joins the committees we used to have.`"
+    :name="committee.name"
     :open="open"
-    :question="question"
+    :returning="`${committee.name} goes back on the reel and into the pickers, among the committees that run.`"
+    :save="save"
     testid="archive-committee-dialog"
-    :title="archiving ? `Archive ${committee.name}?` : `Bring ${committee.name} back?`"
-    :working="working"
-    :working-label="archiving ? 'Archiving' : 'Bringing it back'"
-    @confirm="confirm"
+    @saved="emit('saved', $event)"
     @update:open="emit('update:open', $event)"
   />
 </template>

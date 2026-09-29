@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {cellOf, driftItemOf, forgetCasualGames, initialsOf, reelItemOf, useCasualGames} from "@/domains/games"
+import {cellOf, driftItemOf, forgetCasualGames, reelItemOf, useCasualGames} from "@/domains/games"
 
 const findCasualGames = vi.fn()
 vi.mock("@/services/api", async importOriginal => ({
@@ -71,11 +71,5 @@ describe("a game on the reel", () => {
 
   it("falls back to the association's blue and a plate where nothing was drawn", () => {
     expect(reelItemOf(dota)).toMatchObject({accent: "var(--color-brand)", banner: null, icon: null, initials: "D2"})
-  })
-
-  it("takes a plate's letters from the first two words, whatever the punctuation", () => {
-    expect(initialsOf("Super Smash Bros.")).toBe("SS")
-    expect(initialsOf("CS:GO")).toBe("C")
-    expect(initialsOf("pokémon")).toBe("P")
   })
 })

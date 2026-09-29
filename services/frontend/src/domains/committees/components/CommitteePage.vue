@@ -14,7 +14,8 @@ import {cellOf as gameCellOf, useCasualGames} from "@/domains/games"
 import type {Committee, CommitteePage} from "../adapters/committees"
 import ArchiveCommitteeDialog from "../island/ArchiveCommitteeDialog.vue"
 import {useCommitteeRights} from "../island/useCommitteeRights"
-import {initialsOf, useCommittees} from "../useCommittees"
+import {useCommittees} from "../useCommittees"
+import {initialsOf} from "@/utils/initials"
 import {BRAND_ACCENT} from "@/utils/brand"
 
 defineOptions({name: "CommitteePage"})

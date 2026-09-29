@@ -1,7 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import UserManager from "@/pages/management/UserManager.vue"
 import {MemberType} from "@/services/api"
-import {mountInApp, settle} from "../helpers"
+import {settle} from "../helpers"
+import {boardLogin, mountPage} from "../../helpers/mountPage"
 
 const {
   mockFindUsers,
@@ -11,8 +12,7 @@ const {
   mockDeleteUserById,
   mockCreateContribution,
   mockDeleteContribution,
-  mockLgAndUp,
-  mockViewportHeight,
+  mockFindContributionPeriods,
 } = vi.hoisted(() => ({
   mockFindUsers: vi.fn(),
   mockFindUserById: vi.fn(),
@@ -21,16 +21,8 @@ const {
   mockDeleteUserById: vi.fn(),
   mockCreateContribution: vi.fn(),
   mockDeleteContribution: vi.fn(),
-  mockLgAndUp: {value: true},
-  mockViewportHeight: {value: 1000},
+  mockFindContributionPeriods: vi.fn(),
 }))
-
-vi.mock("vuetify", async (importOriginal) => {
-  const {withVuetify} = await import("../../helpers/testUtils")
-  return withVuetify(importOriginal, {
-    useDisplay: () => ({height: mockViewportHeight, lgAndUp: mockLgAndUp}),
-  })
-})
 
 vi.mock("@/services/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/api")>()
@@ -43,28 +35,9 @@ vi.mock("@/services/api", async (importOriginal) => {
     deleteUserById: mockDeleteUserById,
     createContribution: mockCreateContribution,
     deleteContribution: mockDeleteContribution,
+    findContributionPeriods: mockFindContributionPeriods,
   }
 })
-
-vi.mock("@/components/common/lists/ContributionPeriodList.vue", () => ({
-  default: {name: "ContributionPeriodList", template: "<div />"},
-}))
-
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({
-  default: {name: "TopBanner", template: "<div />"},
-}))
-
-vi.mock("@/components/common/modals/DeletionConfirmationDialog.vue", () => ({
-  default: {name: "DeletionConfirmationDialog", template: "<div />"},
-}))
-
-vi.mock("@/components/common/modals/ManageMembershipDialog.vue", () => ({
-  default: {name: "ManageMembershipDialog", template: "<div />"},
-}))
-
-vi.mock("@/components/form/UserForm.vue", () => ({
-  default: {name: "UserForm", template: "<div />"},
-}))
 
 describe("UserManager paid toggle", () => {
   beforeEach(() => {
@@ -91,42 +64,38 @@ describe("UserManager paid toggle", () => {
     mockDeleteUserById.mockResolvedValue({})
     mockCreateContribution.mockResolvedValue({data: {userId: 1, contributionPeriodId: 5, version: 1, createdAt: "", updatedAt: ""}})
     mockDeleteContribution.mockResolvedValue({})
+    mockFindContributionPeriods.mockResolvedValue({data: [{id: 5, startDate: "2025-01-01", endDate: "2025-12-31"}]})
   })
 
-  // The list reports the period a board member picked; the page offers no other way in.
-  const choosePeriod = async (wrapper: ReturnType<typeof mountInApp>) => {
-    wrapper.getComponent({name: "ContributionPeriodList"}).vm.$emit(
-      "update:contribution-period",
-      {id: 5, startDate: "2025-01-01", endDate: "2025-12-31"},
-    )
+  const mount = () => mountPage(UserManager, {path: "/user-manager", login: boardLogin, width: 1400})
+
+  // Picked the way a board member picks it, from the list of periods.
+  const choosePeriod = async (wrapper: Awaited<ReturnType<typeof mount>>) => {
+    await wrapper.get('[data-testid="contribution-period-select-btn-5"]').trigger("click")
     await settle()
   }
 
-  const paidStatus = (wrapper: ReturnType<typeof mountInApp>) =>
+  const paidStatus = (wrapper: Awaited<ReturnType<typeof mount>>) =>
     wrapper.get('[data-testid="member-manager-paid-status-1"]').text()
 
-  const toggleButton = (wrapper: ReturnType<typeof mountInApp>) =>
+  const toggleButton = (wrapper: Awaited<ReturnType<typeof mount>>) =>
     wrapper.get('[data-testid="member-manager-toggle-paid-btn-1"]')
 
-  it("offers no paid toggle until a period is picked", async () => {
-    const wrapper = mountInApp(UserManager)
-    await settle()
+  it("offers no paid toggle while no period is recorded", async () => {
+    mockFindContributionPeriods.mockResolvedValue({data: []})
+    const wrapper = await mount()
 
     expect(toggleButton(wrapper).attributes("disabled")).toBeDefined()
   })
 
-  it("offers the paid toggle once a period is picked", async () => {
-    const wrapper = mountInApp(UserManager)
-    await settle()
-
-    await choosePeriod(wrapper)
+  it("offers the paid toggle on the latest period, which the list picks on arrival", async () => {
+    const wrapper = await mount()
 
     expect(toggleButton(wrapper).attributes("disabled")).toBeUndefined()
   })
 
   it("marks an unpaid member paid", async () => {
-    const wrapper = mountInApp(UserManager)
-    await settle()
+    const wrapper = await mount()
     await choosePeriod(wrapper)
     expect(paidStatus(wrapper)).toBe("Unpaid")
 
@@ -139,8 +108,7 @@ describe("UserManager paid toggle", () => {
 
   it("takes a paid member back to unpaid", async () => {
     mockFindContributionsByPeriodId.mockResolvedValue({data: [{userId: 1, contributionPeriodId: 5}]})
-    const wrapper = mountInApp(UserManager)
-    await settle()
+    const wrapper = await mount()
     await choosePeriod(wrapper)
     expect(paidStatus(wrapper)).toBe("Paid")
 
@@ -153,8 +121,7 @@ describe("UserManager paid toggle", () => {
 
   it("reports a failed contribution read instead of rendering every member unpaid", async () => {
     mockFindContributionsByPeriodId.mockResolvedValue({error: {status: 500}, data: undefined})
-    const wrapper = mountInApp(UserManager)
-    await settle()
+    const wrapper = await mount()
 
     await choosePeriod(wrapper)
 
@@ -165,8 +132,7 @@ describe("UserManager paid toggle", () => {
   })
 
   it("a period with no contributions is known to hold none", async () => {
-    const wrapper = mountInApp(UserManager)
-    await settle()
+    const wrapper = await mount()
 
     await choosePeriod(wrapper)
 
@@ -175,8 +141,7 @@ describe("UserManager paid toggle", () => {
   })
 
   it("shows no toggle in progress while nothing is being saved", async () => {
-    const wrapper = mountInApp(UserManager)
-    await settle()
+    const wrapper = await mount()
 
     await choosePeriod(wrapper)
 

@@ -100,6 +100,16 @@ raises thresholds from the global percentage rather than the worst file
 ([vitest#3179](https://github.com/vitest-dev/vitest/issues/3179)), which
 manufactures failures on the following run.
 
+### A page spec mocks the api and nothing else
+
+With Vuetify rendering for real, the reason to stub a child is gone, and a spec that stubs
+children and writes the page's refs through `.vm` breaks on a renamed ref or a split child while
+the page behaves the same. `tests/unit/helpers/mountPage.ts` mounts a page as the app runs it:
+every child real, the app's own router standing at a path and its own store, signed in or not,
+and the window sized for the breakpoint under test rather than Vuetify's `useDisplay` mocked. The
+spec mocks `@/services/api` and presses what a visitor presses. Page specs move onto it as they
+are touched (#1675).
+
 ## Implementation status
 
 Sequenced, because each step depends on the one before:

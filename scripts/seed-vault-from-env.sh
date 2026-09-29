@@ -233,26 +233,10 @@ append_field secret/api discord.botToken "$(env_value DISCORD_BOT_TOKEN)"
 append_field secret/api discord.guildId "$(env_value DISCORD_GUILD_ID)"
 append_field secret/api auth.clients.vault.secret "$(env_value VAULT_OIDC_CLIENT_SECRET)"
 
-# The names the injector's template reads, kept until the contract step of api ADR-033
-# removes the injector: the api image already live reads these.
-append_field secret/api jwt-secret "$jwt_secret"
-append_field secret/api two-factor-encryption-key "$(env_value TWO_FACTOR_ENCRYPTION_KEY)"
-append_field secret/api brevo-api-key "$(env_value BREVO_API_KEY)"
-append_field secret/api brevo-folder-contribution-periods-id "$(env_value BREVO_FOLDER_CONTRIBUTION_PERIODS_ID)"
-append_field secret/api google-calendar-id "$(env_value GOOGLE_CALENDAR_ID)"
-append_field secret/api google-calendar-sa-json "$(env_value GOOGLE_CALENDAR_SA_JSON)"
-append_field secret/api discord-bot-token "$(env_value DISCORD_BOT_TOKEN)"
-append_field secret/api discord-guild-id "$(env_value DISCORD_GUILD_ID)"
-append_field secret/api vault-oidc-client-secret "$(env_value VAULT_OIDC_CLIENT_SECRET)"
-
 mariadb_root_password="$(env_value MYSQL_ROOT_PASSWORD)"
 mariadb_user="$(env_value MYSQL_USER)"
 mariadb_password="$(env_value MYSQL_PASSWORD)"
 
-# The login the injector's template renders for the api image already live, kept until
-# the contract step of api ADR-033; the next image leases its own.
-append_field secret/api mysql-user "$mariadb_user"
-append_field secret/api mysql-password "$mariadb_password"
 mariadb_admin_user="$(env_value MARIADB_ADMIN_USER)"
 mariadb_admin_password="$(env_value MARIADB_ADMIN_PASSWORD)"
 

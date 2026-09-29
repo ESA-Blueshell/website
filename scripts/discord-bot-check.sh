@@ -201,8 +201,6 @@ case "$write" in
     command -v kubectl >/dev/null || { echo "Needs kubectl, pointed at the cluster." >&2; exit 2; }
     # patch, never put: put replaces every field of secret/api.
     printf '%s' "$token" | vault kv patch secret/api discord.botToken=- discord.guildId="$guild" >/dev/null
-    # The injector's names, until the contract step of api ADR-033 removes it.
-    printf '%s' "$token" | vault kv patch secret/api discord-bot-token=- discord-guild-id="$guild" >/dev/null
     kubectl -n default rollout restart deployment/api
     echo "Patched secret/api and restarted the api."
     ;;

@@ -35,10 +35,11 @@ sets none of those variables. Adding a key is one KV write and one property, and
 a failed pod rather than an empty key.
 
 **KV is polled.** KV v2 secrets carry no lease, so Spring Cloud Vault's lease lifecycle never
-re-reads them, and Vault tells the api nothing when a key changes. The api calls
-`ContextRefresher.refresh()` on an interval set in `application.yaml`. Each consumer reads
-the current value rather than the one it was built with: a client is rebuilt, or reads the
-key per call.
+re-reads them, and Vault tells the api nothing when a key changes. On an interval set in the
+prod profile, the api re-reads the KV paths it imports, puts any key that changed in front of
+the imported ones and names the changed keys in an `EnvironmentChangeEvent`. Each consumer
+reads the current value rather than the one it was built with: a client is rebuilt on that
+event, or reads the key per call.
 
 **A refresh never makes things worse.** A refresh that cannot reach Vault keeps the values in
 use. A value a consumer refuses, such as a two-factor key of the wrong length, keeps the
@@ -80,6 +81,9 @@ is not how a rotated key reaches the api.
   Cloud Vault already talks to Vault.
 - **The Vault injector.** Renders once at pod start, as stale as environment variables, plus
   an init container and a template that repeats every key.
+- **Spring Cloud's `ContextRefresher`.** It re-runs the whole `vault://` import. Measured
+  against a real Vault and MariaDB, three refreshes leased three more database users, and a
+  refresh put a development value back over a Vault one.
 - **Push instead of poll.** Vault sends nothing to a KV v2 reader when a key changes, so a
   push would need a separate notifier. Polling one path on an interval is cheaper than
   running one.

@@ -1,7 +1,11 @@
 package net.blueshell.api.cohort.web
 
+import net.blueshell.api.cohort.domain.BulkTargetMoveResult
 import net.blueshell.api.cohort.domain.ExternalTarget
+import net.blueshell.api.cohort.domain.FolderTidy
 import net.blueshell.api.cohort.domain.TargetCatalog
+import net.blueshell.api.cohort.domain.TidyMove
+import net.blueshell.api.cohort.domain.TidyPlan
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
@@ -12,7 +16,8 @@ import org.mockito.kotlin.whenever
 
 class CohortTargetControllerTest {
     private val catalog = mock<TargetCatalog>()
-    private val controller = CohortTargetController(catalog)
+    private val tidy = mock<FolderTidy>()
+    private val controller = CohortTargetController(catalog, tidy)
     private val list = ExternalTarget(TargetSystem.BREVO, "9", CohortKind.LIST, "Pub quiz", "Projects")
 
     @Test
@@ -43,5 +48,16 @@ class CohortTargetControllerTest {
         controller.delete(TargetSystem.BREVO, "9", DeleteExternalTargetRequest("Pub quiz"))
 
         verify(catalog).delete(TargetSystem.BREVO, "9", "Pub quiz")
+    }
+
+    @Test
+    fun `the tidy's preview and apply are the tidy's own answers`() {
+        val plan = TidyPlan(listOf(TidyMove("9", "Pub quiz", null, "Committees")), listOf("Committees"))
+        val result = BulkTargetMoveResult(listOf(list.copy(folderLabel = "Committees")), emptyList())
+        whenever(tidy.preview(TargetSystem.BREVO)).thenReturn(plan)
+        whenever(tidy.apply(TargetSystem.BREVO, listOf("9"))).thenReturn(result)
+
+        assertThat(controller.previewTidy(TargetSystem.BREVO)).isEqualTo(plan)
+        assertThat(controller.applyTidy(TargetSystem.BREVO, ApplyTidyRequest(listOf("9")))).isEqualTo(result)
     }
 }

@@ -9,6 +9,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.JavaMailSenderImpl
+import org.springframework.mock.env.MockEnvironment
 import java.util.Properties
 
 class SmtpEmailClientTest {
@@ -17,7 +19,7 @@ class SmtpEmailClientTest {
         mock<JavaMailSender>().also {
             whenever(it.createMimeMessage()).thenAnswer { MimeMessage(session) }
         }
-    private val client = SmtpEmailClient(mailSender)
+    private val client = SmtpEmailClient(mailSender, MockEnvironment())
 
     @Test
     fun `send stamps the Message-ID header on the outgoing MimeMessage`() {
@@ -80,5 +82,29 @@ class SmtpEmailClientTest {
         verify(mailSender).send(captor.capture())
         assertThat(captor.firstValue.getHeader("Message-ID").single()).isEqualTo(returned)
         assertThat(returned).startsWith("<").endsWith("@esa-blueshell.nl>")
+    }
+
+    @Test
+    fun `each send logs in with the mail password as it stands, so a rotated one is used next`() {
+        val environment = MockEnvironment().withProperty("spring.mail.password", "first")
+        val seen = mutableListOf<String?>()
+        val sender =
+            object : JavaMailSenderImpl() {
+                override fun doSend(
+                    mimeMessages: Array<out MimeMessage>,
+                    originalMessages: Array<out Any>?,
+                ) {
+                    seen += password
+                }
+            }
+        val smtp = SmtpEmailClient(sender, environment)
+
+        fun send() = smtp.send("to@example.com", "To", "Hi", "<p>Hi</p>", "Blueshell", "no-reply@esa-blueshell.nl", "board@example.com")
+
+        send()
+        environment.setProperty("spring.mail.password", "second")
+        send()
+
+        assertThat(seen).containsExactly("first", "second")
     }
 }

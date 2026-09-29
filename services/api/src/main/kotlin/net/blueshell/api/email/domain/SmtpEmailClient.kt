@@ -2,9 +2,12 @@ package net.blueshell.api.email.domain
 
 import jakarta.mail.internet.InternetAddress
 import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.RotatingSecret
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import org.slf4j.LoggerFactory
+import org.springframework.core.env.Environment
 import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.JavaMailSenderImpl
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -20,7 +23,19 @@ import java.util.UUID
 @WhenCredentialsSet(Credentials.SMTP_HOST)
 class SmtpEmailClient(
     private val mailSender: JavaMailSender,
+    environment: Environment,
 ) : EmailTransportClient {
+    // Boot builds the sender once; its password is set per send, so a rotated one is used next.
+    // Two sends racing across a rotation may pair the old one with a connect; that send fails
+    // and the outbox shows it.
+    private val password = RotatingSecret(environment, MAIL_PASSWORD)
+
+    init {
+        if (mailSender !is JavaMailSenderImpl) {
+            log.warn("{} takes no rotated mail password; one needs a restart", mailSender.javaClass.name)
+        }
+    }
+
     override fun send(
         toEmail: String,
         toName: String,
@@ -47,6 +62,7 @@ class SmtpEmailClient(
         // Re-assert — MimeMessageHelper's setters can rewrite headers.
         mime.setHeader("Message-ID", messageId)
 
+        (mailSender as? JavaMailSenderImpl)?.password = password.current()
         mailSender.send(mime)
         log.info("Sent email via SMTP to={} subject='{}' messageId={}", toEmail, subject, messageId)
         return messageId
@@ -54,6 +70,7 @@ class SmtpEmailClient(
 
     companion object {
         private val log = LoggerFactory.getLogger(SmtpEmailClient::class.java)
+        private const val MAIL_PASSWORD = "spring.mail.password"
 
         internal fun generateMessageId(senderAddress: String): String {
             val host = senderAddress.substringAfter('@', missingDelimiterValue = "blueshell.local")

@@ -5,12 +5,13 @@ import net.blueshell.api.event.api.CalendarServiceException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.springframework.mock.env.MockEnvironment
 import java.io.IOException
 import java.time.Instant
 
 /** The adapter against a client that keeps its calendar in memory, as Google would. */
 class GoogleCalendarAdapterRoundTripTest {
-    private class InMemoryGoogleCalendar : GoogleCalendarClient() {
+    private class InMemoryGoogleCalendar : GoogleCalendarClient("calendar", "", MockEnvironment()) {
         val events = mutableMapOf<String, String>()
         private var next = 0
 

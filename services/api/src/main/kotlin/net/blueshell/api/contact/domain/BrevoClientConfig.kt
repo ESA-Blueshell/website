@@ -1,12 +1,14 @@
 package net.blueshell.api.contact.domain
 
 import net.blueshell.api.shared.credentials.Credentials
+import net.blueshell.api.shared.credentials.RotatingSecret
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.clients.brevo.BrevoClient
 import net.blueshell.clients.brevo.api.ContactsApi
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
@@ -29,14 +31,14 @@ class BrevoClientConfig {
     fun brevoContactsApi(
         restClientBuilder: RestClient.Builder,
         jsonMapper: JsonMapper,
-        @Value($$"${brevo.apiKey:}") apiKey: String,
+        environment: Environment,
         @Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") baseUrl: String,
     ): ContactsApi =
         BrevoClient
             .using(
                 restClientBuilder
                     .baseUrl(baseUrl)
-                    .defaultHeader("api-key", apiKey)
+                    .requestInterceptor(BrevoApiKeyHeader(RotatingSecret(environment, Credentials.BREVO)))
                     .configureMessageConverters {
                         it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))
                     }.build(),

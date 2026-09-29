@@ -352,9 +352,9 @@ vault operator generate-root -init
 ## 7. Rotating credentials
 
 VSO renders a path into a Kubernetes Secret for the consumers that are not
-Spring, and none of them reloads it on its own. The api reads its paths from
-Vault at start. So the rotation pattern is: *update Vault, then restart
-the consumer.*
+Spring, and none of them reloads it on its own, so for those the pattern is:
+*update Vault, then restart the consumer.* The api needs no restart for the keys
+below.
 
 ### Keys the api takes without a restart
 
@@ -362,6 +362,24 @@ The api re-reads `secret/api` and `secret/platform/mail` every five minutes
 (`app.vault.refresh-interval`) and hands a changed key to whatever uses it, so
 none of these needs `kubectl rollout restart`. Write each rotation as one
 `vault kv patch`, so the api never reads half of it.
+
+- **Brevo key, Google Calendar service account.** Patch the key; the next
+  Brevo request sends it, and the calendar client is rebuilt from it. A service
+  account that does not parse, or a key patched to blank, keeps the one in use.
+
+  ```bash
+  vault kv patch secret/api brevo.apiKey=<new-key>
+  vault kv patch secret/api google.calendar.serviceAccountJson=@service-account.json
+  ```
+
+- **Bounce mailbox password** (`account.bounce` in `secret/platform/mail`). The
+  api sends and polls with it, and reads it at each send and each poll.
+  Stalwart takes it when VSO restarts it, within the Secret's refresh, so for up
+  to one api refresh interval the two may disagree. A send that fails in that
+  window shows as failed in the email manager, which can retry it. Until the
+  contract step of api ADR-033 removes `EMAIL_BOUNCE_IMAP_PASSWORD` from the api
+  Deployment, that variable outranks Vault, so this one still needs an api
+  restart until then.
 
 - **Two-factor key.** A new key takes a new id, and the old one moves to the
   retired keys in the same patch, or every secret it sealed stops opening. A key
@@ -436,7 +454,7 @@ Same shape, narrower blast radius:
 
 | Path | Consumers | Restart |
 |---|---|---|
-| `secret/api` | api Deployment | `kubectl -n default rollout restart deployment/api` |
+| `secret/api` | api Deployment | none for the keys above; a new key the api has never read needs one |
 | `secret/platform/mail` | stalwart Deployment | `kubectl -n mail-system rollout restart deployment/stalwart` |
 | `secret/platform/edge` | cert-manager + external-dns | restarts not usually needed; VSO refreshes the Secret in place |
 | `secret/platform/ghcr` | `imagePullSecrets` plus the Flux registry scan | next image pull picks up the new auth; a scan recovers on its own interval |

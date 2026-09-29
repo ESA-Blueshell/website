@@ -104,6 +104,15 @@ class TargetCatalogTest {
         }
 
     @Test
+    fun `a folder is made on the system, which answers every folder`() {
+        val brevo = placingStrategy()
+        whenever(brevo.createFolder("Archief")).thenReturn(listOf("Archief", "Committees"))
+
+        assertThat(TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).createFolder(TargetSystem.BREVO, "Archief"))
+            .containsExactly("Archief", "Committees")
+    }
+
+    @Test
     fun `a new list is made on the system and comes back unlinked`() {
         val brevo = placingStrategy()
         val made = ExternalTarget(TargetSystem.BREVO, "12", CohortKind.LIST, "Pub quiz", "Committees")

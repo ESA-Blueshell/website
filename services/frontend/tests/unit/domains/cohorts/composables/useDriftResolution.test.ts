@@ -33,6 +33,7 @@ const mapping = (system: TargetSystem, cohortId: number): TargetMapping => ({
   path: [],
   folderKnown: true,
   runs: [],
+  enforced: false,
 })
 
 let nextId = 1

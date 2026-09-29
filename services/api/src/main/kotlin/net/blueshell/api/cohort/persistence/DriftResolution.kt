@@ -46,4 +46,7 @@ enum class DriftResolutionAction {
 
     /** Theirs only: taken in on our side, which records what the cohort stands for. */
     ADOPT,
+
+    /** Theirs only: removed by a reconcile because the target is enforced. */
+    ENFORCED_REMOVE,
 }

@@ -37,7 +37,7 @@ export {CohortKind, CohortSubjectCategory, CohortSubjectType, DriftResolutionAct
 export {fetchCohortOptions} from "./adapters/cohorts"
 export {fetchCohortSubject} from "./adapters/cohorts"
 export {fetchCohortSubjects} from "./adapters/cohorts"
-export {linkDriftPeople, proposeDriftLinks, pushDriftPeople, removeDriftPeople} from "./adapters/cohorts"
+export {linkDriftPeople, proposeDriftLinks, pushDriftPeople, removeDriftPeople, setTargetEnforced} from "./adapters/cohorts"
 export {queueCohortJob} from "./adapters/cohorts"
 export {triggerReconcile} from "./adapters/cohorts"
 export {useDriftResolution} from "./composables/useDriftResolution"

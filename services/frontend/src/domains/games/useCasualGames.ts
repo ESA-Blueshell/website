@@ -1,4 +1,4 @@
-import {computed, ref, type ComputedRef, type Ref} from "vue"
+import {computed, type ComputedRef, type Ref} from "vue"
 import type {ArtCell} from "@/components/island/ArtCells.vue"
 import type {DriftItem} from "@/components/island/DriftRow.vue"
 import type {ReelItem} from "@/components/island/FlickReel.vue"
@@ -6,6 +6,7 @@ import {srcsetOf} from "@/components/island/pictures"
 import {loadCasualGames, type CasualGame} from "./adapters/games"
 import {BRAND_ACCENT} from "@/utils/brand"
 import {initialsOf} from "@/utils/initials"
+import {sharedList} from "@/utils/sharedLists"
 
 /** The channels a game is played in, as a line: "#fighting-games · #valorant". */
 const channelLine = (game: CasualGame): string | undefined =>
@@ -40,8 +41,8 @@ export function cellOf(game: CasualGame, organisersOf: (code: string) => string[
   return {id, title, href, accent, banner, srcset, icon, initials, chips, sub: channelLine(game), archived: game.archived}
 }
 
-const records = ref<CasualGame[]>([])
-let asked: Promise<CasualGame[]> | null = null
+const list = sharedList(() => loadCasualGames())
+const records = list.records
 
 /**
  * The games, read once and shared by every casual page and the home band.
@@ -55,22 +56,14 @@ export function useCasualGames(): {
   ready: Promise<CasualGame[]>
   refresh: () => Promise<CasualGame[]>
 } {
-  const refresh = async () => {
-    records.value = await loadCasualGames()
-    return records.value
-  }
-  asked ??= refresh()
   return {
     games: records,
     live: computed(() => records.value.filter(game => !game.archived)),
     archived: computed(() => records.value.filter(game => game.archived)),
-    ready: asked,
-    refresh,
+    ready: list.read(),
+    refresh: list.refresh,
   }
 }
 
 /** Lets the next caller read the games afresh. For tests, which each start from nothing. */
-export function forgetCasualGames(): void {
-  records.value = []
-  asked = null
-}
+export const forgetCasualGames = list.forget

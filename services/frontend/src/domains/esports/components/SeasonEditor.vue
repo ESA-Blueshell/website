@@ -23,7 +23,7 @@ import {
   type SeasonGame,
 } from "../adapters/esports"
 import {countOf} from "@/utils/countOf"
-import {forgetCompetitionReads} from "../island/forgetCompetitionReads"
+import {refreshSharedLists} from "@/utils/sharedLists"
 import {seasonStops} from "../island/seasonAxis"
 import {useGames} from "../island/useGames"
 import {useSeasons} from "../island/useSeasons"
@@ -52,7 +52,7 @@ const emit = defineEmits<{
   (event: "cancel"): void
 }>()
 
-const {seasons, refresh: refreshSeasons} = useSeasons()
+const {seasons} = useSeasons()
 const {games, identityOf} = useGames()
 
 const name = ref(props.season?.name ?? "")
@@ -92,8 +92,7 @@ const submit = async () => {
       failure.value = result.reason
       return
     }
-    forgetCompetitionReads()
-    await refreshSeasons()
+    await refreshSharedLists()
     emit("saved", result.saved)
   } finally {
     saving.value = false
@@ -121,7 +120,7 @@ const enter = async (game: string) => {
     gamesFailure.value = result.reason
     return
   }
-  forgetCompetitionReads()
+  await refreshSharedLists()
   await readGames()
 }
 
@@ -134,7 +133,7 @@ const takeOut = async (game: string) => {
     gamesFailure.value = result.reason
     return
   }
-  forgetCompetitionReads()
+  await refreshSharedLists()
   await readGames()
 }
 
@@ -177,8 +176,7 @@ const removeSeason = async () => {
       return
     }
     confirming.value = false
-    forgetCompetitionReads()
-    await refreshSeasons()
+    await refreshSharedLists()
     emit("removed", season)
   } finally {
     removing.value = false

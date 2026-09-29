@@ -22,12 +22,13 @@ import {saveGameOrganisers, useCommittees} from "@/domains/committees"
 import GameOrganisersPicker from "@/domains/committees/island/GameOrganisersPicker.vue"
 import {GameChannelCategory} from "@/domains/discord"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
-import {enterGameInSeason, forgetCompetitionReads, useGames as useCompetitionGames} from "@/domains/esports"
+import {enterGameInSeason} from "@/domains/esports"
+import {refreshSharedLists} from "@/utils/sharedLists"
 import EsportsGameHead from "@/domains/esports/island/EsportsGameHead.vue"
 import {addCasualGame, saveCasualGame, storeGameBanner, storeGameIcon, type CasualGame, type GameChannel} from "../adapters/games"
 import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
 import RemoveGameDialog from "../island/RemoveGameDialog.vue"
-import {cellOf, useCasualGames} from "../useCasualGames"
+import {cellOf} from "../useCasualGames"
 import {initialsOf} from "@/utils/initials"
 import {BRAND_ACCENT} from "@/utils/brand"
 
@@ -59,9 +60,7 @@ const emit = defineEmits<{
 }>()
 
 const adding = computed(() => props.game == null)
-const {refresh: refreshCasual} = useCasualGames()
-const {refresh: refreshCompetition} = useCompetitionGames()
-const {committees, refresh: refreshCommittees} = useCommittees()
+const {committees} = useCommittees()
 
 const name = ref(props.game?.name ?? "")
 const slug = ref(props.game?.slug ?? "")
@@ -171,8 +170,7 @@ const submit = async () => {
         return
       }
     }
-    forgetCompetitionReads()
-    await Promise.all([refreshCasual(), refreshCompetition(), refreshCommittees()])
+    await refreshSharedLists()
     emit("saved", result.saved)
   } finally {
     saving.value = false
@@ -182,16 +180,14 @@ const submit = async () => {
 const archiving = ref(false)
 const removing = ref(false)
 const archived = async () => {
-  forgetCompetitionReads()
-  await Promise.all([refreshCasual(), refreshCompetition()])
+  await refreshSharedLists()
   emit("saved", props.game!)
 }
 /* Said before the games are read again: without the game this page unmounts, and an emit from a
    component that is gone reaches nobody. */
 const removed = async () => {
-  forgetCompetitionReads()
   emit("removed")
-  await Promise.all([refreshCasual(), refreshCompetition()])
+  await refreshSharedLists()
 }
 
 const backLabel = computed(() => (props.area === "casual" ? "Casual" : "Competition"))

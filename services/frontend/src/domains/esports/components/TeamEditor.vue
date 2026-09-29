@@ -18,7 +18,7 @@ import FormFields from "@/components/island/FormFields.vue"
 import FormSection from "@/components/island/FormSection.vue"
 import LineupSource from "../island/LineupSource.vue"
 import TeamRoster from "../island/TeamRoster.vue"
-import {forgetCompetitionReads} from "../island/forgetCompetitionReads"
+import {refreshSharedLists} from "@/utils/sharedLists"
 import {
   dropTeam,
   loadRoster,
@@ -257,7 +257,7 @@ const fieldPicked = async () => {
       }
       return
     }
-    forgetCompetitionReads()
+    await refreshSharedLists()
     emit("saved")
   } finally {
     fieldingNow.value = false
@@ -410,7 +410,7 @@ const removeTeam = async () => {
       return
     }
     droppingTeam.value = false
-    forgetCompetitionReads()
+    await refreshSharedLists()
     emit("removed")
   } finally {
     removingTeam.value = false
@@ -446,7 +446,7 @@ const dropFromSeason = async () => {
       return
     }
     droppingFromSeason.value = false
-    forgetCompetitionReads()
+    await refreshSharedLists()
     emit("removed")
   } finally {
     leavingSeason.value = false
@@ -512,7 +512,7 @@ const submit = async () => {
       failure.value = done.reason
       return
     }
-    forgetCompetitionReads()
+    await refreshSharedLists()
     emit("saved")
   } finally {
     saving.value = false

@@ -17,6 +17,11 @@ vi.mock("@/domains/esports/adapters/esports", () => adapter)
 // The list is made before each test, since a ref cannot be made inside a hoisted factory.
 const seasonsStore = vi.hoisted(() => ({refresh: vi.fn()} as {seasons: Ref<Season[]>, refresh: ReturnType<typeof vi.fn>}))
 vi.mock("@/domains/esports/island/useSeasons", () => ({useSeasons: () => seasonsStore}))
+const lists = vi.hoisted(() => ({refreshSharedLists: vi.fn()}))
+vi.mock("@/utils/sharedLists", async importOriginal => ({
+  ...(await importOriginal<typeof import("@/utils/sharedLists")>()),
+  refreshSharedLists: lists.refreshSharedLists,
+}))
 vi.mock("@/domains/esports/island/useGames", () => ({
   useGames: () => ({
     games: ref([{code: "VAL", name: "Valorant"}, {code: "CS2", name: "Counter-Strike 2"}]),
@@ -75,7 +80,7 @@ describe("the season edit page", () => {
     await flushPromises()
 
     expect(adapter.saveSeasonOrReason).toHaveBeenCalledWith(undefined, {name: "Autumn 2026", startDate: "2026-09-01", endDate: "2027-01-31"})
-    expect(seasonsStore.refresh).toHaveBeenCalled()
+    expect(lists.refreshSharedLists).toHaveBeenCalled()
     expect(wrapper.emitted("saved")).toEqual([[{...spring, id: 9}]])
   })
 

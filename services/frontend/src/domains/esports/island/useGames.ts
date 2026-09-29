@@ -1,4 +1,5 @@
-import {computed, ref, type ComputedRef, type Ref} from "vue"
+import {computed, type ComputedRef, type Ref} from "vue"
+import {sharedList} from "@/utils/sharedLists"
 import {loadGames, type GameCode, type Game} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "@/components/island/pictures"
 import {BRAND_ACCENT} from "@/utils/brand"
@@ -46,8 +47,8 @@ const identify = (record: Game): GameIdentity => ({
  * Which games exist, what each is called and the art each carries are one answer from the api,
  * so a page and the database cannot disagree. This is where the pages ask for it.
  */
-const records = ref<Game[]>([])
-let asked: Promise<Game[]> | null = null
+const list = sharedList(() => loadGames())
+const records = list.records
 
 export function useGames(): {
   games: Ref<Game[]>
@@ -58,19 +59,12 @@ export function useGames(): {
   bySlug: (slug: string) => Game | null
   refresh: () => Promise<Game[]>
 } {
-  const refresh = async () => {
-    records.value = await loadGames()
-    return records.value
-  }
-
-  asked ??= refresh()
-
   const recordOf = (game: GameCode | string) => records.value.find(one => one.code === game) ?? null
 
   return {
     games: records,
     current: computed(() => records.value.filter(one => one.inCompetition)),
-    ready: asked,
+    ready: list.read(),
     identityOf: (game) => {
       const record = recordOf(game)
       // No record means the records have not answered yet, or the code names no game. Either
@@ -79,12 +73,9 @@ export function useGames(): {
     },
     recordOf,
     bySlug: (slug) => records.value.find(one => one.slug === slug) ?? null,
-    refresh,
+    refresh: list.refresh,
   }
 }
 
-/** Forgets what was read, so a test or a page that writes a game can ask again. */
-export const forgetGames = () => {
-  asked = null
-  records.value = []
-}
+/** Forgets what was read, so a test can start from nothing. */
+export const forgetGames = list.forget

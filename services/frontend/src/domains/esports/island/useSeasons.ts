@@ -1,4 +1,5 @@
-import {computed, ref, type ComputedRef, type Ref} from "vue"
+import {computed, type ComputedRef, type Ref} from "vue"
+import {sharedList} from "@/utils/sharedLists"
 import {loadSeasons, type Season} from "../adapters/esports"
 import {newestSeason} from "./seasonAxis"
 
@@ -12,8 +13,7 @@ import {newestSeason} from "./seasonAxis"
  * reader may edit, so a season written down or taken away is written back here and both pages show
  * it.
  */
-const records = ref<Season[]>([])
-let asked: Promise<Season[]> | null = null
+const list = sharedList(() => loadSeasons())
 
 export function useSeasons(): {
   seasons: Ref<Season[]>
@@ -23,23 +23,13 @@ export function useSeasons(): {
   newest: ComputedRef<Season | null>
   refresh: () => Promise<Season[]>
 } {
-  const refresh = async () => {
-    records.value = await loadSeasons()
-    return records.value
-  }
-
-  asked ??= refresh()
-
   return {
-    seasons: records,
-    ready: asked,
-    newest: computed(() => newestSeason(records.value)),
-    refresh,
+    seasons: list.records,
+    ready: list.read(),
+    newest: computed(() => newestSeason(list.records.value)),
+    refresh: list.refresh,
   }
 }
 
-/** Forgets what was read, so a test or a page that writes a season can ask again. */
-export const forgetSeasons = () => {
-  asked = null
-  records.value = []
-}
+/** Forgets what was read, so a test can start from nothing. */
+export const forgetSeasons = list.forget

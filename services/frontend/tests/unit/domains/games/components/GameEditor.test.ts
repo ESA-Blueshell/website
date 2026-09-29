@@ -9,10 +9,10 @@ import "@/plugins/validation"
 
 const adapter = vi.hoisted(() => ({addCasualGame: vi.fn(), saveCasualGame: vi.fn(), storeGameBanner: vi.fn(), storeGameIcon: vi.fn()}))
 vi.mock("@/domains/games/adapters/games", () => adapter)
-const casual = vi.hoisted(() => ({refresh: vi.fn()}))
-vi.mock("@/domains/games/useCasualGames", async importOriginal => ({
-  ...(await importOriginal<typeof import("@/domains/games/useCasualGames")>()),
-  useCasualGames: () => casual,
+const lists = vi.hoisted(() => ({refreshSharedLists: vi.fn()}))
+vi.mock("@/utils/sharedLists", async importOriginal => ({
+  ...(await importOriginal<typeof import("@/utils/sharedLists")>()),
+  refreshSharedLists: lists.refreshSharedLists,
 }))
 // The list is made before each test, since a ref cannot be made inside a hoisted factory.
 const committees = vi.hoisted(() => ({saveGameOrganisers: vi.fn(), refresh: vi.fn()} as {
@@ -23,7 +23,7 @@ vi.mock("@/domains/committees", () => ({
   useCommittees: () => ({committees: committees.committees, refresh: committees.refresh}),
 }))
 const esports = vi.hoisted(() => ({enterGameInSeason: vi.fn(), refresh: vi.fn()}))
-vi.mock("@/domains/esports", () => ({enterGameInSeason: esports.enterGameInSeason, forgetCompetitionReads: vi.fn(), useGames: () => ({refresh: esports.refresh})}))
+vi.mock("@/domains/esports", () => ({enterGameInSeason: esports.enterGameInSeason}))
 
 const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, (() => VNode[]) | undefined>}) =>
   () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()])})
@@ -59,8 +59,7 @@ const mountEditor = (game: CasualGame | null, area: "casual" | "competition" = "
 
 beforeEach(() => {
   Object.values(adapter).forEach(one => one.mockReset())
-  casual.refresh.mockReset().mockResolvedValue([])
-  esports.refresh.mockReset().mockResolvedValue([])
+  lists.refreshSharedLists.mockReset().mockResolvedValue(undefined)
   esports.enterGameInSeason.mockReset()
   committees.saveGameOrganisers.mockReset()
   committees.refresh.mockReset().mockResolvedValue([])
@@ -146,8 +145,7 @@ describe("the game edit page", () => {
     await flushPromises()
     expect(adapter.saveCasualGame).toHaveBeenLastCalledWith("CHESS", expect.objectContaining({sortIndex: 2, intro: "Rapid on Thursdays", channels: [], banner: "b.webp"}))
     expect(committees.saveGameOrganisers).toHaveBeenLastCalledWith("CHESS", [1, 2])
-    expect(casual.refresh).toHaveBeenCalled()
-    expect(esports.refresh).toHaveBeenCalled()
+    expect(lists.refreshSharedLists).toHaveBeenCalled()
     expect(wrapper.emitted("saved")).toEqual([[chess]])
   })
 

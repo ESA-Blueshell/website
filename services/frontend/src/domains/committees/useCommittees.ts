@@ -1,4 +1,4 @@
-import {computed, ref, type ComputedRef, type Ref} from "vue"
+import {computed, type ComputedRef, type Ref} from "vue"
 import type {ArtCell} from "@/components/island/ArtCells.vue"
 import type {DriftItem} from "@/components/island/DriftRow.vue"
 import type {ReelItem} from "@/components/island/FlickReel.vue"
@@ -6,6 +6,7 @@ import {srcsetOf} from "@/components/island/pictures"
 import {loadCommittees, type Committee} from "./adapters/committees"
 import {BRAND_ACCENT} from "@/utils/brand"
 import {initialsOf} from "@/utils/initials"
+import {sharedList} from "@/utils/sharedLists"
 
 /**
  * The first line of a committee's description with its markdown and emoji codes taken out, cut
@@ -48,8 +49,8 @@ export function cellOf(committee: Committee, gameNames: (codes: string[]) => str
   return {id, title, href, accent, banner, srcset, initials, chips, sub: openingLineOf(committee.description), archived: committee.archived}
 }
 
-const records = ref<Committee[]>([])
-let asked: Promise<Committee[]> | null = null
+const list = sharedList(() => loadCommittees())
+const records = list.records
 
 /**
  * The committees, read once and shared by the committees pages and the game pages.
@@ -65,24 +66,16 @@ export function useCommittees(): {
   ready: Promise<Committee[]>
   refresh: () => Promise<Committee[]>
 } {
-  const refresh = async () => {
-    records.value = await loadCommittees()
-    return records.value
-  }
-  asked ??= refresh()
   const listed = computed(() => records.value.filter(committee => committee.listed))
   return {
     committees: records,
     listed,
     live: computed(() => listed.value.filter(committee => !committee.archived)),
     archived: computed(() => listed.value.filter(committee => committee.archived)),
-    ready: asked,
-    refresh,
+    ready: list.read(),
+    refresh: list.refresh,
   }
 }
 
 /** Lets the next caller read the committees afresh. For tests, which each start from nothing. */
-export function forgetCommittees(): void {
-  records.value = []
-  asked = null
-}
+export const forgetCommittees = list.forget

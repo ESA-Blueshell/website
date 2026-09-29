@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {refreshSharedLists} from "@/utils/sharedLists"
 import {addressOf} from "@/utils/address"
 import {computed, ref, watch} from "vue"
 import ArtCells from "@/components/island/ArtCells.vue"
@@ -155,6 +156,7 @@ const submit = async () => {
       failure.value = result.reason
       return
     }
+    await refreshSharedLists()
     emit("saved", result.saved)
   } finally {
     saving.value = false
@@ -177,6 +179,7 @@ const removeIt = async () => {
       return
     }
     confirming.value = false
+    await refreshSharedLists()
     emit("removed")
   } finally {
     removing.value = false

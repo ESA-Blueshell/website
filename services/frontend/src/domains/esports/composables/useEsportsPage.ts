@@ -1,5 +1,6 @@
 import {computed, onMounted, ref, watch} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {forgetAfterWrites} from "@/utils/sharedLists"
 import {asksInOrder} from "../island/asksInOrder"
 import {heldAnswers, type HeldAnswers} from "../island/heldAnswers"
 import {useSeasons} from "../island/useSeasons"
@@ -18,6 +19,7 @@ const byGame = new Map<GameCode, HeldAnswers<EsportsPage | null>>()
 
 /** Forgets every game's pages, so the next reading of any of them asks again. */
 export const forgetEsportsPages = () => byGame.clear()
+forgetAfterWrites(forgetEsportsPages)
 
 const answersFor = (game: GameCode): HeldAnswers<EsportsPage | null> => {
   let held = byGame.get(game)

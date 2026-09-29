@@ -4,6 +4,7 @@ import {asksInOrder} from "./asksInOrder"
 import {heldAnswers} from "./heldAnswers"
 import {seasonsIncluding} from "./seasonAxis"
 import {useSeasons} from "./useSeasons"
+import {forgetAfterWrites} from "@/utils/sharedLists"
 
 export interface LineupEntry {
   game: GameCode
@@ -36,6 +37,7 @@ const answers = heldAnswers<SeasonGame[]>(loadSeasonGames)
  * same place.
  */
 export const forgetSeasonLineups = () => answers.drop()
+forgetAfterWrites(forgetSeasonLineups)
 
 /**
  * What the association ran in one season, across every game.

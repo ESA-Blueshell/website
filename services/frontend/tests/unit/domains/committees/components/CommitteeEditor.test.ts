@@ -14,6 +14,11 @@ const adapter = vi.hoisted(() => ({
   listCommittees: vi.fn(),
   removeCommittee: vi.fn(),
 }))
+const lists = vi.hoisted(() => ({refreshSharedLists: vi.fn()}))
+vi.mock("@/utils/sharedLists", async importOriginal => ({
+  ...(await importOriginal<typeof import("@/utils/sharedLists")>()),
+  refreshSharedLists: lists.refreshSharedLists,
+}))
 vi.mock("@/domains/committees/adapters/committees", () => adapter)
 vi.mock("@/domains/games", async importOriginal => {
   const {ref} = await import("vue")

@@ -217,8 +217,11 @@ class TargetCatalogTest {
         verify(brevo).delete(target)
         val recorded = argumentCaptor<TargetDeletion>()
         verify(deletions).save(recorded.capture())
-        assertThat(recorded.firstValue.name).isEqualTo("Old test list")
-        assertThat(recorded.firstValue.deletedBy).isEqualTo(5L)
+        with(recorded.firstValue) {
+            assertThat(listOf(system, externalId, name)).containsExactly("BREVO", "3", "Old test list")
+            assertThat(deletedBy).isEqualTo(5L)
+            assertThat(deletedAt).isNotNull()
+        }
     }
 
     @Test

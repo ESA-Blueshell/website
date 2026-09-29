@@ -943,13 +943,13 @@ test.describe("board page", () => {
 
     // Downwards into the words, the way the board photograph in the band above already fades on
     // a narrow screen. The dissolve is eased, so it is polled until it comes to rest.
-    await expect.poll(() => sharpestStepAtFoot(page, member), {timeout: 5000}).toBeLessThan(40)
+    await expect.poll(() => sharpestStepAtFoot(page, member), {timeout: 15000}).toBeLessThan(40)
 
     // Shut there is nothing for the picture to be joined to, so it ends on the band's own
     // diagonal rather than melting into the face after it.
     await openMember(page, 92)
     await expect(member.getByRole("button")).toHaveAttribute("aria-expanded", "false")
-    await expect.poll(() => sharpestStepAtFoot(page, member), {timeout: 5000}).toBeGreaterThan(100)
+    await expect.poll(() => sharpestStepAtFoot(page, member), {timeout: 15000}).toBeGreaterThan(100)
   })
 
   test("carries a phone portrait's name on ground of the portrait's own", {tag: "@phone"}, async ({page}) => {
@@ -998,7 +998,7 @@ test.describe("board page", () => {
       return darkest
     }
 
-    await expect.poll(darkestAtFoot, {timeout: 5000}).toBeLessThan(90)
+    await expect.poll(darkestAtFoot, {timeout: 15000}).toBeLessThan(90)
   })
 
   test("asks for a phone portrait at the width of the slice it fills", {tag: "@phone"}, async ({page}) => {

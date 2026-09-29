@@ -1,3 +1,4 @@
+import {Buffer} from "node:buffer"
 import type {Locator} from "@playwright/test"
 import type {Page} from "./test"
 
@@ -22,7 +23,9 @@ export async function pixelsOf(page: Page, target: Locator): Promise<Pixels> {
   await target.scrollIntoViewIfNeeded()
   const clip = (await target.boundingBox())!
   const png = (await page.screenshot({clip, animations: "disabled", scale: "css"})).toString("base64")
-  const {width, height, data} = await page.evaluate(async (encoded) => {
+  // The colours come back as base64 rather than an array: a million numbers as JSON is seconds
+  // on a loaded runner, which a poll around this cannot afford.
+  const {width, height, rgba} = await page.evaluate(async (encoded) => {
     const image = new Image()
     image.src = `data:image/png;base64,${encoded}`
     await image.decode()
@@ -31,8 +34,12 @@ export async function pixelsOf(page: Page, target: Locator): Promise<Pixels> {
     canvas.height = image.height
     const context = canvas.getContext("2d")!
     context.drawImage(image, 0, 0)
-    return {width: image.width, height: image.height, data: [...context.getImageData(0, 0, image.width, image.height).data]}
+    const bytes = context.getImageData(0, 0, image.width, image.height).data
+    let binary = ""
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+    return {width: image.width, height: image.height, rgba: btoa(binary)}
   }, png)
+  const data = Buffer.from(rgba, "base64")
   return {
     width,
     height,

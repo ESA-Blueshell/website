@@ -11,6 +11,7 @@ import {
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
+  fetchTidyPlan,
   renameTarget,
 } from "@/domains/cohorts/adapters/cohorts"
 import {mountInApp} from "../helpers"
@@ -25,6 +26,8 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   renameTarget: vi.fn(),
   archiveTarget: vi.fn(),
   deleteTarget: vi.fn(),
+  fetchTidyPlan: vi.fn(),
+  applyTidy: vi.fn(),
 }))
 
 const modal = (wrapper: Awaited<ReturnType<typeof mountPage>>, testid: string) =>
@@ -179,5 +182,30 @@ describe("CohortTargets", () => {
 
     expect(archiveTarget).toHaveBeenCalledWith("BREVO", "7")
     expect(wrapper.get("[data-testid=cohort-targets-write-refusal]").text()).toContain("Brevo refused it: down")
+  })
+
+  it("shows the tidy's proposal and the folders it would make", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(fetchTidyPlan).mockResolvedValue({
+      moves: [{externalId: "7", label: "Guests", from: "Newsletter", to: "Members"}],
+      foldersToCreate: ["Members"],
+    })
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+
+    expect(wrapper.get("[data-testid=cohort-targets-tidy-move-7]").text()).toContain("Newsletter → Members")
+    expect(wrapper.get("[data-testid=cohort-targets-tidy-folders]").text()).toContain("Members")
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("saveLabel")).toBe("Move 1")
+  })
+
+  it("says so when every linked list is already in its folder", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(fetchTidyPlan).mockResolvedValue({moves: [], foldersToCreate: []})
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+
+    expect(wrapper.find("[data-testid=cohort-targets-tidy-nothing]").exists()).toBe(true)
   })
 })

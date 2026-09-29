@@ -141,6 +141,13 @@ export type ApiError = {
     type?: string;
 };
 
+/**
+ * The lists picked out of the tidy's preview.
+ */
+export type ApplyTidyRequest = {
+    externalIds: Array<string>;
+};
+
 export type ArchiveCommitteeRequest = {
     archived: boolean;
 };
@@ -2587,6 +2594,30 @@ export type TelemetryResponse = {
     updatedAt: string;
     url: string;
     version: number;
+};
+
+/**
+ * One linked list the tidy would move into its cohort type's folder.
+ */
+export type TidyMove = {
+    externalId: string;
+    /**
+     * The folder it is in now; null at the top level.
+     */
+    from?: string | null;
+    label: string;
+    to: string;
+};
+
+/**
+ * The folder tidy's proposal: the moves, and the folders it would make.
+ */
+export type TidyPlan = {
+    /**
+     * Folders the moves need that the system does not have yet.
+     */
+    foldersToCreate: Array<string>;
+    moves: Array<TidyMove>;
 };
 
 export enum TokenPurpose {
@@ -8272,6 +8303,92 @@ export type CreateTargetFolderResponses = {
 };
 
 export type CreateTargetFolderResponse = CreateTargetFolderResponses[keyof CreateTargetFolderResponses];
+
+export type PreviewFolderTidyData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/tidy';
+};
+
+export type PreviewFolderTidyErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewFolderTidyError = PreviewFolderTidyErrors[keyof PreviewFolderTidyErrors];
+
+export type PreviewFolderTidyResponses = {
+    /**
+     * OK
+     */
+    200: TidyPlan;
+};
+
+export type PreviewFolderTidyResponse = PreviewFolderTidyResponses[keyof PreviewFolderTidyResponses];
+
+export type ApplyFolderTidyData = {
+    body: ApplyTidyRequest;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/tidy';
+};
+
+export type ApplyFolderTidyErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ApplyFolderTidyError = ApplyFolderTidyErrors[keyof ApplyFolderTidyErrors];
+
+export type ApplyFolderTidyResponses = {
+    /**
+     * OK
+     */
+    200: BulkTargetMoveResult;
+};
+
+export type ApplyFolderTidyResponse = ApplyFolderTidyResponses[keyof ApplyFolderTidyResponses];
 
 export type ArchiveExternalTargetData = {
     body?: never;

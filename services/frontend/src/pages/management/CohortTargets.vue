@@ -37,7 +37,25 @@ const {
   rename,
   archive,
   remove,
+  tidyMoves,
+  tidyFoldersToCreate,
+  tidyPicked,
+  tidyFailures,
+  previewTidy,
+  toggleTidyPick,
+  applyTidyPicks,
 } = useTargetOverview()
+
+const tidying = ref(false)
+
+async function openTidy() {
+  tidying.value = true
+  await previewTidy(TargetSystem.BREVO)
+}
+
+async function confirmTidy() {
+  if (await applyTidyPicks(TargetSystem.BREVO)) tidying.value = false
+}
 
 /** The delete dialog: only for a list linked to nothing, confirmed by its name typed exactly. */
 const deleting = ref<ExternalTarget | null>(null)
@@ -187,6 +205,15 @@ onMounted(() => void load(TargetSystem.BREVO))
               @click="openCreate"
             >
               New list
+            </v-btn>
+            <v-btn
+              data-testid="cohort-targets-tidy"
+              :disabled="loading"
+              size="small"
+              variant="outlined"
+              @click="openTidy"
+            >
+              Tidy folders
             </v-btn>
             <v-btn
               data-testid="cohort-targets-refresh"
@@ -412,6 +439,66 @@ onMounted(() => void load(TargetSystem.BREVO))
             type="error"
           >
             {{ writeRefusal }}
+          </v-alert>
+        </base-modal>
+
+        <base-modal
+          :model-value="tidying"
+          :save-disabled="tidyPicked.size === 0"
+          :save-loading="writing"
+          :save-label="`Move ${tidyPicked.size}`"
+          save-testid="cohort-targets-tidy-confirm"
+          show-save
+          testid="cohort-targets-tidy-dialog"
+          title="Tidy folders"
+          @cancel="tidying = false"
+          @save="confirmTidy"
+          @update:model-value="(open) => { if (!open) tidying = false }"
+        >
+          <p
+            v-if="!writing && tidyMoves.length === 0 && tidyFailures.length === 0"
+            data-testid="cohort-targets-tidy-nothing"
+          >
+            Every linked list is in its cohort type's folder.
+          </p>
+          <p
+            v-if="tidyFoldersToCreate.length"
+            class="mb-2"
+            data-testid="cohort-targets-tidy-folders"
+          >
+            Folders that will be made: {{ tidyFoldersToCreate.join(", ") }}
+          </p>
+          <v-list density="compact">
+            <v-list-item
+              v-for="proposal in tidyMoves"
+              :key="proposal.externalId"
+              :data-testid="`cohort-targets-tidy-move-${proposal.externalId}`"
+              :subtitle="`${proposal.from ?? 'No folder'} → ${proposal.to}`"
+              :title="proposal.label"
+            >
+              <template #prepend>
+                <v-checkbox-btn
+                  :data-testid="`cohort-targets-tidy-pick-${proposal.externalId}`"
+                  :model-value="tidyPicked.has(proposal.externalId)"
+                  @update:model-value="toggleTidyPick(proposal.externalId)"
+                />
+              </template>
+            </v-list-item>
+          </v-list>
+          <v-alert
+            v-if="tidyFailures.length"
+            class="mt-2"
+            data-testid="cohort-targets-tidy-failures"
+            density="compact"
+            type="error"
+          >
+            <p
+              v-for="failure in tidyFailures"
+              :key="failure.externalId"
+              class="mb-0"
+            >
+              {{ failure.label }}: {{ failure.message }}
+            </p>
           </v-alert>
         </base-modal>
 

@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from "vitest"
 import {useTargetOverview} from "@/domains/cohorts/composables/useTargetOverview"
 import {
+  applyTidy,
   archiveTarget,
   createFolderInSystem,
   createListInSystem,
@@ -8,6 +9,7 @@ import {
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
+  fetchTidyPlan,
   moveTargetToFolder,
   moveTargetsToFolder,
   renameTarget,
@@ -29,6 +31,8 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
     renameTarget: vi.fn(),
     archiveTarget: vi.fn(),
     deleteTarget: vi.fn(),
+    fetchTidyPlan: vi.fn(),
+    applyTidy: vi.fn(),
   }
 })
 
@@ -377,5 +381,33 @@ describe("useTargetOverview", () => {
 
     expect(o.targets.value.map((t) => t.externalId)).toEqual(["2"])
     expect(o.writeRefusal.value).toBe("That is not the list's name; type it exactly to delete it.")
+  })
+
+  it("ticks every proposed move, moves what stays ticked, and keeps the refusals", async () => {
+    const o = await loaded([target("1", "Alpha", null), target("2", "Beta", null)])
+    vi.mocked(fetchTidyPlan).mockResolvedValue({
+      moves: [{externalId: "1", label: "Alpha", from: null, to: "Committees"}, {externalId: "2", label: "Beta", from: null, to: "Committees"}],
+      foldersToCreate: [],
+    })
+    vi.mocked(applyTidy).mockResolvedValue({moved: [target("1", "Alpha", "Committees")], failed: []})
+
+    await o.previewTidy("BREVO")
+    expect([...o.tidyPicked.value]).toEqual(["1", "2"])
+    o.toggleTidyPick("2")
+
+    expect(await o.applyTidyPicks("BREVO")).toBe(true)
+    expect(applyTidy).toHaveBeenCalledWith("BREVO", ["1"])
+    expect(o.targets.value[0]!.folderLabel).toBe("Committees")
+    expect(o.tidyMoves.value.map((m) => m.externalId)).toEqual(["2"])
+  })
+
+  it("reports a refused tidy move and keeps the dialog", async () => {
+    const o = await loaded([target("1", "Alpha", null)])
+    vi.mocked(fetchTidyPlan).mockResolvedValue({moves: [{externalId: "1", label: "Alpha", from: null, to: "Committees"}], foldersToCreate: ["Committees"]})
+    vi.mocked(applyTidy).mockResolvedValue({moved: [], failed: [{externalId: "1", label: "Alpha", message: "Brevo said no"}]})
+
+    await o.previewTidy("BREVO")
+    expect(await o.applyTidyPicks("BREVO")).toBe(false)
+    expect(o.tidyFailures.value).toEqual([{externalId: "1", label: "Alpha", message: "Brevo said no"}])
   })
 })

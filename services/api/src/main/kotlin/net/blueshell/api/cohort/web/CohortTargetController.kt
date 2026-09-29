@@ -5,8 +5,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.cohort.domain.BulkTargetMoveResult
 import net.blueshell.api.cohort.domain.ExternalTarget
+import net.blueshell.api.cohort.domain.FolderTidy
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetDescriptor
+import net.blueshell.api.cohort.domain.TidyPlan
 import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.http.HttpStatus
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 @AdminOnly
 class CohortTargetController(
     private val catalog: TargetCatalog,
+    private val tidy: FolderTidy,
 ) {
     @GetMapping("/systems")
     @Operation(operationId = "listCohortTargetSystems")
@@ -83,6 +86,19 @@ class CohortTargetController(
         @PathVariable externalId: String,
         @Valid @RequestBody request: DeleteExternalTargetRequest,
     ) = catalog.delete(system, externalId, request.name)
+
+    @GetMapping("/{system}/tidy")
+    @Operation(operationId = "previewFolderTidy")
+    fun previewTidy(
+        @PathVariable system: TargetSystem,
+    ): TidyPlan = tidy.preview(system)
+
+    @PostMapping("/{system}/tidy")
+    @Operation(operationId = "applyFolderTidy")
+    fun applyTidy(
+        @PathVariable system: TargetSystem,
+        @Valid @RequestBody request: ApplyTidyRequest,
+    ): BulkTargetMoveResult = tidy.apply(system, request.externalIds)
 
     @PostMapping("/{system}/folders")
     @Operation(operationId = "createTargetFolder")

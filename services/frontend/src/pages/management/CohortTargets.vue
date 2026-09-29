@@ -31,7 +31,51 @@ const {
   load,
   move,
   moveSelected,
+  writeRefusal,
+  writing,
+  createList,
+  rename,
 } = useTargetOverview()
+
+/** The new-list dialog: a name, and a folder picked or a new one named. */
+const NEW_FOLDER = "__new__"
+const creating = ref(false)
+const newName = ref("")
+const newFolderChoice = ref<string | null>(null)
+const newFolderName = ref("")
+const folderChoices = computed(() => [
+  ...folderNames.value.map((name) => ({title: name, value: name})),
+  {title: "New folder…", value: NEW_FOLDER},
+])
+
+function openCreate() {
+  creating.value = true
+  newName.value = ""
+  newFolderChoice.value = null
+  newFolderName.value = ""
+  writeRefusal.value = null
+}
+
+async function confirmCreate() {
+  const isNew = newFolderChoice.value === NEW_FOLDER
+  const folder = isNew ? newFolderName.value.trim() : newFolderChoice.value
+  if (await createList(TargetSystem.BREVO, newName.value.trim(), folder || null, isNew)) creating.value = false
+}
+
+/** The rename dialog, for one list at a time. */
+const renaming = ref<ExternalTarget | null>(null)
+const renameTo = ref("")
+
+function openRename(target: ExternalTarget) {
+  renaming.value = target
+  renameTo.value = target.label
+  writeRefusal.value = null
+}
+
+async function confirmRename() {
+  const target = renaming.value
+  if (target && await rename(TargetSystem.BREVO, target, renameTo.value.trim())) renaming.value = null
+}
 
 /**
  * One dialog for both moves. Filing one target and filing thirty ask the same question and
@@ -108,6 +152,15 @@ onMounted(() => void load(TargetSystem.BREVO))
           :title="systemLabel(TargetSystem.BREVO)"
         >
           <template #actions>
+            <v-btn
+              data-testid="cohort-targets-create"
+              :disabled="loading"
+              size="small"
+              variant="outlined"
+              @click="openCreate"
+            >
+              New list
+            </v-btn>
             <v-btn
               data-testid="cohort-targets-refresh"
               :disabled="loading"
@@ -207,6 +260,14 @@ onMounted(() => void load(TargetSystem.BREVO))
                   </span>
                   <!-- A target nothing points at is either finished with or a mistake. -->
                   <v-btn
+                    :data-testid="`cohort-target-rename-${target.externalId}`"
+                    size="small"
+                    variant="text"
+                    @click="openRename(target)"
+                  >
+                    Rename
+                  </v-btn>
+                  <v-btn
                     :data-testid="`cohort-target-move-${target.externalId}`"
                     :disabled="moving === target.externalId"
                     :loading="moving === target.externalId"
@@ -236,6 +297,77 @@ onMounted(() => void load(TargetSystem.BREVO))
           :subtitle="search ? 'Nothing matches that search.' : 'This system reports no targets.'"
           testid="cohort-targets-empty"
         />
+        <base-modal
+          :model-value="creating"
+          :save-disabled="!newName.trim() || (newFolderChoice === NEW_FOLDER && !newFolderName.trim())"
+          :save-loading="writing"
+          save-label="Make the list"
+          save-testid="cohort-target-create-confirm"
+          show-save
+          testid="cohort-target-create-dialog"
+          title="New list"
+          @cancel="creating = false"
+          @save="confirmCreate"
+          @update:model-value="(open) => { if (!open) creating = false }"
+        >
+          <v-text-field
+            v-model="newName"
+            data-testid="cohort-target-create-name"
+            label="Name"
+          />
+          <v-select
+            v-model="newFolderChoice"
+            clearable
+            data-testid="cohort-target-create-folder"
+            :items="folderChoices"
+            label="Folder"
+          />
+          <v-text-field
+            v-if="newFolderChoice === NEW_FOLDER"
+            v-model="newFolderName"
+            data-testid="cohort-target-create-folder-name"
+            label="New folder's name"
+          />
+          <v-alert
+            v-if="writeRefusal"
+            class="mt-2"
+            data-testid="cohort-target-write-refusal"
+            density="compact"
+            type="error"
+          >
+            {{ writeRefusal }}
+          </v-alert>
+        </base-modal>
+
+        <base-modal
+          :model-value="renaming !== null"
+          :save-disabled="!renameTo.trim() || renameTo.trim() === renaming?.label"
+          :save-loading="writing"
+          save-label="Rename"
+          save-testid="cohort-target-rename-confirm"
+          show-save
+          testid="cohort-target-rename-dialog"
+          :title="`Rename ${renaming?.label ?? ''}`"
+          @cancel="renaming = null"
+          @save="confirmRename"
+          @update:model-value="(open) => { if (!open) renaming = null }"
+        >
+          <v-text-field
+            v-model="renameTo"
+            data-testid="cohort-target-rename-name"
+            label="Name"
+          />
+          <v-alert
+            v-if="writeRefusal"
+            class="mt-2"
+            data-testid="cohort-target-write-refusal"
+            density="compact"
+            type="error"
+          >
+            {{ writeRefusal }}
+          </v-alert>
+        </base-modal>
+
         <base-modal
           :model-value="moveDialogOpen"
           :save-disabled="!destination || destination === movingTarget?.folderLabel"

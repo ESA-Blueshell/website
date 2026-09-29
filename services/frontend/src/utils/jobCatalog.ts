@@ -148,6 +148,13 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "delete depending on its current state). Triggered by the event lifecycle " +
       "listener and safe to re-run manually.",
   },
+  "calendar.sync-unsynced": {
+    title: "Sync unsynced calendar events",
+    description:
+      "Pushes every event that has not ended and was never synced to the shared Google " +
+      "Calendar. Runs daily, so an event whose own sync did not run still reaches the " +
+      "calendar; safe to re-run manually.",
+  },
 
   "cohort.membership-sync": {
     title: "Sync cohort membership",

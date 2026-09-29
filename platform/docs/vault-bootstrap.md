@@ -353,6 +353,47 @@ Spring, and none of them reloads it on its own. The api reads its paths from
 Vault at start. So the rotation pattern is: *update Vault, then restart
 the consumer.*
 
+### Keys the api takes without a restart
+
+The api re-reads `secret/api` and `secret/platform/mail` every five minutes
+(`app.vault.refresh-interval`) and hands a changed key to whatever uses it, so
+none of these needs `kubectl rollout restart`. Write each rotation as one
+`vault kv patch`, so the api never reads half of it.
+
+- **Two-factor key.** A new key takes a new id, and the old one moves to the
+  retired keys in the same patch, or every secret it sealed stops opening. A key
+  of the wrong length is refused and the old one stays; the api logs it.
+
+  ```bash
+  OLD_ID=$(vault kv get -field=app.two-factor.key-id secret/api)
+  OLD=$(vault kv get -field=app.two-factor.key secret/api)
+  vault kv patch secret/api \
+    app.two-factor.key-id=$((OLD_ID + 1)) \
+    app.two-factor.key="$(openssl rand -base64 32)" \
+    app.two-factor.retired-keys="$OLD_ID:$OLD"
+  ```
+
+  Keep earlier retired keys in the list (`id:key` pairs, comma-separated) until
+  every secret they sealed has been re-sealed.
+
+- **JWT secret.** Tokens signed with the previous secret keep reading, so nobody
+  is signed out. Only the one secret before the current one reads: rotate again
+  no sooner than a sign-in lives.
+
+  ```bash
+  vault kv patch secret/api app.jwt.secret="$(openssl rand -base64 64)"
+  ```
+
+- **Vault OIDC client secret.** Vault's OIDC config holds the same secret, so
+  Vault sign-in fails from the patch until both sides hold the new one, up to one
+  refresh interval. Do it in a quiet moment: patch Vault KV, then run the
+  bootstrap Job, which writes the new secret into `auth/oidc/config`.
+
+  ```bash
+  vault kv patch secret/api auth.clients.vault.secret="$(openssl rand -hex 32)"
+  flux -n flux-system reconcile kustomization apps-data
+  ```
+
 ### MariaDB logins (api, migrate Job and Bitnami chart)
 
 The api does not keep a MariaDB password. Its prod profile leases a login from

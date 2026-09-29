@@ -45,6 +45,22 @@ class DatabaseLoginIT {
     }
 
     @Test
+    fun `the next release's image boots under the api Deployment that still renders the injector's env`() {
+        // What today's pod sets: the bare Vault import, Vault switched on and the rendered keys.
+        val injectorEnv =
+            arrayOf(
+                "--spring.config.import=vault://",
+                "--VAULT_ENABLED=true",
+                "--JWT_SECRET=from-the-injector",
+                "--MYSQL_USER=root",
+            )
+        SpringApplicationBuilder(DatabaseOnly::class.java).run(*apiArguments(), *injectorEnv).use { context ->
+            assertThat(currentUser(context)).startsWith("v-")
+            assertThat(context.environment.getProperty("app.two-factor.key")).isEqualTo("two-factor-from-vault")
+        }
+    }
+
+    @Test
     fun `the migration connects as the schema owner, so what it creates outlives any lease`() {
         SpringApplicationBuilder(DatabaseOnly::class.java)
             .run(*vault.bootArguments("prod,migrate", migrateToken), *databaseArguments())

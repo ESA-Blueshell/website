@@ -64,6 +64,12 @@ class CohortSubjectController(
     @GetMapping
     fun findCohortSubjects(): List<CohortSubjectSummaryResponse> = queries.summaries().map { it.toResponse() }
 
+    @GetMapping("/targets")
+    fun listTargetOptions(): List<TargetOptionResponse> =
+        queries.targets().map {
+            TargetOptionResponse(it.cohort.id!!, it.cohort.system, it.cohort.kind, it.cohort.label, it.memberCount)
+        }
+
     @GetMapping("/{id}")
     fun findCohortSubjectById(
         @PathVariable id: Long,
@@ -148,6 +154,16 @@ class CohortSubjectController(
         @RequestBody @Valid body: InboundReconcileApplyRequest,
     ): InboundReconcileApplyResponse = inboundReconcile.apply(id, cohortId, body)
 }
+
+@Schema(name = "TargetOption", description = "A target as a picker offers it.")
+data class TargetOptionResponse(
+    val id: Long,
+    val system: String,
+    val kind: CohortKind,
+    val label: String,
+    @param:Schema(description = "How many of our people the target holds")
+    val memberCount: Int,
+)
 
 @Schema(name = "CohortSubjectSummary")
 data class CohortSubjectSummaryResponse(

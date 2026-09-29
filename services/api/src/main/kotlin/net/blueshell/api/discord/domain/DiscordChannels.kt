@@ -15,6 +15,8 @@ import java.time.Duration
 data class DiscordChannel(
     val id: String,
     val name: String,
+    /** The category the server files it under, null for a channel outside any. */
+    val category: String?,
 )
 
 /**
@@ -46,6 +48,6 @@ class DiscordChannelDirectory(
         }
         return guild.channels
             .filter { it !is Category && !hidden(it) }
-            .map { DiscordChannel(it.id, it.name) }
+            .map { DiscordChannel(it.id, it.name, (it as? ICategorizableChannel)?.parentCategory?.name) }
     }
 }

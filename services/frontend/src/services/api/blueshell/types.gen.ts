@@ -1064,6 +1064,18 @@ export type DiscordMemberResponse = {
 };
 
 /**
+ * A channel everybody in the Discord server can see, which a description may mention
+ */
+export type DiscordMentionChannelResponse = {
+    /**
+     * The category the server files the channel under, where it has one
+     */
+    category?: string | null;
+    id: string;
+    name: string;
+};
+
+/**
  * What a description's mentions name: the members, roles and channels the server has
  */
 export type DiscordMentionsResponse = {
@@ -1096,6 +1108,10 @@ export type DiscordRoleNameResponse = {
  * A role in the Discord server an event may ping
  */
 export type DiscordRoleResponse = {
+    /**
+     * The role's colour as 0xRRGGBB, where it has one
+     */
+    colour?: number | null;
     id: string;
     name: string;
 };
@@ -5123,7 +5139,7 @@ export type ListDiscordChannelsResponses = {
     /**
      * OK
      */
-    200: Array<DiscordNameResponse>;
+    200: Array<DiscordMentionChannelResponse>;
 };
 
 export type ListDiscordChannelsResponse = ListDiscordChannelsResponses[keyof ListDiscordChannelsResponses];

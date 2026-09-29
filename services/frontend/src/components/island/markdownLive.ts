@@ -31,6 +31,18 @@ const LINKS = new Set(["Link", "Image"])
 /** A mark that opens a line, shown on the whole line the cursor is on. */
 const LINE_MARKS = new Set(["HeaderMark", "QuoteMark", "SubtextMark"])
 
+/** Discord's code face, which the site has none of its own for. */
+export const CODE_FONT = "ui-monospace, SFMono-Regular, Consolas, monospace"
+
+/** Blocks drawn line by line, as Discord draws a quote with its bar and code in its box. */
+const BLOCK_LINES: Record<string, Decoration> = {
+  Blockquote: Decoration.line({class: "cm-quote"}),
+  FencedCode: Decoration.line({class: "cm-codeblock"}),
+  CodeBlock: Decoration.line({class: "cm-codeblock"}),
+}
+
+const inlineCode = Decoration.mark({class: "cm-code"})
+
 /** Where text is only characters: code, and an address. */
 const LITERAL = new Set(["InlineCode", "FencedCode", "CodeBlock", "URL", "Autolink", "HTMLTag"])
 
@@ -233,6 +245,15 @@ const decorate = (view: EditorView): DecorationSet => {
       to,
       enter: (ref) => {
         const {node} = ref
+
+        const block = BLOCK_LINES[node.name]
+        if (block) {
+          const last = state.doc.lineAt(node.to).number
+          for (let line = state.doc.lineAt(node.from).number; line <= last; line++) {
+            marks.push(block.range(state.doc.line(line).from))
+          }
+        }
+        if (node.name === "InlineCode") marks.push(inlineCode.range(node.from, node.to))
 
         // A bullet even on the line being written: nobody needs reminding they typed a dash.
         if (node.name === "ListMark") {

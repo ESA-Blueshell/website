@@ -6,14 +6,8 @@ import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.Duration
 
-/** A role in the server an event may ping. */
+/** A role in the server as a mention shows it: its name, and its colour where it has one. */
 data class DiscordRole(
-    val id: String,
-    val name: String,
-)
-
-/** A role as a mention shows it: its name, and its colour where it has one. */
-data class DiscordRoleName(
     val id: String,
     val name: String,
     val colour: Int?,
@@ -35,13 +29,15 @@ class DiscordRoleDirectory(
     fun pingable(): List<DiscordRole>? =
         roles()
             ?.filterNot { it.isPublicRole || it.isManaged }
-            ?.map { DiscordRole(it.id, it.name) }
+            ?.map(::described)
 
     /** Every role among [ids] the server has, @everyone and integration roles included. */
-    fun named(ids: Set<String>): List<DiscordRoleName>? =
+    fun named(ids: Set<String>): List<DiscordRole>? =
         roles()
             ?.filter { it.id in ids }
-            ?.map { DiscordRoleName(it.id, it.name, it.colors.takeUnless { colours -> colours.isDefault }?.primaryRaw) }
+            ?.map(::described)
+
+    private fun described(role: Role) = DiscordRole(role.id, role.name, role.colors.takeUnless { it.isDefault }?.primaryRaw)
 
     // Highest first, as the server lists them.
     private fun roles(): List<Role>? {

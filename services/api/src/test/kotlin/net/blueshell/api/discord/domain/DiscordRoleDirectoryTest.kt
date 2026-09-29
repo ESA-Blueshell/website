@@ -34,11 +34,17 @@ class DiscordRoleDirectoryTest {
     }
 
     @Test
-    fun `lists the roles an event may ping in the server's order, without @everyone or integration roles`() {
+    fun `lists the roles an event may ping in the server's order, with their colours, without @everyone or integration roles`() {
         val server =
-            guild(role("903", "Bot", managed = true), role("902", "Board"), role("901", "Gamers"), role("324", "@everyone", public = true))
+            guild(
+                role("903", "Bot", managed = true),
+                role("902", "Board", colour = 0xE91E63),
+                role("901", "Gamers"),
+                role("324", "@everyone", public = true),
+            )
 
-        assertThat(directory { server }.pingable()).containsExactly(DiscordRole("902", "Board"), DiscordRole("901", "Gamers"))
+        assertThat(directory { server }.pingable())
+            .containsExactly(DiscordRole("902", "Board", 0xE91E63), DiscordRole("901", "Gamers", null))
     }
 
     @Test
@@ -47,7 +53,7 @@ class DiscordRoleDirectoryTest {
             guild(role("903", "Bot", managed = true), role("901", "Gamers", colour = 0x3498DB), role("324", "@everyone", public = true))
 
         assertThat(directory { server }.named(setOf("901", "903", "999")))
-            .containsExactly(DiscordRoleName("903", "Bot", null), DiscordRoleName("901", "Gamers", 0x3498DB))
+            .containsExactly(DiscordRole("903", "Bot", null), DiscordRole("901", "Gamers", 0x3498DB))
     }
 
     @Test
@@ -56,9 +62,9 @@ class DiscordRoleDirectoryTest {
         var held: Guild? = server
         val directory = directory { held }
 
-        assertThat(directory.pingable()).containsExactly(DiscordRole("901", "Gamers"))
+        assertThat(directory.pingable()).containsExactly(DiscordRole("901", "Gamers", null))
         held = null
-        assertThat(directory.pingable()).containsExactly(DiscordRole("901", "Gamers"))
+        assertThat(directory.pingable()).containsExactly(DiscordRole("901", "Gamers", null))
     }
 
     @Test

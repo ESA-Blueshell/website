@@ -33,7 +33,8 @@ export const emojiCompletion = (context: CompletionContext): CompletionResult | 
 /** Draws an entry's emoji the way the page will, before its name. */
 export const emojiOption = {
   position: 20,
-  render: (completion: Completion): Node => {
+  render: (completion: Completion): Node | null => {
+    if (completion.type !== "emoji") return null
     const drawn = document.createElement("img")
     drawn.className = "cm-emoji"
     drawn.src = pictureOf(completion.apply as string)

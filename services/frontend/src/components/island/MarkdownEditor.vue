@@ -5,10 +5,11 @@ import {autocompletion} from "@codemirror/autocomplete"
 import {Compartment, EditorState} from "@codemirror/state"
 import {EditorView, placeholder as showPlaceholder} from "@codemirror/view"
 import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
+import {CODE_FONT} from "@/components/island/markdownLive"
 import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import DateTimeInput from "@/components/island/DateTimeInput.vue"
 import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
-import {channelCompletion, mentionCompletion} from "@/components/island/markdownMentions"
+import {channelCompletion, mentionCompletion, mentionOption, mentionRow} from "@/components/island/markdownMentions"
 import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 import {TIME_STYLES, timestampText, type TimeStyle} from "@/plugins/discordTime"
 import {BRAND_ACCENT} from "@/utils/brand"
@@ -172,6 +173,22 @@ const dress = EditorView.theme({
     margin: "0 0.05em",
     verticalAlign: "-0.3em",
   },
+  // Discord's quote: a bar at its left, the words upright.
+  ".cm-quote": {
+    borderLeft: "4px solid color-mix(in oklab, var(--color-chalk) 30%, transparent)",
+    paddingLeft: "0.75rem",
+  },
+  ".cm-code": {
+    padding: "0.1em 0.25em",
+    borderRadius: "4px",
+    backgroundColor: "color-mix(in oklab, var(--color-void) 45%, transparent)",
+  },
+  ".cm-codeblock": {
+    padding: "0 0.6rem",
+    fontFamily: CODE_FONT,
+    fontSize: "0.85em",
+    backgroundColor: "color-mix(in oklab, var(--color-void) 45%, transparent)",
+  },
   ".cm-placeholder": {color: "var(--color-ash)"},
   "&.cm-editor .cm-selectionBackground, ::selection": {
     backgroundColor: "color-mix(in oklab, var(--color-brand) 35%, transparent)",
@@ -209,7 +226,8 @@ onMounted(() => {
           override: [emojiCompletion, mentionCompletion, channelCompletion],
           icons: false,
           activateOnTyping: true,
-          addToOptions: [emojiOption],
+          addToOptions: [emojiOption, mentionOption],
+          optionClass: mentionRow,
         }),
         showPlaceholder(placeholder),
         EditorView.lineWrapping,
@@ -496,6 +514,29 @@ onBeforeUnmount(() => {
 .island-markdown :deep(.cm-tooltip-autocomplete .cm-emoji) {
   width: 1.3rem;
   height: 1.3rem;
+}
+
+.island-markdown :deep(.cm-tooltip-autocomplete .cm-avatar) {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+}
+
+/* Discord names a role in its own colour; one without a colour takes the mention's. */
+.island-markdown :deep(.cm-tooltip-autocomplete .cm-role) {
+  color: var(--mention, var(--color-brand-lit));
+  font-weight: 600;
+}
+
+.island-markdown :deep(.cm-tooltip-autocomplete .cm-option-role .cm-completionLabel) {
+  display: none;
+}
+
+.island-markdown :deep(.cm-tooltip-autocomplete .cm-completionDetail) {
+  margin-left: auto;
+  padding-left: 1rem;
+  font-style: normal;
+  color: var(--color-ash);
 }
 
 .island-markdown :deep(.cm-editor) {

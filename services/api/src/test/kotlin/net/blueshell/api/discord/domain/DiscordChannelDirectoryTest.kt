@@ -76,14 +76,23 @@ class DiscordChannelDirectoryTest {
     }
 
     @Test
+    fun `names each channel's category, and none for a channel outside one`() {
+        val games = category("20", "Games")
+        val server = guild(channel("1", "general"), games, channel("7", "valorant", parent = games))
+
+        assertThat(directory { server }.open())
+            .containsExactly(DiscordChannel("1", "general", null), DiscordChannel("7", "valorant", "Games"))
+    }
+
+    @Test
     fun `keeps the last channels while the gateway is away`() {
         val server = guild(channel("1", "general"))
         var held: Guild? = server
         val directory = directory { held }
 
-        assertThat(directory.open()).containsExactly(DiscordChannel("1", "general"))
+        assertThat(directory.open()).containsExactly(DiscordChannel("1", "general", null))
         held = null
-        assertThat(directory.open()).containsExactly(DiscordChannel("1", "general"))
+        assertThat(directory.open()).containsExactly(DiscordChannel("1", "general", null))
     }
 
     @Test

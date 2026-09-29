@@ -39,6 +39,8 @@ data class DiscordViewerRoomsResponse(
 data class DiscordRoleResponse(
     val id: String,
     val name: String,
+    @Schema(description = "The role's colour as 0xRRGGBB, where it has one")
+    val colour: Int?,
 )
 
 @Schema(description = "A text channel a game may live in")
@@ -68,6 +70,14 @@ data class DiscordMentionsResponse(
 data class DiscordNameResponse(
     val id: String,
     val name: String,
+)
+
+@Schema(description = "A channel everybody in the Discord server can see, which a description may mention")
+data class DiscordMentionChannelResponse(
+    val id: String,
+    val name: String,
+    @Schema(description = "The category the server files the channel under, where it has one")
+    val category: String?,
 )
 
 @Schema(description = "A role of the Discord server, as a mention shows it")

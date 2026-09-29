@@ -19,7 +19,29 @@ const drawnOn = (doc: string, at = 0, focused = false) => {
   return said
 }
 
+const linesOn = (doc: string) => {
+  const view = new EditorView({
+    parent: document.body,
+    state: EditorState.create({doc, extensions: [markdown({base: markdownLanguage}), markdownLive]}),
+  })
+  const lines = [...view.contentDOM.querySelectorAll(".cm-line")].map(line => ({
+    classes: line.className,
+    code: line.querySelector(".cm-code")?.textContent,
+  }))
+  view.destroy()
+  return lines
+}
+
 describe("what the editor draws", () => {
+  it("marks a quote's lines and a code block's lines for their bar and box, and boxes inline code", () => {
+    const lines = linesOn("> one\n> two\n\n```\ncode\n```\n\nsay `this`\n\n    indented")
+
+    expect(lines.map(line => line.classes.replace("cm-line", "").trim())).toEqual([
+      "cm-quote", "cm-quote", "", "cm-codeblock", "cm-codeblock", "cm-codeblock", "", "", "", "cm-codeblock",
+    ])
+    expect(lines[7]?.code).toBe("this")
+  })
+
   it("hides the marks on every line while nobody is writing in it", () => {
     const said = drawnOn("## Heading\n\nSome **bold** and *italic* and `code`.")
 

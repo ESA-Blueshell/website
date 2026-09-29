@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 /** What a description's mentions name on the server; an ID the server lacks is left out. */
 data class Mentioned(
     val users: List<DiscordMember>,
-    val roles: List<DiscordRoleName>,
+    val roles: List<DiscordRole>,
     val channels: List<DiscordChannel>,
 )
 

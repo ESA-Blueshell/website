@@ -12,9 +12,9 @@ import org.mockito.kotlin.verifyNoInteractions
 class DiscordMentionNameSourceTest {
     private val members: DiscordMemberDirectory =
         mock { on { named(any()) } doReturn listOf(DiscordMember("11", "Anna", "anna", "https://cdn/anna.png")) }
-    private val roles: DiscordRoleDirectory = mock { on { named(any()) } doReturn listOf(DiscordRoleName("901", "Gamers", null)) }
+    private val roles: DiscordRoleDirectory = mock { on { named(any()) } doReturn listOf(DiscordRole("901", "Gamers", null)) }
     private val channels: DiscordChannelDirectory =
-        mock { on { open() } doReturn listOf(DiscordChannel("1", "general"), DiscordChannel("2", "events-info")) }
+        mock { on { open() } doReturn listOf(DiscordChannel("1", "general", null), DiscordChannel("2", "events-info", null)) }
 
     @Test
     fun `names what a description mentions from what the directories keep`() {

@@ -60,12 +60,12 @@ class DiscordMentionController(
     @Operation(operationId = "listDiscordChannels", summary = "The Discord server's channels everybody can see, in the server's order")
     @ApiResponse(
         responseCode = "200",
-        content = [Content(array = ArraySchema(schema = Schema(implementation = DiscordNameResponse::class)))],
+        content = [Content(array = ArraySchema(schema = Schema(implementation = DiscordMentionChannelResponse::class)))],
     )
     @ApiResponse(responseCode = "503", description = "The bot is not set up, or Discord did not answer", content = [Content()])
-    fun channels(): ResponseEntity<List<DiscordNameResponse>> {
+    fun channels(): ResponseEntity<List<DiscordMentionChannelResponse>> {
         val found = channels.open() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        return ResponseEntity.ok(found.map { DiscordNameResponse(it.id, it.name) })
+        return ResponseEntity.ok(found.map { DiscordMentionChannelResponse(it.id, it.name, it.category) })
     }
 
     // A page names a few; a caller asking for thousands is cut short rather than served.

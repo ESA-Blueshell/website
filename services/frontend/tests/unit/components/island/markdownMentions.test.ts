@@ -1,11 +1,11 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import {CompletionContext} from "@codemirror/autocomplete"
+import {type Completion, CompletionContext} from "@codemirror/autocomplete"
 import {EditorSelection, EditorState} from "@codemirror/state"
 import {EditorView} from "@codemirror/view"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import {markdownEditing} from "@/components/island/markdownEditing"
-import {channelCompletion, forgetMentionLists, mentionCompletion} from "@/components/island/markdownMentions"
+import {channelCompletion, forgetMentionLists, mentionCompletion, mentionOption, mentionRow} from "@/components/island/markdownMentions"
 import {forgetMentionNames} from "@/domains/discord"
 import {listServerChannels, readMentionNames} from "@/domains/discord/adapters/mentions"
 import {searchServerMembers} from "@/domains/discord/adapters/members"
@@ -19,9 +19,9 @@ vi.mock("@/domains/discord/adapters/roles", () => ({listServerRoles: vi.fn()}))
 beforeEach(() => {
   forgetMentionLists()
   forgetMentionNames()
-  vi.mocked(searchServerMembers).mockResolvedValue([{id: "11", name: "Anna", username: "anna", avatar: ""}])
-  vi.mocked(listServerRoles).mockResolvedValue([{id: "901", name: "Gamers"}, {id: "902", name: "Board"}])
-  vi.mocked(listServerChannels).mockResolvedValue([{id: "1", name: "general"}, {id: "2", name: "events-info"}])
+  vi.mocked(searchServerMembers).mockResolvedValue([{id: "11", name: "Anna", username: "anna", avatar: "https://cdn/anna.png"}])
+  vi.mocked(listServerRoles).mockResolvedValue([{id: "901", name: "Gamers", colour: 0x3498DB}, {id: "902", name: "Board"}])
+  vi.mocked(listServerChannels).mockResolvedValue([{id: "1", name: "general"}, {id: "2", name: "events-info", category: "Events"}])
   vi.mocked(readMentionNames).mockResolvedValue({users: [{id: "123456789012345611", name: "Anna"}], roles: [{id: "223456789012345901", name: "Gamers", colour: 0x3498DB}], channels: []})
 })
 
@@ -29,12 +29,14 @@ const asking = (doc: string, explicit = false) =>
   new CompletionContext(EditorState.create({doc}), doc.length, explicit)
 
 describe("a mention being typed", () => {
-  it("offers the members the server finds and the roles whose name holds what was typed", async () => {
-    const found = await mentionCompletion(asking("ask @an"))
+  it("offers every member the server finds, as it found them, then the roles whose name holds what was typed", async () => {
+    vi.mocked(searchServerMembers).mockResolvedValue([{id: "12", name: "The Old Man", username: "extratoast", avatar: ""}])
+    const found = await mentionCompletion(asking("ask @ex"))
 
-    expect(found?.options.map(one => [one.label, one.apply])).toEqual([["@Anna", "<@11>"]])
-    expect(searchServerMembers).toHaveBeenCalledWith("an")
-    expect(found?.validFor instanceof Function && found.validFor("@ann", 0, 4, EditorState.create())).toBe(true)
+    expect(found?.options.map(one => [one.label, one.detail, one.apply])).toEqual([["The Old Man", "extratoast", "<@12>"]])
+    expect(searchServerMembers).toHaveBeenCalledWith("ex")
+    expect(found?.filter).toBe(false)
+    expect(found?.validFor).toBeUndefined()
   })
 
   it("offers roles alone before two letters, and asks the server for no members", async () => {
@@ -42,7 +44,6 @@ describe("a mention being typed", () => {
 
     expect(found?.options.map(one => one.apply)).toEqual(["<@&901>"])
     expect(searchServerMembers).not.toHaveBeenCalled()
-    expect(found?.validFor instanceof Function && found.validFor("@ga", 0, 3, EditorState.create())).toBe(false)
   })
 
   it("offers nothing inside a word, for a bare @, or where nothing answers", async () => {
@@ -63,18 +64,51 @@ describe("a mention being typed", () => {
   })
 })
 
-describe("a channel being typed", () => {
-  it("offers the channels whose name holds what was typed, in the middle of a line", async () => {
-    const found = await channelCompletion(asking("see #event"))
+describe("a mention's row", () => {
+  it("draws a member's avatar, and a role's name in its colour or the mention's", () => {
+    const anna: Completion & {avatar: string} = {label: "Anna", type: "member", avatar: "https://cdn/anna.png"}
+    const gamers: Completion & {colour: number} = {label: "@Gamers", type: "role", colour: 0x3498DB}
+    const nobody: Completion & {avatar: string} = {label: "Nobody", type: "member", avatar: ""}
+    const avatar = mentionOption.render(anna) as HTMLImageElement
+    const coloured = mentionOption.render(gamers) as HTMLElement
+    const plain = mentionOption.render({label: "@Board", type: "role"}) as HTMLElement
 
-    expect(found?.options.map(one => [one.label, one.apply])).toEqual([["#events-info", "<#2>"]])
+    expect(avatar.getAttribute("src")).toBe("https://cdn/anna.png")
+    expect([coloured.textContent, coloured.style.getPropertyValue("--mention")]).toEqual(["@Gamers", "#3498db"])
+    expect([plain.textContent, plain.style.getPropertyValue("--mention")]).toEqual(["@Board", ""])
+    expect(mentionOption.render(nobody)).toBeNull()
+    expect(mentionOption.render({label: "#general", type: "channel"})).toBeNull()
   })
 
-  it("offers nothing at the start of a line, where # is a heading, or where nothing answers", async () => {
+  it("hides the label a role's row draws itself", () => {
+    expect(mentionRow({label: "@Board", type: "role"})).toBe("cm-option-role")
+    expect(mentionRow({label: "Anna", type: "member"})).toBe("")
+  })
+})
+
+describe("a channel being typed", () => {
+  it("offers the channels whose name holds what was typed, with the category each is in", async () => {
+    const found = await channelCompletion(asking("see #e"))
+
+    expect(found?.options.map(one => [one.label, one.detail, one.apply])).toEqual([
+      ["#general", undefined, "<#1>"],
+      ["#events-info", "Events", "<#2>"],
+    ])
+  })
+
+  it("offers channels at the start of a line only right before a letter, since `# ` there is a heading", async () => {
+    expect((await channelCompletion(asking("#gen")))?.options.map(one => one.apply)).toEqual(["<#1>"])
+    expect((await channelCompletion(asking("  #gen")))?.options.map(one => one.apply)).toEqual(["<#1>"])
+    expect(await channelCompletion(asking("#"))).toBeNull()
+    expect(await channelCompletion(asking("# Heading"))).toBeNull()
+    expect((await channelCompletion(asking("see #")))?.options).toHaveLength(2)
+  })
+
+  it("offers nothing inside a word, or where nothing answers", async () => {
+    expect(await channelCompletion(asking("c#gen"))).toBeNull()
+    forgetMentionLists()
     vi.mocked(listServerChannels).mockResolvedValue(null)
 
-    expect(await channelCompletion(asking("#gen"))).toBeNull()
-    expect(await channelCompletion(asking("  #gen"))).toBeNull()
     expect(await channelCompletion(asking("see #gen"))).toBeNull()
     expect(await channelCompletion(asking("plain"))).toBeNull()
   })

@@ -10,12 +10,12 @@ internal object Shortcodes {
     private val ADDRESS = Regex("""^(https?://|www\.)\S+""")
     private val BRACKETED = Regex("""^<[^\s<>][^<>\n]*>""")
     private val FENCE = Regex("""^ {0,3}(`{3,}|~{3,})""")
+    private const val TABLE = "/db/changelog/emoji/emojilib-shortcodes.tsv"
 
     /** The names the site expanded, from the table committed beside the changelog. */
     fun names(): Map<String, String> =
-        requireNotNull(Shortcodes::class.java.getResourceAsStream("/db/changelog/emoji/emojilib-shortcodes.tsv")) {
-            "The shortcode table is missing"
-        }.bufferedReader()
+        (Shortcodes::class.java.getResourceAsStream(TABLE) ?: error("The shortcode table $TABLE is missing"))
+            .bufferedReader()
             .useLines { lines ->
                 lines
                     .filterNot { it.isBlank() || it.startsWith("#") }

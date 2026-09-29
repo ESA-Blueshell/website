@@ -35,6 +35,7 @@ class ShortcodesTest {
             listOf(
                 "`:smile:`",
                 "``a ` :smile:``",
+                "``a ``` :smile:``",
                 "see https://example.com/:smile:",
                 "see www.example.com/:smile:",
                 "<:smile:657733730491826186> <a:smile:1> <t:1790000000:R> <@123> <https://x/:smile:>",

@@ -9,6 +9,20 @@ import liquibase.resource.ResourceAccessor
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 
+/** Every column a description is written to, by table. */
+private val COLUMNS =
+    listOf(
+        "events" to "description",
+        "committees" to "description",
+        "sponsors" to "description",
+        "questions" to "label",
+        "boards" to "description",
+        "board_members" to "description",
+        "game" to "intro",
+        "game" to "competition_intro",
+        "team_roster_entry" to "description",
+    )
+
 /**
  * Writes the emoji shortcodes stored in descriptions as the emoji themselves (architecture
  * ADR-010), so Discord shows them and the site needs no second name list to expand them. Each
@@ -90,19 +104,6 @@ class ShortcodesBecomeCharacters :
     }
 
     private companion object {
-        /** Every column a description is written to, by table. */
-        val COLUMNS =
-            listOf(
-                "events" to "description",
-                "committees" to "description",
-                "sponsors" to "description",
-                "questions" to "label",
-                "boards" to "description",
-                "board_members" to "description",
-                "game" to "intro",
-                "game" to "competition_intro",
-                "team_roster_entry" to "description",
-            )
         const val BACKUP = "INSERT INTO shortcode_rewrites (table_name, column_name, row_id, before_text) VALUES (?, ?, ?, ?)"
         private val log = LoggerFactory.getLogger(ShortcodesBecomeCharacters::class.java)
     }

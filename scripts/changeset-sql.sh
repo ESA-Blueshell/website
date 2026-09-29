@@ -27,6 +27,25 @@ edited=$(git diff --name-only --diff-filter=M "$BASE...HEAD" -- "$REL/changes" \
   | grep -E '\.ya?ml$' || true)
 for file in $edited; do rm -f "$WORK/base/changes/${file##*/}"; done
 
+# A customChange is api code the Liquibase image cannot load, so both copies stand the same
+# output change in its place, and the render names it instead of its SQL.
+mkdir -p "$WORK/head"
+cp -R "$REL/." "$WORK/head/"
+python3 - "$WORK/base/changes" "$WORK/head/changes" <<'PY'
+import pathlib, re, sys
+for folder in sys.argv[1:]:
+    for path in pathlib.Path(folder).glob("*.y*ml"):
+        text = path.read_text()
+        swapped = re.sub(
+            r"^(\s*)- customChange:\s*\n\s*class:\s*(\S+)\s*$",
+            lambda m: f"{m.group(1)}- output:\n{m.group(1)}    message: custom change {m.group(2)}",
+            text,
+            flags=re.M,
+        )
+        if swapped != text:
+            path.write_text(swapped)
+PY
+
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 # Production's version; see platform/cluster/flux/apps/data/mariadb/release.yaml.
 docker run -d --name "$NAME" -e MARIADB_ROOT_PASSWORD=x -p "$PORT:3306" mariadb:10.11.10 >/dev/null
@@ -47,10 +66,13 @@ lb "$WORK/base" update >/dev/null 2>&1 \
   || { echo "::error::the base changelog does not apply"; exit 1; }
 
 # DATABASECHANGELOG rows are Liquibase's own bookkeeping, not the change.
-lb "$PWD/$REL" update-sql \
+lb "$WORK/head" update-sql \
   | sed -n '/^--  *Changeset/,$p' \
   | sed '/^--  *Release Database Lock/,$d' \
   | { grep -vE '^INSERT INTO blueshell\.DATABASECHANGELOG' || true; } > "$OUT"
+for file in $added; do
+  sed -n 's/^[[:space:]]*class:[[:space:]]*\([^[:space:]]*\).*/-- Also runs \1, a custom change in the api that no SQL render shows./p' "$file" >> "$OUT"
+done
 
 echo "$added" | sed 's|.*/||' > "${OUT%.sql}.files"
 echo "rendered $(grep -c '' "$OUT") lines for $(echo "$added" | grep -c '') changeset file(s)"

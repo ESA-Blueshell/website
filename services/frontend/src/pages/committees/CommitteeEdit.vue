@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import Island from "@/components/island/Island.vue"
+import PagePlaceholder from "@/components/island/PagePlaceholder.vue"
 import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import CommitteeEditor from "@/domains/committees/components/CommitteeEditor.vue"
@@ -47,4 +49,9 @@ const removed = async () => {
     @saved="saved"
   />
   <not-found v-else-if="answered" />
+  <v-main v-else>
+    <island>
+      <page-placeholder testid="committee-edit-placeholder" />
+    </island>
+  </v-main>
 </template>

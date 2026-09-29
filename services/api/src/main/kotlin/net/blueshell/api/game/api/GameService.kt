@@ -26,8 +26,21 @@ class GameService(
     private val holdings: ObjectProvider<GameHoldings>,
     private val competition: ObjectProvider<GamesInCompetition>,
 ) {
+    /**
+     * Every game, with what a listing draws of each already read.
+     *
+     * `enable_lazy_load_no_trans` is on, so a picture or channel list first touched after this
+     * returns is read in a session of its own, one game at a time. Touched here, inside the
+     * transaction, `default_batch_fetch_size` reads each kind for every game in one query.
+     */
     @Transactional(readOnly = true)
-    fun findAll(): List<Game> = games.findAllByOrderBySortIndexAsc()
+    fun findAll(): List<Game> =
+        games.findAllByOrderBySortIndexAsc().onEach { game ->
+            game.channels.size
+            game.esportsChannels.size
+            game.banner?.renditions?.size
+            game.icon?.renditions?.size
+        }
 
     /** The codes of the games in competition now, as the module that fields teams answers. */
     fun inCompetition(): Set<String> =

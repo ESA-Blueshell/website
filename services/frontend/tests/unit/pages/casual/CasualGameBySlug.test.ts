@@ -15,6 +15,7 @@ vi.mock("@/services/api", async importOriginal => ({
 const stubs = {
   CasualGamePage: {name: "CasualGamePage", props: ["game"], template: "<div data-testid=page />"},
   NotFound: {name: "NotFound", template: "<div data-testid=missing />"},
+  VMain: {template: "<main><slot /></main>"},
 }
 
 beforeEach(() => {
@@ -32,10 +33,11 @@ describe("a game's page by its address", () => {
     expect(document.title).toBe("Chess — Blueshell")
   })
 
-  it("reads as not found once the games have answered without it, and as nothing before", async () => {
+  it("reads as not found once the games have answered without it, and as a placeholder before", async () => {
     route.params.slug = "pong"
     const wrapper = mount(CasualGameBySlug, {global: {stubs}})
     expect(wrapper.find("[data-testid=missing]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=casual-game-placeholder]").exists()).toBe(true)
 
     await flushPromises()
 

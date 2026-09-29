@@ -16,7 +16,7 @@ vi.mock("@/domains/committees", () => ({
 }))
 
 const CommitteeEditor = {name: "CommitteeEditor", props: ["committee", "asBoard", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
-const stubs = {CommitteeEditor, NotFound: {template: "<div data-testid=missing />"}}
+const stubs = {CommitteeEditor, NotFound: {template: "<div data-testid=missing />"}, VMain: {template: "<main><slot /></main>"}}
 
 const mountPage = async (address?: string) => {
   route.params = address ? {address} : {}
@@ -77,5 +77,11 @@ describe("the committee edit page", () => {
     expect((await mountPage("lancie")).find("[data-testid=missing]").exists()).toBe(true)
     rights.board = true
     expect((await mountPage("nobody")).find("[data-testid=missing]").exists()).toBe(true)
+  })
+
+  it("stands a placeholder while the committees are still on their way", () => {
+    route.params = {address: "lancie"}
+    const wrapper = mount(CommitteeEdit, {global: {stubs}})
+    expect(wrapper.find("[data-testid=committee-edit-placeholder]").exists()).toBe(true)
   })
 })

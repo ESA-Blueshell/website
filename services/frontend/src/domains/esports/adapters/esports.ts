@@ -17,7 +17,6 @@ import {
   findGame,
   findGameAccounts,
   findPlayedRosters,
-  findCasualGames,
   findRoster,
   findSeasonContents,
   findSeasons,
@@ -76,18 +75,6 @@ export type FieldedTeam = FieldedTeamResponse
 export interface SeasonContents {
   teams: number
   players: number
-}
-
-/**
- * Every game the association knows, in the order their records put them.
- *
- * Answers with a list whatever came back. Every page asks for this now, including ones served
- * before the api is reachable, and a body that is not the list it was promised must read as no
- * games rather than take the navigation down with it.
- */
-export async function loadGames(): Promise<Game[]> {
-  const res = await findCasualGames()
-  return Array.isArray(res.data) ? res.data.map(withArt) : []
 }
 
 /**

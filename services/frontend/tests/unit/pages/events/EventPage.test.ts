@@ -203,4 +203,12 @@ describe("an event's own page", () => {
     expect(wrapper.find("[data-testid=event-page-signup]").exists()).toBe(false)
     expect(wrapper.get("[data-testid=event-page-description]").text()).toBe("")
   })
+
+  it("stands a placeholder under the way back while the event is on its way", () => {
+    mockRead.mockReturnValue(new Promise(() => {}))
+    const wrapper = mount(EventPage, {global: {stubs}})
+
+    expect(wrapper.find("[data-testid=event-placeholder]").exists()).toBe(true)
+    expect(wrapper.find("[data-testid=event-page-missing]").exists()).toBe(false)
+  })
 })

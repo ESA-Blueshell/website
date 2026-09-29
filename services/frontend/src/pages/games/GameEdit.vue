@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import Island from "@/components/island/Island.vue"
+import PagePlaceholder from "@/components/island/PagePlaceholder.vue"
 import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import GameEditor from "@/domains/games/components/GameEditor.vue"
@@ -50,4 +52,9 @@ const saved = (now: CasualGame) => {
     @saved="saved"
   />
   <not-found v-else-if="answered" />
+  <v-main v-else>
+    <island>
+      <page-placeholder testid="game-edit-placeholder" />
+    </island>
+  </v-main>
 </template>

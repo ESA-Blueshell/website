@@ -18,7 +18,7 @@ vi.mock("@/composables/useIsBoard", () => ({useIsBoard: () => ref(state.may)}))
 
 const BoardEditor = {name: "BoardEditor", props: ["board", "boards", "nextNumber", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
 const BoardMemberEditor = {name: "BoardMemberEditor", props: ["board", "member", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
-const stubs = {BoardEditor, BoardMemberEditor, NotFound: {template: "<div data-testid=missing />"}}
+const stubs = {BoardEditor, BoardMemberEditor, NotFound: {template: "<div data-testid=missing />"}, VMain: {template: "<main><slot /></main>"}}
 
 const mountAt = async (page: typeof BoardEdit, params: Record<string, string>) => {
   route.params = params
@@ -77,5 +77,11 @@ describe("the board member edit page", () => {
   it("is not found for a member or a board nobody recorded", async () => {
     expect((await mountAt(BoardMemberEdit, {number: "10", member: "99"})).find("[data-testid=missing]").exists()).toBe(true)
     expect((await mountAt(BoardMemberEdit, {number: "44"})).find("[data-testid=missing]").exists()).toBe(true)
+  })
+
+  it("stands a placeholder while the boards are still on their way", async () => {
+    state.loading = true
+    expect((await mountAt(BoardEdit, {number: "10"})).find("[data-testid=board-edit-placeholder]").exists()).toBe(true)
+    expect((await mountAt(BoardMemberEdit, {number: "10", member: "9"})).find("[data-testid=board-member-edit-placeholder]").exists()).toBe(true)
   })
 })

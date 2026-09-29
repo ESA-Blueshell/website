@@ -24,8 +24,21 @@ class CommitteeService
         private val pictures: StoredPictures,
         private val games: GameService,
     ) {
+        /**
+         * Every committee, with what a listing draws of each already read.
+         *
+         * `enable_lazy_load_no_trans` is on, so a picture, game list or seat first touched after
+         * this returns is read in a session of its own, one committee at a time. Touched here,
+         * inside the transaction, `default_batch_fetch_size` reads each kind in one query.
+         */
         @Transactional(readOnly = true)
-        fun findAll(): List<Committee> = repository.findAll()
+        fun findAll(): List<Committee> =
+            repository.findAll().onEach { committee ->
+                committee.gameCodes.size
+                committee.members.size
+                committee.banner?.renditions?.size
+                committee.icon?.renditions?.size
+            }
 
         @Transactional(readOnly = true)
         fun findById(id: Long): Committee = repository.findById(id).orElseThrow { CommitteeNotFound(id) }

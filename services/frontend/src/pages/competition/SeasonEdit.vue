@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import Island from "@/components/island/Island.vue"
+import PagePlaceholder from "@/components/island/PagePlaceholder.vue"
 import {computed, ref, shallowRef, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import SeasonEditor from "@/domains/esports/components/SeasonEditor.vue"
@@ -47,4 +49,9 @@ const backOn = (id: number | null) => {
     @saved="saved => router.replace(backOn(saved.id))"
   />
   <not-found v-else-if="answered" />
+  <v-main v-else>
+    <island>
+      <page-placeholder testid="season-edit-placeholder" />
+    </island>
+  </v-main>
 </template>

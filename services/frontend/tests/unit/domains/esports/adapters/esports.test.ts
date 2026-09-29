@@ -9,7 +9,6 @@ import {
   loadEsportsPage,
   loadGameAccounts,
   loadPlayedRosters,
-  loadGames,
   loadSeasonContents,
   loadSeasonGames,
   loadTeams,
@@ -27,7 +26,6 @@ import {
   fieldTeam,
   findGame,
   findGameAccounts,
-  findCasualGames,
   findPlayedRosters,
   findSeasonContents,
   findSeasonGames,
@@ -37,8 +35,8 @@ import {
   uploadPublicImage,
 } from "@/services/api"
 import type {Image} from "@/services/api"
-import {FileType, TeamRole, type CasualGameResponse} from "@/services/api"
-import {aGame, aSeason, aTeam} from "../../../helpers/apiFixtures"
+import {FileType, TeamRole} from "@/services/api"
+import {aSeason, aTeam} from "../../../helpers/apiFixtures"
 import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
@@ -52,7 +50,6 @@ vi.mock("@/services/api", async (importOriginal) => ({
   findGame: vi.fn(),
   findGameAccounts: vi.fn(),
   findPlayedRosters: vi.fn(),
-  findCasualGames: vi.fn(),
   findSeasonContents: vi.fn(),
   findSeasonGames: vi.fn(),
   findTeams: vi.fn(),
@@ -75,28 +72,6 @@ const optionsOf = (call: unknown) => call as Record<string, any>
 beforeEach(() => {
   vi.clearAllMocks()
 })
-
-describe("loadGames", () => {
-  it("answers with the games it read, drawn against the api rather than the page's own origin", async () => {
-    vi.mocked(findCasualGames).mockResolvedValue(answer(findCasualGames, [aGame({code: "VAL", name: "Valorant", banner: picture("/media/val.png"), icon: null})]))
-
-    const [game] = await loadGames()
-
-    expect(game?.banner?.url).toBe(apiUrl("/media/val.png"))
-    expect(game?.banner?.renditions[0]?.url).toBe(apiUrl("/media/val.png?w=600"))
-  })
-
-  // Every page asks for this, including ones served before the api is reachable, so a body that
-  // is not the list it was promised reads as no games rather than taking the navigation down.
-  it("answers with no games at all where the body was not a list", async () => {
-    vi.mocked(findCasualGames).mockResolvedValue(answer(findCasualGames, {message: "no"} as unknown as CasualGameResponse[]))
-
-    await expect(loadGames()).resolves.toEqual([])
-  })
-})
-
-
-
 
 describe("loadSeasonContents", () => {
   // Deliberate rather than an oversight: this answers zero where it could not read, so the offer

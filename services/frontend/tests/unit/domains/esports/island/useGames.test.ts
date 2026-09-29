@@ -1,9 +1,12 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {forgetGames, useGames} from "@/domains/esports/island/useGames"
-import {loadGames, type Game} from "@/domains/esports/adapters/esports"
+import {useCasualGames} from "@/domains/games"
+import type {Game} from "@/domains/esports/adapters/esports"
+import {loadCasualGames} from "@/domains/games/adapters/games"
 
-vi.mock("@/domains/esports/adapters/esports", () => ({
-  loadGames: vi.fn(),
+// The competition pages share the casual pages' read of the games, so this is the one asked.
+vi.mock("@/domains/games/adapters/games", () => ({
+  loadCasualGames: vi.fn(),
 }))
 
 const art = (path: string) => ({
@@ -34,7 +37,7 @@ const read = async () => {
 beforeEach(() => {
   vi.clearAllMocks()
   forgetGames()
-  vi.mocked(loadGames).mockResolvedValue([VALORANT, CSGO])
+  vi.mocked(loadCasualGames).mockResolvedValue([VALORANT, CSGO])
 })
 
 describe("useGames", () => {
@@ -84,11 +87,12 @@ describe("useGames", () => {
     expect(games.bySlug("no-such-page")).toBeNull()
   })
 
-  it("reads the games once, however many pages ask for them", async () => {
+  it("reads the games once, however many pages ask for them, the casual pages among them", async () => {
     await read()
     await read()
+    await useCasualGames().ready
 
-    expect(vi.mocked(loadGames).mock.calls.length).toBe(1)
+    expect(vi.mocked(loadCasualGames).mock.calls.length).toBe(1)
   })
 
   it("reads them again once a page that wrote a game says to forget", async () => {
@@ -96,6 +100,6 @@ describe("useGames", () => {
     forgetGames()
     await read()
 
-    expect(vi.mocked(loadGames).mock.calls.length).toBe(2)
+    expect(vi.mocked(loadCasualGames).mock.calls.length).toBe(2)
   })
 })

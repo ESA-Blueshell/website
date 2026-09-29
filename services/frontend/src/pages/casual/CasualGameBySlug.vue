@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import {useRoute} from "vue-router"
+import Island from "@/components/island/Island.vue"
+import PagePlaceholder from "@/components/island/PagePlaceholder.vue"
 import CasualGamePage from "@/domains/games/components/CasualGamePage.vue"
 import {useCasualGames} from "@/domains/games"
 import NotFound from "@/pages/NotFound.vue"
@@ -33,4 +35,9 @@ watch(record, (found) => {
     :game="record"
   />
   <not-found v-else-if="answered" />
+  <v-main v-else>
+    <island>
+      <page-placeholder testid="casual-game-placeholder" />
+    </island>
+  </v-main>
 </template>

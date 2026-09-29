@@ -74,9 +74,12 @@ const games = [
   {code: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: null, sortIndex: 3, inCompetition: true},
 ]
 
+vi.mock("@/domains/games/adapters/games", () => ({
+  loadCasualGames: vi.fn(async () => games),
+}))
+
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadSeasonGames: vi.fn(async () => seasonGames),
-  loadGames: vi.fn(async () => games),
   saveSeasonOrReason: vi.fn(async () => ({ok: true, saved: seasons[0]})),
   leaveGameInSeason: vi.fn(async () => ({ok: true})),
   // Every season written down, which is more than the games were fielded in.

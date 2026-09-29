@@ -7,6 +7,7 @@ import BackBar from "@/components/island/BackBar.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
+import PagePlaceholder from "@/components/island/PagePlaceholder.vue"
 import store from "@/plugins/store"
 import {tabTitle} from "@/plugins/tabTitle"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -200,6 +201,10 @@ function signedOut(signUpId: number) {
           See what is on
         </cut-button>
       </section>
+      <page-placeholder
+        v-else
+        testid="event-placeholder"
+      />
     </island>
   </v-main>
 </template>

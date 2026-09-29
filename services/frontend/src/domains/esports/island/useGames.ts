@@ -1,6 +1,6 @@
 import {computed, type ComputedRef, type Ref} from "vue"
-import {sharedList} from "@/utils/sharedLists"
-import {loadGames, type GameCode, type Game} from "../adapters/esports"
+import {forgetCasualGames, useCasualGames} from "@/domains/games"
+import type {GameCode, Game} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "@/components/island/pictures"
 import {BRAND_ACCENT} from "@/utils/brand"
 
@@ -45,11 +45,9 @@ const identify = (record: Game): GameIdentity => ({
  * The games the association knows, read once and shared.
  *
  * Which games exist, what each is called and the art each carries are one answer from the api,
- * so a page and the database cannot disagree. This is where the pages ask for it.
+ * so a page and the database cannot disagree. The casual pages read the same answer, so this
+ * shares their list rather than asking the api a second time.
  */
-const list = sharedList(() => loadGames())
-const records = list.records
-
 export function useGames(): {
   games: Ref<Game[]>
   current: ComputedRef<Game[]>
@@ -59,12 +57,13 @@ export function useGames(): {
   bySlug: (slug: string) => Game | null
   refresh: () => Promise<Game[]>
 } {
+  const {games: records, ready, refresh} = useCasualGames()
   const recordOf = (game: GameCode | string) => records.value.find(one => one.code === game) ?? null
 
   return {
     games: records,
     current: computed(() => records.value.filter(one => one.inCompetition)),
-    ready: list.read(),
+    ready,
     identityOf: (game) => {
       const record = recordOf(game)
       // No record means the records have not answered yet, or the code names no game. Either
@@ -73,9 +72,9 @@ export function useGames(): {
     },
     recordOf,
     bySlug: (slug) => records.value.find(one => one.slug === slug) ?? null,
-    refresh: list.refresh,
+    refresh,
   }
 }
 
 /** Forgets what was read, so a test can start from nothing. */
-export const forgetGames = list.forget
+export const forgetGames = forgetCasualGames

@@ -82,11 +82,8 @@ describe("useInboundReconcile", () => {
 
 function preview(overrides: Partial<InboundReconcilePreview> = {}): InboundReconcilePreview {
   return {
-    subjectId: 10,
-    cohortId: 20,
-    system: "BREVO",
-    externalTargetId: "list-20",
-    fact: { kind: "CONTRIBUTION_PAID", key: "12" },
+    cohortLabel: "Paid this year",
+    definitionKey: "contribution-paid",
     writerSupported: true,
     previewToken: "token-1",
     remoteCount: 4,
@@ -95,19 +92,19 @@ function preview(overrides: Partial<InboundReconcilePreview> = {}): InboundRecon
       row("ext-true", true, false),
       row("ext-unsupported", false, false),
     ],
-    skipped: [{ externalUserId: "ext-skip", externalLabel: null, reason: "UNMATCHED" }],
+    skipped: [{ externalUserId: "ext-skip", externalLabel: null, reason: "UNMATCHED", alreadyMember: false, writable: false }],
     ...overrides,
   }
 }
 
-function row(externalUserId: string, alreadyTrue: boolean, writable: boolean) {
+function row(externalUserId: string, alreadyMember: boolean, writable: boolean) {
   return {
     externalUserId,
     externalLabel: externalUserId,
     userId: externalUserId.length,
     userFullName: externalUserId,
     userEmail: `${externalUserId}@example.org`,
-    alreadyTrue,
+    alreadyMember,
     writable,
   }
 }

@@ -1,7 +1,7 @@
-<script generic="T" lang="ts" setup>
+<script generic="T, Shown = T" lang="ts" setup>
 import {Field} from "vee-validate"
 import FormControl from "@/components/island/FormControl.vue"
-import type {DefineComponent} from "vue"
+import type {Component} from "vue"
 import type {DisplayFn, HandleChange, UpdateFn} from "@/types/VVField.types.ts"
 
 defineOptions({inheritAttrs: false})
@@ -14,22 +14,23 @@ withDefaults(
     label?: string
     rules?: Rules
     testId?: string
-    component?: DefineComponent | string
+    component?: Component | string
     componentProps?: Record<string, unknown>
     disabled?: boolean
-    display?: DisplayFn<T>
-    update?: UpdateFn<T>
+    display?: DisplayFn<T, Shown>
+    update?: UpdateFn<T, Shown>
   }>(),
   {
     label: "",
     rules: "",
     testId: undefined,
-    component: () => FormControl as unknown as DefineComponent,
+    component: () => FormControl,
     componentProps: () => ({}),
     disabled: false,
-    display: (v: T) => v,
-    update: (incoming: T, handleChange: HandleChange<T>) => {
-      handleChange(incoming)
+    // Without a display or an update the control shows and emits the value itself.
+    display: (v: T) => v as unknown as Shown,
+    update: (incoming: Shown, handleChange: HandleChange<T>) => {
+      handleChange(incoming as unknown as T)
     },
   },
 )
@@ -56,7 +57,7 @@ const model = defineModel<T>()
         :model-value="display(value as T)"
         v-bind="{...componentProps, ...$attrs}"
         @blur="handleBlur"
-        @update:model-value="(v: T) => update(v, handleChange as (v: T) => void)"
+        @update:model-value="(v: Shown) => update(v, handleChange as (v: T) => void)"
       >
         <template
           v-if="$slots.label"

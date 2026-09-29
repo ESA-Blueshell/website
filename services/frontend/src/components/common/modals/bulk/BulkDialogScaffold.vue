@@ -411,12 +411,6 @@ defineExpose({validate})
                   >
                     {{ reasonLabel(row.reason) }}
                   </span>
-                  <span
-                    v-if="row.lastSentOn"
-                    class="text-medium-emphasis ml-1"
-                  >
-                    Last sent {{ row.lastSentOn }}
-                  </span>
                 </span>
               </template>
             </slot>

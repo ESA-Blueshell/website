@@ -7,8 +7,9 @@ const {mockDeleteAddress, mockHandleNetworkError} = vi.hoisted(() => ({
   mockHandleNetworkError: vi.fn(),
 }))
 
-vi.mock("@/domains/user", () => ({
+vi.mock("@/domains/user", async () => ({
   deleteAddress: mockDeleteAddress,
+  Role: (await import("@/services/api")).Role,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({$handleNetworkError: mockHandleNetworkError}))

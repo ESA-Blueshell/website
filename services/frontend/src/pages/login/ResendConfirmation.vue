@@ -20,7 +20,7 @@
             v-slot="{ meta }"
             as="form"
             data-testid="resend-confirmation-form"
-            @submit="onSubmit"
+            @submit="() => onSubmit()"
           >
             <v-row>
               <v-col cols="12">

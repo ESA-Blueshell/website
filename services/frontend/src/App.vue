@@ -39,7 +39,7 @@
     </v-snackbar>
 
     <v-snackbar
-      v-model="statusSnackbarMessage"
+      v-model="snackbarOpen"
       timeout="10000"
     >
       <!-- eslint-disable-next-line vue/no-v-html -->
@@ -120,6 +120,14 @@ const theme = useTheme()
 const statusSnackbarMessage = computed({
   get: (): string => store.state.statusSnackbarMessage,
   set: (message: string) => store.commit("setStatusSnackbarMessage", message),
+})
+
+// The snackbar closes itself on its timeout, which clears the message rather than storing `false`.
+const snackbarOpen = computed({
+  get: (): boolean => !!store.state.statusSnackbarMessage,
+  set: (open: boolean) => {
+    if (!open) store.commit("setStatusSnackbarMessage", "")
+  },
 })
 
 const statusSnackbarAction = computed((): SnackbarAction | null => store.state.statusSnackbarAction)

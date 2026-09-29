@@ -259,9 +259,9 @@ const dark = ref(true)
             v-model="pick"
             label="How often"
             :options="[
-              {value: 'weekly', label: 'Every week'},
-              {value: 'monthly', label: 'Every month'},
-              {value: 'never', label: 'Never'},
+              {key: 'weekly', label: 'Every week'},
+              {key: 'monthly', label: 'Every month'},
+              {key: 'never', label: 'Never'},
             ]"
           />
         </div>

@@ -4,8 +4,7 @@
     "moduleResolution": "bundler"
   },
   "vueCompilerOptions": {
-    "strictTemplates": false,
-    "skipTemplateCodegen": true
+    "strictTemplates": false
   },
   "include": [
     "env.d.ts",

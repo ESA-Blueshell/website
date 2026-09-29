@@ -7,7 +7,7 @@
  * counter ticks up the moment the admin presses retry. The frontend reflects
  * that value directly.
  */
-export const attemptsLabel = (attempts?: number): string => {
+export const attemptsLabel = (attempts?: number | null): string => {
   const count = attempts ?? 0
   return `${count} ${count === 1 ? "attempt" : "attempts"}`
 }

@@ -88,6 +88,10 @@ const said = computed<string>(() => label.trimEnd().replace(/\*$/, "").trimEnd()
    rises at once rather than sitting on top of it. */
 const SELF_DRAWN = new Set(["date", "datetime-local", "month", "time", "week"])
 const DRAWS_ITS_OWN = new Set<ControlKind>(["date", "time", "datetime", "count", "money"])
+// The date, time and moment kinds have inputs of their own above, so only these reach the text input.
+const TEXT_TYPES = ["text", "email", "tel", "url", "number", "password"] as const
+const textType = computed(() => TEXT_TYPES.find((type) => type === kind) ?? "text")
+
 const drawsItsOwn = computed<boolean>(() => DRAWS_ITS_OWN.has(kind) || SELF_DRAWN.has(typedAs.value))
 /* A markdown box is tall and its label sits over it, so the label stays up rather than resting in
    the middle of an empty box. */
@@ -247,7 +251,7 @@ const inset = computed(() =>
         :invalid="invalid"
         :placeholder="placeholder"
         :testid="undefined"
-        :type="kind"
+        :type="textType"
         v-bind="rest"
         @blur="emit('blur')"
       />

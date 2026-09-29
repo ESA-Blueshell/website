@@ -59,7 +59,7 @@
               width="600"
             />
             <iframe
-              allowfullscreen=""
+              allowfullscreen
               height="450"
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"

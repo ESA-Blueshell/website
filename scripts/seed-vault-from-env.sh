@@ -2,8 +2,8 @@
 # Load one or more dotenv-style files, map the known keys into the
 # website's Vault paths, and optionally write them.
 #
-# Trusted-input script: env files are operator-controlled migration
-# artefacts, not untrusted user uploads.
+# Trusted-input script: env files are operator-controlled, not untrusted
+# user uploads.
 
 set -euo pipefail
 
@@ -13,14 +13,11 @@ Usage:
   scripts/seed-vault-from-env.sh [--apply] [--sync-api] [env-file ...]
 
 Examples:
-  scripts/seed-vault-from-env.sh \
-    ../blueshell-website-old/.env \
-    services/api/.db.env \
-    services/api/.api.env
+  scripts/seed-vault-from-env.sh services/api/.db.env services/api/.api.env
 
   scripts/seed-vault-from-env.sh --apply services/api/.db.env services/api/.api.env
 
-  scripts/seed-vault-from-env.sh --apply --sync-api ../legacy/.env
+  scripts/seed-vault-from-env.sh --apply --sync-api services/api/.api.env
 
 If no env files are given, the current shell environment is used.
 Without --apply the script prints the Vault paths/fields it would write.
@@ -69,17 +66,8 @@ load_env_file() {
   done <"$file"
 }
 
-first_value() {
-  local key
-  local value
-  for key in "$@"; do
-    value="${!key-}"
-    if [[ -n "$value" ]]; then
-      printf '%s' "$value"
-      return 0
-    fi
-  done
-  return 1
+env_value() {
+  printf '%s' "${!1-}"
 }
 
 append_field() {
@@ -224,52 +212,6 @@ sync_api_secret() {
   echo "Watch rollout: kubectl -n default get pod -l app.kubernetes.io/name=api -w"
 }
 
-build_google_sa_json() {
-  local direct pk project
-
-  if direct="$(first_value GOOGLE_CALENDAR_SA_JSON 2>/dev/null)"; then
-    printf '%s' "$direct"
-    return 0
-  fi
-
-  local client_id client_email private_key_id private_key_pkcs8
-  client_id="$(first_value GOOGLE_CALENDAR_CLIENT_ID CALENDAR_CLIENT_ID 2>/dev/null || true)"
-  client_email="$(first_value GOOGLE_CALENDAR_CLIENT_EMAIL CALENDAR_CLIENT_EMAIL 2>/dev/null || true)"
-  private_key_id="$(first_value GOOGLE_CALENDAR_PRIVATE_KEY_ID CALENDAR_PRIVATEKEY_ID 2>/dev/null || true)"
-  private_key_pkcs8="$(first_value GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8 CALENDAR_PRIVATEKEY_PKCS8 2>/dev/null || true)"
-
-  if [[ -z "$client_id" || -z "$client_email" || -z "$private_key_id" || -z "$private_key_pkcs8" ]]; then
-    return 1
-  fi
-
-  pk="$(printf '%b' "$private_key_pkcs8")"
-  project="$(printf '%s' "$client_email" | awk -F'[@.]' '{print $2}')"
-  [[ -n "$project" ]] || {
-    echo "Could not derive Google project_id from $client_email" >&2
-    return 1
-  }
-
-  jq -n -c \
-    --arg cid "$client_id" \
-    --arg cem "$client_email" \
-    --arg pki "$private_key_id" \
-    --arg pk "$pk" \
-    --arg prj "$project" \
-    '{
-      type:                        "service_account",
-      project_id:                  $prj,
-      private_key_id:              $pki,
-      private_key:                 $pk,
-      client_email:                $cem,
-      client_id:                   $cid,
-      auth_uri:                    "https://accounts.google.com/o/oauth2/auth",
-      token_uri:                   "https://oauth2.googleapis.com/token",
-      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-      client_x509_cert_url:        ("https://www.googleapis.com/robot/v1/metadata/x509/" + ($cem|@uri)),
-      universe_domain:             "googleapis.com"
-    }'
-}
-
 APPLY=0
 SYNC_API=0
 FILES=()
@@ -298,9 +240,7 @@ if [[ "$SYNC_API" -eq 1 && "$APPLY" -ne 1 ]]; then
   exit 1
 fi
 
-for cmd in jq vault awk; do
-  command -v "$cmd" >/dev/null 2>&1 || { echo "missing command: $cmd" >&2; exit 1; }
-done
+command -v vault >/dev/null 2>&1 || { echo "missing command: vault" >&2; exit 1; }
 if [[ "$SYNC_API" -eq 1 ]]; then
   for cmd in kubectl base64; do
     command -v "$cmd" >/dev/null 2>&1 || { echo "missing command: $cmd" >&2; exit 1; }
@@ -325,31 +265,24 @@ EDGE_FIELDS=()
 GHCR_ARGS=()
 GHCR_FIELDS=()
 
-jwt_secret="$(first_value JWT_SECRET 2>/dev/null || true)"
+jwt_secret="$(env_value JWT_SECRET)"
 if [[ "$jwt_secret" =~ ^[0-9A-Fa-f]{64}$ ]]; then
   echo "Warning: JWT_SECRET looks like a 32-byte hex string. Production expects Base64 that decodes to at least 64 bytes." >&2
 fi
 
 append_field secret/api jwt-secret "$jwt_secret"
-append_field secret/api two-factor-encryption-key "$(first_value TWO_FACTOR_ENCRYPTION_KEY 2>/dev/null || true)"
-append_field secret/api brevo-api-key "$(first_value BREVO_API_KEY BREVO_APIKEY 2>/dev/null || true)"
-append_field secret/api brevo-folder-contribution-periods-id "$(first_value BREVO_FOLDER_CONTRIBUTION_PERIODS_ID 2>/dev/null || true)"
-append_field secret/api mollie-api-key "$(first_value MOLLIE_API_KEY 2>/dev/null || true)"
-append_field secret/api google-calendar-id "$(first_value GOOGLE_CALENDAR_ID CALENDAR_ID 2>/dev/null || true)"
-append_field secret/api google-calendar-sa-json "$(build_google_sa_json || true)"
-append_field secret/api facebook-page-id "$(first_value FACEBOOK_PAGE_ID 2>/dev/null || true)"
-append_field secret/api facebook-access-token "$(first_value FACEBOOK_ACCESS_TOKEN 2>/dev/null || true)"
-append_field secret/api x-api-key "$(first_value X_API_KEY 2>/dev/null || true)"
-append_field secret/api x-api-secret "$(first_value X_API_SECRET 2>/dev/null || true)"
-append_field secret/api x-access-token "$(first_value X_ACCESS_TOKEN 2>/dev/null || true)"
-append_field secret/api x-access-secret "$(first_value X_ACCESS_SECRET 2>/dev/null || true)"
-append_field secret/api discord-bot-token "$(first_value DISCORD_BOT_TOKEN 2>/dev/null || true)"
-append_field secret/api discord-guild-id "$(first_value DISCORD_GUILD_ID 2>/dev/null || true)"
-append_field secret/api vault-oidc-client-secret "$(first_value VAULT_OIDC_CLIENT_SECRET 2>/dev/null || true)"
+append_field secret/api two-factor-encryption-key "$(env_value TWO_FACTOR_ENCRYPTION_KEY)"
+append_field secret/api brevo-api-key "$(env_value BREVO_API_KEY)"
+append_field secret/api brevo-folder-contribution-periods-id "$(env_value BREVO_FOLDER_CONTRIBUTION_PERIODS_ID)"
+append_field secret/api google-calendar-id "$(env_value GOOGLE_CALENDAR_ID)"
+append_field secret/api google-calendar-sa-json "$(env_value GOOGLE_CALENDAR_SA_JSON)"
+append_field secret/api discord-bot-token "$(env_value DISCORD_BOT_TOKEN)"
+append_field secret/api discord-guild-id "$(env_value DISCORD_GUILD_ID)"
+append_field secret/api vault-oidc-client-secret "$(env_value VAULT_OIDC_CLIENT_SECRET)"
 
-mariadb_root_password="$(first_value MYSQL_ROOT_PASSWORD MARIADB_ROOT_PASSWORD 2>/dev/null || true)"
-mariadb_user="$(first_value MYSQL_USER MARIADB_USER 2>/dev/null || true)"
-mariadb_password="$(first_value MYSQL_PASSWORD MARIADB_PASSWORD 2>/dev/null || true)"
+mariadb_root_password="$(env_value MYSQL_ROOT_PASSWORD)"
+mariadb_user="$(env_value MYSQL_USER)"
+mariadb_password="$(env_value MYSQL_PASSWORD)"
 
 # Mirror the app DB user + password into secret/api so the Vault Agent
 # template in apps/stateless/api/deployment.yaml can render them
@@ -358,8 +291,8 @@ mariadb_password="$(first_value MYSQL_PASSWORD MARIADB_PASSWORD 2>/dev/null || t
 # creds (`spring.cloud.vault.database.enabled=true`) are working.
 append_field secret/api mysql-user     "$mariadb_user"
 append_field secret/api mysql-password "$mariadb_password"
-mariadb_admin_user="$(first_value MARIADB_ADMIN_USER MYSQL_ADMIN_USER 2>/dev/null || true)"
-mariadb_admin_password="$(first_value MARIADB_ADMIN_PASSWORD MYSQL_ADMIN_PASSWORD 2>/dev/null || true)"
+mariadb_admin_user="$(env_value MARIADB_ADMIN_USER)"
+mariadb_admin_password="$(env_value MARIADB_ADMIN_PASSWORD)"
 
 if [[ -z "$mariadb_admin_user" && -n "$mariadb_root_password" ]]; then
   mariadb_admin_user="root"
@@ -373,22 +306,15 @@ append_field secret/platform/mariadb user "$mariadb_user"
 append_field secret/platform/mariadb password "$mariadb_password"
 append_field secret/platform/mariadb admin-user "$mariadb_admin_user"
 append_field secret/platform/mariadb admin-password "$mariadb_admin_password"
-# DELETE AFTER PR 11: `legacy-user`/`legacy-password` capture the old
-# Swarm-era app login purely for operator reference during the apex
-# cutover. The v2 stack does not read these fields, and once the old
-# VPS is decommissioned they're noise in `vault kv get`. Drop both the
-# lines below and any seeded values when cleaning up the retired env.
-append_field secret/platform/mariadb legacy-user "$(first_value DATABASE_USERNAME 2>/dev/null || true)"
-append_field secret/platform/mariadb legacy-password "$(first_value DATABASE_PASSWORD 2>/dev/null || true)"
 
-append_field secret/platform/mail admin-user "$(first_value STALWART_ADMIN_USER 2>/dev/null || true)"
-append_field secret/platform/mail admin-password "$(first_value STALWART_ADMIN_PASSWORD 2>/dev/null || true)"
-append_field secret/platform/mail bounce-mailbox-user "$(first_value BOUNCE_MAILBOX_USER EMAIL_BOUNCE_IMAP_USERNAME 2>/dev/null || true)"
-append_field secret/platform/mail bounce-mailbox-password "$(first_value BOUNCE_MAILBOX_PASSWORD EMAIL_BOUNCE_IMAP_PASSWORD 2>/dev/null || true)"
+append_field secret/platform/mail admin-user "$(env_value STALWART_ADMIN_USER)"
+append_field secret/platform/mail admin-password "$(env_value STALWART_ADMIN_PASSWORD)"
+append_field secret/platform/mail bounce-mailbox-user "$(env_value EMAIL_BOUNCE_IMAP_USERNAME)"
+append_field secret/platform/mail bounce-mailbox-password "$(env_value EMAIL_BOUNCE_IMAP_PASSWORD)"
 
-append_field secret/platform/edge cloudflare.dns_api_token "$(first_value CLOUDFLARE_DNS_API_TOKEN CF_DNS_API_TOKEN 2>/dev/null || true)"
-append_field secret/platform/ghcr username "$(first_value GHCR_USERNAME GITHUB_PACKAGE_USERNAME 2>/dev/null || true)"
-append_field secret/platform/ghcr token "$(first_value GHCR_TOKEN GITHUB_PACKAGE_TOKEN 2>/dev/null || true)"
+append_field secret/platform/edge cloudflare.dns_api_token "$(env_value CF_DNS_API_TOKEN)"
+append_field secret/platform/ghcr username "$(env_value GHCR_USERNAME)"
+append_field secret/platform/ghcr token "$(env_value GHCR_TOKEN)"
 
 if [[ ${#API_ARGS[@]} -eq 0 && ${#MARIADB_ARGS[@]} -eq 0 && ${#MAIL_ARGS[@]} -eq 0 && ${#EDGE_ARGS[@]} -eq 0 && ${#GHCR_ARGS[@]} -eq 0 ]]; then
   echo "No mapped secret values were found in the provided environment." >&2

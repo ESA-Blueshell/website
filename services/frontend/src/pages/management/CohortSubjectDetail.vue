@@ -6,7 +6,7 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
 import TargetPath from "@/domains/cohorts/components/TargetPath.vue"
 import {TargetSystem, fetchCohortSubject, linkUserToExternal, queueCohortJob, removeExternalMember, triggerReconcile, type CohortMember, type CohortSubject, type CohortSyncState, type ExternalUserConflict, type TargetMapping} from "@/domains/cohorts"
-import {categoryLabel, isMember, memberName, memberSystemLabel, syncChipColour, syncLabel, systemLabel} from "@/domains/cohorts"
+import {categoryLabel, driftLabel, earlierDrift, isMember, memberName, memberSystemLabel, syncChipColour, syncLabel, systemLabel} from "@/domains/cohorts"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
 import TargetPickerModal from "@/domains/cohorts/components/TargetPickerModal.vue"
@@ -538,6 +538,21 @@ watch(subjectId, () => void load())
                         :data-testid="`cohort-subject-target-reconciled-${mapping.system.toLowerCase()}`"
                       >
                         {{ lastReconciledLabel(mapping) }}
+                        <div
+                          v-if="driftLabel(mapping)"
+                          class="text-caption"
+                          :data-testid="`cohort-subject-target-drift-${mapping.system.toLowerCase()}`"
+                        >
+                          {{ driftLabel(mapping) }}
+                        </div>
+                        <div
+                          v-for="(line, index) in earlierDrift(mapping)"
+                          :key="index"
+                          class="text-caption text-medium-emphasis"
+                          :data-testid="`cohort-subject-target-drift-history-${mapping.system.toLowerCase()}`"
+                        >
+                          {{ line }}
+                        </div>
                       </td>
                       <td class="text-right">
                         <v-menu location="bottom end">

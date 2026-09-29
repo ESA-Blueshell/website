@@ -1,6 +1,7 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.sync.api.ExternalIdConflictException
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 
@@ -39,9 +40,12 @@ interface CohortRemediation {
      * present members, demotes vanished ones, records strangers, and
      * enqueues follow-up ADD/contact jobs for discrepancies. The
      * per-member sync path establishes health; this only verifies it.
-     * Run by the `cohort.reconcile-list` job.
+     * Run by the `cohort.reconcile-list` job, which records each run's drift with [trigger].
      */
-    fun verifyCohort(cohortId: Long)
+    fun verifyCohort(
+        cohortId: Long,
+        trigger: JobTrigger? = null,
+    )
 
     /**
      * Operator-triggered repair for a bound cohort after a target has been

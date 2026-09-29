@@ -1,0 +1,31 @@
+# Each reconcile of a target writes one run: when, what started it, and how many people were in
+# step, ours only and theirs only. The cohort page reads the latest as the target's drift and the
+# recent ones as its history (architecture ADR-011: reconcile records, it changes nothing).
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-29-target-reconcile-run.yaml
+      id: target-reconcile-run
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: target_reconcile_run
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_target_reconcile_run, nullable: false}
+              - column: {name: cohort_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: started_at, type: DATETIME(6), constraints: {nullable: false}}
+              - column: {name: run_trigger, type: VARCHAR(32)}
+              - column: {name: in_sync, type: INT, constraints: {nullable: false}}
+              - column: {name: ours_only, type: INT, constraints: {nullable: false}}
+              - column: {name: theirs_only, type: INT, constraints: {nullable: false}}
+        - createIndex:
+            tableName: target_reconcile_run
+            indexName: idx_target_reconcile_run_cohort
+            columns:
+              - column: {name: cohort_id}
+              - column: {name: started_at}
+      rollback:
+        - dropTable: {tableName: target_reconcile_run}

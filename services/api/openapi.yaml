@@ -1090,6 +1090,11 @@ components:
           items:
             type: string
           type: array
+        runs:
+          description: The target's recent reconciles, newest first; the first is its current drift
+          items:
+            $ref: '#/components/schemas/ReconcileRun'
+          type: array
         system:
           $ref: '#/components/schemas/TargetSystem'
           description: External system this mapping targets
@@ -1099,6 +1104,7 @@ components:
       - kind
       - label
       - path
+      - runs
       - system
       type: object
     CohortMemberRow:
@@ -4133,6 +4139,32 @@ components:
           type: string
       required:
       - reason
+      type: object
+    ReconcileRun:
+      description: One reconcile of a target and the drift it found.
+      properties:
+        inSync:
+          format: int32
+          type: integer
+        oursOnly:
+          format: int32
+          type: integer
+        startedAt:
+          format: date-time
+          type: string
+        theirsOnly:
+          format: int32
+          type: integer
+        trigger:
+          description: What queued it; null for a run queued before runs recorded it
+          oneOf:
+          - $ref: '#/components/schemas/JobTrigger'
+          - type: 'null'
+      required:
+      - inSync
+      - oursOnly
+      - startedAt
+      - theirsOnly
       type: object
     RecoveryEmailPreviewResponse:
       description: A recovery email rendered for inspection. No token was issued to produce it.

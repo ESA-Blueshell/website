@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
@@ -11,6 +12,8 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.TargetReconcileRun
+import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
@@ -33,6 +36,7 @@ class CohortRemediationServiceTest {
     private val externalIds: ExternalIdMappingService = mockk()
     private val targetIds: CohortTargetIds = mockk()
     private val jobs: JobQueue = mockk(relaxed = true)
+    private val runs: TargetReconcileRunRepository = mockk { every { save(any()) } answers { firstArg() } }
     private val port = RecordingTargetStrategy()
     private val service =
         CohortRemediationService(
@@ -44,6 +48,7 @@ class CohortRemediationServiceTest {
             targetIds = targetIds,
             strategies = TargetStrategies(listOf(port)),
             jobs = jobs,
+            runs = runs,
             transactionManager = ImmediateTransactionManager(),
         )
 
@@ -344,5 +349,31 @@ class CohortRemediationServiceTest {
         override fun doCommit(status: DefaultTransactionStatus) = Unit
 
         override fun doRollback(status: DefaultTransactionStatus) = Unit
+    }
+
+    @Test
+    fun `every reconcile records a run with its trigger and the drift the ledger holds after it`() {
+        val subject = subject(7L)
+        val cohort = cohort(99L, subject.id!!)
+        port.remote = emptyList()
+        every { cohorts.findById(99L) } returns Optional.of(cohort)
+        every { subjects.findById(7L) } returns Optional.of(subject)
+        every { targetIds.require(any()) } returns "list-99"
+        every { externalIds.findBatch(any(), any(), any()) } returns emptyList()
+        every { members.findAllByCohortId(99L) } returns
+            listOf(
+                member(cohort, subject, 1L, "e1", syncedAt = LocalDateTime.now(), verifiedAt = LocalDateTime.now()),
+                member(cohort, subject, userId = 2L),
+                member(cohort, subject, userId = 3L, externalUserId = "e3", syncedAt = LocalDateTime.now()),
+                member(cohort, subject, userId = null, externalUserId = "stranger", verifiedAt = LocalDateTime.now()),
+            )
+        val saved = slot<TargetReconcileRun>()
+        every { runs.save(capture(saved)) } answers { saved.captured }
+
+        service.verifyCohort(99L, JobTrigger.SCHEDULED_RUN)
+
+        assertThat(saved.captured.cohortId).isEqualTo(99L)
+        assertThat(saved.captured.trigger).isEqualTo(JobTrigger.SCHEDULED_RUN)
+        assertThat(listOf(saved.captured.inSync, saved.captured.oursOnly, saved.captured.theirsOnly)).containsExactly(1, 2, 1)
     }
 }

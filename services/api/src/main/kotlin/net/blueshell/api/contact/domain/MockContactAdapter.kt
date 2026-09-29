@@ -18,11 +18,13 @@ import java.util.concurrent.atomic.AtomicLong
 
 /**
  * In-memory [ContactAdapter] and [ContactListAdapter], standing in for Brevo where no Brevo API key
- * is set. The contact sync and the Brevo cohort target both run against it.
+ * is set. The contact sync and the Brevo cohort target both run against it. Both ports share one
+ * store, since a list names the contacts the other port holds, which is why it is long.
  *
  * Reports itself as [TargetSystem.BREVO], so a test exercises the Brevo path without reaching
  * an external API.
  */
+@Suppress("TooManyFunctions")
 @Service
 @WhenCredentialsMissing(Credentials.BREVO)
 class MockContactAdapter :

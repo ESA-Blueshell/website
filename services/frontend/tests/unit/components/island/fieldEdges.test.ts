@@ -11,7 +11,7 @@ import EventPicker from "@/components/form/fields/EventPicker.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import {emojiCompletion} from "@/components/island/markdownEmoji"
-import {markdownLive} from "@/components/island/markdownLive"
+import {emojiLive, markdownLive} from "@/components/island/markdownLive"
 
 const {mockEvents, mockPeriods, mockUsers} = vi.hoisted(() => ({
   mockEvents: vi.fn(), mockPeriods: vi.fn(), mockUsers: vi.fn(),
@@ -91,9 +91,9 @@ describe("an emoji drawn in the text", () => {
     const view = new EditorView({
       parent: document.body,
       state: EditorState.create({
-        doc: "we are :fire: about it",
+        doc: "we are 🔥 about it",
         selection: EditorSelection.cursor(0),
-        extensions: [markdown({base: markdownLanguage}), markdownLive],
+        extensions: [markdown({base: markdownLanguage}), markdownLive, emojiLive],
       }),
     })
     const drawn = view.contentDOM.querySelector<HTMLImageElement>("img.cm-emoji")

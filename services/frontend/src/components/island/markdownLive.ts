@@ -2,7 +2,6 @@ import {syntaxTree} from "@codemirror/language"
 import {EditorSelection, type EditorState, type Range, type SelectionRange} from "@codemirror/state"
 import {Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType}
   from "@codemirror/view"
-import * as emoji from "node-emoji"
 import {type MentionKind, nameMentions} from "@/domains/discord"
 import {TIMESTAMP, timestampText, type TimeStyle} from "@/plugins/discordTime"
 import {EMOJI, emojiSrc, SERVER_EMOJI, serverEmojiSrc} from "@/plugins/emojiArt"
@@ -32,7 +31,7 @@ const LINKS = new Set(["Link", "Image"])
 /** A mark that opens a line, shown on the whole line the cursor is on. */
 const LINE_MARKS = new Set(["HeaderMark", "QuoteMark", "SubtextMark"])
 
-/** Where a shortcode is only characters: code, and an address. */
+/** Where text is only characters: code, and an address. */
 const LITERAL = new Set(["InlineCode", "FencedCode", "CodeBlock", "URL", "Autolink", "HTMLTag"])
 
 /* Only while the editor is written in: a cursor rests at the start whether or not anybody
@@ -109,30 +108,12 @@ class EmojiArt extends WidgetType {
   }
 }
 
-/** `:name:`, which is how a description written before emoji were stored as themselves says one. */
-const SHORTCODE = /:([a-z0-9_+-]+):/g
-
 /** Whether the text at a position is code or an address; `side` -1 reads what ends there. */
 export const literalAt = (state: EditorState, at: number, side: -1 | 1 = 1): boolean => {
   for (let node: SyntaxNode | null = syntaxTree(state).resolveInner(at, side); node; node = node.parent) {
     if (LITERAL.has(node.name)) return true
   }
   return false
-}
-
-const shortcodesIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
-  const drawn: Range<Decoration>[] = []
-  for (const {from, to} of view.visibleRanges) {
-    for (const found of view.state.sliceDoc(from, to).matchAll(SHORTCODE)) {
-      const at = from + found.index
-      const end = at + found[0].length
-      if (touches(ranges, at, end) || literalAt(view.state, at)) continue
-      const said = emoji.get(found[1] as string)
-      if (!said) continue
-      drawn.push(Decoration.replace({widget: new EmojiArt(emojiSrc(said), said)}).range(at, end))
-    }
-  }
-  return drawn
 }
 
 /** A mention as the page draws it, named once the api has said who or what it is. */
@@ -289,7 +270,7 @@ const decorate = (view: EditorView): DecorationSet => {
     })
   }
   return Decoration.set(
-    [...marks, ...shortcodesIn(view, ranges), ...serverEmojiIn(view, ranges), ...mentionsIn(view, ranges)], true)
+    [...marks, ...serverEmojiIn(view, ranges), ...mentionsIn(view, ranges)], true)
 }
 
 /** Hides the marks, and redraws whenever the document, the view or the cursor moves. */

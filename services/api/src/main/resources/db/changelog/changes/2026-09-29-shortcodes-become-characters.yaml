@@ -1,0 +1,22 @@
+# The emoji shortcodes stored in descriptions before the editor wrote emoji as characters become
+# those characters (architecture ADR-010), so Discord shows them. Each value is kept as it was in
+# shortcode_rewrites, and a rollback writes those back before it drops the table.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-29-shortcodes-become-characters.yaml
+      id: shortcodes-become-characters
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: shortcode_rewrites
+            columns:
+              - column: {name: table_name, type: VARCHAR(64), constraints: {nullable: false}}
+              - column: {name: column_name, type: VARCHAR(64), constraints: {nullable: false}}
+              - column: {name: row_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: before_text, type: TEXT, constraints: {nullable: false}}
+        - addPrimaryKey:
+            tableName: shortcode_rewrites
+            columnNames: table_name, column_name, row_id
+            constraintName: pk_shortcode_rewrites
+        - customChange:
+            class: net.blueshell.api.platform.migration.ShortcodesBecomeCharacters

@@ -1,8 +1,7 @@
 import {Marked, type Token, type TokenizerAndRendererExtension, type Tokens} from "marked"
-import * as emoji from "node-emoji"
 import {voiceRoomUrl} from "@/domains/discord"
 import {TIMESTAMP, timestampText, type TimeStyle} from "@/plugins/discordTime"
-import {emojiImg, SERVER_EMOJI, serverEmojiImg, withEmojiArt} from "@/plugins/emojiArt"
+import {SERVER_EMOJI, serverEmojiImg, withEmojiArt} from "@/plugins/emojiArt"
 
 /*
  * A description read the way Discord reads a message (architecture ADR-010). Each rule is
@@ -69,22 +68,6 @@ const tilde: TokenizerAndRendererExtension = {
   tokenizer(src) {
     if (!src.startsWith("~") || src.startsWith("~~")) return undefined
     return {type: "text", raw: "~", text: "~"}
-  },
-}
-
-/** A shortcode written before shortcodes were turned into emoji as they were typed. */
-const shortcode: TokenizerAndRendererExtension = {
-  name: "shortcode",
-  level: "inline",
-  start: src => src.indexOf(":"),
-  tokenizer(src) {
-    const found = /^:([a-z0-9_+-]+):/.exec(src)
-    const character = found ? emoji.get(found[1] as string) : undefined
-    if (!found || !character) return undefined
-    return {type: "shortcode", raw: found[0], character}
-  },
-  renderer(token) {
-    return emojiImg(token.character as string)
   },
 }
 
@@ -195,7 +178,7 @@ export const discordMarked = new Marked({
   breaks: true,
   async: false,
   // Tried last to first, so bold is read before italic.
-  extensions: [subtext, timestamp, mention, serverEmoji, shortcode, tilde, strike, emphasis, strong, underline, spoiler],
+  extensions: [subtext, timestamp, mention, serverEmoji, tilde, strike, emphasis, strong, underline, spoiler],
   hooks: {preprocess: discordLines},
   renderer: {
     text(token: Tokens.Text | Tokens.Escape) {

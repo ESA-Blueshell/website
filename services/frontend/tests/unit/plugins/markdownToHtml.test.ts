@@ -3,7 +3,7 @@ import $markdownToHtml from "@/plugins/markdownToHtml"
 
 describe("markdownToHtml plugin", () => {
   it("renders markdown and emoji", () => {
-    const html = $markdownToHtml("**Bold** :rocket:")
+    const html = $markdownToHtml("**Bold** 🚀")
     expect(html).toContain("<strong>Bold</strong>")
     expect(html).toContain("🚀")
   })

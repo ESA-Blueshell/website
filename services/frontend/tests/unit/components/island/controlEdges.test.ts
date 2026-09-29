@@ -12,7 +12,7 @@ import CountryPicker from "@/components/island/CountryPicker.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import PhoneInput from "@/components/island/PhoneInput.vue"
 import {emojiCompletion} from "@/components/island/markdownEmoji"
-import {markdownLive} from "@/components/island/markdownLive"
+import {emojiLive, markdownLive} from "@/components/island/markdownLive"
 
 const {mockEvents, mockPeriods, mockUsers, mockSearch} = vi.hoisted(() => ({
   mockEvents: vi.fn(), mockPeriods: vi.fn(), mockUsers: vi.fn(), mockSearch: vi.fn(),
@@ -155,9 +155,9 @@ describe("an emoji written where a line is being read", () => {
     const view = new EditorView({
       parent: document.body,
       state: EditorState.create({
-        doc: "first line\nsecond :fire: line",
+        doc: "first line\nsecond 🔥 line",
         selection: EditorSelection.cursor(0),
-        extensions: [markdown({base: markdownLanguage}), markdownLive],
+        extensions: [markdown({base: markdownLanguage}), markdownLive, emojiLive],
       }),
     })
 

@@ -58,9 +58,16 @@ of what it contains.**
 
 - A description stored with `__x__` as bold now reads as underlined. No
   migration rewrites it.
-- Shortcodes stored before this decision keep being expanded when shown, so old
-  text does not regress. Discord still shows them as text until the description
-  is edited.
+- Shortcodes stored before this decision are rewritten once into the emoji they
+  name, by the `shortcodes-become-characters` changeset. It uses the names the
+  site expanded them by, node-emoji's from emojilib 2.4.0, committed beside the
+  changelog. It leaves code, addresses and anything in angle brackets alone,
+  as the renderer did. Each value it changes is kept as it was in
+  `shortcode_rewrites`, which its rollback restores, and it logs how many it
+  changed. Old descriptions look the same on the site, and Discord shows their
+  emoji. The site no longer expands a shortcode, so it keeps a single emoji
+  name list, JoyPixels', which the editor uses to turn a typed shortcode into
+  its emoji.
 - Server emoji load from Discord's CDN by id. A deleted emoji falls back to its
   `:name:`, and a standard emoji whose picture is missing falls back to the
   character.

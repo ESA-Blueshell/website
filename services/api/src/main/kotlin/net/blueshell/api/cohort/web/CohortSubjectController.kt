@@ -15,8 +15,8 @@ import net.blueshell.api.cohort.domain.CohortTargeting
 import net.blueshell.api.cohort.domain.InboundReconcile
 import net.blueshell.api.cohort.domain.InboundReconcileApplyRequest
 import net.blueshell.api.cohort.domain.InboundReconcileApplyResponse
-import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.InboundReconcilePreview
+import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.cohort.persistence.CohortSubjectType

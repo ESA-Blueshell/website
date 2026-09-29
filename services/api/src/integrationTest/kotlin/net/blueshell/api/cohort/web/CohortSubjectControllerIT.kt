@@ -1,12 +1,12 @@
 package net.blueshell.api.cohort.web
 
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.persistence.ExternalIdMapping

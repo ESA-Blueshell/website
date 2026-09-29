@@ -88,14 +88,14 @@ interface TargetStrategy {
         folder: String,
     ): ExternalTarget = throw UnsupportedOperationException("$system cannot move a target between folders")
 
-    /** Give a target another name; a system that cannot keeps this default and refuses. */
+    /** Give a target another name. */
     fun rename(
         target: ExternalTarget,
         name: String,
-    ): ExternalTarget = throw UnsupportedOperationException("$system cannot rename a target")
+    ): ExternalTarget
 
     /** Make a folder by name, or find the one already called that; answers every folder. */
-    fun createFolder(name: String): List<String> = throw UnsupportedOperationException("$system cannot make a folder")
+    fun createFolder(name: String): List<String>
 
     fun delete(target: ExternalTarget)
 }

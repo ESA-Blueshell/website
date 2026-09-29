@@ -39,6 +39,15 @@ interface ContactListAdapter {
         folderId: Long,
     ): Unit = throw UnsupportedOperationException("This adapter cannot move a list between folders")
 
+    /** Renames a list; its members and folder stay. */
+    fun renameList(
+        externalListId: Long,
+        name: String,
+    ): Unit = throw UnsupportedOperationException("This adapter cannot rename a list")
+
+    /** The folder called [name], made when there is none; answers its id. */
+    fun createFolder(name: String): Long = throw UnsupportedOperationException("This adapter cannot make a folder")
+
     /** Every folder, as id to name. */
     fun listFolders(): Map<Long, String> = emptyMap()
 

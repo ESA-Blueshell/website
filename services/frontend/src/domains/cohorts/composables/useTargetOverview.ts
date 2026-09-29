@@ -1,10 +1,13 @@
 import {computed, ref} from "vue"
 import {
+  createFolderInSystem,
+  createListInSystem,
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
   moveTargetToFolder,
   moveTargetsToFolder,
+  renameTarget,
   type BulkTargetMoveResult,
   type ExternalTarget,
   type TargetDescriptor,
@@ -185,7 +188,57 @@ export function useTargetOverview() {
     }
   }
 
+  /** The system's reason when it refused a create or a rename; nothing changed on our side. */
+  const writeRefusal = ref<string | null>(null)
+  const writing = ref(false)
+
+  /** Make a list, linked to nothing, in a folder picked or a new one named. */
+  async function createList(system: TargetSystem, name: string, folder: string | null, newFolder: boolean): Promise<boolean> {
+    writing.value = true
+    writeRefusal.value = null
+    try {
+      if (newFolder && folder) {
+        const made = await createFolderInSystem(system, folder)
+        if (!made.ok) {
+          writeRefusal.value = made.reason
+          return false
+        }
+        folderNames.value = made.saved
+      }
+      const created = await createListInSystem(system, name, folder)
+      if (!created.ok) {
+        writeRefusal.value = created.reason
+        return false
+      }
+      targets.value = [...targets.value, created.saved]
+      return true
+    } finally {
+      writing.value = false
+    }
+  }
+
+  /** Give a list another name; the row shows what the system answered. */
+  async function rename(system: TargetSystem, target: ExternalTarget, name: string): Promise<boolean> {
+    writing.value = true
+    writeRefusal.value = null
+    try {
+      const renamed = await renameTarget(system, target.externalId, name)
+      if (!renamed.ok) {
+        writeRefusal.value = renamed.reason
+        return false
+      }
+      targets.value = targets.value.map((t) => (t.externalId === renamed.saved.externalId ? renamed.saved : t))
+      return true
+    } finally {
+      writing.value = false
+    }
+  }
+
   return {
+    writeRefusal,
+    writing,
+    createList,
+    rename,
     loading,
     errorMessage,
     descriptor,

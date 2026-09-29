@@ -110,6 +110,8 @@ export type TargetMapping = {
   lastReconciledAt: string | null
   /** Where the target sits on its system, outside in. Empty when the system files nothing. */
   path: string[]
+  /** False when the system could not say which folder the target is in. */
+  folderKnown: boolean
 }
 
 export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
@@ -144,6 +146,7 @@ function toTargetMapping(raw: ApiCohortMapping): TargetMapping {
     label: raw.label,
     lastReconciledAt: raw.lastReconciledAt ?? null,
     path: raw.path ?? [],
+    folderKnown: raw.folderKnown,
   }
 }
 

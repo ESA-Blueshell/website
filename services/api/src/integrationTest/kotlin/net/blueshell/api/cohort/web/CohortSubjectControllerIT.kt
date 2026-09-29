@@ -1,6 +1,7 @@
 package net.blueshell.api.cohort.web
 
 import net.blueshell.api.cohort.persistence.Cohort
+import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
@@ -32,6 +33,11 @@ class CohortSubjectControllerIT : UserTestSupport() {
 
     @Autowired
     private lateinit var externalIds: ExternalIdMappingRepository
+
+    @Autowired
+    private lateinit var contactListAdapters: List<ContactListAdapter>
+
+    private val contactLists get() = contactListAdapters.single { it.system == TargetSystem.BREVO }
 
     // The drift report is gone: the subject's own read carries the states and the strangers,
     // so these two cases follow it there rather than being deleted with the endpoint.
@@ -65,10 +71,12 @@ class CohortSubjectControllerIT : UserTestSupport() {
     }
 
     @Test
-    fun `a target reports the folder it is filed in as a path, outside in`() {
+    fun `a target reports the folder Brevo files it in as a path, outside in`() {
         val admin = createUserWithRole(Role.ADMIN)
         val subject = newSubject()
-        newCohort(subject, externalId = "list-1", folder = "Committees")
+        // Created for another folder: the page follows Brevo, not the row.
+        val listId = contactLists.createList("Sitecie", "Committees")
+        newCohort(subject, externalId = listId.toString(), folder = "Members")
 
         mvc
             .perform(
@@ -77,13 +85,14 @@ class CohortSubjectControllerIT : UserTestSupport() {
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
             .andExpect(jsonPath("$.mappings[0].path[1]").value("Committees"))
+            .andExpect(jsonPath("$.mappings[0].folderKnown").value(true))
     }
 
     @Test
-    fun `an unfiled target is one step deep, not one with a nameless folder`() {
+    fun `a target Brevo cannot place shows its folder as unknown`() {
         val admin = createUserWithRole(Role.ADMIN)
         val subject = newSubject()
-        newCohort(subject, externalId = "list-2")
+        newCohort(subject, externalId = "999999", folder = "Committees")
 
         mvc
             .perform(
@@ -92,6 +101,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].path.length()").value(1))
             .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
+            .andExpect(jsonPath("$.mappings[0].folderKnown").value(false))
     }
 
     @Test

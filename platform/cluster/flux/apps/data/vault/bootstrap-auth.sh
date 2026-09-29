@@ -222,21 +222,27 @@ vault write auth/kubernetes/role/vso \
   policies="vso" \
   ttl="1h"
 
-# --- The bounce mailbox ------------------------------------------------
-#
-# Stalwart's apply sidecar creates bounce@ from account.bounce, and the api
-# sends and polls as it; without the key there is no mailbox. Seeded once,
-# never overwritten.
-if ! vault kv get -field=account.bounce secret/platform/mail >/dev/null 2>&1; then
+# Stalwart's apply sidecar creates bounce@ from account.bounce, and the api sends
+# and polls as it (#1868): without the key there is no mailbox. Seeded once and
+# never overwritten; any answer but "not there" fails the Job rather than guess.
+if BOUNCE_READ=$(vault kv get -field=account.bounce secret/platform/mail 2>&1); then
+  :
+elif printf '%s' "$BOUNCE_READ" | grep -q -e 'No value found' -e 'not present in secret'; then
   BOUNCE_PASSWORD=$(head -c 32 /dev/urandom | base64 | tr -d '=+/\n' | head -c 32)
-  if vault kv get secret/platform/mail >/dev/null 2>&1; then
-    vault kv patch secret/platform/mail account.bounce="$BOUNCE_PASSWORD" >/dev/null
+  [ "${#BOUNCE_PASSWORD}" -eq 32 ] || { echo "Could not generate account.bounce." >&2; exit 1; }
+  # A put replaces every key on the path, so it is only for a path that has none.
+  if printf '%s' "$BOUNCE_READ" | grep -q 'No value found'; then
+    printf '%s' "$BOUNCE_PASSWORD" | vault kv put secret/platform/mail account.bounce=- >/dev/null
   else
-    vault kv put secret/platform/mail account.bounce="$BOUNCE_PASSWORD" >/dev/null
+    printf '%s' "$BOUNCE_PASSWORD" | vault kv patch secret/platform/mail account.bounce=- >/dev/null
   fi
   unset BOUNCE_PASSWORD
   echo "Seeded secret/platform/mail account.bounce."
+else
+  echo "Could not read secret/platform/mail: $BOUNCE_READ" >&2
+  exit 1
 fi
+unset BOUNCE_READ
 
 # --- MariaDB dynamic secrets (database engine) --------------------------
 #

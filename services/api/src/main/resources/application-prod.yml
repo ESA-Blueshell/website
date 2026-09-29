@@ -33,7 +33,7 @@ spring:
   # not own, so login and envelope sender are one account; From: stays no-reply@.
   mail:
     username: ${email.bounce.imap.username}
-    password: ${mail.account.bounce:}
+    password: ${email.bounce.imap.password}
     properties:
       mail.smtp.from: ${email.bounce.imap.username}
   datasource:
@@ -42,6 +42,9 @@ spring:
 email:
   bounce:
     imap:
+      # No default: it is the api's mail login too, so a Deployment without it
+      # fails the start rather than send nothing.
+      username: ${EMAIL_BOUNCE_IMAP_USERNAME}
       password: ${mail.account.bounce:}
 
 auth:

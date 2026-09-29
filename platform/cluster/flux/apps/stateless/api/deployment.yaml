@@ -170,8 +170,9 @@ spec:
             # full email derived from the localPart; the password
             # lives at Vault key `account.<localpart>`.
             #
-            # SMTP submission auths as api@ (the api's dedicated
-            # principal). IMAP bounce-poll auths as bounce@.
+            # An api image with the prod profile of #1868 sends and polls as
+            # bounce@ and ignores SMTP_USERNAME and SMTP_PASSWORD; they serve
+            # the image before it and go in the contract step of #1824.
             - name: SMTP_USERNAME
               value: api@esa-blueshell.nl
             - name: SMTP_PASSWORD

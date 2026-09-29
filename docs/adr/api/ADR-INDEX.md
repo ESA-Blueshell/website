@@ -18,6 +18,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [018](ADR-018-data-ownership-in-modular-monolith.md) | Data Ownership in Modular Monolith | Accepted | Data ownership boundaries across domains |
 | [019](ADR-019-anti-corruption-layers-for-external-integration.md) | Anti-Corruption Layers for External Integration | Accepted | External integration isolation via ACL adapters |
 | [021](ADR-021-observability-and-distributed-tracing.md) | Observability and Distributed Tracing | Proposed | Correlation, tracing, and observability standards |
+| [037](ADR-037-google-workspace-through-googles-own-client-libraries.md) | Google Workspace Through Google's Own Client Libraries | Proposed | Google's generated Directory and Drive libraries behind a port; a client repo of our own only if they fall behind |
 
 ### Data and Persistence
 
@@ -44,6 +45,8 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [027](ADR-027-joining-asks-for-the-contribution.md) | Joining Asks For The Contribution | Accepted | A membership starting through signup asks the new member to pay, records the ask, and leaves the deadline to the board |
 | [029](ADR-029-animated-gif-banners-convert-to-animated-webp.md) | Animated GIF Banners Convert To Animated WebP | Accepted | A GIF banner is stored and served as an animated WebP at every width, decoded per frame and resized off the startup path |
 | [032](ADR-032-an-edit-awaiting-re-approval-freezes-discord.md) | An Edit Awaiting Re-Approval Freezes What the Bot Has Out | Accepted | A non-board edit sends the event back without taking its Discord posts down; they stay as last approved until the board decides |
+| [035](ADR-035-a-cohorts-target-is-created-when-the-cohort-is-registered.md) | A Cohort's Target Is Created When the Cohort Is Registered | Proposed | Registration queues a claimed create per mirrored system; reverses #369's manual step; unlinked cohorts backfilled |
+| [036](ADR-036-a-membership-is-pending-until-its-first-contribution.md) | A Membership Is Pending Until Its First Contribution | Proposed | Signup starts a pending membership; the first paid contribution activates it until the board ends it; honorary is active at once |
 
 ### Security and API
 

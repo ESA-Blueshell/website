@@ -15,6 +15,7 @@ stack.
 | [003](ADR-003-package-topology-and-placement-rules.md) | Package Topology and Placement Rules | Accepted | Twenty flat modules, four folders and two named interfaces inside each, six rules for where a file goes |
 | [007](ADR-007-authorization-lives-with-its-aggregate.md) | Authorization Lives With Its Aggregate | Accepted | Domain permission evaluators move to their module; the dispatch mechanism stays |
 | [008](ADR-008-the-backend-does-not-borrow-the-frontends-vocabulary.md) | The Backend Does Not Borrow the Frontend's Vocabulary | Accepted | Records are named for what they are, not where they appear; identity is `code` and the human name is `name`; comments name the act or the caller, never the widget |
+| [011](ADR-011-platforms-mirror-cohorts-and-report-drift.md) | Platforms Mirror Cohorts, and Report Drift Rather Than Correct It | Proposed | Brevo, Discord and Google targets mirror cohorts; Discord access through roles; reconcile records missing and extra people, only an enforced target removes; archive never deletes |
 
 ### Execution
 

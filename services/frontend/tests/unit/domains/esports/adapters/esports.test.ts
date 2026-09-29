@@ -1,6 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {
   addToRoster,
+  dropSeasonOrReason,
+  dropTeam,
   enterGameInSeason,
   fieldTeamInSeason,
   leaveGameInSeason,
@@ -13,11 +15,14 @@ import {
   loadTeams,
   saveSeasonOrReason,
   storePicture,
+  unfieldTeamFromSeason,
 } from "@/domains/esports/adapters/esports"
 import {
   addRosterEntry,
   apiUrl,
   createSeason,
+  deleteSeason,
+  deleteTeam,
   enterGame,
   fieldTeam,
   findGame,
@@ -28,6 +33,7 @@ import {
   findSeasonGames,
   findTeams,
   leaveGame,
+  unfieldTeam,
   uploadPublicImage,
 } from "@/services/api"
 import type {Image} from "@/services/api"
@@ -39,6 +45,8 @@ vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   addRosterEntry: vi.fn(),
   createSeason: vi.fn(),
+  deleteSeason: vi.fn(),
+  deleteTeam: vi.fn(),
   enterGame: vi.fn(),
   fieldTeam: vi.fn(),
   findGame: vi.fn(),
@@ -49,6 +57,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   findSeasonGames: vi.fn(),
   findTeams: vi.fn(),
   leaveGame: vi.fn(),
+  unfieldTeam: vi.fn(),
   uploadPublicImage: vi.fn(),
 }))
 
@@ -296,3 +305,19 @@ describe("loadGameAccounts", () => {
   })
 })
 
+
+describe("the removals", () => {
+  it("drops a team from a season, a season and a team, each refusal in its own words", async () => {
+    vi.mocked(unfieldTeam).mockResolvedValueOnce(answer(unfieldTeam, undefined)).mockResolvedValueOnce(refusal(unfieldTeam, {}))
+    vi.mocked(deleteSeason).mockResolvedValueOnce(answer(deleteSeason, undefined)).mockResolvedValueOnce(refusal(deleteSeason, {}))
+    vi.mocked(deleteTeam).mockResolvedValueOnce(answer(deleteTeam, undefined)).mockResolvedValueOnce(refusal(deleteTeam, {}))
+
+    await expect(unfieldTeamFromSeason(1, "VAL", 20)).resolves.toEqual({ok: true})
+    expect(unfieldTeam).toHaveBeenCalledWith({path: {seasonId: 20, teamId: 1}, query: {game: "VAL"}})
+    await expect(unfieldTeamFromSeason(1, "VAL", 20)).resolves.toEqual({ok: false, reason: "The team could not be dropped from the season."})
+    await expect(dropSeasonOrReason(20)).resolves.toEqual({ok: true})
+    await expect(dropSeasonOrReason(20)).resolves.toEqual({ok: false, reason: "The season could not be removed."})
+    await expect(dropTeam(1)).resolves.toEqual({ok: true})
+    await expect(dropTeam(1)).resolves.toEqual({ok: false, reason: "The team could not be removed."})
+  })
+})

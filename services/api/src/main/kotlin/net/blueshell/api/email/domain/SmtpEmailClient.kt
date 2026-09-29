@@ -26,7 +26,15 @@ class SmtpEmailClient(
     environment: Environment,
 ) : EmailTransportClient {
     // Boot builds the sender once; its password is set per send, so a rotated one is used next.
-    private val password = RotatingSecret(environment, "spring.mail.password")
+    // Two sends racing across a rotation may pair the old one with a connect; that send fails
+    // and the outbox shows it.
+    private val password = RotatingSecret(environment, MAIL_PASSWORD)
+
+    init {
+        if (mailSender !is JavaMailSenderImpl) {
+            log.warn("{} takes no rotated mail password; one needs a restart", mailSender.javaClass.name)
+        }
+    }
 
     override fun send(
         toEmail: String,
@@ -62,6 +70,7 @@ class SmtpEmailClient(
 
     companion object {
         private val log = LoggerFactory.getLogger(SmtpEmailClient::class.java)
+        private const val MAIL_PASSWORD = "spring.mail.password"
 
         internal fun generateMessageId(senderAddress: String): String {
             val host = senderAddress.substringAfter('@', missingDelimiterValue = "blueshell.local")

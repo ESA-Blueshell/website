@@ -37,6 +37,11 @@ class ImapBouncePollingService(
     // Read at each connect, so a rotated password is used on the next poll.
     private val password = RotatingSecret(environment, Credentials.IMAP_PASSWORD)
 
+    // The session a poll connects through. A test swaps in one whose store records the login.
+    internal var sessionFor: (String) -> Session = { protocol ->
+        Session.getInstance(Properties().apply { setProperty("mail.store.protocol", protocol) })
+    }
+
     @Scheduled(fixedDelayString = "\${email.bounce.poll-interval-ms:300000}")
     fun pollBounces() {
         if (host.isBlank() || username.isBlank()) {
@@ -44,12 +49,7 @@ class ImapBouncePollingService(
             return
         }
         val protocol = if (useTls) "imaps" else "imap"
-        val session =
-            Session.getInstance(
-                Properties().apply {
-                    setProperty("mail.store.protocol", protocol)
-                },
-            )
+        val session = sessionFor(protocol)
         try {
             session.getStore(protocol).use { store ->
                 store.connect(host, port, username, password.current())

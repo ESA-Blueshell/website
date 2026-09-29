@@ -369,13 +369,17 @@ none of these needs `kubectl rollout restart`. Write each rotation as one
 
   ```bash
   vault kv patch secret/api brevo.apiKey=<new-key>
+  vault kv patch secret/api google.calendar.serviceAccountJson=@service-account.json
   ```
 
 - **Bounce mailbox password** (`account.bounce` in `secret/platform/mail`). The
   api sends and polls with it, and reads it at each send and each poll.
   Stalwart takes it when VSO restarts it, within the Secret's refresh, so for up
   to one api refresh interval the two may disagree. A send that fails in that
-  window shows as failed in the email manager, which can retry it.
+  window shows as failed in the email manager, which can retry it. Until the
+  contract step of api ADR-033 removes `EMAIL_BOUNCE_IMAP_PASSWORD` from the api
+  Deployment, that variable outranks Vault, so this one still needs an api
+  restart until then.
 
 - **Two-factor key.** A new key takes a new id, and the old one moves to the
   retired keys in the same patch, or every secret it sealed stops opening. A key

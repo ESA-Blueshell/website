@@ -56,6 +56,7 @@ class FolderTidyTest {
         val plan = tidy.preview(TargetSystem.BREVO)
 
         assertThat(plan.moves).containsExactly(TidyMove("100", "Paid 2026", "Periods", "Contribution paid"))
+        assertThat(plan.moves.single().from).isEqualTo("Periods")
         assertThat(plan.foldersToCreate).containsExactly("Contribution paid")
     }
 
@@ -83,6 +84,16 @@ class FolderTidyTest {
 
         verify(strategy, never()).move(paid, "Contribution paid")
         assertThat(result.failed).containsExactly(FailedTargetMove("200", "Sitecie", "Brevo said no"))
+    }
+
+    @Test
+    fun `a list gone from the system fails with that reason`() {
+        given(list("100", "Paid 2026", "Periods"))
+        whenever(strategy.resolve("100")).thenReturn(null)
+
+        val result = tidy.apply(TargetSystem.BREVO, listOf("100"))
+
+        assertThat(result.failed).containsExactly(FailedTargetMove("100", "Paid 2026", "Brevo no longer has this list"))
     }
 
     @Test

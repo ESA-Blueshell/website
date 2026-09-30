@@ -45,7 +45,7 @@ class CohortTargetWritesIT : UserTestSupport() {
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.label").value("Pub quiz 2026"))
             .andExpect(jsonPath("$.folderLabel").value("Committees"))
-            .andExpect(jsonPath("$.linkedCohortId").doesNotExist())
+            .andExpect(jsonPath("$.linkedTargetId").doesNotExist())
     }
 
     @Test
@@ -79,7 +79,7 @@ class CohortTargetWritesIT : UserTestSupport() {
                     .with(signedIn(admin)),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.label").value("Members 2026-2027"))
-            .andExpect(jsonPath("$.linkedCohortId").value(linked.id!!))
+            .andExpect(jsonPath("$.linkedTargetId").value(linked.id!!))
 
         assertThat(contactLists.listAll().single { it.externalListId == listId }.name).isEqualTo("Members 2026-2027")
         assertThat(targets.findById(linked.id!!).orElseThrow().label).isEqualTo("Members 2026-2027")
@@ -122,7 +122,7 @@ class CohortTargetWritesIT : UserTestSupport() {
             .perform(post("/management/cohort-targets/{system}/{externalId}/archive", "BREVO", listId).with(signedIn(admin)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.folderLabel").value("Archive"))
-            .andExpect(jsonPath("$.linkedCohortId").value(linked.id!!))
+            .andExpect(jsonPath("$.linkedTargetId").value(linked.id!!))
 
         val folders = contactLists.listFolders()
         assertThat(folders[contactLists.listAll().single { it.externalListId == listId }.folderId]).isEqualTo("Archive")

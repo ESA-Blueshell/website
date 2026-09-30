@@ -7,9 +7,10 @@ export {
   ContributionEmailKind,
   type ContributionPeriodResponse,
   type CreateContributionPeriodRequest,
+  type PeriodStanding,
   type UpdateContributionPeriodRequest,
 } from "@/services/api"
-export {deletePeriod, listPeriods, readCurrentPeriod, saveNewPeriod, savePeriod} from "./adapters/periods"
+export {deletePeriod, listPeriods, readCurrentPeriod, readPeriodStanding, saveNewPeriod, savePeriod} from "./adapters/periods"
 export {
   readOneEmail,
   readSelection,

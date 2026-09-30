@@ -2108,6 +2108,21 @@ export type ReconcileRun = {
     trigger?: JobTrigger | null;
 };
 
+export type RecordedException = {
+    exceptionType: string;
+    firstSeenAt: string;
+    id: number;
+    lastSeenAt: string;
+    latestConcern: string;
+    latestJobExecutionId?: number | null;
+    latestMessage?: string | null;
+    latestSource: 'REQUEST' | 'JOB';
+    latestStackTrace?: string | null;
+    occurrences: number;
+    resolvedAt?: string | null;
+    thrownAt: string;
+};
+
 /**
  * A recovery email rendered for inspection. No token was issued to produce it.
  */
@@ -9036,6 +9051,135 @@ export type Retry1Responses = {
 };
 
 export type Retry1Response = Retry1Responses[keyof Retry1Responses];
+
+export type ListExceptionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        resolved?: boolean;
+    };
+    url: '/management/exceptions';
+};
+
+export type ListExceptionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListExceptionsError = ListExceptionsErrors[keyof ListExceptionsErrors];
+
+export type ListExceptionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<RecordedException>;
+};
+
+export type ListExceptionsResponse = ListExceptionsResponses[keyof ListExceptionsResponses];
+
+export type FindExceptionData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/exceptions/{id}';
+};
+
+export type FindExceptionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindExceptionError = FindExceptionErrors[keyof FindExceptionErrors];
+
+export type FindExceptionResponses = {
+    /**
+     * OK
+     */
+    200: RecordedException;
+};
+
+export type FindExceptionResponse = FindExceptionResponses[keyof FindExceptionResponses];
+
+export type ResolveExceptionData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/exceptions/{id}/resolve';
+};
+
+export type ResolveExceptionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResolveExceptionError = ResolveExceptionErrors[keyof ResolveExceptionErrors];
+
+export type ResolveExceptionResponses = {
+    /**
+     * OK
+     */
+    200: RecordedException;
+};
+
+export type ResolveExceptionResponse = ResolveExceptionResponses[keyof ResolveExceptionResponses];
 
 export type ListData = {
     body?: never;

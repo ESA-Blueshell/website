@@ -35,6 +35,7 @@ class ApplicationModuleDetectionTest {
                 "sponsor",
                 "cohort",
                 "jobs",
+                "exceptions",
                 "contact",
                 "email",
                 "sync",

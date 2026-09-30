@@ -479,6 +479,18 @@ const routes: RouteRecordRaw[] = [
         meta: {title: "Job", requiresAdmin: true},
       },
       {
+        path: "exceptions",
+        name: "exceptionList",
+        component: () => import("@/pages/management/ExceptionList.vue"),
+        meta: {title: "Exceptions", requiresAdmin: true},
+      },
+      {
+        path: "exceptions/:id(\\d+)",
+        name: "exceptionDetail",
+        component: () => import("@/pages/management/ExceptionDetail.vue"),
+        meta: {title: "Exception", requiresAdmin: true},
+      },
+      {
         path: "platforms/brevo",
         name: "cohortDashboard",
         component: () => import("@/pages/management/CohortDashboard.vue"),

@@ -2005,6 +2005,16 @@ export type PendingActivationsResponse = {
     activations: Array<PendingActivation>;
 };
 
+export type PeriodStanding = {
+    endDate: string;
+    members: number;
+    paid: number;
+    pendingFirstContribution: number;
+    periodId: number;
+    startDate: string;
+    stillToPay: number;
+};
+
 /**
  * A Discord role the bot notifies when it posts the event
  */
@@ -4591,6 +4601,47 @@ export type FindCurrentContributionPeriodResponses = {
 };
 
 export type FindCurrentContributionPeriodResponse = FindCurrentContributionPeriodResponses[keyof FindCurrentContributionPeriodResponses];
+
+export type FindCurrentPeriodStandingData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contributionPeriods/current/standing';
+};
+
+export type FindCurrentPeriodStandingErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCurrentPeriodStandingError = FindCurrentPeriodStandingErrors[keyof FindCurrentPeriodStandingErrors];
+
+export type FindCurrentPeriodStandingResponses = {
+    /**
+     * OK
+     */
+    200: PeriodStanding;
+};
+
+export type FindCurrentPeriodStandingResponse = FindCurrentPeriodStandingResponses[keyof FindCurrentPeriodStandingResponses];
 
 export type DeleteContributionData = {
     body?: never;

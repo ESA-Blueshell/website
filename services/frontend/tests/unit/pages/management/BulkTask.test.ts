@@ -70,6 +70,8 @@ describe("the bulk task page", () => {
 
     task.vm.$emit("done")
     expect(mockPush).toHaveBeenCalledWith("/management/contributions")
+    task.vm.$emit("update:modelValue", false)
+    expect(mockPush).toHaveBeenCalledTimes(2)
   })
 
   it("goes back to Users when it is cancelled, and never to a page outside Management", async () => {

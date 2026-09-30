@@ -1,12 +1,14 @@
 package net.blueshell.api.discord.web
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import net.blueshell.api.discord.domain.DiscordLiveService
+import net.blueshell.api.discord.domain.StarboardService
 import net.blueshell.api.discord.domain.ViewerRoomService
 import org.springframework.http.CacheControl
 import org.springframework.http.HttpStatus
@@ -28,10 +30,12 @@ import java.time.Duration
 class DiscordController(
     private val discordLiveService: DiscordLiveService,
     private val viewerRooms: ViewerRoomService,
+    private val starboard: StarboardService,
 ) {
     private companion object {
         // Short enough that a join shows within the band's own refresh, long enough to spare the api.
         val BROWSER_CACHE: Duration = Duration.ofSeconds(15)
+        val STARBOARD_CACHE: Duration = Duration.ofMinutes(5)
     }
 
     @PermitAll
@@ -66,5 +70,21 @@ class DiscordController(
             .ok()
             .cacheControl(CacheControl.noStore())
             .body(DiscordViewerRoomsResponse(linked = rooms.linked, joinable = rooms.joinable.sorted()))
+    }
+
+    @PermitAll
+    @GetMapping("/starboard")
+    @Operation(operationId = "readStarboard", summary = "Recent messages the Discord server starred, which the home page shows")
+    @ApiResponse(
+        responseCode = "200",
+        content = [Content(array = ArraySchema(schema = Schema(implementation = StarboardEntryResponse::class)))],
+    )
+    @ApiResponse(responseCode = "503", description = "The bot is not set up, or Discord has not answered yet", content = [Content()])
+    fun starboard(): ResponseEntity<List<StarboardEntryResponse>> {
+        val entries = starboard.entries() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        return ResponseEntity
+            .ok()
+            .cacheControl(CacheControl.maxAge(STARBOARD_CACHE).cachePublic())
+            .body(entries.map { it.toResponse() })
     }
 }

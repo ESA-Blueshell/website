@@ -180,6 +180,9 @@ discord:
   posts:
     info-channel: ${DISCORD_POSTS_INFO_CHANNEL:events-info}
     calendar-channel: ${DISCORD_POSTS_CALENDAR_CHANNEL:events-calendar}
+  # The channel the starboard bot reposts starred messages to, by name.
+  starboard:
+    channel: ${DISCORD_STARBOARD_CHANNEL:starboard}
 
 google:
   calendar:

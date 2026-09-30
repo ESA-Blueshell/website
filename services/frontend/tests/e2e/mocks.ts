@@ -1141,6 +1141,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/discord/emojis") {
       return answer(route, "listDiscordEmojis", [{id: "657733730491826186", name: "POGGERS", animated: false}])
     }
+    if (method === "GET" && path === "/discord/starboard") {
+      return answer(route, "readStarboard", [{
+        id: "1552233582498676818", authorName: "The Old Man", authorNickname: "Joris", avatar: null,
+        text: "Soon to be released **events page** redesigns:", image: null, stars: 12, channel: "general",
+        href: "https://discord.com/channels/324285132133629963/611/1552233582498676818", postedAt: "2026-09-23T08:22:05Z",
+      }])
+    }
     // No bot in the mocked api: the Discord band falls back to the public widget, mocked below.
     if (method === "GET" && (path === "/discord/live" || path === "/discord/live/mine")) {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)

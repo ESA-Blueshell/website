@@ -8,6 +8,7 @@ import {readMyRooms} from "../adapters/live"
 import {type DiscordRooms, howFull, liveOf, SERVER_NAME, unlockedFor, type VoiceRoom, watchDiscordRooms} from "../rooms"
 import voiceGlyph from "@/assets/discord/voice.webp"
 import lockedGlyph from "@/assets/discord/voice-locked.webp"
+import StarboardFeed from "./StarboardFeed.vue"
 import VoicePeople from "./VoicePeople.vue"
 
 /**
@@ -17,7 +18,8 @@ import VoicePeople from "./VoicePeople.vue"
  * The widget's Join server is the band's one way in, so the head carries no button. Discord's
  * palette is its own and is the same in both themes, and the widget is the one thing on the
  * page with rounded corners. It lists only the rooms somebody is in, each joined in Discord
- * itself. Where Discord says nothing, the widget is its head and invite alone.
+ * itself. Where Discord says nothing, the widget is its head and invite alone. Below it, what
+ * the server starred lately.
  */
 /* The hero shows the same count, so the page follows the server once. */
 const emit = defineEmits<{online: [count: number | undefined]}>()
@@ -149,6 +151,8 @@ const glyphOf = (room: VoiceRoom) => {
           Nobody is in voice right now.
         </p>
       </div>
+
+      <starboard-feed />
     </div>
   </section>
 </template>

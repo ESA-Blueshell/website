@@ -4832,6 +4832,55 @@ components:
       - updatedAt
       - version
       type: object
+    StarboardEntryResponse:
+      description: A message the Discord server starred, from a channel everybody there can see
+      properties:
+        authorName:
+          description: The author's name across Discord
+          type: string
+        authorNickname:
+          description: The author's name in the server, where they set one
+          type:
+          - string
+          - 'null'
+        avatar:
+          description: The author's avatar's address, where they have one
+          type:
+          - string
+          - 'null'
+        channel:
+          description: The name of the channel the message was written in
+          type: string
+        href:
+          description: The address that opens the message in Discord
+          type: string
+        id:
+          description: The starred message's ID
+          type: string
+        image:
+          description: The picture the message carries, where it has one
+          type:
+          - string
+          - 'null'
+        postedAt:
+          format: date-time
+          type: string
+        stars:
+          format: int32
+          type: integer
+        text:
+          description: The message in Discord markdown, with mentions and server emoji; absent for a picture alone
+          type:
+          - string
+          - 'null'
+      required:
+      - authorName
+      - channel
+      - href
+      - id
+      - postedAt
+      - stars
+      type: object
     StepUpRequest:
       properties:
         code:
@@ -12746,6 +12795,112 @@ paths:
         '503':
           description: The bot is not set up, or Discord did not answer
       summary: The Discord server's roles an event may ping, in the server's order
+      tags:
+      - Discord
+  /discord/starboard:
+    get:
+      operationId: readStarboard
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/StarboardEntryResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+        '503':
+          description: The bot is not set up, or Discord has not answered yet
+      summary: Recent messages the Discord server starred, which the home page shows
       tags:
       - Discord
   /esports/games/{game}:

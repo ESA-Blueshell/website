@@ -21,7 +21,7 @@ A leaked dev token then never touches the real server.
 | --- | --- |
 | Who is in voice | the gateway connection with the Guilds and Guild Voice States intents. REST cannot list voice members. |
 | Counts, channels, which rooms are private | REST, nothing privileged |
-| The starboard's text | the **Message Content** intent |
+| The starboard | the **Message Content** intent, to read the starboard bot's embeds, and **View Channel** and **Read Message History** in `#starboard` (another channel name goes in `DISCORD_STARBOARD_CHANNEL`) |
 | The member list | the **Server Members** intent |
 | Posting | **Send Messages** and **Embed Links** in the channel, and **Attach Files** for an event's banner |
 | Live counts | the **Presence** intent for who is online, and **Server Members** for joins and leaves |

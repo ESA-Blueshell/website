@@ -708,6 +708,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       .map((blog) => [String(blog.id), blog]),
   )
 
+  let exceptionResolvedAt: string | null = null
+
   const baseJobs: Wire<JobExecution>[] = fixtures.jobs ?? [
     aJob({
       id: 700,
@@ -1295,6 +1297,33 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       })
       baseJobs.unshift(enqueued)
       return answer(route, "enqueue", enqueued)
+    }
+    if (path === "/management/exceptions" || path.startsWith("/management/exceptions/")) {
+      const fault = {
+        id: 3,
+        exceptionType: "java.lang.IllegalStateException",
+        thrownAt: "net.blueshell.api.contact.Sync.run",
+        firstSeenAt: "2025-01-01T12:00:00.000Z",
+        lastSeenAt: "2025-01-02T12:00:00.000Z",
+        occurrences: 4,
+        latestMessage: "Brevo said no",
+        latestSource: "JOB",
+        latestConcern: "contact.sync",
+        latestJobExecutionId: 700,
+        latestStackTrace: "java.lang.IllegalStateException: Brevo said no\n\tat net.blueshell.api.contact.Sync.run(Sync.kt:4)",
+        resolvedAt: exceptionResolvedAt,
+      }
+      if (method === "GET" && path === "/management/exceptions") {
+        const resolved = url.searchParams.get("resolved")
+        const shown = resolved === null || (resolved === "true") === (exceptionResolvedAt !== null)
+        return answer(route, "listExceptions", shown ? [{...fault, latestStackTrace: null}] : [])
+      }
+      if (method === "GET" && path === "/management/exceptions/3") return answer(route, "findException", fault)
+      if (method === "POST" && path === "/management/exceptions/3/resolve") {
+        exceptionResolvedAt = "2025-01-03T12:00:00.000Z"
+        return answer(route, "resolveException", {...fault, resolvedAt: exceptionResolvedAt})
+      }
+      return fulfillJson(route, {title: "Not Found", status: 404}, 404)
     }
     if (method === "GET" && /^\/management\/jobs\/\d+$/.test(path)) {
       const job = baseJobs.find((one) => Number(one.id) === Number(path.split("/")[3]))

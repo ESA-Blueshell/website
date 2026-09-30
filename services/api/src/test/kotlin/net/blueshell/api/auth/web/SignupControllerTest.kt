@@ -346,6 +346,7 @@ class SignupControllerTest {
 
             verify(signupUseCases).setUpMandate(TOKEN, "NL91ABNA0417164300", "App Licant")
             assertThat(request.toString()).contains("4300").doesNotContain("0417")
+            assertThat(SignupMandateRequest(iban = "NL91ABNA0417164300", accountHolder = "App Licant").authorised).isFalse()
         }
     }
 }

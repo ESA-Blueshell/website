@@ -178,7 +178,7 @@ class SignupUseCases(
         iban: String,
         accountHolder: String,
     ) {
-        mandates.setUp(requireNotNull(signupTokens.resolveAccount(signupToken).user.id), iban, accountHolder)
+        mandates.setUp(signupTokens.resolveAccount(signupToken).id, iban, accountHolder)
     }
 
     // Transactional so the account resolved from the token stays managed: without

@@ -68,9 +68,11 @@ describe("the bar's own declaration", () => {
     expect(board).toContain("/user-manager")
     expect(board).not.toContain("/management/jobs")
     expect(board).toContain("/management/emails")
+    expect(board).toContain("/management/cohorts")
     expect(admin).toContain("/management/jobs")
     expect(admin).not.toContain("/user-manager")
     expect(admin).toContain("/management/emails")
+    expect(admin).toContain("/management/cohorts")
     expect(member).toEqual([])
   })
 

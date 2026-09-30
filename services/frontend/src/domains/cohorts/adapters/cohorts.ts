@@ -12,6 +12,7 @@ import {
   createTargetFolder,
   deleteExternalTarget,
   enforceTarget,
+  evaluateUser,
   enqueue,
   findCohortById,
   findCohorts,
@@ -24,6 +25,7 @@ import {
   moveCohortTargets,
   previewFolderTidy,
   previewInboundReconcile,
+  reconcileTarget,
   proposeLinks,
   pushDrift,
   removeDrift,
@@ -54,12 +56,14 @@ import {accepted, refusable} from "@/domains/cohorts/refusals"
  */
 export {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem}
 
-export async function triggerReconcile(targetId: number): Promise<number | null> {
-  const res = await enqueue({
-    body: { jobType: "cohort.reconcile-list", payload: { cohortId: targetId, trigger: JobTrigger.BY_HAND } },
-    throwOnError: true,
-  })
-  return res.data?.id ?? null
+/** Queue a reconcile of one of the cohort's targets, started by hand. */
+export async function triggerReconcile(cohortId: number, targetId: number): Promise<{ok: true} | Refused> {
+  return accepted(reconcileTarget({path: {id: cohortId, targetId}}), "The reconcile could not be queued.")
+}
+
+/** Queue a fresh look at which cohorts somebody belongs to. */
+export async function evaluateMember(userId: number): Promise<{ok: true} | Refused> {
+  return accepted(evaluateUser({path: {userId}}), "The member could not be looked at again.")
 }
 
 

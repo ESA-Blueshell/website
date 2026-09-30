@@ -129,6 +129,27 @@ class CohortTargetWritesIT : UserTestSupport() {
     }
 
     @Test
+    fun `the board makes a list but cannot delete one`() {
+        val board = createUserWithRole(Role.BOARD)
+        val listId = contactLists.createList("Board test list", null)
+
+        mvc
+            .perform(
+                post("/management/cohort-targets/{system}", "BREVO")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Pub quiz"}""")
+                    .with(signedIn(board)),
+            ).andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/management/cohort-targets/{system}/{externalId}/delete", "BREVO", listId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Board test list"}""")
+                    .with(signedIn(board)),
+            ).andExpect(status().isForbidden)
+    }
+
+    @Test
     fun `an unlinked list is deleted by its exact name, and the delete is recorded`() {
         val admin = createUserWithRole(Role.ADMIN)
         val listId = contactLists.createList("Old test list", null)

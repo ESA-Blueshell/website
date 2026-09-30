@@ -4,7 +4,7 @@ import CohortCategory from "@/pages/management/CohortCategory.vue"
 import {CohortCategory as Category, CohortType, fetchCohorts, type CohortSummary} from "@/domains/cohorts/adapters/cohorts"
 import router from "@/plugins/router"
 import type {StoredLogin} from "@/plugins/store"
-import {mountPage} from "../../helpers/mountPage"
+import {boardLogin, mountPage} from "../../helpers/mountPage"
 
 vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -52,5 +52,13 @@ describe("the cohort listings", () => {
     expect(push).toHaveBeenCalledTimes(3)
     expect(push).toHaveBeenCalledWith({name: "cohortDetail", params: {id: 1}})
     push.mockRestore()
+  })
+
+  it("gives the board the cohorts but not the engine-wide passes", async () => {
+    const wrapper = await mountPage(CohortDashboard, {path: "/management/cohorts", login: boardLogin})
+
+    expect(wrapper.find("[data-testid=cohort-total-count]").exists()).toBe(true)
+    expect(wrapper.find("[data-testid=cohort-action-reconcile-periods]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=cohort-action-reconcile-users]").exists()).toBe(false)
   })
 })

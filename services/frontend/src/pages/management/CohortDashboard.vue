@@ -12,6 +12,9 @@ defineOptions({name: "CohortDashboardPage"})
 
 const router = useRouter()
 
+/** The engine-wide passes run as jobs, which only an admin queues. */
+const isAdmin = computed(() => store.getters.isAdmin === true)
+
 const cohorts = ref<CohortSummary[]>([])
 const loading = ref<boolean>(false)
 const triggering = ref<string | null>(null)
@@ -139,7 +142,7 @@ const openCategory = (category: CohortCategory) => {
 }
 
 onMounted(async () => {
-  if (!store.getters.isAdmin) {
+  if (!(store.getters.isBoard || store.getters.isAdmin)) {
     await router.replace("/")
     return
   }
@@ -202,6 +205,7 @@ onMounted(async () => {
                 style="gap: 8px"
               >
                 <v-btn
+                  v-if="isAdmin"
                   color="primary"
                   data-testid="cohort-action-reconcile-periods"
                   :disabled="!!triggering"
@@ -213,6 +217,7 @@ onMounted(async () => {
                   Reconcile periods
                 </v-btn>
                 <v-btn
+                  v-if="isAdmin"
                   color="primary"
                   data-testid="cohort-action-reconcile-users"
                   :disabled="!!triggering"

@@ -3,10 +3,10 @@ package net.blueshell.api.committee.web
 import com.jayway.jsonpath.JsonPath
 import net.blueshell.api.committee.persistence.CommitteeRepository
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.model.addressOf
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.hamcrest.Matchers.contains
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -80,20 +80,15 @@ class CommitteePageIT : UserTestSupport() {
     }
 
     @Test
-    fun `a committee the release before added, with no address stored, answers to the one its name makes`() {
-        val name = "Old Release ${System.nanoTime()}"
-        transactionTemplate.execute {
-            entityManager
-                .createNativeQuery("INSERT INTO committees (name, description) VALUES (:name, 'Added before addresses')")
-                .setParameter("name", name)
-                .executeUpdate()
-        }
-
-        mvc
-            .perform(get("/committees/address/{address}", addressOf(name)))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.name").value(name))
-            .andExpect(jsonPath("$.slug").value(addressOf(name)))
+    fun `a committee without an address is refused, since every release since 1_12_0 writes one`() {
+        assertThatThrownBy {
+            transactionTemplate.execute {
+                entityManager
+                    .createNativeQuery("INSERT INTO committees (name, description) VALUES (:name, 'No address')")
+                    .setParameter("name", "No Address ${System.nanoTime()}")
+                    .executeUpdate()
+            }
+        }.hasStackTraceContaining("slug")
     }
 
     @Test

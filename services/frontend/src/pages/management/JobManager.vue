@@ -22,7 +22,8 @@ const PAGE_SIZE = 50
 
 const stats = ref<JobStats | null>(null)
 const selectedCategory = ref<string | null>(null)
-const selectedStatus = ref<string | null>(null)
+// An alert links here with the status it is about.
+const selectedStatus = ref<string | null>(typeof route.query.status === "string" ? route.query.status : null)
 const hideSkipped = ref(false)
 const runOpen = ref(false)
 const preset = ref<JobPreset | null>(null)

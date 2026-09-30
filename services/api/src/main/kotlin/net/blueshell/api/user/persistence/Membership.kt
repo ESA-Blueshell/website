@@ -1,6 +1,7 @@
 package net.blueshell.api.user.persistence
 
 import jakarta.persistence.Column
+import jakarta.persistence.Embedded
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -44,6 +45,10 @@ class Membership(
     @Column(name = "incasso", nullable = false)
     var incasso: Boolean = false,
 ) : AuditedAutoIdEntity() {
+    /** The bank details and mandate it is collected under, or null where none is recorded. */
+    @Embedded
+    var mandate: IncassoMandate? = null
+
     val userId: Long
         get() = user.id ?: 0
 }

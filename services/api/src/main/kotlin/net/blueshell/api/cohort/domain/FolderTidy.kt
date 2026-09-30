@@ -2,7 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -16,24 +16,24 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class FolderTidy(
     private val strategies: TargetStrategies,
+    private val targets: TargetRepository,
     private val cohorts: CohortRepository,
-    private val subjects: CohortSubjectRepository,
 ) {
     /** What the tidy would do; changes nothing. */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun preview(system: TargetSystem): TidyPlan {
         val strategy = strategies.require(system)
         val catalog = strategy.catalog(null).associateBy { it.externalId }
-        val typeOf = subjects.findAll().associate { it.id to it.type }
+        val typeOf = cohorts.findAll().associate { it.id to it.type }
         val moves =
-            cohorts
+            targets
                 .findAllBySystem(system.name)
-                .mapNotNull { cohort ->
-                    val target = cohort.externalId?.let(catalog::get) ?: return@mapNotNull null
-                    val type = typeOf[cohort.subjectId] ?: return@mapNotNull null
+                .mapNotNull { target ->
+                    val external = target.externalId?.let(catalog::get) ?: return@mapNotNull null
+                    val type = typeOf[target.cohortId] ?: return@mapNotNull null
                     val folder = CohortFolders.forType(type)
-                    if (target.folderLabel.equals(folder, ignoreCase = true)) return@mapNotNull null
-                    TidyMove(target.externalId, target.label, target.folderLabel, folder)
+                    if (external.folderLabel.equals(folder, ignoreCase = true)) return@mapNotNull null
+                    TidyMove(external.externalId, external.label, external.folderLabel, folder)
                 }.sortedWith(compareBy({ it.to }, { it.label }))
         val known = strategy.folders().map { it.lowercase() }.toSet()
         val toCreate = moves.map { it.to }.distinct().filter { it.lowercase() !in known }
@@ -60,8 +60,8 @@ class FolderTidy(
             val outcome =
                 unmade[move.to]?.let { Result.failure(it) }
                     ?: runCatching {
-                        val target = strategy.resolve(move.externalId) ?: error("${system.shownName} no longer has this list")
-                        strategy.move(target, move.to)
+                        val external = strategy.resolve(move.externalId) ?: error("${system.shownName} no longer has this list")
+                        strategy.move(external, move.to)
                     }
             outcome
                 .onSuccess { moved += it }

@@ -13,7 +13,7 @@ import {
 export type DriftAction = "push" | "remove" | "link"
 
 /** The people one action concerns, grouped by the target each sits on. */
-export type DriftGroup = {cohortId: number; people: CohortMember[]}
+export type DriftGroup = {targetId: number; people: CohortMember[]}
 
 /** What a confirmed action will do: its people, and for a link the account each would get. */
 export type DriftPlan = {action: DriftAction; groups: DriftGroup[]; proposals: LinkProposal[]}
@@ -35,7 +35,7 @@ const DONE: Record<DriftAction, (count: number) => string> = {
  * a plan to confirm, and the calls it makes per target.
  */
 export function useDriftResolution(
-  subjectId: Ref<number | null>,
+  cohortId: Ref<number | null>,
   mappings: Ref<TargetMapping[]>,
   reload: () => Promise<void>,
 ) {
@@ -48,8 +48,8 @@ export function useDriftResolution(
 
   const toggle = (row: CohortMember) => {
     const next = new Set(selection.value)
-    if (next.has(row.cohortMemberId)) next.delete(row.cohortMemberId)
-    else next.add(row.cohortMemberId)
+    if (next.has(row.targetMemberId)) next.delete(row.targetMemberId)
+    else next.add(row.targetMemberId)
     selection.value = next
   }
 
@@ -57,34 +57,34 @@ export function useDriftResolution(
     selection.value = new Set()
   }
 
-  const cohortIdFor = (row: CohortMember): number | null =>
-    mappings.value.find((mapping) => mapping.system === row.system)?.cohortId ?? null
+  const targetIdFor = (row: CohortMember): number | null =>
+    mappings.value.find((mapping) => mapping.system === row.system)?.targetId ?? null
 
-  const canResolve = (action: DriftAction, row: CohortMember): boolean => fits[action](row) && cohortIdFor(row) != null
+  const canResolve = (action: DriftAction, row: CohortMember): boolean => fits[action](row) && targetIdFor(row) != null
 
   const grouped = (action: DriftAction, rows: CohortMember[]): DriftGroup[] => {
     const groups = new Map<number, CohortMember[]>()
     rows.filter((row) => canResolve(action, row)).forEach((row) => {
-      const cohortId = cohortIdFor(row)!
-      groups.set(cohortId, [...(groups.get(cohortId) ?? []), row])
+      const targetId = targetIdFor(row)!
+      groups.set(targetId, [...(groups.get(targetId) ?? []), row])
     })
-    return [...groups].map(([cohortId, people]) => ({cohortId, people}))
+    return [...groups].map(([targetId, people]) => ({targetId, people}))
   }
 
   /** How many of the ticked rows [action] fits, which is what its button counts. */
   const selectedFor = (action: DriftAction, rows: CohortMember[]): number =>
-    rows.filter((row) => selection.value.has(row.cohortMemberId) && canResolve(action, row)).length
+    rows.filter((row) => selection.value.has(row.targetMemberId) && canResolve(action, row)).length
 
   /** Opens the plan for [action] over [rows]; a link first asks which account each contact has. */
   const prepare = async (action: DriftAction, rows: CohortMember[]) => {
     error.value = null
     message.value = null
     const groups = grouped(action, rows)
-    if (groups.length === 0 || subjectId.value == null) return
+    if (groups.length === 0 || cohortId.value == null) return
     const proposals: LinkProposal[] = []
     if (action === "link") {
       for (const group of groups) {
-        const answer = await proposeDriftLinks(subjectId.value, group.cohortId, group.people.map((row) => row.externalUserId!))
+        const answer = await proposeDriftLinks(cohortId.value, group.targetId, group.people.map((row) => row.externalUserId!))
         if (!answer.ok) {
           error.value = answer.reason
           return
@@ -109,16 +109,16 @@ export function useDriftResolution(
 
   const run = async (current: DriftPlan, group: DriftGroup, id: number): Promise<{count: number; refused: string | null}> => {
     if (current.action === "push") {
-      const answer = await pushDriftPeople(id, group.cohortId, group.people.map((row) => row.userId!))
+      const answer = await pushDriftPeople(id, group.targetId, group.people.map((row) => row.userId!))
       return answer.ok ? {count: answer.saved, refused: null} : {count: 0, refused: answer.reason}
     }
     if (current.action === "remove") {
-      const answer = await removeDriftPeople(id, group.cohortId, group.people.map((row) => row.externalUserId!))
+      const answer = await removeDriftPeople(id, group.targetId, group.people.map((row) => row.externalUserId!))
       return answer.ok ? {count: answer.saved, refused: null} : {count: 0, refused: answer.reason}
     }
     const links = linksFor(group, current.proposals)
     if (links.length === 0) return {count: 0, refused: null}
-    const answer = await linkDriftPeople(id, group.cohortId, links)
+    const answer = await linkDriftPeople(id, group.targetId, links)
     if (!answer.ok) return {count: 0, refused: answer.reason}
     const taken = answer.saved.conflicts.length
     return {count: answer.saved.linked, refused: taken > 0 ? `${taken} already belong to another account.` : null}
@@ -127,7 +127,7 @@ export function useDriftResolution(
   /** Carries out the open plan, target by target, then reloads the page's rows. */
   const confirm = async () => {
     const current = plan.value
-    const id = subjectId.value
+    const id = cohortId.value
     if (current == null || id == null) return
     working.value = true
     let count = 0
@@ -150,9 +150,9 @@ export function useDriftResolution(
 
   /** Link one contact to an account picked by hand; answers the account already holding it, if any. */
   const linkOne = async (row: CohortMember, userId: number): Promise<number | null> => {
-    const cohortId = cohortIdFor(row)
-    if (cohortId == null || subjectId.value == null || row.externalUserId == null) return null
-    const answer = await linkDriftPeople(subjectId.value, cohortId, [{externalUserId: row.externalUserId, userId}])
+    const targetId = targetIdFor(row)
+    if (targetId == null || cohortId.value == null || row.externalUserId == null) return null
+    const answer = await linkDriftPeople(cohortId.value, targetId, [{externalUserId: row.externalUserId, userId}])
     if (!answer.ok) {
       error.value = answer.reason
       return null

@@ -4,7 +4,7 @@ import org.springframework.modulith.ApplicationModule
 import org.springframework.modulith.PackageInfo
 
 /**
- * Code-defined audiences — "active members", "paid for this period" — evaluated into `CohortMember`
+ * Code-defined audiences — "active members", "paid for this period" — evaluated into `TargetMember`
  * rows and reconciled against the mailing list or group that stands for them in an external system.
  *
  * One `TargetStrategy` per target system stands between the module and that system; the REST

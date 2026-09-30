@@ -2,7 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {ref} from "vue"
 import {useDriftResolution} from "@/domains/cohorts/composables/useDriftResolution"
 import {
-  CohortKind,
+  TargetKind,
   TargetSystem,
   linkDriftPeople,
   proposeDriftLinks,
@@ -23,10 +23,10 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
   }
 })
 
-const mapping = (system: TargetSystem, cohortId: number): TargetMapping => ({
-  cohortId,
+const mapping = (system: TargetSystem, targetId: number): TargetMapping => ({
+  targetId,
   system,
-  kind: CohortKind.LIST,
+  kind: TargetKind.LIST,
   label: "Members",
   externalId: "7",
   lastReconciledAt: null,
@@ -38,7 +38,7 @@ const mapping = (system: TargetSystem, cohortId: number): TargetMapping => ({
 
 let nextId = 1
 const row = (over: Partial<CohortMember>): CohortMember => ({
-  cohortMemberId: nextId++,
+  targetMemberId: nextId++,
   userId: null,
   userFullName: null,
   userEmail: null,
@@ -93,7 +93,7 @@ describe("useDriftResolution", () => {
     drift.toggle(rows[0]!)
 
     await drift.prepare("push", rows)
-    expect(drift.plan.value?.groups).toEqual([{cohortId: 40, people: [rows[0], rows[1]]}])
+    expect(drift.plan.value?.groups).toEqual([{targetId: 40, people: [rows[0], rows[1]]}])
     expect(drift.planCount.value).toBe(2)
     await drift.confirm()
 

@@ -14,8 +14,8 @@ import java.time.Instant
 @Table(name = "drift_resolution")
 class DriftResolution(
     /** The target (a `cohort` row) the drift was on. */
-    @Column(name = "cohort_id", nullable = false)
-    val cohortId: Long,
+    @Column(name = "target_id", nullable = false)
+    val targetId: Long,
     @Enumerated(EnumType.STRING)
     @Column(name = "action", nullable = false, length = 16)
     val action: DriftResolutionAction,

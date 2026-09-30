@@ -6,7 +6,7 @@ import net.blueshell.api.cohort.domain.FolderTidy
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TidyMove
 import net.blueshell.api.cohort.domain.TidyPlan
-import net.blueshell.api.cohort.persistence.CohortKind
+import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -18,7 +18,7 @@ class CohortTargetControllerTest {
     private val catalog = mock<TargetCatalog>()
     private val tidy = mock<FolderTidy>()
     private val controller = CohortTargetController(catalog, tidy)
-    private val list = ExternalTarget(TargetSystem.BREVO, "9", CohortKind.LIST, "Pub quiz", "Projects")
+    private val list = ExternalTarget(TargetSystem.BREVO, "9", TargetKind.LIST, "Pub quiz", "Projects")
 
     @Test
     fun `a new list's name and folder are trimmed before Brevo sees them`() {

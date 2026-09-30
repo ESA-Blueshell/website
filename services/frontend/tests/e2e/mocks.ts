@@ -17,8 +17,8 @@ import type {
   BoardResponse,
   CasualGameRequest,
   CasualGameResponse,
-  CohortSubjectDetail,
-  CohortSubjectSummary,
+  CohortDetail,
+  CohortSummary,
   CommitteeOwnPageRequest,
   CommitteeResponse,
   CreateCommitteeRequest,
@@ -86,8 +86,8 @@ type Fixtures = {
   blogStatusById?: Record<string, number>
   jobs?: Wire<JobExecution>[]
   emails?: Wire<Email>[]
-  cohortSubjects?: Wire<CohortSubjectSummary>[]
-  cohortMembers?: Wire<CohortSubjectDetail["members"]>
+  cohorts?: Wire<CohortSummary>[]
+  cohortMembers?: Wire<CohortDetail["members"]>
   esportsPages?: Record<string, Wire<GameRostersResponse>>
   esportsSeasons?: Wire<SeasonResponse>[]
   esportsTeams?: Wire<TeamResponse>[]
@@ -95,7 +95,7 @@ type Fixtures = {
   esportsGames?: Wire<CasualGameResponse>[]
   casualGames?: Wire<CasualGameResponse>[]
   boards?: Wire<BoardResponse>[]
-  cohortSubjectDetail?: Partial<CohortSubjectDetail>
+  cohortDetail?: Partial<CohortDetail>
   /** A refusal the payment-email send answers with instead of accepting the batch. */
   paymentEmailRefusal?: {status: number; errors: Wire<FieldValidationError>[]}
 }
@@ -109,12 +109,12 @@ type Fixtures = {
 export const BULK_MEMBERSHIP_EFFECTIVE_DATE = "2026-08-31"
 
 const brevoTargets: Wire<ExternalTarget>[] = [
-  {system: "BREVO", externalId: "7", kind: "LIST", label: "Members 2025-2026", folderLabel: "Contribution periods", path: ["Brevo", "Contribution periods"], memberCount: 2, linkedCohortId: 1},
-  {system: "BREVO", externalId: "33", kind: "LIST", label: "Web Cmte", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 1, linkedCohortId: 2},
-  {system: "BREVO", externalId: "34", kind: "LIST", label: "Board", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 5, linkedCohortId: null},
+  {system: "BREVO", externalId: "7", kind: "LIST", label: "Members 2025-2026", folderLabel: "Contribution periods", path: ["Brevo", "Contribution periods"], memberCount: 2, linkedTargetId: 1},
+  {system: "BREVO", externalId: "33", kind: "LIST", label: "Web Cmte", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 1, linkedTargetId: 2},
+  {system: "BREVO", externalId: "34", kind: "LIST", label: "Board", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 5, linkedTargetId: null},
   // Same name as the committee list above, filed somewhere else: only the path tells them apart.
-  {system: "BREVO", externalId: "88", kind: "LIST", label: "Web Cmte", folderLabel: "Archive", path: ["Brevo", "Archive"], memberCount: 0, linkedCohortId: null},
-  {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, path: ["Brevo"], memberCount: null, linkedCohortId: null},
+  {system: "BREVO", externalId: "88", kind: "LIST", label: "Web Cmte", folderLabel: "Archive", path: ["Brevo", "Archive"], memberCount: 0, linkedTargetId: null},
+  {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, path: ["Brevo"], memberCount: null, linkedTargetId: null},
 ]
 
 /**
@@ -1369,19 +1369,17 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         folderLabel: body.folder,
         path: ["Brevo", body.folder].filter(Boolean),
         memberCount: brevoTargets.find((t) => t.externalId === id)?.memberCount ?? null,
-        linkedCohortId: brevoTargets.find((t) => t.externalId === id)?.linkedCohortId ?? null,
+        linkedTargetId: brevoTargets.find((t) => t.externalId === id)?.linkedTargetId ?? null,
       }))
       return answer(route, "moveCohortTargets", {moved, failed: []})
     }
     if (method === "GET" && path === "/management/cohort-targets/BREVO") {
       return answer(route, "searchCohortTargets", brevoTargets)
     }
-    // Legacy /management/cohorts list (still used by CohortPicker until
-    // the engine is fully on subjects).
-    if (method === "GET" && path === "/management/cohorts") {
-      return answer(route, "findCohorts", [
-        {id: 1, system: "BREVO", kind: "LIST", label: "Members 2025-2026", memberCount: 2, externalId: "7", folder: "Periods"},
-        {id: 2, system: "BREVO", kind: "LIST", label: "Web Cmte", memberCount: 1, externalId: "33", folder: "Committees"},
+    if (method === "GET" && path === "/management/cohorts/targets") {
+      return answer(route, "listTargetOptions", [
+        {id: 1, system: "BREVO", kind: "LIST", label: "Members 2025-2026", memberCount: 2},
+        {id: 2, system: "BREVO", kind: "LIST", label: "Web Cmte", memberCount: 1},
       ])
     }
     if (method === "GET" && path === "/boards") {
@@ -1963,8 +1961,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const body = JSON.parse(request.postData() ?? "{}") as {handle: string}
       return answer(route, "setGameAccount", {id: 5, userId: 1, game: path.split("/").pop() ?? "", handle: body.handle})
     }
-    if (method === "GET" && path === "/management/cohort-subjects") {
-      return answer(route, "findCohortSubjects", fixtures.cohortSubjects ?? [
+    if (method === "GET" && path === "/management/cohorts") {
+      return answer(route, "findCohorts", fixtures.cohorts ?? [
         {
           id: 101,
           type: "PERIOD_MEMBERS",
@@ -1983,10 +1981,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         },
       ])
     }
-    if (method === "GET" && /^\/management\/cohort-subjects\/\d+$/.test(path)) {
+    if (method === "GET" && /^\/management\/cohorts\/\d+$/.test(path)) {
       const id = Number(path.split("/")[3] ?? "0")
       const isCommittee = id === 102
-      return answer(route, "findCohortSubjectById", {
+      return answer(route, "findCohortById", {
         id,
         type: isCommittee ? "COMMITTEE_MEMBERS" : "PERIOD_MEMBERS",
         category: isCommittee ? "COMMITTEES" : "PERIODS",
@@ -1994,7 +1992,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         description: null,
         mappings: [
           {
-            cohortId: isCommittee ? 2 : 1,
+            targetId: isCommittee ? 2 : 1,
             system: "BREVO",
             kind: "LIST",
             label: isCommittee ? "Web Cmte" : "Members 2025-2026",
@@ -2013,7 +2011,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         orphaned: false,
         resolutions: [
           {
-            cohortId: isCommittee ? 2 : 1,
+            targetId: isCommittee ? 2 : 1,
             system: "BREVO",
             action: "REMOVE",
             externalUserId: "ext-9",
@@ -2022,12 +2020,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             resolvedAt: "2026-02-10T10:00:00Z",
           },
         ],
-        ...(fixtures.cohortSubjectDetail ?? {}),
+        ...(fixtures.cohortDetail ?? {}),
         // One of each state the page draws: in sync, ours-but-not-pushed, and two rows the
         // target has that we do not — one we can name, one we cannot.
         members: fixtures.cohortMembers ?? [
           {
-            cohortMemberId: 200 + id,
+            targetMemberId: 200 + id,
             system: "BREVO",
             state: "VERIFIED",
             userId: 1,
@@ -2039,7 +2037,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             joinedAt: "2026-01-15T10:00:00Z",
           },
           {
-            cohortMemberId: 300 + id,
+            targetMemberId: 300 + id,
             system: "BREVO",
             state: "DESIRED",
             userId: 2,
@@ -2051,7 +2049,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             joinedAt: "2026-02-01T10:00:00Z",
           },
           {
-            cohortMemberId: 400 + id,
+            targetMemberId: 400 + id,
             system: "BREVO",
             state: "STRANGER",
             userId: 3,
@@ -2063,7 +2061,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             joinedAt: "2026-02-02T10:00:00Z",
           },
           {
-            cohortMemberId: 500 + id,
+            targetMemberId: 500 + id,
             system: "BREVO",
             state: "STRANGER",
             userId: null,

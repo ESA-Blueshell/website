@@ -1,7 +1,8 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortKind
+import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.contact.api.ContactListAdapter
+import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
@@ -31,7 +32,7 @@ class BrevoTargetStrategyTest {
     @Test
     fun `renames a list and makes a folder by name`() {
         whenever(lists.listFolders()).thenReturn(mapOf(1L to "Archive"))
-        val paid = ExternalTarget(TargetSystem.BREVO, "99", CohortKind.LIST, "Paid")
+        val paid = ExternalTarget(TargetSystem.BREVO, "99", TargetKind.LIST, "Paid")
 
         assertThat(strategy.rename(paid, "Paid 2026").label).isEqualTo("Paid 2026")
         assertThat(strategy.createFolder("Archive")).containsExactly("Archive")
@@ -61,6 +62,23 @@ class BrevoTargetStrategyTest {
         val targets = strategy.catalog("paid")
 
         assertThat(targets).extracting<String> { it.externalId }.containsExactly("11")
+    }
+
+    @Test
+    fun `reads, adds to, removes from, renames and deletes a list by its Brevo id`() {
+        val paid = ExternalTarget(TargetSystem.BREVO, "99", TargetKind.LIST, "Paid")
+        whenever(lists.listMembers(99L)).thenReturn(listOf(ContactListMember(7L, "ada@example.com")))
+
+        assertThat(strategy.members(paid)).containsExactly(ExternalMember("7", "ada@example.com"))
+        strategy.add(paid, "7")
+        strategy.remove(paid, "7")
+        assertThat(strategy.rename(paid, "Paid 2026").label).isEqualTo("Paid 2026")
+        strategy.delete(paid)
+
+        verify(lists).addToList(7L, 99L)
+        verify(lists).removeFromList(7L, 99L)
+        verify(lists).renameList(99L, "Paid 2026")
+        verify(lists).deleteList(99L)
     }
 
     private fun list(

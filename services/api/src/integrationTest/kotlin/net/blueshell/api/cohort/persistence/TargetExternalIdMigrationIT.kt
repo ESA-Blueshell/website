@@ -18,8 +18,8 @@ import org.springframework.jdbc.core.JdbcTemplate
  * the column.
  */
 @SpringBootTest
-class CohortExternalIdMigrationIT : UserTestSupport() {
-    @Autowired private lateinit var cohorts: CohortRepository
+class TargetExternalIdMigrationIT : UserTestSupport() {
+    @Autowired private lateinit var targets: TargetRepository
 
     @Autowired private lateinit var externalIds: ExternalIdMappingRepository
 
@@ -28,10 +28,10 @@ class CohortExternalIdMigrationIT : UserTestSupport() {
     @Test
     fun `external_id column round-trips through the entity`() {
         val saved =
-            cohorts.save(
-                Cohort(system = TargetSystem.BREVO.name, kind = CohortKind.LIST, label = "Members", externalId = "list-1"),
+            targets.save(
+                Target(system = TargetSystem.BREVO.name, kind = TargetKind.LIST, label = "Members", externalId = "list-1"),
             )
-        assertThat(cohorts.findById(saved.id!!).orElseThrow().externalId).isEqualTo("list-1")
+        assertThat(targets.findById(saved.id!!).orElseThrow().externalId).isEqualTo("list-1")
     }
 
     @Test
@@ -50,12 +50,12 @@ class CohortExternalIdMigrationIT : UserTestSupport() {
 
     @Test
     fun `the V77 backfill copies the legacy mapping id into the column`() {
-        val cohort =
-            cohorts.save(
-                Cohort(system = TargetSystem.BREVO.name, kind = CohortKind.LIST, label = "Members", externalId = null),
+        val target =
+            targets.save(
+                Target(system = TargetSystem.BREVO.name, kind = TargetKind.LIST, label = "Members", externalId = null),
             )
         externalIds.saveAndFlush(
-            ExternalIdMapping(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name, "legacy-9"),
+            ExternalIdMapping(COHORT_AGGREGATE, target.id!!, TargetSystem.BREVO.name, "legacy-9"),
         )
 
         // The backfill statement from V77 (re-run here against a row left in the
@@ -70,6 +70,6 @@ class CohortExternalIdMigrationIT : UserTestSupport() {
             """.trimIndent(),
         )
 
-        assertThat(cohorts.findById(cohort.id!!).orElseThrow().externalId).isEqualTo("legacy-9")
+        assertThat(targets.findById(target.id!!).orElseThrow().externalId).isEqualTo("legacy-9")
     }
 }

@@ -38,7 +38,7 @@ const mountPage = async () => {
   vi.mocked(fetchTargetDescriptors).mockResolvedValue([{system: "BREVO", kind: "LIST"}])
   vi.mocked(fetchTargetOptions).mockResolvedValue([{
     system: "BREVO", externalId: "7", kind: "LIST", label: "Guests", folderLabel: "Newsletter",
-    memberCount: 3, linkedCohortId: null, path: ["Brevo", "Newsletter"],
+    memberCount: 3, linkedTargetId: null, path: ["Brevo", "Newsletter"],
   }])
   vi.mocked(fetchTargetFolders).mockResolvedValue(["Newsletter"])
   const wrapper = mountInApp(CohortTargets)
@@ -71,7 +71,7 @@ describe("CohortTargets", () => {
     vi.mocked(createFolderInSystem).mockResolvedValue({ok: true, saved: ["Newsletter", "Projects"]})
     vi.mocked(createListInSystem).mockResolvedValue({ok: true, saved: {
       system: "BREVO", externalId: "9", kind: "LIST", label: "Pub quiz", folderLabel: "Projects",
-      memberCount: 0, linkedCohortId: null, path: ["Brevo", "Projects"],
+      memberCount: 0, linkedTargetId: null, path: ["Brevo", "Projects"],
     }})
 
     await wrapper.get("[data-testid=cohort-targets-create]").trigger("click")

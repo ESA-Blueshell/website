@@ -1,11 +1,11 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
@@ -33,9 +33,9 @@ import java.util.Optional
  * A no-op transaction manager runs the TransactionTemplate callbacks inline.
  */
 class CohortTargetingServiceTest {
+    private val targetRepo = mock<TargetRepository>()
     private val cohortRepo = mock<CohortRepository>()
-    private val subjectRepo = mock<CohortSubjectRepository>()
-    private val targetIds = mock<CohortTargetIds>()
+    private val targetExternalIds = mock<CohortTargetIds>()
     private val jobs = mock<JobQueue>()
     private val strategy = mock<TargetStrategy>()
     private val strategies: TargetStrategies
@@ -56,15 +56,15 @@ class CohortTargetingServiceTest {
         whenever(strategy.descriptor).thenReturn(brevoDescriptor)
         whenever(strategy.resolve(any())).thenReturn(null)
         strategies = TargetStrategies(listOf(strategy))
-        service = CohortTargetingService(cohortRepo, subjectRepo, targetIds, strategies, jobs, txManager)
+        service = CohortTargetingService(targetRepo, cohortRepo, targetExternalIds, strategies, jobs, txManager)
     }
 
     @Test
-    fun `create does not touch the provider when the subject already maps the system`() {
-        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(Entities.cohortSubject(id = 1L)))
-        val linked = Entities.cohort()
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(linked)
-        whenever(targetIds.find(linked)).thenReturn("list-1")
+    fun `create does not touch the provider when the cohort already maps the system`() {
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
+        val linked = Entities.target()
+        whenever(targetRepo.findByCohortIdAndSystem(1L, "BREVO")).thenReturn(linked)
+        whenever(targetExternalIds.find(linked)).thenReturn("list-1")
 
         val refused =
             assertThrows<ResponseStatusException> {
@@ -73,51 +73,51 @@ class CohortTargetingServiceTest {
         assert(refused.reason!!.contains("switch it instead"))
 
         verify(strategy, never()).create(any(), any())
-        verify(cohortRepo, never()).save(any())
+        verify(targetRepo, never()).save(any())
     }
 
     @Test
     fun `create materialises the target and records the id`() {
-        val saved = Entities.cohort(id = 42L)
-        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(Entities.cohortSubject(id = 1L)))
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
-        whenever(strategy.create("Members", "Lists")).thenReturn(target("999", "Members", "Lists"))
-        whenever(cohortRepo.save(any<Cohort>())).thenReturn(saved)
+        val saved = Entities.target(id = 42L)
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
+        whenever(targetRepo.findByCohortIdAndSystem(1L, "BREVO")).thenReturn(null)
+        whenever(strategy.create("Members", "Lists")).thenReturn(external("999", "Members", "Lists"))
+        whenever(targetRepo.save(any<Target>())).thenReturn(saved)
 
         val row = service.create(1L, TargetSystem.BREVO, "Members", "Lists")
 
         verify(strategy).create("Members", "Lists")
-        verify(targetIds).record(saved, "999")
+        verify(targetExternalIds).record(saved, "999")
         assert(row.externalId == "999")
     }
 
     @Test
     fun `create fills a registered target that has no list yet, in its type's folder`() {
-        val unlinked = Entities.cohort(id = 42L, system = "BREVO", label = "Paid 2026-2027", folder = "Contribution paid")
-        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(Entities.cohortSubject(id = 1L)))
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(unlinked)
-        whenever(cohortRepo.findById(42L)).thenReturn(Optional.of(unlinked))
-        whenever(strategy.create("Paid 2026-2027", "Contribution paid")).thenReturn(target("999", "Paid 2026-2027", "Contribution paid"))
+        val unlinked = Entities.target(id = 42L, system = "BREVO", label = "Paid 2026-2027", folder = "Contribution paid")
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
+        whenever(targetRepo.findByCohortIdAndSystem(1L, "BREVO")).thenReturn(unlinked)
+        whenever(targetRepo.findById(42L)).thenReturn(Optional.of(unlinked))
+        whenever(strategy.create("Paid 2026-2027", "Contribution paid")).thenReturn(external("999", "Paid 2026-2027", "Contribution paid"))
 
         val row = service.create(1L, TargetSystem.BREVO, "Paid 2026-2027", null)
 
-        verify(cohortRepo, never()).save(any())
-        verify(targetIds).record(unlinked, "999")
+        verify(targetRepo, never()).save(any())
+        verify(targetExternalIds).record(unlinked, "999")
         assert(row.externalId == "999")
     }
 
     @Test
     fun `createFor claims the cohort, makes its target in its folder and reconciles it`() {
-        val cohort = Entities.cohort(id = 7L, system = "BREVO", label = "Paid 2026-2027", folder = "Contribution paid")
-        whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
-        whenever(strategy.create("Paid 2026-2027", "Contribution paid")).thenReturn(target("55", "Paid 2026-2027", "Contribution paid"))
+        val target = Entities.target(id = 7L, system = "BREVO", label = "Paid 2026-2027", folder = "Contribution paid")
+        whenever(targetRepo.findById(7L)).thenReturn(Optional.of(target))
+        whenever(strategy.create("Paid 2026-2027", "Contribution paid")).thenReturn(external("55", "Paid 2026-2027", "Contribution paid"))
 
         val ref = service.createFor(7L)
 
         assert(ref.externalId == "55")
-        assert(cohort.targetClaimedAt != null)
+        assert(target.targetClaimedAt != null)
         verify(strategy, never()).catalog(anyOrNull())
-        verify(targetIds).record(cohort, "55")
+        verify(targetExternalIds).record(target, "55")
         verify(jobs).runAsync(
             eq(CohortJobs.ReconcileList),
             eq(CohortJobs.ReconcileListPayload(7L, JobTrigger.ANOTHER_JOB)),
@@ -128,46 +128,46 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `a retried createFor finds the target its first run made instead of making a second`() {
-        val cohort =
-            Entities.cohort(id = 7L, system = "BREVO", label = "Paid 2026-2027", folder = "Contribution paid").apply {
+        val target =
+            Entities.target(id = 7L, system = "BREVO", label = "Paid 2026-2027", folder = "Contribution paid").apply {
                 targetClaimedAt = java.time.Instant.parse("2026-09-29T10:00:00Z")
             }
-        whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
+        whenever(targetRepo.findById(7L)).thenReturn(Optional.of(target))
         whenever(strategy.catalog("Paid 2026-2027")).thenReturn(
-            listOf(target("54", "Paid 2026-2027", "Members"), target("55", "Paid 2026-2027", "Contribution paid")),
+            listOf(external("54", "Paid 2026-2027", "Members"), external("55", "Paid 2026-2027", "Contribution paid")),
         )
 
         val ref = service.createFor(7L)
 
         assert(ref.externalId == "55")
         verify(strategy, never()).create(any(), anyOrNull())
-        verify(targetIds).record(cohort, "55")
+        verify(targetExternalIds).record(target, "55")
     }
 
     @Test
     fun `createFor is a no-op when the target already exists`() {
-        val cohort = Entities.cohort(id = 7L, system = "BREVO", label = "Members")
-        whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
-        whenever(targetIds.find(cohort)).thenReturn("existing")
+        val target = Entities.target(id = 7L, system = "BREVO", label = "Members")
+        whenever(targetRepo.findById(7L)).thenReturn(Optional.of(target))
+        whenever(targetExternalIds.find(target)).thenReturn("existing")
 
         val ref = service.createFor(7L)
 
         assert(ref.externalId == "existing")
         verify(strategy, never()).create(any(), anyOrNull())
-        verify(targetIds, never()).record(any(), any())
+        verify(targetExternalIds, never()).record(any(), any())
     }
 
     @Test
     fun `createFor fails terminally for a cohort that is gone`() {
-        whenever(cohortRepo.findById(7L)).thenReturn(Optional.empty())
+        whenever(targetRepo.findById(7L)).thenReturn(Optional.empty())
 
         assertThrows<NonRetryableJobException> { service.createFor(7L) }
     }
 
     @Test
     fun `createMissing queues one create-target job per cohort without a target`() {
-        whenever(cohortRepo.findAllBySubjectIdIsNotNullAndExternalIdIsNull()).thenReturn(
-            listOf(Entities.cohort(id = 3L), Entities.cohort(id = 4L)),
+        whenever(targetRepo.findAllByCohortIdIsNotNullAndExternalIdIsNull()).thenReturn(
+            listOf(Entities.target(id = 3L), Entities.target(id = 4L)),
         )
 
         assert(service.createMissing() == 2)
@@ -188,47 +188,47 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `linkExisting fills an existing unbound mapping`() {
-        val subject = mock<net.blueshell.api.cohort.persistence.CohortSubject>()
-        val cohort =
-            Entities.cohort(id = 7L, externalId = null)
-        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(cohort)
+        val cohort = mock<net.blueshell.api.cohort.persistence.Cohort>()
+        val target =
+            Entities.target(id = 7L, externalId = null)
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(cohort))
+        whenever(targetRepo.findByCohortIdAndSystem(1L, "BREVO")).thenReturn(target)
 
         val row = service.linkExisting(1L, TargetSystem.BREVO, "list-123")
 
         verify(strategy).resolve("list-123")
-        verify(cohortRepo, never()).save(any())
-        verify(targetIds).record(cohort, "list-123")
-        assert(row.cohort == cohort)
+        verify(targetRepo, never()).save(any())
+        verify(targetExternalIds).record(target, "list-123")
+        assert(row.target == target)
         assert(row.externalId == "list-123")
     }
 
     @Test
     fun `linkExisting allows ids that are not present in the catalog`() {
-        val subject = CohortSubject(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "Members")
-        val saved = Entities.cohort(id = 7L)
-        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
-        whenever(cohortRepo.save(any<Cohort>())).thenReturn(saved)
+        val cohort = Cohort(CohortType.NEWSLETTER_SUBSCRIBERS, "Members")
+        val saved = Entities.target(id = 7L)
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(cohort))
+        whenever(targetRepo.findByCohortIdAndSystem(1L, "BREVO")).thenReturn(null)
+        whenever(targetRepo.save(any<Target>())).thenReturn(saved)
         whenever(strategy.resolve("missing-list")).thenReturn(null)
 
         service.linkExisting(1L, TargetSystem.BREVO, "missing-list")
 
         verify(strategy).resolve("missing-list")
-        verify(targetIds).record(saved, "missing-list")
+        verify(targetExternalIds).record(saved, "missing-list")
     }
 
     @Test
     fun `switch enqueues delete-previous and reconcile when asked`() {
-        val cohort =
-            Entities.cohort(system = "BREVO", subjectId = 1L)
-        whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
-        whenever(targetIds.find(cohort)).thenReturn("old-list")
+        val target =
+            Entities.target(system = "BREVO", cohortId = 1L)
+        whenever(targetRepo.findById(7L)).thenReturn(Optional.of(target))
+        whenever(targetExternalIds.find(target)).thenReturn("old-list")
 
         service.switchTarget(1L, 7L, "new-list", deletePrevious = true, reconcileNow = true)
 
         verify(strategy).resolve("new-list")
-        verify(targetIds).record(cohort, "new-list")
+        verify(targetExternalIds).record(target, "new-list")
         verify(jobs).runAsync(
             eq(CohortJobs.DeleteExternalTarget),
             eq(CohortJobs.DeleteExternalTargetPayload("BREVO", "old-list")),
@@ -245,10 +245,10 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `switch does not enqueue a delete when there is no previous target`() {
-        val cohort =
-            Entities.cohort(system = "BREVO", subjectId = 1L)
-        whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
-        whenever(targetIds.find(cohort)).thenReturn(null)
+        val target =
+            Entities.target(system = "BREVO", cohortId = 1L)
+        whenever(targetRepo.findById(7L)).thenReturn(Optional.of(target))
+        whenever(targetExternalIds.find(target)).thenReturn(null)
 
         service.switchTarget(1L, 7L, "new-list", deletePrevious = true, reconcileNow = false)
 
@@ -257,35 +257,59 @@ class CohortTargetingServiceTest {
     }
 
     @Test
-    fun `switch rejects a cohort that is not a target of the path subject`() {
-        val cohort = Entities.cohort(subjectId = 99L)
-        whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
+    fun `switch rejects a cohort that is not a target of the path cohort`() {
+        val target = Entities.target(cohortId = 99L)
+        whenever(targetRepo.findById(7L)).thenReturn(Optional.of(target))
 
         assertThrows<ResponseStatusException> {
             service.switchTarget(1L, 7L, "new-list", deletePrevious = false, reconcileNow = false)
         }
 
-        verify(targetIds, never()).record(any(), any())
+        verify(targetExternalIds, never()).record(any(), any())
+    }
+
+    @Test
+    fun `linking a cohort already linked on the system, or a cohort that is gone, is refused`() {
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
+        val linked = Entities.target(id = 3L)
+        whenever(targetRepo.findByCohortIdAndSystem(1L, "BREVO")).thenReturn(linked)
+        whenever(targetExternalIds.find(linked)).thenReturn("list-1")
+        whenever(cohortRepo.findById(2L)).thenReturn(Optional.empty())
+
+        val linkedAlready = assertThrows<ResponseStatusException> { service.linkExisting(1L, TargetSystem.BREVO, "list-2") }
+        val gone = assertThrows<ResponseStatusException> { service.linkExisting(2L, TargetSystem.BREVO, "list-2") }
+
+        assert(linkedAlready.reason == "Cohort 1 already has a BREVO target")
+        assert(gone.reason == "Cohort 2 not found")
+    }
+
+    @Test
+    fun `switching a target that is gone is refused`() {
+        whenever(targetRepo.findById(9L)).thenReturn(Optional.empty())
+
+        val refused = assertThrows<ResponseStatusException> { service.switchTarget(1L, 9L, "list-2", false, false) }
+
+        assert(refused.reason == "Target 9 not found")
     }
 
     @Test
     fun `deleteTarget calls the provider`() {
         service.deleteTarget(TargetSystem.BREVO, "stale-list")
 
-        verify(strategy).delete(target("stale-list", "stale-list", null))
+        verify(strategy).delete(external("stale-list", "stale-list", null))
     }
 
-    private fun target(
+    private fun external(
         id: String,
         label: String,
         folder: String?,
-    ) = ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label, folder)
+    ) = ExternalTarget(TargetSystem.BREVO, id, TargetKind.LIST, label, folder)
 
     private companion object {
         val brevoDescriptor =
             TargetDescriptor(
                 system = TargetSystem.BREVO,
-                kind = CohortKind.LIST,
+                kind = TargetKind.LIST,
             )
     }
 }

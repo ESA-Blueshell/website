@@ -3,8 +3,8 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.cohort.persistence.CohortKind
-import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
@@ -20,18 +20,18 @@ import org.junit.jupiter.api.Test
  */
 class BulkTargetFolderMoveTest {
     private val strategy = mockk<TargetStrategy>(relaxed = true)
-    private val cohorts =
-        mockk<CohortRepository>(relaxed = true) {
+    private val targets =
+        mockk<TargetRepository>(relaxed = true) {
             every { findAllBySystem(any()) } returns emptyList()
         }
 
-    private fun target(
+    private fun external(
         id: String,
         label: String,
     ) = ExternalTarget(
         system = TargetSystem.BREVO,
         externalId = id,
-        kind = CohortKind.LIST,
+        kind = TargetKind.LIST,
         label = label,
         folderLabel = "Unfiled",
     )
@@ -41,15 +41,15 @@ class BulkTargetFolderMoveTest {
         every { strategy.descriptor } returns
             TargetDescriptor(
                 system = TargetSystem.BREVO,
-                kind = CohortKind.LIST,
+                kind = TargetKind.LIST,
             )
-        return TargetCatalog(TargetStrategies(listOf(strategy)), cohorts, mockk(relaxed = true), mockk(relaxed = true))
+        return TargetCatalog(TargetStrategies(listOf(strategy)), targets, mockk(relaxed = true), mockk(relaxed = true))
     }
 
     @Test
     fun `every selected target is filed under the destination`() {
-        val web = target("7", "Web Cmte")
-        val board = target("9", "Board")
+        val web = external("7", "Web Cmte")
+        val board = external("9", "Board")
         every { strategy.folders() } returns listOf("Committees")
         every { strategy.resolve("7") } returns web
         every { strategy.resolve("9") } returns board
@@ -66,7 +66,7 @@ class BulkTargetFolderMoveTest {
     @Test
     fun `an unknown folder refuses the selection whole and sends nothing`() {
         every { strategy.folders() } returns listOf("Committees")
-        every { strategy.resolve(any()) } returns target("7", "Web Cmte")
+        every { strategy.resolve(any()) } returns external("7", "Web Cmte")
 
         assertThatThrownBy { catalog().moveAll(TargetSystem.BREVO, listOf("7"), "Comittees") }
             .isInstanceOf(BulkSelectionRejected::class.java)
@@ -87,7 +87,7 @@ class BulkTargetFolderMoveTest {
     @Test
     fun `one target that has gone refuses the whole selection, so the rest are not moved either`() {
         every { strategy.folders() } returns listOf("Committees")
-        every { strategy.resolve("7") } returns target("7", "Web Cmte")
+        every { strategy.resolve("7") } returns external("7", "Web Cmte")
         every { strategy.resolve("404") } returns null
 
         assertThatThrownBy { catalog().moveAll(TargetSystem.BREVO, listOf("7", "404"), "Committees") }
@@ -108,8 +108,8 @@ class BulkTargetFolderMoveTest {
 
     @Test
     fun `a system refusing one move does not undo the moves already made`() {
-        val web = target("7", "Web Cmte")
-        val board = target("9", "Board")
+        val web = external("7", "Web Cmte")
+        val board = external("9", "Board")
         every { strategy.folders() } returns listOf("Committees")
         every { strategy.resolve("7") } returns web
         every { strategy.resolve("9") } returns board
@@ -128,7 +128,7 @@ class BulkTargetFolderMoveTest {
 
     @Test
     fun `the destination is matched however it is capitalised`() {
-        val web = target("7", "Web Cmte")
+        val web = external("7", "Web Cmte")
         every { strategy.folders() } returns listOf("Committees")
         every { strategy.resolve("7") } returns web
         every { strategy.move(web, "Committees") } returns web.copy(folderLabel = "Committees")
@@ -141,7 +141,7 @@ class BulkTargetFolderMoveTest {
 
     @Test
     fun `the same target named twice is moved once`() {
-        val web = target("7", "Web Cmte")
+        val web = external("7", "Web Cmte")
         every { strategy.folders() } returns listOf("Committees")
         every { strategy.resolve("7") } returns web
         every { strategy.move(web, "Committees") } returns web.copy(folderLabel = "Committees")

@@ -1,7 +1,7 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
@@ -22,7 +22,7 @@ class CohortRegistrationOnCreateIT : UserTestSupport() {
     private lateinit var committees: CommitteeService
 
     @Autowired
-    private lateinit var subjects: CohortSubjectRepository
+    private lateinit var cohorts: CohortRepository
 
     @Test
     fun `a new contribution period has its three cohorts before any contribution exists`() {
@@ -35,9 +35,9 @@ class CohortRegistrationOnCreateIT : UserTestSupport() {
                 ),
             )
 
-        listOf(CohortSubjectType.PERIOD_PAYERS, CohortSubjectType.PERIOD_MEMBERS, CohortSubjectType.PERIOD_ACTIVE_MEMBERS)
+        listOf(CohortType.PERIOD_PAYERS, CohortType.PERIOD_MEMBERS, CohortType.PERIOD_ACTIVE_MEMBERS)
             .forEach { type ->
-                assertThat(subjects.findByDefinitionKey("$type:${period.id}"))
+                assertThat(cohorts.findByDefinitionKey("$type:${period.id}"))
                     .describedAs("no %s cohort for the new period", type)
                     .isNotNull
             }
@@ -47,7 +47,7 @@ class CohortRegistrationOnCreateIT : UserTestSupport() {
     fun `a new committee with no members yet has its cohort`() {
         val committee = committees.createWithMembers("Registratiecie", "Checks its cohort", emptyList())
 
-        assertThat(subjects.findByDefinitionKey("${CohortSubjectType.COMMITTEE_MEMBERS}:${committee.id}")).isNotNull
+        assertThat(cohorts.findByDefinitionKey("${CohortType.COMMITTEE_MEMBERS}:${committee.id}")).isNotNull
     }
 
     @Test
@@ -62,7 +62,7 @@ class CohortRegistrationOnCreateIT : UserTestSupport() {
             )
         periods.update(period)
 
-        val keys = subjects.findAll().mapNotNull { it.definitionKey }.filter { it.endsWith(":${period.id}") }
+        val keys = cohorts.findAll().mapNotNull { it.definitionKey }.filter { it.endsWith(":${period.id}") }
         assertThat(keys).doesNotHaveDuplicates().hasSize(3)
     }
 }

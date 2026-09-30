@@ -6,6 +6,14 @@ databaseChangeLog:
       id: event-google-id-goes
       author: blueshell
       changes:
+        # V58 copied only live events' ids, so any other id still here is kept before the drop.
+        - sql:
+            sql: >-
+              INSERT INTO external_id_mapping (aggregate_type, aggregate_id, system, external_id)
+              SELECT 'EVENT', e.id, 'GOOGLE_CALENDAR', e.google_id FROM events e
+              WHERE e.google_id IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM external_id_mapping m
+                WHERE m.aggregate_type = 'EVENT' AND m.aggregate_id = e.id AND m.system = 'GOOGLE_CALENDAR')
         # The key first: dropping the column alone would leave it unique on deleted_at.
         - dropUniqueConstraint:
             tableName: events
@@ -18,3 +26,8 @@ databaseChangeLog:
             sql: ALTER TABLE events ADD COLUMN google_id MEDIUMTEXT NULL
         - sql:
             sql: ALTER TABLE events ADD UNIQUE KEY uk_events_google_id_deleted_at (google_id, deleted_at) USING HASH
+        - sql:
+            sql: >-
+              UPDATE events e JOIN external_id_mapping m
+              ON m.aggregate_type = 'EVENT' AND m.aggregate_id = e.id AND m.system = 'GOOGLE_CALENDAR'
+              SET e.google_id = m.external_id

@@ -1,5 +1,6 @@
 package net.blueshell.api.contribution.web
 
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
 
+@Schema(name = "StartIncassoRunRequest")
 data class StartIncassoRunRequest(
     val userIds: List<Long> = emptyList(),
     /** Only for a member whose fee type differs from the one the period gives them. */

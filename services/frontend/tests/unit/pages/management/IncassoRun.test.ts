@@ -107,6 +107,7 @@ describe("the incasso task", () => {
       kind: ContributionEmailKind.INCASSO_NOTIFICATION, contributionPeriodId: 2, userId: 1, date: later, feeType: BulkFeeType.HALF_YEAR_FEE,
     }})
     expect(api.startIncassoRun).not.toHaveBeenCalled()
+    wrapper.findComponent({name: "EmailPreviewDialog"}).vm.$emit("update:modelValue", false)
 
     expect(wrapper.get('[data-testid="incasso-run-start"]').text()).toBe("Email the incasso notification to 2 members")
     await wrapper.get('[data-testid="incasso-run-start"]').trigger("click")

@@ -40,27 +40,35 @@ const ROW_HEIGHT = 44
 
 // Column widths are declared because the table is laid out fixed: under `table-layout: auto`
 // the widths come from whichever rows happen to be mounted, so they would shift as the
-// window scrolls. The percentages are the ones the auto layout settled on, so the table
-// looks the way it did.
-const CHECKBOX_COLUMN_WIDTH = "3.3%"
-const ACTIONS_COLUMN_WIDTH = "18.6%"
+// window scrolls. A fixed column never grows to fit its content, so the two columns that hold
+// controls are sized in pixels from what they hold. The data columns split a share of the
+// table that leaves room for those at its narrowest, 936px at lg, and the browser hands the
+// width left over back to them in proportion. A `calc()` width would say this directly, but
+// a table column treats one as `auto`.
+const CHECKBOX_COLUMN_WIDTH = 44
+const DATA_COLUMNS_PERCENT = 72
+// Matches the row's action buttons and its cell padding.
+const ACTION_BUTTON_WIDTH = 28
+const ACTION_GAP = 4
+const CELL_PADDING = 8
 
 const HEADER_COLUMNS: ReadonlyArray<{
   label: string
-  width: string
+  weight: number
   sortKey?: SortKey
   testid?: string
   thClass?: string
 }> = [
-  {label: "Name", width: "13%", sortKey: "name", testid: "member-manager-header-name"},
-  {label: "Username", width: "9.9%", sortKey: "username", testid: "member-manager-header-username"},
-  {label: "Role", width: "8.4%", sortKey: "role", testid: "member-manager-header-role", thClass: "text-right"},
-  {label: "Membership status", width: "9.5%", sortKey: "status", testid: "member-manager-header-status", thClass: "mm-th-multiline"},
-  {label: "Member since", width: "11.7%", sortKey: "memberSince", testid: "member-manager-header-member-since"},
-  {label: "Member in period", width: "7.3%", sortKey: "wasMemberInPeriod", testid: "member-manager-header-period-member", thClass: "mm-th-multiline mm-th-period"},
-  {label: "Paid in period", width: "8%", sortKey: "paid", testid: "member-manager-header-paid", thClass: "mm-th-multiline mm-th-period"},
-  {label: "Type / Incasso", width: "10.3%"},
+  {label: "Name", weight: 13, sortKey: "name", testid: "member-manager-header-name"},
+  {label: "Username", weight: 10.9, sortKey: "username", testid: "member-manager-header-username"},
+  {label: "Role", weight: 8.4, sortKey: "role", testid: "member-manager-header-role", thClass: "text-right"},
+  {label: "Membership status", weight: 10.4, sortKey: "status", testid: "member-manager-header-status", thClass: "mm-th-multiline"},
+  {label: "Member since", weight: 10.4, sortKey: "memberSince", testid: "member-manager-header-member-since"},
+  {label: "Member in period", weight: 7.3, sortKey: "wasMemberInPeriod", testid: "member-manager-header-period-member", thClass: "mm-th-multiline mm-th-period"},
+  {label: "Paid in period", weight: 8, sortKey: "paid", testid: "member-manager-header-paid", thClass: "mm-th-multiline mm-th-period"},
+  {label: "Type / Incasso", weight: 8.4},
 ]
+const TOTAL_WEIGHT = HEADER_COLUMNS.reduce((sum, column) => sum + column.weight, 0)
 
 const users = ref<EditableUser[]>([])
 const memberships = ref<MembershipResponse[]>([])
@@ -92,6 +100,13 @@ const rolesUserId = ref<number | null>(null)
 const rolesUserName = ref("")
 // Board members reach the rest of this page; only an admin may change what somebody reaches.
 const mayEditRoles = computed(() => store.getters.isAdmin === true)
+
+// Paid, memberships, profile and delete, plus roles and account security for an admin.
+const actionsColumnWidth = computed(() => {
+  const buttons = mayEditRoles.value ? 6 : 4
+  return buttons * ACTION_BUTTON_WIDTH + (buttons - 1) * ACTION_GAP + 2 * CELL_PADDING
+})
+const columnWidth = (weight: number) => `${(weight / TOTAL_WEIGHT) * DATA_COLUMNS_PERCENT}%`
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
@@ -507,7 +522,7 @@ async function confirmDeleteUser() {
                   <!-- Selects the rows on screen, so a filter never hides part of the selection. -->
                   <th
                     class="mm-select-cell mm-th-checkbox"
-                    :style="`width: ${CHECKBOX_COLUMN_WIDTH}`"
+                    :style="`width: ${CHECKBOX_COLUMN_WIDTH}px`"
                   >
                     <v-checkbox-btn
                       data-testid="member-manager-header-checkbox"
@@ -525,7 +540,7 @@ async function confirmDeleteUser() {
                     :class="[column.sortKey && 'sortable-header', column.thClass]"
                     :data-testid="column.testid"
                     :role="column.sortKey ? 'button' : undefined"
-                    :style="`width: ${column.width}`"
+                    :style="`width: ${columnWidth(column.weight)}`"
                     :tabindex="column.sortKey ? 0 : undefined"
                     @click="column.sortKey && toggleSort(column.sortKey)"
                     @keydown.enter="column.sortKey && toggleSort(column.sortKey)"
@@ -541,7 +556,7 @@ async function confirmDeleteUser() {
 
                   <th
                     class="mm-th-actions"
-                    :style="`width: ${ACTIONS_COLUMN_WIDTH}`"
+                    :style="`width: ${actionsColumnWidth}px`"
                   >
                     <div class="mm-th-actions__inner">
                       <span>Actions</span>
@@ -770,6 +785,11 @@ async function confirmDeleteUser() {
 // label wrapped onto three lines, or the select-all checkbox.
 .member-manager-vtable :deep(thead th) {
   vertical-align: bottom;
+}
+
+// The row's cell padding, which the column widths are sized from.
+.member-manager-vtable :deep(thead th:not(.mm-select-cell)) {
+  padding-inline: 8px !important;
 }
 
 // Without this the control keeps its own minimum height and pushes the checkbox a line above

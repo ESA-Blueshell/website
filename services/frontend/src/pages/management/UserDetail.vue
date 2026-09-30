@@ -5,10 +5,10 @@ import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import StateMark from "@/components/island/StateMark.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import RecoveryUserRow from "@/components/common/rows/RecoveryUserRow.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import MembershipPanel from "@/components/management/MembershipPanel.vue"
+import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
 import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
 import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, recordPayment, withdrawPayment} from "@/domains/contribution"
@@ -274,17 +274,19 @@ watch(id, load, {immediate: true})
       >
         <section class="person__block">
           <h2>Emails</h2>
-          <recovery-user-row
-            action-type="password"
-            :user="person"
-          />
-          <recovery-user-row
-            v-if="activation"
-            action-type="activation"
-            :pending-activation="activation"
-            :user="person"
-            @action:done="load"
-          />
+          <div class="person__emails">
+            <recovery-action
+              action="password"
+              :user="person"
+            />
+            <recovery-action
+              v-if="activation"
+              action="activation"
+              :pending-activation="activation"
+              :user="person"
+              @done="load"
+            />
+          </div>
         </section>
         <section class="person__block">
           <h2>Security</h2>
@@ -445,6 +447,12 @@ watch(id, load, {immediate: true})
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-eyebrow);
+}
+
+.person__emails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
 .person__stack {

@@ -50,7 +50,8 @@ export const fold = (text: string): string =>
 const addressLine = (address: AddressResponse | undefined): string =>
   address ? [address.street, address.houseNumber, address.zipCode, address.city, address.country].filter(Boolean).join(" ") : ""
 
-function needsOf(user: UserDetailResponse): NeedsLook[] {
+/** Why an account needs a look, each reason something a board member can fix. */
+export function needsLookOf(user: UserDetailResponse): NeedsLook[] {
   const needs: NeedsLook[] = []
   if (user.locked) needs.push("locked")
   if (!user.twoFactorOn && user.roles.some((role) => GRANTED.has(role))) needs.push("role-waiting")
@@ -89,7 +90,7 @@ export function peopleRows(
       membership,
       type,
       memberSince: own.length === 0 ? null : own.map((one) => one.startDate).sort()[0]!,
-      needs: needsOf(user),
+      needs: needsLookOf(user),
       haystack: fold([
         user.fullName, user.firstName, user.lastName, user.username, user.email, user.discord ?? "", user.phoneNumber ?? "", addressLine(address),
         ...(committeesOf.get(user.id) ?? []), ...user.roles, MEMBERSHIP_WORDS[membership], type ?? "",

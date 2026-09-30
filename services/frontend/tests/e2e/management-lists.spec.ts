@@ -21,17 +21,15 @@ test.describe("management pages", () => {
     await expect(page.getByTestId("member-manager-search-input")).toHaveAttribute("placeholder", "Search for a user")
   })
 
-  test("renders address and recovery manager lists", async ({page}) => {
+  test("Account recovery lists the accounts, and the old address manager leads to Users", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
 
-    await page.goto("/management/addresses")
-    await expect(page.getByTestId("address-user-list-with-address")).toBeVisible()
-    await expect(page.getByTestId("address-user-list-without-address")).toBeVisible()
-
     await page.goto("/management/recovery")
-    await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible()
-    await expect(page.getByTestId("recovery-user-list-active")).toBeVisible()
-    await expect(page.getByTestId("recovery-user-list-deleted")).toBeVisible()
+    await expect(page.getByTestId("recovery-manager")).toBeVisible()
+    await expect(page.getByTestId("recovery-list")).toBeVisible()
+
+    await page.goto("/management/addresses")
+    await expect(page).toHaveURL(/\/management\/users$/)
   })
 })

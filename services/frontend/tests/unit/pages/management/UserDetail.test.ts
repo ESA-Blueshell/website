@@ -186,7 +186,7 @@ describe("one user's page", () => {
     api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, enabled: false})})
     const wrapper = await mount("account")
 
-    expect(wrapper.findAllComponents({name: "RecoveryUserRow"}).map((row) => row.props("actionType"))).toEqual(["password", "activation"])
+    expect(wrapper.findAllComponents({name: "RecoveryAction"}).map((one) => one.props("action"))).toEqual(["password", "activation"])
     expect(wrapper.findComponent({name: "AccountSecurityPanel"}).exists()).toBe(true)
 
     await wrapper.get('[data-testid="user-delete"]').trigger("click")

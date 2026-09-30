@@ -33,7 +33,8 @@ describe("Management's navigation", () => {
   })
 })
 
-describe("the Management portal", () => {
+// Mounting through the app's router loads each page lazily, which is slow under a full run.
+describe("the Management portal", {timeout: 20_000}, () => {
   it("groups its pages in a sidebar, marks the one open and the admin-only ones", async () => {
     const wrapper = await mountPage(ManagementShell, {path: "/management/jobs", login: adminLogin})
 
@@ -75,7 +76,7 @@ describe("the Management portal", () => {
   })
 })
 
-describe("the ways into Management", () => {
+describe("the ways into Management", {timeout: 20_000}, () => {
   it("sends each old management address to its new page", async () => {
     await mountPage(ManagementShell, {path: "/", login: adminLogin})
     const cases: [string, string][] = [

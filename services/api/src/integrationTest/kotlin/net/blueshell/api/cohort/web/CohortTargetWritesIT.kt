@@ -100,15 +100,15 @@ class CohortTargetWritesIT : UserTestSupport() {
     }
 
     @Test
-    fun `nobody but an admin makes a list`() {
-        val board = createUserWithRole(Role.BOARD)
+    fun `nobody off the board makes a list`() {
+        val member = createUserWithRole(Role.MEMBER)
 
         mvc
             .perform(
                 post("/management/cohort-targets/{system}", "BREVO")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Sneaky"}""")
-                    .with(signedIn(board)),
+                    .with(signedIn(member)),
             ).andExpect(status().isForbidden)
     }
 

@@ -47,7 +47,7 @@ class DiscordEventPostWiringTest {
                 on { keepAnnouncement(42, false) } doReturn Kept(JobEffect.MADE)
                 on { keepAnnouncement(7, false) } doReturn Kept()
                 on { keepCalendarPost(42, false) } doReturn Kept()
-                on { keepDiscordEvent(42, false) } doReturn Kept()
+                on { keepDiscordEvent(42) } doReturn Kept()
             }
         val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
         val lock = DiscordEventLock(repository)
@@ -61,7 +61,7 @@ class DiscordEventPostWiringTest {
         listing.runJob("""{"eventId": 42}""", null)
 
         verify(posts).keepCalendarPost(42, false)
-        verify(posts).keepDiscordEvent(42, false)
+        verify(posts).keepDiscordEvent(42)
         verify(repository, times(4)).releaseNamedLock(any())
         assertThat(listOf(announcement.jobType, calendar.jobType, listing.jobType))
             .containsExactly("discord.announcement", "discord.post", "discord.event")
@@ -74,7 +74,7 @@ class DiscordEventPostWiringTest {
             mock {
                 on { keepAnnouncement(42, true) } doReturn Kept(skipped = "The event is over.")
                 on { keepCalendarPost(42, true) } doReturn Kept(skipped = "The event's day is over.")
-                on { keepDiscordEvent(42, true) } doReturn Kept(JobEffect.MADE, "https://discord.test/events/e1")
+                on { keepDiscordEvent(42) } doReturn Kept(JobEffect.MADE, "https://discord.test/events/e1")
             }
         val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
         val lock = DiscordEventLock(repository)
@@ -132,7 +132,7 @@ class DiscordEventPostWiringTest {
         val events: EventPosts =
             mock {
                 on { of(42) } doReturn found
-                on { keptOverlapping(any(), any()) } doReturn listOf(42L)
+                on { keptEndingFrom(any()) } doReturn listOf(42L)
             }
         val ledger: PostLedger = mock()
         out.forEach { whenever(ledger.find(42, it)).thenReturn(RecordedArtefact("m", 1)) }
@@ -162,20 +162,23 @@ class DiscordEventPostWiringTest {
     }
 
     @Test
-    fun `queues each morning the events-info post and the Discord event within two weeks, and the day post from its morning`() {
+    fun `queues each morning the Discord event until the event is over, and the posts when they are due`() {
         val morning: DiscordEventPostTriggers.() -> Unit = { runMorning() }
 
-        assertThat(queuedBy("2026-09-26T07:59", run = morning)).isEmpty()
+        assertThat(queuedBy("2026-06-01T08:00", run = morning)).containsExactly("discord.event")
+        assertThat(queuedBy("2026-09-26T07:59", run = morning)).containsExactly("discord.event")
         assertThat(queuedBy("2026-09-26T08:00", run = morning)).containsExactly("discord.announcement", "discord.event")
         assertThat(queuedBy("2026-10-10T10:00", run = morning)).isEqualTo(all)
         assertThat(queuedBy("2026-10-11T01:00", found = lan.copy(endTime = at("2026-10-11T03:00")), run = morning)).isEqualTo(all)
+        assertThat(queuedBy("2026-10-11T00:00", out = DiscordArtefact.entries.toSet(), run = morning))
+            .containsExactly("discord.announcement", "discord.post")
     }
 
     @Test
     fun `queues each morning what is out, to edit or remove it`() {
         val morning: DiscordEventPostTriggers.() -> Unit = { runMorning() }
 
-        assertThat(queuedBy("2026-09-20T08:00", out = setOf(DiscordArtefact.INFO_POST), run = morning))
+        assertThat(queuedBy("2026-09-20T08:00", found = lan.copy(live = false), out = setOf(DiscordArtefact.INFO_POST), run = morning))
             .containsExactly("discord.announcement")
         assertThat(queuedBy("2026-10-10T10:00", found = lan.copy(live = false), out = DiscordArtefact.entries.toSet(), run = morning))
             .isEqualTo(all)
@@ -183,27 +186,22 @@ class DiscordEventPostWiringTest {
     }
 
     @Test
-    fun `queues each morning what is due for every event near its time, and hourly the Discord events of events ending`() {
+    fun `looks each morning at every kept event that ended at most two days ago or ends later`() {
         val jobs = Queued()
         val events: EventPosts =
             mock {
-                on { keptOverlapping(at("2026-09-24T08:00"), at("2026-10-11T08:00")) } doReturn listOf(42L)
-                on { keptOverlapping(at("2026-09-26T06:00"), at("2026-09-26T08:00")) } doReturn listOf(42L, 43L)
+                on { keptEndingFrom(at("2026-09-24T08:00")) } doReturn listOf(42L)
                 on { of(42) } doReturn lan
             }
-        val ledger: PostLedger = mock { on { find(42, DiscordArtefact.DISCORD_EVENT) } doReturn RecordedArtefact("e1", 1) }
-        val triggers = DiscordEventPostTriggers(jobs, events, ledger).apply { clock = Clock.fixed(at("2026-09-26T08:00"), ZoneOffset.UTC) }
+        val triggers = DiscordEventPostTriggers(jobs, events, mock()).apply { clock = Clock.fixed(at("2026-09-26T08:00"), ZoneOffset.UTC) }
 
         triggers.morning()
-        triggers.hourly()
 
         assertThat(jobs.types).containsExactly(
             "discord.announcement EventPostPayload(eventId=42)",
             "discord.event EventPostPayload(eventId=42)",
-            "discord.event EventPostPayload(eventId=42)",
         )
-        assertThat(jobs.triggers.map { it.first })
-            .containsExactly(JobTrigger.MORNING_RUN, JobTrigger.MORNING_RUN, JobTrigger.HOURLY_RUN)
+        assertThat(jobs.triggers.map { it.first }).containsOnly(JobTrigger.MORNING_RUN)
     }
 
     @Test

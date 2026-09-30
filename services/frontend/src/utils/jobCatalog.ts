@@ -135,10 +135,10 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     thing: "the Discord event",
     description:
       "Keeps one event in the Events list at the top of the Discord server's channel list, with " +
-      "the banner as its cover, on the same terms as its #events-info announcement but without " +
-      "waiting for it: edits it when the event changes and deletes it once the event is over. An " +
-      "event already running is listed from a minute on. Run by hand, it lists the event straight " +
-      "away. Safe to re-run: the Discord event is made once.",
+      "the banner as its cover: lists it once the event is approved, however far off, edits it " +
+      "when the event changes and removes it when the event is deleted or no longer approved. " +
+      "Once the event is over it is left alone, as Discord ends it by itself. An event already " +
+      "running is listed from a minute on. Safe to re-run: the Discord event is made once.",
   },
 
   "calendar.sync-event": {

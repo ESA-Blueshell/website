@@ -429,11 +429,13 @@ channel; the events-calendar post, going out again on the day, is its **re-annou
 
 ### Discord event
 
-The event as the association's Discord server lists it, kept by the bot while the event
-is approved and within two weeks, on the same terms as the events-info post but not
-waiting for it. An event approved while it runs is listed from then until it is over.
+The event as the association's Discord server lists it, kept by the bot from the moment
+the event is approved, however far ahead, and followed through every edit. It comes down
+when the event is deleted or unapproved before it is over. Once the event is over the bot
+leaves it alone, and Discord ends it by itself. An event approved while it runs is listed
+from then until it is over.
 **"Event" alone means the site's event**; the Discord event is its
-listing in the server, kept in step with it and removed with it.
+listing in the server, kept in step with it.
 
 ### Event page
 

@@ -26,7 +26,7 @@ enum class JobTrigger {
     /** The Discord posts' 08:00 run. */
     MORNING_RUN,
 
-    /** The Discord posts' hourly look at events on now or just over. */
+    /** The Discord posts' hourly look at events just over, which no longer runs; past runs still name it. */
     HOURLY_RUN,
 
     /** Any other scheduled run: the daily contact sweep, the cohort check. */

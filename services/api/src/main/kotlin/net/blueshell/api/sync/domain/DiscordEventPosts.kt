@@ -76,28 +76,19 @@ class DiscordEventPosts(
     }
 
     /**
-     * The Discord event, on the same terms as the events-info post but without waiting for it, and
-     * gone once the event is over. Discord refuses a start in the past, so one made for an event
-     * already running starts a minute from now, and an edit then leaves the start as Discord has it.
+     * The Discord event, listed once the event is approved however far ahead, and left alone once
+     * it is over: Discord ends an external event at its end by itself. Discord refuses a start in
+     * the past, so one made for an event already running starts a minute from now, and an edit then
+     * leaves the start as Discord has it.
      */
-    fun keepDiscordEvent(
-        eventId: Long,
-        forced: Boolean = false,
-    ): Kept {
+    fun keepDiscordEvent(eventId: Long): Kept {
         val bot = publisher.ifAvailable ?: return NO_BOT
-        val found = bot.findDiscordEvents(DiscordPostContent.listingLineOf(eventId, site))
         val stored = events.of(eventId)
+        if (stored != null && due(stored).over) return Kept(skipped = ENDED)
+        if (stored?.frozen == true) return Kept(skipped = FROZEN)
+        val found = bot.findDiscordEvents(DiscordPostContent.listingLineOf(eventId, site))
         val unlist: (String) -> Unit = { bot.deleteDiscordEvent(it) }
-        if (stored?.frozen == true) return frozen(eventId, DiscordArtefact.DISCORD_EVENT, found, OVER.takeIf { due(stored).over }, unlist)
         val event = stored?.takeIf { it.live } ?: return sweep(eventId, DiscordArtefact.DISCORD_EVENT, found, GONE, unlist)
-        val due = due(event)
-        val refusal =
-            when {
-                due.over -> OVER
-                forced || due.withinTwoWeeks || ledger.find(eventId, DiscordArtefact.DISCORD_EVENT) != null -> null
-                else -> "The Discord event is not due until ${morningOf(withinTwoWeeksFrom(event.startTime))}."
-            }
-        if (refusal != null) return sweep(eventId, DiscordArtefact.DISCORD_EVENT, found, refusal, unlist)
         val now = clock.instant()
         val madeStarting = maxOf(event.startTime, now.plus(DISCORD_EVENT_LEAD))
         return keep(
@@ -290,6 +281,7 @@ private val NO_BOT = Kept(skipped = "The Discord bot is not configured.")
 private const val GONE = "The event is deleted or no longer approved."
 private const val OVER = "The event is over."
 private const val FROZEN = "The event awaits re-approval, so what is out stays as last approved."
+private const val ENDED = "The event is over, and Discord ends its Discord event by itself."
 
 // Room for the request to reach Discord before the start it names.
 private val DISCORD_EVENT_LEAD: Duration = Duration.ofMinutes(1)

@@ -413,6 +413,9 @@ private const val UNAVAILABLE = "Discord is unavailable."
 // What Discord says of a field over its limit, of one text display over it, and of a message's text over its total.
 private val TOO_LONG = listOf("BASE_TYPE_MAX_LENGTH", "BASE_TYPE_BAD_LENGTH", "COMPONENT_DISPLAYABLE_TEXT_SIZE_EXCEEDED")
 
+// Discord's code for a server already holding its 100 scheduled or running Discord events.
+private val EVENTS_LIST_FULL = Regex(""""code"\s*:\s*30038\b""")
+
 /*
  * The refusals the board can act on, in plain words; any other is passed on as it came. Wraps the
  * whole call, outside the handling of a message already gone or an image refused, which are answers.
@@ -441,6 +444,8 @@ private fun plainly(
             status.is5xxServerError -> UNAVAILABLE
             status.value() == HttpStatus.BAD_REQUEST.value() && TOO_LONG.any { refused.responseBodyAsString.contains(it) } ->
                 "Discord refuses ${doing.thing} as too long."
+            status.value() == HttpStatus.BAD_REQUEST.value() && EVENTS_LIST_FULL.containsMatchIn(refused.responseBodyAsString) ->
+                "The server's Events list is full: Discord holds at most 100 Discord events that have not ended."
             else -> null
         }
     return sentence?.let { ExplainedJobFailure(it, refused) }

@@ -243,11 +243,9 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `lists the Discord event within two weeks without waiting for the events-info post, with the banner as its cover`() {
-        posts("2026-09-26T07:59").keepDiscordEvent(42)
-        assertThat(publisher.said).isEmpty()
-
-        posts("2026-09-26T08:00").keepDiscordEvent(42)
+    fun `lists the Discord event once approved, however far ahead, with the banner as its cover`() {
+        assertThat(posts("2026-06-01T09:00").keepAnnouncement(42).effect).isNull()
+        posts("2026-06-01T09:00").keepDiscordEvent(42)
         posts("2026-09-27T08:00").keepDiscordEvent(42)
 
         assertThat(publisher.said).containsExactly("list m1")
@@ -256,7 +254,7 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `puts the day post up on the day and takes it down the morning after, keeping the events-info post`() {
+    fun `puts the day post up on the day and takes it down the morning after, keeping the events-info post and the Discord event`() {
         all("2026-09-26T08:00")
         all("2026-10-10T08:00")
         all("2026-10-10T23:30")
@@ -266,10 +264,9 @@ class DiscordEventPostsTest {
             "post events-info m1",
             "list m2",
             "post events-calendar m3",
-            "unlist m2",
             "delete events-calendar m3",
         )
-        assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.INFO_POST)
+        assertThat(ledger.posted.keys).containsExactlyInAnyOrder(DiscordArtefact.INFO_POST, DiscordArtefact.DISCORD_EVENT)
     }
 
     @Test
@@ -376,10 +373,8 @@ class DiscordEventPostsTest {
         publisher.strays["events-calendar"] = listOf("c1")
         publisher.strays["events"] = listOf("e1")
 
-        posts("2026-09-25T08:00").run {
-            keepCalendarPost(42)
-            keepDiscordEvent(42)
-        }
+        posts("2026-09-25T08:00").keepCalendarPost(42)
+        posts("2026-09-25T08:00", found = event.copy(live = false)).keepDiscordEvent(42)
 
         assertThat(publisher.said).containsExactly("delete events-calendar c1", "unlist e1")
         assertThat(ledger.posted).isEmpty()
@@ -510,8 +505,8 @@ class DiscordEventPostsTest {
 
         all("2026-10-10T23:30", found = waiting)
         all("2026-10-11T08:00", found = waiting)
-        assertThat(publisher.said).containsExactly("unlist m3", "delete events-calendar m2")
-        assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.INFO_POST)
+        assertThat(publisher.said).containsExactly("delete events-calendar m2")
+        assertThat(ledger.posted.keys).containsExactlyInAnyOrder(DiscordArtefact.INFO_POST, DiscordArtefact.DISCORD_EVENT)
 
         ledger.posted.clear()
         publisher.said.clear()
@@ -541,8 +536,8 @@ class DiscordEventPostsTest {
         assertThat(posts("2026-09-26T08:00", bot = null).keepDiscordEvent(42).skipped).isEqualTo("The Discord bot is not configured.")
         assertThat(posts("2026-09-25T08:00").keepAnnouncement(42).skipped)
             .isEqualTo("The #events-info announcement is not due until 08:00 on 26 September 2026.")
-        assertThat(posts("2026-09-25T08:00").keepDiscordEvent(42).skipped)
-            .isEqualTo("The Discord event is not due until 08:00 on 26 September 2026.")
+        assertThat(posts("2026-10-11T08:00").keepDiscordEvent(42).skipped)
+            .isEqualTo("The event is over, and Discord ends its Discord event by itself.")
         assertThat(posts("2026-09-26T08:00").keepCalendarPost(42).skipped)
             .isEqualTo("The #events-calendar post is not due until 08:00 on 10 October 2026.")
         assertThat(posts("2026-10-11T08:00").keepCalendarPost(42).skipped)
@@ -556,7 +551,7 @@ class DiscordEventPostsTest {
     fun `counts taking something down as the run's work, not a skip`() {
         publisher.strays["events"] = listOf("e1")
 
-        val kept = posts("2026-09-25T08:00").keepDiscordEvent(42)
+        val kept = posts("2026-09-25T08:00", found = event.copy(live = false)).keepDiscordEvent(42)
 
         assertThat(kept).isEqualTo(Kept(JobEffect.REMOVED))
         assertThat(publisher.said).containsExactly("unlist e1")
@@ -565,12 +560,11 @@ class DiscordEventPostsTest {
     @Test
     fun `a forced run does what it would wait for`() {
         posts("2026-09-20T09:00").run {
-            assertThat(keepDiscordEvent(42, forced = true).effect).isEqualTo(JobEffect.MADE)
             assertThat(keepAnnouncement(42, forced = true).effect).isEqualTo(JobEffect.MADE)
             assertThat(keepCalendarPost(42, forced = true).effect).isEqualTo(JobEffect.MADE)
         }
 
-        assertThat(publisher.said).containsExactly("list m1", "post events-info m2", "post events-calendar m3")
+        assertThat(publisher.said).containsExactly("post events-info m1", "post events-calendar m2")
     }
 
     @Test
@@ -586,10 +580,27 @@ class DiscordEventPostsTest {
     @Test
     fun `a forced run still skips what cannot be done`() {
         assertThat(posts("2026-10-11T08:00").keepAnnouncement(42, forced = true).skipped).isEqualTo("The event is over.")
-        assertThat(posts("2026-10-11T08:00").keepDiscordEvent(42, forced = true).skipped).isEqualTo("The event is over.")
         assertThat(posts("2026-10-11T08:00").keepCalendarPost(42, forced = true).skipped)
             .isEqualTo("The event's day is over, so its #events-calendar post has come down.")
-        assertThat(posts("2026-10-10T22:59:30").keepDiscordEvent(42, forced = true).skipped)
+        assertThat(publisher.said).isEmpty()
+    }
+
+    @Test
+    fun `leaves the Discord event to Discord once the event is over, whatever happens to the event then`() {
+        posts("2026-10-01T09:00").keepDiscordEvent(42)
+        publisher.checked.clear()
+
+        val kept = posts("2026-10-11T08:00", found = event.copy(live = false, title = "LAN party, renamed")).keepDiscordEvent(42)
+
+        assertThat(kept.skipped).isEqualTo("The event is over, and Discord ends its Discord event by itself.")
+        assertThat(publisher.said).containsExactly("list m1")
+        assertThat(publisher.checked).isEmpty()
+        assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.DISCORD_EVENT)
+    }
+
+    @Test
+    fun `lists no Discord event for an event ending within a minute`() {
+        assertThat(posts("2026-10-10T22:59:30").keepDiscordEvent(42).skipped)
             .isEqualTo("The event ends within a minute, too soon for Discord to list it.")
         assertThat(publisher.said).isEmpty()
     }

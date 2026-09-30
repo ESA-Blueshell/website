@@ -1,10 +1,12 @@
 package net.blueshell.api.user.web
 
 import net.blueshell.api.auth.domain.SignupUseCases
+import net.blueshell.api.auth.web.SignupMandateRequest
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.SignupHeaders
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -15,6 +17,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 @SpringBootTest
 class OwnMandateIT : UserTestSupport() {
@@ -41,7 +44,7 @@ class OwnMandateIT : UserTestSupport() {
         setUp(member)
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
-            .andExpect(jsonPath("$.signedOn").value(LocalDate.now().toString()))
+            .andExpect(jsonPath("$.signedOn").value(LocalDate.now(ZoneOffset.UTC).toString()))
             .andExpect(jsonPath("$.ibanLastFour").value("4300"))
             .andExpect(jsonPath("$.pending").value(false))
         mvc
@@ -94,5 +97,13 @@ class OwnMandateIT : UserTestSupport() {
         mvc
             .perform(get("/users/me/mandate").with(signedIn(applicant)))
             .andExpect(jsonPath("$.pending").value(true))
+    }
+
+    @Test
+    fun `the signup's incasso step needs the authorisation, and its request never shows the account number`() {
+        val request = SignupMandateRequest(iban = "NL91ABNA0417164300", accountHolder = "Ann Vos")
+
+        assertThat(request.authorised).isFalse()
+        assertThat(request.toString()).contains("4300").doesNotContain("0417")
     }
 }

@@ -107,7 +107,9 @@ class MandatesTest {
         assertThat(mandates.bankDetailsOf(membership.mandate!!).toString()).doesNotContain("0417")
         val empty = net.blueshell.api.user.persistence.IncassoMandate::class.java.getDeclaredConstructor().newInstance()
         assertThat(empty).isNotNull
-        assertThat(net.blueshell.api.user.persistence.PendingMandate::class.java.getDeclaredConstructor().newInstance()).isNotNull
+        assertThat(PendingMandate::class.java.getDeclaredConstructor().newInstance()).isNotNull
+        val waiting = PendingMandate(3, "k1", "sealed", "sealed", "4300", LocalDate.of(2026, 9, 30))
+        assertThat(waiting.toString()).isEqualTo("PendingMandate(****4300)")
     }
 
     @Test

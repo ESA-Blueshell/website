@@ -99,6 +99,15 @@ const loadView = async () => {
   view.value = period.value ? await readPeriodContributions(period.value.id) : null
 }
 
+/** The selected members who pay by incasso, the only ones the notification wizard writes to. */
+const incassoSelected = computed(() => selectedIdsArray.value.filter((id) => members.value.find((one) => one.userId === id)?.incasso))
+
+/** Reminders for members paying by transfer have a task page of their own. */
+const sendReminders = () => {
+  if (!period.value) return
+  void router.push({path: `/management/contributions/${period.value.id}/reminders`, query: {ids: selectedIdsArray.value.join(",")}})
+}
+
 /** Marking payments happens on the bulk task page, which comes back here once done. */
 const markPayments = (action: "paid" | "unpaid") => {
   if (!period.value) return
@@ -229,11 +238,19 @@ void loadPeriods()
       >
         <button
           class="money__action"
+          data-testid="bulk-action-send-payment-reminders"
+          type="button"
+          @click="sendReminders"
+        >
+          Send payment reminders
+        </button>
+        <button
+          class="money__action"
           data-testid="bulk-action-send-payment-emails"
           type="button"
           @click="writing = true"
         >
-          Send payment emails
+          Send incasso notifications
         </button>
         <button
           class="money__action"
@@ -348,10 +365,11 @@ void loadPeriods()
       </section>
     </template>
 
+    <!-- Only members on incasso go in: reminders for the rest have their own task page. -->
     <payment-email-wizard
       v-model="writing"
       :period="period"
-      :user-ids="selectedIdsArray"
+      :user-ids="incassoSelected"
       @done="onEmailsDone"
     />
   </div>

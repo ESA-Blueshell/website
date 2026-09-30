@@ -10,6 +10,7 @@ export {
   type PeriodStanding,
   type UpdateContributionPeriodRequest,
 } from "@/services/api"
+export {reminderName, reminderRows, type ReminderRow} from "./reminders"
 export {deletePeriod, listPeriods, readCurrentPeriod, readPeriodStanding, saveNewPeriod, savePeriod} from "./adapters/periods"
 export {
   readOneEmail,

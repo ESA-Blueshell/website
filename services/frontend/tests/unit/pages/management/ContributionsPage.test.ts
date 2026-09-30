@@ -118,10 +118,15 @@ describe("the Contributions page", () => {
 
     await wrapper.get('[data-testid="contribution-checkbox-2"]').trigger("change")
     await settle()
+    await wrapper.get('[data-testid="bulk-action-send-payment-reminders"]').trigger("click")
+    expect(mockPush).toHaveBeenCalledWith({path: "/management/contributions/2/reminders", query: {ids: "2"}})
+    await wrapper.get('[data-testid="contribution-checkbox-1"]').trigger("change")
+    await settle()
     await wrapper.get('[data-testid="bulk-action-send-payment-emails"]').trigger("click")
     await settle()
+    // Only members on incasso go to the notification wizard; reminders have their own page.
     const wizard = wrapper.findComponent({name: "PaymentEmailWizard"})
-    expect(wizard.props("userIds")).toEqual([2])
+    expect(wizard.props("userIds")).toEqual([1])
     wizard.vm.$emit("update:modelValue", false)
     wizard.vm.$emit("done")
     await settle()

@@ -11,13 +11,43 @@ const api = vi.hoisted(() => ({
   findMemberContributions: vi.fn(),
   createContribution: vi.fn(),
   deleteContribution: vi.fn(),
+  findAddressById: vi.fn(),
+  pendingActivations: vi.fn(),
+  deleteUserById: vi.fn(),
+  readRoleStanding: vi.fn(),
+  listRoleChanges: vi.fn(),
+  accountStanding: vi.fn(),
+  securityEvents: vi.fn(),
 }))
-const {mockRoute} = vi.hoisted(() => ({mockRoute: {params: {id: "7", tab: ""} as Record<string, string>}}))
+const {mockRoute, mockPush, mockStore} = vi.hoisted(() => ({
+  mockRoute: {params: {id: "7", tab: ""} as Record<string, string>},
+  mockPush: vi.fn(),
+  mockStore: {commit: vi.fn(), getters: {isAdmin: false}},
+}))
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
   useRoute: () => mockRoute,
+  useRouter: () => ({push: mockPush}),
 }))
+
+vi.mock("@/plugins/store", () => ({default: mockStore}))
+
+// The form's own checks are UserForm's tests; here it only has to answer a save.
+vi.mock("@/components/form/UserForm.vue", async () => {
+  const {defineComponent} = await import("vue")
+  return {
+    default: defineComponent({
+      name: "UserForm",
+      props: {modelValue: {type: Object, default: null}, options: {type: Object, default: null}},
+      emits: ["submitted"],
+      setup: (_props, {expose}) => {
+        expose({save: async () => ({})})
+        return () => null
+      },
+    }),
+  }
+})
 
 vi.mock("vuex", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vuex")>()),
@@ -52,6 +82,12 @@ describe("one user's page", () => {
     api.findMemberContributions.mockResolvedValue({status: 200, data: [period(5, false), period(4, true)]})
     api.createContribution.mockResolvedValue({status: 201, data: {}})
     api.deleteContribution.mockResolvedValue({status: 204, data: undefined})
+    api.findAddressById.mockResolvedValue({status: 200, data: {id: 3, street: "Hallenweg", version: 0, createdAt: "", updatedAt: ""}})
+    api.pendingActivations.mockResolvedValue({status: 200, data: {activations: [{userId: 7, purpose: "USER_ACTIVATION"}]}})
+    api.deleteUserById.mockResolvedValue({status: 204, data: undefined})
+    api.accountStanding.mockResolvedValue({status: 200, data: {twoFactorOn: false, awaitingReenrolment: false, locked: false}})
+    api.securityEvents.mockResolvedValue({status: 200, data: {events: []}})
+    mockStore.getters.isAdmin = false
   })
 
   afterEach(() => {
@@ -128,5 +164,57 @@ describe("one user's page", () => {
     const wrapper = await mount()
 
     expect(wrapper.get('[data-testid="user-detail-missing"]').text()).toBe("There is nobody with number 7.")
+  })
+
+  it("edits the details and the address on the Profile tab", async () => {
+    api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, addressId: 3})})
+    const wrapper = await mount("profile")
+
+    expect(wrapper.findComponent({name: "UserForm"}).exists()).toBe(true)
+    expect(api.findAddressById).toHaveBeenCalledWith({path: {id: 3}, throwOnError: true})
+    await wrapper.get('[data-testid="user-profile-save"]').trigger("click")
+    await settle()
+    expect(wrapper.text()).toContain("Saved.")
+    wrapper.findComponent({name: "UserForm"}).vm.$emit("update:modelValue", aUser({id: 7, fullName: "Changed"}))
+    wrapper.findComponent({name: "AddressForm"}).vm.$emit("update:modelValue", {street: "Elsewhere"})
+    wrapper.findComponent({name: "AddressForm"}).vm.$emit("submitted", true)
+    await settle()
+    expect(api.findUserById).toHaveBeenCalledTimes(2)
+  })
+
+  it("offers the emails the account can be sent, its security and deleting it, on the Account tab", async () => {
+    api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, enabled: false})})
+    const wrapper = await mount("account")
+
+    expect(wrapper.findAllComponents({name: "RecoveryUserRow"}).map((row) => row.props("actionType"))).toEqual(["password", "activation"])
+    expect(wrapper.findComponent({name: "AccountSecurityPanel"}).exists()).toBe(true)
+
+    await wrapper.get('[data-testid="user-delete"]').trigger("click")
+    wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("confirm")
+    await settle()
+    expect(api.deleteUserById).toHaveBeenCalledWith({path: {userId: 7}, throwOnError: true})
+    expect(mockPush).toHaveBeenCalledWith("/management/users")
+  })
+
+  it("stays on the page when the account could not be deleted", async () => {
+    api.deleteUserById.mockRejectedValue(new Error("refused"))
+    const wrapper = await mount("account")
+
+    wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("update:modelValue", true)
+    wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("confirm")
+    await settle()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it("lets only an admin change roles, and reads the roles saved", async () => {
+    const board = await mount("roles")
+    expect(board.findComponent({name: "UserRolesPanel"}).props("editable")).toBe(false)
+
+    mockStore.getters.isAdmin = true
+    const admin = await mount("roles")
+    expect(admin.findComponent({name: "UserRolesPanel"}).props("editable")).toBe(true)
+    admin.findComponent({name: "UserRolesPanel"}).vm.$emit("changed", {userId: 7, roles: ["BOARD"]})
+    await settle()
+    await admin.get('[data-testid="user-tab-overview"]').trigger("click")
   })
 })

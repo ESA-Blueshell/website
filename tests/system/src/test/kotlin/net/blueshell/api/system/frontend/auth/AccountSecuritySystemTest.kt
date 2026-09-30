@@ -151,7 +151,7 @@ class AccountSecuritySystemTest : PlaywrightTestBase() {
 
         UserManagerHelper.open(page, frontendUrl)
         UserManagerHelper.search(page, member.username)
-        UserManagerHelper.clickAccountSecurity(page, memberId)
+        UserManagerHelper.openTab(page, memberId, "account")
         byTestId("account-security-two-factor-chip").waitFor()
         byTestId("account-security-reason-field").locator("textarea").first().fill("lost the phone and the codes")
         page.awaitResponseFrom(

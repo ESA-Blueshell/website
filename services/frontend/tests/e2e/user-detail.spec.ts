@@ -35,3 +35,18 @@ test.describe("one user's page", () => {
     expect(overflow).toBeLessThanOrEqual(0)
   })
 })
+
+test.describe("one user's Account and Roles", () => {
+  test("the board reads the roles but cannot change them, and the Account tab offers a password reset", async ({page}) => {
+    await installApiMocks(page, {users: [ann]})
+    await loginAsBoard(page.context())
+
+    await page.goto("/management/users/71/roles")
+    await expect(page.getByTestId("user-roles-panel")).toBeVisible()
+    await expect(page.getByTestId("user-roles-save-btn")).toHaveCount(0)
+
+    await page.getByTestId("user-tab-account").click()
+    await expect(page.getByTestId("recovery-user-send-btn-PASSWORD_RESET-71")).toBeVisible()
+    await expect(page.getByTestId("account-security-panel")).toBeVisible()
+  })
+})

@@ -2,11 +2,21 @@
 /* One person, on one page with tabs rather than modals. The tab is in the address, so a link
    opens the tab it names. */
 import {computed, ref, watch} from "vue"
-import {useRoute} from "vue-router"
+import {useRoute, useRouter} from "vue-router"
 import StateMark from "@/components/island/StateMark.vue"
+import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
+import RecoveryUserRow from "@/components/common/rows/RecoveryUserRow.vue"
+import AddressForm from "@/components/form/AddressForm.vue"
+import UserForm from "@/components/form/UserForm.vue"
 import MembershipPanel from "@/components/management/MembershipPanel.vue"
+import {AccountSecurityPanel} from "@/domains/auth"
+import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
 import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, recordPayment, withdrawPayment} from "@/domains/contribution"
-import {type MembershipResponse, type UserDetailResponse, highestRoleLabel, listMembershipsFor, readUser} from "@/domains/user"
+import {type AddressResponse, type MembershipResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, readAddress, readUser} from "@/domains/user"
+import UserRolesPanel from "@/domains/user/components/UserRolesPanel.vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import store from "@/plugins/store"
+import {type EditableUser, toEditableUser} from "@/utils/editableUser"
 import {feeTypeLabels} from "@/utils/feePreview"
 import {memberTypeLabel} from "@/utils/memberType"
 import {formatDate} from "@/utils/timestamps"
@@ -17,9 +27,13 @@ const TABS = [
   {key: "overview", label: "Overview"},
   {key: "membership", label: "Membership"},
   {key: "contributions", label: "Contributions"},
+  {key: "profile", label: "Profile"},
+  {key: "account", label: "Account"},
+  {key: "roles", label: "Roles"},
 ] as const
 
 const route = useRoute()
+const router = useRouter()
 const id = computed(() => Number(route.params.id))
 const tab = computed(() => (typeof route.params.tab === "string" && route.params.tab !== "" ? route.params.tab : "overview"))
 
@@ -28,6 +42,13 @@ const memberships = ref<MembershipResponse[]>([])
 const periods = ref<MemberPeriodContribution[]>([])
 const loaded = ref(false)
 const said = ref<{periodId: number; text: string} | null>(null)
+const profile = ref<EditableUser | null>(null)
+const profileForm = ref<InstanceType<typeof UserForm> | null>(null)
+const profileSaved = ref<string | null>(null)
+const address = ref<Partial<AddressResponse>>({})
+const activation = ref<TokenPurpose | null>(null)
+const deleteOpen = ref(false)
+const isAdmin = computed(() => store.getters.isAdmin === true)
 
 const current = computed(() => memberships.value.find((one) => !one.endDate) ?? null)
 const since = computed(() => memberships.value.map((one) => one.startDate).sort()[0] ?? null)
@@ -44,7 +65,29 @@ const load = async () => {
   person.value = found
   memberships.value = held
   periods.value = owed
+  profile.value = found ? toEditableUser(found) : null
+  address.value = found?.addressId == null ? {} : await readAddress(found.addressId).catch(() => ({}))
+  activation.value = found && !found.enabled ? (await listPendingActivations().catch(() => ({} as Record<number, TokenPurpose>)))[found.id] ?? null : null
   loaded.value = true
+}
+
+const saveProfile = async () => {
+  profileSaved.value = (await profileForm.value?.save()) != null ? "Saved." : null
+}
+
+const onRolesChanged = (standing: RoleStanding) => {
+  if (person.value) person.value = {...person.value, roles: standing.roles}
+}
+
+const confirmDelete = async () => {
+  deleteOpen.value = false
+  try {
+    await deleteUser(id.value)
+    await router.push("/management/users")
+  } catch (error) {
+    // The account is still there, so the page stays.
+    $handleNetworkError(error)
+  }
 }
 
 const reloadMemberships = async () => {
@@ -182,6 +225,105 @@ watch(id, load, {immediate: true})
       </div>
 
       <div
+        v-else-if="tab === 'profile'"
+        class="person__stack"
+        data-testid="user-profile"
+      >
+        <section
+          v-if="profile"
+          class="person__block"
+        >
+          <h2>Details</h2>
+          <user-form
+            ref="profileForm"
+            v-model="profile"
+            :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
+            @submitted="load"
+          />
+          <button
+            class="person__action"
+            data-testid="user-profile-save"
+            type="button"
+            @click="saveProfile"
+          >
+            Save details
+          </button>
+          <span
+            v-if="profileSaved"
+            class="person__said"
+            role="status"
+          >{{ profileSaved }}</span>
+        </section>
+        <section class="person__block">
+          <h2>Address</h2>
+          <address-form
+            v-model="address"
+            data-testid="user-address-form"
+            show-submit
+            submit-text="Save address"
+            :user-id="id"
+            @submitted="load"
+          />
+        </section>
+      </div>
+
+      <div
+        v-else-if="tab === 'account'"
+        class="person__stack"
+        data-testid="user-account"
+      >
+        <section class="person__block">
+          <h2>Emails</h2>
+          <recovery-user-row
+            action-type="password"
+            :user="person"
+          />
+          <recovery-user-row
+            v-if="activation"
+            action-type="activation"
+            :pending-activation="activation"
+            :user="person"
+            @action:done="load"
+          />
+        </section>
+        <section class="person__block">
+          <h2>Security</h2>
+          <account-security-panel :user-id="id" />
+        </section>
+        <section class="person__block">
+          <h2>Delete</h2>
+          <p class="person__note">
+            Deleting anonymises the account; it can be restored from Account recovery for a while.
+          </p>
+          <button
+            class="person__action person__action--danger"
+            data-testid="user-delete"
+            type="button"
+            @click="deleteOpen = true"
+          >
+            Delete this account
+          </button>
+        </section>
+        <deletion-confirmation-dialog
+          v-model="deleteOpen"
+          :message="`Are you sure you want to delete ${person.fullName}?`"
+          title="Confirm User Deletion"
+          @confirm="confirmDelete"
+        />
+      </div>
+
+      <div
+        v-else-if="tab === 'roles'"
+        data-testid="user-roles"
+      >
+        <user-roles-panel
+          :editable="isAdmin"
+          :user-id="id"
+          @changed="onRolesChanged"
+        />
+      </div>
+
+      <div
         v-else-if="tab === 'contributions'"
         data-testid="user-contributions"
       >
@@ -303,6 +445,17 @@ watch(id, load, {immediate: true})
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-eyebrow);
+}
+
+.person__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.person__action--danger {
+  border-color: var(--color-error, #e5484d);
+  color: var(--color-error, #e5484d);
 }
 
 .person__block p {

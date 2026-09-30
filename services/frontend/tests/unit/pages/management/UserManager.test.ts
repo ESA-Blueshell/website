@@ -6,7 +6,6 @@ import {
   findAllAddresses,
   findCommittees,
   findMemberships,
-  findUserById,
   findUsers,
   MemberType,
   type MembershipResponse,
@@ -21,7 +20,6 @@ import {settle} from "../helpers"
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   findUsers: vi.fn(),
-  findUserById: vi.fn(),
   findMemberships: vi.fn(),
   findAllAddresses: vi.fn(),
   findCommittees: vi.fn(),
@@ -84,7 +82,6 @@ async function act(wrapper: VueWrapper<any>, id: number, testid: string) {
 describe("the Users page", () => {
   beforeEach(() => {
     vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [zoe, bob, carol]}))
-    vi.mocked(findUserById).mockResolvedValue(answer(findUserById, zoe))
     vi.mocked(findMemberships).mockResolvedValue(answer(findMemberships, memberships))
     vi.mocked(findAllAddresses).mockResolvedValue(answer(findAllAddresses, [
       {id: 5, street: "Hallenweg", houseNumber: "5", city: "Enschede", userId: 1, version: 0, createdAt: "", updatedAt: ""},
@@ -182,26 +179,15 @@ describe("the Users page", () => {
     expect(wrapper.find('[data-testid="member-manager-selection"]').exists()).toBe(false)
   })
 
-  it("reads the account afresh before offering to edit it", async () => {
-    const wrapper = await mount()
-
-    await act(wrapper, 1, "member-manager-edit-profile-btn")
-
-    expect(findUserById).toHaveBeenCalledWith({path: {userId: 1}})
-    expect(wrapper.find('[data-testid="member-manager-edit-profile-dialog"]').exists()).toBe(true)
-  })
-
-  it("links each person to their own page, and opens account security and, for an admin, roles", async () => {
+  it("links each person to their own page, and Edit profile to its Profile tab", async () => {
     const wrapper = await mount(adminLogin)
 
     expect(wrapper.get('[data-testid="member-manager-open-1"]').attributes("to")).toBe("/management/users/1")
-    await act(wrapper, 1, "member-manager-account-security-btn")
-    expect(wrapper.findComponent({name: "AccountSecurityDialog"}).exists()).toBe(true)
-    await act(wrapper, 1, "member-manager-edit-roles-btn")
-    expect(wrapper.findComponent({name: "UserRolesDialog"}).exists()).toBe(true)
-    wrapper.findComponent({name: "UserRolesDialog"}).vm.$emit("changed", {userId: 1, roles: ["ADMIN"]})
+    await wrapper.get('[data-testid="member-manager-actions-1"]').trigger("click")
     await settle()
-    expect(wrapper.get('[data-testid="member-manager-needs-1"]').text()).toContain("Role waits on two-factor")
+    const edit = wrapper.findAllComponents({name: "DropdownMenuItem"}).map((item) => item.find('[data-testid="member-manager-open-profile-1"]'))
+      .find((link) => link.exists())
+    expect(edit?.attributes("to")).toBe("/management/users/1/profile")
   })
 
   it("adds a user from the Add user form", async () => {
@@ -238,28 +224,18 @@ describe("the Users page", () => {
     expect(rowIds(wrapper)).toEqual([2, 3, 1])
   })
 
-  it("saves and cancels the add and edit forms, and closes every dialog it opened", async () => {
-    const wrapper = await mount(adminLogin)
+  it("saves and cancels the add form, and closes the delete confirmation", async () => {
+    const wrapper = await mount()
 
     await wrapper.get('[data-testid="member-manager-add-user-btn"]').trigger("click")
-    await act(wrapper, 1, "member-manager-edit-profile-btn")
     for (const modal of wrapper.findAllComponents({name: "BaseModal"})) {
       modal.vm.$emit("save")
       modal.vm.$emit("cancel")
       modal.vm.$emit("update:modelValue", false)
     }
+    await act(wrapper, 1, "member-manager-delete-btn")
+    wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("update:modelValue", false)
     await settle()
-
-    for (const [testid, dialog] of [
-      ["member-manager-account-security-btn", "AccountSecurityDialog"],
-      ["member-manager-edit-roles-btn", "UserRolesDialog"],
-      ["member-manager-delete-btn", "DeletionConfirmationDialog"],
-    ] as const) {
-      await act(wrapper, 1, testid)
-      wrapper.findComponent({name: dialog}).vm.$emit("update:modelValue", false)
-      await settle()
-    }
-    expect(wrapper.findComponent({name: "UserRolesDialog"}).exists()).toBe(false)
 
     await wrapper.get('[data-testid="member-manager-header-name"]').trigger("click")
     await settle()

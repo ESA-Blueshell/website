@@ -5,6 +5,7 @@ import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -112,6 +113,21 @@ class JobManagementControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.content[0].jobType").value("calendar.sync-user"))
                 .andExpect(jsonPath("$.content[0].initiatedByType").value("USER"))
                 .andExpect(jsonPath("$.content[0].payload.key").value("value"))
+        }
+
+        @Test
+        fun `admin finds a job by its number`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val wanted = createJobExecutionFixture(jobType = "email.send")
+            createJobExecutionFixture(jobType = "email.send")
+
+            mvc
+                .perform(
+                    get("/management/jobs")
+                        .queryParam("search", wanted.id.toString())
+                        .with(signedIn(admin)),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.content[*].id", hasItem(wanted.id!!.toInt())))
         }
 
         @Test

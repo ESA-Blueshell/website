@@ -55,6 +55,8 @@ export interface PagedTableOptions {
   pageSize?: number
   /** Long enough that a typed word is one request, short enough to feel immediate. */
   searchDebounceMs?: number
+  /** Set without the debounced re-read that typing the same text would start. */
+  initialSearch?: string
 }
 
 export function usePagedTable<T extends Expandable>(
@@ -69,7 +71,7 @@ export function usePagedTable<T extends Expandable>(
   const page = ref(1)
   const totalPages = ref(1)
   const totalElements = ref(0)
-  const search = ref<string | null>("")
+  const search = ref<string | null>(options.initialSearch ?? "")
   const expanded = ref<number[]>([])
   let debounceHandle: ReturnType<typeof setTimeout> | undefined
 

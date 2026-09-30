@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
-import {useRouter} from "vue-router"
+import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
 import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
@@ -12,6 +12,7 @@ import {formatDate, formatDateNoSeconds} from "@/utils/timestamps"
 
 defineOptions({name: "JobManagerPage"})
 
+const route = useRoute()
 const router = useRouter()
 const PAGE_SIZE = 50
 
@@ -36,7 +37,8 @@ const loadPage = (query: PageQuery) => {
   })
 }
 
-const table = usePagedTable<Job>(loadPage, {pageSize: PAGE_SIZE})
+const asked = route.query.search
+const table = usePagedTable<Job>(loadPage, {pageSize: PAGE_SIZE, initialSearch: typeof asked === "string" ? asked : undefined})
 const {
   rows: executions,
   loading,

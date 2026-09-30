@@ -12,6 +12,8 @@ import {formatDate, formatDateNoSeconds} from "@/utils/timestamps"
 defineOptions({name: "EmailManagerPage"})
 
 const PAGE_SIZE = 50
+// The job manager is the admin's alone, so a link to it would send the rest of the board home.
+const isAdmin = computed(() => store.getters.isAdmin)
 
 const stats = ref<EmailStats | null>(null)
 const retrying = ref<number | null>(null)
@@ -516,9 +518,17 @@ onMounted(async () => {
                     <p class="text-caption text-medium-emphasis mb-2">
                       Linked job
                     </p>
-                    <router-link :to="`/management/jobs?search=${email.jobExecutionId}`">
+                    <router-link
+                      v-if="isAdmin"
+                      :data-testid="`email-job-link-${email.id}`"
+                      :to="`/management/jobs?search=${email.jobExecutionId}`"
+                    >
                       Job #{{ email.jobExecutionId }}
                     </router-link>
+                    <span
+                      v-else
+                      :data-testid="`email-job-${email.id}`"
+                    >Job #{{ email.jobExecutionId }}</span>
                   </v-sheet>
 
                   <v-sheet

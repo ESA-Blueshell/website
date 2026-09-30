@@ -73,8 +73,8 @@ object JobExecutionSpecifications {
                 .or(containsLargeText("payload", raw))
                 .or(initiatedByUserMatches(normalized))
 
-        normalized.toLongOrNull()?.let { userId ->
-            spec = spec.or(initiatedByUserId(userId))
+        normalized.toLongOrNull()?.let { number ->
+            spec = spec.or(hasId(number)).or(initiatedByUserId(number))
         }
 
         return spec
@@ -138,6 +138,11 @@ object JobExecutionSpecifications {
             )
         }
     }
+
+    private fun hasId(id: Long): Specification<JobExecution> =
+        Specification { root, _, cb ->
+            cb.equal(root.get<Long>("id"), id)
+        }
 
     private fun initiatedByUserId(userId: Long): Specification<JobExecution> =
         Specification { root, _, cb ->

@@ -15,7 +15,7 @@ const {mockList, mockRetry, mockGetStats, mockPreview, mockStore} = vi.hoisted((
   mockRetry: vi.fn(),
   mockGetStats: vi.fn(),
   mockPreview: vi.fn(),
-  mockStore: {commit: vi.fn(), getters: {}},
+  mockStore: {commit: vi.fn(), getters: {} as Record<string, unknown>},
 }))
 
 vi.mock("@/plugins/store", () => ({default: mockStore}))
@@ -53,7 +53,7 @@ describe("EmailManager page", () => {
 
   const mountEmailManager = () => {
     const wrapper = mountInApp(EmailManager, {
-      global: {stubs: {RouterLink: {template: "<a><slot /></a>"}}},
+      global: {stubs: {RouterLink: {name: "RouterLink", props: ["to"], template: "<a><slot /></a>"}}},
     })
     wrappers.push(wrapper)
     return wrapper
@@ -61,6 +61,7 @@ describe("EmailManager page", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockStore.getters = {}
     mockList.mockResolvedValue(pageOf([
       email({id: 1, deliveryStatus: "FAILED", jobExecutionId: 9}),
       email({id: 2, deliveryStatus: "OPENED", previewable: true}),
@@ -113,6 +114,23 @@ describe("EmailManager page", () => {
     // Read off the state rather than the dom: the collapse is a transition, so the panel is
     // still mounted at this point on its way out.
     expect((wrapper.vm as any).isExpanded({id: 1})).toBe(false)
+  })
+
+  it("links an admin to the job that sent an email, and names it without a link for the rest of the board", async () => {
+    mockStore.getters = {isAdmin: true}
+    const admin = mountEmailManager()
+    await settle()
+    await admin.find('[data-testid="email-row-1"]').trigger("click")
+    await settle()
+    expect(admin.getComponent('[data-testid="email-job-link-1"]').props("to")).toBe("/management/jobs?search=9")
+
+    mockStore.getters = {isAdmin: false}
+    const board = mountEmailManager()
+    await settle()
+    await board.find('[data-testid="email-row-1"]').trigger("click")
+    await settle()
+    expect(board.find('[data-testid="email-job-link-1"]').exists()).toBe(false)
+    expect(board.get('[data-testid="email-job-1"]').text()).toBe("Job #9")
   })
 
   it("offers Retry only for a failed send with a job behind it, and Preview only where stored", async () => {

@@ -122,7 +122,7 @@ describe("EmailManager page", () => {
     await settle()
     await admin.find('[data-testid="email-row-1"]').trigger("click")
     await settle()
-    expect(admin.getComponent('[data-testid="email-job-link-1"]').props("to")).toBe("/management/jobs?search=9")
+    expect(admin.getComponent('[data-testid="email-job-link-1"]').props("to")).toBe("/management/jobs/9")
 
     mockStore.getters = {isAdmin: false}
     const board = mountEmailManager()

@@ -521,7 +521,7 @@ onMounted(async () => {
                     <router-link
                       v-if="isAdmin"
                       :data-testid="`email-job-link-${email.id}`"
-                      :to="`/management/jobs?search=${email.jobExecutionId}`"
+                      :to="`/management/jobs/${email.jobExecutionId}`"
                     >
                       Job #{{ email.jobExecutionId }}
                     </router-link>

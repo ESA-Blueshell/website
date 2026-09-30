@@ -1,0 +1,20 @@
+# The account holds the roster answer since name-on-rosters-on-the-account, and 1.12.0, the
+# release that carried it, maps no column here, so the profile's copy goes (#1636).
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-30-profile-name-on-rosters-goes.yaml
+      id: profile-name-on-rosters-goes
+      author: blueshell
+      changes:
+        - dropColumn:
+            tableName: member_profiles
+            columnName: name_on_rosters
+      rollback:
+        - addColumn:
+            tableName: member_profiles
+            columns:
+              - column: {name: name_on_rosters, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+        - sql:
+            sql: >-
+              UPDATE member_profiles p JOIN users u ON u.id = p.id
+              SET p.name_on_rosters = u.name_on_rosters

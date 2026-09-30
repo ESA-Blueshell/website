@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import io.mockk.mockk
 import io.mockk.verify
+import net.blueshell.api.board.api.BoardMembershipChanged
 import net.blueshell.api.committee.api.CommitteeCreated
 import net.blueshell.api.contribution.api.ContributionPeriodChanged
 import org.junit.jupiter.api.Test
@@ -24,5 +25,12 @@ class CohortRuleListenerTest {
         listener.onContributionPeriodChanged(ContributionPeriodChanged(14))
 
         verify(exactly = 1) { registrar.register() }
+    }
+
+    @Test
+    fun `a change to somebody's board place looks at their cohorts again`() {
+        listener.onBoardMembershipChanged(BoardMembershipChanged(9))
+
+        verify(exactly = 1) { updater.updateMember(9) }
     }
 }

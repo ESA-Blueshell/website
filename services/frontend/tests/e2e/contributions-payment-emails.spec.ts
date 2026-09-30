@@ -26,12 +26,16 @@ const PERIOD = aContributionPeriod({
 const DUE_DATE = day(30)
 const DEBIT_DATE = day(45)
 
-/** One who transfers, one on direct debit, an honorary one, and one who has already paid. */
+/**
+ * Contributions hands this wizard only members on incasso: reminders for the others have a task
+ * page of their own. So all four are on direct debit here: two to write to, an honorary one and
+ * one who has already paid.
+ */
 const MEMBERSHIPS = [
-  aMembership({id: 100, userId: 1, memberType: "REGULAR", startDate: "2025-01-01", incasso: false}),
+  aMembership({id: 100, userId: 1, memberType: "REGULAR", startDate: "2025-01-01", incasso: true}),
   aMembership({id: 101, userId: 2, memberType: "REGULAR", startDate: "2025-02-01", incasso: true}),
-  aMembership({id: 102, userId: 3, memberType: "HONORARY", startDate: "2025-01-01", incasso: false}),
-  aMembership({id: 103, userId: 4, memberType: "REGULAR", startDate: "2025-03-01", incasso: false}),
+  aMembership({id: 102, userId: 3, memberType: "HONORARY", startDate: "2025-01-01", incasso: true}),
+  aMembership({id: 103, userId: 4, memberType: "REGULAR", startDate: "2025-03-01", incasso: true}),
 ]
 
 const USERS = [
@@ -109,16 +113,16 @@ test.describe("step 1, who the batch writes to", () => {
 
     await expect(page.getByTestId("payment-emails-count-recipients")).toContainText("2 of 4")
     await expect(page.getByTestId("payment-emails-count-reminders"))
-      .toContainText("1 contribution reminder")
+      .toContainText("0 contribution reminders")
     await expect(page.getByTestId("payment-emails-count-notifications"))
-      .toContainText("1 incasso notification")
+      .toContainText("2 incasso notifications")
     await expect(page.getByTestId("payment-emails-count-excluded")).toContainText("1 cannot be emailed")
 
     await page.getByTestId("payment-emails-send-to-4").locator("input").click()
 
     await expect(page.getByTestId("payment-emails-count-recipients")).toContainText("3 of 4")
-    await expect(page.getByTestId("payment-emails-count-reminders"))
-      .toContainText("2 contribution reminders")
+    await expect(page.getByTestId("payment-emails-count-notifications"))
+      .toContainText("3 incasso notifications")
   })
 
   test("unticking a member drops them from the rest of the wizard", {tag: "@phone"}, async ({page}) => {
@@ -221,7 +225,7 @@ test.describe("step 2, the fees and the emails", {tag: "@phone"}, () => {
     await expect(page.getByTestId("payment-emails-kind-warning")).toContainText("Viktor Petrov")
     await expect(page.getByTestId("payment-emails-switched-2")).toContainText("Pays by direct debit")
     await expect(page.getByTestId("payment-emails-count-reminders"))
-      .toContainText("2 contribution reminders")
+      .toContainText("1 contribution reminder")
   })
 
   test("prices each row, and re-prices one when its fee type changes", async ({page}) => {
@@ -264,7 +268,7 @@ test.describe("step 3, what will be sent", () => {
     await page.getByTestId("payment-emails-preview-1").click()
 
     await expect(page.getByTestId("email-preview-subject"))
-      .toContainText("Please pay your Blueshell contribution")
+      .toContainText("will be collected automatically")
     await expect(page.getByTestId("email-preview-frame")).toBeVisible()
   })
 
@@ -272,7 +276,8 @@ test.describe("step 3, what will be sent", () => {
     await openPaymentEmails(page)
     await goToTheLastStep(page)
 
-    await expect(page.getByTestId("payment-emails-payment-due-date")).toContainText("required")
+    // Everybody here is on incasso: the debit date is required, the due date is not.
+    await expect(page.getByTestId("payment-emails-payment-due-date")).toContainText("Nobody here is asked to transfer")
     await expect(page.getByTestId("payment-emails-debit-date")).toContainText("required")
     await expect(page.getByTestId("payment-emails-next-btn")).toBeDisabled()
   })
@@ -281,10 +286,10 @@ test.describe("step 3, what will be sent", () => {
     await openPaymentEmails(page, {select: [1]})
     await goToTheLastStep(page)
 
-    await expect(page.getByTestId("payment-emails-debit-date"))
-      .toContainText("Nobody here is on direct debit")
+    await expect(page.getByTestId("payment-emails-payment-due-date"))
+      .toContainText("Nobody here is asked to transfer")
 
-    await page.getByTestId("payment-emails-payment-due-date").locator("input").fill(DUE_DATE)
+    await page.getByTestId("payment-emails-debit-date").locator("input").fill(DEBIT_DATE)
     await next(page)
     await page.getByTestId("payment-emails-confirm-send-btn").click()
 
@@ -301,8 +306,8 @@ test.describe("the confirmation", () => {
     await next(page)
 
     await expect(page.getByTestId("payment-emails-confirm-summary")).toBeVisible()
-    await expect(page.getByTestId("payment-emails-confirm-reminders")).toContainText("1")
-    await expect(page.getByTestId("payment-emails-confirm-notifications")).toContainText("1")
+    await expect(page.getByTestId("payment-emails-confirm-reminders")).toHaveCount(0)
+    await expect(page.getByTestId("payment-emails-confirm-notifications")).toContainText("2")
     await expect(page.getByTestId("payment-emails-confirm-not-emailed"))
       .toContainText("2 selected members get no email")
 

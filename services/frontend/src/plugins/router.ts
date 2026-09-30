@@ -467,6 +467,12 @@ const routes: RouteRecordRaw[] = [
         meta: {title: "Contribution period"},
       },
       {
+        path: "contributions/:periodId(\\d+)/reminders",
+        name: "paymentReminders",
+        component: () => import("@/pages/management/PaymentReminders.vue"),
+        meta: {title: "Payment reminders"},
+      },
+      {
         path: "contributions/:periodId(\\d+)?",
         name: "contributions",
         component: () => import("@/pages/management/ContributionsPage.vue"),

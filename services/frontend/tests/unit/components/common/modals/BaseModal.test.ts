@@ -16,6 +16,21 @@ function mountModal(props: Record<string, unknown> = {}) {
 }
 
 describe("BaseModal", () => {
+  it("stands in the page rather than over it when drawn inline", () => {
+    const wrapper = mountModal({inline: true, testid: "task"})
+
+    expect(wrapper.find("section.base-modal--inline[data-testid='task']").exists()).toBe(true)
+    expect(wrapper.findComponent({name: "VDialog"}).exists()).toBe(false)
+    expect(wrapper.text()).toContain("Dialog body")
+  })
+
+  it("closes through the dialog's own model", async () => {
+    const wrapper = mountModal()
+
+    wrapper.findComponent({name: "VDialog"}).vm.$emit("update:modelValue", false)
+    expect(wrapper.emitted("update:modelValue")).toEqual([[false]])
+  })
+
   it("renders the title", () => {
     const wrapper = mountModal()
     expect(wrapper.text()).toContain("Test Title")

@@ -9305,6 +9305,49 @@ export type JobTypesResponses = {
 
 export type JobTypesResponse = JobTypesResponses[keyof JobTypesResponses];
 
+export type FindJobByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/jobs/{id}';
+};
+
+export type FindJobByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindJobByIdError = FindJobByIdErrors[keyof FindJobByIdErrors];
+
+export type FindJobByIdResponses = {
+    /**
+     * OK
+     */
+    200: JobExecution;
+};
+
+export type FindJobByIdResponse = FindJobByIdResponses[keyof FindJobByIdResponses];
+
 export type RetryData = {
     body?: never;
     path: {

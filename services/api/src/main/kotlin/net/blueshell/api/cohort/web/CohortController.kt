@@ -26,6 +26,7 @@ import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.security.AdminOnly
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobTrigger
@@ -43,8 +44,8 @@ import java.time.Instant
 /** The cohorts, each with the targets that mirror it on the external systems, and their drift. */
 @RestController
 @RequestMapping("/management/cohorts")
-@Tag(name = "Cohorts", description = "Admin: cohorts and the targets that mirror them")
-@AdminOnly
+@Tag(name = "Cohorts", description = "The board's cohorts and the targets that mirror them")
+@BoardOnly
 class CohortController(
     private val queries: CohortQueryService,
     private val resolutions: DriftResolutions,
@@ -84,6 +85,20 @@ class CohortController(
         @RequestBody @Valid body: PushDriftRequest,
     ): DriftResolvedResponse = DriftResolvedResponse(resolutions.push(id, targetId, body.userIds))
 
+    @PostMapping("/{id}/targets/{targetId}/reconcile")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun reconcileTarget(
+        @PathVariable id: Long,
+        @PathVariable targetId: Long,
+    ) = resolutions.reconcile(id, targetId)
+
+    @PostMapping("/users/{userId}/evaluate")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun evaluateUser(
+        @PathVariable userId: Long,
+    ) = resolutions.evaluate(userId)
+
+    @AdminOnly
     @PutMapping("/{id}/targets/{targetId}/enforced")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun enforceTarget(
@@ -125,6 +140,7 @@ class CohortController(
         @RequestBody @Valid body: CreateTargetRequest,
     ): CohortTargetResponse = targeting.create(id, body.system, body.label, body.folderHint).toResponse()
 
+    @AdminOnly
     @PutMapping("/{id}/targets/{targetId}")
     fun switchTarget(
         @PathVariable id: Long,

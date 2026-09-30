@@ -8283,6 +8283,49 @@ export type ListTargetOptionsResponses = {
 
 export type ListTargetOptionsResponse = ListTargetOptionsResponses[keyof ListTargetOptionsResponses];
 
+export type EvaluateUserData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/users/{userId}/evaluate';
+};
+
+export type EvaluateUserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EvaluateUserError = EvaluateUserErrors[keyof EvaluateUserErrors];
+
+export type EvaluateUserResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type EvaluateUserResponse = EvaluateUserResponses[keyof EvaluateUserResponses];
+
 export type FindCohortByIdData = {
     body?: never;
     path: {
@@ -8763,6 +8806,50 @@ export type PreviewInboundReconcileResponses = {
 };
 
 export type PreviewInboundReconcileResponse = PreviewInboundReconcileResponses[keyof PreviewInboundReconcileResponses];
+
+export type ReconcileTargetData = {
+    body?: never;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/reconcile';
+};
+
+export type ReconcileTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReconcileTargetError = ReconcileTargetErrors[keyof ReconcileTargetErrors];
+
+export type ReconcileTargetResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ReconcileTargetResponse = ReconcileTargetResponses[keyof ReconcileTargetResponses];
 
 export type List1Data = {
     body?: never;

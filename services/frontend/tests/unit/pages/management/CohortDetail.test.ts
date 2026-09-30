@@ -13,13 +13,14 @@ import {
   pushDriftPeople,
   removeDriftPeople,
   setTargetEnforced,
+  evaluateMember,
   triggerReconcile,
   type CohortMember,
   type Cohort,
 } from "@/domains/cohorts/adapters/cohorts"
 import router from "@/plugins/router"
 import type {StoredLogin} from "@/plugins/store"
-import {mountPage} from "../../helpers/mountPage"
+import {boardLogin, mountPage} from "../../helpers/mountPage"
 import {settle} from "../../helpers/testUtils"
 
 vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
@@ -31,6 +32,7 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   linkDriftPeople: vi.fn(),
   setTargetEnforced: vi.fn(),
   triggerReconcile: vi.fn(),
+  evaluateMember: vi.fn(),
 }))
 
 const adminLogin: StoredLogin = {
@@ -261,13 +263,13 @@ describe("CohortDetail drift", () => {
   }
 
   it("reconciles a target from its menu", async () => {
-    vi.mocked(triggerReconcile).mockResolvedValue(3)
+    vi.mocked(triggerReconcile).mockResolvedValue({ok: true})
     const wrapper = await withTargets()
 
     await press(wrapper, "cohort-detail-target-menu-brevo")
     await click(wrapper, "VListItem", "cohort-detail-reconcile-brevo")
 
-    expect(triggerReconcile).toHaveBeenCalledWith(40)
+    expect(triggerReconcile).toHaveBeenCalledWith(7, 40)
     expect(wrapper.get("[data-testid=cohort-detail-success]").text()).toBe("Reconcile enqueued.")
   })
 
@@ -321,5 +323,44 @@ describe("CohortDetail drift", () => {
 
     expect(wrapper.get("[data-testid=cohort-detail-target-drift-brevo]").text()).toBe("40 in step · 1 missing · 2 extra")
     expect(wrapper.get("[data-testid=cohort-detail-target-drift-history-brevo]").text()).toContain("nightly: 3 missing, 2 extra")
+  })
+
+  it("says why a reconcile was refused", async () => {
+    vi.mocked(triggerReconcile).mockResolvedValue({ok: false, reason: "The target has not been created yet."})
+    const wrapper = await withTargets()
+
+    await press(wrapper, "cohort-detail-target-menu-brevo")
+    await click(wrapper, "VListItem", "cohort-detail-reconcile-brevo")
+
+    expect(wrapper.get("[data-testid=cohort-detail-error]").text()).toBe("The target has not been created yet.")
+  })
+
+  it("has a member looked at again, and says when that was refused", async () => {
+    vi.mocked(evaluateMember).mockResolvedValueOnce({ok: true}).mockResolvedValueOnce({ok: false, reason: "No."})
+    const wrapper = await open()
+
+    await press(wrapper, "cohort-detail-member-menu-1")
+    await click(wrapper, "VListItem", "cohort-detail-member-reeval-5")
+    expect(evaluateMember).toHaveBeenCalledWith(5)
+    expect(wrapper.get("[data-testid=cohort-detail-success]").text()).toBe("Queued a fresh look at their cohorts.")
+
+    const again = await open()
+    await press(again, "cohort-detail-member-menu-1")
+    await click(again, "VListItem", "cohort-detail-member-reeval-5")
+    expect(again.get("[data-testid=cohort-detail-error]").text()).toBe("No.")
+  })
+
+  it("leaves switching and enforcing out of the board's target menu", async () => {
+    vi.mocked(fetchCohort).mockResolvedValue(cohort())
+    const wrapper = await mountPage(CohortDetail, {path: "/management/cohort/7", login: boardLogin})
+    await wrapper.get("[data-testid=cohort-detail-targets] [data-testid=info-box-toggle]").trigger("click")
+    await settle()
+
+    await press(wrapper, "cohort-detail-target-menu-brevo")
+
+    const items = wrapper.findAllComponents({name: "VListItem"}).map((c) => c.attributes("data-testid"))
+    expect(items).toContain("cohort-detail-reconcile-brevo")
+    expect(items).not.toContain("cohort-detail-switch-target-brevo")
+    expect(items).not.toContain("cohort-detail-enforce-brevo")
   })
 })

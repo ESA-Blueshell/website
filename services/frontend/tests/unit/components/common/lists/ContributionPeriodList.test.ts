@@ -80,24 +80,23 @@ describe("ContributionPeriodList", () => {
     expect(wrapper.find('[data-testid="contribution-period-list-unread"]').exists()).toBe(false)
   })
 
-  it("deletes selected contribution period on confirm", async () => {
-    const wrapper = mount(ContributionPeriodList, {
-      global: {
-        stubs: {
-          ContributionPeriodDialog: true,
-          DeleteConfirmationDialog: true,
-          "v-slide-group": {
-            template: "<div><slot /></div>",
-          },
-          "v-slide-group-item": {
-            template: "<div><slot :toggle=\"() => {}\" :selectedClass=\"''\" :isSelected=\"false\" /></div>",
-          },
-        },
-      },
-    })
+  it("deletes the period whose edit dialog is open, which the confirm names, not the one selected in the strip", async () => {
+    const PeriodDialog = {name: "ContributionPeriodDialog", props: ["contributionPeriod"], emits: ["delete"], template: "<div />"}
+    const Confirm = {name: "DeleteConfirmationDialog", props: ["message"], emits: ["confirm"], template: "<div />"}
+    const wrapper = mount(ContributionPeriodList, {global: {stubs: {...stubs, ContributionPeriodDialog: PeriodDialog, DeleteConfirmationDialog: Confirm}}})
+    await flushPromises()
 
-    ;(wrapper.vm as any).selectedPeriodId = 2
-    await (wrapper.vm as any).confirmDeleteContributionPeriod()
-    expect(mockDeletePeriod).toHaveBeenCalledWith(2)
+    await wrapper.get('[data-testid="contribution-period-select-btn-1"]').element.parentElement!.dispatchEvent(new MouseEvent("mouseover"))
+    await flushPromises()
+    await wrapper.get('[data-testid="contribution-period-edit-btn-1"]').trigger("click")
+    wrapper.getComponent(PeriodDialog).vm.$emit("delete", 1)
+    await flushPromises()
+
+    expect(wrapper.getComponent(Confirm).props("message")).toContain("01/01/2025 - 30/06/2025")
+    wrapper.getComponent(Confirm).vm.$emit("confirm")
+    await flushPromises()
+
+    expect(mockDeletePeriod).toHaveBeenCalledWith(1)
+    expect(mockDeletePeriod).not.toHaveBeenCalledWith(3)
   })
 })

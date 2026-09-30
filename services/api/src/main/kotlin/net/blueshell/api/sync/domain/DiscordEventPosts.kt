@@ -77,9 +77,9 @@ class DiscordEventPosts(
 
     /**
      * The Discord event, listed once the event is approved however far ahead, and left alone once
-     * it is over: Discord ends an external event at its end by itself. Discord refuses a start in
-     * the past, so one made for an event already running starts a minute from now, and an edit then
-     * leaves the start as Discord has it.
+     * it is over: Discord ends an external event at its end by itself, and an event moved ahead
+     * again after that gets a new one. Discord refuses a start in the past, so one made for an event
+     * already running starts a minute from now, and an edit then leaves the start as Discord has it.
      */
     fun keepDiscordEvent(eventId: Long): Kept {
         val bot = publisher.ifAvailable ?: return NO_BOT

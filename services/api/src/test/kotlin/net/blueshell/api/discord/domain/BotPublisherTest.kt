@@ -333,6 +333,17 @@ class BotPublisherTest {
     }
 
     @Test
+    fun `answers an edit to a Discord event Discord has ended as gone, without trying again with no cover`() {
+        val finished = """{"message": "Cannot update a finished event", "code": 180000}"""
+        discord
+            .expect(requestTo("https://discord.test/guilds/324/scheduled-events/e1"))
+            .andRespond(withBadRequest().body(finished).contentType(MediaType.APPLICATION_JSON))
+
+        assertThat(publisher.updateDiscordEvent("e1", listing)).isFalse()
+        discord.verify()
+    }
+
+    @Test
     fun `says the server's Events list is full where Discord refuses one more Discord event`() {
         val full = """{"message": "Maximum number of uncompleted guild scheduled events reached (100)", "code": 30038}"""
         discord

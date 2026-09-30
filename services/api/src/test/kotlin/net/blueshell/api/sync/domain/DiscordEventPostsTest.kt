@@ -101,11 +101,14 @@ class DiscordEventPostsTest {
             }
         }
 
+        /** Discord events Discord has ended: still there when asked after, but refusing an edit. */
+        val finished = mutableSetOf<String>()
+
         override fun updateDiscordEvent(
             discordEventId: String,
             listing: DiscordEventListing,
         ): Boolean {
-            if (discordEventId in gone) return false
+            if (discordEventId in gone || discordEventId in finished) return false
             listings += listing
             said += "relist $discordEventId"
             return true
@@ -596,6 +599,18 @@ class DiscordEventPostsTest {
         assertThat(publisher.said).containsExactly("list m1")
         assertThat(publisher.checked).isEmpty()
         assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.DISCORD_EVENT)
+    }
+
+    @Test
+    fun `lists a new Discord event for an event moved ahead again after Discord ended the old one`() {
+        posts("2026-10-01T09:00").keepDiscordEvent(42)
+        publisher.finished += "m1"
+        val moved = event.copy(startTime = at("2026-12-10T20:00"), endTime = at("2026-12-10T23:00"))
+
+        assertThat(posts("2026-10-12T09:00", found = moved).keepDiscordEvent(42).effect).isEqualTo(JobEffect.MADE)
+
+        assertThat(publisher.said).containsExactly("list m1", "list m2")
+        assertThat(ledger.posted[DiscordArtefact.DISCORD_EVENT]?.externalId).isEqualTo("m2")
     }
 
     @Test

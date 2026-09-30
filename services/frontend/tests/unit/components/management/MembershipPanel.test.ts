@@ -1,8 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
-import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
+import MembershipPanel from "@/components/management/MembershipPanel.vue"
 import {MemberType} from "@/services/api"
-import {settle} from "../../../pages/helpers"
+import {settle} from "../../pages/helpers"
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
@@ -93,13 +93,11 @@ function makeMembership(overrides: {
 
 // ── Shared mount helper ───────────────────────────────────────────────────────
 
-function mountDialog(props: {userId?: number; userName?: string; isAdmin?: boolean} = {}) {
+function mountDialog(props: {userId?: number; isAdmin?: boolean} = {}) {
   mockStore.getters.isAdmin = props.isAdmin ?? false
-  return mount(ManageMembershipDialog, {
+  return mount(MembershipPanel, {
     props: {
-      modelValue: true,
       userId: props.userId ?? 42,
-      userName: props.userName ?? "Alice",
     },
     global: {
       stubs: {
@@ -111,7 +109,7 @@ function mountDialog(props: {userId?: number; userName?: string; isAdmin?: boole
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("ManageMembershipDialog", () => {
+describe("MembershipPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockListMembershipsFor.mockResolvedValue([])
@@ -122,7 +120,7 @@ describe("ManageMembershipDialog", () => {
     mockRestoreOneMembership.mockResolvedValue(undefined)
   })
 
-  it("loads memberships on open (watch modelValue=true)", async () => {
+  it("loads the memberships of the person it is given", async () => {
     mountDialog()
     await settle()
     expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
@@ -283,14 +281,6 @@ describe("ManageMembershipDialog", () => {
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
-  it("close emits update:modelValue false", async () => {
-    const wrapper = mountDialog()
-    await settle()
-
-    ;(wrapper.vm as any).close()
-    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([false])
-  })
-
   it("hasActive is true when any membership has no endDate", async () => {
     const activeMembership = makeMembership({id: 10, userId: 42, startDate: "2025-01-01"})
     mockListMembershipsFor.mockResolvedValue([activeMembership])
@@ -353,13 +343,13 @@ describe("ManageMembershipDialog", () => {
     expect(wrapper.find("[data-testid^='manage-membership-row-']").exists()).toBe(false)
   })
 
-  it("title contains 'Manage memberships: Alice' (colon, not em-dash)", async () => {
-    const wrapper = mountDialog({userName: "Alice"})
+  it("loads again for another person", async () => {
+    const wrapper = mountDialog()
     await settle()
 
-    // The BaseModal receives the title prop — check the computed prop string
-    const baseModal = wrapper.findComponent({name: "BaseModal"})
-    expect(baseModal.props("title")).toBe("Manage memberships: Alice")
+    await wrapper.setProps({userId: 43})
+    await settle()
+    expect(mockListMembershipsFor).toHaveBeenLastCalledWith(43)
   })
 
   it("edit pane (manage-membership-edit-pane) appears when toggling inline edit", async () => {

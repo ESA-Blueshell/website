@@ -34,6 +34,6 @@ export function alertLink(alert: Alert): string {
     case AlertKind.EXCEPTION_OPEN:
       return "/management/exceptions"
     case AlertKind.ROLE_AWAITING_TWO_FACTOR:
-      return `/management/users?search=${encodeURIComponent(alert.subjectLabel ?? "")}`
+      return `/management/users/${alert.subjectId}`
   }
 }

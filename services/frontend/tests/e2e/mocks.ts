@@ -711,6 +711,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   )
 
   let exceptionResolvedAt: string | null = null
+  const paidPeriods = new Set<number>()
   const baseAlerts: Wire<Alert>[] = fixtures.alerts ?? []
 
   const baseJobs: Wire<JobExecution>[] = fixtures.jobs ?? [
@@ -973,7 +974,23 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "restoreDeletedUserById", {}, 204)
     }
     if (method === "GET" && path === "/memberships") {
-      return answer(route, "findMemberships", baseMemberships)
+      const userId = url.searchParams.get("userId")
+      return answer(route, "findMemberships", userId ? baseMemberships.filter((one) => String(one.userId) === userId) : baseMemberships)
+    }
+    if (method === "GET" && /^\/users\/\d+\/contributions$/.test(path)) {
+      return answer(route, "findMemberContributions", [{
+        periodId: 1, startDate: "2025-09-01", endDate: "2026-08-31", feeType: "FULL_YEAR_FEE", fee: 30,
+        paid: paidPeriods.has(1), paidAt: paidPeriods.has(1) ? "2025-10-01T10:00:00.000Z" : null,
+        lastEmailAt: "2025-09-20T10:00:00.000Z", lastEmailKind: "REMINDER",
+      }])
+    }
+    if (method === "POST" && path === "/contributions") {
+      paidPeriods.add((request.postDataJSON() as {contributionPeriodId: number}).contributionPeriodId)
+      return route.fulfill({status: 201, contentType: "application/json", body: "{}"})
+    }
+    if (method === "DELETE" && /^\/contributionPeriods\/\d+\/users\/\d+\/contributions$/.test(path)) {
+      paidPeriods.delete(Number(path.split("/")[2]))
+      return route.fulfill({status: 204})
     }
     // The bulk membership actions ask the api what they would do before doing it, so the
     // preview decides the rows here the way the server would: a member with an open

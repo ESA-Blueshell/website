@@ -76,7 +76,7 @@ describe("JobDetail page", () => {
   it("links what the job concerns to its own page, and names the rest", async () => {
     const wrapper = await mountDetail()
 
-    expect(wrapper.find('[data-testid="job-detail-concern-USER-7"]').attributes("to")).toBe("/management/users?search=ada")
+    expect(wrapper.find('[data-testid="job-detail-concern-USER-7"]').attributes("to")).toBe("/management/users/7")
     expect(wrapper.find('[data-testid="job-detail-concerns"]').text()).toContain("2026-2027")
     expect(wrapper.find('[data-testid="job-detail-concern-CONTRIBUTION_PERIOD-3"]').exists()).toBe(false)
   })

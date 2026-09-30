@@ -12,7 +12,6 @@ import SelectionBar from "@/components/island/SelectionBar.vue"
 import SortHeader from "@/components/island/SortHeader.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipStatusDialog.vue"
 import UserForm from "@/components/form/UserForm.vue"
@@ -163,7 +162,6 @@ const editSaving = ref(false)
 const {submitState: editState, showSubmitStatus: editStatus, setSubmitResult: editResult} = useSubmitFeedback()
 
 const acting = ref<{id: number; name: string} | null>(null)
-const membershipOpen = ref(false)
 const rolesOpen = ref(false)
 const securityOpen = ref(false)
 const deleteOpen = ref(false)
@@ -209,7 +207,7 @@ async function openEdit(row: PersonRow) {
   }
 }
 
-const dialogs = {membership: membershipOpen, roles: rolesOpen, security: securityOpen, delete: deleteOpen}
+const dialogs = {roles: rolesOpen, security: securityOpen, delete: deleteOpen}
 
 const act = (row: PersonRow, dialog: keyof typeof dialogs) => {
   acting.value = {id: row.id, name: row.fullName}
@@ -372,7 +370,11 @@ onMounted(load)
             @change="toggle(row.id)"
           >
           <span class="people__who">
-            <strong>{{ row.fullName }}</strong>
+            <router-link
+              class="people__name"
+              :data-testid="`member-manager-open-${row.id}`"
+              :to="`/management/users/${row.id}`"
+            >{{ row.fullName }}</router-link>
             <span class="people__sub">@{{ row.username }} · {{ row.email }}</span>
           </span>
           <span
@@ -414,13 +416,6 @@ onMounted(load)
                   @select="openEdit(row)"
                 >
                   Edit profile
-                </dropdown-menu-item>
-                <dropdown-menu-item
-                  class="people-menu__item"
-                  :data-testid="`member-manager-manage-membership-btn-${row.id}`"
-                  @select="act(row, 'membership')"
-                >
-                  Membership
                 </dropdown-menu-item>
                 <dropdown-menu-item
                   v-if="mayEditRoles"
@@ -521,13 +516,6 @@ onMounted(load)
       :user-name="acting.name"
       @changed="onRolesChanged"
     />
-    <manage-membership-dialog
-      v-if="acting && membershipOpen"
-      v-model="membershipOpen"
-      :user-id="acting.id"
-      :user-name="acting.name"
-      @changed="load"
-    />
     <!-- Mounted only while chosen: opening it is what asks the api for its preview. -->
     <membership-status-dialog
       v-if="bulkAction"
@@ -613,7 +601,13 @@ onMounted(load)
   min-width: 0;
 }
 
-.people__who strong,
+.people__name {
+  font-weight: 600;
+  color: var(--color-chalk);
+  text-decoration: none;
+}
+
+.people__name,
 .people__sub,
 .people__needs {
   overflow: hidden;

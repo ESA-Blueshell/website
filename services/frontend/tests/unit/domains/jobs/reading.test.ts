@@ -159,8 +159,7 @@ describe("job reading", () => {
   it("links what a job concerns to its own page, where it has one", () => {
     expect(relatedEntityLink({type: "EVENT", id: 4, label: "LAN"})).toBe("/events/4")
     expect(relatedEntityLink({type: "COHORT", id: 2, label: "Sitecie (BREVO LIST)"})).toBe("/management/platforms/brevo/lists")
-    expect(relatedEntityLink({type: "USER", id: 7, label: "Ada Lovelace (@ada.l)"})).toBe("/management/users?search=ada.l")
-    expect(relatedEntityLink({type: "USER", id: 8, label: "User #8"})).toBeNull()
+    expect(relatedEntityLink({type: "USER", id: 7, label: "Ada Lovelace (@ada.l)"})).toBe("/management/users/7")
     expect(relatedEntityLink({type: "CONTRIBUTION_PERIOD", id: 3, label: "2026-2027"})).toBeNull()
     expect(relatedEntityLink({type: "EVENT", id: null, label: "Event"})).toBeNull()
   })

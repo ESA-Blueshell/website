@@ -126,16 +126,13 @@ export function relatedEntityLabel(entity: JobRelatedEntity): string {
   return entity.label ?? `${type} #${entity.id}`
 }
 
-/**
- * Where the page for what a job concerns lives, or nothing where it has none. A person is found
- * on Users by the username their label carries, since a person gone from the api has none.
- */
+/** Where the page for what a job concerns lives, or nothing where it has none. */
 export function relatedEntityLink(entity: JobRelatedEntity): string | null {
   if (entity.id == null) return null
   if (entity.type === "EVENT") return `/events/${entity.id}`
   if (entity.type === "COHORT") return "/management/platforms/brevo/lists"
-  const username = entity.type === "USER" ? /\(@([^)]+)\)$/.exec(entity.label ?? "")?.[1] : undefined
-  return username ? `/management/users?search=${encodeURIComponent(username)}` : null
+  if (entity.type === "USER") return `/management/users/${entity.id}`
+  return null
 }
 
 export function relatedEntityTypeLabel(type?: string | null): string {

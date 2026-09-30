@@ -6,6 +6,7 @@
 import {describe, expect, it} from "vitest"
 import type {EmailStats, SentEmail} from "@/domains/emails"
 import {
+  canResend,
   canRetry,
   deliveryRate,
   openRate,
@@ -22,7 +23,7 @@ const stats = (fields: Partial<EmailStats>): EmailStats => ({
   deliveredCount: 0,
   failedCount: 0,
   openedCount: 0,
-  pendingCount: 0,
+  queuedCount: 0,
   sentCount: 0,
   totalCount: 0,
   ...fields,
@@ -35,13 +36,13 @@ describe("email reading", () => {
     expect(statusColor("BOUNCED")).toBe("error")
     expect(statusColor("FAILED")).toBe("error")
     expect(statusColor("SENT")).toBe("info")
-    expect(statusColor("PENDING")).toBe("warning")
+    expect(statusColor("QUEUED")).toBe("warning")
     expect(statusColor(undefined)).toBe("secondary")
 
     expect(rowStatusClass("OPENED")).toBe("email-row--success")
     expect(rowStatusClass("BOUNCED")).toBe("email-row--failed")
     expect(rowStatusClass("SENT")).toBe("email-row--sent")
-    expect(rowStatusClass("PENDING")).toBe("email-row--pending")
+    expect(rowStatusClass("QUEUED")).toBe("email-row--queued")
     expect(rowStatusClass(undefined)).toBe("")
   })
 
@@ -50,6 +51,10 @@ describe("email reading", () => {
     // A failure with no job recorded has nothing to run again.
     expect(canRetry(email({id: 1, deliveryStatus: "FAILED"}))).toBe(false)
     expect(canRetry(email({id: 1, deliveryStatus: "BOUNCED", jobExecutionId: 9}))).toBe(false)
+    expect(canResend(email({id: 1, deliveryStatus: "BOUNCED", jobExecutionId: 9}))).toBe(true)
+    expect(canResend(email({id: 1, deliveryStatus: "FAILED", jobExecutionId: 9}))).toBe(true)
+    expect(canResend(email({id: 1, deliveryStatus: "SENT", jobExecutionId: 9}))).toBe(false)
+    expect(canResend(email({id: 1, deliveryStatus: "BOUNCED"}))).toBe(false)
     expect(canRetry(email({deliveryStatus: "FAILED", jobExecutionId: 9}))).toBe(false)
   })
 
@@ -76,14 +81,14 @@ describe("email reading", () => {
     ])
 
     expect(counts).toEqual({
-      PENDING: 0, SENT: 2, DELIVERED: 0, OPENED: 1, BOUNCED: 0, FAILED: 0,
+      QUEUED: 0, SENT: 2, DELIVERED: 0, OPENED: 1, BOUNCED: 0, FAILED: 0,
     })
   })
 
   it("offers every status the api declares", () => {
     expect(statusOptions()).toEqual([
       {title: "All statuses", value: "all"},
-      {title: "Pending", value: "PENDING"},
+      {title: "Queued", value: "QUEUED"},
       {title: "Sent", value: "SENT"},
       {title: "Delivered", value: "DELIVERED"},
       {title: "Opened", value: "OPENED"},

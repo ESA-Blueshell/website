@@ -10,6 +10,8 @@ import net.blueshell.api.jobs.api.JobExecutor
 import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -32,6 +34,7 @@ class EmailManagementController(
     private val sentEmailPreviewService: SentEmailPreviewService,
     private val jobExecutionService: JobExecutionService,
     private val jobExecutor: JobExecutor,
+    private val jobs: JobQueue,
 ) {
     @GetMapping
     @BoardOnly
@@ -52,7 +55,7 @@ class EmailManagementController(
     fun getStats(): EmailStatsDTO =
         EmailStatsDTO(
             totalCount = EmailDeliveryStatus.entries.sumOf { emailService.countByStatus(it) },
-            pendingCount = emailService.countByStatus(EmailDeliveryStatus.PENDING),
+            queuedCount = emailService.countByStatus(EmailDeliveryStatus.QUEUED),
             sentCount = emailService.countByStatus(EmailDeliveryStatus.SENT),
             deliveredCount = emailService.countByStatus(EmailDeliveryStatus.DELIVERED),
             openedCount = emailService.countByStatus(EmailDeliveryStatus.OPENED),
@@ -110,6 +113,31 @@ class EmailManagementController(
         return email.toDto()
     }
 
+    /**
+     * Makes the email again from what it is about as it stands now, such as the person's current
+     * address, and sends that as a new email linked to this one. A retry sends this one again.
+     */
+    @PostMapping("/{id}/resend")
+    @BoardOnly
+    fun resend(
+        @PathVariable id: Long,
+    ): EmailDTO {
+        val email = emailService.findById(id)
+        val jobExecutionId =
+            email.jobExecutionId
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Email $id has no linked job and cannot be resent")
+        val queued =
+            jobs.runAgain(jobExecutionId, JobTrigger.SITE_ACTION)
+                ?: throw ResponseStatusException(HttpStatus.CONFLICT, "The same email is already queued")
+        val made =
+            emailService.linkResend(requireNotNull(queued.id), email)
+                ?: throw ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "What email $id was about no longer exists, so it cannot be made again",
+                )
+        return made.toDto()
+    }
+
     private fun normalizePageable(pageable: Pageable): Pageable {
         val sort = if (pageable.sort.isSorted) pageable.sort else DEFAULT_SORT
         val pageNumber = if (pageable.isPaged) pageable.pageNumber else 0
@@ -145,4 +173,5 @@ private fun Email.toDto() =
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
         previewable = this.bodyMarkdown != null,
+        resentFromId = this.resentFromId,
     )

@@ -210,7 +210,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.totalCount").isNumber)
                 .andExpect(jsonPath("$.sentCount").isNumber)
                 .andExpect(jsonPath("$.failedCount").isNumber)
-                .andExpect(jsonPath("$.pendingCount").isNumber)
+                .andExpect(jsonPath("$.queuedCount").isNumber)
                 .andExpect(jsonPath("$.deliveredCount").isNumber)
                 .andExpect(jsonPath("$.openedCount").isNumber)
                 .andExpect(jsonPath("$.bouncedCount").isNumber)

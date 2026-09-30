@@ -13,7 +13,7 @@ export function statusColor(status?: Status): string {
   if (status === "DELIVERED" || status === "OPENED") return "success"
   if (status === "FAILED" || status === "BOUNCED") return "error"
   if (status === "SENT") return "info"
-  if (status === "PENDING") return "warning"
+  if (status === "QUEUED") return "warning"
   return "secondary"
 }
 
@@ -21,7 +21,7 @@ export function rowStatusClass(status?: Status): string {
   if (status === "DELIVERED" || status === "OPENED") return "email-row--success"
   if (status === "FAILED" || status === "BOUNCED") return "email-row--failed"
   if (status === "SENT") return "email-row--sent"
-  if (status === "PENDING") return "email-row--pending"
+  if (status === "QUEUED") return "email-row--queued"
   return ""
 }
 
@@ -31,6 +31,12 @@ export function rowStatusClass(status?: Status): string {
  */
 export function canRetry(email: SentEmail): boolean {
   return email.id != null && email.deliveryStatus === "FAILED" && email.jobExecutionId != null
+}
+
+/** A failed or bounced email that a job wrote can be made again for the person's current address. */
+export function canResend(email: SentEmail): boolean {
+  return email.id != null && email.jobExecutionId != null
+    && (email.deliveryStatus === EmailDeliveryStatus.FAILED || email.deliveryStatus === EmailDeliveryStatus.BOUNCED)
 }
 
 /** An opened email was delivered, so it counts towards delivery as well as towards opens. */
@@ -52,7 +58,7 @@ export function openRate(stats: EmailStats | null): number {
  */
 export function statusCounts(emails: SentEmail[]): Record<EmailDeliveryStatus, number> {
   const counts = {
-    [EmailDeliveryStatus.PENDING]: 0,
+    [EmailDeliveryStatus.QUEUED]: 0,
     [EmailDeliveryStatus.SENT]: 0,
     [EmailDeliveryStatus.DELIVERED]: 0,
     [EmailDeliveryStatus.OPENED]: 0,

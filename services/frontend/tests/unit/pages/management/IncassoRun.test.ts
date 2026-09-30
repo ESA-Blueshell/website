@@ -1,0 +1,161 @@
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import type {VueWrapper} from "@vue/test-utils"
+import IncassoRun from "@/pages/management/IncassoRun.vue"
+import {BulkFeeType, ContributionEmailKind, IncassoLeftOut} from "@/services/api"
+import {aContributionPeriod} from "../../helpers/apiFixtures"
+import {mountInApp, settle, unmountAll} from "../helpers"
+
+const api = vi.hoisted(() => ({
+  findContributionPeriods: vi.fn(),
+  planIncasso: vi.fn(),
+  startIncassoRun: vi.fn(),
+  findIncassoRun: vi.fn(),
+  readContributionEmail: vi.fn(),
+}))
+const {mockRoute, mockReplace, mockHandleNetworkError} = vi.hoisted(() => ({
+  mockRoute: {params: {periodId: "2"} as Record<string, string>},
+  mockReplace: vi.fn(),
+  mockHandleNetworkError: vi.fn(),
+}))
+
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRoute: () => mockRoute,
+  useRouter: () => ({replace: mockReplace}),
+}))
+
+vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
+
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
+  ...api,
+}))
+
+const candidate = (userId: number, name: string, fields: Record<string, unknown> = {}) => ({
+  userId, name, ingName: name, memberSince: "2025-09-01", feeType: BulkFeeType.FULL_YEAR_FEE, amount: 25,
+  ibanLastFour: `${userId}${userId}${userId}${userId}`.slice(0, 4), mandateReference: `BLUESHELL-${userId}`, mandateSignedOn: "2025-09-03",
+  leftOut: null, lastNotifiedOn: null, ...fields,
+})
+
+const later = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10)
+
+const run = {
+  id: 11, contributionPeriodId: 2, collectionDate: later, statementText: "Contributie 2025-2026 ESA Blueshell", total: 30,
+  createdAt: "2026-09-30T10:00:00Z", submittedAt: null,
+  collections: [{userId: 1, name: "Mila Vries", ingName: "Mila Vries", ibanLastFour: "1111", mandateReference: "BLUESHELL-1",
+    mandateSignedOn: "2025-09-03", feeType: BulkFeeType.FULL_YEAR_FEE, amount: 30}],
+}
+
+describe("the incasso task", () => {
+  const wrappers: VueWrapper[] = []
+  const mount = async () => {
+    const wrapper = mountInApp(IncassoRun)
+    wrappers.push(wrapper)
+    await settle()
+    return wrapper
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRoute.params = {periodId: "2"}
+    api.findContributionPeriods.mockResolvedValue({status: 200, data: [
+      aContributionPeriod({id: 2, startDate: "2025-09-01", endDate: "2026-08-31", fullYearFee: 30, halfYearFee: 15, alumniFee: 5}),
+    ]})
+    api.planIncasso.mockResolvedValue({status: 200, data: [
+      candidate(1, "Mila Vries"),
+      candidate(2, "Zoë Bakker", {ingName: "Zoe Bakker"}),
+      candidate(3, "Lotte Meijer", {ibanLastFour: null, mandateReference: null, mandateSignedOn: null, leftOut: IncassoLeftOut.NO_BANK_DETAILS}),
+      candidate(4, "Bram Kok", {leftOut: IncassoLeftOut.ALREADY_PAID}),
+    ]})
+    api.startIncassoRun.mockResolvedValue({status: 201, data: run})
+    api.findIncassoRun.mockResolvedValue({status: 200, data: {...run, submittedAt: "2026-10-20T10:00:00Z"}})
+    api.readContributionEmail.mockResolvedValue({status: 200, data: {
+      subject: "Collected", html: "<p>x</p>", recipientEmail: "a@x", recipientName: "A", kind: "INCASSO_NOTIFICATION", feeType: "FULL_YEAR_FEE",
+    }})
+  })
+
+  afterEach(() => {
+    unmountAll(wrappers, "IncassoRunPage")
+  })
+
+  it("walks who, amounts and the check to a run, and emails nobody before it", async () => {
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="incasso-run-with-mandate"]').text()).toBe("3 with a mandate")
+    expect(wrapper.get('[data-testid="incasso-run-row-1"]').text()).toContain("NL•• •••• •••• ••11 11")
+    expect(wrapper.get('[data-testid="incasso-run-left-out-3"]').text()).toContain("No bank details recorded. Ask them to add")
+    expect(wrapper.get('[data-testid="incasso-run-left-out-4"]').text()).toBe("Already paid")
+
+    await wrapper.get('[data-testid="incasso-run-next"]').trigger("click")
+    await settle()
+    wrapper.findComponent({name: "VSelect"}).vm.$emit("update:modelValue", BulkFeeType.HALF_YEAR_FEE)
+    await settle()
+    expect(wrapper.get('[data-testid="incasso-run-amounts"]').text()).toContain("€ 15.00")
+
+    await wrapper.get('[data-testid="incasso-run-next"]').trigger("click")
+    await settle()
+    expect(wrapper.text()).toContain("€ 45.00 will be collected from 2 members")
+    expect(wrapper.get('[data-testid="incasso-run-renamed"]').text()).toContain("Zoë Bakker as Zoe Bakker")
+    expect(wrapper.get('[data-testid="incasso-run-left-out"]').text()).toContain("Lotte Meijer")
+    expect(wrapper.get('[data-testid="incasso-run-start"]').attributes("disabled")).toBeDefined()
+    wrapper.findComponent({name: "DateInput"}).vm.$emit("update:modelValue", later)
+    await settle()
+
+    await wrapper.get('[data-testid="incasso-run-preview-1"]').trigger("click")
+    await settle()
+    expect(api.readContributionEmail).toHaveBeenCalledWith({query: {
+      kind: ContributionEmailKind.INCASSO_NOTIFICATION, contributionPeriodId: 2, userId: 1, date: later, feeType: BulkFeeType.HALF_YEAR_FEE,
+    }})
+    expect(api.startIncassoRun).not.toHaveBeenCalled()
+
+    expect(wrapper.get('[data-testid="incasso-run-start"]').text()).toBe("Email the incasso notification to 2 members")
+    await wrapper.get('[data-testid="incasso-run-start"]').trigger("click")
+    await settle()
+    expect(api.startIncassoRun).toHaveBeenCalledWith({path: {periodId: 2}, body: {
+      userIds: [1, 2], feeTypeOverrides: {1: BulkFeeType.HALF_YEAR_FEE}, collectionDate: later, statementText: "Contributie 2025-2026 ESA Blueshell",
+    }})
+    expect(wrapper.get('[data-testid="incasso-run-done"]').text()).toContain("1 incasso notification sent")
+    expect(wrapper.get('[data-testid="incasso-run-waiting"]').text()).toContain("put the collection in ING")
+    expect(mockReplace).toHaveBeenCalledWith("/management/contributions/2/incasso/11")
+  })
+
+  it("leaves out who is unticked, and says why a run was refused", async () => {
+    api.startIncassoRun.mockResolvedValue({status: 400, error: {code: "CollectionDateNotAhead"}})
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="incasso-run-tick-2"]').setValue(false)
+    await wrapper.get('[data-testid="incasso-run-next"]').trigger("click")
+    await wrapper.get('[data-testid="incasso-run-previous"]').trigger("click")
+    await wrapper.get('[data-testid="incasso-run-next"]').trigger("click")
+    await wrapper.get('[data-testid="incasso-run-next"]').trigger("click")
+    await settle()
+    expect(wrapper.find('[data-testid="incasso-run-renamed"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="incasso-run-left-out"]').text()).toContain("Not chosen")
+    wrapper.findComponent({name: "DateInput"}).vm.$emit("update:modelValue", later)
+    wrapper.findComponent({name: "TextInput"}).vm.$emit("update:modelValue", "a".repeat(141))
+    await settle()
+    expect(wrapper.get('[data-testid="incasso-run-start"]').attributes("disabled")).toBeDefined()
+    wrapper.findComponent({name: "TextInput"}).vm.$emit("update:modelValue", "Contributie")
+    await settle()
+    await wrapper.get('[data-testid="incasso-run-start"]').trigger("click")
+    await settle()
+
+    expect(api.startIncassoRun).toHaveBeenCalledWith({path: {periodId: 2}, body: expect.objectContaining({userIds: [1], feeTypeOverrides: {}})})
+    expect(wrapper.get('[data-testid="incasso-run-failure"]').text()).toBe("The collection date has to be after today.")
+  })
+
+  it("opens a run on its last step, and says when nobody pays by incasso", async () => {
+    mockRoute.params = {periodId: "2", runId: "11"}
+    const opened = await mount()
+    expect(api.planIncasso).not.toHaveBeenCalled()
+    expect(opened.get('[data-testid="incasso-run-done"]').text()).toContain("Submitted to ING on 20 Oct 2026")
+
+    mockRoute.params = {periodId: "2"}
+    api.planIncasso.mockResolvedValue({status: 200, data: []})
+    expect((await mount()).find('[data-testid="incasso-run-empty"]').exists()).toBe(true)
+
+    api.findContributionPeriods.mockRejectedValue(new Error("offline"))
+    await mount()
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+  })
+})

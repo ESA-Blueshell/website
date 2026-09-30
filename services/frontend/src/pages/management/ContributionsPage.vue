@@ -9,13 +9,13 @@ import FullList from "@/components/island/FullList.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import SelectionBar from "@/components/island/SelectionBar.vue"
 import SortHeader from "@/components/island/SortHeader.vue"
-import PaymentEmailWizard from "@/components/common/modals/bulk/paymentEmail/PaymentEmailWizard.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {
   type ContributionPeriodResponse,
   type PeriodMember,
   type PeriodContributionsView,
   contributionEmailLabels,
+  dayName,
   listPeriods,
   readPeriodContributions,
 } from "@/domains/contribution"
@@ -35,7 +35,6 @@ const search = ref("")
 const paid = ref<string | null>(null)
 const sortKey = ref<"name" | "lastEmail">("name")
 const descending = ref(false)
-const writing = ref(false)
 
 const paidOptions = [
   {key: "no", label: "Not paid"},
@@ -99,9 +98,6 @@ const loadView = async () => {
   view.value = period.value ? await readPeriodContributions(period.value.id) : null
 }
 
-/** The selected members who pay by incasso, the only ones the notification wizard writes to. */
-const incassoSelected = computed(() => selectedIdsArray.value.filter((id) => members.value.find((one) => one.userId === id)?.incasso))
-
 /** Reminders for members paying by transfer have a task page of their own. */
 const sendReminders = () => {
   if (!period.value) return
@@ -115,11 +111,6 @@ const markPayments = (action: "paid" | "unpaid") => {
     path: `/management/users/bulk/${action}`,
     query: {ids: selectedIdsArray.value.join(","), period: String(period.value.id), back: `/management/contributions/${period.value.id}`},
   })
-}
-
-const onEmailsDone = async () => {
-  clearSelection()
-  await loadView()
 }
 
 const listHeight = ref(Math.max(320, globalThis.innerHeight - 520))
@@ -211,6 +202,13 @@ void loadPeriods()
         >
           Edit period
         </router-link>
+        <router-link
+          class="money__action"
+          data-testid="contribution-incasso-run"
+          :to="`/management/contributions/${period.id}/incasso`"
+        >
+          Run an incasso
+        </router-link>
       </section>
 
       <filter-bar
@@ -243,14 +241,6 @@ void loadPeriods()
           @click="sendReminders"
         >
           Send payment reminders
-        </button>
-        <button
-          class="money__action"
-          data-testid="bulk-action-send-payment-emails"
-          type="button"
-          @click="writing = true"
-        >
-          Send incasso notifications
         </button>
         <button
           class="money__action"
@@ -339,6 +329,30 @@ void loadPeriods()
       </full-list>
 
       <section
+        v-if="(view?.incassoRuns ?? []).length > 0"
+        class="money__runs"
+        data-testid="contribution-incasso-runs"
+      >
+        <h2>Incassos</h2>
+        <ul>
+          <li
+            v-for="run in view?.incassoRuns ?? []"
+            :key="run.id"
+            :data-testid="`contribution-incasso-${run.id}`"
+          >
+            <span>{{ dayName(run.collectionDate) }}, {{ run.collections }} collection{{ run.collections === 1 ? "" : "s" }}, {{ euro(run.total) }}</span>
+            <span
+              class="money__sub"
+              :class="{'money__waiting': !run.submittedAt}"
+            >{{ run.submittedAt ? `Submitted to ING ${dayName(run.submittedAt.slice(0, 10))}` : "Waiting for upload to ING" }}</span>
+            <router-link :to="`/management/contributions/${period.id}/incasso/${run.id}`">
+              Open
+            </router-link>
+          </li>
+        </ul>
+      </section>
+
+      <section
         class="money__runs"
         data-testid="contribution-runs"
       >
@@ -364,14 +378,6 @@ void loadPeriods()
         </ul>
       </section>
     </template>
-
-    <!-- Only members on incasso go in: reminders for the rest have their own task page. -->
-    <payment-email-wizard
-      v-model="writing"
-      :period="period"
-      :user-ids="incassoSelected"
-      @done="onEmailsDone"
-    />
   </div>
 </template>
 
@@ -503,6 +509,10 @@ void loadPeriods()
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.money__waiting {
+  color: var(--color-warning);
 }
 
 .money__sub {

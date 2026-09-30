@@ -10,6 +10,7 @@ import {
   previewActorDisplay,
   previewTitle,
   relatedEntityLabel,
+  relatedEntityLink,
   retryLabel,
   rowStatusClass,
   stackTrace,
@@ -33,7 +34,7 @@ describe("job reading", () => {
     expect(triggerLabel(job({trigger: JobTrigger.MORNING_RUN}))).toBe("The 08:00 run")
     expect(triggerLabel(job({trigger: JobTrigger.EVENT_SENT_BACK}))).toBe("Sending the event back to the board")
     expect(triggerLabel(job({trigger: JobTrigger.EVENT_UPDATED, forced: true}))).toBe("Editing the event, run again by hand")
-    expect(triggerLabel(job({trigger: JobTrigger.BY_HAND, forced: true}))).toBe("The trigger dialog")
+    expect(triggerLabel(job({trigger: JobTrigger.BY_HAND, forced: true}))).toBe("Run a job")
     expect(triggerLabel(job({}))).toBe("")
     expect(Object.values(JobTrigger).every(trigger => triggerLabel(job({trigger})) !== "")).toBe(true)
   })
@@ -155,17 +156,25 @@ describe("job reading", () => {
     expect(successRate({...stats, totalCount: 0})).toBe(0)
   })
 
+  it("links what a job concerns to its own page, where it has one", () => {
+    expect(relatedEntityLink({type: "EVENT", id: 4, label: "LAN"})).toBe("/events/4")
+    expect(relatedEntityLink({type: "COHORT", id: 2, label: "Sitecie (BREVO LIST)"})).toBe("/management/platforms/brevo/lists")
+    expect(relatedEntityLink({type: "USER", id: 7, label: "Ada Lovelace (@ada.l)"})).toBe("/management/users?search=ada.l")
+    expect(relatedEntityLink({type: "USER", id: 8, label: "User #8"})).toBeNull()
+    expect(relatedEntityLink({type: "CONTRIBUTION_PERIOD", id: 3, label: "2026-2027"})).toBeNull()
+    expect(relatedEntityLink({type: "EVENT", id: null, label: "Event"})).toBeNull()
+  })
+
   it("offers every filter the api declares, not only the ones on screen", () => {
     expect(categoryOptions()).toEqual([
-      {title: "All categories", value: "all"},
-      {title: "Calendar", value: "calendar"},
-      {title: "Contact", value: "contact"},
-      {title: "Cohort", value: "cohort"},
-      {title: "Discord", value: "discord"},
-      {title: "Email", value: "email"},
-      {title: "Other", value: "other"},
+      {key: "calendar", label: "Calendar"},
+      {key: "contact", label: "Contact"},
+      {key: "cohort", label: "Cohort"},
+      {key: "discord", label: "Discord"},
+      {key: "email", label: "Email"},
+      {key: "other", label: "Other"},
     ])
-    expect(statusOptions().map(one => one.value))
-      .toEqual(["all", "QUEUED", "RUNNING", "SUCCESS", "SKIPPED", "FAILED", "DEAD"])
+    expect(statusOptions().map(one => one.key))
+      .toEqual(["QUEUED", "RUNNING", "SUCCESS", "SKIPPED", "FAILED", "DEAD"])
   })
 })

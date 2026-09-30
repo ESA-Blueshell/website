@@ -473,6 +473,12 @@ const routes: RouteRecordRaw[] = [
         meta: {title: "Jobs", requiresAdmin: true},
       },
       {
+        path: "jobs/:id(\\d+)",
+        name: "jobDetail",
+        component: () => import("@/pages/management/JobDetail.vue"),
+        meta: {title: "Job", requiresAdmin: true},
+      },
+      {
         path: "platforms/brevo",
         name: "cohortDashboard",
         component: () => import("@/pages/management/CohortDashboard.vue"),

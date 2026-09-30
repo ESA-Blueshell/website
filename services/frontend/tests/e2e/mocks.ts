@@ -1289,6 +1289,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       baseJobs.unshift(enqueued)
       return answer(route, "enqueue", enqueued)
     }
+    if (method === "GET" && /^\/management\/jobs\/\d+$/.test(path)) {
+      const job = baseJobs.find((one) => Number(one.id) === Number(path.split("/")[3]))
+      if (!job) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+      return answer(route, "findJobById", job)
+    }
     if (method === "GET" && path === "/management/jobs") {
       const page = Number(url.searchParams.get("page") ?? "0")
       const size = Number(url.searchParams.get("size") ?? "50")

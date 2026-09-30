@@ -129,6 +129,8 @@ class CohortSubjectControllerTest {
 
         val entry = controller.findCohortSubjectById(10L).resolutions.single()
 
+        assertThat(listOf(entry.personName, entry.resolvedByName)).containsExactly("c@example.com", "Board Member")
+
         assertThat(entry).isEqualTo(
             DriftResolutionResponse(
                 cohortId = 3L,

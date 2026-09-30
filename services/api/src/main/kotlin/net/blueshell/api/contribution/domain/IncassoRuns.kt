@@ -1,5 +1,6 @@
 package net.blueshell.api.contribution.domain
 
+import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
@@ -19,6 +20,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 
 /** Why a member on incasso is not collected from, in the order it is decided. */
+@Schema(name = "IncassoLeftOut", enumAsRef = true)
 enum class IncassoLeftOut {
     OWES_NOTHING,
     DELETED,

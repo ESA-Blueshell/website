@@ -3227,15 +3227,9 @@ components:
           - string
           - 'null'
         leftOut:
-          enum:
-          - OWES_NOTHING
-          - DELETED
-          - NO_EMAIL
-          - NO_BANK_DETAILS
-          - ALREADY_PAID
-          type:
-          - string
-          - 'null'
+          oneOf:
+          - $ref: '#/components/schemas/IncassoLeftOut'
+          - type: 'null'
         mandateReference:
           type:
           - string
@@ -3293,6 +3287,14 @@ components:
       - name
       - userId
       type: object
+    IncassoLeftOut:
+      enum:
+      - OWES_NOTHING
+      - DELETED
+      - NO_EMAIL
+      - NO_BANK_DETAILS
+      - ALREADY_PAID
+      type: string
     IncassoRunSummary:
       properties:
         collectionDate:

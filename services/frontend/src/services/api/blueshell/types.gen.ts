@@ -1655,7 +1655,7 @@ export type IncassoCandidate = {
     ibanLastFour?: string | null;
     ingName: string;
     lastNotifiedOn?: string | null;
-    leftOut?: 'OWES_NOTHING' | 'DELETED' | 'NO_EMAIL' | 'NO_BANK_DETAILS' | 'ALREADY_PAID';
+    leftOut?: IncassoLeftOut | null;
     mandateReference?: string | null;
     mandateSignedOn?: string | null;
     memberSince: string;
@@ -1673,6 +1673,14 @@ export type IncassoCollection = {
     name: string;
     userId: number;
 };
+
+export enum IncassoLeftOut {
+    OWES_NOTHING = 'OWES_NOTHING',
+    DELETED = 'DELETED',
+    NO_EMAIL = 'NO_EMAIL',
+    NO_BANK_DETAILS = 'NO_BANK_DETAILS',
+    ALREADY_PAID = 'ALREADY_PAID'
+}
 
 export type IncassoRunSummary = {
     collectionDate: string;

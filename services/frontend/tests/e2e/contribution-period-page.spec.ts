@@ -35,12 +35,12 @@ const writeToPeriods = (page: Page) => page.waitForRequest((request) =>
 )
 
 /**
- * The dialog is shared between adding and editing a period, so what it carries from one to the
+ * The form is shared between adding and editing a period, so what it carries from one to the
  * next decides which endpoint the submit reaches. A create that keeps the edited period's id
  * updates that period instead, and the version it carries is stale by then, so the API answers
  * with a conflict.
  */
-test.describe("contribution period dialog", () => {
+test.describe("a contribution period's page", () => {
   test("the add dialog holds nothing of the period that was edited", async ({page}) => {
     await openPeriods(page)
     await openEditDialog(page, 201)
@@ -53,8 +53,8 @@ test.describe("contribution period dialog", () => {
     await expect(field(page, "start-date")).toHaveValue("")
     await expect(field(page, "end-date")).toHaveValue("")
     await expect(field(page, "half-year-cutoff")).toHaveValue("")
-    // The delete button belongs to an existing period, so its absence says the dialog knows
-    // it is adding one.
+    // The danger zone belongs to an existing period, so its absence says the page knows it is
+    // adding one.
     await expect(page.getByTestId("contribution-period-delete-btn")).toHaveCount(0)
   })
 
@@ -105,5 +105,20 @@ test.describe("contribution period dialog", () => {
     await openEditDialog(page, 201)
 
     await expect(field(page, "full-year-fee")).toHaveValue("20")
+  })
+
+  test("deletes a period only once its name is typed in the danger zone", async ({page}) => {
+    await openPeriods(page)
+    await openEditDialog(page, 201)
+
+    const remove = page.getByTestId("contribution-period-delete-btn")
+    await expect(remove).toBeDisabled()
+    const name = await page.getByTestId("contribution-period-delete-name").getAttribute("placeholder")
+    await page.getByTestId("contribution-period-delete-name").fill(name ?? "")
+
+    const deleted = page.waitForRequest((request) => request.method() === "DELETE" && /\/contributionPeriods\/201$/.test(request.url()))
+    await remove.click()
+    await deleted
+    await expect(page).toHaveURL(/\/management\/contributions$/)
   })
 })

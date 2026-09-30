@@ -1,17 +1,20 @@
 package net.blueshell.api.email.web
 
 import net.blueshell.api.email.domain.EmailService
+import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.testsupport.Entities
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
 
 class EmailResendTest {
     private val emails: EmailService = mock()
@@ -43,5 +46,23 @@ class EmailResendTest {
                 2,
             )
         }.isInstanceOf(ResponseStatusException::class.java).hasMessageContaining("no longer exists")
+    }
+
+    @Test
+    fun `answers the email made again, linked to the one it came from, and counts what is queued`() {
+        val linked = Entities.email(2).apply { jobExecutionId = 5 }
+        val made =
+            Entities.email(3).apply {
+                resentFromId = 2
+                createdAt = Instant.EPOCH
+                updatedAt = Instant.EPOCH
+            }
+        whenever(emails.findById(2)).thenReturn(linked)
+        whenever(jobs.runAgain(5, JobTrigger.SITE_ACTION)).thenReturn(queued(9))
+        whenever(emails.linkResend(9, linked)).thenReturn(made)
+        whenever(emails.countByStatus(EmailDeliveryStatus.QUEUED)).thenReturn(4)
+
+        assertThat(controller.resend(2).resentFromId).isEqualTo(2)
+        assertThat(controller.getStats().queuedCount).isEqualTo(4)
     }
 }

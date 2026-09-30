@@ -21,7 +21,7 @@ class PeriodActiveMembersDefinition(
     override val type = CohortSubjectType.PERIOD_ACTIVE_MEMBERS
     override val scope = period.id
     override val label = "Active Members ${period.startDate.year} - ${period.endDate.year}"
-    override val folder = PERIOD_FOLDER
+    override val folder = CohortFolders.ACTIVE_MEMBERS
 
     override fun members(): Set<Long> = sources.flatMapTo(mutableSetOf()) { it.activeBetween(period.startDate, period.endDate) }
 
@@ -53,15 +53,11 @@ class CommitteeMembersDefinition(
     override val type = CohortSubjectType.COMMITTEE_MEMBERS
     override val scope = committee.id
     override val label = committee.name
-    override val folder = COMMITTEE_FOLDER
+    override val folder = CohortFolders.COMMITTEES
 
     override fun members(): Set<Long> = committeeMembers.findUserIdsOnCommittee(committee.id!!)
 
     override fun contains(userId: Long): Boolean = userId in members()
-
-    companion object {
-        const val COMMITTEE_FOLDER = "Committees"
-    }
 }
 
 /**
@@ -94,7 +90,7 @@ class NewsletterSubscribersDefinition(
     override val type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS
     override val scope = null
     override val label = "Newsletter Subscribers"
-    override val folder = null
+    override val folder = CohortFolders.NEWSLETTER
 
     override fun members(): Set<Long> = users.findNewsletterSubscriberIds()
 

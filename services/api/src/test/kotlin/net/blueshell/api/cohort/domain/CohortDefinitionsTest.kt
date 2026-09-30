@@ -3,6 +3,7 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.api.MembershipService
 import org.assertj.core.api.Assertions.assertThat
@@ -91,5 +92,16 @@ class CohortDefinitionsTest {
 
         assertThat(definition.members()).containsExactly(7L)
         assertThat(definition.contains(7L)).isTrue()
+    }
+
+    @Test
+    fun `each cohort type names its own Brevo folder`() {
+        val committee = Committee(name = "Sitecie", description = "Builds the site").apply { id = 3L }
+
+        assertThat(PeriodMembersDefinition(year, mockk()).folder).isEqualTo(CohortFolders.MEMBERS)
+        assertThat(PeriodPayersDefinition(year, mockk()).folder).isEqualTo(CohortFolders.CONTRIBUTION_PAID)
+        assertThat(PeriodActiveMembersDefinition(year, emptyList()).folder).isEqualTo(CohortFolders.ACTIVE_MEMBERS)
+        assertThat(CommitteeMembersDefinition(committee, mockk()).folder).isEqualTo(CohortFolders.COMMITTEES)
+        assertThat(NewsletterSubscribersDefinition(mockk()).folder).isEqualTo(CohortFolders.NEWSLETTER)
     }
 }

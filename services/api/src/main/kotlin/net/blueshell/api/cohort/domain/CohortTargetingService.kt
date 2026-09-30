@@ -77,17 +77,21 @@ class CohortTargetingService(
         label: String,
         folderHint: String?,
     ): CohortMappingRow {
-        // Validate before touching the provider so a duplicate/missing subject
-        // never creates an external target.
-        writeTransaction.execute {
-            requireSubject(subjectId)
-            requireNoExistingMapping(subjectId, system)
-        }
+        // Validate before touching the provider so a linked or missing subject never creates an
+        // external target. A registered cohort's row without an id is the one to fill.
+        val unlinked =
+            writeTransaction.execute {
+                requireSubject(subjectId)
+                unlinkedOrNone(subjectId, system)
+            }
+        val folder = folderHint ?: unlinked?.folder
 
-        val target = outsideTransaction.execute { strategies.require(system).create(label, folderHint) }
+        val target = outsideTransaction.execute { strategies.require(system).create(label, folder) }
 
         return writeTransaction.execute {
-            val cohort = cohortRepo.save(newCohort(system, label, folder = folderHint, subjectId = subjectId))
+            val cohort =
+                unlinked?.id?.let { id -> cohortRepo.findById(id).orElseThrow().also { it.folder = folder } }
+                    ?: cohortRepo.save(newCohort(system, label, folder = folder, subjectId = subjectId))
             targetIds.record(cohort, target.externalId)
             CohortMappingRow(cohort, target.externalId)
         }
@@ -161,16 +165,19 @@ class CohortTargetingService(
             ResponseStatusException(HttpStatus.NOT_FOUND, "Subject $subjectId not found")
         }
 
-    private fun requireNoExistingMapping(
+    /** The subject's target without an id yet, or none; a linked one is refused, to be switched instead. */
+    private fun unlinkedOrNone(
         subjectId: Long,
         system: TargetSystem,
-    ) {
-        if (cohortRepo.findBySubjectIdAndSystem(subjectId, system.name) != null) {
+    ): Cohort? {
+        val existing = cohortRepo.findBySubjectIdAndSystem(subjectId, system.name) ?: return null
+        if (targetIds.find(existing) != null) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
-                "Subject $subjectId already has a $system target",
+                "Subject $subjectId already has a $system target; switch it instead",
             )
         }
+        return existing
     }
 
     private fun newCohort(

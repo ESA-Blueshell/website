@@ -22,4 +22,11 @@ describe("GameBySlug", () => {
     shallowMount(GameBySlug)
     expect(document.title).toBe("Valorant — Blueshell Esports")
   })
+
+  it("stands a placeholder while the games are still on their way", () => {
+    route.params.slug = "pong"
+    const wrapper = shallowMount(GameBySlug, {global: {renderStubDefaultSlot: true}})
+    expect(wrapper.findComponent({name: "PagePlaceholder"}).props("testid")).toBe("esports-game-placeholder")
+    route.params.slug = "valorant"
+  })
 })

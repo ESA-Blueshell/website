@@ -22,7 +22,7 @@ const TeamEditor = {
   emits: ["saved", "removed", "cancel"],
   template: "<div />",
 }
-const stubs = {TeamEditor, NotFound: {template: "<div data-testid=missing />"}}
+const stubs = {TeamEditor, NotFound: {template: "<div data-testid=missing />"}, VMain: {template: "<main><slot /></main>"}}
 
 const answer = (season: unknown, teams: {id: number, name: string}[], team: unknown) => ({
   season: ref(season), fielded: ref(teams), team: ref(team), answered: Promise.resolve(),
@@ -73,5 +73,12 @@ describe("the team edit page", () => {
 
     expect((await mountPage({slug: "pong"})).find("[data-testid=missing]").exists()).toBe(true)
     expect((await mountPage({slug: "valorant", team: "99"})).find("[data-testid=missing]").exists()).toBe(true)
+  })
+
+  it("stands a placeholder while the team is still on its way", () => {
+    read.useTeamToEdit.mockReturnValue(answer(autumn, [], null))
+    route.params = {slug: "valorant", team: "9"}
+    const wrapper = mount(TeamEdit, {global: {stubs}})
+    expect(wrapper.find("[data-testid=team-edit-placeholder]").exists()).toBe(true)
   })
 })

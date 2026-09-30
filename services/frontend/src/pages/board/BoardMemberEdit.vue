@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import Island from "@/components/island/Island.vue"
+import PagePlaceholder from "@/components/island/PagePlaceholder.vue"
 import {computed} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import BoardMemberEditor from "@/domains/boards/components/BoardMemberEditor.vue"
@@ -39,4 +41,9 @@ const done = async () => {
     @saved="done"
   />
   <not-found v-else-if="!loading" />
+  <v-main v-else>
+    <island>
+      <page-placeholder testid="board-member-edit-placeholder" />
+    </island>
+  </v-main>
 </template>

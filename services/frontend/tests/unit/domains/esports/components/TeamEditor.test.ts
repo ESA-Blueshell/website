@@ -2,7 +2,8 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {defineComponent, h, type VNode} from "vue"
 import TeamEditor from "@/domains/esports/components/TeamEditor.vue"
-import {dropTeam, loadGames, loadRoster, loadTeamSeasons, loadTeams, unfieldTeamFromSeason} from "@/domains/esports/adapters/esports"
+import {dropTeam, loadRoster, loadTeamSeasons, loadTeams, unfieldTeamFromSeason} from "@/domains/esports/adapters/esports"
+import {loadCasualGames} from "@/domains/games/adapters/games"
 import {forgetGames, useGames} from "@/domains/esports/island/useGames"
 import {fieldExistingTeam, publishLineup} from "@/domains/esports/adapters/lineup"
 import {loadMemberAccounts} from "@/domains/user"
@@ -15,10 +16,13 @@ import {aGame, aRosterEntry, aSeason, aTeam} from "../../../helpers/apiFixtures"
  * promises at its own interface: which buttons it offers, what it says about a line-up it could
  * not read, and that a refused write closes nothing.
  */
+vi.mock("@/domains/games/adapters/games", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/domains/games/adapters/games")>()),
+  loadCasualGames: vi.fn(async () => []),
+}))
 vi.mock("@/domains/esports/adapters/esports", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/domains/esports/adapters/esports")>()),
   dropTeam: vi.fn(),
-  loadGames: vi.fn(),
   loadRoster: vi.fn(),
   loadTeamSeasons: vi.fn(),
   loadTeams: vi.fn(),
@@ -140,7 +144,7 @@ describe("TeamEditor, fielding from a line-up that could not be read", () => {
   // The site bar's Competition menu reads the same shared list, so it moves with the write.
   it("puts a newly fielded game in the Competition menu without a reload", async () => {
     forgetGames()
-    vi.mocked(loadGames).mockResolvedValueOnce([]).mockResolvedValue([aGame({code: "VAL", inCompetition: true})])
+    vi.mocked(loadCasualGames).mockResolvedValueOnce([]).mockResolvedValue([aGame({code: "VAL", inCompetition: true})])
     const menu = useGames()
     await menu.ready
     expect(menu.current.value).toEqual([])

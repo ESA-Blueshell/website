@@ -21,7 +21,7 @@ vi.mock("@/domains/esports", () => ({useSeasons: () => {
 }}))
 
 const SeasonEditor = {name: "SeasonEditor", props: ["season", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
-const stubs = {SeasonEditor, NotFound: {template: "<div data-testid=missing />"}}
+const stubs = {SeasonEditor, NotFound: {template: "<div data-testid=missing />"}, VMain: {template: "<main><slot /></main>"}}
 
 beforeEach(() => router.replace.mockReset())
 
@@ -52,6 +52,7 @@ describe("the season edit page", () => {
     route.params = {id: "99"}
     const missing = mount(SeasonEdit, {global: {stubs}})
     expect(missing.find("[data-testid=missing]").exists()).toBe(false)
+    expect(missing.find("[data-testid=season-edit-placeholder]").exists()).toBe(true)
     await flushPromises()
     expect(missing.find("[data-testid=missing]").exists()).toBe(true)
   })

@@ -455,6 +455,18 @@ const routes: RouteRecordRaw[] = [
       {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
       {path: "users", name: "userManager", component: () => import("@/pages/management/UserManager.vue"), meta: {title: "Users"}},
       {
+        path: "contributions/periods/new",
+        name: "contributionPeriodNew",
+        component: () => import("@/pages/management/ContributionPeriodPage.vue"),
+        meta: {title: "New contribution period"},
+      },
+      {
+        path: "contributions/periods/:id(\\d+)",
+        name: "contributionPeriod",
+        component: () => import("@/pages/management/ContributionPeriodPage.vue"),
+        meta: {title: "Contribution period"},
+      },
+      {
         path: "contributions/:periodId(\\d+)?",
         name: "contributions",
         component: () => import("@/pages/management/ContributionsPage.vue"),

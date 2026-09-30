@@ -1144,6 +1144,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       Object.assign(period, body, {version: period.version + 1})
       return answer(route, "updateContributionPeriod", period)
     }
+    if (method === "DELETE" && /^\/contributionPeriods\/\d+$/.test(path)) {
+      const index = basePeriods.findIndex((one) => one.id === Number(path.split("/")[2]))
+      if (index >= 0) basePeriods.splice(index, 1)
+      return route.fulfill({status: 204})
+    }
     if (method === "GET" && /^\/contributionPeriods\/\d+\/members$/.test(path)) {
       const periodId = Number(path.split("/")[2])
       const period = basePeriods.find((one) => one.id === periodId)

@@ -10,6 +10,7 @@ import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.UNMATCHED
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
@@ -34,6 +35,7 @@ class InboundReconcile(
     private val definitions: CohortDefinitionRegistry,
     private val jobs: JobQueue,
     private val strategies: TargetStrategies,
+    private val resolutions: DriftResolutions,
     transactionManager: PlatformTransactionManager,
 ) {
     private val noTx = transactionManager.tx(TransactionDefinition.PROPAGATION_NOT_SUPPORTED)
@@ -71,6 +73,11 @@ class InboundReconcile(
         )
         val skipped = current.skipped.size + current.matched.size - selected.size
         val queued = jobs.runAsync(CohortJobs.ApplyInboundReconcile, payload, JobTrigger.SITE_ACTION)
+        resolutions.record(
+            target.cohortId,
+            DriftResolutionAction.ADOPT,
+            selected.map { DriftResolutions.Person(it.userId, it.externalUserId, byExternalId[it.externalUserId]?.externalLabel) },
+        )
         return InboundReconcileApplyResponse(queued?.id, selected.size, skipped)
     }
 

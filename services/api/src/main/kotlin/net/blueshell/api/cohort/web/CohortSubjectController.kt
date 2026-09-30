@@ -4,22 +4,27 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.cohort.domain.CohortMappingRow
 import net.blueshell.api.cohort.domain.CohortMemberRow
-import net.blueshell.api.cohort.domain.CohortRemediation
 import net.blueshell.api.cohort.domain.CohortSubjectDetail
 import net.blueshell.api.cohort.domain.CohortSubjectQueryService
 import net.blueshell.api.cohort.domain.CohortSubjectSummary
 import net.blueshell.api.cohort.domain.CohortTargeting
+import net.blueshell.api.cohort.domain.DriftResolutions
 import net.blueshell.api.cohort.domain.InboundReconcile
 import net.blueshell.api.cohort.domain.InboundReconcileApplyRequest
 import net.blueshell.api.cohort.domain.InboundReconcileApplyResponse
 import net.blueshell.api.cohort.domain.InboundReconcilePreview
+import net.blueshell.api.cohort.domain.LinkChoice
+import net.blueshell.api.cohort.domain.LinkOutcome
+import net.blueshell.api.cohort.domain.LinkProposal
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
@@ -49,7 +54,7 @@ import java.time.Instant
 @AdminOnly
 class CohortSubjectController(
     private val queries: CohortSubjectQueryService,
-    private val remediation: CohortRemediation,
+    private val resolutions: DriftResolutions,
     private val targeting: CohortTargeting,
     private val inboundReconcile: InboundReconcile,
     private val catalog: TargetCatalog,
@@ -73,24 +78,33 @@ class CohortSubjectController(
         )
     }
 
-    @PostMapping("/{id}/drift/link-user")
-    fun linkUser(
+    @PostMapping("/{id}/targets/{cohortId}/drift/push")
+    fun pushDrift(
         @PathVariable id: Long,
-        @RequestBody @Valid body: LinkUserRequest,
-    ): LinkedUserResponse {
-        val mapping =
-            remediation.linkUser(
-                subjectId = id,
-                userId = body.userId,
-                system = body.system,
-                externalUserId = body.externalUserId,
-            )
-        return LinkedUserResponse(
-            userId = mapping.aggregateId,
-            system = TargetSystem.valueOf(mapping.system),
-            externalUserId = mapping.externalId ?: body.externalUserId,
-        )
-    }
+        @PathVariable cohortId: Long,
+        @RequestBody @Valid body: PushDriftRequest,
+    ): DriftResolvedResponse = DriftResolvedResponse(resolutions.push(id, cohortId, body.userIds))
+
+    @PostMapping("/{id}/targets/{cohortId}/drift/remove")
+    fun removeDrift(
+        @PathVariable id: Long,
+        @PathVariable cohortId: Long,
+        @RequestBody @Valid body: ExternalDriftRequest,
+    ): DriftResolvedResponse = DriftResolvedResponse(resolutions.remove(id, cohortId, body.externalUserIds))
+
+    @PostMapping("/{id}/targets/{cohortId}/drift/link/preview")
+    fun proposeLinks(
+        @PathVariable id: Long,
+        @PathVariable cohortId: Long,
+        @RequestBody @Valid body: ExternalDriftRequest,
+    ): List<LinkProposal> = resolutions.proposeLinks(id, cohortId, body.externalUserIds)
+
+    @PostMapping("/{id}/targets/{cohortId}/drift/link")
+    fun linkDrift(
+        @PathVariable id: Long,
+        @PathVariable cohortId: Long,
+        @RequestBody @Valid body: LinkDriftRequest,
+    ): LinkOutcome = resolutions.link(id, cohortId, body.links)
 
     @PostMapping("/{id}/targets/existing")
     fun linkExistingTarget(
@@ -148,6 +162,8 @@ data class CohortSubjectDetailResponse(
     @Schema(description = "True when no definition produces this cohort any more")
     val orphaned: Boolean,
     val members: List<CohortSubjectMemberResponse>,
+    @param:Schema(description = "The latest drift resolutions across the subject's targets, newest first")
+    val resolutions: List<DriftResolutionResponse>,
 )
 
 @Schema(name = "CohortMapping")
@@ -203,18 +219,39 @@ data class CohortSubjectMemberResponse(
     val joinedAt: Instant,
 )
 
-@Schema(name = "LinkUser")
-data class LinkUserRequest(
-    @field:NotNull val userId: Long,
-    @field:NotNull val system: TargetSystem,
-    @field:NotBlank val externalUserId: String,
+@Schema(name = "PushDrift")
+data class PushDriftRequest(
+    @field:NotEmpty val userIds: List<Long>,
 )
 
-@Schema(name = "LinkedUser")
-data class LinkedUserResponse(
-    val userId: Long,
+@Schema(name = "ExternalDrift")
+data class ExternalDriftRequest(
+    @field:NotEmpty val externalUserIds: List<String>,
+)
+
+@Schema(name = "LinkDrift")
+data class LinkDriftRequest(
+    @field:NotEmpty val links: List<LinkChoice>,
+)
+
+@Schema(name = "DriftResolved")
+data class DriftResolvedResponse(
+    @param:Schema(description = "How many people the action resolved; anyone no longer drifting is skipped")
+    val resolved: Int,
+)
+
+@Schema(name = "DriftResolutionEntry")
+data class DriftResolutionResponse(
+    val cohortId: Long,
     val system: TargetSystem,
-    val externalUserId: String,
+    val action: DriftResolutionAction,
+    val userId: Long?,
+    val externalUserId: String?,
+    @param:Schema(description = "The account's name, or what the target calls a person with none")
+    val personName: String?,
+    @param:Schema(description = "Who resolved it; null when the api did so on its own behalf")
+    val resolvedByName: String?,
+    val resolvedAt: Instant,
 )
 
 /** Map the subject's per-system cohort to an external target that already exists. */
@@ -261,6 +298,19 @@ private fun CohortSubjectDetail.toResponse(): CohortSubjectDetailResponse =
         definitionKey = definitionKey,
         orphaned = orphaned,
         members = members.map { it.toMemberResponse() },
+        resolutions =
+            resolutions.map {
+                DriftResolutionResponse(
+                    cohortId = it.resolution.cohortId,
+                    system = it.system,
+                    action = it.resolution.action,
+                    userId = it.resolution.userId,
+                    externalUserId = it.resolution.externalUserId,
+                    personName = it.personName,
+                    resolvedByName = it.resolvedByName,
+                    resolvedAt = it.resolution.resolvedAt,
+                )
+            },
     )
 
 private fun CohortMappingRow.toResponse(): CohortMappingResponse =

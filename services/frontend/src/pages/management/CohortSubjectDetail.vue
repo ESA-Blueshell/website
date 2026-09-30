@@ -5,7 +5,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
 import TargetPath from "@/domains/cohorts/components/TargetPath.vue"
-import {TargetSystem, fetchCohortSubject, linkUserToExternal, queueCohortJob, removeExternalMember, triggerReconcile, type CohortMember, type CohortSubject, type CohortSyncState, type ExternalUserConflict, type TargetMapping} from "@/domains/cohorts"
+import {DriftResolutionAction, TargetSystem, fetchCohortSubject, queueCohortJob, triggerReconcile, useDriftResolution, type CohortMember, type CohortSubject, type CohortSyncState, type TargetMapping} from "@/domains/cohorts"
 import {categoryLabel, driftLabel, earlierDrift, isMember, memberName, memberSystemLabel, syncChipColour, syncLabel, systemLabel} from "@/domains/cohorts"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
@@ -174,39 +174,39 @@ const MEMBER_COLUMNS: ReadonlyArray<{label: string; sortKey: MemberSortKey; widt
   {label: "Sync", sortKey: "sync", width: "22%"},
 ]
 
-const removingExternal = ref<string | null>(null)
+const drift = useDriftResolution(
+  subjectId,
+  computed(() => subject.value?.mappings ?? []),
+  load,
+)
 
 /** What this row can be acted on with, which is what its menu holds. */
 const canReevaluate = (member: CohortMember): boolean =>
   member.userId != null && member.sync !== "ONLY_EXTERNAL"
 
-const canRemoveExternal = (member: CohortMember): boolean =>
-  member.sync === "ONLY_EXTERNAL" && member.externalUserId != null
-
-const canLinkUser = (member: CohortMember): boolean =>
-  member.sync === "ONLY_EXTERNAL" && member.userId == null && member.externalUserId != null
-
 const hasRowActions = (member: CohortMember): boolean =>
-  canReevaluate(member) || canRemoveExternal(member) || canLinkUser(member)
+  canReevaluate(member) || drift.canResolve("push", member) || drift.canResolve("remove", member) || drift.canResolve("link", member)
 
-/** A row belongs to one system's ledger; the cohort behind it is that system's mapping. */
-const cohortIdFor = (member: CohortMember): number | null =>
-  subject.value?.mappings.find((mapping) => mapping.system === member.system)?.cohortId ?? null
+/** The ticked rows the page shows; a filtered-out row stays ticked but is not acted on. */
+const selectedRows = computed(() => sortedMembers.value.filter((member) => drift.selection.value.has(member.cohortMemberId)))
 
-const removeExternalRow = async (member: CohortMember) => {
-  const cohortId = cohortIdFor(member)
-  if (member.externalUserId == null || cohortId == null) return
-  removingExternal.value = member.externalUserId
-  try {
-    await removeExternalMember(cohortId, member.externalUserId)
-    successMessage.value = "Removal enqueued."
-    await load()
-  } catch (error) {
-    errorMessage.value = (error as Error)?.message ?? "Could not remove that row."
-    $handleNetworkError(error)
-  } finally {
-    removingExternal.value = null
-  }
+const PLAN_TITLES: Record<string, (count: number) => string> = {
+  push: (count) => `Push ${count} to the target`,
+  remove: (count) => `Remove ${count} from the target`,
+  link: (count) => `Link ${count} to their accounts`,
+}
+
+/** The account a planned link would give a contact, or why it gets none. */
+const proposalFor = (member: CohortMember): string => {
+  const proposal = drift.plan.value?.proposals.find((p) => p.externalUserId === member.externalUserId)
+  return proposal?.userFullName ?? "No account with this address"
+}
+
+const RESOLUTION_VERBS: Record<DriftResolutionAction, string> = {
+  [DriftResolutionAction.PUSH]: "pushed to",
+  [DriftResolutionAction.REMOVE]: "removed from",
+  [DriftResolutionAction.LINK]: "linked on",
+  [DriftResolutionAction.ADOPT]: "adopted from",
 }
 
 //
@@ -216,7 +216,7 @@ const removeExternalRow = async (member: CohortMember) => {
 const linkingRow = ref<CohortMember | null>(null)
 const linkUserId = ref<number | undefined>(undefined)
 const linkSubmitting = ref<boolean>(false)
-const linkConflict = ref<ExternalUserConflict | null>(null)
+const linkConflict = ref<number | null>(null)
 
 const openLinkUser = (member: CohortMember) => {
   linkingRow.value = member
@@ -232,28 +232,12 @@ const closeLinkUser = () => {
 
 const submitLinkUser = async () => {
   const row = linkingRow.value
-  if (row?.externalUserId == null || row.system == null || linkUserId.value == null) return
-  if (subjectId.value == null) return
+  if (row == null || linkUserId.value == null) return
   linkSubmitting.value = true
-  linkConflict.value = null
   try {
-    const result = await linkUserToExternal(
-      subjectId.value,
-      linkUserId.value,
-      row.system,
-      row.externalUserId,
-    )
-    if (result.type === "conflict") {
-      // That external id already points at somebody; saying who is more use than failing.
-      linkConflict.value = result.conflict
-      return
-    }
-    closeLinkUser()
-    successMessage.value = "External id linked."
-    await load()
-  } catch (error) {
-    errorMessage.value = (error as Error)?.message ?? "Could not link that user."
-    $handleNetworkError(error)
+    // An external id already pointing at somebody is said, not failed.
+    linkConflict.value = await drift.linkOne(row, linkUserId.value)
+    if (linkConflict.value == null && drift.error.value == null) closeLinkUser()
   } finally {
     linkSubmitting.value = false
   }
@@ -311,7 +295,7 @@ const openInboundReconcile = (cohortId: number) => {
 }
 
 const onInboundApplied = () => {
-  successMessage.value = "Inbound reconcile job enqueued."
+  successMessage.value = "Adopt queued."
 }
 
 const backToCategory = () => {
@@ -359,6 +343,24 @@ watch(subjectId, () => void load())
           type="error"
         >
           {{ errorMessage }}
+        </v-alert>
+        <v-alert
+          v-if="drift.error.value"
+          class="mb-3"
+          data-testid="cohort-drift-error"
+          density="compact"
+          type="error"
+        >
+          {{ drift.error.value }}
+        </v-alert>
+        <v-alert
+          v-if="drift.message.value"
+          class="mb-3"
+          data-testid="cohort-drift-message"
+          density="compact"
+          type="success"
+        >
+          {{ drift.message.value }}
         </v-alert>
         <v-alert
           v-if="successMessage"
@@ -581,7 +583,7 @@ watch(subjectId, () => void load())
                               :data-testid="`cohort-subject-inbound-reconcile-${mapping.system.toLowerCase()}`"
                               :disabled="!mapping.externalId"
                               prepend-icon="mdi-import"
-                              title="Inbound reconcile"
+                              title="Adopt"
                               @click="openInboundReconcile(mapping.cohortId)"
                             />
                             <v-list-item
@@ -627,6 +629,32 @@ watch(subjectId, () => void load())
                     />
                   </div>
 
+                  <div
+                    v-if="selectedRows.length > 0"
+                    class="d-flex flex-wrap ga-2 mb-3"
+                    data-testid="cohort-drift-bulk"
+                  >
+                    <v-btn
+                      v-for="action in (['push', 'remove', 'link'] as const)"
+                      :key="action"
+                      :data-testid="`cohort-drift-bulk-${action}`"
+                      :disabled="drift.selectedFor(action, selectedRows) === 0"
+                      size="small"
+                      variant="tonal"
+                      @click="drift.prepare(action, selectedRows)"
+                    >
+                      {{ PLAN_TITLES[action]!(drift.selectedFor(action, selectedRows)) }}
+                    </v-btn>
+                    <v-btn
+                      data-testid="cohort-drift-bulk-clear"
+                      size="small"
+                      variant="text"
+                      @click="drift.clear()"
+                    >
+                      Clear selection
+                    </v-btn>
+                  </div>
+
                   <v-table
                     class="manager-table"
                     data-testid="cohort-subject-member-list"
@@ -634,6 +662,7 @@ watch(subjectId, () => void load())
                   >
                     <thead>
                       <tr>
+                        <th style="width: 40px" />
                         <th
                           v-for="column in MEMBER_COLUMNS"
                           :key="column.sortKey"
@@ -663,6 +692,15 @@ watch(subjectId, () => void load())
                         :class="{'subject-member--deleted': member.isUserDeleted}"
                         :data-testid="`cohort-subject-member-${member.cohortMemberId}`"
                       >
+                        <td>
+                          <v-checkbox-btn
+                            :aria-label="`Select ${memberName(member)}`"
+                            :data-testid="`cohort-subject-member-select-${member.cohortMemberId}`"
+                            density="compact"
+                            :model-value="drift.selection.value.has(member.cohortMemberId)"
+                            @update:model-value="drift.toggle(member)"
+                          />
+                        </td>
                         <td>
                           {{ memberName(member) }}
                           <v-chip
@@ -725,19 +763,26 @@ watch(subjectId, () => void load())
                                 @click="reevaluateMember(member.userId!)"
                               />
                               <v-list-item
-                                v-if="canLinkUser(member)"
+                                v-if="drift.canResolve('push', member)"
+                                :data-testid="`cohort-subject-member-push-${member.cohortMemberId}`"
+                                prepend-icon="mdi-upload"
+                                title="Push to the target"
+                                @click="drift.prepare('push', [member])"
+                              />
+                              <v-list-item
+                                v-if="drift.canResolve('link', member)"
                                 :data-testid="`cohort-subject-member-link-${member.cohortMemberId}`"
                                 prepend-icon="mdi-account-arrow-left"
                                 title="Link to a user"
                                 @click="openLinkUser(member)"
                               />
                               <v-list-item
-                                v-if="canRemoveExternal(member)"
+                                v-if="drift.canResolve('remove', member)"
                                 base-color="error"
                                 :data-testid="`cohort-subject-member-remove-${member.cohortMemberId}`"
                                 prepend-icon="mdi-close-circle-outline"
                                 :title="`Remove from ${memberSystemLabel(member)}`"
-                                @click="removeExternalRow(member)"
+                                @click="drift.prepare('remove', [member])"
                               />
                             </v-list>
                           </v-menu>
@@ -747,6 +792,24 @@ watch(subjectId, () => void load())
                   </v-table>
                 </template>
               </div>
+
+              <info-box
+                v-if="subject.resolutions.length > 0"
+                expandable
+                :count="subject.resolutions.length"
+                label="Resolved"
+                testid="cohort-subject-resolutions"
+              >
+                <v-list density="compact">
+                  <v-list-item
+                    v-for="(resolution, index) in subject.resolutions"
+                    :key="index"
+                    :data-testid="`cohort-subject-resolution-${index}`"
+                    :subtitle="`${resolution.resolvedByName ?? 'The site'} · ${formatJoinedAt(resolution.resolvedAt)}`"
+                    :title="`${resolution.personName ?? 'Someone'} ${RESOLUTION_VERBS[resolution.action]} ${systemLabel(resolution.system)}`"
+                  />
+                </v-list>
+              </info-box>
             </div>
           </v-card-text>
         </v-card>
@@ -790,7 +853,7 @@ watch(subjectId, () => void load())
                 variant="tonal"
               >
                 That external id is already linked to
-                <strong>{{ linkConflict.existingUserFullName ?? `User #${linkConflict.existingUserId}` }}</strong>.
+                <strong>User #{{ linkConflict }}</strong>.
                 Resolve the existing mapping first or choose a different user.
               </v-alert>
             </v-card-text>
@@ -812,6 +875,52 @@ watch(subjectId, () => void load())
                 @click="submitLinkUser"
               >
                 Link
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
+        <v-dialog
+          max-width="480"
+          :model-value="drift.plan.value != null"
+          @update:model-value="(value: boolean) => { if (!value) drift.cancel() }"
+        >
+          <v-card
+            v-if="drift.plan.value"
+            data-testid="cohort-drift-plan"
+            :title="PLAN_TITLES[drift.plan.value.action]!(drift.planCount.value)"
+          >
+            <v-card-text>
+              <v-list density="compact">
+                <template
+                  v-for="group in drift.plan.value.groups"
+                  :key="group.cohortId"
+                >
+                  <v-list-item
+                    v-for="person in group.people"
+                    :key="person.cohortMemberId"
+                    :subtitle="drift.plan.value.action === 'link' ? proposalFor(person) : undefined"
+                    :title="memberName(person)"
+                  />
+                </template>
+              </v-list>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer />
+              <v-btn
+                variant="text"
+                @click="drift.cancel()"
+              >
+                Cancel
+              </v-btn>
+              <v-btn
+                color="primary"
+                data-testid="cohort-drift-plan-confirm"
+                :loading="drift.working.value"
+                variant="flat"
+                @click="drift.confirm()"
+              >
+                Confirm
               </v-btn>
             </v-card-actions>
           </v-card>

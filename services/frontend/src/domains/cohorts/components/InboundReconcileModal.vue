@@ -42,7 +42,7 @@ async function confirm() {
     @update:model-value="emit('update:modelValue', $event)"
   >
     <v-card>
-      <v-card-title>Inbound reconcile</v-card-title>
+      <v-card-title>Adopt</v-card-title>
       <v-card-text>
         <v-alert
           v-if="reconcile.errorMessage.value"

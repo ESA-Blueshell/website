@@ -7,6 +7,8 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.TargetReconcileRun
+import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.state
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdMappingService
@@ -36,6 +38,7 @@ class CohortSubjectQueryService(
     private val externalIds: ExternalIdMappingService,
     private val definitions: CohortDefinitionRegistry,
     private val strategies: TargetStrategies,
+    private val runs: TargetReconcileRunRepository,
 ) {
     @Transactional(readOnly = true)
     fun summaries(): List<CohortSubjectSummary> {
@@ -129,6 +132,7 @@ class CohortSubjectQueryService(
                         // The system only: the folder is read from the system by the caller, outside
                         // this transaction, since a list moved in Brevo is somewhere its row cannot say.
                         path = listOf(runCatching { strategies.descriptor(system).system.shownName }.getOrDefault(cohort.system)),
+                        runs = runs.findTop10ByCohortIdOrderByStartedAtDesc(cohort.id!!),
                     )
                 }.sortedBy { it.cohort.system }
 
@@ -217,4 +221,6 @@ data class CohortMappingRow(
     val lastReconciledAt: Instant? = null,
     /** The target's place on its system, outside in: the system, then any folder holding it. */
     val path: List<String> = emptyList(),
+    /** The target's recent reconciles, newest first; the first is its current drift. */
+    val runs: List<TargetReconcileRun> = emptyList(),
 )

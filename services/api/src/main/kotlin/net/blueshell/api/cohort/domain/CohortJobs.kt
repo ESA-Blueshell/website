@@ -1,6 +1,8 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 
 /**
  * Per-target cohort membership sync jobs: one execution pushes one `(user, cohort)` pair to one
@@ -157,6 +159,8 @@ object CohortJobs {
 
     data class ReconcileListPayload(
         val cohortId: Long,
+        /** What queued the reconcile, recorded on its run; null on payloads queued before runs recorded it. */
+        val trigger: JobTrigger? = null,
     )
 
     /** `system` holds a `TargetSystem.name()`; shared/job cannot depend on the sync.port package. */
@@ -187,3 +191,9 @@ object CohortJobs {
 
 /** Direction of a single cohort-membership sync: the verb the payload carries. */
 enum class SyncCohortMembershipIntent { ADD, REMOVE }
+
+/** Queues a reconcile of target [cohortId], recording [trigger] on its run. */
+fun JobQueue.reconcileTarget(
+    cohortId: Long,
+    trigger: JobTrigger,
+) = runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId, trigger), trigger)

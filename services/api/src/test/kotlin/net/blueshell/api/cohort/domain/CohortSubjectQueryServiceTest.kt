@@ -11,6 +11,7 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdMappingService
@@ -42,6 +43,7 @@ class CohortSubjectQueryServiceTest {
                 )
         }
     private val strategies: TargetStrategies = TargetStrategies(listOf(brevo))
+    private val runs: TargetReconcileRunRepository = mockk(relaxed = true)
     private val service =
         CohortSubjectQueryService(
             subjects,
@@ -52,6 +54,7 @@ class CohortSubjectQueryServiceTest {
             externalIds,
             definitions,
             strategies,
+            runs,
         )
 
     @Test

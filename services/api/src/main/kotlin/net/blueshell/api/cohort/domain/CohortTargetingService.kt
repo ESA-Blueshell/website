@@ -69,7 +69,7 @@ class CohortTargetingService(
                 CohortMappingRow(cohort, externalId)
             }
 
-        jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(linked.cohort.id!!), JobTrigger.SITE_ACTION)
+        jobs.reconcileTarget(linked.cohort.id!!, JobTrigger.SITE_ACTION)
         return linked
     }
 
@@ -130,7 +130,7 @@ class CohortTargetingService(
             )
         }
         if (reconcileNow) {
-            jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId), JobTrigger.SITE_ACTION)
+            jobs.reconcileTarget(cohortId, JobTrigger.SITE_ACTION)
         }
         return CohortMappingRow(switched.cohort, externalId)
     }
@@ -169,7 +169,7 @@ class CohortTargetingService(
             targetIds.record(cohortRepo.findById(cohortId).orElseThrow(), externalId)
         }
         // Pushes that failed while the cohort had no target are made good by the reconcile.
-        jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId), JobTrigger.ANOTHER_JOB)
+        jobs.reconcileTarget(cohortId, JobTrigger.ANOTHER_JOB)
         return CohortTargetRef(cohortId, externalId)
     }
 

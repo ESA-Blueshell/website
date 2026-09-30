@@ -76,7 +76,7 @@ describe("enqueued cohort work", () => {
 
     await expect(triggerReconcile(4)).resolves.toBe(88)
     expect(enqueue).toHaveBeenCalledWith({
-      body: {jobType: "cohort.reconcile-list", payload: {cohortId: 4}},
+      body: {jobType: "cohort.reconcile-list", payload: {cohortId: 4, trigger: "BY_HAND"}},
       throwOnError: true,
     })
   })
@@ -155,6 +155,7 @@ describe("giving a subject's cohort a target", () => {
         lastReconciledAt: "2026-01-05T10:00:00Z",
         path: ["Members"],
         folderKnown: true,
+        runs: [],
       }))
 
     await expect(linkExistingTargetForSubject(1, TargetSystem.BREVO, "17")).resolves.toEqual({
@@ -168,6 +169,7 @@ describe("giving a subject's cohort a target", () => {
         lastReconciledAt: "2026-01-05T10:00:00Z",
         path: ["Members"],
         folderKnown: true,
+        runs: [],
       },
     })
     expect(linkExistingTarget).toHaveBeenCalledWith({
@@ -181,7 +183,7 @@ describe("giving a subject's cohort a target", () => {
   // sends none, and a target nothing has reconciled yet sends no time: all three read as absent
   // rather than as undefined leaking into the page.
   it("reads a mapping the api sent no path, id or reconcile time for", async () => {
-    vi.mocked(createTarget).mockResolvedValue(answer(createTarget, {cohortId: 4, system: TargetSystem.GOOGLE_CALENDAR, kind: CohortKind.GROUP, label: "Board", path: [], folderKnown: true}))
+    vi.mocked(createTarget).mockResolvedValue(answer(createTarget, {cohortId: 4, system: TargetSystem.GOOGLE_CALENDAR, kind: CohortKind.GROUP, label: "Board", path: [], folderKnown: true, runs: []}))
 
     await expect(createTargetForSubject(1, TargetSystem.GOOGLE_CALENDAR, "Board", null)).resolves.toEqual({
       type: "ok",
@@ -194,6 +196,7 @@ describe("giving a subject's cohort a target", () => {
         lastReconciledAt: null,
         path: [],
         folderKnown: true,
+        runs: [],
       },
     })
     expect(createTarget).toHaveBeenCalledWith({
@@ -221,7 +224,7 @@ describe("giving a subject's cohort a target", () => {
   })
 
   it("repoints a mapping at another target, carrying both choices the operator made", async () => {
-    vi.mocked(switchTarget).mockResolvedValue(answer(switchTarget, {cohortId: 4, system: TargetSystem.BREVO, kind: CohortKind.LIST, externalId: "18", label: "Paid members", path: [], folderKnown: true}))
+    vi.mocked(switchTarget).mockResolvedValue(answer(switchTarget, {cohortId: 4, system: TargetSystem.BREVO, kind: CohortKind.LIST, externalId: "18", label: "Paid members", path: [], folderKnown: true, runs: []}))
 
     await expect(switchCohortTarget(1, 4, "18", true, false)).resolves.toMatchObject({externalId: "18"})
     expect(switchTarget).toHaveBeenCalledWith({

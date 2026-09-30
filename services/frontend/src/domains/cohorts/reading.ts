@@ -5,7 +5,7 @@
  * Pure functions over domain records rather than computeds over a page's state, so the rules
  * are worth a test and the two cohort pages cannot title the same category differently.
  */
-import {CohortSubjectCategory, type CohortMember} from "./adapters/cohorts"
+import {CohortSubjectCategory, JobTrigger, type CohortMember, type ReconcileRun, type TargetMapping} from "./adapters/cohorts"
 
 /**
  * What each system is called. Keyed by the string rather than by the enum: the ledger carries
@@ -72,3 +72,25 @@ export const memberName = (member: CohortMember): string => {
   // A stranger nothing local claims: the external system's own label is all there is.
   return member.externalLabel ?? member.externalUserId ?? "Unknown"
 }
+
+/** What started a reconcile: the nightly check, the board, or a change on the site. */
+export const runStartedBy = (run: ReconcileRun): string => {
+  if (run.trigger === JobTrigger.SCHEDULED_RUN) return "Nightly"
+  if (run.trigger === JobTrigger.BY_HAND) return "By hand"
+  if (run.trigger === null) return "Unknown"
+  return "After a change"
+}
+
+/** The target's drift as of its latest reconcile; empty before the first. */
+export const driftLabel = (mapping: TargetMapping): string => {
+  const latest = mapping.runs.at(0)
+  if (!latest) return ""
+  return `${latest.inStep} in step · ${latest.missing} missing · ${latest.extra} extra`
+}
+
+/** The drift of the few runs before the latest, newest first. */
+export const earlierDrift = (mapping: TargetMapping): string[] =>
+  mapping.runs.slice(1, 5).map((run) => {
+    const day = new Date(run.startedAt).toLocaleDateString(undefined, {day: "2-digit", month: "2-digit"})
+    return `${day} ${runStartedBy(run).toLowerCase()}: ${run.missing} missing, ${run.extra} extra`
+  })

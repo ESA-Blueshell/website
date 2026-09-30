@@ -90,7 +90,7 @@
 
       <delete-confirmation-dialog
         v-model="deleteDialog"
-        :message="`Are you sure you want to delete the contribution period from ${formatPeriod(selectedPeriod)}?`"
+        :message="`Are you sure you want to delete the contribution period from ${formatPeriod(periodToDelete)}?`"
         title="Confirm Period Deletion"
         @confirm="confirmDeleteContributionPeriod"
       />
@@ -118,6 +118,8 @@ const periodsUnread = ref(false)
 const selectedPeriodId = ref<number | undefined>()
 const hoveredPeriodId = ref<number | null>(null)
 const deleteDialog = ref(false)
+/** The period the confirm names; the strip's selection can be a different one. */
+const periodToDelete = ref<ContributionPeriodResponse | null>(null)
 const selectedPeriod = ref<ContributionPeriodResponse | null>(null)
 const showAddPeriodDialog = ref(false)
 
@@ -164,15 +166,17 @@ const openEditPeriodDialog = (period: ContributionPeriodResponse) => {
   showAddPeriodDialog.value = true
 }
 
-const deleteContributionPeriod = () => {
+const deleteContributionPeriod = (id: number) => {
+  periodToDelete.value = contributionPeriods.value.find((cp) => cp.id === id) ?? null
   deleteDialog.value = true
 }
 
 const confirmDeleteContributionPeriod = async () => {
   deleteDialog.value = false
-  if (selectedPeriodId.value != null) {
+  const id = periodToDelete.value?.id
+  if (id != null) {
     try {
-      await deletePeriod(selectedPeriodId.value)
+      await deletePeriod(id)
     } catch (error) {
       // The period is still there, so the selection stays on it rather than resetting
       // to a list that would show it again anyway.
@@ -180,6 +184,7 @@ const confirmDeleteContributionPeriod = async () => {
       return
     }
   }
+  periodToDelete.value = null
   selectedPeriod.value = null
   selectedPeriodId.value = undefined
   await getContributionPeriods()

@@ -19,6 +19,6 @@ class CohortJobSubjectResolverTest {
 
         assertThat(resolver.label(4L)).isEqualTo("Sitecie (BREVO LIST)")
         assertThat(resolver.label(5L)).isEqualTo("Target #5")
-        assertThat(resolver.payloadFields).containsExactly("cohortId")
+        assertThat(resolver.payloadFields).containsExactly("targetId", "cohortId")
     }
 }

@@ -466,12 +466,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/management/RecoveryManager.vue"),
         meta: {title: "Account recovery"},
       },
-      {
-        path: "addresses",
-        name: "addressManager",
-        component: () => import("@/pages/management/AddressManager.vue"),
-        meta: {title: "Addresses"},
-      },
+      // People without an address are found on Users, under Needs a look.
+      {path: "addresses", redirect: "/management/users"},
       {path: "mail/sent", name: "emailManager", component: () => import("@/pages/management/EmailManager.vue"), meta: {title: "Sent mail"}},
       {
         path: "jobs",
@@ -525,7 +521,7 @@ const routes: RouteRecordRaw[] = [
   },
   // The addresses management had before the portal; bookmarks and old emails keep working.
   {path: "/user-manager", redirect: "/management/users"},
-  {path: "/addresses/manage", redirect: "/management/addresses"},
+  {path: "/addresses/manage", redirect: "/management/users"},
   {path: "/recovery/manage", redirect: "/management/recovery"},
   {path: "/management/emails", redirect: "/management/mail/sent"},
   {path: "/management/cohorts", redirect: "/management/platforms/brevo"},

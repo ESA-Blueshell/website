@@ -1,34 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
-import type {Locator, Page} from "@playwright/test"
 import {aContributionPeriod, aMembership, aUser, anAddress} from "./records"
-
-const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-
-const exactText = (value: string) => new RegExp(`^${escapeRegExp(value)}$`)
-
-const listCard = (page: Page, cardTestId: string): Locator =>
-  page.getByTestId(cardTestId).first()
-
-const searchInput = (page: Page, searchTestId: string): Locator =>
-  page.getByTestId(searchTestId).locator("input").first()
-
-const ensureListOpen = async (
-  page: Page,
-  cardTestId: string,
-  toggleTestId: string,
-  searchTestId: string,
-): Promise<Locator> => {
-  const card = listCard(page, cardTestId)
-  const headerToggle = page.getByTestId(toggleTestId).first()
-
-  if (await headerToggle.getAttribute("aria-expanded") !== "true") {
-    await headerToggle.click()
-  }
-
-  await expect(page.getByTestId(searchTestId)).toBeVisible()
-  return card
-}
 
 test.describe("management filters", () => {
   test("member manager filters users by multiple fields in single table", async ({page}) => {
@@ -139,7 +111,7 @@ test.describe("management filters", () => {
     await expect(page.getByTestId("member-manager-row-53")).toBeVisible()
   })
 
-  test("address manager filters users with and without address by multiple fields", async ({page}) => {
+  test("Needs a look finds the users without an address", async ({page}) => {
     await installApiMocks(page, {
       users: [
         aUser({
@@ -188,38 +160,22 @@ test.describe("management filters", () => {
     })
     await loginAsBoard(page.context())
 
-    await page.goto("/management/addresses")
-    await expect(page.getByTestId("address-user-list-with-address")).toBeVisible()
+    await page.setViewportSize({width: 1440, height: 900})
+    await page.goto("/management/users")
+    await page.getByTestId("member-manager-filter-needs-search").click()
+    await page.getByTestId("member-manager-filter-needs-no-address").click()
 
-    const withAddressCard = await ensureListOpen(
-      page,
-      "address-user-list-with-address",
-      "address-user-list-toggle-with-address",
-      "address-user-list-search-with-address",
-    )
-    await expect(withAddressCard.getByText(exactText("address-target"))).toBeVisible()
-    await expect(withAddressCard.getByText(exactText("address-other"))).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-43")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-44")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-41")).toHaveCount(0)
+    await expect(page.getByTestId("member-manager-row-42")).toHaveCount(0)
 
-    await searchInput(page, "address-user-list-search-with-address").fill("AddressTarget address.target@test.com")
-    await expect(withAddressCard.getByText(exactText("address-target"))).toBeVisible()
-    await expect(withAddressCard.getByText(exactText("address-other"))).toHaveCount(0)
-
-    await searchInput(page, "address-user-list-search-with-address").fill("")
-    const withoutAddressCard = await ensureListOpen(
-      page,
-      "address-user-list-without-address",
-      "address-user-list-toggle-without-address",
-      "address-user-list-search-without-address",
-    )
-    await expect(withoutAddressCard.getByText(exactText("no-address-target"))).toBeVisible()
-    await expect(withoutAddressCard.getByText(exactText("no-address-other"))).toBeVisible()
-
-    await searchInput(page, "address-user-list-search-without-address").fill("NoAddressTarget no.address.target@test.com")
-    await expect(withoutAddressCard.getByText(exactText("no-address-target"))).toBeVisible()
-    await expect(withoutAddressCard.getByText(exactText("no-address-other"))).toHaveCount(0)
+    await page.getByTestId("member-manager-search-input").fill("NoAddressTarget no.address.target@test.com")
+    await expect(page.getByTestId("member-manager-row-43")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-44")).toHaveCount(0)
   })
 
-  test("recovery manager filters inactive and active users by multiple fields", async ({page}) => {
+  test("Account recovery narrows by search and state", async ({page}) => {
     await installApiMocks(page, {
       users: [
         aUser({
@@ -262,34 +218,19 @@ test.describe("management filters", () => {
     })
     await loginAsBoard(page.context())
 
+    await page.setViewportSize({width: 1440, height: 900})
     await page.goto("/management/recovery")
-    await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible()
+    await expect(page.getByTestId("recovery-list")).toBeVisible()
 
-    const inactiveCard = await ensureListOpen(
-      page,
-      "recovery-user-list-inactive",
-      "recovery-user-list-toggle-inactive",
-      "recovery-user-list-search-inactive",
-    )
-    await expect(inactiveCard.getByText(exactText("inactive-target"))).toBeVisible()
-    await expect(inactiveCard.getByText(exactText("inactive-other"))).toBeVisible()
+    await page.getByTestId("recovery-search").fill("InactiveTarget inactive.target@test.com")
+    await expect(page.getByTestId("recovery-user-row-21")).toBeVisible()
+    await expect(page.getByTestId("recovery-user-row-22")).toHaveCount(0)
 
-    await searchInput(page, "recovery-user-list-search-inactive").fill("InactiveTarget inactive.target@test.com")
-    await expect(inactiveCard.getByText(exactText("inactive-target"))).toBeVisible()
-    await expect(inactiveCard.getByText(exactText("inactive-other"))).toHaveCount(0)
-
-    await searchInput(page, "recovery-user-list-search-inactive").fill("")
-    const activeCard = await ensureListOpen(
-      page,
-      "recovery-user-list-active",
-      "recovery-user-list-toggle-active",
-      "recovery-user-list-search-active",
-    )
-    await expect(activeCard.getByText(exactText("active-target"))).toBeVisible()
-    await expect(activeCard.getByText(exactText("active-other"))).toBeVisible()
-
-    await searchInput(page, "recovery-user-list-search-active").fill("ActiveTarget active.target@test.com")
-    await expect(activeCard.getByText(exactText("active-target"))).toBeVisible()
-    await expect(activeCard.getByText(exactText("active-other"))).toHaveCount(0)
+    await page.getByTestId("recovery-search").fill("")
+    await page.getByTestId("recovery-filter-state-search").click()
+    await page.getByTestId("recovery-filter-state-active").click()
+    await expect(page.getByTestId("recovery-user-row-23")).toBeVisible()
+    await expect(page.getByTestId("recovery-user-row-24")).toBeVisible()
+    await expect(page.getByTestId("recovery-user-row-21")).toHaveCount(0)
   })
 })

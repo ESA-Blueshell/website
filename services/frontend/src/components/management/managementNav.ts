@@ -38,7 +38,6 @@ const GROUPS: ManagementGroup[] = [
     entries: [
       {label: "Users", to: "/management/users", tab: "members"},
       {label: "Account recovery", to: "/management/recovery"},
-      {label: "Addresses", to: "/management/addresses"},
     ],
   },
   {label: "Mail", entries: [{label: "Sent", to: "/management/mail/sent"}]},

@@ -1,13 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
-import type {Locator} from "@playwright/test"
 import {aUser} from "./records"
-
-const ensureExpanded = async (toggle: Locator) => {
-  if (await toggle.getAttribute("aria-expanded") !== "true") {
-    await toggle.click()
-  }
-}
 
 test.describe("management recovery lifecycle", () => {
   test("deletes user from member manager and restores in recovery manager", async ({page}) => {
@@ -57,25 +50,12 @@ test.describe("management recovery lifecycle", () => {
     // Row should be removed from the table
     await expect(page.getByTestId(`member-manager-row-${targetId}`)).toHaveCount(0)
 
-    // Navigate to recovery manager and restore the deleted user
+    // Account recovery restores the deleted user
     await page.goto("/management/recovery")
-    await expect(page.getByTestId("recovery-user-list-deleted")).toBeVisible()
+    await page.getByTestId("recovery-search").fill(targetUsername)
+    await expect(page.getByTestId(`recovery-state-${targetId}`)).toContainText("Deleted")
 
-    const deletedToggle = page.getByTestId("recovery-user-list-toggle-deleted").first()
-    await ensureExpanded(deletedToggle)
-
-    const deletedCard = page.getByTestId("recovery-user-list-deleted").first()
-    await deletedCard.getByTestId("recovery-user-list-search-deleted").locator("input").first().fill(targetUsername)
-    await expect(deletedCard.getByTestId(`recovery-user-row-${targetId}`)).toBeVisible()
-
-    await deletedCard.getByTestId(`recovery-user-action-btn-restore-${targetId}`).click()
-    await expect(deletedCard.getByTestId(`recovery-user-row-${targetId}`)).toHaveCount(0)
-
-    const activeToggle = page.getByTestId("recovery-user-list-toggle-active").first()
-    await ensureExpanded(activeToggle)
-
-    const activeCard = page.getByTestId("recovery-user-list-active").first()
-    await activeCard.getByTestId("recovery-user-list-search-active").locator("input").first().fill(targetUsername)
-    await expect(activeCard.getByTestId(`recovery-user-row-${targetId}`)).toBeVisible()
+    await page.getByTestId(`recovery-user-action-btn-restore-${targetId}`).click()
+    await expect(page.getByTestId(`recovery-state-${targetId}`)).toHaveText("Active")
   })
 })

@@ -80,6 +80,7 @@ export {
   NEEDS_LOOK_WORDS,
   filterPeople,
   fold,
+  needsLookOf,
   peopleRows,
   sortPeople,
   type MembershipState,

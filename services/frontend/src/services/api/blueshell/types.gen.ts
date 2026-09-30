@@ -1782,6 +1782,18 @@ export type JwtRequest = {
     username: string;
 };
 
+export type LastRecoveryEmail = {
+    sentAt: string;
+    userId: number;
+};
+
+/**
+ * When each account was last sent an activation or a password reset.
+ */
+export type LastRecoveryEmailsResponse = {
+    emails: Array<LastRecoveryEmail>;
+};
+
 /**
  * One person on a line-up being saved: an entry kept, or somebody added
  */
@@ -10413,6 +10425,47 @@ export type ConfirmEmailChangeResponses = {
 };
 
 export type ConfirmEmailChangeResponse = ConfirmEmailChangeResponses[keyof ConfirmEmailChangeResponses];
+
+export type LastRecoveryEmailsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/recovery/last-emails';
+};
+
+export type LastRecoveryEmailsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LastRecoveryEmailsError = LastRecoveryEmailsErrors[keyof LastRecoveryEmailsErrors];
+
+export type LastRecoveryEmailsResponses = {
+    /**
+     * OK
+     */
+    200: LastRecoveryEmailsResponse;
+};
+
+export type LastRecoveryEmailsResponse2 = LastRecoveryEmailsResponses[keyof LastRecoveryEmailsResponses];
 
 export type LockData = {
     body: TokenRequest;

@@ -2,12 +2,21 @@
  * One person's contributions: every period they were a member in, and recording or withdrawing
  * their payment for one.
  */
-import {createContribution, deleteContribution, findContributionsByPeriodId, findMemberContributions, type MemberPeriodContribution} from "@/services/api"
+import {
+  createContribution,
+  deleteContribution,
+  findContributionsByPeriodId,
+  findMemberContributions,
+  findPeriodContributions,
+  type MemberPeriodContribution,
+  type PeriodContributionsView,
+  type PeriodMember,
+} from "@/services/api"
 import type {Refused} from "@/types/api"
 import {readOr} from "@/utils/answers"
 import {refusalReader} from "@/utils/refusals"
 
-export type {MemberPeriodContribution}
+export type {MemberPeriodContribution, PeriodContributionsView, PeriodMember}
 
 const {accepted} = refusalReader({})
 
@@ -26,3 +35,7 @@ export const withdrawPayment = (userId: number, contributionPeriodId: number): P
 /** Who has paid for the period, or nobody where it could not be read. */
 export const listPaidUserIds = async (periodId: number): Promise<Set<number>> =>
   new Set((await readOr(findContributionsByPeriodId({path: {periodId}}), [])).map((one) => one.userId))
+
+/** A period's members with their payments, and the payment email runs sent for it; nothing where unreadable. */
+export const readPeriodContributions = (periodId: number): Promise<PeriodContributionsView | null> =>
+  readOr(findPeriodContributions({path: {periodId}}), null)

@@ -90,4 +90,10 @@ class RecordedExceptionsTest {
         verify(records).purgeLastSeenBefore(now.minus(RecordedExceptions.RETENTION))
         assertThat(fault(5).toDto(withTrace = true).firstSeenAt).isEqualTo(now)
     }
+
+    @Test
+    fun `hibernate can build an empty fault to fill`() {
+        assertThat(RecordedException::class.java.getDeclaredConstructor().newInstance().id).isNull()
+        assertThat(fault(6).fingerprint).isEqualTo("f6")
+    }
 }

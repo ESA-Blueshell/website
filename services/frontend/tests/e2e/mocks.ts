@@ -1069,6 +1069,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         notWrittenTo: 0,
       })
     }
+    if (method === "GET" && path === "/contributionPeriods/current/standing") {
+      return answer(route, "findCurrentPeriodStanding", {
+        periodId: 1, startDate: "2025-09-01", endDate: "2026-08-31", members: 211, paid: 180, stillToPay: 31, pendingFirstContribution: 9,
+      })
+    }
     if (method === "GET" && path === "/contributionPeriods/current") {
       // A fixture set to null is a year nobody has recorded a fee for yet, which the api
       // answers with no content rather than with a period.

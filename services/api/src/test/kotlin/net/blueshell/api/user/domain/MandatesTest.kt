@@ -107,6 +107,7 @@ class MandatesTest {
         assertThat(mandates.bankDetailsOf(membership.mandate!!).toString()).doesNotContain("0417")
         val empty = net.blueshell.api.user.persistence.IncassoMandate::class.java.getDeclaredConstructor().newInstance()
         assertThat(empty).isNotNull
+        assertThat(net.blueshell.api.user.persistence.PendingMandate::class.java.getDeclaredConstructor().newInstance()).isNotNull
     }
 
     @Test

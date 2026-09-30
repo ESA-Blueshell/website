@@ -8,6 +8,7 @@ import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.SignupDetailsData
+import net.blueshell.api.user.api.SignupMandates
 import net.blueshell.api.user.api.UpsertMemberProfileData
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.MemberProfile
@@ -41,7 +42,9 @@ class SignupWriteUseCasesTest {
 
     private val validator = Validation.buildDefaultValidatorFactory().validator
 
-    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs, validator, mock())
+    private val mandates = mock<SignupMandates>()
+
+    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs, validator, mandates)
 
     private fun applicant(withProfile: Boolean): User {
         val user =
@@ -63,6 +66,15 @@ class SignupWriteUseCasesTest {
         }
         whenever(signupTokens.resolveAccount("sel.ver")).thenReturn(SignupAccount(APPLICANT_ID, user))
         return user
+    }
+
+    @Test
+    fun `sets up incasso for the account the token speaks for`() {
+        applicant(withProfile = false)
+
+        useCases.setUpMandate("sel.ver", "NL91ABNA0417164300", "App Licant")
+
+        verify(mandates).setUp(APPLICANT_ID, "NL91ABNA0417164300", "App Licant")
     }
 
     @Nested

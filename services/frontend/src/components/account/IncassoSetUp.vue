@@ -1,0 +1,138 @@
+<script lang="ts" setup>
+/* A member's own bank details for incasso. Saving signs the mandate that day, on the site; the
+   account number is shown back only by its last four. */
+import {onMounted, ref} from "vue"
+import {type OwnMandateResponse, readOwnMandate, setUpIncasso} from "@/domains/user"
+
+defineOptions({name: "IncassoSetUp"})
+
+const {signupToken = undefined} = defineProps<{
+  /** During a signup, which has no session: the details wait on the token for the membership. */
+  signupToken?: string
+}>()
+const emit = defineEmits<{saved: []}>()
+
+const own = ref<OwnMandateResponse | null>(null)
+const open = ref(false)
+const iban = ref("")
+const holder = ref("")
+const authorised = ref(false)
+const failure = ref<string | null>(null)
+const saved = ref(false)
+const saving = ref(false)
+
+const save = async () => {
+  if (saving.value) return
+  saving.value = true
+  failure.value = null
+  const answered = await setUpIncasso({iban: iban.value, accountHolder: holder.value, authorised: authorised.value}, signupToken)
+  saving.value = false
+  if (!answered.ok) {
+    failure.value = answered.reason
+    return
+  }
+  own.value = answered.saved ?? own.value
+  saved.value = true
+  open.value = false
+  iban.value = ""
+  emit("saved")
+}
+
+onMounted(async () => {
+  if (!signupToken) own.value = await readOwnMandate()
+})
+</script>
+
+<template>
+  <section
+    class="incasso"
+    data-testid="incasso-set-up"
+  >
+    <p
+      v-if="own?.ibanLastFour"
+      data-testid="incasso-current"
+    >
+      Your contribution is collected by incasso from the account ending in {{ own.ibanLastFour }}{{ own.pending ? ", from the day your membership starts" : "" }}.
+    </p>
+    <p
+      v-else
+      data-testid="incasso-none"
+    >
+      You pay by incasso by giving your bank details here. Other ways to pay exist, but they are handled by hand: the
+      treasurer sends you a payment request.
+    </p>
+    <p
+      v-if="saved"
+      class="incasso__saved"
+      data-testid="incasso-saved"
+      role="status"
+    >
+      Your bank details are saved.
+    </p>
+
+    <v-btn
+      v-if="!open"
+      data-testid="incasso-open"
+      variant="outlined"
+      @click="open = true"
+    >
+      {{ own?.ibanLastFour ? "Change bank details" : "Pay by incasso" }}
+    </v-btn>
+    <form
+      v-else
+      data-testid="incasso-form"
+      @submit.prevent="save"
+    >
+      <v-text-field
+        v-model="iban"
+        autocomplete="off"
+        data-testid="incasso-iban"
+        label="IBAN"
+      />
+      <v-text-field
+        v-model="holder"
+        data-testid="incasso-holder"
+        label="Account holder"
+      />
+      <v-checkbox
+        v-model="authorised"
+        data-testid="incasso-authorised"
+        label="I authorise ESA Blueshell to collect my yearly contribution from this account by incasso, and my bank to pay it."
+      />
+      <p
+        v-if="failure"
+        class="incasso__failure"
+        data-testid="incasso-failure"
+        role="alert"
+      >
+        {{ failure }}
+      </p>
+      <v-btn
+        class="mr-2"
+        data-testid="incasso-cancel"
+        variant="text"
+        @click="open = false"
+      >
+        Cancel
+      </v-btn>
+      <v-btn
+        color="primary"
+        data-testid="incasso-save"
+        :disabled="!authorised || saving"
+        type="submit"
+      >
+        Save bank details
+      </v-btn>
+    </form>
+  </section>
+</template>
+
+<style scoped>
+.incasso__saved {
+  color: rgb(var(--v-theme-success));
+}
+
+.incasso__failure {
+  color: rgb(var(--v-theme-error));
+}
+</style>

@@ -81,9 +81,6 @@ test.describe("management filters", () => {
     })
     await loginAsBoard(page.context())
 
-    // The member manager renders its unified table only at the lg breakpoint and
-    // up; below that it switches to a mobile card list with its own test ids. This
-    // test exercises the desktop table, so it pins a desktop viewport.
     await page.setViewportSize({width: 1440, height: 900})
     await page.goto("/management/users")
     await expect(page.getByTestId("member-manager-table")).toBeVisible()
@@ -95,7 +92,7 @@ test.describe("management filters", () => {
     await expect(page.getByTestId("member-manager-row-34")).toBeVisible()
 
     // Filter by name matching only one non-member
-    await searchInput(page, "member-manager-search-input").fill("NonTarget")
+    await page.getByTestId("member-manager-search-input").fill("NonTarget")
     await expect(page.getByTestId("member-manager-row-31")).toBeVisible()
     await expect(page.getByTestId("member-manager-row-32")).toHaveCount(0)
     await expect(page.getByTestId("member-manager-row-33")).toHaveCount(0)
@@ -104,25 +101,24 @@ test.describe("management filters", () => {
     // Filter by first name matching only one member. (Uses the unique "MemberTarget"
     // first name rather than the "member-target" username, which is a substring of
     // non-member "nonmember-target" and would match both in the single table.)
-    await searchInput(page, "member-manager-search-input").fill("MemberTarget")
+    await page.getByTestId("member-manager-search-input").fill("MemberTarget")
     await expect(page.getByTestId("member-manager-row-33")).toBeVisible()
     await expect(page.getByTestId("member-manager-row-31")).toHaveCount(0)
 
     // Clear filter — all visible again
-    await searchInput(page, "member-manager-search-input").fill("")
+    await page.getByTestId("member-manager-search-input").fill("")
     await expect(page.getByTestId("member-manager-row-31")).toBeVisible()
     await expect(page.getByTestId("member-manager-row-34")).toBeVisible()
 
-    // The field's clear button writes null rather than "", which the search has to
-    // read as "not searching" like any other empty value.
-    await searchInput(page, "member-manager-search-input").fill("MemberTarget")
+    // Clear filters empties the search too.
+    await page.getByTestId("member-manager-search-input").fill("MemberTarget")
     await expect(page.getByTestId("member-manager-row-31")).toHaveCount(0)
-    await page.getByTestId("member-manager-search-input").locator(".v-field__clearable").click()
+    await page.getByTestId("member-manager-filters-clear").click()
     await expect(page.getByTestId("member-manager-row-31")).toBeVisible()
     await expect(page.getByTestId("member-manager-row-34")).toBeVisible()
   })
 
-  test("member manager finds the users with no Discord member linked", async ({page}) => {
+  test("Needs a look finds the users with no Discord member linked", async ({page}) => {
     await installApiMocks(page, {
       users: [
         aUser({id: 51, fullName: "Linked Member", username: "linked", discord: "Nelly B", discordId: "803", enabled: true, roles: ["GUEST"]}),
@@ -135,12 +131,8 @@ test.describe("management filters", () => {
     await page.goto("/management/users")
     await expect(page.getByTestId("member-manager-row-51")).toBeVisible()
 
-    const filter = page.getByTestId("member-manager-filter-discord")
-    await filter.click()
-    const no = page.locator(".v-overlay__content .v-list-item").filter({hasText: exactText("No")})
-    await expect.poll(() => no.evaluate(el =>
-      el.closest(".v-overlay__content")?.getAnimations({subtree: true}).length ?? 0)).toBe(0)
-    await no.click()
+    await page.getByTestId("member-manager-filter-needs-search").click()
+    await page.getByTestId("member-manager-filter-needs-no-discord").click()
 
     await expect(page.getByTestId("member-manager-row-51")).toHaveCount(0)
     await expect(page.getByTestId("member-manager-row-52")).toBeVisible()

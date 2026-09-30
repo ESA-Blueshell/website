@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import {computed, nextTick, onMounted, ref, useTemplateRef, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import FilterBar from "@/components/island/FilterBar.vue"
 import FilterPicker from "@/components/island/FilterPicker.vue"
 import FoldOut from "@/components/island/FoldOut.vue"
@@ -121,8 +120,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-main>
-    <top-banner title="Job Manager" />
+  <div class="job-manager">
+    <h1 class="job-manager__title">
+      Jobs
+    </h1>
 
     <v-container>
       <div
@@ -773,10 +774,17 @@ onMounted(async () => {
         </v-card>
       </div>
     </v-container>
-  </v-main>
+  </div>
 </template>
 
 <style lang="scss" scoped>
+.job-manager__title {
+  margin: 2rem 0 0;
+  padding: 0 1rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
 .job-manager-page {
   max-width: 980px;
 }

@@ -53,7 +53,7 @@ test.describe("auth guards", () => {
     await page.goto("/management/jobs")
 
     await expect(page).toHaveURL(/\/management\/jobs/)
-    await expect(page.getByText("JOB MANAGER", {exact: true})).toBeVisible()
+    await expect(page.getByRole("heading", {name: "Jobs", exact: true})).toBeVisible()
     await expect(page.getByTestId("job-manager-table")).toBeVisible()
     await expect(page.getByText("FAILED").first()).toBeVisible()
 

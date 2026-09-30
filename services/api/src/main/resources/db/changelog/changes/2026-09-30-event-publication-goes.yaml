@@ -1,0 +1,26 @@
+# Spring Modulith's event publication registry went in 1.12.0, which writes nothing here, so
+# its table goes (#1843). Its rows describe listener runs that code no longer has.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-30-event-publication-goes.yaml
+      id: event-publication-goes
+      author: blueshell
+      changes:
+        - dropTable:
+            tableName: EVENT_PUBLICATION
+      rollback:
+        - sql:
+            sql: >-
+              CREATE TABLE `EVENT_PUBLICATION` (
+                `ID` varchar(36) NOT NULL,
+                `LISTENER_ID` varchar(512) NOT NULL,
+                `EVENT_TYPE` varchar(512) NOT NULL,
+                `SERIALIZED_EVENT` varchar(4000) NOT NULL,
+                `PUBLICATION_DATE` timestamp(6) NOT NULL,
+                `COMPLETION_DATE` timestamp(6) NULL DEFAULT NULL,
+                `STATUS` varchar(20) DEFAULT NULL,
+                `COMPLETION_ATTEMPTS` int(11) DEFAULT NULL,
+                `LAST_RESUBMISSION_DATE` timestamp(6) NULL DEFAULT NULL,
+                PRIMARY KEY (`ID`),
+                KEY `EVENT_PUBLICATION_BY_COMPLETION_DATE_IDX` (`COMPLETION_DATE`)
+              ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

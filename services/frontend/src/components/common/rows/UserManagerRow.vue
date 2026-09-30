@@ -165,6 +165,7 @@ const paidActionLabel = () => {
         <v-btn
           :aria-label="paidActionLabel()"
           :data-testid="`member-manager-toggle-paid-btn-${row.id}`"
+          density="comfortable"
           :disabled="toggleDisabled"
           icon
           :loading="saving"
@@ -182,6 +183,7 @@ const paidActionLabel = () => {
         <v-btn
           aria-label="Manage memberships"
           :data-testid="`member-manager-manage-membership-btn-${row.id}`"
+          density="comfortable"
           icon
           size="small"
           title="Manage memberships"
@@ -198,6 +200,7 @@ const paidActionLabel = () => {
           v-if="mayEditRoles"
           aria-label="Edit roles"
           :data-testid="`member-manager-edit-roles-btn-${row.id}`"
+          density="comfortable"
           icon
           size="small"
           title="Edit roles"
@@ -215,6 +218,7 @@ const paidActionLabel = () => {
           :aria-label="`Account security: ${securityLook.label}`"
           :data-security="row.security"
           :data-testid="`member-manager-account-security-btn-${row.id}`"
+          density="comfortable"
           icon
           size="small"
           :title="`Account security: ${securityLook.label}`"
@@ -231,6 +235,7 @@ const paidActionLabel = () => {
         <v-btn
           aria-label="Edit profile"
           :data-testid="`member-manager-edit-profile-btn-${row.id}`"
+          density="comfortable"
           icon
           size="small"
           title="Edit profile"
@@ -247,6 +252,7 @@ const paidActionLabel = () => {
           aria-label="Delete user"
           color="red"
           :data-testid="`member-manager-delete-btn-${row.id}`"
+          density="comfortable"
           :disabled="row.role === 'admin'"
           icon
           size="small"
@@ -272,7 +278,9 @@ const paidActionLabel = () => {
 tr {
   height: 44px;
 
+  // The page sizes its columns from this padding, and matches it in the header.
   > td {
+    padding-inline: 8px !important;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

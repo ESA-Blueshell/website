@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import UserManager from "@/pages/management/UserManager.vue"
+import router from "@/plugins/router"
 import {
   deleteUserById,
   findAllAddresses,
@@ -159,24 +160,18 @@ describe("the Users page", () => {
     expect(rowIds(wrapper)).toEqual([2, 1, 3])
   })
 
-  it("starts or ends the membership of the people selected", async () => {
+  it("takes the people selected to the task page that starts or ends their membership", async () => {
     const wrapper = await mount()
 
     await wrapper.get('[data-testid="member-manager-checkbox-2"]').trigger("change")
     await settle()
     expect(wrapper.get('[data-testid="member-manager-selection"]').text()).toContain("1 selected")
-    await wrapper.get('[data-testid="bulk-action-start-membership"]').trigger("click")
-    await settle()
-    expect(wrapper.findComponent({name: "MembershipStatusDialog"}).exists()).toBe(true)
-    wrapper.findComponent({name: "MembershipStatusDialog"}).vm.$emit("update:modelValue", false)
-    await settle()
-    expect(wrapper.findComponent({name: "MembershipStatusDialog"}).exists()).toBe(false)
-
     await wrapper.get('[data-testid="bulk-action-end-membership"]').trigger("click")
     await settle()
-    wrapper.findComponent({name: "MembershipStatusDialog"}).vm.$emit("done")
-    await settle()
-    expect(wrapper.find('[data-testid="member-manager-selection"]').exists()).toBe(false)
+
+    // The task page loads lazily, so the navigation settles after it arrives.
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe("/management/users/bulk/end"), {timeout: 10_000})
+    expect(router.currentRoute.value.query).toEqual({ids: "2", back: "/management/users"})
   })
 
   it("links each person to their own page, and Edit profile to its Profile tab", async () => {

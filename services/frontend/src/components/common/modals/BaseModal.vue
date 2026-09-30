@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed} from "vue"
 import {useDisplay} from "vuetify"
+import {VDialog} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import type {SubmitState} from "@/composables/formUtils"
 
@@ -32,6 +33,8 @@ interface Props {
   showCancel?: boolean
   cancelLabel?: string
   cancelTestid?: string
+  /** Drawn in the page rather than over it, for work that has a page of its own. */
+  inline?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -55,6 +58,7 @@ const props = withDefaults(defineProps<Props>(), {
   showCancel: true,
   cancelLabel: "Cancel",
   cancelTestid: undefined,
+  inline: false,
 })
 
 defineSlots<{
@@ -105,6 +109,23 @@ function onCancel() {
   emit("cancel")
 }
 
+/** A dialog over the page, or the same card standing in it. */
+const shell = computed(() =>
+  props.inline
+    ? {is: "section", attrs: {"class": "base-modal--inline", "data-testid": props.testid}}
+    : {
+        is: VDialog,
+        attrs: {
+          "modelValue": open.value,
+          "onUpdate:modelValue": (value: boolean) => (open.value = value),
+          "data-testid": props.testid,
+          "fullscreen": isFullscreen.value,
+          "maxWidth": props.maxWidth,
+          "scrollable": props.scrollable,
+        },
+      },
+)
+
 /** When a caller supplies saveIcon or saveShowStatus, render SubmitButton for rich feedback. */
 const useSaveAsSubmitButton = computed(
   () => props.saveIcon != null || props.saveShowStatus,
@@ -112,12 +133,9 @@ const useSaveAsSubmitButton = computed(
 </script>
 
 <template>
-  <v-dialog
-    v-model="open"
-    :data-testid="testid"
-    :fullscreen="isFullscreen"
-    :max-width="maxWidth"
-    :scrollable="scrollable"
+  <component
+    :is="shell.is"
+    v-bind="shell.attrs"
   >
     <v-card>
       <v-card-title class="base-modal__title text-h5 d-flex align-center">
@@ -215,7 +233,7 @@ const useSaveAsSubmitButton = computed(
         </slot>
       </v-card-actions>
     </v-card>
-  </v-dialog>
+  </component>
 </template>
 
 <style lang="scss" scoped>

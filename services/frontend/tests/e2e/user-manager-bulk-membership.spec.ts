@@ -18,8 +18,10 @@ async function openManagerWithSelection(page: Page): Promise<void> {
   await page.getByTestId("member-manager-checkbox-1").click()
 }
 
+/** The selection bar leads to the task page, which draws the work in the page itself. */
 async function openBulkAction(page: Page, testid: string): Promise<void> {
   await page.getByTestId(testid).click()
+  await expect(page).toHaveURL(/\/management\/users\/bulk\/(end|start)\?ids=1/)
   await page.getByTestId("bulk-action-dialog").waitFor()
 }
 
@@ -35,6 +37,8 @@ test.describe("ending and starting membership in bulk", () => {
     await page.getByTestId("bulk-action-confirm-btn").click()
 
     await expect(page.getByTestId("bulk-membership-result")).toContainText("1 ended, 0 skipped")
+    // Once it has said what changed, it goes back to the list it came from.
+    await expect(page).toHaveURL(/\/management\/users$/)
   })
 
   test("starting names the member it cannot apply to, rather than dropping them", async ({page}) => {

@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 /* Everyone with an account, in one full-length list: one search over every field, three filters
    and sortable columns. Money is not here; it lives in Contributions. */
-import {computed, onMounted, ref, watch} from "vue"
-import {useRoute} from "vue-router"
+import {computed, onMounted, ref} from "vue"
+import {useRoute, useRouter} from "vue-router"
 import {DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuRoot, DropdownMenuTrigger} from "reka-ui"
 import FilterBar from "@/components/island/FilterBar.vue"
 import FilterPicker from "@/components/island/FilterPicker.vue"
@@ -13,7 +13,6 @@ import SortHeader from "@/components/island/SortHeader.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
-import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipStatusDialog.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {useUserSelection} from "@/composables/useUserSelection"
@@ -38,7 +37,6 @@ import {
   sortPeople,
 } from "@/domains/user"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {computeBulkTargets} from "@/utils/bulkTarget"
 import type {EditableUser} from "@/utils/editableUser"
 
 defineOptions({name: "UserManagerPage"})
@@ -53,6 +51,7 @@ const loaded = ref(false)
 
 // Another page sends a person here by the username it knows them by.
 const route = useRoute()
+const router = useRouter()
 const search = ref(typeof route.query.search === "string" ? route.query.search : "")
 const membership = ref<string | null>(null)
 const type = ref<string | null>(null)
@@ -103,25 +102,9 @@ const listHeight = ref(Math.max(360, globalThis.innerHeight - 330))
 const displayedIds = computed(() => shown.value.map((row) => row.id))
 const {selectedIdsArray, isSelected, toggle, clear: clearSelection} = useUserSelection(displayedIds)
 
-const byId = computed(() => new Map(users.value.map((user) => [user.id, user])))
-const membershipsByUserId = computed(() => {
-  const held = new Map<number, MembershipResponse[]>()
-  for (const one of memberships.value) held.set(one.userId, [...(held.get(one.userId) ?? []), one])
-  return held
-})
-
-const bulkAction = ref<"start" | "end" | null>(null)
-const bulkOpen = ref(false)
-const bulkTargets = computed(() => computeBulkTargets(selectedIdsArray.value, membershipsByUserId.value, new Set(), byId.value))
-
-const openBulk = (action: "start" | "end") => {
-  bulkAction.value = action
-  bulkOpen.value = true
-}
-
-watch(bulkOpen, (open) => {
-  if (!open) bulkAction.value = null
-})
+/** The task page takes the selection by id and says what will happen before anything does. */
+const openBulk = (action: "start" | "end") =>
+  router.push({path: `/management/users/bulk/${action}`, query: {ids: selectedIdsArray.value.join(","), back: "/management/users"}})
 
 const load = async () => {
   try {
@@ -136,12 +119,6 @@ const load = async () => {
     loaded.value = true
   }
 }
-
-async function onBulkDone() {
-  clearSelection()
-  await load()
-}
-
 
 const addOpen = ref(false)
 const addModel = ref<EditableUser>(blankUser())
@@ -430,16 +407,6 @@ onMounted(load)
         @submitted="onSaved"
       />
     </base-modal>
-
-    <!-- Mounted only while chosen: opening it is what asks the api for its preview. -->
-    <membership-status-dialog
-      v-if="bulkAction"
-      v-model="bulkOpen"
-      :target-state="bulkAction"
-      :targets="bulkTargets"
-      @done="onBulkDone"
-      @stale="load"
-    />
   </div>
 </template>
 

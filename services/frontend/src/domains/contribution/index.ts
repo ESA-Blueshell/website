@@ -19,7 +19,7 @@ export {
   type SendPaymentEmailsBody,
 } from "./adapters/paymentEmails"
 export {recordPaid, recordUnpaid, type BulkContributionCall} from "./adapters/contributions"
-export {listMemberContributions, recordPayment, withdrawPayment, type MemberPeriodContribution} from "./adapters/memberContributions"
+export {listMemberContributions, listPaidUserIds, recordPayment, withdrawPayment, type MemberPeriodContribution} from "./adapters/memberContributions"
 export {
   changedFeeTypes,
   changedKinds,

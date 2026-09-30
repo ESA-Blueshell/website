@@ -2,7 +2,7 @@
  * One person's contributions: every period they were a member in, and recording or withdrawing
  * their payment for one.
  */
-import {createContribution, deleteContribution, findMemberContributions, type MemberPeriodContribution} from "@/services/api"
+import {createContribution, deleteContribution, findContributionsByPeriodId, findMemberContributions, type MemberPeriodContribution} from "@/services/api"
 import type {Refused} from "@/types/api"
 import {readOr} from "@/utils/answers"
 import {refusalReader} from "@/utils/refusals"
@@ -22,3 +22,7 @@ export const recordPayment = (userId: number, contributionPeriodId: number): Pro
 /** Takes the person's payment for the period back off the record. */
 export const withdrawPayment = (userId: number, contributionPeriodId: number): Promise<{ok: true} | Refused> =>
   accepted(deleteContribution({path: {userId, contributionPeriodId}}), "That payment could not be withdrawn.")
+
+/** Who has paid for the period, or nobody where it could not be read. */
+export const listPaidUserIds = async (periodId: number): Promise<Set<number>> =>
+  new Set((await readOr(findContributionsByPeriodId({path: {periodId}}), [])).map((one) => one.userId))

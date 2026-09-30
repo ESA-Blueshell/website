@@ -74,6 +74,8 @@ interface Props {
   help?: {title: string; body: string}
   /** Label for the optional #info-box slot's labelled box (e.g. "Contribution period"). */
   infoBoxLabel?: string
+  /** Drawn on the bulk task page rather than over the list. */
+  inline?: boolean
 }
 
 const DEFAULT_COLUMNS: BulkColumn[] = [
@@ -202,6 +204,7 @@ defineExpose({validate})
     :save-submit-state="submitState"
     :title="title"
     data-testid="bulk-action-dialog"
+    :inline="inline"
     max-width="1200"
     save-testid="bulk-action-confirm-btn"
     scrollable

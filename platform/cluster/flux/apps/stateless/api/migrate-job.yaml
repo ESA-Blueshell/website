@@ -6,7 +6,7 @@ metadata:
   name: migrate
   namespace: default
 ---
-# The template the pre-rollout webhook instantiates per release. Suspended, and
+# The template the confirm-rollout webhook instantiates per release. Suspended, and
 # untagged so the images block in ../kustomization.yaml pins it to the release.
 apiVersion: batch/v1
 kind: CronJob

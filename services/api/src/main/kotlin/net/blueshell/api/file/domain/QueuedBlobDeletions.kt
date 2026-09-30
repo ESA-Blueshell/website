@@ -21,8 +21,11 @@ class QueuedBlobDeletions(
 ) {
     @EventListener(ApplicationReadyEvent::class)
     fun onReady() {
-        val queued = queue.findAll()
-        if (queued.isEmpty()) return
+        val queued =
+            runCatching { queue.findAll() }
+                .onFailure { log.warn("[blobs] could not read the deletion queue; it waits for the next start: {}", it.message) }
+                .getOrNull()
+        if (queued.isNullOrEmpty()) return
         val deleted =
             queued.count { entry ->
                 runCatching { blobs.delete(entry.path) }

@@ -10,11 +10,12 @@ import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.model.SoftDelete
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.time.Instant
 
 /**
  * A named group on one external system — a Brevo list, a Discord role, a Google group — holding
- * the users who share some fact. [externalId] is null until an operator creates or links the
- * external target, and `CohortTargetIds` owns it.
+ * the users who share some fact. [externalId] is null until the cohort's create-target job, or an
+ * operator, creates or links the external target, and `CohortTargetIds` owns it.
  *
  * `system` is a plain string holding a `TargetSystem.name()`: persistence cannot depend on the
  * `sync.port` package under the layered architecture rule.
@@ -63,4 +64,7 @@ class Cohort(
      */
     @Column(name = "external_id", nullable = true, length = 1024)
     var externalId: String? = null,
+    /** When a create-target job first set out to make this target; a retry that finds it looks the target up first. */
+    @Column(name = "target_claimed_at", nullable = true)
+    var targetClaimedAt: Instant? = null,
 ) : AuditedAutoIdEntity()

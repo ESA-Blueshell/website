@@ -107,32 +107,83 @@ class CohortTargetingServiceTest {
     }
 
     @Test
-    fun `materialize without an existing target fails terminally and never creates a provider target`() {
-        val cohort =
-            Entities.cohort(id = 7L, system = "BREVO", label = "Members", folder = "Committees")
+    fun `createFor claims the cohort, makes its target in its folder and reconciles it`() {
+        val cohort = Entities.cohort(id = 7L, system = "BREVO", label = "Paid 2026-2027", folder = "Contribution paid")
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
-        whenever(targetIds.find(cohort)).thenReturn(null)
+        whenever(strategy.create("Paid 2026-2027", "Contribution paid")).thenReturn(target("55", "Paid 2026-2027", "Contribution paid"))
 
-        assertThrows<NonRetryableJobException> {
-            service.materialize(7L)
-        }
+        val ref = service.createFor(7L)
 
-        verify(strategy, never()).create(any(), any())
+        assert(ref.externalId == "55")
+        assert(cohort.targetClaimedAt != null)
+        verify(strategy, never()).catalog(anyOrNull())
+        verify(targetIds).record(cohort, "55")
+        verify(jobs).runAsync(
+            eq(CohortJobs.ReconcileList),
+            eq(CohortJobs.ReconcileListPayload(7L)),
+            eq(JobTrigger.ANOTHER_JOB),
+            anyOrNull(),
+        )
+    }
+
+    @Test
+    fun `a retried createFor finds the target its first run made instead of making a second`() {
+        val cohort =
+            Entities.cohort(id = 7L, system = "BREVO", label = "Paid 2026-2027", folder = "Contribution paid").apply {
+                targetClaimedAt = java.time.Instant.parse("2026-09-29T10:00:00Z")
+            }
+        whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
+        whenever(strategy.catalog("Paid 2026-2027")).thenReturn(
+            listOf(target("54", "Paid 2026-2027", "Members"), target("55", "Paid 2026-2027", "Contribution paid")),
+        )
+
+        val ref = service.createFor(7L)
+
+        assert(ref.externalId == "55")
+        verify(strategy, never()).create(any(), anyOrNull())
+        verify(targetIds).record(cohort, "55")
+    }
+
+    @Test
+    fun `createFor is a no-op when the target already exists`() {
+        val cohort = Entities.cohort(id = 7L, system = "BREVO", label = "Members")
+        whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
+        whenever(targetIds.find(cohort)).thenReturn("existing")
+
+        val ref = service.createFor(7L)
+
+        assert(ref.externalId == "existing")
+        verify(strategy, never()).create(any(), anyOrNull())
         verify(targetIds, never()).record(any(), any())
     }
 
     @Test
-    fun `materialize is a no-op when the target already exists`() {
-        val cohort =
-            Entities.cohort(id = 7L, system = "BREVO", label = "Members")
-        whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
-        whenever(targetIds.find(cohort)).thenReturn("existing")
+    fun `createFor fails terminally for a cohort that is gone`() {
+        whenever(cohortRepo.findById(7L)).thenReturn(Optional.empty())
 
-        val ref = service.materialize(7L)
+        assertThrows<NonRetryableJobException> { service.createFor(7L) }
+    }
 
-        assert(ref.externalId == "existing")
-        verify(strategy, never()).create(any(), any())
-        verify(targetIds, never()).record(any(), any())
+    @Test
+    fun `createMissing queues one create-target job per cohort without a target`() {
+        whenever(cohortRepo.findAllBySubjectIdIsNotNullAndExternalIdIsNull()).thenReturn(
+            listOf(Entities.cohort(id = 3L), Entities.cohort(id = 4L)),
+        )
+
+        assert(service.createMissing() == 2)
+
+        verify(jobs).runAsync(
+            eq(CohortJobs.CreateCohortTarget),
+            eq(CohortJobs.CreateCohortTargetPayload(3L)),
+            eq(JobTrigger.ANOTHER_JOB),
+            anyOrNull(),
+        )
+        verify(jobs).runAsync(
+            eq(CohortJobs.CreateCohortTarget),
+            eq(CohortJobs.CreateCohortTargetPayload(4L)),
+            eq(JobTrigger.ANOTHER_JOB),
+            anyOrNull(),
+        )
     }
 
     @Test

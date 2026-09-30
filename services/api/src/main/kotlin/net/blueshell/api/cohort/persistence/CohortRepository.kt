@@ -19,6 +19,8 @@ interface CohortRepository : BaseRepository<Cohort, Long> {
 
     fun findAllBySubjectId(subjectId: Long): List<Cohort>
 
+    fun findAllBySubjectIdIsNotNullAndExternalIdIsNull(): List<Cohort>
+
     fun countBySubjectId(subjectId: Long): Long
 
     fun findBySubjectIdAndSystem(

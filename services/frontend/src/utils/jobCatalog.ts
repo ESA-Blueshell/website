@@ -214,12 +214,19 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "into that cohort, as members. Each pick is applied in its own transaction and reports " +
       "its own outcome, so a run that half fails can be re-run for the rest.",
   },
-  "cohort.materialize-target": {
-    title: "Materialize cohort target",
+  "cohort.create-target": {
+    title: "Create a cohort's list",
     description:
-      "Answers with the external target a cohort already has, and fails when it has none. " +
-      "Creating a target is an operator's own action now, so nothing enqueues this any " +
-      "more; it stays registered for rows queued before that changed.",
+      "Creates one cohort's list in its type's folder and links it. Registering a cohort queues " +
+      "it, so a new period or committee gets its lists without anyone asking.",
+  },
+  "cohort.create-missing-targets": {
+    title: "Create every missing list",
+    description: "Queues a list for every cohort that has none yet.",
+  },
+  "cohort.materialize-target": {
+    title: "Create a cohort's list (older job)",
+    description: "Queued before creating a cohort's list got its own job; it now does the same.",
   },
 }
 

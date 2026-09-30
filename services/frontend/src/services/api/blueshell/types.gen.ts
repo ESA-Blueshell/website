@@ -1649,6 +1649,50 @@ export type InboundReconcileRow = {
     writable: boolean;
 };
 
+export type IncassoCandidate = {
+    amount?: number | null;
+    feeType?: BulkFeeType | null;
+    ibanLastFour?: string | null;
+    ingName: string;
+    lastNotifiedOn?: string | null;
+    leftOut?: 'OWES_NOTHING' | 'DELETED' | 'NO_EMAIL' | 'NO_BANK_DETAILS' | 'ALREADY_PAID';
+    mandateReference?: string | null;
+    mandateSignedOn?: string | null;
+    memberSince: string;
+    name: string;
+    userId: number;
+};
+
+export type IncassoCollection = {
+    amount: number;
+    feeType: BulkFeeType;
+    ibanLastFour?: string | null;
+    ingName: string;
+    mandateReference?: string | null;
+    mandateSignedOn?: string | null;
+    name: string;
+    userId: number;
+};
+
+export type IncassoRunSummary = {
+    collectionDate: string;
+    collections: number;
+    id: number;
+    submittedAt?: string | null;
+    total: number;
+};
+
+export type IncassoRunView = {
+    collectionDate: string;
+    collections: Array<IncassoCollection>;
+    contributionPeriodId: number;
+    createdAt: string;
+    id: number;
+    statementText: string;
+    submittedAt?: string | null;
+    total: number;
+};
+
 export enum IncassoStanding {
     NONE = 'NONE',
     MANDATE_RECORDED = 'MANDATE_RECORDED',
@@ -2072,6 +2116,7 @@ export type PendingActivationsResponse = {
 };
 
 export type PeriodContributionsView = {
+    incassoRuns: Array<IncassoRunSummary>;
     members: Array<PeriodMember>;
     periodId: number;
     runs: Array<PaymentEmailRun>;
@@ -2703,6 +2748,15 @@ export type StarboardEntryResponse = {
      * The message in Discord markdown, with mentions and server emoji; absent for a picture alone
      */
     text?: string | null;
+};
+
+export type StartIncassoRunRequest = {
+    collectionDate: string | null;
+    feeTypeOverrides: {
+        [key: string]: BulkFeeType;
+    };
+    statementText: string;
+    userIds: Array<number>;
 };
 
 export type StepUpRequest = {
@@ -4958,6 +5012,92 @@ export type FindContributionsByPeriodIdResponses = {
 };
 
 export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdResponses[keyof FindContributionsByPeriodIdResponses];
+
+export type PlanIncassoData = {
+    body?: never;
+    path: {
+        periodId: number;
+    };
+    query?: never;
+    url: '/contributionPeriods/{periodId}/incasso';
+};
+
+export type PlanIncassoErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PlanIncassoError = PlanIncassoErrors[keyof PlanIncassoErrors];
+
+export type PlanIncassoResponses = {
+    /**
+     * OK
+     */
+    200: Array<IncassoCandidate>;
+};
+
+export type PlanIncassoResponse = PlanIncassoResponses[keyof PlanIncassoResponses];
+
+export type StartIncassoRunData = {
+    body: StartIncassoRunRequest;
+    path: {
+        periodId: number;
+    };
+    query?: never;
+    url: '/contributionPeriods/{periodId}/incassoRuns';
+};
+
+export type StartIncassoRunErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type StartIncassoRunError = StartIncassoRunErrors[keyof StartIncassoRunErrors];
+
+export type StartIncassoRunResponses = {
+    /**
+     * Created
+     */
+    201: IncassoRunView;
+};
+
+export type StartIncassoRunResponse = StartIncassoRunResponses[keyof StartIncassoRunResponses];
 
 export type FindPeriodContributionsData = {
     body?: never;
@@ -8002,6 +8142,49 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type FindIncassoRunData = {
+    body?: never;
+    path: {
+        runId: number;
+    };
+    query?: never;
+    url: '/incassoRuns/{runId}';
+};
+
+export type FindIncassoRunErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindIncassoRunError = FindIncassoRunErrors[keyof FindIncassoRunErrors];
+
+export type FindIncassoRunResponses = {
+    /**
+     * OK
+     */
+    200: IncassoRunView;
+};
+
+export type FindIncassoRunResponse = FindIncassoRunResponses[keyof FindIncassoRunResponses];
 
 export type ListAlertsData = {
     body?: never;

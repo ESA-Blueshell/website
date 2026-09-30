@@ -39,7 +39,7 @@ vi.mock("@/components/form/UserForm.vue", async () => {
   return {
     default: defineComponent({
       name: "UserForm",
-      props: ["modelValue", "options"],
+      props: {modelValue: {type: Object, default: null}, options: {type: Object, default: null}},
       emits: ["submitted"],
       setup: (_props, {expose}) => {
         expose({save: async () => ({})})
@@ -175,6 +175,8 @@ describe("one user's page", () => {
     await wrapper.get('[data-testid="user-profile-save"]').trigger("click")
     await settle()
     expect(wrapper.text()).toContain("Saved.")
+    wrapper.findComponent({name: "UserForm"}).vm.$emit("update:modelValue", aUser({id: 7, fullName: "Changed"}))
+    wrapper.findComponent({name: "AddressForm"}).vm.$emit("update:modelValue", {street: "Elsewhere"})
     wrapper.findComponent({name: "AddressForm"}).vm.$emit("submitted", true)
     await settle()
     expect(api.findUserById).toHaveBeenCalledTimes(2)
@@ -198,6 +200,7 @@ describe("one user's page", () => {
     api.deleteUserById.mockRejectedValue(new Error("refused"))
     const wrapper = await mount("account")
 
+    wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("update:modelValue", true)
     wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("confirm")
     await settle()
     expect(mockPush).not.toHaveBeenCalled()

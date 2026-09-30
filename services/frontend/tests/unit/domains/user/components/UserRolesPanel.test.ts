@@ -61,6 +61,7 @@ describe("the roles panel", () => {
     ;(wrapper.vm as unknown as {chosen: Role[]}).chosen = [Role.MEMBER, Role.BOARD]
     await flushPromises()
 
+    wrapper.findComponent({name: "VTextField"}).vm.$emit("update:modelValue", "Took office")
     await wrapper.get('[data-testid="user-roles-save-btn"]').trigger("click")
     await flushPromises()
     expect(user.saveRolesOrReason).toHaveBeenCalled()

@@ -892,6 +892,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/users/me/email") {
       return answer(route, "emailAddress", {email: "mock-user@example.com", pendingEmail: null})
     }
+    if (method === "GET" && /^\/users\/\d+\/account-security$/.test(path)) {
+      return answer(route, "accountStanding", {twoFactorOn: false, awaitingReenrolment: false, locked: false})
+    }
+    if (method === "GET" && /^\/users\/\d+\/security-events$/.test(path)) {
+      return answer(route, "securityEvents", {events: [], page: 0, totalPages: 0, totalElements: 0})
+    }
     if (method === "GET" && path === "/users/me/security-events") {
       return answer(route, "mySecurityEvents", {events: [], page: 0, totalPages: 0, totalElements: 0})
     }

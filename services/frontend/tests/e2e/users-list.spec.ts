@@ -28,7 +28,7 @@ test.describe("the Users list", () => {
     await page.goto("/management/users")
 
     await page.getByTestId("member-manager-actions-61").click()
-    await expect(page.getByTestId("member-manager-edit-profile-btn-61")).toBeVisible()
+    await expect(page.getByTestId("member-manager-open-profile-61")).toBeVisible()
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(0)
   })

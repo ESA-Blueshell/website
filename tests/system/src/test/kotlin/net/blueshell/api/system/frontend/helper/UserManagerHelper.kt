@@ -37,18 +37,16 @@ object UserManagerHelper {
         return entry
     }
 
-    fun clickEditRoles(
+    /** Opens one of a person's tabs from their name on the list. */
+    fun openTab(
         page: Page,
         userId: Long,
+        tab: String,
     ) {
-        action(page, userId, "member-manager-edit-roles-btn").click()
-    }
-
-    fun clickAccountSecurity(
-        page: Page,
-        userId: Long,
-    ) {
-        action(page, userId, "member-manager-account-security-btn").click()
+        TestIdLocatorHelper.byTestId(page, "member-manager-open-$userId").click()
+        page.waitForURL("**/management/users/$userId")
+        TestIdLocatorHelper.byTestId(page, "user-tab-$tab").click()
+        page.waitForURL("**/management/users/$userId/$tab")
     }
 
     /** Opens the row's menu and answers its Delete entry. */

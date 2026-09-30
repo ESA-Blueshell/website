@@ -17,7 +17,6 @@ import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipSt
 import UserForm from "@/components/form/UserForm.vue"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {useUserSelection} from "@/composables/useUserSelection"
-import {AccountSecurityDialog} from "@/domains/auth"
 import {type Committee, listCommittees} from "@/domains/committees"
 import {
   type AddressResponse,
@@ -29,7 +28,6 @@ import {
   type NeedsLook,
   type PeopleSortKey,
   type PersonRow,
-  type RoleStanding,
   type UserDetailResponse,
   deleteUser,
   filterPeople,
@@ -37,14 +35,11 @@ import {
   listMemberships,
   listUsers,
   peopleRows,
-  readUser,
   sortPeople,
 } from "@/domains/user"
-import UserRolesDialog from "@/domains/user/components/UserRolesDialog.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import store from "@/plugins/store"
 import {computeBulkTargets} from "@/utils/bulkTarget"
-import {type EditableUser, toEditableUser} from "@/utils/editableUser"
+import type {EditableUser} from "@/utils/editableUser"
 
 defineOptions({name: "UserManagerPage"})
 
@@ -147,7 +142,6 @@ async function onBulkDone() {
   await load()
 }
 
-const mayEditRoles = computed(() => store.getters.isAdmin === true)
 
 const addOpen = ref(false)
 const addModel = ref<EditableUser>(blankUser())
@@ -155,15 +149,8 @@ const addForm = ref<InstanceType<typeof UserForm> | null>(null)
 const addSaving = ref(false)
 const {submitState: addState, showSubmitStatus: addStatus, setSubmitResult: addResult} = useSubmitFeedback()
 
-const editOpen = ref(false)
-const editModel = ref<EditableUser | null>(null)
-const editForm = ref<InstanceType<typeof UserForm> | null>(null)
-const editSaving = ref(false)
-const {submitState: editState, showSubmitStatus: editStatus, setSubmitResult: editResult} = useSubmitFeedback()
 
 const acting = ref<{id: number; name: string} | null>(null)
-const rolesOpen = ref(false)
-const securityOpen = ref(false)
 const deleteOpen = ref(false)
 
 function blankUser(): EditableUser {
@@ -185,38 +172,17 @@ async function onAddSave() {
   addResult(saved != null)
 }
 
-async function onEditSave() {
-  editSaving.value = true
-  const saved = await editForm.value?.save()
-  editSaving.value = false
-  editResult(saved != null)
-}
-
 function onSaved(ok: boolean) {
   if (!ok) return
   addOpen.value = false
-  editOpen.value = false
   void load()
 }
 
-async function openEdit(row: PersonRow) {
-  const found = await readUser(row.id)
-  if (found) {
-    editModel.value = toEditableUser(found)
-    editOpen.value = true
-  }
-}
-
-const dialogs = {roles: rolesOpen, security: securityOpen, delete: deleteOpen}
+const dialogs = {delete: deleteOpen}
 
 const act = (row: PersonRow, dialog: keyof typeof dialogs) => {
   acting.value = {id: row.id, name: row.fullName}
   dialogs[dialog].value = true
-}
-
-/** The roles a save answered with, so the list's role reads right without a reload. */
-function onRolesChanged(standing: RoleStanding) {
-  users.value = users.value.map((user) => (user.id === standing.userId ? {...user, roles: standing.roles} : user))
 }
 
 async function confirmDelete() {
@@ -410,27 +376,14 @@ onMounted(load)
                 align="end"
                 class="island people-menu"
               >
-                <dropdown-menu-item
-                  class="people-menu__item"
-                  :data-testid="`member-manager-edit-profile-btn-${row.id}`"
-                  @select="openEdit(row)"
-                >
-                  Edit profile
-                </dropdown-menu-item>
-                <dropdown-menu-item
-                  v-if="mayEditRoles"
-                  class="people-menu__item"
-                  :data-testid="`member-manager-edit-roles-btn-${row.id}`"
-                  @select="act(row, 'roles')"
-                >
-                  Roles
-                </dropdown-menu-item>
-                <dropdown-menu-item
-                  class="people-menu__item"
-                  :data-testid="`member-manager-account-security-btn-${row.id}`"
-                  @select="act(row, 'security')"
-                >
-                  Account security
+                <dropdown-menu-item as-child>
+                  <router-link
+                    class="people-menu__item"
+                    :data-testid="`member-manager-open-profile-${row.id}`"
+                    :to="`/management/users/${row.id}/profile`"
+                  >
+                    Edit profile
+                  </router-link>
                 </dropdown-menu-item>
                 <dropdown-menu-item
                   class="people-menu__item people-menu__item--danger"
@@ -478,44 +431,6 @@ onMounted(load)
       />
     </base-modal>
 
-    <base-modal
-      v-if="editModel"
-      v-model="editOpen"
-      testid="member-manager-edit-profile-dialog"
-      title="Edit profile"
-      show-save
-      save-label="Save"
-      save-testid="user-form-submit-btn"
-      save-icon="mdi-content-save-edit"
-      :save-loading="editSaving"
-      :save-submit-state="editState"
-      :save-show-status="editStatus"
-      show-cancel
-      cancel-label="Cancel"
-      @save="onEditSave"
-      @cancel="editOpen = false"
-    >
-      <user-form
-        ref="editForm"
-        v-model="editModel"
-        :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
-        @submitted="onSaved"
-      />
-    </base-modal>
-
-    <account-security-dialog
-      v-if="acting && securityOpen"
-      v-model="securityOpen"
-      :user-id="acting.id"
-      :user-name="acting.name"
-    />
-    <user-roles-dialog
-      v-if="acting && rolesOpen"
-      v-model="rolesOpen"
-      :user-id="acting.id"
-      :user-name="acting.name"
-      @changed="onRolesChanged"
-    />
     <!-- Mounted only while chosen: opening it is what asks the api for its preview. -->
     <membership-status-dialog
       v-if="bulkAction"

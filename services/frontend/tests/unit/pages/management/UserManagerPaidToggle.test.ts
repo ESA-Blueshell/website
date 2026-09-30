@@ -67,7 +67,7 @@ describe("UserManager paid toggle", () => {
     mockFindContributionPeriods.mockResolvedValue({data: [{id: 5, startDate: "2025-01-01", endDate: "2025-12-31"}]})
   })
 
-  const mount = () => mountPage(UserManager, {path: "/user-manager", login: boardLogin, width: 1400})
+  const mount = () => mountPage(UserManager, {path: "/management/users", login: boardLogin, width: 1400})
 
   // Picked the way a board member picks it, from the list of periods.
   const choosePeriod = async (wrapper: Awaited<ReturnType<typeof mount>>) => {

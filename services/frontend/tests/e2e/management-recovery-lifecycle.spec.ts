@@ -42,7 +42,7 @@ test.describe("management recovery lifecycle", () => {
     // up; below that it switches to a mobile card list with its own test ids. This
     // test exercises the desktop table, so it pins a desktop viewport.
     await page.setViewportSize({width: 1440, height: 900})
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
     await expect(page.getByTestId("member-manager-table")).toBeVisible()
 
     // The user row should be visible in the unified table
@@ -57,7 +57,7 @@ test.describe("management recovery lifecycle", () => {
     await expect(page.getByTestId(`member-manager-row-${targetId}`)).toHaveCount(0)
 
     // Navigate to recovery manager and restore the deleted user
-    await page.goto("/recovery/manage")
+    await page.goto("/management/recovery")
     await expect(page.getByTestId("recovery-user-list-deleted")).toBeVisible()
 
     const deletedToggle = page.getByTestId("recovery-user-list-toggle-deleted").first()

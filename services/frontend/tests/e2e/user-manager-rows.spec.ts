@@ -12,7 +12,7 @@ async function openTable(page: Page, {narrow = false} = {}): Promise<void> {
   await page.setViewportSize(narrow ? {width: 600, height: 900} : {width: 1400, height: 900})
   await installApiMocks(page)
   await loginAsBoard(page.context())
-  await page.goto("/user-manager")
+  await page.goto("/management/users")
   await page.getByTestId("member-manager-table").waitFor()
 }
 

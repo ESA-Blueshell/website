@@ -5,7 +5,7 @@ async function openPeriods(page: Page): Promise<void> {
   await page.setViewportSize({width: 1400, height: 900})
   await installApiMocks(page)
   await loginAsBoard(page.context())
-  await page.goto("/user-manager")
+  await page.goto("/management/users")
   await page.getByTestId("contribution-period-list").waitFor()
 }
 

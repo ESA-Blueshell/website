@@ -444,64 +444,74 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Circuit Showdown"},
   },
   {
-    path: "/user-manager",
-    name: "userManager",
-    component: () => import("@/pages/management/UserManager.vue"),
-    meta: {title: "Manage users", requiresAuth: true, requiresBoard: true},
+    // Management is a portal of its own (frontend ADR-009): one layout route, and each child
+    // still carries its own role for the guard.
+    path: "/management",
+    component: () => import("@/components/management/ManagementShell.vue"),
+    meta: {requiresAuth: true, requiresBoard: true, management: true},
+    children: [
+      {path: "", name: "management", redirect: "/management/users"},
+      {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
+      {path: "users", name: "userManager", component: () => import("@/pages/management/UserManager.vue"), meta: {title: "Users"}},
+      {
+        path: "recovery",
+        name: "recoveryManager",
+        component: () => import("@/pages/management/RecoveryManager.vue"),
+        meta: {title: "Account recovery"},
+      },
+      {
+        path: "addresses",
+        name: "addressManager",
+        component: () => import("@/pages/management/AddressManager.vue"),
+        meta: {title: "Addresses"},
+      },
+      {path: "mail/sent", name: "emailManager", component: () => import("@/pages/management/EmailManager.vue"), meta: {title: "Sent mail"}},
+      {
+        path: "jobs",
+        name: "jobManager",
+        component: () => import("@/pages/management/JobManager.vue"),
+        meta: {title: "Jobs", requiresAdmin: true},
+      },
+      {
+        path: "platforms/brevo",
+        name: "cohortDashboard",
+        component: () => import("@/pages/management/CohortDashboard.vue"),
+        meta: {title: "Brevo"},
+      },
+      {
+        path: "platforms/brevo/lists",
+        name: "cohortTargets",
+        component: () => import("@/pages/management/CohortTargets.vue"),
+        meta: {title: "Brevo lists"},
+      },
+      {
+        path: "platforms/brevo/cohort/:id",
+        name: "cohortDetail",
+        component: () => import("@/pages/management/CohortDetail.vue"),
+        meta: {title: "Cohort"},
+      },
+      {
+        path: "platforms/brevo/:category",
+        name: "cohortCategory",
+        component: () => import("@/pages/management/CohortCategory.vue"),
+        meta: {title: "Cohorts"},
+      },
+    ],
   },
-  {
-    path: "/addresses/manage",
-    name: "addressManager",
-    component: () => import("@/pages/management/AddressManager.vue"),
-    meta: {title: "Manage addresses", requiresAuth: true, requiresBoard: true},
-  },
-  {
-    path: "/recovery/manage",
-    name: "recoveryManager",
-    component: () => import("@/pages/management/RecoveryManager.vue"),
-    meta: {title: "Manage account recovery", requiresAuth: true, requiresBoard: true},
-  },
-  {
-    path: "/management/jobs",
-    name: "jobManager",
-    component: () => import("@/pages/management/JobManager.vue"),
-    meta: {title: "Manage jobs", requiresAuth: true, requiresAdmin: true},
-  },
-  {
-    path: "/management/emails",
-    name: "emailManager",
-    component: () => import("@/pages/management/EmailManager.vue"),
-    meta: {title: "Manage emails", requiresAuth: true, requiresBoard: true},
-  },
+  // The addresses management had before the portal; bookmarks and old emails keep working.
+  {path: "/user-manager", redirect: "/management/users"},
+  {path: "/addresses/manage", redirect: "/management/addresses"},
+  {path: "/recovery/manage", redirect: "/management/recovery"},
+  {path: "/management/emails", redirect: "/management/mail/sent"},
+  {path: "/management/cohorts", redirect: "/management/platforms/brevo"},
+  {path: "/management/cohorts/targets", redirect: "/management/platforms/brevo/lists"},
+  {path: "/management/cohort/:id", redirect: (to) => `/management/platforms/brevo/cohort/${String(to.params.id)}`},
+  {path: "/management/cohorts/:category", redirect: (to) => `/management/platforms/brevo/${String(to.params.category)}`},
   {
     // The esports manager is gone: seasons, teams and line-ups are edited on the pages that
     // show them. A bookmark to it lands on those pages rather than on nothing.
     path: "/management/esports",
     redirect: "/competition",
-  },
-  {
-    path: "/management/cohorts",
-    name: "cohortDashboard",
-    component: () => import("@/pages/management/CohortDashboard.vue"),
-    meta: {title: "Manage cohorts", requiresAuth: true, requiresBoard: true},
-  },
-  {
-    path: "/management/cohorts/targets",
-    name: "cohortTargets",
-    component: () => import("@/pages/management/CohortTargets.vue"),
-    meta: {title: "Cohort targets", requiresAuth: true, requiresBoard: true},
-  },
-  {
-    path: "/management/cohort/:id",
-    name: "cohortDetail",
-    component: () => import("@/pages/management/CohortDetail.vue"),
-    meta: {title: "Cohort", requiresAuth: true, requiresBoard: true},
-  },
-  {
-    path: "/management/cohorts/:category",
-    name: "cohortCategory",
-    component: () => import("@/pages/management/CohortCategory.vue"),
-    meta: {title: "Cohort category", requiresAuth: true, requiresBoard: true},
   },
   {
     path: "/blogs",
@@ -599,11 +609,13 @@ router.beforeEach((to) => {
   if (store.getters.twoFactorRequired && !TWO_FACTOR_SET_UP_OPEN.has(to.path)) {
     return {path: SECURITY_PAGES.required, query: {redirect: to.fullPath}}
   }
+  // Inside Management a refusal says so; elsewhere the reader goes home, as before.
+  const refused = to.meta.management ? {path: "/unauthorized"} : {path: "/"}
   if (to.meta.requiresAdmin && !store.getters.isAdmin) {
-    return {path: "/"}
+    return refused
   }
   if (to.meta.requiresBoard && !(store.getters.isBoard || store.getters.isAdmin)) {
-    return {path: "/"}
+    return refused
   }
   // Nothing returned is the navigation going ahead.
   return true

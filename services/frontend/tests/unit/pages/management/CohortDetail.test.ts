@@ -87,7 +87,7 @@ const cohort = (): Cohort => ({
 
 const open = async () => {
   vi.mocked(fetchCohort).mockResolvedValue(cohort())
-  return mountPage(CohortDetail, {path: "/management/cohort/7", login: adminLogin})
+  return mountPage(CohortDetail, {path: "/management/platforms/brevo/cohort/7", login: adminLogin})
 }
 
 const press = async (wrapper: Awaited<ReturnType<typeof open>>, testid: string) => {
@@ -244,7 +244,7 @@ describe("CohortDetail drift", () => {
     const enforced = cohort()
     enforced.mappings[0]!.enforced = true
     vi.mocked(fetchCohort).mockResolvedValue(enforced)
-    const wrapper = await mountPage(CohortDetail, {path: "/management/cohort/7", login: adminLogin})
+    const wrapper = await mountPage(CohortDetail, {path: "/management/platforms/brevo/cohort/7", login: adminLogin})
     await wrapper.get("[data-testid=cohort-detail-targets] [data-testid=info-box-toggle]").trigger("click")
     await settle()
 
@@ -307,7 +307,7 @@ describe("CohortDetail drift", () => {
 
   it("shows nothing for a cohort that could not be read", async () => {
     vi.mocked(fetchCohort).mockRejectedValue(new Error("down"))
-    const wrapper = await mountPage(CohortDetail, {path: "/management/cohort/7", login: adminLogin})
+    const wrapper = await mountPage(CohortDetail, {path: "/management/platforms/brevo/cohort/7", login: adminLogin})
 
     expect(wrapper.find("[data-testid=cohort-detail-identity]").exists()).toBe(false)
   })
@@ -317,7 +317,7 @@ describe("CohortDetail drift", () => {
     const withRuns = cohort()
     withRuns.mappings[0]!.runs = [run("2026-09-29T03:00:00Z", 1), run("2026-09-28T03:00:00Z", 3)]
     vi.mocked(fetchCohort).mockResolvedValue(withRuns)
-    const wrapper = await mountPage(CohortDetail, {path: "/management/cohort/7", login: adminLogin})
+    const wrapper = await mountPage(CohortDetail, {path: "/management/platforms/brevo/cohort/7", login: adminLogin})
     await wrapper.get("[data-testid=cohort-detail-targets] [data-testid=info-box-toggle]").trigger("click")
     await settle()
 
@@ -352,7 +352,7 @@ describe("CohortDetail drift", () => {
 
   it("leaves switching and enforcing out of the board's target menu", async () => {
     vi.mocked(fetchCohort).mockResolvedValue(cohort())
-    const wrapper = await mountPage(CohortDetail, {path: "/management/cohort/7", login: boardLogin})
+    const wrapper = await mountPage(CohortDetail, {path: "/management/platforms/brevo/cohort/7", login: boardLogin})
     await wrapper.get("[data-testid=cohort-detail-targets] [data-testid=info-box-toggle]").trigger("click")
     await settle()
 

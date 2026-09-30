@@ -1,0 +1,16 @@
+# Archiving is the only way a committee leaves the committees pages since 1.13.0 (#1953), which
+# maps no committees.listed, so the flag goes (#1956).
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-30-committee-listed-goes.yaml
+      id: committee-listed-goes
+      author: blueshell
+      changes:
+        - dropColumn:
+            tableName: committees
+            columnName: listed
+      rollback:
+        - addColumn:
+            tableName: committees
+            columns:
+              - column: {name: listed, type: BOOLEAN, defaultValueBoolean: true, constraints: {nullable: false}}

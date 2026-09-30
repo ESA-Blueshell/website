@@ -87,6 +87,7 @@ describe("the payment reminders task", () => {
       kind: ContributionEmailKind.REMINDER, contributionPeriodId: 2, userId: 1, date: later, feeType: BulkFeeType.ALUMNI_FEE,
     }})
     expect(api.sendPaymentEmails).not.toHaveBeenCalled()
+    wrapper.findComponent({name: "EmailPreviewDialog"}).vm.$emit("update:modelValue", false)
 
     await wrapper.get('[data-testid="payment-reminders-send"]').trigger("click")
     await settle()

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 class CohortJobSubjectResolver(
     private val targets: TargetRepository,
 ) : JobSubjectResolver {
-    override val payloadFields = listOf("cohortId")
+    override val payloadFields = listOf("targetId", "cohortId")
     override val entityType = "COHORT"
 
     override fun label(id: Long): String {

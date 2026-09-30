@@ -12,6 +12,7 @@ import {
   proposeDriftLinks,
   pushDriftPeople,
   removeDriftPeople,
+  setTargetEnforced,
   type CohortMember,
   type CohortSubject,
 } from "@/domains/cohorts/adapters/cohorts"
@@ -26,6 +27,7 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   removeDriftPeople: vi.fn(),
   proposeDriftLinks: vi.fn(),
   linkDriftPeople: vi.fn(),
+  setTargetEnforced: vi.fn(),
 }))
 
 const adminLogin: StoredLogin = {
@@ -67,6 +69,7 @@ const subject = (): CohortSubject => ({
     path: ["Brevo"],
     folderKnown: true,
     runs: [],
+    enforced: false,
   }],
   members: [
     member({cohortMemberId: 1, userId: 5, userFullName: "Ada Lovelace", sync: "ONLY_HERE"}),
@@ -203,6 +206,48 @@ describe("CohortSubjectDetail drift", () => {
     await settle()
 
     expect(wrapper.get("[data-testid=cohort-subject-success]").text()).toBe("Adopt queued.")
+  })
+
+  const enforceFromMenu = async () => {
+    const wrapper = await open()
+    await wrapper.get("[data-testid=cohort-subject-targets] [data-testid=info-box-toggle]").trigger("click")
+    await settle()
+    await press(wrapper, "cohort-subject-target-menu-brevo")
+    await click(wrapper, "VListItem", "cohort-subject-enforce-brevo")
+    return wrapper
+  }
+
+  it("enforces a target from its menu", async () => {
+    vi.mocked(setTargetEnforced).mockResolvedValue({ok: true})
+
+    const wrapper = await enforceFromMenu()
+
+    expect(setTargetEnforced).toHaveBeenCalledWith(7, 40, true)
+    expect(wrapper.get("[data-testid=cohort-subject-success]").text()).toBe("Enforced: each reconcile removes the extra people.")
+  })
+
+  it("says why a switch was refused", async () => {
+    vi.mocked(setTargetEnforced).mockResolvedValue({ok: false, reason: "Only an admin may."})
+
+    const wrapper = await enforceFromMenu()
+
+    expect(wrapper.get("[data-testid=cohort-subject-error]").text()).toBe("Only an admin may.")
+  })
+
+  it("marks an enforced target and offers to stop enforcing it", async () => {
+    vi.mocked(setTargetEnforced).mockResolvedValue({ok: true})
+    const enforced = subject()
+    enforced.mappings[0]!.enforced = true
+    vi.mocked(fetchCohortSubject).mockResolvedValue(enforced)
+    const wrapper = await mountPage(CohortSubjectDetail, {path: "/management/cohorts/subjects/7", login: adminLogin})
+    await wrapper.get("[data-testid=cohort-subject-targets] [data-testid=info-box-toggle]").trigger("click")
+    await settle()
+
+    expect(wrapper.find("[data-testid=cohort-subject-target-enforced-brevo]").exists()).toBe(true)
+    await press(wrapper, "cohort-subject-target-menu-brevo")
+    await click(wrapper, "VListItem", "cohort-subject-enforce-brevo")
+    expect(setTargetEnforced).toHaveBeenCalledWith(7, 40, false)
+    expect(wrapper.get("[data-testid=cohort-subject-success]").text()).toBe("No longer enforced.")
   })
 
   it("shows each target's drift and the runs before it", async () => {

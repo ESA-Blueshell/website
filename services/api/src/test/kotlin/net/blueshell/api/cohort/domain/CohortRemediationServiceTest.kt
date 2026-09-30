@@ -12,6 +12,9 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.DriftResolution
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
+import net.blueshell.api.cohort.persistence.DriftResolutionRepository
 import net.blueshell.api.cohort.persistence.TargetReconcileRun
 import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.contact.api.ContactJobs
@@ -37,6 +40,7 @@ class CohortRemediationServiceTest {
     private val targetIds: CohortTargetIds = mockk()
     private val jobs: JobQueue = mockk(relaxed = true)
     private val runs: TargetReconcileRunRepository = mockk { every { save(any()) } answers { firstArg() } }
+    private val resolutions: DriftResolutionRepository = mockk(relaxed = true)
     private val port = RecordingTargetStrategy()
     private val service =
         CohortRemediationService(
@@ -49,6 +53,7 @@ class CohortRemediationServiceTest {
             strategies = TargetStrategies(listOf(port)),
             jobs = jobs,
             runs = runs,
+            resolutions = resolutions,
             transactionManager = ImmediateTransactionManager(),
         )
 
@@ -379,5 +384,47 @@ class CohortRemediationServiceTest {
         // A reconcile queued before runs recorded their trigger names none.
         service.verifyCohort(99L, null)
         assertThat(saved.captured.trigger).isNull()
+    }
+
+    @Test
+    fun `a reconcile of an enforced target removes its theirs-only people and records each removal`() {
+        val subject = subject(8L)
+        val cohort = cohort(98L, subject.id!!).apply { enforced = true }
+        port.remote = listOf(ExternalMember("stranger", "old@example.com"))
+        every { cohorts.findById(98L) } returns Optional.of(cohort)
+        every { subjects.findById(8L) } returns Optional.of(subject)
+        every { targetIds.require(any()) } returns "list-98"
+        every { externalIds.findBatch(any(), any(), any()) } returns emptyList()
+        every { members.save(any()) } answers { firstArg() }
+        val stranger = member(cohort, subject, userId = null, externalUserId = "stranger", verifiedAt = LocalDateTime.now())
+        every { members.findAllByCohortIdAndUserIdIsNull(98L) } returns listOf(stranger.apply { label = "old@example.com" })
+        val recorded = slot<List<DriftResolution>>()
+        every { resolutions.saveAll(capture(recorded)) } answers { firstArg() }
+
+        service.verifyCohort(98L, JobTrigger.SCHEDULED_RUN)
+
+        verify {
+            jobs.runAsync(CohortJobs.RemoveExternalMember, CohortJobs.RemoveExternalMemberPayload(98L, "stranger"), JobTrigger.ANOTHER_JOB)
+        }
+        assertThat(recorded.captured.single().action).isEqualTo(DriftResolutionAction.ENFORCED_REMOVE)
+        assertThat(recorded.captured.single().resolvedBy).isNull()
+        verify(exactly = 0) { jobs.runAsync(CohortJobs.SyncCohortMembership, any(), any()) }
+    }
+
+    @Test
+    fun `a reconcile of a target not enforced removes nobody`() {
+        val subject = subject(9L)
+        val cohort = cohort(97L, subject.id!!)
+        port.remote = listOf(ExternalMember("stranger", null))
+        every { cohorts.findById(97L) } returns Optional.of(cohort)
+        every { subjects.findById(9L) } returns Optional.of(subject)
+        every { targetIds.require(any()) } returns "list-97"
+        every { externalIds.findBatch(any(), any(), any()) } returns emptyList()
+        every { members.save(any()) } answers { firstArg() }
+
+        service.verifyCohort(97L, null)
+
+        verify(exactly = 0) { jobs.runAsync(CohortJobs.RemoveExternalMember, any(), any()) }
+        verify(exactly = 0) { resolutions.saveAll(any<List<DriftResolution>>()) }
     }
 }

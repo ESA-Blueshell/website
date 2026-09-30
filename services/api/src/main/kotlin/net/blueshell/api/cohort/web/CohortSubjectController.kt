@@ -29,12 +29,14 @@ import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobTrigger
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 
@@ -84,6 +86,14 @@ class CohortSubjectController(
         @PathVariable cohortId: Long,
         @RequestBody @Valid body: PushDriftRequest,
     ): DriftResolvedResponse = DriftResolvedResponse(resolutions.push(id, cohortId, body.userIds))
+
+    @PutMapping("/{id}/targets/{cohortId}/enforced")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun enforceTarget(
+        @PathVariable id: Long,
+        @PathVariable cohortId: Long,
+        @RequestBody @Valid body: EnforceTargetRequest,
+    ) = resolutions.enforce(id, cohortId, body.enforced)
 
     @PostMapping("/{id}/targets/{cohortId}/drift/remove")
     fun removeDrift(
@@ -188,6 +198,8 @@ data class CohortMappingResponse(
     val folderKnown: Boolean = true,
     @param:Schema(description = "The target's recent reconciles, newest first; the first is its current drift")
     val runs: List<ReconcileRunResponse> = emptyList(),
+    @param:Schema(description = "Whether each reconcile removes the target's theirs-only people")
+    val enforced: Boolean = false,
 )
 
 @Schema(name = "ReconcileRun", description = "One reconcile of a target and the drift it found.")
@@ -222,6 +234,12 @@ data class CohortSubjectMemberResponse(
 @Schema(name = "PushDrift")
 data class PushDriftRequest(
     @field:NotEmpty val userIds: List<Long>,
+)
+
+@Schema(name = "EnforceTarget")
+data class EnforceTargetRequest(
+    @param:Schema(description = "Whether each reconcile removes the target's theirs-only people")
+    val enforced: Boolean,
 )
 
 @Schema(name = "ExternalDrift")
@@ -323,6 +341,7 @@ private fun CohortMappingRow.toResponse(): CohortMappingResponse =
         lastReconciledAt = lastReconciledAt,
         path = path,
         runs = runs.map { ReconcileRunResponse(it.startedAt, it.trigger, it.inSync, it.oursOnly, it.theirsOnly) },
+        enforced = cohort.enforced,
     )
 
 private fun CohortMemberRow.toMemberResponse(): CohortSubjectMemberResponse =

@@ -5,7 +5,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
 import TargetPath from "@/domains/cohorts/components/TargetPath.vue"
-import {DriftResolutionAction, TargetSystem, fetchCohortSubject, queueCohortJob, triggerReconcile, useDriftResolution, type CohortMember, type CohortSubject, type CohortSyncState, type TargetMapping} from "@/domains/cohorts"
+import {DriftResolutionAction, TargetSystem, fetchCohortSubject, queueCohortJob, setTargetEnforced, triggerReconcile, useDriftResolution, type CohortMember, type CohortSubject, type CohortSyncState, type TargetMapping} from "@/domains/cohorts"
 import {categoryLabel, driftLabel, earlierDrift, isMember, memberName, memberSystemLabel, syncChipColour, syncLabel, systemLabel} from "@/domains/cohorts"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
@@ -207,6 +207,7 @@ const RESOLUTION_VERBS: Record<DriftResolutionAction, string> = {
   [DriftResolutionAction.REMOVE]: "removed from",
   [DriftResolutionAction.LINK]: "linked on",
   [DriftResolutionAction.ADOPT]: "adopted from",
+  [DriftResolutionAction.ENFORCED_REMOVE]: "removed by enforcement from",
 }
 
 //
@@ -256,6 +257,18 @@ const reconcileTarget = async (cohortId: number) => {
   } finally {
     reconciling.value = null
   }
+}
+
+/** Enforcing, or no longer enforcing, a target; the row reloads to show which it is. */
+const toggleEnforced = async (mapping: TargetMapping) => {
+  if (subjectId.value == null) return
+  const answer = await setTargetEnforced(subjectId.value, mapping.cohortId, !mapping.enforced)
+  if (!answer.ok) {
+    errorMessage.value = answer.reason
+    return
+  }
+  successMessage.value = mapping.enforced ? "No longer enforced." : "Enforced: each reconcile removes the extra people."
+  await load()
 }
 
 /** What the target row says about its agreement with the external system. */
@@ -515,6 +528,15 @@ watch(subjectId, () => void load())
                     >
                       <td class="font-weight-medium">
                         {{ systemLabel(mapping.system) }}
+                        <v-chip
+                          v-if="mapping.enforced"
+                          class="ml-1"
+                          :data-testid="`cohort-subject-target-enforced-${mapping.system.toLowerCase()}`"
+                          size="x-small"
+                          variant="tonal"
+                        >
+                          Enforced
+                        </v-chip>
                       </td>
                       <td class="text-medium-emphasis targets-col-detail">
                         {{ mapping.kind }}
@@ -585,6 +607,13 @@ watch(subjectId, () => void load())
                               prepend-icon="mdi-import"
                               title="Adopt"
                               @click="openInboundReconcile(mapping.cohortId)"
+                            />
+                            <v-list-item
+                              :data-testid="`cohort-subject-enforce-${mapping.system.toLowerCase()}`"
+                              :disabled="!mapping.externalId"
+                              prepend-icon="mdi-shield-check-outline"
+                              :title="mapping.enforced ? 'Stop enforcing' : 'Enforce'"
+                              @click="toggleEnforced(mapping)"
                             />
                             <v-list-item
                               :data-testid="`cohort-subject-switch-target-${mapping.system.toLowerCase()}`"

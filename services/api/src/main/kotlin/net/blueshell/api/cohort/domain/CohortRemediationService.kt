@@ -4,6 +4,9 @@ import net.blueshell.api.cohort.domain.CohortLedger.DesiredConfirmation
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.DriftResolution
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
+import net.blueshell.api.cohort.persistence.DriftResolutionRepository
 import net.blueshell.api.cohort.persistence.TargetReconcileRun
 import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.state
@@ -45,6 +48,7 @@ class CohortRemediationService(
     private val strategies: TargetStrategies,
     private val jobs: JobQueue,
     private val runs: TargetReconcileRunRepository,
+    private val resolutions: DriftResolutionRepository,
     transactionManager: PlatformTransactionManager,
 ) : CohortRemediation {
     private val readOnlyTransaction = TransactionTemplate(transactionManager).apply { isReadOnly = true }
@@ -102,7 +106,26 @@ class CohortRemediationService(
         writeTransaction.executeWithoutResult {
             applySnapshot(plan, remote)
             recordRun(cohortId, startedAt, trigger)
+            enforce(cohortId)
         }
+    }
+
+    // An enforced target loses its theirs-only people on every reconcile; ours-only drift is
+    // never resolved by itself.
+    private fun enforce(cohortId: Long) {
+        if (cohortRepo.findById(cohortId).orElse(null)?.enforced != true) return
+        val strangers = memberRepo.findAllByCohortIdAndUserIdIsNull(cohortId).filter { it.externalUserId != null }
+        strangers.forEach { row ->
+            jobs.runAsync(
+                CohortJobs.RemoveExternalMember,
+                CohortJobs.RemoveExternalMemberPayload(cohortId, row.externalUserId!!),
+                JobTrigger.ANOTHER_JOB,
+            )
+        }
+        val at = Instant.now()
+        resolutions.saveAll(
+            strangers.map { DriftResolution(cohortId, DriftResolutionAction.ENFORCED_REMOVE, null, it.externalUserId, it.label, null, at) },
+        )
     }
 
     // The ledger after the snapshot is the drift: confirmed present, ours only, theirs only.

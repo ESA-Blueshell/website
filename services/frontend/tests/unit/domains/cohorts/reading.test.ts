@@ -102,6 +102,7 @@ const mapping = (runs: ReconcileRun[]): TargetMapping => ({
   path: [],
   folderKnown: true,
   runs,
+  enforced: false,
 })
 
 describe("drift", () => {

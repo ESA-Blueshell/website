@@ -67,4 +67,7 @@ class Cohort(
     /** When a create-target job first set out to make this target; a retry that finds it looks the target up first. */
     @Column(name = "target_claimed_at", nullable = true)
     var targetClaimedAt: Instant? = null,
+    /** Whether each reconcile removes the target's theirs-only people. Only an admin sets it. */
+    @Column(name = "enforced", nullable = false)
+    var enforced: Boolean = false,
 ) : AuditedAutoIdEntity()

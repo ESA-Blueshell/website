@@ -11,6 +11,7 @@ import {
   createTarget,
   createTargetFolder,
   deleteExternalTarget,
+  enforceTarget,
   enqueue,
   findCohortSubjectById,
   findCohortSubjects,
@@ -67,6 +68,11 @@ export type LinkProposal = {externalUserId: string; label: string | null; userId
 
 /** How many contacts were linked, and those another account already holds. */
 export type LinkOutcome = {linked: number; conflicts: {externalUserId: string; existingUserId: number}[]}
+
+/** Switch whether each reconcile removes the target's theirs-only people. Only an admin may. */
+export async function setTargetEnforced(subjectId: number, cohortId: number, enforced: boolean): Promise<{ok: true} | Refused> {
+  return accepted(enforceTarget({path: {id: subjectId, cohortId}, body: {enforced}}), "The target could not be switched.")
+}
 
 /** Push each ours-only person to the target; answers how many were still ours only. */
 export async function pushDriftPeople(subjectId: number, cohortId: number, userIds: number[]): Promise<Saved<number> | Refused> {
@@ -127,6 +133,8 @@ export type TargetMapping = {
   folderKnown: boolean
   /** Recent reconciles, newest first; the first is the target's current drift. */
   runs: ReconcileRun[]
+  /** Whether each reconcile removes the target's theirs-only people. */
+  enforced: boolean
 }
 
 /** One reconcile of a target: how many were in step, missing from it and extra on it. */
@@ -178,6 +186,7 @@ function toTargetMapping(raw: ApiCohortMapping): TargetMapping {
       missing: run.oursOnly,
       extra: run.theirsOnly,
     })),
+    enforced: raw.enforced,
   }
 }
 

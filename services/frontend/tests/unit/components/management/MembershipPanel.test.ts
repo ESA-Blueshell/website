@@ -25,8 +25,9 @@ const {
 }))
 
 vi.mock("@/domains/user", async () => {
-  const {MemberType} = await import("@/services/api")
+  const {IncassoStanding, MemberType} = await import("@/services/api")
   return {
+    IncassoStanding,
     MemberType,
     listMembershipsFor: mockListMembershipsFor,
     listDeletedMembershipsFor: mockListDeletedMembershipsFor,

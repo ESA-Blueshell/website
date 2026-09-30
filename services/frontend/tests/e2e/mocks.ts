@@ -982,6 +982,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       return answer(route, "restoreDeletedUserById", {}, 204)
     }
+    if (/^\/memberships\/\d+\/mandate$/.test(path)) {
+      const membershipId = Number(path.split("/")[2])
+      if (method === "PUT") {
+        const {accountHolder, signedOn, iban} = request.postDataJSON() as {accountHolder: string; signedOn: string; iban: string}
+        const compact = iban.replace(/\s/g, "")
+        return answer(route, "recordMandate", {
+          membershipId, standing: "MANDATE_RECORDED", accountHolder, ibanLastFour: compact.slice(-4),
+          reference: `BLUESHELL-${membershipId}`, signedOn, recordedBy: 1, recordedAt: "2026-09-30T10:00:00.000Z",
+        })
+      }
+      return answer(route, "findMandate", {membershipId, standing: "NONE"})
+    }
     if (method === "GET" && path === "/memberships") {
       const userId = url.searchParams.get("userId")
       return answer(route, "findMemberships", userId ? baseMemberships.filter((one) => String(one.userId) === userId) : baseMemberships)

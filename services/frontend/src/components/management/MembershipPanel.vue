@@ -4,6 +4,7 @@ import {useStore} from "vuex"
 import ConfirmationDialog from "@/components/common/modals/ConfirmationDialog.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {
+  IncassoStanding,
   deleteOneMembership,
   endOneMembership,
   listDeletedMembershipsFor,
@@ -43,6 +44,7 @@ const blankMembership = (): MembershipResponse => ({
   startDate: "",
   memberType: MemberType.REGULAR,
   incasso: false,
+  incassoStanding: IncassoStanding.NONE,
   version: 0,
   createdAt: "",
   updatedAt: "",

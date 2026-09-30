@@ -7,6 +7,7 @@ import StateMark from "@/components/island/StateMark.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import UserForm from "@/components/form/UserForm.vue"
+import MandatePanel from "@/components/management/MandatePanel.vue"
 import MembershipPanel from "@/components/management/MembershipPanel.vue"
 import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
@@ -51,6 +52,8 @@ const deleteOpen = ref(false)
 const isAdmin = computed(() => store.getters.isAdmin === true)
 
 const current = computed(() => memberships.value.find((one) => !one.endDate) ?? null)
+/** The membership a mandate is recorded on: the running one, else the newest. */
+const latestMembership = computed(() => current.value ?? [...memberships.value].sort((a, b) => b.startDate.localeCompare(a.startDate))[0] ?? null)
 const since = computed(() => memberships.value.map((one) => one.startDate).sort()[0] ?? null)
 const standing = computed(() => (current.value ? "Member" : memberships.value.length > 0 ? "Former member" : "Never a member"))
 const incasso = computed(() => (current.value ? (current.value.incasso ? "Pays by incasso" : "Pays by transfer") : null))
@@ -218,6 +221,11 @@ watch(id, load, {immediate: true})
         >
           {{ incasso }}
         </p>
+        <mandate-panel
+          v-if="latestMembership"
+          :membership-id="latestMembership.id"
+          @changed="reloadMemberships"
+        />
         <membership-panel
           :user-id="id"
           @changed="reloadMemberships"

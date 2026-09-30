@@ -75,6 +75,7 @@ export {
   type SaveRolesResult,
 } from "./adapters/roles"
 export {highestRole, highestRoleLabel} from "./roles"
+export {IncassoStanding, readMandate, saveMandate, type MandateResponse, type RecordMandateRequest} from "./adapters/mandates"
 export {
   MEMBERSHIP_WORDS,
   NEEDS_LOOK_WORDS,

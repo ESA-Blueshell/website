@@ -191,11 +191,10 @@ describe("the Users page", () => {
     expect(wrapper.find('[data-testid="member-manager-edit-profile-dialog"]').exists()).toBe(true)
   })
 
-  it("opens a member's memberships, account security and, for an admin, roles", async () => {
+  it("links each person to their own page, and opens account security and, for an admin, roles", async () => {
     const wrapper = await mount(adminLogin)
 
-    await act(wrapper, 1, "member-manager-manage-membership-btn")
-    expect(wrapper.find('[data-testid="manage-membership-dialog"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="member-manager-open-1"]').attributes("to")).toBe("/management/users/1")
     await act(wrapper, 1, "member-manager-account-security-btn")
     expect(wrapper.findComponent({name: "AccountSecurityDialog"}).exists()).toBe(true)
     await act(wrapper, 1, "member-manager-edit-roles-btn")
@@ -252,7 +251,6 @@ describe("the Users page", () => {
     await settle()
 
     for (const [testid, dialog] of [
-      ["member-manager-manage-membership-btn", "ManageMembershipDialog"],
       ["member-manager-account-security-btn", "AccountSecurityDialog"],
       ["member-manager-edit-roles-btn", "UserRolesDialog"],
       ["member-manager-delete-btn", "DeletionConfirmationDialog"],
@@ -261,7 +259,7 @@ describe("the Users page", () => {
       wrapper.findComponent({name: dialog}).vm.$emit("update:modelValue", false)
       await settle()
     }
-    expect(wrapper.findComponent({name: "ManageMembershipDialog"}).exists()).toBe(false)
+    expect(wrapper.findComponent({name: "UserRolesDialog"}).exists()).toBe(false)
 
     await wrapper.get('[data-testid="member-manager-header-name"]').trigger("click")
     await settle()

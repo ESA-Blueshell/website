@@ -1,8 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import {useStore} from "vuex"
-import BaseModal from "./BaseModal.vue"
-import ConfirmationDialog from "./ConfirmationDialog.vue"
+import ConfirmationDialog from "@/components/common/modals/ConfirmationDialog.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {
   deleteOneMembership,
@@ -18,24 +17,12 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import type {TypedStore} from "@/plugins/store"
 import {memberTypeLabel} from "@/utils/memberType"
 
-defineOptions({name: "ManageMembershipDialog"})
+/* A person's memberships, newest first: start, edit, end, resume, delete and, for an admin,
+   restore a deleted one, all in place. */
+defineOptions({name: "MembershipPanel"})
 
-interface Props {
-  modelValue: boolean
-  userId: number
-  userName?: string
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<{
-  (e: "update:modelValue", value: boolean): void
-  (e: "changed"): void
-}>()
-
-const open = computed({
-  get: () => props.modelValue,
-  set: (val: boolean) => emit("update:modelValue", val),
-})
+const props = defineProps<{userId: number}>()
+const emit = defineEmits<{(e: "changed"): void}>()
 
 const store = useStore<TypedStore>()
 const isAdmin = computed(() => store.getters.isAdmin)
@@ -49,8 +36,8 @@ const addOpen = ref(false)
 
 const hasActive = computed(() => memberships.value.some((m) => !m.endDate))
 
-// Create form — blank MembershipResponse model for MembershipForm in board mode
-const createModel = ref<MembershipResponse>({
+/** The create form's blank model, for MembershipForm in board mode. */
+const blankMembership = (): MembershipResponse => ({
   id: 0,
   userId: props.userId,
   startDate: "",
@@ -59,7 +46,9 @@ const createModel = ref<MembershipResponse>({
   version: 0,
   createdAt: "",
   updatedAt: "",
-} as MembershipResponse)
+})
+
+const createModel = ref<MembershipResponse>(blankMembership())
 
 // Inline edit models per membership id — each is a copy of the membership for editing
 const editModels = ref<Record<number, MembershipResponse | undefined>>({})
@@ -83,24 +72,13 @@ async function loadMemberships() {
 }
 
 watch(
-  () => props.modelValue,
-  async (val) => {
-    if (val) {
-      editingIds.value = new Set()
-      editModels.value = {}
-      addOpen.value = false
-      createModel.value = {
-        id: 0,
-        userId: props.userId,
-        startDate: "",
-        memberType: MemberType.REGULAR,
-        incasso: false,
-        version: 0,
-        createdAt: "",
-        updatedAt: "",
-      } as MembershipResponse
-      await loadMemberships()
-    }
+  () => props.userId,
+  async () => {
+    editingIds.value = new Set()
+    editModels.value = {}
+    addOpen.value = false
+    createModel.value = blankMembership()
+    await loadMemberships()
   },
   {immediate: true},
 )
@@ -125,16 +103,7 @@ function isEditing(id: number): boolean {
 
 async function onCreateSubmitted(ok: boolean) {
   if (!ok) return
-  createModel.value = {
-    id: 0,
-    userId: props.userId,
-    startDate: "",
-    memberType: MemberType.REGULAR,
-    incasso: false,
-    version: 0,
-    createdAt: "",
-    updatedAt: "",
-  } as MembershipResponse
+  createModel.value = blankMembership()
   await loadMemberships()
   emit("changed")
 }
@@ -196,17 +165,12 @@ async function onRestore(m: MembershipResponse) {
   }
 }
 
-function close() {
-  open.value = false
-}
-
 defineExpose({
   onEnd,
   onReopen,
   onDelete,
   onDeleteConfirmed,
   onRestore,
-  close,
   hasActive,
   memberships,
   deleteTarget,
@@ -223,15 +187,9 @@ defineExpose({
 </script>
 
 <template>
-  <base-modal
-    v-model="open"
-    :title="`Manage memberships${userName ? `: ${userName}` : ''}`"
-    testid="manage-membership-dialog"
-    max-width="1000"
-    fullscreen-mobile
-    show-cancel
-    cancel-label="Close"
-    cancel-testid="manage-membership-close-btn"
+  <section
+    class="membership-panel"
+    data-testid="membership-panel"
   >
     <div
       v-if="isLoading"
@@ -463,7 +421,7 @@ defineExpose({
         </template>
       </div>
     </template>
-  </base-modal>
+  </section>
 
   <!-- Delete membership confirmation -->
   <confirmation-dialog

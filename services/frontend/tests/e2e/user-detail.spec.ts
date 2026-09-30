@@ -31,6 +31,7 @@ test.describe("one user's page", () => {
     await page.goto("/management/users/71/membership")
 
     await expect(page.getByTestId("membership-panel")).toBeVisible()
+    await expect(page.getByTestId("mandate-standing")).toHaveText("Pays by transfer")
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(0)
   })
@@ -48,5 +49,21 @@ test.describe("one user's Account and Roles", () => {
     await page.getByTestId("user-tab-account").click()
     await expect(page.getByTestId("recovery-user-send-btn-PASSWORD_RESET-71")).toBeVisible()
     await expect(page.getByTestId("account-security-panel")).toBeVisible()
+  })
+})
+
+test.describe("one user's mandate", () => {
+  test("the board records a paper mandate and sees only the last four of the account", async ({page}) => {
+    await installApiMocks(page, {users: [ann], memberships: [aMembership({id: 171, userId: 71, startDate: "2024-09-01"})]})
+    await loginAsBoard(page.context())
+    await page.goto("/management/users/71/membership")
+
+    await page.getByTestId("mandate-record").click()
+    await page.getByTestId("mandate-iban").locator("input").fill("NL91 ABNA 0417 1643 00")
+    await page.getByTestId("mandate-holder").locator("input").fill("Ann Vos")
+    await page.getByTestId("mandate-save").click()
+
+    await expect(page.getByTestId("mandate-facts")).toContainText("•••• 4300")
+    await expect(page.getByTestId("mandate-panel")).not.toContainText("0417")
   })
 })

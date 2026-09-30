@@ -1,0 +1,62 @@
+import {beforeEach, describe, expect, it, vi} from "vitest"
+import {mount} from "@vue/test-utils"
+import MandatePanel from "@/components/management/MandatePanel.vue"
+import {IncassoStanding} from "@/services/api"
+import {settle} from "../../helpers/testUtils"
+
+const api = vi.hoisted(() => ({findMandate: vi.fn(), recordMandate: vi.fn()}))
+
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
+  ...api,
+}))
+
+const recorded = {
+  membershipId: 9, standing: IncassoStanding.MANDATE_RECORDED, accountHolder: "Ann Vos", ibanLastFour: "4300",
+  reference: "BLUESHELL-9-20260901", signedOn: "2026-09-01", recordedBy: 3, recordedAt: "2026-09-02T10:00:00Z",
+}
+
+describe("the mandate panel", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    api.findMandate.mockResolvedValue({status: 200, data: {membershipId: 9, standing: IncassoStanding.NONE}})
+    api.recordMandate.mockResolvedValue({status: 200, data: recorded})
+  })
+
+  it("records a paper mandate and shows only the last four of the account", async () => {
+    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    await settle()
+    expect(wrapper.get('[data-testid="mandate-standing"]').text()).toBe("Pays by transfer")
+
+    await wrapper.get('[data-testid="mandate-record"]').trigger("click")
+    const fields = wrapper.findAllComponents({name: "VTextField"})
+    await fields[0]!.vm.$emit("update:modelValue", "NL91 ABNA 0417 1643 00")
+    await fields[1]!.vm.$emit("update:modelValue", "Ann Vos")
+    await fields[2]!.vm.$emit("update:modelValue", "2026-09-01")
+    await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
+    await settle()
+
+    expect(api.recordMandate).toHaveBeenCalledWith({path: {membershipId: 9}, body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", signedOn: "2026-09-01"}})
+    expect(wrapper.get('[data-testid="mandate-standing"]').text()).toBe("Collected by incasso")
+    expect(wrapper.get('[data-testid="mandate-facts"]').text()).toContain("•••• 4300")
+    expect(wrapper.text()).not.toContain("0417")
+    expect(wrapper.emitted("changed")).toHaveLength(1)
+    expect(wrapper.get('[data-testid="mandate-record"]').text()).toBe("Replace the mandate")
+  })
+
+  it("says why a mandate was refused, and cancels", async () => {
+    api.recordMandate.mockResolvedValue({status: 400, error: {code: "InvalidIban", detail: "That is not a valid IBAN."}})
+    api.findMandate.mockResolvedValue({status: 200, data: {membershipId: 9, standing: IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS}})
+    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    await settle()
+    expect(wrapper.get('[data-testid="mandate-standing"]').text()).toContain("no bank details")
+
+    await wrapper.get('[data-testid="mandate-record"]').trigger("click")
+    await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
+    await settle()
+    expect(wrapper.get('[data-testid="mandate-failure"]').text()).toContain("not a valid IBAN")
+
+    await wrapper.get('[data-testid="mandate-cancel"]').trigger("click")
+    expect(wrapper.find('[data-testid="mandate-form"]').exists()).toBe(false)
+  })
+})

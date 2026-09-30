@@ -62,6 +62,7 @@ class DiscordDoorServiceTest {
         assertThat(DiscordDoor.entries.map { DiscordDoor.of(it.key) }).containsExactlyElementsOf(DiscordDoor.entries)
         assertThat(DiscordDoor.of("WELCOME")).isNull()
         assertThat(DiscordDoorsProperties().channelOf(DiscordDoor.SUGGESTIONS)).isEqualTo("sitecie")
+        assertThat(DiscordDoorsProperties().channelOf(DiscordDoor.STARBOARD)).isEqualTo("starboard")
         assertThat(plain("💡 Sitecie_Suggestions")).isEqualTo("sitecieSuggestions".lowercase())
     }
 }

@@ -3,9 +3,7 @@ package net.blueshell.api.discord.domain
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel
-import net.dv8tion.jda.api.entities.channel.attribute.IPermissionContainer
 import net.dv8tion.jda.api.entities.channel.concrete.Category
-import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Service
 import java.time.Clock
@@ -21,7 +19,7 @@ data class DiscordChannel(
 
 /**
  * The channels everybody in the server can see, in the order the server lists them, as the gateway
- * holds them. A channel hidden from @everyone is never named, so a mention of one reads as Discord
+ * holds them. A channel @everyone cannot view is never named, so a mention of one reads as Discord
  * shows it to an outsider. Null without a bot, or while the gateway has never had the server; the
  * last channels it had serve while it is away.
  */
@@ -37,17 +35,10 @@ class DiscordChannelDirectory(
         return kept.get { source.guild()?.let(::seenByEveryone) }
     }
 
-    private fun seenByEveryone(guild: Guild): List<DiscordChannel> {
-        val everyone = guild.publicRole
-
-        // The channel's own rule for @everyone decides; without one, its category's does.
-        fun hidden(channel: GuildChannel): Boolean {
-            val own = (channel as? IPermissionContainer)?.getPermissionOverride(everyone)
-            val rule = own ?: (channel as? ICategorizableChannel)?.parentCategory?.getPermissionOverride(everyone)
-            return rule?.denied?.contains(Permission.VIEW_CHANNEL) ?: false
-        }
-        return guild.channels
-            .filter { it !is Category && !hidden(it) }
+    // What @everyone may see once the server's base permissions and the channel's overrides are
+    // applied, as Discord itself works it out.
+    private fun seenByEveryone(guild: Guild): List<DiscordChannel> =
+        guild.channels
+            .filter { it !is Category && guild.publicRole.hasPermission(it, Permission.VIEW_CHANNEL) }
             .map { DiscordChannel(it.id, it.name, (it as? ICategorizableChannel)?.parentCategory?.name) }
-    }
 }

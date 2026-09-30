@@ -11630,6 +11630,7 @@ paths:
           - welcome
           - board
           - suggestions
+          - starboard
           type: string
       responses:
         '302':
@@ -12050,6 +12051,7 @@ paths:
           - welcome
           - board
           - suggestions
+          - starboard
           type: string
       responses:
         '302':
@@ -12900,7 +12902,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up, or Discord has not answered yet
-      summary: Recent messages the Discord server starred, which the home page shows
+      summary: What the Discord server starred lately, most stars first, for the home page
       tags:
       - Discord
   /esports/games/{game}:

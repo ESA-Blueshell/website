@@ -111,10 +111,10 @@ class RestStarboardSource(
 }
 
 /**
- * The starboard as the home page shows it. A message makes it with at least [MIN_STARS] stars and
- * at most [MAX_AGE] old, from a channel everybody in the server can see, so the public site never
- * quotes a members-only room. Kept for [KEPT_FOR], longer than the voice rooms, since stars move
- * slowly. Null without a bot, or while Discord has never answered.
+ * The starboard as the home page shows it, most stars first. A message makes it with at least
+ * [MIN_STARS] stars and at most [MAX_AGE] old, from a channel everybody in the server can see, so
+ * the public site never quotes a members-only room. Kept for [KEPT_FOR], longer than the voice
+ * rooms, since stars move slowly. Null without a bot, or while Discord has never answered.
  */
 @Service
 class StarboardService(
@@ -132,7 +132,7 @@ class StarboardService(
         return recent
             .filter { it.stars >= MIN_STARS && it.postedAt >= since }
             .mapNotNull { message -> open[message.channelId]?.let { StarboardEntry(message, it) } }
-            .sortedByDescending { it.message.postedAt }
+            .sortedWith(compareByDescending<StarboardEntry> { it.message.stars }.thenByDescending { it.message.postedAt })
             .take(SHOWN)
     }
 
@@ -140,6 +140,6 @@ class StarboardService(
         const val MIN_STARS = 3
         val MAX_AGE: Duration = Duration.ofDays(30)
         val KEPT_FOR: Duration = Duration.ofMinutes(10)
-        const val SHOWN = 12
+        const val SHOWN = 25
     }
 }

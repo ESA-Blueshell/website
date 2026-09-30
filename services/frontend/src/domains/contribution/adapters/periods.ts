@@ -9,9 +9,12 @@ import {
   deleteContributionPeriodById,
   findContributionPeriods,
   findCurrentContributionPeriod,
+  findCurrentPeriodStanding,
+  type PeriodStanding,
   updateContributionPeriod,
   type UpdateContributionPeriodRequest,
 } from "@/services/api"
+import {readOr} from "@/utils/answers"
 
 /**
  * The period contributions are charged over right now, or nothing where there is no open one.
@@ -20,6 +23,11 @@ import {
 export async function readCurrentPeriod(): Promise<ContributionPeriodResponse | null> {
   const res = await findCurrentContributionPeriod({throwOnError: true})
   return res.data ?? null
+}
+
+/** How the current period stands, or nothing before any period exists or where it could not be read. */
+export async function readPeriodStanding(): Promise<PeriodStanding | null> {
+  return readOr(findCurrentPeriodStanding(), null)
 }
 
 /**

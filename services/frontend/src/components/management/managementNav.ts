@@ -14,6 +14,8 @@ export interface ManagementEntry {
   tab?: "alerts" | "members"
   /** Carries the count of the reader's alerts beside its name. */
   counted?: boolean
+  /** On only at its own address, not below it: the dashboard sits above every page. */
+  exact?: boolean
 }
 
 /** A group of pages, named for the job they share. */
@@ -24,7 +26,13 @@ export interface ManagementGroup {
 }
 
 const GROUPS: ManagementGroup[] = [
-  {label: "Overview", entries: [{label: "Alerts", to: "/management/alerts", tab: "alerts", counted: true}]},
+  {
+    label: "Overview",
+    entries: [
+      {label: "Dashboard", to: "/management", exact: true},
+      {label: "Alerts", to: "/management/alerts", tab: "alerts", counted: true},
+    ],
+  },
   {
     label: "Members",
     entries: [
@@ -53,4 +61,5 @@ export const managementFor = (reader: ManagementReader): ManagementGroup[] =>
     : []
 
 /** Whether [path] is on the page [entry] leads to, or one below it. */
-export const isOn = (path: string, entry: ManagementEntry): boolean => path === entry.to || path.startsWith(`${entry.to}/`)
+export const isOn = (path: string, entry: ManagementEntry): boolean =>
+  path === entry.to || (!entry.exact && path.startsWith(`${entry.to}/`))

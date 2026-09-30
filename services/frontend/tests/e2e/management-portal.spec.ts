@@ -10,9 +10,9 @@ test.describe("the Management portal", () => {
     await page.getByTestId("nav-account").click()
     await page.getByTestId("nav-switch-management").first().click()
 
-    await expect(page).toHaveURL(/\/management\/users$/)
+    await expect(page).toHaveURL(/\/management$/)
     await expect(page.getByTestId("management-bar")).toBeVisible()
-    await expect(page.getByTestId("member-manager-table")).toBeVisible()
+    await expect(page.getByTestId("management-dashboard")).toBeVisible()
 
     await page.getByTestId("management-account").click()
     await page.getByTestId("management-back-to-site").click()

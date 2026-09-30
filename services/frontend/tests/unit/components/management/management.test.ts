@@ -41,6 +41,9 @@ describe("Management's navigation", () => {
     expect(isOn("/management/users", users)).toBe(true)
     expect(isOn("/management/users/4", users)).toBe(true)
     expect(isOn("/management/users-old", users)).toBe(false)
+    const dashboard = {label: "Dashboard", to: "/management", exact: true}
+    expect(isOn("/management", dashboard)).toBe(true)
+    expect(isOn("/management/users", dashboard)).toBe(false)
   })
 })
 
@@ -126,7 +129,7 @@ describe("the ways into Management", {timeout: 20_000}, () => {
       ["/management/cohorts/targets", "/management/platforms/brevo/lists"],
       ["/management/cohort/7", "/management/platforms/brevo/cohort/7"],
       ["/management/cohorts/periods", "/management/platforms/brevo/periods"],
-      ["/management", "/management/users"],
+      ["/management", "/management"],
     ]
 
     for (const [from, to] of cases) {

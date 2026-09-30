@@ -450,7 +450,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/components/management/ManagementShell.vue"),
     meta: {requiresAuth: true, requiresBoard: true, management: true},
     children: [
-      {path: "", name: "management", redirect: "/management/users"},
+      {path: "", name: "management", component: () => import("@/pages/management/ManagementDashboard.vue"), meta: {title: "Overview"}},
       {path: "alerts", name: "alertList", component: () => import("@/pages/management/AlertList.vue"), meta: {title: "Alerts"}},
       {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
       {path: "users", name: "userManager", component: () => import("@/pages/management/UserManager.vue"), meta: {title: "Users"}},

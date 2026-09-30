@@ -91,6 +91,29 @@ export type AddressResponse = {
     zipCode?: string | null;
 };
 
+export type Alert = {
+    count: number;
+    hidden: boolean;
+    key: string;
+    kind: AlertKind;
+    since?: string | null;
+    subjectId?: number | null;
+    subjectLabel?: string | null;
+};
+
+export type AlertKeyRequest = {
+    key: string;
+};
+
+export enum AlertKind {
+    TARGET_DRIFT = 'TARGET_DRIFT',
+    COHORT_WITHOUT_LIST = 'COHORT_WITHOUT_LIST',
+    EMAIL_FAILED = 'EMAIL_FAILED',
+    JOB_DEAD = 'JOB_DEAD',
+    EXCEPTION_OPEN = 'EXCEPTION_OPEN',
+    ROLE_AWAITING_TWO_FACTOR = 'ROLE_AWAITING_TWO_FACTOR'
+}
+
 export type AnswerRequest = {
     optionSelections?: Array<boolean> | null;
     questionId: number;
@@ -7697,6 +7720,129 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type ListAlertsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/alerts';
+};
+
+export type ListAlertsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListAlertsError = ListAlertsErrors[keyof ListAlertsErrors];
+
+export type ListAlertsResponses = {
+    /**
+     * OK
+     */
+    200: Array<Alert>;
+};
+
+export type ListAlertsResponse = ListAlertsResponses[keyof ListAlertsResponses];
+
+export type HideAlertData = {
+    body: AlertKeyRequest;
+    path?: never;
+    query?: never;
+    url: '/management/alerts/hidden';
+};
+
+export type HideAlertErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type HideAlertError = HideAlertErrors[keyof HideAlertErrors];
+
+export type HideAlertResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type HideAlertResponse = HideAlertResponses[keyof HideAlertResponses];
+
+export type ShowAlertData = {
+    body: AlertKeyRequest;
+    path?: never;
+    query?: never;
+    url: '/management/alerts/shown';
+};
+
+export type ShowAlertErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ShowAlertError = ShowAlertErrors[keyof ShowAlertErrors];
+
+export type ShowAlertResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ShowAlertResponse = ShowAlertResponses[keyof ShowAlertResponses];
 
 export type ListCohortTargetSystemsData = {
     body?: never;

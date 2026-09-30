@@ -10,7 +10,8 @@ import type {VueWrapper} from "@vue/test-utils"
 import JobManager from "@/pages/management/JobManager.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const {mockRouterReplace, mockList, mockRetry, mockGetStats, mockStore} = vi.hoisted(() => ({
+const {mockRoute, mockRouterReplace, mockList, mockRetry, mockGetStats, mockStore} = vi.hoisted(() => ({
+  mockRoute: {query: {} as Record<string, string>},
   mockRouterReplace: vi.fn(),
   mockList: vi.fn(),
   mockRetry: vi.fn(),
@@ -20,7 +21,7 @@ const {mockRouterReplace, mockList, mockRetry, mockGetStats, mockStore} = vi.hoi
 
 vi.mock("vue-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-router")>()
-  return {...actual, useRouter: () => ({replace: mockRouterReplace})}
+  return {...actual, useRoute: () => mockRoute, useRouter: () => ({replace: mockRouterReplace})}
 })
 
 vi.mock("@/plugins/store", () => ({default: mockStore}))
@@ -56,6 +57,7 @@ describe("JobManager page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockStore.getters.isAdmin = true
+    mockRoute.query = {}
     mockList.mockResolvedValue(pageOf([job({id: 1, status: "FAILED"}), job({id: 2})], 2))
     mockRetry.mockResolvedValue({status: 200, data: job({id: 1, attempts: 2})})
     // Every field, because the stats panel calls toFixed on four of them and a partial object
@@ -82,6 +84,17 @@ describe("JobManager page", () => {
 
     expect(mockRouterReplace).toHaveBeenCalledWith("/")
     expect(mockList).not.toHaveBeenCalled()
+  })
+
+  it("opens already searching for what its address asks, in one read", async () => {
+    mockRoute.query = {search: "9"}
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect(mockList).toHaveBeenCalledTimes(1)
+    expect(mockList).toHaveBeenCalledWith({query: expect.objectContaining({search: "9"})})
+    expect((wrapper.get('[data-testid="job-filter-search"] input').element as HTMLInputElement).value).toBe("9")
   })
 
   it("draws a row for every job the api answered with", async () => {

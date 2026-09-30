@@ -6,6 +6,7 @@ import io.mockk.verify
 import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Expression
+import jakarta.persistence.criteria.Path
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.jobs.domain.JobExecutionQuery
 import net.blueshell.api.shared.enums.JobExecutionCategory
@@ -27,6 +28,22 @@ class JobExecutionSpecificationsTest {
         JobExecutionSpecifications.fromFilter(JobExecutionQuery(hideSkipped = false)).toPredicate(root, query, cb)
 
         verify(exactly = 1) { cb.equal(status, JobExecutionStatus.SKIPPED) }
+    }
+
+    @Test
+    fun `matches a number against the job's own id as well as the user who started it`() {
+        val id: Path<Long> = mockk()
+        val userId: Path<Long> = mockk()
+        val anyRoot: Root<JobExecution> =
+            mockk(relaxed = true) {
+                every { get<Long>("id") } returns id
+                every { get<Long>("initiatedByUserId") } returns userId
+            }
+
+        JobExecutionSpecifications.search("42").toPredicate(anyRoot, mockk(relaxed = true), cb)
+
+        verify { cb.equal(id, 42L) }
+        verify { cb.equal(userId, 42L) }
     }
 
     @Test

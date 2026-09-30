@@ -91,7 +91,7 @@ class CohortRemediationService(
     }
 
     /**
-     * Fetches the full external member list for [cohortId] and reconciles
+     * Fetches the full external member list for [targetId] and reconciles
      * the ledger against it. One network call per run; runs the fetch
      * outside any DB transaction.
      */

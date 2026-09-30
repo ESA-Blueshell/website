@@ -25,7 +25,7 @@ interface CohortRemediation {
     ): ExternalIdMapping
 
     /**
-     * Removes one member from the external target backing [cohortId]
+     * Removes one member from the external target backing [targetId]
      * and soft-deletes the corresponding stranger row from the
      * [net.blueshell.api.cohort.persistence.TargetMember]
      * ledger. Run by the `cohort.remove-external-member` job.
@@ -36,7 +36,7 @@ interface CohortRemediation {
     )
 
     /**
-     * Verifies [cohortId] against its live external member list: confirms
+     * Verifies [targetId] against its live external member list: confirms
      * present members, demotes vanished ones, records strangers, and
      * enqueues follow-up ADD/contact jobs for discrepancies. The
      * per-member sync path establishes health; this only verifies it.

@@ -79,7 +79,7 @@ const openCohort = (cohort: CohortSummary) => {
 }
 
 onMounted(async () => {
-  if (!store.getters.isAdmin) {
+  if (!(store.getters.isBoard || store.getters.isAdmin)) {
     await router.replace("/")
     return
   }

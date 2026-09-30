@@ -5,7 +5,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
 import TargetPath from "@/domains/cohorts/components/TargetPath.vue"
-import {DriftResolutionAction, TargetSystem, fetchCohort, queueCohortJob, setTargetEnforced, triggerReconcile, useDriftResolution, type CohortMember, type Cohort, type CohortSyncState, type TargetMapping} from "@/domains/cohorts"
+import {DriftResolutionAction, TargetSystem, evaluateMember, fetchCohort, setTargetEnforced, triggerReconcile, useDriftResolution, type CohortMember, type Cohort, type CohortSyncState, type TargetMapping} from "@/domains/cohorts"
 import {categoryLabel, driftLabel, earlierDrift, isMember, memberName, memberSystemLabel, syncChipColour, syncLabel, systemLabel} from "@/domains/cohorts"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
@@ -56,25 +56,17 @@ const load = async () => {
   }
 }
 
-const EVALUATE_USER = "cohort.evaluate-user"
+/** Switching and enforcing a target stay with an admin; the api refuses the board both. */
+const isAdmin = computed(() => store.getters.isAdmin === true)
 
 const reevaluateMember = async (userId: number) => {
-  triggering.value = EVALUATE_USER
+  triggering.value = "evaluate"
   errorMessage.value = null
   successMessage.value = null
-  try {
-    const queued = await queueCohortJob(EVALUATE_USER, {userId})
-    if (queued.ok) {
-      successMessage.value = `Job enqueued (#${queued.jobId ?? "?"}).`
-    } else {
-      errorMessage.value = `Failed to enqueue ${EVALUATE_USER}.`
-    }
-  } catch (error) {
-    errorMessage.value = (error as Error)?.message ?? `Failed to enqueue ${EVALUATE_USER}.`
-    $handleNetworkError(error)
-  } finally {
-    triggering.value = null
-  }
+  const answer = await evaluateMember(userId)
+  triggering.value = null
+  if (answer.ok) successMessage.value = "Queued a fresh look at their cohorts."
+  else errorMessage.value = answer.reason
 }
 
 /** The date only: a cohort's join time to the second says nothing an operator acts on. */
@@ -247,16 +239,12 @@ const submitLinkUser = async () => {
 const reconciling = ref<number | null>(null)
 
 const reconcileTarget = async (targetId: number) => {
+  if (cohortId.value == null) return
   reconciling.value = targetId
-  try {
-    await triggerReconcile(targetId)
-    successMessage.value = "Reconcile enqueued."
-  } catch (error) {
-    errorMessage.value = (error as Error)?.message ?? "Could not enqueue a reconcile."
-    $handleNetworkError(error)
-  } finally {
-    reconciling.value = null
-  }
+  const answer = await triggerReconcile(cohortId.value, targetId)
+  reconciling.value = null
+  if (answer.ok) successMessage.value = "Reconcile enqueued."
+  else errorMessage.value = answer.reason
 }
 
 /** Enforcing, or no longer enforcing, a target; the row reloads to show which it is. */
@@ -320,7 +308,7 @@ const backToCategory = () => {
 }
 
 onMounted(async () => {
-  if (!store.getters.isAdmin) {
+  if (!(store.getters.isBoard || store.getters.isAdmin)) {
     await router.replace("/")
     return
   }
@@ -609,6 +597,7 @@ watch(cohortId, () => void load())
                               @click="openInboundReconcile(mapping.targetId)"
                             />
                             <v-list-item
+                              v-if="isAdmin"
                               :data-testid="`cohort-detail-enforce-${mapping.system.toLowerCase()}`"
                               :disabled="!mapping.externalId"
                               prepend-icon="mdi-shield-check-outline"
@@ -616,6 +605,7 @@ watch(cohortId, () => void load())
                               @click="toggleEnforced(mapping)"
                             />
                             <v-list-item
+                              v-if="isAdmin"
                               :data-testid="`cohort-detail-switch-target-${mapping.system.toLowerCase()}`"
                               prepend-icon="mdi-swap-horizontal"
                               title="Switch target"

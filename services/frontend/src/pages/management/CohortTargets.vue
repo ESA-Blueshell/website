@@ -5,8 +5,12 @@ import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import {useTargetOverview} from "@/domains/cohorts"
 import {systemLabel, TargetSystem, type ExternalTarget} from "@/domains/cohorts"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
+import store from "@/plugins/store"
 
 defineOptions({name: "CohortTargets"})
+
+/** Deleting a list stays with an admin; the api refuses the board. */
+const isAdmin = computed(() => store.getters.isAdmin === true)
 
 const {
   loading,
@@ -332,7 +336,7 @@ onMounted(() => void load(TargetSystem.BREVO))
                   </v-btn>
                   <!-- Brevo cannot undo a delete, so only a list linked to nothing offers one. -->
                   <v-btn
-                    v-if="target.linkedTargetId == null"
+                    v-if="isAdmin && target.linkedTargetId == null"
                     color="error"
                     :data-testid="`cohort-target-delete-${target.externalId}`"
                     size="small"

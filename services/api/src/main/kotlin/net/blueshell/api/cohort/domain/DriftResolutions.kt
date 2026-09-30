@@ -133,7 +133,21 @@ class DriftResolutions(
         target(cohortId, targetId).enforced = enforced
     }
 
-    /** Records [people] as resolved by [action] on [cohortId], by whoever is acting now. */
+    /** Queues a reconcile of the target, started by hand. */
+    fun reconcile(
+        cohortId: Long,
+        targetId: Long,
+    ) {
+        target(cohortId, targetId)
+        jobs.reconcileTarget(targetId, JobTrigger.BY_HAND)
+    }
+
+    /** Queues a fresh look at which cohorts [userId] belongs to. */
+    fun evaluate(userId: Long) {
+        jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(userId), JobTrigger.BY_HAND)
+    }
+
+    /** Records [people] as resolved by [action] on [targetId], by whoever is acting now. */
     fun record(
         targetId: Long,
         action: DriftResolutionAction,

@@ -208,7 +208,7 @@ object CohortJobs {
 /** Direction of a single cohort-membership sync: the verb the payload carries. */
 enum class SyncCohortMembershipIntent { ADD, REMOVE }
 
-/** Queues a reconcile of target [cohortId], recording [trigger] on its run. */
+/** Queues a reconcile of target [targetId], recording [trigger] on its run. */
 fun JobQueue.reconcileTarget(
     targetId: Long,
     trigger: JobTrigger,

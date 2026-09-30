@@ -122,10 +122,14 @@ export const managementFor = (reader: NavReader): NavEntry[] => [
   ...(reader.admin
     ? [
       {label: "Manage jobs", to: "/management/jobs"},
-      {label: "Manage cohorts", to: "/management/cohorts"},
     ]
     : []),
-  ...(reader.board || reader.admin ? [{label: "Manage emails", to: "/management/emails"}] : []),
+  ...(reader.board || reader.admin
+    ? [
+      {label: "Manage cohorts", to: "/management/cohorts"},
+      {label: "Manage emails", to: "/management/emails"},
+    ]
+    : []),
 ]
 
 /** Where the bar sends somebody who is logged in, beside logging out. */

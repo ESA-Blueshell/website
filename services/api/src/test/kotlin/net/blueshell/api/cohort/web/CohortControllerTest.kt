@@ -132,6 +132,10 @@ class CohortControllerTest {
         assertThat(controller.proposeLinks(1L, 2L, ExternalDriftRequest(listOf("x")))).containsExactly(proposal)
         assertThat(controller.linkDrift(1L, 2L, LinkDriftRequest(listOf(LinkChoice("x", 5L))))).isEqualTo(outcome)
         controller.enforceTarget(1L, 2L, EnforceTargetRequest(true))
+        controller.reconcileTarget(1L, 2L)
+        controller.evaluateUser(7L)
+        verify(resolutions).reconcile(1L, 2L)
+        verify(resolutions).evaluate(7L)
         verify(resolutions).enforce(1L, 2L, true)
     }
 

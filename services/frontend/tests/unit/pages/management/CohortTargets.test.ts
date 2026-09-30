@@ -16,6 +16,8 @@ import {
   renameTarget,
 } from "@/domains/cohorts/adapters/cohorts"
 import {mountInApp} from "../helpers"
+import store, {type StoredLogin} from "@/plugins/store"
+import {boardLogin} from "../../helpers/mountPage"
 
 vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -34,7 +36,10 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
 const modal = (wrapper: Awaited<ReturnType<typeof mountPage>>, testid: string) =>
   wrapper.findAllComponents(BaseModal).find((m) => m.props("testid") === testid)!
 
-const mountPage = async () => {
+const adminLogin: StoredLogin = {...boardLogin, roles: ["ADMIN"] as StoredLogin["roles"]}
+
+const mountPage = async (login: StoredLogin = adminLogin) => {
+  store.commit("setLoginState", login)
   vi.mocked(fetchTargetDescriptors).mockResolvedValue([{system: "BREVO", kind: "LIST"}])
   vi.mocked(fetchTargetOptions).mockResolvedValue([{
     system: "BREVO", externalId: "7", kind: "LIST", label: "Guests", folderLabel: "Newsletter",
@@ -249,5 +254,12 @@ describe("CohortTargets", () => {
     modal(wrapper, "cohort-targets-tidy-dialog").vm.$emit("update:modelValue", false)
     await flushPromises()
     expect(modal(wrapper, "cohort-targets-tidy-dialog").props("modelValue")).toBe(false)
+  })
+
+  it("offers the board no delete", async () => {
+    const wrapper = await mountPage(boardLogin)
+
+    expect(wrapper.find("[data-testid=cohort-target-archive-7]").exists()).toBe(true)
+    expect(wrapper.find("[data-testid=cohort-target-delete-7]").exists()).toBe(false)
   })
 })

@@ -186,6 +186,25 @@ class CohortControllerIT : UserTestSupport() {
     }
 
     @Test
+    fun `the board reads a cohort and reconciles its target, and switching it stays with an admin`() {
+        val board = createUserWithRole(Role.BOARD)
+        val cohort = newCohort()
+        val target = newTarget(cohort, externalId = "list-12")
+
+        mvc.perform(get("/management/cohorts/{id}", cohort.id).with(signedIn(board))).andExpect(status().isOk)
+        mvc
+            .perform(post("/management/cohorts/{id}/targets/{targetId}/reconcile", cohort.id, target.id).with(signedIn(board)))
+            .andExpect(status().isNoContent)
+        mvc
+            .perform(
+                put("/management/cohorts/{id}/targets/{targetId}", cohort.id, target.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"externalId":"new-list","deletePrevious":false,"reconcileNow":false}""")
+                    .with(signedIn(board)),
+            ).andExpect(status().isForbidden)
+    }
+
+    @Test
     fun `only an admin enforces a target`() {
         val board = createUserWithRole(Role.BOARD)
         val admin = createUserWithRole(Role.ADMIN)

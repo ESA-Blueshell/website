@@ -1882,6 +1882,18 @@ export type MemberActivationRequest = {
     username: string;
 };
 
+export type MemberPeriodContribution = {
+    endDate: string;
+    fee?: number | null;
+    feeType?: BulkFeeType | null;
+    lastEmailAt?: string | null;
+    lastEmailKind?: ContributionEmailKind | null;
+    paid: boolean;
+    paidAt?: string | null;
+    periodId: number;
+    startDate: string;
+};
+
 export type MemberProfileResponse = {
     bhv: boolean;
     conditionsAcceptedAt?: string;
@@ -12499,6 +12511,49 @@ export type AccountStandingResponses = {
 };
 
 export type AccountStandingResponse2 = AccountStandingResponses[keyof AccountStandingResponses];
+
+export type FindMemberContributionsData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/contributions';
+};
+
+export type FindMemberContributionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindMemberContributionsError = FindMemberContributionsErrors[keyof FindMemberContributionsErrors];
+
+export type FindMemberContributionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<MemberPeriodContribution>;
+};
+
+export type FindMemberContributionsResponse = FindMemberContributionsResponses[keyof FindMemberContributionsResponses];
 
 export type FindGameAccountsData = {
     body?: never;

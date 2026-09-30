@@ -14,6 +14,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "email",
     allowedDependencies = [
+        // Failed and bounced emails raise an alert.
+        "alerts :: api",
         // A send is recorded as a job execution through JobExecutionService.
         "jobs :: api",
         // DEBT. EmailManagementController reads JobExecution.status to decide

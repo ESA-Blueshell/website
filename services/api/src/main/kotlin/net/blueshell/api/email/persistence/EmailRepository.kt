@@ -8,6 +8,16 @@ import java.time.Instant
 interface EmailRepository : BaseRepository<Email, Long> {
     fun countByDeliveryStatus(status: EmailDeliveryStatus): Long
 
+    fun countByDeliveryStatusInAndCreatedAtAfter(
+        statuses: Collection<EmailDeliveryStatus>,
+        after: Instant,
+    ): Long
+
+    fun findTopByDeliveryStatusInAndCreatedAtAfterOrderByIdDesc(
+        statuses: Collection<EmailDeliveryStatus>,
+        after: Instant,
+    ): Email?
+
     fun findByTrackingToken(trackingToken: String): Email?
 
     fun findByMessageId(messageId: String): Email?

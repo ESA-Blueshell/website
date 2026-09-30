@@ -13,6 +13,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "exceptions",
     allowedDependencies = [
+        // Open faults raise an alert.
+        "alerts :: api",
         // Open kernel: the pages are @AdminOnly.
         "security",
         // Open kernel.

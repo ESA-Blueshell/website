@@ -16,25 +16,42 @@ object UserManagerHelper {
         page: Page,
         query: String,
     ) {
-        UserListHelper.searchUser(page, query, searchTestId = "member-manager-search-input")
+        TestIdLocatorHelper.byTestId(page, "member-manager-search-input").fill(query)
     }
 
     fun clickAddUser(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "bulk-actions-menu-btn").click()
         TestIdLocatorHelper.byTestId(page, "member-manager-add-user-btn").click()
+    }
+
+    /** A row's actions live in its menu, so each one is reached by opening the menu first. */
+    private fun action(
+        page: Page,
+        userId: Long,
+        testId: String,
+    ): Locator {
+        TestIdLocatorHelper.byTestId(page, "member-manager-actions-$userId").click()
+        return TestIdLocatorHelper.byTestId(page, "$testId-$userId")
     }
 
     fun clickEditRoles(
         page: Page,
         userId: Long,
     ) {
-        TestIdLocatorHelper.byTestId(page, "member-manager-edit-roles-btn-$userId").click()
+        action(page, userId, "member-manager-edit-roles-btn").click()
     }
 
+    fun clickAccountSecurity(
+        page: Page,
+        userId: Long,
+    ) {
+        action(page, userId, "member-manager-account-security-btn").click()
+    }
+
+    /** Opens the row's menu and answers its Delete entry. */
     fun deleteButton(
         page: Page,
         userId: Long,
-    ): Locator = TestIdLocatorHelper.byTestId(page, "member-manager-delete-btn-$userId")
+    ): Locator = action(page, userId, "member-manager-delete-btn")
 
     fun clickDeleteUser(
         page: Page,

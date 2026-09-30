@@ -48,7 +48,8 @@ test.describe("management recovery lifecycle", () => {
     // The user row should be visible in the unified table
     await expect(page.getByTestId(`member-manager-row-${targetId}`)).toBeVisible()
 
-    // Click the delete button for this user
+    // Delete sits in the row's actions menu.
+    await page.getByTestId(`member-manager-actions-${targetId}`).click()
     await page.getByTestId(`member-manager-delete-btn-${targetId}`).click()
     await expect(page.getByTestId("deletion-confirmation-dialog")).toBeVisible()
     await page.getByTestId("deletion-confirmation-confirm-btn").click()

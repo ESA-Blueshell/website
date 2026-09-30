@@ -1,5 +1,4 @@
 import {expect, test, type Page} from "./test"
-import {chooseBulkAction} from "./bulkActions"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
 /**
@@ -16,11 +15,11 @@ async function openManagerWithSelection(page: Page): Promise<void> {
   await loginAsBoard(page.context())
   await page.goto("/management/users")
   await page.getByTestId("member-manager-table").waitFor()
-  await page.getByTestId("member-manager-checkbox-1").locator("input").click()
+  await page.getByTestId("member-manager-checkbox-1").click()
 }
 
 async function openBulkAction(page: Page, testid: string): Promise<void> {
-  await chooseBulkAction(page, testid)
+  await page.getByTestId(testid).click()
   await page.getByTestId("bulk-action-dialog").waitFor()
 }
 
@@ -49,29 +48,19 @@ test.describe("ending and starting membership in bulk", () => {
     await expect(page.getByTestId("bulk-action-counts")).toContainText("1 selected")
     await expect(page.getByTestId("bulk-action-counts")).toContainText("0 will apply")
   })
-
-  test("neither action needs a contribution period selected", async ({page}) => {
-    await openManagerWithSelection(page)
-    await page.getByTestId("bulk-actions-menu-btn").click()
-
-    // Marking contributions is booked against a period; membership is not, so the two
-    // membership entries stay live whatever the period picker says.
-    await expect(page.getByTestId("bulk-action-end-membership")).not.toHaveClass(/v-list-item--disabled/)
-    await expect(page.getByTestId("bulk-action-start-membership")).not.toHaveClass(/v-list-item--disabled/)
-  })
 })
 
 test.describe("bulk membership without a selection", () => {
-  test("the membership actions are offered but inert until somebody is picked", async ({page}) => {
+  test("the membership actions appear once somebody is picked", async ({page}) => {
     await page.setViewportSize({width: 1400, height: 900})
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto("/management/users")
     await page.getByTestId("member-manager-table").waitFor()
 
-    await page.getByTestId("bulk-actions-menu-btn").click()
-
-    await expect(page.getByTestId("bulk-action-end-membership")).toHaveClass(/v-list-item--disabled/)
-    await expect(page.getByTestId("bulk-action-start-membership")).toHaveClass(/v-list-item--disabled/)
+    await expect(page.getByTestId("bulk-action-end-membership")).toHaveCount(0)
+    await page.getByTestId("member-manager-checkbox-1").click()
+    await expect(page.getByTestId("bulk-action-end-membership")).toBeVisible()
+    await expect(page.getByTestId("bulk-action-start-membership")).toBeVisible()
   })
 })

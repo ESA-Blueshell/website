@@ -75,4 +75,17 @@ export {
   type SaveRolesResult,
 } from "./adapters/roles"
 export {highestRole, highestRoleLabel} from "./roles"
+export {
+  MEMBERSHIP_WORDS,
+  NEEDS_LOOK_WORDS,
+  filterPeople,
+  fold,
+  peopleRows,
+  sortPeople,
+  type MembershipState,
+  type NeedsLook,
+  type PeopleFilter,
+  type PeopleSortKey,
+  type PersonRow,
+} from "./peopleList"
 export {MemberType, Role, RoleSource} from "@/services/api"

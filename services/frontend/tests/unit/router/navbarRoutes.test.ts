@@ -54,7 +54,7 @@ describe("the account security pages", () => {
 
 describe("the pages the fields and the parts are drawn on", () => {
   // The galleries import every island part, which a loaded runner transforms slowly.
-  it.each(["design/fields", "design/parts"])("reaches %s while developing, and loads its gallery", async (name) => {
+  it.each(["design/fields", "design/parts", "design/management"])("reaches %s while developing, and loads its gallery", async (name) => {
     const route = router.getRoutes().find(one => one.name === name)
     expect(route).toBeDefined()
 

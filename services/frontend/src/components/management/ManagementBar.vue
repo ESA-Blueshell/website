@@ -111,6 +111,8 @@ const account = computed(() =>
   align-items: center;
   gap: 1rem;
   height: 60px;
+  /* The island class stretches to fill its parent; a bar stays its own height. */
+  min-height: 0;
   padding: 0 20px 0 22px;
   background: color-mix(in oklab, var(--color-pit) 92%, transparent);
   border-bottom: 1px solid var(--color-hairline);

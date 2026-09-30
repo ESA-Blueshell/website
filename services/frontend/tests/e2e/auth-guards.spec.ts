@@ -18,8 +18,8 @@ test.describe("auth guards", () => {
 
     await page.goto("/management/jobs")
 
-    await expect(page).toHaveURL(/\/$/)
-    await expect(page.locator("#blueshell")).toBeVisible()
+    // Inside Management a refusal says so rather than sending the reader home.
+    await expect(page).toHaveURL(/\/unauthorized/)
   })
 
   test("allows admins to access job manager and retry failed jobs", async ({page}) => {

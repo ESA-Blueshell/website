@@ -82,12 +82,12 @@ test.describe("email manager — access control", () => {
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
   })
 
-  test("a member is redirected to home", async ({page}) => {
+  test("a member is shown the unauthorized page", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsMember(page.context())
 
     await page.goto("/management/mail/sent")
-    await expect(page).toHaveURL(/\/$/)
+    await expect(page).toHaveURL(/\/unauthorized/)
   })
 
   test("admin can access the email manager", async ({page}) => {

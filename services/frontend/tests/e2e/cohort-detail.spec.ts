@@ -173,7 +173,7 @@ test.describe("cohort cohort detail", () => {
     await page.goto(COMMITTEE_COHORT)
     await page.getByTestId("cohort-detail-back").click()
 
-    await expect(page).toHaveURL(/\/management\/cohorts\/committees$/)
+    await expect(page).toHaveURL(/\/management\/platforms\/brevo\/committees$/)
   })
 })
 

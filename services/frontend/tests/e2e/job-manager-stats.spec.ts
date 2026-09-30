@@ -52,6 +52,6 @@ test.describe("job manager stats panel", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/management/jobs")
-    await expect(page).toHaveURL(/\/$/)
+    await expect(page).toHaveURL(/\/unauthorized/)
   })
 })

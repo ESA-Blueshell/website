@@ -23,14 +23,18 @@ object UserManagerHelper {
         TestIdLocatorHelper.byTestId(page, "member-manager-add-user-btn").click()
     }
 
-    /** A row's actions live in its menu, so each one is reached by opening the menu first. */
+    /**
+     * A row's actions live in its menu, so each one is reached by opening the menu first. The
+     * trigger toggles, so an entry already showing is taken as it is rather than clicked shut.
+     */
     private fun action(
         page: Page,
         userId: Long,
         testId: String,
     ): Locator {
-        TestIdLocatorHelper.byTestId(page, "member-manager-actions-$userId").click()
-        return TestIdLocatorHelper.byTestId(page, "$testId-$userId")
+        val entry = TestIdLocatorHelper.byTestId(page, "$testId-$userId")
+        if (!entry.isVisible) TestIdLocatorHelper.byTestId(page, "member-manager-actions-$userId").click()
+        return entry
     }
 
     fun clickEditRoles(

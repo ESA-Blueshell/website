@@ -225,6 +225,8 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
 
 .mg-foot a {
   color: var(--color-brand);
+  /* A link inside a sentence is told apart by more than its colour. */
+  text-decoration: underline;
 }
 
 .mg-tabbar {

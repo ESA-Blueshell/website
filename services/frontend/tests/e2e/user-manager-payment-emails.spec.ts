@@ -59,7 +59,7 @@ async function openPaymentEmails(
     paymentEmailRefusal: options.refusal,
   })
   await loginAsBoard(page.context())
-  await page.goto("/user-manager")
+  await page.goto("/management/users")
 
   // Below lg the manager is a list rather than a table, and it selects with its own
   // controls. No viewport is pinned here, so each project drives the layout it is for.
@@ -388,7 +388,7 @@ test.describe("the payment emails action without a selection", () => {
     await page.setViewportSize({width: 1400, height: 900})
     await installApiMocks(page, {users: USERS, memberships: MEMBERSHIPS})
     await loginAsBoard(page.context())
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
     await page.getByTestId("member-manager-table").waitFor()
 
     await page.getByTestId("bulk-actions-menu-btn").click()

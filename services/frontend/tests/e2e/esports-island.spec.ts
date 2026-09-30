@@ -147,7 +147,7 @@ test.describe("the esports island", () => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
 
-    await page.goto("/management/cohorts")
+    await page.goto("/management/platforms/brevo")
 
     // The island must not have disturbed the rest of the app: no Tailwind
     // Preflight is imported, so Vuetify's own components look as they did.

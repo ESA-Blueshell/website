@@ -29,7 +29,7 @@ describe("the cohort listings", () => {
   })
 
   it("counts every cohort and opens a category", async () => {
-    const wrapper = await mountPage(CohortDashboard, {path: "/management/cohorts", login: adminLogin})
+    const wrapper = await mountPage(CohortDashboard, {path: "/management/platforms/brevo", login: adminLogin})
 
     expect(wrapper.get("[data-testid=cohort-total-count]").text()).toContain("2")
     expect(wrapper.get("[data-testid=cohort-category-card-committees]").text()).toContain("4")
@@ -39,7 +39,7 @@ describe("the cohort listings", () => {
   })
 
   it("lists one category's cohorts and opens one by click or key", async () => {
-    const wrapper = await mountPage(CohortCategory, {path: "/management/cohorts/committees", login: adminLogin})
+    const wrapper = await mountPage(CohortCategory, {path: "/management/platforms/brevo/committees", login: adminLogin})
     // Mounted outside a router view, the page would follow its own navigation; the push is what matters.
     const push = vi.spyOn(router, "push").mockResolvedValue(undefined)
 
@@ -55,7 +55,7 @@ describe("the cohort listings", () => {
   })
 
   it("gives the board the cohorts but not the engine-wide passes", async () => {
-    const wrapper = await mountPage(CohortDashboard, {path: "/management/cohorts", login: boardLogin})
+    const wrapper = await mountPage(CohortDashboard, {path: "/management/platforms/brevo", login: boardLogin})
 
     expect(wrapper.find("[data-testid=cohort-total-count]").exists()).toBe(true)
     expect(wrapper.find("[data-testid=cohort-action-reconcile-periods]").exists()).toBe(false)

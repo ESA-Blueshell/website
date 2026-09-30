@@ -9,7 +9,7 @@ object UserManagerHelper {
         frontendUrl: String,
     ) {
         page.navigate("$frontendUrl/user-manager")
-        page.waitForURL("**/user-manager**")
+        page.waitForURL("**/management/users**")
     }
 
     fun search(

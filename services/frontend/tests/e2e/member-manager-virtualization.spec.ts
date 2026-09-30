@@ -60,7 +60,7 @@ test.describe("member manager virtualization", () => {
     await loginAsAdmin(page.context())
     // The table renders at the lg breakpoint and up; below it the page is a list of cards.
     await page.setViewportSize({width: 1440, height: 900})
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
     await page.getByTestId("member-manager-row-1").waitFor()
   })
 

@@ -7,8 +7,8 @@ object AddressManagerHelper {
         page: Page,
         frontendUrl: String,
     ) {
-        page.navigate("$frontendUrl/addresses/manage")
-        page.waitForURL("**/addresses/manage**")
+        page.navigate("$frontendUrl/management/addresses")
+        page.waitForURL("**/management/addresses**")
     }
 
     fun openUsersWithAddress(page: Page) {

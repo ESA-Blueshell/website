@@ -141,7 +141,7 @@
       -->
       <button
         v-if="narrow && reader.loggedIn"
-        aria-label="Your account and management"
+        aria-label="Your account"
         :aria-expanded="side"
         class="site-bar__icon"
         :data-state="side ? 'open' : 'closed'"
@@ -154,40 +154,6 @@
           :size="26"
         />
       </button>
-
-      <dropdown-menu-root
-        v-if="!narrow && management.length > 0"
-        :modal="false"
-      >
-        <dropdown-menu-trigger
-          aria-label="Management"
-          class="site-bar__icon"
-          data-testid="nav-management"
-        >
-          <nav-mark
-            mark="management"
-            :size="26"
-          />
-        </dropdown-menu-trigger>
-        <dropdown-menu-content
-          align="end"
-          class="site-bar__menu site-bar__menu--wide"
-          :side-offset="0"
-        >
-          <dropdown-menu-item
-            v-for="entry in management"
-            :key="entry.to"
-            as-child
-          >
-            <router-link
-              class="site-bar__entry"
-              :to="entry.to"
-            >
-              {{ entry.label }}
-            </router-link>
-          </dropdown-menu-item>
-        </dropdown-menu-content>
-      </dropdown-menu-root>
 
       <dropdown-menu-root
         v-if="!narrow && reader.loggedIn"
@@ -218,6 +184,18 @@
               :to="entry.to"
             >
               {{ entry.label }}
+            </router-link>
+          </dropdown-menu-item>
+          <dropdown-menu-item
+            v-if="managementSwitch"
+            as-child
+          >
+            <router-link
+              class="site-bar__entry site-bar__switch"
+              data-testid="nav-switch-management"
+              :to="managementSwitch.to"
+            >
+              {{ managementSwitch.label }}
             </router-link>
           </dropdown-menu-item>
           <dropdown-menu-item
@@ -330,7 +308,7 @@
   <nav
     v-if="side"
     ref="sidePanel"
-    aria-label="Your account and management"
+    aria-label="Your account"
     class="site-bar-drawer site-bar-drawer--end"
     data-testid="nav-side-panel"
     tabindex="-1"
@@ -357,20 +335,15 @@
       Log out
     </button>
 
-    <template v-if="management.length > 0">
-      <p class="site-bar-drawer__label">
-        Management
-      </p>
-      <router-link
-        v-for="entry in management"
-        :key="entry.to"
-        class="site-bar-drawer__entry"
-        :to="entry.to"
-        @click="side = false"
-      >
-        {{ entry.label }}
-      </router-link>
-    </template>
+    <router-link
+      v-if="managementSwitch"
+      class="site-bar-drawer__entry site-bar__switch"
+      data-testid="nav-switch-management"
+      :to="managementSwitch.to"
+      @click="side = false"
+    >
+      {{ managementSwitch.label }}
+    </router-link>
   </nav>
 </template>
 
@@ -388,7 +361,7 @@ import NavMark from "@/components/common/NavMark.vue"
 import {
   accountFor,
   covers,
-  managementFor,
+  managementSwitchFor,
   sectionsFor,
   SOCIALS,
   type NavReader,
@@ -510,7 +483,7 @@ const reader = computed<NavReader>(() => ({
 }))
 
 const sections = computed(() => sectionsFor(currentGames.value, currentCommittees.value, casualGames.value))
-const management = computed(() => managementFor(reader.value))
+const managementSwitch = computed(() => managementSwitchFor(reader.value))
 const account = computed(() => accountFor(reader.value))
 </script>
 
@@ -696,6 +669,11 @@ const account = computed(() => accountFor(reader.value))
  * "Manage account recovery". The rule is about a menu under a labelled entry, where a panel
  * wider than its label points at nothing. These are placed by reka as usual.
  */
+:deep(.site-bar__switch) {
+  color: var(--color-brand);
+  border-top: 1px solid var(--color-hairline);
+}
+
 :deep(.site-bar__menu--wide) {
   width: max-content;
   min-width: 12rem;

@@ -1,0 +1,35 @@
+# One row per fault: exceptions of one type thrown from one place share a fingerprint, so a fault
+# that fires a thousand times is still one row, with its latest message and trace.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-30-recorded-exception.yaml
+      id: recorded-exception
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: recorded_exception
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_recorded_exception, nullable: false}
+              - column: {name: fingerprint, type: CHAR(64), constraints: {nullable: false, unique: true, uniqueConstraintName: uk_recorded_exception_fingerprint}}
+              - column: {name: exception_type, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: thrown_at, type: VARCHAR(512), constraints: {nullable: false}}
+              - column: {name: first_seen_at, type: DATETIME(6), constraints: {nullable: false}}
+              - column: {name: last_seen_at, type: DATETIME(6), constraints: {nullable: false}}
+              - column: {name: occurrences, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: latest_message, type: LONGTEXT}
+              - column: {name: latest_stack_trace, type: LONGTEXT}
+              - column: {name: latest_source, type: VARCHAR(16), constraints: {nullable: false}}
+              - column: {name: latest_concern, type: VARCHAR(512), constraints: {nullable: false}}
+              - column: {name: latest_job_execution_id, type: BIGINT}
+              - column: {name: resolved_at, type: DATETIME(6)}
+        - createIndex:
+            tableName: recorded_exception
+            indexName: idx_recorded_exception_last_seen
+            columns:
+              - column: {name: last_seen_at}
+      rollback:
+        - dropTable: {tableName: recorded_exception}

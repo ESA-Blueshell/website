@@ -123,7 +123,7 @@ class StarboardTest {
         service.entries()
 
         verify(source, times(1)).recent()
-        assertThat(StarboardService(provided(null), openChannels, clock).entries()).isNull()
+        assertThat(StarboardService(provided(null), openChannels).entries()).isNull()
     }
 
     @Test

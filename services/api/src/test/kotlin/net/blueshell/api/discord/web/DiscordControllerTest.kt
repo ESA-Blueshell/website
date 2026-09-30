@@ -99,20 +99,12 @@ class DiscordControllerTest {
         val response = DiscordController(mock(), mock(), starboard).starboard()
 
         assertThat(response.headers.cacheControl).contains("max-age=300")
-        assertThat(response.body!!.single()).isEqualTo(
-            StarboardEntryResponse(
-                id = "9",
-                authorName = "The Old Man",
-                authorNickname = "Joris",
-                avatar = null,
-                text = "hi",
-                image = null,
-                stars = 12,
-                channel = "general",
-                href = "https://discord.com/channels/324/611/9",
-                postedAt = Instant.parse("2026-09-23T08:22:05Z"),
-            ),
-        )
+        // Read field by field: the getters are what the serialiser calls.
+        val shown = response.body!!.single()
+        assertThat(listOf(shown.id, shown.authorName, shown.authorNickname, shown.avatar, shown.text, shown.image))
+            .containsExactly("9", "The Old Man", "Joris", null, "hi", null)
+        assertThat(listOf(shown.stars, shown.channel, shown.href, shown.postedAt))
+            .containsExactly(12, "general", "https://discord.com/channels/324/611/9", Instant.parse("2026-09-23T08:22:05Z"))
 
         val offline: StarboardService = mock { on { entries() } doReturn null }
         assertThat(DiscordController(mock(), mock(), offline).starboard().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)

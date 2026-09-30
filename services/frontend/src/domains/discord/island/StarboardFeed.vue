@@ -134,7 +134,6 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   --color-brand: #5865f2;
   --color-brand-lit: #c9cdfb;
   --color-brand-ink: #00a8fc;
-  --discord-font: "gg sans", "Noto Sans", "Helvetica Neue", helvetica, arial, sans-serif;
   --font-body: var(--discord-font);
   --font-prose: var(--discord-font);
 

@@ -158,7 +158,10 @@ const glyphOf = (room: VoiceRoom) => {
 </template>
 
 <style scoped>
+/* Discord's own type, for the widget and the starboard under it. */
 .discord-band {
+  --discord-font: "gg sans", "Noto Sans", "Helvetica Neue", helvetica, arial, sans-serif;
+
   position: relative;
   isolation: isolate;
   width: 100%;
@@ -200,7 +203,7 @@ const glyphOf = (room: VoiceRoom) => {
   border-radius: 14px;
   background: #2b2d31;
   color: #dbdee1;
-  font-family: var(--font-body);
+  font-family: var(--discord-font);
 }
 
 .widget__head {

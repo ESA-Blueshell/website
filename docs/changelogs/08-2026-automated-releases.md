@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.13.0](https://github.com/ESA-Blueshell/website/compare/v1.12.0...v1.13.0) (2026-09-30)
+
+
+### Features
+
+* an approved event's Discord event is listed at approval, however far ahead ([#2015](https://github.com/ESA-Blueshell/website/issues/2015)) ([0a05517](https://github.com/ESA-Blueshell/website/commit/0a05517faaada6562b7c71649c7fab3e4ba2c07b))
+* **committees:** add a committee from the reel, archiving is the only way off the pages, and the archived row drags ([#1953](https://github.com/ESA-Blueshell/website/issues/1953)) ([4f51a00](https://github.com/ESA-Blueshell/website/commit/4f51a001674a1f845d5b321a22a2f97a8f8e711a))
+* **platform:** the Vault injector, its env and api-secrets go, now the api reads Vault itself ([#1862](https://github.com/ESA-Blueshell/website/issues/1862)) ([35e5ae7](https://github.com/ESA-Blueshell/website/commit/35e5ae7e190d72e3d3d0b86576748784daaf3f90))
+* the home page shows what the Discord server starred lately ([#2018](https://github.com/ESA-Blueshell/website/issues/2018)) ([b9789b2](https://github.com/ESA-Blueshell/website/commit/b9789b27df61bab3ee50c7c5d3824b95edfbe4cb))
+
+
+### Bug Fixes
+
+* an email's Linked job opens that job for an admin, and is plain text for the rest of the board ([#2004](https://github.com/ESA-Blueshell/website/issues/2004)) ([551b4da](https://github.com/ESA-Blueshell/website/commit/551b4dae566e5f41662e9081a46a236e6dc6ab35))
+* **api:** a plain request forwarded on port 443 is redirected to HTTPS, not answered with a 500 ([#1959](https://github.com/ESA-Blueshell/website/issues/1959)) ([27ed684](https://github.com/ESA-Blueshell/website/commit/27ed6845142c56c32bc9bcd5e20759aa84632bb3))
+* **api:** signature files leave the database, and the api deletes their bytes at start ([#1952](https://github.com/ESA-Blueshell/website/issues/1952)) ([e582a23](https://github.com/ESA-Blueshell/website/commit/e582a232f755b632d56bf3b648e0e34e6e229d0b))
+* **api:** the Valkey connection opens before the pod takes traffic, so no first request pays for it ([#1985](https://github.com/ESA-Blueshell/website/issues/1985)) ([be1fc4f](https://github.com/ESA-Blueshell/website/commit/be1fc4f85f62638f44bdee4c5055577fc698fef8))
+* **discord:** a guild with a feature the client does not know is still read ([#1955](https://github.com/ESA-Blueshell/website/issues/1955)) ([6217909](https://github.com/ESA-Blueshell/website/commit/62179093fea8162456919dfa4eff30408ccb83e8))
+* **frontend:** deleting a contribution period from its edit dialog deletes that period ([#2002](https://github.com/ESA-Blueshell/website/issues/2002)) ([3179f17](https://github.com/ESA-Blueshell/website/commit/3179f179091233f4ca0932ac66ad5b67012d3d8c)), closes [#1929](https://github.com/ESA-Blueshell/website/issues/1929)
+* **frontend:** the user, address and recovery managers are the board's, in the router too ([#1998](https://github.com/ESA-Blueshell/website/issues/1998)) ([41803df](https://github.com/ESA-Blueshell/website/commit/41803df34c2147880a1e0fa64d5be0f206bd0fe9)), closes [#1928](https://github.com/ESA-Blueshell/website/issues/1928)
+* **platform:** the api canary takes load before its analysis, so the first check has data ([#1986](https://github.com/ESA-Blueshell/website/issues/1986)) ([2195bbc](https://github.com/ESA-Blueshell/website/commit/2195bbcc8747275a34aeb5ab3171580ea85d3c75))
+
+
+### Performance
+
+* pages stand at once with placeholders, and the games and committees answer in one pass ([#1989](https://github.com/ESA-Blueshell/website/issues/1989)) ([6c529d6](https://github.com/ESA-Blueshell/website/commit/6c529d6fa13dc455d9a9e6f9c341cdf3e20fec95)), closes [#1957](https://github.com/ESA-Blueshell/website/issues/1957)
+
+
+### Refactoring
+
+* **api:** application.yaml holds no secret, and one profile names every secret the environment gives ([#1962](https://github.com/ESA-Blueshell/website/issues/1962)) ([fecb2df](https://github.com/ESA-Blueshell/website/commit/fecb2dfbb9ec84e06939d364122b09dcb2e5dcd3))
+
+
+### Build and Dependencies
+
+* **deps:** bump undici ([#1993](https://github.com/ESA-Blueshell/website/issues/1993)) ([892d07d](https://github.com/ESA-Blueshell/website/commit/892d07df448041662329b3e42ade3c72314f0d01))
+
 ## [1.12.0](https://github.com/ESA-Blueshell/website/compare/v1.11.0...v1.12.0) (2026-09-29)
 
 

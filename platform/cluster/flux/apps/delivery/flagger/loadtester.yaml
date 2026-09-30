@@ -44,13 +44,14 @@ rules:
       - get
   # The post-rollout check reads the tag off the primary Deployment, so the
   # version it expects comes from the cluster rather than from the webhook.
+  # The confirm-promotion gates compare the canary's image with the primary's.
   - apiGroups:
       - apps
     resources:
       - deployments
     verbs:
       - get
-  # The pre-rollout webhook makes the migrate Job from the CronJob template and
+  # The confirm-rollout webhook makes the migrate Job from the CronJob template and
   # waits on it; the pod list and logs are how a failure gets reported.
   - apiGroups:
       - batch

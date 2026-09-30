@@ -55,8 +55,14 @@ spec:
           type: bash
           cmd: >-
             phase=$(kubectl -n default get canary api -o jsonpath='{.status.phase}');
-            echo "api=$phase";
-            [ "$phase" != Progressing ] && [ "$phase" != Failed ]
+            want=$(kubectl -n default get deploy api -o jsonpath='{.spec.template.spec.containers[0].image}');
+            have=$(kubectl -n default get deploy api-primary -o jsonpath='{.spec.template.spec.containers[0].image}');
+            echo "api=$phase canary=$want primary=$have";
+            case "$phase" in
+            Waiting|Progressing|Failed) exit 1;;
+            WaitingPromotion|Promoting|Finalising) exit 0;;
+            *) [ "$want" = "$have" ];;
+            esac
 
       # Ready is not the same as changed: a promotion that kept the old pods
       # reports healthy and serves yesterday's build. Both sides come from the

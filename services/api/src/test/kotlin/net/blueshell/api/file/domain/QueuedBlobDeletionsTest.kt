@@ -4,8 +4,11 @@ import net.blueshell.api.file.api.BlobStore
 import net.blueshell.api.file.persistence.BlobToDelete
 import net.blueshell.api.file.persistence.BlobToDeleteRepository
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -61,6 +64,17 @@ class QueuedBlobDeletionsTest {
         assertThat(store.keys).containsExactly("signatures/stuck.png")
         verify(queue).delete(gone)
         verify(queue, never()).delete(refused)
+    }
+
+    @Test
+    fun `a queue that cannot be read leaves the start alone and deletes nothing`() {
+        val queue = mock<BlobToDeleteRepository> { on { findAll() } doThrow IllegalStateException("no such table") }
+        val store = mock<BlobStore>()
+
+        assertThatCode { QueuedBlobDeletions(queue, store).onReady() }.doesNotThrowAnyException()
+
+        verifyNoInteractions(store)
+        verify(queue, never()).delete(any<BlobToDelete>())
     }
 
     @Test

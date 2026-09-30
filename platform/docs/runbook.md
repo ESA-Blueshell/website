@@ -50,7 +50,8 @@ commit by one automation run, so they cannot reach the cluster apart.
 
 Flux applies the pair; Flagger turns each one
 into a blue/green rollout and the two `confirm-promotion` gates hold
-each canary until the other is out of `Progressing` and not `Failed`.
+each canary until the other is in `WaitingPromotion` or past it, or has
+no image left to promote. `Failed` holds it too.
 One release of backward compatibility is still the contract: promotion
 copies the canary spec onto the `-primary` Deployment, which then rolls
 normally, so the two apex Services finish flipping seconds apart.
@@ -63,8 +64,9 @@ flux -n flux-system get kustomization apps-stateless
 
 Phases: `Initializing` → `Initialized` on first install, then
 `Progressing` → `WaitingPromotion` → `Promoting` → `Succeeded` per
-release. A canary parked in `WaitingPromotion` is waiting for its
-sibling — check the other one's phase before touching anything.
+release, with the api first in `Waiting` while it migrates. A canary
+parked in `WaitingPromotion` is waiting for its sibling — check the
+other one's phase before touching anything.
 
 `Failed` means the analysis or the acceptance webhook failed; Flagger
 scales the canary down and leaves the primary serving the previous
@@ -153,32 +155,40 @@ SELECT DISTINCT FILENAME FROM DATABASECHANGELOG;
 
 ### When a release parks on the migration
 
-The api does not migrate at boot. A `pre-rollout` webhook on the api Canary
+The api does not migrate at boot. A `confirm-rollout` webhook on the api Canary
 creates `migrate-<tag>` from the suspended `db-migrate` CronJob, on the image
-the overlay pins, and waits up to ten minutes for it.
+the overlay pins, and waits up to nine minutes per call for it.
 
-Flagger scales the canary up and waits for it to be Ready before running a
-`pre-rollout` webhook, so by the time the migration runs a canary pod exists.
-It takes no traffic — this is blue/green, and the weight stays at 0 — and
-nothing is promoted until the Job succeeds. A migration that cannot apply
-therefore leaves the previous release serving, with a canary pod idle beside
-it that is scaled away when the analysis gives up.
+Flagger runs `confirm-rollout` webhooks before it scales the canary up, so the
+migration runs before any pod of the new release starts. A release may
+therefore rely on its own schema from its first line of startup. Until the
+webhook exits zero the canary sits in `Waiting` with no pod, and Flagger calls
+it again every interval: a Job still running is waited on again, never created
+twice. The frontend's gate holds while the api has an unpromoted image, so
+neither side is promoted before the schema is in place.
 
-A second `pre-rollout` webhook, `warm-the-canary`, then sends the canary the
-read-only load for about 50 seconds. The analysis reads a rate over a minute of
-the canary's own requests, scraped every 15 seconds, so without it the first
-check finds no data and spends one of the three failures the analysis allows.
+A migration that cannot apply leaves the previous release serving and the
+canary parked in `Waiting` for as long as the Job stays Failed. There is no
+deadline on that wait; the Discord alert says the canary is waiting for
+approval.
+
+Once the Job completes, Flagger scales the canary up. A `pre-rollout` webhook,
+`warm-the-canary`, then sends the Ready canary the read-only load for about 50
+seconds. The analysis reads a rate over a minute of the canary's own requests,
+scraped every 15 seconds, so without it the first check finds no data and
+spends one of the three failures the analysis allows.
 
 ```bash
+kubectl -n default get canary api -o jsonpath='{.status.phase}'
 kubectl -n default get jobs -l job-name --field-selector status.successful=0
 kubectl -n default logs job/migrate-<tag> --tail=100
-kubectl -n default describe canary api | grep -A5 pre-rollout
+kubectl -n default describe canary api | grep -A5 confirm-rollout
 ```
 
-The Job name comes from the image tag, so re-running the same release reuses
-the existing Job rather than starting a second one. Fix the changeset, cut a
-new tag and let the gate run again; delete the failed Job only once you want
-that tag retried from scratch.
+The Job name comes from the image tag, so every call for the same release reuses
+the existing Job rather than starting a second one. Fix the changeset and cut a
+new tag, which gets its own Job; or delete the failed Job once you want that
+tag retried from scratch, and the next call creates it again.
 
 Every changeset carries a rollback, the baseline included. Rolling one back is
 a rehearsed manual step with a backup, never an automatic response to a failed

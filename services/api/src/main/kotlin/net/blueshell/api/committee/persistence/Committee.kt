@@ -10,7 +10,6 @@ import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import jakarta.persistence.PostLoad
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
@@ -44,7 +43,7 @@ class Committee(
     @Column(name = "description", nullable = false, length = DESCRIPTION_MAX)
     var description: String,
     /** The address its page answers to. Made from the name unless somebody chose one. */
-    @Column(name = "slug", length = ADDRESS_LENGTH)
+    @Column(name = "slug", nullable = false, length = ADDRESS_LENGTH)
     var slug: String = addressOf(name),
     /** A committee that no longer runs: kept, with its page and its events, but not offered. */
     @Column(name = "archived", nullable = false)
@@ -68,16 +67,6 @@ class Committee(
     private val _members: MutableList<CommitteeMember> = mutableListOf()
     val members: List<CommitteeMember>
         get() = _members
-
-    /**
-     * A committee the release before this one added while this one rolled out has no address yet,
-     * so it answers to the one its name makes. The column turns NOT NULL a release later.
-     */
-    @PostLoad
-    @Suppress("SENSELESS_COMPARISON")
-    internal fun addressFromName() {
-        if (slug == null) slug = addressOf(name)
-    }
 
     fun hasMember(user: User?): Boolean = hasMember(user?.id)
 

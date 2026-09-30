@@ -1,0 +1,27 @@
+# committees.slug turns NOT NULL a release after 1.12.0 (#1694) began writing an address for every
+# committee it adds (#1699). A committee 1.11.0 added during that rollout still has none, so it is
+# given one first: from its name, with its id after it so it cannot land on an address in use.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-30-committee-address-required.yaml
+      id: committee-address-required
+      author: blueshell
+      changes:
+        - sql:
+            sql: >-
+              UPDATE committees
+              SET slug = CONCAT(LEFT(TRIM(BOTH '-' FROM REGEXP_REPLACE(LOWER(name), '[^\\p{L}\\p{Nd}]+', '-')), 44), '-', id)
+              WHERE slug IS NULL
+        # A name without a letter or digit leaves the id alone behind a dash.
+        - sql:
+            sql: >-
+              UPDATE committees SET slug = CONCAT('committee', slug) WHERE slug LIKE '-%'
+        - addNotNullConstraint:
+            tableName: committees
+            columnName: slug
+            columnDataType: VARCHAR(64)
+      rollback:
+        - dropNotNullConstraint:
+            tableName: committees
+            columnName: slug
+            columnDataType: VARCHAR(64)

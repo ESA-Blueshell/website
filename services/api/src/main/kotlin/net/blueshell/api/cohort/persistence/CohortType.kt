@@ -22,14 +22,23 @@ enum class CohortType {
 
     /** The single newsletter opt-in cohort. Pivots on `NEWSLETTER`. */
     NEWSLETTER_SUBSCRIBERS,
+
+    /** Everybody holding a committee or board seat today. */
+    ACTIVISTS,
+
+    /** Everybody with a membership today. */
+    CURRENT_MEMBERS,
     ;
+
+    /** Whether registering a cohort of this type makes it a Brevo list; these two exist for Discord and Workspace. */
+    val listedOnBrevo: Boolean get() = this != ACTIVISTS && this != CURRENT_MEMBERS
 
     /** The bucket the dashboard browses by: every per-period cohort collapses into PERIODS. */
     fun category(): CohortCategory =
         when (this) {
             COMMITTEE_MEMBERS -> CohortCategory.COMMITTEES
             PERIOD_PAYERS, PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS -> CohortCategory.PERIODS
-            NEWSLETTER_SUBSCRIBERS -> CohortCategory.MEMBERS
+            NEWSLETTER_SUBSCRIBERS, ACTIVISTS, CURRENT_MEMBERS -> CohortCategory.MEMBERS
         }
 }
 

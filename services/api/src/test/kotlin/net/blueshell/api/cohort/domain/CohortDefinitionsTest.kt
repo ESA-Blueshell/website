@@ -115,6 +115,8 @@ class CohortDefinitionsTest {
                 PeriodActiveMembersProvider(mockk(), emptyList()),
                 CommitteeMembersProvider(mockk(), mockk()),
                 NewsletterSubscribersProvider(mockk()),
+                ActivistsProvider(mockk(), mockk(), mockk()),
+                CurrentMembersProvider(mockk()),
             )
 
         assertThat(providers.map { it.type }).containsExactlyInAnyOrder(*CohortType.entries.toTypedArray())
@@ -125,6 +127,8 @@ class CohortDefinitionsTest {
                 CohortType.PERIOD_MEMBERS to CohortCategory.PERIODS,
                 CohortType.PERIOD_ACTIVE_MEMBERS to CohortCategory.PERIODS,
                 CohortType.NEWSLETTER_SUBSCRIBERS to CohortCategory.MEMBERS,
+                CohortType.ACTIVISTS to CohortCategory.MEMBERS,
+                CohortType.CURRENT_MEMBERS to CohortCategory.MEMBERS,
             ),
         )
     }

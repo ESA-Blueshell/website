@@ -29,18 +29,22 @@ class CohortRegistrarIT : UserTestSupport() {
     private lateinit var targets: TargetRepository
 
     @Test
-    fun `every definition ends up with a record and a target to link`() {
+    fun `every definition ends up with a record, and a target to link where it is listed on Brevo`() {
         registrar.register()
 
-        val keys = definitions.all().map { it.key }
-        assertThat(keys).isNotEmpty
+        val all = definitions.all()
+        assertThat(all).isNotEmpty
 
-        keys.forEach { key ->
-            val cohort = cohorts.findByDefinitionKey(key)
-            assertThat(cohort).describedAs("no record for %s", key).isNotNull
+        all.forEach { definition ->
+            val cohort = cohorts.findByDefinitionKey(definition.key)
+            assertThat(cohort).describedAs("no record for %s", definition.key).isNotNull
             // Its target row, whose list the create-target job makes after the commit.
             val targets = targets.findAllByCohortId(cohort!!.id!!)
-            assertThat(targets).describedAs("no target for %s", key).isNotEmpty
+            if (definition.type.listedOnBrevo) {
+                assertThat(targets).describedAs("no target for %s", definition.key).isNotEmpty
+            } else {
+                assertThat(targets).describedAs("a Brevo target for %s", definition.key).isEmpty()
+            }
         }
     }
 

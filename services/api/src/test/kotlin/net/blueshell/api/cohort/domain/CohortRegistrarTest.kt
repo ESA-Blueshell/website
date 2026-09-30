@@ -79,4 +79,25 @@ class CohortRegistrarTest {
         assertThat(report.relabelled).isEqualTo(1)
         verify { cohorts.save(match { it.label == "Sitecie" }) }
     }
+
+    @Test
+    fun `a cohort that is not listed on Brevo gets no target`() {
+        val activists =
+            object : CohortDefinition {
+                override val key = "ACTIVISTS"
+                override val type = CohortType.ACTIVISTS
+                override val scope: Long? = null
+                override val label = "Activists"
+                override val folder: String? = "Activists"
+
+                override fun members(): Set<Long> = emptySet()
+
+                override fun contains(userId: Long) = false
+            }
+        every { definitions.all() } returns listOf(activists)
+        every { cohorts.findAll() } returns emptyList()
+
+        assertThat(registrar.register().created).isEqualTo(1)
+        verify(exactly = 0) { targets.save(any()) }
+    }
 }

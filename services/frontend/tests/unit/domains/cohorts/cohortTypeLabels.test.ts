@@ -21,6 +21,8 @@ describe("cohortTypeLabels", () => {
       CohortType.PERIOD_ACTIVE_MEMBERS,
       CohortType.PERIOD_PAYERS,
       CohortType.NEWSLETTER_SUBSCRIBERS,
+      CohortType.ACTIVISTS,
+      CohortType.CURRENT_MEMBERS,
     ])
   })
 

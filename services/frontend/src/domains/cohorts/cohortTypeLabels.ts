@@ -14,6 +14,8 @@ export const COHORT_TYPE_LABELS: Record<CohortType, string> = {
   [CohortType.PERIOD_ACTIVE_MEMBERS]: "Active members in period",
   [CohortType.PERIOD_PAYERS]: "Contribution paid",
   [CohortType.NEWSLETTER_SUBSCRIBERS]: "Newsletter subscribers",
+  [CohortType.ACTIVISTS]: "Activists",
+  [CohortType.CURRENT_MEMBERS]: "Members",
 }
 
 /** The order the groups appear in, which is the order above rather than alphabetical. */

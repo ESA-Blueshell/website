@@ -1,12 +1,25 @@
-import {describe, expect, it} from "vitest"
+import {beforeEach, describe, expect, it, vi} from "vitest"
 import ManagementShell from "@/components/management/ManagementShell.vue"
 import ManagementBar from "@/components/management/ManagementBar.vue"
 import ManagementMore from "@/pages/management/ManagementMore.vue"
-import {firstPageFor, isOn, managementFor} from "@/components/management/managementNav"
+import {isOn, managementFor} from "@/components/management/managementNav"
 import router from "@/plugins/router"
 import type {StoredLogin} from "@/plugins/store"
 import {boardLogin, mountPage} from "../../helpers/mountPage"
 import {settle} from "../../helpers/testUtils"
+
+const {mockListAlerts} = vi.hoisted(() => ({mockListAlerts: vi.fn()}))
+
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
+  listAlerts: mockListAlerts,
+}))
+
+const anAlert = (key: string, hidden = false) => ({key, kind: "JOB_DEAD", count: 1, hidden})
+
+beforeEach(() => {
+  mockListAlerts.mockResolvedValue({status: 200, data: []})
+})
 
 const adminLogin: StoredLogin = {...boardLogin, roles: ["ADMIN", "BOARD"] as StoredLogin["roles"]}
 const memberLogin: StoredLogin = {...boardLogin, roles: ["MEMBER"] as StoredLogin["roles"]}
@@ -28,8 +41,6 @@ describe("Management's navigation", () => {
     expect(isOn("/management/users", users)).toBe(true)
     expect(isOn("/management/users/4", users)).toBe(true)
     expect(isOn("/management/users-old", users)).toBe(false)
-    expect(firstPageFor({board: true, admin: false})).toBe("/management/users")
-    expect(firstPageFor({board: false, admin: false})).toBeNull()
   })
 })
 
@@ -44,13 +55,40 @@ describe("the Management portal", {timeout: 20_000}, () => {
     expect(wrapper.find("[data-testid=management-nav-users]").attributes("aria-current")).toBeUndefined()
   })
 
-  it("gives a phone a bottom bar with the members tab and More", async () => {
+  it("gives a phone a bottom bar with the alerts and members tabs and More", async () => {
     const wrapper = await mountPage(ManagementShell, {path: "/management/users", login: boardLogin, width: 390})
 
     // RouterLink is stubbed in the unit suite, so each link carries its target as `to`.
     const tabs = wrapper.findAll("[data-testid=management-tabbar] a").map((tab) => tab.attributes("to"))
-    expect(tabs).toEqual(["/management/users", "/management/more"])
+    expect(tabs).toEqual(["/management/alerts", "/management/users", "/management/more"])
     expect(wrapper.get("[data-testid=management-tab-members]").classes()).toContain("mg-tab--on")
+  })
+
+  it("counts the reader's alerts, hidden ones left out, in the sidebar, the phone bar and the account menu", async () => {
+    mockListAlerts.mockResolvedValue({status: 200, data: [anAlert("a"), anAlert("b"), anAlert("c", true)]})
+    const shell = await mountPage(ManagementShell, {path: "/management/users", login: boardLogin, width: 390})
+    await settle()
+
+    expect(shell.get("[data-testid=management-nav-alerts-count]").text()).toContain("2")
+    expect(shell.get("[data-testid=management-tab-alerts-count]").text()).toBe("2")
+
+    const bar = await mountPage(ManagementBar, {path: "/management/users", login: boardLogin})
+    await bar.get("[data-testid=management-account]").trigger("click")
+    await settle()
+    const alerts = bar.findAllComponents({name: "DropdownMenuItem"}).map((item) => item.find("[data-testid=management-account-alerts]"))
+      .find((link) => link.exists())
+    expect(alerts?.attributes("to")).toBe("/management/alerts")
+    expect(alerts?.text()).toContain("2")
+  })
+
+  it("reads the alerts again on every page", async () => {
+    await mountPage(ManagementShell, {path: "/management/users", login: boardLogin})
+    const before = mockListAlerts.mock.calls.length
+
+    await router.push("/management/recovery")
+    await settle()
+
+    expect(mockListAlerts.mock.calls.length).toBeGreaterThan(before)
   })
 
   it("lists every page on More, grouped like the sidebar", async () => {

@@ -1,5 +1,6 @@
 package net.blueshell.api.user.persistence
 
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Pageable
@@ -14,6 +15,12 @@ import java.util.Optional
 // responsibilities.
 @Suppress("TooManyFunctions")
 interface UserRepository : BaseRepository<User, Long> {
+    /** People holding any of [roles] with no two-factor yet, so the role waits on it. */
+    @Query("select distinct u from User u join u.roles r where r in :roles and u.twoFactorSince is null order by u.id")
+    fun findHoldingWithoutTwoFactor(
+        @Param("roles") roles: Collection<Role>,
+    ): List<User>
+
     fun findByUsername(username: String): Optional<User>
 
     /** Every administrator who is a person: the service account holds SYSTEM as well. */

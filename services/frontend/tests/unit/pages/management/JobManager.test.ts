@@ -351,6 +351,14 @@ describe("JobManager page", () => {
     expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({page: 0})})
   })
 
+  it("opens filtered on the status an alert linked it with", async () => {
+    mockRoute.query = {status: "DEAD"}
+    mountJobManager()
+    await settle()
+
+    expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({status: "DEAD"})})
+  })
+
   it("links an opened row to the job's own page", async () => {
     const wrapper = mountJobManager()
     await settle()

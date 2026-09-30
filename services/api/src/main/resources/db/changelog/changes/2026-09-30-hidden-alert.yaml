@@ -1,0 +1,24 @@
+# An alert one person hid for themself. The row goes once the alert clears, so a recurrence shows.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-30-hidden-alert.yaml
+      id: hidden-alert
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: hidden_alert
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_hidden_alert, nullable: false}
+              - column: {name: user_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: alert_key, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: hidden_at, type: DATETIME(6), constraints: {nullable: false}}
+        - addUniqueConstraint:
+            tableName: hidden_alert
+            constraintName: uk_hidden_alert_user_key
+            columnNames: user_id, alert_key
+      rollback:
+        - dropTable: {tableName: hidden_alert}

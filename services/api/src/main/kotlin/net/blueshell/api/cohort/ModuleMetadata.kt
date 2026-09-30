@@ -14,6 +14,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "cohort",
     allowedDependencies = [
+        // Drift and cohorts without a list raise alerts.
+        "alerts :: api",
         // AbstractJsonJobHandler, which this module's job handlers extend.
         "jobs :: api",
         // The board-members cohort is built from BoardMemberService.

@@ -44,6 +44,8 @@ interface RecordedExceptionRepository : JpaRepository<RecordedException, Long> {
 
     fun findAllByOrderByLastSeenAtDesc(): List<RecordedException>
 
+    fun findAllByResolvedAtIsNull(): List<RecordedException>
+
     fun findByFingerprint(fingerprint: String): RecordedException?
 
     @Modifying

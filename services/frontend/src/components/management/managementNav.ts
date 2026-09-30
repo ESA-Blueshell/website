@@ -11,7 +11,9 @@ export interface ManagementEntry {
   /** Only an admin opens it; the sidebar marks it. */
   adminOnly?: boolean
   /** Its place in the phone's bottom bar, where it has one. */
-  tab?: "members"
+  tab?: "alerts" | "members"
+  /** Carries the count of the reader's alerts beside its name. */
+  counted?: boolean
 }
 
 /** A group of pages, named for the job they share. */
@@ -22,6 +24,7 @@ export interface ManagementGroup {
 }
 
 const GROUPS: ManagementGroup[] = [
+  {label: "Overview", entries: [{label: "Alerts", to: "/management/alerts", tab: "alerts", counted: true}]},
   {
     label: "Members",
     entries: [
@@ -51,6 +54,3 @@ export const managementFor = (reader: ManagementReader): ManagementGroup[] =>
 
 /** Whether [path] is on the page [entry] leads to, or one below it. */
 export const isOn = (path: string, entry: ManagementEntry): boolean => path === entry.to || path.startsWith(`${entry.to}/`)
-
-/** Where Management opens: the first page the reader may use. */
-export const firstPageFor = (reader: ManagementReader): string | null => managementFor(reader)[0]?.entries[0]?.to ?? null

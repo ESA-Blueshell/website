@@ -8,6 +8,7 @@ import {
 import {addressOf} from "@/utils/address"
 import type {
   AddBoardMemberRequest,
+  Alert,
   AddRosterEntryRequest,
   AddressResponse,
   AssociationStatisticsResponse,
@@ -85,6 +86,7 @@ type Fixtures = {
   blogsById?: Record<string, Wire<BlogResponse>>
   blogStatusById?: Record<string, number>
   jobs?: Wire<JobExecution>[]
+  alerts?: Wire<Alert>[]
   emails?: Wire<Email>[]
   cohorts?: Wire<CohortSummary>[]
   cohortMembers?: Wire<CohortDetail["members"]>
@@ -709,6 +711,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   )
 
   let exceptionResolvedAt: string | null = null
+  const baseAlerts: Wire<Alert>[] = fixtures.alerts ?? []
 
   const baseJobs: Wire<JobExecution>[] = fixtures.jobs ?? [
     aJob({
@@ -1290,6 +1293,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       })
       baseJobs.unshift(enqueued)
       return answer(route, "enqueue", enqueued)
+    }
+    if (path.startsWith("/management/alerts")) {
+      if (method === "GET") return answer(route, "listAlerts", baseAlerts)
+      const {key} = request.postDataJSON() as {key: string}
+      const one = baseAlerts.find((alert) => alert.key === key)
+      if (!one) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+      one.hidden = path.endsWith("/hidden")
+      return route.fulfill({status: 204})
     }
     if (path === "/management/exceptions" || path.startsWith("/management/exceptions/")) {
       const fault = {

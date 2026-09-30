@@ -451,6 +451,7 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true, requiresBoard: true, management: true},
     children: [
       {path: "", name: "management", redirect: "/management/users"},
+      {path: "alerts", name: "alertList", component: () => import("@/pages/management/AlertList.vue"), meta: {title: "Alerts"}},
       {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
       {path: "users", name: "userManager", component: () => import("@/pages/management/UserManager.vue"), meta: {title: "Users"}},
       {

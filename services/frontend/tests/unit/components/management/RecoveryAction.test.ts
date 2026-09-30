@@ -1,8 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
-import RecoveryUserRow from "@/components/common/rows/RecoveryUserRow.vue"
+import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
-import {settle} from "../../../helpers/testUtils"
+import {settle} from "../../helpers/testUtils"
 
 const {
   mockResendRecoveryMail,
@@ -31,7 +31,7 @@ vi.mock("@/domains/recovery", () => ({
   },
 }))
 
-vi.mock("@/plugins/handleNetworkError.ts", () => ({$handleNetworkError: mockHandleNetworkError}))
+vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
 
 const emma = {id: 1, fullName: "Emma", username: "emma", enabled: false}
 
@@ -40,7 +40,7 @@ function row(
   pendingActivation: string | null = null,
   user: Record<string, unknown> = emma,
 ) {
-  return mount(RecoveryUserRow, {props: {user, actionType, pendingActivation}})
+  return mount(RecoveryAction, {props: {user, action: actionType, pendingActivation}})
 }
 
 /** Click the row's one send button, which opens the email rather than sending it. */
@@ -55,7 +55,7 @@ async function confirmInDialog(wrapper: ReturnType<typeof row>) {
   await settle()
 }
 
-describe("RecoveryUserRow", () => {
+describe("RecoveryAction", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockResendRecoveryMail.mockResolvedValue(undefined)
@@ -75,7 +75,7 @@ describe("RecoveryUserRow", () => {
       const wrapper = row("activation", "MEMBER_ACTIVATION")
 
       expect(wrapper.find('[data-testid="recovery-user-send-btn-MEMBER_ACTIVATION-1"]').text())
-        .toContain("Resend Member Activation")
+        .toContain("Send member activation")
       // Only the one that applies; the other is not a choice the operator has to make.
       expect(wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').exists()).toBe(false)
     })
@@ -84,7 +84,7 @@ describe("RecoveryUserRow", () => {
       const wrapper = row("activation", "USER_ACTIVATION")
 
       expect(wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').text())
-        .toContain("Resend Activation")
+        .toContain("Send activation")
       expect(wrapper.find('[data-testid="recovery-user-send-btn-MEMBER_ACTIVATION-1"]').exists()).toBe(false)
     })
 
@@ -126,7 +126,7 @@ describe("RecoveryUserRow", () => {
       await openEmail(wrapper, "MEMBER_ACTIVATION")
 
       const dialog = wrapper.findComponent(EmailPreviewDialog)
-      expect(dialog.props("confirmLabel")).toBe("Resend Member Activation")
+      expect(dialog.props("confirmLabel")).toBe("Send member activation")
     })
 
     it("confirming sends the same email that was read", async () => {
@@ -136,7 +136,7 @@ describe("RecoveryUserRow", () => {
       await confirmInDialog(wrapper)
 
       expect(mockResendRecoveryMail).toHaveBeenCalledWith(1, "MEMBER_ACTIVATION")
-      expect(wrapper.emitted("action:done")).toHaveLength(1)
+      expect(wrapper.emitted("done")).toHaveLength(1)
     })
 
     it("a password reset still goes by username, which needs no elevated permission", async () => {
@@ -167,7 +167,7 @@ describe("RecoveryUserRow", () => {
       await confirmInDialog(wrapper)
 
       expect(mockHandleNetworkError).toHaveBeenCalled()
-      expect(wrapper.emitted("action:done")).toBeUndefined()
+      expect(wrapper.emitted("done")).toBeUndefined()
     })
   })
 
@@ -188,27 +188,17 @@ describe("RecoveryUserRow", () => {
     await settle()
 
     expect(mockHandleNetworkError).toHaveBeenCalled()
-    expect(wrapper.emitted("action:done")).toBeUndefined()
+    expect(wrapper.emitted("done")).toBeUndefined()
   })
 
   // The window is what is left of the fortnight a deleted account can be brought back in.
-  it.each([
-    [3, "3 days left", true],
-    [1, "1 day left", true],
-    // A fortnight left is not something to hurry over, so the chip is drawn plain.
-    [12, "12 days left", false],
-  ])("says how long the restore window has left, at %s days", async (days, expected, urgent) => {
-    const until = new Date(Date.now() + (days - 0.5) * 24 * 60 * 60 * 1000).toISOString()
-    const wrapper = row("restore", null, {...emma, restoreUntilAt: until})
+  it("refuses a restore once the window has passed", () => {
+    const passed = row("restore", null, {...emma, restoreUntilAt: new Date(Date.now() - 60_000).toISOString()})
+    const open = row("restore", null, {...emma, restoreUntilAt: new Date(Date.now() + 86_400_000).toISOString()})
 
-    expect(wrapper.text()).toContain(expected)
-    expect((wrapper.vm as any).restoreWindowUrgent).toBe(urgent)
-  })
-
-  it("marks no urgency for an account with no deadline on it", () => {
-    const wrapper = row("restore")
-
-    expect((wrapper.vm as any).restoreWindowUrgent).toBe(false)
+    expect(passed.get('[data-testid="recovery-user-action-btn-restore-1"]').text()).toBe("Window passed")
+    expect(passed.get('[data-testid="recovery-user-action-btn-restore-1"]').attributes("disabled")).toBeDefined()
+    expect(open.get('[data-testid="recovery-user-action-btn-restore-1"]').attributes("disabled")).toBeUndefined()
   })
 
   it("restores nothing twice while the first restore is still going", async () => {
@@ -240,7 +230,7 @@ describe("RecoveryUserRow", () => {
     wrapper.findComponent(EmailPreviewDialog).vm.$emit("update:modelValue", false)
     await settle()
 
-    expect((wrapper.vm as any).previewOpen).toBe(false)
+    expect(wrapper.findComponent(EmailPreviewDialog).props("modelValue")).toBe(false)
   })
 
   it("says nothing about a window for an account with no deadline on it", () => {

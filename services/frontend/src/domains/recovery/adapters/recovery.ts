@@ -7,6 +7,7 @@ import {
   memberActivate,
   type MemberActivationRequest,
   type PasswordResetRequest,
+  lastRecoveryEmails,
   pendingActivations,
   previewRecoveryEmail,
   type RecoveryEmailPreviewResponse,
@@ -24,6 +25,12 @@ import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
  * Which activation each account that has not been activated is waiting for, so the manager
  * offers the one that applies rather than both and a guess. Empty where the api would not say.
  */
+/** When each account was last sent an activation or a password reset, by account; none where unreadable. */
+export async function listLastRecoveryEmails(): Promise<Record<number, string>> {
+  const {data} = await lastRecoveryEmails()
+  return Object.fromEntries((data?.emails ?? []).map(one => [one.userId, one.sentAt]))
+}
+
 export async function listPendingActivations(): Promise<Record<number, TokenPurpose>> {
   const {data} = await pendingActivations()
   return Object.fromEntries((data?.activations ?? []).map(one => [one.userId, one.purpose]))

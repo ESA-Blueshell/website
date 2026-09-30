@@ -122,7 +122,8 @@ describe("the ways into Management", {timeout: 20_000}, () => {
     await mountPage(ManagementShell, {path: "/", login: adminLogin})
     const cases: [string, string][] = [
       ["/user-manager", "/management/users"],
-      ["/addresses/manage", "/management/addresses"],
+      ["/addresses/manage", "/management/users"],
+      ["/management/addresses", "/management/users"],
       ["/recovery/manage", "/management/recovery"],
       ["/management/emails", "/management/mail/sent"],
       ["/management/cohorts", "/management/platforms/brevo"],

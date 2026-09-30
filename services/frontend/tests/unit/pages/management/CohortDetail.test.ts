@@ -312,14 +312,14 @@ describe("CohortDetail drift", () => {
 
   it("shows each target's drift and the runs before it", async () => {
     const run = (startedAt: string, missing: number) => ({startedAt, trigger: JobTrigger.SCHEDULED_RUN, inStep: 40, missing, extra: 2})
-    const withRuns = subject()
+    const withRuns = cohort()
     withRuns.mappings[0]!.runs = [run("2026-09-29T03:00:00Z", 1), run("2026-09-28T03:00:00Z", 3)]
-    vi.mocked(fetchCohortSubject).mockResolvedValue(withRuns)
-    const wrapper = await mountPage(CohortSubjectDetail, {path: "/management/cohorts/subjects/7", login: adminLogin})
-    await wrapper.get("[data-testid=cohort-subject-targets] [data-testid=info-box-toggle]").trigger("click")
+    vi.mocked(fetchCohort).mockResolvedValue(withRuns)
+    const wrapper = await mountPage(CohortDetail, {path: "/management/cohort/7", login: adminLogin})
+    await wrapper.get("[data-testid=cohort-detail-targets] [data-testid=info-box-toggle]").trigger("click")
     await settle()
 
-    expect(wrapper.get("[data-testid=cohort-subject-target-drift-brevo]").text()).toBe("40 in step · 1 missing · 2 extra")
-    expect(wrapper.get("[data-testid=cohort-subject-target-drift-history-brevo]").text()).toContain("nightly: 3 missing, 2 extra")
+    expect(wrapper.get("[data-testid=cohort-detail-target-drift-brevo]").text()).toBe("40 in step · 1 missing · 2 extra")
+    expect(wrapper.get("[data-testid=cohort-detail-target-drift-history-brevo]").text()).toContain("nightly: 3 missing, 2 extra")
   })
 })

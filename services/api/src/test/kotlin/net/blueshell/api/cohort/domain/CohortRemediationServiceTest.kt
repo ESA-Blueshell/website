@@ -384,7 +384,9 @@ class CohortRemediationServiceTest {
         every { targets.findById(3L) } returns Optional.of(Entities.target(id = 3L, cohortId = 30L))
         every { cohorts.findById(30L) } returns Optional.empty()
 
-        assertThatThrownBy { service.verifyTarget(1L, null) }.isInstanceOf(NonRetryableJobException::class.java).hasMessage("Target 1 not found")
+        assertThatThrownBy { service.verifyTarget(1L, null) }
+            .isInstanceOf(NonRetryableJobException::class.java)
+            .hasMessage("Target 1 not found")
         assertThatThrownBy { service.verifyTarget(2L, null) }.hasMessage("Target 2 has no cohort")
         assertThatThrownBy { service.verifyTarget(3L, null) }.hasMessage("Target 3 references missing cohort 30")
         assertThatThrownBy { service.removeExternalMember(1L, "x") }.hasMessage("Target 1 not found")

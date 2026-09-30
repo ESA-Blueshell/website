@@ -114,6 +114,8 @@ class FolderTidyTest {
                 CohortType.PERIOD_MEMBERS to "Members",
                 CohortType.PERIOD_ACTIVE_MEMBERS to "Active members",
                 CohortType.NEWSLETTER_SUBSCRIBERS to "Newsletter",
+                CohortType.ACTIVISTS to "Activists",
+                CohortType.CURRENT_MEMBERS to "Members",
             ),
         )
     }

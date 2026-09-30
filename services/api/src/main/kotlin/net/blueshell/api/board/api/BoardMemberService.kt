@@ -5,6 +5,7 @@ import jakarta.persistence.PersistenceContext
 import net.blueshell.api.board.domain.BoardMemberNotFoundException
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.board.persistence.BoardMemberRepository
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,6 +15,7 @@ import java.time.LocalDate
 @Service
 class BoardMemberService(
     private val repository: BoardMemberRepository,
+    private val trackedEvents: TrackedEventPublisher,
 ) {
     // Read back after each write, so the columns the database fills are on the answer.
     @PersistenceContext
@@ -32,13 +34,23 @@ class BoardMemberService(
     }
 
     @Transactional
-    fun create(member: BoardMember): BoardMember = written(member)
+    fun create(member: BoardMember): BoardMember = written(member).also(::changed)
 
     @Transactional
-    fun update(member: BoardMember): BoardMember = rewritten(member)
+    fun update(member: BoardMember): BoardMember = rewritten(member).also(::changed)
 
     @Transactional
-    fun deleteById(id: Long) = repository.delete(findMember(id))
+    fun deleteById(id: Long) {
+        val member = findMember(id)
+        repository.delete(member)
+        changed(member)
+    }
+
+    // A place held by somebody with no account here changes nobody's cohorts.
+    private fun changed(member: BoardMember) {
+        val userId = member.user?.id ?: return
+        trackedEvents.publish { actor -> BoardMembershipChanged(userId, actor) }
+    }
 
     @Transactional(readOnly = true)
     fun findMember(id: Long): BoardMember = repository.findById(id).orElseThrow { BoardMemberNotFoundException(id) }

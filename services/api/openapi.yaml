@@ -1205,6 +1205,8 @@ components:
       - PERIOD_MEMBERS
       - PERIOD_ACTIVE_MEMBERS
       - NEWSLETTER_SUBSCRIBERS
+      - ACTIVISTS
+      - CURRENT_MEMBERS
       type: string
     CommitteeMemberRequest:
       properties:

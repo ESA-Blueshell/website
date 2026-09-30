@@ -4,15 +4,19 @@ import jakarta.persistence.EntityManager
 import net.blueshell.api.board.domain.BoardMemberNotFoundException
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.board.persistence.BoardMemberRepository
+import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.web.server.ResponseStatusException
 import java.util.Optional
@@ -21,8 +25,9 @@ class BoardMemberServiceTest {
     private val manager = mock<EntityManager>()
     private val repository =
         mock<BoardMemberRepository> { on { saveAndFlush(any<BoardMember>()) } doAnswer { it.getArgument(0) } }
+    private val events = mock<TrackedEventPublisher>()
     private val service =
-        BoardMemberService(repository).also {
+        BoardMemberService(repository, events).also {
             BoardMemberService::class.java
                 .getDeclaredField("em")
                 .apply { isAccessible = true }
@@ -41,6 +46,20 @@ class BoardMemberServiceTest {
 
         verify(manager, times(2)).refresh(member)
         verify(repository).delete(member)
+        verifyNoInteractions(events)
+    }
+
+    @Test
+    fun `a change to the place of somebody with an account says whose it was`() {
+        val member = Entities.boardMember(id = 6).apply { user = Entities.user(id = 9L) }
+        whenever(repository.findById(6)).thenReturn(Optional.of(member))
+
+        service.create(member)
+        service.deleteById(6)
+
+        val published = argumentCaptor<(Actor) -> Any>()
+        verify(events, times(2)).publish(published.capture())
+        assertThat(published.allValues.map { it(Actor.system()) }).containsOnly(BoardMembershipChanged(9L, Actor.system()))
     }
 
     @Test

@@ -55,7 +55,7 @@ describe("reading an alert", () => {
     [alert(AlertKind.EMAIL_FAILED, {count: 2}), "2 emails failed or bounced this month", "/management/mail/sent"],
     [alert(AlertKind.JOB_DEAD), "1 job is dead", "/management/jobs?status=DEAD"],
     [alert(AlertKind.EXCEPTION_OPEN, {count: 4}), "4 exceptions are open", "/management/exceptions"],
-    [alert(AlertKind.ROLE_AWAITING_TWO_FACTOR, {subjectLabel: "ada"}), "@ada's granted role waits on two-factor", "/management/users?search=ada"],
+    [alert(AlertKind.ROLE_AWAITING_TWO_FACTOR, {subjectId: 5, subjectLabel: "ada"}), "@ada's granted role waits on two-factor", "/management/users/5"],
   ])("words %o and links it", (one, title, link) => {
     expect(alertTitle(one)).toBe(title)
     expect(alertLink(one)).toBe(link)

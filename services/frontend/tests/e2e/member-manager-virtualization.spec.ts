@@ -37,7 +37,7 @@ const renderedRows = (page: import("./test").Page) =>
 // The names the scroller currently has mounted, in order. Read from the name cell rather than
 // through a locator so a failed wait reports the window it ended on instead of "not found".
 const windowedNames = (page: import("./test").Page) =>
-  renderedRows(page).evaluateAll((rows) => rows.map((row) => row.querySelector("strong")?.textContent?.trim() ?? ""))
+  renderedRows(page).evaluateAll((rows) => rows.map((row) => row.querySelector(".people__name")?.textContent?.trim() ?? ""))
 
 // Puts the row this many indexes down the list at the middle of the window rather than at its
 // top edge. The scroller re-estimates its item height from the rows it has mounted, so an

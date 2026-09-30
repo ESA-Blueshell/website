@@ -12,7 +12,14 @@ class IngIncassoFileTest {
     private val header = IngHeader("Blueshell E-Sports Vereniging", "NL19INGB0008096462", "NL00ZZZ000000000000", LocalDate.of(2026, 11, 1))
 
     private fun collection(name: String) =
-        IngCollection(name, "NL91ABNA0417164300", "BLUESHELL-1-20250903", 25.0, "Contributie 2026-2027 ESA Blueshell", LocalDate.of(2025, 9, 3))
+        IngCollection(
+            name,
+            "NL91ABNA0417164300",
+            "BLUESHELL-1-20250903",
+            25.0,
+            "Contributie 2026-2027 ESA Blueshell",
+            LocalDate.of(2025, 9, 3),
+        )
 
     private fun parts(bytes: ByteArray): Map<String, String> =
         ZipInputStream(ByteArrayInputStream(bytes)).use { zip ->
@@ -52,7 +59,12 @@ class IngIncassoFileTest {
     @Test
     fun `holds 1 to 1000 collections, and escapes what it writes`() {
         assertThatThrownBy { IngIncassoFile.write(header, emptyList()) }.isInstanceOf(IllegalArgumentException::class.java)
-        assertThatThrownBy { IngIncassoFile.write(header, List(1001) { collection("A") }) }.isInstanceOf(IllegalArgumentException::class.java)
+        assertThatThrownBy {
+            IngIncassoFile.write(
+                header,
+                List(1001) { collection("A") },
+            )
+        }.isInstanceOf(IllegalArgumentException::class.java)
 
         val sheet = parts(IngIncassoFile.write(header, listOf(collection("A & B <C>")))).getValue("xl/worksheets/sheet1.xml")
         assertThat(sheet).contains("<t>A &amp; B &lt;C&gt;</t>")

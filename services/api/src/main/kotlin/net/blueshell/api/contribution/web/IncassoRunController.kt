@@ -92,8 +92,14 @@ class IncassoRunController(
         return ResponseEntity
             .ok()
             .contentType(MediaType.parseMediaType(XLSX))
-            .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(file.name).build().toString())
-            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .header(
+                HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition
+                    .attachment()
+                    .filename(file.name)
+                    .build()
+                    .toString(),
+            ).header(HttpHeaders.CACHE_CONTROL, "no-store")
             .body(file.bytes)
     }
 

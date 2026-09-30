@@ -42,7 +42,8 @@ class IncassoFilesTest {
         submittedAt: Instant? = null,
     ) = IncassoRun(4, date, "Contributie", 9, Instant.EPOCH, submittedAt = submittedAt).also { it.id = 11 }
 
-    private fun mandate(reference: String) = IncassoMandate("k1", "sealed", "sealed", "4300", reference, LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
+    private fun mandate(reference: String) =
+        IncassoMandate("k1", "sealed", "sealed", "4300", reference, LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
 
     private fun told(user: User) =
         IncassoNotification(
@@ -67,7 +68,20 @@ class IncassoFilesTest {
             @Suppress("UNCHECKED_CAST")
             (invocation.arguments[0] as Collection<Long>).associateWith { id ->
                 val member = members.first { it.id == id }
-                listOf(Entities.membership(user = member).apply { mandate = mandate(if (id in changed) "BLUESHELL-NEW" else "BLUESHELL-$id") })
+                listOf(
+                    Entities.membership(user = member).apply {
+                        mandate =
+                            mandate(
+                                if (id in
+                                    changed
+                                ) {
+                                    "BLUESHELL-NEW"
+                                } else {
+                                    "BLUESHELL-$id"
+                                },
+                            )
+                    },
+                )
             }
         }
         whenever(accounts.of(any())).thenReturn(CollectionAccount("NL91ABNA0417164300", "Zoë Bakker"))

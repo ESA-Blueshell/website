@@ -43,11 +43,12 @@ class IncassoRunSubmitted : IncassoRefusal(HttpStatus.CONFLICT, "IncassoRunSubmi
 
 class CollectionDatePassed : IncassoRefusal(HttpStatus.CONFLICT, "CollectionDatePassed", "The collection date has passed.")
 
-class IngDetailsMissing : IncassoRefusal(
-    HttpStatus.CONFLICT,
-    "IngDetailsMissing",
-    "The association's IBAN or incassant ID is not configured.",
-)
+class IngDetailsMissing :
+    IncassoRefusal(
+        HttpStatus.CONFLICT,
+        "IngDetailsMissing",
+        "The association's IBAN or incassant ID is not configured.",
+    )
 
 class MandateChanged(
     userIds: List<Long>,

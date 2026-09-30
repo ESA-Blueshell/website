@@ -16,6 +16,7 @@ import net.blueshell.api.cohort.domain.InboundReconcile
 import net.blueshell.api.cohort.domain.InboundReconcileApplyRequest
 import net.blueshell.api.cohort.domain.InboundReconcileApplyResponse
 import net.blueshell.api.cohort.domain.InboundReconcilePreview
+import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.cohort.persistence.CohortSubjectType
@@ -50,6 +51,7 @@ class CohortSubjectController(
     private val remediation: CohortRemediation,
     private val targeting: CohortTargeting,
     private val inboundReconcile: InboundReconcile,
+    private val catalog: TargetCatalog,
 ) {
     @GetMapping
     fun findCohortSubjects(): List<CohortSubjectSummaryResponse> = queries.summaries().map { it.toResponse() }
@@ -57,7 +59,18 @@ class CohortSubjectController(
     @GetMapping("/{id}")
     fun findCohortSubjectById(
         @PathVariable id: Long,
-    ): CohortSubjectDetailResponse = queries.detail(id).toResponse()
+    ): CohortSubjectDetailResponse {
+        val detail = queries.detail(id).toResponse()
+        // Brevo is asked where each linked list is now, outside the read transaction.
+        return detail.copy(
+            mappings =
+                detail.mappings.map { mapping ->
+                    val externalId = mapping.externalId ?: return@map mapping
+                    val place = catalog.placeOf(mapping.system, externalId)
+                    mapping.copy(path = place.path, folderKnown = place.folderKnown)
+                },
+        )
+    }
 
     @PostMapping("/{id}/drift/link-user")
     fun linkUser(
@@ -151,10 +164,11 @@ data class CohortMappingResponse(
     @param:Schema(
         description =
             "Where the target sits on its system, outside in: the system, then any " +
-                "folder holding it. Read from what was recorded when the target was linked or " +
-                "moved, so a page costs no call to the system.",
+                "folder holding it, read from the system itself.",
     )
     val path: List<String>,
+    @param:Schema(description = "False when the system could not say which folder the target is in")
+    val folderKnown: Boolean = true,
 )
 
 @Schema(name = "CohortSubjectMember")

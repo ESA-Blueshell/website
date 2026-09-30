@@ -5,7 +5,9 @@
  */
 import {
   applyInboundReconcile,
+  createExternalTarget,
   createTarget,
+  createTargetFolder,
   enqueue,
   findCohortSubjectById,
   findCohortSubjects,
@@ -17,6 +19,7 @@ import {
   moveCohortTarget,
   moveCohortTargets,
   previewInboundReconcile,
+  renameExternalTarget,
   searchCohortTargets,
   switchTarget,
 } from "@/services/api"
@@ -33,6 +36,9 @@ import type {
 } from "@/services/api"
 import {CohortKind, CohortSubjectCategory, CohortSubjectType, TargetSystem} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
+import type {Refused} from "@/types/api"
+import type {Saved} from "@/utils/refusals"
+import {refusable} from "@/domains/cohorts/refusals"
 
 /*
  * The enums are re-exported rather than re-declared: what a picker offers and what a category
@@ -110,6 +116,8 @@ export type TargetMapping = {
   lastReconciledAt: string | null
   /** Where the target sits on its system, outside in. Empty when the system files nothing. */
   path: string[]
+  /** False when the system could not say which folder the target is in. */
+  folderKnown: boolean
 }
 
 export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
@@ -144,6 +152,7 @@ function toTargetMapping(raw: ApiCohortMapping): TargetMapping {
     label: raw.label,
     lastReconciledAt: raw.lastReconciledAt ?? null,
     path: raw.path ?? [],
+    folderKnown: raw.folderKnown,
   }
 }
 
@@ -236,6 +245,31 @@ export async function moveTargetToFolder(
 ): Promise<ExternalTarget> {
   const res = await moveCohortTarget({path: {system, externalId}, body: {folder}, throwOnError: true})
   return toExternalTarget(res.data)
+}
+
+/** Make a list linked to no cohort, in [folder] or at the top level; answers it as the system has it. */
+export async function createListInSystem(
+  system: TargetSystem,
+  name: string,
+  folder: string | null,
+): Promise<Saved<ExternalTarget> | Refused> {
+  const answer = await refusable(createExternalTarget({path: {system}, body: {name, folder}}), "The list could not be made.")
+  return answer.ok ? {ok: true, saved: toExternalTarget(answer.saved)} : answer
+}
+
+/** Give a list, linked or not, another name on its system. */
+export async function renameTarget(
+  system: TargetSystem,
+  externalId: string,
+  name: string,
+): Promise<Saved<ExternalTarget> | Refused> {
+  const answer = await refusable(renameExternalTarget({path: {system, externalId}, body: {name}}), "The list could not be renamed.")
+  return answer.ok ? {ok: true, saved: toExternalTarget(answer.saved)} : answer
+}
+
+/** Make a folder, or find the one already called that; answers every folder. */
+export async function createFolderInSystem(system: TargetSystem, name: string): Promise<Saved<string[]> | Refused> {
+  return refusable(createTargetFolder({path: {system}, body: {name}}), "The folder could not be made.")
 }
 
 /** One target an external system would not move, and what it said about it. */

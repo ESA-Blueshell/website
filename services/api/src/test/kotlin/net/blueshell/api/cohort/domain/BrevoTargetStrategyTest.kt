@@ -1,11 +1,13 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class BrevoTargetStrategyTest {
@@ -24,6 +26,17 @@ class BrevoTargetStrategyTest {
 
         assertThat(paid.folderLabel).isEqualTo("Contribution periods")
         assertThat(paid.memberCount).isEqualTo(728L)
+    }
+
+    @Test
+    fun `renames a list and makes a folder by name`() {
+        whenever(lists.listFolders()).thenReturn(mapOf(1L to "Archive"))
+        val paid = ExternalTarget(TargetSystem.BREVO, "99", CohortKind.LIST, "Paid")
+
+        assertThat(strategy.rename(paid, "Paid 2026").label).isEqualTo("Paid 2026")
+        assertThat(strategy.createFolder("Archive")).containsExactly("Archive")
+        verify(lists).renameList(99L, "Paid 2026")
+        verify(lists).createFolder("Archive")
     }
 
     @Test

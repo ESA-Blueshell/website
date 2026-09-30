@@ -115,6 +115,27 @@ class BrevoListAdapter(
         }
     }
 
+    override fun renameList(
+        externalListId: Long,
+        name: String,
+    ) {
+        log.info("Renaming Brevo list {} to '{}'", externalListId, sanitizeForLog(name))
+        try {
+            contactsApi.updateList(externalListId, UpdateListRequest(name = name))
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to rename Brevo list {}", externalListId, e)
+            throw ContactServiceException("Failed to rename list: ${e.statusText}", e)
+        }
+    }
+
+    override fun createFolder(name: String): Long =
+        try {
+            folderNamed(name)
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to create Brevo folder '{}'", sanitizeForLog(name), e)
+            throw ContactServiceException("Failed to create folder: ${e.statusText}", e)
+        }
+
     // Brevo files lists by folder id, and its folders do not nest: find the one by name or make it.
     private fun folderNamed(name: String): Long =
         listFolders().entries.firstOrNull { it.value.equals(name, ignoreCase = true) }?.key

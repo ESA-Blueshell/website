@@ -15,6 +15,7 @@ import net.blueshell.clients.brevo.model.GetFolders200Response
 import net.blueshell.clients.brevo.model.GetLists200Response
 import net.blueshell.clients.brevo.model.GetLists200ResponseListsInner
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
+import net.blueshell.clients.brevo.model.UpdateListRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -213,5 +214,41 @@ class BrevoListAdapterTest {
         adapter.createList("Loose", null)
 
         verify(contactsApi).createList(CreateListRequest(folderId = 7L, name = "Loose"))
+    }
+
+    @Test
+    fun `renaming a list sends only its new name`() {
+        adapter.renameList(40L, "Sitecie 2026")
+
+        verify(contactsApi).updateList(40L, UpdateListRequest(name = "Sitecie 2026"))
+    }
+
+    @Test
+    fun `a refused rename is reported with Brevo's reason`() {
+        whenever(contactsApi.updateList(eq(40L), any())).thenThrow(error(400, """{"code":"invalid_parameter"}"""))
+
+        assertThatThrownBy { adapter.renameList(40L, "Sitecie 2026") }
+            .isInstanceOf(ContactServiceException::class.java)
+            .hasMessageStartingWith("Failed to rename list")
+    }
+
+    @Test
+    fun `making a folder that exists answers the one already there`() {
+        whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC)))
+            .thenReturn(GetFolders200Response(count = 1L, folders = listOf(folder(9L, "Archive"))))
+
+        assertThat(adapter.createFolder("archive")).isEqualTo(9L)
+        verify(contactsApi, never()).createFolder(any())
+    }
+
+    @Test
+    fun `a folder Brevo refuses to make is reported with its reason`() {
+        whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC)))
+            .thenReturn(GetFolders200Response(count = 0L, folders = emptyList()))
+        whenever(contactsApi.createFolder(any())).thenThrow(error(400, """{"code":"invalid_parameter"}"""))
+
+        assertThatThrownBy { adapter.createFolder("Archive") }
+            .isInstanceOf(ContactServiceException::class.java)
+            .hasMessageStartingWith("Failed to create folder")
     }
 }

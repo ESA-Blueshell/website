@@ -2001,6 +2001,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             path: isCommittee ? ["Brevo", "Committees"] : ["Brevo", "Contribution periods"],
             externalId: isCommittee ? "33" : "7",
             lastReconciledAt: "2026-02-10T09:00:00Z",
+            folderKnown: true,
           },
         ],
         definitionKey: isCommittee ? "COMMITTEE_MEMBERS:42" : "PERIOD_MEMBERS:1",

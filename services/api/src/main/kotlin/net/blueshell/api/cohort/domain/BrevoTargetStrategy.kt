@@ -93,6 +93,19 @@ class BrevoTargetStrategy(
         return target.copy(folderLabel = folder, path = pathTo(folder))
     }
 
+    override fun rename(
+        target: ExternalTarget,
+        name: String,
+    ): ExternalTarget {
+        lists.renameList(target.externalId.toBrevoId("externalId", "rename"), name)
+        return target.copy(label = name)
+    }
+
+    override fun createFolder(name: String): List<String> {
+        lists.createFolder(name)
+        return folders()
+    }
+
     override fun delete(target: ExternalTarget) {
         lists.deleteList(target.externalId.toBrevoId("externalId", "delete"))
     }

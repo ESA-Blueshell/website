@@ -583,6 +583,10 @@ export enum CohortKind {
 export type CohortMapping = {
     cohortId: number;
     externalId?: string | null;
+    /**
+     * False when the system could not say which folder the target is in
+     */
+    folderKnown: boolean;
     kind: CohortKind;
     label: string;
     /**
@@ -590,7 +594,7 @@ export type CohortMapping = {
      */
     lastReconciledAt?: string | null;
     /**
-     * Where the target sits on its system, outside in: the system, then any folder holding it. Read from what was recorded when the target was linked or moved, so a page costs no call to the system.
+     * Where the target sits on its system, outside in: the system, then any folder holding it, read from the system itself.
      */
     path: Array<string>;
     /**
@@ -922,6 +926,17 @@ export type CreateEventSignUpRequest = {
     userId?: number | null;
 };
 
+/**
+ * A new target, linked to no cohort.
+ */
+export type CreateExternalTargetRequest = {
+    /**
+     * The folder to make it in; none puts it at the top level.
+     */
+    folder?: string | null;
+    name: string;
+};
+
 export type CreateGuestRequest = {
     discord: string;
     email: string;
@@ -953,6 +968,13 @@ export type CreateTarget = {
     folderHint?: string | null;
     label: string;
     system: TargetSystem;
+};
+
+/**
+ * A folder to make, by name.
+ */
+export type CreateTargetFolderRequest = {
+    name: string;
 };
 
 export type CreateTelemetryRequest = {
@@ -2063,6 +2085,13 @@ export type ReenrolRequest = {
     password: string;
     token: string;
     username: string;
+};
+
+/**
+ * Another name for a target.
+ */
+export type RenameExternalTargetRequest = {
+    name: string;
 };
 
 export enum Role {
@@ -7980,6 +8009,49 @@ export type SearchCohortTargetsResponses = {
 
 export type SearchCohortTargetsResponse = SearchCohortTargetsResponses[keyof SearchCohortTargetsResponses];
 
+export type CreateExternalTargetData = {
+    body: CreateExternalTargetRequest;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}';
+};
+
+export type CreateExternalTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateExternalTargetError = CreateExternalTargetErrors[keyof CreateExternalTargetErrors];
+
+export type CreateExternalTargetResponses = {
+    /**
+     * OK
+     */
+    200: ExternalTarget;
+};
+
+export type CreateExternalTargetResponse = CreateExternalTargetResponses[keyof CreateExternalTargetResponses];
+
 export type MoveCohortTargetsData = {
     body: BulkMoveTargetsRequest;
     path: {
@@ -8066,6 +8138,49 @@ export type ListCohortTargetFoldersResponses = {
 
 export type ListCohortTargetFoldersResponse = ListCohortTargetFoldersResponses[keyof ListCohortTargetFoldersResponses];
 
+export type CreateTargetFolderData = {
+    body: CreateTargetFolderRequest;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders';
+};
+
+export type CreateTargetFolderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateTargetFolderError = CreateTargetFolderErrors[keyof CreateTargetFolderErrors];
+
+export type CreateTargetFolderResponses = {
+    /**
+     * OK
+     */
+    200: Array<string>;
+};
+
+export type CreateTargetFolderResponse = CreateTargetFolderResponses[keyof CreateTargetFolderResponses];
+
 export type MoveCohortTargetData = {
     body: MoveTargetRequest;
     path: {
@@ -8109,6 +8224,50 @@ export type MoveCohortTargetResponses = {
 };
 
 export type MoveCohortTargetResponse = MoveCohortTargetResponses[keyof MoveCohortTargetResponses];
+
+export type RenameExternalTargetData = {
+    body: RenameExternalTargetRequest;
+    path: {
+        system: TargetSystem;
+        externalId: string;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/{externalId}/name';
+};
+
+export type RenameExternalTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RenameExternalTargetError = RenameExternalTargetErrors[keyof RenameExternalTargetErrors];
+
+export type RenameExternalTargetResponses = {
+    /**
+     * OK
+     */
+    200: ExternalTarget;
+};
+
+export type RenameExternalTargetResponse = RenameExternalTargetResponses[keyof RenameExternalTargetResponses];
 
 export type FindCohortsData = {
     body?: never;

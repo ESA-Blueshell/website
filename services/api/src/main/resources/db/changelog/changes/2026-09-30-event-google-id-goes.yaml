@@ -1,0 +1,20 @@
+# An event's Google Calendar id lives in external_id_mapping, and 1.12.0, the release that
+# stopped writing events.google_id, maps no such column, so it goes (#1835).
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-30-event-google-id-goes.yaml
+      id: event-google-id-goes
+      author: blueshell
+      changes:
+        # The key first: dropping the column alone would leave it unique on deleted_at.
+        - dropUniqueConstraint:
+            tableName: events
+            constraintName: uk_events_google_id_deleted_at
+        - dropColumn:
+            tableName: events
+            columnName: google_id
+      rollback:
+        - sql:
+            sql: ALTER TABLE events ADD COLUMN google_id MEDIUMTEXT NULL
+        - sql:
+            sql: ALTER TABLE events ADD UNIQUE KEY uk_events_google_id_deleted_at (google_id, deleted_at) USING HASH

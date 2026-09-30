@@ -1307,7 +1307,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         lastSeenAt: "2025-01-02T12:00:00.000Z",
         occurrences: 4,
         latestMessage: "Brevo said no",
-        latestSource: "JOB",
+        latestSource: "JOB" as const,
         latestConcern: "contact.sync",
         latestJobExecutionId: 700,
         latestStackTrace: "java.lang.IllegalStateException: Brevo said no\n\tat net.blueshell.api.contact.Sync.run(Sync.kt:4)",

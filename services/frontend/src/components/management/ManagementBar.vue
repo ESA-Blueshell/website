@@ -44,6 +44,21 @@
         class="mg-menu"
         :side-offset="0"
       >
+        <dropdown-menu-item as-child>
+          <router-link
+            class="mg-menu__entry mg-menu__alerts"
+            data-testid="management-account-alerts"
+            to="/management/alerts"
+          >
+            Alerts
+            <count-badge
+              v-if="count > 0"
+              :count="count"
+              said="alerts"
+              testid="management-account-alerts-count"
+            />
+          </router-link>
+        </dropdown-menu-item>
         <dropdown-menu-item
           v-for="entry in account"
           :key="entry.to"
@@ -82,6 +97,8 @@ import {computed} from "vue"
 import {useStore} from "vuex"
 import {DropdownMenuContent, DropdownMenuItem, DropdownMenuRoot, DropdownMenuTrigger} from "reka-ui"
 import NavMark from "@/components/common/NavMark.vue"
+import CountBadge from "@/components/island/CountBadge.vue"
+import {useAlerts} from "@/domains/alerts"
 import {accountFor} from "@/components/common/nav"
 import logo from "@/assets/topbarlogo-38.webp"
 import logo2x from "@/assets/topbarlogo-76.webp"
@@ -91,6 +108,7 @@ const {darkMode} = defineProps<{darkMode: boolean}>()
 const emit = defineEmits<{toggleDarkMode: []; logOut: []}>()
 
 const store = useStore()
+const {count} = useAlerts()
 
 const account = computed(() =>
   accountFor({
@@ -190,6 +208,10 @@ const account = computed(() =>
 :deep(.mg-menu__entry[data-highlighted]),
 :deep(.mg-menu__entry:hover) {
   background: color-mix(in oklab, var(--color-chalk) 8%, transparent);
+}
+
+:deep(.mg-menu__alerts) {
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 :deep(.mg-menu__switch) {

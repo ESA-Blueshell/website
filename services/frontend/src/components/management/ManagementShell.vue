@@ -32,7 +32,15 @@
           :data-testid="`management-nav-${slug(entry.label)}`"
           :to="entry.to"
         >
-          {{ entry.label }}
+          <span>
+            {{ entry.label }}
+            <count-badge
+              v-if="entry.counted && count > 0"
+              :count="count"
+              said="alerts"
+              :testid="`management-nav-${slug(entry.label)}-count`"
+            />
+          </span>
           <span
             v-if="entry.adminOnly && !group.adminOnly"
             class="mg-admin"
@@ -74,16 +82,23 @@
           <path :d="tab.icon" />
         </svg>
         <span>{{ tab.label }}</span>
+        <span
+          v-if="tab.count > 0"
+          class="mg-tab__count"
+          :data-testid="`management-tab-${slug(tab.label)}-count`"
+        >{{ tab.count }}</span>
       </router-link>
     </nav>
   </div>
 </template>
 
 <script lang="ts" setup>
-import {computed} from "vue"
+import {computed, onMounted, watch} from "vue"
 import {useRoute} from "vue-router"
 import {useStore} from "vuex"
+import CountBadge from "@/components/island/CountBadge.vue"
 import {isOn, managementFor} from "@/components/management/managementNav"
+import {useAlerts} from "@/domains/alerts"
 
 defineOptions({name: "ManagementShell"})
 
@@ -92,14 +107,22 @@ const store = useStore()
 
 const groups = computed(() => managementFor({board: store.getters.isBoard === true, admin: store.getters.isAdmin === true}))
 
+// Read again on every page, so an alert dealt with on one page leaves the count on the next.
+const {count, refresh} = useAlerts()
+onMounted(refresh)
+watch(() => route.path, refresh)
+
 const MEMBERS_ICON = "M9 4.6a3.4 3.4 0 1 1 0 6.8a3.4 3.4 0 1 1 0-6.8M2.6 19.4c0-3.4 2.9-5.6 6.4-5.6s6.4 2.2 6.4 5.6M16 5.2a3.2 3.2 0 0 1 0 6.1M18.4 14.2c1.8.8 3 2.6 3 5.2"
+const ALERTS_ICON = "M12 3.5a5.5 5.5 0 0 0-5.5 5.5v3.6L4.6 16.4h14.8l-1.9-3.8V9A5.5 5.5 0 0 0 12 3.5M9.8 19.2a2.3 2.3 0 0 0 4.4 0"
 const MORE_ICON = "M4 7h16M4 12h16M4 17h16"
+const TAB_LOOK = {alerts: {label: "Alerts", icon: ALERTS_ICON}, members: {label: "Members", icon: MEMBERS_ICON}}
 
 /** The phone's bottom bar: the pages that have a tab, then More for everything else. */
 const tabs = computed(() => {
-  const entries = groups.value.flatMap((group) => group.entries).filter((entry) => entry.tab)
-  const owned = entries.map((entry) => ({label: "Members", to: entry.to, icon: MEMBERS_ICON, on: isOn(route.path, entry)}))
-  const more = {label: "More", to: "/management/more", icon: MORE_ICON, on: route.path === "/management/more"}
+  const owned = groups.value.flatMap((group) => group.entries).flatMap((entry) => entry.tab
+    ? [{...TAB_LOOK[entry.tab], to: entry.to, on: isOn(route.path, entry), count: entry.counted ? count.value : 0}]
+    : [])
+  const more = {label: "More", to: "/management/more", icon: MORE_ICON, on: route.path === "/management/more", count: 0}
   return [...owned, {...more, on: more.on || (!owned.some((tab) => tab.on) && route.path !== "/management")}]
 })
 
@@ -254,6 +277,19 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
 .mg-tab svg {
   width: 22px;
   height: 22px;
+}
+
+.mg-tab__count {
+  position: absolute;
+  top: 0.5rem;
+  left: calc(50% + 0.4rem);
+  min-width: 1.1rem;
+  padding: 0 0.3rem;
+  font-size: 0.66rem;
+  line-height: 1.1rem;
+  text-align: center;
+  color: var(--color-pit);
+  background: var(--color-brand);
 }
 
 .mg-tab--on {

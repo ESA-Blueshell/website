@@ -1649,6 +1649,12 @@ export type InboundReconcileRow = {
     writable: boolean;
 };
 
+export enum IncassoStanding {
+    NONE = 'NONE',
+    MANDATE_RECORDED = 'MANDATE_RECORDED',
+    ON_INCASSO_WITHOUT_BANK_DETAILS = 'ON_INCASSO_WITHOUT_BANK_DETAILS'
+}
+
 export enum JobEffect {
     MADE = 'MADE',
     EDITED = 'EDITED',
@@ -1888,6 +1894,20 @@ export type LoginResponse = {
     username: string;
 };
 
+export type MandateResponse = {
+    accountHolder?: string | null;
+    /**
+     * The last four characters of the IBAN; no response carries more.
+     */
+    ibanLastFour?: string | null;
+    membershipId: number;
+    recordedAt?: string | null;
+    recordedBy?: number | null;
+    reference?: string | null;
+    signedOn?: string | null;
+    standing: IncassoStanding;
+};
+
 export type MemberActivationRequest = {
     password: string;
     token: string;
@@ -1939,8 +1959,13 @@ export type MembershipApplicationRequest = {
 export type MembershipResponse = {
     createdAt: string;
     endDate?: string | null;
+    /**
+     * The last four characters of the mandate's IBAN, where one is recorded.
+     */
+    ibanLastFour?: string | null;
     id: number;
     incasso: boolean;
+    incassoStanding: IncassoStanding;
     memberType: MemberType;
     startDate: string;
     updatedAt: string;
@@ -2188,6 +2213,12 @@ export type ReconcileRun = {
      * What queued it; null for a run queued before runs recorded it
      */
     trigger?: JobTrigger | null;
+};
+
+export type RecordMandateRequest = {
+    accountHolder: string;
+    iban: string;
+    signedOn: string;
 };
 
 export type RecordedException = {
@@ -10328,6 +10359,92 @@ export type RestoreMembershipResponses = {
 };
 
 export type RestoreMembershipResponse = RestoreMembershipResponses[keyof RestoreMembershipResponses];
+
+export type FindMandateData = {
+    body?: never;
+    path: {
+        membershipId: number;
+    };
+    query?: never;
+    url: '/memberships/{membershipId}/mandate';
+};
+
+export type FindMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindMandateError = FindMandateErrors[keyof FindMandateErrors];
+
+export type FindMandateResponses = {
+    /**
+     * OK
+     */
+    200: MandateResponse;
+};
+
+export type FindMandateResponse = FindMandateResponses[keyof FindMandateResponses];
+
+export type RecordMandateData = {
+    body: RecordMandateRequest;
+    path: {
+        membershipId: number;
+    };
+    query?: never;
+    url: '/memberships/{membershipId}/mandate';
+};
+
+export type RecordMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RecordMandateError = RecordMandateErrors[keyof RecordMandateErrors];
+
+export type RecordMandateResponses = {
+    /**
+     * OK
+     */
+    200: MandateResponse;
+};
+
+export type RecordMandateResponse = RecordMandateResponses[keyof RecordMandateResponses];
 
 export type ForwardAuthData = {
     body?: never;

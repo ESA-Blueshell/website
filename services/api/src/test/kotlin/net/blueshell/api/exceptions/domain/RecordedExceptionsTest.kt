@@ -93,7 +93,8 @@ class RecordedExceptionsTest {
 
     @Test
     fun `hibernate can build an empty fault to fill`() {
-        assertThat(RecordedException::class.java.getDeclaredConstructor().newInstance().id).isNull()
+        val empty = RecordedException::class.java.getDeclaredConstructor().newInstance()
+        assertThat(empty.id).isNull()
         assertThat(fault(6).fingerprint).isEqualTo("f6")
     }
 }

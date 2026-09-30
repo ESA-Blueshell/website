@@ -38,5 +38,7 @@ class IncassoRunControllerTest {
             )
         assertThat(controller.startIncassoRun(4, request)).isEqualTo(view)
         assertThat(controller.findIncassoRun(11)).isEqualTo(view)
+        assertThat(StartIncassoRunRequest(collectionDate = null).statementText).isEmpty()
+        assertThat(net.blueshell.api.contribution.persistence.IncassoRun::class.java.getDeclaredConstructor().newInstance()).isNotNull
     }
 }

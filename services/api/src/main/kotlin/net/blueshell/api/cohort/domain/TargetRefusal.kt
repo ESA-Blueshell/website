@@ -31,3 +31,22 @@ class TargetNotFound(
         "The system has no such target.",
         mapOf("system" to system.shownName, "externalId" to externalId),
     )
+
+class TargetStillLinked(
+    system: TargetSystem,
+    externalId: String,
+) : TargetRefusal(
+        HttpStatus.CONFLICT,
+        "TargetStillLinked",
+        "A list linked to a cohort cannot be deleted.",
+        mapOf("system" to system.shownName, "externalId" to externalId),
+    )
+
+class TargetNameMismatch(
+    name: String,
+) : TargetRefusal(
+        HttpStatus.BAD_REQUEST,
+        "TargetNameMismatch",
+        "The name typed is not the list's name.",
+        mapOf("name" to name),
+    )

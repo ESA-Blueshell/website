@@ -1,10 +1,14 @@
 import {computed, ref} from "vue"
 import {
+  applyTidy,
+  archiveTarget,
   createFolderInSystem,
   createListInSystem,
+  deleteTarget,
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
+  fetchTidyPlan,
   moveTargetToFolder,
   moveTargetsToFolder,
   renameTarget,
@@ -12,6 +16,7 @@ import {
   type ExternalTarget,
   type TargetDescriptor,
   type TargetSystem,
+  type TidyMove,
 } from "@/domains/cohorts/adapters/cohorts"
 import type {BulkRejection} from "@/utils/bulkRejection"
 
@@ -234,7 +239,90 @@ export function useTargetOverview() {
     }
   }
 
+  /** File a list in the archive folder; the row shows where it went. */
+  async function archive(system: TargetSystem, target: ExternalTarget): Promise<boolean> {
+    writing.value = true
+    writeRefusal.value = null
+    try {
+      const archived = await archiveTarget(system, target.externalId)
+      if (!archived.ok) {
+        writeRefusal.value = archived.reason
+        return false
+      }
+      targets.value = targets.value.map((t) => (t.externalId === archived.saved.externalId ? archived.saved : t))
+      return true
+    } finally {
+      writing.value = false
+    }
+  }
+
+  /** Delete an unlinked list for good, by its name typed exactly. */
+  async function remove(system: TargetSystem, target: ExternalTarget, typedName: string): Promise<boolean> {
+    writing.value = true
+    writeRefusal.value = null
+    try {
+      const deleted = await deleteTarget(system, target.externalId, typedName)
+      if (!deleted.ok) {
+        writeRefusal.value = deleted.reason
+        return false
+      }
+      targets.value = targets.value.filter((t) => t.externalId !== target.externalId)
+      return true
+    } finally {
+      writing.value = false
+    }
+  }
+
+  /** The folder tidy's proposal, what is ticked in it, and what the system refused when applied. */
+  const tidyMoves = ref<TidyMove[]>([])
+  const tidyFoldersToCreate = ref<string[]>([])
+  const tidyPicked = ref<Set<string>>(new Set())
+  const tidyFailures = ref<BulkTargetMoveResult["failed"]>([])
+
+  async function previewTidy(system: TargetSystem): Promise<void> {
+    writing.value = true
+    tidyFailures.value = []
+    try {
+      const plan = await fetchTidyPlan(system)
+      tidyMoves.value = plan.moves
+      tidyFoldersToCreate.value = plan.foldersToCreate
+      tidyPicked.value = new Set(plan.moves.map((m) => m.externalId))
+    } finally {
+      writing.value = false
+    }
+  }
+
+  function toggleTidyPick(externalId: string): void {
+    const next = new Set(tidyPicked.value)
+    if (!next.delete(externalId)) next.add(externalId)
+    tidyPicked.value = next
+  }
+
+  /** Moves what is ticked; the rows show where each list went, and refusals stay listed. */
+  async function applyTidyPicks(system: TargetSystem): Promise<boolean> {
+    writing.value = true
+    try {
+      const {moved, failed} = await applyTidy(system, [...tidyPicked.value])
+      const byId = new Map(moved.map((target) => [target.externalId, target]))
+      targets.value = targets.value.map((target) => byId.get(target.externalId) ?? target)
+      tidyFailures.value = failed
+      tidyMoves.value = tidyMoves.value.filter((m) => !byId.has(m.externalId))
+      return failed.length === 0
+    } finally {
+      writing.value = false
+    }
+  }
+
   return {
+    tidyMoves,
+    tidyFoldersToCreate,
+    tidyPicked,
+    tidyFailures,
+    previewTidy,
+    toggleTidyPick,
+    applyTidyPicks,
+    archive,
+    remove,
     writeRefusal,
     writing,
     createList,

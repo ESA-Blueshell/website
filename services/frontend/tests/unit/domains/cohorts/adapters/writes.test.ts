@@ -1,9 +1,13 @@
 import {describe, expect, it, vi} from "vitest"
 import {
   applyInboundReconcileSelection,
+  applyTidy,
+  fetchTidyPlan,
+  archiveTarget,
   createFolderInSystem,
   createListInSystem,
   createTargetForSubject,
+  deleteTarget,
   linkExistingTargetForSubject,
   linkUserToExternal,
   moveTargetToFolder,
@@ -14,15 +18,19 @@ import {
   triggerReconcile,
 } from "@/domains/cohorts/adapters/cohorts"
 import {
+  applyFolderTidy,
   applyInboundReconcile,
+  archiveExternalTarget,
   createExternalTarget,
   createTarget,
   createTargetFolder,
+  deleteExternalTarget,
   enqueue,
   linkExistingTarget,
   linkUser,
   moveCohortTarget,
   moveCohortTargets,
+  previewFolderTidy,
   renameExternalTarget,
   switchTarget,
 } from "@/services/api"
@@ -34,6 +42,10 @@ import {CohortKind, TargetSystem} from "@/services/api"
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   applyInboundReconcile: vi.fn(),
+  applyFolderTidy: vi.fn(),
+  previewFolderTidy: vi.fn(),
+  archiveExternalTarget: vi.fn(),
+  deleteExternalTarget: vi.fn(),
   createExternalTarget: vi.fn(),
   createTarget: vi.fn(),
   createTargetFolder: vi.fn(),
@@ -352,5 +364,66 @@ describe("making and renaming lists on the system", () => {
     vi.mocked(createTargetFolder).mockResolvedValue(answer(createTargetFolder, ["Members", "Projects"]))
 
     await expect(createFolderInSystem(TargetSystem.BREVO, "Projects")).resolves.toEqual({ok: true, saved: ["Members", "Projects"]})
+  })
+})
+
+describe("archiving and deleting lists", () => {
+  it("answers with the list in its archive folder", async () => {
+    vi.mocked(archiveExternalTarget).mockResolvedValue(answer(archiveExternalTarget, target({folderLabel: "Archive"})))
+
+    await expect(archiveTarget(TargetSystem.BREVO, "17")).resolves.toMatchObject({ok: true, saved: {folderLabel: "Archive"}})
+  })
+
+  it("says why a linked list cannot be deleted", async () => {
+    vi.mocked(deleteExternalTarget).mockResolvedValue(
+      refusal(deleteExternalTarget, {code: "TargetStillLinked", system: "Brevo", externalId: "17"}, 409),
+    )
+
+    await expect(deleteTarget(TargetSystem.BREVO, "17", "Paid members")).resolves.toEqual({
+      ok: false,
+      reason: "A list linked to a cohort is archived, not deleted.",
+    })
+    expect(deleteExternalTarget).toHaveBeenCalledWith({path: {system: TargetSystem.BREVO, externalId: "17"}, body: {name: "Paid members"}})
+  })
+
+  it("says a mistyped name is why a delete was refused", async () => {
+    vi.mocked(deleteExternalTarget).mockResolvedValue(refusal(deleteExternalTarget, {code: "TargetNameMismatch", name: "paid"}, 400))
+
+    await expect(deleteTarget(TargetSystem.BREVO, "17", "paid")).resolves.toEqual({
+      ok: false,
+      reason: "That is not the list's name; type it exactly to delete it.",
+    })
+  })
+
+  it("answers that the delete went through", async () => {
+    vi.mocked(deleteExternalTarget).mockResolvedValue(emptyAnswer(deleteExternalTarget))
+
+    await expect(deleteTarget(TargetSystem.BREVO, "18", "Loose")).resolves.toEqual({ok: true})
+  })
+})
+
+describe("the folder tidy", () => {
+  it("reads the proposal, with a list at the top level as no folder", async () => {
+    vi.mocked(previewFolderTidy).mockResolvedValue(answer(previewFolderTidy, {
+      moves: [{externalId: "7", label: "Sitecie", to: "Committees"}],
+      foldersToCreate: ["Committees"],
+    }))
+
+    await expect(fetchTidyPlan(TargetSystem.BREVO)).resolves.toEqual({
+      moves: [{externalId: "7", label: "Sitecie", from: null, to: "Committees"}],
+      foldersToCreate: ["Committees"],
+    })
+  })
+
+  it("answers what moved and what was refused", async () => {
+    vi.mocked(applyFolderTidy).mockResolvedValue(answer(applyFolderTidy, {
+      moved: [target({externalId: "7", folderLabel: "Committees"})],
+      failed: [{externalId: "8", label: "Board", message: "Brevo said no"}],
+    }))
+
+    const result = await applyTidy(TargetSystem.BREVO, ["7", "8"])
+
+    expect(result.moved.map((t) => t.externalId)).toEqual(["7"])
+    expect(result.failed).toEqual([{externalId: "8", label: "Board", message: "Brevo said no"}])
   })
 })

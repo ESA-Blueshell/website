@@ -3,18 +3,30 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.TargetDeletion
+import net.blueshell.api.cohort.persistence.TargetDeletionRepository
 import net.blueshell.api.contact.api.ContactServiceException
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.shared.tracking.ActorProvider
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class TargetCatalogTest {
     private val cohorts: CohortRepository = mock()
     private val strategy = RecordingStrategy()
-    private val catalog = TargetCatalog(TargetStrategies(listOf(strategy)), cohorts)
+    private val deletions: TargetDeletionRepository = mock()
+    private val actors: ActorProvider = mock { on { currentOrSystem() } doReturn Actor.user(5L, Role.ADMIN) }
+    private val catalog = TargetCatalog(TargetStrategies(listOf(strategy)), cohorts, deletions, actors)
 
     @Test
     fun `descriptors come from registered target strategies`() {
@@ -89,7 +101,7 @@ class TargetCatalogTest {
             ExternalTarget(TargetSystem.BREVO, "10", CohortKind.LIST, "Sitecie", "Committees", path = listOf("Brevo", "Committees")),
         )
 
-        assertThat(TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).placeOf(TargetSystem.BREVO, "10"))
+        assertThat(catalogWith(brevo).placeOf(TargetSystem.BREVO, "10"))
             .isEqualTo(TargetPlace(listOf("Brevo", "Committees"), folderKnown = true))
     }
 
@@ -98,11 +110,13 @@ class TargetCatalogTest {
         val brevo = placingStrategy()
         whenever(brevo.resolve("10")).thenThrow(IllegalStateException("Brevo is down"))
         whenever(brevo.resolve("11")).thenReturn(null)
-        val placing = TargetCatalog(TargetStrategies(listOf(brevo)), cohorts)
+        val placing = catalogWith(brevo)
 
         assertThat(placing.placeOf(TargetSystem.BREVO, "10")).isEqualTo(TargetPlace(listOf("Brevo"), folderKnown = false))
         assertThat(placing.placeOf(TargetSystem.BREVO, "11")).isEqualTo(TargetPlace(listOf("Brevo"), folderKnown = false))
     }
+
+    private fun catalogWith(brevo: TargetStrategy) = TargetCatalog(TargetStrategies(listOf(brevo)), cohorts, deletions, actors)
 
     private fun placingStrategy(): TargetStrategy =
         mock<TargetStrategy>().also {
@@ -115,7 +129,7 @@ class TargetCatalogTest {
         val brevo = placingStrategy()
         whenever(brevo.createFolder("Archief")).thenReturn(listOf("Archief", "Committees"))
 
-        assertThat(TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).createFolder(TargetSystem.BREVO, "Archief"))
+        assertThat(catalogWith(brevo).createFolder(TargetSystem.BREVO, "Archief"))
             .containsExactly("Archief", "Committees")
     }
 
@@ -125,7 +139,7 @@ class TargetCatalogTest {
         val made = ExternalTarget(TargetSystem.BREVO, "12", CohortKind.LIST, "Pub quiz", "Committees")
         whenever(brevo.create("Pub quiz", "Committees")).thenReturn(made)
 
-        val created = TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).create(TargetSystem.BREVO, "Pub quiz", "Committees")
+        val created = catalogWith(brevo).create(TargetSystem.BREVO, "Pub quiz", "Committees")
 
         assertThat(created.linkedCohortId).isNull()
         assertThat(created.externalId).isEqualTo("12")
@@ -145,7 +159,7 @@ class TargetCatalogTest {
         whenever(cohorts.findAllBySystem("BREVO")).thenReturn(listOf(linked))
         whenever(cohorts.findById(42L)).thenReturn(java.util.Optional.of(linked))
 
-        val renamed = TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).rename(TargetSystem.BREVO, "2", "Members 2026")
+        val renamed = catalogWith(brevo).rename(TargetSystem.BREVO, "2", "Members 2026")
 
         assertThat(renamed.label).isEqualTo("Members 2026")
         assertThat(renamed.linkedCohortId).isEqualTo(42L)
@@ -157,7 +171,7 @@ class TargetCatalogTest {
         val brevo = placingStrategy()
         whenever(brevo.createFolder("Archief")).thenThrow(ContactServiceException("Failed to create folder: Bad Request"))
 
-        assertThatThrownBy { TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).createFolder(TargetSystem.BREVO, "Archief") }
+        assertThatThrownBy { catalogWith(brevo).createFolder(TargetSystem.BREVO, "Archief") }
             .isInstanceOf(TargetSystemRefused::class.java)
             .extracting("facts")
             .isEqualTo(mapOf("system" to "Brevo", "reason" to "Failed to create folder: Bad Request"))
@@ -168,7 +182,68 @@ class TargetCatalogTest {
         val brevo = placingStrategy()
         whenever(brevo.resolve("404")).thenReturn(null)
 
-        assertThatThrownBy { TargetCatalog(TargetStrategies(listOf(brevo)), cohorts).rename(TargetSystem.BREVO, "404", "Gone") }
+        assertThatThrownBy { catalogWith(brevo).rename(TargetSystem.BREVO, "404", "Gone") }
             .isInstanceOf(TargetNotFound::class.java)
+    }
+
+    @Test
+    fun `archiving files a list in the archive folder, made first, and keeps its link`() {
+        val brevo = placingStrategy()
+        val target = ExternalTarget(TargetSystem.BREVO, "2", CohortKind.LIST, "Paid 2024", "Contribution paid")
+        whenever(brevo.resolve("2")).thenReturn(target)
+        whenever(brevo.move(target, "Archive")).thenReturn(target.copy(folderLabel = "Archive"))
+        val linked =
+            Cohort("BREVO", CohortKind.LIST, "Paid 2024").apply {
+                id = 7L
+                externalId = "2"
+            }
+        whenever(cohorts.findAllBySystem("BREVO")).thenReturn(listOf(linked))
+
+        val archived = catalogWith(brevo).archive(TargetSystem.BREVO, "2")
+
+        verify(brevo).createFolder("Archive")
+        assertThat(archived.folderLabel).isEqualTo("Archive")
+        assertThat(archived.linkedCohortId).isEqualTo(7L)
+    }
+
+    @Test
+    fun `deleting an unlinked list by its exact name deletes it and records who did`() {
+        val brevo = placingStrategy()
+        val target = ExternalTarget(TargetSystem.BREVO, "3", CohortKind.LIST, "Old test list")
+        whenever(brevo.resolve("3")).thenReturn(target)
+
+        catalogWith(brevo).delete(TargetSystem.BREVO, "3", "Old test list")
+
+        verify(brevo).delete(target)
+        val recorded = argumentCaptor<TargetDeletion>()
+        verify(deletions).save(recorded.capture())
+        with(recorded.firstValue) {
+            assertThat(listOf(system, externalId, name)).containsExactly("BREVO", "3", "Old test list")
+            assertThat(deletedBy).isEqualTo(5L)
+            assertThat(deletedAt).isNotNull()
+        }
+    }
+
+    @Test
+    fun `a linked list or a mistyped name is refused, and nothing is deleted`() {
+        val brevo = placingStrategy()
+        val target = ExternalTarget(TargetSystem.BREVO, "2", CohortKind.LIST, "Members")
+        whenever(brevo.resolve("2")).thenReturn(target)
+        val deleting = catalogWith(brevo)
+
+        assertThatThrownBy { deleting.delete(TargetSystem.BREVO, "2", "members") }.isInstanceOf(TargetNameMismatch::class.java)
+
+        whenever(cohorts.findAllBySystem("BREVO")).thenReturn(
+            listOf(
+                Cohort("BREVO", CohortKind.LIST, "Members").apply {
+                    id = 1L
+                    externalId = "2"
+                },
+            ),
+        )
+        assertThatThrownBy { deleting.delete(TargetSystem.BREVO, "2", "Members") }.isInstanceOf(TargetStillLinked::class.java)
+
+        verify(brevo, never()).delete(any())
+        verify(deletions, never()).save(any<TargetDeletion>())
     }
 }

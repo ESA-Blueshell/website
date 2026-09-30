@@ -4,10 +4,13 @@
  * it through `index.ts`.
  */
 import {
+  applyFolderTidy,
   applyInboundReconcile,
+  archiveExternalTarget,
   createExternalTarget,
   createTarget,
   createTargetFolder,
+  deleteExternalTarget,
   enqueue,
   findCohortSubjectById,
   findCohortSubjects,
@@ -18,6 +21,7 @@ import {
   listCohortTargetSystems,
   moveCohortTarget,
   moveCohortTargets,
+  previewFolderTidy,
   previewInboundReconcile,
   renameExternalTarget,
   searchCohortTargets,
@@ -38,7 +42,7 @@ import {CohortKind, CohortSubjectCategory, CohortSubjectType, TargetSystem} from
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
-import {refusable} from "@/domains/cohorts/refusals"
+import {accepted, refusable} from "@/domains/cohorts/refusals"
 
 /*
  * The enums are re-exported rather than re-declared: what a picker offers and what a category
@@ -270,6 +274,38 @@ export async function renameTarget(
 /** Make a folder, or find the one already called that; answers every folder. */
 export async function createFolderInSystem(system: TargetSystem, name: string): Promise<Saved<string[]> | Refused> {
   return refusable(createTargetFolder({path: {system}, body: {name}}), "The folder could not be made.")
+}
+
+/** File a list in the archive folder; it keeps its contacts and its link. */
+export async function archiveTarget(system: TargetSystem, externalId: string): Promise<Saved<ExternalTarget> | Refused> {
+  const answer = await refusable(archiveExternalTarget({path: {system, externalId}}), "The list could not be archived.")
+  return answer.ok ? {ok: true, saved: toExternalTarget(answer.saved)} : answer
+}
+
+/** Delete a list linked to no cohort for good, confirmed by its name typed exactly. */
+export async function deleteTarget(system: TargetSystem, externalId: string, name: string): Promise<{ok: true} | Refused> {
+  return accepted(deleteExternalTarget({path: {system, externalId}, body: {name}}), "The list could not be deleted.")
+}
+
+/** One linked list the tidy would move into its cohort type's folder. */
+export type TidyMove = {externalId: string; label: string; from: string | null; to: string}
+
+/** What the folder tidy would do: its moves, and the folders it would make. Changes nothing. */
+export async function fetchTidyPlan(system: TargetSystem): Promise<{moves: TidyMove[]; foldersToCreate: string[]}> {
+  const res = await previewFolderTidy({path: {system}, throwOnError: true})
+  return {
+    moves: (res.data.moves ?? []).map((m) => ({externalId: m.externalId, label: m.label, from: m.from ?? null, to: m.to})),
+    foldersToCreate: res.data.foldersToCreate ?? [],
+  }
+}
+
+/** Apply the tidy to the lists picked; answers what moved and what the system refused. */
+export async function applyTidy(system: TargetSystem, externalIds: string[]): Promise<BulkTargetMoveResult> {
+  const res = await applyFolderTidy({path: {system}, body: {externalIds}, throwOnError: true})
+  return {
+    moved: (res.data.moved ?? []).map(toExternalTarget),
+    failed: (res.data.failed ?? []).map((row) => ({externalId: row.externalId, label: row.label, message: row.message})),
+  }
 }
 
 /** One target an external system would not move, and what it said about it. */

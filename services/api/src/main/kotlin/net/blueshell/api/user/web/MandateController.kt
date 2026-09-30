@@ -3,15 +3,18 @@ package net.blueshell.api.user.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.domain.Mandates
 import net.blueshell.api.user.domain.incassoStanding
 import net.blueshell.api.user.persistence.Membership
+import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @Tag(name = "Memberships")
@@ -36,6 +39,19 @@ class MandateController(
             .record(membershipId, request.iban, request.accountHolder, request.signedOn, currentUser.currentUser()?.id)
             .asMandateResponse()
 
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/users/me/mandate")
+    fun findOwnMandate(): OwnMandateResponse = mandates.own(reader()).asResponse()
+
+    /** A member sets up or changes incasso themselves; the mandate is signed today, on the site. */
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/users/me/mandate")
+    fun setUpOwnMandate(
+        @Valid @RequestBody request: SetUpMandateRequest,
+    ): OwnMandateResponse = mandates.setUpOwn(reader(), request.iban, request.accountHolder).asResponse()
+
+    private fun reader(): Long = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
+
     private fun Membership.asMandateResponse(): MandateResponse {
         val held = mandate
         return MandateResponse(
@@ -50,3 +66,5 @@ class MandateController(
         )
     }
 }
+
+fun OwnMandate.asResponse() = OwnMandateResponse(standing, ibanLastFour, reference, signedOn, pending)

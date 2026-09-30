@@ -1,6 +1,7 @@
 package net.blueshell.api.user.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.user.domain.IncassoStanding
@@ -32,6 +33,35 @@ data class RecordMandateRequest(
 ) {
     // A request is logged on a failure; the account number is not.
     override fun toString(): String = "RecordMandateRequest(iban=****${iban.takeLast(SHOWN)}, signedOn=$signedOn)"
+
+    private companion object {
+        const val SHOWN = 4
+    }
+}
+
+/** A person's own mandate, the account masked to its last four. */
+@Schema(name = "OwnMandateResponse")
+data class OwnMandateResponse(
+    val standing: IncassoStanding,
+    val ibanLastFour: String?,
+    val reference: String?,
+    val signedOn: LocalDate?,
+    @field:Schema(description = "Set up before the membership started, and moved onto it once it does.")
+    val pending: Boolean,
+)
+
+/** A member's own bank details; the mandate is signed on the day they are sent. */
+@Schema(name = "SetUpMandateRequest")
+data class SetUpMandateRequest(
+    @field:NotBlank
+    val iban: String,
+    @field:NotBlank
+    val accountHolder: String,
+    @field:AssertTrue(message = "Authorise the collection to set up incasso.")
+    val authorised: Boolean = false,
+) {
+    // A request is logged on a failure; the account number is not.
+    override fun toString(): String = "SetUpMandateRequest(iban=****${iban.takeLast(SHOWN)})"
 
     private companion object {
         const val SHOWN = 4

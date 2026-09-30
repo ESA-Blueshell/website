@@ -2,9 +2,12 @@ package net.blueshell.api.user.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.shared.crypto.Sealed
+import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.PendingMandate
+import net.blueshell.api.user.persistence.PendingMandateRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -46,6 +49,7 @@ fun Membership.incassoStanding(): IncassoStanding =
 @Service
 class Mandates(
     private val memberships: MemberRepository,
+    private val pendingMandates: PendingMandateRepository,
     private val cipher: BankDetailsCipher,
     private val clock: Clock,
 ) {
@@ -85,6 +89,69 @@ class Mandates(
             )
         membership.incasso = true
         return memberships.save(membership)
+    }
+
+    /**
+     * A member setting up or changing incasso themselves: signed today, on the site. Before their
+     * membership starts the details wait as a pending mandate and move onto it when it does.
+     */
+    @Transactional
+    fun setUpOwn(
+        userId: Long,
+        rawIban: String,
+        accountHolder: String,
+    ): OwnMandate {
+        val today = LocalDate.now(clock)
+        val running = memberships.findByUser_Id(userId).firstOrNull { it.endDate == null }
+        if (running != null) {
+            record(requireNotNull(running.id), rawIban, accountHolder, today, userId)
+            return own(userId)
+        }
+        val iban = Iban.parse(rawIban) ?: throw InvalidIban()
+        val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
+        val sealedIban = cipher.seal(iban.value)
+        val pending = pendingMandates.findByUserId(userId)
+        val kept =
+            pending?.apply {
+                keyId = sealedIban.keyId
+                ibanCiphertext = sealedIban.ciphertext
+                accountHolderCiphertext = cipher.seal(holder).ciphertext
+                ibanLastFour = iban.lastFour
+                signedOn = today
+            } ?: PendingMandate(userId, sealedIban.keyId, sealedIban.ciphertext, cipher.seal(holder).ciphertext, iban.lastFour, today)
+        pendingMandates.save(kept)
+        return own(userId)
+    }
+
+    /** The person's own mandate: on their running membership, else waiting, else none. */
+    @Transactional(readOnly = true)
+    fun own(userId: Long): OwnMandate {
+        val running = memberships.findByUser_Id(userId).firstOrNull { it.endDate == null }
+        val held = running?.mandate
+        if (held != null) return OwnMandate(IncassoStanding.MANDATE_RECORDED, held.ibanLastFour, held.reference, held.signedOn, false)
+        val pending = pendingMandates.findByUserId(userId)
+        if (pending != null) return OwnMandate(IncassoStanding.MANDATE_RECORDED, pending.ibanLastFour, null, pending.signedOn, true)
+        return OwnMandate(running?.incassoStanding() ?: IncassoStanding.NONE, null, null, null, false)
+    }
+
+    /** Moves a waiting mandate onto the membership that just started, which puts it on incasso. */
+    @Transactional
+    fun adoptPending(membership: Membership) {
+        val pending = pendingMandates.findByUserId(membership.userId) ?: return
+        membership.mandate =
+            IncassoMandate(
+                keyId = pending.keyId,
+                ibanCiphertext = pending.ibanCiphertext,
+                accountHolderCiphertext = pending.accountHolderCiphertext,
+                ibanLastFour = pending.ibanLastFour,
+                reference = referenceFor(requireNotNull(membership.id), pending.signedOn),
+                signedOn = pending.signedOn,
+                recordedBy = membership.userId,
+                recordedAt = clock.instant(),
+            )
+        membership.incasso = true
+        memberships.save(membership)
+        pendingMandates.delete(pending)
     }
 
     @Transactional(readOnly = true)

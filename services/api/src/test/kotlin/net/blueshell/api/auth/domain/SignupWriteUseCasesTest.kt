@@ -41,7 +41,7 @@ class SignupWriteUseCasesTest {
 
     private val validator = Validation.buildDefaultValidatorFactory().validator
 
-    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs, validator)
+    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs, validator, mock())
 
     private fun applicant(withProfile: Boolean): User {
         val user =

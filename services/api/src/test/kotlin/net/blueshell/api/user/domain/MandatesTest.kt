@@ -3,15 +3,20 @@ package net.blueshell.api.user.domain
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.testsupport.Entities
+import net.blueshell.api.user.api.SignupMandates
 import net.blueshell.api.user.persistence.MemberRepository
+import net.blueshell.api.user.persistence.PendingMandate
+import net.blueshell.api.user.persistence.PendingMandateRepository
 import net.blueshell.api.user.web.MandateController
 import net.blueshell.api.user.web.RecordMandateRequest
+import net.blueshell.api.user.web.SetUpMandateRequest
 import net.blueshell.api.user.web.asResponse
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.mock.env.MockEnvironment
 import org.springframework.web.server.ResponseStatusException
@@ -27,7 +32,8 @@ class MandatesTest {
     private val now = Instant.parse("2026-09-30T10:00:00Z")
     private val repository: MemberRepository = mock()
     private val cipher = BankDetailsCipher("1", Base64.getEncoder().encodeToString(ByteArray(32) { 7 }), "", MockEnvironment())
-    private val mandates = Mandates(repository, cipher, Clock.fixed(now, ZoneOffset.UTC))
+    private val pending: PendingMandateRepository = mock()
+    private val mandates = Mandates(repository, pending, cipher, Clock.fixed(now, ZoneOffset.UTC))
     private val currentUser: CurrentUserProvider = mock()
     private val controller = MandateController(mandates, currentUser)
     private val membership =
@@ -101,5 +107,64 @@ class MandatesTest {
         assertThat(mandates.bankDetailsOf(membership.mandate!!).toString()).doesNotContain("0417")
         val empty = net.blueshell.api.user.persistence.IncassoMandate::class.java.getDeclaredConstructor().newInstance()
         assertThat(empty).isNotNull
+    }
+
+    @Test
+    fun `a member sets up incasso themselves, signed today, and a new IBAN gets a new reference`() {
+        // The signed-in reader is user 3.
+        whenever(repository.findByUser_Id(3)).thenReturn(mutableListOf(membership))
+
+        val own = controller.setUpOwnMandate(SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true))
+
+        assertThat(own.standing).isEqualTo(IncassoStanding.MANDATE_RECORDED)
+        assertThat(own.signedOn).isEqualTo(LocalDate.of(2026, 9, 30))
+        assertThat(own.pending).isFalse()
+        assertThat(membership.mandate!!.recordedBy).isEqualTo(3)
+        controller.setUpOwnMandate(SetUpMandateRequest("GB82WEST12345698765432", "Ann Vos", authorised = true))
+        assertThat(controller.findOwnMandate().reference).isEqualTo("BLUESHELL-12-20260930")
+        assertThat(controller.findOwnMandate().ibanLastFour).isEqualTo("5432")
+        assertThat(SetUpMandateRequest("NL91ABNA0417164300", "Ann").toString()).doesNotContain("0417")
+    }
+
+    @Test
+    fun `an applicant's details wait until the membership starts, and move onto it then`() {
+        whenever(repository.findByUser_Id(membership.userId)).thenReturn(mutableListOf())
+        var waiting: PendingMandate? = null
+        whenever(pending.save(any<PendingMandate>())).thenAnswer { invocation ->
+            (invocation.arguments[0] as PendingMandate).also { waiting = it }
+        }
+        whenever(pending.findByUserId(membership.userId)).thenAnswer { waiting }
+
+        assertThat(mandates.own(membership.userId).standing).isEqualTo(IncassoStanding.NONE)
+        mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", "Ann Vos")
+        val again = mandates.setUpOwn(membership.userId, "GB82WEST12345698765432", "Ann Vos")
+        assertThat(again.pending).isTrue()
+        assertThat(again.ibanLastFour).isEqualTo("5432")
+        assertThat(waiting.toString()).doesNotContain("1234")
+        assertThatThrownBy { mandates.setUpOwn(membership.userId, "nope", "Ann") }.isInstanceOf(InvalidIban::class.java)
+        assertThatThrownBy { mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", " ") }
+            .isInstanceOf(AccountHolderMissing::class.java)
+
+        mandates.adoptPending(membership)
+
+        assertThat(membership.mandate!!.ibanLastFour).isEqualTo("5432")
+        assertThat(membership.mandate!!.reference).isEqualTo("BLUESHELL-12-20260930")
+        assertThat(membership.incasso).isTrue()
+        verify(pending).delete(waiting!!)
+        assertThat(PendingMandate::class.java.getDeclaredConstructor().newInstance()).isNotNull
+    }
+
+    @Test
+    fun `a membership with nothing waiting is left alone, and a running one without details says so`() {
+        mandates.adoptPending(membership)
+        assertThat(membership.mandate).isNull()
+
+        membership.incasso = true
+        whenever(repository.findByUser_Id(membership.userId)).thenReturn(mutableListOf(membership))
+        assertThat(mandates.own(membership.userId).standing).isEqualTo(IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS)
+        assertThat(SignupMandates(mandates).setUp(membership.userId, "NL91ABNA0417164300", "Ann").standing)
+            .isEqualTo(IncassoStanding.MANDATE_RECORDED)
+        whenever(currentUser.currentUser()).thenReturn(null)
+        assertThatThrownBy { controller.findOwnMandate() }.isInstanceOf(ResponseStatusException::class.java)
     }
 }

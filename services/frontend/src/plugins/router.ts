@@ -455,6 +455,12 @@ const routes: RouteRecordRaw[] = [
       {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
       {path: "users", name: "userManager", component: () => import("@/pages/management/UserManager.vue"), meta: {title: "Users"}},
       {
+        path: "users/bulk/:action(start|end|paid|unpaid)",
+        name: "bulkTask",
+        component: () => import("@/pages/management/BulkTask.vue"),
+        meta: {title: "Many members"},
+      },
+      {
         path: "users/:id(\\d+)/:tab(membership|contributions|profile|account|roles)?",
         name: "userDetail",
         component: () => import("@/pages/management/UserDetail.vue"),

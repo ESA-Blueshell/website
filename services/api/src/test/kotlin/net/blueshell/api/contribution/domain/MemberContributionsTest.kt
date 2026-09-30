@@ -71,7 +71,8 @@ class MemberContributionsTest {
         )
         assertThat(listed[1].paid).isTrue()
         assertThat(listed[1].feeType).isEqualTo(BulkFeeType.FULL_YEAR_FEE)
-        val json = JsonMapper.builder().findAndAddModules().build().writeValueAsString(listed[1])
+        val mapper = JsonMapper.builder().findAndAddModules().build()
+        val json = mapper.writeValueAsString(listed[1])
         assertThat(json).contains(
             "\"periodId\":1",
             "\"startDate\":\"2024-09-01\"",

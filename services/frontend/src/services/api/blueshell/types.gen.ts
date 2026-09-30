@@ -1999,6 +1999,12 @@ export type PasswordResetRequest = {
     token: string;
 };
 
+export type PaymentEmailRun = {
+    kind: ContributionEmailKind;
+    recipients: number;
+    sentAt: string;
+};
+
 export type PaymentEmailsResultResponse = {
     incassoNotificationsSent: number;
     /**
@@ -2027,6 +2033,25 @@ export type PendingActivation = {
  */
 export type PendingActivationsResponse = {
     activations: Array<PendingActivation>;
+};
+
+export type PeriodContributionsView = {
+    members: Array<PeriodMember>;
+    periodId: number;
+    runs: Array<PaymentEmailRun>;
+};
+
+export type PeriodMember = {
+    fee?: number | null;
+    feeType?: BulkFeeType | null;
+    incasso: boolean;
+    lastEmailAt?: string | null;
+    lastEmailKind?: ContributionEmailKind | null;
+    name: string;
+    paid: boolean;
+    paidAt?: string | null;
+    userId: number;
+    username: string;
 };
 
 export type PeriodStanding = {
@@ -4839,6 +4864,49 @@ export type FindContributionsByPeriodIdResponses = {
 };
 
 export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdResponses[keyof FindContributionsByPeriodIdResponses];
+
+export type FindPeriodContributionsData = {
+    body?: never;
+    path: {
+        periodId: number;
+    };
+    query?: never;
+    url: '/contributionPeriods/{periodId}/members';
+};
+
+export type FindPeriodContributionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindPeriodContributionsError = FindPeriodContributionsErrors[keyof FindPeriodContributionsErrors];
+
+export type FindPeriodContributionsResponses = {
+    /**
+     * OK
+     */
+    200: PeriodContributionsView;
+};
+
+export type FindPeriodContributionsResponse = FindPeriodContributionsResponses[keyof FindPeriodContributionsResponses];
 
 export type FindContributionRemindersData = {
     body?: never;

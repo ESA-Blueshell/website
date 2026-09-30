@@ -56,6 +56,13 @@ describe("the mandate panel", () => {
     await settle()
     expect(wrapper.get('[data-testid="mandate-failure"]').text()).toContain("not a valid IBAN")
 
+    for (const [code, words] of [["MandateSignedInFuture", "signed today or before"], ["AccountHolderMissing", "whose account"]] as const) {
+      api.recordMandate.mockResolvedValue({status: 400, error: {code, detail: code}})
+      await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
+      await settle()
+      expect(wrapper.get('[data-testid="mandate-failure"]').text()).toContain(words)
+    }
+
     await wrapper.get('[data-testid="mandate-cancel"]').trigger("click")
     expect(wrapper.find('[data-testid="mandate-form"]').exists()).toBe(false)
   })

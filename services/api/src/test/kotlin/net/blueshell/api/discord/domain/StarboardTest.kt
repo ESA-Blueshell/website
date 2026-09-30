@@ -95,23 +95,25 @@ class StarboardTest {
         mock { on { open() } doReturn listOf(DiscordChannel("611", "general", null), DiscordChannel("758", "events-calendar", null)) }
 
     @Test
-    fun `shows messages with three stars or more from the last thirty days, newest first, only from open channels`() {
+    fun `shows messages with three stars or more from the last thirty days, most stars first, only from open channels`() {
         val source =
             StarboardSource {
                 listOf(
                     starred("older", daysOld = 3),
                     starred("newest", channelId = "758"),
+                    starred("most-starred", stars = 30, daysOld = 20),
                     starred("two-stars", stars = 2),
                     starred("three-stars", stars = 3, daysOld = 2),
-                    starred("month-old", daysOld = 31),
-                    starred("members-only", channelId = "999"),
+                    starred("month-old", stars = 40, daysOld = 31),
+                    starred("members-only", stars = 50, channelId = "999"),
                 )
             }
 
         val entries = StarboardService(provided(source), openChannels, clock).entries()!!
 
-        assertThat(entries.map { it.message.id }).containsExactly("newest", "three-stars", "older")
-        assertThat(entries.first().channel).isEqualTo("events-calendar")
+        // Level on stars, the newer one goes first.
+        assertThat(entries.map { it.message.id }).containsExactly("most-starred", "newest", "older", "three-stars")
+        assertThat(entries[1].channel).isEqualTo("events-calendar")
     }
 
     @Test

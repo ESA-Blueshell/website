@@ -74,7 +74,7 @@ class DiscordController(
 
     @PermitAll
     @GetMapping("/starboard")
-    @Operation(operationId = "readStarboard", summary = "Recent messages the Discord server starred, which the home page shows")
+    @Operation(operationId = "readStarboard", summary = "What the Discord server starred lately, most stars first, for the home page")
     @ApiResponse(
         responseCode = "200",
         content = [Content(array = ArraySchema(schema = Schema(implementation = StarboardEntryResponse::class)))],

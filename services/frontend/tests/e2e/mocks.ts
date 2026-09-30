@@ -1144,6 +1144,32 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       Object.assign(period, body, {version: period.version + 1})
       return answer(route, "updateContributionPeriod", period)
     }
+    if (method === "GET" && /^\/contributionPeriods\/\d+\/members$/.test(path)) {
+      const periodId = Number(path.split("/")[2])
+      const period = basePeriods.find((one) => one.id === periodId)
+      const inPeriod = baseMemberships.filter((one) => period != null
+        && one.startDate <= period.endDate && (one.endDate == null || one.endDate >= period.startDate))
+      return answer(route, "findPeriodContributions", {
+        periodId,
+        members: inPeriod.map((held) => {
+          const user = baseUsers.find((one) => one.id === held.userId)
+          const honorary = held.memberType === "HONORARY"
+          return {
+            userId: held.userId,
+            name: user?.fullName ?? `User ${held.userId}`,
+            username: user?.username ?? `user${held.userId}`,
+            feeType: honorary ? null : "FULL_YEAR_FEE" as const,
+            fee: honorary ? null : period?.fullYearFee ?? 0,
+            incasso: held.incasso,
+            paid: baseContributions.some((one) => one.userId === held.userId && one.contributionPeriodId === periodId),
+            paidAt: null,
+            lastEmailAt: null,
+            lastEmailKind: null,
+          }
+        }),
+        runs: [],
+      })
+    }
     if (method === "GET" && /\/contributionPeriods\/\d+\/contributions$/.test(path)) {
       return answer(route, "findContributionsByPeriodId", baseContributions)
     }

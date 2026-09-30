@@ -35,6 +35,7 @@ const navbarPaths = [
   "/management/jobs/12",
   "/management/exceptions",
   "/management/alerts",
+  "/management/contributions/2",
   "/management/users/7/contributions",
   "/management/exceptions/3",
 ]
@@ -58,7 +59,7 @@ describe("the account security pages", () => {
 })
 
 describe("the System pages", () => {
-  it.each(["jobDetail", "exceptionList", "exceptionDetail", "alertList", "management", "userDetail", "bulkTask"])("loads %s", async (name) => {
+  it.each(["jobDetail", "exceptionList", "exceptionDetail", "alertList", "management", "userDetail", "bulkTask", "contributions"])("loads %s", async (name) => {
     const load = router.getRoutes().find(one => one.name === name)?.components?.default as () => Promise<unknown>
     await expect(load()).resolves.toBeDefined()
   }, 20_000)

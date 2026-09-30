@@ -422,7 +422,7 @@ class CohortRemediationServiceTest {
         every { externalIds.findBatch(any(), any(), any()) } returns emptyList()
         every { members.save(any()) } answers { firstArg() }
 
-        service.verifyCohort(97L)
+        service.verifyCohort(97L, null)
 
         verify(exactly = 0) { jobs.runAsync(CohortJobs.RemoveExternalMember, any(), any()) }
         verify(exactly = 0) { resolutions.saveAll(any<List<DriftResolution>>()) }

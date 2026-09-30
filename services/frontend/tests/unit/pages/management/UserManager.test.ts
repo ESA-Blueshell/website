@@ -239,6 +239,35 @@ describe("the Users page", () => {
     expect(rowIds(wrapper)).toEqual([2, 3, 1])
   })
 
+  it("saves and cancels the add and edit forms, and closes every dialog it opened", async () => {
+    const wrapper = await mount(adminLogin)
+
+    await wrapper.get('[data-testid="member-manager-add-user-btn"]').trigger("click")
+    await act(wrapper, 1, "member-manager-edit-profile-btn")
+    for (const modal of wrapper.findAllComponents({name: "BaseModal"})) {
+      modal.vm.$emit("save")
+      modal.vm.$emit("cancel")
+      modal.vm.$emit("update:modelValue", false)
+    }
+    await settle()
+
+    for (const [testid, dialog] of [
+      ["member-manager-manage-membership-btn", "ManageMembershipDialog"],
+      ["member-manager-account-security-btn", "AccountSecurityDialog"],
+      ["member-manager-edit-roles-btn", "UserRolesDialog"],
+      ["member-manager-delete-btn", "DeletionConfirmationDialog"],
+    ] as const) {
+      await act(wrapper, 1, testid)
+      wrapper.findComponent({name: dialog}).vm.$emit("update:modelValue", false)
+      await settle()
+    }
+    expect(wrapper.findComponent({name: "ManageMembershipDialog"}).exists()).toBe(false)
+
+    await wrapper.get('[data-testid="member-manager-header-name"]').trigger("click")
+    await settle()
+    expect(rowIds(wrapper)).toEqual([1, 3, 2])
+  })
+
   it("says so when nobody matches, and when the people could not be read", async () => {
     vi.mocked(findUsers).mockRejectedValue(new Error("offline"))
     const wrapper = await mount()

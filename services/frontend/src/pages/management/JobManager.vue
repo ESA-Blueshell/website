@@ -1,9 +1,13 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {computed, nextTick, onMounted, ref, useTemplateRef, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
-import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
+import FilterBar from "@/components/island/FilterBar.vue"
+import FilterPicker from "@/components/island/FilterPicker.vue"
+import FoldOut from "@/components/island/FoldOut.vue"
+import SearchBox from "@/components/island/SearchBox.vue"
+import JobRunForm, {type JobPreset} from "@/components/management/JobRunForm.vue"
+import {loadJob, loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
 import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
@@ -17,10 +21,12 @@ const router = useRouter()
 const PAGE_SIZE = 50
 
 const stats = ref<JobStats | null>(null)
-const selectedCategory = ref<JobExecutionCategory | "all">("all")
-const selectedStatus = ref<JobExecutionStatus | "all">("all")
+const selectedCategory = ref<string | null>(null)
+const selectedStatus = ref<string | null>(null)
 const hideSkipped = ref(false)
-const showTriggerDialog = ref(false)
+const runOpen = ref(false)
+const preset = ref<JobPreset | null>(null)
+const runPanel = useTemplateRef<HTMLElement>("runPanel")
 
 const loadStats = async () => {
   stats.value = await loadJobStats()
@@ -31,14 +37,13 @@ const loadStats = async () => {
 const loadPage = (query: PageQuery) => {
   void loadStats()
   return loadJobPage(query, {
-    ...(selectedCategory.value !== "all" ? {category: selectedCategory.value} : {}),
-    ...(selectedStatus.value !== "all" ? {status: selectedStatus.value} : {}),
+    ...(selectedCategory.value ? {category: selectedCategory.value as JobExecutionCategory} : {}),
+    ...(selectedStatus.value ? {status: selectedStatus.value as JobExecutionStatus} : {}),
     hideSkipped: hideSkipped.value,
   })
 }
 
-const asked = route.query.search
-const table = usePagedTable<Job>(loadPage, {pageSize: PAGE_SIZE, initialSearch: typeof asked === "string" ? asked : undefined})
+const table = usePagedTable<Job>(loadPage, {pageSize: PAGE_SIZE})
 const {
   rows: executions,
   loading,
@@ -57,9 +62,26 @@ watch([selectedCategory, selectedStatus, hideSkipped], () => {
   resetToFirstPage()
 })
 
-/** A job just enqueued belongs at the top, which is the first page with the filters unchanged. */
-const onJobTriggered = () => {
+/** A job just queued belongs at the top, which is the first page with the filters unchanged. */
+const onJobQueued = () => {
   resetToFirstPage()
+}
+
+const filtered = computed(() => (searchQuery.value ?? "") !== "" || selectedCategory.value !== null || selectedStatus.value !== null)
+
+const clearFilters = () => {
+  searchQuery.value = ""
+  selectedCategory.value = null
+  selectedStatus.value = null
+}
+
+/** Opens Run a job filled in from a job already run; the list under it stays where it was. */
+const runAgain = async (execution: Pick<Job, "jobType" | "payload">) => {
+  if (!execution.jobType) return
+  preset.value = {type: execution.jobType, payload: {...execution.payload}}
+  runOpen.value = true
+  await nextTick()
+  runPanel.value?.scrollIntoView?.({block: "start"})
 }
 
 // Read once: both lists come from the generated enums, which do not change while the page is open.
@@ -88,17 +110,18 @@ onMounted(async () => {
   }
   void loadStats()
   await refresh()
+  // A job's own page sends Run again here, to the one form that queues jobs.
+  const again = Number(route.query.again)
+  if (Number.isInteger(again) && again > 0) {
+    const job = await loadJob(again)
+    if (job) await runAgain(job)
+  }
 })
 </script>
 
 <template>
   <v-main>
     <top-banner title="Job Manager" />
-
-    <job-trigger-dialog
-      v-model="showTriggerDialog"
-      @enqueued="onJobTriggered"
-    />
 
     <v-container>
       <div
@@ -281,6 +304,22 @@ onMounted(async () => {
           </v-row>
         </v-card>
 
+        <div
+          ref="runPanel"
+          class="island job-run-panel mb-4"
+        >
+          <fold-out
+            v-model:open="runOpen"
+            label="Run a job"
+            testid="job-run"
+          >
+            <job-run-form
+              :preset="preset"
+              @queued="onJobQueued"
+            />
+          </fold-out>
+        </div>
+
         <v-card
           class="manager-card mb-4"
           rounded="lg"
@@ -301,14 +340,6 @@ onMounted(async () => {
 
             <div class="d-flex ga-2">
               <v-btn
-                color="primary"
-                data-testid="job-manager-trigger-btn"
-                variant="flat"
-                @click="showTriggerDialog = true"
-              >
-                Trigger job
-              </v-btn>
-              <v-btn
                 :disabled="loading"
                 data-testid="job-manager-refresh-btn"
                 variant="outlined"
@@ -320,85 +351,38 @@ onMounted(async () => {
           </div>
 
           <div class="manager-card__body">
-            <v-row class="ma-0 manager-filters">
-              <v-col
-                cols="12"
-                md="3"
-                sm="6"
-              >
-                <v-select
-                  v-model="selectedCategory"
-                  :items="categoryOptions"
-                  data-testid="job-filter-category"
-                  density="comfortable"
-                  hide-details
-                  item-title="title"
-                  item-value="value"
-                  label="Category"
-                  variant="outlined"
-                >
-                  <template #item="{ props, internalItem }">
-                    <v-list-item
-                      v-bind="props"
-                      :data-testid="`job-filter-category-option-${internalItem.value}`"
-                    />
-                  </template>
-                </v-select>
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-                sm="6"
-              >
-                <v-select
-                  v-model="selectedStatus"
-                  :items="statusOptions"
-                  data-testid="job-filter-status"
-                  density="comfortable"
-                  hide-details
-                  item-title="title"
-                  item-value="value"
-                  label="Status"
-                  variant="outlined"
-                >
-                  <template #item="{ props, internalItem }">
-                    <v-list-item
-                      v-bind="props"
-                      :data-testid="`job-filter-status-option-${String(internalItem.value).toLowerCase()}`"
-                    />
-                  </template>
-                </v-select>
-              </v-col>
-              <v-col
-                cols="12"
-                md="2"
-                sm="4"
-              >
-                <v-switch
-                  v-model="hideSkipped"
-                  color="primary"
-                  data-testid="job-filter-hide-skipped"
-                  hide-details
-                  label="Hide skipped"
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="8"
-              >
-                <v-text-field
-                  v-model="searchQuery"
-                  clearable
-                  data-testid="job-filter-search"
-                  density="comfortable"
-                  hide-details
-                  label="Search summary, type, actor or related entities"
-                  prepend-inner-icon="mdi-magnify"
-                  variant="outlined"
-                />
-              </v-col>
-            </v-row>
+            <filter-bar
+              :active="filtered"
+              class="manager-filters"
+              testid="job-filters"
+              @clear="clearFilters"
+            >
+              <search-box
+                label="Search jobs"
+                :model-value="searchQuery ?? ''"
+                testid="job-filter-search"
+                @update:model-value="searchQuery = $event"
+              />
+              <filter-picker
+                v-model="selectedStatus"
+                label="Status"
+                :options="statusOptions"
+                testid="job-filter-status"
+              />
+              <filter-picker
+                v-model="selectedCategory"
+                label="Kind"
+                :options="categoryOptions"
+                testid="job-filter-kind"
+              />
+              <v-switch
+                v-model="hideSkipped"
+                color="primary"
+                data-testid="job-filter-hide-skipped"
+                hide-details
+                label="Hide skipped"
+              />
+            </filter-bar>
 
             <div class="manager-chip-row">
               <v-chip
@@ -563,6 +547,15 @@ onMounted(async () => {
                     >
                       {{ retryLabel(execution) }}
                     </v-btn>
+
+                    <v-btn
+                      :data-testid="`job-run-again-btn-${execution.id}`"
+                      size="small"
+                      variant="text"
+                      @click.stop="runAgain(execution)"
+                    >
+                      Run again
+                    </v-btn>
                   </div>
                 </template>
               </v-list-item>
@@ -579,6 +572,14 @@ onMounted(async () => {
                   >
                     {{ jobDescription(execution) }}
                   </p>
+
+                  <router-link
+                    class="job-open-link"
+                    :data-testid="`job-open-${execution.id}`"
+                    :to="`/management/jobs/${execution.id}`"
+                  >
+                    Open this job
+                  </router-link>
 
                   <div class="job-detail-grid">
                     <v-sheet
@@ -792,7 +793,19 @@ onMounted(async () => {
 }
 
 .manager-filters {
-  row-gap: 6px;
+  align-items: center;
+}
+
+.job-run-panel {
+  /* The island class stretches to fill its parent; this panel stays its own height. */
+  min-height: 0;
+  background: none;
+}
+
+.job-open-link {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
 }
 
 .manager-chip-row {

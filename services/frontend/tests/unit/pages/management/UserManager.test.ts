@@ -102,6 +102,12 @@ describe("the user manager", () => {
     await vi.waitFor(() => expect(rowIds(wrapper)).toEqual([2]))
   })
 
+  it("opens searched for the person another page sent here", async () => {
+    const wrapper = await mountPage(UserManager, {path: "/management/users?search=bob", login: boardLogin, width: 1400})
+
+    await vi.waitFor(() => expect(rowIds(wrapper)).toEqual([2]))
+  })
+
   it("sorts by name once the name column is chosen, and turns the order round on a second press", async () => {
     vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [bob, carol, alice]}))
     const wrapper = await mount()

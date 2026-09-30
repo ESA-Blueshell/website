@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
+import {useRoute} from "vue-router"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {useDisplay} from "vuetify"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
@@ -142,6 +143,10 @@ const {
   toggleSort,
   sortIcon,
 } = useUserFilters(rows, userSearchIndex)
+
+// Another page sends a person here by the username it knows them by.
+const route = useRoute()
+if (typeof route.query.search === "string") searchInput.value = route.query.search
 
 // Selection follows the rows on screen, so the header checkbox means "these" rather than
 // "everyone", and a filter change never silently drops somebody from the set.

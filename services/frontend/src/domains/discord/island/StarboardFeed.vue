@@ -4,6 +4,7 @@ import MarkdownView from "@/components/island/MarkdownView.vue"
 import type {StarboardEntryResponse} from "@/services/api"
 import {safeFormatISO} from "@/utils/datetime"
 import {initialsOf} from "@/utils/initials"
+import {discordInvite} from "../adapters/doors"
 import {readStarboard} from "../adapters/starboard"
 
 /**
@@ -27,24 +28,33 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
     data-testid="home-starboard"
   >
     <div class="starboard__head">
-      <svg
-        aria-hidden="true"
-        class="starboard__hash"
-        fill="none"
-        height="20"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        width="20"
-      >
-        <path d="M10 3 7 21M17 3l-3 18M4 8.5h17M3 15.5h17" />
-      </svg>
       <h3
         id="starboard-title"
         class="starboard__title"
       >
-        starboard
+        <!-- An invite into the channel, which opens it for somebody already on the server. -->
+        <a
+          class="starboard__door"
+          data-testid="home-starboard-channel"
+          :href="discordInvite('starboard')"
+          rel="noopener"
+          target="_blank"
+        >
+          <svg
+            aria-hidden="true"
+            class="starboard__hash"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path d="M10 3 7 21M17 3l-3 18M4 8.5h17M3 15.5h17" />
+          </svg>
+          starboard
+        </a>
       </h3>
       <span class="starboard__topic">The most starred messages of the last 30 days</span>
     </div>
@@ -146,7 +156,7 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   margin: 1rem auto 0;
   overflow: hidden;
   border-radius: 14px;
-  background: #313338;
+  background: #2b2d31;
   color: #dbdee1;
   font-family: var(--discord-font);
 }
@@ -158,7 +168,7 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   min-width: 0;
   height: 48px;
   padding: 0 1rem;
-  border-bottom: 1px solid #26282c;
+  border-bottom: 1px solid #3f4147;
 }
 
 .starboard__hash {
@@ -180,6 +190,17 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   letter-spacing: 0;
   text-transform: none;
   color: #f2f3f5;
+}
+
+.starboard__door {
+  display: flex;
+  align-items: center;
+  color: inherit;
+}
+
+.starboard__door:hover,
+.starboard__door:focus-visible {
+  text-decoration: underline;
 }
 
 .starboard__topic {
@@ -210,7 +231,7 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
 }
 
 .starboard__list::-webkit-scrollbar-track {
-  background: #2b2d31;
+  background: #232428;
 }
 
 .starboard__list::-webkit-scrollbar-thumb {
@@ -231,7 +252,7 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
 }
 
 .starboard__entry:hover {
-  background: #2e3035;
+  background: #313338;
 }
 
 .starboard__avatar {
@@ -353,7 +374,7 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   padding: 0 0.375rem;
   border: 1px solid transparent;
   border-radius: 0.5rem;
-  background: #2b2d31;
+  background: #383a40;
   font-size: 0.875rem;
   font-weight: 500;
   color: #b5bac1;
@@ -381,7 +402,18 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
     max-height: 32rem;
   }
 
-  .starboard__topic {
+  .starboard__door {
+  display: flex;
+  align-items: center;
+  color: inherit;
+}
+
+.starboard__door:hover,
+.starboard__door:focus-visible {
+  text-decoration: underline;
+}
+
+.starboard__topic {
     display: none;
   }
 

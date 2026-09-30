@@ -34,6 +34,11 @@ describe("StarboardFeed", () => {
     mockRead.mockResolvedValue([entry({}), entry({id: "10", authorNickname: null, text: null, image: null, avatar: null})])
     const wrapper = await mountFeed()
 
+    expect(wrapper.get("[data-testid=home-starboard-channel]").attributes()).toMatchObject({
+      href: expect.stringMatching(/\/api\/discord\/invite\/starboard$/),
+      target: "_blank",
+    })
+
     const first = wrapper.get("[data-testid=home-starboard-9]")
     expect(first.get(".starboard__name").text()).toBe("Joris")
     expect(first.get(".starboard__channel").text()).toBe("#general")

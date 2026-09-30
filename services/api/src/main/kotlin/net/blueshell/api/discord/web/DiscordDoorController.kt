@@ -35,7 +35,7 @@ class DiscordDoorController(
     @ApiResponse(responseCode = "302", description = "To the invite", content = [Content()])
     @ApiResponse(responseCode = "404", description = "No such door", content = [Content()])
     fun invite(
-        @Parameter(schema = Schema(allowableValues = ["welcome", "board", "suggestions"]))
+        @Parameter(schema = Schema(allowableValues = ["welcome", "board", "suggestions", "starboard"]))
         @PathVariable door: String,
     ): ResponseEntity<Void> = redirect(DiscordDoor.of(door)?.let(doors::invite))
 
@@ -45,7 +45,7 @@ class DiscordDoorController(
     @ApiResponse(responseCode = "302", description = "To the channel", content = [Content()])
     @ApiResponse(responseCode = "404", description = "No such door", content = [Content()])
     fun channel(
-        @Parameter(schema = Schema(allowableValues = ["welcome", "board", "suggestions"]))
+        @Parameter(schema = Schema(allowableValues = ["welcome", "board", "suggestions", "starboard"]))
         @PathVariable door: String,
     ): ResponseEntity<Void> = redirect(DiscordDoor.of(door)?.let(doors::channel))
 

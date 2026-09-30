@@ -15,6 +15,7 @@ enum class DiscordDoor(
     WELCOME("welcome"),
     BOARD("board"),
     SUGGESTIONS("suggestions"),
+    STARBOARD("starboard"),
     ;
 
     companion object {
@@ -31,6 +32,7 @@ data class DiscordDoorsProperties(
     val welcome: String = "welcome",
     val board: String = "board-questions",
     val suggestions: String = "sitecie",
+    val starboard: String = "starboard",
     val fallback: String = "https://discord.gg/23YMFQy",
 ) {
     fun channelOf(door: DiscordDoor): String =
@@ -38,6 +40,7 @@ data class DiscordDoorsProperties(
             DiscordDoor.WELCOME -> welcome
             DiscordDoor.BOARD -> board
             DiscordDoor.SUGGESTIONS -> suggestions
+            DiscordDoor.STARBOARD -> starboard
         }
 }
 

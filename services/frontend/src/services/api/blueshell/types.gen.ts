@@ -5101,7 +5101,7 @@ export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
 export type OpenDiscordChannelData = {
     body?: never;
     path: {
-        door: 'welcome' | 'board' | 'suggestions';
+        door: 'welcome' | 'board' | 'suggestions' | 'starboard';
     };
     query?: never;
     url: '/discord/channel/{door}';
@@ -5272,7 +5272,7 @@ export type ListGameChannelsResponse = ListGameChannelsResponses[keyof ListGameC
 export type OpenDiscordInviteData = {
     body?: never;
     path: {
-        door: 'welcome' | 'board' | 'suggestions';
+        door: 'welcome' | 'board' | 'suggestions' | 'starboard';
     };
     query?: never;
     url: '/discord/invite/{door}';

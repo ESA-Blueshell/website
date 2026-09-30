@@ -556,6 +556,11 @@ const routes: RouteRecordRaw[] = [
         name: "design/parts",
         component: () => import("@/pages/design/PartsGallery.vue"),
         meta: {title: "Parts"},
+      }, {
+        path: "/design/management",
+        name: "design/management",
+        component: () => import("@/pages/design/ManagementGallery.vue"),
+        meta: {title: "Management parts"},
       }]
     : []),
   {

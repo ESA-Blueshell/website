@@ -3,6 +3,8 @@ package net.blueshell.api.discord.web
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.discord.domain.DiscordLive
 import net.blueshell.api.discord.domain.DiscordMember
+import net.blueshell.api.discord.domain.StarboardEntry
+import java.time.Instant
 
 @Schema(description = "The association's Discord server as the site shows it: counts and the voice rooms with who is in them")
 data class DiscordLiveResponse(
@@ -123,4 +125,40 @@ internal fun DiscordLive.toResponse(): DiscordLiveResponse =
                     people = room.people.map { DiscordVoicePersonResponse(it.name, it.avatar) },
                 )
             },
+    )
+
+@Schema(description = "A message the Discord server starred, from a channel everybody there can see")
+data class StarboardEntryResponse(
+    @Schema(description = "The starred message's ID")
+    val id: String,
+    @Schema(description = "The author's name across Discord")
+    val authorName: String,
+    @Schema(description = "The author's name in the server, where they set one")
+    val authorNickname: String?,
+    @Schema(description = "The author's avatar's address, where they have one")
+    val avatar: String?,
+    @Schema(description = "The message in Discord markdown, with mentions and server emoji; absent for a picture alone")
+    val text: String?,
+    @Schema(description = "The picture the message carries, where it has one")
+    val image: String?,
+    val stars: Int,
+    @Schema(description = "The name of the channel the message was written in")
+    val channel: String,
+    @Schema(description = "The address that opens the message in Discord")
+    val href: String,
+    val postedAt: Instant,
+)
+
+internal fun StarboardEntry.toResponse(): StarboardEntryResponse =
+    StarboardEntryResponse(
+        id = message.id,
+        authorName = message.authorName,
+        authorNickname = message.authorNickname,
+        avatar = message.avatar,
+        text = message.text,
+        image = message.image,
+        stars = message.stars,
+        channel = channel,
+        href = message.href,
+        postedAt = message.postedAt,
     )

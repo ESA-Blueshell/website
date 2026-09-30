@@ -2424,6 +2424,46 @@ export type SponsorResponse = {
     version: number;
 };
 
+/**
+ * A message the Discord server starred, from a channel everybody there can see
+ */
+export type StarboardEntryResponse = {
+    /**
+     * The author's name across Discord
+     */
+    authorName: string;
+    /**
+     * The author's name in the server, where they set one
+     */
+    authorNickname?: string | null;
+    /**
+     * The author's avatar's address, where they have one
+     */
+    avatar?: string | null;
+    /**
+     * The name of the channel the message was written in
+     */
+    channel: string;
+    /**
+     * The address that opens the message in Discord
+     */
+    href: string;
+    /**
+     * The starred message's ID
+     */
+    id: string;
+    /**
+     * The picture the message carries, where it has one
+     */
+    image?: string | null;
+    postedAt: string;
+    stars: number;
+    /**
+     * The message in Discord markdown, with mentions and server emoji; absent for a picture alone
+     */
+    text?: string | null;
+};
+
 export type StepUpRequest = {
     code?: string | null;
     password?: string | null;
@@ -5538,6 +5578,51 @@ export type ListDiscordRolesResponses = {
 };
 
 export type ListDiscordRolesResponse = ListDiscordRolesResponses[keyof ListDiscordRolesResponses];
+
+export type ReadStarboardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/discord/starboard';
+};
+
+export type ReadStarboardErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up, or Discord has not answered yet
+     */
+    503: unknown;
+};
+
+export type ReadStarboardError = ReadStarboardErrors[keyof ReadStarboardErrors];
+
+export type ReadStarboardResponses = {
+    /**
+     * OK
+     */
+    200: Array<StarboardEntryResponse>;
+};
+
+export type ReadStarboardResponse = ReadStarboardResponses[keyof ReadStarboardResponses];
 
 export type FindGameData = {
     body?: never;

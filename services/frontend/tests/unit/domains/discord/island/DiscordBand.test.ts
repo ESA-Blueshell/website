@@ -12,6 +12,7 @@ const {mockRead, mockStop, watcher, mockMine, session} = vi.hoisted(() => ({
 
 vi.mock("@/plugins/store", () => ({default: session}))
 vi.mock("@/domains/discord/adapters/live", () => ({readMyRooms: mockMine}))
+vi.mock("@/domains/discord/adapters/starboard", () => ({readStarboard: vi.fn(async () => null)}))
 
 /* The watch hands over what mockRead answers first; a test tells it more through watcher.tell. */
 vi.mock("@/domains/discord/rooms", async (importOriginal) => ({

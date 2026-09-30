@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
-import AccountSecurityDialog from "@/domains/auth/components/AccountSecurityDialog.vue"
+import AccountSecurityPanel from "@/domains/auth/components/AccountSecurityPanel.vue"
 import {settle} from "../../pages/helpers"
 
 const {mockStore, security} = vi.hoisted(() => ({
@@ -39,14 +39,14 @@ const event = {
 }
 
 const open = async (userId = 9) => {
-  const wrapper = mount(AccountSecurityDialog, {props: {modelValue: true, userId, userName: "Alice Doe"}, global: {stubs}})
+  const wrapper = mount(AccountSecurityPanel, {props: {userId}, global: {stubs}})
   await settle()
   return wrapper
 }
 
 const button = (wrapper: Awaited<ReturnType<typeof open>>, testId: string) => wrapper.find(`[data-testid=${testId}]`)
 
-describe("an admin's account security dialog", () => {
+describe("an admin's account security panel", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     security.readAccountStanding.mockResolvedValue({twoFactorOn: true, awaitingReenrolment: true, locked: true})
@@ -119,15 +119,15 @@ describe("an admin's account security dialog", () => {
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "That person is not waiting to set up two-factor again.")
   })
 
-  it("offers no reset of the admin's own two-factor, and closes", async () => {
+  it("offers no reset of the admin's own two-factor, and reads again for another person", async () => {
     security.readAccountStanding.mockResolvedValue({twoFactorOn: true, awaitingReenrolment: false, locked: false})
     const wrapper = await open(1)
 
     expect(button(wrapper, "account-security-reset-btn").exists()).toBe(false)
     expect(button(wrapper, "account-security-unlock-btn").exists()).toBe(false)
-    wrapper.findComponent({name: "VDialog"}).vm.$emit("update:modelValue", false)
-    await wrapper.findAll("button").find(b => b.text() === "Close")?.trigger("click")
-    expect(wrapper.emitted("update:modelValue")).toEqual([[false], [false]])
+    await wrapper.setProps({userId: 2})
+    await settle()
+    expect(security.readAccountStanding).toHaveBeenLastCalledWith(2)
   })
 
   it("reads nothing into an empty log", async () => {

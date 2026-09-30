@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import BaseModal from "@/components/common/modals/BaseModal.vue"
 import {safeFormatISO} from "@/utils/datetime"
 import {
   listRoleChanges,
@@ -12,7 +11,7 @@ import {
   saveRolesOrReason,
 } from "@/domains/user"
 
-defineOptions({name: "UserRolesDialog"})
+defineOptions({name: "UserRolesPanel"})
 
 /**
  * What one person may reach, and every change they have been through.
@@ -22,20 +21,14 @@ defineOptions({name: "UserRolesDialog"})
  * the record that owns it, because granting one is a lie the listener would undo (ADR-028).
  */
 const props = defineProps<{
-  modelValue: boolean
   userId: number
-  userName: string
+  /** Only an admin adds or removes a role; everybody else reads them. */
+  editable: boolean
 }>()
 
 const emit = defineEmits<{
-  "update:modelValue": [value: boolean]
   changed: [standing: RoleStanding]
 }>()
-
-const open = computed({
-  get: () => props.modelValue,
-  set: (value: boolean) => emit("update:modelValue", value),
-})
 
 const standing = ref<RoleStanding | null>(null)
 const history = ref<RoleChange[]>([])
@@ -101,30 +94,13 @@ function label(role: Role): string {
   return `${role}`.toLocaleLowerCase()
 }
 
-watch(
-  () => [props.modelValue, props.userId] as const,
-  ([isOpen]) => {
-    if (isOpen) void load()
-  },
-  {immediate: true},
-)
+watch(() => props.userId, load, {immediate: true})
 </script>
 
 <template>
-  <base-modal
-    v-model="open"
-    :title="`Roles — ${userName}`"
-    testid="user-roles-dialog"
-    show-save
-    save-label="Save roles"
-    save-testid="user-roles-save-btn"
-    save-icon="mdi-content-save"
-    :save-loading="saving"
-    :save-disabled="!standing || !dirty"
-    show-cancel
-    cancel-label="Close"
-    @save="save"
-    @cancel="open = false"
+  <section
+    class="roles-panel"
+    data-testid="user-roles-panel"
   >
     <v-alert
       v-if="loadFailure"
@@ -151,6 +127,7 @@ watch(
         v-model="chosen"
         class="text-capitalize"
         :data-testid="`user-roles-checkbox-${label(role)}`"
+        :disabled="!editable"
         hide-details
         :label="standing.dormant?.includes(role) ? `${label(role)} — dormant` : label(role)"
         :value="role"
@@ -206,13 +183,25 @@ watch(
         </div>
       </template>
 
-      <v-text-field
-        v-model="note"
-        class="mt-4"
-        data-testid="user-roles-note"
-        label="Why (optional)"
-        maxlength="1023"
-      />
+      <template v-if="editable">
+        <v-text-field
+          v-model="note"
+          class="mt-4"
+          data-testid="user-roles-note"
+          label="Why (optional)"
+          maxlength="1023"
+        />
+        <v-btn
+          color="primary"
+          data-testid="user-roles-save-btn"
+          :disabled="!dirty"
+          :loading="saving"
+          variant="flat"
+          @click="save"
+        >
+          Save roles
+        </v-btn>
+      </template>
 
       <v-alert
         v-if="failure"
@@ -258,5 +247,5 @@ watch(
         </v-list-item>
       </v-list>
     </template>
-  </base-modal>
+  </section>
 </template>

@@ -5,9 +5,9 @@ import java.time.LocalTime
 import java.time.ZoneId
 
 /**
- * Which of the bot's things should stand for an event at a moment. [withinTwoWeeks] governs the
- * events-info post and the Discord event, [calendarPost] the events-calendar post, which comes down
- * for good once [calendarPostOver].
+ * Which of the bot's posts should stand for an event at a moment. [withinTwoWeeks] governs the
+ * events-info post, [calendarPost] the events-calendar post, which comes down for good once
+ * [calendarPostOver]; the Discord event reads only [over].
  */
 data class DiscordPostsDue(
     val withinTwoWeeks: Boolean,
@@ -17,10 +17,9 @@ data class DiscordPostsDue(
 )
 
 /**
- * When the bot's things for an event are due, in Amsterdam time: the events-info post and the
- * Discord event while the event is within two weeks, from 08:00 fourteen days before its first day
- * until it is over; the events-calendar post from 08:00 on that day until 08:00 the morning after
- * its last.
+ * When the bot's posts for an event are due, in Amsterdam time: the events-info post while the event
+ * is within two weeks, from 08:00 fourteen days before its first day until it is over; the
+ * events-calendar post from 08:00 on that day until 08:00 the morning after its last.
  */
 object DiscordPostSchedule {
     const val ZONE_ID = "Europe/Amsterdam"

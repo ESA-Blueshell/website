@@ -68,5 +68,5 @@ class DiscordEventJob(
     override fun keep(
         eventId: Long,
         forced: Boolean,
-    ) = posts.keepDiscordEvent(eventId, forced)
+    ) = posts.keepDiscordEvent(eventId)
 }

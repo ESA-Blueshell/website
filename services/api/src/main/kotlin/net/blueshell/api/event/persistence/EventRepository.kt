@@ -28,12 +28,10 @@ interface EventRepository : BaseRepository<Event, Long> {
     fun findByIdIncludingDeleted(id: Long): Event?
 
     @Query(
-        "select e.id from Event e where (e.approved = true or e.awaitingReapproval = true) " +
-            "and e.startTime <= :to and e.endTime >= :from",
+        "select e.id from Event e where (e.approved = true or e.awaitingReapproval = true) and e.endTime >= :from",
     )
-    fun findKeptIdsOverlapping(
+    fun findKeptIdsEndingFrom(
         @Param("from") from: Instant,
-        @Param("to") to: Instant,
     ): List<Long>
 
     @Query("select e.id from Event e where e.endTime >= :from")

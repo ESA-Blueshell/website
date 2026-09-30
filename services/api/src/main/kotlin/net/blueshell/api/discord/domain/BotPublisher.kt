@@ -223,7 +223,7 @@ class BotPublisher(
         listing: DiscordEventListing,
     ): Boolean =
         explained(LISTING) {
-            stillThere {
+            stillOpen {
                 withoutImageIfRefused(listing.cover != null) { withCover ->
                     update(discordEventId, if (withCover) listing else listing.copy(cover = null))
                 }
@@ -369,11 +369,26 @@ private fun <T> withoutImageIfRefused(
     try {
         send(hasImage)
     } catch (refused: RestClientResponseException) {
-        if (!hasImage || refused.statusCode.value() !in IMAGE_REFUSED) throw refused
+        if (!hasImage || refused.statusCode.value() !in IMAGE_REFUSED || finished(refused)) throw refused
         send(false)
     }
 
 private val IMAGE_REFUSED = setOf(HttpStatus.BAD_REQUEST.value(), HttpStatus.CONTENT_TOO_LARGE.value())
+
+/*
+ * A Discord event Discord has ended takes no edit, and answers false like one removed by hand: an
+ * event moved ahead again after it was over gets a new one.
+ */
+private fun stillOpen(call: () -> Unit): Boolean =
+    try {
+        stillThere(call)
+    } catch (refused: RestClientResponseException) {
+        if (!finished(refused)) throw refused
+        false
+    }
+
+private fun finished(refused: RestClientResponseException) =
+    refused.statusCode.value() == HttpStatus.BAD_REQUEST.value() && FINISHED.containsMatchIn(refused.responseBodyAsString)
 
 // Editing what somebody removed by hand answers false, so the caller can make it again.
 private fun stillThere(call: () -> Unit): Boolean =
@@ -413,6 +428,12 @@ private const val UNAVAILABLE = "Discord is unavailable."
 // What Discord says of a field over its limit, of one text display over it, and of a message's text over its total.
 private val TOO_LONG = listOf("BASE_TYPE_MAX_LENGTH", "BASE_TYPE_BAD_LENGTH", "COMPONENT_DISPLAYABLE_TEXT_SIZE_EXCEEDED")
 
+// Discord's code for a server already holding its 100 scheduled or running Discord events.
+private val EVENTS_LIST_FULL = Regex(""""code"\s*:\s*30038\b""")
+
+// Discord's code for an edit to a Discord event it has already ended.
+private val FINISHED = Regex(""""code"\s*:\s*180000\b""")
+
 /*
  * The refusals the board can act on, in plain words; any other is passed on as it came. Wraps the
  * whole call, outside the handling of a message already gone or an image refused, which are answers.
@@ -441,6 +462,8 @@ private fun plainly(
             status.is5xxServerError -> UNAVAILABLE
             status.value() == HttpStatus.BAD_REQUEST.value() && TOO_LONG.any { refused.responseBodyAsString.contains(it) } ->
                 "Discord refuses ${doing.thing} as too long."
+            status.value() == HttpStatus.BAD_REQUEST.value() && EVENTS_LIST_FULL.containsMatchIn(refused.responseBodyAsString) ->
+                "The server's Events list is full: Discord holds at most 100 Discord events that have not ended."
             else -> null
         }
     return sentence?.let { ExplainedJobFailure(it, refused) }

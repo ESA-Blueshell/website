@@ -75,11 +75,11 @@ class EventPostsTest {
     }
 
     @Test
-    fun `hands over the banner's bytes, and the approved events near a window`() {
+    fun `hands over the banner's bytes, and the kept events ending from a moment`() {
         val events: EventRepository =
             mock {
                 on { findByIdIncludingDeleted(42) } doReturn event
-                on { findKeptIdsOverlapping(Instant.EPOCH, Instant.MAX) } doReturn listOf(42L)
+                on { findKeptIdsEndingFrom(Instant.EPOCH) } doReturn listOf(42L)
             }
 
         val image = EventPosts(events, signUps, blobs).bannerOf(42)!!
@@ -87,7 +87,7 @@ class EventPostsTest {
         assertThat(image.mediaType).isEqualTo("image/webp")
         assertThat(image.bytes).containsExactly(1, 2)
         assertThat(EventPosts(events, signUps, blobs).bannerOf(44)).isNull()
-        assertThat(EventPosts(events, signUps, blobs).keptOverlapping(Instant.EPOCH, Instant.MAX)).containsExactly(42L)
+        assertThat(EventPosts(events, signUps, blobs).keptEndingFrom(Instant.EPOCH)).containsExactly(42L)
     }
 
     @Test

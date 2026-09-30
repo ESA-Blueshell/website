@@ -60,12 +60,9 @@ class EventPosts(
             event.asPostData(if (event.signUp) signUps.findLinkedDiscordIds(eventId) else emptyList())
         }
 
-    /** Events whose Discord things the bot keeps, approved or awaiting re-approval, any part of which falls between [from] and [to]. */
+    /** Events whose Discord things the bot keeps, approved or awaiting re-approval, that end at or after [from]. */
     @Transactional(readOnly = true)
-    fun keptOverlapping(
-        from: Instant,
-        to: Instant,
-    ): List<Long> = events.findKeptIdsOverlapping(from, to)
+    fun keptEndingFrom(from: Instant): List<Long> = events.findKeptIdsEndingFrom(from)
 
     // The widest rendition Discord takes comfortably rather than the master, which can be large.
     @Transactional(readOnly = true)

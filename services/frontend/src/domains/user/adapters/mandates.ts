@@ -17,7 +17,7 @@ import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
 import {readOr} from "@/utils/answers"
-import {refusable} from "../refusals"
+import {accepted, refusable} from "../refusals"
 
 export type {MandateResponse, OwnMandateResponse, RecordMandateRequest}
 export {IncassoStanding}
@@ -42,7 +42,7 @@ export async function setUpIncasso(
   signupToken?: string,
 ): Promise<{ok: true; saved: OwnMandateResponse | null} | Refused> {
   if (signupToken) {
-    const answered = await refusable(setUpMandate({headers: {[SIGNUP_TOKEN_HEADER]: signupToken}, body}), "Your bank details could not be saved.")
+    const answered = await accepted(setUpMandate({headers: {[SIGNUP_TOKEN_HEADER]: signupToken}, body}), "Your bank details could not be saved.")
     return answered.ok ? {ok: true, saved: null} : answered
   }
   return refusable(setUpOwnMandate({body}), "Your bank details could not be saved.")

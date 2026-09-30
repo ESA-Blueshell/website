@@ -698,7 +698,9 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   display: flex;
   height: var(--rail-height);
   overflow: hidden;
-  background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
+  /* Laid on the ground rather than over whatever is behind: under .island-dark the tokens are
+     dark ones, and a light page showing through left its labels pale on pale. */
+  background-color: color-mix(in oklab, var(--color-chalk) 5%, var(--color-ground));
 }
 
 .flick-reel__cell {

@@ -36,7 +36,7 @@ describe("StarboardFeed", () => {
 
     const first = wrapper.get("[data-testid=home-starboard-9]")
     expect(first.get(".starboard__name").text()).toBe("Joris")
-    expect(first.get(".starboard__channel").text()).toBe("in #general")
+    expect(first.get(".starboard__channel").text()).toBe("#general")
     expect(first.get(".starboard__when").attributes("datetime")).toBe("2026-09-23T08:22:05Z")
     expect(first.get(".starboard__when").text()).toBe("23 Sep")
     expect(first.getComponent({name: "MarkdownView"}).props("source")).toBe("Soon to be released events page redesigns:")

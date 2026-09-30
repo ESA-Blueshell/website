@@ -74,7 +74,7 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
         <div class="starboard__body">
           <div class="starboard__byline">
             <span class="starboard__name">{{ nameOf(entry) }}</span>
-            <span class="starboard__channel">in #{{ entry.channel }}</span>
+            <span class="starboard__channel">#{{ entry.channel }}</span>
             <time
               class="starboard__when"
               :datetime="entry.postedAt"
@@ -122,16 +122,21 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
 
 <style scoped>
 /*
- * Discord's own chrome, the same in both themes, and as wide as the voice widget above it. The
- * site's tokens are set to Discord's so the markdown inside reads on its ground in light too.
+ * Discord's own chrome and metrics, the same in both themes, and as wide as the voice widget above
+ * it. The site's tokens are set to Discord's so the markdown inside reads on its ground in light too.
  */
 .starboard {
   --color-chalk: #dbdee1;
   --color-ash: #949ba4;
-  --color-hairline: #3f4147;
+  --color-hairline: #4e5058;
   --color-void: #1e1f22;
   --color-eyebrow: #949ba4;
+  --color-brand: #5865f2;
+  --color-brand-lit: #c9cdfb;
   --color-brand-ink: #00a8fc;
+  --discord-font: "gg sans", "Noto Sans", "Helvetica Neue", helvetica, arial, sans-serif;
+  --font-body: var(--discord-font);
+  --font-prose: var(--discord-font);
 
   display: flex;
   flex-direction: column;
@@ -144,33 +149,35 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   border-radius: 14px;
   background: #313338;
   color: #dbdee1;
-  font-family: var(--font-body);
+  font-family: var(--discord-font);
 }
 
 .starboard__head {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 0.45rem;
   min-width: 0;
-  padding: 0.7rem 1rem;
+  height: 48px;
+  padding: 0 1rem;
   border-bottom: 1px solid #26282c;
-  background: #2b2d31;
 }
 
 .starboard__hash {
   flex: none;
+  width: 24px;
+  height: 24px;
+  margin-right: 0.5rem;
   color: #80848e;
 }
 
 /* The site's heading face would make it read as a band heading rather than a channel name. */
 .starboard__title {
   margin: 0;
-  font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-family: var(--discord-font);
+  font-size: 1rem;
   font-style: normal;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.25rem;
   letter-spacing: 0;
   text-transform: none;
   color: #f2f3f5;
@@ -178,20 +185,22 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
 
 .starboard__topic {
   overflow: hidden;
-  margin-left: 0.35rem;
-  padding-left: 0.8rem;
+  margin-left: 0.5rem;
+  padding-left: 0.5rem;
   border-left: 1px solid #3f4147;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5rem;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: #949ba4;
+  color: #b5bac1;
 }
 
 .starboard__list {
   flex: 1 1 auto;
   min-height: 0;
   margin: 0;
-  padding: 0.5rem 0;
+  padding: 1rem 0;
   overflow-y: auto;
   list-style: none;
   overscroll-behavior: contain;
@@ -201,16 +210,25 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   width: 8px;
 }
 
+.starboard__list::-webkit-scrollbar-track {
+  background: #2b2d31;
+}
+
 .starboard__list::-webkit-scrollbar-thumb {
   border-radius: 4px;
   background: #1a1b1e;
 }
 
+/* A message group as Discord spaces one: the avatar 16px in, the words from 72px. */
 .starboard__entry {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr);
-  column-gap: 0.9rem;
-  padding: 0.55rem 1rem 0.65rem;
+  column-gap: 1rem;
+  padding: 0.125rem 1rem 0.125rem;
+}
+
+.starboard__entry + .starboard__entry {
+  margin-top: 1.0625rem;
 }
 
 .starboard__entry:hover {
@@ -220,6 +238,7 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
 .starboard__avatar {
   width: 40px;
   height: 40px;
+  margin-top: 0.125rem;
   border-radius: 9999px;
 }
 
@@ -229,14 +248,13 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   place-items: center;
   background: #5865f2;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   color: #fff;
 }
 
 .starboard__body {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
   min-width: 0;
 }
 
@@ -244,41 +262,65 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  column-gap: 0.5rem;
-  line-height: 1.3;
+  column-gap: 0.25rem;
+  line-height: 1.375rem;
 }
 
 .starboard__name {
-  font-size: 0.95rem;
-  font-weight: 600;
+  margin-right: 0.25rem;
+  font-size: 1rem;
+  font-weight: 500;
   color: #f2f3f5;
 }
 
-.starboard__channel,
+/* The source channel as Discord writes a channel mention. */
+.starboard__channel {
+  padding: 0 2px;
+  border-radius: 3px;
+  background: rgb(88 101 242 / 30%);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #c9cdfb;
+}
+
 .starboard__when {
+  margin-left: 0.25rem;
   font-size: 0.75rem;
   color: #949ba4;
 }
 
 .starboard__text {
   overflow-wrap: anywhere;
-  font-size: 0.93rem;
-  line-height: 1.4;
+  font-size: 1rem;
+  line-height: 1.375rem;
   color: #dbdee1;
 }
 
 .starboard__text :deep(:is(h1, h2, h3, h4, h5, h6)) {
-  margin: 0.2rem 0 0.3rem;
-  font-size: 1rem;
+  margin: 0.5rem 0 0.25rem;
+  font-family: var(--discord-font);
+  font-size: 1.25rem;
+  font-style: normal;
+  line-height: 1.375;
+  text-transform: none;
   color: #f2f3f5;
 }
 
 .starboard__text :deep(:is(p, ul, ol, blockquote)) {
-  margin: 0 0 0.35rem;
+  margin: 0;
 }
 
-.starboard__text :deep(:last-child) {
-  margin-bottom: 0;
+/* A blank line between paragraphs, as Discord keeps the one somebody typed. */
+.starboard__text :deep(p + p) {
+  margin-top: 1.375rem;
+}
+
+.starboard__text :deep(:is(ul, ol)) {
+  margin: 0.25rem 0 0.25rem 1rem;
+}
+
+.starboard__text :deep(:first-child) {
+  margin-top: 0;
 }
 
 .starboard__text :deep(a) {
@@ -292,43 +334,47 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
   max-width: min(100%, 26rem);
   height: auto;
   max-height: 22rem;
-  margin-top: 0.15rem;
+  margin-top: 0.25rem;
   border-radius: 8px;
 }
 
 .starboard__foot {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-top: 0.15rem;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 /* The star reaction, as Discord draws one. */
 .starboard__stars {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.15rem 0.5rem;
-  border: 1px solid #4e5058;
-  border-radius: 8px;
+  gap: 0.375rem;
+  height: 1.5rem;
+  padding: 0 0.375rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
   background: #2b2d31;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #dbdee1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #b5bac1;
 }
 
 .starboard__stars svg {
-  color: #f0b232;
+  width: 16px;
+  height: 16px;
+  color: #ffac33;
 }
 
 .starboard__open {
   font-size: 0.75rem;
-  color: #00a8fc;
+  color: #949ba4;
 }
 
 .starboard__open:hover,
 .starboard__open:focus-visible {
   text-decoration: underline;
+  color: #dbdee1;
 }
 
 @media (--phone) {
@@ -342,13 +388,17 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
 
   .starboard__entry {
     grid-template-columns: 32px minmax(0, 1fr);
-    column-gap: 0.7rem;
-    padding: 0.55rem 0.75rem 0.65rem;
+    column-gap: 0.75rem;
+    padding: 0.125rem 0.75rem;
   }
 
   .starboard__avatar {
     width: 32px;
     height: 32px;
+  }
+
+  .starboard__text {
+    font-size: 0.9375rem;
   }
 }
 </style>

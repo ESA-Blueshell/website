@@ -137,6 +137,44 @@ describe("JobRunForm", () => {
     expect((wrapper.vm as any).pickerForField({name: "name", type: "String"})).toBeNull()
   })
 
+  it("keeps what each field and the type picker hand back", async () => {
+    mockListJobTypes.mockResolvedValue([
+      ...descriptors,
+      {
+        type: "everything",
+        payloadFields: [
+          {name: "userId", type: "Long", required: false},
+          {name: "cohortId", type: "Long", required: false},
+          {name: "eventId", type: "Long", required: false},
+          {name: "periodId", type: "Long", required: false},
+          {name: "intent", type: "Intent", required: false, kind: "ENUM", enumValues: ["ADD"]},
+          {name: "note", type: "String", required: false},
+        ],
+      },
+    ])
+    const wrapper = await mountForm()
+
+    await wrapper.findComponent({name: "VSelect"}).vm.$emit("update:modelValue", "everything")
+    await settle()
+    for (const [name, value] of [["UserPicker", 1], ["TargetPicker", 2], ["EventPicker", 3], ["ContributionPeriodPicker", 4], ["EnumPicker", "ADD"]] as const) {
+      await wrapper.findComponent({name}).vm.$emit("update:modelValue", value)
+    }
+    await wrapper.findComponent({name: "VTextField"}).vm.$emit("update:modelValue", "hello")
+
+    expect((wrapper.vm as any).fieldValues).toEqual({userId: 1, cohortId: 2, eventId: 3, periodId: 4, intent: "ADD", note: "hello"})
+  })
+
+  it("draws the refusal it was given", async () => {
+    mockEnqueueJob.mockResolvedValue({ok: false, reason: "No."})
+    const wrapper = shallowMount(JobRunForm, {props: {preset: {type: "contact.sync-all", payload: {}}}, global: {renderStubDefaultSlot: true}})
+    await settle()
+
+    await (wrapper.vm as any).submit()
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-run-error"]').text()).toBe("No.")
+  })
+
   it("keeps an empty list of types when they cannot be read", async () => {
     mockListJobTypes.mockRejectedValue(new Error("offline"))
     const wrapper = await mountForm()

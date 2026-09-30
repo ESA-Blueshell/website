@@ -273,6 +273,18 @@ describe("JobManager page", () => {
     expect(wrapper.find('[data-testid="job-filters-clear"]').exists()).toBe(false)
   })
 
+  it("reads Status and Kind off their pickers", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+
+    const [status, kind] = wrapper.findAllComponents({name: "FilterPicker"})
+    await status.vm.$emit("update:modelValue", "DEAD")
+    await kind.vm.$emit("update:modelValue", "email")
+    await settle()
+
+    expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({status: "DEAD", category: "email"})})
+  })
+
   it("searches jobs alongside the pickers", async () => {
     const wrapper = mountJobManager()
     await settle()

@@ -32,6 +32,7 @@ const navbarPaths = [
   "/management/recovery",
   "/management/users",
   "/management/jobs",
+  "/management/jobs/12",
 ]
 
 describe("Navbar route targets", () => {
@@ -48,6 +49,13 @@ describe("the account security pages", () => {
     "accountTwoFactor", "accountTwoFactorSetUp", "accountSignIns", "accountSecurityLog", "twoFactorRequired",
   ])("loads %s", async (name) => {
     const load = router.getRoutes().find(one => one.name === name)?.components?.default as () => Promise<unknown>
+    await expect(load()).resolves.toBeDefined()
+  }, 20_000)
+})
+
+describe("the page for one job", () => {
+  it("loads its page", async () => {
+    const load = router.getRoutes().find(one => one.name === "jobDetail")?.components?.default as () => Promise<unknown>
     await expect(load()).resolves.toBeDefined()
   }, 20_000)
 })

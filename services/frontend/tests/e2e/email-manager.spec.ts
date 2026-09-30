@@ -78,23 +78,23 @@ test.describe("email manager — access control", () => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsBoard(page.context())
 
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
   })
 
-  test("a member is redirected to home", async ({page}) => {
+  test("a member is shown the unauthorized page", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsMember(page.context())
 
-    await page.goto("/management/emails")
-    await expect(page).toHaveURL(/\/$/)
+    await page.goto("/management/mail/sent")
+    await expect(page).toHaveURL(/\/unauthorized/)
   })
 
   test("admin can access the email manager", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
 
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
   })
 })
@@ -111,7 +111,7 @@ test.describe("email manager — stats panel", () => {
       ],
     })
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-stats-total")).toBeVisible()
     await expect(page.getByTestId("email-stats-total")).toContainText("5")
@@ -131,7 +131,7 @@ test.describe("email manager — stats panel", () => {
       ],
     })
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     // 2 delivered out of 4 total = 50%
     await expect(page.getByTestId("email-stats-delivered")).toBeVisible()
@@ -148,7 +148,7 @@ test.describe("email manager — stats panel", () => {
       ],
     })
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     // 1 opened out of 4 total = 25%
     await expect(page.getByTestId("email-stats-opened")).toBeVisible()
@@ -160,7 +160,7 @@ test.describe("email manager — email list", () => {
   test("shows all emails in list", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
     await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible()
@@ -171,7 +171,7 @@ test.describe("email manager — email list", () => {
   test("shows 'No emails found' when list is empty", async ({page}) => {
     await installApiMocks(page, {emails: []})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByText("No emails found.")).toBeVisible()
   })
@@ -179,7 +179,7 @@ test.describe("email manager — email list", () => {
   test("displays status chip for each email row", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
     const deliveredRow = page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)
@@ -194,7 +194,7 @@ test.describe("email manager — filtering", () => {
   test("filter by delivery status shows only matching emails", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
 
@@ -210,7 +210,7 @@ test.describe("email manager — filtering", () => {
   test("search filters emails by recipient email", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
 
@@ -224,7 +224,7 @@ test.describe("email manager — filtering", () => {
   test("search filters emails by subject", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
 
@@ -238,7 +238,7 @@ test.describe("email manager — filtering", () => {
   test("refresh button reloads the list", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-manager-refresh-btn")).toBeVisible()
     await page.getByTestId("email-manager-refresh-btn").click()
@@ -252,7 +252,7 @@ test.describe("email manager — expanded details", () => {
   test("clicking a row expands email details", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible()
     await expect(page.getByTestId(`email-detail-${BASE_EMAILS[0].id}`)).not.toBeVisible()
@@ -265,7 +265,7 @@ test.describe("email manager — expanded details", () => {
   test("expanded details show recipient name and email", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible()
     await page.getByTestId(`email-row-${BASE_EMAILS[0].id}`).click()
@@ -278,7 +278,7 @@ test.describe("email manager — expanded details", () => {
   test("expanded details show error information for failed emails", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId(`email-row-${BASE_EMAILS[1].id}`)).toBeVisible()
     await page.getByTestId(`email-row-${BASE_EMAILS[1].id}`).click()
@@ -291,7 +291,7 @@ test.describe("email manager — expanded details", () => {
   test("clicking expanded row collapses it", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible()
     await page.getByTestId(`email-row-${BASE_EMAILS[0].id}`).click()
@@ -306,7 +306,7 @@ test.describe("email manager — retry", () => {
   test("retry button is only visible for FAILED emails with a linked job", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
 
@@ -325,7 +325,7 @@ test.describe("email manager — retry", () => {
   test("clicking retry updates the email status", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId(`email-retry-btn-${BASE_EMAILS[1].id}`)).toBeVisible()
     await page.getByTestId(`email-retry-btn-${BASE_EMAILS[1].id}`).click()
@@ -340,7 +340,7 @@ test.describe("email manager — pagination", () => {
   test("pagination is visible when there are emails", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
     await expect(page.getByTestId("email-manager-pagination")).toBeVisible()
@@ -351,7 +351,7 @@ test.describe("email manager — preview", () => {
   test("reads a sent email back, and says its links were removed", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await page.getByTestId("email-preview-btn-801").click()
 
@@ -373,7 +373,7 @@ test.describe("email manager — preview", () => {
   test("offers no preview for an email whose body was never stored", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsAdmin(page.context())
-    await page.goto("/management/emails")
+    await page.goto("/management/mail/sent")
 
     await expect(page.getByTestId("email-row-802")).toBeVisible()
     await expect(page.getByTestId("email-preview-btn-802")).toHaveCount(0)

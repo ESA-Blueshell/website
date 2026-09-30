@@ -4,7 +4,7 @@ import {installApiMocks, loginAsAdmin} from "./mocks"
 
 // Cohort 102 in the mocks is the committee cohort: one member, one Brevo mapping, one
 // enabled rule — enough for every section to have something to count.
-const COMMITTEE_COHORT = "/management/cohort/102"
+const COMMITTEE_COHORT = "/management/platforms/brevo/cohort/102"
 
 /** The number a box wears on its heading. */
 const badgeOf = (box: Locator) => box.getByTestId("info-box-count").locator(".v-badge__badge")
@@ -120,7 +120,7 @@ test.describe("cohort cohort detail", () => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
 
-    await page.goto("/management/cohorts/committees")
+    await page.goto("/management/platforms/brevo/committees")
 
     // The kind used to be a heading repeated above each run of rows, which put the same words
     // on screen twice. It is a column now, and the counts are columns beside it.
@@ -136,7 +136,7 @@ test.describe("cohort cohort detail", () => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
 
-    await page.goto("/management/cohorts/periods")
+    await page.goto("/management/platforms/brevo/periods")
 
     // One heading carrying the count, as the member table does — not a heading, an eyebrow
     // repeating it, and a subtitle holding the number.
@@ -153,7 +153,7 @@ test.describe("cohort cohort detail", () => {
     })
     await loginAsAdmin(page.context())
 
-    await page.goto("/management/cohorts/periods")
+    await page.goto("/management/platforms/brevo/periods")
 
     const names = page.locator('[data-testid^="cohort-row-"] td:first-child')
     // Unsorted, the rows read in the order the kinds are declared: members before payers.
@@ -173,7 +173,7 @@ test.describe("cohort cohort detail", () => {
     await page.goto(COMMITTEE_COHORT)
     await page.getByTestId("cohort-detail-back").click()
 
-    await expect(page).toHaveURL(/\/management\/cohorts\/committees$/)
+    await expect(page).toHaveURL(/\/management\/platforms\/brevo\/committees$/)
   })
 })
 
@@ -182,7 +182,7 @@ test.describe("cohort cohort detail", () => {
  * are one table, and each row says which of the two it is.
  */
 test.describe("cohort cohort detail — drift in the members table", () => {
-  const COHORT = "/management/cohort/101"
+  const COHORT = "/management/platforms/brevo/cohort/101"
 
   const openMembers = async (page: import("./test").Page) => {
     await installApiMocks(page)

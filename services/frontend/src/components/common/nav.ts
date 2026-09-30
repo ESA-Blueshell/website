@@ -105,32 +105,9 @@ export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = [], c
   {label: "Contact", to: "/contact"},
 ]
 
-/**
- * The management entries this reader may use.
- *
- * The gates are the controller's, mirrored: a board runs the association's own records, an admin
- * runs the machinery, and the outbox answers to both.
- */
-export const managementFor = (reader: NavReader): NavEntry[] => [
-  ...(reader.board
-    ? [
-      {label: "Manage addresses", to: "/addresses/manage"},
-      {label: "Manage account recovery", to: "/recovery/manage"},
-      {label: "Manage users", to: "/user-manager"},
-    ]
-    : []),
-  ...(reader.admin
-    ? [
-      {label: "Manage jobs", to: "/management/jobs"},
-    ]
-    : []),
-  ...(reader.board || reader.admin
-    ? [
-      {label: "Manage cohorts", to: "/management/cohorts"},
-      {label: "Manage emails", to: "/management/emails"},
-    ]
-    : []),
-]
+/** The way into Management, for a reader holding a role that may use it (frontend ADR-009). */
+export const managementSwitchFor = (reader: NavReader): NavEntry | null =>
+  reader.board || reader.admin ? {label: "Switch to management", to: "/management"} : null
 
 /** Where the bar sends somebody who is logged in, beside logging out. */
 export const accountFor = (reader: NavReader): NavEntry[] => [

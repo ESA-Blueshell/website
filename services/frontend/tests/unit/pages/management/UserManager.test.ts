@@ -52,7 +52,7 @@ const memberships = [
   membership(91, 2, "2020-01-01", {endDate: "2021-12-31"}),
 ]
 
-const mount = () => mountPage(UserManager, {path: "/user-manager", login: boardLogin, width: 1400})
+const mount = () => mountPage(UserManager, {path: "/management/users", login: boardLogin, width: 1400})
 
 const rowIds = (wrapper: VueWrapper<any>) =>
   wrapper.findAll('[data-testid^="member-manager-row-"]').map((row) => Number(row.attributes("data-testid")!.split("-").at(-1)))

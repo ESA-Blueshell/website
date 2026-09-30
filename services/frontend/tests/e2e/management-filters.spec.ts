@@ -85,7 +85,7 @@ test.describe("management filters", () => {
     // up; below that it switches to a mobile card list with its own test ids. This
     // test exercises the desktop table, so it pins a desktop viewport.
     await page.setViewportSize({width: 1440, height: 900})
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
     await expect(page.getByTestId("member-manager-table")).toBeVisible()
 
     // All users visible before filtering
@@ -132,7 +132,7 @@ test.describe("management filters", () => {
     })
     await loginAsBoard(page.context())
     await page.setViewportSize({width: 1440, height: 900})
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
     await expect(page.getByTestId("member-manager-row-51")).toBeVisible()
 
     const filter = page.getByTestId("member-manager-filter-discord")
@@ -196,7 +196,7 @@ test.describe("management filters", () => {
     })
     await loginAsBoard(page.context())
 
-    await page.goto("/addresses/manage")
+    await page.goto("/management/addresses")
     await expect(page.getByTestId("address-user-list-with-address")).toBeVisible()
 
     const withAddressCard = await ensureListOpen(
@@ -270,7 +270,7 @@ test.describe("management filters", () => {
     })
     await loginAsBoard(page.context())
 
-    await page.goto("/recovery/manage")
+    await page.goto("/management/recovery")
     await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible()
 
     const inactiveCard = await ensureListOpen(

@@ -8,8 +8,8 @@ object RecoveryManagerHelper {
         page: Page,
         frontendUrl: String,
     ) {
-        page.navigate("$frontendUrl/recovery/manage")
-        page.waitForURL("**/recovery/manage**")
+        page.navigate("$frontendUrl/management/recovery")
+        page.waitForURL("**/management/recovery**")
     }
 
     /**

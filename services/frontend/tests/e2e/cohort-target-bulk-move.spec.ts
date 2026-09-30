@@ -1,7 +1,7 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsAdmin} from "./mocks"
 
-const PAGE = "/management/cohorts/targets"
+const PAGE = "/management/platforms/brevo/lists"
 
 test.describe("moving cohort targets in bulk", () => {
   test.beforeEach(async ({page}) => {

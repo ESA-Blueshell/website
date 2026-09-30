@@ -189,6 +189,7 @@ describe("App navbar behavior", () => {
 
     mockRoute.path = "/"
     mockRoute.meta.requiresAuth = false
+    mockRoute.meta.management = false
 
     mockFindUserById.mockResolvedValue({
       data: {
@@ -212,7 +213,7 @@ describe("App navbar behavior", () => {
     })))
   })
 
-  it("shows full desktop navigation and management links for board/admin users", async () => {
+  it("shows full desktop navigation and the switch to management for board/admin users", async () => {
     const wrapper = await mountWithLinks()
 
     expect(destinations(wrapper)).not.toContain("/login")
@@ -236,14 +237,14 @@ describe("App navbar behavior", () => {
 
     expect(destinations(wrapper)).toContain("/committees/lancie")
     expect(destinations(wrapper)).not.toContain("/committees/oldcie")
-    expect(managementDestinations(wrapper)).not.toContain("/management/jobs")
+    // Management's pages leave the site's bar; the account menu switches into Management.
+    expect(managementDestinations(wrapper)).toEqual([])
+    expect(wrapper.find("[data-testid='nav-management']").exists()).toBe(false)
 
-    await wrapper.get("[data-testid='nav-management']").trigger("click")
+    await wrapper.get("[data-testid='nav-account']").trigger("click")
     await settle()
 
-    expect(managementDestinations(wrapper)).toContain("/management/jobs")
-    // A board is edited on the page it is read on, so the management entry is gone from here.
-    expect(managementDestinations(wrapper)).not.toContain("/management/boards")
+    expect(managementDestinations(wrapper)).toEqual(["/management"])
   })
 
   // The mark cannot be Vuetify's own active class: an entry that opens a menu addresses one
@@ -335,14 +336,14 @@ describe("App navbar behavior", () => {
     const panel = wrapper.get("[data-testid='nav-side-panel']")
     const offered = panel.findAll("a[href]").map(link => link.attributes("href"))
     expect(offered.slice(0, 4)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses/7"])
-    expect(offered).toContain("/management/jobs")
+    expect(offered).toContain("/management")
     expect(wrapper.get("[data-testid='nav-account']").attributes("aria-expanded")).toBe("true")
 
     await panel.get("a[href='/account']").trigger("click")
     expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(false)
     await wrapper.get("[data-testid='nav-account']").trigger("click")
     await settle()
-    await wrapper.get("[data-testid='nav-side-panel'] a[href='/management/jobs']").trigger("click")
+    await wrapper.get("[data-testid='nav-side-panel'] a[href='/management']").trigger("click")
     expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(false)
 
     // A second press on the icon folds the panel away again, and so does the scrim.
@@ -524,5 +525,16 @@ describe("App navbar behavior", () => {
 
     expect((wrapper.vm as any).poggers).toBe(true)
     expect(mockAlert).toHaveBeenCalledWith("BIG SITECIE ENERGY")
+  })
+
+  it("gives Management its own bar and no site footer", async () => {
+    mockRoute.path = "/management/users"
+    mockRoute.meta.management = true
+
+    const wrapper = await mountWithLinks()
+
+    expect(wrapper.find("[data-testid=management-bar]").exists()).toBe(true)
+    expect(wrapper.find("header.site-bar").exists()).toBe(false)
+    expect(wrapper.find("[data-test=footer-banner]").exists()).toBe(false)
   })
 })

@@ -14,7 +14,7 @@ async function openManagerWithSelection(page: Page): Promise<void> {
   await page.setViewportSize({width: 1400, height: 900})
   await installApiMocks(page)
   await loginAsBoard(page.context())
-  await page.goto("/user-manager")
+  await page.goto("/management/users")
   await page.getByTestId("member-manager-table").waitFor()
   await page.getByTestId("member-manager-checkbox-1").locator("input").click()
 }
@@ -66,7 +66,7 @@ test.describe("bulk membership without a selection", () => {
     await page.setViewportSize({width: 1400, height: 900})
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
     await page.getByTestId("member-manager-table").waitFor()
 
     await page.getByTestId("bulk-actions-menu-btn").click()

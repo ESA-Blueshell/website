@@ -23,7 +23,7 @@ async function openDesktopTable(page: import("./test").Page, dark = false): Prom
     (value: string) => localStorage.setItem("esa-blueshell.nl:darkMode", value),
     String(dark),
   )
-  await page.goto("/user-manager")
+  await page.goto("/management/users")
   await page.getByTestId("member-manager-table").waitFor()
 
   // Skip on the layout, not on whether rows happen to be visible yet: a probe that can be

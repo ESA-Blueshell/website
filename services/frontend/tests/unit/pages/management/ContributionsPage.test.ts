@@ -8,7 +8,6 @@ import {mountInApp, settle, unmountAll} from "../helpers"
 const api = vi.hoisted(() => ({
   findContributionPeriods: vi.fn(),
   findPeriodContributions: vi.fn(),
-  deleteContributionPeriodById: vi.fn(),
 }))
 const {mockRoute, mockPush, mockHandleNetworkError} = vi.hoisted(() => ({
   mockRoute: {params: {} as Record<string, string>},
@@ -63,7 +62,6 @@ describe("the Contributions page", () => {
       ],
       runs: [{kind: ContributionEmailKind.REMINDER, sentAt: "2025-09-20T10:00:00Z", recipients: 1}],
     }})
-    api.deleteContributionPeriodById.mockResolvedValue({status: 204, data: undefined})
   })
 
   afterEach(() => {
@@ -140,48 +138,23 @@ describe("the Contributions page", () => {
     expect(mockPush).toHaveBeenLastCalledWith(expect.objectContaining({path: "/management/users/bulk/unpaid"}))
   })
 
-  it("adds, edits and deletes a period", async () => {
+  it("sends New period and Edit period to the period's own page", async () => {
     const wrapper = await mount()
 
-    await wrapper.get('[data-testid="contribution-period-new"]').trigger("click")
-    await settle()
-    const dialog = () => wrapper.findComponent({name: "ContributionPeriodDialog"})
-    expect(dialog().props("contributionPeriod")).toBeUndefined()
-    dialog().vm.$emit("changed", aContributionPeriod({id: 4}))
-    await settle()
-    expect(mockPush).toHaveBeenCalledWith("/management/contributions/4")
-    dialog().vm.$emit("update:showDialog", false)
-    await settle()
-    expect(dialog().exists()).toBe(false)
-
-    await wrapper.get('[data-testid="contribution-period-edit"]').trigger("click")
-    await settle()
-    expect(dialog().props("contributionPeriod")).toMatchObject({id: 2})
-    dialog().vm.$emit("changed")
-    dialog().vm.$emit("delete", 2)
-    await settle()
-    wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("update:modelValue", true)
-    wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("confirm")
-    await settle()
-    expect(api.deleteContributionPeriodById).toHaveBeenCalled()
-    expect(mockPush).toHaveBeenLastCalledWith("/management/contributions")
+    expect(wrapper.get('[data-testid="contribution-period-new"]').attributes("to")).toBe("/management/contributions/periods/new")
+    expect(wrapper.get('[data-testid="contribution-period-edit"]').attributes("to")).toBe("/management/contributions/periods/2")
   })
 
-  it("says so when there is no period, when nobody matches, and when a period cannot be deleted", async () => {
+  it("says so when there is no period, when nobody matches, and when the periods could not be read", async () => {
     api.findContributionPeriods.mockResolvedValue({status: 200, data: []})
     expect((await mount()).find('[data-testid="contributions-no-period"]').exists()).toBe(true)
 
     api.findContributionPeriods.mockResolvedValue({status: 200, data: [aContributionPeriod({id: 2, startDate: "2025-09-01"})]})
     api.findPeriodContributions.mockResolvedValue({status: 200, data: {periodId: 2, members: [], runs: []}})
-    api.deleteContributionPeriodById.mockRejectedValue(new Error("in use"))
-    const wrapper = await mount()
-    expect(wrapper.find('[data-testid="contributions-empty"]').exists()).toBe(true)
-    wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("confirm")
-    await settle()
-    expect(mockHandleNetworkError).toHaveBeenCalled()
+    expect((await mount()).find('[data-testid="contributions-empty"]').exists()).toBe(true)
 
     api.findContributionPeriods.mockRejectedValue(new Error("offline"))
     await mount()
-    expect(mockHandleNetworkError).toHaveBeenCalledTimes(2)
+    expect(mockHandleNetworkError).toHaveBeenCalled()
   })
 })

@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
-import ContributionPeriodDialog from "@/components/common/modals/ContributionPeriodDialog.vue"
+import ContributionPeriodForm from "@/components/management/ContributionPeriodForm.vue"
 
 const {mockSaveNewPeriod, mockSavePeriod, mockApply, mockHandleNetworkError} = vi.hoisted(() => ({
   mockSaveNewPeriod: vi.fn(),
@@ -29,7 +29,7 @@ vi.mock("@/components/form/fields/VvField.vue", () => ({
   },
 }))
 
-describe("ContributionPeriodDialog", () => {
+describe("ContributionPeriodForm", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockSaveNewPeriod.mockResolvedValue({id: 11})
@@ -38,9 +38,8 @@ describe("ContributionPeriodDialog", () => {
   })
 
   it("creates and updates contribution periods", async () => {
-    const createWrapper = mount(ContributionPeriodDialog, {
+    const createWrapper = mount(ContributionPeriodForm, {
       props: {
-        showDialog: true,
       },
       global: {
         stubs: {
@@ -67,9 +66,8 @@ describe("ContributionPeriodDialog", () => {
     )
     expect(createWrapper.emitted("changed")?.[0]).toEqual([{id: 11}])
 
-    const updateWrapper = mount(ContributionPeriodDialog, {
+    const updateWrapper = mount(ContributionPeriodForm, {
       props: {
-        showDialog: true,
         contributionPeriod: {
           id: 22,
           startDate: "2026-01-01",
@@ -101,28 +99,14 @@ describe("ContributionPeriodDialog", () => {
     )
   })
 
-  it("emits delete intent for selected period", () => {
-    const wrapper = mount(ContributionPeriodDialog, {
-      props: {
-        showDialog: true,
-        contributionPeriod: {
-          id: 55,
-          startDate: "2026-01-01",
-          endDate: "2026-06-30",
-          halfYearFee: 10,
-          fullYearFee: 20,
-          alumniFee: 5,
-        },
-      },
-      global: {
-        stubs: {
-          Form: true,
-          VvField: true,
-        },
-      },
-    })
+  it("says it was cancelled, and refuses to save what does not validate", async () => {
+    const wrapper = mount(ContributionPeriodForm, {global: {stubs: {Form: true, VvField: true}}})
+    ;(wrapper.vm as any).formRef = {validate: vi.fn().mockResolvedValue({valid: false})}
 
-    ;(wrapper.vm as any).confirmDeletePeriod()
-    expect(wrapper.emitted("delete")?.[0]).toEqual([55])
+    await wrapper.get('[data-testid="contribution-period-cancel-btn"]').trigger("click")
+    await (wrapper.vm as any).saveContributionPeriod()
+
+    expect(wrapper.emitted("cancelled")).toHaveLength(1)
+    expect(mockSaveNewPeriod).not.toHaveBeenCalled()
   })
 })

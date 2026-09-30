@@ -9,8 +9,6 @@ import FullList from "@/components/island/FullList.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import SelectionBar from "@/components/island/SelectionBar.vue"
 import SortHeader from "@/components/island/SortHeader.vue"
-import ContributionPeriodDialog from "@/components/common/modals/ContributionPeriodDialog.vue"
-import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import PaymentEmailWizard from "@/components/common/modals/bulk/paymentEmail/PaymentEmailWizard.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {
@@ -18,7 +16,6 @@ import {
   type PeriodMember,
   type PeriodContributionsView,
   contributionEmailLabels,
-  deletePeriod,
   listPeriods,
   readPeriodContributions,
 } from "@/domains/contribution"
@@ -38,9 +35,6 @@ const search = ref("")
 const paid = ref<string | null>(null)
 const sortKey = ref<"name" | "lastEmail">("name")
 const descending = ref(false)
-const editing = ref(false)
-const creating = ref(false)
-const deleting = ref(false)
 const writing = ref(false)
 
 const paidOptions = [
@@ -114,23 +108,6 @@ const markPayments = (action: "paid" | "unpaid") => {
   })
 }
 
-const onPeriodSaved = async (saved?: ContributionPeriodResponse) => {
-  await loadPeriods()
-  if (saved?.id != null) await router.push(`/management/contributions/${saved.id}`)
-}
-
-const confirmDelete = async () => {
-  deleting.value = false
-  if (!period.value) return
-  try {
-    await deletePeriod(period.value.id)
-    await loadPeriods()
-    await router.push("/management/contributions")
-  } catch (error) {
-    $handleNetworkError(error)
-  }
-}
-
 const onEmailsDone = async () => {
   clearSelection()
   await loadView()
@@ -170,14 +147,13 @@ void loadPeriods()
       >
         {{ one.startDate.slice(0, 4) }}–{{ one.endDate.slice(2, 4) }}
       </router-link>
-      <button
+      <router-link
         class="money__tile money__tile--new"
         data-testid="contribution-period-new"
-        type="button"
-        @click="creating = true"
+        to="/management/contributions/periods/new"
       >
         New period
-      </button>
+      </router-link>
     </nav>
 
     <p
@@ -219,14 +195,13 @@ void loadPeriods()
             </dd>
           </div>
         </dl>
-        <button
+        <router-link
           class="money__action"
           data-testid="contribution-period-edit"
-          type="button"
-          @click="editing = true"
+          :to="`/management/contributions/periods/${period.id}`"
         >
           Edit period
-        </button>
+        </router-link>
       </section>
 
       <filter-bar
@@ -373,20 +348,6 @@ void loadPeriods()
       </section>
     </template>
 
-    <contribution-period-dialog
-      v-if="creating || editing"
-      :contribution-period="editing ? period ?? undefined : undefined"
-      :show-dialog="true"
-      @changed="onPeriodSaved"
-      @delete="editing = false; deleting = true"
-      @update:show-dialog="creating = false; editing = false"
-    />
-    <deletion-confirmation-dialog
-      v-model="deleting"
-      :message="period ? `Are you sure you want to delete the contribution period from ${period.startDate} to ${period.endDate}?` : ''"
-      title="Confirm Period Deletion"
-      @confirm="confirmDelete"
-    />
     <payment-email-wizard
       v-model="writing"
       :period="period"
@@ -475,6 +436,7 @@ void loadPeriods()
 }
 
 .money__action {
+  text-decoration: none;
   padding: 0.4rem 0.9rem;
   border: 1px solid var(--color-hairline);
   background: none;

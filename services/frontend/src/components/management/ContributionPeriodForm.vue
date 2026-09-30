@@ -1,10 +1,9 @@
 <template>
-  <v-dialog
-    v-model="showDialog"
+  <section
+    class="period-form"
     data-testid="contribution-period-dialog"
-    max-width="600"
   >
-    <v-card>
+    <v-card variant="flat">
       <v-card-title class="mt-6 align-center justify-center text-center">
         <span class="text-h4">
           {{ editedPeriodId ? "Edit Contribution Period" : "Add Contribution Period" }}
@@ -79,14 +78,6 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          v-if="editedPeriodId"
-          color="red"
-          data-testid="contribution-period-delete-btn"
-          @click="confirmDeletePeriod"
-        >
-          Delete
-        </v-btn>
-        <v-btn
           color="primary"
           :data-submit-mode="editedPeriodId ? 'update' : 'create'"
           data-testid="contribution-period-submit-btn"
@@ -102,7 +93,7 @@
         </v-btn>
       </v-card-actions>
     </v-card>
-  </v-dialog>
+  </section>
 </template>
 
 <script lang="ts" setup>
@@ -119,15 +110,16 @@ import {
 import {handleSubmitError} from "@/composables/formUtils"
 import type {HandleChange} from "@/types/VVField.types.ts"
 
-defineOptions({name: "ContributionPeriodDialog"})
+/* A period's dates, three fees and half-year cutoff; empty for a new one. Deleting sits on the
+   page's danger zone rather than here. */
+defineOptions({name: "ContributionPeriodForm"})
 
 type PeriodFormModel = CreateContributionPeriodRequest & Partial<ContributionPeriodResponse>
 
-const props = defineProps<{ contributionPeriod?: ContributionPeriodResponse; showDialog: boolean }>()
+const props = defineProps<{ contributionPeriod?: ContributionPeriodResponse }>()
 const emit = defineEmits<{
-  (e: "update:showDialog", value: boolean): void;
+  (e: "cancelled"): void;
   (e: "changed", value: ContributionPeriodResponse): void;
-  (e: "delete", value: number): void;
 }>()
 
 const emptyPeriod = (): PeriodFormModel => ({
@@ -155,25 +147,7 @@ const loadPeriod = (val?: ContributionPeriodResponse | null) => {
 
 watch(() => props.contributionPeriod, (val) => loadPeriod(val), {immediate: true})
 
-watch(
-  () => props.showDialog,
-  (open) => {
-    if (open) loadPeriod(props.contributionPeriod)
-  },
-)
-
-const showDialog = computed({
-  get: () => props.showDialog,
-  set: (value: boolean) => emit("update:showDialog", value),
-})
-
-const closeDialog = () => {
-  showDialog.value = false
-}
-const confirmDeletePeriod = () => {
-  showDialog.value = false
-  if (editedPeriodId.value != null) emit("delete", editedPeriodId.value)
-}
+const closeDialog = () => emit("cancelled")
 
 const saveContributionPeriod = async () => {
   const result = await formRef.value?.validate()
@@ -199,11 +173,9 @@ const saveContributionPeriod = async () => {
         version: props.contributionPeriod.version,
       }
       emit("changed", await savePeriod(props.contributionPeriod.id, payload))
-      closeDialog()
     } else {
       const payload: CreateContributionPeriodRequest = {...fees}
       emit("changed", await saveNewPeriod(payload))
-      closeDialog()
     }
   } catch (err) {
     handleSubmitError(formRef.value, err)

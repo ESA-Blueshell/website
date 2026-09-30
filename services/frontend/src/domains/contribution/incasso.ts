@@ -39,3 +39,7 @@ export const dayName = (iso: string | null | undefined): string => {
   const day = iso ? DateTime.fromISO(iso) : null
   return day?.isValid ? day.toFormat("d LLL yyyy") : "—"
 }
+
+/** What a run's file for ING is called, such as incassobatch-2026-11-01.xlsx, or with its part when there are several. */
+export const incassoFileName = (collectionDate: string, part: number, parts: number): string =>
+  `incassobatch-${collectionDate}${parts > 1 ? `-${part}-of-${parts}` : ""}.xlsx`

@@ -16,6 +16,12 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   StatementTextMissing: () => "Say what the collection is for on their bank statement.",
   StatementTextTooLong: (r) => `The text on their bank statement can be at most ${r.max ?? 140} characters.`,
   IncassoRunNotFound: () => "There is no such incasso.",
+  IncassoRunSubmitted: () => "This incasso is already in ING, so its file is not made again.",
+  CollectionDatePassed: () => "The collection date has passed. Run a new incasso with a date ahead.",
+  IngDetailsMissing: () => "The association's IBAN or incassant ID is not set up, so ING's file cannot be filled in. Ask an admin.",
+  MandateChanged: (r) =>
+    `${r.userIds?.length ?? "Some"} of the members changed their bank details after they were told. Run a new incasso for them.`,
+  IncassoFilePartNotFound: () => "This incasso has no such file.",
 }
 
 export const {refusable} = refusalReader(sentences)

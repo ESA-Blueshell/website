@@ -3,19 +3,23 @@ import {
   fieldExistingTeam,
   isBlank,
   publishLineup,
+  removeTeamDiscord,
+  saveTeamDiscord,
   type DraftEntry,
   type LineupDraft,
 } from "@/domains/esports/adapters/lineup"
-import {addRosterEntry, fieldTeam, publishLineup as sendLineup} from "@/services/api"
+import {addRosterEntry, fieldTeam, publishLineup as sendLineup, removeTeamDiscord as dropTeamDiscord, setTeamDiscord} from "@/services/api"
 import {TeamRole} from "@/services/api"
 import {aRosterEntry, aSeason, aTeam} from "../../../helpers/apiFixtures"
-import {answer, refusal} from "../../../helpers/sdkAnswers"
+import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   addRosterEntry: vi.fn(),
   fieldTeam: vi.fn(),
   publishLineup: vi.fn(),
+  setTeamDiscord: vi.fn(),
+  removeTeamDiscord: vi.fn(),
 }))
 
 const entry = (over: Partial<DraftEntry> = {}): DraftEntry => ({
@@ -151,5 +155,22 @@ describe("isBlank", () => {
     expect(isBlank(entry({handle: "", description: "A word about them"}))).toBe(false)
     expect(isBlank(entry({handle: "", userId: 4}))).toBe(false)
     expect(isBlank(entry({handle: "", icon: "roster-icons/one.webp"}))).toBe(false)
+  })
+})
+
+describe("a team's Discord", () => {
+  it("is set and removed through the api, and a Discord that cannot be reached says so", async () => {
+    const place = {available: true, roleId: "900", channels: []}
+    vi.mocked(setTeamDiscord).mockResolvedValueOnce(answer(setTeamDiscord, place))
+    await expect(saveTeamDiscord(7, {createRole: true, channelIds: []})).resolves.toEqual({ok: true, saved: place})
+    vi.mocked(setTeamDiscord).mockResolvedValueOnce(refusal(setTeamDiscord, {code: "TargetSystemUnavailable", system: "Discord"}, 503))
+    await expect(saveTeamDiscord(7, {createRole: true, channelIds: []})).resolves.toEqual({
+      ok: false,
+      reason: "Discord cannot be reached now, so the team's role and channel are left as they were.",
+    })
+
+    vi.mocked(dropTeamDiscord).mockResolvedValueOnce(emptyAnswer(dropTeamDiscord))
+    await expect(removeTeamDiscord(7)).resolves.toEqual({ok: true})
+    expect(dropTeamDiscord).toHaveBeenCalledWith({path: {id: 7}})
   })
 })

@@ -125,4 +125,16 @@ class TeamRosterServicePublishTest {
         whenever(fielded.fieldedSeasonNow()).thenReturn(null)
         assertThat(service.currentPlayersOf(3)).isEmpty()
     }
+
+    @Test
+    fun `a line-up carried into a season tells the cohorts who came with it`() {
+        val previous = TeamRosterEntry(teamSeason = fielding, handle = "old", userId = 50, sortIndex = 0)
+        whenever(entries.findSeasonIdsWithLineup(3, "CS2", 5)).thenReturn(listOf(4L))
+        whenever(entries.findAllByTeamAndSeason(3, "CS2", 4)).thenReturn(listOf(previous))
+
+        val fieldedTeam = service.fieldWithLineup(3, "CS2", 5, carryLineup = true)
+
+        assertThat(fieldedTeam.carried.map { it.userId }).containsExactly(50L)
+        verify(events).publishEvent(RosterChanged(3, setOf(50)))
+    }
 }

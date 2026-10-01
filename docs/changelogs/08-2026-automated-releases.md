@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.14.0](https://github.com/ESA-Blueshell/website/compare/v1.13.0...v1.14.0) (2026-10-01)
+
+
+### Features
+
+* the starboard reads as a Discord channel, most stars first ([#2037](https://github.com/ESA-Blueshell/website/issues/2037)) ([f3a3143](https://github.com/ESA-Blueshell/website/commit/f3a314368d8dc8b13b53ba9a5c92e8aa85444a9d))
+
+
+### Bug Fixes
+
+* **frontend:** the reel's rail stays legible in light mode, and the home page's keyboard and motion checks are specs ([#2040](https://github.com/ESA-Blueshell/website/issues/2040)) ([1af4626](https://github.com/ESA-Blueshell/website/commit/1af462619489d2c19e650e6d467ace7290bf29b1))
+* **frontend:** the user manager's row actions fit their column ([#2032](https://github.com/ESA-Blueshell/website/issues/2032)) ([0fa2b29](https://github.com/ESA-Blueshell/website/commit/0fa2b29c12cdecdccc950ee6e42296ce6186788d)), closes [#2031](https://github.com/ESA-Blueshell/website/issues/2031)
+* **platform:** the api migrates before its canary starts, so a release may read its own schema at startup ([#2030](https://github.com/ESA-Blueshell/website/issues/2030)) ([74fa64e](https://github.com/ESA-Blueshell/website/commit/74fa64efbe6af73128d8fb2583eea22176fcbdef))
+
 ## [1.13.0](https://github.com/ESA-Blueshell/website/compare/v1.12.0...v1.13.0) (2026-09-30)
 
 

@@ -1416,7 +1416,6 @@ components:
       - label
       - mappingCount
       - memberCount
-      - targets
       - type
       type: object
     CohortTarget:

@@ -183,7 +183,10 @@ data class CohortSummaryResponse(
     val mappingCount: Int,
     @param:Schema(description = "Which definition in code decides who belongs here")
     val definitionKey: String?,
-    @param:Schema(description = "The targets it has, one per system, and whether each is made there yet")
+    @param:Schema(
+        description = "The targets it has, one per system, and whether each is made there yet",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+    )
     val targets: List<SummaryTarget>,
 )
 

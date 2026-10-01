@@ -30,7 +30,7 @@ data class TeamResponse(
     @Schema(description = "The team's own icon, drawn beside the name. The banner it is drawn on belongs to the fielding, not to the team")
     val icon: Image? = null,
     @Schema(description = "Whether the team stopped playing", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    val archived: Boolean = false,
+    val archived: Boolean,
 )
 
 @Schema(name = "ArchiveTeamRequest", description = "Whether a team stopped playing")

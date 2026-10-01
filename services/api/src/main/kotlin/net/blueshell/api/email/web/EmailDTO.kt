@@ -1,6 +1,7 @@
 package net.blueshell.api.email.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotBlank
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import java.time.Instant
 
@@ -57,4 +58,19 @@ data class EmailDetailDTO(
     val email: EmailDTO,
     @param:Schema(description = "The emails made again from this one, oldest first")
     val resends: List<EmailDTO>,
+)
+
+@Schema(name = "RenderEmailRequest")
+data class RenderEmailRequest(
+    @field:NotBlank
+    val subject: String = "",
+    @param:Schema(description = "The message as the site's editor writes it, in Discord's markdown")
+    val message: String = "",
+    val recipientName: String = "Member",
+)
+
+@Schema(name = "RenderedEmail")
+data class RenderedEmailDTO(
+    val subject: String,
+    val html: String,
 )

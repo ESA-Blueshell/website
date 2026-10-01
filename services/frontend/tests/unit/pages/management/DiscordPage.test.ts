@@ -130,6 +130,13 @@ describe("the Discord page", () => {
     boxes()[1]!.vm.$emit("update:modelValue", false)
     await settle()
     expect(inDialog("discord-matches-link").text()).toBe("Link 1 match")
+    wrapper.findAllComponents({name: "ModalDialog"})[0]!.vm.$emit("update:open", false)
+    await settle()
+    expect(wrapper.findAllComponents({name: "ModalDialog"})[0]!.props("open")).toBe(false)
+    await wrapper.get('[data-testid="discord-review-matches"]').trigger("click")
+    await settle()
+    boxes()[1]!.vm.$emit("update:modelValue", false)
+    await settle()
 
     api.adoptDiscordMatches.mockResolvedValueOnce({status: 503, error: {code: "DiscordUnreachable"}, response: {status: 503}})
     await inDialog("discord-matches-link").trigger("click")

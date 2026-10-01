@@ -10,6 +10,7 @@ interface RefusalBody extends RefusalCode {
 
 const sentences: Record<string, (r: RefusalBody) => string> = {
   TargetSystemRefused: r => `${r.system} refused it: ${r.reason}`,
+  TargetSystemUnavailable: r => `${r.system} cannot be reached now; try again later.`,
   TargetNotFound: r => `${r.system} has no list ${r.externalId}; reload the lists.`,
   TargetStillLinked: () => "A list linked to a cohort is archived, not deleted.",
   TargetNameMismatch: () => "That is not the list's name; type it exactly to delete it.",

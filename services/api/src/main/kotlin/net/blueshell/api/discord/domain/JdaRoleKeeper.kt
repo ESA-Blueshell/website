@@ -24,7 +24,12 @@ class JdaRoleKeeper(
     @Value($$"${discord.guildId:}") private val guildId: String,
     @Value($$"${discord.claim-roles:}") claimRoles: String,
 ) : DiscordRoleKeeper {
-    private val claimRoleIds = claimRoles.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    private val claimRoleIds =
+        claimRoles
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
 
     override fun available(): Boolean = gateway.ifAvailable?.guild() != null && api.ifAvailable != null
 
@@ -69,7 +74,14 @@ class JdaRoleKeeper(
 
     override fun create(name: String): KeptRole {
         val guild = guild()
-        return kept(guild, guild.createRole().setName(name).setMentionable(false).complete())
+        return kept(
+            guild,
+            guild
+                .createRole()
+                .setName(name)
+                .setMentionable(false)
+                .complete(),
+        )
     }
 
     override fun rename(

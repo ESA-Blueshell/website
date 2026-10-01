@@ -1,11 +1,11 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.sync.api.ExternalIdMappingService
@@ -100,7 +100,9 @@ class BrevoTargetStrategyTest {
         whenever(externalIds.findBatch("USER", setOf(1L, 2L), "BREVO")).thenReturn(
             listOf(ExternalIdMapping("USER", 1L, "BREVO", "77"), ExternalIdMapping("USER", 2L, "BREVO", " ")),
         )
-        whenever(externalIds.findByExternalIds("USER", "BREVO", setOf("77"))).thenReturn(listOf(ExternalIdMapping("USER", 1L, "BREVO", "77")))
+        whenever(
+            externalIds.findByExternalIds("USER", "BREVO", setOf("77")),
+        ).thenReturn(listOf(ExternalIdMapping("USER", 1L, "BREVO", "77")))
 
         assertThat(strategy.memberIds(setOf(1L, 2L))).isEqualTo(mapOf(1L to "77"))
         assertThat(strategy.ownersOf(setOf("77"))).isEqualTo(mapOf("77" to 1L))

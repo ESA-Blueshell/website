@@ -505,6 +505,7 @@ const routes: RouteRecordRaw[] = [
       // People without an address are found on Users, under Needs a look.
       {path: "addresses", redirect: "/management/users"},
       {path: "mail/sent", name: "emailManager", component: () => import("@/pages/management/SentEmails.vue"), meta: {title: "Sent"}},
+      {path: "mail/write", name: "writeEmail", component: () => import("@/pages/management/WriteEmail.vue"), meta: {title: "Write an email"}},
       {
         path: "mail/sent/:id(\\d+)",
         name: "sentEmail",

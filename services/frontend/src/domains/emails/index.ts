@@ -20,4 +20,4 @@ export {
 } from "./reading"
 export type {EmailDetail, EmailFilter, EmailStats, SentEmail} from "./adapters/emails"
 export {EmailDeliveryStatus} from "./adapters/emails"
-export {loadEmailPage, loadEmailStats, readEmail, readSentEmail, resendEmail, retrySend} from "./adapters/emails"
+export {loadEmailPage, loadEmailStats, readEmail, readSentEmail, renderWritten, resendEmail, retrySend} from "./adapters/emails"

@@ -15,6 +15,12 @@ import java.util.Optional
 // responsibilities.
 @Suppress("TooManyFunctions")
 interface UserRepository : BaseRepository<User, Long> {
+    /** Everybody holding [role] itself, as it is stored. */
+    @Query("select distinct u.id from User u join u.roles r where r = :role")
+    fun findIdsHolding(
+        @Param("role") role: Role,
+    ): List<Long>
+
     /** People holding any of [roles] with no two-factor yet, so the role waits on it. */
     @Query("select distinct u from User u join u.roles r where r in :roles and u.twoFactorSince is null order by u.id")
     fun findHoldingWithoutTwoFactor(

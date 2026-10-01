@@ -144,6 +144,10 @@ class UserService @Autowired constructor(
 
     fun findAdministrators(): List<User> = repository.findAdministrators()
 
+    /** Everybody holding [role] itself. */
+    @Transactional(readOnly = true)
+    fun findIdsHolding(role: Role): Set<Long> = repository.findIdsHolding(role).toSet()
+
     fun findAllByIds(ids: Collection<Long>): List<User> =
         if (ids.isEmpty()) emptyList() else repository.findAllById(ids).toList()
 

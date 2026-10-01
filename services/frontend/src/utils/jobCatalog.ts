@@ -78,6 +78,12 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "hold or no longer hold. The note the admin left is theirs and stays out of it. " +
       "Re-running sends the same notification again.",
   },
+  "email.written": {
+    title: "Send a written email",
+    description:
+      "Sends one copy of an email the board wrote on the site to one person, at their address as it " +
+      "is when the job runs, rendered from the site's markdown. Re-running sends that person the email again.",
+  },
 
   "contact.sync-all": {
     title: "Sync all contacts",

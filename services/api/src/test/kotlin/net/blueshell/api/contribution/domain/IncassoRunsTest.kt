@@ -20,6 +20,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
@@ -128,6 +129,7 @@ class IncassoRunsTest {
         assertThat(zoes.feeType).isEqualTo(BulkFeeType.HALF_YEAR_FEE)
         assertThat(zoes.debitDate).isEqualTo(LocalDate.of(2026, 11, 1))
         assertThat(run.statementText).isEqualTo("Contributie 2026-2027 ESA Blueshell")
+        verify(runs).save(argThat<IncassoRun> { createdBy == 9L })
         assertThat(run.collections.map { it.ingName }).containsExactly("Mila Vries", "Zoe Bakker")
         assertThat(run.total).isEqualTo(sent.allValues.sumOf { it.amount })
         assertThat(run.submittedAt).isNull()

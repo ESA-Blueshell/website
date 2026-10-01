@@ -59,7 +59,7 @@ class IncassoRunIT : UserTestSupport() {
                         .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
-                            """{"userIds":[${withMandate.id}],"collectionDate":"$collectionDate","statementText":"Contributie ESA Blueshell"}""",
+                            """{"userIds":[${withMandate.id}],"collectionDate":"$collectionDate","statementText":"Contributie"}""",
                         ),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.collections[0].ibanLastFour").value("4300"))

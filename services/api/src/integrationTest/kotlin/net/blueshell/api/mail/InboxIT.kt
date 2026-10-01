@@ -97,7 +97,12 @@ class InboxIT : UserTestSupport() {
         val sentId = "<${UUID.randomUUID()}@blueshell>"
         val sent =
             emails.save(
-                Email(recipientEmail = member.email, subject = "Your contribution", emailType = "email.contribution-reminder", messageId = sentId),
+                Email(
+                    recipientEmail = member.email,
+                    subject = "Your contribution",
+                    emailType = "email.contribution-reminder",
+                    messageId = sentId,
+                ),
             )
         val stamp = UUID.randomUUID()
         val message = intake.take(received("<reply-$stamp>", member.email, listOf(sentId)))!!

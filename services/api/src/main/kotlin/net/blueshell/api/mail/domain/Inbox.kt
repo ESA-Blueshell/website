@@ -1,10 +1,11 @@
 package net.blueshell.api.mail.domain
 
+import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.email.api.SentEmailRef
 import net.blueshell.api.email.api.SentEmails
 import net.blueshell.api.mail.persistence.InboxMessage
-import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.mail.persistence.InboxMessageRepository
+import net.blueshell.api.mail.persistence.InboxReply
 import net.blueshell.api.mail.persistence.InboxReplyRepository
 import net.blueshell.api.mail.persistence.InboxState
 import net.blueshell.api.user.api.UserService
@@ -113,27 +114,45 @@ class Inbox(
             users
                 .findAllByIds((written.mapNotNull { it.writtenBy } + listOfNotNull(received.senderUserId, received.handledBy)).toSet())
                 .associate { requireNotNull(it.id) to it.fullName }
-        val items =
-            answered.values.map { ConversationItem(ConversationKind.SENT, it.sentAt, it.subject, null, null, it.id, null, null) } +
-                inThread.map {
-                    ConversationItem(ConversationKind.RECEIVED, it.receivedAt, it.subject, it.bodyText ?: it.bodyHtml?.let(::plainOf), it.fromAddress, null, it.id, null)
-                } +
-                written.map {
-                    ConversationItem(ConversationKind.REPLY, it.writtenAt, null, it.message, null, null, it.inboxMessageId, it.writtenBy?.let(names::get))
-                }
-        val inThreadIds = inThread.mapNotNull { it.id }.toSet()
-        val earlier =
-            (
-                sent.toAddress(received.fromAddress).filter { it.id != received.answersEmailId }.map {
-                    EarlierMail(ConversationKind.SENT, it.sentAt, it.subject, it.id, null)
-                } +
-                    fromThem.filter { it.id !in inThreadIds }.map { EarlierMail(ConversationKind.RECEIVED, it.receivedAt, it.subject, null, it.id) }
-            ).sortedByDescending { it.at }
         return Conversation(
             message = entryOf(received, answered, names),
-            items = items.sortedBy { it.at },
-            earlier = earlier,
+            items = itemsOf(answered.values, inThread, written, names),
+            earlier = earlierWith(received, fromThem.filter { mail -> inThread.none { it.id == mail.id } }),
         )
+    }
+
+    private fun itemsOf(
+        answered: Collection<SentEmailRef>,
+        inThread: List<InboxMessage>,
+        written: List<InboxReply>,
+        names: Map<Long, String>,
+    ): List<ConversationItem> {
+        val sentItems = answered.map { ConversationItem(ConversationKind.SENT, it.sentAt, it.subject, null, null, it.id, null, null) }
+        val receivedItems =
+            inThread.map {
+                val body = it.bodyText ?: it.bodyHtml?.let(::plainOf)
+                ConversationItem(ConversationKind.RECEIVED, it.receivedAt, it.subject, body, it.fromAddress, null, it.id, null)
+            }
+        val replyItems =
+            written.map {
+                val by = it.writtenBy?.let(names::get)
+                ConversationItem(ConversationKind.REPLY, it.writtenAt, null, it.message, null, null, it.inboxMessageId, by)
+            }
+        return (sentItems + receivedItems + replyItems).sortedBy { it.at }
+    }
+
+    /** What the site sent to the address and what else came from it, outside the conversation. */
+    private fun earlierWith(
+        received: InboxMessage,
+        otherMessages: List<InboxMessage>,
+    ): List<EarlierMail> {
+        val sentToThem =
+            sent
+                .toAddress(received.fromAddress)
+                .filter { it.id != received.answersEmailId }
+                .map { EarlierMail(ConversationKind.SENT, it.sentAt, it.subject, it.id, null) }
+        val fromThem = otherMessages.map { EarlierMail(ConversationKind.RECEIVED, it.receivedAt, it.subject, null, it.id) }
+        return (sentToThem + fromThem).sortedByDescending { it.at }
     }
 
     @Transactional(readOnly = true)

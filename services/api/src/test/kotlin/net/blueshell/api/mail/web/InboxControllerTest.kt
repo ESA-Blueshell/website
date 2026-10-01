@@ -4,8 +4,8 @@ import net.blueshell.api.mail.domain.Answering
 import net.blueshell.api.mail.domain.Conversation
 import net.blueshell.api.mail.domain.Inbox
 import net.blueshell.api.mail.domain.InboxCounts
-import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.security.CurrentUser
+import net.blueshell.api.shared.security.CurrentUserProvider
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock

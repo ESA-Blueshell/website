@@ -30,7 +30,16 @@ class EmailSenderServiceTest {
 
         verify(
             transport,
-        ).send(eq("a@b.nl"), eq("Ann"), eq("Hi"), argThat { contains("https://api/track/email/open/tok") }, any(), any(), any(), eq(emptyMap()))
+        ).send(
+            eq("a@b.nl"),
+            eq("Ann"),
+            eq("Hi"),
+            argThat { contains("https://api/track/email/open/tok") },
+            any(),
+            any(),
+            any(),
+            eq(emptyMap()),
+        )
         verify(records).markSent(queued, "<m@b.nl>")
     }
 }

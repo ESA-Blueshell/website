@@ -107,11 +107,26 @@ class AnsweringTest {
         val users: UserService = mock()
         val first = received(1, at = Instant.parse("2026-09-01T10:00:00Z"))
         val second = received(2, at = Instant.parse("2026-09-02T10:00:00Z"))
-        val other = received(3, thread = null, at = Instant.parse("2026-08-01T10:00:00Z")).let {
-            InboxMessage(it.messageId, null, null, it.fromAddress, null, null, "Hello", null, "<p>Hi</p>", it.receivedAt, false, null, 5)
-                .apply { id = 3 }
-        }
-        val reminder = SentEmailRef(9, "email.contribution-reminder", "lars@example.com", "Your contribution", Instant.parse("2026-08-30T10:00:00Z"))
+        val other =
+            received(3, thread = null, at = Instant.parse("2026-08-01T10:00:00Z")).let {
+                InboxMessage(
+                    it.messageId,
+                    null,
+                    null,
+                    it.fromAddress,
+                    null,
+                    null,
+                    "Hello",
+                    null,
+                    "<p>Hi</p>",
+                    it.receivedAt,
+                    false,
+                    null,
+                    5,
+                ).apply { id = 3 }
+            }
+        val reminder =
+            SentEmailRef(9, "email.contribution-reminder", "lars@example.com", "Your contribution", Instant.parse("2026-08-30T10:00:00Z"))
         val welcome = SentEmailRef(8, "email.welcome", "lars@example.com", "Welcome", Instant.parse("2026-07-01T10:00:00Z"))
         val reply = InboxReply(2, "Thanks", null, 6, Instant.parse("2026-09-03T10:00:00Z"))
         whenever(messages.findById(2)).thenReturn(Optional.of(second))
@@ -121,7 +136,10 @@ class AnsweringTest {
         whenever(sent.byIds(listOf(9L))).thenReturn(mapOf(9L to reminder))
         whenever(sent.toAddress("lars@example.com")).thenReturn(listOf(reminder, welcome))
         whenever(users.findAllByIds(setOf(6L, 5L))).thenReturn(
-            listOf(Entities.user(id = 5, firstName = "Lars", lastName = "Mulder"), Entities.user(id = 6, firstName = "Alice", lastName = "Board")),
+            listOf(
+                Entities.user(id = 5, firstName = "Lars", lastName = "Mulder"),
+                Entities.user(id = 6, firstName = "Alice", lastName = "Board"),
+            ),
         )
         val inbox = Inbox(messages, replies, sent, users)
 
@@ -146,10 +164,24 @@ class AnsweringTest {
     fun `a message that answers nothing the site sent is a conversation of its own`() {
         val sent: SentEmails = mock()
         val users: UserService = mock()
-        val alone = received(3, thread = null).let {
-            InboxMessage(it.messageId, null, null, it.fromAddress, null, null, "Hello", null, "<p>Hi</p>", it.receivedAt, false, null, null)
-                .apply { id = 3 }
-        }
+        val alone =
+            received(3, thread = null).let {
+                InboxMessage(
+                    it.messageId,
+                    null,
+                    null,
+                    it.fromAddress,
+                    null,
+                    null,
+                    "Hello",
+                    null,
+                    "<p>Hi</p>",
+                    it.receivedAt,
+                    false,
+                    null,
+                    null,
+                ).apply { id = 3 }
+            }
         whenever(messages.findById(3)).thenReturn(Optional.of(alone))
         whenever(messages.findTop20ByFromAddressOrderByReceivedAtDesc("lars@example.com")).thenReturn(listOf(alone))
         whenever(replies.findByInboxMessageIdInOrderByWrittenAtAsc(listOf(3L))).thenReturn(emptyList())
@@ -161,6 +193,8 @@ class AnsweringTest {
 
         assertThat(conversation.items.single().body).isEqualTo("Hi")
         assertThat(conversation.earlier).isEmpty()
-        assertThat(plainOf("<style>p{}</style><div>Hi  <b>Lars</b>,<br>Paid?</div><p></p><p></p><p>Bye</p>")).isEqualTo("Hi  Lars,\nPaid?\n\nBye")
+        assertThat(
+            plainOf("<style>p{}</style><div>Hi  <b>Lars</b>,<br>Paid?</div><p></p><p></p><p>Bye</p>"),
+        ).isEqualTo("Hi  Lars,\nPaid?\n\nBye")
     }
 }

@@ -26,7 +26,12 @@ class InboxReplyJob(
         val received = requireExists { messages.findById(reply.inboxMessageId).orElseThrow { gone() } }
         val subject = received.subject.trim().ifEmpty { "Your message" }
         // Stored newest first, the way a reply's thread is searched; References runs oldest first.
-        val thread = received.threadIds?.split(" ")?.filter { it.isNotBlank() }?.reversed().orEmpty()
+        val thread =
+            received.threadIds
+                ?.split(" ")
+                ?.filter { it.isNotBlank() }
+                ?.reversed()
+                .orEmpty()
         return EmailContent(
             recipientEmail = received.fromAddress,
             recipientName = received.fromName ?: received.fromAddress,

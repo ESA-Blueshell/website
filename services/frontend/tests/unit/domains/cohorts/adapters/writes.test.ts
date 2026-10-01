@@ -313,6 +313,14 @@ describe("the folder tidy", () => {
     await expect(fetchTidyPlan(TargetSystem.BREVO)).resolves.toEqual({
       moves: [{externalId: "7", label: "Sitecie", from: null, to: "Committees"}],
       foldersToCreate: ["Committees"],
+      lastApplied: null,
+    })
+
+    vi.mocked(previewFolderTidy).mockResolvedValue(answer(previewFolderTidy, {
+      moves: [], foldersToCreate: [], lastApplied: {appliedAt: "2026-10-01T10:00:00Z", moved: 3, failed: 0},
+    }))
+    await expect(fetchTidyPlan(TargetSystem.BREVO)).resolves.toMatchObject({
+      lastApplied: {appliedAt: "2026-10-01T10:00:00Z", appliedByName: null, moved: 3, failed: 0},
     })
   })
 

@@ -4009,6 +4009,28 @@ components:
       required:
       - emails
       type: object
+    LastTidy:
+      description: When a tidy was applied, by whom, and what it moved.
+      properties:
+        appliedAt:
+          format: date-time
+          type: string
+        appliedByName:
+          description: Who applied it; null when the api did on its own behalf.
+          type:
+          - string
+          - 'null'
+        failed:
+          format: int32
+          type: integer
+        moved:
+          format: int32
+          type: integer
+      required:
+      - appliedAt
+      - failed
+      - moved
+      type: object
     LineupEntryRequest:
       description: 'One person on a line-up being saved: an entry kept, or somebody added'
       properties:
@@ -6273,6 +6295,11 @@ components:
           items:
             type: string
           type: array
+        lastApplied:
+          description: The newest applied tidy on the system, if any.
+          oneOf:
+          - $ref: '#/components/schemas/LastTidy'
+          - type: 'null'
         moves:
           items:
             $ref: '#/components/schemas/TidyMove'

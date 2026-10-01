@@ -1,7 +1,7 @@
 import type {Fact} from "@/components/island/FactList.vue"
 import type {StateKind} from "@/components/island/StateMark.vue"
 import {formatDateNoSeconds} from "@/utils/timestamps"
-import type {ListedTarget, MissingTarget, TargetOverview} from "./adapters/cohorts"
+import type {LastTidy, ListedTarget, MissingTarget, TargetOverview} from "./adapters/cohorts"
 import {cohortTypeLabel} from "./cohortTypeLabels"
 
 /** The folder Brevo's archived lists sit in; it reads last and folded. */
@@ -95,4 +95,12 @@ export function missingNotice(missing: MissingTarget[]): {title: string; body: s
     body: `${named} ${missing.length === 1 ? "has" : "have"} no list yet, so nobody in ${missing.length === 1 ? "it" : "them"} gets mail sent to a list. ` +
       "Creating one puts it in its folder and fills it straight away.",
   }
+}
+
+/** When the last tidy was applied, by whom and what it moved. */
+export function lastTidyLine(last: LastTidy | null): string {
+  if (!last) return "No tidy has been applied yet."
+  const by = last.appliedByName ? ` by ${last.appliedByName}` : ""
+  const failed = last.failed > 0 ? `, ${last.failed} refused` : ""
+  return `Last applied ${formatDateNoSeconds(last.appliedAt)}${by}: ${plural(last.moved, "list")} moved${failed}.`
 }

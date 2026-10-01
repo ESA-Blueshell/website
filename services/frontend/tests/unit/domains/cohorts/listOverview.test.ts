@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {CohortType, driftOf, followsOf, groupsOf, missingNotice, overviewFacts, type ListedTarget, type MissingTarget} from "@/domains/cohorts"
+import {CohortType, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type ListedTarget, type MissingTarget} from "@/domains/cohorts"
 
 const list = (fields: Partial<ListedTarget>): ListedTarget => ({externalId: "1", label: "List", enforced: false, ...fields})
 const missing = (fields: Partial<MissingTarget> = {}): MissingTarget => ({
@@ -73,5 +73,13 @@ describe("the Brevo page's reading", () => {
     })
     expect(missingNotice([missing(), missing({cohortLabel: "B"}), missing({cohortLabel: "C"})])?.title).toBe("3 lists the site expects are missing")
     expect(missingNotice([missing(), missing({cohortLabel: "B"}), missing({cohortLabel: "C"})])?.body).toContain("Paid 2026-2027, B and C have no list yet, so nobody in them")
+  })
+
+  it("says when the last tidy was applied, by whom and what it moved", () => {
+    expect(lastTidyLine(null)).toBe("No tidy has been applied yet.")
+    expect(lastTidyLine({appliedAt: "2026-10-01T10:00:00Z", appliedByName: "Alice Board", moved: 3, failed: 0}))
+      .toMatch(/^Last applied .+ by Alice Board: 3 lists moved\.$/)
+    expect(lastTidyLine({appliedAt: "2026-10-01T10:00:00Z", appliedByName: null, moved: 1, failed: 2}))
+      .toMatch(/^Last applied [^b]+: 1 list moved, 2 refused\.$/)
   })
 })

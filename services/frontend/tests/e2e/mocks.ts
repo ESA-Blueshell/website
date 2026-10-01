@@ -1566,6 +1566,20 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           cohortLabel: one.label, cohortType: one.cohortType, missing: 1, extra: 2, lastReconciledAt: "2026-02-10T09:00:00.000Z", enforced: false}
         : {externalId: listOf[1], label: "Old newsletter test", folderLabel: null, memberCount: 4, enforced: false})
     }
+    if (method === "GET" && path === "/management/cohort-targets/BREVO/tidy") {
+      return answer(route, "previewFolderTidy", {
+        moves: [{externalId: "33", label: "Web Cmte", from: null, to: "Committees"}],
+        foldersToCreate: [],
+        lastApplied: {appliedAt: "2026-09-01T10:00:00.000Z", appliedByName: "Mock User", moved: 4, failed: 0},
+      })
+    }
+    if (method === "POST" && path === "/management/cohort-targets/BREVO/tidy") {
+      const {externalIds} = request.postDataJSON() as {externalIds: string[]}
+      return answer(route, "applyFolderTidy", {
+        moved: externalIds.map((externalId) => ({system: "BREVO" as const, externalId, kind: "LIST" as const, label: "Web Cmte", folderLabel: "Committees", path: ["Brevo", "Committees"]})),
+        failed: [],
+      })
+    }
     if (method === "POST" && path === "/management/cohort-targets/BREVO/missing") {
       const {targetIds} = request.postDataJSON() as {targetIds: number[]}
       return answer(route, "createMissingTargets", {queued: targetIds.length === 0 ? 1 : targetIds.length})

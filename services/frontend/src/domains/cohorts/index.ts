@@ -24,23 +24,28 @@ export type {
 export {TargetKind, CohortCategory, CohortType, DriftResolutionAction, TargetSystem} from "./adapters/cohorts"
 export {fetchCohortTargets} from "./adapters/cohorts"
 export {
+  applyTidy,
   archiveTarget,
   createFolderInSystem,
   createListInSystem,
   createMissingLists,
   fetchTargetFolders,
+  fetchTidyPlan,
   readListedTarget,
   readTargetOverview,
   renameTarget,
   moveTargetToFolder,
   deleteTarget,
   linkExistingTargetForCohort,
+  type LastTidy,
   type ListedTarget,
   type MissingTarget,
+  type TidyMove,
+  type TidyPlan,
   type TargetOverview,
 } from "./adapters/cohorts"
 export {RESOLUTION_WORDS, adoptWord, driftRowsOf, inStepOn, isDrift, runBars, whyOf} from "./listPage"
-export {ARCHIVE_FOLDER, driftOf, followsOf, groupsOf, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
+export {ARCHIVE_FOLDER, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
 export {fetchCohort} from "./adapters/cohorts"
 export {fetchCohorts} from "./adapters/cohorts"
 export {linkDriftPeople, proposeDriftLinks, pushDriftPeople, removeDriftPeople, setTargetEnforced} from "./adapters/cohorts"

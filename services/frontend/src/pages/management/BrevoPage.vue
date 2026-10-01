@@ -10,20 +10,25 @@ import NoticeBox from "@/components/island/NoticeBox.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import CheckBox from "@/components/island/CheckBox.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import {
   type ListedTarget,
   type OverviewRow,
   type TargetOverview,
   TargetSystem,
+  type TidyPlan,
+  applyTidy,
   archiveTarget,
   createFolderInSystem,
   createListInSystem,
   createMissingLists,
   driftOf,
   fetchTargetFolders,
+  fetchTidyPlan,
   followsOf,
   groupsOf,
+  lastTidyLine,
   missingNotice,
   overviewFacts,
   readTargetOverview,
@@ -118,6 +123,49 @@ const confirmCreate = async () => {
   }
 }
 
+/** The folder tidy: every proposed move ticked, and applied only once confirmed. */
+const tidying = ref(false)
+const tidy = ref<TidyPlan | null>(null)
+const tidyPicked = ref<Set<string>>(new Set())
+const tidyFailures = ref<string[]>([])
+const tidyRefusal = ref<string | null>(null)
+
+const openTidy = async () => {
+  tidying.value = true
+  tidy.value = null
+  tidyFailures.value = []
+  tidyRefusal.value = null
+  try {
+    tidy.value = await fetchTidyPlan(SYSTEM)
+    tidyPicked.value = new Set(tidy.value.moves.map((move) => move.externalId))
+  } catch {
+    tidyRefusal.value = "Brevo could not be read, so nothing can be proposed."
+  }
+}
+
+const pickTidy = (externalId: string, picked: boolean) => {
+  const next = new Set(tidyPicked.value)
+  if (picked) next.add(externalId)
+  else next.delete(externalId)
+  tidyPicked.value = next
+}
+
+const applyPicked = async () => {
+  if (tidyPicked.value.size === 0 || acting.value) return
+  acting.value = true
+  try {
+    const result = await applyTidy(SYSTEM, [...tidyPicked.value])
+    tidyFailures.value = result.failed.map((one) => `${one.label}: ${one.message}`)
+    said(`${result.moved.length} ${result.moved.length === 1 ? "list" : "lists"} moved.`)
+    if (tidyFailures.value.length === 0) tidying.value = false
+    await load()
+  } catch {
+    tidyRefusal.value = "The tidy could not be applied."
+  } finally {
+    acting.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -146,6 +194,14 @@ onMounted(load)
           @click="openCreate"
         >
           New list
+        </button>
+        <button
+          class="brevo__action"
+          data-testid="brevo-tidy"
+          type="button"
+          @click="openTidy"
+        >
+          Tidy folders
         </button>
       </div>
     </header>
@@ -271,6 +327,83 @@ onMounted(load)
         </ul>
       </component>
     </template>
+
+    <modal-dialog
+      :open="tidying"
+      testid="brevo-tidy-dialog"
+      title="Tidy folders"
+      @update:open="tidying = $event"
+    >
+      <div class="brevo__form">
+        <p class="brevo__note">
+          Moves each list that follows a cohort into its cohort type's folder. Nothing moves until you apply it, and nothing moves a list back afterwards.
+        </p>
+        <p
+          v-if="tidy"
+          class="brevo__note brevo__note--small"
+          data-testid="brevo-tidy-last"
+        >
+          {{ lastTidyLine(tidy.lastApplied) }}
+        </p>
+        <p
+          v-if="tidy && tidy.moves.length === 0"
+          class="brevo__note"
+          data-testid="brevo-tidy-none"
+        >
+          Every list is in its folder.
+        </p>
+        <ul
+          v-if="tidy && tidy.moves.length"
+          class="brevo__moves"
+          data-testid="brevo-tidy-moves"
+        >
+          <li
+            v-for="move in tidy.moves"
+            :key="move.externalId"
+          >
+            <check-box
+              :label="`${move.label}: ${move.from ?? 'no folder'} to ${move.to}`"
+              :model-value="tidyPicked.has(move.externalId)"
+              :testid="`brevo-tidy-pick-${move.externalId}`"
+              @update:model-value="pickTidy(move.externalId, $event)"
+            />
+          </li>
+        </ul>
+        <p
+          v-if="tidy && tidy.foldersToCreate.length"
+          class="brevo__note brevo__note--small"
+        >
+          Makes {{ tidy.foldersToCreate.join(", ") }} first.
+        </p>
+        <p
+          v-for="failure in tidyFailures"
+          :key="failure"
+          class="brevo__failure"
+          data-testid="brevo-tidy-failure"
+        >
+          {{ failure }}
+        </p>
+        <p
+          v-if="tidyRefusal"
+          class="brevo__failure"
+          data-testid="brevo-tidy-refusal"
+          role="alert"
+        >
+          {{ tidyRefusal }}
+        </p>
+      </div>
+      <template #footer>
+        <button
+          class="brevo__action brevo__action--main"
+          data-testid="brevo-tidy-apply"
+          :disabled="acting || tidyPicked.size === 0"
+          type="button"
+          @click="applyPicked"
+        >
+          Move {{ tidyPicked.size }} {{ tidyPicked.size === 1 ? "list" : "lists" }}
+        </button>
+      </template>
+    </modal-dialog>
 
     <modal-dialog
       :open="creating"
@@ -477,6 +610,15 @@ onMounted(load)
 .brevo__row-acts {
   display: flex;
   justify-content: flex-end;
+}
+
+.brevo__moves {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .brevo__form {

@@ -28,6 +28,8 @@ data class ListedTarget(
     val missing: Int?,
     /** From the newest reconcile: people on the list who should not be. */
     val extra: Int?,
+    /** From the newest reconcile: people who should be on it and have no account there to put on it. */
+    val unreachable: Int?,
     val lastReconciledAt: Instant?,
     val enforced: Boolean,
 )
@@ -116,6 +118,7 @@ class TargetOverview(
             cohortType = cohort?.type,
             missing = newest?.oursOnly,
             extra = newest?.theirsOnly,
+            unreachable = newest?.unreachable,
             lastReconciledAt = newest?.startedAt,
             enforced = target?.enforced ?: false,
         )

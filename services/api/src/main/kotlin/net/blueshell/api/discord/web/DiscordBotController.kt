@@ -8,7 +8,9 @@ import net.blueshell.api.discord.api.KeptRole
 import net.blueshell.api.discord.domain.AccessPolicy
 import net.blueshell.api.discord.domain.BotStanding
 import net.blueshell.api.discord.domain.BotStandingResult
+import net.blueshell.api.discord.domain.CataloguedChannel
 import net.blueshell.api.discord.domain.ChannelAccessState
+import net.blueshell.api.discord.domain.DiscordCatalogue
 import net.blueshell.api.discord.domain.GameChannelCategory
 import net.blueshell.api.discord.domain.GameChannelPolicies
 import net.blueshell.api.discord.domain.MadeChannel
@@ -36,6 +38,7 @@ class DiscordBotController(
     private val gameChannels: GameChannelPolicies,
     private val roles: DiscordRoleKeeper,
     private val channels: DiscordChannelKeeper,
+    private val catalogue: DiscordCatalogue,
 ) {
     /** The roles the site could keep, for a picker; none without a bot. */
     @GetMapping("/roles")
@@ -44,6 +47,10 @@ class DiscordBotController(
     /** Every channel and category, for a picker; none without a bot. */
     @GetMapping("/channels")
     fun listKeptChannels(): List<KeptChannel> = if (channels.available()) channels.channels() else emptyList()
+
+    /** Every channel with who it is opened to, the game it belongs to and its access, for the Discord page. */
+    @GetMapping("/catalogue/channels")
+    fun listCataloguedChannels(): List<CataloguedChannel> = catalogue.channels()
 
     /** Makes a games or esports channel with the default access, for a game's form to add. */
     @PostMapping("/game-channels")

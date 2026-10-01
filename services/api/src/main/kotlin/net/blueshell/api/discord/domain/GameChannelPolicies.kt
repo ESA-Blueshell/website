@@ -77,6 +77,17 @@ class GameChannelPolicies(
         return ChannelAccessState(kept, actualOf(guild, channel))
     }
 
+    /** Every channel the site keeps an access for, as kept and as Discord has it now; one gone from the server is left out. */
+    fun readKept(): Map<String, ChannelAccessState> {
+        val guild = guild()
+        return policies
+            .findAll()
+            .mapNotNull { kept ->
+                val channel = guild.getGuildChannelById(kept.channelId)?.takeIf { it is IPermissionContainer } ?: return@mapNotNull null
+                kept.channelId to ChannelAccessState(AccessPolicy(kept.everyone, kept.members), actualOf(guild, channel))
+            }.toMap()
+    }
+
     fun set(
         channelId: String,
         policy: AccessPolicy,

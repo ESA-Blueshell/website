@@ -72,7 +72,7 @@ class CohortTargetControllerTest {
         whenever(overview.createMissing(TargetSystem.BREVO, listOf(11L))).thenReturn(1)
 
         assertThat(controller.overview(TargetSystem.BREVO)).isSameAs(read)
-        val one = ListedTarget("9", "Pub quiz", null, 1, null, null, null, null, null, null, null, false)
+        val one = ListedTarget("9", "Pub quiz", null, 1, null, null, null, null, null, null, null, null, false)
         whenever(overview.one(TargetSystem.BREVO, "9")).thenReturn(one)
         assertThat(controller.one(TargetSystem.BREVO, "9")).isSameAs(one)
         assertThat(controller.createMissing(TargetSystem.BREVO, CreateMissingTargetsRequest(listOf(11L))).queued).isEqualTo(1)

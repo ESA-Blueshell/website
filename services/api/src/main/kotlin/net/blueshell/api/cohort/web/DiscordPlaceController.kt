@@ -2,7 +2,9 @@ package net.blueshell.api.cohort.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
+import net.blueshell.api.cohort.domain.AdoptionMatch
 import net.blueshell.api.cohort.domain.CohortDiscord
+import net.blueshell.api.cohort.domain.DiscordAdoption
 import net.blueshell.api.cohort.domain.DiscordChoice
 import net.blueshell.api.cohort.domain.DiscordPlace
 import net.blueshell.api.cohort.persistence.CohortType
@@ -12,6 +14,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -31,12 +34,23 @@ data class DiscordPlaceRequest(
     fun choice() = DiscordChoice(roleId, createRole, channelIds, createChannel)
 }
 
+@Schema(name = "AdoptDiscord", description = "The matches the board confirmed, by their cohort's key")
+data class AdoptDiscordRequest(
+    val keys: List<String>,
+)
+
+@Schema(name = "AdoptedDiscord")
+data class AdoptDiscordResponse(
+    val linked: Int,
+)
+
 /** A committee's and a team's role and private channels on Discord. */
 @RestController
 @Tag(name = "Discord places", description = "A committee's or a team's role and private channels")
 @BoardOnly
 class DiscordPlaceController(
     private val discord: CohortDiscord,
+    private val adoption: DiscordAdoption,
     @param:Value($$"${discord.committees-category:Committees}") private val committees: String,
     @param:Value($$"${discord.esports-category:Esports}") private val esports: String,
 ) {
@@ -68,6 +82,16 @@ class DiscordPlaceController(
     fun removeTeamDiscord(
         @PathVariable id: Long,
     ) = discord.remove(team(id))
+
+    /** Committees and teams with no role yet, matched by name to the roles and channels already in the server. */
+    @GetMapping("/management/discord/adoption")
+    fun listDiscordMatches(): List<AdoptionMatch> = adoption.proposals()
+
+    /** Links the matches the board confirmed, by their cohort's key. */
+    @PostMapping("/management/discord/adoption")
+    fun adoptDiscordMatches(
+        @RequestBody request: AdoptDiscordRequest,
+    ): AdoptDiscordResponse = AdoptDiscordResponse(adoption.adopt(request.keys))
 
     private fun committee(id: Long) = "${CohortType.COMMITTEE_MEMBERS}:$id"
 

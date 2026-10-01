@@ -14,12 +14,16 @@ import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.model.RenderedEmailPreview
+import net.blueshell.api.testsupport.Entities
+import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
 import java.time.LocalDate
 
 /** Reading one member's payment email, built by the same builders the send uses. */
@@ -41,6 +45,7 @@ class ContributionEmailMessageServiceTest {
     private val periods: ContributionPeriodService = mockk()
     private val users: UserService = mockk()
     private val renderer: EmailPreviewRenderer = mockk()
+    private val memberships: MembershipService = mockk()
 
     private val service =
         ContributionEmailMessageService(
@@ -49,6 +54,7 @@ class ContributionEmailMessageServiceTest {
             users,
             renderer,
             PaymentChannels(BankProperties(), "https://blueshell.test"),
+            memberships,
         )
 
     private val alice =
@@ -83,7 +89,7 @@ class ContributionEmailMessageServiceTest {
 
         assertThat(message.kind).isEqualTo(ContributionEmailKind.INCASSO_NOTIFICATION)
         assertThat(captured.captured.markdownContent)
-            .contains("collected", "€45,00")
+            .contains("collected", "€45,00", "ending in **4300**", "BLUESHELL-1-20250901")
             .doesNotContain("Bank transfer")
     }
 
@@ -188,5 +194,26 @@ class ContributionEmailMessageServiceTest {
             )
         every { periods.findById(periodId) } returns period
         every { users.findById(1L) } returns alice
+        every { memberships.findByUserIdsWithMembers(listOf(1L)) } returns
+            mapOf(
+                1L to
+                    listOf(
+                        Entities.membership(user = alice).apply {
+                            mandate = aMandate()
+                        },
+                    ),
+            )
     }
+
+    private fun aMandate() =
+        IncassoMandate(
+            keyId = "k1",
+            ibanCiphertext = "sealed",
+            accountHolderCiphertext = "sealed",
+            ibanLastFour = "4300",
+            reference = "BLUESHELL-1-20250901",
+            signedOn = LocalDate.of(2025, 9, 1),
+            recordedBy = null,
+            recordedAt = Instant.EPOCH,
+        )
 }

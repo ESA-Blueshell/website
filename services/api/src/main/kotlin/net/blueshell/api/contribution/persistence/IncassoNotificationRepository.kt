@@ -10,4 +10,6 @@ interface IncassoNotificationRepository : BaseRepository<IncassoNotification, Lo
     fun findByContributionPeriod_Id(contributionPeriodId: Long): MutableList<IncassoNotification>
 
     fun findByUser_Id(userId: Long): List<IncassoNotification>
+
+    fun findByIncassoRunIdIn(incassoRunIds: Collection<Long>): List<IncassoNotification>
 }

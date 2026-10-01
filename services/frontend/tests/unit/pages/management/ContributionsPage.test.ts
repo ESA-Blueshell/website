@@ -113,25 +113,32 @@ describe("the Contributions page", () => {
     expect(rowIds(wrapper)).toHaveLength(3)
   })
 
-  it("sends payment emails for the people selected, and marks payments on the task page", async () => {
+  it("lists the period's incassos, a run not yet in ING as waiting for upload", async () => {
+    api.findPeriodContributions.mockResolvedValue({status: 200, data: {
+      periodId: 2,
+      members: [],
+      runs: [],
+      incassoRuns: [
+        {id: 7, collectionDate: "2026-11-01", collections: 2, total: 50, submittedAt: null},
+        {id: 6, collectionDate: "2025-11-01", collections: 1, total: 25, submittedAt: "2025-10-20T10:00:00Z"},
+      ],
+    }})
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="contribution-incasso-run"]').attributes("to")).toBe("/management/contributions/2/incasso")
+    expect(wrapper.get('[data-testid="contribution-incasso-7"]').text()).toContain("Waiting for upload to ING")
+    expect(wrapper.get('[data-testid="contribution-incasso-7"]').text()).toContain("€ 50.00")
+    expect(wrapper.get('[data-testid="contribution-incasso-6"]').text()).toContain("Submitted to ING 20 Oct 2025")
+  })
+
+  it("sends reminders for the people selected, and marks payments on the task page", async () => {
     const wrapper = await mount()
 
     await wrapper.get('[data-testid="contribution-checkbox-2"]').trigger("change")
     await settle()
     await wrapper.get('[data-testid="bulk-action-send-payment-reminders"]').trigger("click")
     expect(mockPush).toHaveBeenCalledWith({path: "/management/contributions/2/reminders", query: {ids: "2"}})
-    await wrapper.get('[data-testid="contribution-checkbox-1"]').trigger("change")
-    await settle()
-    await wrapper.get('[data-testid="bulk-action-send-payment-emails"]').trigger("click")
-    await settle()
-    // Only members on incasso go to the notification wizard; reminders have their own page.
-    const wizard = wrapper.findComponent({name: "PaymentEmailWizard"})
-    expect(wizard.props("userIds")).toEqual([1])
-    wizard.vm.$emit("update:modelValue", false)
-    wizard.vm.$emit("done")
-    await settle()
-    expect(api.findPeriodContributions).toHaveBeenCalledTimes(2)
-
+    await wrapper.get('[data-testid="contribution-checkbox-2"]').trigger("change")
     await wrapper.get('[data-testid="contribution-checkbox-1"]').trigger("change")
     await settle()
     await wrapper.get('[data-testid="bulk-action-mark-paid"]').trigger("click")

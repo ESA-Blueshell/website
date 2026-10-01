@@ -30,6 +30,8 @@ class IncassoNotificationEmailJob(
                 notification.feeType,
                 notification.amount,
                 notification.debitDate,
+                notification.ibanLastFour,
+                notification.mandateReference,
             ),
             "email.incasso-notification",
             currentExecutionId,

@@ -12,7 +12,7 @@ import java.time.LocalDate
  * It asks for nothing. A member on direct debit who is also sent a payment request pays twice,
  * which is why these are two emails rather than one with a conditional paragraph. The amount is
  * passed in rather than priced from [feeType]: a sent pre-notification records
- * what it said would be taken, and this quotes that.
+ * what it said would be taken, and this quotes that. The account shows only its last four.
  */
 fun createIncassoNotificationEmail(
     recipient: User,
@@ -20,6 +20,8 @@ fun createIncassoNotificationEmail(
     feeType: BulkFeeType,
     amount: Double,
     debitDate: LocalDate,
+    ibanLastFour: String? = null,
+    mandateReference: String? = null,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val debitDateText = formatDate(debitDate)
@@ -35,6 +37,11 @@ fun createIncassoNotificationEmail(
             add("")
             add("**Amount to be collected: €${formatEuros(amount)}** (${feeReason(feeType)})")
             add("")
+            if (ibanLastFour != null) {
+                val under = mandateReference?.let { ", under mandate $it" } ?: ""
+                add("It is collected from your account ending in **$ibanLastFour**$under.")
+                add("")
+            }
             add(
                 "You do not need to transfer anything yourself. If you wish to end your membership, " +
                     "reply to this email before $debitDateText so we can take you off the direct-debit list.",

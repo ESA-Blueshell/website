@@ -3204,6 +3204,159 @@ components:
       - externalUserId
       - writable
       type: object
+    IncassoCandidate:
+      properties:
+        amount:
+          format: double
+          type:
+          - number
+          - 'null'
+        feeType:
+          oneOf:
+          - $ref: '#/components/schemas/BulkFeeType'
+          - type: 'null'
+        ibanLastFour:
+          type:
+          - string
+          - 'null'
+        ingName:
+          type: string
+        lastNotifiedOn:
+          format: date
+          type:
+          - string
+          - 'null'
+        leftOut:
+          oneOf:
+          - $ref: '#/components/schemas/IncassoLeftOut'
+          - type: 'null'
+        mandateReference:
+          type:
+          - string
+          - 'null'
+        mandateSignedOn:
+          format: date
+          type:
+          - string
+          - 'null'
+        memberSince:
+          format: date
+          type: string
+        name:
+          type: string
+        userId:
+          format: int64
+          type: integer
+      required:
+      - ingName
+      - memberSince
+      - name
+      - userId
+      type: object
+    IncassoCollection:
+      properties:
+        amount:
+          format: double
+          type: number
+        feeType:
+          $ref: '#/components/schemas/BulkFeeType'
+        ibanLastFour:
+          type:
+          - string
+          - 'null'
+        ingName:
+          type: string
+        mandateReference:
+          type:
+          - string
+          - 'null'
+        mandateSignedOn:
+          format: date
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        userId:
+          format: int64
+          type: integer
+      required:
+      - amount
+      - feeType
+      - ingName
+      - name
+      - userId
+      type: object
+    IncassoLeftOut:
+      enum:
+      - OWES_NOTHING
+      - DELETED
+      - NO_EMAIL
+      - NO_BANK_DETAILS
+      - ALREADY_PAID
+      type: string
+    IncassoRunSummary:
+      properties:
+        collectionDate:
+          format: date
+          type: string
+        collections:
+          format: int32
+          type: integer
+        id:
+          format: int64
+          type: integer
+        submittedAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        total:
+          format: double
+          type: number
+      required:
+      - collectionDate
+      - collections
+      - id
+      - total
+      type: object
+    IncassoRunView:
+      properties:
+        collectionDate:
+          format: date
+          type: string
+        collections:
+          items:
+            $ref: '#/components/schemas/IncassoCollection'
+          type: array
+        contributionPeriodId:
+          format: int64
+          type: integer
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          format: int64
+          type: integer
+        statementText:
+          type: string
+        submittedAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        total:
+          format: double
+          type: number
+      required:
+      - collectionDate
+      - collections
+      - contributionPeriodId
+      - createdAt
+      - id
+      - statementText
+      - total
+      type: object
     IncassoStanding:
       enum:
       - NONE
@@ -4138,6 +4291,10 @@ components:
       type: object
     PeriodContributionsView:
       properties:
+        incassoRuns:
+          items:
+            $ref: '#/components/schemas/IncassoRunSummary'
+          type: array
         members:
           items:
             $ref: '#/components/schemas/PeriodMember'
@@ -4150,6 +4307,7 @@ components:
             $ref: '#/components/schemas/PaymentEmailRun'
           type: array
       required:
+      - incassoRuns
       - members
       - periodId
       - runs
@@ -5386,6 +5544,30 @@ components:
       - id
       - postedAt
       - stars
+      type: object
+    StartIncassoRunRequest:
+      properties:
+        collectionDate:
+          format: date
+          type:
+          - string
+          - 'null'
+        feeTypeOverrides:
+          additionalProperties:
+            $ref: '#/components/schemas/BulkFeeType'
+          type: object
+        statementText:
+          type: string
+        userIds:
+          items:
+            format: int64
+            type: integer
+          type: array
+      required:
+      - collectionDate
+      - feeTypeOverrides
+      - statementText
+      - userIds
       type: object
     StepUpRequest:
       properties:
@@ -10988,6 +11170,230 @@ paths:
                   $ref: '#/components/schemas/ContributionResponse'
                 type: array
           description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Contributions
+  /contributionPeriods/{periodId}/incasso:
+    get:
+      operationId: planIncasso
+      parameters:
+      - in: path
+        name: periodId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/IncassoCandidate'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Contributions
+  /contributionPeriods/{periodId}/incassoRuns:
+    post:
+      operationId: startIncassoRun
+      parameters:
+      - in: path
+        name: periodId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartIncassoRunRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncassoRunView'
+          description: Created
         '400':
           content:
             application/json:
@@ -18833,6 +19239,114 @@ paths:
           description: Server error
       tags:
       - Health
+  /incassoRuns/{runId}:
+    get:
+      operationId: findIncassoRun
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncassoRunView'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Contributions
   /management/alerts:
     get:
       operationId: listAlerts

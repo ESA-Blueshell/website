@@ -83,6 +83,7 @@ class GameChannelPoliciesTest {
         verify(repository, times(2)).save(kept.capture())
         assertThat(listOf(kept.firstValue.everyone, kept.firstValue.members)).containsExactly(ChannelAccess.READ, ChannelAccess.WRITE)
         assertThat(kept.firstValue.id).isEqualTo("1")
+        assertThat(ChannelPolicy::class.java.getDeclaredConstructor().newInstance()).isNotNull
     }
 
     @Test

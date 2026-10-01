@@ -14,6 +14,7 @@ import net.blueshell.api.cohort.domain.InboundReconcilePreview
 import net.blueshell.api.cohort.domain.LinkChoice
 import net.blueshell.api.cohort.domain.LinkOutcome
 import net.blueshell.api.cohort.domain.LinkProposal
+import net.blueshell.api.cohort.domain.SummaryTarget
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetMemberRow
 import net.blueshell.api.cohort.domain.TargetPlace
@@ -172,7 +173,18 @@ class CohortControllerTest {
 
     @Test
     fun `the listings name each cohort and each target the pickers offer`() {
-        whenever(queries.summaries()).thenReturn(listOf(CohortSummary(Entities.cohort(id = 1L, label = "Sitecie"), 4, 1)))
+        whenever(
+            queries.summaries(),
+        ).thenReturn(
+            listOf(
+                CohortSummary(
+                    Entities.cohort(id = 1L, label = "Sitecie"),
+                    4,
+                    1,
+                    listOf(SummaryTarget(TargetSystem.DISCORD, "Sitecie", true)),
+                ),
+            ),
+        )
         whenever(queries.targets()).thenReturn(listOf(TargetSummary(Entities.target(id = 2L, label = "Sitecie"), 3)))
 
         val cohorts = json.writeValueAsString(controller.findCohorts())

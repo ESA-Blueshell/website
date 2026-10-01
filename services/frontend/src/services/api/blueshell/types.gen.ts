@@ -749,10 +749,18 @@ export type CohortMember = {
 
 export type CohortSummary = {
     category: CohortCategory;
+    /**
+     * Which definition in code decides who belongs here
+     */
+    definitionKey?: string | null;
     id: number;
     label: string;
     mappingCount: number;
     memberCount: number;
+    /**
+     * The targets it has, one per system, and whether each is made there yet
+     */
+    targets: Array<SummaryTarget>;
     type: CohortType;
 };
 
@@ -3156,6 +3164,12 @@ export type StartIncassoRunRequest = {
 export type StepUpRequest = {
     code?: string | null;
     password?: string | null;
+};
+
+export type SummaryTarget = {
+    label: string;
+    made: boolean;
+    system: TargetSystem;
 };
 
 export type SurveyRequest = {

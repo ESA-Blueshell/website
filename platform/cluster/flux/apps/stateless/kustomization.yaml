@@ -16,8 +16,8 @@ resources:
 # reverts it. See "Rolling back under automation" in the runbook.
 images:
   - name: ghcr.io/esa-blueshell/api
-    newTag: v1.13.0 # {"$imagepolicy": "flux-system:api:tag"}
-    digest: sha256:5b0256b2a0ea71f501cbfcb7078697f8127a03e430bd2aa6bf61c569d3e860da # {"$imagepolicy": "flux-system:api:digest"}
+    newTag: v1.14.0 # {"$imagepolicy": "flux-system:api:tag"}
+    digest: sha256:5134ff1548856b28e4c241a3e863a1522e8286d894282cd854133c9f77b81dd5 # {"$imagepolicy": "flux-system:api:digest"}
   - name: ghcr.io/esa-blueshell/frontend
     newTag: v1.13.0 # {"$imagepolicy": "flux-system:frontend:tag"}
     digest: sha256:0912a3551652a68d3303aad82e0c037b0fe51832db4f8e0ddc69d2ccb1de5584 # {"$imagepolicy": "flux-system:frontend:digest"}

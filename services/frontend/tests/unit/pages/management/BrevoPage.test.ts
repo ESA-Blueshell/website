@@ -165,9 +165,9 @@ describe("the Brevo page", () => {
     await wrapper.get('[data-testid="brevo-new-list"]').trigger("click")
     await settle()
     expect(wrapper.findComponent({name: "SearchPicker"}).props("options")).toEqual([{key: "__new__", label: "New folder…"}])
-    wrapper.findComponent({name: "ModalDialog"}).vm.$emit("update:open", false)
+    wrapper.findAllComponents({name: "ModalDialog"})[1].vm.$emit("update:open", false)
     await settle()
-    expect(wrapper.findComponent({name: "ModalDialog"}).props("open")).toBe(false)
+    expect(wrapper.findAllComponents({name: "ModalDialog"})[1].props("open")).toBe(false)
   })
 
   it("previews the folder tidy with every move ticked, applies the ones left ticked, and keeps a refusal in view", async () => {

@@ -1,4 +1,4 @@
-import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router"
+import {createRouter, createWebHistory, type RouteLocationNormalized, type RouteRecordRaw} from "vue-router"
 import {SECURITY_PAGES} from "@/domains/auth/securityPages"
 import store from "./store"
 import {tabTitle} from "./tabTitle"
@@ -8,6 +8,14 @@ declare module "vue-router" {
     /** The page's name in the browser tab; a page that knows a better one sets it once loaded. */
     title?: string
   }
+}
+
+/** The Brevo list a link naming a cohort means, or Brevo where the cohort has none. */
+export async function cohortListRoute(to: RouteLocationNormalized): Promise<string> {
+  const {TargetSystem, fetchCohort} = await import("@/domains/cohorts")
+  const cohort = await fetchCohort(Number(to.params.id)).catch(() => null)
+  const externalId = cohort?.mappings.find((mapping) => mapping.system === TargetSystem.BREVO)?.externalId
+  return externalId ? `/management/platforms/brevo/lists/${externalId}` : "/management/platforms/brevo"
 }
 
 const routes: RouteRecordRaw[] = [
@@ -552,11 +560,13 @@ const routes: RouteRecordRaw[] = [
       // Brevo's lists and cohort categories were pages of their own; every list is on Brevo now.
       {path: "platforms/brevo/lists", redirect: "/management/platforms/brevo"},
       {
-        path: "platforms/brevo/cohort/:id",
-        name: "cohortDetail",
-        component: () => import("@/pages/management/CohortDetail.vue"),
-        meta: {title: "Cohort"},
+        path: "platforms/brevo/lists/:externalId",
+        name: "brevoList",
+        component: () => import("@/pages/management/BrevoList.vue"),
+        meta: {title: "Brevo list"},
       },
+      // A cohort's page was its own; alerts and old links name the cohort, so they land on its list.
+      {path: "platforms/brevo/cohort/:id", component: () => import("@/pages/management/BrevoList.vue"), beforeEnter: cohortListRoute},
       {path: "platforms/brevo/:category(committees|periods|members)", redirect: "/management/platforms/brevo"},
     ],
   },

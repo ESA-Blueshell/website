@@ -1544,7 +1544,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         lists: [
           {externalId: "7", label: "Members 2025-2026", folderLabel: "Members", memberCount: 211, targetId: 1, cohortId: 101,
             cohortLabel: "Members 2025-2026", cohortType: "PERIOD_MEMBERS", missing: 0, extra: 0, lastReconciledAt: "2026-10-01T03:00:00.000Z", enforced: false},
-          {externalId: "8", label: "Web Cmte", folderLabel: "Committees", memberCount: 9, targetId: 2, cohortId: 102,
+          {externalId: "33", label: "Web Cmte", folderLabel: "Committees", memberCount: 9, targetId: 2, cohortId: 102,
             cohortLabel: "Web Cmte", cohortType: "COMMITTEE_MEMBERS", missing: 1, extra: 0, lastReconciledAt: "2026-10-01T03:00:00.000Z", enforced: false},
           {externalId: "9", label: "Old newsletter test", folderLabel: null, memberCount: 4, enforced: false},
           {externalId: "10", label: "LAN party 2024", folderLabel: "Archive", memberCount: 57, enforced: false},
@@ -1553,6 +1553,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           memberCount: 142, creating: false}],
         lastReconciledAt: "2026-10-01T03:00:00.000Z",
       })
+    }
+    const listOf = path.match(/^\/management\/cohort-targets\/BREVO\/lists\/(\w+)$/)
+    if (method === "GET" && listOf) {
+      const linked: Record<string, {cohortId: number; targetId: number; label: string; cohortType: "PERIOD_MEMBERS" | "COMMITTEE_MEMBERS"}> = {
+        "7": {cohortId: 101, targetId: 1, label: "Members 2025-2026", cohortType: "PERIOD_MEMBERS"},
+        "33": {cohortId: 102, targetId: 2, label: "Web Cmte", cohortType: "COMMITTEE_MEMBERS"},
+      }
+      const one = linked[listOf[1]]
+      return answer(route, "findListedTarget", one
+        ? {externalId: listOf[1], label: one.label, folderLabel: "Members", memberCount: 41, targetId: one.targetId, cohortId: one.cohortId,
+          cohortLabel: one.label, cohortType: one.cohortType, missing: 1, extra: 2, lastReconciledAt: "2026-02-10T09:00:00.000Z", enforced: false}
+        : {externalId: listOf[1], label: "Old newsletter test", folderLabel: null, memberCount: 4, enforced: false})
     }
     if (method === "POST" && path === "/management/cohort-targets/BREVO/missing") {
       const {targetIds} = request.postDataJSON() as {targetIds: number[]}
@@ -2165,6 +2177,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           mappingCount: 1,
         },
       ])
+    }
+    const driftOf = path.match(/^\/management\/cohorts\/\d+\/targets\/\d+\/drift\/(push|remove)$/)
+    if (method === "POST" && driftOf) {
+      const body = request.postDataJSON() as {userIds?: number[]; externalUserIds?: string[]}
+      return answer(route, driftOf[1] === "push" ? "pushDrift" : "removeDrift", {resolved: (body.userIds ?? body.externalUserIds ?? []).length})
     }
     if (method === "GET" && /^\/management\/cohorts\/\d+$/.test(path)) {
       const id = Number(path.split("/")[3] ?? "0")

@@ -6,17 +6,7 @@
  * place a call to the api may be written. Re-exported by name rather than with `export *`,
  * because the list of names is the promise.
  */
-export {
-  driftLabel,
-  earlierDrift,
-  isMember,
-  memberName,
-  memberSystemLabel,
-  runStartedBy,
-  syncChipColour,
-  syncLabel,
-  systemLabel,
-} from "./reading"
+export {memberName, systemLabel} from "./reading"
 export {COHORT_TYPE_LABELS, cohortTypeLabel} from "./cohortTypeLabels"
 export type {
   CohortMember,
@@ -39,14 +29,20 @@ export {
   createListInSystem,
   createMissingLists,
   fetchTargetFolders,
+  readListedTarget,
   readTargetOverview,
+  renameTarget,
+  moveTargetToFolder,
+  deleteTarget,
+  linkExistingTargetForCohort,
   type ListedTarget,
   type MissingTarget,
   type TargetOverview,
 } from "./adapters/cohorts"
+export {RESOLUTION_WORDS, adoptWord, driftRowsOf, inStepOn, isDrift, runBars, whyOf} from "./listPage"
 export {ARCHIVE_FOLDER, driftOf, followsOf, groupsOf, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
 export {fetchCohort} from "./adapters/cohorts"
 export {fetchCohorts} from "./adapters/cohorts"
 export {linkDriftPeople, proposeDriftLinks, pushDriftPeople, removeDriftPeople, setTargetEnforced} from "./adapters/cohorts"
-export {evaluateMember, triggerReconcile} from "./adapters/cohorts"
-export {useDriftResolution} from "./composables/useDriftResolution"
+export {triggerReconcile} from "./adapters/cohorts"
+export {useDriftResolution, type DriftAction} from "./composables/useDriftResolution"

@@ -599,6 +599,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/games/GameEdit.vue"),
         meta: {title: "Edit game", portal: "/management/games"},
       },
+      {path: "competition", name: "managementTeams", component: () => import("@/pages/management/TeamList.vue"), meta: {title: "Competition"}},
+      {
+        path: "competition/:slug/teams/:team",
+        name: "managementTeam",
+        component: () => import("@/pages/competition/TeamEdit.vue"),
+        meta: {title: "Edit team", portal: "/management/competition"},
+      },
       {
         path: "platforms/discord",
         name: "discord",

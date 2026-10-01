@@ -27,6 +27,7 @@ class CohortRegistrar(
     private val targets: TargetRepository,
     private val strategies: TargetStrategies,
     private val jobs: JobQueue,
+    private val keptRoles: KeptDiscordRoles,
 ) {
     @Transactional
     fun register(): RegistrationReport {
@@ -56,6 +57,7 @@ class CohortRegistrar(
         if (orphaned.isNotEmpty()) {
             log.info("[cohort] {} cohort(s) have no definition any more: {}", orphaned.size, orphaned)
         }
+        keptRoles.link()
         log.info("[cohort] registered {} definitions ({} new, {} relabelled)", all.size, created, relabelled)
         return RegistrationReport(total = all.size, created = created, relabelled = relabelled, orphaned = orphaned)
     }

@@ -22,7 +22,8 @@ class CohortRegistrarTest {
     private val targets: TargetRepository = mockk()
     private val strategies: TargetStrategies = mockk()
     private val jobs: JobQueue = mockk(relaxed = true)
-    private val registrar = CohortRegistrar(definitions, cohorts, targets, strategies, jobs)
+    private val keptRoles: KeptDiscordRoles = mockk(relaxed = true)
+    private val registrar = CohortRegistrar(definitions, cohorts, targets, strategies, jobs, keptRoles)
 
     private val definition =
         object : CohortDefinition {
@@ -55,6 +56,7 @@ class CohortRegistrarTest {
         verify {
             targets.save(match { it.folder == "Committees" && it.label == "Sitecie" && it.cohortId == 3L })
             jobs.runAsync(CohortJobs.CreateCohortTarget, CohortJobs.CreateCohortTargetPayload(30L), JobTrigger.SITE_ACTION)
+            keptRoles.link()
         }
     }
 

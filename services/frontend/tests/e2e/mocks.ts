@@ -2601,6 +2601,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && (path === "/management/discord/roles" || path === "/management/discord/channels")) {
       return answer(route, path.endsWith("roles") ? "listKeptRoles" : "listKeptChannels", [])
     }
+    if (method === "GET" && /^\/management\/discord\/channels\/\w+\/access$/.test(path)) {
+      return answer(route, "findChannelAccess", {kept: {everyone: "READ", members: "WRITE"}, actual: {everyone: "READ", members: "WRITE"}, differs: false})
+    }
     if (method === "GET" && /^\/management\/(committees|teams)\/\d+\/discord$/.test(path)) {
       return answer(route, path.includes("/teams/") ? "findTeamDiscord" : "findCommitteeDiscord", {available: false, channels: []})
     }

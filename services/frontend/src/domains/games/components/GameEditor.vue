@@ -296,6 +296,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
         />
         <game-channel-picker
           v-model="channels"
+          :create-name="slug"
           empty-note="The games category has no channels left to add."
           label="Games channels"
           testid="game-edit-channels"
@@ -316,6 +317,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
         <game-channel-picker
           v-model="esportsChannels"
           :category="GameChannelCategory.ESPORTS"
+          :create-name="slug ? `${slug}-esports` : ''"
           empty-note="The esports category has no channels left to add."
           label="Esports channels"
           testid="game-edit-esports-channels"

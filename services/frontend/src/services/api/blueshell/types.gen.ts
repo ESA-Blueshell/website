@@ -102,6 +102,26 @@ export enum AddresseeKind {
     PERSON = 'PERSON'
 }
 
+/**
+ * The matches the board confirmed, by their cohort's key
+ */
+export type AdoptDiscord = {
+    keys: Array<string>;
+};
+
+export type AdoptedDiscord = {
+    linked: number;
+};
+
+export type AdoptionMatch = {
+    channels: Array<KeptChannel>;
+    key: string;
+    label: string;
+    roleId: string;
+    roleName: string;
+    type: CohortType;
+};
+
 export type Alert = {
     count: number;
     hidden: boolean;
@@ -628,6 +648,17 @@ export type CasualGameResponse = {
     sortIndex: number;
 };
 
+export type CataloguedChannel = {
+    access?: ChannelAccessState | null;
+    category?: string | null;
+    game?: ChannelGame | null;
+    id: string;
+    kind: 'TEXT' | 'VOICE' | 'CATEGORY';
+    name: string;
+    private: boolean;
+    roleIds: Array<string>;
+};
+
 export enum ChannelAccess {
     HIDDEN = 'HIDDEN',
     READ = 'READ',
@@ -643,6 +674,12 @@ export type ChannelAccessState = {
     actual: ChannelAccessPolicy;
     differs: boolean;
     kept?: ChannelAccessPolicy | null;
+};
+
+export type ChannelGame = {
+    code: string;
+    kind: 'CASUAL' | 'COMPETITION';
+    name: string;
 };
 
 export type CodeRequest = {
@@ -2183,6 +2220,7 @@ export type ListedTarget = {
     memberCount?: number | null;
     missing?: number | null;
     targetId?: number | null;
+    unreachable?: number | null;
 };
 
 export type LockResponse = {
@@ -10610,6 +10648,88 @@ export type SetCommitteeDiscordResponses = {
 
 export type SetCommitteeDiscordResponse = SetCommitteeDiscordResponses[keyof SetCommitteeDiscordResponses];
 
+export type ListDiscordMatchesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/adoption';
+};
+
+export type ListDiscordMatchesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListDiscordMatchesError = ListDiscordMatchesErrors[keyof ListDiscordMatchesErrors];
+
+export type ListDiscordMatchesResponses = {
+    /**
+     * OK
+     */
+    200: Array<AdoptionMatch>;
+};
+
+export type ListDiscordMatchesResponse = ListDiscordMatchesResponses[keyof ListDiscordMatchesResponses];
+
+export type AdoptDiscordMatchesData = {
+    body: AdoptDiscord;
+    path?: never;
+    query?: never;
+    url: '/management/discord/adoption';
+};
+
+export type AdoptDiscordMatchesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AdoptDiscordMatchesError = AdoptDiscordMatchesErrors[keyof AdoptDiscordMatchesErrors];
+
+export type AdoptDiscordMatchesResponses = {
+    /**
+     * OK
+     */
+    200: AdoptedDiscord;
+};
+
+export type AdoptDiscordMatchesResponse = AdoptDiscordMatchesResponses[keyof AdoptDiscordMatchesResponses];
+
 export type FindBotStandingData = {
     body?: never;
     path?: never;
@@ -10650,6 +10770,47 @@ export type FindBotStandingResponses = {
 };
 
 export type FindBotStandingResponse = FindBotStandingResponses[keyof FindBotStandingResponses];
+
+export type ListCataloguedChannelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/catalogue/channels';
+};
+
+export type ListCataloguedChannelsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListCataloguedChannelsError = ListCataloguedChannelsErrors[keyof ListCataloguedChannelsErrors];
+
+export type ListCataloguedChannelsResponses = {
+    /**
+     * OK
+     */
+    200: Array<CataloguedChannel>;
+};
+
+export type ListCataloguedChannelsResponse = ListCataloguedChannelsResponses[keyof ListCataloguedChannelsResponses];
 
 export type ListKeptChannelsData = {
     body?: never;

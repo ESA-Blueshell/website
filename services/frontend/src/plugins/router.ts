@@ -557,6 +557,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/management/BrevoPage.vue"),
         meta: {title: "Brevo"},
       },
+      {
+        path: "platforms/discord",
+        name: "discord",
+        component: () => import("@/pages/management/DiscordPage.vue"),
+        meta: {title: "Discord"},
+      },
       // Brevo's lists and cohort categories were pages of their own; every list is on Brevo now.
       {path: "platforms/brevo/lists", redirect: "/management/platforms/brevo"},
       {

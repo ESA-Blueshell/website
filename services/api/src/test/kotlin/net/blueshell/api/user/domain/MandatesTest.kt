@@ -110,6 +110,7 @@ class MandatesTest {
         assertThat(PendingMandate::class.java.getDeclaredConstructor().newInstance()).isNotNull
         val waiting = PendingMandate(3, "k1", "sealed", "sealed", "4300", LocalDate.of(2026, 9, 30))
         assertThat(waiting.toString()).isEqualTo("PendingMandate(****4300)")
+        assertThat(waiting.userId).isEqualTo(3)
     }
 
     @Test

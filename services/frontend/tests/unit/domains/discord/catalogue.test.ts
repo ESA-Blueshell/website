@@ -5,12 +5,15 @@ import {
   catalogueFacts,
   channelGroups,
   differsOf,
+  openingDiffers,
+  openingKind,
   opensOf,
   policyWords,
+  roleAccessWord,
   type CataloguedChannel,
   type NamedRole,
 } from "@/domains/discord"
-import {ChannelAccess} from "@/services/api"
+import {ChannelAccess, RoleAccess} from "@/services/api"
 
 const channel = (over: Partial<CataloguedChannel>): CataloguedChannel => ({id: "1", name: "x", kind: "TEXT", private: false, roleIds: [], ...over})
 const {HIDDEN, READ, WRITE} = ChannelAccess
@@ -88,5 +91,21 @@ describe("the Discord catalogue words", () => {
     ])
     expect(catalogueFacts([{targetId: 1, unreachable: 1}], 0, [])[1]!.sub).toBe("1 person with no Discord linked")
     expect(catalogueFacts([], 0, [])[2]!.sub).toBe("0 differ from its access policy")
+  })
+
+  it("words a role's access, where Discord differs and what an opening is", () => {
+    expect([RoleAccess.WRITE, RoleAccess.READ, RoleAccess.SPEAK].map(roleAccessWord)).toEqual(["Read and write", "Read only", "Join and speak"])
+    const lounge = {id: "1", name: "lounge", kind: "TEXT" as const}
+    expect(openingDiffers({channel: lounge, kept: RoleAccess.WRITE, actual: RoleAccess.WRITE, differs: false})).toBeNull()
+    expect(openingDiffers({channel: lounge, actual: RoleAccess.READ, differs: true})).toBe("On Discord only, at read only")
+    expect(openingDiffers({channel: lounge, kept: RoleAccess.READ, differs: true})).toBe("Not open on Discord, where the site keeps read only")
+    expect(openingDiffers({channel: lounge, kept: RoleAccess.WRITE, actual: RoleAccess.SPEAK, differs: true}))
+      .toBe("On Discord join and speak, where the site keeps read and write")
+
+    const listed = [channel({id: "9", kind: "CATEGORY", name: "Games"}), channel({category: "Games"}), channel({id: "2", category: "Games"}), channel({id: "3", category: "Voice"})]
+    expect(openingKind({channel: {id: "9", name: "Games", kind: "CATEGORY"}, differs: false}, listed)).toBe("Category · 2 channels")
+    expect(openingKind({channel: {id: "8", name: "Voice", kind: "CATEGORY"}, differs: false}, listed)).toBe("Category · 1 channel")
+    expect(openingKind({channel: {id: "3", name: "Lounge", kind: "VOICE"}, differs: false}, listed)).toBe("Voice channel")
+    expect(openingKind({channel: lounge, differs: false}, listed)).toBe("Channel")
   })
 })

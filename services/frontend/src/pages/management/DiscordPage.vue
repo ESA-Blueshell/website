@@ -199,7 +199,7 @@ onMounted(load)
             class="discord__row"
             :data-testid="`discord-role-${role.externalId}`"
           >
-            <span class="discord__name">@{{ role.label }}</span>
+            <span class="discord__name"><router-link :to="`/management/platforms/discord/roles/${role.externalId}`">@{{ role.label }}</router-link></span>
             <span class="discord__sub">{{ followsRow(role) }}</span>
             <state-mark
               :kind="driftOf(role).kind"
@@ -228,7 +228,7 @@ onMounted(load)
             class="discord__row"
             :data-testid="`discord-role-${role.externalId}`"
           >
-            <span class="discord__name">@{{ role.label }}</span>
+            <span class="discord__name"><router-link :to="`/management/platforms/discord/roles/${role.externalId}`">@{{ role.label }}</router-link></span>
             <span class="discord__sub">Nothing</span>
             <span />
             <span class="discord__sub">{{ opensOf(role.externalId, channels) }}</span>
@@ -440,6 +440,10 @@ onMounted(load)
   overflow: hidden;
   font-weight: 600;
   text-overflow: ellipsis;
+}
+
+.discord__name a {
+  color: var(--color-chalk);
 }
 
 .discord__sub {

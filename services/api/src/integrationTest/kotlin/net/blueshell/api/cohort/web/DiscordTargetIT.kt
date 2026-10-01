@@ -104,6 +104,18 @@ class DiscordTargetIT : UserTestSupport() {
                     .with(signedIn(board)),
             ).andExpect(jsonPath("$.linked").value(0))
         mvc.perform(get("/management/discord/adoption").with(signedIn(member))).andExpect(status().isForbidden)
+        mvc
+            .perform(get("/management/discord/roles/{roleId}/opens", "900").with(signedIn(board)))
+            .andExpect(status().isServiceUnavailable)
+            .andExpect(jsonPath("$.code").value("DiscordUnreachable"))
+        mvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .put("/management/discord/roles/{roleId}/opens/{channelId}", "900", "1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"access":"READ"}""")
+                    .with(signedIn(member)),
+            ).andExpect(status().isForbidden)
         mvc.perform(get("/management/committees/{id}/discord", 1).with(signedIn(member))).andExpect(status().isForbidden)
         mvc
             .perform(get("/management/teams/{id}/discord", 1).with(signedIn(board)))

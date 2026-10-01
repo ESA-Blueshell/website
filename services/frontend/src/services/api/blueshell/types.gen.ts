@@ -2713,6 +2713,12 @@ export enum Role {
     SYSTEM = 'SYSTEM'
 }
 
+export enum RoleAccess {
+    WRITE = 'WRITE',
+    READ = 'READ',
+    SPEAK = 'SPEAK'
+}
+
 export type RoleChangeResponse = {
     actorId: number;
     actorName: string;
@@ -2721,6 +2727,29 @@ export type RoleChangeResponse = {
     changedAt: string;
     id: number;
     note?: string | null;
+};
+
+/**
+ * A new text channel under a category, opened to the role
+ */
+export type RoleChannelRequest = {
+    access: RoleAccess;
+    category: string;
+    name: string;
+};
+
+/**
+ * The access a role gets to a channel or category
+ */
+export type RoleOpeningRequest = {
+    access: RoleAccess;
+};
+
+export type RoleOpeningState = {
+    actual?: RoleAccess | null;
+    channel: KeptChannel;
+    differs: boolean;
+    kept?: RoleAccess | null;
 };
 
 export enum RoleSource {
@@ -11020,6 +11049,224 @@ export type ListKeptRolesResponses = {
 };
 
 export type ListKeptRolesResponse = ListKeptRolesResponses[keyof ListKeptRolesResponses];
+
+export type ListRoleOpeningsData = {
+    body?: never;
+    path: {
+        roleId: string;
+    };
+    query?: never;
+    url: '/management/discord/roles/{roleId}/opens';
+};
+
+export type ListRoleOpeningsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListRoleOpeningsError = ListRoleOpeningsErrors[keyof ListRoleOpeningsErrors];
+
+export type ListRoleOpeningsResponses = {
+    /**
+     * OK
+     */
+    200: Array<RoleOpeningState>;
+};
+
+export type ListRoleOpeningsResponse = ListRoleOpeningsResponses[keyof ListRoleOpeningsResponses];
+
+export type CreateRoleChannelData = {
+    body: RoleChannelRequest;
+    path: {
+        roleId: string;
+    };
+    query?: never;
+    url: '/management/discord/roles/{roleId}/opens';
+};
+
+export type CreateRoleChannelErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateRoleChannelError = CreateRoleChannelErrors[keyof CreateRoleChannelErrors];
+
+export type CreateRoleChannelResponses = {
+    /**
+     * OK
+     */
+    200: Array<RoleOpeningState>;
+};
+
+export type CreateRoleChannelResponse = CreateRoleChannelResponses[keyof CreateRoleChannelResponses];
+
+export type RemoveRoleOpeningData = {
+    body?: never;
+    path: {
+        roleId: string;
+        channelId: string;
+    };
+    query?: never;
+    url: '/management/discord/roles/{roleId}/opens/{channelId}';
+};
+
+export type RemoveRoleOpeningErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveRoleOpeningError = RemoveRoleOpeningErrors[keyof RemoveRoleOpeningErrors];
+
+export type RemoveRoleOpeningResponses = {
+    /**
+     * OK
+     */
+    200: Array<RoleOpeningState>;
+};
+
+export type RemoveRoleOpeningResponse = RemoveRoleOpeningResponses[keyof RemoveRoleOpeningResponses];
+
+export type SetRoleOpeningData = {
+    body: RoleOpeningRequest;
+    path: {
+        roleId: string;
+        channelId: string;
+    };
+    query?: never;
+    url: '/management/discord/roles/{roleId}/opens/{channelId}';
+};
+
+export type SetRoleOpeningErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetRoleOpeningError = SetRoleOpeningErrors[keyof SetRoleOpeningErrors];
+
+export type SetRoleOpeningResponses = {
+    /**
+     * OK
+     */
+    200: Array<RoleOpeningState>;
+};
+
+export type SetRoleOpeningResponse = SetRoleOpeningResponses[keyof SetRoleOpeningResponses];
+
+export type ArchiveRoleChannelData = {
+    body?: never;
+    path: {
+        roleId: string;
+        channelId: string;
+    };
+    query?: never;
+    url: '/management/discord/roles/{roleId}/opens/{channelId}/archive';
+};
+
+export type ArchiveRoleChannelErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ArchiveRoleChannelError = ArchiveRoleChannelErrors[keyof ArchiveRoleChannelErrors];
+
+export type ArchiveRoleChannelResponses = {
+    /**
+     * OK
+     */
+    200: Array<RoleOpeningState>;
+};
+
+export type ArchiveRoleChannelResponse = ArchiveRoleChannelResponses[keyof ArchiveRoleChannelResponses];
 
 export type List1Data = {
     body?: never;

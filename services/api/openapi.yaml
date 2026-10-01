@@ -12903,7 +12903,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up, or Discord has not answered yet
-      summary: What the Discord server starred lately, most stars first, for the home page
+      summary: What the Discord server starred lately, most stars first, for a member
       tags:
       - Discord
   /esports/games/{game}:

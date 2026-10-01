@@ -16,6 +16,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "discord",
     allowedDependencies = [
+        // Open kernel: the starboard is @MemberOnly.
+        "security",
         // Open kernel.
         "shared",
         // The bot implements the DiscordPublisher port sync declares.

@@ -1,13 +1,14 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import DiscordBand from "@/domains/discord/island/DiscordBand.vue"
+import StarboardFeed from "@/domains/discord/island/StarboardFeed.vue"
 
 const {mockRead, mockStop, watcher, mockMine, session} = vi.hoisted(() => ({
   mockRead: vi.fn(),
   mockStop: vi.fn(),
   watcher: {tell: (_rooms: unknown) => {}},
   mockMine: vi.fn(),
-  session: {getters: {isLoggedIn: false}},
+  session: {getters: {isLoggedIn: false, isMember: false}},
 }))
 
 vi.mock("@/plugins/store", () => ({default: session}))
@@ -45,6 +46,7 @@ describe("DiscordBand", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     session.getters.isLoggedIn = false
+    session.getters.isMember = false
     mockMine.mockResolvedValue({linked: true, joinable: ["3"]})
   })
 
@@ -56,6 +58,15 @@ describe("DiscordBand", () => {
     expect(wrapper.find(".band-head__way").exists()).toBe(false)
     expect(wrapper.get("[data-testid=home-discord-join]").attributes()).toMatchObject({href: "http://localhost:3000/api/discord/invite/welcome", target: "_blank"})
     expect(wrapper.get(".widget__server").text()).toBe("Blueshell")
+  })
+
+  it("shows the starboard to a member only, since it quotes rooms only members are in", async () => {
+    mockRead.mockResolvedValue(FIXTURE)
+    expect((await mountBand()).findComponent(StarboardFeed).exists()).toBe(false)
+
+    session.getters.isLoggedIn = true
+    session.getters.isMember = true
+    expect((await mountBand()).findComponent(StarboardFeed).exists()).toBe(true)
   })
 
   it("counts online out of everybody, and joins each room in Discord itself", async () => {

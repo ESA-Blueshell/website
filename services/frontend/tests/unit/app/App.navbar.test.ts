@@ -210,6 +210,19 @@ describe("App navbar behavior", () => {
     })))
   })
 
+  it("keeps a section's link beside its menu button, never inside it", async () => {
+    const wrapper = await mountWithLinks()
+
+    for (const section of ["association", "committees", "competition"]) {
+      const button = wrapper.get(`[data-testid='nav-${section}-more']`)
+      const link = wrapper.get(`[data-testid='nav-${section}']`)
+      expect(button.element.tagName).toBe("BUTTON")
+      expect(button.element.contains(link.element)).toBe(false)
+      expect(button.find("a, button, [tabindex]").exists()).toBe(false)
+      expect(button.attributes("aria-expanded")).toBe("false")
+    }
+  })
+
   it("shows full desktop navigation and management links for board/admin users", async () => {
     const wrapper = await mountWithLinks()
 

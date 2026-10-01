@@ -136,6 +136,7 @@ class RoleOpeningsTest {
         val saved = argumentCaptor<RoleOpening>()
         verify(kept).save(saved.capture())
         assertThat(saved.firstValue.access).isEqualTo(RoleAccess.READ)
+        assertThat(saved.firstValue.id).isEqualTo(RoleOpeningKey("500", "1"))
         assertThat(written).isEmpty()
 
         val deleting: AuditableRestAction<Void> = mock()

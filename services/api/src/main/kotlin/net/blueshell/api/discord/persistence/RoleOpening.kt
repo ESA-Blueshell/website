@@ -8,6 +8,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Table
+import net.blueshell.api.shared.model.Identifiable
 import org.springframework.data.jpa.repository.JpaRepository
 import java.io.Serializable
 
@@ -43,7 +44,9 @@ class RoleOpening(
     @Enumerated(EnumType.STRING)
     @Column(name = "access", nullable = false, length = 16)
     var access: RoleAccess,
-)
+) : Identifiable<RoleOpeningKey> {
+    override val id: RoleOpeningKey get() = key
+}
 
 interface RoleOpeningRepository : JpaRepository<RoleOpening, RoleOpeningKey> {
     fun findAllByKeyRoleId(roleId: String): List<RoleOpening>

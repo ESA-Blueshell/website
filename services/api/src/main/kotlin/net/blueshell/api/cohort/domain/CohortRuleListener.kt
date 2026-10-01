@@ -1,11 +1,14 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.board.api.BoardMembershipChanged
+import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.committee.api.CommitteeArchiveChanged
 import net.blueshell.api.committee.api.CommitteeCreated
 import net.blueshell.api.committee.api.CommitteeMembershipChanged
 import net.blueshell.api.contribution.api.ContributionChanged
 import net.blueshell.api.contribution.api.ContributionPeriodChanged
 import net.blueshell.api.esports.api.RosterChanged
+import net.blueshell.api.esports.api.TeamArchiveChanged
 import net.blueshell.api.shared.event.AfterCommitListener
 import net.blueshell.api.user.api.MembershipChanged
 import net.blueshell.api.user.api.UserCreated
@@ -26,6 +29,8 @@ import org.springframework.stereotype.Component
 class CohortRuleListener(
     private val updater: CohortMembershipUpdater,
     private val registrar: CohortRegistrar,
+    private val definitions: CohortDefinitionRegistry,
+    private val discord: CohortDiscord,
 ) {
     @AfterCommitListener
     fun onUserCreated(evt: UserCreated) {
@@ -54,6 +59,22 @@ class CohortRuleListener(
         // A committee seated for the first time has a definition but no record yet.
         registrar.register()
         updater.updateMember(evt.userId)
+    }
+
+    @AfterCommitListener
+    fun onCommitteeArchiveChanged(evt: CommitteeArchiveChanged) = archiveChanged("${CohortType.COMMITTEE_MEMBERS}:${evt.committeeId}", evt.archived)
+
+    @AfterCommitListener
+    fun onTeamArchiveChanged(evt: TeamArchiveChanged) = archiveChanged("${CohortType.TEAM_PLAYERS}:${evt.teamId}", evt.archived)
+
+    // The cohort empties or refills, which takes its role off everybody or gives it back, and the
+    // channels only its role opens move into the archive category or out of it again.
+    private fun archiveChanged(
+        key: String,
+        archived: Boolean,
+    ) {
+        definitions.all().firstOrNull { it.key == key }?.let(updater::updateCohort)
+        discord.archive(key, archived)
     }
 
     @AfterCommitListener

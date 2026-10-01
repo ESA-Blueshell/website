@@ -25,6 +25,9 @@ import java.util.UUID
 @SpringBootTest
 class DiscordTargetIT : UserTestSupport() {
     @Autowired
+    private lateinit var teamService: net.blueshell.api.esports.domain.TeamService
+
+    @Autowired
     private lateinit var cohorts: CohortRepository
 
     @Autowired
@@ -98,5 +101,29 @@ class DiscordTargetIT : UserTestSupport() {
                         1,
                     ).with(signedIn(board)),
             ).andExpect(status().isServiceUnavailable)
+    }
+
+    @Test
+    fun `a team is archived and brought back, its cohort emptied and refilled without a bot to move its channel`() {
+        val board = createUserWithRole(Role.BOARD)
+        val team = teamService.create(net.blueshell.api.esports.domain.TeamInput("Archive ${UUID.randomUUID().toString().take(6)}", null))
+
+        mvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .put("/esports/teams/{id}/archived", team.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"archived":true}""")
+                    .with(signedIn(board)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.archived").value(true))
+        mvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .put("/esports/teams/{id}/archived", team.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"archived":false}""")
+                    .with(signedIn(board)),
+            ).andExpect(jsonPath("$.archived").value(false))
     }
 }

@@ -71,4 +71,12 @@ class EsportsControllerWriteTest {
         verify(rosters).update(11, RosterEntryInput("nova", TeamRole.PLAYER), 2)
         assertThat(answer.id).isEqualTo(11)
     }
+
+    @org.junit.jupiter.api.Test
+    fun `archives a team and answers it as it now stands`() {
+        val team = net.blueshell.api.esports.persistence.Team(name = "BS Draft", archived = true).also { it.id = 3 }
+        org.mockito.kotlin.whenever(teams.archive(3, true)).thenReturn(team)
+
+        org.assertj.core.api.Assertions.assertThat(controller.archiveTeam(3, ArchiveTeamRequest(true)).archived).isTrue()
+    }
 }

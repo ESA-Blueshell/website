@@ -124,6 +124,9 @@ class TeamRosterServicePublishTest {
         assertThat(service.currentPlayersOf(3)).containsExactly(7L)
         whenever(fielded.fieldedSeasonNow()).thenReturn(null)
         assertThat(service.currentPlayersOf(3)).isEmpty()
+        team.archived = true
+        whenever(fielded.fieldedSeasonNow()).thenReturn(5L)
+        assertThat(service.currentPlayersOf(3)).isEmpty()
     }
 
     @Test

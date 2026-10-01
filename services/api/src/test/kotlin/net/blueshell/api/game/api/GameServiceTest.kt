@@ -27,6 +27,7 @@ inline fun <reified T : Any> provider(vararg beans: T): ObjectProvider<T> =
         .getBeanProvider(T::class.java)
 
 class GameServiceTest {
+    private val published = mock<org.springframework.context.ApplicationEventPublisher>()
     private val games =
         mock<GameRepository> {
             on { save(any<Game>()) } doAnswer { it.getArgument(0) }
@@ -41,7 +42,7 @@ class GameServiceTest {
                 refused += code
             }
         }
-    private val service = GameService(games, pictures, provider(holding), provider(GamesInCompetition { setOf("CHESS") }))
+    private val service = GameService(games, pictures, provider(holding), provider(GamesInCompetition { setOf("CHESS") }), published)
 
     private fun game(
         code: String,
@@ -187,8 +188,13 @@ class GameServiceTest {
         val chess = game("CHESS")
         whenever(games.findByCode("CHESS")).thenReturn(chess)
 
+        chess.channels += GameChannel("11", "324", "chess")
+        chess.esportsChannels += GameChannel("11", "324", "chess")
         assertThat(service.archive("CHESS", true).archived).isTrue()
+        service.archive("CHESS", true)
         assertThat(service.archive("CHESS", false).archived).isFalse()
+        verify(published).publishEvent(GameArchiveChanged("CHESS", true, listOf("11")))
+        verify(published).publishEvent(GameArchiveChanged("CHESS", false, listOf("11")))
     }
 
     @Test
@@ -220,7 +226,7 @@ class GameServiceTest {
             object : GameHoldings {
                 override fun refuseRemoval(code: String) = throw IllegalStateException("held")
             }
-        val strict = GameService(games, pictures, provider(refusing), provider())
+        val strict = GameService(games, pictures, provider(refusing), provider(), published)
 
         assertThatThrownBy { strict.remove("CHESS") }.hasMessage("held")
         verify(games, never()).remove(any())
@@ -237,7 +243,7 @@ class GameServiceTest {
             object : GameHoldings {
                 override fun heldAgainst(code: String) = GameHeld(events = 4, teams = 1)
             }
-        val counting = GameService(games, pictures, provider(teams, events), provider())
+        val counting = GameService(games, pictures, provider(teams, events), provider(), published)
 
         assertThat(counting.heldAgainst("CHESS")).isEqualTo(GameHeld(teams = 3, players = 9, events = 4))
         assertThat(service.heldAgainst("CHESS")).isEqualTo(GameHeld())

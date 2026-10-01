@@ -29,6 +29,12 @@ data class TeamResponse(
     val name: String,
     @Schema(description = "The team's own icon, drawn beside the name. The banner it is drawn on belongs to the fielding, not to the team")
     val icon: Image? = null,
+    val archived: Boolean = false,
+)
+
+@Schema(name = "ArchiveTeamRequest", description = "Whether a team stopped playing")
+data class ArchiveTeamRequest(
+    val archived: Boolean,
 )
 
 @Schema(description = "A team fielded in a game in a season, which is where a line-up hangs")

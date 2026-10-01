@@ -149,7 +149,10 @@ class CommitteeServiceTest {
         stored(lan)
 
         assertThat(service.archive(1, true).archived).isTrue()
+        service.archive(1, true)
         assertThat(service.archive(1, false).archived).isFalse()
+        verify(afterCommit).publish(CommitteeArchiveChanged(1, true, Actor.system()))
+        verify(afterCommit).publish(CommitteeArchiveChanged(1, false, Actor.system()))
     }
 
     @Test

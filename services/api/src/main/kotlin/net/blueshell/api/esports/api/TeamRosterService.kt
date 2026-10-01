@@ -76,6 +76,7 @@ class TeamRosterService(
      */
     @Transactional(readOnly = true)
     fun currentPlayersOf(teamId: Long): Set<Long> {
+        if (teams.findById(teamId).archived) return emptySet()
         val seasonId = fielded.fieldedSeasonNow() ?: return emptySet()
         return fielded
             .seasonsOf(teamId)

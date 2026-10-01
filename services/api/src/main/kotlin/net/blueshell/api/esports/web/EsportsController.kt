@@ -164,6 +164,14 @@ class EsportsController(
         @Valid @RequestBody request: TeamRequest,
     ): TeamResponse = teams.update(id, request.asInput()).asResponse()
 
+    /** A team stopped playing, or plays again: its Discord role empties or refills, and its channel moves. */
+    @BoardOnly
+    @PutMapping("/teams/{id}/archived")
+    fun archiveTeam(
+        @PathVariable id: Long,
+        @RequestBody request: ArchiveTeamRequest,
+    ): TeamResponse = teams.archive(id, request.archived).asResponse()
+
     @BoardOnly
     @DeleteMapping("/teams/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

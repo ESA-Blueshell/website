@@ -166,7 +166,7 @@ onMounted(load)
     >
       <p>{{ notice.body }}</p>
       <button
-        class="brevo__action brevo__action--main"
+        class="brevo__action brevo__action--on-notice"
         data-testid="brevo-create-missing"
         :disabled="acting"
         type="button"
@@ -405,6 +405,12 @@ onMounted(load)
 .brevo__mini {
   padding: 0.25rem 0.6rem;
   font-size: 0.8rem;
+}
+
+/* The notice's tint takes the brand text below contrast, so the button keeps the page's ink. */
+.brevo__action--on-notice {
+  align-self: flex-start;
+  border-color: var(--color-brand);
 }
 
 .brevo__action--main {

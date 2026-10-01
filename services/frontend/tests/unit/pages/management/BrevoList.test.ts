@@ -236,6 +236,12 @@ describe("one Brevo list", () => {
 
     await wrapper.get('[data-testid="brevo-list-delete"]').trigger("click")
     await settle()
+    const dialogs = () => wrapper.findAllComponents({name: "ModalDialog"})
+    dialogs().at(-1)!.vm.$emit("update:open", false)
+    await settle()
+    expect(dialogs().at(-1)!.props("open")).toBe(false)
+    await wrapper.get('[data-testid="brevo-list-delete"]').trigger("click")
+    await settle()
     const typed = wrapper.findAllComponents({name: "TextInput"}).at(-1)!
     typed.vm.$emit("update:modelValue", "Old test")
     await settle()

@@ -34,6 +34,10 @@ class TargetCatalogTest {
     @Test
     fun `descriptors come from registered target strategies`() {
         assertThat(catalog.descriptors()).containsExactly(strategy.descriptor)
+        // A strategy that says nothing else is always reachable, and makes no member ids.
+        assertThat(strategy.available()).isTrue()
+        assertThat(strategy.makesMemberIds).isFalse()
+        strategy.makeMemberId(1L)
     }
 
     @Test

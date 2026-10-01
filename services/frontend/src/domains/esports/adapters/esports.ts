@@ -12,6 +12,7 @@ import {
   apiUrl,
   createSeason,
   deleteSeason,
+  archiveTeam,
   deleteTeam,
   fieldTeam,
   findGame,
@@ -233,6 +234,11 @@ export async function dropSeasonOrReason(id: number): Promise<{ok: true} | Refus
 export async function loadTeams(): Promise<Team[]> {
   const res = await findTeams()
   return (res.data ?? []).map(withArt)
+}
+
+/** A team stopped playing, or plays again: its Discord role empties or refills, and its channel moves. */
+export async function setTeamArchived(id: number, archived: boolean): Promise<{ok: true} | Refused> {
+  return accepted(archiveTeam({path: {id}, body: {archived}}), "The team could not be archived.")
 }
 
 export async function dropTeam(id: number): Promise<{ok: true} | Refused> {

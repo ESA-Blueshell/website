@@ -2,7 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {defineComponent, h, type VNode} from "vue"
 import TeamEditor from "@/domains/esports/components/TeamEditor.vue"
-import {dropTeam, loadRoster, loadTeamSeasons, loadTeams, unfieldTeamFromSeason} from "@/domains/esports/adapters/esports"
+import {dropTeam, loadRoster, loadTeamSeasons, loadTeams, setTeamArchived, unfieldTeamFromSeason} from "@/domains/esports/adapters/esports"
 import {loadCasualGames} from "@/domains/games/adapters/games"
 import {forgetGames, useGames} from "@/domains/esports/island/useGames"
 import {fieldExistingTeam, publishLineup, readTeamDiscord, removeTeamDiscord, saveTeamDiscord} from "@/domains/esports/adapters/lineup"
@@ -28,6 +28,7 @@ vi.mock("@/domains/esports/adapters/esports", async (importOriginal) => ({
   loadTeams: vi.fn(),
   storePicture: vi.fn(),
   unfieldTeamFromSeason: vi.fn(),
+  setTeamArchived: vi.fn(),
 }))
 
 // `isBlank` is left real: it is the rule the Save button reads, and a stub of it would prove
@@ -96,6 +97,7 @@ beforeEach(() => {
   vi.mocked(publishLineup).mockResolvedValue({ok: true, teamId: 9})
   vi.mocked(fieldExistingTeam).mockResolvedValue({ok: true})
   vi.mocked(loadMemberAccounts).mockResolvedValue([])
+  vi.mocked(loadTeams).mockResolvedValue([])
 })
 
 /**
@@ -440,5 +442,32 @@ describe("the team's Discord", () => {
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The team's role and channel are removed from Discord.")
     expect(wrapper.find("[data-testid=lineup-discord-remove]").exists()).toBe(false)
     dialog().vm.$emit("update:open", false)
+  })
+})
+
+describe("archiving a team", () => {
+  it("archives the team and brings it back, saying what happens on Discord, and says why where it could not", async () => {
+    vi.mocked(loadRoster).mockResolvedValue([entry(1, "ace")])
+    vi.mocked(loadTeamSeasons).mockResolvedValue([])
+    vi.mocked(loadTeams).mockResolvedValue([{id: 7, name: "Blueshell", archived: false}])
+    vi.mocked(setTeamArchived).mockResolvedValue({ok: true})
+    const wrapper = await openEditor()
+
+    const button = () => wrapper.get("[data-testid=lineup-archive-team]")
+    expect(button().text()).toBe("Archive the team")
+    await button().trigger("click")
+    await settle()
+    expect(setTeamArchived).toHaveBeenCalledWith(7, true)
+    expect(button().text()).toBe("Bring the team back")
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The team is archived: its Discord role empties and its channel moves to the archive.")
+    await button().trigger("click")
+    await settle()
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The team plays again: its Discord role refills and its channel comes back.")
+
+    vi.mocked(setTeamArchived).mockResolvedValueOnce({ok: false, reason: "The team could not be archived."})
+    await button().trigger("click")
+    await settle()
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The team could not be archived.")
+    expect(button().text()).toBe("Archive the team")
   })
 })

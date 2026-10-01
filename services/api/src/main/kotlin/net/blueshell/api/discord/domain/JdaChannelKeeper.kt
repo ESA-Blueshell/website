@@ -4,6 +4,8 @@ import net.blueshell.api.discord.api.DiscordChannelKeeper
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptChannelKind
+import net.blueshell.api.discord.persistence.ArchivedChannel
+import net.blueshell.api.discord.persistence.ArchivedChannelRepository
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Role
@@ -12,12 +14,15 @@ import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel
 import net.dv8tion.jda.api.entities.channel.attribute.IPermissionContainer
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 /** The server's channels opened to roles through the gateway, by permission overwrites. */
 @Service
 class JdaChannelKeeper(
     private val gateway: ObjectProvider<GatewayGuild>,
+    private val archived: ArchivedChannelRepository,
+    @param:Value($$"${discord.archive-category:Archive}") private val archiveCategory: String,
 ) : DiscordChannelKeeper {
     override fun available(): Boolean = gateway.ifAvailable?.guild() != null
 
@@ -66,6 +71,26 @@ class JdaChannelKeeper(
     ) {
         val guild = guild()
         containerOf(guild, channelId).getPermissionOverride(roleOf(guild, roleId))?.delete()?.complete()
+    }
+
+    override fun archive(channelIds: Collection<String>) {
+        val guild = guild()
+        val archive = guild.getCategoriesByName(archiveCategory, true).firstOrNull() ?: guild.createCategory(archiveCategory).complete()
+        channelIds.mapNotNull { guild.getGuildChannelById(it) as? ICategorizableChannel }.forEach { channel ->
+            if (channel.parentCategoryIdLong == archive.idLong) return@forEach
+            archived.save(ArchivedChannel(channel.id, channel.parentCategoryId))
+            channel.manager.setParent(archive).complete()
+        }
+    }
+
+    override fun restore(channelIds: Collection<String>) {
+        val guild = guild()
+        channelIds.forEach { id ->
+            val kept = archived.findById(id).orElse(null) ?: return@forEach
+            val channel = guild.getGuildChannelById(id) as? ICategorizableChannel
+            channel?.manager?.setParent(kept.categoryId?.let(guild::getCategoryById))?.complete()
+            archived.delete(kept)
+        }
     }
 
     override fun delete(channelId: String) {

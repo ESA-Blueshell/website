@@ -7,6 +7,7 @@ import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.model.addressOf
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -25,6 +26,7 @@ class GameService(
     // Looked up when asked, not injected: the modules implementing these read games through here.
     private val holdings: ObjectProvider<GameHoldings>,
     private val competition: ObjectProvider<GamesInCompetition>,
+    private val events: ApplicationEventPublisher,
 ) {
     /**
      * Every game, with what a listing draws of each already read.
@@ -187,8 +189,14 @@ class GameService(
         archived: Boolean,
     ): Game {
         val existing = requireGame(game)
+        val changed = existing.archived != archived
         existing.archived = archived
-        return games.save(existing)
+        val saved = games.save(existing)
+        if (changed) {
+            val channels = (existing.channels + existing.esportsChannels).map { it.channelId }.distinct()
+            events.publishEvent(GameArchiveChanged(existing.code, archived, channels))
+        }
+        return saved
     }
 
     /**

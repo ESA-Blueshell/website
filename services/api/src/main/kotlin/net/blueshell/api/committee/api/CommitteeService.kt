@@ -128,8 +128,11 @@ class CommitteeService
             archived: Boolean,
         ): Committee {
             val committee = findById(id)
+            val changed = committee.archived != archived
             committee.archived = archived
-            return repository.saveAndFlush(committee)
+            val saved = repository.saveAndFlush(committee)
+            if (changed) trackedEvents.publish { actor -> CommitteeArchiveChanged(id, archived, actor = actor) }
+            return saved
         }
 
         /**

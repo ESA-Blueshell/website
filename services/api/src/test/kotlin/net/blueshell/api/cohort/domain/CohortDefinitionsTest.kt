@@ -103,6 +103,9 @@ class CohortDefinitionsTest {
         assertThat(PeriodPayersDefinition(year, mockk()).folder).isEqualTo(CohortFolders.CONTRIBUTION_PAID)
         assertThat(PeriodActiveMembersDefinition(year, emptyList()).folder).isEqualTo(CohortFolders.ACTIVE_MEMBERS)
         assertThat(CommitteeMembersDefinition(committee, mockk()).folder).isEqualTo(CohortFolders.COMMITTEES)
+        // An archived committee keeps its seats and holds nobody.
+        committee.archived = true
+        assertThat(CommitteeMembersDefinition(committee, mockk()).members()).isEmpty()
         assertThat(NewsletterSubscribersDefinition(mockk()).folder).isEqualTo(CohortFolders.NEWSLETTER)
     }
 

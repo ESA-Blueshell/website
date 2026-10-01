@@ -9,6 +9,7 @@ import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptChannelKind
 import net.blueshell.api.shared.enums.TargetSystem
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -103,6 +104,25 @@ class CohortDiscord(
         targets.delete(target)
     }
 
+    /**
+     * Moves the private channels the cohort's role opens into the archive category, or back out.
+     * Without a bot nothing moves, and that is said in the log rather than failing the archive.
+     */
+    fun archive(
+        key: String,
+        archived: Boolean,
+    ) {
+        if (!roles.available() ||
+            !channels.available()
+        ) {
+            return log.warn("[cohort] {} was archived or restored with no bot to move its channels", key)
+        }
+        val cohort = cohorts.findByDefinitionKey(key) ?: return
+        val roleId = roleOf(requireNotNull(cohort.id)) ?: return
+        val opened = channels.openedTo(roleId).filter { it.kind != KeptChannelKind.CATEGORY }.map { it.id }
+        if (archived) channels.archive(opened) else channels.restore(opened)
+    }
+
     // A record made a moment ago may not have its cohort yet, so one is registered for it.
     private fun cohortIdOf(key: String): Long {
         val cohort =
@@ -122,4 +142,8 @@ class CohortDiscord(
         } catch (e: DiscordUnavailable) {
             throw TargetSystemUnavailable(TargetSystem.DISCORD).apply { initCause(e) }
         }
+
+    private companion object {
+        val log = LoggerFactory.getLogger(CohortDiscord::class.java)
+    }
 }

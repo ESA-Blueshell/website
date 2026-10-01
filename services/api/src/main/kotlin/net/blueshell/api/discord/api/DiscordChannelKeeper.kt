@@ -51,4 +51,10 @@ interface DiscordChannelKeeper {
 
     /** Deletes [channelId] from the server, for a removal the board asked for. */
     fun delete(channelId: String)
+
+    /** Moves each of [channelIds] into the archive category, remembering where it was; nothing is deleted. */
+    fun archive(channelIds: Collection<String>)
+
+    /** Moves each of [channelIds] back to the category it was archived from. */
+    fun restore(channelIds: Collection<String>)
 }

@@ -123,4 +123,24 @@ class CohortDiscordTest {
         whenever(roles.available()).thenReturn(false)
         assertThatThrownBy { discord.remove("COMMITTEE_MEMBERS:7") }.isInstanceOf(TargetSystemUnavailable::class.java)
     }
+
+    @Test
+    fun `archiving moves the channels the role opens into the archive and back, and nothing without a bot or a role`() {
+        given(linked = true)
+        val category = KeptChannel("10", "Committees", KeptChannelKind.CATEGORY, null)
+        whenever(channels.openedTo("900")).thenReturn(listOf(sitecie, category))
+
+        discord.archive("COMMITTEE_MEMBERS:7", true)
+        discord.archive("COMMITTEE_MEMBERS:7", false)
+        verify(channels).archive(listOf("1"))
+        verify(channels).restore(listOf("1"))
+
+        whenever(cohorts.findByDefinitionKey("COMMITTEE_MEMBERS:8")).thenReturn(null)
+        discord.archive("COMMITTEE_MEMBERS:8", true)
+        given(linked = false)
+        discord.archive("COMMITTEE_MEMBERS:7", true)
+        whenever(roles.available()).thenReturn(false)
+        discord.archive("COMMITTEE_MEMBERS:7", true)
+        verify(channels, org.mockito.kotlin.times(1)).archive(any())
+    }
 }

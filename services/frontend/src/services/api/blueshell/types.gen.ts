@@ -205,6 +205,13 @@ export type ArchiveGameRequest = {
 };
 
 /**
+ * Whether a team stopped playing
+ */
+export type ArchiveTeamRequest = {
+    archived: boolean;
+};
+
+/**
  * What the association can say about itself in numbers
  */
 export type AssociationStatisticsResponse = {
@@ -3151,6 +3158,10 @@ export type TeamRequest = {
  * A team the association fields in one game
  */
 export type TeamResponse = {
+    /**
+     * Whether the team stopped playing
+     */
+    archived?: boolean;
     /**
      * The team's own icon, drawn beside the name. The banner it is drawn on belongs to the fielding, not to the team
      */
@@ -7294,6 +7305,49 @@ export type UpdateTeamResponses = {
 };
 
 export type UpdateTeamResponse = UpdateTeamResponses[keyof UpdateTeamResponses];
+
+export type ArchiveTeamData = {
+    body: ArchiveTeamRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/teams/{id}/archived';
+};
+
+export type ArchiveTeamErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ArchiveTeamError = ArchiveTeamErrors[keyof ArchiveTeamErrors];
+
+export type ArchiveTeamResponses = {
+    /**
+     * OK
+     */
+    200: TeamResponse;
+};
+
+export type ArchiveTeamResponse = ArchiveTeamResponses[keyof ArchiveTeamResponses];
 
 export type FindRosterData = {
     body?: never;

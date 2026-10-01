@@ -32,7 +32,7 @@ class EsportsInputWritesTest {
     fun `a team is made and edited from its input, trimmed`() {
         val repository = mock<TeamRepository> { on { save(any<Team>()) } doAnswer { it.getArgument(0) } }
         whenever(repository.findById(3)).thenReturn(Optional.of(Team(name = "Old")))
-        val service = TeamService(repository, mock(), mock())
+        val service = TeamService(repository, mock(), mock(), mock())
 
         assertThat(service.create(TeamInput(" BS Nomads ")).name).isEqualTo("BS Nomads")
         assertThat(service.update(3, TeamInput(" BS Settlers ")).name).isEqualTo("BS Settlers")

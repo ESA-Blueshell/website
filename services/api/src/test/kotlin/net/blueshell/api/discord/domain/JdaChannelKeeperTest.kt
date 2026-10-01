@@ -29,6 +29,7 @@ import org.springframework.beans.factory.ObjectProvider
 import java.util.EnumSet
 
 class JdaChannelKeeperTest {
+    private val archived: net.blueshell.api.discord.persistence.ArchivedChannelRepository = mock()
     private val everyone: Role = mock()
     private val sitecieRole: Role = mock { on { id } doReturn "900" }
     private val committees: Category =
@@ -64,7 +65,7 @@ class JdaChannelKeeperTest {
 
     private fun keeper(gateway: GatewayGuild? = GatewayGuild { guild }): JdaChannelKeeper {
         val provider: ObjectProvider<GatewayGuild> = mock { on { ifAvailable } doReturn gateway }
-        return JdaChannelKeeper(provider)
+        return JdaChannelKeeper(provider, archived, "Archive")
     }
 
     @Test
@@ -129,5 +130,49 @@ class JdaChannelKeeperTest {
         assertThatThrownBy { keeper(gateway = GatewayGuild { null }).channels() }.isInstanceOf(DiscordUnavailable::class.java)
         assertThatThrownBy { keeper().openedTo("999") }.isInstanceOf(DiscordUnavailable::class.java)
         assertThatThrownBy { keeper().close("999", "900") }.isInstanceOf(DiscordUnavailable::class.java)
+    }
+
+    @Test
+    fun `archives a channel into the archive category remembering where it was, and restores it there`() {
+        val archive: Category = mock { on { idLong } doReturn 20 }
+        whenever(guild.getCategoriesByName("Archive", true)).thenReturn(emptyList(), listOf(archive))
+        val makingArchive: ChannelAction<Category> = mock { on { complete() } doReturn archive }
+        whenever(guild.createCategory("Archive")).thenReturn(makingArchive)
+        val manager: net.dv8tion.jda.api.managers.channel.concrete.TextChannelManager = mock()
+        whenever(text.manager).thenReturn(manager)
+        whenever(manager.setParent(any())).thenReturn(manager)
+        whenever(text.parentCategoryId).thenReturn("10")
+        whenever(text.parentCategoryIdLong).thenReturn(10, 20)
+        whenever(guild.getCategoryById("10")).thenReturn(committees)
+
+        keeper().archive(listOf("1", "999"))
+        keeper().archive(listOf("1"))
+        verify(archived).save(
+            net.blueshell.api.discord.persistence.ArchivedChannel("1", "10").let {
+                org.mockito.kotlin.argThat {
+                    channelId ==
+                        "1" &&
+                        categoryId == "10"
+                }
+            },
+        )
+        verify(manager).setParent(archive)
+
+        whenever(archived.findById("1")).thenReturn(
+            java.util.Optional.of(
+                net.blueshell.api.discord.persistence
+                    .ArchivedChannel("1", "10"),
+            ),
+        )
+        whenever(archived.findById("2")).thenReturn(java.util.Optional.empty())
+        keeper().restore(listOf("1", "2"))
+        verify(manager).setParent(committees)
+        verify(archived).delete(org.mockito.kotlin.argThat { channelId == "1" })
+        assertThat(net.blueshell.api.discord.persistence.ArchivedChannel::class.java.getDeclaredConstructor().newInstance()).isNotNull
+        assertThat(
+            net.blueshell.api.discord.persistence
+                .ArchivedChannel("1", null)
+                .id,
+        ).isEqualTo("1")
     }
 }

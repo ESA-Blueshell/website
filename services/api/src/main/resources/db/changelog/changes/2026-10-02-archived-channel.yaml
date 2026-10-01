@@ -1,0 +1,19 @@
+# A channel archiving moved into the archive category, and the category restoring moves it back to.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-archived-channel.yaml
+      id: archived-channel
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: archived_channel
+            columns:
+              - column: {name: channel_id, type: VARCHAR(32), constraints: {primaryKey: true, primaryKeyName: pk_archived_channel, nullable: false}}
+              - column: {name: category_id, type: VARCHAR(32)}
+        - addColumn:
+            tableName: team
+            columns:
+              - column: {name: archived, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+      rollback:
+        - dropColumn: {tableName: team, columnName: archived}
+        - dropTable: {tableName: archived_channel}

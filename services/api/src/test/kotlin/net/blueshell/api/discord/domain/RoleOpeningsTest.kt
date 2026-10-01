@@ -174,5 +174,6 @@ class RoleOpeningsTest {
         assertThatThrownBy { openings().read("999") }.isInstanceOf(ResponseStatusException::class.java)
         assertThatThrownBy { openings().set("500", "999", RoleAccess.READ) }.isInstanceOf(ResponseStatusException::class.java)
         assertThat(RoleOpening::class.java.getDeclaredConstructor().newInstance()).isNotNull
+        assertThat(RoleOpeningKey()).isEqualTo(RoleOpeningKey("", ""))
     }
 }

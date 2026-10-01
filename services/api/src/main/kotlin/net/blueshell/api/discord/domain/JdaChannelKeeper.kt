@@ -126,19 +126,22 @@ class JdaChannelKeeper(
     ): IPermissionContainer =
         guild.getGuildChannelById(channelId) as? IPermissionContainer ?: throw DiscordUnavailable("Discord has no channel $channelId.")
 
-    private fun kept(channel: GuildChannel): KeptChannel? {
-        val kind =
-            when (channel.type) {
-                ChannelType.TEXT, ChannelType.NEWS, ChannelType.FORUM -> KeptChannelKind.TEXT
-                ChannelType.VOICE, ChannelType.STAGE -> KeptChannelKind.VOICE
-                ChannelType.CATEGORY -> KeptChannelKind.CATEGORY
-                else -> return null
-            }
-        return KeptChannel(channel.id, channel.name, kind, (channel as? ICategorizableChannel)?.parentCategory?.name)
-    }
+    private fun kept(channel: GuildChannel): KeptChannel? = keptOf(channel)
 
     private companion object {
         val TEXT_ACCESS = listOf(Permission.VIEW_CHANNEL, Permission.MESSAGE_SEND, Permission.MESSAGE_HISTORY)
         val VOICE_ACCESS = listOf(Permission.VIEW_CHANNEL, Permission.VOICE_CONNECT, Permission.VOICE_SPEAK)
     }
+}
+
+/** A channel as other modules keep it, or null for a thread or anything else the site does not keep. */
+internal fun keptOf(channel: GuildChannel): KeptChannel? {
+    val kind =
+        when (channel.type) {
+            ChannelType.TEXT, ChannelType.NEWS, ChannelType.FORUM -> KeptChannelKind.TEXT
+            ChannelType.VOICE, ChannelType.STAGE -> KeptChannelKind.VOICE
+            ChannelType.CATEGORY -> KeptChannelKind.CATEGORY
+            else -> return null
+        }
+    return KeptChannel(channel.id, channel.name, kind, (channel as? ICategorizableChannel)?.parentCategory?.name)
 }

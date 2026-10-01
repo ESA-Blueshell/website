@@ -76,6 +76,7 @@ class WritingTest {
         assertThat(listOf(first.subject, first.message, first.replyTo, first.writtenBy, first.writtenAt, first.recipients))
             .containsExactly("Hi", "Body", null, 9L, Instant.parse("2026-10-01T10:00:00Z"), 2)
         assertThat(MailJobs.Written.dedupKey(MailJobs.WrittenPayload(7, 1))).isNull()
+        assertThat(WrittenEmail::class.java.getDeclaredConstructor().newInstance()).isNotNull
 
         assertThatThrownBy { writing.test(" ", "Body", null, 9) }.isInstanceOf(SubjectMissing::class.java)
         assertThatThrownBy { writing.test("Hi", " ", null, 9) }.isInstanceOf(MessageMissing::class.java)

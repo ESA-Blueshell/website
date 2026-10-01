@@ -4,6 +4,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import net.blueshell.api.shared.model.Identifiable
 
 /** The last UID read from a folder, valid while the folder keeps its UIDVALIDITY. */
 @Entity
@@ -16,4 +17,6 @@ class InboxCursor(
     var uidValidity: Long,
     @Column(name = "last_uid", nullable = false)
     var lastUid: Long,
-)
+) : Identifiable<String> {
+    override val id: String get() = folder
+}

@@ -107,7 +107,7 @@ object InboxMessageParser {
                 one.isMimeType("text/html") && html == null -> html = one.content as? String
                 one.isMimeType("multipart/*") ->
                     (one.content as? Multipart)?.let { parts ->
-                        (0 until parts.count).forEach { walk(parts.getBodyPart(it)) }
+                        for (at in 0 until parts.count) walk(parts.getBodyPart(at))
                     }
             }
         }

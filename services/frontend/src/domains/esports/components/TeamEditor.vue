@@ -26,6 +26,7 @@ import {
   loadRoster,
   loadTeamSeasons,
   loadTeams,
+  setTeamArchived,
   storePicture,
   unfieldTeamFromSeason,
   type Fielding,
@@ -501,6 +502,25 @@ const discordFailure = ref<string | null>(null)
 const readDiscord = computed(() => (props.teamId == null ? null : () => readTeamDiscord(props.teamId!)))
 const discordSlug = computed(() => draftName.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""))
 
+/** Whether the team stopped playing, read from the pool, which is where a team's own state lives. */
+const archived = ref(false)
+watch(() => props.teamId, async (teamId) => {
+  if (teamId == null) return
+  archived.value = (await loadTeams()).find(one => one.id === teamId)?.archived === true
+}, {immediate: true})
+
+const toggleArchived = async () => {
+  if (props.teamId == null || saving.value) return
+  saving.value = true
+  const done = await setTeamArchived(props.teamId, !archived.value)
+  saving.value = false
+  if (!done.ok) return store.commit("setStatusSnackbarMessage", done.reason)
+  archived.value = !archived.value
+  store.commit("setStatusSnackbarMessage", archived.value
+    ? "The team is archived: its Discord role empties and its channel moves to the archive."
+    : "The team plays again: its Discord role refills and its channel comes back.")
+}
+
 const removeDiscord = async () => {
   if (props.teamId == null || saving.value) return
   saving.value = true
@@ -577,6 +597,14 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
       v-if="!adding"
       #actions
     >
+      <cut-button
+        v-if="teamId != null"
+        testid="lineup-archive-team"
+        tone="quiet"
+        @click="toggleArchived"
+      >
+        {{ archived ? "Bring the team back" : "Archive the team" }}
+      </cut-button>
       <cut-button
         v-if="season"
         testid="lineup-drop-from-season"

@@ -55,6 +55,7 @@ class DiscordTargetStrategyTest {
         assertThat(strategy.memberIds(setOf(1L, 2L, 3L))).isEqualTo(mapOf(1L to "d1"))
         assertThat(strategy.ownersOf(setOf("d1", "d9"))).isEqualTo(mapOf("d1" to 1L))
         assertThat(strategy.makesMemberIds).isFalse()
+        strategy.makeMemberId(3L)
         assertThat(strategy.members(target(board))).containsExactly(ExternalMember("d1", "Ann"))
     }
 

@@ -322,6 +322,8 @@ class CohortTargetingServiceTest {
         org.assertj.core.api.Assertions
             .assertThatThrownBy { service.create(1L, TargetSystem.BREVO, "Members", null) }
             .isInstanceOf(TargetSystemUnavailable::class.java)
-        org.mockito.kotlin.verify(strategy, org.mockito.kotlin.never()).create(any(), anyOrNull())
+        org.mockito.kotlin
+            .verify(strategy, org.mockito.kotlin.never())
+            .create(any(), anyOrNull())
     }
 }

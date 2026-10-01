@@ -41,6 +41,11 @@ class DiscordTargetStrategy(
             .mapNotNull { user -> user.discordId?.takeIf { it.isNotBlank() }?.let { requireNotNull(user.id) to it } }
             .toMap()
 
+    // The site never links a Discord account for somebody; they link their own.
+    override val makesMemberIds = false
+
+    override fun makeMemberId(userId: Long) = Unit
+
     override fun ownersOf(externalUserIds: Set<String>): Map<String, Long> =
         users.findAllByDiscordIds(externalUserIds).mapNotNull { user -> user.discordId?.let { it to requireNotNull(user.id) } }.toMap()
 

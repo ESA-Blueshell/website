@@ -6,6 +6,7 @@ import net.blueshell.api.cohort.persistence.TargetDeletionRepository
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactServiceException
+import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.tracking.Actor
@@ -34,10 +35,8 @@ class TargetCatalogTest {
     @Test
     fun `descriptors come from registered target strategies`() {
         assertThat(catalog.descriptors()).containsExactly(strategy.descriptor)
-        // A strategy that says nothing else is always reachable, and makes no member ids.
+        // A strategy that says nothing else is always reachable.
         assertThat(strategy.available()).isTrue()
-        assertThat(strategy.makesMemberIds).isFalse()
-        strategy.makeMemberId(1L)
     }
 
     @Test
@@ -69,6 +68,10 @@ class TargetCatalogTest {
         override fun memberIds(userIds: Set<Long>): Map<Long, String> = emptyMap()
 
         override fun ownersOf(externalUserIds: Set<String>): Map<String, Long> = emptyMap()
+
+        override val makesMemberIds = false
+
+        override fun makeMemberId(userId: Long) = Unit
 
         val queries = mutableListOf<String?>()
 
@@ -211,6 +214,10 @@ class TargetCatalogTest {
             .isInstanceOf(TargetSystemRefused::class.java)
             .extracting("facts")
             .isEqualTo(mapOf("system" to "Brevo", "reason" to "Failed to create folder: Bad Request"))
+
+        whenever(brevo.createFolder("Gone")).thenThrow(DiscordUnavailable("The bot is not in the server right now."))
+        assertThatThrownBy { catalogWith(brevo).createFolder(TargetSystem.BREVO, "Gone") }
+            .isInstanceOf(TargetSystemUnavailable::class.java)
     }
 
     @Test

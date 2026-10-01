@@ -321,6 +321,10 @@ class InboundReconcileTest {
 
         override fun ownersOf(externalUserIds: Set<String>): Map<String, Long> = emptyMap()
 
+        override val makesMemberIds = false
+
+        override fun makeMemberId(userId: Long) = Unit
+
         override val descriptor =
             TargetDescriptor(
                 system = TargetSystem.BREVO,

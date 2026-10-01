@@ -45,10 +45,10 @@ interface MemberIdentity {
      * Whether a user without an id there is given one by the site, as Brevo is given a contact.
      * Where not, they are unreachable: counted apart from drift and never pushed.
      */
-    val makesMemberIds: Boolean get() = false
+    val makesMemberIds: Boolean
 
     /** Sets off making [userId]'s id on the system; only called where [makesMemberIds]. */
-    fun makeMemberId(userId: Long) = Unit
+    fun makeMemberId(userId: Long)
 }
 
 /**

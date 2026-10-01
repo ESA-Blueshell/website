@@ -82,8 +82,12 @@ class EsportsControllerWriteTest {
             .whenever(teams.archive(3, true))
             .thenReturn(team)
 
+        val answer = controller.archiveTeam(3, ArchiveTeamRequest(true))
         org.assertj.core.api.Assertions
-            .assertThat(controller.archiveTeam(3, ArchiveTeamRequest(true)).archived)
+            .assertThat(answer.archived)
             .isTrue()
+        org.assertj.core.api.Assertions
+            .assertThat(answer.icon)
+            .isNull()
     }
 }

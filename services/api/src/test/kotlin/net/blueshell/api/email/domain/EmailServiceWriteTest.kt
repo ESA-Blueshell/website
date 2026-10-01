@@ -91,5 +91,7 @@ class EmailServiceWriteTest {
         val first = Entities.email(id = 2)
         assertThat(service.linkResend(7, first)?.resentFromId).isEqualTo(2)
         assertThat(service.linkResend(70, first)).isNull()
+        whenever(repository.findByResentFromIdOrderByIdAsc(2)).thenReturn(listOf(stored))
+        assertThat(service.resendsOf(2)).containsExactly(stored)
     }
 }

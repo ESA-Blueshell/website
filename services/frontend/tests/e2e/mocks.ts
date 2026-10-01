@@ -2302,6 +2302,21 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         failedCount: counts["FAILED"],
       })
     }
+    if (method === "GET" && /^\/management\/emails\/\d+$/.test(path)) {
+      const id = Number(path.split("/")[3])
+      const email = baseEmails.find((candidate) => candidate.id === id)
+      if (!email) return fulfillJson(route, {message: "Not found"}, 404)
+      return answer(route, "findEmail", {email, resends: baseEmails.filter((one) => one.resentFromId === id)})
+    }
+    if (method === "POST" && /^\/management\/emails\/\d+\/resend$/.test(path)) {
+      const id = Number(path.split("/")[3])
+      const email = baseEmails.find((candidate) => candidate.id === id)
+      if (!email) return fulfillJson(route, {message: "Not found"}, 404)
+      const made = {...email, id: Math.max(...baseEmails.map((one) => Number(one.id ?? 0))) + 1, deliveryStatus: "QUEUED" as const,
+        sentAt: null, deliveredAt: null, openedAt: null, errorType: null, errorReason: null, attempts: 0, resentFromId: id}
+      baseEmails.unshift(made)
+      return answer(route, "resend", made)
+    }
     if (method === "GET" && /^\/management\/emails\/\d+\/preview$/.test(path)) {
       const id = Number(path.replace(/\D+/g, ""))
       const email = baseEmails.find((candidate) => candidate.id === id)

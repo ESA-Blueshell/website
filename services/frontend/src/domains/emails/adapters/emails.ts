@@ -3,6 +3,8 @@
  * (frontend ADR-002). Everything else imports from here.
  */
 import {
+  type EmailDetail,
+  findEmail,
   getStats1,
   list1,
   previewSentEmail,
@@ -22,6 +24,7 @@ import {refusalReader} from "@/utils/refusals"
 export type {Refused}
 
 export type SentEmail = Email
+export type {EmailDetail}
 export type EmailStats = EmailStatsDto
 export {EmailDeliveryStatus}
 
@@ -90,3 +93,6 @@ export const resendEmail = (id: number): Promise<{ok: true} | Refused> =>
  */
 export const readSentEmail = (id: number): Promise<RenderedEmailPreview | null> =>
   readOr(previewSentEmail({path: {id}}), null)
+
+/** One email and the emails made again from it, or nothing where it could not be read. */
+export const readEmail = (id: number): Promise<EmailDetail | null> => readOr(findEmail({path: {id}}), null)

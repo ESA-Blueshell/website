@@ -63,6 +63,13 @@ class EmailManagementController(
             failedCount = emailService.countByStatus(EmailDeliveryStatus.FAILED),
         )
 
+    /** One email, with the emails made again from it. */
+    @GetMapping("/{id}")
+    @BoardOnly
+    fun findEmail(
+        @PathVariable id: Long,
+    ): EmailDetailDTO = EmailDetailDTO(emailService.findById(id).toDto(), emailService.resendsOf(id).map { it.toDto() })
+
     /**
      * Renders a sent email so it can be read back, with every url stripped out of it first.
      *
@@ -174,4 +181,5 @@ private fun Email.toDto() =
         updatedAt = this.updatedAt,
         previewable = this.bodyMarkdown != null,
         resentFromId = this.resentFromId,
+        initiatedByUserId = this.initiatedByUserId,
     )

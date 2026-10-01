@@ -26,6 +26,8 @@ data class EmailDTO(
     val previewable: Boolean,
     @param:Schema(description = "The email this one was made again from, when it was resent")
     val resentFromId: Long? = null,
+    @param:Schema(description = "Who queued it, where a person did")
+    val initiatedByUserId: Long?,
 )
 
 @Schema(name = "SentEmailPreview")
@@ -48,4 +50,11 @@ data class EmailStatsDTO(
     val openedCount: Long,
     val bouncedCount: Long,
     val failedCount: Long,
+)
+
+@Schema(name = "EmailDetail")
+data class EmailDetailDTO(
+    val email: EmailDTO,
+    @param:Schema(description = "The emails made again from this one, oldest first")
+    val resends: List<EmailDTO>,
 )

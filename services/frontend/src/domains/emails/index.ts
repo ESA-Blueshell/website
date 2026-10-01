@@ -9,16 +9,15 @@
  * Re-exported by name rather than with `export *`, because the list of names is the promise.
  */
 export {
-  type FilterOption,
+  type EmailMoment,
   canResend,
   canRetry,
-  deliveryRate,
-  openRate,
-  rowStatusClass,
-  statusColor,
-  statusCounts,
-  statusOptions,
+  emailTypeLabel,
+  sentFacts,
+  stateKindOf,
+  statusWord,
+  timelineOf,
 } from "./reading"
-export type {EmailFilter, EmailStats, SentEmail} from "./adapters/emails"
+export type {EmailDetail, EmailFilter, EmailStats, SentEmail} from "./adapters/emails"
 export {EmailDeliveryStatus} from "./adapters/emails"
-export {loadEmailPage, loadEmailStats, readSentEmail, resendEmail, retrySend} from "./adapters/emails"
+export {loadEmailPage, loadEmailStats, readEmail, readSentEmail, resendEmail, retrySend} from "./adapters/emails"

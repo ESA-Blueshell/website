@@ -9,7 +9,6 @@ import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.tracking.Actor
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -81,6 +80,9 @@ class EmailService(
         queued.bodyMarkdown = content.markdownContent
         return rewritten(queued)
     }
+
+    @Transactional(readOnly = true)
+    fun resendsOf(id: Long): List<Email> = repository.findByResentFromIdOrderByIdAsc(id)
 
     /** Links an email made again to the one it was made from. */
     @Transactional
@@ -168,14 +170,6 @@ class EmailService(
     }
 
     @Transactional(readOnly = true)
-    fun findSentForSync(limit: Int): List<Email> {
-        val pageable = PageRequest.of(0, limit)
-        // Sync entries sent more than 5 minutes ago to allow events to propagate
-        val threshold = Instant.now().minusSeconds(300)
-        return repository.findByDeliveryStatusAndSentAtBefore(EmailDeliveryStatus.SENT, threshold, pageable)
-    }
-
-    @Transactional(readOnly = true)
     fun findByFilter(
         pageable: Pageable,
         query: EmailQuery,
@@ -185,10 +179,4 @@ class EmailService(
     }
 
     fun countByStatus(status: EmailDeliveryStatus): Long = repository.countByDeliveryStatus(status)
-
-    @Transactional(readOnly = true)
-    fun findRecentByRecipientEmail(
-        email: String,
-        since: Instant,
-    ): Email? = repository.findTopByRecipientEmailAndSentAtAfterOrderBySentAtDesc(email, since)
 }

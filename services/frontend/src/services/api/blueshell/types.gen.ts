@@ -1224,6 +1224,10 @@ export type Email = {
     errorReason?: string | null;
     errorType?: string | null;
     id?: number | null;
+    /**
+     * Who queued it, where a person did
+     */
+    initiatedByUserId?: number | null;
     jobExecutionId?: number | null;
     messageId?: string | null;
     openedAt?: string | null;
@@ -1259,6 +1263,14 @@ export enum EmailDeliveryStatus {
     BOUNCED = 'BOUNCED',
     FAILED = 'FAILED'
 }
+
+export type EmailDetail = {
+    email: Email;
+    /**
+     * The emails made again from this one, oldest first
+     */
+    resends: Array<Email>;
+};
 
 export type EmailStats = {
     bouncedCount: number;
@@ -9677,6 +9689,49 @@ export type GetStats1Responses = {
 };
 
 export type GetStats1Response = GetStats1Responses[keyof GetStats1Responses];
+
+export type FindEmailData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/emails/{id}';
+};
+
+export type FindEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindEmailError = FindEmailErrors[keyof FindEmailErrors];
+
+export type FindEmailResponses = {
+    /**
+     * OK
+     */
+    200: EmailDetail;
+};
+
+export type FindEmailResponse = FindEmailResponses[keyof FindEmailResponses];
 
 export type PreviewSentEmailData = {
     body?: never;

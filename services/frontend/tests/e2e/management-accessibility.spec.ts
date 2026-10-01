@@ -122,6 +122,7 @@ const PAGES = [
   // rebuild comes with #1907, and it joins this list then.
   {path: "/management/exceptions", ready: "exception-list"},
   {path: "/management/alerts", ready: "alert-list"},
+  {path: "/management/mail/sent", ready: "sent-emails"},
 ]
 
 for (const theme of ["dark", "light"] as const) {

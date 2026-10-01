@@ -119,10 +119,12 @@ class TargetCatalog(
         if (linkedTargets(system).containsKey(externalId)) throw TargetStillLinked(system, externalId)
         if (typedName != external.label) throw TargetNameMismatch(typedName)
         refusedBy(system) { strategy.delete(external) }
-        deletions.save(
-            TargetDeletion(system.name, externalId, external.label, actors.currentOrSystem().userId, Instant.now()),
-        )
-        log.info("[cohort] deleted {} target {} '{}'", system, externalId, external.label)
+        val deletion =
+            deletions.save(
+                TargetDeletion(system.name, externalId, external.label, actors.currentOrSystem().userId, Instant.now()),
+            )
+        // The deletion row holds the id and name; both came from a request, so the log names only the row.
+        log.info("[cohort] deleted {} target, recorded as deletion {}", system, deletion.id)
     }
 
     // The system's own reason is what the board needs to see; nothing on our side changed.

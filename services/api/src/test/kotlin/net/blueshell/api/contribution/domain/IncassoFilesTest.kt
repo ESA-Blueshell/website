@@ -107,6 +107,7 @@ class IncassoFilesTest {
 
         assertThat(files().file(11, 2).name).isEqualTo("incassobatch-2026-11-01-2-of-2.xlsx")
         assertThatThrownBy { files().file(11, 3) }.isInstanceOf(IncassoFilePartNotFound::class.java)
+        assertThatThrownBy { files().file(11, 0) }.isInstanceOf(IncassoFilePartNotFound::class.java)
     }
 
     @Test

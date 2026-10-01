@@ -49,6 +49,7 @@ class IncassoFiles(
 
         val all = notifications.findByIncassoRunIdIn(listOf(runId)).sortedBy { it.user.fullName }
         val chunks = all.chunked(IngIncassoFile.MAX_COLLECTIONS)
+        if (part < 1) throw IncassoFilePartNotFound()
         val theirs = chunks.getOrNull(part - 1) ?: throw IncassoFilePartNotFound()
         val held = memberships.findByUserIdsWithMembers(theirs.map { it.userId })
         val mandates =

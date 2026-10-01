@@ -16,6 +16,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -25,7 +26,8 @@ import org.mockito.kotlin.whenever
 class TargetCatalogTest {
     private val targets: TargetRepository = mock()
     private val strategy = RecordingStrategy()
-    private val deletions: TargetDeletionRepository = mock()
+    private val deletions: TargetDeletionRepository =
+        mock { on { save(org.mockito.kotlin.any<TargetDeletion>()) } doAnswer { it.arguments[0] as TargetDeletion } }
     private val actors: ActorProvider = mock { on { currentOrSystem() } doReturn Actor.user(5L, Role.ADMIN) }
     private val catalog = TargetCatalog(TargetStrategies(listOf(strategy)), targets, deletions, actors)
 

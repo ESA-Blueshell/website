@@ -190,4 +190,16 @@ class InboxTest {
         poller.sessionFor = { error("no network") }
         poller.poll()
     }
+
+    @Test
+    fun `a kept message and a cursor carry what they were given, and hibernate can build them empty`() {
+        val kept = InboxMessage("<r>", "<s>", "<s>", "a@x.nl", "Ann", "board@x.nl", "Hi", "text", "<p>html</p>", Instant.EPOCH, true, 9, 5)
+        assertThat(listOf(kept.messageId, kept.inReplyTo, kept.fromName, kept.toAddress, kept.bodyText, kept.bodyHtml))
+            .containsExactly("<r>", "<s>", "Ann", "board@x.nl", "text", "<p>html</p>")
+        assertThat(InboxCursor("INBOX", 7, 3).id).isEqualTo("INBOX")
+        assertThat(InboxMessage::class.java.getDeclaredConstructor().newInstance()).isNotNull
+        assertThat(InboxCursor::class.java.getDeclaredConstructor().newInstance()).isNotNull
+        val poller = InboxPoller(mock(), mock(), Clock.systemUTC(), "", 993, "", "INBOX", true, mock<Environment>())
+        assertThat(poller.sessionFor("imaps").getProperty("mail.store.protocol")).isEqualTo("imaps")
+    }
 }

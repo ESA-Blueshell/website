@@ -79,6 +79,9 @@ class Event(
     /** Sent back to the board by an edit from anybody else after it was approved. */
     @Column(name = "awaiting_reapproval", nullable = false)
     var awaitingReapproval: Boolean = false,
+    /** When the events-info post goes out, as the board chose on approving; null while unapproved. */
+    @Column(name = "announce_at")
+    var announceAt: Instant? = null,
     @Column(name = "members_only", nullable = false)
     var membersOnly: Boolean = false,
     @Column(name = "sign_up", nullable = false)

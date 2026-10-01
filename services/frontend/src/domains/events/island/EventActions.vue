@@ -9,6 +9,8 @@ import store, {type GuestSessionData} from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {deleteEvent, type EventResponse, type EventSignUpResponse, setEventApproved, withdrawSignUp} from ".."
 import {useIsBoard} from "@/composables/useIsBoard"
+import AnnounceDialog from "./AnnounceDialog.vue"
+import {useAnnouncePrompt} from "./announcing"
 
 /**
  * What can be done with one event from where it is listed: signing up, and for its committee
@@ -87,8 +89,16 @@ async function pressSignUp() {
   }
 }
 
+const {open: announceOpen, later: announceLater, ask: askAnnounce, answer: answerAnnounce} = useAnnouncePrompt()
+
 async function toggleApproved() {
-  emit("update:event", await setEventApproved(event.id, !event.approved))
+  if (event.approved) {
+    emit("update:event", await setEventApproved(event.id, false))
+    return
+  }
+  const announce = await askAnnounce(event)
+  if (announce === null) return
+  emit("update:event", await setEventApproved(event.id, true, announce))
 }
 
 const deleting = ref(false)
@@ -187,6 +197,12 @@ async function confirmDelete() {
       working-label="Deleting"
       @confirm="confirmDelete"
       @update:open="deleting = $event"
+    />
+
+    <announce-dialog
+      :later="announceLater"
+      :open="announceOpen"
+      @answer="answerAnnounce"
     />
   </span>
 </template>

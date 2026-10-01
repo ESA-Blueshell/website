@@ -39,6 +39,8 @@ class DiscordEventPostsTest {
             signUpDeadline = null,
             pingedRoleIds = listOf("901"),
             bannerPath = "/files/public/events/lan.webp",
+            // The board chose the morning of Saturday 26 September when it approved the event.
+            announceAt = at("2026-09-26T08:00"),
         )
 
     /** Remembers every call, and fails the ones a test says Discord refuses. */
@@ -211,7 +213,7 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `announces the event two weeks ahead with its banner attached, once`() {
+    fun `announces the event at the time the board chose, with its banner attached, once`() {
         assertThat(posts("2026-09-26T08:00").keepAnnouncement(42).effect).isEqualTo(JobEffect.MADE)
         assertThat(posts("2026-09-27T08:00").keepAnnouncement(42).effect).isNotEqualTo(JobEffect.MADE)
 

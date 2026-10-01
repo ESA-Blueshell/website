@@ -60,9 +60,9 @@ class DiscordEventPostTriggers(
         trigger: JobTrigger,
     ) {
         val event = events.of(eventId)
-        val due = event?.takeIf { it.live }?.let { DiscordPostSchedule.due(it.startTime, it.endTime, clock.instant()) }
+        val due = event?.takeIf { it.live }?.let { DiscordPostSchedule.due(it.startTime, it.endTime, it.announceAt, clock.instant()) }
         val payload = DiscordPostJobs.EventPostPayload(eventId)
-        if (out(eventId, DiscordArtefact.INFO_POST) || due?.withinTwoWeeks == true) {
+        if (out(eventId, DiscordArtefact.INFO_POST) || due?.announce == true) {
             jobs.runAsync(DiscordPostJobs.Announcement, payload, trigger)
         }
         if (out(eventId, DiscordArtefact.CALENDAR_POST) || due?.calendarPost == true) {

@@ -51,4 +51,10 @@ data class EventResponse(
     var version: Long,
     var createdAt: Instant,
     var updatedAt: Instant,
+    @field:Schema(
+        description =
+            "Whether the events-info post is out, so approving asks no choice of when it goes out. " +
+                "Answered for one event, absent in a list.",
+    )
+    var announced: Boolean? = null,
 )

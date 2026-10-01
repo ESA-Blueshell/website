@@ -32,7 +32,7 @@ class EventControllerSecurityTest : UserTestSupport() {
         membersOnly: Boolean = false,
         signUp: Boolean = true,
     ): String =
-        """{"committeeId":$committeeId,"title":"$title","description":"Event description","location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z","approved":$approved,"membersOnly":$membersOnly,"signUp":$signUp}"""
+        """{"committeeId":$committeeId,"title":"$title","description":"Event description","location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z","approved":$approved,"announce":"NOW","membersOnly":$membersOnly,"signUp":$signUp}"""
 
     private fun updateEventPayload(
         committeeId: Long,
@@ -45,7 +45,7 @@ class EventControllerSecurityTest : UserTestSupport() {
     ): String {
         val bannerPart = if (bannerFileId == null) "" else ""","banner":{"fileId":$bannerFileId}"""
         return """
-            {"committeeId":$committeeId,"title":"$title","description":"Updated event description","location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z","approved":$approved,"membersOnly":$membersOnly,"signUp":$signUp,"version":$version$bannerPart}
+            {"committeeId":$committeeId,"title":"$title","description":"Updated event description","location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z","approved":$approved,"announce":"NOW","membersOnly":$membersOnly,"signUp":$signUp,"version":$version$bannerPart}
             """.trimIndent()
     }
 
@@ -229,6 +229,7 @@ class EventControllerSecurityTest : UserTestSupport() {
                 .perform(
                     put("/events/{id}/approve", eventId)
                         .param("approved", "true")
+                        .param("announce", "NOW")
                         .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
@@ -255,6 +256,7 @@ class EventControllerSecurityTest : UserTestSupport() {
                 .perform(
                     put("/events/{id}/approve", eventId)
                         .param("approved", "true")
+                        .param("announce", "NOW")
                         .with(signedIn(committee)),
                 ).andExpect(status().isForbidden)
         }
@@ -268,6 +270,7 @@ class EventControllerSecurityTest : UserTestSupport() {
                 .perform(
                     put("/events/{id}/approve", eventId)
                         .param("approved", "true")
+                        .param("announce", "NOW")
                         .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
@@ -279,7 +282,8 @@ class EventControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/{id}/approve", eventId)
-                        .param("approved", "true"),
+                        .param("approved", "true")
+                        .param("announce", "NOW"),
                 ).andExpect(status().isUnauthorized)
         }
     }
@@ -455,6 +459,7 @@ class EventControllerSecurityTest : UserTestSupport() {
                 .perform(
                     put("/events/{id}/approve", eventId)
                         .param("approved", "true")
+                        .param("announce", "NOW")
                         .with(signedIn(admin)),
                 ).andExpect(status().isOk)
         }

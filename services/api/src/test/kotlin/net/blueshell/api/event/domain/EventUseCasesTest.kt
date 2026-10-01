@@ -1,6 +1,10 @@
 package net.blueshell.api.event.domain
 
 import net.blueshell.api.committee.api.CommitteeService
+import net.blueshell.api.event.api.AnnounceChoice
+import net.blueshell.api.event.api.AnnounceChoice.NEXT_MORNING
+import net.blueshell.api.event.api.AnnounceChoice.NOW
+import net.blueshell.api.event.api.AnnouncementLedger
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.PingedRole
@@ -27,7 +31,9 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.dao.OptimisticLockingFailureException
+import java.time.Clock
 import java.time.Instant
+import java.time.ZoneOffset
 
 class EventUseCasesTest {
     private val eventService = mock<EventService>()
@@ -36,7 +42,21 @@ class EventUseCasesTest {
     private val surveyFactory = mock<SurveyFactory>()
     private val fileService = mock<FileService>()
     private val games = mock<GameService>()
-    private val useCases = EventUseCases(eventService, committeeService, currentUserProvider, surveyFactory, fileService, games)
+    private val announcements = mock<AnnouncementLedger>()
+
+    // Tuesday 6 January 2026, 14:00 in Amsterdam: the next 08:00 is Wednesday's.
+    private val now = Instant.parse("2026-01-06T13:00:00Z")
+    private val useCases =
+        EventUseCases(
+            eventService,
+            committeeService,
+            currentUserProvider,
+            surveyFactory,
+            fileService,
+            games,
+            announcements,
+            clock = Clock.fixed(now, ZoneOffset.UTC),
+        )
 
     @Nested
     inner class CreateEvent {
@@ -53,7 +73,7 @@ class EventUseCasesTest {
             whenever(eventService.create(captured.capture())).thenAnswer { captured.firstValue }
             val data = createEventData(approved = true)
 
-            val result = useCases.create(data)
+            val result = useCases.create(data, NOW)
 
             assertThat(captured.firstValue.committee).isSameAs(committee)
             assertThat(captured.firstValue.title).isEqualTo("Event title")
@@ -81,7 +101,7 @@ class EventUseCasesTest {
             val captured = argumentCaptor<Event>()
             whenever(eventService.create(captured.capture())).thenAnswer { captured.firstValue }
 
-            val result = useCases.create(createEventData(approved = true))
+            val result = useCases.create(createEventData(approved = true), NOW)
 
             assertThat(result.approved).isFalse()
         }
@@ -109,6 +129,7 @@ class EventUseCasesTest {
                     data = data,
                     removeExistingSignUps = false,
                     version = 1L,
+                    announce = NOW,
                 )
 
             assertThat(existing.committee).isSameAs(committee)
@@ -147,7 +168,7 @@ class EventUseCasesTest {
             whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(Entities.survey())
             whenever(fileService.findById(88L)).thenReturn(bannerFile)
             whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
-            return useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L)
+            return useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L, announce = NOW)
         }
 
         @Test
@@ -192,7 +213,7 @@ class EventUseCasesTest {
             val captured = argumentCaptor<Event>()
             whenever(eventService.create(captured.capture())).thenAnswer { captured.firstValue }
 
-            useCases.create(createEventData(approved = true).copy(pingedRoles = listOf(PingedRoleData("901", "Gamers"))))
+            useCases.create(createEventData(approved = true).copy(pingedRoles = listOf(PingedRoleData("901", "Gamers"))), NOW)
 
             assertThat(captured.firstValue.pingedRoles).containsExactly(PingedRole("901", "Gamers"))
         }
@@ -208,12 +229,13 @@ class EventUseCasesTest {
                     surveyFactory,
                     fileService,
                     games,
+                    announcements,
                     discordGuildId = "324",
                 )
             val everyone = listOf(PingedRoleData("324", "@everyone"))
             whenever(eventService.findById(9L)).thenReturn(eventEntity().apply { version = 1L })
 
-            assertThatThrownBy { guarded.create(createEventData(approved = true).copy(pingedRoles = everyone)) }
+            assertThatThrownBy { guarded.create(createEventData(approved = true).copy(pingedRoles = everyone), NOW) }
                 .isInstanceOf(InvalidEventException::class.java)
             assertThatThrownBy {
                 guarded.update(id = 9L, data = updateEventData().copy(pingedRoles = everyone), removeExistingSignUps = false, version = 1L)
@@ -228,7 +250,7 @@ class EventUseCasesTest {
             whenever(committeeService.findById(4L)).thenReturn(Entities.committee(id = 4L))
             whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
 
-            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 0L)
+            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 0L, announce = NOW)
             assertThat(existing.pingedRoles).containsExactly(PingedRole("901", "Gamers"))
 
             useCases.update(
@@ -236,6 +258,7 @@ class EventUseCasesTest {
                 data = updateEventData().copy(pingedRoles = listOf(PingedRoleData("902", "Board"))),
                 removeExistingSignUps = false,
                 version = 0L,
+                announce = NOW,
             )
             assertThat(existing.pingedRoles).containsExactly(PingedRole("902", "Board"))
         }
@@ -257,7 +280,7 @@ class EventUseCasesTest {
             val captured = argumentCaptor<Event>()
             whenever(eventService.create(captured.capture())).thenAnswer { captured.firstValue }
 
-            useCases.create(createEventData(approved = true).copy(gameCodes = listOf(" CHESS ", "WORDLE")))
+            useCases.create(createEventData(approved = true).copy(gameCodes = listOf(" CHESS ", "WORDLE")), NOW)
 
             assertThat(captured.firstValue.gameCodes).containsExactly("CHESS", "WORDLE")
         }
@@ -270,11 +293,11 @@ class EventUseCasesTest {
             whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
             whenever(games.requireNameable(listOf("DOTA_2", "CHESS"), setOf("DOTA_2"))).thenReturn(listOf("DOTA_2", "CHESS"))
 
-            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 0L)
+            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 0L, announce = NOW)
             assertThat(existing.gameCodes).containsExactly("DOTA_2")
 
             val both = updateEventData().copy(gameCodes = listOf("DOTA_2", "CHESS"))
-            useCases.update(id = 9L, data = both, removeExistingSignUps = false, version = 0L)
+            useCases.update(id = 9L, data = both, removeExistingSignUps = false, version = 0L, announce = NOW)
             assertThat(existing.gameCodes).containsExactly("DOTA_2", "CHESS")
         }
 
@@ -283,7 +306,7 @@ class EventUseCasesTest {
             asBoard()
             whenever(games.requireNameable(listOf("DOTA_2"), emptySet())).thenThrow(GameArchived("Dota 2"))
 
-            assertThatThrownBy { useCases.create(createEventData(approved = true).copy(gameCodes = listOf("DOTA_2"))) }
+            assertThatThrownBy { useCases.create(createEventData(approved = true).copy(gameCodes = listOf("DOTA_2")), NOW) }
                 .isInstanceOf(GameArchived::class.java)
             verify(eventService, never()).create(any())
         }
@@ -297,7 +320,7 @@ class EventUseCasesTest {
             whenever(eventService.findById(6L)).thenReturn(existing)
             whenever(eventService.update(existing)).thenReturn(existing)
 
-            val result = useCases.approve(id = 6L, approved = true)
+            val result = useCases.approve(id = 6L, approved = true, announce = NOW)
 
             assertThat(existing.approved).isTrue()
             assertThat(result).isSameAs(existing)
@@ -310,11 +333,93 @@ class EventUseCasesTest {
             whenever(eventService.findById(6L)).thenReturn(approved)
             whenever(eventService.findById(7L)).thenReturn(declined)
 
-            useCases.approve(id = 6L, approved = true)
+            useCases.approve(id = 6L, approved = true, announce = NOW)
             useCases.approve(id = 7L, approved = false)
 
             assertThat(approved.approved to approved.awaitingReapproval).isEqualTo(true to false)
             assertThat(declined.approved to declined.awaitingReapproval).isEqualTo(false to false)
+        }
+    }
+
+    @Nested
+    inner class Announcing {
+        private fun approving(
+            announce: AnnounceChoice?,
+            postOut: Boolean = false,
+        ): Event {
+            val existing = eventEntity().apply { id = 6L }
+            whenever(eventService.findById(6L)).thenReturn(existing)
+            whenever(announcements.announced(6L)).thenReturn(postOut)
+            useCases.approve(id = 6L, approved = true, announce = announce)
+            return existing
+        }
+
+        @Test
+        fun `sends the events-info post now, or at the next 08 00 Amsterdam time, as the board chose`() {
+            assertThat(approving(NOW).announceAt).isEqualTo(now)
+            assertThat(approving(NEXT_MORNING).announceAt).isEqualTo(Instant.parse("2026-01-07T07:00:00Z"))
+        }
+
+        @Test
+        fun `refuses an approval that does not say when the post goes out, while it is not out`() {
+            assertThatThrownBy { approving(announce = null) }.isInstanceOf(InvalidEventException::class.java)
+            verify(eventService, never()).update(any())
+        }
+
+        @Test
+        fun `asks nothing once the post is out, and leaves its time alone`() {
+            assertThat(approving(announce = null, postOut = true).announceAt).isNull()
+        }
+
+        @Test
+        fun `asks a new event the board approves on creating it`() {
+            whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
+            whenever(committeeService.findById(3L)).thenReturn(Entities.committee(id = 3L))
+            whenever(fileService.findById(77L)).thenReturn(Entities.file(id = 77L))
+            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(Entities.survey())
+            val created = argumentCaptor<Event>()
+            whenever(eventService.create(created.capture())).thenAnswer { created.firstValue }
+
+            assertThatThrownBy { useCases.create(createEventData(approved = true)) }.isInstanceOf(InvalidEventException::class.java)
+            useCases.create(createEventData(approved = true), NEXT_MORNING)
+
+            assertThat(created.firstValue.announceAt).isEqualTo(Instant.parse("2026-01-07T07:00:00Z"))
+        }
+
+        @Test
+        fun `forgets the time on unapproving, so approving again asks again`() {
+            val approved =
+                eventEntity().apply {
+                    id = 7L
+                    this.approved = true
+                    announceAt = now
+                }
+            whenever(eventService.findById(7L)).thenReturn(approved)
+
+            useCases.approve(id = 7L, approved = false)
+            assertThat(approved.announceAt).isNull()
+            assertThatThrownBy { useCases.approve(id = 7L, approved = true) }.isInstanceOf(InvalidEventException::class.java)
+        }
+
+        @Test
+        fun `keeps the time of an event already approved through an edit`() {
+            val approved =
+                eventEntity().apply {
+                    id = 9L
+                    version = 1L
+                    this.approved = true
+                    announceAt = now
+                }
+            whenever(eventService.findById(9L)).thenReturn(approved)
+            whenever(committeeService.findById(4L)).thenReturn(Entities.committee(id = 4L))
+            whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
+            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(Entities.survey())
+            whenever(fileService.findById(88L)).thenReturn(Entities.file(id = 88L))
+            whenever(eventService.update(eq(approved), eq(false))).thenReturn(approved)
+
+            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L)
+
+            assertThat(approved.announceAt).isEqualTo(now)
         }
     }
 

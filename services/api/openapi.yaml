@@ -191,6 +191,11 @@ components:
       - updatedAt
       - version
       type: object
+    AnnounceChoice:
+      enum:
+      - NOW
+      - NEXT_MORNING
+      type: string
     AnswerRequest:
       properties:
         optionSelections:
@@ -1779,6 +1784,11 @@ components:
       type: object
     CreateEventRequest:
       properties:
+        announce:
+          description: When the events-info post goes out, which approving must say while it is not out yet
+          oneOf:
+          - $ref: '#/components/schemas/AnnounceChoice'
+          - type: 'null'
         approved:
           type: boolean
         banner:
@@ -2466,6 +2476,11 @@ components:
       type: object
     EventResponse:
       properties:
+        announced:
+          description: Whether the events-info post is out, so approving asks no choice of when it goes out. Answered for one event, absent in a list.
+          type:
+          - boolean
+          - 'null'
         approved:
           type: boolean
         awaitingReapproval:
@@ -5349,6 +5364,11 @@ components:
       type: object
     UpdateEventRequest:
       properties:
+        announce:
+          description: When the events-info post goes out, which approving must say while it is not out yet
+          oneOf:
+          - $ref: '#/components/schemas/AnnounceChoice'
+          - type: 'null'
         approved:
           type: boolean
         banner:
@@ -16981,6 +17001,11 @@ paths:
         required: true
         schema:
           type: boolean
+      - in: query
+        name: announce
+        required: false
+        schema:
+          $ref: '#/components/schemas/AnnounceChoice'
       responses:
         '200':
           content:

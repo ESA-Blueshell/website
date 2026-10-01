@@ -24,7 +24,7 @@ class EventRequestFactory {
         val deadlinePart = signUpDeadline?.let { ""","signUpDeadline":"$it"""" } ?: ""
         val limitPart = signUpLimit?.let { ""","signUpLimit":$it""" } ?: ""
         return """
-            {"committeeId":$committeeId,"title":"$title","description":"Event description","location":"Campus","startTime":"$startTime","endTime":"$endTime","approved":$approved,"membersOnly":false,"signUp":true$bannerPart$signUpFormPart$deadlinePart$limitPart}
+            {"committeeId":$committeeId,"title":"$title","description":"Event description","location":"Campus","startTime":"$startTime","endTime":"$endTime","approved":$approved,"announce":"NOW","membersOnly":false,"signUp":true$bannerPart$signUpFormPart$deadlinePart$limitPart}
             """.trimIndent()
     }
 
@@ -47,7 +47,7 @@ class EventRequestFactory {
         val limitPart = signUpLimit?.let { ""","signUpLimit":$it""" } ?: ""
         val removePart = ""","removeExistingSignUps":$removeExistingSignUps"""
         return """
-            {"committeeId":$committeeId,"title":"$title","description":"Updated description","location":"Updated Campus","startTime":"$startTime","endTime":"$endTime","approved":$approved,"membersOnly":false,"signUp":true$bannerPart$signUpFormPart$deadlinePart$limitPart$removePart,"version":$version}
+            {"committeeId":$committeeId,"title":"$title","description":"Updated description","location":"Updated Campus","startTime":"$startTime","endTime":"$endTime","approved":$approved,"announce":"NOW","membersOnly":false,"signUp":true$bannerPart$signUpFormPart$deadlinePart$limitPart$removePart,"version":$version}
             """.trimIndent()
     }
 

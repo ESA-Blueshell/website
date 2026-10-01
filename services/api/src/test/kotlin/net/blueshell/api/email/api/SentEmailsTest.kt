@@ -31,5 +31,7 @@ class SentEmailsTest {
         assertThat(sent.answeredBy(emptyList())).isNull()
         assertThat(sent.byIds(listOf(9L)).keys).containsExactly(9)
         assertThat(sent.byIds(emptyList())).isEmpty()
+        whenever(repository.findTop20ByRecipientEmailOrderByIdDesc("a@b.nl")).thenReturn(listOf(reminder))
+        assertThat(sent.toAddress("a@b.nl").map { it.id }).containsExactly(9)
     }
 }

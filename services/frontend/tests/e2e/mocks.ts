@@ -2319,6 +2319,26 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/mail/inbox/counts") {
       return answer(route, "findInboxCounts", {new: 2, oldestNewAt: "2026-09-27T10:02:00.000Z", done: 0, automatic: 0})
     }
+    const conversationOf = path.match(/^\/mail\/inbox\/(\d+)(?:\/(reply|handled))?$/)
+    if (conversationOf) {
+      const replied = conversationOf[2] === "reply"
+      const handled = conversationOf[2] === "handled"
+      const message = {id: Number(conversationOf[1]), fromAddress: "lars@example.com", fromName: "Lars Mulder", senderUserId: 1, senderName: "Lars Mulder",
+        subject: "Re: Your contribution", receivedAt: "2026-09-29T11:20:00.000Z", automatic: false,
+        answers: {emailId: 800, emailType: "email.contribution-reminder"},
+        state: (replied ? "REPLIED" : handled ? "HANDLED" : "NEW") as "NEW" | "REPLIED" | "HANDLED",
+        ...(replied || handled ? {handledBy: 1, handledByName: "Mock User", handledAt: "2026-10-01T10:00:00.000Z"} : {})}
+      const items = [
+        {kind: "SENT" as const, at: "2026-09-29T09:40:00.000Z", subject: "Your contribution", emailId: 800},
+        {kind: "RECEIVED" as const, at: "2026-09-29T11:20:00.000Z", subject: "Re: Your contribution", body: "I already paid. Do I still need to do anything?",
+          fromAddress: "lars@example.com", inboxMessageId: message.id},
+        ...(replied ? [{kind: "REPLY" as const, at: "2026-10-01T10:00:00.000Z", body: (request.postDataJSON() as {message: string}).message,
+          inboxMessageId: message.id, writtenByName: "Mock User"}] : []),
+      ]
+      const earlier = [{kind: "SENT" as const, at: "2026-09-21T10:00:00.000Z", subject: "Welcome to Blueshell", emailId: 801}]
+      const operation = replied ? "replyToMessage" : handled ? "markMessageHandled" : "findConversation"
+      return answer(route, operation, {message, items, earlier})
+    }
     if (method === "GET" && path === "/mail/audiences") {
       return answer(route, "findAudiences", [{key: "ACTIVE_MEMBERS:4", label: "Active members 2026-2027"}])
     }

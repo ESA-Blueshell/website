@@ -27,6 +27,10 @@ class SentEmails(
         return messageIds.firstNotNullOfOrNull { found[it] }?.let(::refOf)
     }
 
+    /** What the site sent to one address, newest first. */
+    @Transactional(readOnly = true)
+    fun toAddress(address: String): List<SentEmailRef> = emails.findTop20ByRecipientEmailOrderByIdDesc(address).map(::refOf)
+
     @Transactional(readOnly = true)
     fun byIds(ids: Collection<Long>): Map<Long, SentEmailRef> =
         if (ids.isEmpty()) emptyMap() else emails.findByIdIn(ids).map(::refOf).associateBy { it.id }

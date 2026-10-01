@@ -861,6 +861,29 @@ export type ContributionResponse = {
     version: number;
 };
 
+export type Conversation = {
+    earlier: Array<EarlierMail>;
+    items: Array<ConversationItem>;
+    message: InboxEntry;
+};
+
+export type ConversationItem = {
+    at?: string | null;
+    body?: string | null;
+    emailId?: number | null;
+    fromAddress?: string | null;
+    inboxMessageId?: number | null;
+    kind: ConversationKind;
+    subject?: string | null;
+    writtenByName?: string | null;
+};
+
+export enum ConversationKind {
+    SENT = 'SENT',
+    RECEIVED = 'RECEIVED',
+    REPLY = 'REPLY'
+}
+
 export type CreateAddressRequest = {
     city: string;
     country: string;
@@ -1235,6 +1258,14 @@ export type DriftResolved = {
      * How many people the action resolved; anyone no longer drifting is skipped
      */
     resolved: number;
+};
+
+export type EarlierMail = {
+    at?: string | null;
+    emailId?: number | null;
+    inboxMessageId?: number | null;
+    kind: ConversationKind;
+    subject: string;
 };
 
 export type Email = {
@@ -2459,6 +2490,14 @@ export type RenderEmailRequest = {
 export type RenderedEmail = {
     html: string;
     subject: string;
+};
+
+export type ReplyRequest = {
+    /**
+     * The reply as the site's editor writes it, in Discord's markdown
+     */
+    message: string;
+    replyTo?: string | null;
 };
 
 export enum Role {
@@ -8535,6 +8574,135 @@ export type FindInboxCountsResponses = {
 };
 
 export type FindInboxCountsResponse = FindInboxCountsResponses[keyof FindInboxCountsResponses];
+
+export type FindConversationData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/mail/inbox/{id}';
+};
+
+export type FindConversationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindConversationError = FindConversationErrors[keyof FindConversationErrors];
+
+export type FindConversationResponses = {
+    /**
+     * OK
+     */
+    200: Conversation;
+};
+
+export type FindConversationResponse = FindConversationResponses[keyof FindConversationResponses];
+
+export type MarkMessageHandledData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/mail/inbox/{id}/handled';
+};
+
+export type MarkMessageHandledErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MarkMessageHandledError = MarkMessageHandledErrors[keyof MarkMessageHandledErrors];
+
+export type MarkMessageHandledResponses = {
+    /**
+     * OK
+     */
+    200: Conversation;
+};
+
+export type MarkMessageHandledResponse = MarkMessageHandledResponses[keyof MarkMessageHandledResponses];
+
+export type ReplyToMessageData = {
+    body: ReplyRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/mail/inbox/{id}/reply';
+};
+
+export type ReplyToMessageErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReplyToMessageError = ReplyToMessageErrors[keyof ReplyToMessageErrors];
+
+export type ReplyToMessageResponses = {
+    /**
+     * OK
+     */
+    200: Conversation;
+};
+
+export type ReplyToMessageResponse = ReplyToMessageResponses[keyof ReplyToMessageResponses];
 
 export type FindReachData = {
     body: ReachRequest;

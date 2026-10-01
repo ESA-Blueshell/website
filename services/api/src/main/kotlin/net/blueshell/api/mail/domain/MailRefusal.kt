@@ -16,3 +16,5 @@ class NobodyToWrite : MailRefusal(HttpStatus.BAD_REQUEST, "NobodyToWrite", "Nobo
 class SubjectMissing : MailRefusal(HttpStatus.BAD_REQUEST, "SubjectMissing", "An email has a subject.")
 
 class MessageMissing : MailRefusal(HttpStatus.BAD_REQUEST, "MessageMissing", "An email says something.")
+
+class InboxMessageNotFound : MailRefusal(HttpStatus.NOT_FOUND, "InboxMessageNotFound", "There is no such message in the inbox.")

@@ -84,6 +84,12 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Sends one copy of an email the board wrote on the site to one person, at their address as it " +
       "is when the job runs, rendered from the site's markdown. Re-running sends that person the email again.",
   },
+  "email.inbox-reply": {
+    title: "Send a reply from the inbox",
+    description:
+      "Sends the reply a board member wrote on the site to the address a received message came from, " +
+      "threaded with that conversation. Re-running sends the reply again.",
+  },
 
   "contact.sync-all": {
     title: "Sync all contacts",

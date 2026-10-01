@@ -30,4 +30,6 @@ interface EmailRepository : BaseRepository<Email, Long> {
     fun findByMessageIdIn(messageIds: Collection<String>): List<Email>
 
     fun findByIdIn(ids: Collection<Long>): List<Email>
+
+    fun findTop20ByRecipientEmailOrderByIdDesc(recipientEmail: String): List<Email>
 }

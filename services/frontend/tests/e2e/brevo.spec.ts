@@ -41,4 +41,17 @@ test.describe("the Brevo page", () => {
 
     await expect(page).toHaveURL(/\/management\/platforms\/brevo\/lists\/33$/)
   })
+
+  test("previews the folder tidy and applies it", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/management/platforms/brevo")
+
+    await page.getByTestId("brevo-tidy").click()
+    await expect(page.getByTestId("brevo-tidy-moves")).toContainText("Web Cmte: no folder to Committees")
+    await expect(page.getByTestId("brevo-tidy-last")).toContainText("by Mock User")
+    const applied = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/cohort-targets/BREVO/tidy"))
+    await page.getByTestId("brevo-tidy-apply").click()
+    expect((await applied).postDataJSON()).toEqual({externalIds: ["33"]})
+  })
 })

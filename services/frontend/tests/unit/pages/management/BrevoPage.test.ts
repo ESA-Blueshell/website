@@ -10,6 +10,8 @@ const api = vi.hoisted(() => ({
   listCohortTargetFolders: vi.fn(),
   createExternalTarget: vi.fn(),
   createTargetFolder: vi.fn(),
+  previewFolderTidy: vi.fn(),
+  applyFolderTidy: vi.fn(),
 }))
 const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {isAdmin: false} as Record<string, unknown>}}))
 
@@ -52,6 +54,12 @@ describe("the Brevo page", () => {
     api.listCohortTargetFolders.mockResolvedValue({status: 200, data: ["Members", "Projects"]})
     api.createExternalTarget.mockResolvedValue({status: 200, data: made})
     api.createTargetFolder.mockResolvedValue({status: 200, data: ["Members", "Projects", "New"]})
+    api.previewFolderTidy.mockResolvedValue({status: 200, data: {
+      moves: [{externalId: "7", label: "Members 2025-2026", to: "Members"}, {externalId: "8", label: "Sitecie", from: "Old", to: "Committees"}],
+      foldersToCreate: ["Committees"],
+      lastApplied: {appliedAt: "2026-09-01T10:00:00Z", appliedByName: "Alice Board", moved: 2, failed: 0},
+    }})
+    api.applyFolderTidy.mockResolvedValue({status: 200, data: {moved: [made], failed: []}})
   })
 
   afterEach(() => unmountAll(wrappers, "BrevoPage"))
@@ -157,8 +165,55 @@ describe("the Brevo page", () => {
     await wrapper.get('[data-testid="brevo-new-list"]').trigger("click")
     await settle()
     expect(wrapper.findComponent({name: "SearchPicker"}).props("options")).toEqual([{key: "__new__", label: "New folder…"}])
-    wrapper.findComponent({name: "ModalDialog"}).vm.$emit("update:open", false)
+    wrapper.findAllComponents({name: "ModalDialog"})[1].vm.$emit("update:open", false)
     await settle()
-    expect(wrapper.findComponent({name: "ModalDialog"}).props("open")).toBe(false)
+    expect(wrapper.findAllComponents({name: "ModalDialog"})[1].props("open")).toBe(false)
+  })
+
+  it("previews the folder tidy with every move ticked, applies the ones left ticked, and keeps a refusal in view", async () => {
+    const wrapper = await mount()
+    await wrapper.get('[data-testid="brevo-tidy"]').trigger("click")
+    await settle()
+
+    expect(api.previewFolderTidy).toHaveBeenCalledWith({path: {system: "BREVO"}, throwOnError: true})
+    expect(document.body.querySelector('[data-testid="brevo-tidy-last"]')?.textContent).toContain("by Alice Board: 2 lists moved")
+    expect(document.body.textContent).toContain("Members 2025-2026: no folder to Members")
+    expect(document.body.textContent).toContain("Makes Committees first.")
+    const boxes = () => wrapper.findAllComponents({name: "CheckBox"})
+    boxes()[1].vm.$emit("update:modelValue", false)
+    boxes()[1].vm.$emit("update:modelValue", true)
+    boxes()[1].vm.$emit("update:modelValue", false)
+    await settle()
+    expect(document.body.querySelector('[data-testid="brevo-tidy-apply"]')?.textContent?.trim()).toBe("Move 1 list")
+    await new DOMWrapper(document.body.querySelector('[data-testid="brevo-tidy-apply"]')!).trigger("click")
+    await settle()
+    expect(api.applyFolderTidy).toHaveBeenCalledWith({path: {system: "BREVO"}, body: {externalIds: ["7"]}, throwOnError: true})
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "1 list moved.")
+    expect(wrapper.findAllComponents({name: "ModalDialog"})[0].props("open")).toBe(false)
+
+    api.applyFolderTidy.mockResolvedValueOnce({status: 200, data: {moved: [], failed: [{externalId: "7", label: "Members 2025-2026", message: "Brevo said no"}]}})
+    await wrapper.get('[data-testid="brevo-tidy"]').trigger("click")
+    await settle()
+    await new DOMWrapper(document.body.querySelector('[data-testid="brevo-tidy-apply"]')!).trigger("click")
+    await settle()
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "0 lists moved.")
+    expect(document.body.querySelector('[data-testid="brevo-tidy-failure"]')?.textContent).toContain("Members 2025-2026: Brevo said no")
+
+    api.applyFolderTidy.mockRejectedValueOnce(new Error("down"))
+    await new DOMWrapper(document.body.querySelector('[data-testid="brevo-tidy-apply"]')!).trigger("click")
+    await settle()
+    expect(document.body.querySelector('[data-testid="brevo-tidy-refusal"]')?.textContent).toContain("could not be applied")
+
+    wrapper.findAllComponents({name: "ModalDialog"})[0].vm.$emit("update:open", false)
+    api.previewFolderTidy.mockResolvedValueOnce({status: 200, data: {moves: [], foldersToCreate: []}})
+    await wrapper.get('[data-testid="brevo-tidy"]').trigger("click")
+    await settle()
+    expect(document.body.querySelector('[data-testid="brevo-tidy-none"]')).not.toBeNull()
+    expect(document.body.querySelector('[data-testid="brevo-tidy-last"]')?.textContent).toContain("No tidy has been applied yet.")
+
+    api.previewFolderTidy.mockRejectedValueOnce(new Error("down"))
+    await wrapper.get('[data-testid="brevo-tidy"]').trigger("click")
+    await settle()
+    expect(document.body.querySelector('[data-testid="brevo-tidy-refusal"]')?.textContent).toContain("Brevo could not be read")
   })
 })

@@ -266,12 +266,19 @@ export async function deleteTarget(system: TargetSystem, externalId: string, nam
 /** One linked list the tidy would move into its cohort type's folder. */
 export type TidyMove = {externalId: string; label: string; from: string | null; to: string}
 
-/** What the folder tidy would do: its moves, and the folders it would make. Changes nothing. */
-export async function fetchTidyPlan(system: TargetSystem): Promise<{moves: TidyMove[]; foldersToCreate: string[]}> {
+/** The newest applied tidy: when, by whom, and what it moved. */
+export type LastTidy = {appliedAt: string; appliedByName: string | null; moved: number; failed: number}
+
+export type TidyPlan = {moves: TidyMove[]; foldersToCreate: string[]; lastApplied: LastTidy | null}
+
+/** What the folder tidy would do: its moves, the folders it would make and the last one applied. Changes nothing. */
+export async function fetchTidyPlan(system: TargetSystem): Promise<TidyPlan> {
   const res = await previewFolderTidy({path: {system}, throwOnError: true})
+  const last = res.data.lastApplied
   return {
     moves: (res.data.moves ?? []).map((m) => ({externalId: m.externalId, label: m.label, from: m.from ?? null, to: m.to})),
     foldersToCreate: res.data.foldersToCreate ?? [],
+    lastApplied: last ? {appliedAt: last.appliedAt, appliedByName: last.appliedByName ?? null, moved: last.moved, failed: last.failed} : null,
   }
 }
 

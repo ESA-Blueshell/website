@@ -1976,6 +1976,19 @@ export type LastRecoveryEmailsResponse = {
 };
 
 /**
+ * When a tidy was applied, by whom, and what it moved.
+ */
+export type LastTidy = {
+    appliedAt: string;
+    /**
+     * Who applied it; null when the api did on its own behalf.
+     */
+    appliedByName?: string | null;
+    failed: number;
+    moved: number;
+};
+
+/**
  * One person on a line-up being saved: an entry kept, or somebody added
  */
 export type LineupEntryRequest = {
@@ -3095,6 +3108,10 @@ export type TidyPlan = {
      * Folders the moves need that the system does not have yet.
      */
     foldersToCreate: Array<string>;
+    /**
+     * The newest applied tidy on the system, if any.
+     */
+    lastApplied?: LastTidy | null;
     moves: Array<TidyMove>;
 };
 

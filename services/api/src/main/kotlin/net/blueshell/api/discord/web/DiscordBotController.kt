@@ -5,12 +5,27 @@ import net.blueshell.api.discord.api.DiscordChannelKeeper
 import net.blueshell.api.discord.api.DiscordRoleKeeper
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptRole
+import net.blueshell.api.discord.domain.AccessPolicy
 import net.blueshell.api.discord.domain.BotStanding
+import net.blueshell.api.discord.domain.ChannelAccessState
+import net.blueshell.api.discord.domain.GameChannelCategory
+import net.blueshell.api.discord.domain.GameChannelPolicies
+import net.blueshell.api.discord.domain.MadeChannel
 import net.blueshell.api.discord.domain.BotStandingResult
 import net.blueshell.api.security.BoardOnly
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+
+@io.swagger.v3.oas.annotations.media.Schema(name = "CreateGameChannelRequest")
+data class CreateGameChannelRequest(
+    val name: String,
+    val category: GameChannelCategory = GameChannelCategory.GAMES,
+)
 
 @RestController
 @RequestMapping("/management/discord")
@@ -18,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController
 @BoardOnly
 class DiscordBotController(
     private val standing: BotStanding,
+    private val gameChannels: GameChannelPolicies,
     private val roles: DiscordRoleKeeper,
     private val channels: DiscordChannelKeeper,
 ) {
@@ -28,6 +44,25 @@ class DiscordBotController(
     /** Every channel and category, for a picker; none without a bot. */
     @GetMapping("/channels")
     fun listKeptChannels(): List<KeptChannel> = if (channels.available()) channels.channels() else emptyList()
+
+    /** Makes a games or esports channel with the default access, for a game's form to add. */
+    @PostMapping("/game-channels")
+    fun createGameChannel(
+        @RequestBody request: CreateGameChannelRequest,
+    ): MadeChannel = gameChannels.create(request.name, request.category)
+
+    /** A channel's access as the site keeps it and as Discord has it, and whether they differ. */
+    @GetMapping("/channels/{id}/access")
+    fun findChannelAccess(
+        @PathVariable id: String,
+    ): ChannelAccessState = gameChannels.read(id)
+
+    /** Keeps and writes a channel's access; Discord is written now and never again on its own. */
+    @PutMapping("/channels/{id}/access")
+    fun setChannelAccess(
+        @PathVariable id: String,
+        @RequestBody policy: AccessPolicy,
+    ): ChannelAccessState = gameChannels.set(id, policy)
 
     /** Whether the bot may manage roles and channels, and which roles stay out of its hands. */
     @GetMapping("/bot")

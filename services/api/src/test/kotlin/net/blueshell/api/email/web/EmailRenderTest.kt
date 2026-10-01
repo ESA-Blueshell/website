@@ -20,7 +20,7 @@ class EmailRenderTest {
         ).thenReturn(RenderedEmailPreview("Hello", "<html>hi</html>"))
 
         val rendered =
-            EmailManagementController(mock(), mock(), mock(), mock(), siteMarkdown, renderer)
+            EmailManagementController(mock(), mock(), mock(), mock(), mock(), siteMarkdown, renderer)
                 .render(RenderEmailRequest(subject = "Hello", message = "__hi__", recipientName = "Ann"))
 
         assertThat(rendered).isEqualTo(RenderedEmailDTO("Hello", "<html>hi</html>"))

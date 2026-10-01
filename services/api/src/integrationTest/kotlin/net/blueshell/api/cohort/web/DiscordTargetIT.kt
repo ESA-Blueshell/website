@@ -6,6 +6,8 @@ import net.blueshell.api.cohort.domain.SyncCohortMembershipIntent
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.TargetMember
+import net.blueshell.api.cohort.persistence.TargetMemberRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.JobTrigger
@@ -32,6 +34,9 @@ class DiscordTargetIT : UserTestSupport() {
 
     @Autowired
     private lateinit var targets: TargetRepository
+
+    @Autowired
+    private lateinit var targetMembers: TargetMemberRepository
 
     @Autowired
     private lateinit var membership: CohortMembershipSyncService
@@ -129,5 +134,34 @@ class DiscordTargetIT : UserTestSupport() {
                     .content("""{"archived":false}""")
                     .with(signedIn(board)),
             ).andExpect(jsonPath("$.archived").value(false))
+    }
+
+    @Test
+    fun `a member on a Discord role is asked to link their account until they have one`() {
+        val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
+        val cohort = cohorts.save(Cohort(type = CohortType.COMMITTEE_MEMBERS, label = "Unlinked ${UUID.randomUUID()}"))
+        mvc
+            .perform(
+                post("/management/cohorts/{id}/targets/existing", cohort.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"system":"DISCORD","externalId":"223456789012345678"}""")
+                    .with(signedIn(board)),
+            ).andExpect(status().isOk)
+        val role = targets.findByCohortIdAndSystem(cohort.id!!, "DISCORD")!!
+        targetMembers.saveAndFlush(TargetMember(target = role, userId = member.id!!, cohort = cohort))
+
+        mvc
+            .perform(get("/users/me/unlinked-targets").with(signedIn(member)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].system").value("DISCORD"))
+            .andExpect(jsonPath("$[0].label").value(role.label))
+
+        member.discordId = "323456789012345678"
+        userRepository.saveAndFlush(member)
+        mvc
+            .perform(get("/users/me/unlinked-targets").with(signedIn(member)))
+            .andExpect(jsonPath("$.length()").value(0))
+        mvc.perform(get("/users/me/unlinked-targets")).andExpect(status().isUnauthorized)
     }
 }

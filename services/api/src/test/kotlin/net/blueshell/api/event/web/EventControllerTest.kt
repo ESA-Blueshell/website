@@ -38,4 +38,40 @@ class EventControllerTest {
 
         assertThat(controller.findEventById(6L).announced).isTrue()
     }
+
+    @Test
+    fun `passes a new or edited event's choice on, and says whether its post is out`() {
+        val start = Instant.parse("2026-11-01T19:00:00Z")
+        val created =
+            CreateEventRequest(
+                committeeId = 3L,
+                title = "LAN",
+                description = "Bring a rig.",
+                startTime = start,
+                endTime = start.plusSeconds(7200),
+                approved = true,
+                announce = AnnounceChoice.NOW,
+                membersOnly = false,
+                signUp = false,
+            )
+        val edited =
+            UpdateEventRequest(
+                committeeId = 3L,
+                title = "LAN",
+                description = "Bring a rig.",
+                startTime = start,
+                endTime = start.plusSeconds(7200),
+                approved = true,
+                announce = AnnounceChoice.NEXT_MORNING,
+                membersOnly = false,
+                signUp = false,
+                version = 1L,
+            )
+
+        assertThat(controller.createEvent(created).announced).isTrue()
+        assertThat(controller.updateEvent(6L, edited).announced).isTrue()
+
+        verify(useCases).create(any(), eq(AnnounceChoice.NOW))
+        verify(useCases).update(eq(6L), any(), eq(false), eq(1L), eq(AnnounceChoice.NEXT_MORNING))
+    }
 }

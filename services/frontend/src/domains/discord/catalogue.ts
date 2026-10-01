@@ -30,17 +30,14 @@ export function belongsTo(channel: CataloguedChannel, roles: Map<string, NamedRo
   return follows.length > 0 ? follows.join(", ") : "Nothing"
 }
 
-const ACCESS_WORD: Record<ChannelAccess, string> = {
-  [ChannelAccess.HIDDEN]: "nobody",
-  [ChannelAccess.READ]: "reads",
-  [ChannelAccess.WRITE]: "writes",
-}
+// Read when called, not when loaded: the door loads this file under tests that mock the api in part.
+const accessWord = (access: ChannelAccess) => (access === ChannelAccess.WRITE ? "writes" : access === ChannelAccess.READ ? "reads" : "nobody")
 
 /** An access policy in words: who reads and who writes. */
 export function policyWords(policy: ChannelAccessPolicy): string {
-  if (policy.everyone === policy.members) return policy.everyone === ChannelAccess.HIDDEN ? "Hidden" : `Everyone ${ACCESS_WORD[policy.everyone]}`
-  if (policy.everyone === ChannelAccess.HIDDEN) return `@Member ${ACCESS_WORD[policy.members]}`
-  return `Everyone ${ACCESS_WORD[policy.everyone]}, @Member ${ACCESS_WORD[policy.members]}`
+  if (policy.everyone === policy.members) return policy.everyone === ChannelAccess.HIDDEN ? "Hidden" : `Everyone ${accessWord(policy.everyone)}`
+  if (policy.everyone === ChannelAccess.HIDDEN) return `@Member ${accessWord(policy.members)}`
+  return `Everyone ${accessWord(policy.everyone)}, @Member ${accessWord(policy.members)}`
 }
 
 /** Who gets into a channel: its kept policy, the roles a private channel opens to, or everyone. */

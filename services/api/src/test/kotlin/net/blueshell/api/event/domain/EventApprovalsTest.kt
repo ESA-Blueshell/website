@@ -28,6 +28,7 @@ class EventApprovalsTest {
         val kept = argumentCaptor<ApprovedEvent>()
         verify(repository).save(kept.capture())
         assertThat(kept.firstValue.id).isEqualTo(6L)
+        assertThat(ApprovedEvent::class.java.getDeclaredConstructor().newInstance()).isNotNull
 
         whenever(repository.findById(6L)).thenReturn(Optional.of(kept.firstValue))
         assertThat(approvals.changesOf(event)).isEmpty()

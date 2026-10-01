@@ -8,6 +8,8 @@ import net.blueshell.api.cohort.domain.ExternalTarget
 import net.blueshell.api.cohort.domain.FolderTidy
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetDescriptor
+import net.blueshell.api.cohort.domain.TargetOverview
+import net.blueshell.api.cohort.domain.TargetOverviewResult
 import net.blueshell.api.cohort.domain.TidyPlan
 import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.security.BoardOnly
@@ -30,7 +32,23 @@ import org.springframework.web.bind.annotation.RestController
 class CohortTargetController(
     private val catalog: TargetCatalog,
     private val tidy: FolderTidy,
+    private val overview: TargetOverview,
 ) {
+    /** Every list on the system with the cohort it follows and its drift, and the lists the site expects that are missing. */
+    @GetMapping("/{system}/overview")
+    @Operation(operationId = "findTargetOverview")
+    fun overview(
+        @PathVariable system: TargetSystem,
+    ): TargetOverviewResult = overview.of(system)
+
+    /** Creates the missing lists named, or all of them when none are; each is its own job. */
+    @PostMapping("/{system}/missing")
+    @Operation(operationId = "createMissingTargets")
+    fun createMissing(
+        @PathVariable system: TargetSystem,
+        @Valid @RequestBody request: CreateMissingTargetsRequest,
+    ): CreateMissingTargetsResponse = CreateMissingTargetsResponse(overview.createMissing(system, request.targetIds))
+
     @GetMapping("/systems")
     @Operation(operationId = "listCohortTargetSystems")
     fun systems(): List<TargetDescriptor> = catalog.descriptors()

@@ -38,3 +38,14 @@ data class DeleteExternalTargetRequest(
 data class ApplyTidyRequest(
     val externalIds: List<String>,
 )
+
+@Schema(name = "CreateMissingTargetsRequest", description = "The missing lists to create, by target; none creates every one.")
+data class CreateMissingTargetsRequest(
+    val targetIds: List<Long> = emptyList(),
+)
+
+@Schema(name = "CreateMissingTargetsResponse")
+data class CreateMissingTargetsResponse(
+    @param:Schema(description = "How many lists are queued to be created")
+    val queued: Int,
+)

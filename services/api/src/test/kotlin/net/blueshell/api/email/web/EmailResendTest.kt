@@ -71,6 +71,7 @@ class EmailResendTest {
         whenever(emails.resendsOf(2)).thenReturn(listOf(made))
         val detail = controller.findEmail(2)
         assertThat(detail.resends.map { it.id }).containsExactly(3)
+        assertThat(detail.email.initiatedByUserId).isNull()
         assertThat(controller.getStats().queuedCount).isEqualTo(4)
     }
 }

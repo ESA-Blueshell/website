@@ -100,6 +100,9 @@ describe("the Sent page", () => {
     await settle()
     expect(mockList).toHaveBeenCalledTimes(4)
 
+    await wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "lars")
+    await vi.waitFor(() => expect(mockList).toHaveBeenLastCalledWith(expect.objectContaining({query: expect.objectContaining({search: "lars"})})))
+
     mockList.mockResolvedValue(page([]))
     expect((await mount()).find('[data-testid="sent-emails-empty"]').exists()).toBe(true)
   })

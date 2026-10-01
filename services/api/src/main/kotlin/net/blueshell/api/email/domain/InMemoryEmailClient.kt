@@ -43,6 +43,7 @@ class InMemoryEmailClient : EmailTransportClient {
         senderName: String,
         senderAddress: String,
         replyToAddress: String,
+        threadHeaders: Map<String, String>,
     ): String {
         if (shouldFail) throw IllegalStateException("Simulated send failure")
 
@@ -55,6 +56,7 @@ class InMemoryEmailClient : EmailTransportClient {
                 senderName = senderName,
                 senderAddress = senderAddress,
                 replyToAddress = replyToAddress,
+                threadHeaders = threadHeaders,
             ),
         )
         return "<mock-${System.nanoTime()}@blueshell.test>"
@@ -68,5 +70,6 @@ class InMemoryEmailClient : EmailTransportClient {
         val senderName: String,
         val senderAddress: String,
         val replyToAddress: String,
+        val threadHeaders: Map<String, String> = emptyMap(),
     )
 }

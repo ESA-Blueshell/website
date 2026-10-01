@@ -33,7 +33,15 @@ interface InboxMessageRepository : JpaRepository<InboxMessage, Long> {
     fun countByAutomaticTrue(): Long
 
     fun findFirstByStateAndAutomaticFalseOrderByReceivedAtAsc(state: InboxState): InboxMessage?
+
+    /** What one address sent, newest first. */
+    fun findTop20ByFromAddressOrderByReceivedAtDesc(fromAddress: String): List<InboxMessage>
 }
 
 @Repository
 interface InboxCursorRepository : JpaRepository<InboxCursor, String>
+
+@Repository
+interface InboxReplyRepository : JpaRepository<InboxReply, Long> {
+    fun findByInboxMessageIdInOrderByWrittenAtAsc(inboxMessageIds: Collection<Long>): List<InboxReply>
+}

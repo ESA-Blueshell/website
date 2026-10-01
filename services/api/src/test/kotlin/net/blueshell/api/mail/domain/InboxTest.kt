@@ -148,12 +148,12 @@ class InboxTest {
         whenever(messages.countByStateAndAutomaticFalse(InboxState.HANDLED)).thenReturn(42)
         whenever(messages.countByAutomaticTrue()).thenReturn(24)
 
-        val entry = Inbox(messages, sent, users).page(" lars ", page).content.single()
+        val entry = Inbox(messages, mock(), sent, users).page(" lars ", page).content.single()
 
         assertThat(entry.senderName).isEqualTo("Lars Mulder")
         assertThat(entry.handledByName).isEqualTo("Alice Board")
         assertThat(entry.answers).isEqualTo(AnsweredEmail(9, "email.contribution-reminder", Instant.EPOCH))
-        assertThat(Inbox(messages, sent, users).counts()).isEqualTo(InboxCounts(3, null, 142, 24))
+        assertThat(Inbox(messages, mock(), sent, users).counts()).isEqualTo(InboxCounts(3, null, 142, 24))
     }
 
     @Test

@@ -23,14 +23,14 @@ class EmailSenderServiceTest {
         val queued = Email(trackingToken = "tok")
         whenever(templates.createEmail("a@b.nl", "Ann", "Hi", "Body")).thenReturn("<html><body>Hi</body></html>")
         whenever(records.forSend(content, "email.test", 7)).thenReturn(queued)
-        whenever(transport.send(any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@b.nl>")
+        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@b.nl>")
 
         EmailSenderService(templates, transport, records, "https://site", "https://api", "Blueshell", "no-reply@b.nl", "board@b.nl")
             .send(content, "email.test", 7)
 
         verify(
             transport,
-        ).send(eq("a@b.nl"), eq("Ann"), eq("Hi"), argThat { contains("https://api/track/email/open/tok") }, any(), any(), any())
+        ).send(eq("a@b.nl"), eq("Ann"), eq("Hi"), argThat { contains("https://api/track/email/open/tok") }, any(), any(), any(), eq(emptyMap()))
         verify(records).markSent(queued, "<m@b.nl>")
     }
 }

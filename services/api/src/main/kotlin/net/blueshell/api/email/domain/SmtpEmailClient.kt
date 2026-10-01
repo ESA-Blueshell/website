@@ -44,6 +44,7 @@ class SmtpEmailClient(
         senderName: String,
         senderAddress: String,
         replyToAddress: String,
+        threadHeaders: Map<String, String>,
     ): String {
         val messageId = generateMessageId(senderAddress)
         val mime = mailSender.createMimeMessage()
@@ -61,6 +62,7 @@ class SmtpEmailClient(
 
         // Re-assert — MimeMessageHelper's setters can rewrite headers.
         mime.setHeader("Message-ID", messageId)
+        threadHeaders.forEach(mime::setHeader)
 
         (mailSender as? JavaMailSenderImpl)?.password = password.current()
         mailSender.send(mime)

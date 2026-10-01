@@ -1,6 +1,9 @@
 package net.blueshell.api.email.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import net.blueshell.api.email.api.EmailPreviewRenderer
+import net.blueshell.api.email.api.SiteMarkdownEmails
 import net.blueshell.api.email.domain.EmailQuery
 import net.blueshell.api.email.domain.EmailService
 import net.blueshell.api.email.domain.SentEmailPreviewService
@@ -8,6 +11,7 @@ import net.blueshell.api.email.persistence.Email
 import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.api.JobExecutor
 import net.blueshell.api.security.BoardOnly
+import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.job.JobQueue
@@ -22,6 +26,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
@@ -35,6 +40,8 @@ class EmailManagementController(
     private val jobExecutionService: JobExecutionService,
     private val jobExecutor: JobExecutor,
     private val jobs: JobQueue,
+    private val siteMarkdown: SiteMarkdownEmails,
+    private val renderer: EmailPreviewRenderer,
 ) {
     @GetMapping
     @BoardOnly
@@ -94,6 +101,22 @@ class EmailManagementController(
             recipientEmail = preview.recipientEmail,
             recipientName = preview.recipientName,
         )
+    }
+
+    /** A message from the site's editor as the email it becomes, rendered the way the send renders it. Sends nothing. */
+    @PostMapping("/render")
+    @BoardOnly
+    fun render(
+        @Valid @RequestBody request: RenderEmailRequest,
+    ): RenderedEmailDTO {
+        val content =
+            EmailContent(
+                recipientEmail = "",
+                recipientName = request.recipientName,
+                subject = request.subject,
+                markdownContent = siteMarkdown.forEmail(request.message),
+            )
+        return renderer.render(content).let { RenderedEmailDTO(it.subject, it.html) }
     }
 
     @PostMapping("/{id}/retry")

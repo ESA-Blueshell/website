@@ -19,7 +19,7 @@ import java.time.Instant
 class EmailResendTest {
     private val emails: EmailService = mock()
     private val jobs: JobQueue = mock()
-    private val controller = EmailManagementController(emails, mock(), mock(), mock(), jobs)
+    private val controller = EmailManagementController(emails, mock(), mock(), mock(), jobs, mock(), mock())
 
     private fun queued(id: Long?) =
         object : QueuedJob {

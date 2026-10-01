@@ -2364,6 +2364,20 @@ export type RenameExternalTargetRequest = {
     name: string;
 };
 
+export type RenderEmailRequest = {
+    /**
+     * The message as the site's editor writes it, in Discord's markdown
+     */
+    message: string;
+    recipientName: string;
+    subject: string;
+};
+
+export type RenderedEmail = {
+    html: string;
+    subject: string;
+};
+
 export enum Role {
     ANONYMOUS = 'ANONYMOUS',
     VEGAN = 'VEGAN',
@@ -9648,6 +9662,47 @@ export type List1Responses = {
 };
 
 export type List1Response = List1Responses[keyof List1Responses];
+
+export type RenderData = {
+    body: RenderEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/management/emails/render';
+};
+
+export type RenderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RenderError = RenderErrors[keyof RenderErrors];
+
+export type RenderResponses = {
+    /**
+     * OK
+     */
+    200: RenderedEmail;
+};
+
+export type RenderResponse = RenderResponses[keyof RenderResponses];
 
 export type GetStats1Data = {
     body?: never;

@@ -63,5 +63,7 @@ class FolderTidyIT : UserTestSupport() {
             .perform(get("/management/cohort-targets/{system}/tidy", "BREVO").with(signedIn(admin)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.moves[*].externalId").value(not(hasItem(listId))))
+            .andExpect(jsonPath("$.lastApplied.appliedByName").value(admin.fullName))
+            .andExpect(jsonPath("$.lastApplied.moved").value(1))
     }
 }

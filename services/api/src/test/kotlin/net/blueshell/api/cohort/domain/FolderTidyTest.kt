@@ -1,29 +1,41 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.cohort.persistence.AppliedTidy
+import net.blueshell.api.cohort.persistence.AppliedTidyRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetRepository
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.shared.tracking.ActorProvider
 import net.blueshell.api.testsupport.Entities
+import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.time.Instant
 
 class FolderTidyTest {
     private val strategy = mock<TargetStrategy>()
     private val targets = mock<TargetRepository>()
     private val cohorts = mock<CohortRepository>()
+    private val applied = mock<AppliedTidyRepository>()
+    private val users = mock<UserService>()
+    private val actors: ActorProvider = mock { on { currentOrSystem() } doReturn Actor.user(6L, Role.BOARD) }
     private val tidy: FolderTidy
 
     init {
         whenever(strategy.system).thenReturn(TargetSystem.BREVO)
         whenever(strategy.descriptor).thenReturn(TargetDescriptor(TargetSystem.BREVO, TargetKind.LIST))
-        tidy = FolderTidy(TargetStrategies(listOf(strategy)), targets, cohorts)
+        tidy = FolderTidy(TargetStrategies(listOf(strategy)), targets, cohorts, applied, actors, users)
     }
 
     private fun list(
@@ -93,6 +105,28 @@ class FolderTidyTest {
                 .single()
                 .folderLabel,
         ).isEqualTo("Contribution paid")
+    }
+
+    @Test
+    fun `applying records who applied it and what moved, and the next preview says so`() {
+        given(list("100", "Paid 2026", "Periods"))
+        val paid = list("100", "Paid 2026", "Periods")
+        whenever(strategy.resolve("100")).thenReturn(paid)
+        whenever(strategy.move(paid, "Contribution paid")).thenReturn(paid.copy(folderLabel = "Contribution paid"))
+
+        tidy.apply(TargetSystem.BREVO, listOf("100"))
+
+        val kept = argumentCaptor<AppliedTidy>()
+        verify(applied).save(kept.capture())
+        assertThat(listOf(kept.firstValue.system, kept.firstValue.moved, kept.firstValue.failed, kept.firstValue.appliedBy))
+            .containsExactly("BREVO", 1, 0, 6L)
+        whenever(applied.findFirstBySystemOrderByAppliedAtDesc("BREVO")).thenReturn(kept.firstValue)
+        whenever(users.findAllByIds(setOf(6L))).thenReturn(listOf(Entities.user(id = 6, firstName = "Alice", lastName = "Board")))
+        assertThat(tidy.preview(TargetSystem.BREVO).lastApplied)
+            .isEqualTo(LastTidy(kept.firstValue.appliedAt, "Alice Board", 1, 0))
+        whenever(applied.findFirstBySystemOrderByAppliedAtDesc("BREVO")).thenReturn(AppliedTidy("BREVO", 0, 1, null, Instant.EPOCH))
+        assertThat(tidy.preview(TargetSystem.BREVO).lastApplied?.appliedByName).isNull()
+        assertThat(AppliedTidy::class.java.getDeclaredConstructor().newInstance()).isNotNull
     }
 
     @Test

@@ -1292,11 +1292,38 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "listDiscordEmojis", [{id: "657733730491826186", name: "POGGERS", animated: false}])
     }
     if (method === "GET" && path === "/discord/starboard") {
-      return answer(route, "readStarboard", [{
-        id: "1552233582498676818", authorName: "The Old Man", authorNickname: "Joris", avatar: null,
-        text: "Soon to be released **events page** redesigns:", image: null, stars: 12, channel: "general",
-        href: "https://discord.com/channels/324285132133629963/611/1552233582498676818", postedAt: "2026-09-23T08:22:05Z",
-      }])
+      // Most stars first, as the api orders them; the lengths vary so the feed shows whole messages.
+      const starredAt = (id: string) => `https://discord.com/channels/324285132133629963/611/${id}`
+      return answer(route, "readStarboard", [
+        {
+          id: "1552240000000000001", authorName: "cawalive", authorNickname: "Cas", avatar: null,
+          text: "Reminder for tonight: the **Rocket League** in-house starts at 20:00 in the Gaming Room. "
+            + "Bring your own controller if you have one, we have four spare.\n\n"
+            + "Sign-ups close at 18:00, so if you have not signed up yet, now is the time.",
+          image: null, stars: 21, channel: "events-info", href: starredAt("1552240000000000001"), postedAt: "2026-09-19T15:40:00Z",
+        },
+        {
+          id: "1552233582498676818", authorName: "The Old Man", authorNickname: "Joris", avatar: null,
+          text: "Soon to be released **events page** redesigns:", image: null, stars: 12, channel: "general",
+          href: starredAt("1552233582498676818"), postedAt: "2026-09-23T08:22:05Z",
+        },
+        {
+          id: "1552240000000000002", authorName: "mirte", authorNickname: null, avatar: null,
+          text: "who put the pineapple pizza on the LAN party order form", image: null, stars: 9, channel: "general",
+          href: starredAt("1552240000000000002"), postedAt: "2026-09-26T21:12:00Z",
+        },
+        {
+          id: "1552240000000000003", authorName: "Viktor", authorNickname: "Vik", avatar: null,
+          text: "GG to everyone who came to the Smash tournament yesterday. Final bracket:\n"
+            + "1. Emma\n2. Viktor\n3. Cas\n\nSee you all at the next one!",
+          image: null, stars: 7, channel: "smash-bros", href: starredAt("1552240000000000003"), postedAt: "2026-09-14T10:05:00Z",
+        },
+        {
+          id: "1552240000000000004", authorName: "Emma", authorNickname: null, avatar: null,
+          text: "The board just approved the new streaming setup for the Gaming Room.", image: null, stars: 4, channel: "general",
+          href: starredAt("1552240000000000004"), postedAt: "2026-09-28T12:30:00Z",
+        },
+      ])
     }
     // No bot in the mocked api: the Discord band falls back to the public widget, mocked below.
     if (method === "GET" && (path === "/discord/live" || path === "/discord/live/mine")) {

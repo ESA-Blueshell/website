@@ -183,6 +183,9 @@ discord:
   # The channel the starboard bot reposts starred messages to, by name.
   starboard:
     channel: ${DISCORD_STARBOARD_CHANNEL:starboard}
+  # The home page links its starboard to the same channel.
+  doors:
+    starboard: ${discord.starboard.channel}
 
 google:
   calendar:

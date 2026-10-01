@@ -63,20 +63,12 @@
           :modal="false"
         >
           <!--
-            The pair is the trigger, so the panel hangs off the whole entry: anchored to the
-            caret alone it starts halfway along the label and runs out past the right edge of
-            the thing it belongs to, which is the behaviour this bar was rebuilt to stop.
-
-            The label inside it stays a link of its own, so a press or an Enter on the label
-            follows the section's page while the caret and the keyboard open the pages under it.
+            The label is a link and the caret beside it is the menu's button: a link inside a
+            button is a control inside a control. The panel is pinned to the pair in CSS, and the
+            pair holds it, so the pointer can travel from the entry onto the panel.
           -->
-          <dropdown-menu-trigger
-            :aria-label="`Pages under ${section.label}`"
+          <div
             class="site-bar__section"
-            :data-testid="`nav-${section.label.toLowerCase()}-more`"
-            @click="openByHand"
-            @keydown.enter="openByHand"
-            @keydown.space="openByHand"
             @mouseenter="openByPointer(section.to)"
             @mouseleave="closeSection(section.to)"
           >
@@ -86,15 +78,23 @@
               :data-testid="`nav-${section.label.toLowerCase()}`"
               :to="section.to"
               @click="closeSection(section.to)"
-              @keydown.enter.stop
             >
               {{ section.label }}
+            </router-link>
+            <dropdown-menu-trigger
+              :aria-label="`Pages under ${section.label}`"
+              class="bar-button bar-button--caret"
+              :data-testid="`nav-${section.label.toLowerCase()}-more`"
+              @click="openByHand"
+              @keydown.enter="openByHand"
+              @keydown.space="openByHand"
+            >
               <nav-mark
                 class="bar-button__caret"
                 mark="caret"
                 :size="14"
               />
-            </router-link>
+            </dropdown-menu-trigger>
 
             <dropdown-menu-content
               align="start"
@@ -116,7 +116,7 @@
                 </router-link>
               </dropdown-menu-item>
             </dropdown-menu-content>
-          </dropdown-menu-trigger>
+          </div>
         </dropdown-menu-root>
       </template>
     </nav>
@@ -526,15 +526,18 @@ const account = computed(() => accountFor(reader.value))
 .site-bar__section {
   position: relative;
   display: flex;
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
 }
 
-/* Reka's panel is sized from the trigger, which is the whole entry, so it needs no width here. */
-.site-bar__section .bar-button {
-  cursor: pointer;
+/* The pair reads as one entry: both halves light together, and the rule runs under both. */
+.site-bar__section:hover .bar-button,
+.site-bar__section:has([data-state="open"]) .bar-button {
+  color: var(--color-chalk);
+  box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--color-chalk) 32%, transparent);
+}
+
+.site-bar__section:has(.bar-button--here) .bar-button {
+  color: var(--color-chalk);
+  box-shadow: inset 0 -2px 0 var(--color-eyebrow);
 }
 
 .site-bar__end {
@@ -577,7 +580,7 @@ const account = computed(() => accountFor(reader.value))
   transition: rotate v-bind(caretTravel) var(--ease-out-quint);
 }
 
-.bar-button[data-state="open"] .bar-button__caret {
+.bar-button--caret[data-state="open"] .bar-button__caret {
   rotate: 180deg;
 }
 

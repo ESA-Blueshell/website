@@ -5849,7 +5849,7 @@ components:
       - version
       type: object
     StarboardEntryResponse:
-      description: A message the Discord server starred, from a channel everybody there can see
+      description: A message the Discord server starred
       properties:
         authorName:
           description: The author's name across Discord
@@ -5865,8 +5865,10 @@ components:
           - string
           - 'null'
         channel:
-          description: The name of the channel the message was written in
-          type: string
+          description: The name of the channel the message was written in; absent where that channel is members-only
+          type:
+          - string
+          - 'null'
         href:
           description: The address that opens the message in Discord
           type: string
@@ -5891,7 +5893,6 @@ components:
           - 'null'
       required:
       - authorName
-      - channel
       - href
       - id
       - postedAt
@@ -13195,6 +13196,7 @@ paths:
           - welcome
           - board
           - suggestions
+          - starboard
           type: string
       responses:
         '302':
@@ -13615,6 +13617,7 @@ paths:
           - welcome
           - board
           - suggestions
+          - starboard
           type: string
       responses:
         '302':
@@ -14465,7 +14468,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up, or Discord has not answered yet
-      summary: Recent messages the Discord server starred, which the home page shows
+      summary: What the Discord server starred lately, most stars first, for the home page
       tags:
       - Discord
   /esports/games/{game}:

@@ -2872,7 +2872,7 @@ export type SponsorResponse = {
 };
 
 /**
- * A message the Discord server starred, from a channel everybody there can see
+ * A message the Discord server starred
  */
 export type StarboardEntryResponse = {
     /**
@@ -2888,9 +2888,9 @@ export type StarboardEntryResponse = {
      */
     avatar?: string | null;
     /**
-     * The name of the channel the message was written in
+     * The name of the channel the message was written in; absent where that channel is members-only
      */
-    channel: string;
+    channel?: string | null;
     /**
      * The address that opens the message in Discord
      */
@@ -5785,7 +5785,7 @@ export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
 export type OpenDiscordChannelData = {
     body?: never;
     path: {
-        door: 'welcome' | 'board' | 'suggestions';
+        door: 'welcome' | 'board' | 'suggestions' | 'starboard';
     };
     query?: never;
     url: '/discord/channel/{door}';
@@ -5956,7 +5956,7 @@ export type ListGameChannelsResponse = ListGameChannelsResponses[keyof ListGameC
 export type OpenDiscordInviteData = {
     body?: never;
     path: {
-        door: 'welcome' | 'board' | 'suggestions';
+        door: 'welcome' | 'board' | 'suggestions' | 'starboard';
     };
     query?: never;
     url: '/discord/invite/{door}';

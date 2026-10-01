@@ -573,6 +573,19 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/committees/CommitteeEdit.vue"),
         meta: {title: "Edit committee", portal: "/management/committees"},
       },
+      {path: "boards", name: "managementBoards", component: () => import("@/pages/management/BoardList.vue"), meta: {title: "Boards"}},
+      {
+        path: "boards/new",
+        name: "managementBoardNew",
+        component: () => import("@/pages/board/BoardEdit.vue"),
+        meta: {title: "Add a board", portal: "/management/boards"},
+      },
+      {
+        path: "boards/:number(\\d+)",
+        name: "managementBoard",
+        component: () => import("@/pages/board/BoardEdit.vue"),
+        meta: {title: "Edit board", portal: "/management/boards"},
+      },
       {
         path: "platforms/discord",
         name: "discord",

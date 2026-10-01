@@ -8,21 +8,21 @@ import {
   applyInboundReconcile,
   archiveExternalTarget,
   createExternalTarget,
+  createMissingTargets,
   createTarget,
   createTargetFolder,
   deleteExternalTarget,
   enforceTarget,
   evaluateUser,
-  enqueue,
   findCohortById,
   findCohorts,
+  findTargetOverview,
   listTargetOptions,
   linkExistingTarget,
   linkDrift,
   listCohortTargetFolders,
   listCohortTargetSystems,
   moveCohortTarget,
-  moveCohortTargets,
   previewFolderTidy,
   previewInboundReconcile,
   reconcileTarget,
@@ -42,11 +42,14 @@ import type {
   ExternalTarget as ApiExternalTarget,
   InboundReconcileApplyResponse as ApiInboundReconcileApplyResponse,
   InboundReconcilePreview as ApiInboundReconcilePreview,
+  ListedTarget,
+  MissingTarget,
+  TargetOverviewResult,
   TargetDescriptor as ApiTargetDescriptor,
 } from "@/services/api"
 import {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem} from "@/services/api"
-import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {Refused} from "@/types/api"
+import {readOr} from "@/utils/answers"
 import type {Saved} from "@/utils/refusals"
 import {accepted, refusable} from "@/domains/cohorts/refusals"
 
@@ -354,43 +357,6 @@ export type BulkTargetMoveResult = {
   failed: FailedTargetMove[]
 }
 
-/**
- * What came back from a bulk move: either the api took the selection, or it refused the whole
- * of it. The two are different enough to the operator — one lists what happened, the other why
- * nothing did — that they are separate outcomes rather than a result with an error beside it.
- */
-export type BulkTargetMoveOutcome =
-  | {status: "moved"; result: BulkTargetMoveResult}
-  | {status: "refused"; rejection: BulkRejection}
-
-/**
- * File several targets under one folder.
- *
- * A `moved` outcome may still name failures: the selection was valid, but past that point the
- * moves are separate calls to a system that cannot roll them back.
- */
-export async function moveTargetsToFolder(
-  system: TargetSystem,
-  externalIds: string[],
-  folder: string,
-): Promise<BulkTargetMoveOutcome> {
-  const res = await moveCohortTargets({path: {system}, body: {externalIds, folder}})
-  const refused = parseBulkRejection(res)
-  if (refused) return {status: "refused", rejection: refused}
-  if (res.error || !res.data) throw new Error("The move could not be sent.")
-  return {
-    status: "moved",
-    result: {
-      moved: (res.data.moved ?? []).map(toExternalTarget),
-      failed: (res.data.failed ?? []).map((row) => ({
-        externalId: row.externalId,
-        label: row.label,
-        message: row.message,
-      })),
-    },
-  }
-}
-
 function toTargetDescriptor(raw: ApiTargetDescriptor): TargetDescriptor {
   return {
     system: raw.system,
@@ -610,20 +576,14 @@ export async function fetchCohortTargets(): Promise<TargetOption[]> {
     })
 }
 
-/** A job one of the cohort pages asks for by hand, and the id it was queued under. */
-export type CohortJobQueued = {ok: true; jobId: number | null} | {ok: false}
+export type {ListedTarget, MissingTarget}
+export type TargetOverview = TargetOverviewResult
 
-/**
- * Queues one of the cohort engine's jobs.
- *
- * Answers rather than throwing: the pages that press these buttons report a refusal in their own
- * words beside the button, which a thrown error would replace with a network notice.
- */
-export async function queueCohortJob(
-  jobType: string,
-  payload: Record<string, unknown> = {},
-): Promise<CohortJobQueued> {
-  const res = await enqueue({body: {jobType, payload}})
-  if (res.status !== 200 || !res.data) return {ok: false}
-  return {ok: true, jobId: res.data.id ?? null}
+/** Every list on the system with the cohort it follows and its drift, and the missing ones; nothing where it could not be read. */
+export const readTargetOverview = (system: TargetSystem): Promise<TargetOverview | null> => readOr(findTargetOverview({path: {system}}), null)
+
+/** Queues a create for each missing list named, or every one when none are; answers how many. */
+export async function createMissingLists(system: TargetSystem, targetIds: number[]): Promise<Saved<number> | Refused> {
+  const answer = await refusable(createMissingTargets({path: {system}, body: {targetIds}}), "The lists could not be created.")
+  return answer.ok ? {ok: true, saved: answer.saved.queued} : answer
 }

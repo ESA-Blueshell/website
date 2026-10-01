@@ -7,7 +7,6 @@
  * because the list of names is the promise.
  */
 export {
-  categoryLabel,
   driftLabel,
   earlierDrift,
   isMember,
@@ -18,8 +17,7 @@ export {
   syncLabel,
   systemLabel,
 } from "./reading"
-export {COHORT_TYPE_LABELS, COHORT_TYPE_ORDER, cohortTypeLabel} from "./cohortTypeLabels"
-export {countLabel, nounFor} from "./cohortSummaries"
+export {COHORT_TYPE_LABELS, cohortTypeLabel} from "./cohortTypeLabels"
 export type {
   CohortMember,
   TargetOption,
@@ -35,10 +33,20 @@ export type {
 } from "./adapters/cohorts"
 export {TargetKind, CohortCategory, CohortType, DriftResolutionAction, TargetSystem} from "./adapters/cohorts"
 export {fetchCohortTargets} from "./adapters/cohorts"
+export {
+  archiveTarget,
+  createFolderInSystem,
+  createListInSystem,
+  createMissingLists,
+  fetchTargetFolders,
+  readTargetOverview,
+  type ListedTarget,
+  type MissingTarget,
+  type TargetOverview,
+} from "./adapters/cohorts"
+export {ARCHIVE_FOLDER, driftOf, followsOf, groupsOf, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
 export {fetchCohort} from "./adapters/cohorts"
 export {fetchCohorts} from "./adapters/cohorts"
 export {linkDriftPeople, proposeDriftLinks, pushDriftPeople, removeDriftPeople, setTargetEnforced} from "./adapters/cohorts"
-export {queueCohortJob} from "./adapters/cohorts"
 export {evaluateMember, triggerReconcile} from "./adapters/cohorts"
 export {useDriftResolution} from "./composables/useDriftResolution"
-export {useTargetOverview} from "./composables/useTargetOverview"

@@ -5,7 +5,7 @@
  * Pure functions over domain records rather than computeds over a page's state, so the rules
  * are worth a test and the two cohort pages cannot title the same category differently.
  */
-import {CohortCategory, JobTrigger, type CohortMember, type ReconcileRun, type TargetMapping} from "./adapters/cohorts"
+import {JobTrigger, type CohortMember, type ReconcileRun, type TargetMapping} from "./adapters/cohorts"
 
 /**
  * What each system is called. Keyed by the string rather than by the enum: the ledger carries
@@ -18,14 +18,6 @@ const SYSTEM_LABELS: Record<string, string> = {
 }
 
 export const systemLabel = (system: string): string => SYSTEM_LABELS[system] ?? system
-
-const CATEGORY_LABELS: Record<CohortCategory, string> = {
-  [CohortCategory.COMMITTEES]: "Committees",
-  [CohortCategory.PERIODS]: "Periods",
-  [CohortCategory.MEMBERS]: "Members",
-}
-
-export const categoryLabel = (category: CohortCategory): string => CATEGORY_LABELS[category]
 
 /** The system a row answers to, or the target in the abstract where it belongs to none. */
 export const memberSystemLabel = (member: CohortMember): string =>

@@ -1,7 +1,6 @@
 import {describe, expect, it} from "vitest"
-import {TargetKind, CohortCategory, JobTrigger, TargetSystem, type CohortMember, type ReconcileRun, type TargetMapping} from "@/domains/cohorts/adapters/cohorts"
+import {TargetKind, JobTrigger, TargetSystem, type CohortMember, type ReconcileRun, type TargetMapping} from "@/domains/cohorts/adapters/cohorts"
 import {
-  categoryLabel,
   driftLabel,
   earlierDrift,
   isMember,
@@ -70,16 +69,10 @@ describe("what the sync column says", () => {
   })
 })
 
-describe("what a system and a category are called", () => {
+describe("what a system is called", () => {
   it("names the systems we speak to, and leaves an unknown one as its own id", () => {
     expect(systemLabel("GOOGLE_WORKSPACE")).toBe("Google Workspace")
     expect(systemLabel("MASTODON")).toBe("MASTODON")
-  })
-
-  it("titles each category the same way on every page", () => {
-    expect(categoryLabel(CohortCategory.COMMITTEES)).toBe("Committees")
-    expect(categoryLabel(CohortCategory.PERIODS)).toBe("Periods")
-    expect(categoryLabel(CohortCategory.MEMBERS)).toBe("Members")
   })
 })
 

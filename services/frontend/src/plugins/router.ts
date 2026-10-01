@@ -545,28 +545,19 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: "platforms/brevo",
-        name: "cohortDashboard",
-        component: () => import("@/pages/management/CohortDashboard.vue"),
+        name: "brevo",
+        component: () => import("@/pages/management/BrevoPage.vue"),
         meta: {title: "Brevo"},
       },
-      {
-        path: "platforms/brevo/lists",
-        name: "cohortTargets",
-        component: () => import("@/pages/management/CohortTargets.vue"),
-        meta: {title: "Brevo lists"},
-      },
+      // Brevo's lists and cohort categories were pages of their own; every list is on Brevo now.
+      {path: "platforms/brevo/lists", redirect: "/management/platforms/brevo"},
       {
         path: "platforms/brevo/cohort/:id",
         name: "cohortDetail",
         component: () => import("@/pages/management/CohortDetail.vue"),
         meta: {title: "Cohort"},
       },
-      {
-        path: "platforms/brevo/:category",
-        name: "cohortCategory",
-        component: () => import("@/pages/management/CohortCategory.vue"),
-        meta: {title: "Cohorts"},
-      },
+      {path: "platforms/brevo/:category(committees|periods|members)", redirect: "/management/platforms/brevo"},
     ],
   },
   // The addresses management had before the portal; bookmarks and old emails keep working.
@@ -575,9 +566,9 @@ const routes: RouteRecordRaw[] = [
   {path: "/recovery/manage", redirect: "/management/recovery"},
   {path: "/management/emails", redirect: "/management/mail/sent"},
   {path: "/management/cohorts", redirect: "/management/platforms/brevo"},
-  {path: "/management/cohorts/targets", redirect: "/management/platforms/brevo/lists"},
+  {path: "/management/cohorts/targets", redirect: "/management/platforms/brevo"},
   {path: "/management/cohort/:id", redirect: (to) => `/management/platforms/brevo/cohort/${String(to.params.id)}`},
-  {path: "/management/cohorts/:category", redirect: (to) => `/management/platforms/brevo/${String(to.params.category)}`},
+  {path: "/management/cohorts/:category", redirect: "/management/platforms/brevo"},
   {
     // The esports manager is gone: seasons, teams and line-ups are edited on the pages that
     // show them. A bookmark to it lands on those pages rather than on nothing.

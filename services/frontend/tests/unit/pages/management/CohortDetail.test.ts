@@ -295,13 +295,13 @@ describe("CohortDetail drift", () => {
     expect(picker.props("targetId")).toBeUndefined()
   })
 
-  it("goes back to the cohort's category", async () => {
+  it("goes back to Brevo", async () => {
     const wrapper = await open()
     const push = vi.spyOn(router, "push").mockResolvedValue(undefined)
 
     await press(wrapper, "cohort-detail-back")
 
-    expect(push).toHaveBeenCalledWith({name: "cohortCategory", params: {category: "periods"}})
+    expect(push).toHaveBeenCalledWith({name: "brevo"})
     push.mockRestore()
   })
 

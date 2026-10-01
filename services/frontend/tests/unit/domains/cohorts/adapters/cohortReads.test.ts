@@ -3,16 +3,13 @@ import {
   fetchCohortTargets,
   fetchCohort,
   fetchCohorts,
-  queueCohortJob,
 } from "@/domains/cohorts/adapters/cohorts"
-import {enqueue, findCohortById, findCohorts, listTargetOptions} from "@/services/api"
-import {aJob} from "../../../helpers/apiFixtures"
-import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
+import {findCohortById, findCohorts, listTargetOptions} from "@/services/api"
+import {answer, emptyAnswer} from "../../../helpers/sdkAnswers"
 import {TargetKind, CohortCategory, CohortType, TargetSystem} from "@/services/api"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
-  enqueue: vi.fn(),
   findCohortById: vi.fn(),
   findCohorts: vi.fn(),
   listTargetOptions: vi.fn(),
@@ -176,41 +173,5 @@ describe("the cohorts a picker offers", () => {
     vi.mocked(listTargetOptions).mockResolvedValue(emptyAnswer(listTargetOptions))
 
     await expect(fetchCohortTargets()).resolves.toEqual([])
-  })
-})
-
-describe("a cohort job answers rather than throwing", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it("carries the id it was queued under", async () => {
-    vi.mocked(enqueue).mockResolvedValue(answer(enqueue, aJob({id: 42})))
-
-    await expect(queueCohortJob("cohort.evaluate-user", {userId: 3})).resolves.toEqual({
-      ok: true,
-      jobId: 42,
-    })
-    expect(enqueue).toHaveBeenCalledWith({
-      body: {jobType: "cohort.evaluate-user", payload: {userId: 3}},
-    })
-  })
-
-  it("queues with nothing where the job takes no payload", async () => {
-    vi.mocked(enqueue).mockResolvedValue(answer(enqueue, aJob({id: null})))
-
-    await expect(queueCohortJob("cohort.reconcile-all-users")).resolves.toEqual({
-      ok: true,
-      jobId: null,
-    })
-    expect(enqueue).toHaveBeenCalledWith({
-      body: {jobType: "cohort.reconcile-all-users", payload: {}},
-    })
-  })
-
-  it("a refusal is an answer, not a thrown error", async () => {
-    vi.mocked(enqueue).mockResolvedValue(refusal(enqueue, {status: 403}, 403))
-
-    await expect(queueCohortJob("cohort.evaluate-user", {userId: 3})).resolves.toEqual({ok: false})
   })
 })

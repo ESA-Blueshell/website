@@ -44,7 +44,10 @@ class TargetOverviewIT : UserTestSupport() {
         val followed = cohorts.save(Cohort(type = CohortType.PERIOD_MEMBERS, label = "Members $stamp"))
         targets.save(Target(TargetSystem.BREVO.name, TargetKind.LIST, "Followed $stamp", cohortId = followed.id, externalId = listId))
         val unmade = cohorts.save(Cohort(type = CohortType.PERIOD_PAYERS, label = "Paid $stamp"))
-        val target = targets.save(Target(TargetSystem.BREVO.name, TargetKind.LIST, "Paid $stamp", "Contribution paid", cohortId = unmade.id))
+        val target =
+            targets.save(
+                Target(TargetSystem.BREVO.name, TargetKind.LIST, "Paid $stamp", "Contribution paid", cohortId = unmade.id),
+            )
 
         mvc
             .perform(get("/management/cohort-targets/{system}/overview", "BREVO").with(signedIn(board)))

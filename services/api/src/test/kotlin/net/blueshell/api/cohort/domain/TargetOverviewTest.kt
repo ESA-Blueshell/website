@@ -59,8 +59,18 @@ class TargetOverviewTest {
 
         assertThat(read.lists).containsExactly(
             ListedTarget(
-                "7", "Contribution paid 2025-2026", "Contribution paid", 188, 10, 1, "Paid 2025-2026", CohortType.PERIOD_PAYERS,
-                1, 2, Instant.parse("2026-10-01T03:00:00Z"), true,
+                "7",
+                "Contribution paid 2025-2026",
+                "Contribution paid",
+                188,
+                10,
+                1,
+                "Paid 2025-2026",
+                CohortType.PERIOD_PAYERS,
+                1,
+                2,
+                Instant.parse("2026-10-01T03:00:00Z"),
+                true,
             ),
             ListedTarget("8", "Old newsletter test", null, 4, null, null, null, null, null, null, null, false),
         )
@@ -75,10 +85,21 @@ class TargetOverviewTest {
         given()
         unmade.targetClaimedAt = Instant.EPOCH
 
-        assertThat(overview.of(TargetSystem.BREVO).missing.single().creating).isTrue()
+        assertThat(
+            overview
+                .of(TargetSystem.BREVO)
+                .missing
+                .single()
+                .creating,
+        ).isTrue()
         assertThat(overview.createMissing(TargetSystem.BREVO, listOf(99))).isZero()
         assertThat(overview.createMissing(TargetSystem.BREVO, emptyList())).isEqualTo(1)
-        verify(jobs).runAsync(eq(CohortJobs.CreateCohortTarget), eq(CohortJobs.CreateCohortTargetPayload(11)), eq(JobTrigger.SITE_ACTION), eq(null))
-        verify(jobs, never()).runAsync(eq(CohortJobs.CreateCohortTarget), eq(CohortJobs.CreateCohortTargetPayload(12)), eq(JobTrigger.SITE_ACTION), eq(null))
+        verify(
+            jobs,
+        ).runAsync(eq(CohortJobs.CreateCohortTarget), eq(CohortJobs.CreateCohortTargetPayload(11)), eq(JobTrigger.SITE_ACTION), eq(null))
+        verify(
+            jobs,
+            never(),
+        ).runAsync(eq(CohortJobs.CreateCohortTarget), eq(CohortJobs.CreateCohortTargetPayload(12)), eq(JobTrigger.SITE_ACTION), eq(null))
     }
 }

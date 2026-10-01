@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.15.0](https://github.com/ESA-Blueshell/website/compare/v1.14.0...v1.15.0) (2026-10-01)
+
+
+### Features
+
+* the home page starboard shows every repost, naming only public channels ([#2065](https://github.com/ESA-Blueshell/website/issues/2065)) ([4665863](https://github.com/ESA-Blueshell/website/commit/4665863c16c7f3e17a2cdd686e44324ebc13268d)), closes [#2064](https://github.com/ESA-Blueshell/website/issues/2064)
+
+
+### Bug Fixes
+
+* **frontend:** a site bar section's link sits beside its menu button, not inside it ([#2046](https://github.com/ESA-Blueshell/website/issues/2046)) ([dc46857](https://github.com/ESA-Blueshell/website/commit/dc46857b8a7eecb2b02619a3ab8a2281149773b3)), closes [#2039](https://github.com/ESA-Blueshell/website/issues/2039)
+* **frontend:** the user manager's table fills its card again ([#2063](https://github.com/ESA-Blueshell/website/issues/2063)) ([f95a7e9](https://github.com/ESA-Blueshell/website/commit/f95a7e976bc6ea92c96c439af5c552d574e1b240))
+
 ## [1.14.0](https://github.com/ESA-Blueshell/website/compare/v1.13.0...v1.14.0) (2026-10-01)
 
 

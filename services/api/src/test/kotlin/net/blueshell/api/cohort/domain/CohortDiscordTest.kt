@@ -22,7 +22,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.server.ResponseStatusException
 import java.util.Optional
 
-class CommitteeDiscordTest {
+class CohortDiscordTest {
     private val cohorts: CohortRepository = mock()
     private val targets: TargetRepository = mock()
     private val targetIds: CohortTargetIds = mock()
@@ -30,7 +30,7 @@ class CommitteeDiscordTest {
     private val registrar: CohortRegistrar = mock()
     private val roles: DiscordRoleKeeper = mock()
     private val channels: DiscordChannelKeeper = mock()
-    private val discord = CommitteeDiscord(cohorts, targets, targetIds, targeting, registrar, roles, channels, "Committees")
+    private val discord = CohortDiscord(cohorts, targets, targetIds, targeting, registrar, roles, channels)
     private val cohort = Entities.cohort(id = 5, type = CohortType.COMMITTEE_MEMBERS, label = "Sitecie")
     private val role = Entities.target(id = 50, system = "DISCORD", cohortId = 5, externalId = "900")
     private val sitecie = KeptChannel("1", "sitecie", KeptChannelKind.TEXT, "Committees")
@@ -50,11 +50,13 @@ class CommitteeDiscordTest {
         given(linked = true)
         whenever(channels.openedTo("900")).thenReturn(listOf(sitecie))
 
-        assertThat(discord.read(7)).isEqualTo(CommitteeDiscordState(true, "900", "Sitecie", listOf(sitecie)))
+        assertThat(discord.read("COMMITTEE_MEMBERS:7")).isEqualTo(DiscordPlace(true, "900", "Sitecie", listOf(sitecie)))
 
         whenever(roles.available()).thenReturn(false)
-        assertThat(discord.read(7)).isEqualTo(CommitteeDiscordState(false, null, null, emptyList()))
-        assertThatThrownBy { discord.apply(7, CommitteeDiscordChoice(createRole = true)) }.isInstanceOf(TargetSystemUnavailable::class.java)
+        assertThat(discord.read("COMMITTEE_MEMBERS:7")).isEqualTo(DiscordPlace(false, null, null, emptyList()))
+        assertThatThrownBy {
+            discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(createRole = true), "Committees")
+        }.isInstanceOf(TargetSystemUnavailable::class.java)
     }
 
     @Test
@@ -63,7 +65,7 @@ class CommitteeDiscordTest {
         whenever(targeting.create(5, TargetSystem.DISCORD, "Sitecie", null)).thenReturn(CohortTargetRow(role, "900"))
         whenever(channels.openedTo("900")).thenReturn(emptyList())
 
-        discord.apply(7, CommitteeDiscordChoice(createRole = true, createChannel = " sitecie "))
+        discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(createRole = true, createChannel = " sitecie "), "Committees")
 
         verify(channels).createPrivate("sitecie", "Committees", "900")
     }
@@ -74,14 +76,14 @@ class CommitteeDiscordTest {
         whenever(targeting.linkExisting(5, TargetSystem.DISCORD, "901")).thenReturn(CohortTargetRow(role, "901"))
         whenever(channels.openedTo("901")).thenReturn(listOf(sitecie))
 
-        discord.apply(7, CommitteeDiscordChoice(roleId = "901", channelIds = listOf("2")))
+        discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "901", channelIds = listOf("2")), "Committees")
 
         verify(channels).open("2", "901", true)
         verify(channels).close("1", "901")
 
         given(linked = true)
         whenever(channels.openedTo("900")).thenReturn(emptyList())
-        discord.apply(7, CommitteeDiscordChoice(roleId = "902", createChannel = " "))
+        discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "902", createChannel = " "), "Committees")
         verify(targeting, never()).linkExisting(5, TargetSystem.DISCORD, "902")
         verify(channels, never()).createPrivate(any(), any(), any())
     }
@@ -89,17 +91,36 @@ class CommitteeDiscordTest {
     @Test
     fun `without a role nothing is opened, a cohort not yet registered is registered first, and a bot gone mid-call refuses`() {
         given(linked = false)
-        assertThat(discord.apply(7, CommitteeDiscordChoice(channelIds = listOf("2"))).roleId).isNull()
+        assertThat(discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(channelIds = listOf("2")), "Committees").roleId).isNull()
         verify(channels, never()).open(any(), any(), any())
 
         whenever(cohorts.findByDefinitionKey("COMMITTEE_MEMBERS:8")).thenReturn(null, cohort)
-        discord.read(8)
+        discord.read("COMMITTEE_MEMBERS:8")
         verify(registrar).register()
         whenever(cohorts.findByDefinitionKey("COMMITTEE_MEMBERS:9")).thenReturn(null)
-        assertThatThrownBy { discord.read(9) }.isInstanceOf(ResponseStatusException::class.java)
+        assertThatThrownBy { discord.read("COMMITTEE_MEMBERS:9") }.isInstanceOf(ResponseStatusException::class.java)
 
         given(linked = true)
         whenever(channels.openedTo("900")).thenThrow(DiscordUnavailable("gone"))
-        assertThatThrownBy { discord.read(7) }.isInstanceOf(TargetSystemUnavailable::class.java)
+        assertThatThrownBy { discord.read("COMMITTEE_MEMBERS:7") }.isInstanceOf(TargetSystemUnavailable::class.java)
+    }
+
+    @Test
+    fun `removes the role and the private channels it opens, and unlinks it, only where asked`() {
+        given(linked = true)
+        val category = KeptChannel("10", "Committees", KeptChannelKind.CATEGORY, null)
+        whenever(channels.openedTo("900")).thenReturn(listOf(sitecie, category))
+
+        discord.remove("COMMITTEE_MEMBERS:7")
+
+        verify(channels).delete("1")
+        verify(channels, never()).delete("10")
+        verify(roles).delete("900")
+        verify(targets).delete(role)
+
+        given(linked = false)
+        discord.remove("COMMITTEE_MEMBERS:7")
+        whenever(roles.available()).thenReturn(false)
+        assertThatThrownBy { discord.remove("COMMITTEE_MEMBERS:7") }.isInstanceOf(TargetSystemUnavailable::class.java)
     }
 }

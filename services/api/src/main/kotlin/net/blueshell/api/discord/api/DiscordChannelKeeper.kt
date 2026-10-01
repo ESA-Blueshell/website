@@ -48,4 +48,7 @@ interface DiscordChannelKeeper {
         channelId: String,
         roleId: String,
     )
+
+    /** Deletes [channelId] from the server, for a removal the board asked for. */
+    fun delete(channelId: String)
 }

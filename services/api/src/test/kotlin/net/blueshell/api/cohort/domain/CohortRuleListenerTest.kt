@@ -33,4 +33,16 @@ class CohortRuleListenerTest {
 
         verify(exactly = 1) { updater.updateMember(9) }
     }
+
+    @Test
+    fun `a line-up change registers a new team's cohort and re-evaluates who came on or off`() {
+        listener.onRosterChanged(
+            net.blueshell.api.esports.api
+                .RosterChanged(3, setOf(7L, 8L)),
+        )
+
+        io.mockk.verify { registrar.register() }
+        io.mockk.verify { updater.updateMember(7L) }
+        io.mockk.verify { updater.updateMember(8L) }
+    }
 }

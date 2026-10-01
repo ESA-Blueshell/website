@@ -87,5 +87,16 @@ class DiscordTargetIT : UserTestSupport() {
         mvc.perform(get("/management/discord/roles").with(signedIn(board))).andExpect(jsonPath("$.length()").value(0))
         mvc.perform(get("/management/discord/channels").with(signedIn(board))).andExpect(jsonPath("$.length()").value(0))
         mvc.perform(get("/management/committees/{id}/discord", 1).with(signedIn(member))).andExpect(status().isForbidden)
+        mvc
+            .perform(get("/management/teams/{id}/discord", 1).with(signedIn(board)))
+            .andExpect(jsonPath("$.available").value(false))
+        mvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .delete(
+                        "/management/teams/{id}/discord",
+                        1,
+                    ).with(signedIn(board)),
+            ).andExpect(status().isServiceUnavailable)
     }
 }

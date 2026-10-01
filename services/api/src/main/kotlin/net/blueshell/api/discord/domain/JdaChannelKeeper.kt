@@ -68,6 +68,10 @@ class JdaChannelKeeper(
         containerOf(guild, channelId).getPermissionOverride(roleOf(guild, roleId))?.delete()?.complete()
     }
 
+    override fun delete(channelId: String) {
+        guild().getGuildChannelById(channelId)?.delete()?.complete()
+    }
+
     private fun guild(): Guild = gateway.ifAvailable?.guild() ?: throw DiscordUnavailable("The bot is not in the server right now.")
 
     private fun roleOf(

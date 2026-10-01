@@ -113,6 +113,11 @@ class JdaChannelKeeperTest {
         keeper().open("1", "900", private = true)
         keeper().open("2", "900", private = false)
         keeper().close("1", "900")
+        val removing: AuditableRestAction<Void> = mock()
+        whenever(text.delete()).thenReturn(removing)
+        keeper().delete("1")
+        keeper().delete("999")
+        verify(removing).complete()
 
         verify(denying).complete()
         verify(deleting).complete()

@@ -13,6 +13,7 @@ object CohortFolders {
     const val COMMITTEES = "Committees"
     const val NEWSLETTER = "Newsletter"
     const val ACTIVISTS = "Activists"
+    const val TEAMS = "Teams"
 
     /** The folder a list for a cohort of [type] belongs in. */
     fun forType(type: CohortType): String =
@@ -24,5 +25,6 @@ object CohortFolders {
             CohortType.NEWSLETTER_SUBSCRIBERS -> NEWSLETTER
             CohortType.ACTIVISTS -> ACTIVISTS
             CohortType.CURRENT_MEMBERS -> MEMBERS
+            CohortType.TEAM_PLAYERS -> TEAMS
         }
 }

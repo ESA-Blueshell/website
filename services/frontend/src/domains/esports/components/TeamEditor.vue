@@ -19,6 +19,8 @@ import FormSection from "@/components/island/FormSection.vue"
 import LineupSource from "../island/LineupSource.vue"
 import TeamRoster from "../island/TeamRoster.vue"
 import {refreshSharedLists} from "@/utils/sharedLists"
+import {DiscordPlaceFields, type DiscordPlace, type DiscordPlaceRequest} from "@/domains/discord"
+import store from "@/plugins/store"
 import {
   dropTeam,
   loadRoster,
@@ -37,6 +39,9 @@ import {
   fieldExistingTeam,
   isBlank,
   publishLineup,
+  readTeamDiscord,
+  removeTeamDiscord,
+  saveTeamDiscord,
   type DraftEntry,
 } from "../adapters/lineup"
 import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
@@ -488,6 +493,25 @@ const previewSlices = computed(() => {
   }]
 })
 
+/** The team's role and private channel on Discord, set once the line-up is saved. */
+const discord = ref<DiscordPlaceRequest | null>(null)
+const discordPlace = ref<DiscordPlace | null>(null)
+const removingDiscord = ref(false)
+const discordFailure = ref<string | null>(null)
+const readDiscord = computed(() => (props.teamId == null ? null : () => readTeamDiscord(props.teamId!)))
+const discordSlug = computed(() => draftName.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""))
+
+const removeDiscord = async () => {
+  if (props.teamId == null || saving.value) return
+  saving.value = true
+  const done = await removeTeamDiscord(props.teamId)
+  saving.value = false
+  if (!done.ok) return void (discordFailure.value = done.reason)
+  removingDiscord.value = false
+  discordPlace.value = null
+  store.commit("setStatusSnackbarMessage", "The team's role and channel are removed from Discord.")
+}
+
 const submit = async () => {
   const seasonId = props.season?.id
   // Two guards rather than one: `complete` is what the button reads, and this is what makes an
@@ -511,6 +535,11 @@ const submit = async () => {
     if (!done.ok) {
       failure.value = done.reason
       return
+    }
+    // The line-up is saved either way; Discord refusing only means the role and channel wait.
+    if (discord.value && done.teamId != null) {
+      const set = await saveTeamDiscord(done.teamId, discord.value)
+      if (!set.ok) store.commit("setStatusSnackbarMessage", set.reason)
     }
     await refreshSharedLists()
     emit("saved")
@@ -663,6 +692,29 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
             {{ teamFailure }}
           </notice-box>
         </form-section>
+
+        <discord-place-fields
+          v-model="discord"
+          category="Esports"
+          holders="Everyone on the line-up this season holds it; a season ending takes nobody off."
+          :name="draftName"
+          :read="readDiscord"
+          :slug="discordSlug"
+          testid="lineup-discord"
+          @loaded="(place: DiscordPlace | null) => discordPlace = place"
+        />
+        <div
+          v-if="discordPlace?.roleId"
+          class="lineup__discord-remove"
+        >
+          <cut-button
+            testid="lineup-discord-remove"
+            tone="danger"
+            @click="removingDiscord = true; discordFailure = null"
+          >
+            Remove the team's role and channel
+          </cut-button>
+        </div>
 
         <!-- Only while a team is being made: correcting a line-up is about the people already
              on it, and dropping another squad into it would be a different act in the same
@@ -982,6 +1034,18 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
     title="Take this player off?"
     @confirm="dropping !== null && remove(dropping)"
     @update:open="dropping = $event ? dropping : null"
+  />
+  <confirm-dialog
+    confirm-label="Remove from Discord"
+    :failure="discordFailure"
+    :open="removingDiscord"
+    :question="`This deletes the role @${discordPlace?.roleName ?? draftName} and the channels only it opens from the Discord server. The line-up stays.`"
+    testid="lineup-discord-remove-dialog"
+    title="Remove the team's role and channel"
+    :working="saving"
+    working-label="Removing"
+    @confirm="removeDiscord"
+    @update:open="removingDiscord = $event"
   />
 </template>
 

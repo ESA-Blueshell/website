@@ -6,8 +6,8 @@
 import {
   apiUrl,
   archiveCommittee,
-  type CommitteeDiscordRequest,
-  type CommitteeDiscordState,
+  type DiscordPlace,
+  type DiscordPlaceRequest,
   type CommitteeOwnPageRequest,
   type CommitteePageResponse,
   type CommitteeResponse,
@@ -129,11 +129,11 @@ export async function storeCommitteeIcon(file: File, committeeId: number | null)
 export const saveGameOrganisers = (code: string, committeeIds: number[]): Promise<{ok: true} | Refused> =>
   accepted(setGameOrganisers({path: {game: code}, body: {committeeIds}}), "The committees could not be saved.")
 
-export type {CommitteeDiscordRequest, CommitteeDiscordState}
+export type {DiscordPlace, DiscordPlaceRequest}
 
 /** The role a committee's seats hold and the channels it opens; nothing where it could not be read. */
-export const readCommitteeDiscord = (id: number): Promise<CommitteeDiscordState | null> => readOr(findCommitteeDiscord({path: {id}}), null)
+export const readCommitteeDiscord = (id: number): Promise<DiscordPlace | null> => readOr(findCommitteeDiscord({path: {id}}), null)
 
 /** Links or makes the committee's role, and opens, closes or makes its channels. */
-export const saveCommitteeDiscord = (id: number, body: CommitteeDiscordRequest): Promise<Saved<CommitteeDiscordState> | Refused> =>
+export const saveCommitteeDiscord = (id: number, body: DiscordPlaceRequest): Promise<Saved<DiscordPlace> | Refused> =>
   refusable(setCommitteeDiscord({path: {id}, body}), "Discord could not be set for the committee.")

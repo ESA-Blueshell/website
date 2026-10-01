@@ -63,8 +63,9 @@ class PresentDefinitionsTest {
     }
 
     @Test
-    fun `neither is listed on Brevo, and both browse under members`() {
-        assertThat(CohortType.entries.filterNot { it.listedOnBrevo }).containsExactly(CohortType.ACTIVISTS, CohortType.CURRENT_MEMBERS)
+    fun `neither is listed on Brevo, nor is a team, and both browse under members`() {
+        assertThat(CohortType.entries.filterNot { it.listedOnBrevo })
+            .containsExactly(CohortType.ACTIVISTS, CohortType.CURRENT_MEMBERS, CohortType.TEAM_PLAYERS)
     }
 
     private fun membership(

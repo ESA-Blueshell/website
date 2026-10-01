@@ -628,7 +628,8 @@ export type CodeRequest = {
 export enum CohortCategory {
     COMMITTEES = 'COMMITTEES',
     PERIODS = 'PERIODS',
-    MEMBERS = 'MEMBERS'
+    MEMBERS = 'MEMBERS',
+    TEAMS = 'TEAMS'
 }
 
 export type CohortDetail = {
@@ -728,37 +729,9 @@ export enum CohortType {
     PERIOD_ACTIVE_MEMBERS = 'PERIOD_ACTIVE_MEMBERS',
     NEWSLETTER_SUBSCRIBERS = 'NEWSLETTER_SUBSCRIBERS',
     ACTIVISTS = 'ACTIVISTS',
-    CURRENT_MEMBERS = 'CURRENT_MEMBERS'
+    CURRENT_MEMBERS = 'CURRENT_MEMBERS',
+    TEAM_PLAYERS = 'TEAM_PLAYERS'
 }
-
-/**
- * The role a committee's seats hold, and the channels it opens.
- */
-export type CommitteeDiscordRequest = {
-    /**
-     * Every channel the role opens; one left out is closed to it
-     */
-    channelIds: Array<string>;
-    /**
-     * A new private channel to make for the role, by name
-     */
-    createChannel?: string | null;
-    /**
-     * Make a new role, where the committee has none yet and no role is named
-     */
-    createRole: boolean;
-    /**
-     * An existing role to link, where the committee has none yet
-     */
-    roleId?: string | null;
-};
-
-export type CommitteeDiscordState = {
-    available: boolean;
-    channels: Array<KeptChannel>;
-    roleId?: string | null;
-    roleName?: string | null;
-};
 
 export type CommitteeMemberRequest = {
     /**
@@ -1218,6 +1191,35 @@ export type DiscordMentionsResponse = {
 export type DiscordNameResponse = {
     id: string;
     name: string;
+};
+
+export type DiscordPlace = {
+    available: boolean;
+    channels: Array<KeptChannel>;
+    roleId?: string | null;
+    roleName?: string | null;
+};
+
+/**
+ * The role a cohort's people hold, and the channels it opens.
+ */
+export type DiscordPlaceRequest = {
+    /**
+     * Every channel the role opens; one left out is closed to it
+     */
+    channelIds: Array<string>;
+    /**
+     * A new private channel to make for the role, by name
+     */
+    createChannel?: string | null;
+    /**
+     * Make a new role, where there is none yet and no role is named
+     */
+    createRole: boolean;
+    /**
+     * An existing role to link, where there is none yet
+     */
+    roleId?: string | null;
 };
 
 export type DiscordRole = {
@@ -10470,13 +10472,13 @@ export type FindCommitteeDiscordResponses = {
     /**
      * OK
      */
-    200: CommitteeDiscordState;
+    200: DiscordPlace;
 };
 
 export type FindCommitteeDiscordResponse = FindCommitteeDiscordResponses[keyof FindCommitteeDiscordResponses];
 
 export type SetCommitteeDiscordData = {
-    body: CommitteeDiscordRequest;
+    body: DiscordPlaceRequest;
     path: {
         id: number;
     };
@@ -10513,7 +10515,7 @@ export type SetCommitteeDiscordResponses = {
     /**
      * OK
      */
-    200: CommitteeDiscordState;
+    200: DiscordPlace;
 };
 
 export type SetCommitteeDiscordResponse = SetCommitteeDiscordResponses[keyof SetCommitteeDiscordResponses];
@@ -11349,6 +11351,135 @@ export type RetryResponses = {
 };
 
 export type RetryResponse = RetryResponses[keyof RetryResponses];
+
+export type RemoveTeamDiscordData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/teams/{id}/discord';
+};
+
+export type RemoveTeamDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveTeamDiscordError = RemoveTeamDiscordErrors[keyof RemoveTeamDiscordErrors];
+
+export type RemoveTeamDiscordResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveTeamDiscordResponse = RemoveTeamDiscordResponses[keyof RemoveTeamDiscordResponses];
+
+export type FindTeamDiscordData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/teams/{id}/discord';
+};
+
+export type FindTeamDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindTeamDiscordError = FindTeamDiscordErrors[keyof FindTeamDiscordErrors];
+
+export type FindTeamDiscordResponses = {
+    /**
+     * OK
+     */
+    200: DiscordPlace;
+};
+
+export type FindTeamDiscordResponse = FindTeamDiscordResponses[keyof FindTeamDiscordResponses];
+
+export type SetTeamDiscordData = {
+    body: DiscordPlaceRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/teams/{id}/discord';
+};
+
+export type SetTeamDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetTeamDiscordError = SetTeamDiscordErrors[keyof SetTeamDiscordErrors];
+
+export type SetTeamDiscordResponses = {
+    /**
+     * OK
+     */
+    200: DiscordPlace;
+};
+
+export type SetTeamDiscordResponse = SetTeamDiscordResponses[keyof SetTeamDiscordResponses];
 
 export type MyServicesData = {
     body?: never;

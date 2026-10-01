@@ -43,9 +43,13 @@ class DiscordBotControllerTest {
     fun `makes a game channel and reads and sets a channel's access through the policies`() {
         val policies: net.blueshell.api.discord.domain.GameChannelPolicies = mock()
         val controller = DiscordBotController(mock(), policies, mock(), mock())
-        val made = net.blueshell.api.discord.domain.MadeChannel("1", "99", "bs-valo")
+        val made =
+            net.blueshell.api.discord.domain
+                .MadeChannel("1", "99", "bs-valo")
         val access = net.blueshell.api.discord.domain.AccessPolicy.DEFAULT
-        val state = net.blueshell.api.discord.domain.ChannelAccessState(access, access)
+        val state =
+            net.blueshell.api.discord.domain
+                .ChannelAccessState(access, access)
         whenever(policies.create("bs-valo", net.blueshell.api.discord.domain.GameChannelCategory.GAMES)).thenReturn(made)
         whenever(policies.read("1")).thenReturn(state)
         whenever(policies.set("1", access)).thenReturn(state)

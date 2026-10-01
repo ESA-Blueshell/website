@@ -107,7 +107,9 @@ class GameChannelPoliciesTest {
     fun `writes a changed policy to Discord and keeps it, a hidden channel denying the view`() {
         allows(everyone, view = false, send = false)
         allows(member, view = true, send = true)
-        whenever(repository.findById("1")).thenReturn(Optional.empty(), Optional.of(ChannelPolicy("1", ChannelAccess.READ, ChannelAccess.READ)))
+        whenever(
+            repository.findById("1"),
+        ).thenReturn(Optional.empty(), Optional.of(ChannelPolicy("1", ChannelAccess.READ, ChannelAccess.READ)))
 
         policies().set("1", AccessPolicy(ChannelAccess.HIDDEN, ChannelAccess.WRITE))
         verify(overriding).setDenied(listOf(Permission.VIEW_CHANNEL))

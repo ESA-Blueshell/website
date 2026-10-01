@@ -7,11 +7,11 @@ import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptRole
 import net.blueshell.api.discord.domain.AccessPolicy
 import net.blueshell.api.discord.domain.BotStanding
+import net.blueshell.api.discord.domain.BotStandingResult
 import net.blueshell.api.discord.domain.ChannelAccessState
 import net.blueshell.api.discord.domain.GameChannelCategory
 import net.blueshell.api.discord.domain.GameChannelPolicies
 import net.blueshell.api.discord.domain.MadeChannel
-import net.blueshell.api.discord.domain.BotStandingResult
 import net.blueshell.api.security.BoardOnly
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

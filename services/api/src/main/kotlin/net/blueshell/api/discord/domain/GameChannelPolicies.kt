@@ -42,8 +42,7 @@ data class MadeChannel(
     val name: String,
 )
 
-class DiscordUnreachable :
-    Refusal(HttpStatus.SERVICE_UNAVAILABLE, "DiscordUnreachable", "Discord cannot be reached now.")
+class DiscordUnreachable : Refusal(HttpStatus.SERVICE_UNAVAILABLE, "DiscordUnreachable", "Discord cannot be reached now.")
 
 /**
  * A game's channels and their access. A channel the site makes goes under the games or esports
@@ -116,7 +115,11 @@ class GameChannelPolicies(
                 ChannelAccess.READ -> listOf(Permission.VIEW_CHANNEL) to listOf(Permission.MESSAGE_SEND)
                 ChannelAccess.WRITE -> listOf(Permission.VIEW_CHANNEL, Permission.MESSAGE_SEND) to emptyList()
             }
-        container.upsertPermissionOverride(role).setAllowed(allow).setDenied(deny).complete()
+        container
+            .upsertPermissionOverride(role)
+            .setAllowed(allow)
+            .setDenied(deny)
+            .complete()
     }
 
     private fun actualOf(
@@ -147,5 +150,6 @@ class GameChannelPolicies(
         channelId: String,
     ): GuildChannel =
         guild.getGuildChannelById(channelId)?.takeIf { it is IPermissionContainer }
-            ?: throw org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "Discord has no channel $channelId")
+            ?: throw org.springframework.web.server
+                .ResponseStatusException(HttpStatus.NOT_FOUND, "Discord has no channel $channelId")
 }

@@ -15,6 +15,9 @@ interface MemberRepository : BaseRepository<Membership, Long> {
 
     fun existsByUser_IdAndEndDateIsNull(userId: Long): Boolean
 
+    /** Whether the user holds a running membership that is active rather than pending. */
+    fun existsByUser_IdAndEndDateIsNullAndActivatedOnIsNotNull(userId: Long): Boolean
+
     fun findByUser_Id(userId: Long): MutableList<Membership>
 
     /**

@@ -45,6 +45,7 @@ const blankMembership = (): MembershipResponse => ({
   memberType: MemberType.REGULAR,
   incasso: false,
   incassoStanding: IncassoStanding.NONE,
+  pending: false,
   version: 0,
   createdAt: "",
   updatedAt: "",

@@ -180,10 +180,11 @@
           mdi-check-circle
         </v-icon>
         <p class="text-h6 font-weight-medium mb-2">
-          You're a member
+          Welcome to Blueshell
         </p>
         <p class="text-body-1 text-medium-emphasis">
-          Welcome to Blueshell. Your membership starts today.
+          Your membership has started and is pending until your first contribution is paid. You become a member once
+          the treasurer records it.
         </p>
         <v-btn
           class="mt-4"

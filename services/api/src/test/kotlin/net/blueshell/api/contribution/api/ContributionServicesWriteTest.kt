@@ -70,7 +70,7 @@ class ContributionServicesWriteTest {
         whenever(repository.findById(id)).thenReturn(Optional.of(contribution))
         whenever(repository.findById(Contribution.Id(1, 3))).thenReturn(Optional.empty())
         whenever(repository.existsById(id)).thenReturn(true)
-        val service = ContributionService(repository, mock(), mock(), mock<TrackedEventPublisher>()).withEntityManager()
+        val service = ContributionService(repository, mock(), mock(), mock<TrackedEventPublisher>(), mock()).withEntityManager()
 
         service.create(contribution)
         service.update(contribution)
@@ -108,7 +108,7 @@ class ContributionServicesWriteTest {
         val period = Entities.period(id = 4)
         val contribution = Entities.contribution(id = Contribution.Id(1, 2))
         val periods = ContributionPeriodService(mock<ContributionPeriodRepository>(), mock<TrackedEventPublisher>())
-        val contributions = ContributionService(mock<ContributionRepository>(), mock(), mock(), mock<TrackedEventPublisher>())
+        val contributions = ContributionService(mock<ContributionRepository>(), mock(), mock(), mock<TrackedEventPublisher>(), mock())
 
         assertThatThrownBy { periods.update(period) }.isInstanceOf(ResponseStatusException::class.java)
         assertThatThrownBy { contributions.update(contribution) }.isInstanceOf(ResponseStatusException::class.java)

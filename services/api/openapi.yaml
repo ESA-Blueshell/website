@@ -4095,6 +4095,11 @@ components:
       type: object
     MembershipResponse:
       properties:
+        activatedOn:
+          format: date
+          type:
+          - string
+          - 'null'
         createdAt:
           format: date-time
           type: string
@@ -4117,6 +4122,9 @@ components:
           $ref: '#/components/schemas/IncassoStanding'
         memberType:
           $ref: '#/components/schemas/MemberType'
+        pending:
+          description: Running and waiting for its first contribution, so it carries no member role yet.
+          type: boolean
         startDate:
           format: date
           type: string
@@ -4135,6 +4143,7 @@ components:
       - incasso
       - incassoStanding
       - memberType
+      - pending
       - startDate
       - updatedAt
       - userId

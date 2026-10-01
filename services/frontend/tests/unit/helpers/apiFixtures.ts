@@ -104,6 +104,7 @@ export const aMembership = (over: Partial<MembershipResponse> = {}): MembershipR
   id: 1,
   userId: 42,
   memberType: MemberType.REGULAR,
+  pending: false,
   incasso: false,
   incassoStanding: over.incasso ? IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS : IncassoStanding.NONE,
   startDate: "2026-09-01",

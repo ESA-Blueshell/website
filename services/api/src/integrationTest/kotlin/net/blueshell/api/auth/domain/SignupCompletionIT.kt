@@ -47,7 +47,9 @@ class SignupCompletionIT : UserTestSupport() {
 
         assertThat(completion.completeIfReady(user.id!!).membershipStarted).isTrue()
         assertThat(memberships.findByUser_Id(user.id!!)).hasSize(1)
-        assertThat(refreshUser(user).hasAuthority(Role.MEMBER)).isTrue()
+        // Pending until the first contribution is paid, so not a member yet (api ADR-036).
+        assertThat(memberships.findByUser_Id(user.id!!).single().isPending).isTrue()
+        assertThat(refreshUser(user).hasAuthority(Role.MEMBER)).isFalse()
     }
 
     @Test

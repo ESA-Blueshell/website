@@ -2026,6 +2026,7 @@ export type MembershipApplicationRequest = {
 };
 
 export type MembershipResponse = {
+    activatedOn?: string | null;
     createdAt: string;
     endDate?: string | null;
     /**
@@ -2036,6 +2037,10 @@ export type MembershipResponse = {
     incasso: boolean;
     incassoStanding: IncassoStanding;
     memberType: MemberType;
+    /**
+     * Running and waiting for its first contribution, so it carries no member role yet.
+     */
+    pending: boolean;
     startDate: string;
     updatedAt: string;
     userId: number;

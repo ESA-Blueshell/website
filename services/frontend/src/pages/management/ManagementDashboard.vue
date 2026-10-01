@@ -167,7 +167,12 @@ onMounted(async () => {
           </router-link>
         </header>
         <p class="dash__quiet">
-          {{ awaitingCount }} awaiting approval
+          <router-link
+            data-testid="dashboard-events-queue"
+            to="/management/events"
+          >
+            {{ awaitingCount }} awaiting approval
+          </router-link>
         </p>
         <ul class="dash__list">
           <li

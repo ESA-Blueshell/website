@@ -559,6 +559,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/management/BrevoPage.vue"),
         meta: {title: "Brevo"},
       },
+      {path: "events", name: "eventQueue", component: () => import("@/pages/management/EventQueue.vue"), meta: {title: "Events to approve"}},
       {path: "committees", name: "managementCommittees", component: () => import("@/pages/management/CommitteeList.vue"), meta: {title: "Committees"}},
       // The site's own editor, rendered inside the portal.
       {

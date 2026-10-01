@@ -118,7 +118,11 @@ onMounted(refresh)
           <span class="inbox__sub">{{ entry.fromAddress }}</span>
         </span>
         <span class="inbox__what">
-          <span class="inbox__subject">{{ entry.subject || "(no subject)" }}</span>
+          <router-link
+            class="inbox__subject"
+            :data-testid="`inbox-open-${entry.id}`"
+            :to="`/management/mail/inbox/${entry.id}`"
+          >{{ entry.subject || "(no subject)" }}</router-link>
           <span
             v-if="follows(entry)"
             class="inbox__sub"

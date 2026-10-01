@@ -506,6 +506,12 @@ const routes: RouteRecordRaw[] = [
       {path: "addresses", redirect: "/management/users"},
       {path: "mail/sent", name: "emailManager", component: () => import("@/pages/management/SentEmails.vue"), meta: {title: "Sent"}},
       {path: "mail/inbox", name: "inbox", component: () => import("@/pages/management/InboxPage.vue"), meta: {title: "Inbox"}},
+      {
+        path: "mail/inbox/:id(\\d+)",
+        name: "inboxMessage",
+        component: () => import("@/pages/management/InboxMessage.vue"),
+        meta: {title: "Inbox"},
+      },
       {path: "mail/write", name: "writeEmail", component: () => import("@/pages/management/WriteEmail.vue"), meta: {title: "Write an email"}},
       {
         path: "mail/sent/:id(\\d+)",

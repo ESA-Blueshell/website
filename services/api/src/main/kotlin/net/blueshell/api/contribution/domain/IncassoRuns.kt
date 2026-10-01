@@ -67,6 +67,8 @@ data class IncassoRunView(
     val createdAt: Instant,
     /** Null while the run waits for upload to ING. */
     val submittedAt: Instant?,
+    /** How many files ING's batch takes, at most 1000 collections each. */
+    val fileParts: Int,
 )
 
 data class IncassoRunSummary(
@@ -144,6 +146,21 @@ class IncassoRuns(
     @Transactional(readOnly = true)
     fun find(runId: Long): IncassoRunView = view(runs.findById(runId).orElseThrow { IncassoRunNotFound() })
 
+    /** The board uploaded the run's file in ING and confirmed it there. Saying so twice changes nothing. */
+    @Transactional
+    fun markSubmitted(
+        runId: Long,
+        by: Long?,
+    ): IncassoRunView {
+        val run = runs.findById(runId).orElseThrow { IncassoRunNotFound() }
+        if (run.submittedAt == null) {
+            run.submittedAt = clock.instant()
+            run.submittedBy = by
+            runs.save(run)
+        }
+        return view(run)
+    }
+
     @Transactional(readOnly = true)
     fun summariesOf(periodId: Long): List<IncassoRunSummary> {
         val theirs = runs.findByContributionPeriodIdOrderByCreatedAtDesc(periodId)
@@ -185,6 +202,7 @@ class IncassoRuns(
             total = collections.sumOf { it.amount },
             createdAt = run.createdAt,
             submittedAt = run.submittedAt,
+            fileParts = (collections.size + IngIncassoFile.MAX_COLLECTIONS - 1) / IngIncassoFile.MAX_COLLECTIONS,
         )
     }
 

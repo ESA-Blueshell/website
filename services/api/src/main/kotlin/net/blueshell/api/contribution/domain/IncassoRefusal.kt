@@ -38,3 +38,25 @@ class StatementTextTooLong(
 ) : IncassoRefusal(HttpStatus.BAD_REQUEST, "StatementTextTooLong", "The statement text is too long.", mapOf("max" to max))
 
 class IncassoRunNotFound : IncassoRefusal(HttpStatus.NOT_FOUND, "IncassoRunNotFound", "There is no such incasso run.")
+
+class IncassoRunSubmitted : IncassoRefusal(HttpStatus.CONFLICT, "IncassoRunSubmitted", "The incasso is already in ING.")
+
+class CollectionDatePassed : IncassoRefusal(HttpStatus.CONFLICT, "CollectionDatePassed", "The collection date has passed.")
+
+class IngDetailsMissing :
+    IncassoRefusal(
+        HttpStatus.CONFLICT,
+        "IngDetailsMissing",
+        "The association's IBAN or incassant ID is not configured.",
+    )
+
+class MandateChanged(
+    userIds: List<Long>,
+) : IncassoRefusal(
+        HttpStatus.CONFLICT,
+        "MandateChanged",
+        "A member's mandate changed after they were told.",
+        mapOf("userIds" to userIds),
+    )
+
+class IncassoFilePartNotFound : IncassoRefusal(HttpStatus.NOT_FOUND, "IncassoFilePartNotFound", "The incasso has no such file.")

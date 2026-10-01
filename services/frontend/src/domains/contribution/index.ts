@@ -13,15 +13,17 @@ export {
 export {reminderName, reminderRows, type ReminderRow} from "./reminders"
 export {
   IncassoLeftOut,
+  fetchIncassoFile,
   readIncassoPlan,
   readIncassoRun,
+  saveSubmitted,
   startIncasso,
   type IncassoCandidate,
   type IncassoCollection,
   type IncassoRunSummary,
   type IncassoRunView,
 } from "./adapters/incasso"
-export {dayName, defaultStatementText, leftOutGroups, leftOutHelp, leftOutLabels, maskedIban, renamedForIng} from "./incasso"
+export {dayName, defaultStatementText, incassoFileName, leftOutGroups, leftOutHelp, leftOutLabels, maskedIban, renamedForIng} from "./incasso"
 export {deletePeriod, listPeriods, readCurrentPeriod, readPeriodStanding, saveNewPeriod, savePeriod} from "./adapters/periods"
 export {
   readOneEmail,

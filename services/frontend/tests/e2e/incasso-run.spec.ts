@@ -8,7 +8,7 @@ const typed = (iso: string) => iso.split("-").reverse().join("/")
 const PERIOD = aContributionPeriod({id: 201, startDate: day(-60), endDate: day(240), halfYearCutoffDate: day(90), fullYearFee: 25, halfYearFee: 12.5, alumniFee: 5})
 
 test.describe("an incasso run", () => {
-  test("collects from members with a mandate, tells them, and waits on Contributions for ING", async ({page}) => {
+  test("collects from members with a mandate, tells them, gives ING's file and waits until it is in ING", async ({page}) => {
     await installApiMocks(page, {contributionPeriods: [PERIOD], contributions: []})
     await loginAsBoard(page.context())
     await page.goto(`/management/contributions/${PERIOD.id}`)
@@ -31,7 +31,16 @@ test.describe("an incasso run", () => {
     await expect(page.getByTestId("incasso-run-done")).toContainText("2 incasso notifications sent")
     await expect(page).toHaveURL(/\/management\/contributions\/201\/incasso\/70$/)
 
+    const saved = page.waitForEvent("download")
+    await page.getByTestId("incasso-run-download-1").click()
+    expect((await saved).suggestedFilename()).toBe(`incassobatch-${day(30)}.xlsx`)
+
     await page.getByTestId("incasso-run-done").getByRole("link", {name: "Back to Contributions"}).click()
     await expect(page.getByTestId("contribution-incasso-70")).toContainText("Waiting for upload to ING")
+
+    await page.getByTestId("contribution-incasso-70").getByRole("link", {name: "Open"}).click()
+    await page.getByTestId("incasso-run-submitted").click()
+    await expect(page.getByTestId("incasso-run-in-ing")).toContainText("Submitted to ING on")
+    await expect(page.getByTestId("incasso-run-file")).toHaveCount(0)
   })
 })

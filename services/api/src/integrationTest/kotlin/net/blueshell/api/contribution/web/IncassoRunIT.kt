@@ -11,6 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
@@ -103,5 +104,54 @@ class IncassoRunIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userIds":[1],"collectionDate":"${LocalDate.now().plusDays(7)}"}"""),
             ).andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `the board downloads ING's file until it says the run is in ING, and members never`() {
+        val board = createUserWithRole(Role.BOARD)
+        val period = createContributionPeriodFixture()
+        val withMandate = onIncasso(board, "NL91ABNA0417164300")
+        val nextWeek = LocalDate.now().plusDays(7)
+        val answer =
+            mvc
+                .perform(
+                    post("/contributionPeriods/${period.id}/incassoRuns")
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """{"userIds":[${withMandate.id}],"collectionDate":"$nextWeek","statementText":"Contributie"}""",
+                        ),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.fileParts").value(1))
+                .andReturn()
+                .response.contentAsString
+        val runId = Regex("\"id\":(\\d+)").find(answer)!!.groupValues[1]
+
+        val file =
+            mvc
+                .perform(get("/incassoRuns/$runId/file").with(signedIn(board)))
+                .andExpect(status().isOk)
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("incassobatch-")))
+                .andReturn()
+                .response.contentAsByteArray
+        val sheet =
+            java.util.zip.ZipInputStream(file.inputStream()).use { zip ->
+                generateSequence { zip.nextEntry }.first { it.name == "xl/worksheets/sheet1.xml" }.let { zip.readBytes().decodeToString() }
+            }
+        assertThat(sheet).contains("NL91ABNA0417164300")
+        mvc.perform(get("/incassoRuns/$runId/file").with(signedIn(createUserWithRole(Role.MEMBER)))).andExpect(status().isForbidden)
+
+        mvc
+            .perform(post("/incassoRuns/$runId/submitted").with(signedIn(board)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.submittedAt").isNotEmpty)
+        mvc
+            .perform(get("/incassoRuns/$runId/file").with(signedIn(board)))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.code").value("IncassoRunSubmitted"))
+        mvc
+            .perform(get("/contributionPeriods/${period.id}/members").with(signedIn(board)))
+            .andExpect(jsonPath("$.incassoRuns[0].submittedAt").isNotEmpty)
     }
 }

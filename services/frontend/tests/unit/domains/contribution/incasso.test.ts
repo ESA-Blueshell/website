@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {dayName, defaultStatementText, leftOutGroups, maskedIban, renamedForIng} from "@/domains/contribution/incasso"
+import {dayName, defaultStatementText, incassoFileName, leftOutGroups, maskedIban, renamedForIng} from "@/domains/contribution/incasso"
 import {refusable} from "@/domains/contribution/refusals"
 import {IncassoLeftOut} from "@/services/api"
 
@@ -10,6 +10,8 @@ describe("an incasso run", () => {
     expect(dayName("2026-11-01")).toBe("1 Nov 2026")
     expect(dayName(null)).toBe("—")
     expect(defaultStatementText("2026-09-01", "2027-08-31")).toBe("Contributie 2026-2027 ESA Blueshell")
+    expect(incassoFileName("2026-11-01", 1, 1)).toBe("incassobatch-2026-11-01.xlsx")
+    expect(incassoFileName("2026-11-01", 2, 3)).toBe("incassobatch-2026-11-01-2-of-3.xlsx")
   })
 
   it("groups who is left out by why, and lists names ING spells differently", () => {
@@ -34,5 +36,10 @@ describe("an incasso run", () => {
     expect(await reason({code: "StatementTextTooLong", max: 140})).toContain("at most 140")
     expect(await reason({code: "StatementTextTooLong"})).toContain("at most 140")
     expect(await reason({code: "IncassoRunNotFound"})).toContain("no such incasso")
+    expect(await reason({code: "IncassoRunSubmitted"})).toContain("already in ING")
+    expect(await reason({code: "IngDetailsMissing"})).toContain("incassant ID")
+    expect(await reason({code: "MandateChanged", userIds: [3]})).toContain("1 of the members")
+    expect(await reason({code: "MandateChanged"})).toContain("Some of the members")
+    expect(await reason({code: "IncassoFilePartNotFound"})).toContain("no such file")
   })
 })

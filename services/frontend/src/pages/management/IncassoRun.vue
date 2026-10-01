@@ -19,6 +19,8 @@ import {
   type IncassoRunView,
   dayName,
   defaultStatementText,
+  fetchIncassoFile,
+  incassoFileName,
   leftOutGroups,
   leftOutHelp,
   leftOutLabels,
@@ -28,6 +30,7 @@ import {
   readIncassoRun,
   readOneEmail,
   renamedForIng,
+  saveSubmitted,
   startIncasso,
 } from "@/domains/contribution"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -55,6 +58,9 @@ const loaded = ref(false)
 const starting = ref(false)
 const failure = ref<string | null>(null)
 const run = ref<IncassoRunView | null>(null)
+const fetching = ref<number | null>(null)
+const submitting = ref(false)
+const doneFailure = ref<string | null>(null)
 
 const feeOptions = (Object.values(BulkFeeType) as BulkFeeType[]).map((value) => ({title: feeTypeLabels[value], value}))
 const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
@@ -112,6 +118,40 @@ const start = async () => {
   step.value = 3
   // The address names the run, so going back to it later lands on this step.
   void router.replace(`/management/contributions/${periodId.value}/incasso/${answered.saved.id}`)
+}
+
+/** Saves one of the run's files for ING, made by the api as it answers. */
+const download = async (part: number) => {
+  if (!run.value || fetching.value !== null) return
+  fetching.value = part
+  doneFailure.value = null
+  const answered = await fetchIncassoFile(run.value.id, part)
+  fetching.value = null
+  if (!answered.ok) {
+    doneFailure.value = answered.reason
+    return
+  }
+  const url = URL.createObjectURL(answered.file)
+  const anchor = document.createElement("a")
+  anchor.href = url
+  anchor.download = incassoFileName(run.value.collectionDate, part, run.value.fileParts)
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}
+
+const submitted = async () => {
+  if (!run.value || submitting.value) return
+  submitting.value = true
+  doneFailure.value = null
+  const answered = await saveSubmitted(run.value.id)
+  submitting.value = false
+  if (!answered.ok) {
+    doneFailure.value = answered.reason
+    return
+  }
+  run.value = answered.saved
 }
 
 onMounted(async () => {
@@ -351,18 +391,70 @@ onMounted(async () => {
       data-testid="incasso-run-done"
     >
       <h2>{{ run.collections.length }} incasso notification{{ run.collections.length === 1 ? "" : "s" }} sent</h2>
-      <p
-        v-if="!run.submittedAt"
-        class="incasso__note"
-        data-testid="incasso-run-waiting"
-      >
-        One thing left: put the collection in ING, so the money is actually taken on {{ dayName(run.collectionDate) }}.
-      </p>
+      <template v-if="!run.submittedAt">
+        <p
+          class="incasso__note"
+          data-testid="incasso-run-waiting"
+        >
+          One thing left: put the collection in ING, so the money is actually taken on {{ dayName(run.collectionDate) }}.
+        </p>
+        <notice-box
+          testid="incasso-run-file"
+          title="Incasso file for ING"
+        >
+          <p>
+            {{ incassoFileName(run.collectionDate, 1, run.fileParts) }} · ING's incasso batch template, filled in:
+            {{ run.collections.length }} collection{{ run.collections.length === 1 ? "" : "s" }}, {{ euro(run.total) }},
+            on {{ dayName(run.collectionDate) }}, Core, doorlopend.
+            <template v-if="run.fileParts > 1">
+              ING takes at most 1000 collections a file, so there are {{ run.fileParts }}.
+            </template>
+          </p>
+          <div class="incasso__downloads">
+            <button
+              v-for="part in run.fileParts"
+              :key="part"
+              class="incasso__action incasso__action--main"
+              :data-testid="`incasso-run-download-${part}`"
+              :disabled="fetching !== null"
+              type="button"
+              @click="download(part)"
+            >
+              {{ run.fileParts > 1 ? `Download file ${part} of ${run.fileParts}` : "Download incasso file" }}
+            </button>
+          </div>
+        </notice-box>
+        <ol class="incasso__how">
+          <li>In Mijn ING Zakelijk, go to Incasso, then Excel importeren, and upload the file.</li>
+          <li>Check it says {{ dayName(run.collectionDate) }} and {{ euro(run.total) }}, then confirm it there.</li>
+          <li>Come back and press Submitted to ING.</li>
+        </ol>
+        <div class="incasso__nav incasso__nav--start">
+          <button
+            class="incasso__action"
+            data-testid="incasso-run-submitted"
+            :disabled="submitting"
+            type="button"
+            @click="submitted"
+          >
+            Submitted to ING
+          </button>
+        </div>
+      </template>
       <p
         v-else
         class="incasso__note"
+        data-testid="incasso-run-in-ing"
       >
         Submitted to ING on {{ dayName(run.submittedAt.slice(0, 10)) }}.
+      </p>
+      <p
+        v-if="doneFailure"
+        class="incasso__warn"
+        data-testid="incasso-run-done-failure"
+        role="alert"
+      >
+        {{ doneFailure }}
       </p>
       <p class="incasso__sub">
         {{ run.collections.length }} collection{{ run.collections.length === 1 ? "" : "s" }}, {{ euro(run.total) }}, on {{ dayName(run.collectionDate) }}: {{ run.statementText }}
@@ -543,6 +635,27 @@ onMounted(async () => {
   display: flex;
   gap: 0.6rem;
   justify-content: flex-end;
+}
+
+.incasso__nav--start {
+  justify-content: flex-start;
+}
+
+.incasso__downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.incasso__how {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.92rem;
+  color: var(--color-ash);
 }
 
 .incasso__action {

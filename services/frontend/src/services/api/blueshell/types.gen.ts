@@ -1695,6 +1695,7 @@ export type IncassoRunView = {
     collections: Array<IncassoCollection>;
     contributionPeriodId: number;
     createdAt: string;
+    fileParts: number;
     id: number;
     statementText: string;
     submittedAt?: string | null;
@@ -8193,6 +8194,94 @@ export type FindIncassoRunResponses = {
 };
 
 export type FindIncassoRunResponse = FindIncassoRunResponses[keyof FindIncassoRunResponses];
+
+export type DownloadIncassoFileData = {
+    body?: never;
+    path: {
+        runId: number;
+    };
+    query?: {
+        part?: number;
+    };
+    url: '/incassoRuns/{runId}/file';
+};
+
+export type DownloadIncassoFileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadIncassoFileError = DownloadIncassoFileErrors[keyof DownloadIncassoFileErrors];
+
+export type DownloadIncassoFileResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadIncassoFileResponse = DownloadIncassoFileResponses[keyof DownloadIncassoFileResponses];
+
+export type MarkIncassoRunSubmittedData = {
+    body?: never;
+    path: {
+        runId: number;
+    };
+    query?: never;
+    url: '/incassoRuns/{runId}/submitted';
+};
+
+export type MarkIncassoRunSubmittedErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MarkIncassoRunSubmittedError = MarkIncassoRunSubmittedErrors[keyof MarkIncassoRunSubmittedErrors];
+
+export type MarkIncassoRunSubmittedResponses = {
+    /**
+     * OK
+     */
+    200: IncassoRunView;
+};
+
+export type MarkIncassoRunSubmittedResponse = MarkIncassoRunSubmittedResponses[keyof MarkIncassoRunSubmittedResponses];
 
 export type ListAlertsData = {
     body?: never;

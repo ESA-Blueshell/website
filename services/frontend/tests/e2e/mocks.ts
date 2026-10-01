@@ -1200,10 +1200,24 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const run = {
         id: 70 + incassoRuns.length, contributionPeriodId: Number(path.split("/")[2]), collectionDate: body.collectionDate,
         statementText: body.statementText, collections, total: collections.reduce((sum, one) => sum + one.amount, 0),
-        createdAt: "2026-09-30T10:00:00.000Z", submittedAt: null,
+        createdAt: "2026-09-30T10:00:00.000Z", submittedAt: null as string | null, fileParts: 1,
       }
       incassoRuns.push(run)
       return answer(route, "startIncassoRun", run, 201)
+    }
+    if (method === "GET" && /^\/incassoRuns\/\d+\/file$/.test(path)) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers: {"Content-Disposition": "attachment; filename=\"incassobatch.xlsx\""},
+        body: "PK",
+      })
+    }
+    if (method === "POST" && /^\/incassoRuns\/\d+\/submitted$/.test(path)) {
+      const run = incassoRuns.find((one) => one.id === Number(path.split("/")[2]))
+      if (!run) return route.fulfill({status: 404, body: ""})
+      run.submittedAt = "2026-10-20T10:00:00.000Z"
+      return answer(route, "markIncassoRunSubmitted", run)
     }
     if (method === "GET" && /^\/incassoRuns\/\d+$/.test(path)) {
       const run = incassoRuns.find((one) => one.id === Number(path.split("/")[2]))

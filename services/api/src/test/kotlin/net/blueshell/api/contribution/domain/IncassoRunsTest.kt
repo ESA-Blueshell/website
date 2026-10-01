@@ -175,4 +175,20 @@ class IncassoRunsTest {
         whenever(runs.findById(11)).thenReturn(Optional.of(run))
         assertThat(incasso.find(11).collections).hasSize(2)
     }
+
+    @Test
+    fun `marks a run submitted once, by who said so`() {
+        val run = IncassoRun(4, LocalDate.of(2026, 11, 1), "Contributie", 9, Instant.EPOCH).also { it.id = 11 }
+        whenever(runs.findById(11)).thenReturn(Optional.of(run))
+        whenever(notificationRows.findByIncassoRunIdIn(listOf(11L))).thenReturn(emptyList())
+
+        assertThat(incasso.markSubmitted(11, 3).submittedAt).isEqualTo(clock.instant())
+        assertThat(run.submittedBy).isEqualTo(3)
+        incasso.markSubmitted(11, 5)
+        assertThat(run.submittedBy).isEqualTo(3)
+        verify(runs, times(1)).save(run)
+
+        whenever(runs.findById(12)).thenReturn(Optional.empty())
+        assertThatThrownBy { incasso.markSubmitted(12, 3) }.isInstanceOf(IncassoRunNotFound::class.java)
+    }
 }

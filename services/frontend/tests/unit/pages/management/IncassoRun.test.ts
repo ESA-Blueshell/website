@@ -11,6 +11,8 @@ const api = vi.hoisted(() => ({
   startIncassoRun: vi.fn(),
   findIncassoRun: vi.fn(),
   readContributionEmail: vi.fn(),
+  downloadIncassoFile: vi.fn(),
+  markIncassoRunSubmitted: vi.fn(),
 }))
 const {mockRoute, mockReplace, mockHandleNetworkError} = vi.hoisted(() => ({
   mockRoute: {params: {periodId: "2"} as Record<string, string>},
@@ -41,7 +43,7 @@ const later = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10)
 
 const run = {
   id: 11, contributionPeriodId: 2, collectionDate: later, statementText: "Contributie 2025-2026 ESA Blueshell", total: 30,
-  createdAt: "2026-09-30T10:00:00Z", submittedAt: null,
+  createdAt: "2026-09-30T10:00:00Z", submittedAt: null, fileParts: 1,
   collections: [{userId: 1, name: "Mila Vries", ingName: "Mila Vries", ibanLastFour: "1111", mandateReference: "BLUESHELL-1",
     mandateSignedOn: "2025-09-03", feeType: BulkFeeType.FULL_YEAR_FEE, amount: 30}],
 }
@@ -69,6 +71,8 @@ describe("the incasso task", () => {
     ]})
     api.startIncassoRun.mockResolvedValue({status: 201, data: run})
     api.findIncassoRun.mockResolvedValue({status: 200, data: {...run, submittedAt: "2026-10-20T10:00:00Z"}})
+    api.downloadIncassoFile.mockResolvedValue({status: 200, data: new Blob(["PK"])})
+    api.markIncassoRunSubmitted.mockResolvedValue({status: 200, data: {...run, submittedAt: "2026-10-20T10:00:00Z"}})
     api.readContributionEmail.mockResolvedValue({status: 200, data: {
       subject: "Collected", html: "<p>x</p>", recipientEmail: "a@x", recipientName: "A", kind: "INCASSO_NOTIFICATION", feeType: "FULL_YEAR_FEE",
     }})
@@ -149,7 +153,7 @@ describe("the incasso task", () => {
     mockRoute.params = {periodId: "2", runId: "11"}
     const opened = await mount()
     expect(api.planIncasso).not.toHaveBeenCalled()
-    expect(opened.get('[data-testid="incasso-run-done"]').text()).toContain("Submitted to ING on 20 Oct 2026")
+    expect(opened.get('[data-testid="incasso-run-in-ing"]').text()).toContain("Submitted to ING on 20 Oct 2026")
 
     mockRoute.params = {periodId: "2"}
     api.planIncasso.mockResolvedValue({status: 200, data: []})
@@ -158,5 +162,41 @@ describe("the incasso task", () => {
     api.findContributionPeriods.mockRejectedValue(new Error("offline"))
     await mount()
     expect(mockHandleNetworkError).toHaveBeenCalled()
+  })
+
+  it("downloads ING's file for a run, one per part, then marks it in ING", async () => {
+    const createObjectURL = vi.fn(() => "blob:file")
+    const revokeObjectURL = vi.fn()
+    vi.stubGlobal("URL", {...URL, createObjectURL, revokeObjectURL})
+    const clicked = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined)
+    mockRoute.params = {periodId: "2", runId: "11"}
+    api.findIncassoRun.mockResolvedValue({status: 200, data: {...run, fileParts: 2}})
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="incasso-run-file"]').text()).toContain("so there are 2")
+    expect(wrapper.get('[data-testid="incasso-run-download-2"]').text()).toBe("Download file 2 of 2")
+    await wrapper.get('[data-testid="incasso-run-download-2"]').trigger("click")
+    await settle()
+    expect(api.downloadIncassoFile).toHaveBeenCalledWith({path: {runId: 11}, query: {part: 2}})
+    expect(clicked).toHaveBeenCalledTimes(1)
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:file")
+
+    api.downloadIncassoFile.mockResolvedValue({status: 409, error: {code: "CollectionDatePassed"}})
+    await wrapper.get('[data-testid="incasso-run-download-1"]').trigger("click")
+    await settle()
+    expect(wrapper.get('[data-testid="incasso-run-done-failure"]').text()).toContain("collection date has passed")
+
+    api.markIncassoRunSubmitted.mockResolvedValueOnce({status: 404, error: {code: "IncassoRunNotFound"}})
+    await wrapper.get('[data-testid="incasso-run-submitted"]').trigger("click")
+    await settle()
+    expect(wrapper.get('[data-testid="incasso-run-done-failure"]').text()).toContain("no such incasso")
+    await wrapper.get('[data-testid="incasso-run-submitted"]').trigger("click")
+    await settle()
+    expect(api.markIncassoRunSubmitted).toHaveBeenCalledWith({path: {runId: 11}})
+    expect(wrapper.get('[data-testid="incasso-run-in-ing"]').text()).toContain("Submitted to ING on 20 Oct 2026")
+    expect(wrapper.find('[data-testid="incasso-run-file"]').exists()).toBe(false)
+
+    clicked.mockRestore()
+    vi.unstubAllGlobals()
   })
 })

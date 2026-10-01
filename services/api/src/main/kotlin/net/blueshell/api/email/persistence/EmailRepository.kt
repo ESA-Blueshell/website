@@ -26,4 +26,8 @@ interface EmailRepository : BaseRepository<Email, Long> {
     fun findTopByJobExecutionIdOrderByIdDesc(jobExecutionId: Long): Email?
 
     fun findByMessageId(messageId: String): Email?
+
+    fun findByMessageIdIn(messageIds: Collection<String>): List<Email>
+
+    fun findByIdIn(ids: Collection<Long>): List<Email>
 }

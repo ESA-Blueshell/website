@@ -39,5 +39,23 @@ for (const [who, login] of [["an admin", loginAsAdmin], ["a board member", login
       expect(fit.sideways).toBe(0)
       expect(Math.abs(fit.menu)).toBeLessThan(1)
     })
+
+    test(`the table fills its card for ${who} at ${width}px`, async ({page}) => {
+      await page.setViewportSize({width, height: 800})
+      await installApiMocks(page)
+      await login(page.context())
+      await page.goto("/user-manager")
+      const row = page.locator(dataRow).first()
+      await row.waitFor()
+
+      // The row's own box spans the table whatever its cells add up to, so the edge is the last cell's.
+      const gap = await row.evaluate((tr) => {
+        const wrapper = tr.closest(".v-table__wrapper") as HTMLElement
+        const right = (tr.lastElementChild as HTMLElement).getBoundingClientRect().right
+        return wrapper.getBoundingClientRect().left + wrapper.clientWidth - right
+      })
+
+      expect(Math.abs(gap)).toBeLessThan(1)
+    })
   }
 }

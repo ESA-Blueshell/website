@@ -41,12 +41,13 @@ const ROW_HEIGHT = 44
 // Column widths are declared because the table is laid out fixed: under `table-layout: auto`
 // the widths come from whichever rows happen to be mounted, so they would shift as the
 // window scrolls. A fixed column never grows to fit its content, so the two columns that hold
-// controls are sized in pixels from what they hold. The data columns split a share of the
-// table that leaves room for those at its narrowest, 936px at lg, and the browser hands the
-// width left over back to them in proportion. A `calc()` width would say this directly, but
-// a table column treats one as `auto`.
+// controls are sized in pixels from what they hold. The weighted data columns split a share
+// of the table that leaves room for those at its narrowest, 936px at lg, and Name and Username
+// split what is left: a fixed table hands its spare width to the columns without one, and
+// would otherwise widen the pixel columns. A `calc()` width would say this directly, but a
+// table column treats one as `auto`.
 const CHECKBOX_COLUMN_WIDTH = 44
-const DATA_COLUMNS_PERCENT = 72
+const WEIGHTED_COLUMNS_PERCENT = 50
 // Matches the row's action buttons and its cell padding.
 const ACTION_BUTTON_WIDTH = 28
 const ACTION_GAP = 4
@@ -54,13 +55,13 @@ const CELL_PADDING = 8
 
 const HEADER_COLUMNS: ReadonlyArray<{
   label: string
-  weight: number
+  weight?: number
   sortKey?: SortKey
   testid?: string
   thClass?: string
 }> = [
-  {label: "Name", weight: 13, sortKey: "name", testid: "member-manager-header-name"},
-  {label: "Username", weight: 10.9, sortKey: "username", testid: "member-manager-header-username"},
+  {label: "Name", sortKey: "name", testid: "member-manager-header-name"},
+  {label: "Username", sortKey: "username", testid: "member-manager-header-username"},
   {label: "Role", weight: 8.4, sortKey: "role", testid: "member-manager-header-role", thClass: "text-right"},
   {label: "Membership status", weight: 10.4, sortKey: "status", testid: "member-manager-header-status", thClass: "mm-th-multiline"},
   {label: "Member since", weight: 10.4, sortKey: "memberSince", testid: "member-manager-header-member-since"},
@@ -68,7 +69,15 @@ const HEADER_COLUMNS: ReadonlyArray<{
   {label: "Paid in period", weight: 8, sortKey: "paid", testid: "member-manager-header-paid", thClass: "mm-th-multiline mm-th-period"},
   {label: "Type / Incasso", weight: 8.4},
 ]
-const TOTAL_WEIGHT = HEADER_COLUMNS.reduce((sum, column) => sum + column.weight, 0)
+const TOTAL_WEIGHT = HEADER_COLUMNS.reduce((sum, column) => sum + (column.weight ?? 0), 0)
+// The table counts its columns from these, not from the header slot. Left to count the row's
+// fields, it spans its spacer rows across more columns than the header has, and those empty
+// columns take the width the declared ones leave over.
+const TABLE_COLUMNS = [
+  {key: "select"},
+  ...HEADER_COLUMNS.map((column) => ({key: column.label})),
+  {key: "actions"},
+]
 
 const users = ref<EditableUser[]>([])
 const memberships = ref<MembershipResponse[]>([])
@@ -106,7 +115,8 @@ const actionsColumnWidth = computed(() => {
   const buttons = mayEditRoles.value ? 6 : 4
   return buttons * ACTION_BUTTON_WIDTH + (buttons - 1) * ACTION_GAP + 2 * CELL_PADDING
 })
-const columnWidth = (weight: number) => `${(weight / TOTAL_WEIGHT) * DATA_COLUMNS_PERCENT}%`
+const columnStyle = (weight?: number) =>
+  weight === undefined ? undefined : `width: ${(weight / TOTAL_WEIGHT) * WEIGHTED_COLUMNS_PERCENT}%`
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
@@ -512,6 +522,7 @@ async function confirmDeleteUser() {
               density="comfortable"
               disable-sort
               fixed-header
+              :headers="TABLE_COLUMNS"
               :height="tableHeight"
               item-value="id"
               :item-height="ROW_HEIGHT"
@@ -540,7 +551,7 @@ async function confirmDeleteUser() {
                     :class="[column.sortKey && 'sortable-header', column.thClass]"
                     :data-testid="column.testid"
                     :role="column.sortKey ? 'button' : undefined"
-                    :style="`width: ${columnWidth(column.weight)}`"
+                    :style="columnStyle(column.weight)"
                     :tabindex="column.sortKey ? 0 : undefined"
                     @click="column.sortKey && toggleSort(column.sortKey)"
                     @keydown.enter="column.sortKey && toggleSort(column.sortKey)"

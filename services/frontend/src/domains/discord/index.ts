@@ -12,6 +12,8 @@ export {fillMentions, forgetMentionNames, nameMentions, type MentionKind, type M
 export {listServerRoles} from "./adapters/roles"
 export {listKeepableChannels, listKeepableRoles, type KeptChannel, type KeptRole} from "./adapters/keeping"
 export {default as DiscordPlaceFields} from "./island/DiscordPlaceFields.vue"
+export {default as LinkDiscordAsk} from "./island/LinkDiscordAsk.vue"
+export {listMyUnlinkedRoles} from "./adapters/unlinked"
 export type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
 export {readStarboard} from "./adapters/starboard"
 export {readGuildCounts, readGuildWidget, voiceRoomUrl, type GuildCounts, type GuildWidget, type WidgetChannel, type WidgetMember, type WidgetResponse} from "./adapters/widget"

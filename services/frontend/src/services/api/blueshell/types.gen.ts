@@ -3276,6 +3276,14 @@ export type TwoFactorStanding = {
     since?: string | null;
 };
 
+/**
+ * A role or list somebody belongs on, which they reach once they link their account there
+ */
+export type UnlinkedTarget = {
+    label: string;
+    system: TargetSystem;
+};
+
 export type UnlockRequest = {
     email?: string | null;
     reason: string;
@@ -14579,6 +14587,47 @@ export type SetUpTwoFactorResponses = {
 };
 
 export type SetUpTwoFactorResponse = SetUpTwoFactorResponses[keyof SetUpTwoFactorResponses];
+
+export type ListMyUnlinkedTargetsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/unlinked-targets';
+};
+
+export type ListMyUnlinkedTargetsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListMyUnlinkedTargetsError = ListMyUnlinkedTargetsErrors[keyof ListMyUnlinkedTargetsErrors];
+
+export type ListMyUnlinkedTargetsResponses = {
+    /**
+     * OK
+     */
+    200: Array<UnlinkedTarget>;
+};
+
+export type ListMyUnlinkedTargetsResponse = ListMyUnlinkedTargetsResponses[keyof ListMyUnlinkedTargetsResponses];
 
 export type UpdateUserData = {
     body: UpdateUserRequest;

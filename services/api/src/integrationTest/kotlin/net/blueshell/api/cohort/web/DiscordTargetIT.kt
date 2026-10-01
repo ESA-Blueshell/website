@@ -91,7 +91,12 @@ class DiscordTargetIT : UserTestSupport() {
             .perform(get("/management/teams/{id}/discord", 1).with(signedIn(board)))
             .andExpect(jsonPath("$.available").value(false))
         mvc
-            .perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/management/teams/{id}/discord", 1).with(signedIn(board)))
-            .andExpect(status().isServiceUnavailable)
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .delete(
+                        "/management/teams/{id}/discord",
+                        1,
+                    ).with(signedIn(board)),
+            ).andExpect(status().isServiceUnavailable)
     }
 }

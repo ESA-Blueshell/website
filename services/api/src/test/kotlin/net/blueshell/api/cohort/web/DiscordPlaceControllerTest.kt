@@ -20,8 +20,9 @@ class DiscordPlaceControllerTest {
         whenever(discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(null, true, listOf("1"), "sitecie"), "Committees")).thenReturn(place)
 
         assertThat(controller.findCommitteeDiscord(7)).isSameAs(place)
-        assertThat(controller.setCommitteeDiscord(7, DiscordPlaceRequest(createRole = true, channelIds = listOf("1"), createChannel = "sitecie")))
-            .isSameAs(place)
+        assertThat(
+            controller.setCommitteeDiscord(7, DiscordPlaceRequest(createRole = true, channelIds = listOf("1"), createChannel = "sitecie")),
+        ).isSameAs(place)
         assertThat(DiscordPlaceRequest().channelIds).isEmpty()
     }
 

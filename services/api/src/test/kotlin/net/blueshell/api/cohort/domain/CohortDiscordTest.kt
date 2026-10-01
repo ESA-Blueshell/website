@@ -54,7 +54,9 @@ class CohortDiscordTest {
 
         whenever(roles.available()).thenReturn(false)
         assertThat(discord.read("COMMITTEE_MEMBERS:7")).isEqualTo(DiscordPlace(false, null, null, emptyList()))
-        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(createRole = true), "Committees") }.isInstanceOf(TargetSystemUnavailable::class.java)
+        assertThatThrownBy {
+            discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(createRole = true), "Committees")
+        }.isInstanceOf(TargetSystemUnavailable::class.java)
     }
 
     @Test

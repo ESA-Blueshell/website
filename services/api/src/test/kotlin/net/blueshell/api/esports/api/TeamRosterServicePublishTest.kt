@@ -102,8 +102,23 @@ class TeamRosterServicePublishTest {
     fun `names every team, and reads a team's players in the season fielded now`() {
         whenever(teams.pool()).thenReturn(listOf(team))
         whenever(fielded.fieldedSeasonNow()).thenReturn(5L)
-        whenever(fielded.seasonsOf(3)).thenReturn(listOf(fielding, TeamSeason(team = team, game = "CS2", season = Season(name = "Old", startDate = LocalDate.of(2029, 1, 1), endDate = LocalDate.of(2029, 6, 1)).also { it.id = 4 })))
-        whenever(entries.findAllByTeamAndSeason(3, "CS2", 5)).thenReturn(listOf(TeamRosterEntry(teamSeason = fielding, handle = "a", userId = 7), kept))
+        whenever(fielded.seasonsOf(3)).thenReturn(
+            listOf(
+                fielding,
+                TeamSeason(
+                    team = team,
+                    game = "CS2",
+                    season =
+                        Season(name = "Old", startDate = LocalDate.of(2029, 1, 1), endDate = LocalDate.of(2029, 6, 1)).also {
+                            it.id =
+                                4
+                        },
+                ),
+            ),
+        )
+        whenever(
+            entries.findAllByTeamAndSeason(3, "CS2", 5),
+        ).thenReturn(listOf(TeamRosterEntry(teamSeason = fielding, handle = "a", userId = 7), kept))
 
         assertThat(service.teamNames()).isEqualTo(mapOf(3L to "BS Draft"))
         assertThat(service.currentPlayersOf(3)).containsExactly(7L)

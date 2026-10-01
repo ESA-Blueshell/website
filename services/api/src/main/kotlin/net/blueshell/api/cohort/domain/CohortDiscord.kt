@@ -1,5 +1,6 @@
 package net.blueshell.api.cohort.domain
 
+import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.discord.api.DiscordChannelKeeper
@@ -8,7 +9,6 @@ import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptChannelKind
 import net.blueshell.api.shared.enums.TargetSystem
-import io.swagger.v3.oas.annotations.media.Schema
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException

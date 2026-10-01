@@ -1,6 +1,7 @@
 package net.blueshell.api.user.api
 
 import jakarta.persistence.EntityManager
+import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.domain.AddressService
@@ -20,6 +21,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.web.server.ResponseStatusException
+import java.time.LocalDate
 import java.util.Optional
 
 /** The reads and writes the user services make against their repositories. */
@@ -86,6 +88,43 @@ class UserServicesWriteTest {
         verify(manager, times(2)).refresh(membership)
         verify(repository, times(2)).delete(membership)
         assertThatThrownBy { service.findById(7) }.isInstanceOf(ResponseStatusException::class.java)
+    }
+
+    @Test
+    fun `a new membership waits for its first contribution unless it is honorary, and the payment makes it active`() {
+        val repository =
+            mock<MemberRepository> {
+                on { saveAndFlush(any<Membership>()) } doAnswer { it.getArgument(0) }
+            }
+        whenever(repository.existsById(any())).thenReturn(true)
+        val service = MembershipService(repository, mock<TrackedEventPublisher>(), mock(), mock()).withEntityManager()
+        val today = LocalDate.now()
+
+        val regular = service.create(Entities.membership(id = 1, startDate = today, activatedOn = null))
+        assertThat(regular.isPending).isTrue()
+        val honorary = service.create(Entities.membership(id = 2, activatedOn = null).apply { memberType = MemberType.HONORARY })
+        assertThat(honorary.activatedOn).isEqualTo(honorary.startDate)
+        val madeHonorary = service.update(Entities.membership(id = 3, activatedOn = null).apply { memberType = MemberType.HONORARY })
+        assertThat(madeHonorary.activatedOn).isEqualTo(today)
+
+        val ended = Entities.membership(id = 4, endDate = today, activatedOn = null)
+        whenever(repository.findByUser_Id(9)).thenReturn(mutableListOf(regular, ended))
+        service.activatePending(9)
+        assertThat(regular.activatedOn).isEqualTo(today)
+        assertThat(ended.activatedOn).isNull()
+        verify(repository).saveAll(listOf(regular))
+        service.activatePending(9)
+        verify(repository, times(1)).saveAll(any<List<Membership>>())
+
+        val user = Entities.user(id = 5)
+        whenever(repository.findUserIdsOverlapping(today, today)).thenReturn(listOf(5, 6))
+        whenever(repository.findByUser_IdIn(listOf(5L, 6L))).thenReturn(
+            mutableListOf(
+                Entities.membership(user = user, startDate = today),
+                Entities.membership(user = Entities.user(id = 6), startDate = today, activatedOn = null),
+            ),
+        )
+        assertThat(service.findActiveUserIdsOn(today)).containsExactly(5L)
     }
 
     @Test

@@ -52,7 +52,7 @@ class ActivistsProvider(
     override fun definitions(): List<CohortDefinition> = listOf(ActivistsDefinition(committees, committeeMembers, boardMembers))
 }
 
-/** Everybody whose membership covers today. */
+/** Everybody whose active membership covers today; a pending one waits for its first contribution. */
 class CurrentMembersDefinition(
     private val memberships: MembershipService,
 ) : CohortDefinition {
@@ -62,14 +62,13 @@ class CurrentMembersDefinition(
     override val label = "Members"
     override val folder = CohortFolders.MEMBERS
 
-    override fun members(): Set<Long> {
-        val today = LocalDate.now()
-        return memberships.findUserIdsOverlapping(today, today)
-    }
+    override fun members(): Set<Long> = memberships.findActiveUserIdsOn(LocalDate.now())
 
     override fun contains(userId: Long): Boolean {
         val today = LocalDate.now()
-        return memberships.findByUserId(userId).any { !it.startDate.isAfter(today) && it.endDate?.isBefore(today) != true }
+        return memberships.findByUserId(userId).any {
+            it.activatedOn != null && !it.startDate.isAfter(today) && it.endDate?.isBefore(today) != true
+        }
     }
 }
 

@@ -46,16 +46,18 @@ class PresentDefinitionsTest {
     }
 
     @Test
-    fun `members hold a membership that covers today`() {
-        every { memberships.findUserIdsOverlapping(today, today) } returns setOf(5L)
+    fun `members hold an active membership that covers today, and a pending one does not count`() {
+        every { memberships.findActiveUserIdsOn(today) } returns setOf(5L)
         every { memberships.findByUserId(5L) } returns mutableListOf(membership(today.minusYears(1), null))
         every { memberships.findByUserId(6L) } returns mutableListOf(membership(today.minusYears(2), today.minusDays(1)))
         every { memberships.findByUserId(7L) } returns mutableListOf(membership(today.plusDays(1), null))
         every { memberships.findByUserId(8L) } returns mutableListOf(membership(today.minusDays(3), today))
+        every { memberships.findByUserId(9L) } returns
+            mutableListOf(Entities.membership(startDate = today.minusDays(3), activatedOn = null))
         val members = CurrentMembersProvider(memberships).definitions().single()
 
         assertThat(members.members()).containsExactly(5L)
-        assertThat(listOf(5L, 6L, 7L, 8L).map(members::contains)).containsExactly(true, false, false, true)
+        assertThat(listOf(5L, 6L, 7L, 8L, 9L).map(members::contains)).containsExactly(true, false, false, true, false)
         assertThat(listOf(members.key, members.label, members.folder)).containsExactly("CURRENT_MEMBERS", "Members", "Members")
         assertThat(members.scope).isNull()
     }

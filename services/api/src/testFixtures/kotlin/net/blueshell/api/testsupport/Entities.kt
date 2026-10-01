@@ -184,7 +184,8 @@ object Entities {
         user: User = user(),
         startDate: LocalDate = LocalDate.of(2026, 9, 1),
         endDate: LocalDate? = null,
-    ): Membership = Membership(user = user, startDate = startDate, endDate = endDate).also { it.id = id }
+        activatedOn: LocalDate? = startDate,
+    ): Membership = Membership(user = user, startDate = startDate, endDate = endDate, activatedOn = activatedOn).also { it.id = id }
 
     fun period(
         id: Long? = null,

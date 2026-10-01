@@ -16,6 +16,9 @@ data class MembershipResponse(
     var incassoStanding: IncassoStanding,
     @field:Schema(description = "The last four characters of the mandate's IBAN, where one is recorded.")
     var ibanLastFour: String? = null,
+    @field:Schema(description = "Running and waiting for its first contribution, so it carries no member role yet.")
+    var pending: Boolean,
+    var activatedOn: LocalDate?,
     var version: Long,
     var id: Long,
     var createdAt: Instant,

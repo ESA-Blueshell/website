@@ -267,7 +267,8 @@ abstract class UserTestSupport : ServiceTestSupport() {
         memberType: MemberType = MemberType.REGULAR,
         startDate: LocalDate = LocalDate.now().minusDays(30),
         endDate: LocalDate? = null,
-    ): Membership = userFactory.createMembership(user, memberType, startDate, endDate)
+        activatedOn: LocalDate? = startDate,
+    ): Membership = userFactory.createMembership(user, memberType, startDate, endDate, activatedOn = activatedOn)
 
     protected fun createContributionPeriodFixture(
         startDate: LocalDate = LocalDate.now().minusMonths(1),

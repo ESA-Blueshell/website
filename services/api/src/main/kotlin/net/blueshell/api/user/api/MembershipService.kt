@@ -1,5 +1,6 @@
 package net.blueshell.api.user.api
 
+import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.MembershipSpecifications
@@ -29,13 +30,15 @@ class MembershipService @Autowired constructor(
 ) {
     @Transactional
     fun create(entity: Membership): Membership {
+        // Only an honorary membership owes nothing, so only it starts active (api ADR-036).
+        if (entity.memberType == MemberType.HONORARY && entity.activatedOn == null) entity.activatedOn = entity.startDate
         val saved = written(entity)
         // Bank details given at signup wait for the membership they belong to.
         mandates.adoptPending(saved)
         trackedEvents.publish { actor ->
             MembershipChanged(
                 saved.userId,
-                repository.existsByUser_IdAndEndDateIsNull(saved.userId),
+                activeHeldBy(saved.userId),
                 MembershipChange.CREATED,
                 actor = actor
             )
@@ -45,11 +48,12 @@ class MembershipService @Autowired constructor(
 
     @Transactional
     fun update(entity: Membership): Membership {
+        if (entity.memberType == MemberType.HONORARY && entity.activatedOn == null) entity.activatedOn = LocalDate.now()
         val saved = rewritten(entity)
         trackedEvents.publish { actor ->
             MembershipChanged(
                 saved.userId,
-                repository.existsByUser_IdAndEndDateIsNull(saved.userId),
+                activeHeldBy(saved.userId),
                 MembershipChange.UPDATED,
                 actor = actor
             )
@@ -64,7 +68,7 @@ class MembershipService @Autowired constructor(
         trackedEvents.publish { actor ->
             MembershipChanged(
                 userId,
-                repository.existsByUser_IdAndEndDateIsNull(userId),
+                activeHeldBy(userId),
                 changeType = MembershipChange.DELETED,
                 actor = actor
             )
@@ -78,19 +82,42 @@ class MembershipService @Autowired constructor(
         trackedEvents.publish { actor ->
             MembershipChanged(
                 membership.userId,
-                repository.existsByUser_IdAndEndDateIsNull(membership.userId),
+                activeHeldBy(membership.userId),
                 changeType = MembershipChange.DELETED,
                 actor = actor
             )
         }
     }
 
+    /**
+     * A contribution was paid, so the user's pending membership becomes active and they a member.
+     * A membership already active stays as it was: a later period's payment changes nothing.
+     */
+    @Transactional
+    fun activatePending(userId: Long) {
+        val pending = repository.findByUser_Id(userId).filter { it.isPending }.ifEmpty { return }
+        pending.forEach { it.activatedOn = LocalDate.now() }
+        repository.saveAll(pending)
+        trackedEvents.publish { actor -> MembershipChanged(userId, true, MembershipChange.UPDATED, actor = actor) }
+    }
+
+    /** Users holding an active membership on [day]; a pending one does not count. */
+    @Transactional(readOnly = true)
+    fun findActiveUserIdsOn(day: LocalDate): Set<Long> =
+        repository.findUserIdsOverlapping(day, day).let { overlapping ->
+            repository
+                .findByUser_IdIn(overlapping)
+                .filter { it.activatedOn != null && it.overlaps(day) }
+                .map { it.userId }
+                .toSet()
+        }
+
     fun existsByUserId(userId: Long): Boolean {
         return repository.existsByUser_Id(userId)
     }
 
     fun existsActiveMembershipByUserId(userId: Long): Boolean {
-        return repository.existsByUser_IdAndEndDateIsNull(userId)
+        return activeHeldBy(userId)
     }
 
     fun findByUserId(userId: Long): MutableList<Membership> {
@@ -144,10 +171,13 @@ class MembershipService @Autowired constructor(
         if (repository.restoreById(id) == 0) throw MembershipNotFoundException(id)
         val userId = membership.userId
         trackedEvents.publish { actor ->
-            MembershipChanged(userId, repository.existsByUser_IdAndEndDateIsNull(userId), MembershipChange.UPDATED, actor = actor)
+            MembershipChanged(userId, activeHeldBy(userId), MembershipChange.UPDATED, actor = actor)
         }
         return findById(id)
     }
+
+    // Active means running and paid for once; a pending membership carries no member role.
+    private fun activeHeldBy(userId: Long): Boolean = repository.existsByUser_IdAndEndDateIsNullAndActivatedOnIsNotNull(userId)
 
     // Read back after each write, so the columns the database fills are on the answer.
     @PersistenceContext
@@ -171,3 +201,5 @@ class MembershipService @Autowired constructor(
             ResponseStatusException(HttpStatus.NOT_FOUND, "Membership not found with id: $id")
         }
 }
+
+private fun Membership.overlaps(day: LocalDate): Boolean = !startDate.isAfter(day) && endDate?.isBefore(day) != true

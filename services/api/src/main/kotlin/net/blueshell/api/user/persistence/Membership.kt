@@ -44,7 +44,14 @@ class Membership(
     var memberType: MemberType = MemberType.REGULAR,
     @Column(name = "incasso", nullable = false)
     var incasso: Boolean = false,
+    /** The day it became active; null while it waits for its first contribution (api ADR-036). */
+    @Column(name = "activated_on")
+    var activatedOn: LocalDate? = null,
 ) : AuditedAutoIdEntity() {
+    /** Running and not yet paid for, so it carries no member role. */
+    val isPending: Boolean
+        get() = activatedOn == null && endDate == null
+
     /** The bank details and mandate it is collected under, or null where none is recorded. */
     @Embedded
     var mandate: IncassoMandate? = null

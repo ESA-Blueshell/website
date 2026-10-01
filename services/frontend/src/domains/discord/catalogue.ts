@@ -1,6 +1,7 @@
 /** How the Discord page words its channels: what each belongs to, who gets in and where Discord differs. */
-import {type ChannelAccessPolicy, ChannelAccess} from "@/services/api"
+import {type ChannelAccessPolicy, ChannelAccess, RoleAccess} from "@/services/api"
 import type {CataloguedChannel} from "./adapters/catalogue"
+import type {RoleOpeningState} from "./adapters/roleOpenings"
 
 /** The category archived channels sit in; it reads last. */
 export const ARCHIVE_CATEGORY = "Archive"
@@ -88,4 +89,27 @@ export function catalogueFacts(roles: RoleRow[], toCreate: number, channels: Cat
       testid: "discord-fact-channels",
     },
   ]
+}
+
+/** An access a role gets to a channel, in the words the role page uses. */
+export function roleAccessWord(access: RoleAccess): string {
+  if (access === RoleAccess.SPEAK) return "Join and speak"
+  return access === RoleAccess.READ ? "Read only" : "Read and write"
+}
+
+/** Where Discord has a role's access otherwise than the site keeps it, or null where they agree. */
+export function openingDiffers(state: RoleOpeningState): string | null {
+  if (!state.differs) return null
+  if (!state.kept) return `On Discord only, at ${roleAccessWord(state.actual!).toLowerCase()}`
+  if (!state.actual) return `Not open on Discord, where the site keeps ${roleAccessWord(state.kept).toLowerCase()}`
+  return `On Discord ${roleAccessWord(state.actual).toLowerCase()}, where the site keeps ${roleAccessWord(state.kept).toLowerCase()}`
+}
+
+/** What one opening is: a category and how many channels sit in it, or a text or voice channel. */
+export function openingKind(state: RoleOpeningState, channels: CataloguedChannel[]): string {
+  if (state.channel.kind === "CATEGORY") {
+    const held = channels.filter((one) => one.kind !== "CATEGORY" && one.category === state.channel.name).length
+    return `Category · ${held} ${held === 1 ? "channel" : "channels"}`
+  }
+  return state.channel.kind === "VOICE" ? "Voice channel" : "Channel"
 }

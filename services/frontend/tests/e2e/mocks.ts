@@ -2597,6 +2597,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/csrf") {
       return answer(route, "csrf", {token: "e2e-csrf-token"})
     }
+    // No bot in the stand-in: the committee form's Discord section stays hidden.
+    if (method === "GET" && (path === "/management/discord/roles" || path === "/management/discord/channels")) {
+      return answer(route, path.endsWith("roles") ? "listKeptRoles" : "listKeptChannels", [])
+    }
+    if (method === "GET" && /^\/management\/committees\/\d+\/discord$/.test(path)) {
+      return answer(route, "findCommitteeDiscord", {available: false, channels: []})
+    }
     if (method === "GET" && path === "/discord/roles") {
       return answer(route, "listDiscordRoles", [])
     }

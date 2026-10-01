@@ -13,7 +13,11 @@ const adapter = vi.hoisted(() => ({
   storeCommitteeIcon: vi.fn(),
   listCommittees: vi.fn(),
   removeCommittee: vi.fn(),
+  saveCommitteeDiscord: vi.fn(),
+  readCommitteeDiscord: vi.fn(),
 }))
+const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn()}}))
+vi.mock("@/plugins/store", () => ({default: mockStore}))
 const lists = vi.hoisted(() => ({refreshSharedLists: vi.fn()}))
 vi.mock("@/utils/sharedLists", async importOriginal => ({
   ...(await importOriginal<typeof import("@/utils/sharedLists")>()),
@@ -37,10 +41,11 @@ const ConfirmDialog = {name: "ConfirmDialog", props: ["open", "question", "title
 const ArtCells = {name: "ArtCells", props: ["cells", "testidPrefix"], template: "<div />"}
 const RecordHead = {name: "RecordHead", props: ["title", "archived"], template: "<div data-testid=head><slot /><slot name=\"facts\" /></div>"}
 const MarkdownEditor = {name: "MarkdownEditor", props: ["modelValue"], emits: ["update:modelValue"], template: "<div />"}
+const CommitteeDiscordFields = {name: "CommitteeDiscordFields", props: ["modelValue", "committeeId", "name", "slug"], emits: ["update:modelValue"], template: "<div />"}
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
-  ImagePicker, EventGamesPicker, CommitteeSeats, ConfirmDialog, ArtCells, RecordHead, MarkdownEditor,
+  ImagePicker, EventGamesPicker, CommitteeSeats, ConfirmDialog, ArtCells, RecordHead, MarkdownEditor, CommitteeDiscordFields,
   CutButton: {props: ["href", "testid"], template: "<a :href='href' :data-testid='testid'><slot /></a>"},
 }
 
@@ -173,6 +178,29 @@ describe("the committee edit page, for its own members", () => {
 
     expect(adapter.saveOwnCommitteePage).toHaveBeenCalledWith(1, {description: "LANs, monthly.", banner: "b.webp", icon: "i.webp", gameCodes: ["CS2"], version: 3})
     expect(wrapper.emitted("saved")).toEqual([[lan]])
+  })
+
+  it("sets the committee's Discord once it is saved, and says where Discord refused without holding the committee back", async () => {
+    adapter.addCommittee.mockResolvedValue({ok: true, saved: lan})
+    adapter.saveCommitteeDiscord.mockResolvedValueOnce({ok: true, saved: {available: true, channels: []}})
+    const wrapper = mountEditor(null, true)
+    await flushPromises()
+    await input(wrapper, "name").setValue("Pub Quiz Cie")
+    describe_(wrapper, "Questions.")
+    const fields = wrapper.getComponent(CommitteeDiscordFields)
+    expect(fields.props("committeeId")).toBeNull()
+    const choice = {createRole: true, channelIds: [], createChannel: "pub-quiz-cie"}
+    fields.vm.$emit("update:modelValue", choice)
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+    expect(adapter.saveCommitteeDiscord).toHaveBeenCalledWith(lan.id, choice)
+    expect(wrapper.emitted("saved")).toHaveLength(1)
+
+    adapter.saveCommitteeDiscord.mockResolvedValueOnce({ok: false, reason: "Discord cannot be reached now."})
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now.")
+    expect(wrapper.emitted("saved")).toHaveLength(2)
   })
 
   it("leaves on Cancel", async () => {

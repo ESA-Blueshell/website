@@ -731,6 +731,35 @@ export enum CohortType {
     CURRENT_MEMBERS = 'CURRENT_MEMBERS'
 }
 
+/**
+ * The role a committee's seats hold, and the channels it opens.
+ */
+export type CommitteeDiscordRequest = {
+    /**
+     * Every channel the role opens; one left out is closed to it
+     */
+    channelIds: Array<string>;
+    /**
+     * A new private channel to make for the role, by name
+     */
+    createChannel?: string | null;
+    /**
+     * Make a new role, where the committee has none yet and no role is named
+     */
+    createRole: boolean;
+    /**
+     * An existing role to link, where the committee has none yet
+     */
+    roleId?: string | null;
+};
+
+export type CommitteeDiscordState = {
+    available: boolean;
+    channels: Array<KeptChannel>;
+    roleId?: string | null;
+    roleName?: string | null;
+};
+
 export type CommitteeMemberRequest = {
     /**
      * What this member does on the committee. Omitted for a member who simply sits on it, which is most of them.
@@ -1988,6 +2017,19 @@ export type JobTypeDescriptor = {
 export type JwtRequest = {
     password: string;
     username: string;
+};
+
+export type KeptChannel = {
+    category?: string | null;
+    id: string;
+    kind: 'TEXT' | 'VOICE' | 'CATEGORY';
+    name: string;
+};
+
+export type KeptRole = {
+    assignable: boolean;
+    id: string;
+    name: string;
 };
 
 export type LastRecoveryEmail = {
@@ -10390,6 +10432,92 @@ export type ReconcileTargetResponses = {
 
 export type ReconcileTargetResponse = ReconcileTargetResponses[keyof ReconcileTargetResponses];
 
+export type FindCommitteeDiscordData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/committees/{id}/discord';
+};
+
+export type FindCommitteeDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCommitteeDiscordError = FindCommitteeDiscordErrors[keyof FindCommitteeDiscordErrors];
+
+export type FindCommitteeDiscordResponses = {
+    /**
+     * OK
+     */
+    200: CommitteeDiscordState;
+};
+
+export type FindCommitteeDiscordResponse = FindCommitteeDiscordResponses[keyof FindCommitteeDiscordResponses];
+
+export type SetCommitteeDiscordData = {
+    body: CommitteeDiscordRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/committees/{id}/discord';
+};
+
+export type SetCommitteeDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetCommitteeDiscordError = SetCommitteeDiscordErrors[keyof SetCommitteeDiscordErrors];
+
+export type SetCommitteeDiscordResponses = {
+    /**
+     * OK
+     */
+    200: CommitteeDiscordState;
+};
+
+export type SetCommitteeDiscordResponse = SetCommitteeDiscordResponses[keyof SetCommitteeDiscordResponses];
+
 export type FindBotStandingData = {
     body?: never;
     path?: never;
@@ -10430,6 +10558,88 @@ export type FindBotStandingResponses = {
 };
 
 export type FindBotStandingResponse = FindBotStandingResponses[keyof FindBotStandingResponses];
+
+export type ListKeptChannelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/channels';
+};
+
+export type ListKeptChannelsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListKeptChannelsError = ListKeptChannelsErrors[keyof ListKeptChannelsErrors];
+
+export type ListKeptChannelsResponses = {
+    /**
+     * OK
+     */
+    200: Array<KeptChannel>;
+};
+
+export type ListKeptChannelsResponse = ListKeptChannelsResponses[keyof ListKeptChannelsResponses];
+
+export type ListKeptRolesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/roles';
+};
+
+export type ListKeptRolesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListKeptRolesError = ListKeptRolesErrors[keyof ListKeptRolesErrors];
+
+export type ListKeptRolesResponses = {
+    /**
+     * OK
+     */
+    200: Array<KeptRole>;
+};
+
+export type ListKeptRolesResponse = ListKeptRolesResponses[keyof ListKeptRolesResponses];
 
 export type List1Data = {
     body?: never;

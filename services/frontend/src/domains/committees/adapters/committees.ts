@@ -6,6 +6,8 @@
 import {
   apiUrl,
   archiveCommittee,
+  type CommitteeDiscordRequest,
+  type CommitteeDiscordState,
   type CommitteeOwnPageRequest,
   type CommitteePageResponse,
   type CommitteeResponse,
@@ -13,10 +15,12 @@ import {
   type CreateCommitteeRequest,
   deleteCommitteeById,
   FileType,
+  findCommitteeDiscord,
   findCommitteePage,
   findCommittees,
   findCommitteesByUserId,
   type Image,
+  setCommitteeDiscord,
   setGameOrganisers,
   updateCommittee,
   type UpdateCommitteeRequest,
@@ -28,6 +32,7 @@ import {
 import type {Picture} from "@/components/island/pictures"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
+import {readOr} from "@/utils/answers"
 import {accepted, refusable} from "../refusals"
 
 /** A committee as every reader gets it; its members only where the board or its own members read it. */
@@ -123,3 +128,12 @@ export async function storeCommitteeIcon(file: File, committeeId: number | null)
 /** Sets which committees organise events for a game, from the game's own form. */
 export const saveGameOrganisers = (code: string, committeeIds: number[]): Promise<{ok: true} | Refused> =>
   accepted(setGameOrganisers({path: {game: code}, body: {committeeIds}}), "The committees could not be saved.")
+
+export type {CommitteeDiscordRequest, CommitteeDiscordState}
+
+/** The role a committee's seats hold and the channels it opens; nothing where it could not be read. */
+export const readCommitteeDiscord = (id: number): Promise<CommitteeDiscordState | null> => readOr(findCommitteeDiscord({path: {id}}), null)
+
+/** Links or makes the committee's role, and opens, closes or makes its channels. */
+export const saveCommitteeDiscord = (id: number, body: CommitteeDiscordRequest): Promise<Saved<CommitteeDiscordState> | Refused> =>
+  refusable(setCommitteeDiscord({path: {id}, body}), "Discord could not be set for the committee.")

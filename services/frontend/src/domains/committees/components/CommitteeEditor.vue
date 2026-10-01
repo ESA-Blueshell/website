@@ -21,17 +21,21 @@ import {useCasualGames} from "@/domains/games"
 import {
   addCommittee,
   type Committee,
+  type CommitteeDiscordRequest,
   listCommittees,
   removeCommittee,
   saveCommitteeAsBoard,
+  saveCommitteeDiscord,
   saveOwnCommitteePage,
   storeCommitteeBanner,
   storeCommitteeIcon,
 } from "../adapters/committees"
+import CommitteeDiscordFields from "../island/CommitteeDiscordFields.vue"
 import CommitteeSeats, {type Seat} from "../island/CommitteeSeats.vue"
 import {cellOf} from "../useCommittees"
 import {initialsOf} from "@/utils/initials"
 import {BRAND_ACCENT} from "@/utils/brand"
+import store from "@/plugins/store"
 
 /**
  * A committee added or corrected on its own page, with its page head and its cell in Every
@@ -63,6 +67,7 @@ const gameCodes = ref<string[]>([])
 const seats = ref<Seat[]>([])
 const failure = ref<string | null>(null)
 const saving = ref(false)
+const discord = ref<CommitteeDiscordRequest | null>(null)
 
 watch(() => props.committee, async committee => {
   name.value = committee?.name ?? ""
@@ -150,6 +155,11 @@ const submit = async () => {
     if (!result.ok) {
       failure.value = result.reason
       return
+    }
+    // The committee is saved either way; Discord refusing only means its role and channels wait.
+    if (props.asBoard && discord.value) {
+      const set = await saveCommitteeDiscord(result.saved.id, discord.value)
+      if (!set.ok) store.commit("setStatusSnackbarMessage", set.reason)
     }
     await refreshSharedLists()
     emit("saved", result.saved)
@@ -279,6 +289,14 @@ const removeIt = async () => {
       >
         <committee-seats v-model="seats" />
       </form-section>
+
+      <committee-discord-fields
+        v-if="asBoard"
+        v-model="discord"
+        :committee-id="committee?.id ?? null"
+        :name="name"
+        :slug="slug"
+      />
 
       <notice-box
         v-if="failure"

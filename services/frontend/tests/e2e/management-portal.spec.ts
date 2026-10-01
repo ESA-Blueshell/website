@@ -54,7 +54,7 @@ test.describe("the Management portal", () => {
     await page.goto("/management/emails")
     await expect(page).toHaveURL(/\/management\/mail\/sent$/)
     await page.goto("/management/cohorts/targets")
-    await expect(page).toHaveURL(/\/management\/platforms\/brevo\/lists$/)
+    await expect(page).toHaveURL(/\/management\/platforms\/brevo$/)
   })
 
   test("a member is shown the unauthorized page", async ({page}) => {

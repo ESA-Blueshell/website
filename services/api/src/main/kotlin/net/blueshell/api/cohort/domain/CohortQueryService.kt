@@ -14,8 +14,6 @@ import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.cohort.persistence.state
 import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.sync.api.ExternalIdMappingService
-import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.slf4j.LoggerFactory
@@ -34,7 +32,6 @@ class CohortQueryService(
     private val targetMembers: TargetMemberRepository,
     private val users: UserService,
     private val targetExternalIds: CohortTargetIds,
-    private val externalIds: ExternalIdMappingService,
     private val definitions: CohortDefinitionRegistry,
     private val strategies: TargetStrategies,
     private val runs: TargetReconcileRunRepository,
@@ -68,8 +65,8 @@ class CohortQueryService(
     private fun targetSystemOrNull(system: String): TargetSystem? = TargetSystem.entries.firstOrNull { it.name == system }
 
     /**
-     * External id to the account behind it, for the rows that have no account of their own.
-     * Grouped by system because an external id only means anything within one.
+     * External id to the account behind it, for the rows that have no account of their own, as each
+     * system's strategy knows it. Grouped by system because an external id only means anything within one.
      */
     private fun resolveStrangerOwners(
         members: List<TargetMember>,
@@ -83,11 +80,8 @@ class CohortQueryService(
                 row.externalUserId?.let { system to it }
             }.groupBy({ it.first }, { it.second })
             .forEach { (system, externalUserIds) ->
-                externalIds
-                    .findByExternalIds(USER_AGGREGATE, system.name, externalUserIds.toSet())
-                    // A mapping row without an external id maps nothing; skip rather than
-                    // keying the map on null.
-                    .forEach { mapping -> mapping.externalId?.let { byExternalId[it] = mapping.aggregateId } }
+                runCatching { strategies.require(system).ownersOf(externalUserIds.toSet()) }
+                    .onSuccess(byExternalId::putAll)
             }
         return byExternalId
     }

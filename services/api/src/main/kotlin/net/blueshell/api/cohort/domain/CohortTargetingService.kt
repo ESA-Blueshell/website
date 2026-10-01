@@ -88,7 +88,9 @@ class CohortTargetingService(
             }
         val folder = folderHint ?: unlinked?.folder
 
-        val external = outsideTransaction.execute { strategies.require(system).create(label, folder) }
+        val strategy = strategies.require(system)
+        if (!strategy.available()) throw TargetSystemUnavailable(system)
+        val external = outsideTransaction.execute { strategy.create(label, folder) }
 
         return writeTransaction.execute {
             val target =

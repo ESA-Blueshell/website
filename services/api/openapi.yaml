@@ -5115,11 +5115,16 @@ components:
           oneOf:
           - $ref: '#/components/schemas/JobTrigger'
           - type: 'null'
+        unreachable:
+          description: Ours only with no account on the system, whom no push reaches
+          format: int32
+          type: integer
       required:
       - inSync
       - oursOnly
       - startedAt
       - theirsOnly
+      - unreachable
       type: object
     RecordMandateRequest:
       properties:
@@ -6216,6 +6221,7 @@ components:
       enum:
       - BREVO
       - GOOGLE_CALENDAR
+      - DISCORD
       type: string
     TeamRequest:
       description: A team as a write says it stands. A team is the association's rather than a game's, so it names none

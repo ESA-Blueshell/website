@@ -33,13 +33,31 @@ data class ExternalMember(
     val label: String?,
 )
 
+/** How a system knows the site's people: the id each has there, and who an id there belongs to. */
+interface MemberIdentity {
+    /** The id each of [userIds] has on the system, for those who have one. */
+    fun memberIds(userIds: Set<Long>): Map<Long, String>
+
+    /** The account behind each of [externalUserIds], for those an account holds. */
+    fun ownersOf(externalUserIds: Set<String>): Map<String, Long>
+
+    /**
+     * Whether a user without an id there is given one by the site, as Brevo is given a contact.
+     * Where not, they are unreachable: counted apart from drift and never pushed.
+     */
+    val makesMemberIds: Boolean
+
+    /** Sets off making [userId]'s id on the system; only called where [makesMemberIds]. */
+    fun makeMemberId(userId: Long)
+}
+
 /**
  * The one port over a cohort's external target: its catalogue, its folders, and who is on it.
  *
  * Ids are [String] so a Discord snowflake or a Google group address sits beside Brevo's numeric
  * list id; an adapter that needs another shape converts at its own edge and nowhere else.
  */
-interface TargetStrategy {
+interface TargetStrategy : MemberIdentity {
     val descriptor: TargetDescriptor
     val system: TargetSystem get() = descriptor.system
 
@@ -54,6 +72,12 @@ interface TargetStrategy {
     fun resolve(externalId: String): ExternalTarget? = catalog(externalId).firstOrNull { it.externalId == externalId }
 
     fun members(external: ExternalTarget): List<ExternalMember>
+
+    /**
+     * Whether the system can be reached now. A target on one that cannot is absent: its writes and
+     * reconciles skip rather than fail, and its catalogue is empty.
+     */
+    fun available(): Boolean = true
 
     fun add(
         external: ExternalTarget,

@@ -1,9 +1,14 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import org.springframework.stereotype.Service
 
 /**
@@ -14,6 +19,8 @@ import org.springframework.stereotype.Service
 @Service
 class BrevoTargetStrategy(
     contactListAdapters: List<ContactListAdapter>,
+    private val externalIds: ExternalIdMappingService,
+    private val jobs: JobQueue,
 ) : TargetStrategy {
     private val lists = contactListAdapters.single { it.system == TargetSystem.BREVO }
 
@@ -70,6 +77,25 @@ class BrevoTargetStrategy(
             externalUserId.toBrevoId("externalUserId", "remove"),
             external.externalId.toBrevoId("externalId", "remove"),
         )
+    }
+
+    override fun memberIds(userIds: Set<Long>): Map<Long, String> =
+        externalIds
+            .findBatch(USER_AGGREGATE, userIds, system.name)
+            .mapNotNull { mapping -> mapping.externalId?.takeIf { it.isNotBlank() }?.let { mapping.aggregateId to it } }
+            .toMap()
+
+    override fun ownersOf(externalUserIds: Set<String>): Map<String, Long> =
+        externalIds
+            .findByExternalIds(USER_AGGREGATE, system.name, externalUserIds)
+            .mapNotNull { mapping -> mapping.externalId?.let { it to mapping.aggregateId } }
+            .toMap()
+
+    // A member's contact is made by the contact sync, and a push retries once it exists.
+    override val makesMemberIds = true
+
+    override fun makeMemberId(userId: Long) {
+        jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId), JobTrigger.ANOTHER_JOB)
     }
 
     /** Brevo's own folders, including the ones holding nothing. */

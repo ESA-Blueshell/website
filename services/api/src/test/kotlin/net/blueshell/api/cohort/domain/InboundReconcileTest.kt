@@ -317,6 +317,14 @@ class InboundReconcileTest {
     ): User = Entities.user(id = id, firstName = "User", lastName = "$id", email = email)
 
     private class RecordingTargetStrategy : TargetStrategy {
+        override fun memberIds(userIds: Set<Long>): Map<Long, String> = emptyMap()
+
+        override fun ownersOf(externalUserIds: Set<String>): Map<String, Long> = emptyMap()
+
+        override val makesMemberIds = false
+
+        override fun makeMemberId(userId: Long) = Unit
+
         override val descriptor =
             TargetDescriptor(
                 system = TargetSystem.BREVO,

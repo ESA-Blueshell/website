@@ -2474,6 +2474,10 @@ export type ReconcileRun = {
      * What queued it; null for a run queued before runs recorded it
      */
     trigger?: JobTrigger | null;
+    /**
+     * Ours only with no account on the system, whom no push reaches
+     */
+    unreachable: number;
 };
 
 export type RecordMandateRequest = {
@@ -3043,7 +3047,8 @@ export type TargetOverviewResult = {
 
 export enum TargetSystem {
     BREVO = 'BREVO',
-    GOOGLE_CALENDAR = 'GOOGLE_CALENDAR'
+    GOOGLE_CALENDAR = 'GOOGLE_CALENDAR',
+    DISCORD = 'DISCORD'
 }
 
 /**

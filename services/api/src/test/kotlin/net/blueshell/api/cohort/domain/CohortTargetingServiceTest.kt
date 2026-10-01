@@ -55,6 +55,7 @@ class CohortTargetingServiceTest {
         whenever(strategy.system).thenReturn(TargetSystem.BREVO)
         whenever(strategy.descriptor).thenReturn(brevoDescriptor)
         whenever(strategy.resolve(any())).thenReturn(null)
+        whenever(strategy.available()).thenReturn(true)
         strategies = TargetStrategies(listOf(strategy))
         service = CohortTargetingService(targetRepo, cohortRepo, targetExternalIds, strategies, jobs, txManager)
     }
@@ -311,5 +312,18 @@ class CohortTargetingServiceTest {
                 system = TargetSystem.BREVO,
                 kind = TargetKind.LIST,
             )
+    }
+
+    @Test
+    fun `create refuses a system that cannot be reached before anything is made`() {
+        whenever(strategy.available()).thenReturn(false)
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
+
+        org.assertj.core.api.Assertions
+            .assertThatThrownBy { service.create(1L, TargetSystem.BREVO, "Members", null) }
+            .isInstanceOf(TargetSystemUnavailable::class.java)
+        org.mockito.kotlin
+            .verify(strategy, org.mockito.kotlin.never())
+            .create(any(), anyOrNull())
     }
 }

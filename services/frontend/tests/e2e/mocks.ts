@@ -2244,8 +2244,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             lastReconciledAt: "2026-02-10T09:00:00Z",
             folderKnown: true,
             runs: [
-              {startedAt: "2026-02-10T09:00:00Z", trigger: "SCHEDULED_RUN", inSync: 40, oursOnly: 1, theirsOnly: 2},
-              {startedAt: "2026-02-09T09:00:00Z", trigger: "SCHEDULED_RUN", inSync: 38, oursOnly: 3, theirsOnly: 2},
+              {startedAt: "2026-02-10T09:00:00Z", trigger: "SCHEDULED_RUN", inSync: 40, oursOnly: 1, theirsOnly: 2, unreachable: 0},
+              {startedAt: "2026-02-09T09:00:00Z", trigger: "SCHEDULED_RUN", inSync: 38, oursOnly: 3, theirsOnly: 2, unreachable: 0},
             ],
             enforced: false,
           },

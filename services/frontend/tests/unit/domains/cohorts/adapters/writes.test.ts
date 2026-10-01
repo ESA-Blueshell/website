@@ -242,6 +242,14 @@ describe("making and renaming lists on the system", () => {
       ok: false,
       reason: "Brevo refused it: Failed to create list",
     })
+
+    vi.mocked(createExternalTarget).mockResolvedValue(
+      refusal(createExternalTarget, {code: "TargetSystemUnavailable", system: "Discord"}, 503),
+    )
+    await expect(createListInSystem(TargetSystem.DISCORD, "Sitecie", null)).resolves.toEqual({
+      ok: false,
+      reason: "Discord cannot be reached now; try again later.",
+    })
   })
 
   it("renames a list and answers with its new name", async () => {

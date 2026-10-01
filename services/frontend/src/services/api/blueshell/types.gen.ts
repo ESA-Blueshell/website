@@ -366,6 +366,15 @@ export type BoardResponse = {
     version: number;
 };
 
+export type BotStandingResult = {
+    above: Array<DiscordRole>;
+    botRole?: DiscordRole | null;
+    claimed: Array<DiscordRole>;
+    connected: boolean;
+    manageChannels: boolean;
+    manageRoles: boolean;
+};
+
 export type BulkActionResult = {
     applied: number;
     queued: number;
@@ -1169,6 +1178,12 @@ export type DiscordMentionsResponse = {
  * A member or a channel of the Discord server, by the name the server shows
  */
 export type DiscordNameResponse = {
+    id: string;
+    name: string;
+};
+
+export type DiscordRole = {
+    colour?: number | null;
     id: string;
     name: string;
 };
@@ -10351,6 +10366,47 @@ export type ReconcileTargetResponses = {
 };
 
 export type ReconcileTargetResponse = ReconcileTargetResponses[keyof ReconcileTargetResponses];
+
+export type FindBotStandingData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/bot';
+};
+
+export type FindBotStandingErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBotStandingError = FindBotStandingErrors[keyof FindBotStandingErrors];
+
+export type FindBotStandingResponses = {
+    /**
+     * OK
+     */
+    200: BotStandingResult;
+};
+
+export type FindBotStandingResponse = FindBotStandingResponses[keyof FindBotStandingResponses];
 
 export type List1Data = {
     body?: never;

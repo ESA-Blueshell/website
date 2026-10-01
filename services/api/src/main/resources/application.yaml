@@ -186,6 +186,8 @@ discord:
   # The home page links its starboard to the same channel.
   doors:
     starboard: ${discord.starboard.channel}
+  # The role ids the separate role-claim bot hands out, comma apart; the site never keeps them.
+  claim-roles: ${DISCORD_CLAIM_ROLES:}
 
 google:
   calendar:

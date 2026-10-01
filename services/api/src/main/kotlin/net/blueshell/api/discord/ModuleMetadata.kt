@@ -18,6 +18,8 @@ import org.springframework.modulith.PackageInfo
     allowedDependencies = [
         // Open kernel.
         "shared",
+        // The management endpoints are the board's.
+        "security",
         // The bot implements the DiscordPublisher port sync declares.
         "sync :: api",
         // Games are given the server's channels named for them, through the game module.

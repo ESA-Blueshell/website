@@ -33,11 +33,11 @@ EOF
 API="https://discord.com/api/v10"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT/services/api/.api.env"
-# Create Invite (1 << 0), View Channels (1 << 10), Send Messages (1 << 11), Embed Links (1 << 14),
-# Attach Files (1 << 15), Read Message History (1 << 16), Mention All Roles (1 << 17) and Create
-# Events (1 << 44): reading the server, inviting to it, posting to it and listing events in it.
-# Nothing that manages it.
-PERMISSIONS=17592186293249
+# Create Invite (1 << 0), Manage Channels (1 << 4), View Channels (1 << 10), Send Messages (1 << 11),
+# Embed Links (1 << 14), Attach Files (1 << 15), Read Message History (1 << 16), Mention All Roles
+# (1 << 17), Manage Roles (1 << 28) and Create Events (1 << 44): reading the server, inviting to it,
+# posting to it, listing events in it, and keeping roles and channels in step with the site.
+PERMISSIONS=17592454728721
 # The intent flags on an application: the limited bits are what an unverified bot has, the full
 # bits what a verified one has.
 PRESENCE_FLAGS=$(((1 << 12) | (1 << 13)))
@@ -151,8 +151,8 @@ check_permissions() {
   done < <(jq -r --argjson mine "$(jq '.roles' <<<"$body")" --arg everyone "$guild" \
     '.roles[] | select(.id == $everyone or (.id as $id | $mine | index($id))) | .permissions' <<<"$server")
   local name bit
-  for name in "Create Invite:0" "View Channels:10" "Send Messages:11" "Embed Links:14" \
-    "Attach Files:15" "Read Message History:16" "Mention All Roles:17" "Create Events:44"; do
+  for name in "Create Invite:0" "Manage Channels:4" "View Channels:10" "Send Messages:11" "Embed Links:14" \
+    "Attach Files:15" "Read Message History:16" "Mention All Roles:17" "Manage Roles:28" "Create Events:44"; do
     bit=$(( 1 << ${name##*:} ))
     if (( held & (1 << 3) || held & bit )); then
       pass "the bot may ${name%%:*}"

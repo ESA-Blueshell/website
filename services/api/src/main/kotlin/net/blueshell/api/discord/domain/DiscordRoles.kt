@@ -29,15 +29,13 @@ class DiscordRoleDirectory(
     fun pingable(): List<DiscordRole>? =
         roles()
             ?.filterNot { it.isPublicRole || it.isManaged }
-            ?.map(::described)
+            ?.map(::describedRole)
 
     /** Every role among [ids] the server has, @everyone and integration roles included. */
     fun named(ids: Set<String>): List<DiscordRole>? =
         roles()
             ?.filter { it.id in ids }
-            ?.map(::described)
-
-    private fun described(role: Role) = DiscordRole(role.id, role.name, role.colors.takeUnless { it.isDefault }?.primaryRaw)
+            ?.map(::describedRole)
 
     // Highest first, as the server lists them.
     private fun roles(): List<Role>? {
@@ -45,3 +43,5 @@ class DiscordRoleDirectory(
         return kept.get { source.guild()?.roles }
     }
 }
+
+internal fun describedRole(role: Role) = DiscordRole(role.id, role.name, role.colors.takeUnless { it.isDefault }?.primaryRaw)

@@ -49,6 +49,16 @@ class TargetCatalog(
         return found?.let { TargetPlace(it.path, folderKnown = true) } ?: TargetPlace(listOf(system.shownName), folderKnown = false)
     }
 
+    /** One target as its system has it now, with the cohort target it is linked to. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun find(
+        system: TargetSystem,
+        externalId: String,
+    ): ExternalTarget {
+        val found = strategies.require(system).resolve(externalId) ?: throw TargetNotFound(system, externalId)
+        return found.copy(linkedTargetId = linkedTargets(system)[externalId])
+    }
+
     /** Make a target linked to no cohort, in [folder] or at the top level. */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun create(

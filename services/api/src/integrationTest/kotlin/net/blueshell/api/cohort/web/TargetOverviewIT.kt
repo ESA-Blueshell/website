@@ -65,6 +65,15 @@ class TargetOverviewIT : UserTestSupport() {
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.queued").value(1))
 
+        mvc
+            .perform(get("/management/cohort-targets/{system}/lists/{id}", "BREVO", listId).with(signedIn(board)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.cohortId").value(followed.id!!.toInt()))
+        mvc
+            .perform(get("/management/cohort-targets/{system}/lists/{id}", "BREVO", "999999999").with(signedIn(board)))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.code").value("TargetNotFound"))
+
         val member = createUserWithRole(Role.MEMBER)
         mvc.perform(get("/management/cohort-targets/{system}/overview", "BREVO").with(signedIn(member))).andExpect(status().isForbidden)
     }

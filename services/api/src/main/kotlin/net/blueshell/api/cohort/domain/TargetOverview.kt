@@ -1,5 +1,6 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.Target
@@ -69,22 +70,7 @@ class TargetOverview(
         val lists =
             external.map { list ->
                 val target = byExternalId[list.externalId]
-                val cohort = target?.cohortId?.let(cohortById::get)
-                val newest = target?.id?.let(runs::findFirstByTargetIdOrderByStartedAtDesc)
-                ListedTarget(
-                    externalId = list.externalId,
-                    label = list.label,
-                    folderLabel = list.folderLabel,
-                    memberCount = list.memberCount,
-                    targetId = target?.id,
-                    cohortId = cohort?.id,
-                    cohortLabel = cohort?.label,
-                    cohortType = cohort?.type,
-                    missing = newest?.oursOnly,
-                    extra = newest?.theirsOnly,
-                    lastReconciledAt = newest?.startedAt,
-                    enforced = target?.enforced ?: false,
-                )
+                rowOf(list, target, target?.cohortId?.let(cohortById::get))
             }
         val missing =
             missingOf(system).mapNotNull { target ->
@@ -100,6 +86,39 @@ class TargetOverview(
                 )
             }
         return TargetOverviewResult(lists, missing, lists.mapNotNull { it.lastReconciledAt }.maxOrNull())
+    }
+
+    /** One list on the system, with the cohort it follows and its newest drift. */
+    fun one(
+        system: TargetSystem,
+        externalId: String,
+    ): ListedTarget {
+        val list = catalog.find(system, externalId)
+        val target = targets.findFirstBySystemAndExternalId(system.name, externalId)
+        val cohort = target?.cohortId?.let { cohorts.findById(it).orElse(null) }
+        return rowOf(list, target, cohort)
+    }
+
+    private fun rowOf(
+        list: ExternalTarget,
+        target: Target?,
+        cohort: Cohort?,
+    ): ListedTarget {
+        val newest = target?.id?.let(runs::findFirstByTargetIdOrderByStartedAtDesc)
+        return ListedTarget(
+            externalId = list.externalId,
+            label = list.label,
+            folderLabel = list.folderLabel,
+            memberCount = list.memberCount,
+            targetId = target?.id,
+            cohortId = cohort?.id,
+            cohortLabel = cohort?.label,
+            cohortType = cohort?.type,
+            missing = newest?.oursOnly,
+            extra = newest?.theirsOnly,
+            lastReconciledAt = newest?.startedAt,
+            enforced = target?.enforced ?: false,
+        )
     }
 
     /**

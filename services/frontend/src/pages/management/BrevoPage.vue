@@ -224,10 +224,9 @@ onMounted(load)
             <span class="brevo__name">
               <template v-if="row.missing">{{ row.missing.cohortLabel }}</template>
               <router-link
-                v-else-if="row.list.cohortId != null"
-                :to="`/management/platforms/brevo/cohort/${row.list.cohortId}`"
+                v-else
+                :to="`/management/platforms/brevo/lists/${row.list.externalId}`"
               >{{ row.list.label }}</router-link>
-              <template v-else>{{ row.list.label }}</template>
             </span>
             <span class="brevo__sub brevo__follows">{{ followsOf(row) }}</span>
             <span class="brevo__sub">{{ people(row) }}</span>

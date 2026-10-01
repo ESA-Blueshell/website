@@ -9294,6 +9294,50 @@ export type CreateTargetFolderResponses = {
 
 export type CreateTargetFolderResponse = CreateTargetFolderResponses[keyof CreateTargetFolderResponses];
 
+export type FindListedTargetData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+        externalId: string;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/lists/{externalId}';
+};
+
+export type FindListedTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindListedTargetError = FindListedTargetErrors[keyof FindListedTargetErrors];
+
+export type FindListedTargetResponses = {
+    /**
+     * OK
+     */
+    200: ListedTarget;
+};
+
+export type FindListedTargetResponse = FindListedTargetResponses[keyof FindListedTargetResponses];
+
 export type CreateMissingTargetsData = {
     body: CreateMissingTargetsRequest;
     path: {

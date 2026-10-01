@@ -125,6 +125,7 @@ const PAGES = [
   {path: "/management/mail/sent", ready: "sent-emails"},
   {path: "/management/mail/inbox", ready: "inbox"},
   {path: "/management/platforms/brevo", ready: "brevo-page"},
+  {path: "/management/platforms/brevo/lists/7", ready: "brevo-list"},
 ]
 
 for (const theme of ["dark", "light"] as const) {

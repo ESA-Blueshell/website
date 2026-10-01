@@ -9,19 +9,17 @@ import {
   archiveExternalTarget,
   createExternalTarget,
   createMissingTargets,
-  createTarget,
   createTargetFolder,
   deleteExternalTarget,
   enforceTarget,
-  evaluateUser,
   findCohortById,
   findCohorts,
+  findListedTarget,
   findTargetOverview,
   listTargetOptions,
   linkExistingTarget,
   linkDrift,
   listCohortTargetFolders,
-  listCohortTargetSystems,
   moveCohortTarget,
   previewFolderTidy,
   previewInboundReconcile,
@@ -30,8 +28,6 @@ import {
   pushDrift,
   removeDrift,
   renameExternalTarget,
-  searchCohortTargets,
-  switchTarget,
 } from "@/services/api"
 import type {
   CohortTarget as ApiCohortTarget,
@@ -45,7 +41,6 @@ import type {
   ListedTarget,
   MissingTarget,
   TargetOverviewResult,
-  TargetDescriptor as ApiTargetDescriptor,
 } from "@/services/api"
 import {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem} from "@/services/api"
 import type {Refused} from "@/types/api"
@@ -63,12 +58,6 @@ export {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigge
 export async function triggerReconcile(cohortId: number, targetId: number): Promise<{ok: true} | Refused> {
   return accepted(reconcileTarget({path: {id: cohortId, targetId}}), "The reconcile could not be queued.")
 }
-
-/** Queue a fresh look at which cohorts somebody belongs to. */
-export async function evaluateMember(userId: number): Promise<{ok: true} | Refused> {
-  return accepted(evaluateUser({path: {userId}}), "The member could not be looked at again.")
-}
-
 
 /** A theirs-only contact, and the account holding the address the target calls them by. */
 export type LinkProposal = {externalUserId: string; label: string | null; userId: number | null; userFullName: string | null}
@@ -155,11 +144,6 @@ export type ReconcileRun = {
 
 export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
 
-export type TargetDescriptor = {
-  system: TargetSystem
-  kind: ApiTargetDescriptor["kind"]
-}
-
 // Mirrors the API's ExternalTarget. A field added there has to be added here too.
 export type ExternalTarget = {
   system: TargetSystem
@@ -220,41 +204,6 @@ export async function linkExistingTargetForCohort(
   }
 }
 
-/** Creates a fresh external target and maps the cohort's per-system cohort to it. */
-export async function createTargetForCohort(
-  cohortId: number,
-  system: TargetSystem,
-  label: string,
-  folderHint: string | null,
-): Promise<AddTargetResult> {
-  try {
-    const res = await createTarget({
-      path: { id: cohortId },
-      body: { system, label, folderHint: folderHint ?? undefined },
-      throwOnError: true,
-    })
-    return { type: "ok", mapping: toTargetMapping(res.data!) }
-  } catch (err: unknown) {
-    return asConflict(err) ?? Promise.reject(err)
-  }
-}
-
-/** Repoints an existing cohort mapping at a different external target. */
-export async function switchCohortTarget(
-  cohortId: number,
-  targetId: number,
-  externalId: string,
-  deletePrevious: boolean,
-  reconcileNow: boolean,
-): Promise<TargetMapping> {
-  const res = await switchTarget({
-    path: { id: cohortId, targetId },
-    body: { externalId, deletePrevious, reconcileNow },
-    throwOnError: true,
-  })
-  return toTargetMapping(res.data!)
-}
-
 /*
  * The four reads below throw rather than answering with nothing.
  *
@@ -262,16 +211,6 @@ export async function switchCohortTarget(
  * give — so a read that failed has to be told apart from one that came back empty, or the page
  * states an emptiness nobody confirmed.
  */
-export async function fetchTargetDescriptors(): Promise<TargetDescriptor[]> {
-  const res = await listCohortTargetSystems({throwOnError: true})
-  return (res.data ?? []).map(toTargetDescriptor)
-}
-
-export async function fetchTargetOptions(system: TargetSystem): Promise<ExternalTarget[]> {
-  const res = await searchCohortTargets({path: {system}, throwOnError: true})
-  return (res.data ?? []).map(toExternalTarget)
-}
-
 /** Every folder the system has, including the ones holding nothing. */
 export async function fetchTargetFolders(system: TargetSystem): Promise<string[]> {
   const res = await listCohortTargetFolders({path: {system}, throwOnError: true})
@@ -357,13 +296,6 @@ export type BulkTargetMoveResult = {
   failed: FailedTargetMove[]
 }
 
-function toTargetDescriptor(raw: ApiTargetDescriptor): TargetDescriptor {
-  return {
-    system: raw.system,
-    kind: raw.kind,
-  }
-}
-
 function toExternalTarget(raw: ApiExternalTarget): ExternalTarget {
   return {
     system: raw.system,
@@ -377,7 +309,7 @@ function toExternalTarget(raw: ApiExternalTarget): ExternalTarget {
   }
 }
 
-export async function fetchInboundReconcilePreview(
+async function fetchInboundReconcilePreview(
   cohortId: number,
   targetId: number,
 ): Promise<InboundReconcilePreview> {
@@ -385,7 +317,7 @@ export async function fetchInboundReconcilePreview(
   return res.data as InboundReconcilePreview
 }
 
-export async function applyInboundReconcileSelection(
+async function applyInboundReconcileSelection(
   cohortId: number,
   targetId: number,
   previewToken: string,
@@ -586,4 +518,25 @@ export const readTargetOverview = (system: TargetSystem): Promise<TargetOverview
 export async function createMissingLists(system: TargetSystem, targetIds: number[]): Promise<Saved<number> | Refused> {
   const answer = await refusable(createMissingTargets({path: {system}, body: {targetIds}}), "The lists could not be created.")
   return answer.ok ? {ok: true, saved: answer.saved.queued} : answer
+}
+
+/** One list on the system with the cohort it follows; nothing where the system does not have it. */
+export const readListedTarget = (system: TargetSystem, externalId: string): Promise<ListedTarget | null> =>
+  readOr(findListedTarget({path: {system, externalId}}), null)
+
+/**
+ * Takes the contacts named into the cohort where its data can, which for a paid cohort is recording
+ * their contribution; answers how many are queued. Those the preview cannot take in are left alone.
+ */
+export async function adoptPeople(cohortId: number, targetId: number, externalUserIds: string[]): Promise<Saved<number> | Refused> {
+  try {
+    const preview = await fetchInboundReconcilePreview(cohortId, targetId)
+    const wanted = new Set(externalUserIds)
+    const picked = preview.matched.filter((row) => row.writable && wanted.has(row.externalUserId)).map((row) => row.externalUserId)
+    if (!preview.writerSupported || picked.length === 0) return {ok: false, reason: "None of them can be taken in from Brevo."}
+    const applied = await applyInboundReconcileSelection(cohortId, targetId, preview.previewToken, picked)
+    return {ok: true, saved: applied.acceptedCount}
+  } catch {
+    return {ok: false, reason: "They could not be taken in."}
+  }
 }

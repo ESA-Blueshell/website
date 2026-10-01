@@ -128,7 +128,8 @@ describe("the ways into Management", {timeout: 20_000}, () => {
       ["/management/emails", "/management/mail/sent"],
       ["/management/cohorts", "/management/platforms/brevo"],
       ["/management/cohorts/targets", "/management/platforms/brevo"],
-      ["/management/cohort/7", "/management/platforms/brevo/cohort/7"],
+      // Unreadable here, so the cohort's list cannot be found and Brevo is where it lands.
+      ["/management/cohort/7", "/management/platforms/brevo"],
       ["/management/cohorts/periods", "/management/platforms/brevo"],
       ["/management/platforms/brevo/lists", "/management/platforms/brevo"],
       ["/management/platforms/brevo/committees", "/management/platforms/brevo"],

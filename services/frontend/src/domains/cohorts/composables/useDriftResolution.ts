@@ -1,5 +1,6 @@
 import {computed, ref, type Ref} from "vue"
 import {
+  adoptPeople,
   linkDriftPeople,
   proposeDriftLinks,
   pushDriftPeople,
@@ -9,8 +10,8 @@ import {
   type TargetMapping,
 } from "@/domains/cohorts/adapters/cohorts"
 
-/** What the board can do about a person on one side only. Adopting is the inbound reconcile. */
-export type DriftAction = "push" | "remove" | "link"
+/** What the board can do about a person on one side only. Adopting takes them in through the inbound reconcile. */
+export type DriftAction = "push" | "remove" | "link" | "adopt"
 
 /** The people one action concerns, grouped by the target each sits on. */
 export type DriftGroup = {targetId: number; people: CohortMember[]}
@@ -22,12 +23,14 @@ const fits: Record<DriftAction, (row: CohortMember) => boolean> = {
   push: (row) => row.sync === "ONLY_HERE" && row.userId != null,
   remove: (row) => row.sync === "ONLY_EXTERNAL" && row.externalUserId != null,
   link: (row) => row.sync === "ONLY_EXTERNAL" && row.userId == null && row.externalUserId != null,
+  adopt: (row) => row.sync === "ONLY_EXTERNAL" && row.userId != null && row.externalUserId != null,
 }
 
 const DONE: Record<DriftAction, (count: number) => string> = {
   push: (count) => `${count} pushed.`,
   remove: (count) => `${count} removed.`,
   link: (count) => `${count} linked.`,
+  adopt: (count) => `${count} queued to be taken in.`,
 }
 
 /**
@@ -110,6 +113,10 @@ export function useDriftResolution(
   const run = async (current: DriftPlan, group: DriftGroup, id: number): Promise<{count: number; refused: string | null}> => {
     if (current.action === "push") {
       const answer = await pushDriftPeople(id, group.targetId, group.people.map((row) => row.userId!))
+      return answer.ok ? {count: answer.saved, refused: null} : {count: 0, refused: answer.reason}
+    }
+    if (current.action === "adopt") {
+      const answer = await adoptPeople(id, group.targetId, group.people.map((row) => row.externalUserId!))
       return answer.ok ? {count: answer.saved, refused: null} : {count: 0, refused: answer.reason}
     }
     if (current.action === "remove") {

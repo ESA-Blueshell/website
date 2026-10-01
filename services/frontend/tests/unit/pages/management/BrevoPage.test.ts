@@ -64,7 +64,7 @@ describe("the Brevo page", () => {
     expect(wrapper.get('[data-testid="brevo-create-missing"]').text()).toBe("Create the list")
     expect(wrapper.get('[data-testid="brevo-state-missing-3"]').text()).toBe("Not created yet")
     expect(wrapper.get('[data-testid="brevo-state-list-7"]').text()).toBe("In step")
-    expect(wrapper.get('[data-testid="brevo-row-list-7"] .brevo__name > *').attributes("to")).toBe("/management/platforms/brevo/cohort/101")
+    expect(wrapper.get('[data-testid="brevo-row-list-7"] .brevo__name > *').attributes("to")).toBe("/management/platforms/brevo/lists/7")
     expect(wrapper.get('[data-testid="brevo-group-Follows nothing"]').text()).toContain("Old newsletter test")
     expect(wrapper.find('[data-testid="brevo-row-list-10"]').exists()).toBe(false)
 

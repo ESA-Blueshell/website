@@ -14,14 +14,14 @@ class DiscordBotControllerTest {
         val read = BotStandingResult(true, true, true, null, emptyList(), emptyList())
         whenever(standing.read()).thenReturn(read)
 
-        assertThat(DiscordBotController(standing, mock(), mock(), mock(), mock()).findBotStanding()).isSameAs(read)
+        assertThat(DiscordBotController(standing, mock(), mock(), mock(), mock(), mock()).findBotStanding()).isSameAs(read)
     }
 
     @Test
     fun `offers the roles and channels a picker needs, and none without a bot`() {
         val roles: net.blueshell.api.discord.api.DiscordRoleKeeper = mock()
         val channels: net.blueshell.api.discord.api.DiscordChannelKeeper = mock()
-        val controller = DiscordBotController(mock(), mock(), roles, channels, mock())
+        val controller = DiscordBotController(mock(), mock(), roles, channels, mock(), mock())
         val role =
             net.blueshell.api.discord.api
                 .KeptRole("1", "Sitecie", true)
@@ -42,7 +42,7 @@ class DiscordBotControllerTest {
     @Test
     fun `makes a game channel and reads and sets a channel's access through the policies`() {
         val policies: net.blueshell.api.discord.domain.GameChannelPolicies = mock()
-        val controller = DiscordBotController(mock(), policies, mock(), mock(), mock())
+        val controller = DiscordBotController(mock(), policies, mock(), mock(), mock(), mock())
         val made =
             net.blueshell.api.discord.domain
                 .MadeChannel("1", "99", "bs-valo")
@@ -77,6 +77,29 @@ class DiscordBotControllerTest {
             )
         whenever(catalogue.channels()).thenReturn(listed)
 
-        assertThat(DiscordBotController(mock(), mock(), mock(), mock(), catalogue).listCataloguedChannels()).isSameAs(listed)
+        assertThat(DiscordBotController(mock(), mock(), mock(), mock(), catalogue, mock()).listCataloguedChannels()).isSameAs(listed)
+    }
+
+    @Test
+    fun `reads and sets a game's access, and archives a channel only with a bot`() {
+        val gameAccess: net.blueshell.api.discord.domain.GameAccess = mock()
+        val channels: net.blueshell.api.discord.api.DiscordChannelKeeper = mock()
+        val controller = DiscordBotController(mock(), mock(), mock(), channels, mock(), gameAccess)
+        val state =
+            net.blueshell.api.discord.domain
+                .GameAccessState(net.blueshell.api.discord.domain.AccessPolicy.DEFAULT, emptyList())
+        whenever(gameAccess.read("VALO")).thenReturn(state)
+        whenever(gameAccess.set("VALO", net.blueshell.api.discord.domain.AccessPolicy.DEFAULT)).thenReturn(state)
+
+        assertThat(controller.findGameAccess("VALO")).isSameAs(state)
+        assertThat(controller.setGameAccess("VALO", net.blueshell.api.discord.domain.AccessPolicy.DEFAULT)).isSameAs(state)
+        org.assertj.core.api.Assertions
+            .assertThatThrownBy { controller.archiveChannel("1") }
+            .isInstanceOf(net.blueshell.api.discord.domain.DiscordUnreachable::class.java)
+        whenever(channels.available()).thenReturn(true)
+        controller.archiveChannel("1")
+        org.mockito.kotlin
+            .verify(channels)
+            .archive(listOf("1"))
     }
 }

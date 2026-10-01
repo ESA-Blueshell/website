@@ -1723,6 +1723,11 @@ export type FirstContribution = {
     periodStartDate?: string | null;
 };
 
+export type GameAccessState = {
+    channels: Array<GameChannelAccess>;
+    policy: ChannelAccessPolicy;
+};
+
 /**
  * Set what a member is called in one game
  */
@@ -1738,6 +1743,12 @@ export type GameAccountResponse = {
     handle: string;
     id: number;
     userId: number;
+};
+
+export type GameChannelAccess = {
+    id: string;
+    name: string;
+    state: ChannelAccessState;
 };
 
 export enum GameChannelCategory {
@@ -11053,6 +11064,49 @@ export type SetChannelAccessResponses = {
 
 export type SetChannelAccessResponse = SetChannelAccessResponses[keyof SetChannelAccessResponses];
 
+export type ArchiveChannelData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/management/discord/channels/{id}/archive';
+};
+
+export type ArchiveChannelErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ArchiveChannelError = ArchiveChannelErrors[keyof ArchiveChannelErrors];
+
+export type ArchiveChannelResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ArchiveChannelResponse = ArchiveChannelResponses[keyof ArchiveChannelResponses];
+
 export type CreateGameChannelData = {
     body: CreateGameChannelRequest;
     path?: never;
@@ -11093,6 +11147,92 @@ export type CreateGameChannelResponses = {
 };
 
 export type CreateGameChannelResponse = CreateGameChannelResponses[keyof CreateGameChannelResponses];
+
+export type FindGameAccessData = {
+    body?: never;
+    path: {
+        code: string;
+    };
+    query?: never;
+    url: '/management/discord/games/{code}/access';
+};
+
+export type FindGameAccessErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindGameAccessError = FindGameAccessErrors[keyof FindGameAccessErrors];
+
+export type FindGameAccessResponses = {
+    /**
+     * OK
+     */
+    200: GameAccessState;
+};
+
+export type FindGameAccessResponse = FindGameAccessResponses[keyof FindGameAccessResponses];
+
+export type SetGameAccessData = {
+    body: ChannelAccessPolicy;
+    path: {
+        code: string;
+    };
+    query?: never;
+    url: '/management/discord/games/{code}/access';
+};
+
+export type SetGameAccessErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetGameAccessError = SetGameAccessErrors[keyof SetGameAccessErrors];
+
+export type SetGameAccessResponses = {
+    /**
+     * OK
+     */
+    200: GameAccessState;
+};
+
+export type SetGameAccessResponse = SetGameAccessResponses[keyof SetGameAccessResponses];
 
 export type ListKeptRolesData = {
     body?: never;

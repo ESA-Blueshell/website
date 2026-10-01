@@ -11,16 +11,21 @@ import net.blueshell.api.discord.domain.BotStandingResult
 import net.blueshell.api.discord.domain.CataloguedChannel
 import net.blueshell.api.discord.domain.ChannelAccessState
 import net.blueshell.api.discord.domain.DiscordCatalogue
+import net.blueshell.api.discord.domain.DiscordUnreachable
+import net.blueshell.api.discord.domain.GameAccess
+import net.blueshell.api.discord.domain.GameAccessState
 import net.blueshell.api.discord.domain.GameChannelCategory
 import net.blueshell.api.discord.domain.GameChannelPolicies
 import net.blueshell.api.discord.domain.MadeChannel
 import net.blueshell.api.security.BoardOnly
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @io.swagger.v3.oas.annotations.media.Schema(name = "CreateGameChannelRequest")
@@ -39,6 +44,7 @@ class DiscordBotController(
     private val roles: DiscordRoleKeeper,
     private val channels: DiscordChannelKeeper,
     private val catalogue: DiscordCatalogue,
+    private val gameAccess: GameAccess,
 ) {
     /** The roles the site could keep, for a picker; none without a bot. */
     @GetMapping("/roles")
@@ -70,6 +76,29 @@ class DiscordBotController(
         @PathVariable id: String,
         @RequestBody policy: AccessPolicy,
     ): ChannelAccessState = gameChannels.set(id, policy)
+
+    /** Who reads every channel of a game and who writes in it, and each channel as Discord has it. */
+    @GetMapping("/games/{code}/access")
+    fun findGameAccess(
+        @PathVariable code: String,
+    ): GameAccessState = gameAccess.read(code)
+
+    /** Sets who reads and writes every channel of a game; Discord is written now and never again on its own. */
+    @PutMapping("/games/{code}/access")
+    fun setGameAccess(
+        @PathVariable code: String,
+        @RequestBody policy: AccessPolicy,
+    ): GameAccessState = gameAccess.set(code, policy)
+
+    /** Moves a channel into the archive category, read only and kept for its history. */
+    @PostMapping("/channels/{id}/archive")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun archiveChannel(
+        @PathVariable id: String,
+    ) {
+        if (!channels.available()) throw DiscordUnreachable()
+        channels.archive(listOf(id))
+    }
 
     /** Whether the bot may manage roles and channels, and which roles stay out of its hands. */
     @GetMapping("/bot")

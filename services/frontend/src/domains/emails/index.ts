@@ -10,6 +10,7 @@
  */
 export {
   type FilterOption,
+  canResend,
   canRetry,
   deliveryRate,
   openRate,
@@ -20,4 +21,4 @@ export {
 } from "./reading"
 export type {EmailFilter, EmailStats, SentEmail} from "./adapters/emails"
 export {EmailDeliveryStatus} from "./adapters/emails"
-export {loadEmailPage, loadEmailStats, readSentEmail, retrySend} from "./adapters/emails"
+export {loadEmailPage, loadEmailStats, readSentEmail, resendEmail, retrySend} from "./adapters/emails"

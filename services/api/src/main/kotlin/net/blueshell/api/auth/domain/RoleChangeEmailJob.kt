@@ -1,7 +1,8 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.email.api.EmailJob
 import net.blueshell.api.email.api.EmailSenderService
-import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.job.requireExists
 import net.blueshell.api.user.api.RoleChanges
 import net.blueshell.api.user.api.UserJobs
@@ -22,12 +23,11 @@ class RoleChangeEmailJob(
     private val roleChanges: RoleChanges,
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
-) : AbstractJsonJobHandler<UserJobs.RoleChangePayload>(
+) : EmailJob<UserJobs.RoleChangePayload>(
         objectMapper,
         UserJobs.RoleChange,
+        emails,
     ) {
-    override fun handlePayload(payload: UserJobs.RoleChangePayload) {
-        val change = requireExists { roleChanges.find(payload.roleChangeId) }
-        emails.send(createRoleChangeEmail(change, frontendUrl), UserJobs.RoleChange.type, currentExecutionId)
-    }
+    override fun compose(payload: UserJobs.RoleChangePayload): EmailContent =
+        createRoleChangeEmail(requireExists { roleChanges.find(payload.roleChangeId) }, frontendUrl)
 }

@@ -2287,14 +2287,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "retry", retried)
     }
     if (method === "GET" && path === "/management/emails/stats") {
-      const counts: Record<string, number> = {PENDING: 0, SENT: 0, DELIVERED: 0, OPENED: 0, BOUNCED: 0, FAILED: 0}
+      const counts: Record<string, number> = {QUEUED: 0, SENT: 0, DELIVERED: 0, OPENED: 0, BOUNCED: 0, FAILED: 0}
       for (const email of baseEmails) {
         const s = toSearchableString(email.deliveryStatus).toUpperCase()
         if (s in counts) counts[s] = (counts[s] ?? 0) + 1
       }
       return answer(route, "getStats1", {
         totalCount: baseEmails.length,
-        pendingCount: counts["PENDING"],
+        queuedCount: counts["QUEUED"],
         sentCount: counts["SENT"],
         deliveredCount: counts["DELIVERED"],
         openedCount: counts["OPENED"],

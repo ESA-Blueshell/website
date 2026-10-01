@@ -20,6 +20,9 @@ interface EmailRepository : BaseRepository<Email, Long> {
 
     fun findByTrackingToken(trackingToken: String): Email?
 
+    /** The email a job sends; the newest where a job ever wrote two. */
+    fun findTopByJobExecutionIdOrderByIdDesc(jobExecutionId: Long): Email?
+
     fun findByMessageId(messageId: String): Email?
 
     fun findByDeliveryStatusAndSentAtBefore(

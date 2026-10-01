@@ -1,10 +1,10 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.email.api.EmailJob
 import net.blueshell.api.email.api.EmailSenderService
-import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.job.requireExists
 import net.blueshell.api.user.api.UserService
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -16,21 +16,14 @@ class RecoveryEmailJob(
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     private val contacts: SecurityContacts,
-) : AbstractJsonJobHandler<AuthJobs.RecoveryPayload>(
+) : EmailJob<AuthJobs.RecoveryPayload>(
         objectMapper,
         AuthJobs.Recovery,
+        emails,
+        "email.recovery",
     ) {
-    override fun handlePayload(payload: AuthJobs.RecoveryPayload) {
+    override fun compose(payload: AuthJobs.RecoveryPayload): EmailContent {
         val user = requireExists { users.findById(payload.userId) }
-        log.info("Sending {} email for user={}", payload.tokenPurpose, payload.userId)
-        emails.send(
-            buildRecoveryEmail(payload.tokenPurpose, user, payload.token, frontendUrl, contacts),
-            "email.recovery",
-            currentExecutionId,
-        )
-    }
-
-    companion object {
-        private val log = LoggerFactory.getLogger(RecoveryEmailJob::class.java)
+        return buildRecoveryEmail(payload.tokenPurpose, user, payload.token, frontendUrl, contacts)
     }
 }

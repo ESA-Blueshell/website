@@ -1,0 +1,24 @@
+# An email is on record from the moment its job is queued, as QUEUED rather than PENDING, and one
+# made again for a person's current address names the email it was made from.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-email-queued.yaml
+      id: email-queued
+      author: blueshell
+      changes:
+        - update:
+            tableName: emails
+            columns:
+              - column: {name: delivery_status, value: QUEUED}
+            where: delivery_status = 'PENDING'
+        - addColumn:
+            tableName: emails
+            columns:
+              - column: {name: resent_from_id, type: BIGINT}
+      rollback:
+        - dropColumn: {tableName: emails, columnName: resent_from_id}
+        - update:
+            tableName: emails
+            columns:
+              - column: {name: delivery_status, value: PENDING}
+            where: delivery_status = 'QUEUED'

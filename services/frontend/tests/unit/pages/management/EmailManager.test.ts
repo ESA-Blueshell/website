@@ -10,9 +10,10 @@ import type {VueWrapper} from "@vue/test-utils"
 import EmailManager from "@/pages/management/EmailManager.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const {mockList, mockRetry, mockGetStats, mockPreview, mockStore} = vi.hoisted(() => ({
+const {mockList, mockRetry, mockResend, mockGetStats, mockPreview, mockStore} = vi.hoisted(() => ({
   mockList: vi.fn(),
   mockRetry: vi.fn(),
+  mockResend: vi.fn(),
   mockGetStats: vi.fn(),
   mockPreview: vi.fn(),
   mockStore: {commit: vi.fn(), getters: {} as Record<string, unknown>},
@@ -27,6 +28,7 @@ vi.mock("@/services/api", async (importOriginal) => {
     ...actual,
     list1: mockList,
     retry1: mockRetry,
+    resend: mockResend,
     getStats1: mockGetStats,
     previewSentEmail: mockPreview,
   }
@@ -66,11 +68,11 @@ describe("EmailManager page", () => {
       email({id: 1, deliveryStatus: "FAILED", jobExecutionId: 9}),
       email({id: 2, deliveryStatus: "OPENED", previewable: true}),
     ], 2))
-    mockRetry.mockResolvedValue({status: 200, data: email({id: 1, deliveryStatus: "PENDING"})})
+    mockRetry.mockResolvedValue({status: 200, data: email({id: 1, deliveryStatus: "QUEUED"})})
     mockGetStats.mockResolvedValue({
       status: 200,
       data: {
-        bouncedCount: 0, deliveredCount: 4, failedCount: 1, openedCount: 3, pendingCount: 0,
+        bouncedCount: 0, deliveredCount: 4, failedCount: 1, openedCount: 3, queuedCount: 0,
         sentCount: 2, totalCount: 10,
       },
     })
@@ -167,6 +169,22 @@ describe("EmailManager page", () => {
     expect(mockStore.commit)
       .toHaveBeenCalledWith("setStatusSnackbarMessage", "That email is already queued.")
     expect(mockList).toHaveBeenCalledTimes(1)
+  })
+
+  it("resends a failed email for the current address, and says why a resend was refused", async () => {
+    mockResend.mockResolvedValueOnce({status: 200, data: email({id: 3, deliveryStatus: "QUEUED"})})
+    const wrapper = mountEmailManager()
+    await settle()
+
+    await wrapper.find('[data-testid="email-resend-btn-1"]').trigger("click")
+    await settle()
+    expect(mockResend).toHaveBeenCalledWith({path: {id: 1}})
+    expect(mockList).toHaveBeenCalledTimes(2)
+
+    mockResend.mockResolvedValueOnce({status: 409, error: {detail: "The same email is already queued"}})
+    await wrapper.find('[data-testid="email-resend-btn-1"]').trigger("click")
+    await settle()
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The same email is already queued")
   })
 
   it("falls back to its own sentence when a refusal carries no words", async () => {

@@ -43,7 +43,7 @@ class EmailSenderService(
     ) {
         val htmlContent = renderEmailHtml(emailContent)
 
-        val outbox = emailService.createPending(emailContent, emailType, jobExecutionId)
+        val outbox = emailService.forSend(emailContent, emailType, jobExecutionId)
         val trackedHtml =
             outbox.trackingToken
                 ?.let { token -> injectTrackingPixel(htmlContent, "$appUrl/track/email/open/$token") }

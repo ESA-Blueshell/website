@@ -23,19 +23,19 @@ import java.time.Instant
     ],
 )
 class Email(
-    @Column(name = "recipient_email", nullable = false) val recipientEmail: String = "",
-    @Column(name = "recipient_name", nullable = false) val recipientName: String = "",
-    @Column(name = "subject", nullable = false) val subject: String = "",
+    @Column(name = "recipient_email", nullable = false) var recipientEmail: String = "",
+    @Column(name = "recipient_name", nullable = false) var recipientName: String = "",
+    @Column(name = "subject", nullable = false) var subject: String = "",
     /**
      * The markdown body the sending domain produced, kept so a sent email can be read back.
      * Null for rows written before the column existed.
      */
-    @Lob @Column(name = "body_markdown") val bodyMarkdown: String? = null,
+    @Lob @Column(name = "body_markdown") var bodyMarkdown: String? = null,
     @Column(name = "email_type", nullable = false) val emailType: String = "",
     @Enumerated(EnumType.STRING) @Column(
         name = "delivery_status",
         nullable = false,
-    ) var deliveryStatus: EmailDeliveryStatus = EmailDeliveryStatus.PENDING,
+    ) var deliveryStatus: EmailDeliveryStatus = EmailDeliveryStatus.QUEUED,
     @Column(name = "message_id") var messageId: String? = null,
     /** Opaque UUID used as the tracking pixel token — never exposed in responses. */
     @Column(name = "tracking_token", unique = true) val trackingToken: String? = null,
@@ -51,4 +51,6 @@ class Email(
         name = "initiated_by_type",
         nullable = false,
     ) var initiatedByType: ActionActorType = ActionActorType.SYSTEM,
+    /** The email this one was made again from, for the person's current address. */
+    @Column(name = "resent_from_id") var resentFromId: Long? = null,
 ) : AuditedAutoIdEntity()

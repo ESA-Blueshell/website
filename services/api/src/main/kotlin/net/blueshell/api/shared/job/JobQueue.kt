@@ -22,6 +22,12 @@ interface JobQueue {
         trigger: JobTrigger,
         actor: Actor? = null,
     ): QueuedJob?
+
+    /** Queues what an execution ran, with its payload, as a new execution: the same work done again. */
+    fun runAgain(
+        executionId: Long,
+        trigger: JobTrigger,
+    ): QueuedJob?
 }
 
 /** Queues a job on behalf of whoever the tracked thing records as its actor. */

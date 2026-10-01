@@ -70,4 +70,22 @@ class ContributionEmailJobsTest {
 
         assertThat(sent.captured.markdownContent).contains("ending in **4300**", "BLUESHELL-1-20250901")
     }
+
+    @Test
+    fun `a joining ask sends the one fee it states`() {
+        val ask =
+            Entities.reminder(user = Entities.user(id = 1, firstName = "Mila", lastName = "Vries"), period = Entities.period(4)).apply {
+                feeType = BulkFeeType.HALF_YEAR_FEE
+                amount = 12.5
+                paymentDueDate = LocalDate.of(2026, 11, 1)
+            }
+        val reminders: ContributionReminderService = mockk { every { findById(2L) } returns ask }
+        val sent = slot<EmailContent>()
+        every { emails.send(capture(sent), any(), any()) } returns Unit
+
+        JoiningContributionEmailJob(objectMapper, reminders, emails, PaymentChannels(BankProperties(), "https://blueshell.test"))
+            .runJob(objectMapper.writeValueAsString(ContributionJobs.JoiningContributionPayload(2L)))
+
+        assertThat(sent.captured.markdownContent).contains("12,50")
+    }
 }

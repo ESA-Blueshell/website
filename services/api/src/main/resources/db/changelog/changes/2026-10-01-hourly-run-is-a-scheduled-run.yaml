@@ -1,0 +1,18 @@
+# The Discord posts' hourly run went in 1.13.0 (#2013), so the job runs that name it read as
+# scheduled runs, which 1.13.0 reads already, and the value can go (#2016). Which runs were
+# hourly is not kept, so the rollback has nothing to restore.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-hourly-run-is-a-scheduled-run.yaml
+      id: hourly-run-is-a-scheduled-run
+      author: blueshell
+      changes:
+        - sql:
+            sql: UPDATE job_executions SET queued_by = 'SCHEDULED_RUN' WHERE queued_by = 'HOURLY_RUN'
+        # An entry starts the column or follows a ';', so the leading ';' finds both.
+        - sql:
+            sql: >-
+              UPDATE job_executions
+              SET folded_triggers = SUBSTRING(REPLACE(CONCAT(';', folded_triggers), ';HOURLY_RUN,', ';SCHEDULED_RUN,'), 2)
+              WHERE folded_triggers LIKE '%HOURLY_RUN,%'
+      rollback: []

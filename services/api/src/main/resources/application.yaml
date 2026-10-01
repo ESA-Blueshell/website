@@ -250,6 +250,10 @@ email:
       username: ${EMAIL_BOUNCE_IMAP_USERNAME:}
       folder: ${EMAIL_BOUNCE_IMAP_FOLDER:INBOX}
       tls: ${EMAIL_BOUNCE_IMAP_TLS:true}
+  inbox:
+    # Poll period for the catch-all mailbox the Inbox reads. It is the bounce mailbox's account,
+    # read without changing anything in it, unless email.inbox.imap.* names another.
+    poll-interval-ms: ${EMAIL_INBOX_POLL_INTERVAL_MS:120000}
 
 logging:
   level:

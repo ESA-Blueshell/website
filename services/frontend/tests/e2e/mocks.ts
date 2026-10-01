@@ -2302,6 +2302,17 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         failedCount: counts["FAILED"],
       })
     }
+    if (method === "GET" && path === "/mail/inbox") {
+      return answer(route, "findInbox", {content: [
+        {id: 1, fromAddress: "lars@example.com", fromName: "Lars Mulder", senderUserId: 1, senderName: "Lars Mulder", subject: "Re: Your contribution",
+          receivedAt: "2026-09-29T11:20:00.000Z", state: "NEW", automatic: false, answers: {emailId: 800, emailType: "email.contribution-reminder"}},
+        {id: 2, fromAddress: "info@sponsor.example", subject: "Partnership question", toAddress: "partners@esa-blueshell.nl",
+          receivedAt: "2026-09-27T10:02:00.000Z", state: "NEW", automatic: false},
+      ], page: {size: 50, number: 0, totalElements: 2, totalPages: 1}})
+    }
+    if (method === "GET" && path === "/mail/inbox/counts") {
+      return answer(route, "findInboxCounts", {new: 2, oldestNewAt: "2026-09-27T10:02:00.000Z", done: 0, automatic: 0})
+    }
     if (method === "GET" && path === "/mail/audiences") {
       return answer(route, "findAudiences", [{key: "ACTIVE_MEMBERS:4", label: "Active members 2026-2027"}])
     }

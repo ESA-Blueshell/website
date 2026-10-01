@@ -306,6 +306,22 @@ components:
       - updatedAt
       - version
       type: object
+    AnsweredEmail:
+      properties:
+        emailId:
+          format: int64
+          type: integer
+        emailType:
+          type: string
+        sentAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+      required:
+      - emailId
+      - emailType
+      type: object
     ApiError:
       description: Problem Details for HTTP APIs including validation errors.
       properties:
@@ -3255,6 +3271,92 @@ components:
       - externalUserId
       - writable
       type: object
+    InboxCounts:
+      properties:
+        automatic:
+          format: int64
+          type: integer
+        done:
+          format: int64
+          type: integer
+        new:
+          format: int64
+          type: integer
+        oldestNewAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+      required:
+      - automatic
+      - done
+      - new
+      type: object
+    InboxEntry:
+      properties:
+        answers:
+          oneOf:
+          - $ref: '#/components/schemas/AnsweredEmail'
+          - type: 'null'
+        automatic:
+          type: boolean
+        fromAddress:
+          type: string
+        fromName:
+          type:
+          - string
+          - 'null'
+        handledAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        handledBy:
+          format: int64
+          type:
+          - integer
+          - 'null'
+        handledByName:
+          type:
+          - string
+          - 'null'
+        id:
+          format: int64
+          type: integer
+        receivedAt:
+          format: date-time
+          type: string
+        senderName:
+          type:
+          - string
+          - 'null'
+        senderUserId:
+          format: int64
+          type:
+          - integer
+          - 'null'
+        state:
+          $ref: '#/components/schemas/InboxState'
+        subject:
+          type: string
+        toAddress:
+          type:
+          - string
+          - 'null'
+      required:
+      - automatic
+      - fromAddress
+      - id
+      - receivedAt
+      - state
+      - subject
+      type: object
+    InboxState:
+      enum:
+      - NEW
+      - REPLIED
+      - HANDLED
+      type: string
     IncassoCandidate:
       properties:
         amount:
@@ -4246,6 +4348,15 @@ components:
         content:
           items:
             $ref: '#/components/schemas/EventResponse'
+          type: array
+        page:
+          $ref: '#/components/schemas/PageMetadata'
+      type: object
+    PagedModelInboxEntry:
+      properties:
+        content:
+          items:
+            $ref: '#/components/schemas/InboxEntry'
           type: array
         page:
           $ref: '#/components/schemas/PageMetadata'
@@ -19721,6 +19832,221 @@ paths:
                 items:
                   $ref: '#/components/schemas/Audience'
                 type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Mail
+  /mail/inbox:
+    get:
+      operationId: findInbox
+      parameters:
+      - in: query
+        name: search
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: page
+        required: false
+        schema:
+          default: 0
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedModelInboxEntry'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Mail
+  /mail/inbox/counts:
+    get:
+      operationId: findInboxCounts
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxCounts'
           description: OK
         '400':
           content:

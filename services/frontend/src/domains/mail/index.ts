@@ -15,3 +15,5 @@ export {
   type WriteEmailRequest,
 } from "./adapters/writing"
 export {addresseeKey, addresseeOf} from "./addressees"
+export {InboxState, loadInboxPage, readInboxCounts, type InboxCounts, type InboxEntry} from "./adapters/inbox"
+export {followsOf, inboxStateWord} from "./inbox"

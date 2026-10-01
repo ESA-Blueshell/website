@@ -123,6 +123,7 @@ const PAGES = [
   {path: "/management/exceptions", ready: "exception-list"},
   {path: "/management/alerts", ready: "alert-list"},
   {path: "/management/mail/sent", ready: "sent-emails"},
+  {path: "/management/mail/inbox", ready: "inbox"},
 ]
 
 for (const theme of ["dark", "light"] as const) {

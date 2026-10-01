@@ -87,6 +87,7 @@ export {
 } from "./adapters/mandates"
 export {
   MEMBERSHIP_WORDS,
+  membershipStateOf,
   NEEDS_LOOK_WORDS,
   filterPeople,
   fold,

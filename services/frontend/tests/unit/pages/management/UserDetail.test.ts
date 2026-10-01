@@ -117,6 +117,16 @@ describe("one user's page", () => {
     expect(api.findMemberContributions).toHaveBeenCalledTimes(2)
   })
 
+  it("names a pending membership, and calls them a member once the first payment is recorded", async () => {
+    api.findMemberships.mockResolvedValueOnce({status: 200, data: [aMembership({id: 3, userId: 7, startDate: "2026-09-01", endDate: null, pending: true})]})
+    const wrapper = await mount("contributions")
+    expect(wrapper.get('[data-testid="user-standing"]').text()).toBe("Pending member")
+
+    await wrapper.get('[data-testid="user-period-toggle-5"]').trigger("click")
+    await settle()
+    expect(wrapper.get('[data-testid="user-standing"]').text()).toBe("Member")
+  })
+
   it("records or withdraws a payment, and says so on the row", async () => {
     const wrapper = await mount("contributions")
 
@@ -126,6 +136,7 @@ describe("one user's page", () => {
     await settle()
     expect(api.createContribution).toHaveBeenCalledWith({body: {userId: 7, contributionPeriodId: 5}})
     expect(wrapper.get('[data-testid="user-period-said-5"]').text()).toBe("Payment recorded.")
+    expect(api.findMemberships).toHaveBeenCalledTimes(2)
 
     await wrapper.get('[data-testid="user-period-toggle-4"]').trigger("click")
     await settle()

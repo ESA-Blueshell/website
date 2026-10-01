@@ -24,6 +24,16 @@ test.describe("the account pages", () => {
     await expect(page.locator("h1")).toHaveText("Security")
   })
 
+  test("tell a pending member what their first contribution is", async ({page}) => {
+    await installApiMocks(page, {firstContribution: {
+      membershipStartDate: "2026-09-10", periodId: 4, periodStartDate: "2026-09-01", periodEndDate: "2027-08-31", feeType: "FULL_YEAR_FEE", amount: 30,
+    }})
+    await loginAsMember(page.context())
+
+    await page.goto("/account")
+    await expect(page.getByTestId("pending-membership")).toContainText("€ 30.00, the full-year fee for 2026-2027")
+  })
+
   test("let a member set up incasso and show the account only by its last four", async ({page}) => {
     await installApiMocks(page)
     await loginAsMember(page.context())

@@ -4,6 +4,8 @@
  */
 import {
   createContribution,
+  type FirstContribution,
+  findOwnFirstContribution,
   deleteContribution,
   findContributionsByPeriodId,
   findMemberContributions,
@@ -16,7 +18,7 @@ import type {Refused} from "@/types/api"
 import {readOr} from "@/utils/answers"
 import {refusalReader} from "@/utils/refusals"
 
-export type {MemberPeriodContribution, PeriodContributionsView, PeriodMember}
+export type {FirstContribution, MemberPeriodContribution, PeriodContributionsView, PeriodMember}
 
 const {accepted} = refusalReader({})
 
@@ -39,3 +41,6 @@ export const listPaidUserIds = async (periodId: number): Promise<Set<number>> =>
 /** A period's members with their payments, and the payment email runs sent for it; nothing where unreadable. */
 export const readPeriodContributions = (periodId: number): Promise<PeriodContributionsView | null> =>
   readOr(findPeriodContributions({path: {periodId}}), null)
+
+/** What the reader pays to make their pending membership active, or nothing where none is pending. */
+export const readFirstContribution = (): Promise<FirstContribution | null> => readOr(findOwnFirstContribution(), null)

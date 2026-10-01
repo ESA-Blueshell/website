@@ -3429,7 +3429,6 @@ components:
       - MEMBERSHIP_CHANGED
       - SITE_ACTION
       - MORNING_RUN
-      - HOURLY_RUN
       - SCHEDULED_RUN
       - ANOTHER_JOB
       - BY_HAND

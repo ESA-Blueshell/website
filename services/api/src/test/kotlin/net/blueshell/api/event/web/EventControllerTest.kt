@@ -3,7 +3,10 @@ package net.blueshell.api.event.web
 import net.blueshell.api.event.api.AnnounceChoice
 import net.blueshell.api.event.api.AnnouncementLedger
 import net.blueshell.api.event.api.EventService
+import net.blueshell.api.event.domain.EventApprovals
+import net.blueshell.api.event.domain.EventField
 import net.blueshell.api.event.domain.EventUseCases
+import net.blueshell.api.event.domain.QueuedEvent
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -13,6 +16,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class EventControllerTest {
@@ -29,7 +33,8 @@ class EventControllerTest {
             on { update(any(), any(), any(), any(), anyOrNull()) } doReturn event
         }
     private val service: EventService = mock { on { findById(6L) } doReturn event }
-    private val controller = EventController(service, useCases, AnnouncementLedger { it == 6L })
+    private val approvals: EventApprovals = mock()
+    private val controller = EventController(service, useCases, AnnouncementLedger { it == 6L }, approvals)
 
     @Test
     fun `passes the board's choice on, and says of one event whether its post is out`() {
@@ -73,5 +78,33 @@ class EventControllerTest {
 
         verify(useCases).create(any(), eq(AnnounceChoice.NOW))
         verify(useCases).update(eq(6L), any(), eq(false), eq(1L), eq(AnnounceChoice.NEXT_MORNING))
+    }
+
+    @Test
+    fun `lists the events waiting for the board, soonest first, each with what changed since approved`() {
+        val page =
+            org.springframework.data.domain
+                .PageImpl(listOf(event))
+        whenever(service.findByFilter(any(), any())).thenReturn(page)
+        whenever(approvals.queued(listOf(event))).thenReturn(listOf(QueuedEvent(event, true, listOf(EventField.TITLE))))
+
+        val queue = controller.listApprovalQueue()
+
+        assertThat(queue.single().reapproval).isTrue()
+        assertThat(queue.single().changes).containsExactly(EventField.TITLE)
+        assertThat(queue.single().event.id).isEqualTo(6L)
+        verify(service).findByFilter(
+            eq(
+                org.springframework.data.domain.Pageable
+                    .unpaged(
+                        org.springframework.data.domain.Sort
+                            .by("startTime"),
+                    ),
+            ),
+            eq(
+                net.blueshell.api.event.domain
+                    .EventQuery(approved = false),
+            ),
+        )
     }
 }

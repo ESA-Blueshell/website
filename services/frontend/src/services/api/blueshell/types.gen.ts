@@ -1513,6 +1513,17 @@ export type EventBannerResponse = {
     version: number;
 };
 
+export enum EventField {
+    TITLE = 'TITLE',
+    DESCRIPTION = 'DESCRIPTION',
+    LOCATION = 'LOCATION',
+    TIMES = 'TIMES',
+    PRICES = 'PRICES',
+    MEMBERS_ONLY = 'MEMBERS_ONLY',
+    SIGN_UP = 'SIGN_UP',
+    COMMITTEE = 'COMMITTEE'
+}
+
 export type EventResponse = {
     /**
      * Whether the events-info post is out, so approving asks no choice of when it goes out. Answered for one event, absent in a list.
@@ -2587,6 +2598,21 @@ export enum QuestionType {
     CHECKBOX = 'CHECKBOX',
     DESCRIPTION = 'DESCRIPTION'
 }
+
+/**
+ * An event waiting for the board
+ */
+export type QueuedEvent = {
+    /**
+     * What changed since it was last approved; empty for a new event, or one approved before this was kept
+     */
+    changes: Array<EventField>;
+    event: EventResponse;
+    /**
+     * Whether it was approved before and changed since
+     */
+    reapproval: boolean;
+};
 
 export type ReachRequest = {
     to: Array<Addressee>;
@@ -7675,6 +7701,47 @@ export type CreateEventResponses = {
 };
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
+
+export type ListApprovalQueueData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/events/approval-queue';
+};
+
+export type ListApprovalQueueErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListApprovalQueueError = ListApprovalQueueErrors[keyof ListApprovalQueueErrors];
+
+export type ListApprovalQueueResponses = {
+    /**
+     * OK
+     */
+    200: Array<QueuedEvent>;
+};
+
+export type ListApprovalQueueResponse = ListApprovalQueueResponses[keyof ListApprovalQueueResponses];
 
 export type UploadEventBannerData = {
     body: {

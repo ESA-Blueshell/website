@@ -121,5 +121,10 @@ describe("writing an email", () => {
     await wrapper.get('[data-testid="write-test"]').trigger("click")
     await settle()
     expect(wrapper.get('[data-testid="write-failure"]').text()).toBe("Write a message.")
+
+    api.sendTestEmail.mockResolvedValue({status: 400, error: {code: "SubjectMissing"}})
+    await wrapper.get('[data-testid="write-test"]').trigger("click")
+    await settle()
+    expect(wrapper.get('[data-testid="write-failure"]').text()).toBe("Give the email a subject.")
   })
 })

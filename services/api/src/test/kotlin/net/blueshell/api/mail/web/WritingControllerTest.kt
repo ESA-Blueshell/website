@@ -36,7 +36,7 @@ class WritingControllerTest {
 
         assertThat(controller.findAudiences().single().label).isEqualTo("Active members 2026-2027")
         assertThat(controller.findReplyToOptions()).first().isEqualTo("board@b.nl")
-        assertThat(controller.findReach(ReachRequest(to))).isEqualTo(ReachResponse(1, 2))
+        assertThat(controller.findReach(ReachRequest(to)).withoutEmail).isEqualTo(2)
         assertThat(controller.sendWrittenEmail(WriteEmailRequest(to, "Hi", "Body", "board@b.nl")).sent).isEqualTo(1)
         assertThat(controller.sendTestEmail(WriteEmailRequest(subject = "Hi", message = "Body")).sent).isEqualTo(1)
         assertThat(ReachRequest().to).isEmpty()

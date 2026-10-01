@@ -16,6 +16,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
@@ -69,7 +70,12 @@ class WritingTest {
         verify(jobs).runAsync(eq(MailJobs.Written), eq(MailJobs.WrittenPayload(7, 1)), eq(JobTrigger.SITE_ACTION), eq(null))
         verify(jobs).runAsync(eq(MailJobs.Written), eq(MailJobs.WrittenPayload(7, 2)), eq(JobTrigger.SITE_ACTION), eq(null))
         assertThat(writing.test("Hi", "Body", "board@b.nl", 9)).isEqualTo(1)
-        verify(written, times(2)).save(any<WrittenEmail>())
+        val kept = argumentCaptor<WrittenEmail>()
+        verify(written, times(2)).save(kept.capture())
+        val first = kept.firstValue
+        assertThat(listOf(first.subject, first.message, first.replyTo, first.writtenBy, first.writtenAt, first.recipients))
+            .containsExactly("Hi", "Body", null, 9L, Instant.parse("2026-10-01T10:00:00Z"), 2)
+        assertThat(MailJobs.Written.dedupKey(MailJobs.WrittenPayload(7, 1))).isNull()
 
         assertThatThrownBy { writing.test(" ", "Body", null, 9) }.isInstanceOf(SubjectMissing::class.java)
         assertThatThrownBy { writing.test("Hi", " ", null, 9) }.isInstanceOf(MessageMissing::class.java)

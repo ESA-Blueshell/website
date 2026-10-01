@@ -13,7 +13,7 @@ import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
 import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
 import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, recordPayment, withdrawPayment} from "@/domains/contribution"
-import {type AddressResponse, type MembershipResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, readAddress, readUser} from "@/domains/user"
+import {type AddressResponse, MEMBERSHIP_WORDS, type MembershipResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readUser} from "@/domains/user"
 import UserRolesPanel from "@/domains/user/components/UserRolesPanel.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import store from "@/plugins/store"
@@ -55,7 +55,8 @@ const current = computed(() => memberships.value.find((one) => !one.endDate) ?? 
 /** The membership a mandate is recorded on: the running one, else the newest. */
 const latestMembership = computed(() => current.value ?? [...memberships.value].sort((a, b) => b.startDate.localeCompare(a.startDate))[0] ?? null)
 const since = computed(() => memberships.value.map((one) => one.startDate).sort()[0] ?? null)
-const standing = computed(() => (current.value ? "Member" : memberships.value.length > 0 ? "Former member" : "Never a member"))
+const membershipState = computed(() => membershipStateOf(memberships.value))
+const standing = computed(() => MEMBERSHIP_WORDS[membershipState.value])
 const incasso = computed(() => (current.value ? (current.value.incasso ? "Pays by incasso" : "Pays by transfer") : null))
 const latest = computed(() => periods.value[0] ?? null)
 
@@ -105,7 +106,10 @@ const togglePayment = async (period: MemberPeriodContribution) => {
     said.value = {periodId: period.periodId, text: answered.reason}
     return
   }
-  periods.value = await listMemberContributions(id.value)
+  // A first payment makes a pending membership active, so the standing is read again with it.
+  const [held, owed] = await Promise.all([listMembershipsFor(id.value), listMemberContributions(id.value)])
+  memberships.value = held
+  periods.value = owed
   said.value = {periodId: period.periodId, text: period.paid ? "Payment withdrawn." : "Payment recorded."}
 }
 
@@ -138,7 +142,10 @@ watch(id, load, {immediate: true})
           {{ person.fullName }}
         </h1>
         <span class="person__note">@{{ person.username }}</span>
-        <state-mark :kind="current ? 'in-step' : memberships.length > 0 ? 'missing' : 'not-compared'">
+        <state-mark
+          :kind="membershipState === 'current' ? 'in-step' : membershipState === 'pending' ? 'not-created' : memberships.length > 0 ? 'missing' : 'not-compared'"
+          testid="user-standing"
+        >
           {{ standing }}
         </state-mark>
       </header>

@@ -10,7 +10,7 @@ import FullList from "@/components/island/FullList.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import SelectionBar from "@/components/island/SelectionBar.vue"
 import SortHeader from "@/components/island/SortHeader.vue"
-import StateMark from "@/components/island/StateMark.vue"
+import StateMark, {type StateKind} from "@/components/island/StateMark.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import UserForm from "@/components/form/UserForm.vue"
@@ -59,6 +59,7 @@ const needs = ref<string | null>(null)
 const sortKey = ref<PeopleSortKey>("name")
 const descending = ref(false)
 
+const MEMBERSHIP_MARKS: Record<MembershipState, StateKind> = {current: "in-step", pending: "not-created", former: "missing", never: "not-compared"}
 const membershipOptions = (Object.keys(MEMBERSHIP_WORDS) as MembershipState[]).map((key) => ({key, label: MEMBERSHIP_WORDS[key]}))
 // Picker values come from the generated SDK; NONE is no type anybody holds.
 const typeOptions = Object.values(MemberType).filter((one) => one !== MemberType.NONE)
@@ -324,7 +325,7 @@ onMounted(load)
             class="people__membership"
             :data-testid="`member-manager-status-${row.id}`"
           >
-            <state-mark :kind="row.membership === 'current' ? 'in-step' : row.membership === 'former' ? 'missing' : 'not-compared'">
+            <state-mark :kind="MEMBERSHIP_MARKS[row.membership]">
               {{ MEMBERSHIP_WORDS[row.membership] }}
             </state-mark>
             <span

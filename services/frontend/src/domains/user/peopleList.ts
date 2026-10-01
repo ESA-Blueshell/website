@@ -1,7 +1,7 @@
 import {type AddressResponse, type CommitteeResponse, MemberType, type MembershipResponse, Role, type UserDetailResponse} from "@/services/api"
 import {highestRoleLabel} from "./roles"
 
-export type MembershipState = "current" | "former" | "never"
+export type MembershipState = "current" | "pending" | "former" | "never"
 
 /** Why a person needs a look: each is something a board member can go and fix. */
 export type NeedsLook = "locked" | "role-waiting" | "no-discord" | "no-address"
@@ -13,7 +13,20 @@ export const NEEDS_LOOK_WORDS: Record<NeedsLook, string> = {
   "no-address": "No address",
 }
 
-export const MEMBERSHIP_WORDS: Record<MembershipState, string> = {current: "Member", former: "Former member", never: "Never a member"}
+export const MEMBERSHIP_WORDS: Record<MembershipState, string> = {
+  current: "Member",
+  pending: "Pending member",
+  former: "Former member",
+  never: "Never a member",
+}
+
+/** Where a person stands: a running membership is pending until its first contribution is paid. */
+export function membershipStateOf(own: Pick<MembershipResponse, "endDate" | "pending">[]): MembershipState {
+  const running = own.filter((one) => !one.endDate)
+  if (running.some((one) => !one.pending)) return "current"
+  if (running.length > 0) return "pending"
+  return own.length === 0 ? "never" : "former"
+}
 
 /** One person as the Users list draws, filters and sorts them. */
 export interface PersonRow {
@@ -78,7 +91,7 @@ export function peopleRows(
   return users.map((user) => {
     const own = held.get(user.id) ?? []
     const latest = own.reduce<MembershipResponse | null>((newest, one) => (!newest || one.startDate > newest.startDate ? one : newest), null)
-    const membership: MembershipState = own.length === 0 ? "never" : own.some((one) => !one.endDate) ? "current" : "former"
+    const membership = membershipStateOf(own)
     const type = latest?.memberType ?? null
     const address = user.addressId == null ? undefined : addressById.get(user.addressId)
     return {
@@ -109,7 +122,7 @@ export function filterPeople(rows: PersonRow[], filter: PeopleFilter): PersonRow
     && words.every((word) => row.haystack.includes(word)))
 }
 
-const MEMBERSHIP_ORDER: Record<MembershipState, number> = {current: 0, former: 1, never: 2}
+const MEMBERSHIP_ORDER: Record<MembershipState, number> = {current: 0, pending: 1, former: 2, never: 3}
 
 /** Sorted by one column; people never a member sort after everyone else by date. */
 export function sortPeople(rows: PersonRow[], key: PeopleSortKey, descending: boolean): PersonRow[] {

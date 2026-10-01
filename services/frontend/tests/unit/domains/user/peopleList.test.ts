@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {MemberType, Role} from "@/services/api"
-import {filterPeople, fold, peopleRows, sortPeople, type PersonRow} from "@/domains/user"
+import {filterPeople, fold, membershipStateOf, peopleRows, sortPeople, type PersonRow} from "@/domains/user"
 import {aCommittee, aMembership, aUser} from "../../helpers/apiFixtures"
 
 const row = (id: number, fullName: string, memberSince: string | null): PersonRow =>
@@ -31,5 +31,15 @@ describe("the people list", () => {
     )
 
     expect(person).toMatchObject({membership: "current", type: MemberType.HONORARY, memberSince: "2019-01-01", needs: ["no-discord", "no-address"]})
+  })
+  it("calls a running membership pending until its first contribution, and sorts and filters on it", () => {
+    expect(membershipStateOf([{endDate: null, pending: true}])).toBe("pending")
+    expect(membershipStateOf([{endDate: null, pending: true}, {endDate: null, pending: false}])).toBe("current")
+    expect(membershipStateOf([{endDate: "2020-01-01", pending: false}])).toBe("former")
+    expect(membershipStateOf([])).toBe("never")
+
+    const rows = [{...row(1, "Ann", null), membership: "former" as const}, {...row(2, "Bea", null), membership: "pending" as const}]
+    expect(sortPeople(rows, "membership", false).map((one) => one.id)).toEqual([2, 1])
+    expect(filterPeople(rows, {search: "", membership: "pending", type: null, needs: null}).map((one) => one.id)).toEqual([2])
   })
 })

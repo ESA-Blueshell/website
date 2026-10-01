@@ -1521,6 +1521,15 @@ export enum FileType {
     BOARD_PORTRAIT = 'BOARD_PORTRAIT'
 }
 
+export type FirstContribution = {
+    amount?: number | null;
+    feeType?: BulkFeeType | null;
+    membershipStartDate: string;
+    periodEndDate?: string | null;
+    periodId?: number | null;
+    periodStartDate?: string | null;
+};
+
 /**
  * Set what a member is called in one game
  */
@@ -12786,6 +12795,47 @@ export type RequestEmailChangeResponses = {
 };
 
 export type RequestEmailChangeResponse = RequestEmailChangeResponses[keyof RequestEmailChangeResponses];
+
+export type FindOwnFirstContributionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/first-contribution';
+};
+
+export type FindOwnFirstContributionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnFirstContributionError = FindOwnFirstContributionErrors[keyof FindOwnFirstContributionErrors];
+
+export type FindOwnFirstContributionResponses = {
+    /**
+     * OK
+     */
+    200: FirstContribution;
+};
+
+export type FindOwnFirstContributionResponse = FindOwnFirstContributionResponses[keyof FindOwnFirstContributionResponses];
 
 export type FindOwnMandateData = {
     body?: never;

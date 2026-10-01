@@ -41,11 +41,11 @@ const ConfirmDialog = {name: "ConfirmDialog", props: ["open", "question", "title
 const ArtCells = {name: "ArtCells", props: ["cells", "testidPrefix"], template: "<div />"}
 const RecordHead = {name: "RecordHead", props: ["title", "archived"], template: "<div data-testid=head><slot /><slot name=\"facts\" /></div>"}
 const MarkdownEditor = {name: "MarkdownEditor", props: ["modelValue"], emits: ["update:modelValue"], template: "<div />"}
-const CommitteeDiscordFields = {name: "CommitteeDiscordFields", props: ["modelValue", "committeeId", "name", "slug"], emits: ["update:modelValue"], template: "<div />"}
+const DiscordPlaceFields = {name: "DiscordPlaceFields", props: ["modelValue", "read", "name", "slug"], emits: ["update:modelValue"], template: "<div />"}
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
-  ImagePicker, EventGamesPicker, CommitteeSeats, ConfirmDialog, ArtCells, RecordHead, MarkdownEditor, CommitteeDiscordFields,
+  ImagePicker, EventGamesPicker, CommitteeSeats, ConfirmDialog, ArtCells, RecordHead, MarkdownEditor, DiscordPlaceFields,
   CutButton: {props: ["href", "testid"], template: "<a :href='href' :data-testid='testid'><slot /></a>"},
 }
 
@@ -187,14 +187,19 @@ describe("the committee edit page, for its own members", () => {
     await flushPromises()
     await input(wrapper, "name").setValue("Pub Quiz Cie")
     describe_(wrapper, "Questions.")
-    const fields = wrapper.getComponent(CommitteeDiscordFields)
-    expect(fields.props("committeeId")).toBeNull()
+    const fields = wrapper.getComponent(DiscordPlaceFields)
+    expect(fields.props("read")).toBeNull()
     const choice = {createRole: true, channelIds: [], createChannel: "pub-quiz-cie"}
     fields.vm.$emit("update:modelValue", choice)
     await wrapper.get("form").trigger("submit")
     await flushPromises()
     expect(adapter.saveCommitteeDiscord).toHaveBeenCalledWith(lan.id, choice)
     expect(wrapper.emitted("saved")).toHaveLength(1)
+
+    const editing = mountEditor(lan, true)
+    await flushPromises()
+    await (editing.getComponent(DiscordPlaceFields).props("read") as () => Promise<unknown>)()
+    expect(adapter.readCommitteeDiscord).toHaveBeenCalledWith(lan.id)
 
     adapter.saveCommitteeDiscord.mockResolvedValueOnce({ok: false, reason: "Discord cannot be reached now."})
     await wrapper.get("form").trigger("submit")

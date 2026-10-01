@@ -21,16 +21,17 @@ import {useCasualGames} from "@/domains/games"
 import {
   addCommittee,
   type Committee,
-  type CommitteeDiscordRequest,
+  type DiscordPlaceRequest,
   listCommittees,
   removeCommittee,
   saveCommitteeAsBoard,
+  readCommitteeDiscord,
   saveCommitteeDiscord,
   saveOwnCommitteePage,
   storeCommitteeBanner,
   storeCommitteeIcon,
 } from "../adapters/committees"
-import CommitteeDiscordFields from "../island/CommitteeDiscordFields.vue"
+import {DiscordPlaceFields} from "@/domains/discord"
 import CommitteeSeats, {type Seat} from "../island/CommitteeSeats.vue"
 import {cellOf} from "../useCommittees"
 import {initialsOf} from "@/utils/initials"
@@ -67,7 +68,7 @@ const gameCodes = ref<string[]>([])
 const seats = ref<Seat[]>([])
 const failure = ref<string | null>(null)
 const saving = ref(false)
-const discord = ref<CommitteeDiscordRequest | null>(null)
+const discord = ref<DiscordPlaceRequest | null>(null)
 
 watch(() => props.committee, async committee => {
   name.value = committee?.name ?? ""
@@ -290,11 +291,11 @@ const removeIt = async () => {
         <committee-seats v-model="seats" />
       </form-section>
 
-      <committee-discord-fields
+      <discord-place-fields
         v-if="asBoard"
         v-model="discord"
-        :committee-id="committee?.id ?? null"
         :name="name"
+        :read="committee ? () => readCommitteeDiscord(committee!.id) : null"
         :slug="slug"
       />
 

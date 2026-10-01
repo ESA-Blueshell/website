@@ -1,6 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
-import CommitteeDiscordFields from "@/domains/committees/island/CommitteeDiscordFields.vue"
+import DiscordPlaceFields from "@/domains/discord/island/DiscordPlaceFields.vue"
+import {findCommitteeDiscord} from "@/services/api"
 import {mountInApp, settle, unmountAll} from "../../../pages/helpers"
 
 const api = vi.hoisted(() => ({findCommitteeDiscord: vi.fn(), listKeptRoles: vi.fn(), listKeptChannels: vi.fn()}))
@@ -18,7 +19,7 @@ const channels = [
 describe("a committee's Discord on its form", () => {
   const wrappers: VueWrapper[] = []
   const mount = async (props: {committeeId: number | null, name: string, slug: string}) => {
-    const wrapper = mountInApp(CommitteeDiscordFields, {props})
+    const wrapper = mountInApp(DiscordPlaceFields, {props: {...props, read: props.committeeId == null ? null : async () => (await findCommitteeDiscord({path: {id: props.committeeId!}})).data ?? null}})
     wrappers.push(wrapper)
     await settle()
     return wrapper
@@ -32,7 +33,7 @@ describe("a committee's Discord on its form", () => {
     api.findCommitteeDiscord.mockResolvedValue({status: 200, data: {available: true, roleId: "900", roleName: "Sitecie", channels: [channels[1]]}})
   })
 
-  afterEach(() => unmountAll(wrappers, "CommitteeDiscordFields"))
+  afterEach(() => unmountAll(wrappers, "DiscordPlaceFields"))
 
   it("asks a new committee for a new role and a private channel by default, or links a role and channels instead", async () => {
     const wrapper = await mount({committeeId: null, name: "Pub Quiz", slug: "pub-quiz"})
@@ -55,13 +56,14 @@ describe("a committee's Discord on its form", () => {
     const wrapper = await mount({committeeId: 7, name: "Sitecie", slug: " "})
 
     expect(api.findCommitteeDiscord).toHaveBeenCalledWith({path: {id: 7}})
+    expect(wrapper.emitted("loaded")?.[0]?.[0]).toMatchObject({roleId: "900"})
     expect(wrapper.get('[data-testid="committee-edit-discord-role"]').text()).toContain("@Sitecie")
     expect(wrapper.findComponent({name: "SearchPicker"}).exists()).toBe(false)
     expect(choice(wrapper)).toEqual({roleId: null, createRole: false, channelIds: ["1"], createChannel: null})
     wrapper.findComponent({name: "CheckBox"}).vm.$emit("update:modelValue", true)
     await settle()
     expect(choice(wrapper)?.createChannel).toBeNull()
-    expect(wrapper.findComponent({name: "CheckBox"}).props("label")).toBe("Make a private channel #for the committee")
+    expect(wrapper.findComponent({name: "CheckBox"}).props("label")).toBe("Make a private channel #named after it")
   })
 
   it("stays hidden and asks nothing where Discord is away", async () => {
@@ -80,6 +82,6 @@ describe("a committee's Discord on its form", () => {
     const wrapper = await mount({committeeId: 7, name: "Sitecie", slug: "sitecie"})
     expect(wrapper.get('[data-testid="committee-edit-discord-role"]').text()).toContain("@900")
     const adding = await mount({committeeId: null, name: "  ", slug: "x"})
-    expect(adding.findComponent({name: "SearchPicker"}).props("options")[0].label).toBe("A new role, @the committee")
+    expect(adding.findComponent({name: "SearchPicker"}).props("options")[0].label).toBe("A new role, @named after it")
   })
 })

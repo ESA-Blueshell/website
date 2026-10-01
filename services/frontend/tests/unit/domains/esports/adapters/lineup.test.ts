@@ -85,7 +85,7 @@ describe("publishLineup", () => {
   })
 
   it("answers a save the api took", async () => {
-    expect(await publishLineup(draft())).toEqual({ok: true})
+    expect(await publishLineup(draft())).toEqual({ok: true, teamId: 7})
   })
 })
 

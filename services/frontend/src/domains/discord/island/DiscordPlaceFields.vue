@@ -1,44 +1,52 @@
 <script lang="ts" setup>
-/* A committee's Discord on its form: the role its seats hold and the channels that role opens. A new
-   committee gets a new role and a private channel by default; an existing role and channels can be
-   linked instead, on adding and on editing. Hidden where the api has no bot in the server. */
+/* A committee's or a team's Discord on its form: the role its people hold and the channels that role
+   opens. A new one gets a new role and a private channel by default; an existing role and channels can
+   be linked instead, on adding and on editing. Hidden where the api has no bot in the server. */
 import {computed, onMounted, ref, watch} from "vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import ChipPicker from "@/components/island/ChipPicker.vue"
 import FormField from "@/components/island/FormField.vue"
 import FormSection from "@/components/island/FormSection.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
-import {type KeptChannel, type KeptRole, listKeepableChannels, listKeepableRoles} from "@/domains/discord"
-import {type CommitteeDiscordRequest, type CommitteeDiscordState, readCommitteeDiscord} from "../adapters/committees"
+import type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
+import {type KeptChannel, type KeptRole, listKeepableChannels, listKeepableRoles} from "../adapters/keeping"
 
-defineOptions({name: "CommitteeDiscordFields"})
+defineOptions({name: "DiscordPlaceFields"})
 
 const NEW_ROLE = "__new__"
 
-const {committeeId, name, slug} = defineProps<{
-  committeeId: number | null
+const {read, name, slug, holders = "Everyone with a seat holds it.", category = "Committees", testid = "committee-edit-discord"} = defineProps<{
+  /** Reads the place as it stands, or nothing where the record is being added. */
+  read: (() => Promise<DiscordPlace | null>) | null
   name: string
   slug: string
+  /** Who holds the role, as the form says it. */
+  holders?: string
+  /** The category a channel the site makes goes under. */
+  category?: string
+  testid?: string
 }>()
 
-/** What the form will ask of Discord once the committee is saved, or nothing where Discord is away. */
-const choice = defineModel<CommitteeDiscordRequest | null>({default: null})
+/** What the form will ask of Discord once the record is saved, or nothing where Discord is away. */
+const choice = defineModel<DiscordPlaceRequest | null>({default: null})
+const emit = defineEmits<{(event: "loaded", place: DiscordPlace | null): void}>()
 
-const state = ref<CommitteeDiscordState | null>(null)
+const adding = read == null
+const state = ref<DiscordPlace | null>(null)
 const roles = ref<KeptRole[]>([])
 const channels = ref<KeptChannel[]>([])
-const roleKey = ref<string | null>(committeeId == null ? NEW_ROLE : null)
+const roleKey = ref<string | null>(adding ? NEW_ROLE : null)
 const channelIds = ref<string[]>([])
-const makeChannel = ref(committeeId == null)
+const makeChannel = ref(adding)
 
-const available = computed(() => (committeeId == null ? roles.value.length > 0 : state.value?.available === true))
+const available = computed(() => (adding ? roles.value.length > 0 : state.value?.available === true))
 const linkedRole = computed(() => state.value?.roleId ?? null)
 const roleOptions = computed(() => [
-  {key: NEW_ROLE, label: `A new role, @${name.trim() || "the committee"}`},
+  {key: NEW_ROLE, label: `A new role, @${name.trim() || "named after it"}`},
   ...roles.value.filter((one) => one.assignable).map((one) => ({key: one.id, label: `@${one.name}`})),
 ])
 const asOption = (channel: KeptChannel) => ({key: channel.id, label: channel.name, note: channel.category ?? undefined})
-const channelOptions = computed(() => channels.value.filter((one) => one.kind !== "CATEGORY").map(asOption))
+const channelOptions = computed(() => channels.value.filter((one: KeptChannel) => one.kind !== "CATEGORY").map(asOption))
 const chosenChannels = computed(() => channelIds.value.map((id) => channelOptions.value.find((one) => one.key === id) ?? {key: id, label: id}))
 const pickable = computed(() => channelOptions.value.filter((one) => !channelIds.value.includes(one.key)))
 const hasRole = computed(() => linkedRole.value != null || roleKey.value != null)
@@ -55,15 +63,16 @@ watch([available, roleKey, channelIds, makeChannel, () => slug], () => {
 }, {deep: true, immediate: true})
 
 onMounted(async () => {
-  const [read, held, open] = await Promise.all([
-    committeeId == null ? Promise.resolve(null) : readCommitteeDiscord(committeeId),
+  const [found, held, open] = await Promise.all([
+    read ? read() : Promise.resolve(null),
     listKeepableRoles(),
     listKeepableChannels(),
   ])
-  state.value = read
+  state.value = found
+  emit("loaded", found)
   roles.value = held
   channels.value = open
-  channelIds.value = (read?.channels ?? []).map((one) => one.id)
+  channelIds.value = (found?.channels ?? []).map((one) => one.id)
 })
 </script>
 
@@ -73,20 +82,20 @@ onMounted(async () => {
     title="Discord"
   >
     <div
-      class="committee-discord"
-      data-testid="committee-edit-discord"
+      class="discord-place"
+      :data-testid="testid"
     >
       <p
         v-if="linkedRole"
-        class="committee-discord__role"
-        data-testid="committee-edit-discord-role"
+        class="discord-place__role"
+        :data-testid="`${testid}-role`"
       >
-        @{{ state?.roleName ?? linkedRole }}<span class="committee-discord__note">Everyone with a seat holds it.</span>
+        @{{ state?.roleName ?? linkedRole }}<span class="discord-place__note">{{ holders }}</span>
       </p>
       <form-field
         v-else
         label="Role"
-        testid="committee-edit-discord-role-field"
+        :testid="`${testid}-role-field`"
       >
         <template #default="{controlId, labelId}">
           <search-picker
@@ -95,7 +104,7 @@ onMounted(async () => {
             :options="roleOptions"
             placeholder="Link a role"
             :selected-key="roleKey"
-            testid-prefix="committee-edit-discord-role-picker"
+            :testid-prefix="`${testid}-role-picker`"
             @pick="(key: string) => roleKey = key"
           />
         </template>
@@ -104,7 +113,7 @@ onMounted(async () => {
       <template v-if="hasRole">
         <form-field
           label="Channels the role opens"
-          testid="committee-edit-discord-channels"
+          :testid="`${testid}-channels`"
         >
           <template #default="{controlId, labelId}">
             <chip-picker
@@ -116,7 +125,7 @@ onMounted(async () => {
               placeholder="Open a channel to the role"
               :remove-label="(label: string) => `Stop opening #${label}`"
               sigil="#"
-              testid-prefix="committee-edit-discord-channel-picker"
+              :testid-prefix="`${testid}-channel-picker`"
               @add="(keys: string[]) => channelIds = [...channelIds, ...keys]"
               @remove="(key: string) => channelIds = channelIds.filter((one) => one !== key)"
             />
@@ -124,9 +133,9 @@ onMounted(async () => {
         </form-field>
         <check-box
           v-model="makeChannel"
-          :label="`Make a private channel #${slug.trim() || 'for the committee'}`"
-          hint="Under Committees, readable only by the role."
-          testid="committee-edit-discord-make-channel"
+          :hint="`Under ${category}, readable only by the role.`"
+          :label="`Make a private channel #${slug.trim() || 'named after it'}`"
+          :testid="`${testid}-make-channel`"
         />
       </template>
     </div>
@@ -134,13 +143,13 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.committee-discord {
+.discord-place {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
 }
 
-.committee-discord__role {
+.discord-place__role {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
@@ -148,7 +157,7 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-.committee-discord__note {
+.discord-place__note {
   font-weight: 400;
   color: var(--color-ash);
 }

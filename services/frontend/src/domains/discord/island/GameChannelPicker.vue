@@ -11,7 +11,6 @@ import FormField from "@/components/island/FormField.vue"
 import store from "@/plugins/store"
 import {makeGameChannel} from "../adapters/channelAccess"
 import {GameChannelCategory, type GameRoom, listGameRooms} from "../index"
-import ChannelAccessRow from "./ChannelAccessRow.vue"
 
 const props = withDefaults(defineProps<{
   modelValue?: GameRoom[] | null
@@ -105,13 +104,6 @@ const make = async () => {
       Make #{{ createName.trim() }}
     </cut-button>
   </div>
-  <channel-access-row
-    v-for="channel in loaded && !unavailable ? chosen : []"
-    :key="channel.id"
-    :channel-id="channel.id"
-    :name="channel.name"
-    :testid="`${testid}-access-${channel.id}`"
-  />
 </template>
 
 <style scoped>

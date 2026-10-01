@@ -21,6 +21,8 @@ import SliceBand from "@/components/island/SliceBand.vue"
 import {saveGameOrganisers, useCommittees} from "@/domains/committees"
 import GameOrganisersPicker from "@/domains/committees/island/GameOrganisersPicker.vue"
 import {GameChannelCategory} from "@/domains/discord"
+import GameAccessSection from "@/domains/discord/island/GameAccessSection.vue"
+import {useIsBoard} from "@/composables/useIsBoard"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
 import {enterGameInSeason} from "@/domains/esports"
 import {refreshSharedLists} from "@/utils/sharedLists"
@@ -60,6 +62,7 @@ const emit = defineEmits<{
 }>()
 
 const adding = computed(() => props.game == null)
+const isBoard = useIsBoard()
 const {committees} = useCommittees()
 
 const name = ref(props.game?.name ?? "")
@@ -321,6 +324,17 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
           empty-note="The esports category has no channels left to add."
           label="Esports channels"
           testid="game-edit-esports-channels"
+        />
+      </form-section>
+
+      <form-section
+        v-if="game && isBoard"
+        testid="game-edit-discord"
+        title="Discord access"
+      >
+        <game-access-section
+          :code="game.code"
+          testid="game-edit-access"
         />
       </form-section>
 

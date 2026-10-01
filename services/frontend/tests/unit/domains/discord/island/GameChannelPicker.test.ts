@@ -85,7 +85,7 @@ describe("making a game's channel", () => {
     mockChannels.mockResolvedValue([CHESS])
   })
 
-  it("makes a channel named after the game, adds it, and draws each chosen channel's access", async () => {
+  it("makes a channel named after the game and adds it", async () => {
     const VALO = {id: "902", guildId: "324", name: "valo"}
     mockMake.mockResolvedValueOnce({ok: true, saved: VALO})
     const wrapper = shallowMount(GameChannelPicker, {
@@ -94,7 +94,6 @@ describe("making a game's channel", () => {
     })
     await flushPromises()
 
-    expect(wrapper.findAllComponents({name: "ChannelAccessRow"}).map((row) => row.props("channelId"))).toEqual(["900"])
     await wrapper.get("[data-testid=game-channels-make]").trigger("click")
     await flushPromises()
     expect(mockMake).toHaveBeenCalledWith("valo", "ESPORTS")

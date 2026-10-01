@@ -4,6 +4,9 @@ import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
 
 const {mockChannels} = vi.hoisted(() => ({mockChannels: vi.fn()}))
 vi.mock("@/domains/discord/adapters/channels", () => ({listGameRooms: mockChannels, gameRoomUrl: vi.fn()}))
+const {mockMake, mockStore} = vi.hoisted(() => ({mockMake: vi.fn(), mockStore: {commit: vi.fn()}}))
+vi.mock("@/domains/discord/adapters/channelAccess", () => ({makeGameChannel: mockMake}))
+vi.mock("@/plugins/store", () => ({default: mockStore}))
 
 const throughField = {props: ["hint"], template: "<div :data-hint='hint'><slot :control-id=\"'c'\" :label-id=\"'l'\" /></div>"}
 
@@ -73,5 +76,38 @@ describe("GameChannelPicker", () => {
     await flushPromises()
 
     expect(mockChannels).toHaveBeenLastCalledWith("ESPORTS")
+  })
+})
+
+describe("making a game's channel", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockChannels.mockResolvedValue([CHESS])
+  })
+
+  it("makes a channel named after the game, adds it, and draws each chosen channel's access", async () => {
+    const VALO = {id: "902", guildId: "324", name: "valo"}
+    mockMake.mockResolvedValueOnce({ok: true, saved: VALO})
+    const wrapper = shallowMount(GameChannelPicker, {
+      props: {modelValue: [CHESS], createName: " valo ", category: "ESPORTS"},
+      global: {stubs: {FormField: throughField, CutButton: {props: ["testid", "disabled"], template: "<button :data-testid='testid' @click=\"$emit('click')\"><slot /></button>"}}},
+    })
+    await flushPromises()
+
+    expect(wrapper.findAllComponents({name: "ChannelAccessRow"}).map((row) => row.props("channelId"))).toEqual(["900"])
+    await wrapper.get("[data-testid=game-channels-make]").trigger("click")
+    await flushPromises()
+    expect(mockMake).toHaveBeenCalledWith("valo", "ESPORTS")
+    expect(wrapper.emitted("update:modelValue")).toEqual([[[CHESS, VALO]]])
+
+    mockMake.mockResolvedValueOnce({ok: false, reason: "Discord cannot be reached now; try again in a moment."})
+    await wrapper.get("[data-testid=game-channels-make]").trigger("click")
+    await flushPromises()
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now; try again in a moment.")
+  })
+
+  it("offers no making without a name", async () => {
+    const wrapper = await mountPicker([CHESS])
+    expect(wrapper.find("[data-testid=game-channels-make]").exists()).toBe(false)
   })
 })

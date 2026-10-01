@@ -4,6 +4,8 @@ import net.blueshell.api.discord.api.DiscordChannelKeeper
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptChannelKind
+import net.blueshell.api.discord.persistence.ArchivedChannel
+import net.blueshell.api.discord.persistence.ArchivedChannelRepository
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Role
@@ -11,8 +13,6 @@ import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel
 import net.dv8tion.jda.api.entities.channel.attribute.IPermissionContainer
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
-import net.blueshell.api.discord.persistence.ArchivedChannel
-import net.blueshell.api.discord.persistence.ArchivedChannelRepository
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service

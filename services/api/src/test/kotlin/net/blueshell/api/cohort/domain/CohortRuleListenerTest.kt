@@ -53,8 +53,14 @@ class CohortRuleListenerTest {
         val committee: CohortDefinition = mockk { io.mockk.every { key } returns "COMMITTEE_MEMBERS:7" }
         io.mockk.every { definitions.all() } returns listOf(committee)
 
-        listener.onCommitteeArchiveChanged(net.blueshell.api.committee.api.CommitteeArchiveChanged(7, true))
-        listener.onTeamArchiveChanged(net.blueshell.api.esports.api.TeamArchiveChanged(3, false))
+        listener.onCommitteeArchiveChanged(
+            net.blueshell.api.committee.api
+                .CommitteeArchiveChanged(7, true),
+        )
+        listener.onTeamArchiveChanged(
+            net.blueshell.api.esports.api
+                .TeamArchiveChanged(3, false),
+        )
 
         io.mockk.verify { updater.updateCohort(committee) }
         io.mockk.verify { discord.archive("COMMITTEE_MEMBERS:7", true) }

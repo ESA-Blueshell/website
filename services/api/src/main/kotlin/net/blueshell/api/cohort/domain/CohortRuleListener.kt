@@ -62,7 +62,8 @@ class CohortRuleListener(
     }
 
     @AfterCommitListener
-    fun onCommitteeArchiveChanged(evt: CommitteeArchiveChanged) = archiveChanged("${CohortType.COMMITTEE_MEMBERS}:${evt.committeeId}", evt.archived)
+    fun onCommitteeArchiveChanged(evt: CommitteeArchiveChanged) =
+        archiveChanged("${CohortType.COMMITTEE_MEMBERS}:${evt.committeeId}", evt.archived)
 
     @AfterCommitListener
     fun onTeamArchiveChanged(evt: TeamArchiveChanged) = archiveChanged("${CohortType.TEAM_PLAYERS}:${evt.teamId}", evt.archived)

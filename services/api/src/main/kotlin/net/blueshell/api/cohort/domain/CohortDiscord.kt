@@ -112,7 +112,11 @@ class CohortDiscord(
         key: String,
         archived: Boolean,
     ) {
-        if (!roles.available() || !channels.available()) return log.warn("[cohort] {} was archived or restored with no bot to move its channels", key)
+        if (!roles.available() ||
+            !channels.available()
+        ) {
+            return log.warn("[cohort] {} was archived or restored with no bot to move its channels", key)
+        }
         val cohort = cohorts.findByDefinitionKey(key) ?: return
         val roleId = roleOf(requireNotNull(cohort.id)) ?: return
         val opened = channels.openedTo(roleId).filter { it.kind != KeptChannelKind.CATEGORY }.map { it.id }

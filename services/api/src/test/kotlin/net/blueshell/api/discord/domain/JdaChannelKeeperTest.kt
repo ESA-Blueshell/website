@@ -147,15 +147,32 @@ class JdaChannelKeeperTest {
 
         keeper().archive(listOf("1", "999"))
         keeper().archive(listOf("1"))
-        verify(archived).save(net.blueshell.api.discord.persistence.ArchivedChannel("1", "10").let { org.mockito.kotlin.argThat { channelId == "1" && categoryId == "10" } })
+        verify(archived).save(
+            net.blueshell.api.discord.persistence.ArchivedChannel("1", "10").let {
+                org.mockito.kotlin.argThat {
+                    channelId ==
+                        "1" &&
+                        categoryId == "10"
+                }
+            },
+        )
         verify(manager).setParent(archive)
 
-        whenever(archived.findById("1")).thenReturn(java.util.Optional.of(net.blueshell.api.discord.persistence.ArchivedChannel("1", "10")))
+        whenever(archived.findById("1")).thenReturn(
+            java.util.Optional.of(
+                net.blueshell.api.discord.persistence
+                    .ArchivedChannel("1", "10"),
+            ),
+        )
         whenever(archived.findById("2")).thenReturn(java.util.Optional.empty())
         keeper().restore(listOf("1", "2"))
         verify(manager).setParent(committees)
         verify(archived).delete(org.mockito.kotlin.argThat { channelId == "1" })
         assertThat(net.blueshell.api.discord.persistence.ArchivedChannel::class.java.getDeclaredConstructor().newInstance()).isNotNull
-        assertThat(net.blueshell.api.discord.persistence.ArchivedChannel("1", null).id).isEqualTo("1")
+        assertThat(
+            net.blueshell.api.discord.persistence
+                .ArchivedChannel("1", null)
+                .id,
+        ).isEqualTo("1")
     }
 }

@@ -106,7 +106,11 @@ class DiscordTargetIT : UserTestSupport() {
     @Test
     fun `a team is archived and brought back, its cohort emptied and refilled without a bot to move its channel`() {
         val board = createUserWithRole(Role.BOARD)
-        val team = teamService.create(net.blueshell.api.esports.domain.TeamInput("Archive ${UUID.randomUUID().toString().take(6)}", null))
+        val team =
+            teamService.create(
+                net.blueshell.api.esports.domain
+                    .TeamInput("Archive ${UUID.randomUUID().toString().take(6)}", null),
+            )
 
         mvc
             .perform(

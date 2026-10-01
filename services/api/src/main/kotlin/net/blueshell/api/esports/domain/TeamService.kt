@@ -1,11 +1,11 @@
 package net.blueshell.api.esports.domain
 
+import net.blueshell.api.esports.api.TeamArchiveChanged
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.esports.api.TeamArchiveChanged
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

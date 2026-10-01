@@ -79,7 +79,6 @@ interface TargetStrategy : MemberIdentity {
      */
     fun available(): Boolean = true
 
-
     fun add(
         external: ExternalTarget,
         externalUserId: String,

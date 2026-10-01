@@ -10,8 +10,8 @@ import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.concrete.Category
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
-import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
 import net.dv8tion.jda.api.requests.restaction.AuditableRestAction
 import net.dv8tion.jda.api.requests.restaction.ChannelAction
 import net.dv8tion.jda.api.requests.restaction.PermissionOverrideAction
@@ -85,8 +85,12 @@ class JdaChannelKeeperTest {
         whenever(guild.createCategory("Committees")).thenReturn(makingCategory)
         val making: ChannelAction<TextChannel> = mock()
         whenever(committees.createTextChannel("sitecie")).thenReturn(making)
-        whenever(making.addPermissionOverride(eq(everyone), any<Collection<Permission>>(), any<Collection<Permission>>())).thenReturn(making)
-        whenever(making.addPermissionOverride(eq(sitecieRole), any<Collection<Permission>>(), any<Collection<Permission>>())).thenReturn(making)
+        whenever(
+            making.addPermissionOverride(eq(everyone), any<Collection<Permission>>(), any<Collection<Permission>>()),
+        ).thenReturn(making)
+        whenever(
+            making.addPermissionOverride(eq(sitecieRole), any<Collection<Permission>>(), any<Collection<Permission>>()),
+        ).thenReturn(making)
         whenever(making.complete()).thenReturn(text)
 
         assertThat(keeper().createPrivate("sitecie", "Committees", "900").id).isEqualTo("1")

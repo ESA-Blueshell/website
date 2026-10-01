@@ -76,7 +76,10 @@ class CommitteeDiscord(
             val open = channels.openedTo(roleId).map { it.id }.toSet()
             (choice.channelIds - open).forEach { channels.open(it, roleId, private = true) }
             (open - choice.channelIds.toSet()).forEach { channels.close(it, roleId) }
-            choice.createChannel?.trim()?.takeIf { it.isNotEmpty() }?.let { channels.createPrivate(it, category, roleId) }
+            choice.createChannel
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { channels.createPrivate(it, category, roleId) }
         }
         return read(committeeId)
     }

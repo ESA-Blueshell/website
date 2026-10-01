@@ -18,8 +18,12 @@ class CommitteeDiscordControllerTest {
         val controller = CommitteeDiscordController(discord)
 
         assertThat(controller.findCommitteeDiscord(7)).isSameAs(state)
-        assertThat(controller.setCommitteeDiscord(7, CommitteeDiscordRequest(createRole = true, channelIds = listOf("1"), createChannel = "sitecie")))
-            .isSameAs(state)
+        assertThat(
+            controller.setCommitteeDiscord(
+                7,
+                CommitteeDiscordRequest(createRole = true, channelIds = listOf("1"), createChannel = "sitecie"),
+            ),
+        ).isSameAs(state)
         assertThat(CommitteeDiscordRequest().channelIds).isEmpty()
     }
 }

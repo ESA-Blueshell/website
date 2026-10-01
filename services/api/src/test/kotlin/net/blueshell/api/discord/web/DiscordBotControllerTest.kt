@@ -22,8 +22,12 @@ class DiscordBotControllerTest {
         val roles: net.blueshell.api.discord.api.DiscordRoleKeeper = mock()
         val channels: net.blueshell.api.discord.api.DiscordChannelKeeper = mock()
         val controller = DiscordBotController(mock(), roles, channels)
-        val role = net.blueshell.api.discord.api.KeptRole("1", "Sitecie", true)
-        val channel = net.blueshell.api.discord.api.KeptChannel("2", "sitecie", net.blueshell.api.discord.api.KeptChannelKind.TEXT, null)
+        val role =
+            net.blueshell.api.discord.api
+                .KeptRole("1", "Sitecie", true)
+        val channel =
+            net.blueshell.api.discord.api
+                .KeptChannel("2", "sitecie", net.blueshell.api.discord.api.KeptChannelKind.TEXT, null)
         whenever(roles.roles()).thenReturn(listOf(role))
         whenever(channels.channels()).thenReturn(listOf(channel))
 

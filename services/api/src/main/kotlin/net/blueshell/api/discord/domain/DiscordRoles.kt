@@ -37,7 +37,6 @@ class DiscordRoleDirectory(
             ?.filter { it.id in ids }
             ?.map(::describedRole)
 
-
     // Highest first, as the server lists them.
     private fun roles(): List<Role>? {
         val source = gateway.ifAvailable ?: return null

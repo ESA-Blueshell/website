@@ -2,9 +2,9 @@ package net.blueshell.api.discord.domain
 
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.SelfMember
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.RoleColors
+import net.dv8tion.jda.api.entities.SelfMember
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn

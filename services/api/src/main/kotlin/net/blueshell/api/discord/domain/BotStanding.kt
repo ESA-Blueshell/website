@@ -28,7 +28,12 @@ class BotStanding(
     private val gateway: ObjectProvider<GatewayGuild>,
     @Value($$"${discord.claim-roles:}") claimRoles: String,
 ) {
-    private val claimRoleIds = claimRoles.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    private val claimRoleIds =
+        claimRoles
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
 
     fun read(): BotStandingResult {
         val guild = gateway.ifAvailable?.guild() ?: return BotStandingResult(false, false, false, null, emptyList(), emptyList())

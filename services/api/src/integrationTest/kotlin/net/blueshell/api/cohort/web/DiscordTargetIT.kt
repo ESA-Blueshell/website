@@ -66,4 +66,26 @@ class DiscordTargetIT : UserTestSupport() {
         assertThat(membership.sync(board.id!!, role.id!!, SyncCohortMembershipIntent.ADD)).contains("Discord cannot be reached")
         assertThat(remediation.verifyTarget(role.id!!, JobTrigger.BY_HAND)).contains("Discord cannot be reached")
     }
+
+    @Test
+    fun `a committee's Discord reads as absent without a bot, and setting it is refused for the board and the members`() {
+        val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
+
+        mvc
+            .perform(get("/management/committees/{id}/discord", 1).with(signedIn(board)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.available").value(false))
+        mvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .put("/management/committees/{id}/discord", 1)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"createRole":true,"createChannel":"sitecie"}""")
+                    .with(signedIn(board)),
+            ).andExpect(status().isServiceUnavailable)
+        mvc.perform(get("/management/discord/roles").with(signedIn(board))).andExpect(jsonPath("$.length()").value(0))
+        mvc.perform(get("/management/discord/channels").with(signedIn(board))).andExpect(jsonPath("$.length()").value(0))
+        mvc.perform(get("/management/committees/{id}/discord", 1).with(signedIn(member))).andExpect(status().isForbidden)
+    }
 }

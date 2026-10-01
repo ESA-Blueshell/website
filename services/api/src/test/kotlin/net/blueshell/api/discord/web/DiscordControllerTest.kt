@@ -98,7 +98,7 @@ class DiscordControllerTest {
 
         val response = DiscordController(mock(), mock(), starboard).starboard()
 
-        assertThat(response.headers.cacheControl).contains("max-age=300")
+        assertThat(response.headers.cacheControl).contains("max-age=300").contains("private")
         // Read field by field: the getters are what the serialiser calls.
         val shown = response.body!!.single()
         assertThat(listOf(shown.id, shown.authorName, shown.authorNickname, shown.avatar, shown.text, shown.image))

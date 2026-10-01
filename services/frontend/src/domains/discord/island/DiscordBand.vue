@@ -18,8 +18,8 @@ import VoicePeople from "./VoicePeople.vue"
  * The widget's Join server is the band's one way in, so the head carries no button. Discord's
  * palette is its own and is the same in both themes, and the widget is the one thing on the
  * page with rounded corners. It lists only the rooms somebody is in, each joined in Discord
- * itself. Where Discord says nothing, the widget is its head and invite alone. Below it, what
- * the server starred lately.
+ * itself. Where Discord says nothing, the widget is its head and invite alone. Below it, for a
+ * member, what the server starred lately.
  */
 /* The hero shows the same count, so the page follows the server once. */
 const emit = defineEmits<{online: [count: number | undefined]}>()
@@ -41,6 +41,7 @@ onBeforeUnmount(() => stop())
  * viewer is asked about again whenever the locked rooms change, since a new one may be theirs.
  */
 const joinable = ref<ReadonlySet<string>>(new Set())
+const isMember = computed<boolean>(() => store.getters.isMember)
 const lockedIds = computed<string>(() =>
   (rooms.value?.rooms ?? []).filter(room => room.locked).map(room => room.id).join(","))
 watch(lockedIds, async (ids) => {
@@ -152,7 +153,8 @@ const glyphOf = (room: VoiceRoom) => {
         </p>
       </div>
 
-      <starboard-feed />
+      <!-- The starboard quotes rooms only members are in, and the api answers nobody else. -->
+      <starboard-feed v-if="isMember" />
     </div>
   </section>
 </template>

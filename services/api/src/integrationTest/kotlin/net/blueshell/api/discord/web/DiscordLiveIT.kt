@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.web
 
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -30,5 +31,13 @@ class DiscordLiveIT : UserTestSupport() {
             .andExpect(header().string("Location", "https://discord.gg/23YMFQy"))
         mvc.perform(get("/discord/channel/suggestions")).andExpect(status().isFound)
         mvc.perform(get("/discord/invite/lobby")).andExpect(status().isNotFound)
+    }
+
+    /** The starboard quotes members-only rooms, so only a member reads it; no bot past that, hence 503. */
+    @Test
+    fun `only a member reads the starboard`() {
+        mvc.perform(get("/discord/starboard")).andExpect(status().isUnauthorized)
+        mvc.perform(get("/discord/starboard").with(signedIn(createUserWithRole(Role.GUEST)))).andExpect(status().isForbidden)
+        mvc.perform(get("/discord/starboard").with(signedIn(createUserWithRole(Role.MEMBER)))).andExpect(status().isServiceUnavailable)
     }
 }

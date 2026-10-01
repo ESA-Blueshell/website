@@ -2302,6 +2302,23 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         failedCount: counts["FAILED"],
       })
     }
+    if (method === "GET" && path === "/mail/audiences") {
+      return answer(route, "findAudiences", [{key: "ACTIVE_MEMBERS:4", label: "Active members 2026-2027"}])
+    }
+    if (method === "GET" && path === "/mail/reply-to") {
+      return answer(route, "findReplyToOptions", ["board@esa-blueshell.nl", "mock-user@example.com"])
+    }
+    if (method === "POST" && path === "/mail/reach") {
+      const {to} = request.postDataJSON() as {to: unknown[]}
+      return answer(route, "findReach", {recipients: to.length === 0 ? 0 : 217, withoutEmail: to.length === 0 ? 0 : 3})
+    }
+    if (method === "POST" && (path === "/mail/send" || path === "/mail/test")) {
+      return answer(route, path === "/mail/send" ? "sendWrittenEmail" : "sendTestEmail", {sent: path === "/mail/send" ? 217 : 1})
+    }
+    if (method === "POST" && path === "/management/emails/render") {
+      const {subject, message} = request.postDataJSON() as {subject: string; message: string}
+      return answer(route, "render", {subject, html: `<html><body><h1>${subject}</h1><p>${message}</p></body></html>`})
+    }
     if (method === "GET" && /^\/management\/emails\/\d+$/.test(path)) {
       const id = Number(path.split("/")[3])
       const email = baseEmails.find((candidate) => candidate.id === id)

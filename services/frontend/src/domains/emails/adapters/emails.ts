@@ -8,6 +8,7 @@ import {
   getStats1,
   list1,
   previewSentEmail,
+  render,
   resend,
   retry1,
   type Email,
@@ -96,3 +97,9 @@ export const readSentEmail = (id: number): Promise<RenderedEmailPreview | null> 
 
 /** One email and the emails made again from it, or nothing where it could not be read. */
 export const readEmail = (id: number): Promise<EmailDetail | null> => readOr(findEmail({path: {id}}), null)
+
+/** An editor's message as the email it becomes, rendered by the api the way a send renders it. */
+export async function renderWritten(subject: string, message: string, recipientName?: string): Promise<RenderedEmailPreview | null> {
+  const answered = await readOr(render({body: {subject, message, recipientName: recipientName ?? "Member"}}), null)
+  return answered ? {subject: answered.subject, html: answered.html, recipientEmail: "", recipientName: recipientName ?? ""} : null
+}

@@ -39,6 +39,7 @@ class ApplicationModuleDetectionTest {
                 "alerts",
                 "contact",
                 "email",
+                "mail",
                 "sync",
                 "discord",
                 "oidc",

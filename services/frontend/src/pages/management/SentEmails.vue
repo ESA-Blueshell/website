@@ -72,6 +72,13 @@ onMounted(refresh)
           Every email the site sends, from the moment it is queued, and whether it arrived.
         </p>
       </div>
+      <router-link
+        class="sent__action sent__action--main"
+        data-testid="sent-emails-write"
+        to="/management/mail/write"
+      >
+        Write an email
+      </router-link>
       <button
         class="sent__action"
         data-testid="sent-emails-refresh"
@@ -323,6 +330,12 @@ onMounted(refresh)
   font-size: 0.84rem;
   color: var(--color-chalk);
   cursor: pointer;
+}
+
+.sent__action--main {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+  text-decoration: none;
 }
 
 .sent__mini:disabled {

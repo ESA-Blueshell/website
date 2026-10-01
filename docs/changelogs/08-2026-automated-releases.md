@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.16.0](https://github.com/ESA-Blueshell/website/compare/v1.15.0...v1.16.0) (2026-10-01)
+
+
+### Features
+
+* the board picks when an approved event is announced, now or the next 08:00 ([#2052](https://github.com/ESA-Blueshell/website/issues/2052)) ([fa15a3a](https://github.com/ESA-Blueshell/website/commit/fa15a3aefbf0b2ac6a55b56091cab0265a79bc7d))
+
+
+### Bug Fixes
+
+* the home page starboard is a member's, and shows again ([#2067](https://github.com/ESA-Blueshell/website/issues/2067)) ([6867d7c](https://github.com/ESA-Blueshell/website/commit/6867d7cfedbe7c89fe886d609d6c30f1b6b10837))
+
 ## [1.15.0](https://github.com/ESA-Blueshell/website/compare/v1.14.0...v1.15.0) (2026-10-01)
 
 

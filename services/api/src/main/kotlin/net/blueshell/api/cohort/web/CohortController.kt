@@ -233,6 +233,8 @@ data class ReconcileRunResponse(
     val inSync: Int,
     val oursOnly: Int,
     val theirsOnly: Int,
+    @param:Schema(description = "Ours only with no account on the system, whom no push reaches")
+    val unreachable: Int = 0,
 )
 
 @Schema(name = "CohortMember")
@@ -363,7 +365,7 @@ private fun CohortTargetRow.toResponse(): CohortTargetResponse =
         externalId = externalId,
         lastReconciledAt = lastReconciledAt,
         path = path,
-        runs = runs.map { ReconcileRunResponse(it.startedAt, it.trigger, it.inSync, it.oursOnly, it.theirsOnly) },
+        runs = runs.map { ReconcileRunResponse(it.startedAt, it.trigger, it.inSync, it.oursOnly, it.theirsOnly, it.unreachable) },
         enforced = target.enforced,
     )
 

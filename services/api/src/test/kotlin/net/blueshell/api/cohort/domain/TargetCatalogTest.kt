@@ -62,6 +62,10 @@ class TargetCatalogTest {
     }
 
     private class RecordingStrategy : TargetStrategy {
+        override fun memberIds(userIds: Set<Long>): Map<Long, String> = emptyMap()
+
+        override fun ownersOf(externalUserIds: Set<String>): Map<String, Long> = emptyMap()
+
         val queries = mutableListOf<String?>()
 
         override val descriptor =

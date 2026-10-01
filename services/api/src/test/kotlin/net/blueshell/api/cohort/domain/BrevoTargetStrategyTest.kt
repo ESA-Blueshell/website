@@ -5,6 +5,11 @@ import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.contact.api.ContactJobs
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.persistence.ExternalIdMapping
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -16,7 +21,9 @@ class BrevoTargetStrategyTest {
         mock {
             whenever(it.system).thenReturn(TargetSystem.BREVO)
         }
-    private val strategy = BrevoTargetStrategy(listOf(lists))
+    private val externalIds: ExternalIdMappingService = mock()
+    private val jobs: JobQueue = mock()
+    private val strategy = BrevoTargetStrategy(listOf(lists), externalIds, jobs)
 
     @Test
     fun `maps folder names and counts onto the catalog`() {
@@ -87,4 +94,18 @@ class BrevoTargetStrategyTest {
         folderId: Long,
         unique: Long = 10L + id,
     ): ContactListRef = ContactListRef(externalListId = id, name = name, folderId = folderId, memberCount = unique)
+
+    @Test
+    fun `a member's id is their Brevo contact, an owner is the account a contact maps to, and a missing contact is made`() {
+        whenever(externalIds.findBatch("USER", setOf(1L, 2L), "BREVO")).thenReturn(
+            listOf(ExternalIdMapping("USER", 1L, "BREVO", "77"), ExternalIdMapping("USER", 2L, "BREVO", " ")),
+        )
+        whenever(externalIds.findByExternalIds("USER", "BREVO", setOf("77"))).thenReturn(listOf(ExternalIdMapping("USER", 1L, "BREVO", "77")))
+
+        assertThat(strategy.memberIds(setOf(1L, 2L))).isEqualTo(mapOf(1L to "77"))
+        assertThat(strategy.ownersOf(setOf("77"))).isEqualTo(mapOf("77" to 1L))
+        assertThat(strategy.makesMemberIds).isTrue()
+        strategy.makeMemberId(2L)
+        verify(jobs).runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(2L), JobTrigger.ANOTHER_JOB)
+    }
 }

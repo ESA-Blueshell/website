@@ -7,4 +7,4 @@ import io.swagger.v3.oas.annotations.media.Schema
  * `external_id_mapping.system`.
  */
 @Schema(enumAsRef = true)
-enum class TargetSystem { BREVO, GOOGLE_CALENDAR }
+enum class TargetSystem { BREVO, GOOGLE_CALENDAR, DISCORD }

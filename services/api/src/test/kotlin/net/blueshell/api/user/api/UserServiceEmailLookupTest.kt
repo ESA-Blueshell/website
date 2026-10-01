@@ -36,4 +36,14 @@ class UserServiceEmailLookupTest {
         whenever(repository.findIdsHolding(Role.BOARD)).thenReturn(listOf(3, 3, 4))
         assertThat(UserService(repository, mock(), mock(), mock()).findIdsHolding(Role.BOARD)).containsExactlyInAnyOrder(3, 4)
     }
+
+    @Test
+    fun `finds the accounts linked to Discord ids, and asks nothing for none`() {
+        val repository = mock<UserRepository>()
+        whenever(repository.findAllByDiscordIdIn(setOf("d1"))).thenReturn(listOf(ada))
+        val users = UserService(repository, mock(), mock(), mock())
+
+        assertThat(users.findAllByDiscordIds(listOf("d1", "d1"))).containsExactly(ada)
+        assertThat(users.findAllByDiscordIds(emptyList())).isEmpty()
+    }
 }

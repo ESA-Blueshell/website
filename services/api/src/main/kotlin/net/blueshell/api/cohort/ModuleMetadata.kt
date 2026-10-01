@@ -38,6 +38,8 @@ import org.springframework.modulith.PackageInfo
         // FK into either table — this wants a projection published through
         // contribution :: api instead.
         "contribution :: entities",
+        // A cohort's Discord target is a role, kept through DiscordRoleKeeper.
+        "discord :: api",
         // The team-roster cohort is built from TeamRosterService.
         "esports :: api",
         // Open kernel: the controllers are @AdminOnly.

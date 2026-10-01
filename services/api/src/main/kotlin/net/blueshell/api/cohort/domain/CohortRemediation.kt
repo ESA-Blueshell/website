@@ -30,10 +30,11 @@ interface CohortRemediation {
      * [net.blueshell.api.cohort.persistence.TargetMember]
      * ledger. Run by the `cohort.remove-external-member` job.
      */
+    /** Answers why nothing was removed, or null where it was. */
     fun removeExternalMember(
         targetId: Long,
         externalUserId: String,
-    )
+    ): String?
 
     /**
      * Verifies [targetId] against its live external member list: confirms
@@ -42,8 +43,9 @@ interface CohortRemediation {
      * per-member sync path establishes health; this only verifies it.
      * Run by the `cohort.reconcile-list` job, which records each run's drift with [trigger].
      */
+    /** Answers why nothing was compared, or null where it was. */
     fun verifyTarget(
         targetId: Long,
         trigger: JobTrigger?,
-    )
+    ): String?
 }

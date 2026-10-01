@@ -18,8 +18,6 @@ import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.sync.api.ExternalIdMappingService
-import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
@@ -36,7 +34,6 @@ class CohortQueryServiceTest {
     private val targetMembers: TargetMemberRepository = mockk()
     private val users: UserService = mockk()
     private val targetExternalIds: CohortTargetIds = mockk()
-    private val externalIds: ExternalIdMappingService = mockk()
     private val definitions: CohortDefinitionRegistry = mockk()
     private val brevo: TargetStrategy =
         mockk<TargetStrategy>().also {
@@ -57,7 +54,6 @@ class CohortQueryServiceTest {
             targetMembers,
             users,
             targetExternalIds,
-            externalIds,
             definitions,
             strategies,
             runs,
@@ -161,7 +157,7 @@ class CohortQueryServiceTest {
         stubDetail(cohort, target, listOf(desired, synced, verified))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
-        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+        every { brevo.ownersOf(any()) } returns emptyMap()
 
         val detail = service.detail(20L)
 
@@ -184,7 +180,7 @@ class CohortQueryServiceTest {
         stubDetail(cohort, target, listOf(member, stranger))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
-        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+        every { brevo.ownersOf(any()) } returns emptyMap()
 
         val rows = service.detail(24L).members
 
@@ -203,8 +199,7 @@ class CohortQueryServiceTest {
         val target = target(210L)
         val stranger = member(target, cohort, userId = null, externalUserId = "ext-42", verifiedAt = NOW)
         stubDetail(cohort, target, listOf(stranger))
-        every { externalIds.findByExternalIds(any(), "BREVO", setOf("ext-42")) } returns
-            listOf(ExternalIdMapping(aggregateType = "USER", aggregateId = 77L, system = "BREVO", externalId = "ext-42"))
+        every { brevo.ownersOf(setOf("ext-42")) } returns mapOf("ext-42" to 77L)
         every { users.findAllByIds(listOf(77L)) } returns listOf(user(77L, "Emma Dokter"))
         every { users.isSoftDeleted(any()) } returns false
 
@@ -220,7 +215,7 @@ class CohortQueryServiceTest {
         val cohort = cohort(25L)
         val target = target(250L)
         stubDetail(cohort, target, listOf(member(target, cohort, userId = null, externalUserId = "ext-unknown", verifiedAt = NOW)))
-        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+        every { brevo.ownersOf(any()) } returns emptyMap()
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
 
@@ -239,7 +234,7 @@ class CohortQueryServiceTest {
         stubDetail(cohort, target, listOf(older, newest))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
-        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+        every { brevo.ownersOf(any()) } returns emptyMap()
 
         val mapping = service.detail(22L).mappings.single()
 
@@ -318,7 +313,7 @@ class CohortQueryServiceTest {
         val cohort = cohort(30L)
         val known = target(300L)
         val unknown =
-            Target(system = "DISCORD", kind = TargetKind.LIST, label = "Gone")
+            Target(system = "MASTODON", kind = TargetKind.LIST, label = "Gone")
                 .apply { id = 301L }
         every { cohorts.findById(30L) } returns Optional.of(cohort)
         every { targets.findAllByCohortId(30L) } returns listOf(known, unknown)
@@ -338,7 +333,7 @@ class CohortQueryServiceTest {
     fun `detail still lists the members of a cohort whose system is gone`() {
         val cohort = cohort(31L)
         val unknown =
-            Target(system = "DISCORD", kind = TargetKind.LIST, label = "Gone")
+            Target(system = "MASTODON", kind = TargetKind.LIST, label = "Gone")
                 .apply { id = 310L }
         val row = member(unknown, cohort, userId = 1L)
         every { cohorts.findById(31L) } returns Optional.of(cohort)
@@ -347,7 +342,7 @@ class CohortQueryServiceTest {
         every { targetMembers.findAllByTargetId(any()) } returns listOf(row)
         every { users.findAllByIds(any()) } returns listOf(user(1L, "Emma Dokter"))
         every { users.isSoftDeleted(any()) } returns false
-        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+        every { brevo.ownersOf(any()) } returns emptyMap()
 
         val detail = service.detail(31L)
 
@@ -365,7 +360,7 @@ class CohortQueryServiceTest {
         stubDetail(cohort, target, listOf(member(target, cohort, userId = 1L)))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
-        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+        every { brevo.ownersOf(any()) } returns emptyMap()
 
         assertThat(
             service
@@ -389,7 +384,7 @@ class CohortQueryServiceTest {
             )
         every { users.findAllByIds(listOf(5L, 9L)) } returns listOf(user(5L, "Ada Lovelace"), user(9L, "Board Member"))
         every { users.isSoftDeleted(any()) } returns false
-        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+        every { brevo.ownersOf(any()) } returns emptyMap()
 
         val rows = service.detail(26L).resolutions
 
@@ -401,7 +396,7 @@ class CohortQueryServiceTest {
     private fun stubNoUsers() {
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
-        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+        every { brevo.ownersOf(any()) } returns emptyMap()
     }
 
     private fun stubDetail(

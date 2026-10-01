@@ -250,7 +250,8 @@ class CohortRemediationServiceTest {
             label = label,
         )
 
-    private class RecordingTargetStrategy : TargetStrategy {
+    // Brevo's shape: ids come from the mapping table, and a missing contact is made by the contact sync.
+    private inner class RecordingTargetStrategy : TargetStrategy {
         override val descriptor =
             TargetDescriptor(
                 system = TargetSystem.BREVO,
@@ -294,6 +295,25 @@ class CohortRemediationServiceTest {
         ): ExternalTarget = error("not used")
 
         override fun createFolder(name: String): List<String> = error("not used")
+
+        override fun memberIds(userIds: Set<Long>): Map<Long, String> =
+            externalIds
+                .findBatch("USER", userIds, TargetSystem.BREVO.name)
+                .mapNotNull { mapping -> mapping.externalId?.takeIf { it.isNotBlank() }?.let { mapping.aggregateId to it } }
+                .toMap()
+
+        override fun ownersOf(externalUserIds: Set<String>): Map<String, Long> = emptyMap()
+
+        var reachable = true
+        var makes = true
+
+        override fun available() = reachable
+
+        override val makesMemberIds get() = makes
+
+        override fun makeMemberId(userId: Long) {
+            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId), JobTrigger.ANOTHER_JOB)
+        }
     }
 
     private class ImmediateTransactionManager : AbstractPlatformTransactionManager() {
@@ -333,6 +353,45 @@ class CohortRemediationServiceTest {
         assertThat(saved.captured.targetId).isEqualTo(99L)
         assertThat(saved.captured.trigger).isEqualTo(JobTrigger.SCHEDULED_RUN)
         assertThat(listOf(saved.captured.inSync, saved.captured.oursOnly, saved.captured.theirsOnly)).containsExactly(1, 2, 1)
+        assertThat(saved.captured.unreachable).isZero()
+    }
+
+    @Test
+    fun `on a system that makes no ids, somebody with none is unreachable and counted apart from drift`() {
+        val cohort = cohort(7L)
+        val target = target(99L, cohort.id!!)
+        port.remote = emptyList()
+        port.makes = false
+        every { targets.findById(99L) } returns Optional.of(target)
+        every { cohorts.findById(7L) } returns Optional.of(cohort)
+        every { targetExternalIds.require(any()) } returns "role-99"
+        every { externalIds.findBatch(any(), any(), any()) } returns listOf(ExternalIdMapping("USER", 3L, "BREVO", "e3"))
+        val rows = listOf(member(target, cohort, userId = 2L), member(target, cohort, userId = 3L))
+        every { members.findAllByTargetIdAndUserIdIsNotNull(99L) } returns rows
+        every { members.findAllByTargetId(99L) } returns rows
+        val saved = slot<TargetReconcileRun>()
+        every { runs.save(capture(saved)) } answers { saved.captured }
+
+        assertThat(service.verifyTarget(99L, JobTrigger.SCHEDULED_RUN)).isNull()
+
+        assertThat(listOf(saved.captured.oursOnly, saved.captured.unreachable)).containsExactly(1, 1)
+        verify(exactly = 0) { jobs.runAsync(ContactJobs.SyncContact, any(), any()) }
+    }
+
+    @Test
+    fun `a system that cannot be reached is neither compared nor written`() {
+        val cohort = cohort(7L)
+        val target = target(99L, cohort.id!!)
+        port.reachable = false
+        every { targets.findById(99L) } returns Optional.of(target)
+        every { cohorts.findById(7L) } returns Optional.of(cohort)
+        every { targetExternalIds.require(any()) } returns "role-99"
+
+        assertThat(service.verifyTarget(99L, JobTrigger.SCHEDULED_RUN)).isEqualTo("Brevo cannot be reached now, so nothing was compared.")
+        assertThat(service.removeExternalMember(99L, "ext-9")).isEqualTo("Brevo cannot be reached now.")
+        assertThat(port.listCalls).isZero()
+        assertThat(port.removeCalls).isEmpty()
+        verify(exactly = 0) { runs.save(any()) }
     }
 
     @Test

@@ -22,6 +22,15 @@ class TargetSystemRefused(
         mapOf("system" to system.shownName, "reason" to reason),
     )
 
+class TargetSystemUnavailable(
+    system: TargetSystem,
+) : TargetRefusal(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "TargetSystemUnavailable",
+        "The system cannot be reached now.",
+        mapOf("system" to system.shownName),
+    )
+
 class TargetNotFound(
     system: TargetSystem,
     externalId: String,

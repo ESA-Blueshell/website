@@ -55,6 +55,27 @@ interface TargetStrategy {
 
     fun members(external: ExternalTarget): List<ExternalMember>
 
+    /**
+     * Whether the system can be reached now. A target on one that cannot is absent: its writes and
+     * reconciles skip rather than fail, and its catalogue is empty.
+     */
+    fun available(): Boolean = true
+
+    /** The id each of [userIds] has on the system, for those who have one. */
+    fun memberIds(userIds: Set<Long>): Map<Long, String>
+
+    /** The account behind each of [externalUserIds], for those an account holds. */
+    fun ownersOf(externalUserIds: Set<String>): Map<String, Long>
+
+    /**
+     * Whether a user without an id there is given one by the site, as Brevo is given a contact.
+     * Where not, they are unreachable: counted apart from drift and never pushed.
+     */
+    val makesMemberIds: Boolean get() = false
+
+    /** Sets off making [userId]'s id on the system; only called where [makesMemberIds]. */
+    fun makeMemberId(userId: Long) = Unit
+
     fun add(
         external: ExternalTarget,
         externalUserId: String,

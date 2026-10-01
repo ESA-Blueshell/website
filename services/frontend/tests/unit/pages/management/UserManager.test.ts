@@ -174,6 +174,18 @@ describe("the Users page", () => {
     expect(router.currentRoute.value.query).toEqual({ids: "2", back: "/management/users"})
   })
 
+  it("takes the people selected to the task page that starts their membership", async () => {
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="member-manager-checkbox-3"]').trigger("change")
+    await settle()
+    await wrapper.get('[data-testid="bulk-action-start-membership"]').trigger("click")
+    await settle()
+
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe("/management/users/bulk/start"), {timeout: 10_000})
+    expect(router.currentRoute.value.query).toEqual({ids: "3", back: "/management/users"})
+  })
+
   it("links each person to their own page, and Edit profile to its Profile tab", async () => {
     const wrapper = await mount(adminLogin)
 

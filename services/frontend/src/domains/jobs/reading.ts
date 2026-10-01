@@ -48,7 +48,6 @@ const TRIGGERS: Record<JobTrigger, string> = {
   [JobTrigger.MEMBERSHIP_CHANGED]: "A change in a cohort's members",
   [JobTrigger.SITE_ACTION]: "An action on the site",
   [JobTrigger.MORNING_RUN]: "The 08:00 run",
-  [JobTrigger.HOURLY_RUN]: "The hourly run",
   [JobTrigger.SCHEDULED_RUN]: "A scheduled run",
   [JobTrigger.ANOTHER_JOB]: "Another job",
   [JobTrigger.BY_HAND]: "Run a job",

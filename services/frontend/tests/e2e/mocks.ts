@@ -903,6 +903,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const now = new Date().toISOString()
       return answer(route, "signIns", [{id: "here", browser: "Chrome", platform: "Linux", signedInAt: now, lastSeenAt: now, current: true}])
     }
+    if (method === "GET" && path === "/users/me/unlinked-targets") {
+      return answer(route, "listMyUnlinkedTargets", [])
+    }
     if (method === "GET" && path === "/users/me/trusted-browsers") {
       return answer(route, "trustedBrowsers", [])
     }

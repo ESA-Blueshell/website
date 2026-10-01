@@ -34,6 +34,12 @@
           class="mt-6"
         />
 
+        <link-discord-ask
+          v-if="user"
+          class="mt-6"
+          :linked="!!user.discordId"
+        />
+
         <div
           v-if="user"
           class="mt-10"
@@ -73,6 +79,7 @@ import UserForm from "@/components/form/UserForm.vue"
 import IncassoSetUp from "@/components/account/IncassoSetUp.vue"
 import PendingMembership from "@/components/account/PendingMembership.vue"
 import {readUser} from "@/domains/user"
+import {LinkDiscordAsk} from "@/domains/discord"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useIsBoard} from "@/composables/useIsBoard"
 

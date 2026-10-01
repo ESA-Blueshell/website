@@ -82,6 +82,9 @@ class EmailService(
         return rewritten(queued)
     }
 
+    @Transactional(readOnly = true)
+    fun resendsOf(id: Long): List<Email> = repository.findByResentFromIdOrderByIdAsc(id)
+
     /** Links an email made again to the one it was made from. */
     @Transactional
     fun linkResend(

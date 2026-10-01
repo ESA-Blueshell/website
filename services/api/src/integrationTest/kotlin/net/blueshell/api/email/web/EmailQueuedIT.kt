@@ -10,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -46,6 +47,10 @@ class EmailQueuedIT : UserTestSupport() {
             .andExpect(jsonPath("$.resentFromId").value(queued.id!!))
             .andExpect(jsonPath("$.recipientEmail").value("moved-${member.email}"))
             .andExpect(jsonPath("$.deliveryStatus").value("QUEUED"))
+        mvc
+            .perform(get("/management/emails/${queued.id}").with(signedIn(board)))
+            .andExpect(jsonPath("$.email.deliveryStatus").value("SENT"))
+            .andExpect(jsonPath("$.resends[0].recipientEmail").value("moved-${member.email}"))
         val member2 = createUserWithRole(Role.MEMBER)
         mvc
             .perform(post("/management/emails/${queued.id}/resend").with(signedIn(member2)))

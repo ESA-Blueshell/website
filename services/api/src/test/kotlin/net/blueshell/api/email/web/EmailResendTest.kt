@@ -50,7 +50,12 @@ class EmailResendTest {
 
     @Test
     fun `answers the email made again, linked to the one it came from, and counts what is queued`() {
-        val linked = Entities.email(2).apply { jobExecutionId = 5 }
+        val linked =
+            Entities.email(2).apply {
+                jobExecutionId = 5
+                createdAt = Instant.EPOCH
+                updatedAt = Instant.EPOCH
+            }
         val made =
             Entities.email(3).apply {
                 resentFromId = 2
@@ -63,6 +68,9 @@ class EmailResendTest {
         whenever(emails.countByStatus(EmailDeliveryStatus.QUEUED)).thenReturn(4)
 
         assertThat(controller.resend(2).resentFromId).isEqualTo(2)
+        whenever(emails.resendsOf(2)).thenReturn(listOf(made))
+        val detail = controller.findEmail(2)
+        assertThat(detail.resends.map { it.id }).containsExactly(3)
         assertThat(controller.getStats().queuedCount).isEqualTo(4)
     }
 }

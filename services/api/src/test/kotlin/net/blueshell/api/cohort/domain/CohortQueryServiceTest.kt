@@ -38,6 +38,7 @@ class CohortQueryServiceTest {
     private val brevo: TargetStrategy =
         mockk<TargetStrategy>().also {
             every { it.system } returns TargetSystem.BREVO
+            every { it.makesMemberIds } returns true
             every { it.descriptor } returns
                 TargetDescriptor(
                     system = TargetSystem.BREVO,
@@ -191,6 +192,50 @@ class CohortQueryServiceTest {
         assertThat(strangerRow.state).isEqualTo(TargetMemberState.STRANGER)
         assertThat(strangerRow.member.externalUserId).isEqualTo("ext-9")
         assertThat(strangerRow.member.label).isEqualTo("someone@example.com")
+    }
+
+    @Test
+    fun `detail marks the people with no account on a system where everybody links their own`() {
+        val discord =
+            mockk<TargetStrategy>().also {
+                every { it.system } returns TargetSystem.DISCORD
+                every { it.descriptor } returns TargetDescriptor(system = TargetSystem.DISCORD, kind = TargetKind.ROLE)
+                every { it.makesMemberIds } returns false
+                every { it.memberIds(setOf(5L, 6L)) } returns mapOf(5L to "900")
+                every { it.ownersOf(any()) } returns emptyMap()
+            }
+        val withDiscord =
+            CohortQueryService(
+                cohorts,
+                targets,
+                targetMembers,
+                users,
+                targetExternalIds,
+                definitions,
+                TargetStrategies(listOf(discord)),
+                runs,
+                resolutions,
+            )
+        val cohort = cohort(26L)
+        val role = Target(system = "DISCORD", kind = TargetKind.ROLE, label = "Sitecie").apply { id = 260L }
+        val linked = member(role, cohort, userId = 5L).apply { id = 1L }
+        val unlinked = member(role, cohort, userId = 6L).apply { id = 2L }
+        val stranger = member(role, cohort, userId = null, externalUserId = "901", verifiedAt = NOW).apply { id = 3L }
+        stubDetail(cohort, role, listOf(linked, unlinked, stranger))
+        stubNoUsers()
+
+        val rows = withDiscord.detail(26L).members.associate { it.member.id to it.unreachable }
+
+        assertThat(rows).isEqualTo(mapOf(1L to false, 2L to true, 3L to false))
+
+        every { discord.memberIds(any()) } throws IllegalStateException("users unreadable")
+        assertThat(
+            withDiscord
+                .detail(26L)
+                .members
+                .filter { it.unreachable }
+                .map { it.member.id },
+        ).containsExactlyInAnyOrder(1L, 2L)
     }
 
     @Test

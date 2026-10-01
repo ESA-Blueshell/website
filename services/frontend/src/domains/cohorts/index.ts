@@ -44,7 +44,8 @@ export {
   type TidyPlan,
   type TargetOverview,
 } from "./adapters/cohorts"
-export {RESOLUTION_WORDS, adoptWord, driftRowsOf, inStepOn, isDrift, runBars, whyOf} from "./listPage"
+export {RESOLUTION_WORDS, adoptWord, driftRowsOf, driftWords, inStepOn, isDrift, runBars, whyOf, type DriftWords} from "./listPage"
+export {default as TargetDrift} from "./island/TargetDrift.vue"
 export {ARCHIVE_FOLDER, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
 export {fetchCohort} from "./adapters/cohorts"
 export {fetchCohorts} from "./adapters/cohorts"

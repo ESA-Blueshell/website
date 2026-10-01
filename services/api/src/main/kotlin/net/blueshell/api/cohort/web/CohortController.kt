@@ -254,6 +254,11 @@ data class CohortMemberResponse(
     @param:Schema(description = "What the external system calls this row")
     val externalLabel: String?,
     val joinedAt: Instant,
+    @param:Schema(
+        description = "No account on a system that cannot make one, so no push reaches them",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+    )
+    val unreachable: Boolean,
 )
 
 @Schema(name = "PushDrift")
@@ -383,4 +388,5 @@ private fun TargetMemberRow.toMemberResponse(): CohortMemberResponse =
         externalUserId = member.externalUserId,
         externalLabel = member.label,
         joinedAt = member.createdAt,
+        unreachable = unreachable,
     )

@@ -5,6 +5,11 @@ import {mountInApp, settle, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findListedTarget: vi.fn(),
+  findCohortById: vi.fn(),
+  reconcileTarget: vi.fn(),
+  enforceTarget: vi.fn(),
+  pushDrift: vi.fn(),
+  removeDrift: vi.fn(),
   listRoleOpenings: vi.fn(),
   listCataloguedChannels: vi.fn(),
   setRoleOpening: vi.fn(),
@@ -34,6 +39,22 @@ const catalogue = [
   {id: "1", name: "members-lounge", kind: "TEXT", category: "Members", private: true, roleIds: ["500"]},
   {id: "2", name: "announcements", kind: "TEXT", category: "Members", private: true, roleIds: []},
 ]
+const ledger = (targetMemberId: number, state: string, fields: Record<string, unknown> = {}) => ({
+  targetMemberId, state, isUserDeleted: false, joinedAt: "2026-09-22T10:00:00Z", system: "DISCORD", ...fields,
+})
+const members = (fields: Record<string, unknown> = {}) => ({
+  id: 4, label: "Members", category: "MEMBERS", type: "CURRENT_MEMBERS", orphaned: false,
+  mappings: [{targetId: 40, system: "DISCORD", kind: "ROLE", externalId: "500", label: "Member", path: [], folderKnown: true, enforced: false, runs: []}],
+  members: [
+    ledger(1, "DESIRED", {userId: 11, userFullName: "Lars Mulder"}),
+    ledger(2, "DESIRED", {userId: 12, userFullName: "Noor Hendriks", unreachable: true}),
+    ledger(3, "STRANGER", {userId: 13, userFullName: "Jesse Bakker", externalUserId: "d3"}),
+    ledger(4, "STRANGER", {externalUserId: "d4", externalLabel: "pixelsam"}),
+    ledger(5, "VERIFIED", {userId: 15, userFullName: "In Step", syncedAt: "x"}),
+  ],
+  resolutions: [{system: "DISCORD", action: "PUSH", personName: "Kim Vos", resolvedByName: "Alice", resolvedAt: "2026-09-22T14:02:00Z"}],
+  ...fields,
+})
 const member = {externalId: "500", label: "Member", targetId: 1, cohortId: 4, cohortLabel: "Members", cohortType: "CURRENT_MEMBERS", enforced: false}
 
 const inDialog = (testid: string) => new DOMWrapper(document.body.querySelector(`[data-testid="${testid}"]`)!)
@@ -52,6 +73,12 @@ describe("a Discord role's page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     api.findListedTarget.mockResolvedValue({status: 200, data: member})
+    api.findCohortById.mockResolvedValue({status: 200, data: members()})
+    api.reconcileTarget.mockResolvedValue({status: 202, data: undefined})
+    api.enforceTarget.mockResolvedValue({status: 200, data: {}})
+    api.pushDrift.mockResolvedValue({status: 200, data: {resolved: 1}})
+    api.removeDrift.mockResolvedValue({status: 200, data: {resolved: 1}})
+    mockStore.getters.isAdmin = false
     api.listRoleOpenings.mockResolvedValue({status: 200, data: [games, lounge, voice]})
     api.listCataloguedChannels.mockResolvedValue({status: 200, data: catalogue})
     api.setRoleOpening.mockResolvedValue({status: 200, data: [games, {...lounge, kept: "READ", differs: false}, voice]})
@@ -166,5 +193,61 @@ describe("a Discord role's page", () => {
     await settle()
     await inDialog("discord-create-confirm").trigger("click")
     expect(api.createRoleChannel).not.toHaveBeenCalled()
+  })
+
+  it("lists the role's drift in its own words: add and remove the role, and link an account where no Discord is linked", async () => {
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="discord-role-holders"]').text()).toContain("1 in step")
+    expect(wrapper.get('[data-testid="discord-role-holders"]').text()).toContain("1 missing · 2 extra · 1 with no Discord linked")
+    expect(wrapper.get('[data-testid="discord-role-drift-row-1"]').text()).toContain("In Members since")
+    expect(wrapper.get('[data-testid="discord-role-drift-row-1"]').text()).toContain("and without the role")
+    expect(wrapper.get('[data-testid="discord-role-drift-push-1"]').text()).toBe("Add the role")
+    const unlinked = wrapper.get('[data-testid="discord-role-drift-row-2"]')
+    expect(unlinked.text()).toContain("No Discord linked")
+    expect(unlinked.find('[data-testid="discord-role-drift-push-2"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="discord-role-drift-link-account-2"]').attributes("to")).toBe("/management/users/12")
+    expect(wrapper.get('[data-testid="discord-role-drift-remove-3"]').text()).toBe("Remove the role")
+    expect(wrapper.get('[data-testid="discord-role-drift-row-3"]').text()).toContain("Holds the role, and not in Members")
+    expect(wrapper.get('[data-testid="discord-role-drift-row-4"]').text()).toContain("Unknown member")
+    expect(wrapper.get('[data-testid="discord-role-drift-row-4"]').text()).toContain("No account here has this Discord linked")
+    expect(wrapper.get('[data-testid="discord-role-drift-resolved"]').text()).toContain("Added the role")
+    expect(wrapper.find('[data-testid="discord-role-enforce"]').exists()).toBe(false)
+
+    wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "noor")
+    await settle()
+    expect(wrapper.find('[data-testid="discord-role-drift-row-1"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="discord-role-drift-row-2"]').text()).toContain("Noor Hendriks")
+  })
+
+  it("adds the role to the ticked people, reconciles and lets an admin enforce", async () => {
+    mockStore.getters.isAdmin = true
+    const wrapper = await mount()
+
+    wrapper.findAllComponents({name: "CheckBox"}).find((one) => one.props("testid") === "discord-role-drift-select-1")!.vm.$emit("update:modelValue", true)
+    await settle()
+    expect(wrapper.get('[data-testid="discord-role-drift-bulk-push"]').text()).toBe("Add the role: 1")
+    await wrapper.get('[data-testid="discord-role-drift-bulk-push"]').trigger("click")
+    await settle()
+    await new DOMWrapper(document.body.querySelector('[data-testid="discord-role-drift-plan-confirm"]')!).trigger("click")
+    await settle()
+    expect(api.pushDrift).toHaveBeenCalledWith({path: {id: 4, targetId: 40}, body: {userIds: [11]}})
+
+    await wrapper.get('[data-testid="discord-role-reconcile"]').trigger("click")
+    await settle()
+    expect(api.reconcileTarget).toHaveBeenCalled()
+
+    expect(wrapper.get('[data-testid="discord-role-enforce"]').text()).toContain("Off.")
+    await wrapper.get('[data-testid="discord-role-enforce"]').trigger("click")
+    await settle()
+    expect(api.enforceTarget).toHaveBeenCalledWith(expect.objectContaining({path: {id: 4, targetId: 40}}))
+
+    api.enforceTarget.mockResolvedValueOnce({status: 409, error: {code: "Nope", message: "Enforcing is off for now."}, response: {status: 409}})
+    api.findCohortById.mockResolvedValue({status: 200, data: members({mappings: [{...members().mappings[0], enforced: true}]})})
+    const enforced = await mount()
+    expect(enforced.get('[data-testid="discord-role-enforce"]').text()).toContain("Turn off")
+    await enforced.get('[data-testid="discord-role-enforce"]').trigger("click")
+    await settle()
+    expect(api.enforceTarget).toHaveBeenLastCalledWith(expect.objectContaining({body: {enforced: false}}))
   })
 })

@@ -196,6 +196,7 @@ describe("the committee edit page, for its own members", () => {
     expect(adapter.saveCommitteeDiscord).toHaveBeenCalledWith(lan.id, choice)
     expect(wrapper.emitted("saved")).toHaveLength(1)
 
+    adapter.listCommittees.mockResolvedValue([])
     const editing = mountEditor(lan, true)
     await flushPromises()
     await (editing.getComponent(DiscordPlaceFields).props("read") as () => Promise<unknown>)()

@@ -5,41 +5,40 @@ import java.time.LocalTime
 import java.time.ZoneId
 
 /**
- * Which of the bot's posts should stand for an event at a moment. [withinTwoWeeks] governs the
+ * Which of the bot's posts should stand for an event at a moment. [announce] governs the
  * events-info post, [calendarPost] the events-calendar post, which comes down for good once
  * [calendarPostOver]; the Discord event reads only [over].
  */
 data class DiscordPostsDue(
-    val withinTwoWeeks: Boolean,
+    val announce: Boolean,
     val calendarPost: Boolean,
     val calendarPostOver: Boolean,
     val over: Boolean,
 )
 
 /**
- * When the bot's posts for an event are due, in Amsterdam time: the events-info post while the event
- * is within two weeks, from 08:00 fourteen days before its first day until it is over; the
- * events-calendar post from 08:00 on that day until 08:00 the morning after its last.
+ * When the bot's posts for an event are due, in Amsterdam time: the events-info post from the
+ * announce at the board chose until the event is over, or at once where the event starts before
+ * it; the events-calendar post from 08:00 on the event's first day until 08:00 the morning after
+ * its last.
  */
 object DiscordPostSchedule {
     const val ZONE_ID = "Europe/Amsterdam"
     val ZONE: ZoneId = ZoneId.of(ZONE_ID)
     private val MORNING: LocalTime = LocalTime.of(8, 0)
-    private const val LEAD_DAYS = 14L
-
-    fun withinTwoWeeksFrom(start: Instant): Instant = morningOf(start, -LEAD_DAYS)
 
     fun calendarPostFrom(start: Instant): Instant = morningOf(start, 0)
 
     fun due(
         start: Instant,
         end: Instant,
+        announceAt: Instant?,
         now: Instant,
     ): DiscordPostsDue {
         val over = !now.isBefore(end)
         val calendarPostOver = !now.isBefore(takeDownAt(end))
         return DiscordPostsDue(
-            withinTwoWeeks = !over && !now.isBefore(withinTwoWeeksFrom(start)),
+            announce = !over && announceAt != null && (!now.isBefore(announceAt) || !start.isAfter(announceAt)),
             calendarPost = !now.isBefore(calendarPostFrom(start)) && !calendarPostOver,
             calendarPostOver = calendarPostOver,
             over = over,

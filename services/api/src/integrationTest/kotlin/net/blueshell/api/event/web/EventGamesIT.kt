@@ -48,7 +48,7 @@ class EventGamesIT : UserTestSupport() {
         games: List<String>,
     ) = """
         {"committeeId": $committeeId, "title": "Chess night", "description": "Bring a board.",
-         "startTime": "2026-10-10T18:00:00Z", "endTime": "2026-10-10T21:00:00Z", "approved": true,
+         "startTime": "2026-10-10T18:00:00Z", "endTime": "2026-10-10T21:00:00Z", "approved": true, "announce": "NOW",
          "membersOnly": false, "signUp": false, "gameCodes": [${games.joinToString { "\"$it\"" }}]}
         """.trimIndent()
 

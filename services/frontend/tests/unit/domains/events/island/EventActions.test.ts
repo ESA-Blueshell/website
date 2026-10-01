@@ -35,7 +35,10 @@ const event = (over: Record<string, unknown> = {}) => ({
 const mountActions = (props: Record<string, unknown> = {}) =>
   mount(EventActions, {
     props: {event: event(), committees: [], signUps: [], ...props},
-    global: {stubs: {ConfirmDialog: {name: "ConfirmDialog", props: ["open", "question", "failure", "working"], emits: ["confirm", "update:open"], template: "<div />"}}},
+    global: {stubs: {
+      ConfirmDialog: {name: "ConfirmDialog", props: ["open", "question", "failure", "working"], emits: ["confirm", "update:open"], template: "<div />"},
+      AnnounceDialog: {name: "AnnounceDialog", props: ["open", "later"], emits: ["answer"], template: "<div />"},
+    }},
   })
 
 const signUpButton = (wrapper: ReturnType<typeof mountActions>) => wrapper.get("[data-testid=event-signup-toggle-btn-7]")
@@ -58,6 +61,39 @@ describe("what can be done with an event where it is listed", () => {
     await wrapper.get("[data-testid=event-signups-btn-7]").trigger("click")
     await wrapper.get("[data-testid=event-edit-btn-7]").trigger("click")
     expect(mockPush.mock.calls).toEqual([["/events/signups/7"], ["/events/edit/7"]])
+  })
+
+  it("asks when the events-info post goes out on approving, and approves nothing on cancel", async () => {
+    const later = new Date(Date.now() + 30 * 86_400_000).toISOString()
+    mockApprove.mockResolvedValue(event({approved: true}))
+    const wrapper = mountActions({event: event({approved: false, startTime: later})})
+    const dialog = () => wrapper.getComponent({name: "AnnounceDialog"})
+
+    await wrapper.get("[data-testid=event-approve-btn-7]").trigger("click")
+    await flushPromises()
+    expect(dialog().props("open")).toBe(true)
+    dialog().vm.$emit("answer", null)
+    await flushPromises()
+    expect(mockApprove).not.toHaveBeenCalled()
+
+    await wrapper.get("[data-testid=event-approve-btn-7]").trigger("click")
+    await flushPromises()
+    dialog().vm.$emit("answer", "NEXT_MORNING")
+    await flushPromises()
+    expect(mockApprove).toHaveBeenCalledWith(7, true, "NEXT_MORNING")
+  })
+
+  it("asks nothing where the post is out, and posts at once for an event starting before the next morning", async () => {
+    mockApprove.mockResolvedValue(event({approved: true}))
+    const later = new Date(Date.now() + 30 * 86_400_000).toISOString()
+    await mountActions({event: event({approved: false, startTime: later, announced: true})}).get("[data-testid=event-approve-btn-7]").trigger("click")
+    await flushPromises()
+    expect(mockApprove).toHaveBeenLastCalledWith(7, true, undefined)
+
+    const shortly = new Date(Date.now() + 60_000).toISOString()
+    await mountActions({event: event({approved: false, startTime: shortly})}).get("[data-testid=event-approve-btn-7]").trigger("click")
+    await flushPromises()
+    expect(mockApprove).toHaveBeenLastCalledWith(7, true, "NOW")
   })
 
   it("says whether it is approved, and lets only the board change that, before it starts", () => {

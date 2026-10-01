@@ -125,6 +125,11 @@ export enum AlertKind {
     ROLE_AWAITING_TWO_FACTOR = 'ROLE_AWAITING_TWO_FACTOR'
 }
 
+export enum AnnounceChoice {
+    NOW = 'NOW',
+    NEXT_MORNING = 'NEXT_MORNING'
+}
+
 export type AnswerRequest = {
     optionSelections?: Array<boolean> | null;
     questionId: number;
@@ -951,6 +956,10 @@ export type CreateContributionRequest = {
 };
 
 export type CreateEventRequest = {
+    /**
+     * When the events-info post goes out, which approving must say while it is not out yet
+     */
+    announce?: AnnounceChoice | null;
     approved: boolean;
     banner?: EventBannerRequest | null;
     committeeId: number;
@@ -1396,6 +1405,10 @@ export type EventBannerResponse = {
 };
 
 export type EventResponse = {
+    /**
+     * Whether the events-info post is out, so approving asks no choice of when it goes out. Answered for one event, absent in a list.
+     */
+    announced?: boolean | null;
     approved: boolean;
     awaitingReapproval: boolean;
     banner?: EventBannerResponse | null;
@@ -3252,6 +3265,10 @@ export type UpdateContributionPeriodRequest = {
 };
 
 export type UpdateEventRequest = {
+    /**
+     * When the events-info post goes out, which approving must say while it is not out yet
+     */
+    announce?: AnnounceChoice | null;
     approved: boolean;
     banner?: EventBannerRequest | null;
     committeeId: number;
@@ -7977,6 +7994,7 @@ export type ApproveEventData = {
     };
     query: {
         approved: boolean;
+        announce?: AnnounceChoice;
     };
     url: '/events/{id}/approve';
 };

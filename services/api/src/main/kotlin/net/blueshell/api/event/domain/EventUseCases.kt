@@ -2,6 +2,9 @@ package net.blueshell.api.event.domain
 
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.event.api.AnnounceChoice
+import net.blueshell.api.event.api.AnnounceMorning
+import net.blueshell.api.event.api.AnnouncementLedger
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
@@ -16,6 +19,7 @@ import net.blueshell.api.survey.api.SurveyFactory
 import net.blueshell.api.survey.persistence.Question
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import java.time.Clock
 
 /**
  * Event writes that resolve a committee, a banner and a sign-up form before
@@ -29,7 +33,9 @@ class EventUseCases(
     private val surveyFactory: SurveyFactory,
     private val fileService: FileService,
     private val games: GameService,
+    private val announcements: AnnouncementLedger,
     @param:Value($$"${discord.guildId:}") private val discordGuildId: String = "",
+    private val clock: Clock = Clock.systemUTC(),
 ) {
     // @everyone's ID is the server's own, and pinging it reaches everybody, which a pinged role may not.
     private fun refuseEveryone(data: EventData) {
@@ -38,7 +44,10 @@ class EventUseCases(
         }
     }
 
-    fun create(data: EventData): Event {
+    fun create(
+        data: EventData,
+        announce: AnnounceChoice? = null,
+    ): Event {
         refuseEveryone(data)
         val event =
             Event(
@@ -61,6 +70,7 @@ class EventUseCases(
         event.replaceSignUpForm(data.signUpForm?.let(surveyFactory::createFromData))
         event.applyPingedRoles(data)
         applyGames(event, data)
+        settleAnnouncement(event, wasApproved = false, announce)
         return service.create(event)
     }
 
@@ -69,6 +79,7 @@ class EventUseCases(
         data: EventData,
         removeExistingSignUps: Boolean,
         version: Long,
+        announce: AnnounceChoice? = null,
     ): Event {
         val event = service.findById(id)
         event.requireVersion(version)
@@ -79,19 +90,47 @@ class EventUseCases(
         applySignUpFormUpdate(event, data.signUpForm, surveyFactory)
         // Anybody but the board sends an approved event back to it; see api ADR-032.
         val board = isBoard()
+        val wasApproved = event.approved
         event.awaitingReapproval = !board && (event.approved || event.awaitingReapproval)
         event.approved = board && data.approved
+        settleAnnouncement(event, wasApproved, announce)
         return service.update(event, removeExistingSignUps = removeExistingSignUps)
     }
 
     fun approve(
         id: Long,
         approved: Boolean,
+        announce: AnnounceChoice? = null,
     ): Event {
         val event = service.findById(id)
+        val wasApproved = event.approved
         event.approved = approved
         event.awaitingReapproval = false
+        settleAnnouncement(event, wasApproved, announce)
         return service.update(event)
+    }
+
+    /**
+     * Unapproving clears when the events-info post goes out. Approving sets it from the board's
+     * choice, which it must make while the post is not out yet; once it is out there is nothing
+     * to choose, and approving again only brings it up to date.
+     */
+    private fun settleAnnouncement(
+        event: Event,
+        wasApproved: Boolean,
+        announce: AnnounceChoice?,
+    ) {
+        if (!event.approved) {
+            event.announceAt = null
+            return
+        }
+        if (wasApproved || event.id?.let(announcements::announced) == true) return
+        val now = clock.instant()
+        event.announceAt =
+            when (announce ?: throw InvalidEventException("Say when the events-info post goes out: now or the next morning")) {
+                AnnounceChoice.NOW -> now
+                AnnounceChoice.NEXT_MORNING -> AnnounceMorning.next(now)
+            }
     }
 
     // An archived game the event already names stays named; one cannot be newly picked.

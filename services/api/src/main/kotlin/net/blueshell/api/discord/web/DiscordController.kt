@@ -10,6 +10,7 @@ import jakarta.annotation.security.PermitAll
 import net.blueshell.api.discord.domain.DiscordLiveService
 import net.blueshell.api.discord.domain.StarboardService
 import net.blueshell.api.discord.domain.ViewerRoomService
+import net.blueshell.api.security.MemberOnly
 import org.springframework.http.CacheControl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -72,9 +73,10 @@ class DiscordController(
             .body(DiscordViewerRoomsResponse(linked = rooms.linked, joinable = rooms.joinable.sorted()))
     }
 
-    @PermitAll
+    // Members only: the starboard quotes rooms only members are in.
+    @MemberOnly
     @GetMapping("/starboard")
-    @Operation(operationId = "readStarboard", summary = "What the Discord server starred lately, most stars first, for the home page")
+    @Operation(operationId = "readStarboard", summary = "What the Discord server starred lately, most stars first, for a member")
     @ApiResponse(
         responseCode = "200",
         content = [Content(array = ArraySchema(schema = Schema(implementation = StarboardEntryResponse::class)))],
@@ -84,7 +86,7 @@ class DiscordController(
         val entries = starboard.entries() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         return ResponseEntity
             .ok()
-            .cacheControl(CacheControl.maxAge(STARBOARD_CACHE).cachePublic())
+            .cacheControl(CacheControl.maxAge(STARBOARD_CACHE).cachePrivate())
             .body(entries.map { it.toResponse() })
     }
 }

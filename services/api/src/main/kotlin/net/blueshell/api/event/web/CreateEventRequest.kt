@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import net.blueshell.api.event.api.AnnounceChoice
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
 import net.blueshell.api.survey.web.SurveyRequest
 import java.time.Instant
@@ -25,6 +26,8 @@ data class CreateEventRequest(
     var memberPrice: Double? = null,
     var publicPrice: Double? = null,
     var approved: Boolean,
+    @field:Schema(description = "When the events-info post goes out, which approving must say while it is not out yet")
+    var announce: AnnounceChoice? = null,
     var membersOnly: Boolean,
     var signUp: Boolean,
     override var signUpDeadline: Instant? = null,

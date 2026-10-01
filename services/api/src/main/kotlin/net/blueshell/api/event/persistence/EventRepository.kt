@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.jpa.repository.EntityGraph
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -33,6 +34,14 @@ interface EventRepository : BaseRepository<Event, Long> {
     fun findKeptIdsEndingFrom(
         @Param("from") from: Instant,
     ): List<Long>
+
+    /** Gives every approved event not over yet that has no announce at the one passed; answers how many. */
+    @Modifying
+    @Query("update Event e set e.announceAt = :at where e.approved = true and e.announceAt is null and e.endTime > :now")
+    fun announceUnannouncedAt(
+        @Param("at") at: Instant,
+        @Param("now") now: Instant,
+    ): Int
 
     @Query("select e.id from Event e where e.endTime >= :from")
     fun findIdsEndingFrom(

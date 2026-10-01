@@ -537,7 +537,7 @@ export const listDiscordRoles = <ThrowOnError extends boolean = false>(options?:
 });
 
 /**
- * What the Discord server starred lately, most stars first, for the home page
+ * What the Discord server starred lately, most stars first, for a member
  */
 export const readStarboard = <ThrowOnError extends boolean = false>(options?: Options<ReadStarboardData, ThrowOnError>): RequestResult<ReadStarboardResponses, ReadStarboardErrors, ThrowOnError> => (options?.client ?? client).get<ReadStarboardResponses, ReadStarboardErrors, ThrowOnError>({
     responseType: 'json',

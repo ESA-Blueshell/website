@@ -8,6 +8,12 @@ import org.springframework.security.access.prepost.PreAuthorize
  * whose sign-up or whose membership it is, stays a permission evaluator. See api ADR-014.
  */
 
+/** Member or above. */
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+@PreAuthorize("hasAuthority('MEMBER')")
+annotation class MemberOnly
+
 /** Board or above. */
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)

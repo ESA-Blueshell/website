@@ -16,10 +16,10 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "discord",
     allowedDependencies = [
+        // Open kernel: the starboard is @MemberOnly, the management endpoints the board's.
+        "security",
         // Open kernel.
         "shared",
-        // The management endpoints are the board's.
-        "security",
         // The bot implements the DiscordPublisher port sync declares.
         "sync :: api",
         // Games are given the server's channels named for them, through the game module.

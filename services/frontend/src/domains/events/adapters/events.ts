@@ -3,6 +3,7 @@
  * domain it is one of the only files here that reaches the generated client (frontend ADR-001).
  */
 import {
+  type AnnounceChoice,
   apiUrl,
   approveEvent,
   createEvent,
@@ -62,8 +63,9 @@ export async function saveEvent(id: number, body: UpdateEventRequest): Promise<E
 }
 
 /** Approves the event, or takes the approval off it. Throws on a refusal. */
-export async function setEventApproved(id: number, approved: boolean): Promise<EventResponse> {
-  const {data} = await approveEvent({path: {id}, query: {approved}, throwOnError: true})
+/** Approving says when the events-info post goes out while it is not out yet; see useAnnouncePrompt. */
+export async function setEventApproved(id: number, approved: boolean, announce?: AnnounceChoice): Promise<EventResponse> {
+  const {data} = await approveEvent({path: {id}, query: {approved, ...(announce ? {announce} : {})}, throwOnError: true})
   return data!
 }
 

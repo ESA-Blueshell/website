@@ -7,7 +7,6 @@ import net.blueshell.api.sync.api.DiscordImage
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.api.sync.api.DiscordPublisher
 import net.blueshell.api.sync.domain.DiscordPostSchedule.calendarPostFrom
-import net.blueshell.api.sync.domain.DiscordPostSchedule.withinTwoWeeksFrom
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -39,7 +38,7 @@ class DiscordEventPosts(
     // Settable for tests only.
     internal var clock: Clock = Clock.systemUTC()
 
-    /** The events-info post, which stays once out. A forced run posts it before the event is within two weeks. */
+    /** The events-info post, which stays once out. A forced run posts it before its announce at. */
     fun keepAnnouncement(
         eventId: Long,
         forced: Boolean = false,
@@ -48,8 +47,8 @@ class DiscordEventPosts(
             when {
                 out -> null
                 due.over -> OVER
-                forced || due.withinTwoWeeks -> null
-                else -> "The #$infoChannel announcement is not due until ${morningOf(withinTwoWeeksFrom(event.startTime))}."
+                forced || due.announce -> null
+                else -> "The #$infoChannel announcement is not due until ${morningOf(event.announceAt ?: event.startTime)}."
             }
         }
 
@@ -237,7 +236,7 @@ class DiscordEventPosts(
         return Kept(effect, remote.link(standing))
     }
 
-    private fun due(event: EventPostData) = DiscordPostSchedule.due(event.startTime, event.endTime, clock.instant())
+    private fun due(event: EventPostData) = DiscordPostSchedule.due(event.startTime, event.endTime, event.announceAt, clock.instant())
 
     private fun withBanner(
         post: DiscordPost,

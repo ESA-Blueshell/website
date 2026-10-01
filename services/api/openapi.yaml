@@ -254,6 +254,11 @@ components:
       - EXCEPTION_OPEN
       - ROLE_AWAITING_TWO_FACTOR
       type: string
+    AnnounceChoice:
+      enum:
+      - NOW
+      - NEXT_MORNING
+      type: string
     AnswerRequest:
       properties:
         optionSelections:
@@ -1875,6 +1880,11 @@ components:
       type: object
     CreateEventRequest:
       properties:
+        announce:
+          description: When the events-info post goes out, which approving must say while it is not out yet
+          oneOf:
+          - $ref: '#/components/schemas/AnnounceChoice'
+          - type: 'null'
         approved:
           type: boolean
         banner:
@@ -2746,6 +2756,11 @@ components:
       type: object
     EventResponse:
       properties:
+        announced:
+          description: Whether the events-info post is out, so approving asks no choice of when it goes out. Answered for one event, absent in a list.
+          type:
+          - boolean
+          - 'null'
         approved:
           type: boolean
         awaitingReapproval:
@@ -6651,6 +6666,11 @@ components:
       type: object
     UpdateEventRequest:
       properties:
+        announce:
+          description: When the events-info post goes out, which approving must say while it is not out yet
+          oneOf:
+          - $ref: '#/components/schemas/AnnounceChoice'
+          - type: 'null'
         approved:
           type: boolean
         banner:
@@ -14665,7 +14685,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up, or Discord has not answered yet
-      summary: What the Discord server starred lately, most stars first, for the home page
+      summary: What the Discord server starred lately, most stars first, for a member
       tags:
       - Discord
   /esports/games/{game}:
@@ -18744,6 +18764,11 @@ paths:
         required: true
         schema:
           type: boolean
+      - in: query
+        name: announce
+        required: false
+        schema:
+          $ref: '#/components/schemas/AnnounceChoice'
       responses:
         '200':
           content:

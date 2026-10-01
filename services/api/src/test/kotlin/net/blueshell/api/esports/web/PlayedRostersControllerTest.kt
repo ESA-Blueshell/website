@@ -15,7 +15,7 @@ import java.time.LocalDate
 
 class PlayedRostersControllerTest {
     private val entries = mock<TeamRosterEntryRepository>()
-    private val rosters = TeamRosterService(entries, mock(), mock(), mock(), mock(), mock())
+    private val rosters = TeamRosterService(entries, mock(), mock(), mock(), mock(), mock(), mock())
     private val controller = PlayedRostersController(rosters)
 
     @Test

@@ -117,6 +117,7 @@ class CohortDefinitionsTest {
                 NewsletterSubscribersProvider(mockk()),
                 ActivistsProvider(mockk(), mockk(), mockk()),
                 CurrentMembersProvider(mockk()),
+                TeamPlayersProvider(mockk()),
             )
 
         assertThat(providers.map { it.type }).containsExactlyInAnyOrder(*CohortType.entries.toTypedArray())
@@ -129,6 +130,7 @@ class CohortDefinitionsTest {
                 CohortType.NEWSLETTER_SUBSCRIBERS to CohortCategory.MEMBERS,
                 CohortType.ACTIVISTS to CohortCategory.MEMBERS,
                 CohortType.CURRENT_MEMBERS to CohortCategory.MEMBERS,
+                CohortType.TEAM_PLAYERS to CohortCategory.TEAMS,
             ),
         )
     }

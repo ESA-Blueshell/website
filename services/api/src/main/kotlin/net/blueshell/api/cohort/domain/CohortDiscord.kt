@@ -1,20 +1,21 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.discord.api.DiscordChannelKeeper
 import net.blueshell.api.discord.api.DiscordRoleKeeper
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
+import net.blueshell.api.discord.api.KeptChannelKind
 import net.blueshell.api.shared.enums.TargetSystem
-import org.springframework.beans.factory.annotation.Value
+import io.swagger.v3.oas.annotations.media.Schema
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 
-/** A committee's place on Discord: the role its seats hold, and the channels that role opens. */
-data class CommitteeDiscordState(
+/** A cohort's place on Discord: the role its people hold, and the channels that role opens. */
+@Schema(name = "DiscordPlace")
+data class DiscordPlace(
     /** Whether the bot is in the server; nothing below is read without it. */
     val available: Boolean,
     val roleId: String?,
@@ -23,11 +24,11 @@ data class CommitteeDiscordState(
 )
 
 /**
- * What the committee form asks of Discord. The role is linked once, to [roleId] or to a new role
- * where [createRole]; a committee already holding one keeps it. [channelIds] is every channel the
- * role should open, and [createChannel] names a new private channel to make for it.
+ * What a form asks of Discord. The role is linked once, to [roleId] or to a new role where
+ * [createRole]; a cohort already holding one keeps it. [channelIds] is every channel the role should
+ * open, and [createChannel] names a new private channel to make for it.
  */
-data class CommitteeDiscordChoice(
+data class DiscordChoice(
     val roleId: String? = null,
     val createRole: Boolean = false,
     val channelIds: List<String> = emptyList(),
@@ -35,12 +36,12 @@ data class CommitteeDiscordChoice(
 )
 
 /**
- * A committee's role and private channels. The role is the committee-members cohort's Discord target,
- * so it follows the seats; a channel is opened to that role by an overwrite, and kept from everybody
- * else, under the Committees category when the site makes it.
+ * A cohort's role and private channels, as a committee's or a team's form sets them. The role is the
+ * cohort's Discord target, so it follows the cohort's people; a channel is opened to that role by an
+ * overwrite and kept from everybody else, under the category the caller names when the site makes it.
  */
 @Service
-class CommitteeDiscord(
+class CohortDiscord(
     private val cohorts: CohortRepository,
     private val targets: TargetRepository,
     private val targetIds: CohortTargetIds,
@@ -48,22 +49,23 @@ class CommitteeDiscord(
     private val registrar: CohortRegistrar,
     private val roles: DiscordRoleKeeper,
     private val channels: DiscordChannelKeeper,
-    @param:Value($$"${discord.committees-category:Committees}") private val category: String,
 ) {
-    fun read(committeeId: Long): CommitteeDiscordState {
-        if (!roles.available() || !channels.available()) return CommitteeDiscordState(false, null, null, emptyList())
-        val roleId = roleOf(cohortIdOf(committeeId))
+    fun read(key: String): DiscordPlace {
+        if (!roles.available() || !channels.available()) return DiscordPlace(false, null, null, emptyList())
+        val roleId = roleOf(cohortIdOf(key))
         return unavailableAsRefusal {
-            CommitteeDiscordState(true, roleId, roleId?.let { roles.role(it)?.name }, roleId?.let(channels::openedTo).orEmpty())
+            DiscordPlace(true, roleId, roleId?.let { roles.role(it)?.name }, roleId?.let(channels::openedTo).orEmpty())
         }
     }
 
+    /** Sets the role and channels of the cohort defined by [key], a new channel going under [category]. */
     fun apply(
-        committeeId: Long,
-        choice: CommitteeDiscordChoice,
-    ): CommitteeDiscordState {
+        key: String,
+        choice: DiscordChoice,
+        category: String,
+    ): DiscordPlace {
         if (!roles.available() || !channels.available()) throw TargetSystemUnavailable(TargetSystem.DISCORD)
-        val cohortId = cohortIdOf(committeeId)
+        val cohortId = cohortIdOf(key)
         val roleId =
             roleOf(cohortId)
                 ?: when {
@@ -71,7 +73,7 @@ class CommitteeDiscord(
                     choice.createRole -> targeting.create(cohortId, TargetSystem.DISCORD, labelOf(cohortId), null).externalId
                     else -> null
                 }
-                ?: return read(committeeId)
+                ?: return read(key)
         unavailableAsRefusal {
             val open = channels.openedTo(roleId).map { it.id }.toSet()
             (choice.channelIds - open).forEach { channels.open(it, roleId, private = true) }
@@ -81,16 +83,32 @@ class CommitteeDiscord(
                 ?.takeIf { it.isNotEmpty() }
                 ?.let { channels.createPrivate(it, category, roleId) }
         }
-        return read(committeeId)
+        return read(key)
     }
 
-    // A committee made a moment ago may not have its cohort yet, so one is registered for it.
-    private fun cohortIdOf(committeeId: Long): Long {
-        val key = "${CohortType.COMMITTEE_MEMBERS}:$committeeId"
+    /**
+     * Takes the cohort's role and the private channels it opens off Discord, and the role off the
+     * cohort: a deliberate removal, never what archiving does.
+     */
+    fun remove(key: String) {
+        if (!roles.available() || !channels.available()) throw TargetSystemUnavailable(TargetSystem.DISCORD)
+        val target = targets.findByCohortIdAndSystem(cohortIdOf(key), TargetSystem.DISCORD.name) ?: return
+        val roleId = targetIds.find(target)
+        unavailableAsRefusal {
+            roleId?.let { role ->
+                channels.openedTo(role).filter { it.kind != KeptChannelKind.CATEGORY }.forEach { channels.delete(it.id) }
+                roles.delete(role)
+            }
+        }
+        targets.delete(target)
+    }
+
+    // A record made a moment ago may not have its cohort yet, so one is registered for it.
+    private fun cohortIdOf(key: String): Long {
         val cohort =
             cohorts.findByDefinitionKey(key)
                 ?: registrar.register().let { cohorts.findByDefinitionKey(key) }
-                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Committee $committeeId has no cohort")
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No cohort is defined as $key")
         return requireNotNull(cohort.id)
     }
 

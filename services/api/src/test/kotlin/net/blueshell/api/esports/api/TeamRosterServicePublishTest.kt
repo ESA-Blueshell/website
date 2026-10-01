@@ -48,7 +48,8 @@ class TeamRosterServicePublishTest {
         }
     private val seasons = mock<SeasonService>().also { whenever(it.findById(5)).thenReturn(season) }
     private val fielded = mock<TeamSeasonService>().also { whenever(it.field(any(), any(), any())).thenReturn(fielding) }
-    private val service = TeamRosterService(entries, teams, seasons, fielded, mock<SeasonGameService>(), mock<StoredPictures>())
+    private val events = mock<org.springframework.context.ApplicationEventPublisher>()
+    private val service = TeamRosterService(entries, teams, seasons, fielded, mock<SeasonGameService>(), mock<StoredPictures>(), events)
 
     private fun draft(
         teamId: Long?,
@@ -78,5 +79,35 @@ class TeamRosterServicePublishTest {
         service.publish(draft(null))
 
         verify(teams).create(TeamInput("BS Draft"))
+    }
+
+    @Test
+    fun `tells the cohorts who came onto or off a line-up, linked and unlinked`() {
+        val linked = TeamRosterEntry(teamSeason = fielding, handle = "linked", userId = 40).also { it.id = 13 }
+        whenever(entries.findById(13)).thenReturn(Optional.of(linked))
+
+        service.remove(13)
+        service.remove(12)
+        service.link(11, 41)
+        service.add(3, "CS2", 5, RosterEntryInput(handle = "new", role = TeamRole.PLAYER), userId = 42)
+        service.add(3, "CS2", 5, RosterEntryInput(handle = "nobody", role = TeamRole.PLAYER), userId = null)
+
+        verify(events).publishEvent(RosterChanged(3, setOf(40)))
+        verify(events).publishEvent(RosterChanged(3, setOf(41)))
+        verify(events).publishEvent(RosterChanged(3, setOf(42)))
+        verify(events, org.mockito.kotlin.times(3)).publishEvent(any<RosterChanged>())
+    }
+
+    @Test
+    fun `names every team, and reads a team's players in the season fielded now`() {
+        whenever(teams.pool()).thenReturn(listOf(team))
+        whenever(fielded.fieldedSeasonNow()).thenReturn(5L)
+        whenever(fielded.seasonsOf(3)).thenReturn(listOf(fielding, TeamSeason(team = team, game = "CS2", season = Season(name = "Old", startDate = LocalDate.of(2029, 1, 1), endDate = LocalDate.of(2029, 6, 1)).also { it.id = 4 })))
+        whenever(entries.findAllByTeamAndSeason(3, "CS2", 5)).thenReturn(listOf(TeamRosterEntry(teamSeason = fielding, handle = "a", userId = 7), kept))
+
+        assertThat(service.teamNames()).isEqualTo(mapOf(3L to "BS Draft"))
+        assertThat(service.currentPlayersOf(3)).containsExactly(7L)
+        whenever(fielded.fieldedSeasonNow()).thenReturn(null)
+        assertThat(service.currentPlayersOf(3)).isEmpty()
     }
 }

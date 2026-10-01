@@ -116,64 +116,14 @@ test.describe("cohort cohort detail", () => {
     await expect(page.getByTestId("cohort-detail-inbound-reconcile-brevo")).toBeVisible()
   })
 
-  test("the category page names each cohort's kind on its own row", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsAdmin(page.context())
-
-    await page.goto("/management/platforms/brevo/committees")
-
-    // The kind used to be a heading repeated above each run of rows, which put the same words
-    // on screen twice. It is a column now, and the counts are columns beside it.
-    const cells = page.getByTestId("cohort-row-102").locator("td")
-    await expect(cells.nth(0)).toHaveText("Web Cmte")
-    await expect(cells.nth(1)).toHaveText("Committee members")
-    await expect(cells.nth(2)).toHaveText("1")
-    await expect(cells.nth(3)).toHaveText("1")
-    await expect(page.getByTestId("cohort-type-group-COMMITTEE_MEMBERS")).toHaveCount(0)
-  })
-
-  test("the category page counts its cohorts beside one heading", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsAdmin(page.context())
-
-    await page.goto("/management/platforms/brevo/periods")
-
-    // One heading carrying the count, as the member table does — not a heading, an eyebrow
-    // repeating it, and a subtitle holding the number.
-    await expect(page.getByTestId("cohort-count")).toContainText("1")
-    await expect(page.getByRole("heading", {name: "Periods – Cohorts"})).toBeVisible()
-  })
-
-  test("the category table sorts on a column when its header is clicked", async ({page}) => {
-    await installApiMocks(page, {
-      cohorts: [
-        {id: 201, type: "PERIOD_MEMBERS", category: "PERIODS", label: "Alpha", memberCount: 9, mappingCount: 1},
-        {id: 202, type: "PERIOD_PAYERS", category: "PERIODS", label: "Beta", memberCount: 2, mappingCount: 1},
-      ],
-    })
-    await loginAsAdmin(page.context())
-
-    await page.goto("/management/platforms/brevo/periods")
-
-    const names = page.locator('[data-testid^="cohort-row-"] td:first-child')
-    // Unsorted, the rows read in the order the kinds are declared: members before payers.
-    await expect(names).toHaveText(["Alpha", "Beta"])
-
-    await page.getByTestId("cohort-header-memberCount").click()
-    await expect(names).toHaveText(["Beta", "Alpha"])
-
-    await page.getByTestId("cohort-header-memberCount").click()
-    await expect(names).toHaveText(["Alpha", "Beta"])
-  })
-
-  test("goes back to the category the cohort belongs to", async ({page}) => {
+  test("goes back to Brevo", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
 
     await page.goto(COMMITTEE_COHORT)
     await page.getByTestId("cohort-detail-back").click()
 
-    await expect(page).toHaveURL(/\/management\/platforms\/brevo\/committees$/)
+    await expect(page).toHaveURL(/\/management\/platforms\/brevo$/)
   })
 })
 

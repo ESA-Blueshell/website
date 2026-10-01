@@ -2019,6 +2019,26 @@ components:
       - nationality
       - userId
       type: object
+    CreateMissingTargetsRequest:
+      description: The missing lists to create, by target; none creates every one.
+      properties:
+        targetIds:
+          items:
+            format: int64
+            type: integer
+          type: array
+      required:
+      - targetIds
+      type: object
+    CreateMissingTargetsResponse:
+      properties:
+        queued:
+          description: How many lists are queued to be created
+          format: int32
+          type: integer
+      required:
+      - queued
+      type: object
     CreateSponsorRequest:
       properties:
         description:
@@ -4149,6 +4169,61 @@ components:
           - integer
           - 'null'
       type: object
+    ListedTarget:
+      properties:
+        cohortId:
+          format: int64
+          type:
+          - integer
+          - 'null'
+        cohortLabel:
+          type:
+          - string
+          - 'null'
+        cohortType:
+          oneOf:
+          - $ref: '#/components/schemas/CohortType'
+          - type: 'null'
+        enforced:
+          type: boolean
+        externalId:
+          type: string
+        extra:
+          format: int32
+          type:
+          - integer
+          - 'null'
+        folderLabel:
+          type:
+          - string
+          - 'null'
+        label:
+          type: string
+        lastReconciledAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        memberCount:
+          format: int64
+          type:
+          - integer
+          - 'null'
+        missing:
+          format: int32
+          type:
+          - integer
+          - 'null'
+        targetId:
+          format: int64
+          type:
+          - integer
+          - 'null'
+      required:
+      - enforced
+      - externalId
+      - label
+      type: object
     LockResponse:
       properties:
         contactEmail:
@@ -4394,6 +4469,35 @@ components:
       - updatedAt
       - userId
       - version
+      type: object
+    MissingTarget:
+      properties:
+        cohortId:
+          format: int64
+          type: integer
+        cohortLabel:
+          type: string
+        cohortType:
+          $ref: '#/components/schemas/CohortType'
+        creating:
+          type: boolean
+        folder:
+          type:
+          - string
+          - 'null'
+        memberCount:
+          format: int32
+          type: integer
+        targetId:
+          format: int64
+          type: integer
+      required:
+      - cohortId
+      - cohortLabel
+      - cohortType
+      - creating
+      - memberCount
+      - targetId
       type: object
     MoveTargetRequest:
       description: Where to file a target.
@@ -6025,6 +6129,25 @@ components:
       - label
       - memberCount
       - system
+      type: object
+    TargetOverviewResult:
+      properties:
+        lastReconciledAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        lists:
+          items:
+            $ref: '#/components/schemas/ListedTarget'
+          type: array
+        missing:
+          items:
+            $ref: '#/components/schemas/MissingTarget'
+          type: array
+      required:
+      - lists
+      - missing
       type: object
     TargetSystem:
       enum:
@@ -21908,6 +22031,226 @@ paths:
                 items:
                   type: string
                 type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Cohort Targets
+  /management/cohort-targets/{system}/missing:
+    post:
+      operationId: createMissingTargets
+      parameters:
+      - in: path
+        name: system
+        required: true
+        schema:
+          $ref: '#/components/schemas/TargetSystem'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMissingTargetsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateMissingTargetsResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Cohort Targets
+  /management/cohort-targets/{system}/overview:
+    get:
+      operationId: findTargetOverview
+      parameters:
+      - in: path
+        name: system
+        required: true
+        schema:
+          $ref: '#/components/schemas/TargetSystem'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TargetOverviewResult'
           description: OK
         '400':
           content:

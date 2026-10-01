@@ -1003,6 +1003,20 @@ export type CreateMemberProfileRequest = {
     userId: number;
 };
 
+/**
+ * The missing lists to create, by target; none creates every one.
+ */
+export type CreateMissingTargetsRequest = {
+    targetIds: Array<number>;
+};
+
+export type CreateMissingTargetsResponse = {
+    /**
+     * How many lists are queued to be created
+     */
+    queued: number;
+};
+
 export type CreateSponsorRequest = {
     description: string;
     name: string;
@@ -2043,6 +2057,21 @@ export type LinkRosterEntryRequest = {
     userId?: number | null;
 };
 
+export type ListedTarget = {
+    cohortId?: number | null;
+    cohortLabel?: string | null;
+    cohortType?: CohortType | null;
+    enforced: boolean;
+    externalId: string;
+    extra?: number | null;
+    folderLabel?: string | null;
+    label: string;
+    lastReconciledAt?: string | null;
+    memberCount?: number | null;
+    missing?: number | null;
+    targetId?: number | null;
+};
+
 export type LockResponse = {
     contactEmail: string;
 };
@@ -2137,6 +2166,16 @@ export type MembershipResponse = {
     updatedAt: string;
     userId: number;
     version: number;
+};
+
+export type MissingTarget = {
+    cohortId: number;
+    cohortLabel: string;
+    cohortType: CohortType;
+    creating: boolean;
+    folder?: string | null;
+    memberCount: number;
+    targetId: number;
 };
 
 /**
@@ -2967,6 +3006,12 @@ export type TargetOption = {
      */
     memberCount: number;
     system: string;
+};
+
+export type TargetOverviewResult = {
+    lastReconciledAt?: string | null;
+    lists: Array<ListedTarget>;
+    missing: Array<MissingTarget>;
 };
 
 export enum TargetSystem {
@@ -9248,6 +9293,92 @@ export type CreateTargetFolderResponses = {
 };
 
 export type CreateTargetFolderResponse = CreateTargetFolderResponses[keyof CreateTargetFolderResponses];
+
+export type CreateMissingTargetsData = {
+    body: CreateMissingTargetsRequest;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/missing';
+};
+
+export type CreateMissingTargetsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateMissingTargetsError = CreateMissingTargetsErrors[keyof CreateMissingTargetsErrors];
+
+export type CreateMissingTargetsResponses = {
+    /**
+     * OK
+     */
+    200: CreateMissingTargetsResponse;
+};
+
+export type CreateMissingTargetsResponse2 = CreateMissingTargetsResponses[keyof CreateMissingTargetsResponses];
+
+export type FindTargetOverviewData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/overview';
+};
+
+export type FindTargetOverviewErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindTargetOverviewError = FindTargetOverviewErrors[keyof FindTargetOverviewErrors];
+
+export type FindTargetOverviewResponses = {
+    /**
+     * OK
+     */
+    200: TargetOverviewResult;
+};
+
+export type FindTargetOverviewResponse = FindTargetOverviewResponses[keyof FindTargetOverviewResponses];
 
 export type PreviewFolderTidyData = {
     body?: never;

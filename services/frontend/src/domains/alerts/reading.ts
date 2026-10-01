@@ -26,7 +26,7 @@ export function alertLink(alert: Alert): string {
   switch (alert.kind) {
     case AlertKind.TARGET_DRIFT:
     case AlertKind.COHORT_WITHOUT_LIST:
-      return alert.subjectId == null ? "/management/platforms/brevo/lists" : `/management/platforms/brevo/cohort/${alert.subjectId}`
+      return alert.subjectId == null ? "/management/platforms/brevo" : `/management/platforms/brevo/cohort/${alert.subjectId}`
     case AlertKind.EMAIL_FAILED:
       return "/management/mail/sent"
     case AlertKind.JOB_DEAD:

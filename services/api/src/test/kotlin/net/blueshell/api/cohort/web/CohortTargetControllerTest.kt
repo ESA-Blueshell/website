@@ -4,6 +4,8 @@ import net.blueshell.api.cohort.domain.BulkTargetMoveResult
 import net.blueshell.api.cohort.domain.ExternalTarget
 import net.blueshell.api.cohort.domain.FolderTidy
 import net.blueshell.api.cohort.domain.TargetCatalog
+import net.blueshell.api.cohort.domain.TargetOverview
+import net.blueshell.api.cohort.domain.TargetOverviewResult
 import net.blueshell.api.cohort.domain.TidyMove
 import net.blueshell.api.cohort.domain.TidyPlan
 import net.blueshell.api.cohort.persistence.TargetKind
@@ -17,7 +19,8 @@ import org.mockito.kotlin.whenever
 class CohortTargetControllerTest {
     private val catalog = mock<TargetCatalog>()
     private val tidy = mock<FolderTidy>()
-    private val controller = CohortTargetController(catalog, tidy)
+    private val overview = mock<TargetOverview>()
+    private val controller = CohortTargetController(catalog, tidy, overview)
     private val list = ExternalTarget(TargetSystem.BREVO, "9", TargetKind.LIST, "Pub quiz", "Projects")
 
     @Test
@@ -59,5 +62,16 @@ class CohortTargetControllerTest {
 
         assertThat(controller.previewTidy(TargetSystem.BREVO)).isEqualTo(plan)
         assertThat(controller.applyTidy(TargetSystem.BREVO, ApplyTidyRequest(listOf("9")))).isEqualTo(result)
+    }
+
+    @Test
+    fun `the overview is the overview's own answer, and creating missing lists says how many were queued`() {
+        val read = TargetOverviewResult(emptyList(), emptyList(), null)
+        whenever(overview.of(TargetSystem.BREVO)).thenReturn(read)
+        whenever(overview.createMissing(TargetSystem.BREVO, listOf(11L))).thenReturn(1)
+
+        assertThat(controller.overview(TargetSystem.BREVO)).isSameAs(read)
+        assertThat(controller.createMissing(TargetSystem.BREVO, CreateMissingTargetsRequest(listOf(11L))).queued).isEqualTo(1)
+        assertThat(CreateMissingTargetsRequest().targetIds).isEmpty()
     }
 }

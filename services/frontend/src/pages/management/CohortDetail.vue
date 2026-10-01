@@ -6,7 +6,7 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
 import TargetPath from "@/domains/cohorts/components/TargetPath.vue"
 import {DriftResolutionAction, TargetSystem, evaluateMember, fetchCohort, setTargetEnforced, triggerReconcile, useDriftResolution, type CohortMember, type Cohort, type CohortSyncState, type TargetMapping} from "@/domains/cohorts"
-import {categoryLabel, driftLabel, earlierDrift, isMember, memberName, memberSystemLabel, syncChipColour, syncLabel, systemLabel} from "@/domains/cohorts"
+import {driftLabel, earlierDrift, isMember, memberName, memberSystemLabel, syncChipColour, syncLabel, systemLabel} from "@/domains/cohorts"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
 import TargetPickerModal from "@/domains/cohorts/components/TargetPickerModal.vue"
@@ -299,12 +299,8 @@ const onInboundApplied = () => {
   successMessage.value = "Adopt queued."
 }
 
-const backToCategory = () => {
-  if (cohort.value == null) return
-  void router.push({
-    name: "cohortCategory",
-    params: {category: cohort.value.category.toLowerCase()},
-  })
+const backToBrevo = () => {
+  void router.push({name: "brevo"})
 }
 
 onMounted(async () => {
@@ -331,9 +327,9 @@ watch(cohortId, () => void load())
           prepend-icon="mdi-arrow-left"
           size="small"
           variant="text"
-          @click="backToCategory"
+          @click="backToBrevo"
         >
-          {{ categoryLabel(cohort.category) }}
+          Brevo
         </v-btn>
 
         <v-alert

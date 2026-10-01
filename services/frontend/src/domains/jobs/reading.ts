@@ -130,7 +130,7 @@ export function relatedEntityLabel(entity: JobRelatedEntity): string {
 export function relatedEntityLink(entity: JobRelatedEntity): string | null {
   if (entity.id == null) return null
   if (entity.type === "EVENT") return `/events/${entity.id}`
-  if (entity.type === "COHORT") return "/management/platforms/brevo/lists"
+  if (entity.type === "COHORT") return "/management/platforms/brevo"
   if (entity.type === "USER") return `/management/users/${entity.id}`
   return null
 }

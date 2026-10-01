@@ -1566,36 +1566,24 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       // Includes a folder holding nothing, which is exactly where a target tends to head.
       return answer(route, "listCohortTargetFolders", ["Committees", "Contribution periods", "Archive"])
     }
-    if (method === "PUT" && path === "/management/cohort-targets/BREVO/folder") {
-      const body = request.postDataJSON() as {externalIds: string[]; folder: string}
-      // `99` stands for a target the catalogue still lists but the system no longer has.
-      const gone = body.externalIds.filter((id) => id === "99")
-      if (gone.length) {
-        return fulfillJson(route, {
-          type: "about:blank",
-          title: "Conflict",
-          status: 409,
-          detail: "The selection no longer matches the current data.",
-          errors: [{
-            objectName: "BulkMoveTargetsRequest",
-            field: "externalIds",
-            code: "UnknownTargetIds",
-            message: `${gone.length} of the selected targets no longer exist in BREVO.`,
-            refs: gone,
-          }],
-        }, 409)
-      }
-      const moved = body.externalIds.map((id) => ({
-        system: "BREVO" as const,
-        externalId: id,
-        kind: "LIST" as const,
-        label: brevoTargets.find((t) => t.externalId === id)?.label ?? `List ${id}`,
-        folderLabel: body.folder,
-        path: ["Brevo", body.folder].filter(Boolean),
-        memberCount: brevoTargets.find((t) => t.externalId === id)?.memberCount ?? null,
-        linkedTargetId: brevoTargets.find((t) => t.externalId === id)?.linkedTargetId ?? null,
-      }))
-      return answer(route, "moveCohortTargets", {moved, failed: []})
+    if (method === "GET" && path === "/management/cohort-targets/BREVO/overview") {
+      return answer(route, "findTargetOverview", {
+        lists: [
+          {externalId: "7", label: "Members 2025-2026", folderLabel: "Members", memberCount: 211, targetId: 1, cohortId: 101,
+            cohortLabel: "Members 2025-2026", cohortType: "PERIOD_MEMBERS", missing: 0, extra: 0, lastReconciledAt: "2026-10-01T03:00:00.000Z", enforced: false},
+          {externalId: "8", label: "Web Cmte", folderLabel: "Committees", memberCount: 9, targetId: 2, cohortId: 102,
+            cohortLabel: "Web Cmte", cohortType: "COMMITTEE_MEMBERS", missing: 1, extra: 0, lastReconciledAt: "2026-10-01T03:00:00.000Z", enforced: false},
+          {externalId: "9", label: "Old newsletter test", folderLabel: null, memberCount: 4, enforced: false},
+          {externalId: "10", label: "LAN party 2024", folderLabel: "Archive", memberCount: 57, enforced: false},
+        ],
+        missing: [{targetId: 3, cohortId: 103, cohortLabel: "Paid 2026-2027", cohortType: "PERIOD_PAYERS", folder: "Contribution paid",
+          memberCount: 142, creating: false}],
+        lastReconciledAt: "2026-10-01T03:00:00.000Z",
+      })
+    }
+    if (method === "POST" && path === "/management/cohort-targets/BREVO/missing") {
+      const {targetIds} = request.postDataJSON() as {targetIds: number[]}
+      return answer(route, "createMissingTargets", {queued: targetIds.length === 0 ? 1 : targetIds.length})
     }
     if (method === "GET" && path === "/management/cohort-targets/BREVO") {
       return answer(route, "searchCohortTargets", brevoTargets)

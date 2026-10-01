@@ -11,7 +11,6 @@ import {
   linkExistingTargetForCohort,
   linkDriftPeople,
   moveTargetToFolder,
-  moveTargetsToFolder,
   proposeDriftLinks,
   pushDriftPeople,
   removeDriftPeople,
@@ -35,7 +34,6 @@ import {
   linkExistingTarget,
   linkDrift,
   moveCohortTarget,
-  moveCohortTargets,
   previewFolderTidy,
   proposeLinks,
   pushDrift,
@@ -67,7 +65,6 @@ vi.mock("@/services/api", async (importOriginal) => ({
   pushDrift: vi.fn(),
   removeDrift: vi.fn(),
   moveCohortTarget: vi.fn(),
-  moveCohortTargets: vi.fn(),
   switchTarget: vi.fn(),
 }))
 
@@ -259,63 +256,6 @@ describe("moving targets between folders", () => {
       body: {folder: "Archive"},
       throwOnError: true,
     })
-  })
-
-  /*
-   * The bulk move is the one write here that can half succeed. The api validates the whole
-   * selection first, so a refusal means nothing moved; past that point each move is a separate
-   * call to a system that cannot roll the earlier ones back, and the operator is told which.
-   */
-  it("reports a refused selection as nothing having moved", async () => {
-    vi.mocked(moveCohortTargets).mockResolvedValue(refusal(
-      moveCohortTargets,
-      {errors: [{code: "UnknownTargetIds", field: "externalIds", message: "Gone", refs: ["17"]}]},
-      409,
-    ))
-
-    const outcome = await moveTargetsToFolder(TargetSystem.BREVO, ["17"], "Archive")
-
-    expect(outcome.status).toBe("refused")
-    expect(outcome).toMatchObject({rejection: {namedRefs: ["17"], requiresReload: true, status: 409}})
-  })
-
-  it("reports the ones that moved and the ones the system would not move", async () => {
-    vi.mocked(moveCohortTargets).mockResolvedValue(answer(moveCohortTargets, {
-        moved: [target({externalId: "17", folderLabel: "Archive", memberCount: 12, linkedTargetId: 4, path: ["Archive"]})],
-        failed: [{externalId: "18", label: "Guests", message: "The folder is full."}],
-      }))
-
-    const outcome = await moveTargetsToFolder(TargetSystem.BREVO, ["17", "18"], "Archive")
-
-    expect(outcome).toEqual({
-      status: "moved",
-      result: {
-        moved: [{
-          system: TargetSystem.BREVO,
-          externalId: "17",
-          kind: TargetKind.LIST,
-          label: "Paid members",
-          folderLabel: "Archive",
-          memberCount: 12,
-          linkedTargetId: 4,
-          path: ["Archive"],
-        }],
-        failed: [{externalId: "18", label: "Guests", message: "The folder is full."}],
-      },
-    })
-  })
-
-  it("reads a move the api answered nothing about as a move that did not happen", async () => {
-    vi.mocked(moveCohortTargets).mockResolvedValue(answer(moveCohortTargets, {moved: [], failed: []}))
-    await expect(moveTargetsToFolder(TargetSystem.BREVO, ["17"], "Archive")).resolves.toEqual({
-      status: "moved",
-      result: {moved: [], failed: []},
-    })
-
-    // Not a refusal the parser recognises and not an answer either, so neither outcome would
-    // be true; a throw is what keeps the page from reporting a move nobody made.
-    vi.mocked(moveCohortTargets).mockResolvedValue(refusal(moveCohortTargets, {}, 500))
-    await expect(moveTargetsToFolder(TargetSystem.BREVO, ["17"], "Archive")).rejects.toThrow("The move could not be sent.")
   })
 })
 

@@ -11,6 +11,12 @@ const api = vi.hoisted(() => ({
   adoptDiscordMatches: vi.fn(),
 }))
 const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {isAdmin: false} as Record<string, unknown>}}))
+const here = vi.hoisted(() => ({path: "/management/platforms/discord"}))
+
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRoute: () => here,
+}))
 
 vi.mock("@/plugins/store", () => ({default: mockStore}))
 
@@ -53,6 +59,7 @@ describe("the Discord page", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    here.path = "/management/platforms/discord"
     api.findTargetOverview.mockResolvedValue({status: 200, data: overview})
     api.createMissingTargets.mockResolvedValue({status: 200, data: {queued: 1}})
     api.listCataloguedChannels.mockResolvedValue({status: 200, data: channels})
@@ -79,7 +86,11 @@ describe("the Discord page", () => {
   })
 
   it("lists the channels by category with what they belong to, who gets in and where Discord differs", async () => {
+    const roles = await mount()
+    expect(roles.find('[data-testid="discord-channel-1"]').exists()).toBe(false)
+    here.path = "/management/platforms/discord/channels"
     const wrapper = await mount()
+    expect(wrapper.find('[data-testid="discord-roles"]').exists()).toBe(false)
 
     const sitecie = wrapper.get('[data-testid="discord-channel-1"]').text()
     expect(sitecie).toContain("Private")

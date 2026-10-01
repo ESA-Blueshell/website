@@ -735,6 +735,10 @@ export type CohortMember = {
      */
     system?: TargetSystem | null;
     targetMemberId: number;
+    /**
+     * No account on a system that cannot make one, so no push reaches them
+     */
+    unreachable?: boolean;
     userEmail?: string | null;
     userFullName?: string | null;
     /**

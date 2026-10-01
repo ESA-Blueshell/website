@@ -3,11 +3,13 @@
    and where it drifts, what each channel belongs to and who gets in, and where Discord differs.
    Committees and teams with no role yet are offered the roles and channels named as they are. */
 import {computed, onMounted, ref} from "vue"
+import {useRoute} from "vue-router"
 import CheckBox from "@/components/island/CheckBox.vue"
 import FactList from "@/components/island/FactList.vue"
 import FoldOut from "@/components/island/FoldOut.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
+import PageTabs from "@/components/island/PageTabs.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import {
   type ListedTarget,
@@ -38,6 +40,12 @@ import store from "@/plugins/store"
 defineOptions({name: "DiscordPage"})
 
 const SYSTEM = TargetSystem.DISCORD
+const ROLES = "/management/platforms/discord"
+const CHANNELS = "/management/platforms/discord/channels"
+const TABS = [{label: "Roles", to: ROLES}, {label: "Channels", to: CHANNELS}]
+
+const route = useRoute()
+const onChannels = computed(() => route.path === CHANNELS)
 
 const overview = ref<TargetOverview | null>(null)
 const channels = ref<CataloguedChannel[]>([])
@@ -160,7 +168,14 @@ onMounted(load)
     <template v-if="overview">
       <fact-list :facts="facts" />
 
+      <page-tabs
+        :entries="TABS"
+        label="Discord"
+        testid="discord-tabs"
+      />
+
       <section
+        v-if="!onChannels"
         class="discord__group"
         data-testid="discord-roles"
       >
@@ -214,7 +229,7 @@ onMounted(load)
       </section>
 
       <fold-out
-        v-if="others.length"
+        v-if="!onChannels && others.length"
         :label="`Not kept by the site · ${others.length}`"
         testid="discord-other-roles"
       >
@@ -239,7 +254,7 @@ onMounted(load)
 
       <component
         :is="group.name === ARCHIVE_CATEGORY ? FoldOut : 'section'"
-        v-for="group in groups"
+        v-for="group in onChannels ? groups : []"
         :key="group.name"
         class="discord__group"
         :data-testid="`discord-channels-${group.name}`"

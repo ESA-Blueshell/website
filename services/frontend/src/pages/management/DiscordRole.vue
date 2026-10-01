@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-/* One Discord role: what fills it, and what it opens. Each category or channel it opens has an
-   access; a change is written to Discord, and where Discord differs the row says so and offers to
-   set it, never doing so on its own. Channels are made for the role and archived from here. */
+/* One Discord role: what fills it, its holders and drift, and what it opens. Each category or
+   channel it opens has an access; a change is written to Discord, and where Discord differs the
+   row says so and offers to set it, never doing so on its own. Channels are made for the role and
+   archived from here. */
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import FactList from "@/components/island/FactList.vue"
@@ -9,7 +10,19 @@ import FormField from "@/components/island/FormField.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import TextInput from "@/components/island/TextInput.vue"
-import {type ListedTarget, TargetSystem, cohortTypeLabel, readListedTarget} from "@/domains/cohorts"
+import {
+  type Cohort,
+  type ListedTarget,
+  TargetDrift,
+  TargetSystem,
+  cohortTypeLabel,
+  driftRowsOf,
+  fetchCohort,
+  inStepOn,
+  readListedTarget,
+  setTargetEnforced,
+  triggerReconcile,
+} from "@/domains/cohorts"
 import {
   type CataloguedChannel,
   RoleAccess,
@@ -33,6 +46,8 @@ const route = useRoute()
 const roleId = computed(() => String(route.params.roleId))
 
 const role = ref<ListedTarget | null>(null)
+const cohort = ref<Cohort | null>(null)
+const isAdmin = computed(() => store.getters.isAdmin === true)
 const openings = ref<RoleOpeningState[] | null>(null)
 const channels = ref<CataloguedChannel[]>([])
 const loaded = ref(false)
@@ -47,14 +62,30 @@ const openable = computed(() => channels.value
 const categoryOptions = computed(() => channels.value.filter((one) => one.kind === "CATEGORY").map((one) => ({key: one.name, label: one.name})))
 const asCatalogue = computed(() => (openings.value ?? []).filter((one) => one.actual != null).map((one) => ({...one.channel, private: true, roleIds: [roleId.value]})))
 
+const mapping = computed(() => cohort.value?.mappings.find((one) => one.system === TargetSystem.DISCORD) ?? null)
+const holders = computed(() => {
+  const members = cohort.value?.members ?? []
+  const drift = driftRowsOf(members, TargetSystem.DISCORD)
+  const unlinked = drift.filter((one) => one.unreachable).length
+  const missing = drift.filter((one) => one.sync === "ONLY_HERE").length - unlinked
+  const extra = drift.filter((one) => one.sync === "ONLY_EXTERNAL").length
+  return {
+    label: "Holders",
+    value: `${inStepOn(members, TargetSystem.DISCORD)} in step`,
+    sub: `${missing} missing · ${extra} extra · ${unlinked} with no Discord linked`,
+    testid: "discord-role-holders",
+  }
+})
 const facts = computed(() => [
   {label: "Follows", value: role.value?.cohortLabel ?? "Nothing", sub: role.value?.cohortType ? cohortTypeLabel(role.value.cohortType) : "Made by hand on Discord"},
+  ...(cohort.value ? [holders.value] : []),
   {label: "Opens", value: opensOf(roleId.value, asCatalogue.value), sub: "Categories and channels, each at an access", testid: "discord-role-opens"},
 ])
 
 const load = async () => {
   const [read, open, listed] = await Promise.all([readListedTarget(TargetSystem.DISCORD, roleId.value), readOpenings(roleId.value), listCatalogue()])
   role.value = read
+  cohort.value = read?.cohortId != null ? await fetchCohort(read.cohortId) : null
   openings.value = open
   channels.value = listed
   loaded.value = true
@@ -74,6 +105,23 @@ const act = async (call: () => Promise<{ok: true; saved: RoleOpeningState[]} | {
   openings.value = answered.saved
   said(done)
   return true
+}
+
+const reconcile = async () => {
+  if (!cohort.value || !mapping.value || acting.value) return
+  acting.value = true
+  const answered = await triggerReconcile(cohort.value.id, mapping.value.targetId)
+  acting.value = false
+  said(answered.ok ? "A reconcile is queued." : answered.reason)
+}
+
+const enforce = async () => {
+  if (!cohort.value || !mapping.value || acting.value) return
+  acting.value = true
+  const answered = await setTargetEnforced(cohort.value.id, mapping.value.targetId, !mapping.value.enforced)
+  acting.value = false
+  if (!answered.ok) return said(answered.reason)
+  await load()
 }
 
 const nameOf = (state: RoleOpeningState) => (state.channel.kind === "CATEGORY" ? state.channel.name : `#${state.channel.name}`)
@@ -136,6 +184,16 @@ onMounted(load)
       <p class="role__note">
         {{ role?.cohortLabel ? `Everyone in ${role.cohortLabel} holds this role, and with it what it opens below.` : "Nothing on the site fills this role; what it opens is set below." }}
       </p>
+      <button
+        v-if="mapping"
+        class="role__action role__reconcile"
+        data-testid="discord-role-reconcile"
+        :disabled="acting"
+        type="button"
+        @click="reconcile"
+      >
+        Reconcile now
+      </button>
     </header>
 
     <p
@@ -148,8 +206,16 @@ onMounted(load)
 
     <template v-if="openings">
       <fact-list
-        :columns="2"
+        :columns="cohort ? 3 : 2"
         :facts="facts"
+      />
+
+      <target-drift
+        v-if="cohort && mapping"
+        :cohort="cohort"
+        :mapping="mapping"
+        :reload="load"
+        testid="discord-role-drift"
       />
 
       <section
@@ -254,6 +320,21 @@ onMounted(load)
           </button>
         </div>
       </section>
+
+      <button
+        v-if="mapping && isAdmin"
+        class="role__setting"
+        data-testid="discord-role-enforce"
+        :disabled="acting"
+        type="button"
+        @click="enforce"
+      >
+        <span>
+          <span class="role__setting-title">Enforce</span>
+          <span class="role__sub">Remove the role from extra holders at every reconcile. {{ mapping.enforced ? "On." : "Off." }}</span>
+        </span>
+        <span class="role__sub">{{ mapping.enforced ? "Turn off" : "Turn on" }}</span>
+      </button>
     </template>
 
     <modal-dialog
@@ -376,6 +457,35 @@ onMounted(load)
 .role__mini:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+.role__reconcile {
+  align-self: flex-start;
+  margin-top: 0.4rem;
+}
+
+.role__setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem;
+  border: 0;
+  background-color: var(--band-ground);
+  font: inherit;
+  color: var(--color-chalk);
+  text-align: left;
+  cursor: pointer;
+}
+
+.role__setting:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.role__setting-title {
+  display: block;
+  font-weight: 600;
 }
 
 .role__group {

@@ -4,25 +4,18 @@
    archive, enforce or delete. */
 import {computed, onMounted, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import CheckBox from "@/components/island/CheckBox.vue"
 import FactList from "@/components/island/FactList.vue"
 import FormField from "@/components/island/FormField.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
-import SearchBox from "@/components/island/SearchBox.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
-import SelectionBar from "@/components/island/SelectionBar.vue"
-import StateMark from "@/components/island/StateMark.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import {
   ARCHIVE_FOLDER,
   type Cohort,
-  type CohortMember,
-  type DriftAction,
   type ListedTarget,
   type MissingTarget,
-  RESOLUTION_WORDS,
+  TargetDrift,
   TargetSystem,
-  adoptWord,
   archiveTarget,
   cohortTypeLabel,
   deleteTarget,
@@ -31,7 +24,6 @@ import {
   fetchTargetFolders,
   inStepOn,
   linkExistingTargetForCohort,
-  memberName,
   moveTargetToFolder,
   readListedTarget,
   readTargetOverview,
@@ -39,8 +31,6 @@ import {
   runBars,
   setTargetEnforced,
   triggerReconcile,
-  useDriftResolution,
-  whyOf,
 } from "@/domains/cohorts"
 import store from "@/plugins/store"
 import {formatDateNoSeconds} from "@/utils/timestamps"
@@ -57,17 +47,12 @@ const isAdmin = computed(() => store.getters.isAdmin === true)
 const list = ref<ListedTarget | null>(null)
 const cohort = ref<Cohort | null>(null)
 const loaded = ref(false)
-const search = ref("")
 const acting = ref(false)
 
 const mapping = computed(() => cohort.value?.mappings.find((one) => one.system === SYSTEM) ?? null)
-const mappings = computed(() => (mapping.value ? [mapping.value] : []))
 const cohortId = computed(() => cohort.value?.id ?? null)
 const members = computed(() => cohort.value?.members ?? [])
-const drift = computed(() => driftRowsOf(members.value, SYSTEM, search.value))
 const allDrift = computed(() => driftRowsOf(members.value, SYSTEM))
-const resolutions = computed(() => cohort.value?.resolutions.filter((one) => one.system === SYSTEM) ?? [])
-const adopt = computed(() => adoptWord(cohort.value?.type))
 const said = (message: string) => store.commit("setStatusSnackbarMessage", message)
 
 const load = async () => {
@@ -78,9 +63,6 @@ const load = async () => {
   loaded.value = true
   if (list.value && list.value.cohortId == null) unlinkedCohorts.value = (await readTargetOverview(SYSTEM))?.missing ?? []
 }
-
-const resolution = useDriftResolution(cohortId, mappings, load)
-const {selection, plan, planCount, working} = resolution
 
 const facts = computed(() => {
   const latest = mapping.value?.runs.at(0)
@@ -100,21 +82,6 @@ const facts = computed(() => {
   ]
 })
 const bars = computed(() => runBars(mapping.value?.runs ?? []))
-
-const ACTION_WORDS: Record<DriftAction, string> = {push: "Push", remove: "Remove", link: "Link to an account", adopt: "Take in"}
-const actionWord = (action: DriftAction) => (action === "adopt" ? adopt.value ?? ACTION_WORDS.adopt : ACTION_WORDS[action])
-const rowActions = (row: CohortMember): DriftAction[] =>
-  (["push", "adopt", "link", "remove"] as DriftAction[]).filter((action) => (action !== "adopt" || adopt.value !== null) && resolution.canResolve(action, row))
-const bulkActions = computed(() =>
-  (["push", "adopt", "link", "remove"] as DriftAction[])
-    .filter((action) => action !== "adopt" || adopt.value !== null)
-    .map((action) => ({action, count: resolution.selectedFor(action, drift.value)}))
-    .filter((one) => one.count > 0))
-const ticked = (row: CohortMember) => selection.value.has(row.targetMemberId)
-const prepareSelected = (action: DriftAction) => resolution.prepare(action, drift.value.filter(ticked))
-const planTitle = computed(() => (plan.value ? `${actionWord(plan.value.action)}: ${planCount.value} ${planCount.value === 1 ? "person" : "people"}` : ""))
-const planPeople = computed(() => plan.value?.groups.flatMap((group) => group.people) ?? [])
-const proposalFor = (row: CohortMember) => plan.value?.proposals.find((one) => one.externalUserId === row.externalUserId) ?? null
 
 const reconcile = async () => {
   if (!cohortId.value || !mapping.value || acting.value) return
@@ -277,128 +244,12 @@ onMounted(async () => {
           />
         </p>
 
-        <h2 class="list__part">
-          Drift
-        </h2>
-        <search-box
-          v-model="search"
-          label="Search for a user"
-          testid="brevo-list-search"
+        <target-drift
+          :cohort="cohort"
+          :mapping="mapping"
+          :reload="load"
+          testid="brevo-list"
         />
-        <p
-          v-if="resolution.message.value"
-          class="list__note"
-          data-testid="brevo-list-message"
-          role="status"
-        >
-          {{ resolution.message.value }}
-        </p>
-        <p
-          v-if="resolution.error.value"
-          class="list__failure"
-          data-testid="brevo-list-error"
-          role="alert"
-        >
-          {{ resolution.error.value }}
-        </p>
-        <p
-          v-if="drift.length === 0"
-          class="list__note"
-          data-testid="brevo-list-in-step"
-        >
-          {{ search ? "Nobody drifting matches." : "Everybody is where they should be." }}
-        </p>
-        <ul class="list__rows">
-          <li
-            v-for="row in drift"
-            :key="row.targetMemberId"
-            class="list__row"
-            :data-testid="`brevo-list-row-${row.targetMemberId}`"
-          >
-            <check-box
-              :label="`Select ${memberName(row)}`"
-              :model-value="ticked(row)"
-              :testid="`brevo-list-select-${row.targetMemberId}`"
-              @update:model-value="resolution.toggle(row)"
-            />
-            <span class="list__who">
-              <router-link
-                v-if="row.userId != null"
-                :to="`/management/users/${row.userId}`"
-              >{{ memberName(row) }}</router-link>
-              <span v-else>Unknown contact</span>
-              <span class="list__sub">{{ row.userEmail ?? row.externalLabel ?? "" }}</span>
-            </span>
-            <state-mark :kind="row.sync === 'ONLY_HERE' ? 'missing' : 'extra'" />
-            <span class="list__sub list__why">{{ whyOf(row, cohort.label) }}</span>
-            <span class="list__row-acts">
-              <button
-                v-for="action in rowActions(row)"
-                :key="action"
-                class="list__mini"
-                :class="{'list__mini--danger': action === 'remove'}"
-                :data-testid="`brevo-list-${action}-${row.targetMemberId}`"
-                :disabled="working"
-                type="button"
-                @click="resolution.prepare(action, [row])"
-              >
-                {{ actionWord(action) }}
-              </button>
-            </span>
-          </li>
-        </ul>
-        <selection-bar
-          :count="selection.size"
-          testid="brevo-list-selection"
-          @clear="resolution.clear"
-        >
-          <button
-            v-for="one in bulkActions"
-            :key="one.action"
-            class="list__action"
-            :data-testid="`brevo-list-bulk-${one.action}`"
-            :disabled="working"
-            type="button"
-            @click="prepareSelected(one.action)"
-          >
-            {{ actionWord(one.action) }}: {{ one.count }}
-          </button>
-        </selection-bar>
-
-        <h2 class="list__part">
-          Resolved
-        </h2>
-        <table
-          v-if="resolutions.length"
-          class="list__log"
-          data-testid="brevo-list-resolved"
-        >
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Who</th>
-              <th>What</th>
-              <th>Who it concerned</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(one, index) in resolutions"
-              :key="index"
-            >
-              <td>{{ formatDateNoSeconds(one.resolvedAt) }}</td>
-              <td>{{ one.resolvedByName ?? "The site" }}</td>
-              <td>{{ RESOLUTION_WORDS[one.action] }}</td>
-              <td>{{ one.personName ?? "" }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p
-          v-else
-          class="list__note"
-        >
-          Nothing resolved yet.
-        </p>
       </template>
 
       <section
@@ -526,36 +377,6 @@ onMounted(async () => {
         </button>
       </div>
     </template>
-
-    <modal-dialog
-      :open="plan !== null"
-      testid="brevo-list-plan"
-      :title="planTitle"
-      @update:open="(open: boolean) => { if (!open) resolution.cancel() }"
-    >
-      <ul class="list__plan">
-        <li
-          v-for="row in planPeople"
-          :key="row.targetMemberId"
-        >
-          {{ memberName(row) }}
-          <template v-if="plan?.action === 'link'">
-            : {{ proposalFor(row)?.userFullName ?? "no account has this address, so it stays as it is" }}
-          </template>
-        </li>
-      </ul>
-      <template #footer>
-        <button
-          class="list__action list__action--main"
-          data-testid="brevo-list-plan-confirm"
-          :disabled="working"
-          type="button"
-          @click="resolution.confirm"
-        >
-          {{ plan ? actionWord(plan.action) : "" }}
-        </button>
-      </template>
-    </modal-dialog>
 
     <modal-dialog
       :open="deleting"

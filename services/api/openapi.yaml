@@ -1382,7 +1382,6 @@ components:
       - isUserDeleted
       - joinedAt
       - targetMemberId
-      - unreachable
       type: object
     CohortSummary:
       properties:

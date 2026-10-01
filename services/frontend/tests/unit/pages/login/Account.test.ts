@@ -26,6 +26,7 @@ vi.mock("vuex", async (importOriginal) => {
 
 vi.mock("@/domains/user", () => ({
   readUser: mockReadUser,
+  readOwnMandate: vi.fn().mockResolvedValue(null),
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({

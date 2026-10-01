@@ -40,6 +40,7 @@ import type {
   LinkBoardMemberRequest,
   LinkRosterEntryRequest,
   MembershipResponse,
+  OwnMandateResponse,
   PublishLineupRequest,
   Role,
   RosterEntryResponse,
@@ -712,6 +713,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
   let exceptionResolvedAt: string | null = null
   const paidPeriods = new Set<number>()
+  let ownMandate: Wire<OwnMandateResponse> = {standing: "NONE", pending: false}
   const baseAlerts: Wire<Alert>[] = fixtures.alerts ?? []
 
   const baseJobs: Wire<JobExecution>[] = fixtures.jobs ?? [
@@ -888,6 +890,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "POST" && path === "/users/me/two-factor/setup") {
       return answer(route, "setUpTwoFactor", {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})
+    }
+    if (path === "/users/me/mandate" || (method === "PUT" && path === "/signup/mandate")) {
+      if (method === "GET") return answer(route, "findOwnMandate", ownMandate)
+      const {iban} = request.postDataJSON() as {iban: string}
+      const signup = path.startsWith("/signup")
+      ownMandate = {
+        standing: signup ? "NONE" : "MANDATE_RECORDED", ibanLastFour: iban.replace(/\s/g, "").slice(-4),
+        reference: signup ? undefined : "BLUESHELL-1-20260930", signedOn: "2026-09-30", pending: signup,
+      }
+      return signup ? route.fulfill({status: 204, body: ""}) : answer(route, "setUpOwnMandate", ownMandate)
     }
     if (method === "GET" && path === "/users/me/email") {
       return answer(route, "emailAddress", {email: "mock-user@example.com", pendingEmail: null})

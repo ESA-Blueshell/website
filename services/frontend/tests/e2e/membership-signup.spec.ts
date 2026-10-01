@@ -202,6 +202,35 @@ test.describe("membership signup", () => {
     await expect(page.getByTestId("membership-complete-panel")).toHaveCount(0)
   })
 
+  test("lets an applicant give bank details for incasso on the signup token", async ({page}) => {
+    await installApiMocks(page)
+    const suffix = String(Date.now()).slice(-6)
+
+    await page.goto("/membership/signup")
+    await fillPersonalInformationStep(page, suffix, true)
+    await page.getByTestId("membership-details-next-btn").click()
+    await fillAddressStep(page)
+    await page.getByTestId("membership-address-next-btn").click()
+
+    const step = page.getByTestId("membership-incasso-step")
+    await expect(step).toContainText("handled by hand")
+    await step.getByTestId("incasso-open").click()
+    await step.getByLabel("IBAN").fill("NL91 ABNA 0417 1643 00")
+    await step.getByLabel("Account holder").fill("Membership Privacy")
+    await step.getByRole("checkbox").check()
+    const mandateRequest = page.waitForRequest(
+      (request) => request.method() === "PUT" && request.url().endsWith("/signup/mandate"),
+    )
+    await step.getByTestId("incasso-save").click()
+
+    expect((await mandateRequest).headers()["x-signup-token"]).toBe("e2e-selector.e2e-verifier")
+    await expect(step.getByTestId("incasso-saved")).toBeVisible()
+
+    await acceptConditions(page)
+    await page.getByTestId("membership-conditions-submit-btn").click()
+    await expect(page.getByTestId("email-confirm-step")).toBeVisible()
+  })
+
   test("lets an applicant go back and change their details after applying", async ({page}) => {
     await installApiMocks(page)
     const suffix = String(Date.now()).slice(-6)

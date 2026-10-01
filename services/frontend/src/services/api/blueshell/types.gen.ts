@@ -1987,6 +1987,17 @@ export type NameOnRostersRequest = {
     shown: boolean;
 };
 
+export type OwnMandateResponse = {
+    ibanLastFour?: string | null;
+    /**
+     * Set up before the membership started, and moved onto it once it does.
+     */
+    pending: boolean;
+    reference?: string | null;
+    signedOn?: string | null;
+    standing: IncassoStanding;
+};
+
 export type PageMetadata = {
     number?: number;
     size?: number;
@@ -2523,6 +2534,12 @@ export type ServiceEntry = {
     url: string;
 };
 
+export type SetUpMandateRequest = {
+    accountHolder: string;
+    authorised: boolean;
+    iban: string;
+};
+
 export type SignInAnswer = {
     login?: LoginResponse | null;
     status: SignInStatus;
@@ -2573,6 +2590,12 @@ export type SignupDetailsRequest = {
 
 export type SignupEmailRequest = {
     email: string;
+};
+
+export type SignupMandateRequest = {
+    accountHolder: string;
+    authorised: boolean;
+    iban: string;
 };
 
 export type SignupOutcomeResponse = {
@@ -11291,6 +11314,50 @@ export type CorrectEmailResponses = {
 
 export type CorrectEmailResponse = CorrectEmailResponses[keyof CorrectEmailResponses];
 
+export type SetUpMandateData = {
+    body: SignupMandateRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/mandate';
+};
+
+export type SetUpMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetUpMandateError = SetUpMandateErrors[keyof SetUpMandateErrors];
+
+export type SetUpMandateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SetUpMandateResponse = SetUpMandateResponses[keyof SetUpMandateResponses];
+
 export type ResumeSignupData = {
     body?: never;
     headers: {
@@ -11904,6 +11971,88 @@ export type RequestEmailChangeResponses = {
 };
 
 export type RequestEmailChangeResponse = RequestEmailChangeResponses[keyof RequestEmailChangeResponses];
+
+export type FindOwnMandateData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/mandate';
+};
+
+export type FindOwnMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnMandateError = FindOwnMandateErrors[keyof FindOwnMandateErrors];
+
+export type FindOwnMandateResponses = {
+    /**
+     * OK
+     */
+    200: OwnMandateResponse;
+};
+
+export type FindOwnMandateResponse = FindOwnMandateResponses[keyof FindOwnMandateResponses];
+
+export type SetUpOwnMandateData = {
+    body: SetUpMandateRequest;
+    path?: never;
+    query?: never;
+    url: '/users/me/mandate';
+};
+
+export type SetUpOwnMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetUpOwnMandateError = SetUpOwnMandateErrors[keyof SetUpOwnMandateErrors];
+
+export type SetUpOwnMandateResponses = {
+    /**
+     * OK
+     */
+    200: OwnMandateResponse;
+};
+
+export type SetUpOwnMandateResponse = SetUpOwnMandateResponses[keyof SetUpOwnMandateResponses];
 
 export type ChangePasswordData = {
     body: PasswordChangeRequest;

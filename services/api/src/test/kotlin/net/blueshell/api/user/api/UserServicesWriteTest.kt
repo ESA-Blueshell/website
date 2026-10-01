@@ -76,7 +76,7 @@ class UserServicesWriteTest {
         whenever(repository.findById(6)).thenReturn(Optional.of(membership))
         whenever(repository.findById(7)).thenReturn(Optional.empty())
         whenever(repository.existsById(6)).thenReturn(true)
-        val service = MembershipService(repository, mock<TrackedEventPublisher>(), mock()).withEntityManager()
+        val service = MembershipService(repository, mock<TrackedEventPublisher>(), mock(), mock()).withEntityManager()
 
         service.create(membership)
         service.update(membership)
@@ -118,7 +118,7 @@ class UserServicesWriteTest {
         val membership = Entities.membership(id = 1)
         val profile = Entities.memberProfile(id = 2)
         val address = Entities.address(id = 3)
-        val memberships = MembershipService(mock<MemberRepository>(), mock<TrackedEventPublisher>(), mock())
+        val memberships = MembershipService(mock<MemberRepository>(), mock<TrackedEventPublisher>(), mock(), mock())
         val profiles = MemberProfileService(mock<MemberProfileRepository>())
         val addresses = AddressService(mock<AddressRepository>())
 

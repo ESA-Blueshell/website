@@ -43,6 +43,16 @@
           </v-form>
         </div>
         <v-progress-circular v-else />
+
+        <div
+          v-if="user"
+          class="mt-10"
+        >
+          <p class="text-h5">
+            Incasso
+          </p>
+          <incasso-set-up />
+        </div>
       </div>
     </div>
   </account-frame>
@@ -55,6 +65,7 @@ import {useStore} from "vuex"
 import AccountFrame from "@/components/common/AccountFrame.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import UserForm from "@/components/form/UserForm.vue"
+import IncassoSetUp from "@/components/account/IncassoSetUp.vue"
 import {readUser} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useIsBoard} from "@/composables/useIsBoard"

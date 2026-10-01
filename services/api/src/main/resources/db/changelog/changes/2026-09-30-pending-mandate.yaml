@@ -1,0 +1,24 @@
+# Bank details an applicant gave before their membership started: they have no membership to sit
+# on until the email is confirmed, so they wait here, sealed, and move onto it when it starts.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-30-pending-mandate.yaml
+      id: pending-mandate
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: pending_mandates
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_pending_mandates, nullable: false}
+              - column: {name: user_id, type: BIGINT, constraints: {nullable: false, unique: true, uniqueConstraintName: uk_pending_mandates_user}}
+              - column: {name: key_id, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: iban, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: account_holder, type: VARCHAR(512), constraints: {nullable: false}}
+              - column: {name: iban_last_four, type: CHAR(4), constraints: {nullable: false}}
+              - column: {name: signed_on, type: DATE, constraints: {nullable: false}}
+      rollback:
+        - dropTable: {tableName: pending_mandates}

@@ -19,6 +19,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Instant
+import java.util.Optional
 
 class TargetOverviewTest {
     private val catalog = mock<TargetCatalog>()
@@ -101,5 +102,18 @@ class TargetOverviewTest {
             jobs,
             never(),
         ).runAsync(eq(CohortJobs.CreateCohortTarget), eq(CohortJobs.CreateCohortTargetPayload(12)), eq(JobTrigger.SITE_ACTION), eq(null))
+    }
+
+    @Test
+    fun `reads one list with the cohort it follows, and one that follows nothing`() {
+        val list = ExternalTarget(TargetSystem.BREVO, "7", TargetKind.LIST, "Contribution paid 2025-2026", "Contribution paid", 188)
+        whenever(catalog.find(TargetSystem.BREVO, "7")).thenReturn(list)
+        whenever(catalog.find(TargetSystem.BREVO, "8")).thenReturn(list.copy(externalId = "8"))
+        whenever(targets.findFirstBySystemAndExternalId("BREVO", "7")).thenReturn(linked)
+        whenever(cohorts.findById(1)).thenReturn(Optional.of(paid))
+
+        val one = overview.one(TargetSystem.BREVO, "7")
+        assertThat(listOf(one.cohortLabel, one.targetId, one.enforced)).containsExactly("Paid 2025-2026", 10L, true)
+        assertThat(overview.one(TargetSystem.BREVO, "8").cohortId).isNull()
     }
 }

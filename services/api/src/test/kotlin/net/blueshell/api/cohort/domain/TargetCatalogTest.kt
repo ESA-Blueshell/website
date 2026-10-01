@@ -49,6 +49,16 @@ class TargetCatalogTest {
         assertThat(results).extracting<Long?> { it.linkedTargetId }.containsExactly(null, 42L)
     }
 
+    @Test
+    fun `finds one target with the cohort target it is linked to, and refuses one the system does not have`() {
+        val linked = Entities.target(id = 42, externalId = "2")
+        whenever(targets.findAllBySystem("BREVO")).thenReturn(listOf(linked))
+
+        assertThat(catalog.find(TargetSystem.BREVO, "2").linkedTargetId).isEqualTo(42)
+        assertThat(catalog.find(TargetSystem.BREVO, "1").linkedTargetId).isNull()
+        assertThatThrownBy { catalog.find(TargetSystem.BREVO, "9") }.isInstanceOf(TargetNotFound::class.java)
+    }
+
     private class RecordingStrategy : TargetStrategy {
         val queries = mutableListOf<String?>()
 

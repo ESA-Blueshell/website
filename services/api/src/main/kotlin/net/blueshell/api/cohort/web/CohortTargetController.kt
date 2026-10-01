@@ -6,6 +6,7 @@ import jakarta.validation.Valid
 import net.blueshell.api.cohort.domain.BulkTargetMoveResult
 import net.blueshell.api.cohort.domain.ExternalTarget
 import net.blueshell.api.cohort.domain.FolderTidy
+import net.blueshell.api.cohort.domain.ListedTarget
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetDescriptor
 import net.blueshell.api.cohort.domain.TargetOverview
@@ -40,6 +41,13 @@ class CohortTargetController(
     fun overview(
         @PathVariable system: TargetSystem,
     ): TargetOverviewResult = overview.of(system)
+
+    @GetMapping("/{system}/lists/{externalId}")
+    @Operation(operationId = "findListedTarget")
+    fun one(
+        @PathVariable system: TargetSystem,
+        @PathVariable externalId: String,
+    ): ListedTarget = overview.one(system, externalId)
 
     /** Creates the missing lists named, or all of them when none are; each is its own job. */
     @PostMapping("/{system}/missing")

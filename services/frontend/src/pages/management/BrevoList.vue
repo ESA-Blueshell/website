@@ -691,14 +691,14 @@ onMounted(async () => {
   font-size: 0.8rem;
 }
 
+/* Red text falls below contrast on the page; the border carries the warning instead. */
 .list__mini--danger {
-  color: var(--color-error, #e5484d);
+  border-color: var(--color-error, #e5484d);
 }
 
 .list__action--danger {
   align-self: flex-start;
   border-color: var(--color-error, #e5484d);
-  color: var(--color-error, #e5484d);
 }
 
 .list__delete {

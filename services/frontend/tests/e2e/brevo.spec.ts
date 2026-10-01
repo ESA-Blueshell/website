@@ -9,7 +9,7 @@ test.describe("the Brevo page", () => {
 
     await expect(page.getByTestId("brevo-missing")).toContainText("1 list the site expects is missing")
     await expect(page.getByTestId("brevo-group-Contribution paid")).toContainText("Paid 2026-2027")
-    await expect(page.getByTestId("brevo-state-list-8")).toHaveText("1 missing")
+    await expect(page.getByTestId("brevo-state-list-33")).toHaveText("1 missing")
     await expect(page.getByTestId("brevo-group-Follows nothing")).toContainText("Old newsletter test")
 
     const created = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/cohort-targets/BREVO/missing"))

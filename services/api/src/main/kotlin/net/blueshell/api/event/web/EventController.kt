@@ -3,9 +3,12 @@ package net.blueshell.api.event.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.event.api.AnnounceChoice
+import net.blueshell.api.event.api.AnnouncementLedger
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.domain.EventQuery
 import net.blueshell.api.event.domain.EventUseCases
+import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
@@ -29,7 +32,11 @@ import org.springframework.web.bind.annotation.RestController
 class EventController(
     service: EventService,
     private val useCases: EventUseCases,
+    private val announcements: AnnouncementLedger,
 ) : BaseController<EventService>(service) {
+    // Only one event's answer says whether its post is out: a list would ask once per row.
+    private fun Event.asOneResponse(): EventResponse = asResponse().also { it.announced = announcements.announced(id!!) }
+
     @PreAuthorize("hasPermission(#request.committeeId, 'Committee', 'events')")
     @PostMapping("/events")
     @ResponseStatus(
@@ -38,8 +45,8 @@ class EventController(
     fun createEvent(
         @Valid @RequestBody request: CreateEventRequest,
     ): EventResponse {
-        val event = useCases.create(request.asData())
-        return event.asResponse()
+        val event = useCases.create(request.asData(), request.announce)
+        return event.asOneResponse()
     }
 
     @PreAuthorize("hasPermission(#id, 'Event', 'write') and hasPermission(#request.committeeId, 'Committee', 'events')")
@@ -54,8 +61,9 @@ class EventController(
                 data = request.asData(),
                 removeExistingSignUps = request.removeExistingSignUps == true,
                 version = request.version,
+                announce = request.announce,
             )
-        return event.asResponse()
+        return event.asOneResponse()
     }
 
     @PreAuthorize("hasPermission(#id, 'Event', 'approve')")
@@ -63,9 +71,10 @@ class EventController(
     fun approveEvent(
         @PathVariable id: Long,
         @RequestParam approved: Boolean,
+        @RequestParam(required = false) announce: AnnounceChoice?,
     ): EventResponse {
-        val event = useCases.approve(id, approved)
-        return event.asResponse()
+        val event = useCases.approve(id, approved, announce)
+        return event.asOneResponse()
     }
 
     @GetMapping("/events/{id}")
@@ -74,7 +83,7 @@ class EventController(
         @PathVariable id: Long,
     ): EventResponse {
         val event = service.findById(id)
-        return event.asResponse()
+        return event.asOneResponse()
     }
 
     @GetMapping("/events")

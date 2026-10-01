@@ -102,7 +102,7 @@ class EventControllerIT : UserTestSupport() {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             """
-                            {"committeeId":${committee.id},"title":"","description":"Event description","location":"Campus","startTime":"2026-03-01T19:00:00Z","endTime":"2026-03-01T21:00:00Z","approved":true,"membersOnly":false,"signUp":true}
+                            {"committeeId":${committee.id},"title":"","description":"Event description","location":"Campus","startTime":"2026-03-01T19:00:00Z","endTime":"2026-03-01T21:00:00Z","approved":true,"announce":"NOW","membersOnly":false,"signUp":true}
                             """.trimIndent(),
                         ),
                 ).andExpect(status().isBadRequest)
@@ -262,7 +262,7 @@ class EventControllerIT : UserTestSupport() {
             val payload =
                 """{"committeeId":${committee.id},"title":"","description":"desc","location":"here",
                 |"startTime":"2099-06-01T19:00:00Z","endTime":"2099-06-01T21:00:00Z",
-                |"approved":true,"membersOnly":false,"signUp":false}
+                |"approved":true,"announce":"NOW","membersOnly":false,"signUp":false}
                 """.trimMargin()
 
             mvc
@@ -282,7 +282,7 @@ class EventControllerIT : UserTestSupport() {
             val payload =
                 """{"committeeId":${committee.id},"title":"T","description":"desc","location":"here",
                 |"startTime":"2099-06-01T19:00:00Z",
-                |"approved":true,"membersOnly":false,"signUp":false}
+                |"approved":true,"announce":"NOW","membersOnly":false,"signUp":false}
                 """.trimMargin()
 
             mvc
@@ -683,10 +683,30 @@ class EventControllerIT : UserTestSupport() {
                 .perform(
                     put("/events/{id}/approve", event.id)
                         .param("approved", "true")
+                        .param("announce", "NOW")
                         .with(signedIn(board)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(event.id))
                 .andExpect(jsonPath("$.approved").value(true))
+        }
+
+        @Test
+        fun `board must say when the events-info post goes out, and answers whether it is out`() {
+            val board = createUserWithRole(Role.BOARD)
+            val event = createEventFixture(approved = false)
+
+            mvc
+                .perform(put("/events/{id}/approve", event.id).param("approved", "true").with(signedIn(board)))
+                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    put("/events/{id}/approve", event.id)
+                        .param("approved", "true")
+                        .param("announce", "NEXT_MORNING")
+                        .with(signedIn(board)),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.approved").value(true))
+                .andExpect(jsonPath("$.announced").value(false))
         }
 
         @Test
@@ -698,6 +718,7 @@ class EventControllerIT : UserTestSupport() {
                 .perform(
                     put("/events/{id}/approve", event.id)
                         .param("approved", "true")
+                        .param("announce", "NOW")
                         .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }

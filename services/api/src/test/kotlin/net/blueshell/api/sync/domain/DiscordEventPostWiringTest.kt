@@ -105,6 +105,8 @@ class DiscordEventPostWiringTest {
             signUpDeadline = null,
             pingedRoleIds = emptyList(),
             bannerPath = null,
+            // The board chose the morning of Saturday 26 September when it approved the event.
+            announceAt = at("2026-09-26T08:00"),
         )
 
     private class Queued : JobQueue {

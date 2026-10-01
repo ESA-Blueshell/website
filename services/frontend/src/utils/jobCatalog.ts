@@ -114,9 +114,9 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     thing: "the #events-info announcement",
     description:
       "Keeps one event's announcement in the #events-info announcement channel of the Discord " +
-      "server: posts it, pinging the event's roles, once the event is approved and within two " +
-      "weeks (from 08:00 fourteen days before its day, or at once when it is approved inside " +
-      "that), edits it when the event or its sign-up count changes and removes it when the event " +
+      "server: posts it, pinging the event's roles, at the time the board chose on approving " +
+      "(now, or the next 08:00), or at once where the event starts before that, edits it when " +
+      "the event or its sign-up count changes and removes it when the event " +
       "is deleted or no longer approved. Run by hand, it posts straight away, however far off the " +
       "event is. Safe to re-run: the announcement goes out once.",
   },

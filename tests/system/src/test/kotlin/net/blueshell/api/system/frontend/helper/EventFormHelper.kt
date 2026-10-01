@@ -20,6 +20,8 @@ object EventFormHelper {
     private const val SIGNUP_DEADLINE_FIELD_TEST_ID = "event-form-signup-deadline-field"
     private const val SIGNUP_LIMIT_FIELD_TEST_ID = "event-form-signup-limit-field"
     private const val SUBMIT_BUTTON_TEST_ID = "event-form-submit-btn"
+    private const val ANNOUNCE_NOW_TEST_ID = "announce-now"
+    private const val ANNOUNCE_WAIT_MS = 3_000.0
 
     fun openCreatePage(
         page: Page,
@@ -141,6 +143,20 @@ object EventFormHelper {
         val button = TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID)
         HttpFailureLog.mark("submit click, buttons=${button.count()}")
         button.click()
+        val approved = TestIdLocatorHelper.byTestId(page, APPROVED_FIELD_TEST_ID).locator("input[type='checkbox']")
+        if (approved.count() > 0 && approved.first().isChecked) answerAnnouncementIfAsked(page)
+    }
+
+    /**
+     * Answers "Post now" where approving asks when the events-info post goes out. Nothing asks for
+     * an event already approved, one whose post is out, or one starting before the next 08:00.
+     */
+    fun answerAnnouncementIfAsked(page: Page) {
+        try {
+            TestIdLocatorHelper.byTestId(page, ANNOUNCE_NOW_TEST_ID).click(Locator.ClickOptions().setTimeout(ANNOUNCE_WAIT_MS))
+        } catch (_: TimeoutError) {
+            HttpFailureLog.mark("no announcement asked")
+        }
     }
 
     /**

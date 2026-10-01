@@ -1,0 +1,16 @@
+# When an approved event's events-info post goes out, which the board picks on approving (#2021).
+# Nullable, so 1.14.0 adds events without it while this release rolls out.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-event-announce-at.yaml
+      id: event-announce-at
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: events
+            columns:
+              - column: {name: announce_at, type: DATETIME}
+      rollback:
+        - dropColumn:
+            tableName: events
+            columnName: announce_at

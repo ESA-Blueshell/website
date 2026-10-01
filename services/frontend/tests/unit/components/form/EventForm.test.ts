@@ -45,6 +45,7 @@ vi.mock("@/services/api", () => ({
   // A plain function, so resetting the mocks between tests leaves its answer alone.
   listDiscordRoles: async () => ({data: [{id: "901", name: "Gamers"}]}),
   findCasualGames: async () => ({data: []}),
+  AnnounceChoice: {NOW: "NOW", NEXT_MORNING: "NEXT_MORNING"},
 }))
 
 const vvFieldStub = {
@@ -290,7 +291,7 @@ describe("EventForm", () => {
 
   const mountForm = (modelValue: Record<string, unknown>) => mount(EventForm, {
     props: {modelValue},
-    global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    global: {stubs: {Form: formStub, VvField: vvFieldStub, AnnounceDialog: {name: "AnnounceDialog", props: ["open", "later"], emits: ["answer"], template: "<div />"}}},
   })
 
   const acceptValidation = (wrapper: ReturnType<typeof mount>) => {
@@ -455,6 +456,44 @@ describe("EventForm", () => {
     await (wrapper.vm as any).save()
 
     expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({body: expect.objectContaining({gameCodes: ["CHESS"]})}))
+  })
+
+  it("asks the board when the events-info post goes out on a save that approves, and saves nothing on cancel", async () => {
+    mockStore.getters.isBoard = true
+    const wrapper = mountForm(baseEvent({committeeId: 1, title: "LAN", approved: true}))
+    await settle()
+    acceptValidation(wrapper)
+    const dialog = () => wrapper.getComponent({name: "AnnounceDialog"})
+
+    const cancelled = (wrapper.vm as any).save()
+    await settle()
+    expect(dialog().props("open")).toBe(true)
+    dialog().vm.$emit("answer", null)
+    await cancelled
+    expect(mockCreateEvent).not.toHaveBeenCalled()
+
+    const saved = (wrapper.vm as any).save()
+    await settle()
+    dialog().vm.$emit("answer", "NEXT_MORNING")
+    await saved
+    expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({body: expect.objectContaining({approved: true, announce: "NEXT_MORNING"})}))
+  })
+
+  it("asks nothing on a save that keeps an approved event approved, or where the post is out", async () => {
+    mockStore.getters.isBoard = true
+    const approved = mountForm(baseEvent({id: 33, version: 1, committeeId: 1, title: "LAN", approved: true}))
+    await settle()
+    acceptValidation(approved)
+    await (approved.vm as any).save()
+    expect(mockUpdateEvent.mock.lastCall?.[0].body.announce).toBeUndefined()
+
+    const announced = mountForm(baseEvent({id: 33, version: 1, committeeId: 1, title: "LAN", approved: false, announced: true}))
+    await settle()
+    acceptValidation(announced)
+    ;(announced.vm as any).event.approved = true
+    await (announced.vm as any).save()
+    expect(mockUpdateEvent.mock.lastCall?.[0].body).toEqual(expect.objectContaining({approved: true}))
+    expect(mockUpdateEvent.mock.lastCall?.[0].body.announce).toBeUndefined()
   })
 
   it("starts a new event on the committee it was handed", async () => {

@@ -16,6 +16,7 @@ import type {Picture, PictureStore} from "@/components/island/pictures"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import RadioGroup from "@/components/island/RadioGroup.vue"
 import EventPreview from "@/domains/events/island/EventPreview.vue"
+import AnnounceDialog from "@/domains/events/island/AnnounceDialog.vue"
 import {
   type CreateEventRequest,
   type EventBannerRequest,
@@ -26,6 +27,7 @@ import {
   saveNewEvent,
   type SurveyRequest,
   type UpdateEventRequest,
+  useAnnouncePrompt,
 } from "@/domains/events"
 import {
   type Committee,
@@ -56,6 +58,8 @@ type EventModel = Omit<CreateEventRequest, "committeeId" | "banner" | "signUpFor
   committeeId?: number | null;
   id?: number;
   version?: number;
+  /** Whether the events-info post is out, as the api answers for one event. */
+  announced?: boolean | null;
   banner?: EventBannerRequest | null;
   signUpForm?: SurveyRequest | null;
   signUpCount?: number;
@@ -90,6 +94,10 @@ function defaultEvent(): EventModel {
 const event = ref<EventModel>(props.modelValue ? {...props.modelValue} : defaultEvent())
 
 const isBoard = useIsBoard()
+
+/* Approving asks when the events-info post goes out; an event approved already asks nothing. */
+const approvedOnServer = ref<boolean>(props.modelValue?.id != null && props.modelValue.approved === true)
+const {open: announceOpen, later: announceLater, ask: askAnnounce, answer: answerAnnounce} = useAnnouncePrompt()
 
 const committees = ref<CommitteeOption[]>([])
 const {formRef, validate} = useVeeForm()
@@ -242,6 +250,10 @@ const save = async () => {
     return
   }
 
+  const approving = isBoard.value && event.value.approved && !approvedOnServer.value
+  const announce = approving ? await askAnnounce({announced: event.value.announced, startTime: event.value.startTime}) : undefined
+  if (announce === null) return
+
   try {
     await withSaving(async () => {
       if (bannerDirty.value) {
@@ -282,6 +294,7 @@ const save = async () => {
         memberPrice: event.value.memberPrice,
         publicPrice: event.value.publicPrice,
         approved: event.value.approved,
+        ...(announce ? {announce} : {}),
         membersOnly: event.value.membersOnly,
         signUp: event.value.signUp,
         signUpDeadline: event.value.signUp ? event.value.signUpDeadline : undefined,
@@ -306,6 +319,7 @@ const save = async () => {
         : await saveNewEvent(bodyBase)
 
       event.value = {...saved, description: saved.description ?? ""}
+      approvedOnServer.value = saved.approved
       emit("update:modelValue", event.value)
       emit("submitted", true)
       setSubmitResult(true)
@@ -554,6 +568,12 @@ defineExpose({validate, save})
         </cut-button>
       </div>
     </div>
+
+    <announce-dialog
+      :later="announceLater"
+      :open="announceOpen"
+      @answer="answerAnnounce"
+    />
   </Form>
 </template>
 

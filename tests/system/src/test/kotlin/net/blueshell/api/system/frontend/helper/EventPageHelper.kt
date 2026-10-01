@@ -49,6 +49,7 @@ object EventPageHelper {
         eventId: Long,
     ) {
         TestIdLocatorHelper.byTestId(eventCard(page, eventId), "event-approve-btn-$eventId").click()
+        EventFormHelper.answerAnnouncementIfAsked(page)
     }
 
     fun clickEditEventButton(

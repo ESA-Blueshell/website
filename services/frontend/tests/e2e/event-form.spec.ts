@@ -36,8 +36,11 @@ test.describe("the event form", () => {
 
     const created = page.waitForRequest(request => request.method() === "POST" && /\/events$/u.test(new URL(request.url()).pathname))
     await page.getByTestId("event-form-submit-btn").click()
+    // Approving asks when the events-info post goes out, the later choice in the viewer's own time.
+    await expect(page.getByTestId("announce-later")).toHaveText(/^Post (today|tomorrow) at \d\d:\d\d$/u)
+    await page.getByTestId("announce-later").click()
     const body = (await created).postDataJSON() as Wire<CreateEventRequest>
-    expect(body).toMatchObject({title: "Pub quiz", location: "Café De Beiaard", committeeId: 900, approved: true, signUp: true, signUpLimit: 24, gameCodes: ["CHESS"]})
+    expect(body).toMatchObject({title: "Pub quiz", location: "Café De Beiaard", committeeId: 900, approved: true, announce: "NEXT_MORNING", signUp: true, signUpLimit: 24, gameCodes: ["CHESS"]})
   })
 
   test("holds a poster in the picture input and stores it with the event", async ({page}) => {

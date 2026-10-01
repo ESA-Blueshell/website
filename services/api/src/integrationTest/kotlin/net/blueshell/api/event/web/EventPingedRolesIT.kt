@@ -19,7 +19,7 @@ class EventPingedRolesIT : UserTestSupport() {
         val body =
             """
             {"committeeId": ${committee.id}, "title": "LAN party", "description": "Bring a rig.", "location": "Pakhuis",
-             "startTime": "2026-10-10T18:00:00Z", "endTime": "2026-10-10T21:00:00Z", "approved": true,
+             "startTime": "2026-10-10T18:00:00Z", "endTime": "2026-10-10T21:00:00Z", "approved": true, "announce": "NOW",
              "membersOnly": false, "signUp": false,
              "pingedRoles": [{"id": "1144058844004233369", "name": "Gamers"}, {"id": "1144058844004233370", "name": "Alumni"}]}
             """.trimIndent()
@@ -48,7 +48,7 @@ class EventPingedRolesIT : UserTestSupport() {
         val body =
             """
             {"committeeId": ${committee.id}, "title": "LAN party", "description": "Bring a rig.",
-             "startTime": "2026-10-10T18:00:00Z", "endTime": "2026-10-10T21:00:00Z", "approved": true,
+             "startTime": "2026-10-10T18:00:00Z", "endTime": "2026-10-10T21:00:00Z", "approved": true, "announce": "NOW",
              "membersOnly": false, "signUp": false, "pingedRoles": [{"id": "everyone", "name": "@everyone"}]}
             """.trimIndent()
 

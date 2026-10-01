@@ -175,6 +175,10 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
             page.awaitResponseFrom(
                 control = page.locator("[data-testid='event-approve-btn-$eventId']"),
                 expected = "PUT /events/$eventId/approve?approved=true",
+                act = {
+                    page.locator("[data-testid='event-approve-btn-$eventId']").click()
+                    EventFormHelper.answerAnnouncementIfAsked(page)
+                },
             ) {
                 it.request().method() == "PUT" &&
                     it.url().contains("/events/$eventId/approve") &&

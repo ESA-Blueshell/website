@@ -395,13 +395,17 @@ without notifying; unapproved by the board, it comes down.
 **Awaiting re-approval is not unapproved.** An event the board unapproves loses what the
 bot has out; one awaiting re-approval keeps it.
 
-### Within two weeks
+### Announce at
 
-An event is within two weeks from 08:00 on the day fourteen days before its first day,
-until it is over. The time of day the event starts plays no part: an event at 20:00 on
-12 October is within two weeks from 08:00 on 28 September. Amsterdam time.
+When an approved event's events-info post goes out, which the board picks every time it
+approves the event while the post is not out yet: **now**, or the **next morning**, the
+next 08:00 Amsterdam time (today's while it is still before 08:00). The page asks in the
+viewer's own time. Nothing is asked where the post is already out, or where the event
+starts before the next morning, which posts at once. Unapproving clears it, so approving
+again asks again.
 
-_Avoid_: fourteen days before the start (a rolling window), lead time
+_Avoid_: within two weeks (retired: the post no longer waits for the event to come near),
+publish date
 
 ### Events-info post and events-calendar post
 
@@ -414,10 +418,9 @@ sign-up first, and counts the rest as "and 4 others". It changes by an edit as p
 sign up, and nobody it names is notified. Times are
 Amsterdam time.
 
-The **events-info post** goes out once the event is approved and within two weeks: at
-08:00 when that begins, or at once when the event is approved, created or moved inside
-it. Once out it stays, and follows every edit, even one that moves the event
-further away. It comes down when the event is deleted or unapproved; approved again, it
+The **events-info post** goes out at the event's **announce at**, however far ahead the
+event is, or at once where an edit moves the start before it. Once out it stays, and
+follows every edit, even one that moves the event further away. It comes down when the event is deleted or unapproved; approved again, it
 goes out again and notifies again. One somebody removes by hand is put back, and notifies
 again.
 

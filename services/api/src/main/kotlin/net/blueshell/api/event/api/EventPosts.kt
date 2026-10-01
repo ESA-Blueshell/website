@@ -36,6 +36,8 @@ data class EventPostData(
     /** The banner's public path, new with every banner; null without one. */
     val bannerPath: String?,
     val frozen: Boolean = false,
+    /** When the events-info post goes out, as the board chose on approving. */
+    val announceAt: Instant? = null,
 )
 
 /** An event banner's bytes, for a Discord event's cover, which Discord takes as data rather than a link. */
@@ -98,4 +100,5 @@ private fun Event.asPostData(goingDiscordIds: List<String>) =
         goingDiscordIds = goingDiscordIds,
         bannerPath = banner?.file?.let(PublicFileUrls::of),
         frozen = awaitingReapproval && !isSoftDeleted,
+        announceAt = announceAt,
     )

@@ -86,6 +86,24 @@ class CohortQueryService(
         return byExternalId
     }
 
+    /**
+     * The rows of people with no account on a system that cannot make one for them, such as Discord,
+     * where everybody links their own. A system that cannot be asked now reaches nobody here.
+     */
+    private fun unreachableOf(
+        members: List<TargetMember>,
+        systemByTargetId: Map<Long, TargetSystem>,
+    ): Set<Long?> =
+        members
+            .filter { it.userId != null }
+            .groupBy { systemByTargetId[it.target.id] }
+            .flatMap { (system, rows) ->
+                val strategy = system?.let(strategies::find)
+                if (strategy == null || strategy.makesMemberIds) return@flatMap emptyList()
+                val linked = runCatching { strategy.memberIds(rows.mapNotNull { it.userId }.toSet()).keys }.getOrDefault(emptySet())
+                rows.filter { it.userId !in linked }.map { it.id }
+            }.toSet()
+
     /** Every target with how many of our people it holds, for the pickers. */
     @Transactional(readOnly = true)
     fun targets(): List<TargetSummary> =
@@ -156,6 +174,7 @@ class CohortQueryService(
         // account that id belongs to, if any, which is what turns it into a name.
         val ownerByExternalId = resolveStrangerOwners(members, systemByTargetId)
 
+        val unreachableIds = unreachableOf(members, systemByTargetId)
         val recentResolutions = resolutions.findTop20ByTargetIdInOrderByResolvedAtDesc(systemByTargetId.keys)
         val userIds =
             (
@@ -183,6 +202,7 @@ class CohortQueryService(
                             system = systemByTargetId[member.target.id],
                             state = member.state,
                             resolvedUserId = if (member.userId == null) ownerId else null,
+                            unreachable = member.id in unreachableIds,
                         )
                     }.sortedWith(
                         compareBy(
@@ -286,4 +306,6 @@ data class TargetMemberRow(
      * id, once resolved. Null when nothing local matches it.
      */
     val resolvedUserId: Long? = null,
+    /** Whether the row's person has no account on a system that cannot make one, so no push reaches them. */
+    val unreachable: Boolean = false,
 )

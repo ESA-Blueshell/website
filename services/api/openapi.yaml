@@ -1361,6 +1361,9 @@ components:
         targetMemberId:
           format: int64
           type: integer
+        unreachable:
+          description: No account on a system that cannot make one, so no push reaches them
+          type: boolean
         userEmail:
           type:
           - string
@@ -1379,6 +1382,7 @@ components:
       - isUserDeleted
       - joinedAt
       - targetMemberId
+      - unreachable
       type: object
     CohortSummary:
       properties:

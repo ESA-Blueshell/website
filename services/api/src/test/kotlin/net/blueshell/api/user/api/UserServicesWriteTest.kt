@@ -3,6 +3,7 @@ package net.blueshell.api.user.api
 import jakarta.persistence.EntityManager
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.domain.AddressService
 import net.blueshell.api.user.persistence.AddressRepository
@@ -125,6 +126,37 @@ class UserServicesWriteTest {
             ),
         )
         assertThat(service.findActiveUserIdsOn(today)).containsExactly(5L)
+    }
+
+    @Test
+    fun `every change tells whether the user still holds an active membership`() {
+        val membership = Entities.membership(id = 6, user = Entities.user(id = 9))
+        val repository =
+            mock<MemberRepository> {
+                on { saveAndFlush(any<Membership>()) } doAnswer { it.getArgument(0) }
+            }
+        whenever(repository.findById(6)).thenReturn(Optional.of(membership))
+        whenever(repository.existsById(6)).thenReturn(true)
+        whenever(repository.restoreById(6)).thenReturn(1)
+        whenever(repository.existsByUser_IdAndEndDateIsNullAndActivatedOnIsNotNull(9)).thenReturn(true)
+        val told = mutableListOf<MembershipChanged>()
+        val events =
+            mock<TrackedEventPublisher> {
+                on { publish(any()) } doAnswer {
+                    told.add(it.getArgument<(Actor) -> Any>(0)(Actor.system()) as MembershipChanged)
+                    Unit
+                }
+            }
+        val service = MembershipService(repository, events, mock(), mock()).withEntityManager()
+
+        service.create(membership)
+        service.update(membership)
+        service.delete(membership)
+        service.deleteById(6)
+        service.restore(membership)
+
+        assertThat(told.map { it.active }).containsOnly(true).hasSize(5)
+        assertThat(service.existsActiveMembershipByUserId(9)).isTrue()
     }
 
     @Test

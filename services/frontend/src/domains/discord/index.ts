@@ -14,6 +14,8 @@ export {listKeepableChannels, listKeepableRoles, type KeptChannel, type KeptRole
 export {default as DiscordPlaceFields} from "./island/DiscordPlaceFields.vue"
 export {default as LinkDiscordAsk} from "./island/LinkDiscordAsk.vue"
 export {listMyUnlinkedRoles} from "./adapters/unlinked"
+export {adoptMatches, listCatalogue, listMatches, type AdoptionMatch, type CataloguedChannel} from "./adapters/catalogue"
+export {ARCHIVE_CATEGORY, accessOf, belongsTo, catalogueFacts, channelGroups, differsOf, opensOf, policyWords, type ChannelGroup, type NamedRole} from "./catalogue"
 export type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
 export {readStarboard} from "./adapters/starboard"
 export {readGuildCounts, readGuildWidget, voiceRoomUrl, type GuildCounts, type GuildWidget, type WidgetChannel, type WidgetMember, type WidgetResponse} from "./adapters/widget"

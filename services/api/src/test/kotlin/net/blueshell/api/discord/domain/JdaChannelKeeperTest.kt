@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.discord.api.ChannelOpening
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptChannelKind
@@ -77,6 +78,30 @@ class JdaChannelKeeperTest {
             KeptChannel("2", "sitecie-voice", KeptChannelKind.VOICE, null),
         )
         assertThat(keeper().openedTo("900")).containsExactly(KeptChannel("1", "sitecie", KeptChannelKind.TEXT, "Committees"))
+    }
+
+    @Test
+    fun `says of each channel whether everybody is kept out and which roles are let in`() {
+        whenever(everyone.id).thenReturn("99")
+        whenever(opened.id).thenReturn("900")
+        val everyoneSees: PermissionOverride =
+            mock {
+                on { id } doReturn "99"
+                on { allowed } doReturn EnumSet.of(Permission.VIEW_CHANNEL)
+            }
+        val denied: PermissionOverride =
+            mock {
+                on { id } doReturn "901"
+                on { allowed } doReturn EnumSet.noneOf(Permission::class.java)
+            }
+        whenever(text.rolePermissionOverrides).thenReturn(listOf(opened, everyoneSees, denied))
+        whenever(everyone.hasPermission(voice, Permission.VIEW_CHANNEL)).thenReturn(true)
+
+        assertThat(keeper().openings()).containsExactly(
+            ChannelOpening(KeptChannel("10", "Committees", KeptChannelKind.CATEGORY, null), private = true, roleIds = emptyList()),
+            ChannelOpening(KeptChannel("1", "sitecie", KeptChannelKind.TEXT, "Committees"), private = true, roleIds = listOf("900")),
+            ChannelOpening(KeptChannel("2", "sitecie-voice", KeptChannelKind.VOICE, null), private = false, roleIds = emptyList()),
+        )
     }
 
     @Test

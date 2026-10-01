@@ -94,6 +94,16 @@ class DiscordTargetIT : UserTestSupport() {
             ).andExpect(status().isServiceUnavailable)
         mvc.perform(get("/management/discord/roles").with(signedIn(board))).andExpect(jsonPath("$.length()").value(0))
         mvc.perform(get("/management/discord/channels").with(signedIn(board))).andExpect(jsonPath("$.length()").value(0))
+        mvc.perform(get("/management/discord/catalogue/channels").with(signedIn(board))).andExpect(jsonPath("$.length()").value(0))
+        mvc.perform(get("/management/discord/adoption").with(signedIn(board))).andExpect(jsonPath("$.length()").value(0))
+        mvc
+            .perform(
+                post("/management/discord/adoption")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"keys":["COMMITTEE_MEMBERS:1"]}""")
+                    .with(signedIn(board)),
+            ).andExpect(jsonPath("$.linked").value(0))
+        mvc.perform(get("/management/discord/adoption").with(signedIn(member))).andExpect(status().isForbidden)
         mvc.perform(get("/management/committees/{id}/discord", 1).with(signedIn(member))).andExpect(status().isForbidden)
         mvc
             .perform(get("/management/teams/{id}/discord", 1).with(signedIn(board)))

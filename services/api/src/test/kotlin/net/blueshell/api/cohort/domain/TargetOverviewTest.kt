@@ -47,7 +47,7 @@ class TargetOverviewTest {
         whenever(targets.findAllByCohortIdIsNotNullAndExternalIdIsNull()).thenReturn(listOf(unmade, discord))
         whenever(cohorts.findAllById(setOf(1L, 2L))).thenReturn(listOf(paid, newPaid))
         whenever(runs.findFirstByTargetIdOrderByStartedAtDesc(10)).thenReturn(
-            TargetReconcileRun(10, Instant.parse("2026-10-01T03:00:00Z"), null, 186, 1, 2),
+            TargetReconcileRun(10, Instant.parse("2026-10-01T03:00:00Z"), null, 186, 1, 2, unreachable = 3),
         )
         whenever(members.countByTargetIdAndUserIdIsNotNull(11)).thenReturn(142)
     }
@@ -70,10 +70,11 @@ class TargetOverviewTest {
                 CohortType.PERIOD_PAYERS,
                 1,
                 2,
+                3,
                 Instant.parse("2026-10-01T03:00:00Z"),
                 true,
             ),
-            ListedTarget("8", "Old newsletter test", null, 4, null, null, null, null, null, null, null, false),
+            ListedTarget("8", "Old newsletter test", null, 4, null, null, null, null, null, null, null, null, false),
         )
         assertThat(read.missing).containsExactly(
             MissingTarget(11, 2, "Paid 2026-2027", CohortType.PERIOD_PAYERS, "Contribution paid", 142, false),

@@ -127,4 +127,22 @@ class GameChannelPoliciesTest {
         assertThatThrownBy { policies(gateway = null).read("1") }.isInstanceOf(DiscordUnreachable::class.java)
         assertThatThrownBy { policies().read("2") }.isInstanceOf(ResponseStatusException::class.java)
     }
+
+    @Test
+    fun `reads every kept access against Discord, leaving out a channel gone from the server`() {
+        allows(everyone, view = true, send = true)
+        allows(member, view = true, send = true)
+        whenever(repository.findAll()).thenReturn(
+            listOf(
+                ChannelPolicy("1", ChannelAccess.READ, ChannelAccess.WRITE),
+                ChannelPolicy("2", ChannelAccess.READ, ChannelAccess.WRITE),
+            ),
+        )
+
+        val kept = policies().readKept()
+
+        assertThat(kept.keys).containsExactly("1")
+        assertThat(kept["1"]!!.actual).isEqualTo(AccessPolicy(ChannelAccess.WRITE, ChannelAccess.WRITE))
+        assertThat(kept["1"]!!.differs).isTrue()
+    }
 }

@@ -15,6 +15,13 @@ data class KeptChannel(
     val category: String?,
 )
 
+/** A channel and who it is opened to: whether @everyone is kept out, and the roles let in by an overwrite of their own. */
+data class ChannelOpening(
+    val channel: KeptChannel,
+    val private: Boolean,
+    val roleIds: List<String>,
+)
+
 /**
  * The server's channels as the site opens them to roles: a role is given a channel by a permission
  * overwrite on it, and a private channel is one @everyone cannot view. Every call needs the bot;
@@ -25,6 +32,9 @@ interface DiscordChannelKeeper {
 
     /** Every channel and category, in the server's order. */
     fun channels(): List<KeptChannel>
+
+    /** Every channel and category with who it is opened to, in the server's order. */
+    fun openings(): List<ChannelOpening>
 
     /** The channels and categories [roleId] is let into by an overwrite of its own. */
     fun openedTo(roleId: String): List<KeptChannel>

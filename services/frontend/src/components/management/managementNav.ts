@@ -42,7 +42,7 @@ const GROUPS: ManagementGroup[] = [
     ],
   },
   {label: "Mail", entries: [{label: "Sent", to: "/management/mail/sent"}, {label: "Inbox", to: "/management/mail/inbox"}]},
-  {label: "Platforms", entries: [{label: "Brevo", to: "/management/platforms/brevo"}]},
+  {label: "Platforms", entries: [{label: "Brevo", to: "/management/platforms/brevo"}, {label: "Discord", to: "/management/platforms/discord"}]},
   {
     label: "System",
     adminOnly: true,

@@ -14,14 +14,14 @@ class DiscordBotControllerTest {
         val read = BotStandingResult(true, true, true, null, emptyList(), emptyList())
         whenever(standing.read()).thenReturn(read)
 
-        assertThat(DiscordBotController(standing, mock(), mock(), mock()).findBotStanding()).isSameAs(read)
+        assertThat(DiscordBotController(standing, mock(), mock(), mock(), mock()).findBotStanding()).isSameAs(read)
     }
 
     @Test
     fun `offers the roles and channels a picker needs, and none without a bot`() {
         val roles: net.blueshell.api.discord.api.DiscordRoleKeeper = mock()
         val channels: net.blueshell.api.discord.api.DiscordChannelKeeper = mock()
-        val controller = DiscordBotController(mock(), mock(), roles, channels)
+        val controller = DiscordBotController(mock(), mock(), roles, channels, mock())
         val role =
             net.blueshell.api.discord.api
                 .KeptRole("1", "Sitecie", true)
@@ -42,7 +42,7 @@ class DiscordBotControllerTest {
     @Test
     fun `makes a game channel and reads and sets a channel's access through the policies`() {
         val policies: net.blueshell.api.discord.domain.GameChannelPolicies = mock()
-        val controller = DiscordBotController(mock(), policies, mock(), mock())
+        val controller = DiscordBotController(mock(), policies, mock(), mock(), mock())
         val made =
             net.blueshell.api.discord.domain
                 .MadeChannel("1", "99", "bs-valo")
@@ -57,5 +57,26 @@ class DiscordBotControllerTest {
         assertThat(controller.createGameChannel(CreateGameChannelRequest("bs-valo"))).isSameAs(made)
         assertThat(controller.findChannelAccess("1")).isSameAs(state)
         assertThat(controller.setChannelAccess("1", access)).isSameAs(state)
+    }
+
+    @Test
+    fun `lists the catalogued channels for the Discord page`() {
+        val catalogue: net.blueshell.api.discord.domain.DiscordCatalogue = mock()
+        val listed =
+            listOf(
+                net.blueshell.api.discord.domain.CataloguedChannel(
+                    "1",
+                    "sitecie",
+                    net.blueshell.api.discord.api.KeptChannelKind.TEXT,
+                    "Committees",
+                    true,
+                    listOf("900"),
+                    null,
+                    null,
+                ),
+            )
+        whenever(catalogue.channels()).thenReturn(listed)
+
+        assertThat(DiscordBotController(mock(), mock(), mock(), mock(), catalogue).listCataloguedChannels()).isSameAs(listed)
     }
 }

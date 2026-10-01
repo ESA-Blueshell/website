@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.discord.api.ChannelOpening
 import net.blueshell.api.discord.api.DiscordChannelKeeper
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
@@ -27,6 +28,21 @@ class JdaChannelKeeper(
     override fun available(): Boolean = gateway.ifAvailable?.guild() != null
 
     override fun channels(): List<KeptChannel> = guild().channels.mapNotNull(::kept)
+
+    override fun openings(): List<ChannelOpening> {
+        val guild = guild()
+        val everyone = guild.publicRole
+        return guild.channels.mapNotNull { channel ->
+            val kept = kept(channel) ?: return@mapNotNull null
+            val opened =
+                (channel as? IPermissionContainer)
+                    ?.rolePermissionOverrides
+                    .orEmpty()
+                    .filter { Permission.VIEW_CHANNEL in it.allowed && it.id != everyone.id }
+                    .map { it.id }
+            ChannelOpening(kept, private = !everyone.hasPermission(channel, Permission.VIEW_CHANNEL), roleIds = opened)
+        }
+    }
 
     override fun openedTo(roleId: String): List<KeptChannel> {
         val guild = guild()

@@ -760,7 +760,7 @@ export type CohortSummary = {
     /**
      * The targets it has, one per system, and whether each is made there yet
      */
-    targets: Array<SummaryTarget>;
+    targets?: Array<SummaryTarget>;
     type: CohortType;
 };
 

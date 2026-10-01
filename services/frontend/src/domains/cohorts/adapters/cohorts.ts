@@ -40,6 +40,7 @@ import type {
   InboundReconcilePreview as ApiInboundReconcilePreview,
   ListedTarget,
   MissingTarget,
+  SummaryTarget,
   TargetOverviewResult,
 } from "@/services/api"
 import {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem} from "@/services/api"
@@ -53,6 +54,7 @@ import {accepted, refusable} from "@/domains/cohorts/refusals"
  * route matches are the values the api declares, and a copy in a page drifts from them.
  */
 export {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem}
+export type {SummaryTarget}
 
 /** Queue a reconcile of one of the cohort's targets, started by hand. */
 export async function triggerReconcile(cohortId: number, targetId: number): Promise<{ok: true} | Refused> {
@@ -405,6 +407,9 @@ export type CohortSummary = {
   type: CohortType
   memberCount: number
   mappingCount: number
+  /** The definition in code that fills it, such as `COMMITTEE_MEMBERS:7`. */
+  definitionKey: string | null
+  targets: SummaryTarget[]
 }
 
 /** One cohort a picker offers, named by where it lives as much as by what it is called. */
@@ -481,6 +486,8 @@ function toCohortSummary(raw: ApiCohortSummary): CohortSummary {
     type: raw.type,
     memberCount: raw.memberCount,
     mappingCount: raw.mappingCount,
+    definitionKey: raw.definitionKey ?? null,
+    targets: raw.targets ?? [],
   }
 }
 

@@ -7,6 +7,8 @@ declare module "vue-router" {
   interface RouteMeta {
     /** The page's name in the browser tab; a page that knows a better one sets it once loaded. */
     title?: string
+    /** Where an editor the site and Management share goes back to when it is opened inside Management. */
+    portal?: string
   }
 }
 
@@ -556,6 +558,20 @@ const routes: RouteRecordRaw[] = [
         name: "brevo",
         component: () => import("@/pages/management/BrevoPage.vue"),
         meta: {title: "Brevo"},
+      },
+      {path: "committees", name: "managementCommittees", component: () => import("@/pages/management/CommitteeList.vue"), meta: {title: "Committees"}},
+      // The site's own editor, rendered inside the portal.
+      {
+        path: "committees/new",
+        name: "managementCommitteeNew",
+        component: () => import("@/pages/committees/CommitteeEdit.vue"),
+        meta: {title: "Add a committee", portal: "/management/committees"},
+      },
+      {
+        path: "committees/:address",
+        name: "managementCommittee",
+        component: () => import("@/pages/committees/CommitteeEdit.vue"),
+        meta: {title: "Edit committee", portal: "/management/committees"},
       },
       {
         path: "platforms/discord",

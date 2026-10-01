@@ -22,10 +22,18 @@ Feature: Joining with an account you already have
     When they submit their membership application
     Then no further confirmation email is sent to them
 
-  Scenario: Becoming a member grants the member role
+  # A membership is pending until its first contribution is paid (api ADR-036).
+  Scenario: A new membership carries no member role until its first contribution
     Given they have completed their member profile
     And they have an address on file
     When they submit their membership application
+    Then they do not hold the MEMBER role
+
+  Scenario: Paying the first contribution grants the member role
+    Given they have completed their member profile
+    And they have an address on file
+    And they have submitted their membership application
+    When the treasurer records their first contribution
     Then they hold the MEMBER role
 
   # The same ask as the new applicant gets: joining is joining, whichever way somebody

@@ -157,6 +157,8 @@ class UserServicesWriteTest {
 
         assertThat(told.map { it.active }).containsOnly(true).hasSize(5)
         assertThat(service.existsActiveMembershipByUserId(9)).isTrue()
+        whenever(repository.existsByUser_IdAndEndDateIsNull(9)).thenReturn(true)
+        assertThat(service.existsRunningMembershipByUserId(9)).isTrue()
     }
 
     @Test

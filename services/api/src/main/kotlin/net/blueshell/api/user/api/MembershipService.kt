@@ -116,6 +116,9 @@ class MembershipService @Autowired constructor(
         return repository.existsByUser_Id(userId)
     }
 
+    /** Whether the user holds a membership that has not ended, pending or active. */
+    fun existsRunningMembershipByUserId(userId: Long): Boolean = repository.existsByUser_IdAndEndDateIsNull(userId)
+
     fun existsActiveMembershipByUserId(userId: Long): Boolean {
         return activeHeldBy(userId)
     }

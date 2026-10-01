@@ -188,6 +188,10 @@ discord:
     starboard: ${discord.starboard.channel}
   # The role ids the separate role-claim bot hands out, comma apart; the site never keeps them.
   claim-roles: ${DISCORD_CLAIM_ROLES:}
+  # The server's existing roles that follow a cohort, by its definition key: linked once as its target.
+  cohort-roles:
+    CURRENT_MEMBERS: ${DISCORD_MEMBER_ROLE:}
+    ACTIVISTS: ${DISCORD_ACTIVIST_ROLE:}
 
 google:
   calendar:

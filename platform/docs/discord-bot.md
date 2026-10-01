@@ -83,6 +83,10 @@ Discord lets a bot add and remove only the roles below its own highest role. In 
 
 The separate role-claim bot hands out roles such as game roles. List their IDs in `DISCORD_CLAIM_ROLES`, comma apart (`discord.claim-roles` in Vault), and the site never keeps or adopts one.
 
+### The roles that follow a cohort
+
+The server's Member and Activist roles already exist. Put their IDs in `DISCORD_MEMBER_ROLE` and `DISCORD_ACTIVIST_ROLE` (`discord.cohort-roles.CURRENT_MEMBERS` and `discord.cohort-roles.ACTIVISTS` in Vault). The next time the cohorts are registered, each role is linked as its cohort's target and reconciled. From then on, an active membership holds the Member role and a committee or board seat holds the Activist role. People with no linked Discord account are counted as unreachable.
+
 `GET /management/discord/bot`, for the board, answers whether the bot has Manage Roles and Manage Channels, its highest role, the roles the site could keep that sit above it, and the claim bot's roles it found.
 
 What the bot can see follows the channel permissions, like any member's:

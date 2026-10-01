@@ -31,7 +31,7 @@ describe("StarboardFeed", () => {
   beforeEach(() => mockRead.mockReset())
 
   it("shows each starred message whole, with its author's server name, its channel, its day, its stars and a way into Discord", async () => {
-    mockRead.mockResolvedValue([entry({}), entry({id: "10", authorNickname: null, text: null, image: null, avatar: null})])
+    mockRead.mockResolvedValue([entry({}), entry({id: "10", authorNickname: null, text: null, image: null, avatar: null, channel: null})])
     const wrapper = await mountFeed()
 
     expect(wrapper.get("[data-testid=home-starboard-channel]").attributes()).toMatchObject({
@@ -51,6 +51,8 @@ describe("StarboardFeed", () => {
 
     const bare = wrapper.get("[data-testid=home-starboard-10]")
     expect(bare.get(".starboard__name").text()).toBe("The Old Man")
+    // The api names no members-only channel, and the card names none in its place.
+    expect(bare.find(".starboard__channel").exists()).toBe(false)
     expect(bare.find(".markdown").exists()).toBe(false)
     expect(bare.find("img").exists()).toBe(false)
     expect(bare.get(".starboard__avatar--initials").text()).toBe("T")

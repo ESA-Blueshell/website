@@ -127,7 +127,7 @@ internal fun DiscordLive.toResponse(): DiscordLiveResponse =
             },
     )
 
-@Schema(description = "A message the Discord server starred, from a channel everybody there can see")
+@Schema(description = "A message the Discord server starred")
 data class StarboardEntryResponse(
     @Schema(description = "The starred message's ID")
     val id: String,
@@ -142,8 +142,8 @@ data class StarboardEntryResponse(
     @Schema(description = "The picture the message carries, where it has one")
     val image: String?,
     val stars: Int,
-    @Schema(description = "The name of the channel the message was written in")
-    val channel: String,
+    @Schema(description = "The name of the channel the message was written in; absent where that channel is members-only")
+    val channel: String?,
     @Schema(description = "The address that opens the message in Discord")
     val href: String,
     val postedAt: Instant,

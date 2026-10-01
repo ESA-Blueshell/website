@@ -32,15 +32,21 @@ data class StarredMessage(
     val postedAt: Instant,
 )
 
-/** A starred message from a channel everybody can see, with that channel's name. */
+/** A starred message, with its channel's name where everybody in the server can see that channel. */
 data class StarboardEntry(
     val message: StarredMessage,
-    val channel: String,
+    val channel: String?,
 )
 
-/** The starboard channel's recent reposts, newest first; null where Discord could not be read. */
+/** The starboard channel and its recent reposts, newest first. */
+data class Starboard(
+    val channelId: String,
+    val reposts: List<StarredMessage>,
+)
+
+/** The starboard as Discord has it; null where Discord could not be read. */
 fun interface StarboardSource {
-    fun recent(): List<StarredMessage>?
+    fun recent(): Starboard?
 }
 
 private val STARS = Regex("""\*\*(\d+)\*\*""")
@@ -94,15 +100,17 @@ class RestStarboardSource(
     private val doors: DoorSource,
     @Value($$"${discord.starboard.channel:starboard}") private val channel: String,
 ) : StarboardSource {
-    override fun recent(): List<StarredMessage>? {
+    override fun recent(): Starboard? {
         val channelId = doors.textRooms().firstOrNull { plain(it.name) == plain(channel) }?.id ?: return null
-        return discordRestClient
-            .get()
-            .uri("/channels/{channel}/messages?limit=100", channelId)
-            .retrieve()
-            .body(REPOSTS)
-            .orEmpty()
-            .mapNotNull(::starredMessageOf)
+        val reposts =
+            discordRestClient
+                .get()
+                .uri("/channels/{channel}/messages?limit=100", channelId)
+                .retrieve()
+                .body(REPOSTS)
+                .orEmpty()
+                .mapNotNull(::starredMessageOf)
+        return Starboard(channelId, reposts)
     }
 
     private companion object {
@@ -112,9 +120,11 @@ class RestStarboardSource(
 
 /**
  * The starboard as the home page shows it, most stars first. A message makes it with at least
- * [MIN_STARS] stars and at most [MAX_AGE] old, from a channel everybody in the server can see, so
- * the public site never quotes a members-only room. Kept for [KEPT_FOR], longer than the voice
- * rooms, since stars move slowly. Null without a bot, or while Discord has never answered.
+ * [MIN_STARS] stars and at most [MAX_AGE] old, from any channel: the bot has already copied it
+ * into the starboard, so the starboard is the room the public site quotes, and a starboard
+ * everybody in the server cannot see shows nothing. A members-only channel is never named. Kept
+ * for [KEPT_FOR], longer than the voice rooms, since stars move slowly. Null without a bot, or
+ * while Discord has never answered.
  */
 @Service
 class StarboardService(
@@ -122,16 +132,17 @@ class StarboardService(
     private val channels: DiscordChannelDirectory,
     private val clock: Clock = Clock.systemUTC(),
 ) {
-    private val kept = KeptRead<List<StarredMessage>>("Discord starboard", KEPT_FOR, clock)
+    private val kept = KeptRead<Starboard>("Discord starboard", KEPT_FOR, clock)
 
     fun entries(): List<StarboardEntry>? {
         val starboard = source.ifAvailable ?: return null
         val recent = kept.get { starboard.recent() } ?: return null
         val open = channels.open()?.associate { it.id to it.name } ?: return null
+        if (recent.channelId !in open) return emptyList()
         val since = clock.instant().minus(MAX_AGE)
-        return recent
+        return recent.reposts
             .filter { it.stars >= MIN_STARS && it.postedAt >= since }
-            .mapNotNull { message -> open[message.channelId]?.let { StarboardEntry(message, it) } }
+            .map { StarboardEntry(it, open[it.channelId]) }
             .sortedWith(compareByDescending<StarboardEntry> { it.message.stars }.thenByDescending { it.message.postedAt })
             .take(SHOWN)
     }

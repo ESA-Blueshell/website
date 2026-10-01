@@ -84,7 +84,10 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
         <div class="starboard__body">
           <div class="starboard__byline">
             <span class="starboard__name">{{ nameOf(entry) }}</span>
-            <span class="starboard__channel">#{{ entry.channel }}</span>
+            <span
+              v-if="entry.channel"
+              class="starboard__channel"
+            >#{{ entry.channel }}</span>
             <time
               class="starboard__when"
               :datetime="entry.postedAt"

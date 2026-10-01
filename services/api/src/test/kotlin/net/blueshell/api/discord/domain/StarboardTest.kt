@@ -18,6 +18,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 
 private const val JUMP = "https://discord.com/channels/324/611/1552233582498676818"
+private const val STARBOARD = "777"
 
 class StarboardTest {
     private val mapper = JsonMapper.builder().build()
@@ -92,20 +93,29 @@ class StarboardTest {
     private fun <T : Any> provided(bean: T?): ObjectProvider<T> = mock { on { ifAvailable } doReturn bean }
 
     private val openChannels: DiscordChannelDirectory =
-        mock { on { open() } doReturn listOf(DiscordChannel("611", "general", null), DiscordChannel("758", "events-calendar", null)) }
+        mock {
+            on { open() } doReturn
+                listOf(
+                    DiscordChannel("611", "general", null),
+                    DiscordChannel("758", "events-calendar", null),
+                    DiscordChannel(STARBOARD, "starboard", null),
+                )
+        }
 
     @Test
-    fun `shows messages with three stars or more from the last thirty days, most stars first, only from open channels`() {
+    fun `shows messages with three stars or more from the last thirty days, most stars first, from any channel`() {
         val source =
             StarboardSource {
-                listOf(
-                    starred("older", daysOld = 3),
-                    starred("newest", channelId = "758"),
-                    starred("most-starred", stars = 30, daysOld = 20),
-                    starred("two-stars", stars = 2),
-                    starred("three-stars", stars = 3, daysOld = 2),
-                    starred("month-old", stars = 40, daysOld = 31),
-                    starred("members-only", stars = 50, channelId = "999"),
+                Starboard(
+                    STARBOARD,
+                    listOf(
+                        starred("older", daysOld = 3),
+                        starred("newest", channelId = "758"),
+                        starred("most-starred", stars = 30, daysOld = 20),
+                        starred("two-stars", stars = 2),
+                        starred("three-stars", stars = 3, daysOld = 2),
+                        starred("month-old", stars = 40, daysOld = 31),
+                    ),
                 )
             }
 
@@ -117,8 +127,24 @@ class StarboardTest {
     }
 
     @Test
+    fun `shows a message from a members-only channel without naming the channel`() {
+        val source = StarboardSource { Starboard(STARBOARD, listOf(starred("members-only", stars = 50, channelId = "999"))) }
+
+        val entries = StarboardService(provided(source), openChannels, clock).entries()!!
+
+        assertThat(entries.map { it.message.id to it.channel }).containsExactly("members-only" to null)
+    }
+
+    @Test
+    fun `shows nothing while the starboard itself is closed to everybody`() {
+        val source = StarboardSource { Starboard("888", listOf(starred("one"))) }
+
+        assertThat(StarboardService(provided(source), openChannels, clock).entries()).isEmpty()
+    }
+
+    @Test
     fun `keeps what it read rather than asking Discord on every page view, and has nothing without a bot`() {
-        val source: StarboardSource = mock { on { recent() } doReturn listOf(starred("one")) }
+        val source: StarboardSource = mock { on { recent() } doReturn Starboard(STARBOARD, listOf(starred("one"))) }
         val service = StarboardService(provided(source), openChannels, clock)
 
         service.entries()
@@ -145,7 +171,9 @@ class StarboardTest {
 
         val source = RestStarboardSource(builder.build(), doors, "starboard")
 
-        assertThat(source.recent()!!.map { it.id }).containsExactly("1552233582498676818")
+        val starboard = source.recent()!!
+        assertThat(starboard.channelId).isEqualTo("777")
+        assertThat(starboard.reposts.map { it.id }).containsExactly("1552233582498676818")
         rooms.clear()
         assertThat(source.recent()).isNull()
         discord.verify()

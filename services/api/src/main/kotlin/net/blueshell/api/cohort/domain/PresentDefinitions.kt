@@ -80,3 +80,51 @@ class CurrentMembersProvider(
 
     override fun definitions(): List<CohortDefinition> = listOf(CurrentMembersDefinition(memberships))
 }
+
+/** The board in office today: everybody whose place covers today, on a board that has taken office. */
+class BoardDefinition(
+    private val boardMembers: BoardMemberService,
+) : CohortDefinition {
+    override val key = CohortType.BOARD.name
+    override val type = CohortType.BOARD
+    override val scope = null
+    override val label = "Board"
+    override val folder = CohortFolders.BOARD
+
+    override fun members(): Set<Long> = boardMembers.servingOn(LocalDate.now())
+
+    override fun contains(userId: Long): Boolean = userId in members()
+}
+
+/** Kandi: everybody on a board that has not taken office yet. On its first day they move to the board. */
+class KandiDefinition(
+    private val boardMembers: BoardMemberService,
+) : CohortDefinition {
+    override val key = CohortType.KANDI.name
+    override val type = CohortType.KANDI
+    override val scope = null
+    override val label = "Kandi"
+    override val folder = CohortFolders.BOARD
+
+    override fun members(): Set<Long> = boardMembers.candidatesOn(LocalDate.now())
+
+    override fun contains(userId: Long): Boolean = userId in members()
+}
+
+@Component
+class BoardProvider(
+    private val boardMembers: BoardMemberService,
+) : CohortDefinitionProvider {
+    override val type = CohortType.BOARD
+
+    override fun definitions(): List<CohortDefinition> = listOf(BoardDefinition(boardMembers))
+}
+
+@Component
+class KandiProvider(
+    private val boardMembers: BoardMemberService,
+) : CohortDefinitionProvider {
+    override val type = CohortType.KANDI
+
+    override fun definitions(): List<CohortDefinition> = listOf(KandiDefinition(boardMembers))
+}

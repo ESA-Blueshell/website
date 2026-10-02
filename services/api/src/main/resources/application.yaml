@@ -192,6 +192,8 @@ discord:
   cohort-roles:
     CURRENT_MEMBERS: ${DISCORD_MEMBER_ROLE:}
     ACTIVISTS: ${DISCORD_ACTIVIST_ROLE:}
+    BOARD: ${DISCORD_BOARD_ROLE:}
+    KANDI: ${DISCORD_KANDI_ROLE:}
 
 google:
   calendar:

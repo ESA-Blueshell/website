@@ -3,6 +3,7 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.board.api.BoardMemberService
+import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
@@ -66,6 +67,26 @@ class PresentDefinitionsTest {
     fun `neither is listed on Brevo, nor is a team, and both browse under members`() {
         assertThat(CohortType.entries.filterNot { it.listedOnBrevo })
             .containsExactly(CohortType.ACTIVISTS, CohortType.CURRENT_MEMBERS, CohortType.TEAM_PLAYERS)
+    }
+
+    @Test
+    fun `the board is who serves today, and Kandi who sits on a board not yet in office`() {
+        every { boardMembers.servingOn(today) } returns setOf(20L)
+        every { boardMembers.candidatesOn(today) } returns setOf(30L)
+        val board = BoardProvider(boardMembers).definitions().single()
+        val kandi = KandiProvider(boardMembers).definitions().single()
+
+        assertThat(board.members()).containsExactly(20L)
+        assertThat(listOf(20L, 21L).map(board::contains)).containsExactly(true, false)
+        assertThat(kandi.members()).containsExactly(30L)
+        assertThat(listOf(30L, 20L).map(kandi::contains)).containsExactly(true, false)
+        assertThat(listOf(board.key, board.label, board.folder, board.scope)).containsExactly("BOARD", "Board", "Board", null)
+        assertThat(listOf(kandi.key, kandi.label, kandi.folder, kandi.scope)).containsExactly("KANDI", "Kandi", "Board", null)
+        assertThat(
+            listOf(BoardProvider(boardMembers).type, KandiProvider(boardMembers).type),
+        ).containsExactly(CohortType.BOARD, CohortType.KANDI)
+        assertThat(listOf(CohortType.BOARD, CohortType.KANDI).map { it.category() }).containsOnly(CohortCategory.MEMBERS)
+        assertThat(listOf(CohortType.BOARD, CohortType.KANDI).map { CohortFolders.forType(it) }).containsOnly("Board")
     }
 
     private fun membership(

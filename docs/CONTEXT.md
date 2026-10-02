@@ -772,10 +772,13 @@ no office of its own; it is in office, or it is not.
 
 ### Kandi
 
-The members of the next board, from when they are chosen until the day it takes office.
-A cohort of its own, with a Brevo list, the **@Kandi** role and the **kandi@** group. On
-the day the new board takes office the old board's members lose **@Board**, the new ones
-gain it, and Kandi empties.
+The members of the next board, from when they are chosen until the day it takes office:
+everybody on a board whose start date is still ahead. A cohort of its own, with a Brevo
+list and the **@Kandi** role; the **kandi@** group comes with Google Workspace. Beside it,
+the **Board** cohort holds everybody serving today on the board in office, with its own
+list and the **@Board** role. Both are read from the board's dates and recomputed just
+after midnight, so on the day the new board takes office its members move from Kandi to
+Board, the old board's members leave Board, and nobody has to act.
 
 _Avoid_: candidate board in the interface, new board.
 

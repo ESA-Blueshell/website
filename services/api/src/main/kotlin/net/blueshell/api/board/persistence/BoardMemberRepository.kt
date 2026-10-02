@@ -87,4 +87,28 @@ interface BoardMemberRepository : BaseRepository<BoardMember, Long> {
         @Param("from") from: LocalDate,
         @Param("to") to: LocalDate,
     ): List<Long>
+
+    @Query(
+        """
+        SELECT DISTINCT bm.user.id FROM BoardMember bm
+        WHERE bm.user IS NOT NULL
+          AND bm.board.startDate > :day
+        """,
+    )
+    fun findUserIdsOnBoardsStartingAfter(
+        @Param("day") day: LocalDate,
+    ): List<Long>
+
+    @Query(
+        """
+        SELECT DISTINCT bm.user.id FROM BoardMember bm
+        WHERE bm.user IS NOT NULL
+          AND bm.board.startDate <= :day
+          AND bm.startDate <= :day
+          AND (bm.endDate IS NULL OR bm.endDate >= :day)
+        """,
+    )
+    fun findUserIdsServingOn(
+        @Param("day") day: LocalDate,
+    ): List<Long>
 }

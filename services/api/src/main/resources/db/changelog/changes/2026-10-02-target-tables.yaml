@@ -1,0 +1,40 @@
+# The target and target-member tables take the glossary's names: `cohort` holds targets and
+# `cohort_member` the per-target ledger, so they become `target` and `target_member`, with
+# `cohort_id` (a target) becoming `target_id` and `subject_id` (a cohort) becoming `cohort_id`.
+# Under blue/green releases the previous release runs against the same database, so each old
+# name stays behind as an updatable view with the old columns, which that release reads and
+# writes through unchanged. A later release drops the views.
+#
+# RENAME COLUMN keeps each column's type, nullability, keys and foreign keys, which Liquibase's
+# renameColumn would restate and could lose on MariaDB.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-target-tables.yaml
+      id: target-tables
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              RENAME TABLE cohort TO target;
+              ALTER TABLE target RENAME COLUMN subject_id TO cohort_id;
+              RENAME TABLE cohort_member TO target_member;
+              ALTER TABLE target_member RENAME COLUMN cohort_id TO target_id;
+              ALTER TABLE target_member RENAME COLUMN subject_id TO cohort_id;
+              CREATE VIEW cohort AS
+                SELECT id, system, kind, label, folder, cohort_id AS subject_id, version, created_at, created_by_id,
+                       updated_at, updated_by_id, deleted_at, external_id, target_claimed_at, enforced
+                FROM target;
+              CREATE VIEW cohort_member AS
+                SELECT id, target_id AS cohort_id, cohort_id AS subject_id, user_id, external_user_id, synced_at,
+                       verified_at, label, version, created_at, created_by_id, updated_at, updated_by_id, deleted_at
+                FROM target_member;
+      rollback:
+        - sql:
+            sql: |
+              DROP VIEW cohort_member;
+              DROP VIEW cohort;
+              ALTER TABLE target_member RENAME COLUMN cohort_id TO subject_id;
+              ALTER TABLE target_member RENAME COLUMN target_id TO cohort_id;
+              RENAME TABLE target_member TO cohort_member;
+              ALTER TABLE target RENAME COLUMN cohort_id TO subject_id;
+              RENAME TABLE target TO cohort;

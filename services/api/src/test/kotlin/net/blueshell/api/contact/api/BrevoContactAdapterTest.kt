@@ -11,6 +11,7 @@ import net.blueshell.clients.brevo.model.UpdateContactRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
@@ -22,15 +23,19 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.boot.test.system.CapturedOutput
+import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
 
+@ExtendWith(OutputCaptureExtension::class)
 class BrevoContactAdapterTest {
     private val contactsApi: ContactsApi = mock()
     private val adapter = BrevoContactAdapter(contactsApi, JsonMapper.builder().build())
 
     private val data =
         ContactData(
+            userId = 7,
             email = "alice@example.com",
             firstName = "Alice",
             lastName = "Smith",
@@ -89,6 +94,25 @@ class BrevoContactAdapterTest {
         assertThatThrownBy { adapter.createContact(data) }
             .isInstanceOf(BrevoDuplicateContactException::class.java)
         verify(contactsApi, never()).updateContact(any(), any<UpdateContactRequest>(), any())
+    }
+
+    @Test
+    fun `its logs and its refusal name the user, never the email address or phone number`(output: CapturedOutput) {
+        whenever(contactsApi.createContact(any())).thenThrow(duplicateError("sms")).thenThrow(duplicateError("email"))
+        whenever(contactsApi.getContactInfo(any(), any(), anyOrNull(), anyOrNull())).thenThrow(notFound())
+
+        assertThatThrownBy { adapter.createContact(data) }.hasMessageContaining("for user 7")
+
+        assertThat(output.all).contains("for user 7").doesNotContain("alice@example.com", "+31612345678")
+    }
+
+    @Test
+    fun `a duplicate on an identifier it cannot drop is refused naming the user`() {
+        whenever(contactsApi.createContact(any())).thenThrow(duplicateError("ext_id"))
+
+        assertThatThrownBy { adapter.createContact(data) }
+            .isInstanceOf(BrevoDuplicateContactException::class.java)
+            .hasMessageContaining("for user 7")
     }
 
     @Test

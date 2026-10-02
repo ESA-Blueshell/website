@@ -53,7 +53,7 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
         val subject = newSubject()
         val list = brevo.createList("Members", null)
-        val remote = brevo.createContact(ContactData("ada@remote.example", "Ada", "Remote", null, false, false))
+        val remote = brevo.createContact(ContactData(1, "ada@remote.example", "Ada", "Remote", null, false, false))
         brevo.addToList(remote, list)
         val externalUserId = remote.toString()
         val cohort = newCohort(subject, externalId = list.toString())

@@ -52,8 +52,8 @@ class IncassoRunsTest {
     private val ann = Entities.user(id = 5, username = "ann", firstName = "Ann", lastName = "Vos")
     private val hon = Entities.user(id = 6, username = "hon", firstName = "Hon", lastName = "Ored")
 
-    private fun mandate(lastFour: String) =
-        IncassoMandate("k1", "sealed", "sealed", lastFour, "BLUESHELL-$lastFour", LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
+    private fun mandate(masked: String) =
+        IncassoMandate("k1", "sealed", "sealed", masked, "BLUESHELL-$masked", LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
 
     private fun held(
         user: User,
@@ -69,8 +69,8 @@ class IncassoRunsTest {
         whenever(periods.findById(4)).thenReturn(period)
         whenever(memberships.findOverlappingWithMembers(period.startDate, period.endDate)).thenReturn(
             listOf(
-                held(mila, "1234"),
-                held(zoe, "4118"),
+                held(mila, "NL34"),
+                held(zoe, "DE18"),
                 held(lotte, null),
                 held(bram, "5560"),
                 Entities.membership(user = ann, startDate = LocalDate.of(2025, 9, 1)),
@@ -92,8 +92,8 @@ class IncassoRunsTest {
 
         assertThat(plan.keys).containsExactly("Bram Kok", "Hon Ored", "Lotte Meijer", "Mila Vries", "Zoë Bakker")
         assertThat(plan.getValue("Mila Vries").leftOut).isNull()
-        assertThat(plan.getValue("Mila Vries").ibanLastFour).isEqualTo("1234")
-        assertThat(plan.getValue("Mila Vries").mandateReference).isEqualTo("BLUESHELL-1234")
+        assertThat(plan.getValue("Mila Vries").let { listOf(it.ibanCountry, it.ibanLastTwo) }).containsExactly("NL", "34")
+        assertThat(plan.getValue("Mila Vries").mandateReference).isEqualTo("BLUESHELL-NL34")
         assertThat(plan.getValue("Mila Vries").amount).isEqualTo(25.0)
         assertThat(plan.getValue("Zoë Bakker").ingName).isEqualTo("Zoe Bakker")
         assertThat(plan.getValue("Lotte Meijer").leftOut).isEqualTo(IncassoLeftOut.NO_BANK_DETAILS)
@@ -123,8 +123,8 @@ class IncassoRunsTest {
         verify(notifications, times(2)).record(sent.capture())
         val zoes = sent.allValues.single { it.userId == 2L }
         assertThat(zoes.incassoRunId).isEqualTo(11)
-        assertThat(zoes.ibanLastFour).isEqualTo("4118")
-        assertThat(zoes.mandateReference).isEqualTo("BLUESHELL-4118")
+        assertThat(zoes.ibanMasked).isEqualTo("DE18")
+        assertThat(zoes.mandateReference).isEqualTo("BLUESHELL-DE18")
         assertThat(zoes.mandateSignedOn).isEqualTo(LocalDate.of(2025, 9, 3))
         assertThat(zoes.feeType).isEqualTo(BulkFeeType.HALF_YEAR_FEE)
         assertThat(zoes.debitDate).isEqualTo(LocalDate.of(2026, 11, 1))

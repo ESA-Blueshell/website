@@ -3,6 +3,7 @@ package net.blueshell.api.contribution.domain
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
+import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.persistence.User
 import java.time.LocalDate
 
@@ -20,7 +21,7 @@ fun createIncassoNotificationEmail(
     feeType: BulkFeeType,
     amount: Double,
     debitDate: LocalDate,
-    ibanLastFour: String? = null,
+    iban: MaskedIban? = null,
     mandateReference: String? = null,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
@@ -37,9 +38,9 @@ fun createIncassoNotificationEmail(
             add("")
             add("**Amount to be collected: €${formatEuros(amount)}** (${feeReason(feeType)})")
             add("")
-            if (ibanLastFour != null) {
+            if (iban != null) {
                 val under = mandateReference?.let { ", under mandate $it" } ?: ""
-                add("It is collected from your account ending in **$ibanLastFour**$under.")
+                add("It is collected from your account **$iban**$under.")
                 add("")
             }
             add(

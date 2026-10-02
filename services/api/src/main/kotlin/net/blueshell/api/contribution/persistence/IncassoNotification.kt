@@ -76,8 +76,9 @@ class IncassoNotification(
     var mandateReference: String? = null,
     @Column(name = "mandate_signed_on", updatable = false)
     var mandateSignedOn: LocalDate? = null,
-    @Column(name = "iban_last_four", length = 4, updatable = false)
-    var ibanLastFour: String? = null,
+    /** The IBAN's country code and last two characters, as `NL34`, as collected from. */
+    @Column(name = "iban_masked", length = 4, updatable = false)
+    var ibanMasked: String? = null,
 ) : AuditedAutoIdEntity() {
     val userId: Long
         get() = user.id ?: 0

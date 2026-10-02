@@ -4,6 +4,7 @@ import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.email.api.EmailPreviewRenderer
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
+import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
 import org.springframework.http.HttpStatus
@@ -65,7 +66,7 @@ class ContributionEmailMessageService(
                         effectiveFeeType,
                         amount,
                         date,
-                        mandate?.ibanLastFour,
+                        MaskedIban.of(mandate?.ibanMasked),
                         mandate?.reference,
                     )
                 }

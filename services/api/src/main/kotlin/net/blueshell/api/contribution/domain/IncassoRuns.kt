@@ -9,6 +9,7 @@ import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.contribution.persistence.IncassoRun
 import net.blueshell.api.contribution.persistence.IncassoRunRepository
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
+import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.persistence.Membership
@@ -38,7 +39,9 @@ data class IncassoCandidate(
     val memberSince: LocalDate,
     val feeType: BulkFeeType?,
     val amount: Double?,
-    val ibanLastFour: String?,
+    @field:Schema(description = "The IBAN's country code; with the last two, all a response carries of it.")
+    val ibanCountry: String?,
+    val ibanLastTwo: String?,
     val mandateReference: String?,
     val mandateSignedOn: LocalDate?,
     val leftOut: IncassoLeftOut?,
@@ -50,7 +53,9 @@ data class IncassoCollection(
     val userId: Long,
     val name: String,
     val ingName: String,
-    val ibanLastFour: String?,
+    @field:Schema(description = "The IBAN's country code; with the last two, all a response carries of it.")
+    val ibanCountry: String?,
+    val ibanLastTwo: String?,
     val mandateReference: String?,
     val mandateSignedOn: LocalDate?,
     val feeType: BulkFeeType,
@@ -136,7 +141,7 @@ class IncassoRuns(
                     incassoRunId = run.id,
                     mandateReference = candidate.mandateReference,
                     mandateSignedOn = candidate.mandateSignedOn,
-                    ibanLastFour = candidate.ibanLastFour,
+                    ibanMasked = candidate.ibanCountry?.let { it + candidate.ibanLastTwo },
                 ),
             )
         }
@@ -186,7 +191,8 @@ class IncassoRuns(
                         userId = it.userId,
                         name = it.user.fullName,
                         ingName = ingText(it.user.fullName),
-                        ibanLastFour = it.ibanLastFour,
+                        ibanCountry = MaskedIban.of(it.ibanMasked)?.country,
+                        ibanLastTwo = MaskedIban.of(it.ibanMasked)?.lastTwo,
                         mandateReference = it.mandateReference,
                         mandateSignedOn = it.mandateSignedOn,
                         feeType = it.feeType,
@@ -243,7 +249,8 @@ class IncassoRuns(
                         memberSince = membership.startDate,
                         feeType = feeType,
                         amount = feeType?.let { resolveFeeAmount(it, period) },
-                        ibanLastFour = mandate?.ibanLastFour,
+                        ibanCountry = MaskedIban.of(mandate?.ibanMasked)?.country,
+                        ibanLastTwo = MaskedIban.of(mandate?.ibanMasked)?.lastTwo,
                         mandateReference = mandate?.reference,
                         mandateSignedOn = mandate?.signedOn,
                         leftOut = leftOut,

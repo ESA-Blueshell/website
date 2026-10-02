@@ -49,7 +49,7 @@ class IncassoRunIT : UserTestSupport() {
         mvc
             .perform(get("/contributionPeriods/${period.id}/incasso").with(signedIn(board)))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$[?(@.userId == ${withMandate.id})].ibanLastFour").value("4300"))
+            .andExpect(jsonPath("$[?(@.userId == ${withMandate.id})].ibanLastTwo").value("00"))
             .andExpect(jsonPath("$[?(@.userId == ${without.id})].leftOut").value("NO_BANK_DETAILS"))
 
         val collectionDate = LocalDate.now().plusDays(7)
@@ -63,7 +63,7 @@ class IncassoRunIT : UserTestSupport() {
                             """{"userIds":[${withMandate.id}],"collectionDate":"$collectionDate","statementText":"Contributie"}""",
                         ),
                 ).andExpect(status().isCreated)
-                .andExpect(jsonPath("$.collections[0].ibanLastFour").value("4300"))
+                .andExpect(jsonPath("$.collections[0].ibanLastTwo").value("00"))
                 .andExpect(jsonPath("$.collections[0].mandateReference").isNotEmpty)
                 .andExpect(jsonPath("$.submittedAt").doesNotExist())
                 .andReturn()

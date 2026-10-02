@@ -17,8 +17,9 @@ class IncassoMandate(
     var ibanCiphertext: String,
     @Column(name = "mandate_account_holder", length = 512)
     var accountHolderCiphertext: String,
-    @Column(name = "mandate_iban_last_four", length = 4)
-    var ibanLastFour: String,
+    /** The IBAN's country code and last two characters, as `NL34`; see `MaskedIban`. */
+    @Column(name = "mandate_iban_masked", length = 4)
+    var ibanMasked: String,
     @Column(name = "mandate_reference", length = 35)
     var reference: String,
     @Column(name = "mandate_signed_on")
@@ -29,5 +30,5 @@ class IncassoMandate(
     var recordedAt: Instant,
 ) {
     // Nothing of the account reaches a log line.
-    override fun toString(): String = "IncassoMandate(****$ibanLastFour, $reference)"
+    override fun toString(): String = "IncassoMandate($ibanMasked, $reference)"
 }

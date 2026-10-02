@@ -89,7 +89,7 @@ class ContributionEmailMessageServiceTest {
 
         assertThat(message.kind).isEqualTo(ContributionEmailKind.INCASSO_NOTIFICATION)
         assertThat(captured.captured.markdownContent)
-            .contains("collected", "€45,00", "ending in **4300**", "BLUESHELL-1-20250901")
+            .contains("collected", "€45,00", "account **NL•• … ••00**", "BLUESHELL-1-20250901")
             .doesNotContain("Bank transfer")
     }
 
@@ -210,7 +210,7 @@ class ContributionEmailMessageServiceTest {
             keyId = "k1",
             ibanCiphertext = "sealed",
             accountHolderCiphertext = "sealed",
-            ibanLastFour = "4300",
+            ibanMasked = "NL00",
             reference = "BLUESHELL-1-20250901",
             signedOn = LocalDate.of(2025, 9, 1),
             recordedBy = null,

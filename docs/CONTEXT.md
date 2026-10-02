@@ -549,6 +549,16 @@ onto the other one, and a **switched** row says so.
 Different statements, so different records: the treasurer's question is which one a
 member received. Neither quotes an amount without the reason that amount applies.
 
+### Masked IBAN
+
+An IBAN as it shows without a reveal: its country code and its last two characters,
+written out as `NL•• … ••34`. It is all that the overview, the mandate panel, the incasso
+run page, a member's own account page and the incasso notification email show. Beside
+the sealed IBAN the site keeps only those four characters, so no row and no response
+holds more of the account.
+
+_Avoid_: last four, account ending in.
+
 ### Send to
 
 The checkbox on the first step of the payment-email wizard, and the selection itself: a

@@ -5,12 +5,20 @@ import org.junit.jupiter.api.Test
 
 class IbanTest {
     @Test
-    fun `reads an IBAN typed with spaces and in lower case, and shows only its last four`() {
+    fun `reads an IBAN typed with spaces and in lower case, and shows only its country code and last two`() {
         val iban = Iban.parse("nl91 abna 0417 1643 00")
 
         assertThat(iban?.value).isEqualTo("NL91ABNA0417164300")
-        assertThat(iban?.lastFour).isEqualTo("4300")
-        assertThat(iban.toString()).isEqualTo("Iban(****4300)").doesNotContain("0417")
+        assertThat(iban?.masked).isEqualTo("NL00")
+        assertThat(
+            net.blueshell.api.user.api.MaskedIban
+                .of("NL0"),
+        ).isNull()
+        assertThat(
+            net.blueshell.api.user.api.MaskedIban
+                .of(null),
+        ).isNull()
+        assertThat(iban.toString()).isEqualTo("Iban(NL•• … ••00)").doesNotContain("0417")
     }
 
     @Test

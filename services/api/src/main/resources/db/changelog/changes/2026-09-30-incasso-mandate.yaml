@@ -12,7 +12,7 @@ databaseChangeLog:
               - column: {name: mandate_key_id, type: VARCHAR(32)}
               - column: {name: mandate_iban, type: VARCHAR(255)}
               - column: {name: mandate_account_holder, type: VARCHAR(512)}
-              - column: {name: mandate_iban_last_four, type: CHAR(4)}
+              - column: {name: mandate_iban_masked, type: CHAR(4)}
               - column: {name: mandate_reference, type: VARCHAR(35)}
               - column: {name: mandate_signed_on, type: DATE}
               - column: {name: mandate_recorded_by, type: BIGINT}
@@ -24,7 +24,7 @@ databaseChangeLog:
               - column: {name: mandate_key_id}
               - column: {name: mandate_iban}
               - column: {name: mandate_account_holder}
-              - column: {name: mandate_iban_last_four}
+              - column: {name: mandate_iban_masked}
               - column: {name: mandate_reference}
               - column: {name: mandate_signed_on}
               - column: {name: mandate_recorded_by}

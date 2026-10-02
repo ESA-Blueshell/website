@@ -2,6 +2,7 @@ package net.blueshell.api.user.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.shared.crypto.Sealed
+import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.MemberRepository
@@ -81,7 +82,7 @@ class Mandates(
                 keyId = sealedIban.keyId,
                 ibanCiphertext = sealedIban.ciphertext,
                 accountHolderCiphertext = cipher.seal(holder).ciphertext,
-                ibanLastFour = iban.lastFour,
+                ibanMasked = iban.masked,
                 reference = reference,
                 signedOn = signedOn,
                 recordedBy = recordedBy,
@@ -116,9 +117,9 @@ class Mandates(
                 keyId = sealedIban.keyId
                 ibanCiphertext = sealedIban.ciphertext
                 accountHolderCiphertext = cipher.seal(holder).ciphertext
-                ibanLastFour = iban.lastFour
+                ibanMasked = iban.masked
                 signedOn = today
-            } ?: PendingMandate(userId, sealedIban.keyId, sealedIban.ciphertext, cipher.seal(holder).ciphertext, iban.lastFour, today)
+            } ?: PendingMandate(userId, sealedIban.keyId, sealedIban.ciphertext, cipher.seal(holder).ciphertext, iban.masked, today)
         pendingMandates.save(kept)
         return own(userId)
     }
@@ -128,9 +129,17 @@ class Mandates(
     fun own(userId: Long): OwnMandate {
         val running = memberships.findByUser_Id(userId).firstOrNull { it.endDate == null }
         val held = running?.mandate
-        if (held != null) return OwnMandate(IncassoStanding.MANDATE_RECORDED, held.ibanLastFour, held.reference, held.signedOn, false)
+        if (held !=
+            null
+        ) {
+            return OwnMandate(IncassoStanding.MANDATE_RECORDED, MaskedIban.of(held.ibanMasked), held.reference, held.signedOn, false)
+        }
         val pending = pendingMandates.findByUserId(userId)
-        if (pending != null) return OwnMandate(IncassoStanding.MANDATE_RECORDED, pending.ibanLastFour, null, pending.signedOn, true)
+        if (pending !=
+            null
+        ) {
+            return OwnMandate(IncassoStanding.MANDATE_RECORDED, MaskedIban.of(pending.ibanMasked), null, pending.signedOn, true)
+        }
         return OwnMandate(running?.incassoStanding() ?: IncassoStanding.NONE, null, null, null, false)
     }
 
@@ -143,7 +152,7 @@ class Mandates(
                 keyId = pending.keyId,
                 ibanCiphertext = pending.ibanCiphertext,
                 accountHolderCiphertext = pending.accountHolderCiphertext,
-                ibanLastFour = pending.ibanLastFour,
+                ibanMasked = pending.ibanMasked,
                 reference = referenceFor(requireNotNull(membership.id), pending.signedOn),
                 signedOn = pending.signedOn,
                 recordedBy = membership.userId,

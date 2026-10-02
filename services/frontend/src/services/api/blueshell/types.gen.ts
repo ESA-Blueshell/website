@@ -1956,7 +1956,11 @@ export enum InboxState {
 export type IncassoCandidate = {
     amount?: number | null;
     feeType?: BulkFeeType | null;
-    ibanLastFour?: string | null;
+    /**
+     * The IBAN's country code; with the last two, all a response carries of it.
+     */
+    ibanCountry?: string | null;
+    ibanLastTwo?: string | null;
     ingName: string;
     lastNotifiedOn?: string | null;
     leftOut?: IncassoLeftOut | null;
@@ -1970,7 +1974,11 @@ export type IncassoCandidate = {
 export type IncassoCollection = {
     amount: number;
     feeType: BulkFeeType;
-    ibanLastFour?: string | null;
+    /**
+     * The IBAN's country code; with the last two, all a response carries of it.
+     */
+    ibanCountry?: string | null;
+    ibanLastTwo?: string | null;
     ingName: string;
     mandateReference?: string | null;
     mandateSignedOn?: string | null;
@@ -2301,9 +2309,13 @@ export type MadeChannel = {
 export type MandateResponse = {
     accountHolder?: string | null;
     /**
-     * The last four characters of the IBAN; no response carries more.
+     * The IBAN's country code; with the last two, all a response carries of it.
      */
-    ibanLastFour?: string | null;
+    ibanCountry?: string | null;
+    /**
+     * The IBAN's last two characters.
+     */
+    ibanLastTwo?: string | null;
     membershipId: number;
     recordedAt?: string | null;
     recordedBy?: number | null;
@@ -2365,9 +2377,13 @@ export type MembershipResponse = {
     createdAt: string;
     endDate?: string | null;
     /**
-     * The last four characters of the mandate's IBAN, where one is recorded.
+     * The country code of the mandate's IBAN, where one is recorded; shown as NL•• … ••34.
      */
-    ibanLastFour?: string | null;
+    ibanCountry?: string | null;
+    /**
+     * The last two characters of the mandate's IBAN, where one is recorded.
+     */
+    ibanLastTwo?: string | null;
     id: number;
     incasso: boolean;
     incassoStanding: IncassoStanding;
@@ -2407,7 +2423,8 @@ export type NameOnRostersRequest = {
 };
 
 export type OwnMandateResponse = {
-    ibanLastFour?: string | null;
+    ibanCountry?: string | null;
+    ibanLastTwo?: string | null;
     /**
      * Set up before the membership started, and moved onto it once it does.
      */

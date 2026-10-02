@@ -56,7 +56,7 @@ class MandatesTest {
         val answer = controller.recordMandate(12, RecordMandateRequest("NL91 ABNA 0417 1643 00", " Ann Vos ", LocalDate.of(2026, 9, 1)))
 
         assertThat(answer.standing).isEqualTo(IncassoStanding.MANDATE_RECORDED)
-        assertThat(answer.ibanLastFour).isEqualTo("4300")
+        assertThat(listOf(answer.ibanCountry, answer.ibanLastTwo)).containsExactly("NL", "00")
         assertThat(answer.accountHolder).isEqualTo("Ann Vos")
         assertThat(answer.reference).isEqualTo("BLUESHELL-12-20260901")
         assertThat(answer.recordedBy).isEqualTo(3)
@@ -80,7 +80,7 @@ class MandatesTest {
 
         mandates.record(12, "GB82 WEST 1234 5698 7654 32", "Ann Vos", LocalDate.of(2026, 9, 21), 3)
         assertThat(membership.mandate!!.reference).isEqualTo("BLUESHELL-12-20260921")
-        assertThat(membership.mandate!!.ibanLastFour).isEqualTo("5432")
+        assertThat(membership.mandate!!.ibanMasked).isEqualTo("GB32")
     }
 
     @Test
@@ -108,8 +108,8 @@ class MandatesTest {
         val empty = net.blueshell.api.user.persistence.IncassoMandate::class.java.getDeclaredConstructor().newInstance()
         assertThat(empty).isNotNull
         assertThat(PendingMandate::class.java.getDeclaredConstructor().newInstance()).isNotNull
-        val waiting = PendingMandate(3, "k1", "sealed", "sealed", "4300", LocalDate.of(2026, 9, 30))
-        assertThat(waiting.toString()).isEqualTo("PendingMandate(****4300)")
+        val waiting = PendingMandate(3, "k1", "sealed", "sealed", "NL00", LocalDate.of(2026, 9, 30))
+        assertThat(waiting.toString()).isEqualTo("PendingMandate(NL00)")
         assertThat(waiting.userId).isEqualTo(3)
     }
 
@@ -126,7 +126,7 @@ class MandatesTest {
         assertThat(membership.mandate!!.recordedBy).isEqualTo(3)
         controller.setUpOwnMandate(SetUpMandateRequest("GB82WEST12345698765432", "Ann Vos", authorised = true))
         assertThat(controller.findOwnMandate().reference).isEqualTo("BLUESHELL-12-20260930")
-        assertThat(controller.findOwnMandate().ibanLastFour).isEqualTo("5432")
+        assertThat(controller.findOwnMandate().let { listOf(it.ibanCountry, it.ibanLastTwo) }).containsExactly("GB", "32")
         assertThat(SetUpMandateRequest("NL91ABNA0417164300", "Ann").toString()).doesNotContain("0417")
     }
 
@@ -143,7 +143,11 @@ class MandatesTest {
         mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", "Ann Vos")
         val again = mandates.setUpOwn(membership.userId, "GB82WEST12345698765432", "Ann Vos")
         assertThat(again.pending).isTrue()
-        assertThat(again.ibanLastFour).isEqualTo("5432")
+        assertThat(again.iban).isEqualTo(
+            net.blueshell.api.user.api
+                .MaskedIban("GB", "32"),
+        )
+        assertThat(again.iban.toString()).isEqualTo("GB•• … ••32")
         assertThat(waiting.toString()).doesNotContain("1234")
         assertThatThrownBy { mandates.setUpOwn(membership.userId, "nope", "Ann") }.isInstanceOf(InvalidIban::class.java)
         assertThatThrownBy { mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", " ") }
@@ -151,7 +155,7 @@ class MandatesTest {
 
         mandates.adoptPending(membership)
 
-        assertThat(membership.mandate!!.ibanLastFour).isEqualTo("5432")
+        assertThat(membership.mandate!!.ibanMasked).isEqualTo("GB32")
         assertThat(membership.mandate!!.reference).isEqualTo("BLUESHELL-12-20260930")
         assertThat(membership.incasso).isTrue()
         verify(pending).delete(waiting!!)

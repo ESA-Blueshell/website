@@ -710,6 +710,28 @@ class EventControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `the queue lists an event sent back with what changed since the board approved it`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = false)
+            mvc
+                .perform(put("/events/{id}/approve", event.id).param("approved", "true").param("announce", "NOW").with(signedIn(board)))
+                .andExpect(status().isOk)
+            val changed = eventRepository.findById(event.id!!).orElseThrow()
+            changed.title = "${changed.title} again"
+            changed.approved = false
+            changed.awaitingReapproval = true
+            eventRepository.saveAndFlush(changed)
+
+            mvc
+                .perform(get("/events/approval-queue").with(signedIn(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[?(@.event.id == ${event.id})].reapproval").value(true))
+                .andExpect(jsonPath("$[?(@.event.id == ${event.id})].changes[0]").value("TITLE"))
+            mvc.perform(get("/events/approval-queue").with(signedIn(member))).andExpect(status().isForbidden)
+        }
+
+        @Test
         fun `approve event is forbidden for committee member`() {
             val member = createUserWithRole(Role.MEMBER)
             val event = createEventFixture(approved = false)

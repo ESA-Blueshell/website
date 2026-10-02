@@ -45,7 +45,7 @@ const GROUPS: ManagementGroup[] = [
     label: "Content",
     entries: [
       {label: "Committees", to: "/management/committees"},
-      {label: "Board", to: "/management/boards"},
+      {label: "Board", to: "/management/board"},
       {label: "Games", to: "/management/games"},
       {label: "Competition", to: "/management/competition"},
     ],

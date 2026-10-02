@@ -49,7 +49,7 @@ describe("the boards in Management", () => {
     expect(wrapper.get('[data-testid="board-standing-11"]').text()).toBe("In office")
     expect(wrapper.get('[data-testid="board-standing-10"]').text()).toBe("Handed over")
     expect(wrapper.get('[data-testid="board-row-10"]').text()).toContain("0 members")
-    expect(wrapper.get('[data-testid="board-row-10"] a').attributes("to")).toBe("/management/boards/10")
+    expect(wrapper.get('[data-testid="board-row-10"] a').attributes("to")).toBe("/management/board/10")
   })
 
   it("narrows by a name, a member or a year, and says when nothing matches", async () => {

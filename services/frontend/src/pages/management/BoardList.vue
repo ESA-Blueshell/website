@@ -47,7 +47,7 @@ const people = (board: Board) => `${board.members.length} ${board.members.length
       <router-link
         class="boards__action"
         data-testid="board-list-new"
-        to="/management/boards/new"
+        to="/management/board/new"
       >
         Add a board
       </router-link>
@@ -75,7 +75,7 @@ const people = (board: Board) => `${board.members.length} ${board.members.length
         :data-testid="`board-row-${board.number}`"
       >
         <span class="boards__name">
-          <router-link :to="`/management/boards/${board.number}`">{{ boardName(board.number, board.name) }}</router-link>
+          <router-link :to="`/management/board/${board.number}`">{{ boardName(board.number, board.name) }}</router-link>
         </span>
         <span class="boards__sub">{{ academicYear(board.startDate, board.endDate) }}</span>
         <span class="boards__sub">{{ people(board) }}</span>

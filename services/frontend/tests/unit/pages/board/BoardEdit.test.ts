@@ -36,17 +36,17 @@ beforeEach(() => {
 
 describe("the board edit page", () => {
   it("stays inside Management when opened there", async () => {
-    route.meta = {portal: "/management/boards"}
+    route.meta = {portal: "/management/board"}
     const wrapper = await mountAt(BoardEdit, {number: "10"})
     const editor = wrapper.getComponent(BoardEditor)
 
-    expect(editor.props("back")).toBe("/management/boards")
+    expect(editor.props("back")).toBe("/management/board")
     editor.vm.$emit("saved", {...tenth, number: 12})
     await flushPromises()
     editor.vm.$emit("removed")
     await flushPromises()
 
-    expect(router.replace.mock.calls).toEqual([["/management/boards/12"], ["/management/boards"]])
+    expect(router.replace.mock.calls).toEqual([["/management/board/12"], ["/management/board"]])
   })
 
   it("corrects a board, reads the boards again and shows it on the board page", async () => {

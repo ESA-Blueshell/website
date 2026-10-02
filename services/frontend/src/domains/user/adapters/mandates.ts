@@ -40,10 +40,15 @@ export const readOwnMandate = (): Promise<OwnMandateResponse | null> => readOr(f
 export async function setUpIncasso(
   body: {iban: string; accountHolder: string; authorised: boolean},
   signupToken?: string,
-): Promise<{ok: true; saved: OwnMandateResponse | null} | Refused> {
+): Promise<{ok: true; saved: OwnMandateResponse | null} | (Refused & {needsStepUp?: boolean})> {
   if (signupToken) {
     const answered = await accepted(setUpMandate({headers: {[SIGNUP_TOKEN_HEADER]: signupToken}, body}), "Your bank details could not be saved.")
     return answered.ok ? {ok: true, saved: null} : answered
   }
-  return refusable(setUpOwnMandate({body}), "Your bank details could not be saved.")
+  // From the account page a change waits on a step-up, which the page asks for and then saves again.
+  const call = setUpOwnMandate({body})
+  const answered = await refusable(call, "Your bank details could not be saved.")
+  if (answered.ok) return answered
+  const {error} = await call
+  return {...answered, needsStepUp: (error as {code?: string} | undefined)?.code === "StepUpRequired"}
 }

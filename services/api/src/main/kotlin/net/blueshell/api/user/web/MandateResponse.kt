@@ -14,8 +14,10 @@ data class MandateResponse(
     val membershipId: Long,
     val standing: IncassoStanding,
     val accountHolder: String?,
-    @field:Schema(description = "The last four characters of the IBAN; no response carries more.")
-    val ibanLastFour: String?,
+    @field:Schema(description = "The IBAN's country code; with the last two, all a response carries of it.")
+    val ibanCountry: String?,
+    @field:Schema(description = "The IBAN's last two characters.")
+    val ibanLastTwo: String?,
     val reference: String?,
     val signedOn: LocalDate?,
     val recordedBy: Long?,
@@ -43,7 +45,8 @@ data class RecordMandateRequest(
 @Schema(name = "OwnMandateResponse")
 data class OwnMandateResponse(
     val standing: IncassoStanding,
-    val ibanLastFour: String?,
+    val ibanCountry: String?,
+    val ibanLastTwo: String?,
     val reference: String?,
     val signedOn: LocalDate?,
     @field:Schema(description = "Set up before the membership started, and moved onto it once it does.")

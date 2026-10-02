@@ -3,6 +3,7 @@ package net.blueshell.api.user.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.domain.Mandates
 import net.blueshell.api.user.domain.incassoStanding
@@ -58,7 +59,8 @@ class MandateController(
             membershipId = requireNotNull(id),
             standing = incassoStanding(),
             accountHolder = held?.let { mandates.accountHolderOf(it) },
-            ibanLastFour = held?.ibanLastFour,
+            ibanCountry = MaskedIban.of(held?.ibanMasked)?.country,
+            ibanLastTwo = MaskedIban.of(held?.ibanMasked)?.lastTwo,
             reference = held?.reference,
             signedOn = held?.signedOn,
             recordedBy = held?.recordedBy,
@@ -67,4 +69,4 @@ class MandateController(
     }
 }
 
-fun OwnMandate.asResponse() = OwnMandateResponse(standing, ibanLastFour, reference, signedOn, pending)
+fun OwnMandate.asResponse() = OwnMandateResponse(standing, iban?.country, iban?.lastTwo, reference, signedOn, pending)

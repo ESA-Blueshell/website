@@ -35,7 +35,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 
 const candidate = (userId: number, name: string, fields: Record<string, unknown> = {}) => ({
   userId, name, ingName: name, memberSince: "2025-09-01", feeType: BulkFeeType.FULL_YEAR_FEE, amount: 25,
-  ibanLastFour: `${userId}${userId}${userId}${userId}`.slice(0, 4), mandateReference: `BLUESHELL-${userId}`, mandateSignedOn: "2025-09-03",
+  ibanCountry: "NL", ibanLastTwo: `${userId}${userId}`.slice(0, 2), mandateReference: `BLUESHELL-${userId}`, mandateSignedOn: "2025-09-03",
   leftOut: null, lastNotifiedOn: null, ...fields,
 })
 
@@ -44,7 +44,7 @@ const later = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10)
 const run = {
   id: 11, contributionPeriodId: 2, collectionDate: later, statementText: "Contributie 2025-2026 ESA Blueshell", total: 30,
   createdAt: "2026-09-30T10:00:00Z", submittedAt: null, fileParts: 1,
-  collections: [{userId: 1, name: "Mila Vries", ingName: "Mila Vries", ibanLastFour: "1111", mandateReference: "BLUESHELL-1",
+  collections: [{userId: 1, name: "Mila Vries", ingName: "Mila Vries", ibanCountry: "NL", ibanLastTwo: "11", mandateReference: "BLUESHELL-1",
     mandateSignedOn: "2025-09-03", feeType: BulkFeeType.FULL_YEAR_FEE, amount: 30}],
 }
 
@@ -66,7 +66,7 @@ describe("the incasso task", () => {
     api.planIncasso.mockResolvedValue({status: 200, data: [
       candidate(1, "Mila Vries"),
       candidate(2, "Zoë Bakker", {ingName: "Zoe Bakker"}),
-      candidate(3, "Lotte Meijer", {ibanLastFour: null, mandateReference: null, mandateSignedOn: null, leftOut: IncassoLeftOut.NO_BANK_DETAILS}),
+      candidate(3, "Lotte Meijer", {ibanCountry: null, ibanLastTwo: null, mandateReference: null, mandateSignedOn: null, leftOut: IncassoLeftOut.NO_BANK_DETAILS}),
       candidate(4, "Bram Kok", {leftOut: IncassoLeftOut.ALREADY_PAID}),
     ]})
     api.startIncassoRun.mockResolvedValue({status: 201, data: run})
@@ -86,7 +86,7 @@ describe("the incasso task", () => {
     const wrapper = await mount()
 
     expect(wrapper.get('[data-testid="incasso-run-with-mandate"]').text()).toBe("3 with a mandate")
-    expect(wrapper.get('[data-testid="incasso-run-row-1"]').text()).toContain("NL•• •••• •••• ••11 11")
+    expect(wrapper.get('[data-testid="incasso-run-row-1"]').text()).toContain("NL•• … ••11")
     expect(wrapper.get('[data-testid="incasso-run-left-out-3"]').text()).toContain("No bank details recorded. Ask them to add")
     expect(wrapper.get('[data-testid="incasso-run-left-out-4"]').text()).toBe("Already paid")
 

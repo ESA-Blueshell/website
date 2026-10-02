@@ -17,7 +17,7 @@ test.describe("an incasso run", () => {
     await expect(page).toHaveURL(/\/management\/contributions\/201\/incasso$/)
     await expect(page.getByTestId("incasso-run-left-out-203")).toContainText("No bank details recorded")
     await expect(page.getByTestId("incasso-run-left-out-204")).toContainText("Already paid")
-    await expect(page.getByTestId("incasso-run-row-201")).toContainText("••12 34")
+    await expect(page.getByTestId("incasso-run-row-201")).toContainText("NL•• … ••34")
 
     await page.getByTestId("incasso-run-next").click()
     await page.getByTestId("incasso-run-next").click()

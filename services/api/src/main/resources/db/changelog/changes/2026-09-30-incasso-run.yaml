@@ -33,7 +33,7 @@ databaseChangeLog:
               - column: {name: incasso_run_id, type: BIGINT}
               - column: {name: mandate_reference, type: VARCHAR(35)}
               - column: {name: mandate_signed_on, type: DATE}
-              - column: {name: iban_last_four, type: CHAR(4)}
+              - column: {name: iban_masked, type: CHAR(4)}
         - createIndex:
             tableName: incasso_notifications
             indexName: idx_incasso_notifications_run
@@ -41,7 +41,7 @@ databaseChangeLog:
               - column: {name: incasso_run_id}
       rollback:
         - dropIndex: {tableName: incasso_notifications, indexName: idx_incasso_notifications_run}
-        - dropColumn: {tableName: incasso_notifications, columnName: iban_last_four}
+        - dropColumn: {tableName: incasso_notifications, columnName: iban_masked}
         - dropColumn: {tableName: incasso_notifications, columnName: mandate_signed_on}
         - dropColumn: {tableName: incasso_notifications, columnName: mandate_reference}
         - dropColumn: {tableName: incasso_notifications, columnName: incasso_run_id}

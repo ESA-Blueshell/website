@@ -79,7 +79,7 @@ const total = computed(() => chosen.value.reduce((sum, one) => sum + amountOf(on
 const renamed = computed(() => renamedForIng(chosen.value))
 const dateValid = computed(() => collectionDate.value >= tomorrow)
 const textValid = computed(() => statementText.value.trim() !== "" && statementText.value.length <= STATEMENT_TEXT_MAX)
-const withMandate = computed(() => candidates.value.filter((one) => one.ibanLastFour).length)
+const withMandate = computed(() => candidates.value.filter((one) => one.ibanLastTwo).length)
 const withoutDetails = computed(() => candidates.value.filter((one) => one.leftOut === IncassoLeftOut.NO_BANK_DETAILS).length)
 
 const {open: previewOpen, loading: previewLoading, error: previewError, preview, show: showPreview} = useEmailPreview()
@@ -245,7 +245,7 @@ onMounted(async () => {
             {{ one.name }}
           </label>
           <span v-else>{{ one.name }}</span>
-          <span class="incasso__account">{{ maskedIban(one.ibanLastFour) }}</span>
+          <span class="incasso__account">{{ maskedIban(one) }}</span>
           <span class="incasso__sub">{{ one.mandateReference ? `${one.mandateReference}, signed ${dayName(one.mandateSignedOn)}` : "No mandate" }}</span>
           <span
             v-if="one.leftOut"
@@ -332,7 +332,7 @@ onMounted(async () => {
           :data-testid="`incasso-run-collect-${one.userId}`"
         >
           <span>{{ one.name }}</span>
-          <span class="incasso__account">{{ maskedIban(one.ibanLastFour) }}</span>
+          <span class="incasso__account">{{ maskedIban(one) }}</span>
           <span class="incasso__sub">{{ one.mandateReference }} · signed {{ dayName(one.mandateSignedOn) }}</span>
           <span class="incasso__sub">{{ feeTypeLabels[feeOf(one)] }}, {{ euro(amountOf(one)) }}</span>
           <button
@@ -465,7 +465,7 @@ onMounted(async () => {
           :key="one.userId"
         >
           <span>{{ one.name }}</span>
-          <span class="incasso__account">{{ maskedIban(one.ibanLastFour) }}</span>
+          <span class="incasso__account">{{ maskedIban(one) }}</span>
           <span class="incasso__sub">{{ one.mandateReference }} · signed {{ dayName(one.mandateSignedOn) }}</span>
           <span class="incasso__sub">{{ euro(one.amount) }}</span>
         </li>

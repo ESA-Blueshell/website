@@ -5,8 +5,9 @@ import {IncassoLeftOut} from "@/services/api"
 
 describe("an incasso run", () => {
   it("masks an account to its last four, names a day and drafts the statement text", () => {
-    expect(maskedIban("4300")).toBe("NL•• •••• •••• ••43 00")
-    expect(maskedIban(null)).toBe("None recorded")
+    expect(maskedIban({ibanCountry: "NL", ibanLastTwo: "34"})).toBe("NL•• … ••34")
+    expect(maskedIban({ibanCountry: "DE", ibanLastTwo: null})).toBe("None recorded")
+    expect(maskedIban(null, "none")).toBe("none")
     expect(dayName("2026-11-01")).toBe("1 Nov 2026")
     expect(dayName(null)).toBe("—")
     expect(defaultStatementText("2026-09-01", "2027-08-31")).toBe("Contributie 2026-2027 ESA Blueshell")

@@ -41,18 +41,19 @@ class MandateIT : UserTestSupport() {
 
         record(membership.id, board)
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.ibanLastFour").value("4300"))
+            .andExpect(jsonPath("$.ibanCountry").value("NL"))
+            .andExpect(jsonPath("$.ibanLastTwo").value("00"))
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
             .andExpect(jsonPath("$.recordedBy").value(board.id!!.toInt()))
 
         val stored =
             jdbcTemplate.queryForMap(
-                "select mandate_iban, mandate_account_holder, mandate_iban_last_four from memberships where id = ?",
+                "select mandate_iban, mandate_account_holder, mandate_iban_masked from memberships where id = ?",
                 membership.id,
             )
         assertThat(stored["mandate_iban"].toString()).doesNotContain("0417").doesNotContain(iban)
         assertThat(stored["mandate_account_holder"].toString()).doesNotContain("Ann")
-        assertThat(stored["mandate_iban_last_four"]).isEqualTo("4300")
+        assertThat(stored["mandate_iban_masked"]).isEqualTo("NL00")
 
         val paths =
             listOf(

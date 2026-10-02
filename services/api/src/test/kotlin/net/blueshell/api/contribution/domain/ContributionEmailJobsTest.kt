@@ -58,7 +58,7 @@ class ContributionEmailJobsTest {
                 feeType = BulkFeeType.FULL_YEAR_FEE,
                 amount = 25.0,
                 debitDate = LocalDate.of(2026, 11, 1),
-                ibanLastFour = "4300",
+                ibanMasked = "NL00",
                 mandateReference = "BLUESHELL-1-20250901",
             )
         val notifications: IncassoNotificationService = mockk { every { findById(1L) } returns told }
@@ -68,7 +68,7 @@ class ContributionEmailJobsTest {
         IncassoNotificationEmailJob(objectMapper, notifications, emails)
             .runJob(objectMapper.writeValueAsString(ContributionJobs.IncassoNotificationPayload(1L)))
 
-        assertThat(sent.captured.markdownContent).contains("ending in **4300**", "BLUESHELL-1-20250901")
+        assertThat(sent.captured.markdownContent).contains("account **NL•• … ••00**", "BLUESHELL-1-20250901")
     }
 
     @Test

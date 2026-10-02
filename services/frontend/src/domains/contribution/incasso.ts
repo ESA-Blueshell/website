@@ -15,9 +15,12 @@ export const leftOutHelp: Partial<Record<IncassoLeftOut, string>> = {
   [IncassoLeftOut.NO_BANK_DETAILS]: "Ask them to add their bank details on their account page, or record their paper mandate",
 }
 
-/** An account shown only by its last four, the way ING's own pages mask one. */
-export const maskedIban = (lastFour: string | null | undefined): string =>
-  (lastFour ? `NL•• •••• •••• ••${lastFour.slice(0, 2)} ${lastFour.slice(2)}` : "None recorded")
+/** What an account carries of its IBAN without a reveal: the country code and the last two characters. */
+export type IbanMask = {ibanCountry?: string | null; ibanLastTwo?: string | null}
+
+/** An account shown by its country code and last two characters only, as `NL•• … ••34`. */
+export const maskedIban = (account: IbanMask | null | undefined, none = "None recorded"): string =>
+  (account?.ibanCountry && account.ibanLastTwo ? `${account.ibanCountry}•• … ••${account.ibanLastTwo}` : none)
 
 /** The members whose name goes to ING spelled differently, such as Zoë as Zoe. */
 export const renamedForIng = (chosen: Pick<IncassoCandidate, "name" | "ingName">[]): Pick<IncassoCandidate, "name" | "ingName">[] =>

@@ -63,7 +63,7 @@ test.describe("one user's mandate", () => {
     await page.getByTestId("mandate-holder").locator("input").fill("Ann Vos")
     await page.getByTestId("mandate-save").click()
 
-    await expect(page.getByTestId("mandate-facts")).toContainText("•••• 4300")
+    await expect(page.getByTestId("mandate-facts")).toContainText("NL•• … ••00")
     await expect(page.getByTestId("mandate-panel")).not.toContainText("0417")
   })
 })

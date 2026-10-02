@@ -14,8 +14,10 @@ data class MembershipResponse(
     var endDate: LocalDate? = null,
     var incasso: Boolean,
     var incassoStanding: IncassoStanding,
-    @field:Schema(description = "The last four characters of the mandate's IBAN, where one is recorded.")
-    var ibanLastFour: String? = null,
+    @field:Schema(description = "The country code of the mandate's IBAN, where one is recorded; shown as NL•• … ••34.")
+    var ibanCountry: String? = null,
+    @field:Schema(description = "The last two characters of the mandate's IBAN, where one is recorded.")
+    var ibanLastTwo: String? = null,
     @field:Schema(description = "Running and waiting for its first contribution, so it carries no member role yet.")
     var pending: Boolean,
     var activatedOn: LocalDate?,

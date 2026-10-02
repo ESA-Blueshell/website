@@ -18,11 +18,12 @@ class PendingMandate(
     var ibanCiphertext: String,
     @Column(name = "account_holder", nullable = false, length = 512)
     var accountHolderCiphertext: String,
-    @Column(name = "iban_last_four", nullable = false, length = 4)
-    var ibanLastFour: String,
+    /** The IBAN's country code and last two characters, as `NL34`; see `MaskedIban`. */
+    @Column(name = "iban_masked", nullable = false, length = 4)
+    var ibanMasked: String,
     @Column(name = "signed_on", nullable = false)
     var signedOn: LocalDate,
 ) : AutoIdEntity() {
     // Nothing of the account reaches a log line.
-    override fun toString(): String = "PendingMandate(****$ibanLastFour)"
+    override fun toString(): String = "PendingMandate($ibanMasked)"
 }

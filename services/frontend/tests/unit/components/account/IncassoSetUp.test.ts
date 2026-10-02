@@ -12,7 +12,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   ...api,
 }))
 
-const own = {standing: IncassoStanding.MANDATE_RECORDED, ibanLastFour: "4300", reference: "BLUESHELL-9-20260930", signedOn: "2026-09-30", pending: false}
+const own = {standing: IncassoStanding.MANDATE_RECORDED, ibanCountry: "NL", ibanLastTwo: "00", reference: "BLUESHELL-9-20260930", signedOn: "2026-09-30", pending: false}
 
 const fill = async (wrapper: ReturnType<typeof mount>) => {
   await wrapper.get('[data-testid="incasso-open"]').trigger("click")
@@ -41,7 +41,7 @@ describe("setting up incasso", () => {
     await settle()
 
     expect(api.setUpOwnMandate).toHaveBeenCalledWith({body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", authorised: true}})
-    expect(wrapper.get('[data-testid="incasso-current"]').text()).toContain("ending in 4300")
+    expect(wrapper.get('[data-testid="incasso-current"]').text()).toContain("from the account NL•• … ••00")
     expect(wrapper.text()).not.toContain("0417")
     expect(wrapper.find('[data-testid="incasso-saved"]').exists()).toBe(true)
     expect(wrapper.emitted("saved")).toHaveLength(1)

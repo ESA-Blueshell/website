@@ -2,6 +2,7 @@
 /* A membership's incasso standing and mandate, with the board's way to record a paper mandate or
    replace one. The account number is only ever shown by its last four. */
 import {computed, ref, watch} from "vue"
+import {maskedIban} from "@/domains/contribution"
 import {IncassoStanding, type MandateResponse, readMandate, saveMandate} from "@/domains/user"
 import {formatDate} from "@/utils/timestamps"
 
@@ -61,13 +62,13 @@ watch(() => membershipId, load, {immediate: true})
       {{ standing }}
     </p>
     <dl
-      v-if="mandate?.ibanLastFour"
+      v-if="mandate?.ibanLastTwo"
       class="mandate__facts"
       data-testid="mandate-facts"
     >
       <div>
         <dt>Account</dt>
-        <dd>•••• {{ mandate.ibanLastFour }}, {{ mandate.accountHolder }}</dd>
+        <dd>{{ maskedIban(mandate) }}, {{ mandate.accountHolder }}</dd>
       </div>
       <div>
         <dt>Mandate</dt>
@@ -86,7 +87,7 @@ watch(() => membershipId, load, {immediate: true})
       type="button"
       @click="open = true"
     >
-      {{ mandate?.ibanLastFour ? "Replace the mandate" : "Record a paper mandate" }}
+      {{ mandate?.ibanLastTwo ? "Replace the mandate" : "Record a paper mandate" }}
     </button>
     <form
       v-else

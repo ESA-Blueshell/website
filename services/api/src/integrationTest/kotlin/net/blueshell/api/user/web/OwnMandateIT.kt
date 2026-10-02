@@ -45,11 +45,11 @@ class OwnMandateIT : UserTestSupport() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
             .andExpect(jsonPath("$.signedOn").value(LocalDate.now(ZoneOffset.UTC).toString()))
-            .andExpect(jsonPath("$.ibanLastFour").value("4300"))
+            .andExpect(jsonPath("$.ibanLastTwo").value("00"))
             .andExpect(jsonPath("$.pending").value(false))
         mvc
             .perform(get("/users/me/mandate").with(signedIn(member)))
-            .andExpect(jsonPath("$.ibanLastFour").value("4300"))
+            .andExpect(jsonPath("$.ibanLastTwo").value("00"))
         setUp(member, body.replace("true", "false")).andExpect(status().isBadRequest)
     }
 
@@ -76,7 +76,7 @@ class OwnMandateIT : UserTestSupport() {
         mvc
             .perform(get("/memberships/$membershipId/mandate").with(signedIn(createUserWithRole(Role.BOARD))))
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
-            .andExpect(jsonPath("$.ibanLastFour").value("4300"))
+            .andExpect(jsonPath("$.ibanLastTwo").value("00"))
         mvc
             .perform(get("/users/me/mandate").with(signedIn(applicant)))
             .andExpect(jsonPath("$.pending").value(false))

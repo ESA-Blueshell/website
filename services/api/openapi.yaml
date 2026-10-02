@@ -3837,7 +3837,12 @@ components:
           oneOf:
           - $ref: '#/components/schemas/BulkFeeType'
           - type: 'null'
-        ibanLastFour:
+        ibanCountry:
+          description: The IBAN's country code; with the last two, all a response carries of it.
+          type:
+          - string
+          - 'null'
+        ibanLastTwo:
           type:
           - string
           - 'null'
@@ -3882,7 +3887,12 @@ components:
           type: number
         feeType:
           $ref: '#/components/schemas/BulkFeeType'
-        ibanLastFour:
+        ibanCountry:
+          description: The IBAN's country code; with the last two, all a response carries of it.
+          type:
+          - string
+          - 'null'
+        ibanLastTwo:
           type:
           - string
           - 'null'
@@ -4666,8 +4676,13 @@ components:
           type:
           - string
           - 'null'
-        ibanLastFour:
-          description: The last four characters of the IBAN; no response carries more.
+        ibanCountry:
+          description: The IBAN's country code; with the last two, all a response carries of it.
+          type:
+          - string
+          - 'null'
+        ibanLastTwo:
+          description: The IBAN's last two characters.
           type:
           - string
           - 'null'
@@ -4833,8 +4848,13 @@ components:
           type:
           - string
           - 'null'
-        ibanLastFour:
-          description: The last four characters of the mandate's IBAN, where one is recorded.
+        ibanCountry:
+          description: The country code of the mandate's IBAN, where one is recorded; shown as NL•• … ••34.
+          type:
+          - string
+          - 'null'
+        ibanLastTwo:
+          description: The last two characters of the mandate's IBAN, where one is recorded.
           type:
           - string
           - 'null'
@@ -4923,7 +4943,11 @@ components:
       type: object
     OwnMandateResponse:
       properties:
-        ibanLastFour:
+        ibanCountry:
+          type:
+          - string
+          - 'null'
+        ibanLastTwo:
           type:
           - string
           - 'null'

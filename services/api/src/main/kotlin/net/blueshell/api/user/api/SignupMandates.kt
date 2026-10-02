@@ -8,7 +8,7 @@ import java.time.LocalDate
 /** A person's own mandate as they see it: on their membership, or waiting for it to start. */
 data class OwnMandate(
     val standing: IncassoStanding,
-    val ibanLastFour: String?,
+    val iban: MaskedIban?,
     val reference: String?,
     val signedOn: LocalDate?,
     /** Set up before the membership started, and moved onto it once it does. */

@@ -23,7 +23,7 @@ export {
   type IncassoRunSummary,
   type IncassoRunView,
 } from "./adapters/incasso"
-export {dayName, defaultStatementText, incassoFileName, leftOutGroups, leftOutHelp, leftOutLabels, maskedIban, renamedForIng} from "./incasso"
+export {dayName, defaultStatementText, incassoFileName, leftOutGroups, leftOutHelp, leftOutLabels, maskedIban, renamedForIng, type IbanMask} from "./incasso"
 export {deletePeriod, listPeriods, readCurrentPeriod, readPeriodStanding, saveNewPeriod, savePeriod} from "./adapters/periods"
 export {
   readOneEmail,

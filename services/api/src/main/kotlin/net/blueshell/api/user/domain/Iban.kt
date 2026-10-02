@@ -1,5 +1,6 @@
 package net.blueshell.api.user.domain
 
+import net.blueshell.api.user.api.MaskedIban
 import java.math.BigInteger
 
 /**
@@ -11,13 +12,14 @@ import java.math.BigInteger
 value class Iban private constructor(
     val value: String,
 ) {
-    /** The last four characters, which is all of it any response carries. */
-    val lastFour: String get() = value.takeLast(LAST_SHOWN)
+    /** Its country code and its last two characters, as kept beside the sealed IBAN: all a view shows without a reveal. */
+    val masked: String get() = value.take(MASK_END) + value.takeLast(MASK_END)
 
-    override fun toString(): String = "Iban(****$lastFour)"
+    override fun toString(): String = "Iban(${MaskedIban.of(masked)})"
 
     companion object {
         private const val LAST_SHOWN = 4
+        private const val MASK_END = 2
         private val SHAPE = Regex("^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$")
         private val NINETY_SEVEN = BigInteger.valueOf(97)
 

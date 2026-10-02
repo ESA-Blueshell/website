@@ -55,7 +55,7 @@ class IncassoFilesTest {
             incassoRunId = 11,
             mandateReference = "BLUESHELL-${user.id}",
             mandateSignedOn = LocalDate.of(2025, 9, 3),
-            ibanLastFour = "4300",
+            ibanMasked = "NL00",
         )
 
     private fun given(

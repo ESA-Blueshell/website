@@ -6,4 +6,4 @@ const sentences: Record<string, () => string> = {
   DiscordUnreachable: () => "Discord cannot be reached now; try again in a moment.",
 }
 
-export const {refusable} = refusalReader(sentences)
+export const {accepted, refusable} = refusalReader(sentences)

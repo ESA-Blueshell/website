@@ -61,6 +61,38 @@ class CohortQueryServiceTest {
             resolutions,
         )
 
+    init {
+        every { targets.findAll() } returns emptyList()
+    }
+
+    @Test
+    fun `summaries name each cohort's targets, made or not, read in one query`() {
+        val cohort = cohort(3L).apply { definitionKey = "COMMITTEE_MEMBERS:3" }
+        val list = target(30L).apply { cohortId = 3L }
+        val role =
+            Target(system = "DISCORD", kind = TargetKind.ROLE, label = "Sitecie").apply {
+                id = 31L
+                cohortId = 3L
+            }
+        val gone =
+            Target(system = "GONE", kind = TargetKind.LIST, label = "Old").apply {
+                id = 32L
+                cohortId = 3L
+            }
+        every { cohorts.findAll() } returns listOf(cohort)
+        every { targets.findAll() } returns listOf(list, role, gone, target(33L))
+        every { targetMembers.countByCohortIdAndUserIdIsNotNull(3L) } returns 2L
+        every { targets.countByCohortId(3L) } returns 3L
+        every { targetExternalIds.find(list) } returns "7"
+        every { targetExternalIds.find(role) } returns null
+
+        assertThat(service.summaries().single().targets).containsExactly(
+            SummaryTarget(TargetSystem.BREVO, "Cohort 30", true),
+            SummaryTarget(TargetSystem.DISCORD, "Sitecie", false),
+        )
+        verify(exactly = 1) { targets.findAll() }
+    }
+
     @Test
     fun `summaries returns memberCount and mappingCount from count methods not findAll`() {
         val cohort = cohort(1L)

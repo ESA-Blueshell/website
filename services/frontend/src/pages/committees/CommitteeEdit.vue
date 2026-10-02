@@ -9,8 +9,8 @@ import {useReturnTo} from "@/composables/useReturnTo"
 import NotFound from "@/pages/NotFound.vue"
 
 /**
- * One committee added or corrected on its own page. It goes back where it came from, and to the
- * committee's own page once it is saved, at the address it has then.
+ * One committee added or corrected on its own page, on the site or inside Management. It goes back
+ * where it came from, and to the committee's own page once it is saved, at the address it has then.
  */
 defineOptions({name: "CommitteeEditPage"})
 
@@ -25,16 +25,18 @@ void ready.then(() => { answered.value = true })
 const committee = computed<Committee | null>(() => committees.value.find(one => one.slug === route.params.address) ?? null)
 const mayEdit = computed(() => isBoard.value || (committee.value != null && sitsOn(committee.value.id)))
 
-const back = useReturnTo(adding.value ? "/committees" : `/committees/${String(route.params.address)}`)
+// Inside Management the editor goes back to Management's list, and stays in Management once saved.
+const portal = route.meta.portal
+const back = useReturnTo(portal ?? (adding.value ? "/committees" : `/committees/${String(route.params.address)}`))
 
 const saved = async (now: Committee) => {
   await refresh()
-  void router.replace(`/committees/${now.slug}`)
+  void router.replace(portal ? `${portal}/${now.slug}` : `/committees/${now.slug}`)
 }
 
 const removed = async () => {
   await refresh()
-  void router.replace("/committees")
+  void router.replace(portal ?? "/committees")
 }
 </script>
 

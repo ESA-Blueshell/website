@@ -48,7 +48,7 @@ export {RESOLUTION_WORDS, adoptWord, driftRowsOf, driftWords, inStepOn, isDrift,
 export {default as TargetDrift} from "./island/TargetDrift.vue"
 export {ARCHIVE_FOLDER, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
 export {fetchCohort} from "./adapters/cohorts"
-export {fetchCohorts} from "./adapters/cohorts"
+export {fetchCohorts, type SummaryTarget} from "./adapters/cohorts"
 export {linkDriftPeople, proposeDriftLinks, pushDriftPeople, removeDriftPeople, setTargetEnforced} from "./adapters/cohorts"
 export {triggerReconcile} from "./adapters/cohorts"
 export {useDriftResolution, type DriftAction} from "./composables/useDriftResolution"

@@ -7,6 +7,8 @@ declare module "vue-router" {
   interface RouteMeta {
     /** The page's name in the browser tab; a page that knows a better one sets it once loaded. */
     title?: string
+    /** Where an editor the site and Management share goes back to when it is opened inside Management. */
+    portal?: string
   }
 }
 
@@ -556,6 +558,53 @@ const routes: RouteRecordRaw[] = [
         name: "brevo",
         component: () => import("@/pages/management/BrevoPage.vue"),
         meta: {title: "Brevo"},
+      },
+      {path: "committees", name: "managementCommittees", component: () => import("@/pages/management/CommitteeList.vue"), meta: {title: "Committees"}},
+      // The site's own editor, rendered inside the portal.
+      {
+        path: "committees/new",
+        name: "managementCommitteeNew",
+        component: () => import("@/pages/committees/CommitteeEdit.vue"),
+        meta: {title: "Add a committee", portal: "/management/committees"},
+      },
+      {
+        path: "committees/:address",
+        name: "managementCommittee",
+        component: () => import("@/pages/committees/CommitteeEdit.vue"),
+        meta: {title: "Edit committee", portal: "/management/committees"},
+      },
+      {path: "board", name: "managementBoards", component: () => import("@/pages/management/BoardList.vue"), meta: {title: "Boards"}},
+      {
+        path: "board/new",
+        name: "managementBoardNew",
+        component: () => import("@/pages/board/BoardEdit.vue"),
+        meta: {title: "Add a board", portal: "/management/board"},
+      },
+      {
+        path: "board/:number(\\d+)",
+        name: "managementBoard",
+        component: () => import("@/pages/board/BoardEdit.vue"),
+        meta: {title: "Edit board", portal: "/management/board"},
+      },
+      {path: "games", name: "managementGames", component: () => import("@/pages/management/GameList.vue"), meta: {title: "Games"}},
+      {
+        path: "games/new",
+        name: "managementGameNew",
+        component: () => import("@/pages/games/GameEdit.vue"),
+        meta: {title: "Add a game", portal: "/management/games"},
+      },
+      {
+        path: "games/:slug",
+        name: "managementGame",
+        component: () => import("@/pages/games/GameEdit.vue"),
+        meta: {title: "Edit game", portal: "/management/games"},
+      },
+      {path: "competition", name: "managementTeams", component: () => import("@/pages/management/TeamList.vue"), meta: {title: "Competition"}},
+      {
+        path: "competition/:slug/teams/:team",
+        name: "managementTeam",
+        component: () => import("@/pages/competition/TeamEdit.vue"),
+        meta: {title: "Edit team", portal: "/management/competition"},
       },
       {
         path: "platforms/discord",

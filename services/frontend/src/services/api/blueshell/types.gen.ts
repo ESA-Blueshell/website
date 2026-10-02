@@ -407,6 +407,27 @@ export type BotStandingResult = {
     manageRoles: boolean;
 };
 
+export type BrevoPlace = {
+    available: boolean;
+    folder?: string | null;
+    listId?: string | null;
+    listName?: string | null;
+};
+
+/**
+ * The list a committee's people are on, where it has none yet
+ */
+export type BrevoPlaceRequest = {
+    /**
+     * Make a new list, where no list is named
+     */
+    createList: boolean;
+    /**
+     * An existing list to link
+     */
+    listId?: string | null;
+};
+
 export type BulkActionResult = {
     applied: number;
     queued: number;
@@ -10686,6 +10707,92 @@ export type ReconcileTargetResponses = {
 };
 
 export type ReconcileTargetResponse = ReconcileTargetResponses[keyof ReconcileTargetResponses];
+
+export type FindCommitteeBrevoData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/committees/{id}/brevo';
+};
+
+export type FindCommitteeBrevoErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCommitteeBrevoError = FindCommitteeBrevoErrors[keyof FindCommitteeBrevoErrors];
+
+export type FindCommitteeBrevoResponses = {
+    /**
+     * OK
+     */
+    200: BrevoPlace;
+};
+
+export type FindCommitteeBrevoResponse = FindCommitteeBrevoResponses[keyof FindCommitteeBrevoResponses];
+
+export type SetCommitteeBrevoData = {
+    body: BrevoPlaceRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/committees/{id}/brevo';
+};
+
+export type SetCommitteeBrevoErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetCommitteeBrevoError = SetCommitteeBrevoErrors[keyof SetCommitteeBrevoErrors];
+
+export type SetCommitteeBrevoResponses = {
+    /**
+     * OK
+     */
+    200: BrevoPlace;
+};
+
+export type SetCommitteeBrevoResponse = SetCommitteeBrevoResponses[keyof SetCommitteeBrevoResponses];
 
 export type FindCommitteeDiscordData = {
     body?: never;

@@ -40,7 +40,7 @@ class TargetExternalIdMigrationIT : UserTestSupport() {
             jdbc.queryForObject(
                 """
                 SELECT COUNT(*) FROM information_schema.statistics
-                WHERE table_schema = DATABASE() AND table_name = 'cohort'
+                WHERE table_schema = DATABASE() AND table_name = 'target'
                   AND index_name = 'idx_cohort_external_id'
                 """.trimIndent(),
                 Int::class.java,
@@ -62,7 +62,7 @@ class TargetExternalIdMigrationIT : UserTestSupport() {
         // pre-migration shape: column null, legacy mapping present).
         jdbc.update(
             """
-            UPDATE cohort c
+            UPDATE target c
             JOIN external_id_mapping m
               ON m.aggregate_type = 'COHORT' AND m.aggregate_id = c.id AND m.system = c.system
             SET c.external_id = m.external_id

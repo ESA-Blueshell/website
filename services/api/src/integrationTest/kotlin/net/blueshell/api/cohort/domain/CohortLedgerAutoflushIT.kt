@@ -116,8 +116,8 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
                 .createNativeQuery(
                     """
                     SELECT DATE_FORMAT(deleted_at, '%Y-%m-%d %H:%i:%s.%f')
-                    FROM cohort_member
-                    WHERE cohort_id = :cohortId
+                    FROM target_member
+                    WHERE target_id = :cohortId
                       AND external_user_id = :externalUserId
                       AND deleted_at <> '9999-12-31 23:59:59'
                     ORDER BY id

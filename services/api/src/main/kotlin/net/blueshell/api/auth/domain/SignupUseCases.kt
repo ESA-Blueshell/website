@@ -6,8 +6,10 @@ import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.shared.model.SignupSession
+import net.blueshell.api.user.api.AddressFields
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.MembershipConditions
+import net.blueshell.api.user.api.SealedAddresses
 import net.blueshell.api.user.api.SignupDetailsData
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.completenessFor
@@ -34,6 +36,7 @@ class SignupUseCases(
     private val activation: UserActivationService,
     private val jobs: JobQueue,
     private val validator: Validator,
+    private val sealedAddresses: SealedAddresses,
 ) {
     fun issueSession(userId: Long): SignupSession = signupTokens.issue(users.findById(userId))
 
@@ -76,7 +79,7 @@ class SignupUseCases(
                     )
                 },
             address =
-                address?.let {
+                address?.let(sealedAddresses::open)?.let {
                     SignupResumeAddress(
                         country = it.country,
                         city = it.city,
@@ -185,14 +188,7 @@ class SignupUseCases(
         // replaceAddress is an upsert, so going back a step and correcting the
         // address works without the client tracking an id.
         user.replaceAddress(
-            Address(
-                user = user,
-                country = country,
-                city = city,
-                street = street,
-                houseNumber = houseNumber,
-                zipCode = zipCode,
-            ),
+            Address(user = user).also { sealedAddresses.seal(it, AddressFields(country, city, street, houseNumber, zipCode)) },
         )
         users.update(user)
     }

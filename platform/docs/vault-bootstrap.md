@@ -243,6 +243,20 @@ script and again after it. After running `seed-vault-from-env.sh
 flux reconcile kustomization apps-data
 ```
 
+### Sealing keys (handled by the bootstrap Job)
+
+Members' addresses are sealed by Vault Transit (api ADR-038). The bootstrap Job creates
+`transit/keys/api-address`, a derived key: every value is sealed under a context naming the field
+and the member, so a value copied onto another member's row does not open. The `api` policy may
+only encrypt, decrypt and rewrap with it (`transit/encrypt/api-address`,
+`transit/decrypt/api-address`, `transit/rewrap/api-address`). Nothing else may read the key, which
+never leaves Vault. The api uses it once `PRIVACY_SEALING` is `vault`, as the deployment sets it.
+
+After a release that adds sealing, run the `user.seal-addresses` job once from Jobs in Management.
+It seals every address still in plaintext, soft-deleted ones included, and empties the plaintext.
+It is safe to run again. A database backup taken after it ran shows no address without Vault, and
+Vault's unseal shares are never stored with the backups.
+
 If you ever need to inspect or override the OIDC config manually:
 
 ```bash

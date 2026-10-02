@@ -1112,7 +1112,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "findContributionsByPeriodId", baseContributions)
     }
     if (method === "GET" && path === "/addresses") {
-      return answer(route, "findAllAddresses", baseAddresses)
+      // As the api answers it: no list of people opens an address.
+      return answer(route, "findAllAddresses", baseAddresses.map(one => ({
+        ...one, opened: false, country: null, city: null, street: null, houseNumber: null, zipCode: null,
+      })))
     }
     // No bot in the mocked api: the Discord field stays the text field it always was.
     if (method === "GET" && path === "/discord/members") {

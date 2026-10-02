@@ -21,6 +21,9 @@ class AddressControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var addressRepository: AddressRepository
 
+    @Autowired
+    private lateinit var sealedAddresses: net.blueshell.api.user.api.SealedAddresses
+
     private fun createPayload(userId: Long): String =
         """{"userId":$userId,"country":"NL","city":"Enschede","street":"Noorderhagen","houseNumber":"14","zipCode":"7511EL"}"""
 
@@ -49,7 +52,7 @@ class AddressControllerIT : UserTestSupport() {
 
             val refreshed = refreshUser(user)
             assertThat(refreshed.address).isNotNull
-            assertThat(refreshed.address!!.city).isEqualTo("Enschede")
+            assertThat(sealedAddresses.open(refreshed.address!!)?.city).isEqualTo("Enschede")
         }
 
         @Test
@@ -104,7 +107,7 @@ class AddressControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.houseNumber").value("22A"))
                 .andExpect(jsonPath("$.zipCode").value("3512LS"))
 
-            val updated = refreshUser(user).address!!
+            val updated = sealedAddresses.open(refreshUser(user).address!!)!!
             assertThat(updated.city).isEqualTo("Utrecht")
             assertThat(updated.street).isEqualTo("Nieuwegracht")
         }

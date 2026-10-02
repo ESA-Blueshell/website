@@ -34,4 +34,10 @@ class Address(
     var houseNumber: String? = null,
     @Column
     var zipCode: String? = null,
+    /**
+     * The address sealed through Vault Transit as one value, bound to its member; see `SealedAddresses`.
+     * The plaintext columns above are empty once it is set, and go in a later release.
+     */
+    @Column(name = "sealed_address", columnDefinition = "TEXT")
+    var sealed: String? = null,
 ) : AuditedAutoIdEntity()

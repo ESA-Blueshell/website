@@ -3,6 +3,7 @@ package net.blueshell.api.user.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.shared.web.BaseController
+import net.blueshell.api.user.api.SealedAddresses
 import net.blueshell.api.user.domain.AddressService
 import net.blueshell.api.user.domain.AddressUseCases
 import org.springframework.http.HttpStatus
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 class AddressController(
     service: AddressService,
     private val useCases: AddressUseCases,
+    private val sealing: SealedAddresses,
 ) : BaseController<AddressService>(service) {
     @PostMapping("/addresses")
     @PreAuthorize("hasPermission(#request.userId, 'User', 'write')")
@@ -39,7 +41,7 @@ class AddressController(
                 houseNumber = request.houseNumber,
                 zipCode = request.zipCode,
             )
-        return address.asResponse()
+        return address.asResponse(sealing.open(address))
     }
 
     @PutMapping("/addresses/{id}")
@@ -58,14 +60,15 @@ class AddressController(
                 zipCode = request.zipCode,
                 version = request.version,
             )
-        return address.asResponse()
+        return address.asResponse(sealing.open(address))
     }
 
+    /** Every address on file, none of them opened: no list of people opens an address. */
     @GetMapping("/addresses")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Address', 'read')")
     fun findAllAddresses(): MutableList<AddressResponse> {
         val addresses = service.findAll()
-        return addresses.map { it.asResponse() }.toMutableList()
+        return addresses.map { it.asResponse(null) }.toMutableList()
     }
 
     @GetMapping("/addresses/{id}")
@@ -74,7 +77,7 @@ class AddressController(
         @PathVariable id: Long,
     ): AddressResponse {
         val address = service.findById(id)
-        return address.asResponse()
+        return address.asResponse(sealing.open(address))
     }
 
     @DeleteMapping("/addresses/{id}")

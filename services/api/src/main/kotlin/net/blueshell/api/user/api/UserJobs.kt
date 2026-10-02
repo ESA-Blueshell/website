@@ -18,4 +18,15 @@ object UserJobs {
     data class RoleChangePayload(
         val roleChangeId: Long,
     )
+
+    /** Seals every address still in plaintext, soft-deleted ones included, and empties the plaintext. Safe to run again. */
+    object SealAddresses : JobDefinition<SealAddressesPayload> {
+        override val type: String = "user.seal-addresses"
+        override val payloadType: Class<SealAddressesPayload> = SealAddressesPayload::class.java
+    }
+
+    /** Nothing to say: the job reaches every address left. */
+    data class SealAddressesPayload(
+        val reason: String? = null,
+    )
 }

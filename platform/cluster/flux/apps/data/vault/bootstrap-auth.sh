@@ -42,6 +42,11 @@ if ! vault read transit/keys/api-jwt >/dev/null 2>&1; then
   vault write transit/keys/api-jwt type="rsa-2048"
 fi
 
+# Derived keys that seal private details (api ADR-038): each value is bound to its context.
+if ! vault read transit/keys/api-address >/dev/null 2>&1; then
+  vault write transit/keys/api-address derived=true
+fi
+
 # --- Policies -----------------------------------------------------------
 
 cat <<'EOF' >/tmp/api.hcl
@@ -74,6 +79,19 @@ path "transit/sign/api-jwt" {
 
 path "transit/keys/api-jwt" {
   capabilities = ["read"]
+}
+
+# Seal, open and rewrap a member's address; nothing else with the key.
+path "transit/encrypt/api-address" {
+  capabilities = ["update"]
+}
+
+path "transit/decrypt/api-address" {
+  capabilities = ["update"]
+}
+
+path "transit/rewrap/api-address" {
+  capabilities = ["update"]
 }
 EOF
 

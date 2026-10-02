@@ -1,14 +1,16 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
+import {flushPromises, mount} from "@vue/test-utils"
 import AddressUserRow from "@/components/common/rows/AddressUserRow.vue"
 
-const {mockDeleteAddress, mockHandleNetworkError} = vi.hoisted(() => ({
+const {mockDeleteAddress, mockReadAddress, mockHandleNetworkError} = vi.hoisted(() => ({
   mockDeleteAddress: vi.fn(),
+  mockReadAddress: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
 vi.mock("@/domains/user", async () => ({
   deleteAddress: mockDeleteAddress,
+  readAddress: mockReadAddress,
   Role: (await import("@/services/api")).Role,
 }))
 
@@ -36,6 +38,7 @@ describe("AddressUserRow", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockDeleteAddress.mockResolvedValue(undefined)
+    mockReadAddress.mockResolvedValue({id: 11, userId: 1, opened: true, city: "Delft"})
   })
 
   it("toggles expanded row and deletes address", async () => {
@@ -150,6 +153,8 @@ describe("AddressUserRow", () => {
       },
     })
 
+    await flushPromises()
+    expect(mockReadAddress).toHaveBeenCalledWith(11)
     expect(wrapper.get("[data-test='edit']").text()).toBe("11")
 
     await wrapper.get("[data-test='edit']").trigger("click")
@@ -157,6 +162,38 @@ describe("AddressUserRow", () => {
 
     await wrapper.get("[data-test='close']").trigger("click")
     expect((wrapper.vm as any).deleteDialog).toBe(false)
+  })
+
+  // The list carries no address fields, so editing one from it would save blanks over it.
+  it("shows the form only once the expanded row has opened its address", async () => {
+    let answer!: (value: unknown) => void
+    mockReadAddress.mockReturnValue(new Promise((resolve) => { answer = resolve }))
+    const wrapper = row({expanded: 1})
+
+    expect(wrapper.find('[data-testid="address-user-form-1"]').exists()).toBe(false)
+    answer({id: 11, userId: 1, opened: true, city: "Delft"})
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="address-user-form-1"]').exists()).toBe(true)
+    expect((wrapper.vm as any).addressModel.city).toBe("Delft")
+    expect(wrapper.find('[data-testid="address-user-unopened-1"]').exists()).toBe(false)
+  })
+
+  it("says an address that cannot be opened is written anew by saving", async () => {
+    mockReadAddress.mockResolvedValue({id: 11, userId: 1, opened: false})
+    const wrapper = row({expanded: 1})
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="address-user-unopened-1"]').text()).toContain("Saving writes it anew")
+  })
+
+  it("reports an address it could not read, and keeps the form closed", async () => {
+    mockReadAddress.mockRejectedValue(new Error("refused"))
+    const wrapper = row({expanded: 1})
+    await flushPromises()
+
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="address-user-form-1"]').exists()).toBe(false)
   })
 
   it("names the last role the account holds", () => {

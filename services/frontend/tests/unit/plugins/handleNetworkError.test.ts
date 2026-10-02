@@ -100,6 +100,9 @@ describe("handleNetworkError plugin", () => {
 
     $handleNetworkError(axiosStatusError(502))
     expect(mockCommit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", expect.stringContaining("error code 502"))
+
+    $handleNetworkError(axiosStatusError(503))
+    expect(mockCommit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", expect.stringContaining("Try again in a moment"))
   })
 
   // A canned message keyed on the status renamed every deliberate refusal: a taken

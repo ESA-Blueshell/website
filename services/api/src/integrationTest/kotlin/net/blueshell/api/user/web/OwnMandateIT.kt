@@ -29,9 +29,10 @@ class OwnMandateIT : UserTestSupport() {
     private fun setUp(
         by: User,
         content: String = body,
+        steppedUp: Boolean = true,
     ) = mvc.perform(
         put("/users/me/mandate")
-            .with(signedIn(by))
+            .with(signedIn(by, steppedUp = steppedUp))
             .contentType(MediaType.APPLICATION_JSON)
             .content(content),
     )
@@ -51,6 +52,22 @@ class OwnMandateIT : UserTestSupport() {
             .perform(get("/users/me/mandate").with(signedIn(member)))
             .andExpect(jsonPath("$.ibanLastTwo").value("00"))
         setUp(member, body.replace("true", "false")).andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `a change from the account page asks a step-up first, and is written to the security log`() {
+        val member = createUserWithRole(Role.MEMBER)
+        createMembershipFixture(member)
+
+        setUp(member, steppedUp = false)
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("StepUpRequired"))
+        setUp(member).andExpect(status().isOk)
+
+        mvc
+            .perform(get("/users/me/security-events").with(signedIn(member)))
+            .andExpect(jsonPath("$.events[0].kind").value("BANK_DETAILS_CHANGED"))
+            .andExpect(jsonPath("$.events[0].note").value("NL•• … ••00"))
     }
 
     @Test

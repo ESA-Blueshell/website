@@ -2,6 +2,7 @@ package net.blueshell.api.user.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import net.blueshell.api.security.StepUp
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
@@ -22,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException
 class MandateController(
     private val mandates: Mandates,
     private val currentUser: CurrentUserProvider,
+    private val stepUp: StepUp,
 ) {
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'read')")
     @GetMapping("/memberships/{membershipId}/mandate")
@@ -44,12 +46,18 @@ class MandateController(
     @GetMapping("/users/me/mandate")
     fun findOwnMandate(): OwnMandateResponse = mandates.own(reader()).asResponse()
 
-    /** A member sets up or changes incasso themselves; the mandate is signed today, on the site. */
+    /**
+     * A member sets up or changes incasso themselves, the mandate signed today on the site. A sign-in
+     * left open must not quietly swap the account a contribution is taken from, so it asks a step-up.
+     */
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/users/me/mandate")
     fun setUpOwnMandate(
         @Valid @RequestBody request: SetUpMandateRequest,
-    ): OwnMandateResponse = mandates.setUpOwn(reader(), request.iban, request.accountHolder).asResponse()
+    ): OwnMandateResponse {
+        stepUp.require()
+        return mandates.changeOwn(reader(), request.iban, request.accountHolder).asResponse()
+    }
 
     private fun reader(): Long = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
 

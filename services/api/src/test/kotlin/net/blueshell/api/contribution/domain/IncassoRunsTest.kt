@@ -131,6 +131,7 @@ class IncassoRunsTest {
         assertThat(run.statementText).isEqualTo("Contributie 2026-2027 ESA Blueshell")
         verify(runs).save(argThat<IncassoRun> { createdBy == 9L })
         assertThat(run.collections.map { it.ingName }).containsExactly("Mila Vries", "Zoe Bakker")
+        assertThat(run.collections.map { "${it.ibanCountry}${it.ibanLastTwo}" }).containsExactly("NL34", "DE18")
         assertThat(run.total).isEqualTo(sent.allValues.sumOf { it.amount })
         assertThat(run.submittedAt).isNull()
     }

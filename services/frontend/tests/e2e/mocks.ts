@@ -71,13 +71,13 @@ const stampedAt = {createdAt: "2025-01-01T00:00:00Z", updatedAt: "2025-01-01T00:
 /** Members on incasso as the first step of a run reads them: two to collect from, one with an accent, and two left out. */
 const INCASSO_CANDIDATES: Wire<IncassoCandidate>[] = [
   {userId: 201, name: "Mila de Vries", ingName: "Mila de Vries", memberSince: "2024-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
-    ibanLastFour: "1234", mandateReference: "BLUESHELL-201-20240901", mandateSignedOn: "2024-09-01"},
+    ibanCountry: "NL", ibanLastTwo: "34", mandateReference: "BLUESHELL-201-20240901", mandateSignedOn: "2024-09-01"},
   {userId: 202, name: "Zoë Bakker", ingName: "Zoe Bakker", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
-    ibanLastFour: "4118", mandateReference: "BLUESHELL-202-20250904", mandateSignedOn: "2025-09-04"},
+    ibanCountry: "DE", ibanLastTwo: "18", mandateReference: "BLUESHELL-202-20250904", mandateSignedOn: "2025-09-04"},
   {userId: 203, name: "Lotte Meijer", ingName: "Lotte Meijer", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
     leftOut: "NO_BANK_DETAILS"},
   {userId: 204, name: "Bram Kok", ingName: "Bram Kok", memberSince: "2020-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
-    ibanLastFour: "5560", mandateReference: "BLUESHELL-204-20200901", mandateSignedOn: "2020-09-01", leftOut: "ALREADY_PAID"},
+    ibanCountry: "NL", ibanLastTwo: "60", mandateReference: "BLUESHELL-204-20200901", mandateSignedOn: "2020-09-01", leftOut: "ALREADY_PAID"},
 ]
 
 export type {Wire}
@@ -920,7 +920,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const {iban} = request.postDataJSON() as {iban: string}
       const signup = path.startsWith("/signup")
       ownMandate = {
-        standing: signup ? "NONE" : "MANDATE_RECORDED", ibanLastFour: iban.replace(/\s/g, "").slice(-4),
+        standing: signup ? "NONE" : "MANDATE_RECORDED", ibanCountry: iban.replace(/\s/g, "").slice(0, 2), ibanLastTwo: iban.replace(/\s/g, "").slice(-2),
         reference: signup ? undefined : "BLUESHELL-1-20260930", signedOn: "2026-09-30", pending: signup,
       }
       return signup ? route.fulfill({status: 204, body: ""}) : answer(route, "setUpOwnMandate", ownMandate)
@@ -1024,7 +1024,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         const {accountHolder, signedOn, iban} = request.postDataJSON() as {accountHolder: string; signedOn: string; iban: string}
         const compact = iban.replace(/\s/g, "")
         return answer(route, "recordMandate", {
-          membershipId, standing: "MANDATE_RECORDED", accountHolder, ibanLastFour: compact.slice(-4),
+          membershipId, standing: "MANDATE_RECORDED", accountHolder, ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2),
           reference: `BLUESHELL-${membershipId}`, signedOn, recordedBy: 1, recordedAt: "2026-09-30T10:00:00.000Z",
         })
       }
@@ -1203,7 +1203,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "POST" && /^\/contributionPeriods\/\d+\/incassoRuns$/.test(path)) {
       const body = request.postDataJSON() as {userIds: number[]; collectionDate: string; statementText: string}
       const collections = INCASSO_CANDIDATES.filter((one) => body.userIds.includes(one.userId)).map((one) => ({
-        userId: one.userId, name: one.name, ingName: one.ingName, ibanLastFour: one.ibanLastFour, mandateReference: one.mandateReference,
+        userId: one.userId, name: one.name, ingName: one.ingName, ibanCountry: one.ibanCountry, ibanLastTwo: one.ibanLastTwo, mandateReference: one.mandateReference,
         mandateSignedOn: one.mandateSignedOn, feeType: one.feeType ?? "FULL_YEAR_FEE", amount: one.amount ?? 0,
       }))
       const run = {

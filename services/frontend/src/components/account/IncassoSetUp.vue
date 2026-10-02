@@ -2,6 +2,7 @@
 /* A member's own bank details for incasso. Saving signs the mandate that day, on the site; the
    account number is shown back only by its last four. */
 import {onMounted, ref} from "vue"
+import {maskedIban} from "@/domains/contribution"
 import {type OwnMandateResponse, readOwnMandate, setUpIncasso} from "@/domains/user"
 
 defineOptions({name: "IncassoSetUp"})
@@ -49,10 +50,10 @@ onMounted(async () => {
     data-testid="incasso-set-up"
   >
     <p
-      v-if="own?.ibanLastFour"
+      v-if="own?.ibanLastTwo"
       data-testid="incasso-current"
     >
-      Your contribution is collected by incasso from the account ending in {{ own.ibanLastFour }}{{ own.pending ? ", from the day your membership starts" : "" }}.
+      Your contribution is collected by incasso from the account {{ maskedIban(own) }}{{ own.pending ? ", from the day your membership starts" : "" }}.
     </p>
     <p
       v-else
@@ -76,7 +77,7 @@ onMounted(async () => {
       variant="outlined"
       @click="open = true"
     >
-      {{ own?.ibanLastFour ? "Change bank details" : "Pay by incasso" }}
+      {{ own?.ibanLastTwo ? "Change bank details" : "Pay by incasso" }}
     </v-btn>
     <form
       v-else

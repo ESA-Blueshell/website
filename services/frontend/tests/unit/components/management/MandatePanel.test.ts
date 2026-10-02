@@ -12,7 +12,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 }))
 
 const recorded = {
-  membershipId: 9, standing: IncassoStanding.MANDATE_RECORDED, accountHolder: "Ann Vos", ibanLastFour: "4300",
+  membershipId: 9, standing: IncassoStanding.MANDATE_RECORDED, accountHolder: "Ann Vos", ibanCountry: "NL", ibanLastTwo: "00",
   reference: "BLUESHELL-9-20260901", signedOn: "2026-09-01", recordedBy: 3, recordedAt: "2026-09-02T10:00:00Z",
 }
 
@@ -38,7 +38,7 @@ describe("the mandate panel", () => {
 
     expect(api.recordMandate).toHaveBeenCalledWith({path: {membershipId: 9}, body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", signedOn: "2026-09-01"}})
     expect(wrapper.get('[data-testid="mandate-standing"]').text()).toBe("Collected by incasso")
-    expect(wrapper.get('[data-testid="mandate-facts"]').text()).toContain("•••• 4300")
+    expect(wrapper.get('[data-testid="mandate-facts"]').text()).toContain("NL•• … ••00")
     expect(wrapper.text()).not.toContain("0417")
     expect(wrapper.emitted("changed")).toHaveLength(1)
     expect(wrapper.get('[data-testid="mandate-record"]').text()).toBe("Replace the mandate")

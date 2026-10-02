@@ -47,7 +47,7 @@ test.describe("the account pages", () => {
     await incasso.getByRole("checkbox").check()
     await incasso.getByTestId("incasso-save").click()
 
-    await expect(incasso.getByTestId("incasso-current")).toContainText("ending in 4300")
+    await expect(incasso.getByTestId("incasso-current")).toContainText("NL•• … ••00")
     await expect(incasso).not.toContainText("0417")
   })
 

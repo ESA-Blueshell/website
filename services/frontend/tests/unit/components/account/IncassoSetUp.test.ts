@@ -33,7 +33,7 @@ describe("setting up incasso", () => {
 
   it("asks the person to prove it is them when the api wants a step-up, and saves once they have", async () => {
     api.setUpOwnMandate.mockResolvedValueOnce({status: 403, error: {code: "StepUpRequired"}, response: {status: 403}})
-    const wrapper = mount(IncassoSetUp, {global: {stubs: {StepUpDialog: {name: "StepUpDialog", props: ["modelValue", "twoFactorOn"], emits: ["proved"], template: "<div />"}}}})
+    const wrapper = mount(IncassoSetUp, {global: {stubs: {StepUpDialog: {name: "StepUpDialog", props: ["modelValue", "twoFactorOn"], emits: ["proved", "update:modelValue"], template: "<div />"}}}})
     await settle()
     await fill(wrapper)
     await wrapper.get('[data-testid="incasso-form"]').trigger("submit")
@@ -44,6 +44,9 @@ describe("setting up incasso", () => {
     expect(dialog.props("twoFactorOn")).toBe(false)
     expect(wrapper.find('[data-testid="incasso-failure"]').exists()).toBe(false)
 
+    dialog.vm.$emit("update:modelValue", false)
+    await settle()
+    expect(dialog.props("modelValue")).toBe(false)
     dialog.vm.$emit("proved")
     await settle()
     expect(api.setUpOwnMandate).toHaveBeenCalledTimes(2)

@@ -475,33 +475,36 @@ object TestHelper {
         return response.jsonPath().getString("trustedBrowser")
     }
 
-    /** The address row linked to `username`, if any. */
-    fun findAddress(username: String): AddressRow? =
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn
-                .prepareStatement(
-                    "SELECT a.id, a.country, a.city, a.street, a.house_number, a.zip_code " +
-                        "FROM addresses a " +
-                        "JOIN users u ON u.address_id = a.id " +
-                        "WHERE u.username = ? AND u.$ACTIVE_ROW_PREDICATE " +
-                        "AND a.$ACTIVE_ROW_PREDICATE",
-                ).use { stmt ->
-                    stmt.setString(1, username)
-                    val rs = stmt.executeQuery()
-                    if (rs.next()) {
-                        AddressRow(
-                            id = rs.getLong("id"),
-                            country = rs.getString("country"),
-                            city = rs.getString("city"),
-                            street = rs.getString("street"),
-                            houseNumber = rs.getString("house_number"),
-                            zipCode = rs.getString("zip_code"),
-                        )
-                    } else {
-                        null
+    /**
+     * The address linked to `username`, if any. Its row says whether there is one; its fields are
+     * opened by the api, since the table holds them sealed (api ADR-038).
+     */
+    fun findAddress(username: String): AddressRow? {
+        val id =
+            DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+                conn
+                    .prepareStatement(
+                        "SELECT a.id FROM addresses a JOIN users u ON u.address_id = a.id " +
+                            "WHERE u.username = ? AND u.$ACTIVE_ROW_PREDICATE AND a.$ACTIVE_ROW_PREDICATE",
+                    ).use { stmt ->
+                        stmt.setString(1, username)
+                        val rs = stmt.executeQuery()
+                        if (rs.next()) rs.getLong("id") else null
                     }
-                }
-        }
+            } ?: return null
+        val opened =
+            retryOnConnectionFailure {
+                givenApi().baseUri(apiBaseUrl).queryParam("username", username).get("/test-support/address")
+            }.jsonPath()
+        return AddressRow(
+            id = id,
+            country = opened.getString("country"),
+            city = opened.getString("city"),
+            street = opened.getString("street"),
+            houseNumber = opened.getString("houseNumber"),
+            zipCode = opened.getString("zipCode"),
+        )
+    }
 
     /**
      * Insert an `addresses` row for `username` and point the user's

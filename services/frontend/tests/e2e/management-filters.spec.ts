@@ -227,6 +227,26 @@ test.describe("management filters", () => {
     await expect(withoutAddressCard.getByText(exactText("no-address-other"))).toHaveCount(0)
   })
 
+  // The list carries no address fields; the row opens its own address before the form shows it.
+  test("address manager opens the one address it edits", async ({page}) => {
+    await installApiMocks(page, {
+      users: [aUser({id: 41, fullName: "Address Owner", username: "address-owner", roles: ["MEMBER"]})],
+      addresses: [anAddress({id: 501, userId: 41, street: "Hallenweg", city: "Enschede", zipCode: "7522NH", country: "NL"})],
+    })
+    await loginAsBoard(page.context())
+
+    await page.goto("/addresses/manage")
+    await ensureListOpen(
+      page,
+      "address-user-list-with-address",
+      "address-user-list-toggle-with-address",
+      "address-user-list-search-with-address",
+    )
+    await page.getByTestId("address-user-edit-btn-41").click()
+
+    await expect(page.getByTestId("address-user-edit-form-41").getByLabel("Street")).toHaveValue("Hallenweg")
+  })
+
   test("recovery manager filters inactive and active users by multiple fields", async ({page}) => {
     await installApiMocks(page, {
       users: [

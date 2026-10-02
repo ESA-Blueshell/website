@@ -294,6 +294,15 @@ skips a step-up, nor the sign-in to Vault or Headlamp.
 
 _Avoid_: trusted device, remembered device.
 
+### Sealed
+
+Stored so that only Vault can open it. A sealed value is encrypted by Vault Transit under a key
+the api never holds, and bound to its member: copied onto another member's row, it does not
+open. A member's address and their bank details are sealed. When Vault cannot be reached, nothing
+sealed is saved or shown, and nothing falls back to plaintext (api ADR-038).
+
+_Avoid_: encrypted (in the interface), hidden.
+
 ### Step-up
 
 Asking for a fresh second factor inside a session that already has one, before

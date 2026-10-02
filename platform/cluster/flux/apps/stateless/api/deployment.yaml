@@ -117,6 +117,9 @@ spec:
               value: 'true'
             - name: AUTH_TRANSIT_KEY_NAME
               value: api-jwt
+            # Private details are sealed by Vault Transit, never by the stand-in (api ADR-038).
+            - name: PRIVACY_SEALING
+              value: vault
           ports:
             - containerPort: 8080
               name: http

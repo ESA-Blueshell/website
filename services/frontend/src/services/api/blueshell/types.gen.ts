@@ -84,6 +84,10 @@ export type AddressResponse = {
     createdAt: string;
     houseNumber?: string | null;
     id: number;
+    /**
+     * False where the address could not be opened now, or is one of many in a list: its fields are then empty
+     */
+    opened: boolean;
     street?: string | null;
     updatedAt: string;
     userId?: number | null;

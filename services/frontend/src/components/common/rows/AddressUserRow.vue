@@ -52,11 +52,18 @@
 
       <v-expand-transition>
         <div
-          v-if="expanded === user.id"
+          v-if="expanded === user.id && (!hasAddress || opened)"
           class="mb-3"
           :data-testid="`address-user-form-${user.id}`"
           @click.stop
         >
+          <p
+            v-if="opened?.opened === false"
+            class="mt-4"
+            :data-testid="`address-user-unopened-${user.id}`"
+          >
+            This address cannot be shown. Saving writes it anew.
+          </p>
           <!-- Writable v-model proxy pushes updates upward via emit -->
           <address-form
             v-model="addressModel"
@@ -82,10 +89,10 @@
 
 <script lang="ts" setup>
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {computed, ref} from "vue"
+import {computed, ref, watch} from "vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import {type AddressResponse, deleteAddress, Role, type UserDetailResponse} from "@/domains/user"
+import {type AddressResponse, deleteAddress, readAddress, Role, type UserDetailResponse} from "@/domains/user"
 
 type ManagedUser = UserDetailResponse & { addressId?: number | null }
 type ManagedAddress = AddressResponse & { userId?: number | null }
@@ -114,11 +121,25 @@ const address = computed<ManagedAddress | undefined>(() =>
 )
 const hasAddress = computed(() => !!address.value)
 
+/* A list never opens an address, so the expanded row opens its own before the form shows it. */
+const opened = ref<ManagedAddress | null>(null)
+watch(() => props.expanded === props.user.id && address.value?.id, async (id) => {
+  opened.value = null
+  if (!id) return
+  try {
+    opened.value = await readAddress(id)
+  } catch (error) {
+    $handleNetworkError(error)
+  }
+}, {immediate: true})
+
 /** Writable proxy so AddressForm v-model updates bubble up to the list */
 const addressModel = computed<ManagedAddress | undefined>({
-  get: () => address.value,
+  get: () => opened.value ?? undefined,
   set: (next?: ManagedAddress) => {
-    if (next) emit("update:address", next)
+    if (!next) return
+    opened.value = next
+    emit("update:address", next)
   },
 })
 

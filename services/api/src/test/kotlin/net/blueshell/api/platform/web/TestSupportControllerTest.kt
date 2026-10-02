@@ -9,7 +9,10 @@ import net.blueshell.api.security.Browser
 import net.blueshell.api.security.SignIn
 import net.blueshell.api.security.SignInContext
 import net.blueshell.api.security.SignIns
+import net.blueshell.api.user.api.AddressFields
+import net.blueshell.api.user.api.TestSealing
 import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -43,6 +46,7 @@ class TestSupportControllerTest {
             trustedBrowsers,
             AuthTokenCookieService("BSH_AUTH", "/", "Lax", "", false),
             signIns,
+            TestSealing.addresses,
         )
     private val user =
         User(
@@ -93,5 +97,16 @@ class TestSupportControllerTest {
 
         controller.resetClock()
         assertThat(clock.instant()).isNotEqualTo(Instant.parse("2026-09-24T12:01:00Z"))
+    }
+
+    @Test
+    fun `the address a test checks comes back opened, and nothing for somebody without one`() {
+        whenever(users.findByUsername("alice")).thenReturn(user)
+        assertThat(controller.openAddress("alice")).isNull()
+
+        val fields = AddressFields("NL", "Enschede", "Hallenweg", "5", "7522NH")
+        user.address = Address(user = user).also { TestSealing.addresses.seal(it, fields) }
+
+        assertThat(controller.openAddress("alice")).isEqualTo(fields)
     }
 }

@@ -221,6 +221,13 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Creating a target is an operator's own action now, so nothing enqueues this any " +
       "more; it stays registered for rows queued before that changed.",
   },
+  "user.seal-addresses": {
+    title: "Seal addresses",
+    description:
+      "Seals every address still held in plaintext, soft-deleted ones included, under the " +
+      "address key in Vault and empties its plaintext columns. Run once after the sealing " +
+      "release; running it again seals nothing and is skipped.",
+  },
 }
 
 export const humanizeJobType = (jobType: string): string =>

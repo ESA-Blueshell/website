@@ -166,6 +166,9 @@ components:
         id:
           format: int64
           type: integer
+        opened:
+          description: 'False where the address could not be opened now, or is one of many in a list: its fields are then empty'
+          type: boolean
         street:
           type:
           - string
@@ -188,6 +191,7 @@ components:
       required:
       - createdAt
       - id
+      - opened
       - updatedAt
       - version
       type: object

@@ -8,7 +8,7 @@ object UserManagerHelper {
         page: Page,
         frontendUrl: String,
     ) {
-        page.navigate("$frontendUrl/user-manager")
+        page.navigate("$frontendUrl/management/users")
         page.waitForURL("**/management/users**")
     }
 

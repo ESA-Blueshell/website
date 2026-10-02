@@ -46,6 +46,7 @@ export {
 } from "./adapters/cohorts"
 export {RESOLUTION_WORDS, adoptWord, driftRowsOf, driftWords, inStepOn, isDrift, runBars, whyOf, type DriftWords} from "./listPage"
 export {default as TargetDrift} from "./island/TargetDrift.vue"
+export {default as BrevoListFields} from "./island/BrevoListFields.vue"
 export {ARCHIVE_FOLDER, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
 export {fetchCohort} from "./adapters/cohorts"
 export {fetchCohorts, type SummaryTarget} from "./adapters/cohorts"

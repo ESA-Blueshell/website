@@ -15,6 +15,8 @@ const adapter = vi.hoisted(() => ({
   removeCommittee: vi.fn(),
   saveCommitteeDiscord: vi.fn(),
   readCommitteeDiscord: vi.fn(),
+  saveCommitteeBrevo: vi.fn(),
+  readCommitteeBrevo: vi.fn(),
 }))
 const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn()}}))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
@@ -42,10 +44,11 @@ const ArtCells = {name: "ArtCells", props: ["cells", "testidPrefix"], template: 
 const RecordHead = {name: "RecordHead", props: ["title", "archived"], template: "<div data-testid=head><slot /><slot name=\"facts\" /></div>"}
 const MarkdownEditor = {name: "MarkdownEditor", props: ["modelValue"], emits: ["update:modelValue"], template: "<div />"}
 const DiscordPlaceFields = {name: "DiscordPlaceFields", props: ["modelValue", "read", "name", "slug"], emits: ["update:modelValue"], template: "<div />"}
+const BrevoListFields = {name: "BrevoListFields", props: ["modelValue", "read", "name"], emits: ["update:modelValue"], template: "<div />"}
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
-  ImagePicker, EventGamesPicker, CommitteeSeats, ConfirmDialog, ArtCells, RecordHead, MarkdownEditor, DiscordPlaceFields,
+  ImagePicker, EventGamesPicker, CommitteeSeats, ConfirmDialog, ArtCells, RecordHead, MarkdownEditor, DiscordPlaceFields, BrevoListFields,
   CutButton: {props: ["href", "testid"], template: "<a :href='href' :data-testid='testid'><slot /></a>"},
 }
 
@@ -207,6 +210,34 @@ describe("the committee edit page, for its own members", () => {
     await flushPromises()
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now.")
     expect(wrapper.emitted("saved")).toHaveLength(2)
+  })
+
+  it("sets the committee's Brevo list once it is saved, and says where Brevo refused without holding the committee back", async () => {
+    adapter.addCommittee.mockResolvedValue({ok: true, saved: lan})
+    adapter.saveCommitteeBrevo.mockResolvedValueOnce({ok: true, saved: {available: true, listId: "7"}})
+    const wrapper = mountEditor(null, true)
+    await flushPromises()
+    await input(wrapper, "name").setValue("Pub Quiz Cie")
+    describe_(wrapper, "Questions.")
+    const fields = wrapper.getComponent(BrevoListFields)
+    expect(fields.props("read")).toBeNull()
+    fields.vm.$emit("update:modelValue", {listId: null, createList: true})
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+    expect(adapter.saveCommitteeBrevo).toHaveBeenCalledWith(lan.id, {listId: null, createList: true})
+
+    adapter.saveCommitteeBrevo.mockResolvedValueOnce({ok: false, reason: "Brevo cannot be reached now."})
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Brevo cannot be reached now.")
+    expect(wrapper.emitted("saved")).toHaveLength(2)
+
+    adapter.listCommittees.mockResolvedValue([])
+    const editing = mountEditor(lan, true)
+    await flushPromises()
+    await (editing.getComponent(BrevoListFields).props("read") as () => Promise<unknown>)()
+    expect(adapter.readCommitteeBrevo).toHaveBeenCalledWith(lan.id)
+    expect(mountEditor(lan, false).findComponent(BrevoListFields).exists()).toBe(false)
   })
 
   it("leaves on Cancel", async () => {

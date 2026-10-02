@@ -18,4 +18,4 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   AccountHolderMissing: () => "Say whose account it is.",
 }
 
-export const {refusable, accepted} = refusalReader(sentences)
+export const {refusable, accepted, reasonFor} = refusalReader(sentences)

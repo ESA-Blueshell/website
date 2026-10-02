@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 /* A member's own bank details for incasso. Saving signs the mandate that day, on the site; the
-   account number is shown back only by its last four. */
+   account number is shown back only masked. From the account page a change asks the person to
+   prove it is them first, and saves once they have. */
 import {onMounted, ref} from "vue"
+import {StepUpDialog, readTwoFactor} from "@/domains/auth"
 import {maskedIban} from "@/domains/contribution"
 import {type OwnMandateResponse, readOwnMandate, setUpIncasso} from "@/domains/user"
 
@@ -21,6 +23,8 @@ const authorised = ref(false)
 const failure = ref<string | null>(null)
 const saved = ref(false)
 const saving = ref(false)
+const stepUpOpen = ref(false)
+const twoFactorOn = ref(false)
 
 const save = async () => {
   if (saving.value) return
@@ -29,6 +33,10 @@ const save = async () => {
   const answered = await setUpIncasso({iban: iban.value, accountHolder: holder.value, authorised: authorised.value}, signupToken)
   saving.value = false
   if (!answered.ok) {
+    if ("needsStepUp" in answered && answered.needsStepUp) {
+      stepUpOpen.value = true
+      return
+    }
     failure.value = answered.reason
     return
   }
@@ -40,7 +48,10 @@ const save = async () => {
 }
 
 onMounted(async () => {
-  if (!signupToken) own.value = await readOwnMandate()
+  if (signupToken) return
+  const [held, standing] = await Promise.all([readOwnMandate(), readTwoFactor()])
+  own.value = held
+  twoFactorOn.value = standing?.on === true
 })
 </script>
 
@@ -125,6 +136,11 @@ onMounted(async () => {
         Save bank details
       </v-btn>
     </form>
+    <step-up-dialog
+      v-model="stepUpOpen"
+      :two-factor-on="twoFactorOn"
+      @proved="save"
+    />
   </section>
 </template>
 

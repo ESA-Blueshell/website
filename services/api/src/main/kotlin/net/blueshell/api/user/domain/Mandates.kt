@@ -2,6 +2,7 @@ package net.blueshell.api.user.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.shared.crypto.Sealed
+import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.persistence.IncassoMandate
@@ -9,6 +10,7 @@ import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.PendingMandate
 import net.blueshell.api.user.persistence.PendingMandateRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -53,6 +55,7 @@ class Mandates(
     private val pendingMandates: PendingMandateRepository,
     private val cipher: BankDetailsCipher,
     private val clock: Clock,
+    private val events: ApplicationEventPublisher,
 ) {
     /**
      * Records the bank details and mandate, replacing any before them, and puts the membership on
@@ -91,6 +94,20 @@ class Mandates(
         membership.incasso = true
         return memberships.save(membership)
     }
+
+    /**
+     * A member changing their bank details from their account page, behind a step-up the caller
+     * asked for. The security log records it, and a notification names the new account, masked.
+     */
+    @Transactional
+    fun changeOwn(
+        userId: Long,
+        rawIban: String,
+        accountHolder: String,
+    ): OwnMandate =
+        setUpOwn(userId, rawIban, accountHolder).also { own ->
+            own.iban?.let { events.publishEvent(BankDetailsChanged(userId, it)) }
+        }
 
     /**
      * A member setting up or changing incasso themselves: signed today, on the site. Before their

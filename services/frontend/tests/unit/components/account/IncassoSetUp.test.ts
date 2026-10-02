@@ -5,7 +5,7 @@ import {IncassoStanding} from "@/services/api"
 import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 import {settle} from "../../helpers/testUtils"
 
-const api = vi.hoisted(() => ({findOwnMandate: vi.fn(), setUpOwnMandate: vi.fn(), setUpMandate: vi.fn()}))
+const api = vi.hoisted(() => ({findOwnMandate: vi.fn(), setUpOwnMandate: vi.fn(), setUpMandate: vi.fn(), twoFactorStanding: vi.fn()}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -28,9 +28,32 @@ describe("setting up incasso", () => {
     api.findOwnMandate.mockResolvedValue({status: 200, data: {standing: IncassoStanding.NONE, pending: false}})
     api.setUpOwnMandate.mockResolvedValue({status: 200, data: own})
     api.setUpMandate.mockResolvedValue({status: 204, data: undefined})
+    api.twoFactorStanding.mockResolvedValue({status: 200, data: {on: false, required: false}})
   })
 
-  it("saves the member's bank details and shows only the last four", async () => {
+  it("asks the person to prove it is them when the api wants a step-up, and saves once they have", async () => {
+    api.setUpOwnMandate.mockResolvedValueOnce({status: 403, error: {code: "StepUpRequired"}, response: {status: 403}})
+    const wrapper = mount(IncassoSetUp, {global: {stubs: {StepUpDialog: {name: "StepUpDialog", props: ["modelValue", "twoFactorOn"], emits: ["proved", "update:modelValue"], template: "<div />"}}}})
+    await settle()
+    await fill(wrapper)
+    await wrapper.get('[data-testid="incasso-form"]').trigger("submit")
+    await settle()
+
+    const dialog = wrapper.getComponent({name: "StepUpDialog"})
+    expect(dialog.props("modelValue")).toBe(true)
+    expect(dialog.props("twoFactorOn")).toBe(false)
+    expect(wrapper.find('[data-testid="incasso-failure"]').exists()).toBe(false)
+
+    dialog.vm.$emit("update:modelValue", false)
+    await settle()
+    expect(dialog.props("modelValue")).toBe(false)
+    dialog.vm.$emit("proved")
+    await settle()
+    expect(api.setUpOwnMandate).toHaveBeenCalledTimes(2)
+    expect(wrapper.get('[data-testid="incasso-saved"]').text()).toBe("Your bank details are saved.")
+  })
+
+  it("saves the member's bank details and shows only the account masked", async () => {
     const wrapper = mount(IncassoSetUp)
     await settle()
     expect(wrapper.find('[data-testid="incasso-none"]').exists()).toBe(true)

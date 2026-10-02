@@ -33,9 +33,11 @@ class MandatesTest {
     private val repository: MemberRepository = mock()
     private val cipher = BankDetailsCipher("1", Base64.getEncoder().encodeToString(ByteArray(32) { 7 }), "", MockEnvironment())
     private val pending: PendingMandateRepository = mock()
-    private val mandates = Mandates(repository, pending, cipher, Clock.fixed(now, ZoneOffset.UTC))
+    private val published: org.springframework.context.ApplicationEventPublisher = mock()
+    private val stepUp: net.blueshell.api.security.StepUp = mock()
+    private val mandates = Mandates(repository, pending, cipher, Clock.fixed(now, ZoneOffset.UTC), published)
     private val currentUser: CurrentUserProvider = mock()
-    private val controller = MandateController(mandates, currentUser)
+    private val controller = MandateController(mandates, currentUser, stepUp)
     private val membership =
         Entities.membership(id = 12).also {
             it.createdAt = now
@@ -174,5 +176,31 @@ class MandatesTest {
             .isEqualTo(IncassoStanding.MANDATE_RECORDED)
         whenever(currentUser.currentUser()).thenReturn(null)
         assertThatThrownBy { controller.findOwnMandate() }.isInstanceOf(ResponseStatusException::class.java)
+    }
+
+    @Test
+    fun `a change from the account page asks a step-up, and tells the security log with the account masked`() {
+        whenever(repository.findByUser_Id(3)).thenReturn(mutableListOf(membership))
+        controller.setUpOwnMandate(SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true))
+
+        org.mockito.kotlin
+            .verify(stepUp)
+            .require()
+        org.mockito.kotlin.verify(published).publishEvent(
+            net.blueshell.api.user.api
+                .BankDetailsChanged(
+                    3,
+                    net.blueshell.api.user.api
+                        .MaskedIban("NL", "00"),
+                ),
+        )
+
+        whenever(stepUp.require()).thenThrow(
+            net.blueshell.api.security
+                .StepUpRequiredException(),
+        )
+        assertThatThrownBy { controller.setUpOwnMandate(SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true)) }
+            .isInstanceOf(net.blueshell.api.security.StepUpRequiredException::class.java)
+        org.mockito.kotlin.verifyNoMoreInteractions(published)
     }
 }

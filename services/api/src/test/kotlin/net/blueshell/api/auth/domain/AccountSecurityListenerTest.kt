@@ -114,4 +114,25 @@ class AccountSecurityListenerTest {
             anyOrNull(),
         )
     }
+
+    @Test
+    fun `a member's own change of bank details is logged with the new account, masked`() {
+        listener.onBankDetailsChanged(
+            net.blueshell.api.user.api
+                .BankDetailsChanged(
+                    7,
+                    net.blueshell.api.user.api
+                        .MaskedIban("NL", "34"),
+                ),
+        )
+
+        verify(events).record(
+            eq(7L),
+            eq(SecurityEventKind.BANK_DETAILS_CHANGED),
+            eq(SecurityActor.Person(7)),
+            eq("NL•• … ••34"),
+            anyOrNull(),
+            anyOrNull(),
+        )
+    }
 }

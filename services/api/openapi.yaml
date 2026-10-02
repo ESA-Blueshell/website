@@ -5971,6 +5971,7 @@ components:
       - SIGNED_OUT_EVERYWHERE
       - SIGNED_OUT_ELSEWHERE
       - ROLES_CHANGED
+      - BANK_DETAILS_CHANGED
       type: string
     SecurityEventPageResponse:
       properties:

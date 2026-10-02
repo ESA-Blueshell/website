@@ -65,29 +65,20 @@ class ImapBouncePollingService(
         }
     }
 
-    private fun processOne(message: Message) {
+    internal fun processOne(message: Message) {
         try {
             val parsed = BounceMessageParser.parse(message)
             if (parsed == null) {
-                log.debug("Skipping non-DSN message subject='{}'", message.subject)
+                log.debug("Skipping a message that is no delivery report")
                 message.setFlag(Flags.Flag.SEEN, true)
                 return
             }
             val outbox = emailService.findByMessageId(parsed.originalMessageId)
             if (outbox == null) {
-                log.info(
-                    "Bounce for unknown message id={} recipient={} — marking seen anyway",
-                    parsed.originalMessageId,
-                    parsed.recipient,
-                )
+                log.info("Bounce for a message the outbox does not hold; marking it seen anyway")
             } else {
                 emailService.markBounced(outbox, parsed.describe())
-                log.info(
-                    "Marked email id={} as BOUNCED (messageId={} recipient={})",
-                    outbox.id,
-                    parsed.originalMessageId,
-                    parsed.recipient,
-                )
+                log.info("Marked email id={} as BOUNCED", outbox.id)
             }
             message.setFlag(Flags.Flag.SEEN, true)
         } catch (e: Exception) {

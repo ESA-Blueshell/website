@@ -69,21 +69,21 @@ class BrevoContactAdapter(
         data: ContactData,
         omittedAttrs: Set<String>,
     ): Long {
-        log.info("Creating Brevo contact: {} (omit={})", data.email, omittedAttrs)
+        log.info("Creating Brevo contact for user {} (omit={})", data.userId, omittedAttrs)
         try {
             val response = contactsApi.createContact(buildCreateRequest(data, omittedAttrs))
-            log.info("Created Brevo contact id={} for {}", response.id, data.email)
+            log.info("Created Brevo contact id={} for user {}", response.id, data.userId)
             return response.id!!
         } catch (e: RestClientResponseException) {
             val error = parseBrevoError(e, jsonMapper)
             return when {
                 error?.code == DUPLICATE_PARAMETER -> handleCreateDuplicate(data, omittedAttrs, error, e)
                 shouldDropPhone(error, omittedAttrs) -> {
-                    log.warn("Brevo create rejected phone for {}; retrying without SMS/WHATSAPP", data.email)
+                    log.warn("Brevo create rejected phone for user {}; retrying without SMS/WHATSAPP", data.userId)
                     createOrAdopt(data, omittedAttrs + PHONE_ATTRS)
                 }
                 else -> {
-                    log.error("Failed to create Brevo contact for {}", data.email, e)
+                    log.error("Failed to create Brevo contact for user {}", data.userId, e)
                     throw BrevoApiException(e.statusCode.value(), error?.code, error?.message, "createContact", e)
                 }
             }
@@ -112,11 +112,11 @@ class BrevoContactAdapter(
         if (expanded.size == omittedAttrs.size) {
             // Brevo reported a duplicate but we don't recognise the identifier,
             // so we can't drop it. Surface the situation rather than loop.
-            throw BrevoDuplicateContactException(duplicates, data.email, data.phoneNumber, cause)
+            throw BrevoDuplicateContactException(duplicates, data.userId, cause)
         }
         log.warn(
-            "Brevo create on {} conflicted on non-email identifier(s) {}; retrying without {}",
-            data.email,
+            "Brevo create for user {} conflicted on non-email identifier(s) {}; retrying without {}",
+            data.userId,
             error.duplicateIdentifiers,
             expanded - omittedAttrs,
         )
@@ -135,15 +135,15 @@ class BrevoContactAdapter(
         cause: RestClientResponseException,
     ): Long {
         val duplicates = error.duplicateIdentifiers.map { BrevoDuplicateIdentifier.from(it) }.toSet()
-        log.warn("Brevo reports duplicate {} for {}; adopting existing contact", duplicates, data.email)
+        log.warn("Brevo reports duplicate {} for user {}; adopting existing contact", duplicates, data.userId)
         val existingId =
             resolveExistingId(data, duplicates)
-                ?: throw BrevoDuplicateContactException(duplicates, data.email, data.phoneNumber, cause)
+                ?: throw BrevoDuplicateContactException(duplicates, data.userId, cause)
         // Push the intended attributes onto the resolved contact. updateById
         // updates by contact_id (so we hit the contact we actually resolved)
         // and falls through on conflicting / invalid attributes.
         updateById(existingId, data, omittedAttrs = emptySet())
-        log.info("Adopted existing Brevo contact id={} for {}", existingId, data.email)
+        log.info("Adopted existing Brevo contact id={} for user {}", existingId, data.userId)
         return existingId
     }
 
@@ -169,7 +169,7 @@ class BrevoContactAdapter(
         try {
             contactsApi.getContactInfo(identifier, identifierType, null, null).id
         } catch (e: RestClientResponseException) {
-            log.warn("Brevo lookup by {}={} failed: {}", identifierType, identifier, e.statusCode)
+            log.warn("Brevo lookup by {} failed: {}", identifierType, e.statusCode)
             null
         }
 
@@ -187,7 +187,7 @@ class BrevoContactAdapter(
         data: ContactData,
         omittedAttrs: Set<String>,
     ): Long {
-        log.info("Updating Brevo contact id={}: {} (omit={})", externalId, data.email, omittedAttrs)
+        log.info("Updating Brevo contact id={} for user {} (omit={})", externalId, data.userId, omittedAttrs)
         try {
             contactsApi.updateContact(
                 externalId.toString(),

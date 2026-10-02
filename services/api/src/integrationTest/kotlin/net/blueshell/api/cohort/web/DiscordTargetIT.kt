@@ -117,6 +117,7 @@ class DiscordTargetIT : UserTestSupport() {
                     .with(signedIn(member)),
             ).andExpect(status().isForbidden)
         mvc.perform(get("/management/committees/{id}/discord", 1).with(signedIn(member))).andExpect(status().isForbidden)
+        mvc.perform(get("/management/committees/{id}/brevo", 1).with(signedIn(member))).andExpect(status().isForbidden)
         mvc
             .perform(get("/management/teams/{id}/discord", 1).with(signedIn(board)))
             .andExpect(jsonPath("$.available").value(false))

@@ -6,6 +6,8 @@
 import {
   apiUrl,
   archiveCommittee,
+  type BrevoPlace,
+  type BrevoPlaceRequest,
   type DiscordPlace,
   type DiscordPlaceRequest,
   type CommitteeOwnPageRequest,
@@ -15,11 +17,13 @@ import {
   type CreateCommitteeRequest,
   deleteCommitteeById,
   FileType,
+  findCommitteeBrevo,
   findCommitteeDiscord,
   findCommitteePage,
   findCommittees,
   findCommitteesByUserId,
   type Image,
+  setCommitteeBrevo,
   setCommitteeDiscord,
   setGameOrganisers,
   updateCommittee,
@@ -129,7 +133,7 @@ export async function storeCommitteeIcon(file: File, committeeId: number | null)
 export const saveGameOrganisers = (code: string, committeeIds: number[]): Promise<{ok: true} | Refused> =>
   accepted(setGameOrganisers({path: {game: code}, body: {committeeIds}}), "The committees could not be saved.")
 
-export type {DiscordPlace, DiscordPlaceRequest}
+export type {BrevoPlace, BrevoPlaceRequest, DiscordPlace, DiscordPlaceRequest}
 
 /** The role a committee's seats hold and the channels it opens; nothing where it could not be read. */
 export const readCommitteeDiscord = (id: number): Promise<DiscordPlace | null> => readOr(findCommitteeDiscord({path: {id}}), null)
@@ -137,3 +141,10 @@ export const readCommitteeDiscord = (id: number): Promise<DiscordPlace | null> =
 /** Links or makes the committee's role, and opens, closes or makes its channels. */
 export const saveCommitteeDiscord = (id: number, body: DiscordPlaceRequest): Promise<Saved<DiscordPlace> | Refused> =>
   refusable(setCommitteeDiscord({path: {id}, body}), "Discord could not be set for the committee.")
+
+/** The list a committee's seats are on; nothing where it could not be read. */
+export const readCommitteeBrevo = (id: number): Promise<BrevoPlace | null> => readOr(findCommitteeBrevo({path: {id}}), null)
+
+/** Links or makes the committee's list, where it has none. */
+export const saveCommitteeBrevo = (id: number, body: BrevoPlaceRequest): Promise<Saved<BrevoPlace> | Refused> =>
+  refusable(setCommitteeBrevo({path: {id}, body}), "Brevo could not be set for the committee.")

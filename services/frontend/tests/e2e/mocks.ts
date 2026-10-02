@@ -2610,6 +2610,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && /^\/management\/discord\/channels\/\w+\/access$/.test(path)) {
       return answer(route, "findChannelAccess", {kept: {everyone: "READ", members: "WRITE"}, actual: {everyone: "READ", members: "WRITE"}, differs: false})
     }
+    if (/^\/management\/committees\/\d+\/brevo$/.test(path)) {
+      const place = {available: true, listId: null, listName: null, folder: "Committees"}
+      return method === "GET" ? answer(route, "findCommitteeBrevo", place) : answer(route, "setCommitteeBrevo", place)
+    }
     if (method === "GET" && /^\/management\/(committees|teams)\/\d+\/discord$/.test(path)) {
       return answer(route, path.includes("/teams/") ? "findTeamDiscord" : "findCommitteeDiscord", {available: false, channels: []})
     }

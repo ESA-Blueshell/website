@@ -31,6 +31,12 @@ enum class CohortType {
 
     /** Everybody on one team's line-up in the season fielded now. Pivots on `TEAM`. */
     TEAM_PLAYERS,
+
+    /** The board in office today. */
+    BOARD,
+
+    /** Kandi: the next board, from when it is named until the day it takes office. */
+    KANDI,
     ;
 
     /** Whether registering a cohort of this type makes it a Brevo list; the others exist for Discord and Workspace. */
@@ -41,7 +47,7 @@ enum class CohortType {
         when (this) {
             COMMITTEE_MEMBERS -> CohortCategory.COMMITTEES
             PERIOD_PAYERS, PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS -> CohortCategory.PERIODS
-            NEWSLETTER_SUBSCRIBERS, ACTIVISTS, CURRENT_MEMBERS -> CohortCategory.MEMBERS
+            NEWSLETTER_SUBSCRIBERS, ACTIVISTS, CURRENT_MEMBERS, BOARD, KANDI -> CohortCategory.MEMBERS
             TEAM_PLAYERS -> CohortCategory.TEAMS
         }
 }

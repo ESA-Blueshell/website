@@ -70,4 +70,22 @@ class BoardMemberServiceTest {
         assertThatThrownBy { service.update(gone) }.isInstanceOf(ResponseStatusException::class.java)
         assertThatThrownBy { service.deleteById(5) }.isInstanceOf(BoardMemberNotFoundException::class.java)
     }
+
+    @Test
+    fun `names who sits on a board not yet in office, and who serves on a day`() {
+        val day = java.time.LocalDate.parse("2026-09-01")
+        org.mockito.kotlin
+            .whenever(repository.findUserIdsOnBoardsStartingAfter(day))
+            .thenReturn(listOf(3L, 3L, 4L))
+        org.mockito.kotlin
+            .whenever(repository.findUserIdsServingOn(day))
+            .thenReturn(listOf(1L))
+
+        org.assertj.core.api.Assertions
+            .assertThat(service.candidatesOn(day))
+            .containsExactlyInAnyOrder(3L, 4L)
+        org.assertj.core.api.Assertions
+            .assertThat(service.servingOn(day))
+            .containsExactly(1L)
+    }
 }

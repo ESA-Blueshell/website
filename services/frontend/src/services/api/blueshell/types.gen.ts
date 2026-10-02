@@ -824,7 +824,9 @@ export enum CohortType {
     NEWSLETTER_SUBSCRIBERS = 'NEWSLETTER_SUBSCRIBERS',
     ACTIVISTS = 'ACTIVISTS',
     CURRENT_MEMBERS = 'CURRENT_MEMBERS',
-    TEAM_PLAYERS = 'TEAM_PLAYERS'
+    TEAM_PLAYERS = 'TEAM_PLAYERS',
+    BOARD = 'BOARD',
+    KANDI = 'KANDI'
 }
 
 export type CommitteeMemberRequest = {

@@ -1509,6 +1509,8 @@ components:
       - ACTIVISTS
       - CURRENT_MEMBERS
       - TEAM_PLAYERS
+      - BOARD
+      - KANDI
       type: string
     CommitteeMemberRequest:
       properties:

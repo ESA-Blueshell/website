@@ -84,4 +84,12 @@ class BoardMemberService(
         from: LocalDate,
         to: LocalDate,
     ): Set<Long> = repository.findUserIdsInWindow(from, to).toSet()
+
+    /** Everybody on a board that has not taken office by [day]: Kandi, until the board's first day. */
+    @Transactional(readOnly = true)
+    fun candidatesOn(day: LocalDate): Set<Long> = repository.findUserIdsOnBoardsStartingAfter(day).toSet()
+
+    /** Everybody serving on [day] on a board that has taken office by then. */
+    @Transactional(readOnly = true)
+    fun servingOn(day: LocalDate): Set<Long> = repository.findUserIdsServingOn(day).toSet()
 }

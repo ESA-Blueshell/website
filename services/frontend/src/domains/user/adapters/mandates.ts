@@ -17,7 +17,7 @@ import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
 import {readOr} from "@/utils/answers"
-import {accepted, refusable} from "../refusals"
+import {accepted, reasonFor, refusable} from "../refusals"
 
 export type {MandateResponse, OwnMandateResponse, RecordMandateRequest}
 export {IncassoStanding}
@@ -46,9 +46,11 @@ export async function setUpIncasso(
     return answered.ok ? {ok: true, saved: null} : answered
   }
   // From the account page a change waits on a step-up, which the page asks for and then saves again.
-  const call = setUpOwnMandate({body})
-  const answered = await refusable(call, "Your bank details could not be saved.")
-  if (answered.ok) return answered
-  const {error} = await call
-  return {...answered, needsStepUp: (error as {code?: string} | undefined)?.code === "StepUpRequired"}
+  const res = await setUpOwnMandate({body})
+  if (res.data) return {ok: true, saved: res.data}
+  return {
+    ok: false,
+    reason: reasonFor(res.error, "Your bank details could not be saved."),
+    needsStepUp: (res.error as {code?: string} | undefined)?.code === "StepUpRequired",
+  }
 }

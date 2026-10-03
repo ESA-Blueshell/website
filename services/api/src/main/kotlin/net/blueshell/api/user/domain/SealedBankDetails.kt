@@ -72,6 +72,27 @@ class SealedBankDetails(
         return opened.chunked(2).map { (iban, holder) -> BankDetails(Iban.parse(iban) ?: throw BankDetailsUnopenable(null), holder) }
     }
 
+    /** An online mandate's account and the address it was authorised under, opened in one call. */
+    fun openOnline(
+        userId: Long,
+        sealed: SealedAccount,
+    ): Pair<BankDetails, AddressFields> {
+        val values =
+            listOf(
+                Sealed(sealed.iban, sealingContext(IBAN, userId)),
+                Sealed(sealed.accountHolder, sealingContext(ACCOUNT_HOLDER, userId)),
+                Sealed(requireNotNull(sealed.address) { "An online mandate holds its address" }, sealingContext(ADDRESS, userId)),
+            )
+        val (iban, holder, address) =
+            try {
+                sealer.open(key, values)
+            } catch (refused: SealedValueUnopenable) {
+                throw BankDetailsUnopenable(refused)
+            }
+        return BankDetails(Iban.parse(iban) ?: throw BankDetailsUnopenable(null), holder) to
+            mapper.readValue(address, AddressFields::class.java)
+    }
+
     /** The account holder for the mandate panel, or null where it cannot be opened now: the panel then shows the masked IBAN alone. */
     fun accountHolder(account: HeldAccount): String? =
         try {

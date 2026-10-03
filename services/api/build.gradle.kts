@@ -83,6 +83,8 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-vault-config-databases:5.0.2")
     implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    // Renders an online mandate's HTML template to PDF (api ADR-038). The maintained fork, on PDFBox 3.
+    implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.87")
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation(kotlin("stdlib"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")

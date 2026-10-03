@@ -37,6 +37,8 @@ data class MandateResponse(
     val reference: String?,
     val signedOn: LocalDate?,
     val recordedBy: Long?,
+    @field:Schema(description = "Who recorded it, by name; null where the account is gone.")
+    val recordedByName: String?,
     val recordedAt: Instant?,
     @field:Schema(description = "Online where the member authorised it on the site, paper where the board recorded it.")
     val kind: MandateKind?,

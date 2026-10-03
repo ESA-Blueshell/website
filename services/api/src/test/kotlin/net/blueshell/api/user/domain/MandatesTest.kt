@@ -51,7 +51,8 @@ class MandatesTest {
     private val currentUser: CurrentUserProvider = mock()
     private val home = MandateAddressRequest("NL", "Enschede", "Hallenweg", "5", "7522NH")
     private val online = OnlineAuthorisation("2026-10", home.asFields())
-    private val controller = MandateController(mandates, currentUser, stepUp)
+    private val users: net.blueshell.api.user.api.UserService = mock()
+    private val controller = MandateController(mandates, currentUser, stepUp, users)
     private val membership =
         Entities.membership(id = 12).also {
             it.createdAt = now
@@ -427,5 +428,57 @@ class MandatesTest {
         mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 20), 3)
         assertThat(membership.mandate!!.reference).isEqualTo("BLUESHELL-12-20260920")
         assertThat(controller.findMandate(12).bankDetailsWiped).isFalse()
+    }
+
+    @Test
+    fun `opens an online mandate in full in one call, for its PDF, and nothing for a paper or a wiped one`() {
+        whenever(repository.findByUser_Id(membership.userId)).thenReturn(mutableListOf(membership))
+        assertThatThrownBy { mandates.openOnline(12) }.isInstanceOf(NoOnlineMandate::class.java)
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+        assertThatThrownBy { mandates.openOnline(12) }.isInstanceOf(NoOnlineMandate::class.java)
+
+        mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", "Ann Vos", online)
+        val opened =
+            net.blueshell.api.user.api
+                .OnlineMandates(mandates)
+                .open(12)
+
+        assertThat(opened.iban).isEqualTo("NL91ABNA0417164300")
+        assertThat(opened.accountHolder).isEqualTo("Ann Vos")
+        assertThat(opened.address).isEqualTo(online.address)
+        assertThat(opened.wordingVersion to opened.wording).isEqualTo("2026-10" to MandateWording.textOf("2026-10"))
+        assertThat(opened.authorisedAt).isEqualTo(now)
+        assertThat(opened.username).isEqualTo(membership.user.username)
+        assertThat(opened.reference).isEqualTo(membership.mandate!!.reference)
+        verify(sealer).open(eq("api-bank-details"), argThat { size == 3 })
+
+        // Sealed to another member, it opens for nobody.
+        val elsewhere =
+            sealing.seal(
+                membership.userId + 1,
+                requireNotNull(Iban.parse("NL91ABNA0417164300")),
+                "Somebody Else",
+                online.address,
+            )
+        assertThatThrownBy { sealing.openOnline(membership.userId, elsewhere) }.isInstanceOf(BankDetailsUnopenable::class.java)
+        val swapped = sealing.seal(membership.userId, requireNotNull(Iban.parse("NL91ABNA0417164300")), "Ann Vos", online.address)
+        assertThatThrownBy { sealing.openOnline(membership.userId, swapped.copy(iban = swapped.accountHolder)) }
+            .isInstanceOf(BankDetailsUnopenable::class.java)
+
+        membership.mandate!!.sealedIban = null
+        assertThatThrownBy { mandates.openOnline(12) }.isInstanceOf(NoOnlineMandate::class.java)
+    }
+
+    @Test
+    fun `the board reads somebody's mandate as they would see it, and who recorded a paper one by name`() {
+        whenever(repository.findByUser_Id(77)).thenReturn(mutableListOf())
+        assertThat(controller.findMandateOf(77).standing).isEqualTo(IncassoStanding.NONE)
+
+        whenever(users.findById(3)).thenReturn(Entities.user(id = 3, firstName = "Bo", lastName = "Ard"))
+        assertThat(
+            controller.recordMandate(12, RecordMandateRequest("NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1))).recordedByName,
+        ).isEqualTo("Bo Ard")
+        whenever(users.findById(3)).thenThrow(IllegalStateException("gone"))
+        assertThat(controller.findMandate(12).recordedByName).isNull()
     }
 }

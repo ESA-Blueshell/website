@@ -600,7 +600,8 @@ A mandate the member authorised on the site, on their account page or in the sig
 step. It records the moment of authorisation, the version of the wording they agreed to, the
 account that authorised it and the address they confirmed, sealed with the bank details. That
 address is the mandate's own record: the address on the member's account is not changed by it.
-Online is dominant: it replaces a paper mandate without asking.
+Online is dominant: it replaces a paper mandate without asking. A board member can download it as
+a PDF laid out like the paper form, which states the online authorisation in place of a signature.
 
 _Avoid_: e-mandate, digital mandate.
 

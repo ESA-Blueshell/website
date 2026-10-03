@@ -12,8 +12,8 @@ import MembershipPanel from "@/components/management/MembershipPanel.vue"
 import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
 import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
-import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, recordPayment, withdrawPayment} from "@/domains/contribution"
-import {type AddressResponse, MEMBERSHIP_WORDS, type MembershipResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readUser} from "@/domains/user"
+import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, maskedIban, recordPayment, withdrawPayment} from "@/domains/contribution"
+import {type AddressResponse, MEMBERSHIP_WORDS, type MembershipResponse, type OwnMandateResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandateOf, readUser} from "@/domains/user"
 import UserRolesPanel from "@/domains/user/components/UserRolesPanel.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import store from "@/plugins/store"
@@ -47,6 +47,8 @@ const profile = ref<EditableUser | null>(null)
 const profileForm = ref<InstanceType<typeof UserForm> | null>(null)
 const profileSaved = ref<string | null>(null)
 const address = ref<Partial<AddressResponse>>({})
+/** A mandate authorised before the membership started, which has no membership to be shown on yet. */
+const pendingMandate = ref<OwnMandateResponse | null>(null)
 const activation = ref<TokenPurpose | null>(null)
 const deleteOpen = ref(false)
 const isAdmin = computed(() => store.getters.isAdmin === true)
@@ -71,6 +73,9 @@ const load = async () => {
   periods.value = owed
   profile.value = found ? toEditableUser(found) : null
   address.value = found?.addressId == null ? {} : await readAddress(found.addressId).catch(() => ({}))
+  // Only somebody without a running membership can have a mandate waiting for one.
+  const waiting = found && !held.some((one) => !one.endDate) ? await readMandateOf(id.value) : null
+  pendingMandate.value = waiting?.pending ? waiting : null
   activation.value = found && !found.enabled ? (await listPendingActivations().catch(() => ({} as Record<number, TokenPurpose>)))[found.id] ?? null : null
   loaded.value = true
 }
@@ -227,6 +232,14 @@ watch(id, load, {immediate: true})
           data-testid="user-incasso"
         >
           {{ incasso }}
+        </p>
+        <p
+          v-if="pendingMandate"
+          class="person__note"
+          data-testid="user-pending-mandate"
+        >
+          Pending online mandate for the account {{ maskedIban(pendingMandate) }}, authorised on {{ pendingMandate.signedOn }}.
+          Its PDF is available once the membership starts.
         </p>
         <mandate-panel
           v-if="latestMembership"

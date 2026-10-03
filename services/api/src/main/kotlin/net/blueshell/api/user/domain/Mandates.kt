@@ -5,6 +5,7 @@ import net.blueshell.api.user.api.AddressFields
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.IbanRevealed
 import net.blueshell.api.user.api.MaskedIban
+import net.blueshell.api.user.api.OpenedOnlineMandate
 import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.MandateKind
@@ -271,6 +272,28 @@ class Mandates(
         val iban = bankDetailsOf(membership.userId, mandate).iban
         events.publishEvent(IbanRevealed(membership.userId, membershipId, revealedBy))
         return iban
+    }
+
+    /** The membership's online mandate in full, for its PDF. A paper mandate, a wiped one and none at all have no PDF. */
+    @Transactional(readOnly = true)
+    fun openOnline(membershipId: Long): OpenedOnlineMandate {
+        val membership = find(membershipId)
+        val mandate = membership.collectableMandate?.takeIf { it.kind == MandateKind.ONLINE } ?: throw NoOnlineMandate()
+        val sealed = SealedAccount(requireNotNull(mandate.sealedIban), requireNotNull(mandate.sealedAccountHolder), mandate.sealedAddress)
+        val (account, address) = sealing.openOnline(membership.userId, sealed)
+        val version = requireNotNull(mandate.wordingVersion) { "An online mandate records its wording" }
+        return OpenedOnlineMandate(
+            userId = membership.userId,
+            username = membership.user.username,
+            reference = mandate.reference,
+            signedOn = mandate.signedOn,
+            authorisedAt = requireNotNull(mandate.authorisedAt) { "An online mandate records when it was authorised" },
+            wordingVersion = version,
+            wording = requireNotNull(MandateWording.textOf(version)) { "No wording is kept for version $version" },
+            accountHolder = account.accountHolder,
+            iban = account.iban.value,
+            address = address,
+        )
     }
 
     /** The account holder as recorded, or null where it cannot be opened now. Only a reveal carries the IBAN. */

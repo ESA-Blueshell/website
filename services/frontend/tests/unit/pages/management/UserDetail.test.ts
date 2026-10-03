@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
   createContribution: vi.fn(),
   deleteContribution: vi.fn(),
   findAddressById: vi.fn(),
+  findMandateOf: vi.fn(),
   pendingActivations: vi.fn(),
   deleteUserById: vi.fn(),
   readRoleStanding: vi.fn(),
@@ -84,6 +85,7 @@ describe("one user's page", () => {
     api.deleteContribution.mockResolvedValue({status: 204, data: undefined})
     api.findAddressById.mockResolvedValue({status: 200, data: {id: 3, street: "Hallenweg", version: 0, createdAt: "", updatedAt: ""}})
     api.pendingActivations.mockResolvedValue({status: 200, data: {activations: [{userId: 7, purpose: "USER_ACTIVATION"}]}})
+    api.findMandateOf.mockResolvedValue({status: 200, data: {standing: "NONE", pending: false}})
     api.deleteUserById.mockResolvedValue({status: 204, data: undefined})
     api.accountStanding.mockResolvedValue({status: 200, data: {twoFactorOn: false, awaitingReenrolment: false, locked: false}})
     api.securityEvents.mockResolvedValue({status: 200, data: {events: []}})
@@ -199,6 +201,16 @@ describe("one user's page", () => {
     const wrapper = await mount("profile")
 
     expect(wrapper.get('[data-testid="user-address-unopened"]').text()).toContain("Saving writes it anew")
+  })
+
+  it("says a mandate waiting for the membership to start has its PDF once it does", async () => {
+    api.findMemberships.mockResolvedValue({status: 200, data: []})
+    api.findMandateOf.mockResolvedValue({status: 200, data: {standing: "MANDATE_RECORDED", ibanCountry: "NL", ibanLastTwo: "00", signedOn: "2026-09-30", pending: true}})
+    const wrapper = await mount("membership")
+
+    expect(api.findMandateOf).toHaveBeenCalledWith({path: {userId: 7}})
+    expect(wrapper.get('[data-testid="user-pending-mandate"]').text()).toContain("NL•• … ••00")
+    expect(wrapper.get('[data-testid="user-pending-mandate"]').text()).toContain("available once the membership starts")
   })
 
   it("offers the emails the account can be sent, its security and deleting it, on the Account tab", async () => {

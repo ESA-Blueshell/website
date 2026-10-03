@@ -92,7 +92,7 @@ class MandateController(
         return MandateResponse(
             membershipId = requireNotNull(id),
             standing = incassoStanding(),
-            accountHolder = held?.let { mandates.accountHolderOf(userId, it) },
+            accountHolder = held?.takeUnless { it.wiped }?.let { mandates.accountHolderOf(userId, it) },
             ibanCountry = MaskedIban.of(held?.ibanMasked)?.country,
             ibanLastTwo = MaskedIban.of(held?.ibanMasked)?.lastTwo,
             reference = held?.reference,
@@ -101,6 +101,7 @@ class MandateController(
             recordedAt = held?.recordedAt,
             kind = held?.kind,
             authorisedAt = held?.authorisedAt,
+            bankDetailsWiped = held?.wiped == true,
         )
     }
 }

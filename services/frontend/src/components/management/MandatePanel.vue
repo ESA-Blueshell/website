@@ -104,7 +104,14 @@ watch(() => membershipId, load, {immediate: true})
         <dd data-testid="mandate-account">
           {{ account }}
         </dd>
+        <p
+          v-if="mandate.bankDetailsWiped"
+          data-testid="mandate-wiped"
+        >
+          The bank details were wiped 13 months after the last collection. What is left is the record of what was collected.
+        </p>
         <button
+          v-else
           class="mandate__action mandate__action--inline"
           data-testid="mandate-reveal"
           :disabled="revealing"

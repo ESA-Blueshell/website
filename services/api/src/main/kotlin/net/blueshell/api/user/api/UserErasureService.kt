@@ -32,6 +32,7 @@ class UserErasureService(
     private val addressLifecycles: AddressLifecycleRepo,
     private val addresses: AddressRepository,
     private val trackedEvents: TrackedEventPublisher,
+    private val mandateRetention: MandateRetention,
     @param:Value("\${app.user-erasure.restore-window-days:90}")
     private val restoreWindowDays: Long,
 ) {
@@ -88,6 +89,8 @@ class UserErasureService(
 
         userRepository.saveAndFlush(user)
         deletedUsers.save(snapshot)
+        // A pending mandate was never collected from. A recorded one starts its 13 months here.
+        mandateRetention.forgetPending(userId)
 
         trackedEvents.publish { actor ->
             UserDeleted(userId = user.id!!, actor = actor)
@@ -225,7 +228,7 @@ class UserErasureService(
         val suffix = "$userId-${now.toEpochMilli()}"
         return AnonymizedIdentity(
             username = "deleted-$suffix",
-            email = "deleted-$suffix@deleted.invalid",
+            email = "deleted-$suffix@${MandateRetention.ERASED_EMAIL_DOMAIN}",
         )
     }
 

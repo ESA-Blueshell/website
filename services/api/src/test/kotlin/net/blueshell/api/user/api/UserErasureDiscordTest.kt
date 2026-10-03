@@ -42,6 +42,7 @@ class UserErasureDiscordTest {
     private val userRepository: UserRepository = mock()
     private val deletedUsers: DeletedUserRepository = mock()
     private val trackedEvents: TrackedEventPublisher = mock()
+    private val mandateRetention: MandateRetention = mock()
 
     private fun erasure() =
         UserErasureService(
@@ -52,6 +53,7 @@ class UserErasureDiscordTest {
             mock<AddressLifecycleRepo>(),
             mock<AddressRepository>(),
             trackedEvents,
+            mandateRetention,
             90,
         )
 
@@ -66,6 +68,9 @@ class UserErasureDiscordTest {
         assertThat(kept.firstValue.discordId).isEqualTo("1144058844004233369")
         assertThat(user.discordId).isNull()
         assertThat(user.discord).isNull()
+        // A pending mandate was never collected from, so it goes with the account.
+        verify(mandateRetention).forgetPending(7)
+        assertThat(user.email).endsWith("@${MandateRetention.ERASED_EMAIL_DOMAIN}")
     }
 
     @Test

@@ -67,6 +67,7 @@ class IncassoFilesTest {
     private fun given(
         members: List<User>,
         changed: Set<Long> = emptySet(),
+        wiped: Set<Long> = emptySet(),
     ) {
         whenever(runs.findById(11)).thenReturn(Optional.of(run()))
         whenever(notifications.findByIncassoRunIdIn(listOf(11L))).thenReturn(members.map(::told))
@@ -85,7 +86,7 @@ class IncassoFilesTest {
                                 } else {
                                     "BLUESHELL-$id"
                                 },
-                            )
+                            ).apply { if (id in wiped) sealedIban = null }
                     },
                 )
             }
@@ -141,5 +142,12 @@ class IncassoFilesTest {
             .isInstanceOf(MandateChanged::class.java)
             .extracting("facts")
             .isEqualTo(mapOf("userIds" to listOf(2L)))
+
+        // A mandate whose bank details were wiped since the member was told has nothing left to collect from.
+        given(listOf(Entities.user(id = 1), Entities.user(id = 2, username = "two")), wiped = setOf(1))
+        assertThatThrownBy { files().file(11, 1, 9) }
+            .isInstanceOf(MandateChanged::class.java)
+            .extracting("facts")
+            .isEqualTo(mapOf("userIds" to listOf(1L)))
     }
 }

@@ -42,6 +42,10 @@ data class MandateResponse(
     val kind: MandateKind?,
     @field:Schema(description = "The moment an online mandate was authorised.")
     val authorisedAt: Instant?,
+    @field:Schema(
+        description = "True once the sealed bank details were wiped; the reference, signing date and masked IBAN stay as the record.",
+    )
+    val bankDetailsWiped: Boolean,
 )
 
 @Schema(name = "RecordMandateRequest")

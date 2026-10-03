@@ -8,6 +8,12 @@ import org.springframework.data.repository.query.Param
 interface PendingMandateRepository : JpaRepository<PendingMandate, Long> {
     fun findByUserId(userId: Long): PendingMandate?
 
+    @Modifying
+    @Query(value = "DELETE FROM pending_mandates WHERE user_id = :userId", nativeQuery = true)
+    fun deleteByUserId(
+        @Param("userId") userId: Long,
+    ): Int
+
     /** Every pending mandate's sealed values: what a key rotation has to move. */
     @Query(
         value =

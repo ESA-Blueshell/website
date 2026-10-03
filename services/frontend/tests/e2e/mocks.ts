@@ -1029,9 +1029,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         return answer(route, "recordMandate", {
           membershipId, standing: "MANDATE_RECORDED", accountHolder, ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2),
           reference: `BLUESHELL-${membershipId}`, signedOn, recordedBy: 1, recordedAt: "2026-09-30T10:00:00.000Z",
+          kind: "PAPER", bankDetailsWiped: false,
         })
       }
-      return answer(route, "findMandate", {membershipId, standing: "NONE"})
+      return answer(route, "findMandate", {membershipId, standing: "NONE", bankDetailsWiped: false})
     }
     if (method === "GET" && path === "/memberships") {
       const userId = url.searchParams.get("userId")

@@ -1018,6 +1018,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       return answer(route, "restoreDeletedUserById", {}, 204)
     }
+    if (method === "GET" && /^\/users\/\d+\/mandate$/.test(path)) {
+      return answer(route, "findMandateOf", {standing: "NONE", pending: false})
+    }
     if (method === "POST" && /^\/memberships\/\d+\/mandate\/reveal$/.test(path)) {
       return answer(route, "revealIban", {iban: "NL91ABNA0417164300"})
     }

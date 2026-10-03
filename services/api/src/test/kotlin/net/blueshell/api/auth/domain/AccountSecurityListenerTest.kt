@@ -154,6 +154,23 @@ class AccountSecurityListenerTest {
     }
 
     @Test
+    fun `a download of a mandate's PDF is logged on the member, naming who downloaded which membership's`() {
+        listener.onMandatePdfDownloaded(
+            net.blueshell.api.contribution.api
+                .MandatePdfDownloaded(userId = 7, membershipId = 12, downloadedBy = 3),
+        )
+
+        verify(events).record(
+            eq(7L),
+            eq(SecurityEventKind.MANDATE_PDF_DOWNLOADED),
+            eq(SecurityActor.Person(3)),
+            eq("membership 12"),
+            anyOrNull(),
+            anyOrNull(),
+        )
+    }
+
+    @Test
     fun `a download of ING's file is logged on who downloaded it, with the run, the file and how many members it holds`() {
         val downloaded =
             net.blueshell.api.contribution.api.IncassoFileDownloaded(

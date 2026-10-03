@@ -4,7 +4,7 @@
    number lives in this component's memory alone, so it is gone when the panel closes. */
 import {computed, ref, watch} from "vue"
 import {maskedIban} from "@/domains/contribution"
-import {IncassoStanding, MandateKind, type MandateResponse, readMandate, revealMandateIban, saveMandate} from "@/domains/user"
+import {IncassoStanding, MandateKind, type MandateResponse, fetchMandatePdf, readMandate, revealMandateIban, saveMandate} from "@/domains/user"
 import {formatDate} from "@/utils/timestamps"
 
 defineOptions({name: "MandatePanel"})
@@ -43,6 +43,38 @@ const kind = computed(() => {
   if (!mandate.value?.kind) return ""
   return online.value ? `Online mandate, authorised on ${authorisedOn.value}` : "Paper mandate"
 })
+
+/* Only an online mandate has a PDF: a paper one is its own record, and a wiped one has nothing to print. */
+const hasPdf = computed(() => online.value && !mandate.value?.bankDetailsWiped && !!mandate.value?.reference)
+const paperNote = computed(() => {
+  const held = mandate.value
+  if (!held || held.kind !== MandateKind.PAPER) return ""
+  const who = held.recordedByName ? ` by ${held.recordedByName}` : ""
+  const when = held.recordedAt ? ` on ${formatDate(held.recordedAt)}` : ""
+  return `Paper mandate, recorded${who}${when}. The signed paper is the record, so there is no PDF.`
+})
+const pdfFailure = ref<string | null>(null)
+const fetchingPdf = ref(false)
+
+const downloadPdf = async () => {
+  if (fetchingPdf.value || !mandate.value) return
+  fetchingPdf.value = true
+  pdfFailure.value = null
+  const answered = await fetchMandatePdf(membershipId)
+  fetchingPdf.value = false
+  if (!answered.ok) {
+    pdfFailure.value = answered.reason
+    return
+  }
+  const url = URL.createObjectURL(answered.file)
+  const anchor = document.createElement("a")
+  anchor.href = url
+  anchor.download = `mandate-${mandate.value.reference}.pdf`
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}
 
 const load = async () => {
   revealed.value = null
@@ -136,8 +168,26 @@ watch(() => membershipId, load, {immediate: true})
       <div v-if="kind">
         <dt>Kind</dt>
         <dd data-testid="mandate-kind">
-          {{ kind }}
+          {{ paperNote || kind }}
         </dd>
+        <button
+          v-if="hasPdf"
+          class="mandate__action mandate__action--inline"
+          data-testid="mandate-pdf"
+          :disabled="fetchingPdf"
+          type="button"
+          @click="downloadPdf"
+        >
+          Download the mandate PDF
+        </button>
+        <p
+          v-if="pdfFailure"
+          class="mandate__failure"
+          data-testid="mandate-pdf-failure"
+          role="alert"
+        >
+          {{ pdfFailure }}
+        </p>
       </div>
       <div v-if="mandate.recordedAt">
         <dt>Recorded</dt>

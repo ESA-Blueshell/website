@@ -3,7 +3,9 @@
  * browser only for a board member's reveal.
  */
 import {
+  downloadMandatePdf,
   findMandate,
+  findMandateOf,
   findOwnMandate,
   IncassoStanding,
   type MandateAddressRequest,
@@ -42,6 +44,15 @@ export async function revealMandateIban(membershipId: number): Promise<Saved<str
   const answered = await refusable(revealIban({path: {membershipId}}), "The IBAN could not be shown.")
   return answered.ok ? {ok: true, saved: answered.saved.iban} : answered
 }
+
+/** An online mandate as its PDF, filled in by the api as it answers; nothing keeps a copy. */
+export async function fetchMandatePdf(membershipId: number): Promise<{ok: true; file: Blob} | Refused> {
+  const answered = await refusable(downloadMandatePdf({path: {membershipId}}), "The mandate's PDF could not be made.")
+  return answered.ok ? {ok: true, file: answered.saved as Blob} : answered
+}
+
+/** Somebody's mandate as they would see it, for the board: a pending one has no membership to be read on. */
+export const readMandateOf = (userId: number): Promise<OwnMandateResponse | null> => readOr(findMandateOf({path: {userId}}), null)
 
 /** The reader's own mandate, masked, or nothing where it could not be read. */
 export const readOwnMandate = (): Promise<OwnMandateResponse | null> => readOr(findOwnMandate(), null)

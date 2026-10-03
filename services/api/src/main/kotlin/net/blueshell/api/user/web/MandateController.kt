@@ -7,6 +7,7 @@ import net.blueshell.api.security.StepUp
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.domain.Mandates
 import net.blueshell.api.user.domain.OnlineAuthorisation
 import net.blueshell.api.user.domain.incassoStanding
@@ -29,6 +30,7 @@ class MandateController(
     private val mandates: Mandates,
     private val currentUser: CurrentUserProvider,
     private val stepUp: StepUp,
+    private val users: UserService,
 ) {
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'read')")
     @GetMapping("/memberships/{membershipId}/mandate")
@@ -67,6 +69,13 @@ class MandateController(
             .header(HttpHeaders.CACHE_CONTROL, "no-store")
             .body(RevealedIbanResponse(mandates.reveal(membershipId, reader()).value))
 
+    /** Somebody's mandate as they would see it, for the board: a pending one has no membership to be read on yet. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'read')")
+    @GetMapping("/users/{userId}/mandate")
+    fun findMandateOf(
+        @PathVariable userId: Long,
+    ): OwnMandateResponse = mandates.own(userId).asResponse()
+
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/users/me/mandate")
     fun findOwnMandate(): OwnMandateResponse = mandates.own(reader()).asResponse()
@@ -98,6 +107,7 @@ class MandateController(
             reference = held?.reference,
             signedOn = held?.signedOn,
             recordedBy = held?.recordedBy,
+            recordedByName = held?.recordedBy?.let { recorder -> runCatching { users.findById(recorder).fullName }.getOrNull() },
             recordedAt = held?.recordedAt,
             kind = held?.kind,
             authorisedAt = held?.authorisedAt,

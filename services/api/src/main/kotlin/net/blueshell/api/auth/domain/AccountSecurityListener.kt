@@ -4,6 +4,7 @@ import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.contribution.api.IncassoFileDownloaded
+import net.blueshell.api.contribution.api.MandatePdfDownloaded
 import net.blueshell.api.security.SignInEndReason
 import net.blueshell.api.security.SignInEndedAsSuspicious
 import net.blueshell.api.security.SignIns
@@ -67,6 +68,17 @@ class AccountSecurityListener(
             evt.userId,
             SecurityEventKind.IBAN_REVEALED,
             SecurityActor.Person(evt.revealedBy),
+            note = "membership ${evt.membershipId}",
+        )
+    }
+
+    /** Who downloaded whose mandate, as with a reveal. */
+    @AfterCommitListener
+    fun onMandatePdfDownloaded(evt: MandatePdfDownloaded) {
+        events.record(
+            evt.userId,
+            SecurityEventKind.MANDATE_PDF_DOWNLOADED,
+            SecurityActor.Person(evt.downloadedBy),
             note = "membership ${evt.membershipId}",
         )
     }

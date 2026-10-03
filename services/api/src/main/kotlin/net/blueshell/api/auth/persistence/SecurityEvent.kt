@@ -100,4 +100,7 @@ enum class SecurityEventKind(
 
     /** The person downloaded one of an incasso run's files for ING, which holds full account numbers. */
     INCASSO_FILE_DOWNLOADED(false),
+
+    /** A board member downloaded the PDF of the person's online mandate. */
+    MANDATE_PDF_DOWNLOADED(false),
 }

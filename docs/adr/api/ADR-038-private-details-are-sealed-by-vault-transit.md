@@ -32,13 +32,19 @@ logged and shown as none.
 **No list of people opens a sealed value.** Opening costs a Vault call and an audit line, so only
 one person's page, a reveal or ING's file opens one.
 
-**A full IBAN leaves the api in two ways only, and both are logged.** Every other response carries
+**A full IBAN leaves the api in three ways only, and each is logged.** Every other response carries
 the masked IBAN. A board member can **reveal** one membership's full IBAN from its mandate panel:
-the answer is sent `no-store`, shown until the panel closes and kept nowhere. ING's batch file is
-the other. Each reveal is a security event on the member's log, naming who revealed which
-membership and when; each download of ING's file is one on the downloader's log, naming the run,
-the file and how many members it holds. Neither event holds an IBAN. With Vault out of reach a
-reveal is refused with a 503.
+the answer is sent `no-store`, shown until the panel closes and kept nowhere. A board member can
+download an online mandate as a PDF, built from the sealed mandate each time and kept nowhere.
+ING's batch file is the third. A reveal and a PDF download are each a security event on the
+member's log, naming who did it for which membership and when; each download of ING's file is one
+on the downloader's log, naming the run, the file and how many members it holds. No event holds an
+IBAN. With Vault out of reach all three are refused with a 503.
+
+**The mandate PDF is rendered from HTML** by openhtmltopdf on PDFBox, from a Thymeleaf template
+that follows the paper form of August 2021. It prints the wording version the member agreed to,
+and where the paper form has a signature it states when and by whom the mandate was authorised
+online. A paper mandate has no PDF: the signed paper is the record.
 
 **Phone number, date of birth and student number stay plaintext.** They are read on too many
 pages to be worth a Vault call each.

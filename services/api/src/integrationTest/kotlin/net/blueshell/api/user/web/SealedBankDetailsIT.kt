@@ -225,4 +225,55 @@ class SealedBankDetailsIT : UserTestSupport() {
                 .response.contentAsString
         assertThat(annsLog + boardsLog).doesNotContain(iban).doesNotContain("0417")
     }
+
+    @Test
+    fun `the board downloads an online mandate as a PDF, logged without the IBAN, and nobody below board can, not even its member`() {
+        val board = createUserWithRole(Role.BOARD)
+        val admin = createUserWithRole(Role.ADMIN)
+        val member = createUserWithRole(Role.MEMBER)
+        val membership = createMembershipFixture(member, startDate = LocalDate.now().minusMonths(2))
+        setUpOwn(member).andExpect(status().isOk)
+        val (_, paper) = onIncasso(board, "Bob Smit")
+
+        val pdf =
+            mvc
+                .perform(get("/memberships/${membership.id}/mandate/pdf").with(signedIn(board)))
+                .andExpect(status().isOk)
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(header().string("Content-Type", "application/pdf"))
+                .andExpect(
+                    header().string("Content-Disposition", org.hamcrest.Matchers.containsString("mandate-BLUESHELL-${membership.id}-")),
+                ).andReturn()
+                .response.contentAsByteArray
+        val text =
+            org.apache.pdfbox.Loader
+                .loadPDF(pdf)
+                .use {
+                    org.apache.pdfbox.text
+                        .PDFTextStripper()
+                        .getText(it)
+                }.replace(Regex("\\s+"), " ")
+        assertThat(text).contains("NL91 ABNA 0417 1643 00", "Ann Vos", "Hallenweg 5", "signed in as ${member.username}")
+
+        mvc.perform(get("/memberships/${membership.id}/mandate/pdf").with(signedIn(member))).andExpect(status().isForbidden)
+        mvc
+            .perform(get("/memberships/$paper/mandate/pdf").with(signedIn(board)))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.code").value("NoOnlineMandate"))
+        val log =
+            mvc
+                .perform(get("/users/${member.id}/security-events").with(signedIn(admin)))
+                .andExpect(jsonPath("$.events[0].kind").value("MANDATE_PDF_DOWNLOADED"))
+                .andExpect(jsonPath("$.events[0].actorName").value(board.fullName))
+                .andExpect(jsonPath("$.events[0].note").value("membership ${membership.id}"))
+                .andReturn()
+                .response.contentAsString
+        assertThat(log).doesNotContain(iban).doesNotContain("0417")
+
+        doThrow(SealingUnavailable()).whenever(sealer).open(any(), any())
+        mvc
+            .perform(get("/memberships/${membership.id}/mandate/pdf").with(signedIn(board)))
+            .andExpect(status().isServiceUnavailable)
+            .andExpect(jsonPath("$.code").value("SealingUnavailable"))
+    }
 }

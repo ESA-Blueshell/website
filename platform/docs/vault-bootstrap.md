@@ -245,12 +245,15 @@ flux reconcile kustomization apps-data
 
 ### Sealing keys (handled by the bootstrap Job)
 
-Members' addresses are sealed by Vault Transit (api ADR-038). The bootstrap Job creates
-`transit/keys/api-address`, a derived key: every value is sealed under a context naming the field
-and the member, so a value copied onto another member's row does not open. The `api` policy may
-only encrypt, decrypt and rewrap with it (`transit/encrypt/api-address`,
-`transit/decrypt/api-address`, `transit/rewrap/api-address`). Nothing else may read the key, which
-never leaves Vault. The api uses it once `PRIVACY_SEALING` is `vault`, as the deployment sets it.
+Members' addresses and bank details are sealed by Vault Transit (api ADR-038). The bootstrap Job
+creates two derived keys in the `transit` engine: `api-address` for addresses and
+`api-bank-details` for a mandate's IBAN and account holder. Every value is sealed under a context
+naming the field and the member, so a value copied onto another member's row does not open. The
+`api` policy may only encrypt, decrypt and rewrap with each (`transit/encrypt/<key>`,
+`transit/decrypt/<key>`, `transit/rewrap/<key>`). Nothing else may read the keys, which never
+leave Vault. The api uses them once `PRIVACY_SEALING` is `vault`, as the deployment sets it, and it
+then refuses to start if it cannot seal with either key. Run the bootstrap Job before a release
+that adds a key.
 
 After a release that adds sealing, run the `user.seal-addresses` job once from Jobs in Management.
 It seals every address still in plaintext, soft-deleted ones included, and empties the plaintext.
@@ -260,7 +263,8 @@ Vault's unseal shares are never stored with the backups.
 #### Rotating a sealing key
 
 Rotating adds a key version. New values are sealed under it at once, and older versions keep
-opening, so nothing breaks:
+opening, so nothing breaks. The commands below name `api-address`; `api-bank-details` rotates the
+same way:
 
 ```bash
 vault write -f transit/keys/api-address/rotate

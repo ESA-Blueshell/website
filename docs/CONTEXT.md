@@ -568,6 +568,32 @@ holds more of the account.
 
 _Avoid_: last four, account ending in.
 
+### Bank details
+
+The account a member is collected from: its IBAN and the name of its account holder. Both are
+**sealed** to the member, each under its own field, so bank details copied onto another member's
+mandate do not open there and cannot redirect a collection. Only the **masked IBAN** is kept
+readable. They are opened in full for one thing: ING's batch file.
+
+_Avoid_: payment details, account info.
+
+### Mandate
+
+A member's permission for the association to collect from their bank details, kept on their
+membership with its reference, the date it was signed, and who recorded it and when. A paper
+mandate is recorded by the board; a member sets one up themselves on the site, signed that day.
+A new IBAN makes a new mandate with a new reference; the same IBAN keeps its reference.
+
+_Avoid_: incasso (the collection itself), authorisation, SEPA form.
+
+### Pending mandate
+
+Bank details an applicant set up before their membership started. They wait, sealed to the
+applicant, and move onto the membership as its mandate when it starts. The sealed values move as
+they are, since both belong to the same person.
+
+_Avoid_: draft mandate, provisional mandate.
+
 ### Send to
 
 The checkbox on the first step of the payment-email wizard, and the selection itself: a
@@ -602,8 +628,9 @@ and never pre-notified. That fact is worth a warning rather than a column, so th
 confirmation keeps it — it names only the members about to get the very same email again,
 and a **duplicate** is what it fires on.
 
-An **incasso** is the direct debit itself; the record of one of these is an
-`IncassoNotification`, which is the Dutch word the association uses for the mandate.
+An **incasso** is the direct debit itself, the Dutch word the association uses for it. An
+`IncassoNotification` is the record of telling a member about one beforehand: the
+pre-notification, not the **mandate** that permits it.
 
 ### Duplicate
 

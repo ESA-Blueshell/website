@@ -12,12 +12,10 @@ import java.time.LocalDate
 class PendingMandate(
     @Column(name = "user_id", nullable = false, unique = true)
     val userId: Long,
-    @Column(name = "key_id", nullable = false, length = 32)
-    var keyId: String,
     @Column(name = "iban", nullable = false, length = 255)
-    var ibanCiphertext: String,
+    var sealedIban: String,
     @Column(name = "account_holder", nullable = false, length = 512)
-    var accountHolderCiphertext: String,
+    var sealedAccountHolder: String,
     /** The IBAN's country code and last two characters, as `NL34`; see `MaskedIban`. */
     @Column(name = "iban_masked", nullable = false, length = 4)
     var ibanMasked: String,

@@ -1,7 +1,5 @@
 package net.blueshell.api.auth.domain.twofactor
 
-import net.blueshell.api.shared.crypto.Sealed
-import net.blueshell.api.shared.crypto.SealingKeys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 

@@ -2311,6 +2311,9 @@ export type MadeChannel = {
 };
 
 export type MandateResponse = {
+    /**
+     * Null where no mandate is recorded, or where it cannot be opened now.
+     */
     accountHolder?: string | null;
     /**
      * The IBAN's country code; with the last two, all a response carries of it.

@@ -13,12 +13,13 @@ import java.time.LocalDate
 
 class CollectionAccountsTest {
     @Test
-    fun `opens a mandate's account in full, and never logs it`() {
+    fun `opens mandates' accounts in full in one call, and never logs them`() {
         val mandates: Mandates = mock()
-        val mandate = IncassoMandate("k1", "sealed", "sealed", "4300", "BLUESHELL-1", LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
-        whenever(mandates.bankDetailsOf(mandate)).thenReturn(BankDetails(requireNotNull(Iban.parse("NL91ABNA0417164300")), "Ann Vos"))
+        val mandate = IncassoMandate("sealed", "sealed", "4300", "BLUESHELL-1", LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
+        whenever(mandates.bankDetailsOf(listOf(7L to mandate)))
+            .thenReturn(listOf(BankDetails(requireNotNull(Iban.parse("NL91ABNA0417164300")), "Ann Vos")))
 
-        val account = CollectionAccounts(mandates).of(mandate)
+        val account = CollectionAccounts(mandates).of(listOf(7L to mandate)).single()
 
         assertThat(account.iban).isEqualTo("NL91ABNA0417164300")
         assertThat(account.accountHolder).isEqualTo("Ann Vos")

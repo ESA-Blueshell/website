@@ -42,5 +42,7 @@ describe("an incasso run", () => {
     expect(await reason({code: "MandateChanged", userIds: [3]})).toContain("1 of the members")
     expect(await reason({code: "MandateChanged"})).toContain("Some of the members")
     expect(await reason({code: "IncassoFilePartNotFound"})).toContain("no such file")
+    expect(await reason({code: "SealingUnavailable"})).toContain("Try again in a moment")
+    expect(await reason({code: "BankDetailsUnopenable"})).toContain("changed outside the site")
   })
 })

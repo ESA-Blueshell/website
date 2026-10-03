@@ -68,7 +68,7 @@ watch(() => membershipId, load, {immediate: true})
     >
       <div>
         <dt>Account</dt>
-        <dd>{{ maskedIban(mandate) }}, {{ mandate.accountHolder }}</dd>
+        <dd>{{ [maskedIban(mandate), mandate.accountHolder].filter(Boolean).join(", ") }}</dd>
       </div>
       <div>
         <dt>Mandate</dt>

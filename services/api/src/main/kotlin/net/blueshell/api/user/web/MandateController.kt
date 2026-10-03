@@ -66,7 +66,7 @@ class MandateController(
         return MandateResponse(
             membershipId = requireNotNull(id),
             standing = incassoStanding(),
-            accountHolder = held?.let { mandates.accountHolderOf(it) },
+            accountHolder = held?.let { mandates.accountHolderOf(userId, it) },
             ibanCountry = MaskedIban.of(held?.ibanMasked)?.country,
             ibanLastTwo = MaskedIban.of(held?.ibanMasked)?.lastTwo,
             reference = held?.reference,

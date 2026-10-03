@@ -1,4 +1,4 @@
-import {type AddressResponse, type CommitteeResponse, MemberType, type MembershipResponse, Role, type UserDetailResponse} from "@/services/api"
+import {type CommitteeResponse, MemberType, type MembershipResponse, Role, type UserDetailResponse} from "@/services/api"
 import {highestRoleLabel} from "./roles"
 
 export type MembershipState = "current" | "pending" | "former" | "never"
@@ -60,9 +60,6 @@ const GRANTED = new Set<Role>([Role.BOARD, Role.TREASURER, Role.ADMIN])
 export const fold = (text: string): string =>
   text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()
 
-const addressLine = (address: AddressResponse | undefined): string =>
-  address ? [address.street, address.houseNumber, address.zipCode, address.city, address.country].filter(Boolean).join(" ") : ""
-
 /** Why an account needs a look, each reason something a board member can fix. */
 export function needsLookOf(user: UserDetailResponse): NeedsLook[] {
   const needs: NeedsLook[] = []
@@ -73,16 +70,14 @@ export function needsLookOf(user: UserDetailResponse): NeedsLook[] {
   return needs
 }
 
-/** The rows the list draws, with each person's memberships, address and committees folded into their search. */
+/** The rows the list draws, with each person's memberships and committees folded into their search. No address is: a list opens none. */
 export function peopleRows(
   users: UserDetailResponse[],
   memberships: MembershipResponse[],
-  addresses: AddressResponse[],
   committees: CommitteeResponse[],
 ): PersonRow[] {
   const held = new Map<number, MembershipResponse[]>()
   for (const one of memberships) held.set(one.userId, [...(held.get(one.userId) ?? []), one])
-  const addressById = new Map(addresses.map((address) => [address.id, address]))
   const committeesOf = new Map<number, string[]>()
   for (const committee of committees) {
     for (const seat of committee.members ?? []) committeesOf.set(seat.userId, [...(committeesOf.get(seat.userId) ?? []), committee.name])
@@ -93,7 +88,6 @@ export function peopleRows(
     const latest = own.reduce<MembershipResponse | null>((newest, one) => (!newest || one.startDate > newest.startDate ? one : newest), null)
     const membership = membershipStateOf(own)
     const type = latest?.memberType ?? null
-    const address = user.addressId == null ? undefined : addressById.get(user.addressId)
     return {
       id: user.id,
       fullName: user.fullName,
@@ -105,7 +99,7 @@ export function peopleRows(
       memberSince: own.length === 0 ? null : own.map((one) => one.startDate).sort()[0]!,
       needs: needsLookOf(user),
       haystack: fold([
-        user.fullName, user.firstName, user.lastName, user.username, user.email, user.discord ?? "", user.phoneNumber ?? "", addressLine(address),
+        user.fullName, user.firstName, user.lastName, user.username, user.email, user.discord ?? "", user.phoneNumber ?? "",
         ...(committeesOf.get(user.id) ?? []), ...user.roles, MEMBERSHIP_WORDS[membership], type ?? "",
       ].join(" ")),
     }

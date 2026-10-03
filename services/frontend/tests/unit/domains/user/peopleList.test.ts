@@ -26,7 +26,6 @@ describe("the people list", () => {
         aMembership({id: 1, userId: 1, startDate: "2019-01-01", endDate: "2020-01-01", memberType: MemberType.REGULAR}),
         aMembership({id: 2, userId: 1, startDate: "2022-01-01", endDate: null, memberType: MemberType.HONORARY}),
       ],
-      [],
       [aCommittee({id: 1, name: "Board", members: null})],
     )
 

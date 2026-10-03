@@ -18,7 +18,6 @@ import {useSubmitFeedback} from "@/composables/formUtils"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {type Committee, listCommittees} from "@/domains/committees"
 import {
-  type AddressResponse,
   MEMBERSHIP_WORDS,
   MemberType,
   type MembershipResponse,
@@ -30,7 +29,6 @@ import {
   type UserDetailResponse,
   deleteUser,
   filterPeople,
-  listAddresses,
   listMemberships,
   listUsers,
   peopleRows,
@@ -45,7 +43,6 @@ const ROW_HEIGHT = 56
 
 const users = ref<UserDetailResponse[]>([])
 const memberships = ref<MembershipResponse[]>([])
-const addresses = ref<AddressResponse[]>([])
 const committees = ref<Committee[]>([])
 const loaded = ref(false)
 
@@ -69,7 +66,7 @@ const needsOptions = [
   ...(Object.keys(NEEDS_LOOK_WORDS) as NeedsLook[]).map((key) => ({key, label: NEEDS_LOOK_WORDS[key]})),
 ]
 
-const rows = computed(() => peopleRows(users.value, memberships.value, addresses.value, committees.value))
+const rows = computed(() => peopleRows(users.value, memberships.value, committees.value))
 const shown = computed(() => sortPeople(
   filterPeople(rows.value, {
     search: search.value,
@@ -109,10 +106,9 @@ const openBulk = (action: "start" | "end") =>
 
 const load = async () => {
   try {
-    const [people, held, places, groups] = await Promise.all([listUsers(), listMemberships(), listAddresses(), listCommittees()])
+    const [people, held, groups] = await Promise.all([listUsers(), listMemberships(), listCommittees()])
     users.value = people
     memberships.value = held
-    addresses.value = places
     committees.value = groups
   } catch (error) {
     $handleNetworkError(error)

@@ -4,7 +4,6 @@ import UserManager from "@/pages/management/UserManager.vue"
 import router from "@/plugins/router"
 import {
   deleteUserById,
-  findAllAddresses,
   findCommittees,
   findMemberships,
   findUsers,
@@ -22,7 +21,6 @@ vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   findUsers: vi.fn(),
   findMemberships: vi.fn(),
-  findAllAddresses: vi.fn(),
   findCommittees: vi.fn(),
   deleteUserById: vi.fn(),
   findDeletedMemberships: vi.fn(async () => ({data: [], request: {}, response: {}})),
@@ -84,9 +82,6 @@ describe("the Users page", () => {
   beforeEach(() => {
     vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [zoe, bob, carol]}))
     vi.mocked(findMemberships).mockResolvedValue(answer(findMemberships, memberships))
-    vi.mocked(findAllAddresses).mockResolvedValue(answer(findAllAddresses, [
-      {id: 5, street: "Hallenweg", houseNumber: "5", city: "Enschede", userId: 1, version: 0, createdAt: "", updatedAt: ""},
-    ]))
     vi.mocked(findCommittees).mockResolvedValue(answer(findCommittees, [
       aCommittee({id: 4, name: "Sitecie", members: [{committeeId: 4, userId: 3, createdAt: "", updatedAt: "", version: 0}]}),
     ]))
@@ -106,15 +101,13 @@ describe("the Users page", () => {
     expect(wrapper.get('[data-testid="member-manager-count"]').text()).toBe("3 people")
   })
 
-  it("finds Zoë by typing zoe, and people by their address, committee or role", async () => {
+  it("finds Zoë by typing zoe, and people by their committee or role", async () => {
     const wrapper = await mount()
     const search = wrapper.get('[data-testid="member-manager-search-input"]')
 
     await search.setValue("zoe")
     expect(rowIds(wrapper)).toEqual([1])
     expect(wrapper.get('[data-testid="member-manager-count"]').text()).toBe("1 of 3 people")
-    await search.setValue("hallenweg")
-    expect(rowIds(wrapper)).toEqual([1])
     await search.setValue("sitecie")
     expect(rowIds(wrapper)).toEqual([3])
     await search.setValue("board")

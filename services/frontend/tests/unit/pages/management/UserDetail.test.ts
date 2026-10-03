@@ -193,6 +193,14 @@ describe("one user's page", () => {
     expect(api.findUserById).toHaveBeenCalledTimes(2)
   })
 
+  it("says an address that cannot be opened is written anew by saving", async () => {
+    api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, addressId: 3})})
+    api.findAddressById.mockResolvedValue({status: 200, data: {id: 3, opened: false, version: 0, createdAt: "", updatedAt: ""}})
+    const wrapper = await mount("profile")
+
+    expect(wrapper.get('[data-testid="user-address-unopened"]').text()).toContain("Saving writes it anew")
+  })
+
   it("offers the emails the account can be sent, its security and deleting it, on the Account tab", async () => {
     api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, enabled: false})})
     const wrapper = await mount("account")

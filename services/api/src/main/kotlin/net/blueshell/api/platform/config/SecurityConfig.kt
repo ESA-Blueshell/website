@@ -176,6 +176,7 @@ class SecurityConfig(
                     ).permitAll()
                 auth.requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
                 auth.requestMatchers(HttpMethod.PATCH, "/signup/**").permitAll()
+                auth.requestMatchers(HttpMethod.PUT, "/signup/mandate").permitAll()
                 auth.requestMatchers(HttpMethod.GET, *AnonymousReads.of(handlers.handlerMethods).toTypedArray()).permitAll()
 
                 if (openApiPublicEnabled) {

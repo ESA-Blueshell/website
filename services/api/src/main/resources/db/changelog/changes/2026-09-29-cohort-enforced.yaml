@@ -1,0 +1,14 @@
+# An enforced target has its theirs-only people removed by each reconcile. Defaults to false, so
+# the release before this one keeps writing cohort rows without it.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-29-cohort-enforced.yaml
+      id: cohort-enforced
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: cohort
+            columns:
+              - column: {name: enforced, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+      rollback:
+        - dropColumn: {tableName: cohort, columnName: enforced}

@@ -24,6 +24,9 @@ class AfterCommitListenerArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
                 // Opens its transaction inside a try, so a failed activation email cannot fail
                 // the registration that committed before it.
                 "net.blueshell.api.auth.domain.RecoveryEventListener" to "onUserCreated",
+                // Hears a job being queued, which is published mid-transaction rather than at its
+                // commit, and has to write the queued email in that transaction so the two land together.
+                "net.blueshell.api.email.domain.QueuedEmails" to "on",
             )
     }
 

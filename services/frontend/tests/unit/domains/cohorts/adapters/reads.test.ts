@@ -1,25 +1,14 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {
-  fetchInboundReconcilePreview,
-  fetchTargetDescriptors,
-  fetchTargetFolders,
-  fetchTargetOptions,
-} from "@/domains/cohorts/adapters/cohorts"
-import {
-  listCohortTargetFolders,
-  listCohortTargetSystems,
-  previewInboundReconcile,
-  searchCohortTargets,
-} from "@/services/api"
+import {adoptPeople, fetchTargetFolders} from "@/domains/cohorts/adapters/cohorts"
+import {applyInboundReconcile, listCohortTargetFolders, previewInboundReconcile} from "@/services/api"
 import {answer} from "../../../helpers/sdkAnswers"
 import {TargetSystem} from "@/services/api"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   listCohortTargetFolders: vi.fn(),
-  listCohortTargetSystems: vi.fn(),
   previewInboundReconcile: vi.fn(),
-  searchCohortTargets: vi.fn(),
+  applyInboundReconcile: vi.fn(),
 }))
 
 /**
@@ -31,28 +20,6 @@ describe("cohort reads tell an empty answer from a failed one", () => {
     vi.clearAllMocks()
   })
 
-  it("an account with no target systems reads as empty", async () => {
-    vi.mocked(listCohortTargetSystems).mockResolvedValue(answer(listCohortTargetSystems, []))
-
-    await expect(fetchTargetDescriptors()).resolves.toEqual([])
-    expect(listCohortTargetSystems).toHaveBeenCalledWith({throwOnError: true})
-  })
-
-  it("target systems that could not be listed throw", async () => {
-    vi.mocked(listCohortTargetSystems).mockRejectedValue(new Error("boom"))
-
-    await expect(fetchTargetDescriptors()).rejects.toThrow("boom")
-  })
-
-  it("a system with no targets reads as empty, and a failed search throws", async () => {
-    vi.mocked(searchCohortTargets).mockResolvedValue(answer(searchCohortTargets, []))
-    await expect(fetchTargetOptions(TargetSystem.BREVO)).resolves.toEqual([])
-    expect(searchCohortTargets).toHaveBeenCalledWith({path: {system: TargetSystem.BREVO}, throwOnError: true})
-
-    vi.mocked(searchCohortTargets).mockRejectedValue(new Error("boom"))
-    await expect(fetchTargetOptions(TargetSystem.BREVO)).rejects.toThrow("boom")
-  })
-
   it("a system with no folders reads as empty, and a failed listing throws", async () => {
     vi.mocked(listCohortTargetFolders).mockResolvedValue(answer(listCohortTargetFolders, []))
     await expect(fetchTargetFolders(TargetSystem.BREVO)).resolves.toEqual([])
@@ -61,14 +28,34 @@ describe("cohort reads tell an empty answer from a failed one", () => {
     vi.mocked(listCohortTargetFolders).mockRejectedValue(new Error("boom"))
     await expect(fetchTargetFolders(TargetSystem.BREVO)).rejects.toThrow("boom")
   })
+})
 
-  it("a reconcile preview that could not be read throws rather than answering nothing", async () => {
+describe("taking people in from a list", () => {
+  const row = (externalUserId: string, writable: boolean) => ({externalUserId, writable, alreadyMember: false})
+  const preview = (writerSupported = true) => ({
+    cohortLabel: "Paid", definitionKey: "PERIOD_PAYERS:4", previewToken: "tok", remoteCount: 3, skipped: [], writerSupported,
+    matched: [row("a", true), row("b", false), row("c", true)],
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("applies only the named contacts the preview can take in, under its token", async () => {
+    vi.mocked(previewInboundReconcile).mockResolvedValue(answer(previewInboundReconcile, preview()))
+    vi.mocked(applyInboundReconcile).mockResolvedValue(answer(applyInboundReconcile, {acceptedCount: 1, skippedCount: 0}))
+
+    await expect(adoptPeople(1, 2, ["a", "b"])).resolves.toEqual({ok: true, saved: 1})
+    expect(applyInboundReconcile).toHaveBeenCalledWith({path: {id: 1, targetId: 2}, body: {previewToken: "tok", selectedExternalUserIds: ["a"]}, throwOnError: true})
+  })
+
+  it("refuses where nobody named can be taken in, the cohort takes nobody in, or the preview fails", async () => {
+    vi.mocked(previewInboundReconcile).mockResolvedValue(answer(previewInboundReconcile, preview()))
+    await expect(adoptPeople(1, 2, ["b"])).resolves.toEqual({ok: false, reason: "None of them can be taken in from Brevo."})
+    vi.mocked(previewInboundReconcile).mockResolvedValue(answer(previewInboundReconcile, preview(false)))
+    await expect(adoptPeople(1, 2, ["a"])).resolves.toEqual({ok: false, reason: "None of them can be taken in from Brevo."})
     vi.mocked(previewInboundReconcile).mockRejectedValue(new Error("boom"))
-
-    await expect(fetchInboundReconcilePreview(1, 2)).rejects.toThrow("boom")
-    expect(previewInboundReconcile).toHaveBeenCalledWith({
-      path: {id: 1, cohortId: 2},
-      throwOnError: true,
-    })
+    await expect(adoptPeople(1, 2, ["a"])).resolves.toEqual({ok: false, reason: "They could not be taken in."})
+    expect(applyInboundReconcile).not.toHaveBeenCalled()
   })
 })

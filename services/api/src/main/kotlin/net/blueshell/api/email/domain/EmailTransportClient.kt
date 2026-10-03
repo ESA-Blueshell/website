@@ -17,5 +17,6 @@ interface EmailTransportClient {
         senderName: String,
         senderAddress: String,
         replyToAddress: String,
+        threadHeaders: Map<String, String> = emptyMap(),
     ): String
 }

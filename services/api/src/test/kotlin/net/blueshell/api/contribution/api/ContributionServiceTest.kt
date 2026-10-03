@@ -20,7 +20,7 @@ class ContributionServiceTest {
     private val periods: ContributionPeriodService = mockk()
     private val users: UserService = mockk()
     private val trackedEvents: TrackedEventPublisher = mockk(relaxed = true)
-    private val service = spyk(ContributionService(repository, periods, users, trackedEvents))
+    private val service = spyk(ContributionService(repository, periods, users, trackedEvents, mockk(relaxed = true)))
 
     @Test
     fun `ensurePaid is a no-op when contribution already exists`() {

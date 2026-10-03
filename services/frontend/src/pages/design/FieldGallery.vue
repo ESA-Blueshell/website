@@ -2,7 +2,7 @@
 /* Every island field on one page, in both halves of the theme. Dev only: the route that
    reaches it is registered only when `import.meta.env.DEV`. */
 import {ref} from "vue"
-import CohortPicker from "@/components/form/fields/CohortPicker.vue"
+import TargetPicker from "@/components/form/fields/TargetPicker.vue"
 import ContributionPeriodPicker from "@/components/form/fields/ContributionPeriodPicker.vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import EnumPicker from "@/components/form/fields/EnumPicker.vue"
@@ -174,7 +174,7 @@ const dark = ref(true)
             label="One of a fixed set"
             :values="['CONTRIBUTION_PAID', 'CONTRIBUTION_DUE', 'NO_CONTRIBUTION']"
           />
-          <cohort-picker
+          <target-picker
             v-model="cohort"
             label="Cohort"
           />

@@ -108,6 +108,17 @@
               v-model="membership"
               :signup-token="signupToken"
             />
+            <!-- Optional: without it the membership still starts, and paying is arranged by hand. -->
+            <div
+              v-if="!applicationSubmitted"
+              class="my-4"
+              data-testid="membership-incasso-step"
+            >
+              <p class="text-subtitle-1 font-weight-bold">
+                Pay by incasso (optional)
+              </p>
+              <incasso-set-up :signup-token="signupToken" />
+            </div>
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
@@ -169,10 +180,11 @@
           mdi-check-circle
         </v-icon>
         <p class="text-h6 font-weight-medium mb-2">
-          You're a member
+          Welcome to Blueshell
         </p>
         <p class="text-body-1 text-medium-emphasis">
-          Welcome to Blueshell. Your membership starts today.
+          Your membership has started and is pending until your first contribution is paid. You become a member once
+          the treasurer records it.
         </p>
         <v-btn
           class="mt-4"
@@ -193,6 +205,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
+import IncassoSetUp from "@/components/account/IncassoSetUp.vue"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 import {
   type AddressResponse,

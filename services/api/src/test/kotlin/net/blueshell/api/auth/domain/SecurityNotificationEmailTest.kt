@@ -81,6 +81,23 @@ class SecurityNotificationEmailTest {
     }
 
     @Test
+    fun `a change of bank details names the new account, masked`() {
+        val changed =
+            SecurityEvent(
+                person(7),
+                person(7),
+                SecurityActorKind.PERSON,
+                SecurityEventKind.BANK_DETAILS_CHANGED,
+                "NL•• … ••34",
+                null,
+                null,
+                Instant.parse("2026-09-24T12:00:00Z"),
+            )
+
+        assertThat(email(changed).markdownContent).contains("Your bank details for incasso were changed, to the account NL•• … ••34 on")
+    }
+
+    @Test
     fun `an event with no browser says none`() {
         val subject = person(7)
         val quiet =

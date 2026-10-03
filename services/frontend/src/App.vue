@@ -5,8 +5,14 @@
          is loaded into a small popup window (Vault's OIDC flow being
          the canonical case) where the top bar / drawer / footer are
          purely visual noise around the login form. -->
+    <management-bar
+      v-if="isManagement"
+      :dark-mode="isDarkMode"
+      @log-out="logOut"
+      @toggle-dark-mode="toggleDarkMode"
+    />
     <site-bar
-      v-if="!isBareLayout"
+      v-else-if="!isBareLayout"
       :dark-mode="isDarkMode"
       @log-out="logOut"
       @toggle-dark-mode="toggleDarkMode"
@@ -17,7 +23,7 @@
 
     <backup-codes-banner />
 
-    <footer-banner v-if="!isBareLayout" />
+    <footer-banner v-if="!isBareLayout && !isManagement" />
 
 
 
@@ -96,6 +102,7 @@ import type {SnackbarAction, StoredLogin} from "@/plugins/store"
 import {useTheme} from "vuetify"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import SiteBar from "@/components/common/SiteBar.vue"
+import ManagementBar from "@/components/management/ManagementBar.vue"
 import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {initialThemeName, markDocumentTheme, THEME_STORAGE_KEY} from "@/plugins/theme"
@@ -135,6 +142,9 @@ const statusSnackbarAction = computed((): SnackbarAction | null => store.state.s
 // Bare layout is for the SSO redirect chain only: a route that surfaces solely inside an OIDC
 // popup, or a `redirect` at the api's authorize endpoint, meaning the Authorization Server
 // bounced an unauthenticated hit through /login. Regular logged-out browsing keeps the chrome.
+/** Management has its own bar and no site footer (frontend ADR-009). */
+const isManagement = computed((): boolean => route.meta.management === true)
+
 const isBareLayout = computed((): boolean => {
   if (route.meta.bare === true) return true
   const redirect = route.query?.redirect

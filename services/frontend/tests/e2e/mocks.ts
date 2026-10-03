@@ -8,6 +8,7 @@ import {
 import {addressOf} from "@/utils/address"
 import type {
   AddBoardMemberRequest,
+  Alert,
   AddRosterEntryRequest,
   AddressResponse,
   AssociationStatisticsResponse,
@@ -17,8 +18,8 @@ import type {
   BoardResponse,
   CasualGameRequest,
   CasualGameResponse,
-  CohortSubjectDetail,
-  CohortSubjectSummary,
+  CohortDetail,
+  CohortSummary,
   CommitteeOwnPageRequest,
   CommitteeResponse,
   CreateCommitteeRequest,
@@ -38,7 +39,11 @@ import type {
   JobExecution,
   LinkBoardMemberRequest,
   LinkRosterEntryRequest,
+  FirstContribution,
+  IncassoCandidate,
+  IncassoRunView,
   MembershipResponse,
+  OwnMandateResponse,
   PublishLineupRequest,
   Role,
   RosterEntryResponse,
@@ -63,6 +68,18 @@ import {aBlog, aCommittee, aContribution, aContributionPeriod, aJob, aMembership
 
 const stampedAt = {createdAt: "2025-01-01T00:00:00Z", updatedAt: "2025-01-01T00:00:00Z", version: 0}
 
+/** Members on incasso as the first step of a run reads them: two to collect from, one with an accent, and two left out. */
+const INCASSO_CANDIDATES: Wire<IncassoCandidate>[] = [
+  {userId: 201, name: "Mila de Vries", ingName: "Mila de Vries", memberSince: "2024-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+    ibanCountry: "NL", ibanLastTwo: "34", mandateReference: "BLUESHELL-201-20240901", mandateSignedOn: "2024-09-01"},
+  {userId: 202, name: "Zoë Bakker", ingName: "Zoe Bakker", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+    ibanCountry: "DE", ibanLastTwo: "18", mandateReference: "BLUESHELL-202-20250904", mandateSignedOn: "2025-09-04"},
+  {userId: 203, name: "Lotte Meijer", ingName: "Lotte Meijer", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+    leftOut: "NO_BANK_DETAILS"},
+  {userId: 204, name: "Bram Kok", ingName: "Bram Kok", memberSince: "2020-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+    ibanCountry: "NL", ibanLastTwo: "60", mandateReference: "BLUESHELL-204-20200901", mandateSignedOn: "2020-09-01", leftOut: "ALREADY_PAID"},
+]
+
 export type {Wire}
 
 type Fixtures = {
@@ -72,6 +89,8 @@ type Fixtures = {
   contributionPeriods?: Wire<ContributionPeriodResponse>[]
   /** The period the membership page and the signup form quote, or null where none is recorded. */
   currentContributionPeriod?: Wire<ContributionPeriodResponse> | null
+  /** What the signed-in reader pays to make a pending membership active; none by default. */
+  firstContribution?: Wire<FirstContribution> | null
   /** The association's own numbers, or null where the endpoint refuses to say. */
   associationStatistics?: Wire<AssociationStatisticsResponse> | null
   contributions?: Wire<ContributionResponse>[]
@@ -85,9 +104,10 @@ type Fixtures = {
   blogsById?: Record<string, Wire<BlogResponse>>
   blogStatusById?: Record<string, number>
   jobs?: Wire<JobExecution>[]
+  alerts?: Wire<Alert>[]
   emails?: Wire<Email>[]
-  cohortSubjects?: Wire<CohortSubjectSummary>[]
-  cohortMembers?: Wire<CohortSubjectDetail["members"]>
+  cohorts?: Wire<CohortSummary>[]
+  cohortMembers?: Wire<CohortDetail["members"]>
   esportsPages?: Record<string, Wire<GameRostersResponse>>
   esportsSeasons?: Wire<SeasonResponse>[]
   esportsTeams?: Wire<TeamResponse>[]
@@ -95,7 +115,7 @@ type Fixtures = {
   esportsGames?: Wire<CasualGameResponse>[]
   casualGames?: Wire<CasualGameResponse>[]
   boards?: Wire<BoardResponse>[]
-  cohortSubjectDetail?: Partial<CohortSubjectDetail>
+  cohortDetail?: Partial<CohortDetail>
   /** A refusal the payment-email send answers with instead of accepting the batch. */
   paymentEmailRefusal?: {status: number; errors: Wire<FieldValidationError>[]}
 }
@@ -109,12 +129,12 @@ type Fixtures = {
 export const BULK_MEMBERSHIP_EFFECTIVE_DATE = "2026-08-31"
 
 const brevoTargets: Wire<ExternalTarget>[] = [
-  {system: "BREVO", externalId: "7", kind: "LIST", label: "Members 2025-2026", folderLabel: "Contribution periods", path: ["Brevo", "Contribution periods"], memberCount: 2, linkedCohortId: 1},
-  {system: "BREVO", externalId: "33", kind: "LIST", label: "Web Cmte", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 1, linkedCohortId: 2},
-  {system: "BREVO", externalId: "34", kind: "LIST", label: "Board", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 5, linkedCohortId: null},
+  {system: "BREVO", externalId: "7", kind: "LIST", label: "Members 2025-2026", folderLabel: "Contribution periods", path: ["Brevo", "Contribution periods"], memberCount: 2, linkedTargetId: 1},
+  {system: "BREVO", externalId: "33", kind: "LIST", label: "Web Cmte", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 1, linkedTargetId: 2},
+  {system: "BREVO", externalId: "34", kind: "LIST", label: "Board", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 5, linkedTargetId: null},
   // Same name as the committee list above, filed somewhere else: only the path tells them apart.
-  {system: "BREVO", externalId: "88", kind: "LIST", label: "Web Cmte", folderLabel: "Archive", path: ["Brevo", "Archive"], memberCount: 0, linkedCohortId: null},
-  {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, path: ["Brevo"], memberCount: null, linkedCohortId: null},
+  {system: "BREVO", externalId: "88", kind: "LIST", label: "Web Cmte", folderLabel: "Archive", path: ["Brevo", "Archive"], memberCount: 0, linkedTargetId: null},
+  {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, path: ["Brevo"], memberCount: null, linkedTargetId: null},
 ]
 
 /**
@@ -708,6 +728,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       .map((blog) => [String(blog.id), blog]),
   )
 
+  let exceptionResolvedAt: string | null = null
+  const paidPeriods = new Set<number>()
+  const incassoRuns: Wire<IncassoRunView>[] = []
+  let ownMandate: Wire<OwnMandateResponse> = {standing: "NONE", pending: false}
+  const baseAlerts: Wire<Alert>[] = fixtures.alerts ?? []
+
   const baseJobs: Wire<JobExecution>[] = fixtures.jobs ?? [
     aJob({
       id: 700,
@@ -877,17 +903,42 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const now = new Date().toISOString()
       return answer(route, "signIns", [{id: "here", browser: "Chrome", platform: "Linux", signedInAt: now, lastSeenAt: now, current: true}])
     }
+    if (method === "GET" && path === "/users/me/unlinked-targets") {
+      return answer(route, "listMyUnlinkedTargets", [])
+    }
     if (method === "GET" && path === "/users/me/trusted-browsers") {
       return answer(route, "trustedBrowsers", [])
     }
     if (method === "POST" && path === "/users/me/two-factor/setup") {
       return answer(route, "setUpTwoFactor", {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})
     }
+    if (method === "GET" && path === "/users/me/first-contribution") {
+      return fixtures.firstContribution ? answer(route, "findOwnFirstContribution", fixtures.firstContribution) : route.fulfill({status: 204, body: ""})
+    }
+    if (path === "/users/me/mandate" || (method === "PUT" && path === "/signup/mandate")) {
+      if (method === "GET") return answer(route, "findOwnMandate", ownMandate)
+      const {iban} = request.postDataJSON() as {iban: string}
+      const signup = path.startsWith("/signup")
+      ownMandate = {
+        standing: signup ? "NONE" : "MANDATE_RECORDED", ibanCountry: iban.replace(/\s/g, "").slice(0, 2), ibanLastTwo: iban.replace(/\s/g, "").slice(-2),
+        reference: signup ? undefined : "BLUESHELL-1-20260930", signedOn: "2026-09-30", pending: signup,
+      }
+      return signup ? route.fulfill({status: 204, body: ""}) : answer(route, "setUpOwnMandate", ownMandate)
+    }
     if (method === "GET" && path === "/users/me/email") {
       return answer(route, "emailAddress", {email: "mock-user@example.com", pendingEmail: null})
     }
+    if (method === "GET" && /^\/users\/\d+\/account-security$/.test(path)) {
+      return answer(route, "accountStanding", {twoFactorOn: false, awaitingReenrolment: false, locked: false})
+    }
+    if (method === "GET" && /^\/users\/\d+\/security-events$/.test(path)) {
+      return answer(route, "securityEvents", {events: [], page: 0, totalPages: 0, totalElements: 0})
+    }
     if (method === "GET" && path === "/users/me/security-events") {
       return answer(route, "mySecurityEvents", {events: [], page: 0, totalPages: 0, totalElements: 0})
+    }
+    if (method === "GET" && path === "/recovery/last-emails") {
+      return answer(route, "lastRecoveryEmails", {emails: []})
     }
     if (method === "GET" && path === "/users/deleted") {
       return answer(route, "findDeletedUsers", {content: baseDeletedUsers})
@@ -967,8 +1018,36 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       return answer(route, "restoreDeletedUserById", {}, 204)
     }
+    if (/^\/memberships\/\d+\/mandate$/.test(path)) {
+      const membershipId = Number(path.split("/")[2])
+      if (method === "PUT") {
+        const {accountHolder, signedOn, iban} = request.postDataJSON() as {accountHolder: string; signedOn: string; iban: string}
+        const compact = iban.replace(/\s/g, "")
+        return answer(route, "recordMandate", {
+          membershipId, standing: "MANDATE_RECORDED", accountHolder, ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2),
+          reference: `BLUESHELL-${membershipId}`, signedOn, recordedBy: 1, recordedAt: "2026-09-30T10:00:00.000Z",
+        })
+      }
+      return answer(route, "findMandate", {membershipId, standing: "NONE"})
+    }
     if (method === "GET" && path === "/memberships") {
-      return answer(route, "findMemberships", baseMemberships)
+      const userId = url.searchParams.get("userId")
+      return answer(route, "findMemberships", userId ? baseMemberships.filter((one) => String(one.userId) === userId) : baseMemberships)
+    }
+    if (method === "GET" && /^\/users\/\d+\/contributions$/.test(path)) {
+      return answer(route, "findMemberContributions", [{
+        periodId: 1, startDate: "2025-09-01", endDate: "2026-08-31", feeType: "FULL_YEAR_FEE", fee: 30,
+        paid: paidPeriods.has(1), paidAt: paidPeriods.has(1) ? "2025-10-01T10:00:00.000Z" : null,
+        lastEmailAt: "2025-09-20T10:00:00.000Z", lastEmailKind: "REMINDER",
+      }])
+    }
+    if (method === "POST" && path === "/contributions") {
+      paidPeriods.add((request.postDataJSON() as {contributionPeriodId: number}).contributionPeriodId)
+      return route.fulfill({status: 201, contentType: "application/json", body: "{}"})
+    }
+    if (method === "DELETE" && /^\/contributionPeriods\/\d+\/users\/\d+\/contributions$/.test(path)) {
+      paidPeriods.delete(Number(path.split("/")[2]))
+      return route.fulfill({status: 204})
     }
     // The bulk membership actions ask the api what they would do before doing it, so the
     // preview decides the rows here the way the server would: a member with an open
@@ -1064,6 +1143,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         notWrittenTo: 0,
       })
     }
+    if (method === "GET" && path === "/contributionPeriods/current/standing") {
+      return answer(route, "findCurrentPeriodStanding", {
+        periodId: 1, startDate: "2025-09-01", endDate: "2026-08-31", members: 211, paid: 180, stillToPay: 31, pendingFirstContribution: 9,
+      })
+    }
     if (method === "GET" && path === "/contributionPeriods/current") {
       // A fixture set to null is a year nobody has recorded a fee for yet, which the api
       // answers with no content rather than with a period.
@@ -1107,6 +1191,75 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       Object.assign(period, body, {version: period.version + 1})
       return answer(route, "updateContributionPeriod", period)
+    }
+    if (method === "DELETE" && /^\/contributionPeriods\/\d+$/.test(path)) {
+      const index = basePeriods.findIndex((one) => one.id === Number(path.split("/")[2]))
+      if (index >= 0) basePeriods.splice(index, 1)
+      return route.fulfill({status: 204})
+    }
+    if (method === "GET" && /^\/contributionPeriods\/\d+\/incasso$/.test(path)) {
+      return answer(route, "planIncasso", INCASSO_CANDIDATES)
+    }
+    if (method === "POST" && /^\/contributionPeriods\/\d+\/incassoRuns$/.test(path)) {
+      const body = request.postDataJSON() as {userIds: number[]; collectionDate: string; statementText: string}
+      const collections = INCASSO_CANDIDATES.filter((one) => body.userIds.includes(one.userId)).map((one) => ({
+        userId: one.userId, name: one.name, ingName: one.ingName, ibanCountry: one.ibanCountry, ibanLastTwo: one.ibanLastTwo, mandateReference: one.mandateReference,
+        mandateSignedOn: one.mandateSignedOn, feeType: one.feeType ?? "FULL_YEAR_FEE", amount: one.amount ?? 0,
+      }))
+      const run = {
+        id: 70 + incassoRuns.length, contributionPeriodId: Number(path.split("/")[2]), collectionDate: body.collectionDate,
+        statementText: body.statementText, collections, total: collections.reduce((sum, one) => sum + one.amount, 0),
+        createdAt: "2026-09-30T10:00:00.000Z", submittedAt: null as string | null, fileParts: 1,
+      }
+      incassoRuns.push(run)
+      return answer(route, "startIncassoRun", run, 201)
+    }
+    if (method === "GET" && /^\/incassoRuns\/\d+\/file$/.test(path)) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers: {"Content-Disposition": "attachment; filename=\"incassobatch.xlsx\""},
+        body: "PK",
+      })
+    }
+    if (method === "POST" && /^\/incassoRuns\/\d+\/submitted$/.test(path)) {
+      const run = incassoRuns.find((one) => one.id === Number(path.split("/")[2]))
+      if (!run) return route.fulfill({status: 404, body: ""})
+      run.submittedAt = "2026-10-20T10:00:00.000Z"
+      return answer(route, "markIncassoRunSubmitted", run)
+    }
+    if (method === "GET" && /^\/incassoRuns\/\d+$/.test(path)) {
+      const run = incassoRuns.find((one) => one.id === Number(path.split("/")[2]))
+      return run ? answer(route, "findIncassoRun", run) : route.fulfill({status: 404, body: ""})
+    }
+    if (method === "GET" && /^\/contributionPeriods\/\d+\/members$/.test(path)) {
+      const periodId = Number(path.split("/")[2])
+      const period = basePeriods.find((one) => one.id === periodId)
+      const inPeriod = baseMemberships.filter((one) => period != null
+        && one.startDate <= period.endDate && (one.endDate == null || one.endDate >= period.startDate))
+      return answer(route, "findPeriodContributions", {
+        periodId,
+        incassoRuns: incassoRuns.filter((one) => one.contributionPeriodId === periodId).map((one) => ({
+          id: one.id, collectionDate: one.collectionDate, collections: one.collections.length, total: one.total, submittedAt: one.submittedAt,
+        })),
+        members: inPeriod.map((held) => {
+          const user = baseUsers.find((one) => one.id === held.userId)
+          const honorary = held.memberType === "HONORARY"
+          return {
+            userId: held.userId,
+            name: user?.fullName ?? `User ${held.userId}`,
+            username: user?.username ?? `user${held.userId}`,
+            feeType: honorary ? null : "FULL_YEAR_FEE" as const,
+            fee: honorary ? null : period?.fullYearFee ?? 0,
+            incasso: held.incasso,
+            paid: baseContributions.some((one) => one.userId === held.userId && one.contributionPeriodId === periodId),
+            paidAt: null,
+            lastEmailAt: null,
+            lastEmailKind: null,
+          }
+        }),
+        runs: [],
+      })
     }
     if (method === "GET" && /\/contributionPeriods\/\d+\/contributions$/.test(path)) {
       return answer(route, "findContributionsByPeriodId", baseContributions)
@@ -1326,6 +1479,46 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       baseJobs.unshift(enqueued)
       return answer(route, "enqueue", enqueued)
     }
+    if (path.startsWith("/management/alerts")) {
+      if (method === "GET") return answer(route, "listAlerts", baseAlerts)
+      const {key} = request.postDataJSON() as {key: string}
+      const one = baseAlerts.find((alert) => alert.key === key)
+      if (!one) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+      one.hidden = path.endsWith("/hidden")
+      return route.fulfill({status: 204})
+    }
+    if (path === "/management/exceptions" || path.startsWith("/management/exceptions/")) {
+      const fault = {
+        id: 3,
+        exceptionType: "java.lang.IllegalStateException",
+        thrownAt: "net.blueshell.api.contact.Sync.run",
+        firstSeenAt: "2025-01-01T12:00:00.000Z",
+        lastSeenAt: "2025-01-02T12:00:00.000Z",
+        occurrences: 4,
+        latestMessage: "Brevo said no",
+        latestSource: "JOB" as const,
+        latestConcern: "contact.sync",
+        latestJobExecutionId: 700,
+        latestStackTrace: "java.lang.IllegalStateException: Brevo said no\n\tat net.blueshell.api.contact.Sync.run(Sync.kt:4)",
+        resolvedAt: exceptionResolvedAt,
+      }
+      if (method === "GET" && path === "/management/exceptions") {
+        const resolved = url.searchParams.get("resolved")
+        const shown = resolved === null || (resolved === "true") === (exceptionResolvedAt !== null)
+        return answer(route, "listExceptions", shown ? [{...fault, latestStackTrace: null}] : [])
+      }
+      if (method === "GET" && path === "/management/exceptions/3") return answer(route, "findException", fault)
+      if (method === "POST" && path === "/management/exceptions/3/resolve") {
+        exceptionResolvedAt = "2025-01-03T12:00:00.000Z"
+        return answer(route, "resolveException", {...fault, resolvedAt: exceptionResolvedAt})
+      }
+      return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+    }
+    if (method === "GET" && /^\/management\/jobs\/\d+$/.test(path)) {
+      const job = baseJobs.find((one) => Number(one.id) === Number(path.split("/")[3]))
+      if (!job) return fulfillJson(route, {title: "Not Found", status: 404}, 404)
+      return answer(route, "findJobById", job)
+    }
     if (method === "GET" && path === "/management/jobs") {
       const page = Number(url.searchParams.get("page") ?? "0")
       const size = Number(url.searchParams.get("size") ?? "50")
@@ -1379,46 +1572,58 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       // Includes a folder holding nothing, which is exactly where a target tends to head.
       return answer(route, "listCohortTargetFolders", ["Committees", "Contribution periods", "Archive"])
     }
-    if (method === "PUT" && path === "/management/cohort-targets/BREVO/folder") {
-      const body = request.postDataJSON() as {externalIds: string[]; folder: string}
-      // `99` stands for a target the catalogue still lists but the system no longer has.
-      const gone = body.externalIds.filter((id) => id === "99")
-      if (gone.length) {
-        return fulfillJson(route, {
-          type: "about:blank",
-          title: "Conflict",
-          status: 409,
-          detail: "The selection no longer matches the current data.",
-          errors: [{
-            objectName: "BulkMoveTargetsRequest",
-            field: "externalIds",
-            code: "UnknownTargetIds",
-            message: `${gone.length} of the selected targets no longer exist in BREVO.`,
-            refs: gone,
-          }],
-        }, 409)
+    if (method === "GET" && path === "/management/cohort-targets/BREVO/overview") {
+      return answer(route, "findTargetOverview", {
+        lists: [
+          {externalId: "7", label: "Members 2025-2026", folderLabel: "Members", memberCount: 211, targetId: 1, cohortId: 101,
+            cohortLabel: "Members 2025-2026", cohortType: "PERIOD_MEMBERS", missing: 0, extra: 0, lastReconciledAt: "2026-10-01T03:00:00.000Z", enforced: false},
+          {externalId: "33", label: "Web Cmte", folderLabel: "Committees", memberCount: 9, targetId: 2, cohortId: 102,
+            cohortLabel: "Web Cmte", cohortType: "COMMITTEE_MEMBERS", missing: 1, extra: 0, lastReconciledAt: "2026-10-01T03:00:00.000Z", enforced: false},
+          {externalId: "9", label: "Old newsletter test", folderLabel: null, memberCount: 4, enforced: false},
+          {externalId: "10", label: "LAN party 2024", folderLabel: "Archive", memberCount: 57, enforced: false},
+        ],
+        missing: [{targetId: 3, cohortId: 103, cohortLabel: "Paid 2026-2027", cohortType: "PERIOD_PAYERS", folder: "Contribution paid",
+          memberCount: 142, creating: false}],
+        lastReconciledAt: "2026-10-01T03:00:00.000Z",
+      })
+    }
+    const listOf = path.match(/^\/management\/cohort-targets\/BREVO\/lists\/(\w+)$/)
+    if (method === "GET" && listOf) {
+      const linked: Record<string, {cohortId: number; targetId: number; label: string; cohortType: "PERIOD_MEMBERS" | "COMMITTEE_MEMBERS"}> = {
+        "7": {cohortId: 101, targetId: 1, label: "Members 2025-2026", cohortType: "PERIOD_MEMBERS"},
+        "33": {cohortId: 102, targetId: 2, label: "Web Cmte", cohortType: "COMMITTEE_MEMBERS"},
       }
-      const moved = body.externalIds.map((id) => ({
-        system: "BREVO" as const,
-        externalId: id,
-        kind: "LIST" as const,
-        label: brevoTargets.find((t) => t.externalId === id)?.label ?? `List ${id}`,
-        folderLabel: body.folder,
-        path: ["Brevo", body.folder].filter(Boolean),
-        memberCount: brevoTargets.find((t) => t.externalId === id)?.memberCount ?? null,
-        linkedCohortId: brevoTargets.find((t) => t.externalId === id)?.linkedCohortId ?? null,
-      }))
-      return answer(route, "moveCohortTargets", {moved, failed: []})
+      const one = linked[listOf[1]]
+      return answer(route, "findListedTarget", one
+        ? {externalId: listOf[1], label: one.label, folderLabel: "Members", memberCount: 41, targetId: one.targetId, cohortId: one.cohortId,
+          cohortLabel: one.label, cohortType: one.cohortType, missing: 1, extra: 2, lastReconciledAt: "2026-02-10T09:00:00.000Z", enforced: false}
+        : {externalId: listOf[1], label: "Old newsletter test", folderLabel: null, memberCount: 4, enforced: false})
+    }
+    if (method === "GET" && path === "/management/cohort-targets/BREVO/tidy") {
+      return answer(route, "previewFolderTidy", {
+        moves: [{externalId: "33", label: "Web Cmte", from: null, to: "Committees"}],
+        foldersToCreate: [],
+        lastApplied: {appliedAt: "2026-09-01T10:00:00.000Z", appliedByName: "Mock User", moved: 4, failed: 0},
+      })
+    }
+    if (method === "POST" && path === "/management/cohort-targets/BREVO/tidy") {
+      const {externalIds} = request.postDataJSON() as {externalIds: string[]}
+      return answer(route, "applyFolderTidy", {
+        moved: externalIds.map((externalId) => ({system: "BREVO" as const, externalId, kind: "LIST" as const, label: "Web Cmte", folderLabel: "Committees", path: ["Brevo", "Committees"]})),
+        failed: [],
+      })
+    }
+    if (method === "POST" && path === "/management/cohort-targets/BREVO/missing") {
+      const {targetIds} = request.postDataJSON() as {targetIds: number[]}
+      return answer(route, "createMissingTargets", {queued: targetIds.length === 0 ? 1 : targetIds.length})
     }
     if (method === "GET" && path === "/management/cohort-targets/BREVO") {
       return answer(route, "searchCohortTargets", brevoTargets)
     }
-    // Legacy /management/cohorts list (still used by CohortPicker until
-    // the engine is fully on subjects).
-    if (method === "GET" && path === "/management/cohorts") {
-      return answer(route, "findCohorts", [
-        {id: 1, system: "BREVO", kind: "LIST", label: "Members 2025-2026", memberCount: 2, externalId: "7", folder: "Periods"},
-        {id: 2, system: "BREVO", kind: "LIST", label: "Web Cmte", memberCount: 1, externalId: "33", folder: "Committees"},
+    if (method === "GET" && path === "/management/cohorts/targets") {
+      return answer(route, "listTargetOptions", [
+        {id: 1, system: "BREVO", kind: "LIST", label: "Members 2025-2026", memberCount: 2},
+        {id: 2, system: "BREVO", kind: "LIST", label: "Web Cmte", memberCount: 1},
       ])
     }
     if (method === "GET" && path === "/boards") {
@@ -2000,8 +2205,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const body = JSON.parse(request.postData() ?? "{}") as {handle: string}
       return answer(route, "setGameAccount", {id: 5, userId: 1, game: path.split("/").pop() ?? "", handle: body.handle})
     }
-    if (method === "GET" && path === "/management/cohort-subjects") {
-      return answer(route, "findCohortSubjects", fixtures.cohortSubjects ?? [
+    if (method === "GET" && path === "/management/cohorts") {
+      return answer(route, "findCohorts", fixtures.cohorts ?? [
         {
           id: 101,
           type: "PERIOD_MEMBERS",
@@ -2020,10 +2225,15 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         },
       ])
     }
-    if (method === "GET" && /^\/management\/cohort-subjects\/\d+$/.test(path)) {
+    const driftOf = path.match(/^\/management\/cohorts\/\d+\/targets\/\d+\/drift\/(push|remove)$/)
+    if (method === "POST" && driftOf) {
+      const body = request.postDataJSON() as {userIds?: number[]; externalUserIds?: string[]}
+      return answer(route, driftOf[1] === "push" ? "pushDrift" : "removeDrift", {resolved: (body.userIds ?? body.externalUserIds ?? []).length})
+    }
+    if (method === "GET" && /^\/management\/cohorts\/\d+$/.test(path)) {
       const id = Number(path.split("/")[3] ?? "0")
       const isCommittee = id === 102
-      return answer(route, "findCohortSubjectById", {
+      return answer(route, "findCohortById", {
         id,
         type: isCommittee ? "COMMITTEE_MEMBERS" : "PERIOD_MEMBERS",
         category: isCommittee ? "COMMITTEES" : "PERIODS",
@@ -2031,23 +2241,40 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         description: null,
         mappings: [
           {
-            cohortId: isCommittee ? 2 : 1,
+            targetId: isCommittee ? 2 : 1,
             system: "BREVO",
             kind: "LIST",
             label: isCommittee ? "Web Cmte" : "Members 2025-2026",
             path: isCommittee ? ["Brevo", "Committees"] : ["Brevo", "Contribution periods"],
             externalId: isCommittee ? "33" : "7",
             lastReconciledAt: "2026-02-10T09:00:00Z",
+            folderKnown: true,
+            runs: [
+              {startedAt: "2026-02-10T09:00:00Z", trigger: "SCHEDULED_RUN", inSync: 40, oursOnly: 1, theirsOnly: 2, unreachable: 0},
+              {startedAt: "2026-02-09T09:00:00Z", trigger: "SCHEDULED_RUN", inSync: 38, oursOnly: 3, theirsOnly: 2, unreachable: 0},
+            ],
+            enforced: false,
           },
         ],
         definitionKey: isCommittee ? "COMMITTEE_MEMBERS:42" : "PERIOD_MEMBERS:1",
         orphaned: false,
-        ...(fixtures.cohortSubjectDetail ?? {}),
+        resolutions: [
+          {
+            targetId: isCommittee ? 2 : 1,
+            system: "BREVO",
+            action: "REMOVE",
+            externalUserId: "ext-9",
+            personName: "old@example.com",
+            resolvedByName: "Board Member",
+            resolvedAt: "2026-02-10T10:00:00Z",
+          },
+        ],
+        ...(fixtures.cohortDetail ?? {}),
         // One of each state the page draws: in sync, ours-but-not-pushed, and two rows the
         // target has that we do not — one we can name, one we cannot.
         members: fixtures.cohortMembers ?? [
           {
-            cohortMemberId: 200 + id,
+            targetMemberId: 200 + id,
             system: "BREVO",
             state: "VERIFIED",
             userId: 1,
@@ -2059,7 +2286,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             joinedAt: "2026-01-15T10:00:00Z",
           },
           {
-            cohortMemberId: 300 + id,
+            targetMemberId: 300 + id,
             system: "BREVO",
             state: "DESIRED",
             userId: 2,
@@ -2071,7 +2298,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             joinedAt: "2026-02-01T10:00:00Z",
           },
           {
-            cohortMemberId: 400 + id,
+            targetMemberId: 400 + id,
             system: "BREVO",
             state: "STRANGER",
             userId: 3,
@@ -2083,7 +2310,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             joinedAt: "2026-02-02T10:00:00Z",
           },
           {
-            cohortMemberId: 500 + id,
+            targetMemberId: 500 + id,
             system: "BREVO",
             state: "STRANGER",
             userId: null,
@@ -2118,20 +2345,83 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "retry", retried)
     }
     if (method === "GET" && path === "/management/emails/stats") {
-      const counts: Record<string, number> = {PENDING: 0, SENT: 0, DELIVERED: 0, OPENED: 0, BOUNCED: 0, FAILED: 0}
+      const counts: Record<string, number> = {QUEUED: 0, SENT: 0, DELIVERED: 0, OPENED: 0, BOUNCED: 0, FAILED: 0}
       for (const email of baseEmails) {
         const s = toSearchableString(email.deliveryStatus).toUpperCase()
         if (s in counts) counts[s] = (counts[s] ?? 0) + 1
       }
       return answer(route, "getStats1", {
         totalCount: baseEmails.length,
-        pendingCount: counts["PENDING"],
+        queuedCount: counts["QUEUED"],
         sentCount: counts["SENT"],
         deliveredCount: counts["DELIVERED"],
         openedCount: counts["OPENED"],
         bouncedCount: counts["BOUNCED"],
         failedCount: counts["FAILED"],
       })
+    }
+    if (method === "GET" && path === "/mail/inbox") {
+      return answer(route, "findInbox", {content: [
+        {id: 1, fromAddress: "lars@example.com", fromName: "Lars Mulder", senderUserId: 1, senderName: "Lars Mulder", subject: "Re: Your contribution",
+          receivedAt: "2026-09-29T11:20:00.000Z", state: "NEW", automatic: false, answers: {emailId: 800, emailType: "email.contribution-reminder"}},
+        {id: 2, fromAddress: "info@sponsor.example", subject: "Partnership question", toAddress: "partners@esa-blueshell.nl",
+          receivedAt: "2026-09-27T10:02:00.000Z", state: "NEW", automatic: false},
+      ], page: {size: 50, number: 0, totalElements: 2, totalPages: 1}})
+    }
+    if (method === "GET" && path === "/mail/inbox/counts") {
+      return answer(route, "findInboxCounts", {new: 2, oldestNewAt: "2026-09-27T10:02:00.000Z", done: 0, automatic: 0})
+    }
+    const conversationOf = path.match(/^\/mail\/inbox\/(\d+)(?:\/(reply|handled))?$/)
+    if (conversationOf) {
+      const replied = conversationOf[2] === "reply"
+      const handled = conversationOf[2] === "handled"
+      const message = {id: Number(conversationOf[1]), fromAddress: "lars@example.com", fromName: "Lars Mulder", senderUserId: 1, senderName: "Lars Mulder",
+        subject: "Re: Your contribution", receivedAt: "2026-09-29T11:20:00.000Z", automatic: false,
+        answers: {emailId: 800, emailType: "email.contribution-reminder"},
+        state: (replied ? "REPLIED" : handled ? "HANDLED" : "NEW") as "NEW" | "REPLIED" | "HANDLED",
+        ...(replied || handled ? {handledBy: 1, handledByName: "Mock User", handledAt: "2026-10-01T10:00:00.000Z"} : {})}
+      const items = [
+        {kind: "SENT" as const, at: "2026-09-29T09:40:00.000Z", subject: "Your contribution", emailId: 800},
+        {kind: "RECEIVED" as const, at: "2026-09-29T11:20:00.000Z", subject: "Re: Your contribution", body: "I already paid. Do I still need to do anything?",
+          fromAddress: "lars@example.com", inboxMessageId: message.id},
+        ...(replied ? [{kind: "REPLY" as const, at: "2026-10-01T10:00:00.000Z", body: (request.postDataJSON() as {message: string}).message,
+          inboxMessageId: message.id, writtenByName: "Mock User"}] : []),
+      ]
+      const earlier = [{kind: "SENT" as const, at: "2026-09-21T10:00:00.000Z", subject: "Welcome to Blueshell", emailId: 801}]
+      const operation = replied ? "replyToMessage" : handled ? "markMessageHandled" : "findConversation"
+      return answer(route, operation, {message, items, earlier})
+    }
+    if (method === "GET" && path === "/mail/audiences") {
+      return answer(route, "findAudiences", [{key: "ACTIVE_MEMBERS:4", label: "Active members 2026-2027"}])
+    }
+    if (method === "GET" && path === "/mail/reply-to") {
+      return answer(route, "findReplyToOptions", ["board@esa-blueshell.nl", "mock-user@example.com"])
+    }
+    if (method === "POST" && path === "/mail/reach") {
+      const {to} = request.postDataJSON() as {to: unknown[]}
+      return answer(route, "findReach", {recipients: to.length === 0 ? 0 : 217, withoutEmail: to.length === 0 ? 0 : 3})
+    }
+    if (method === "POST" && (path === "/mail/send" || path === "/mail/test")) {
+      return answer(route, path === "/mail/send" ? "sendWrittenEmail" : "sendTestEmail", {sent: path === "/mail/send" ? 217 : 1})
+    }
+    if (method === "POST" && path === "/management/emails/render") {
+      const {subject, message} = request.postDataJSON() as {subject: string; message: string}
+      return answer(route, "render", {subject, html: `<html><body><h1>${subject}</h1><p>${message}</p></body></html>`})
+    }
+    if (method === "GET" && /^\/management\/emails\/\d+$/.test(path)) {
+      const id = Number(path.split("/")[3])
+      const email = baseEmails.find((candidate) => candidate.id === id)
+      if (!email) return fulfillJson(route, {message: "Not found"}, 404)
+      return answer(route, "findEmail", {email, resends: baseEmails.filter((one) => one.resentFromId === id)})
+    }
+    if (method === "POST" && /^\/management\/emails\/\d+\/resend$/.test(path)) {
+      const id = Number(path.split("/")[3])
+      const email = baseEmails.find((candidate) => candidate.id === id)
+      if (!email) return fulfillJson(route, {message: "Not found"}, 404)
+      const made = {...email, id: Math.max(...baseEmails.map((one) => Number(one.id ?? 0))) + 1, deliveryStatus: "QUEUED" as const,
+        sentAt: null, deliveredAt: null, openedAt: null, errorType: null, errorReason: null, attempts: 0, resentFromId: id}
+      baseEmails.unshift(made)
+      return answer(route, "resend", made)
     }
     if (method === "GET" && /^\/management\/emails\/\d+\/preview$/.test(path)) {
       const id = Number(path.replace(/\D+/g, ""))
@@ -2312,6 +2602,23 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
     if (method === "GET" && path === "/csrf") {
       return answer(route, "csrf", {token: "e2e-csrf-token"})
+    }
+    // No bot in the stand-in: the committee form's Discord section stays hidden.
+    if (method === "GET" && (path === "/management/discord/roles" || path === "/management/discord/channels")) {
+      return answer(route, path.endsWith("roles") ? "listKeptRoles" : "listKeptChannels", [])
+    }
+    if (method === "GET" && /^\/management\/discord\/games\/\w+\/access$/.test(path)) {
+      return answer(route, "findGameAccess", {policy: {everyone: "READ", members: "WRITE"}, channels: []})
+    }
+    if (method === "GET" && /^\/management\/discord\/channels\/\w+\/access$/.test(path)) {
+      return answer(route, "findChannelAccess", {kept: {everyone: "READ", members: "WRITE"}, actual: {everyone: "READ", members: "WRITE"}, differs: false})
+    }
+    if (/^\/management\/committees\/\d+\/brevo$/.test(path)) {
+      const place = {available: true, listId: null, listName: null, folder: "Committees"}
+      return method === "GET" ? answer(route, "findCommitteeBrevo", place) : answer(route, "setCommitteeBrevo", place)
+    }
+    if (method === "GET" && /^\/management\/(committees|teams)\/\d+\/discord$/.test(path)) {
+      return answer(route, path.includes("/teams/") ? "findTeamDiscord" : "findCommitteeDiscord", {available: false, channels: []})
     }
     if (method === "GET" && path === "/discord/roles") {
       return answer(route, "listDiscordRoles", [])

@@ -12,6 +12,8 @@ import java.time.Instant
 interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
     fun countByStatus(status: JobExecutionStatus): Long
 
+    fun findTopByStatusOrderByIdDesc(status: JobExecutionStatus): JobExecution?
+
     fun findByJobType(jobType: String): List<JobExecution>
 
     fun findByJobTypeAndDedupKey(

@@ -335,4 +335,18 @@ class SignupControllerTest {
             verify(signupUseCases).correctEmail(signupToken = TOKEN, email = "corrected@example.com")
         }
     }
+
+    @Nested
+    inner class SetUpMandate {
+        @Test
+        fun `passes the bank details on under the token, and never logs the account number`() {
+            val request = SignupMandateRequest(iban = "NL91ABNA0417164300", accountHolder = "App Licant", authorised = true)
+
+            controller.setUpMandate(TOKEN, request)
+
+            verify(signupUseCases).setUpMandate(TOKEN, "NL91ABNA0417164300", "App Licant")
+            assertThat(request.toString()).contains("4300").doesNotContain("0417")
+            assertThat(SignupMandateRequest(iban = "NL91ABNA0417164300", accountHolder = "App Licant").authorised).isFalse()
+        }
+    }
 }

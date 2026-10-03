@@ -10,6 +10,29 @@ export {listUnclaimedMembers, searchServerMembers} from "./adapters/members"
 export {listServerChannels, type MentionIds} from "./adapters/mentions"
 export {fillMentions, forgetMentionNames, nameMentions, type MentionKind, type MentionName} from "./mentions"
 export {listServerRoles} from "./adapters/roles"
+export {listKeepableChannels, listKeepableRoles, type KeptChannel, type KeptRole} from "./adapters/keeping"
+export {default as DiscordPlaceFields} from "./island/DiscordPlaceFields.vue"
+export {default as LinkDiscordAsk} from "./island/LinkDiscordAsk.vue"
+export {listMyUnlinkedRoles} from "./adapters/unlinked"
+export {adoptMatches, listCatalogue, listMatches, type AdoptionMatch, type CataloguedChannel} from "./adapters/catalogue"
+export {
+  ARCHIVE_CATEGORY,
+  accessOf,
+  belongsTo,
+  catalogueFacts,
+  channelGroups,
+  differsOf,
+  openingDiffers,
+  openingKind,
+  opensOf,
+  policyWords,
+  roleAccessWord,
+  type ChannelGroup,
+  type NamedRole,
+} from "./catalogue"
+export {archiveChannelOf, closeTo, createChannelFor, openTo, readOpenings, type RoleOpeningState} from "./adapters/roleOpenings"
+export {RoleAccess} from "@/services/api"
+export type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
 export {readStarboard} from "./adapters/starboard"
 export {readGuildCounts, readGuildWidget, voiceRoomUrl, type GuildCounts, type GuildWidget, type WidgetChannel, type WidgetMember, type WidgetResponse} from "./adapters/widget"
 export {readDiscordRooms, watchDiscordRooms, liveOf, howFull, fitting, SERVER_NAME, type DiscordRooms, type VoicePerson, type VoiceRoom} from "./rooms"

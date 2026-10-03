@@ -1,29 +1,15 @@
 /**
- * How a sent email reads: the words on a row, the colour behind it, and what the rates mean.
+ * How a sent email reads: what it is called, where it stands, what happened to it, and what it
+ * may do next.
  *
  * Knowledge about emails rather than about a page, so it sits in the domain and can be checked
  * without mounting anything.
  */
 import type {EmailStats, SentEmail} from "./adapters/emails"
 import {EmailDeliveryStatus} from "./adapters/emails"
+import type {StateKind} from "@/components/island/StateMark.vue"
 
 type Status = EmailDeliveryStatus | string | null | undefined
-
-export function statusColor(status?: Status): string {
-  if (status === "DELIVERED" || status === "OPENED") return "success"
-  if (status === "FAILED" || status === "BOUNCED") return "error"
-  if (status === "SENT") return "info"
-  if (status === "PENDING") return "warning"
-  return "secondary"
-}
-
-export function rowStatusClass(status?: Status): string {
-  if (status === "DELIVERED" || status === "OPENED") return "email-row--success"
-  if (status === "FAILED" || status === "BOUNCED") return "email-row--failed"
-  if (status === "SENT") return "email-row--sent"
-  if (status === "PENDING") return "email-row--pending"
-  return ""
-}
 
 /**
  * An email that can be sent again: one that failed and has the job behind it to run. A failure
@@ -33,53 +19,65 @@ export function canRetry(email: SentEmail): boolean {
   return email.id != null && email.deliveryStatus === "FAILED" && email.jobExecutionId != null
 }
 
-/** An opened email was delivered, so it counts towards delivery as well as towards opens. */
-export function deliveryRate(stats: EmailStats | null): number {
-  const total = stats?.totalCount ?? 0
-  if (!stats || total === 0) return 0
-  return Math.round(((stats.deliveredCount ?? 0) + (stats.openedCount ?? 0)) / total * 100)
-}
-
-export function openRate(stats: EmailStats | null): number {
-  const total = stats?.totalCount ?? 0
-  if (!stats || total === 0) return 0
-  return Math.round((stats.openedCount ?? 0) / total * 100)
-}
-
-/**
- * The chip counts. These count the page on screen rather than the outbox, unlike the total
- * beside them, which is every email the filter matches.
- */
-export function statusCounts(emails: SentEmail[]): Record<EmailDeliveryStatus, number> {
-  const counts = {
-    [EmailDeliveryStatus.PENDING]: 0,
-    [EmailDeliveryStatus.SENT]: 0,
-    [EmailDeliveryStatus.DELIVERED]: 0,
-    [EmailDeliveryStatus.OPENED]: 0,
-    [EmailDeliveryStatus.BOUNCED]: 0,
-    [EmailDeliveryStatus.FAILED]: 0,
-  }
-  for (const email of emails) {
-    const status = email.deliveryStatus
-    if (status && status in counts) counts[status] += 1
-  }
-  return counts
-}
-
-/** One option in a filter picker: what it says, and the value it filters by. */
-export interface FilterOption {
-  title: string
-  value: string
+/** An email a job wrote can be made again for the person's current address, once it has left the queue. */
+export function canResend(email: SentEmail): boolean {
+  return email.id != null && email.jobExecutionId != null && email.deliveryStatus !== EmailDeliveryStatus.QUEUED
 }
 
 const titleCase = (value: string): string =>
   value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
 
-/**
- * The statuses offered, built from the generated enum rather than from a list copied into the
- * page, so a status the api adds is selectable without anyone noticing it was added.
- */
-export const statusOptions = (): FilterOption[] => [
-  {title: "All statuses", value: "all"},
-  ...Object.values(EmailDeliveryStatus).map(value => ({title: titleCase(value), value})),
-]
+/** What a status is called, such as Queued or Bounced. */
+export const statusWord = (status?: Status): string => (status ? titleCase(status) : "Unknown")
+
+/** How a status stands against arriving: in step once it arrived, unreachable when it did not. */
+export function stateKindOf(status?: Status): StateKind {
+  if (status === "DELIVERED" || status === "OPENED") return "in-step"
+  if (status === "BOUNCED" || status === "FAILED") return "unreachable"
+  if (status === "QUEUED") return "not-created"
+  return "not-compared"
+}
+
+/** What kind of email it is, from its type: email.contribution-reminder reads as Contribution reminder. */
+export function emailTypeLabel(type?: string | null): string {
+  const last = (type ?? "").split(".").pop() ?? ""
+  return last ? titleCase(last.replace(/-/g, " ")) : "Email"
+}
+
+/** One moment in an email's life, oldest first. */
+export interface EmailMoment {
+  what: string
+  at: string
+  wrong: boolean
+}
+
+/** What happened to an email: queued, sent, delivered, opened, or where it went wrong. */
+export function timelineOf(email: SentEmail): EmailMoment[] {
+  const moments: EmailMoment[] = []
+  if (email.createdAt) moments.push({what: "Queued", at: email.createdAt, wrong: false})
+  if (email.sentAt) moments.push({what: "Sent", at: email.sentAt, wrong: false})
+  if (email.deliveredAt) moments.push({what: "Delivered", at: email.deliveredAt, wrong: false})
+  if (email.openedAt) moments.push({what: "Opened", at: email.openedAt, wrong: false})
+  if (email.deliveryStatus === "BOUNCED" || email.deliveryStatus === "FAILED") {
+    moments.push({what: statusWord(email.deliveryStatus), at: email.updatedAt ?? email.createdAt ?? "", wrong: true})
+  }
+  return moments
+}
+
+/** The three facts over every email: waiting, arrived, and needing a look. */
+export function sentFacts(stats: EmailStats | null) {
+  const queued = stats?.queuedCount ?? 0
+  const sent = Math.max(0, (stats?.totalCount ?? 0) - queued)
+  const bounced = stats?.bouncedCount ?? 0
+  const failed = stats?.failedCount ?? 0
+  const arrived = (stats?.deliveredCount ?? 0) + (stats?.openedCount ?? 0)
+  return {
+    queued,
+    sent,
+    delivered: sent === 0 ? 0 : Math.round(arrived / sent * 100),
+    opened: sent === 0 ? 0 : Math.round((stats?.openedCount ?? 0) / sent * 100),
+    needsLook: bounced + failed,
+    bounced,
+    failed,
+  }
+}

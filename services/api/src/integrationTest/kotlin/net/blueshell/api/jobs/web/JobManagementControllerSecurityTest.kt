@@ -76,6 +76,20 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
     }
 
     @Nested
+    inner class ReadOneJob {
+        @Test
+        fun `allows ADMIN to read one job and denies BOARD`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val board = createUserWithRole(Role.BOARD)
+            val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
+
+            mvc.perform(get("/management/jobs/{id}", jobId).with(signedIn(admin))).andExpect(status().isOk)
+            mvc.perform(get("/management/jobs/{id}", jobId).with(signedIn(board))).andExpect(status().isForbidden)
+            mvc.perform(get("/management/jobs/{id}", Long.MAX_VALUE).with(signedIn(admin))).andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
     inner class RetryJob {
         @Test
         fun `allows ADMIN to retry jobs`() {

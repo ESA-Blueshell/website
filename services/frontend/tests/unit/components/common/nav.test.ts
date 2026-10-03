@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {accountFor, covers, managementFor, sectionsFor} from "@/components/common/nav"
+import {accountFor, covers, managementSwitchFor, sectionsFor} from "@/components/common/nav"
 
 const GAMES = [{name: "Valorant", slug: "valorant"}, {name: "Trackmania", slug: "trackmania"}]
 
@@ -58,20 +58,11 @@ describe("the bar's own declaration", () => {
     expect(covers("/membership", home)).toBe(false)
   })
 
-  // The gates are the controllers': a board runs the records, an admin the machinery, and the
-  // outbox answers to both.
-  it("offers management by what the reader may reach", () => {
-    const board = managementFor({loggedIn: true, board: true, admin: false}).map(entry => entry.to)
-    const admin = managementFor({loggedIn: true, board: false, admin: true}).map(entry => entry.to)
-    const member = managementFor({loggedIn: true, board: false, admin: false})
-
-    expect(board).toContain("/user-manager")
-    expect(board).not.toContain("/management/jobs")
-    expect(board).toContain("/management/emails")
-    expect(admin).toContain("/management/jobs")
-    expect(admin).not.toContain("/user-manager")
-    expect(admin).toContain("/management/emails")
-    expect(member).toEqual([])
+  // Management is entered from the account menu, by anyone holding a role that may use it.
+  it("offers the switch to management to the board and the admin only", () => {
+    expect(managementSwitchFor({loggedIn: true, board: true, admin: false})?.to).toBe("/management")
+    expect(managementSwitchFor({loggedIn: true, board: false, admin: true})?.label).toBe("Switch to management")
+    expect(managementSwitchFor({loggedIn: true, board: false, admin: false})).toBeNull()
   })
 
   // A reader with no address is offered the page where the first one is written.

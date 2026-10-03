@@ -16,7 +16,7 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "discord",
     allowedDependencies = [
-        // Open kernel: the starboard is @MemberOnly.
+        // Open kernel: the starboard is @MemberOnly, the management endpoints the board's.
         "security",
         // Open kernel.
         "shared",

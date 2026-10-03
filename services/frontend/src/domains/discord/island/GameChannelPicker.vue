@@ -6,7 +6,10 @@
  */
 import {computed, onMounted, ref} from "vue"
 import ChipPicker from "@/components/island/ChipPicker.vue"
+import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
+import store from "@/plugins/store"
+import {makeGameChannel} from "../adapters/channelAccess"
 import {GameChannelCategory, type GameRoom, listGameRooms} from "../index"
 
 const props = withDefaults(defineProps<{
@@ -17,12 +20,15 @@ const props = withDefaults(defineProps<{
   /** What the picker says once every channel of its category is chosen. */
   emptyNote?: string
   category?: GameChannelCategory
+  /** The name a channel the site makes takes; none offers no making. */
+  createName?: string
 }>(), {
   modelValue: () => [],
   testid: "game-channels",
   label: "Channels",
   emptyNote: "The games category has no channels left to add.",
   category: GameChannelCategory.GAMES,
+  createName: "",
 })
 
 const emit = defineEmits<{"update:modelValue": [channels: GameRoom[]]}>()
@@ -49,6 +55,17 @@ const add = (ids: string[]) => {
 }
 
 const remove = (id: string) => emit("update:modelValue", chosen.value.filter(one => one.id !== id))
+
+const making = ref(false)
+const make = async () => {
+  if (making.value || props.createName.trim() === "") return
+  making.value = true
+  const made = await makeGameChannel(props.createName.trim(), props.category)
+  making.value = false
+  if (!made.ok) return store.commit("setStatusSnackbarMessage", made.reason)
+  channels.value = [...(channels.value ?? []), made.saved]
+  emit("update:modelValue", [...chosen.value, made.saved])
+}
 </script>
 
 <template>
@@ -75,4 +92,22 @@ const remove = (id: string) => emit("update:modelValue", chosen.value.filter(one
       />
     </template>
   </form-field>
+  <div
+    v-if="loaded && !unavailable && createName.trim() !== ''"
+    class="game-channels__make"
+  >
+    <cut-button
+      :disabled="making"
+      :testid="`${testid}-make`"
+      @click="make"
+    >
+      Make #{{ createName.trim() }}
+    </cut-button>
+  </div>
 </template>
+
+<style scoped>
+.game-channels__make {
+  margin-top: 0.4rem;
+}
+</style>

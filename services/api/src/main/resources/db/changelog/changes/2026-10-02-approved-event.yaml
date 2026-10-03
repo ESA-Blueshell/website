@@ -1,0 +1,14 @@
+# Each event as the board last approved it, so the approval queue can say what a re-approval changed.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-approved-event.yaml
+      id: approved-event
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: approved_event
+            columns:
+              - column: {name: event_id, type: BIGINT, constraints: {primaryKey: true, primaryKeyName: pk_approved_event, nullable: false}}
+              - column: {name: fields, type: TEXT, constraints: {nullable: false}}
+      rollback:
+        - dropTable: {tableName: approved_event}

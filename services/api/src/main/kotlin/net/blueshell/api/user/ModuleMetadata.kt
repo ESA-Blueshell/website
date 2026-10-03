@@ -15,6 +15,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "user",
     allowedDependencies = [
+        // Roles waiting on two-factor raise an alert.
+        "alerts :: api",
         // Open kernel: UserPermission extends the base evaluator and CurrentUserProvider
         // reads the security context.
         "security",

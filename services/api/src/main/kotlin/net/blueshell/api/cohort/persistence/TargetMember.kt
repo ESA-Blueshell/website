@@ -1,0 +1,66 @@
+package net.blueshell.api.cohort.persistence
+
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
+import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.shared.model.SoftDelete
+import org.hibernate.annotations.SQLDelete
+import org.hibernate.annotations.SQLRestriction
+import java.time.LocalDateTime
+
+/**
+ * Unified membership ledger, where two nullable timestamps name two distinct facts: `syncedAt`
+ * that the sync path pushed this member, `verifiedAt` that a reconcile found them in a live
+ * remote snapshot.
+ *
+ * Read a row's [state] rather than these fields by hand. `userId` is a plain Long rather than a
+ * `@ManyToOne User`, so cohort code stays off the user entity graph.
+ */
+@Entity
+@Table(
+    name = "target_member",
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_cohort_member",
+            columnNames = ["target_id", "user_id", "deleted_at"],
+        ),
+        UniqueConstraint(
+            name = "uk_cohort_member_external",
+            columnNames = ["target_id", "external_user_id", "deleted_at"],
+        ),
+    ],
+    indexes = [
+        Index(name = "idx_cohort_member_cohort", columnList = "target_id"),
+        Index(name = "idx_cohort_member_user", columnList = "user_id"),
+        Index(name = "idx_cohort_member_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_cohort_member_external", columnList = "target_id,external_user_id"),
+        Index(name = "idx_cohort_member_synced", columnList = "target_id,synced_at"),
+        Index(name = "idx_cohort_member_verified", columnList = "target_id,verified_at"),
+    ],
+)
+@SQLDelete(sql = "UPDATE target_member SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction(SoftDelete.ACTIVE)
+class TargetMember(
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "target_id", nullable = false)
+    val target: Target,
+    @Column(name = "user_id", nullable = true)
+    val userId: Long?,
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cohort_id", nullable = false)
+    val cohort: Cohort,
+    @Column(name = "external_user_id", nullable = true)
+    var externalUserId: String? = null,
+    @Column(name = "synced_at", nullable = true)
+    var syncedAt: LocalDateTime? = null,
+    @Column(name = "verified_at", nullable = true)
+    var verifiedAt: LocalDateTime? = null,
+    @Column(name = "label", nullable = true)
+    var label: String? = null,
+) : AuditedAutoIdEntity()

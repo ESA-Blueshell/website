@@ -1,5 +1,6 @@
 package net.blueshell.api.user.persistence
 
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Pageable
@@ -14,6 +15,18 @@ import java.util.Optional
 // responsibilities.
 @Suppress("TooManyFunctions")
 interface UserRepository : BaseRepository<User, Long> {
+    /** Everybody holding [role] itself, as it is stored. */
+    @Query("select distinct u.id from User u join u.roles r where r = :role")
+    fun findIdsHolding(
+        @Param("role") role: Role,
+    ): List<Long>
+
+    /** People holding any of [roles] with no two-factor yet, so the role waits on it. */
+    @Query("select distinct u from User u join u.roles r where r in :roles and u.twoFactorSince is null order by u.id")
+    fun findHoldingWithoutTwoFactor(
+        @Param("roles") roles: Collection<Role>,
+    ): List<User>
+
     fun findByUsername(username: String): Optional<User>
 
     /** Every administrator who is a person: the service account holds SYSTEM as well. */
@@ -57,6 +70,8 @@ interface UserRepository : BaseRepository<User, Long> {
 
     fun existsByEmail(email: String): Boolean
 
+    fun findAllByEmailIn(emails: Collection<String>): List<User>
+
     // A bulk update, so neither the version nor the audit columns move: nobody here changed it.
     @Modifying
     @Query("update User u set u.discord = :name where u.discordId = :discordId and (u.discord is null or u.discord <> :name)")
@@ -72,6 +87,8 @@ interface UserRepository : BaseRepository<User, Long> {
 
     @Query("select u.discordId from User u where u.discordId is not null")
     fun findLinkedDiscordIds(): List<String>
+
+    fun findAllByDiscordIdIn(discordIds: Collection<String>): List<User>
 
     fun existsByDiscordId(discordId: String): Boolean
 
@@ -98,6 +115,7 @@ interface UserRepository : BaseRepository<User, Long> {
         FROM Membership m
         WHERE m.user.id = :userId
           AND m.endDate IS NULL
+          AND m.activatedOn IS NOT NULL
         """,
     )
     fun existsActiveMembershipByUserId(

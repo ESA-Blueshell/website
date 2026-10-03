@@ -28,10 +28,16 @@ const navbarPaths = [
   "/account",
   "/account/security",
   "/account/games",
-  "/addresses/manage",
-  "/recovery/manage",
-  "/user-manager",
+  "/management/addresses",
+  "/management/recovery",
+  "/management/users",
   "/management/jobs",
+  "/management/jobs/12",
+  "/management/exceptions",
+  "/management/alerts",
+  "/management/contributions/2",
+  "/management/users/7/contributions",
+  "/management/exceptions/3",
 ]
 
 describe("Navbar route targets", () => {
@@ -52,9 +58,16 @@ describe("the account security pages", () => {
   }, 20_000)
 })
 
+describe("the System pages", () => {
+  it.each(["jobDetail", "exceptionList", "exceptionDetail", "alertList", "management", "userDetail", "bulkTask", "contributions", "contributionPeriod", "contributionPeriodNew", "paymentReminders", "emailManager", "sentEmail", "writeEmail", "inbox", "inboxMessage", "incassoRun", "brevo", "brevoList", "discord", "discordChannels", "discordRole", "managementCommittees", "managementCommitteeNew", "managementCommittee", "managementBoards", "managementBoardNew", "managementBoard", "managementGames", "managementGameNew", "managementGame", "managementTeams", "managementTeam", "eventQueue"])("loads %s", async (name) => {
+    const load = router.getRoutes().find(one => one.name === name)?.components?.default as () => Promise<unknown>
+    await expect(load()).resolves.toBeDefined()
+  }, 20_000)
+})
+
 describe("the pages the fields and the parts are drawn on", () => {
   // The galleries import every island part, which a loaded runner transforms slowly.
-  it.each(["design/fields", "design/parts"])("reaches %s while developing, and loads its gallery", async (name) => {
+  it.each(["design/fields", "design/parts", "design/management"])("reaches %s while developing, and loads its gallery", async (name) => {
     const route = router.getRoutes().find(one => one.name === name)
     expect(route).toBeDefined()
 

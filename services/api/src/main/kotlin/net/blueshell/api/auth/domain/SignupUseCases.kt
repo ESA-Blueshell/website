@@ -11,6 +11,7 @@ import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.MembershipConditions
 import net.blueshell.api.user.api.SealedAddresses
 import net.blueshell.api.user.api.SignupDetailsData
+import net.blueshell.api.user.api.SignupMandates
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.completenessFor
 import net.blueshell.api.user.api.upsertInto
@@ -37,6 +38,7 @@ class SignupUseCases(
     private val jobs: JobQueue,
     private val validator: Validator,
     private val sealedAddresses: SealedAddresses,
+    private val mandates: SignupMandates,
 ) {
     fun issueSession(userId: Long): SignupSession = signupTokens.issue(users.findById(userId))
 
@@ -171,6 +173,15 @@ class SignupUseCases(
                 data.memberProfile?.upsertInto(this)
             },
         )
+    }
+
+    /** The optional incasso step: the bank details wait for the membership this signup starts. */
+    fun setUpMandate(
+        signupToken: String,
+        iban: String,
+        accountHolder: String,
+    ) {
+        mandates.setUp(signupTokens.resolveAccount(signupToken).id, iban, accountHolder)
     }
 
     // Transactional so the account resolved from the token stays managed: without

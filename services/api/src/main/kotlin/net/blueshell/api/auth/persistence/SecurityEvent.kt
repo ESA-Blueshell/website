@@ -93,4 +93,14 @@ enum class SecurityEventKind(
     SIGNED_OUT_EVERYWHERE(false),
     SIGNED_OUT_ELSEWHERE(false),
     ROLES_CHANGED(false),
+    BANK_DETAILS_CHANGED(true),
+
+    /** A board member opened the person's full IBAN. */
+    IBAN_REVEALED(false),
+
+    /** The person downloaded one of an incasso run's files for ING, which holds full account numbers. */
+    INCASSO_FILE_DOWNLOADED(false),
+
+    /** A board member downloaded the PDF of the person's online mandate. */
+    MANDATE_PDF_DOWNLOADED(false),
 }

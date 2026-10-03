@@ -3,6 +3,8 @@ package net.blueshell.api.auth.persistence
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
+import java.time.Instant
 import java.util.Optional
 
 interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
@@ -42,4 +44,22 @@ interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
     """,
     )
     fun findUserIdsWithUnconsumedType(type: TokenPurpose): List<Long>
+
+    /** When each account was last sent a token of one of [types], newest issue per account. */
+    @Query(
+        """
+        select rt.user.id as userId, max(rt.createdAt) as sentAt from RecoveryToken rt
+        where rt.type in :types
+        group by rt.user.id
+    """,
+    )
+    fun findLastIssuedPerUser(
+        @Param("types") types: Collection<TokenPurpose>,
+    ): List<LastRecoveryEmail>
+}
+
+/** One account's latest recovery email. */
+interface LastRecoveryEmail {
+    val userId: Long
+    val sentAt: Instant
 }

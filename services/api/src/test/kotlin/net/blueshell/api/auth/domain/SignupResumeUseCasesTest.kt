@@ -36,7 +36,18 @@ class SignupResumeUseCasesTest {
 
     private val validator = Validation.buildDefaultValidatorFactory().validator
 
-    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs, validator)
+    private val useCases =
+        SignupUseCases(
+            signupTokens,
+            users,
+            memberProfiles,
+            completion,
+            activation,
+            jobs,
+            validator,
+            net.blueshell.api.user.api.TestSealing.addresses,
+            mock(),
+        )
 
     private fun applicant(id: Long? = APPLICANT_ID): User {
         val user =

@@ -2,6 +2,7 @@ package net.blueshell.api.platform.config.advice
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import net.blueshell.api.shared.util.PersonalDetails
 import net.blueshell.api.shared.util.sanitizeForLog
 import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered
@@ -44,9 +45,11 @@ class ExceptionLoggingResolver : HandlerExceptionResolver {
             sanitizeForLog(request.method),
             sanitizeForLog(request.requestURI),
             ex.javaClass.simpleName,
-            sanitizeForLog(ex.message),
+            sanitizeForLog(ex.message?.let(PersonalDetails::scrub)),
             ex,
         )
+        // The recording filter reads it once the response has a status, and records only a 5xx.
+        request.setAttribute(ExceptionRecordingFilter.RESOLVED_EXCEPTION, ex)
         return null
     }
 }

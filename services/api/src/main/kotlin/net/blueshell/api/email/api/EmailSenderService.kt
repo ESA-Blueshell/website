@@ -4,6 +4,7 @@ import net.blueshell.api.email.domain.EmailService
 import net.blueshell.api.email.domain.EmailTemplateService
 import net.blueshell.api.email.domain.EmailTransportClient
 import net.blueshell.api.shared.email.EmailContent
+import net.blueshell.api.shared.util.PersonalDetails
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -43,7 +44,7 @@ class EmailSenderService(
     ) {
         val htmlContent = renderEmailHtml(emailContent)
 
-        val outbox = emailService.createPending(emailContent, emailType, jobExecutionId)
+        val outbox = emailService.forSend(emailContent, emailType, jobExecutionId)
         val trackedHtml =
             outbox.trackingToken
                 ?.let { token -> injectTrackingPixel(htmlContent, "$appUrl/track/email/open/$token") }
@@ -59,12 +60,13 @@ class EmailSenderService(
                     emailContent.senderNameOverride ?: senderName,
                     senderAddress,
                     emailContent.replyToOverride ?: defaultReplyTo,
+                    emailContent.threadHeaders,
                 )
-            log.info("Sent email to {} subject='{}'", emailContent.recipientEmail, emailContent.subject)
+            log.info("Sent email id={} type={}", outbox.id, emailType)
             emailService.markSent(outbox, messageId)
         } catch (e: Exception) {
-            log.error("Failed to send email to {} subject='{}': {}", emailContent.recipientEmail, emailContent.subject, e.message, e)
-            emailService.markFailed(outbox, e.javaClass.simpleName, e.message ?: "Send error")
+            log.error("Failed to send email id={} type={}", outbox.id, emailType, e)
+            emailService.markFailed(outbox, e.javaClass.simpleName, PersonalDetails.scrub(e.message ?: "Send error"))
             throw IllegalStateException("Failed to send email", e)
         }
     }

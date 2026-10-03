@@ -112,6 +112,13 @@ class PublicAuthRateLimitFilter(
                 countedPer = CountedPer.APPLICANT,
             ),
             Rule(
+                HttpMethod.PUT.name(),
+                "/signup/mandate",
+                maxRequests = 10,
+                window = Duration.ofMinutes(1),
+                countedPer = CountedPer.APPLICANT,
+            ),
+            Rule(
                 HttpMethod.PATCH.name(),
                 "/signup/details",
                 maxRequests = 10,

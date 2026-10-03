@@ -10,18 +10,20 @@ import type {VueWrapper} from "@vue/test-utils"
 import JobManager from "@/pages/management/JobManager.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const {mockRoute, mockRouterReplace, mockList, mockRetry, mockGetStats, mockStore} = vi.hoisted(() => ({
-  mockRoute: {query: {} as Record<string, string>},
+const {mockRouterReplace, mockList, mockRetry, mockGetStats, mockJobTypes, mockFindJob, mockStore, mockRoute} = vi.hoisted(() => ({
   mockRouterReplace: vi.fn(),
   mockList: vi.fn(),
   mockRetry: vi.fn(),
   mockGetStats: vi.fn(),
+  mockJobTypes: vi.fn(),
+  mockFindJob: vi.fn(),
   mockStore: {commit: vi.fn(), getters: {isAdmin: true}},
+  mockRoute: {query: {} as Record<string, string>},
 }))
 
 vi.mock("vue-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-router")>()
-  return {...actual, useRoute: () => mockRoute, useRouter: () => ({replace: mockRouterReplace})}
+  return {...actual, useRouter: () => ({replace: mockRouterReplace}), useRoute: () => mockRoute}
 })
 
 vi.mock("@/plugins/store", () => ({default: mockStore}))
@@ -29,7 +31,7 @@ vi.mock("@/plugins/store", () => ({default: mockStore}))
 vi.mock("@/services/api", async (importOriginal) => {
   // The real generated enums stay, so the filter options are the api's; only the calls are stubbed.
   const actual = await importOriginal<typeof import("@/services/api")>()
-  return {...actual, list: mockList, retry: mockRetry, getStats: mockGetStats}
+  return {...actual, list: mockList, retry: mockRetry, getStats: mockGetStats, jobTypes: mockJobTypes, findJobById: mockFindJob}
 })
 
 const job = (fields: Record<string, unknown>) => ({
@@ -58,6 +60,7 @@ describe("JobManager page", () => {
     vi.clearAllMocks()
     mockStore.getters.isAdmin = true
     mockRoute.query = {}
+    mockJobTypes.mockResolvedValue({status: 200, data: [{type: "contact.sync-user", payloadFields: [{name: "userId", type: "Long", required: true}]}]})
     mockList.mockResolvedValue(pageOf([job({id: 1, status: "FAILED"}), job({id: 2})], 2))
     mockRetry.mockResolvedValue({status: 200, data: job({id: 1, attempts: 2})})
     // Every field, because the stats panel calls toFixed on four of them and a partial object
@@ -84,17 +87,6 @@ describe("JobManager page", () => {
 
     expect(mockRouterReplace).toHaveBeenCalledWith("/")
     expect(mockList).not.toHaveBeenCalled()
-  })
-
-  it("opens already searching for what its address asks, in one read", async () => {
-    mockRoute.query = {search: "9"}
-
-    const wrapper = mountJobManager()
-    await settle()
-
-    expect(mockList).toHaveBeenCalledTimes(1)
-    expect(mockList).toHaveBeenCalledWith({query: expect.objectContaining({search: "9"})})
-    expect((wrapper.get('[data-testid="job-filter-search"] input').element as HTMLInputElement).value).toBe("9")
   })
 
   it("draws a row for every job the api answered with", async () => {
@@ -272,13 +264,108 @@ describe("JobManager page", () => {
       query: expect.objectContaining({page: 0, size: 50, category: "calendar", status: "FAILED"}),
     })
 
-    vm.selectedCategory = "all"
-    vm.selectedStatus = "all"
+    await wrapper.find('[data-testid="job-filters-clear"]').trigger("click")
     await settle()
 
     const query = mockList.mock.lastCall?.[0]?.query as Record<string, unknown>
     expect(query.category).toBeUndefined()
     expect(query.status).toBeUndefined()
+    expect(wrapper.find('[data-testid="job-filters-clear"]').exists()).toBe(false)
+  })
+
+  it("reads Status and Kind off their pickers", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+
+    const [status, kind] = wrapper.findAllComponents({name: "FilterPicker"})
+    await status.vm.$emit("update:modelValue", "DEAD")
+    await kind.vm.$emit("update:modelValue", "email")
+    await settle()
+
+    expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({status: "DEAD", category: "email"})})
+  })
+
+  it("searches jobs alongside the pickers", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+
+    const vm = wrapper.vm as any
+    vm.selectedStatus = "FAILED"
+    await wrapper.find('[data-testid="job-filter-search"]').setValue("sitecie")
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    await settle()
+
+    expect(mockList).toHaveBeenLastCalledWith({
+      query: expect.objectContaining({status: "FAILED", search: "sitecie"}),
+    })
+  })
+
+  it("fills Run a job from a row's Run again, and queues nothing by itself", async () => {
+    mockList.mockResolvedValue(pageOf([job({id: 1, status: "FAILED", payload: {userId: 7}})]))
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-run-form"]').exists()).toBe(false)
+    await wrapper.find('[data-testid="job-run-again-btn-1"]').trigger("click")
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-run-form"]').exists()).toBe(true)
+    expect((wrapper.vm as any).preset).toEqual({type: "contact.sync-user", payload: {userId: 7}})
+    expect(mockList).toHaveBeenCalledTimes(1)
+  })
+
+  it("opens Run a job filled in when a job's own page sends Run again", async () => {
+    mockRoute.query = {again: "4"}
+    mockFindJob.mockResolvedValue({status: 200, data: job({id: 4, payload: {userId: 9}})})
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect(mockFindJob).toHaveBeenCalledWith({path: {id: 4}})
+    expect((wrapper.vm as any).runOpen).toBe(true)
+    expect((wrapper.vm as any).preset).toEqual({type: "contact.sync-user", payload: {userId: 9}})
+  })
+
+  it("ignores a Run again for a job it cannot read, or one without a type", async () => {
+    mockRoute.query = {again: "4"}
+    mockFindJob.mockResolvedValue({status: 404, error: {detail: "Not found"}})
+
+    const wrapper = mountJobManager()
+    await settle()
+    expect((wrapper.vm as any).runOpen).toBe(false)
+
+    await (wrapper.vm as any).runAgain({jobType: null, payload: {}})
+    expect((wrapper.vm as any).runOpen).toBe(false)
+  })
+
+  it("goes back to the first page once a job is queued", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+    mockList.mockClear()
+
+    await wrapper.find('[data-testid="job-run-toggle"]').trigger("click")
+    await settle()
+    wrapper.findComponent({name: "JobRunForm"}).vm.$emit("queued", "contact.sync-user")
+    await settle()
+
+    expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({page: 0})})
+  })
+
+  it("opens filtered on the status an alert linked it with", async () => {
+    mockRoute.query = {status: "DEAD"}
+    mountJobManager()
+    await settle()
+
+    expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({status: "DEAD"})})
+  })
+
+  it("links an opened row to the job's own page", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+    await wrapper.find('[data-testid="job-row-1"]').trigger("click")
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-open-1"]').attributes("to")).toBe("/management/jobs/1")
   })
 
   it("shows an empty table rather than stale rows when the read is refused", async () => {

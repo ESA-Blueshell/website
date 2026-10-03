@@ -1,7 +1,9 @@
 package net.blueshell.api.user.api
 
 import jakarta.persistence.EntityManager
+import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.domain.AddressService
 import net.blueshell.api.user.persistence.AddressRepository
@@ -20,6 +22,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.web.server.ResponseStatusException
+import java.time.LocalDate
 import java.util.Optional
 
 /** The reads and writes the user services make against their repositories. */
@@ -76,7 +79,7 @@ class UserServicesWriteTest {
         whenever(repository.findById(6)).thenReturn(Optional.of(membership))
         whenever(repository.findById(7)).thenReturn(Optional.empty())
         whenever(repository.existsById(6)).thenReturn(true)
-        val service = MembershipService(repository, mock<TrackedEventPublisher>(), mock()).withEntityManager()
+        val service = MembershipService(repository, mock<TrackedEventPublisher>(), mock(), mock()).withEntityManager()
 
         service.create(membership)
         service.update(membership)
@@ -86,6 +89,76 @@ class UserServicesWriteTest {
         verify(manager, times(2)).refresh(membership)
         verify(repository, times(2)).delete(membership)
         assertThatThrownBy { service.findById(7) }.isInstanceOf(ResponseStatusException::class.java)
+    }
+
+    @Test
+    fun `a new membership waits for its first contribution unless it is honorary, and the payment makes it active`() {
+        val repository =
+            mock<MemberRepository> {
+                on { saveAndFlush(any<Membership>()) } doAnswer { it.getArgument(0) }
+            }
+        whenever(repository.existsById(any())).thenReturn(true)
+        val service = MembershipService(repository, mock<TrackedEventPublisher>(), mock(), mock()).withEntityManager()
+        val today = LocalDate.now()
+
+        val regular = service.create(Entities.membership(id = 1, startDate = today, activatedOn = null))
+        assertThat(regular.isPending).isTrue()
+        val honorary = service.create(Entities.membership(id = 2, activatedOn = null).apply { memberType = MemberType.HONORARY })
+        assertThat(honorary.activatedOn).isEqualTo(honorary.startDate)
+        val madeHonorary = service.update(Entities.membership(id = 3, activatedOn = null).apply { memberType = MemberType.HONORARY })
+        assertThat(madeHonorary.activatedOn).isEqualTo(today)
+
+        val ended = Entities.membership(id = 4, endDate = today, activatedOn = null)
+        whenever(repository.findByUser_Id(9)).thenReturn(mutableListOf(regular, ended))
+        service.activatePending(9)
+        assertThat(regular.activatedOn).isEqualTo(today)
+        assertThat(ended.activatedOn).isNull()
+        verify(repository).saveAll(listOf(regular))
+        service.activatePending(9)
+        verify(repository, times(1)).saveAll(any<List<Membership>>())
+
+        val user = Entities.user(id = 5)
+        whenever(repository.findUserIdsOverlapping(today, today)).thenReturn(listOf(5, 6))
+        whenever(repository.findByUser_IdIn(listOf(5L, 6L))).thenReturn(
+            mutableListOf(
+                Entities.membership(user = user, startDate = today),
+                Entities.membership(user = Entities.user(id = 6), startDate = today, activatedOn = null),
+            ),
+        )
+        assertThat(service.findActiveUserIdsOn(today)).containsExactly(5L)
+    }
+
+    @Test
+    fun `every change tells whether the user still holds an active membership`() {
+        val membership = Entities.membership(id = 6, user = Entities.user(id = 9))
+        val repository =
+            mock<MemberRepository> {
+                on { saveAndFlush(any<Membership>()) } doAnswer { it.getArgument(0) }
+            }
+        whenever(repository.findById(6)).thenReturn(Optional.of(membership))
+        whenever(repository.existsById(6)).thenReturn(true)
+        whenever(repository.restoreById(6)).thenReturn(1)
+        whenever(repository.existsByUser_IdAndEndDateIsNullAndActivatedOnIsNotNull(9)).thenReturn(true)
+        val told = mutableListOf<MembershipChanged>()
+        val events =
+            mock<TrackedEventPublisher> {
+                on { publish(any()) } doAnswer {
+                    told.add(it.getArgument<(Actor) -> Any>(0)(Actor.system()) as MembershipChanged)
+                    Unit
+                }
+            }
+        val service = MembershipService(repository, events, mock(), mock()).withEntityManager()
+
+        service.create(membership)
+        service.update(membership)
+        service.delete(membership)
+        service.deleteById(6)
+        service.restore(membership)
+
+        assertThat(told.map { it.active }).containsOnly(true).hasSize(5)
+        assertThat(service.existsActiveMembershipByUserId(9)).isTrue()
+        whenever(repository.existsByUser_IdAndEndDateIsNull(9)).thenReturn(true)
+        assertThat(service.existsRunningMembershipByUserId(9)).isTrue()
     }
 
     @Test
@@ -118,7 +191,7 @@ class UserServicesWriteTest {
         val membership = Entities.membership(id = 1)
         val profile = Entities.memberProfile(id = 2)
         val address = Entities.address(id = 3)
-        val memberships = MembershipService(mock<MemberRepository>(), mock<TrackedEventPublisher>(), mock())
+        val memberships = MembershipService(mock<MemberRepository>(), mock<TrackedEventPublisher>(), mock(), mock())
         val profiles = MemberProfileService(mock<MemberProfileRepository>())
         val addresses = AddressService(mock<AddressRepository>())
 

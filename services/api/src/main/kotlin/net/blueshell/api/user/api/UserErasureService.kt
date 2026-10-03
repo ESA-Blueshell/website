@@ -32,6 +32,7 @@ class UserErasureService(
     private val addressLifecycles: AddressLifecycleRepo,
     private val addresses: AddressRepository,
     private val trackedEvents: TrackedEventPublisher,
+    private val mandateRetention: MandateRetention,
     @param:Value("\${app.user-erasure.restore-window-days:90}")
     private val restoreWindowDays: Long,
 ) {
@@ -88,6 +89,8 @@ class UserErasureService(
 
         userRepository.saveAndFlush(user)
         deletedUsers.save(snapshot)
+        // Collecting stops here: a recorded mandate starts its 13 months, and a pending one goes.
+        mandateRetention.accountErased(userId)
 
         trackedEvents.publish { actor ->
             UserDeleted(userId = user.id!!, actor = actor)

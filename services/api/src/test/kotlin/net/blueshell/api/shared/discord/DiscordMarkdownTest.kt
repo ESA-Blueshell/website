@@ -15,6 +15,8 @@ class DiscordMarkdownTest {
 
     private fun plain(text: String) = DiscordMarkdown.toCommonMark(text, names, html = false)
 
+    private fun email(text: String) = DiscordMarkdown.toCommonMark(text, names, html = true, email = true)
+
     @Test
     fun `finds the members, roles and channels a description mentions`() {
         assertThat(DiscordMarkdown.mentionsIn("<@123456789012345611> <@!123456789012345612> <@&223456789012345901> <#323456789012345602>"))
@@ -77,5 +79,32 @@ class DiscordMarkdownTest {
         assertThat(plain("`||x|| <@123456789012345611>` and ||y||"))
             .isEqualTo("`||x|| <@123456789012345611>` and ${DiscordMarkdown.SPOILER_SAID}")
         assertThat(plain("```\n||x||\n>>> no\n```\n||y||")).isEqualTo("```\n||x||\n>>> no\n```\n${DiscordMarkdown.SPOILER_SAID}")
+    }
+
+    @Test
+    fun `draws server and unicode emoji as PNG pictures an email shows, named where a picture does not load`() {
+        assertThat(email("hi <:blueshell:123456789012345678> and <a:wave:123456789012345679>"))
+            .contains("""<img src="https://cdn.discordapp.com/emojis/123456789012345678.png?size=48" alt=":blueshell:"""")
+            .contains("""<img src="https://cdn.discordapp.com/emojis/123456789012345679.gif?size=48" alt=":wave:"""")
+        assertThat(email("well done 👍🏽 ❤️ 👨‍👩‍👧 🇳🇱"))
+            .contains("assets/72x72/1f44d-1f3fd.png\" alt=\"👍🏽\"")
+            .contains("assets/72x72/2764.png\" alt=\"❤️\"")
+            .contains("assets/72x72/1f468-200d-1f469-200d-1f467.png")
+            .contains("assets/72x72/1f1f3-1f1f1.png")
+            .doesNotContain(".svg")
+        assertThat(email("© 2026, 3 # items")).isEqualTo("© 2026, 3 # items")
+    }
+
+    @Test
+    fun `keeps a spoiler hidden until selected, strike, underline and small print, and leaves code alone`() {
+        val said = email("-# fine print\n__under__ ~~gone~~ ||secret|| `||kept||`")
+        assertThat(said).contains("<small>fine print</small>", "<u>under</u>", "<s>gone</s>", "`||kept||`")
+        assertThat(said).contains(">secret</span>").contains("background-color:#1E1F22")
+    }
+
+    @Test
+    fun `names mentions and dates times in Amsterdam in an email too, and keeps the old look elsewhere`() {
+        assertThat(email("<@123456789012345611> on <t:1790000000:F>")).isEqualTo("@Anna\\_B on Monday, 21 September 2026 16:13")
+        assertThat(html("~~old~~ <:blueshell:123456789012345678>")).isEqualTo("~~old~~ :blueshell:")
     }
 }

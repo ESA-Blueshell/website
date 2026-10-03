@@ -60,25 +60,42 @@ to play; a removed game is shown nowhere.
 
 ### Games channel
 
-A Discord channel a game is talked about in by the people who play it casually, picked
-from the server's games category. A game may have several, and several games may share
-one: Overwatch has `#overwatch` and `#hero-shooters`, and Smash shares `#fighting-games`
-with every other fighting game. A game without one is still a game. The casual pages name
-a game's Games channels.
+A Discord channel a game is talked about in by the people who play it casually, in the
+server's games category. The board picks an existing one or has the site create it. A
+game may have several, and several games may share one: Overwatch has `#overwatch` and
+`#hero-shooters`, and Smash shares `#fighting-games` with every other fighting game. A game
+without one is still a game. The casual pages name a game's Games channels.
 
 ### Esports channel
 
-A Discord channel a game's esports players meet in, picked from the server's esports
-category. **An esports channel is not a Games channel**: a game keeps the two apart, may
-have several of each, and the competition pages name only its esports channels.
+A Discord channel a game's esports players meet in, in the server's esports category,
+picked or created like a Games channel. **An esports channel is not a Games channel**: a
+game keeps the two apart, may have several of each, and the competition pages name only
+its esports channels.
 
 ### Competition intro
 
 What a game's competition pages say about it, apart from the intro its casual pages say.
 A game without one has its casual intro said on the competition pages too.
 
-A committee has no channel on the site. The private channels a committee keeps on
-Discord are not modelled; a committee reaches Discord only through its games.
+### Access policy
+
+Who may read and who may write in a channel the site keeps. A Games channel starts out
+readable by everyone and writable by members. The board may change it here or on
+Discord; the site keeps the policy it last set and shows where Discord differs, without
+overwriting it.
+
+### Committee channel
+
+The private channel a committee meets in on Discord, under the server's committees
+category. It is open to the holders of the committee's role, and that role follows the
+committee's seats. Archiving the committee moves the channel to the archive category and
+empties the role; restoring it moves the channel back.
+
+### Team channel
+
+The private channel a fielded team meets in, under its game's esports category, open to
+the holders of the team's role, which follows the team's roster.
 
 ### Event game
 
@@ -224,6 +241,16 @@ Never granted and never revoked by hand. Ticking one would be a lie — the list
 that owns it takes it straight back off — so the panel shows it read-only, naming the
 thing to go and change instead.
 
+### Pending membership
+
+A membership waiting for its first contribution. Signing up starts one, and it becomes
+active once a contribution for it is paid; an honorary membership is active from the
+start. Once active it stays active across periods until the board ends it, so a member who
+has not yet paid for the new period is still a member. Rejoining starts a new pending
+membership.
+
+A pending membership does not carry the **member** role.
+
 ### Implied role
 
 A role a person holds by inheritance rather than by a row of their own, because the
@@ -293,6 +320,15 @@ browser, not one machine: a second browser on the same laptop is asked. It never
 skips a step-up, nor the sign-in to Vault or Headlamp.
 
 _Avoid_: trusted device, remembered device.
+
+### Sealed
+
+Stored so that only Vault can open it. A sealed value is encrypted by Vault Transit under a key
+the api never holds, and bound to its member: copied onto another member's row, it does not
+open. A member's address and their bank details are sealed. When Vault cannot be reached, nothing
+sealed is saved or shown, and nothing falls back to plaintext (api ADR-038).
+
+_Avoid_: encrypted (in the interface), hidden.
 
 ### Step-up
 
@@ -507,9 +543,12 @@ transfer to pay what they owe by a due date. An **incasso notification** tells a
 paying by direct debit what will be taken and on what date, and asks for nothing.
 
 A contribution reminder is not always a treasurer's doing. A membership starting through
-the signup form asks the new member for their contribution in the same breath, and that
-ask is a contribution reminder too — same row, same **last payment email**. The member
-reads a welcome rather than a chase, but the association has asked them once either way.
+the signup form asks the new member for their contribution in the same breath: the
+**first payment email**. It is a contribution reminder too, same row, same **last payment
+email**. The member reads a welcome rather than a chase, but the association has asked them
+once either way.
+
+_Avoid_: joining ask, joining contribution reminder.
 
 Which one a member gets is their `incasso` flag's choice, stated per row as the
 member's **kind** — `ContributionEmailKind`, whose values are `REMINDER` and
@@ -518,6 +557,69 @@ onto the other one, and a **switched** row says so.
 
 Different statements, so different records: the treasurer's question is which one a
 member received. Neither quotes an amount without the reason that amount applies.
+
+### Masked IBAN
+
+An IBAN as it shows without a reveal: its country code and its last two characters,
+written out as `NL•• … ••34`. It is all that the overview, the mandate panel, the incasso
+run page, a member's own account page and the incasso notification email show. Beside
+the sealed IBAN the site keeps only those four characters, so no row holds more of the
+account, and no response does except a **reveal** and ING's batch file.
+
+_Avoid_: last four, account ending in.
+
+### Reveal
+
+A board member opening one membership's full IBAN from its mandate panel. The number shows until
+the panel closes and is kept nowhere. Each reveal is written to the member's security log: who
+revealed which membership and when, never the IBAN.
+
+_Avoid_: unmask, show IBAN, decrypt.
+
+### Bank details
+
+The account a member is collected from: its IBAN and the name of its account holder. Both are
+**sealed** to the member, each under its own field, so bank details copied onto another member's
+mandate do not open there and cannot redirect a collection. Only the **masked IBAN** is kept
+readable. They are opened in full for one thing: ING's batch file.
+
+_Avoid_: payment details, account info.
+
+### Mandate
+
+A member's permission for the association to collect from their bank details, kept on their
+membership with its reference, the date it was signed, and who recorded it and when. A paper
+mandate is recorded by the board; a member sets one up themselves on the site, signed that day.
+A new IBAN makes a new mandate with a new reference; the same IBAN keeps its reference.
+
+_Avoid_: incasso (the collection itself), authorisation, SEPA form.
+
+### Online mandate
+
+A mandate the member authorised on the site, on their account page or in the signup's incasso
+step. It records the moment of authorisation, the version of the wording they agreed to, the
+account that authorised it and the address they confirmed, sealed with the bank details. That
+address is the mandate's own record: the address on the member's account is not changed by it.
+Online is dominant: it replaces a paper mandate without asking. A board member can download it as
+a PDF laid out like the paper form, which states the online authorisation in place of a signature.
+
+_Avoid_: e-mandate, digital mandate.
+
+### Paper mandate
+
+A mandate signed on paper and recorded by a board member. The paper is the record, so the site
+keeps only who recorded it and when. Recording one over an online mandate needs the board's
+confirmation, since the online mandate's record goes with it.
+
+_Avoid_: manual mandate.
+
+### Pending mandate
+
+Bank details an applicant set up before their membership started. They wait, sealed to the
+applicant, and move onto the membership as its mandate when it starts. The sealed values move as
+they are, since both belong to the same person. A pending mandate is always an **online mandate**.
+
+_Avoid_: draft mandate, provisional mandate.
 
 ### Send to
 
@@ -553,8 +655,9 @@ and never pre-notified. That fact is worth a warning rather than a column, so th
 confirmation keeps it — it names only the members about to get the very same email again,
 and a **duplicate** is what it fires on.
 
-An **incasso** is the direct debit itself; the record of one of these is an
-`IncassoNotification`, which is the Dutch word the association uses for the mandate.
+An **incasso** is the direct debit itself, the Dutch word the association uses for it. An
+`IncassoNotification` is the record of telling a member about one beforehand: the
+pre-notification, not the **mandate** that permits it.
 
 ### Duplicate
 
@@ -562,6 +665,70 @@ A second ask of the same kind, to the same member, for the same contribution per
 of different kinds are not duplicates of each other: they say different things, and a member
 who has had one may still need the other. The only thing in the interface that reasons per
 kind, because it is the only question where the kind changes the answer.
+
+## Cohorts and platforms
+
+### Platform
+
+An outside system the site keeps in step with who is who: **Brevo** for mail, **Discord**
+for roles and channels, **Google** (the association's Workspace) for groups and shared
+drives. Each is spoken of in its own nouns: lists and folders, roles and channels, groups
+and shared drives.
+
+_Avoid_: external system, integration, sync target, "Google Workspace" in the interface.
+
+### Cohort
+
+A group of people the site defines by a rule written in code: everyone who paid for a
+contribution period, everyone holding a seat on one committee. Nobody is added to a cohort
+by hand; a person is in it because the rule says so.
+
+The management pages do not show the word; they say what a list, role or group
+**follows**.
+
+_Avoid_: audience, segment, list (a list is one kind of target).
+
+### Target
+
+The list, role or group on a platform that mirrors one cohort. A cohort has at most one
+target per platform, and a target mirrors exactly one cohort.
+
+### Follows
+
+What a target mirrors, said as the rule in plain words: "everyone who paid for 2026-2027",
+"seats on Sitecie". A list made by hand in Brevo follows nothing, and the site leaves its
+people alone.
+
+### Drift
+
+The people on one side of a cohort and its target but not the other. **Missing** people
+are in the cohort and not on the target; **extra** people are on the target and outside the
+cohort. Drift is a fact that is recorded, never an error that fixes itself.
+
+_Avoid_: ours only, theirs only, diff, stranger, orphan.
+
+### Reconcile
+
+Comparing a target with its cohort and recording the drift. A reconcile changes neither
+side. Adding someone to the target, removing them from it, or taking them in on our side is
+**resolving** drift, and each resolution is somebody's explicit decision.
+
+### Activist
+
+Anyone holding a seat on a committee today, the board included and One-Of-Committee not.
+A cohort of its own, read from what is true now rather than across a period, so a seat
+given up in October leaves it in October.
+
+### Unreachable
+
+A cohort member a target cannot hold because a link is missing: a Discord role needs the
+person's Discord account, and they have none linked. Counted apart from drift, since no
+resolution on either side fixes it; only the person linking their account does.
+
+### Enforced
+
+A target an admin has told to follow its cohort exactly. Its extra people are removed as
+soon as a reconcile records them. A target starts out not enforced.
 
 ## Boards
 
@@ -675,6 +842,19 @@ follows from the records is read rather than written.
 Not the **office** above, which is the role one board member held. A board holds
 no office of its own; it is in office, or it is not.
 
+
+### Kandi
+
+The members of the next board, from when they are chosen until the day it takes office:
+everybody on a board whose start date is still ahead. A cohort of its own, with a Brevo
+list and the **@Kandi** role; the **kandi@** group comes with Google Workspace. Beside it,
+the **Board** cohort holds everybody serving today on the board in office, with its own
+list and the **@Board** role. Both are read from the board's dates and recomputed just
+after midnight, so on the day the new board takes office its members move from Kandi to
+Board, the old board's members leave Board, and nobody has to act.
+
+_Avoid_: candidate board in the interface, new board.
+
 ## Writing
 
 ### Description
@@ -712,6 +892,29 @@ beside them: a moment each reader sees in their own time zone.
 
 **A mention is not a ping.** A role mentioned in a description notifies nobody; the
 roles an event notifies are its pinged roles.
+
+## Management
+
+### Management
+
+The part of the site where the board, the treasurer and the admins run the association,
+with its own bar and navigation under `/management`. Anyone holding a granted role switches
+into it from the account menu and back to **the site**, the public part, the same way.
+
+_Avoid_: admin panel, back office, dashboard (the dashboard is one page of it).
+
+### Alert
+
+Something that needs a person with a particular role: a missing list, drift, a bounced
+email, a new reply in the inbox, an exception. It shows only to the roles that can act on
+it and clears itself once dealt with; hiding one hides it for that person only.
+
+### Inbox
+
+The replies people send back to the site's emails, read from the catch-all mailbox at the
+association's domain, each matched to the email it answers and the person who sent it.
+Nobody answers from the site: marking a reply **handled** records who dealt with it, and a
+reply goes from a board member's own address. Bounces are not replies and stay out of it.
 
 ## User interface
 

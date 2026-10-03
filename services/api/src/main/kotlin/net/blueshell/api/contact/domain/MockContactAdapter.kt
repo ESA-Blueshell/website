@@ -62,8 +62,7 @@ class MockContactAdapter :
                 isMember = data.isMember,
                 attributes = data.attributes.toMutableMap(),
             )
-        val safeEmail = sanitizeForLog(data.email)
-        log.info("Mock: Created contact id={} for {}", contactId, safeEmail)
+        log.info("Mock: Created contact id={} for user {}", contactId, data.userId)
         return contactId
     }
 
@@ -88,12 +87,10 @@ class MockContactAdapter :
     }
 
     override fun deleteContact(externalId: Long) {
-        val removed =
-            contacts.remove(externalId)
-                ?: throw ContactServiceException("Mock: Contact not found: $externalId")
+        contacts.remove(externalId)
+            ?: throw ContactServiceException("Mock: Contact not found: $externalId")
         memberships.keys.removeIf { (contactId, _) -> contactId == externalId }
-        val safeEmail = sanitizeForLog(removed.email)
-        log.info("Mock: Deleted contact id={} ({})", externalId, safeEmail)
+        log.info("Mock: Deleted contact id={}", externalId)
     }
 
     override fun createList(
@@ -177,6 +174,20 @@ class MockContactAdapter :
             folderIds.entries.firstOrNull { it.value == folderId }?.key
                 ?: throw ContactServiceException("Mock: Folder not found: $folderId")
         lists[externalListId] = list.copy(folderName = folder)
+    }
+
+    override fun renameList(
+        externalListId: Long,
+        name: String,
+    ) {
+        recordTransactionState()
+        val list = lists[externalListId] ?: throw ContactServiceException("Mock: List not found: $externalListId")
+        lists[externalListId] = list.copy(listName = name)
+    }
+
+    override fun createFolder(name: String): Long {
+        recordTransactionState()
+        return requireNotNull(folderOf(name)) { "A folder needs a name" }
     }
 
     // A folder exists once a list has been filed in it, as it would have to on Brevo first.

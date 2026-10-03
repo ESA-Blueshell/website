@@ -243,6 +243,59 @@ script and again after it. After running `seed-vault-from-env.sh
 flux reconcile kustomization apps-data
 ```
 
+### Sealing keys (handled by the bootstrap Job)
+
+Members' addresses and bank details are sealed by Vault Transit (api ADR-038). The bootstrap Job
+creates two derived keys in the `transit` engine: `api-address` for addresses and
+`api-bank-details` for a mandate's IBAN and account holder. Every value is sealed under a context
+naming the field and the member, so a value copied onto another member's row does not open. The
+`api` policy may only encrypt, decrypt and rewrap with each (`transit/encrypt/<key>`,
+`transit/decrypt/<key>`, `transit/rewrap/<key>`). Nothing else may read the keys, which never
+leave Vault. The api uses them once `PRIVACY_SEALING` is `vault`, as the deployment sets it, and it
+then refuses to start if it cannot seal with either key. Run the bootstrap Job before a release
+that adds a key.
+
+After a release that adds sealing, run the `user.seal-addresses` job once from Jobs in Management.
+It seals every address still in plaintext, soft-deleted ones included, and empties the plaintext.
+It is safe to run again. A database backup taken after it ran shows no address without Vault, and
+Vault's unseal shares are never stored with the backups.
+
+#### Rotating a sealing key
+
+Rotating adds a key version. New values are sealed under it at once, and older versions keep
+opening, so nothing breaks. The commands below name `api-address`; `api-bank-details` rotates the
+same way:
+
+```bash
+vault write -f transit/keys/api-address/rotate
+vault read transit/keys/api-address   # latest_version, min_decryption_version and when each version was made
+```
+
+Every night at 04:00 the `user.rewrap-sealed-values` job moves each sealed value that sits below
+the newest version onto it. It uses Transit's rewrap, so the plaintext never reaches the api. It
+shows under Jobs in Management as a scheduled run and can be run there by hand. A value that
+cannot be moved fails the run, which names it, and the next run tries it again; the values that
+did move stay moved.
+
+Old versions must keep opening for as long as a database backup that holds them may be restored.
+So `min_decryption_version` lags behind the rotation:
+
+- Raise it to version N only when every backup still kept was taken after the first rewrap run
+  that succeeded following the rotation to N. A backup taken before that run still holds values on
+  an older version, and restoring it after the minimum was raised leaves them unopenable.
+- This repository configures no database backup, so the retention is that of the backups the
+  operator takes. The rule assumes they are kept for at most 30 days: wait 30 days after that
+  rewrap run, or as long as the oldest backup is kept if that is longer.
+- Check first that the latest rewrap run did not fail. A value it left behind is still on an
+  older version.
+
+```bash
+vault write transit/keys/api-address/config min_decryption_version=<N>
+```
+
+Lowering the minimum again brings the older versions back, as long as they were not trimmed. Do
+not trim versions (`transit/keys/api-address/trim`).
+
 If you ever need to inspect or override the OIDC config manually:
 
 ```bash

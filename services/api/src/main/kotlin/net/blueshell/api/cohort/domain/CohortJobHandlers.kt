@@ -26,7 +26,7 @@ class CohortJobHandlers(
     @Bean
     fun syncCohortMembershipHandler() =
         bindSkipping(CohortJobs.SyncCohortMembership) {
-            membership.sync(it.userId, it.cohortId, it.intent)
+            membership.sync(it.userId, it.targetId, it.intent)
         }
 
     @Bean
@@ -49,14 +49,14 @@ class CohortJobHandlers(
 
     @Bean
     fun reconcileListHandler() =
-        bind(CohortJobs.ReconcileList) {
-            remediation.verifyCohort(it.cohortId)
+        bindSkipping(CohortJobs.ReconcileList) {
+            remediation.verifyTarget(it.targetId, it.trigger)
         }
 
     @Bean
     fun removeExternalMemberHandler() =
-        bind(CohortJobs.RemoveExternalMember) {
-            remediation.removeExternalMember(it.cohortId, it.externalUserId)
+        bindSkipping(CohortJobs.RemoveExternalMember) {
+            remediation.removeExternalMember(it.targetId, it.externalUserId)
         }
 
     @Bean
@@ -66,9 +66,22 @@ class CohortJobHandlers(
         }
 
     @Bean
+    fun createCohortTargetHandler() =
+        bind(CohortJobs.CreateCohortTarget) {
+            targeting.createFor(it.targetId)
+        }
+
+    @Bean
+    fun createMissingCohortTargetsHandler() =
+        bindSkipping(CohortJobs.CreateMissingCohortTargets) {
+            val queued = targeting.createMissing()
+            if (queued == 0) "Every cohort has its target" else null
+        }
+
+    @Bean
     fun materializeCohortTargetHandler() =
         bind(CohortJobs.MaterializeCohortTarget) {
-            targeting.materialize(it.cohortId)
+            targeting.createFor(it.targetId)
         }
 
     @Bean

@@ -24,6 +24,8 @@ class TargetStrategies(
         bySystem[system]
             ?: throw NonRetryableJobException("No TargetStrategy registered for $system")
 
+    fun find(system: TargetSystem): TargetStrategy? = bySystem[system]
+
     fun descriptor(system: TargetSystem): TargetDescriptor = require(system).descriptor
 
     fun descriptors(): List<TargetDescriptor> = bySystem.values.map { it.descriptor }.sortedBy { it.system.shownName }

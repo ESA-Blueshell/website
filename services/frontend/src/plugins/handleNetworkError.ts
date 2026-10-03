@@ -122,6 +122,9 @@ export function $handleNetworkError(err: unknown): void {
       case 502:
         errorMessage = `Uh oh, the server seems to be down (error code 502). Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
         break
+      case 503:
+        errorMessage = "Something the site leans on cannot be reached right now (error code 503). Try again in a moment."
+        break
       default:
         errorMessage = refusal
           ?? `Oh no. An error happened that we don't know about (error code ${error.response.status}). Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`

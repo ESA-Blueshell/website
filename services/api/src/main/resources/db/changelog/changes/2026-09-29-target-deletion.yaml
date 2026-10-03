@@ -1,0 +1,23 @@
+# Brevo cannot undo a list delete, so every delete is recorded: which list, its name, who deleted
+# it and when. Append-only; nothing reads it back but people.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-29-target-deletion.yaml
+      id: target-deletion
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: target_deletion
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_target_deletion, nullable: false}
+              - column: {name: system, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: external_id, type: VARCHAR(1024), constraints: {nullable: false}}
+              - column: {name: name, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: deleted_by, type: BIGINT}
+              - column: {name: deleted_at, type: DATETIME(6), constraints: {nullable: false}}
+      rollback:
+        - dropTable: {tableName: target_deletion}

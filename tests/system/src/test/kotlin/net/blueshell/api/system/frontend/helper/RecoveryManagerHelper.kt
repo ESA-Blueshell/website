@@ -8,36 +8,27 @@ object RecoveryManagerHelper {
         page: Page,
         frontendUrl: String,
     ) {
-        page.navigate("$frontendUrl/recovery/manage")
-        page.waitForURL("**/recovery/manage**")
+        page.navigate("$frontendUrl/management/recovery")
+        page.waitForURL("**/management/recovery**")
     }
 
-    /**
-     * Opens the pane and waits for it to stop growing.
-     *
-     * `v-expand-transition` shows the pane at about two pixels and grows it for some 280ms, and a
-     * row inside it holds one bounding box long enough for Playwright to call it stable. A click
-     * aimed there is delivered to whatever has arrived at those coordinates once the pane moves
-     * on: the action is never entered, nothing is refused, and no request is made. #1212 proved
-     * that shape on the committee panel; this is the same transition around a restore button.
-     */
+    /** Narrows the one list to the accounts the old pane held: `inactive`, `active` or `deleted`. */
     fun openSection(
         page: Page,
         panelKey: String,
     ) {
-        val toggle = TestIdLocatorHelper.byTestId(page, "recovery-user-list-toggle-$panelKey")
-        if (toggle.getAttribute("aria-expanded") != "true") {
-            toggle.click()
-        }
-        ExpandPanelHelper.waitForOpened(page, "recovery-user-list-panel-$panelKey")
+        val state = if (panelKey == "inactive") "not-activated" else panelKey
+        TestIdLocatorHelper.byTestId(page, "recovery-filter-state-search").click()
+        TestIdLocatorHelper.byTestId(page, "recovery-filter-state-$state").click()
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun searchUser(
         page: Page,
         panelKey: String,
         query: String,
     ) {
-        UserListHelper.searchUser(page, query, searchTestId = "recovery-user-list-search-$panelKey")
+        TestIdLocatorHelper.byTestId(page, "recovery-search").fill(query)
     }
 
     fun clickAction(
@@ -82,13 +73,21 @@ object RecoveryManagerHelper {
         userId: Long,
     ): Boolean = emailButton(page, purpose, userId).count() > 0
 
+    /** How many of the account's rows stand in the state the old pane held; a deleted account has two. */
     fun rowCount(
         page: Page,
         panelKey: String,
         userId: Long,
-    ): Int =
-        TestIdLocatorHelper
-            .byTestId(page, "recovery-user-list-$panelKey")
-            .locator("[data-testid='recovery-user-row-$userId']")
-            .count()
+    ): Int {
+        val word =
+            when (panelKey) {
+                "inactive" -> "Not activated"
+                "active" -> "Active"
+                else -> "Deleted"
+            }
+        return page
+            .locator("[data-testid='recovery-state-$userId']")
+            .allTextContents()
+            .count { it.trim().startsWith(word) }
+    }
 }

@@ -4,7 +4,7 @@ import org.springframework.modulith.ApplicationModule
 import org.springframework.modulith.PackageInfo
 
 /**
- * Code-defined audiences — "active members", "paid for this period" — evaluated into `CohortMember`
+ * Code-defined audiences — "active members", "paid for this period" — evaluated into `TargetMember`
  * rows and reconciled against the mailing list or group that stands for them in an external system.
  *
  * One `TargetStrategy` per target system stands between the module and that system; the REST
@@ -14,6 +14,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "cohort",
     allowedDependencies = [
+        // Drift and cohorts without a list raise alerts.
+        "alerts :: api",
         // AbstractJsonJobHandler, which this module's job handlers extend.
         "jobs :: api",
         // The board-members cohort is built from BoardMemberService.
@@ -36,6 +38,8 @@ import org.springframework.modulith.PackageInfo
         // FK into either table — this wants a projection published through
         // contribution :: api instead.
         "contribution :: entities",
+        // A cohort's Discord target is a role, kept through DiscordRoleKeeper.
+        "discord :: api",
         // The team-roster cohort is built from TeamRosterService.
         "esports :: api",
         // Open kernel: the controllers are @AdminOnly.

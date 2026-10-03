@@ -9,7 +9,7 @@ const {mockCohorts, mockEvents, mockPeriods, mockUsers, mockSearch} = vi.hoisted
   mockSearch: vi.fn(),
 }))
 
-vi.mock("@/domains/cohorts", () => ({fetchCohortOptions: mockCohorts}))
+vi.mock("@/domains/cohorts", () => ({fetchCohortTargets: mockCohorts}))
 vi.mock("@/domains/user", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   searchMemberAccounts: mockSearch,
@@ -60,7 +60,7 @@ describe("the page every island field is drawn on", () => {
     // than drawing them and dropping it.
     const written: Record<string, unknown> = {
       FormControl: "7", CheckBox: true, RadioGroup: "never",
-      UserPicker: 1, UserSelect: 2, CohortPicker: 3, ContributionPeriodPicker: 4,
+      UserPicker: 1, UserSelect: 2, TargetPicker: 3, ContributionPeriodPicker: 4,
       EventPicker: 5, MemberTypeSelect: "ALUMNI", EnumPicker: "CONTRIBUTION_PAID",
       CountrySelect: "BE", NationalitySelect: "BE",
     }

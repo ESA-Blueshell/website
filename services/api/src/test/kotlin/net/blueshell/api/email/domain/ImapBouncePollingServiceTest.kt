@@ -4,13 +4,22 @@ import jakarta.mail.Provider
 import jakarta.mail.Session
 import jakarta.mail.Store
 import jakarta.mail.URLName
+import jakarta.mail.internet.MimeMessage
+import net.blueshell.api.email.persistence.Email
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
+import org.springframework.boot.test.system.CapturedOutput
+import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.mock.env.MockEnvironment
 import java.util.Properties
 
+@ExtendWith(OutputCaptureExtension::class)
 class ImapBouncePollingServiceTest {
     private val emailService: EmailService = mock()
     private val environment = MockEnvironment().withProperty("email.bounce.imap.password", "first")
@@ -67,4 +76,41 @@ class ImapBouncePollingServiceTest {
         assertThat(RecordingStore.logins).containsExactly("first", "second")
         verifyNoInteractions(emailService)
     }
+
+    @Test
+    fun `a bounce is logged by its outbox id, never by the address that bounced`(output: CapturedOutput) {
+        val outbox = Email(recipientEmail = "ann@example.org").also { it.id = 5 }
+        whenever(emailService.findByMessageId("<known@club.test>")).thenReturn(outbox)
+
+        poller.processOne(bounce("<known@club.test>"))
+        poller.processOne(bounce("<unknown@club.test>"))
+        poller.processOne(MimeMessage(Session.getInstance(Properties()), "Subject: ann@example.org\r\n\r\nHello".byteInputStream()))
+
+        verify(emailService).markBounced(any(), any())
+        assertThat(output.all)
+            .contains("Marked email id=5 as BOUNCED", "Bounce for a message the outbox does not hold")
+            .doesNotContain("ann@example.org")
+    }
+
+    private fun bounce(messageId: String) =
+        MimeMessage(
+            Session.getInstance(Properties()),
+            """
+            From: MAILER-DAEMON@club.test
+            To: bounce@club.test
+            Subject: Undelivered Mail Returned to Sender
+            Content-Type: multipart/report; report-type=delivery-status; boundary="b"
+
+            --b
+            Content-Type: message/delivery-status
+
+            Reporting-MTA: dns; relay.club.test
+            Final-Recipient: rfc822; ann@example.org
+            Action: failed
+            Status: 5.1.1
+            Original-Message-ID: $messageId
+
+            --b--
+            """.trimIndent().replace("\n", "\r\n").byteInputStream(),
+        )
 }

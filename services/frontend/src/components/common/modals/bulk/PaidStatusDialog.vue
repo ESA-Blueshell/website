@@ -21,6 +21,8 @@ interface Props {
   targetState: "paid" | "unpaid"
   targets: BulkTarget[]
   contributionPeriodId: number | null
+  /** Drawn on the bulk task page rather than over the list. */
+  inline?: boolean
 }
 
 const props = defineProps<Props>()
@@ -154,6 +156,7 @@ watch(computedRows, (newRows) => {
   <bulk-dialog-scaffold
     v-model="open"
     v-model:reinclude-overrides="reincludeOverrides"
+    :inline="inline"
     :confirm-label="config.confirmLabel"
     :counts="counts"
     :help="config.help"

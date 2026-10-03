@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
@@ -74,6 +75,17 @@ class SignupController(
             houseNumber = request.houseNumber,
             zipCode = request.zipCode,
         )
+    }
+
+    /** The optional incasso step; the mandate is signed today, and waits for the membership. */
+    @PutMapping("/mandate")
+    @PermitAll
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun setUpMandate(
+        @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
+        @Valid @RequestBody request: SignupMandateRequest,
+    ) {
+        signupUseCases.setUpMandate(signupToken, request.iban, request.accountHolder, request.wordingVersion)
     }
 
     @PostMapping("/apply")

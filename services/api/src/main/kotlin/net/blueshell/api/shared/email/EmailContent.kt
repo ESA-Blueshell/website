@@ -16,4 +16,16 @@ data class EmailContent(
     val markdownContent: String,
     val senderNameOverride: String? = null,
     val replyToOverride: String? = null,
-)
+    /** The message this answers, so a mail client threads it with the conversation. */
+    val inReplyTo: String? = null,
+    /** The conversation's Message-IDs, oldest first, as the References header carries them. */
+    val references: List<String> = emptyList(),
+) {
+    /** The headers that thread this email with a conversation; none for an email that starts one. */
+    val threadHeaders: Map<String, String>
+        get() =
+            buildMap {
+                inReplyTo?.let { put("In-Reply-To", it) }
+                if (references.isNotEmpty()) put("References", references.joinToString(" "))
+            }
+}

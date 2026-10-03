@@ -6,6 +6,7 @@ import net.blueshell.api.contribution.domain.ContributionChange
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.dao.DataIntegrityViolationException
@@ -22,6 +23,7 @@ class ContributionService
         private val periodService: ContributionPeriodService,
         private val users: UserService,
         private val trackedEvents: TrackedEventPublisher,
+        private val memberships: MembershipService,
     ) {
         // Read back after each write, so the columns the database fills are on the answer.
         @PersistenceContext
@@ -48,6 +50,8 @@ class ContributionService
         @Transactional
         fun create(entity: Contribution): Contribution {
             val saved = written(entity)
+            // A first contribution is what makes a pending membership active (api ADR-036).
+            memberships.activatePending(saved.userId)
             publishChange(saved, ContributionChange.CREATED)
             return saved
         }

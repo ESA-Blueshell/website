@@ -3,7 +3,7 @@ import {flushPromises, mount} from "@vue/test-utils"
 import {computed, ref} from "vue"
 import TeamEdit from "@/pages/competition/TeamEdit.vue"
 
-const route = vi.hoisted(() => ({params: {} as Record<string, string>, query: {} as Record<string, string>}))
+const route = vi.hoisted(() => ({params: {} as Record<string, string>, query: {} as Record<string, string>, meta: {} as {portal?: string}}))
 const router = vi.hoisted(() => ({replace: vi.fn(), options: {history: {state: {back: null}}}}))
 vi.mock("vue-router", async importOriginal => ({...(await importOriginal<typeof import("vue-router")>()), useRoute: () => route, useRouter: () => router}))
 const autumn = {id: 3, name: "Autumn 2025"}
@@ -37,11 +37,21 @@ const mountPage = async (params: Record<string, string>, query: Record<string, s
 }
 
 beforeEach(() => {
+  route.meta = {}
   router.replace.mockReset()
   read.useTeamToEdit.mockReset()
 })
 
 describe("the team edit page", () => {
+  it("goes back to Management's teams when opened there", async () => {
+    const team = {id: 9, name: "Blueshell", banner: null, icon: null}
+    read.useTeamToEdit.mockReturnValue(answer(autumn, [team], team))
+    route.meta = {portal: "/management/competition"}
+    const wrapper = await mountPage({slug: "valorant", team: "9"}, {season: "3"})
+
+    expect(wrapper.getComponent(TeamEditor).props("back")).toBe("/management/competition")
+  })
+
   it("corrects a team's line-up in the season asked for, and goes back to the game page on it", async () => {
     const team = {id: 9, name: "Blueshell", banner: null, icon: null}
     read.useTeamToEdit.mockReturnValue(answer(autumn, [team, {id: 10, name: "Two"}], team))

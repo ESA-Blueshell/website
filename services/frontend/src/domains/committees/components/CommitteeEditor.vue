@@ -21,17 +21,26 @@ import {useCasualGames} from "@/domains/games"
 import {
   addCommittee,
   type Committee,
+  type BrevoPlaceRequest,
+  type DiscordPlaceRequest,
   listCommittees,
   removeCommittee,
   saveCommitteeAsBoard,
+  readCommitteeBrevo,
+  readCommitteeDiscord,
+  saveCommitteeBrevo,
+  saveCommitteeDiscord,
   saveOwnCommitteePage,
   storeCommitteeBanner,
   storeCommitteeIcon,
 } from "../adapters/committees"
+import {DiscordPlaceFields} from "@/domains/discord"
+import {BrevoListFields} from "@/domains/cohorts"
 import CommitteeSeats, {type Seat} from "../island/CommitteeSeats.vue"
 import {cellOf} from "../useCommittees"
 import {initialsOf} from "@/utils/initials"
 import {BRAND_ACCENT} from "@/utils/brand"
+import store from "@/plugins/store"
 
 /**
  * A committee added or corrected on its own page, with its page head and its cell in Every
@@ -63,6 +72,8 @@ const gameCodes = ref<string[]>([])
 const seats = ref<Seat[]>([])
 const failure = ref<string | null>(null)
 const saving = ref(false)
+const discord = ref<DiscordPlaceRequest | null>(null)
+const brevo = ref<BrevoPlaceRequest | null>(null)
 
 watch(() => props.committee, async committee => {
   name.value = committee?.name ?? ""
@@ -150,6 +161,15 @@ const submit = async () => {
     if (!result.ok) {
       failure.value = result.reason
       return
+    }
+    // The committee is saved either way; Discord or Brevo refusing only means its role, channels or list wait.
+    if (props.asBoard && discord.value) {
+      const set = await saveCommitteeDiscord(result.saved.id, discord.value)
+      if (!set.ok) store.commit("setStatusSnackbarMessage", set.reason)
+    }
+    if (props.asBoard && brevo.value) {
+      const set = await saveCommitteeBrevo(result.saved.id, brevo.value)
+      if (!set.ok) store.commit("setStatusSnackbarMessage", set.reason)
     }
     await refreshSharedLists()
     emit("saved", result.saved)
@@ -279,6 +299,21 @@ const removeIt = async () => {
       >
         <committee-seats v-model="seats" />
       </form-section>
+
+      <discord-place-fields
+        v-if="asBoard"
+        v-model="discord"
+        :name="name"
+        :read="committee ? () => readCommitteeDiscord(committee!.id) : null"
+        :slug="slug"
+      />
+
+      <brevo-list-fields
+        v-if="asBoard"
+        v-model="brevo"
+        :name="name"
+        :read="committee ? () => readCommitteeBrevo(committee!.id) : null"
+      />
 
       <notice-box
         v-if="failure"

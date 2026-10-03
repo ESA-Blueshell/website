@@ -3,8 +3,8 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.shared.enums.TargetSystem
 
 /**
- * Admin management of a subject's external targets: linking an existing one, creating one, and
- * repointing a mapping at another. An interface because `CohortSubjectController` is written
+ * Admin management of a cohort's external targets: linking an existing one, creating one, and
+ * repointing a mapping at another. An interface because `CohortController` is written
  * against it — the module publishes this surface to its own web layer.
  *
  * External writes go through [TargetStrategy]. A removal after a switch is handed to the
@@ -12,52 +12,55 @@ import net.blueshell.api.shared.enums.TargetSystem
  */
 interface CohortTargeting {
     /**
-     * Maps the subject's [system] cohort to an existing external target by
-     * id. Fails with 409 when the subject already has an active mapping for
+     * Maps the cohort's [system] target to an existing external target by
+     * id. Fails with 409 when the cohort already has an active mapping for
      * [system] with a target id; an existing unbound row is filled in place.
      * No external call — the id is trusted.
      */
     fun linkExisting(
-        subjectId: Long,
+        cohortId: Long,
         system: TargetSystem,
         externalId: String,
-    ): CohortMappingRow
+    ): CohortTargetRow
 
     /**
      * Creates a new external target on [system] (outside any DB
-     * transaction) and maps the subject's [system] cohort to it. Fails with
-     * 409 when the subject already has an active mapping for [system].
+     * transaction) and maps the cohort's [system] target to it. Fails with
+     * 409 when the cohort already has an active mapping for [system].
      */
     fun create(
-        subjectId: Long,
+        cohortId: Long,
         system: TargetSystem,
         label: String,
         folderHint: String?,
-    ): CohortMappingRow
+    ): CohortTargetRow
 
     /**
-     * Repoints [cohortId]'s external target at [externalId], keeping the same
-     * local `Cohort` row. [subjectId] is the subject the cohort must belong to
+     * Repoints target [targetId] at [externalId], keeping the same
+     * local `Target` row. [cohortId] is the cohort the target must belong to
      * (the route carries it); a mismatch is rejected so a wrong-path admin call
-     * cannot repoint another subject's cohort. Optionally enqueues
+     * cannot repoint another cohort's target. Optionally enqueues
      * `cohort.delete-external-target` for the previous target and
      * `cohort.reconcile-list` for the new one.
      */
     fun switchTarget(
-        subjectId: Long,
         cohortId: Long,
+        targetId: Long,
         externalId: String,
         deletePrevious: Boolean,
         reconcileNow: Boolean,
-    ): CohortMappingRow
+    ): CohortTargetRow
 
     /**
-     * Resolves [cohortId]'s external target for stale queued
-     * `cohort.materialize-target` jobs. Idempotent: returns the existing id
-     * when already set; fails terminally when missing. This path never creates
-     * provider targets.
+     * Creates target [targetId] on its system in its folder and links it (api ADR-035). Idempotent:
+     * returns the id when one is set. The cohort is claimed before the provider is called, and a
+     * run that finds an earlier claim looks the target up by name before making one, so a retry
+     * never makes a second.
      */
-    fun materialize(cohortId: Long): CohortTargetRef
+    fun createFor(targetId: Long): CohortTargetRef
+
+    /** Queues a create-target job for every cohort without a target, and says how many. */
+    fun createMissing(): Int
 
     /**
      * Deletes an external target. Run by the `cohort.delete-external-target` job; provider
@@ -69,8 +72,8 @@ interface CohortTargeting {
     )
 }
 
-/** Result of [CohortTargeting.materialize]: a cohort and its resolved target id. */
+/** Result of [CohortTargeting.createFor]: a cohort and its target id. */
 data class CohortTargetRef(
-    val cohortId: Long,
+    val targetId: Long,
     val externalId: String,
 )

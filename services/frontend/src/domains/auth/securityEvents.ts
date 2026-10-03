@@ -26,6 +26,10 @@ const KINDS: Record<SecurityEventResponse["kind"], string> = {
   SIGNED_OUT_EVERYWHERE: "Signed out everywhere",
   SIGNED_OUT_ELSEWHERE: "Signed out everywhere else",
   ROLES_CHANGED: "Roles changed",
+  BANK_DETAILS_CHANGED: "Bank details changed",
+  IBAN_REVEALED: "Full IBAN revealed",
+  INCASSO_FILE_DOWNLOADED: "ING's incasso file downloaded",
+  MANDATE_PDF_DOWNLOADED: "Mandate PDF downloaded",
 }
 
 /** What happened, and who did it when it was not the person. */

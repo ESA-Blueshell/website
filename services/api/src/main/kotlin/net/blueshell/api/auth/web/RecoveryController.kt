@@ -3,6 +3,7 @@ package net.blueshell.api.auth.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.auth.domain.LastRecoveryEmails
 import net.blueshell.api.auth.domain.RecoveryUseCases
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.telemetry.web.RedirectResponse
@@ -23,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException
 @RequestMapping("/recovery")
 class RecoveryController(
     private val useCases: RecoveryUseCases,
+    private val lastEmails: LastRecoveryEmails,
 ) {
     @PostMapping("/password/reset/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -101,6 +103,12 @@ class RecoveryController(
                 .map { (userId, purpose) -> PendingActivation(userId, purpose) }
                 .sortedBy { it.userId },
         )
+
+    /** When each account was last sent an activation or a password reset. */
+    @GetMapping("/last-emails")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'read')")
+    fun lastRecoveryEmails(): LastRecoveryEmailsResponse =
+        LastRecoveryEmailsResponse(lastEmails.all().map { LastRecoveryEmailResponse(it.userId, it.sentAt) }.sortedBy { it.userId })
 
     /**
      * Renders what a recovery email would look like for this user, without issuing the

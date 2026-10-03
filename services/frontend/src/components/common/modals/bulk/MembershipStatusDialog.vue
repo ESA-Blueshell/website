@@ -28,6 +28,8 @@ interface Props {
   modelValue: boolean
   targetState: MembershipAction
   targets: BulkTarget[]
+  /** Drawn on the bulk task page rather than over the list. */
+  inline?: boolean
 }
 
 const props = defineProps<Props>()
@@ -209,6 +211,7 @@ watch(
   <bulk-dialog-scaffold
     v-model="open"
     v-model:reinclude-overrides="reincludeOverrides"
+    :inline="inline"
     :confirm-label="config.confirmLabel"
     :counts="counts"
     :help="config.help"

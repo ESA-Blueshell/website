@@ -186,6 +186,14 @@ discord:
   # The home page links its starboard to the same channel.
   doors:
     starboard: ${discord.starboard.channel}
+  # The role ids the separate role-claim bot hands out, comma apart; the site never keeps them.
+  claim-roles: ${DISCORD_CLAIM_ROLES:}
+  # The server's existing roles that follow a cohort, by its definition key: linked once as its target.
+  cohort-roles:
+    CURRENT_MEMBERS: ${DISCORD_MEMBER_ROLE:}
+    ACTIVISTS: ${DISCORD_ACTIVIST_ROLE:}
+    BOARD: ${DISCORD_BOARD_ROLE:}
+    KANDI: ${DISCORD_KANDI_ROLE:}
 
 google:
   calendar:
@@ -253,6 +261,10 @@ email:
       username: ${EMAIL_BOUNCE_IMAP_USERNAME:}
       folder: ${EMAIL_BOUNCE_IMAP_FOLDER:INBOX}
       tls: ${EMAIL_BOUNCE_IMAP_TLS:true}
+  inbox:
+    # Poll period for the catch-all mailbox the Inbox reads. It is the bounce mailbox's account,
+    # read without changing anything in it, unless email.inbox.imap.* names another.
+    poll-interval-ms: ${EMAIL_INBOX_POLL_INTERVAL_MS:120000}
 
 logging:
   level:
@@ -289,6 +301,17 @@ management:
         http.server.requests: true
       percentiles:
         http.server.requests: 0.5, 0.95, 0.99
+
+# Private details sealed through Vault Transit (api ADR-038). `vault` in production; the stand-in
+# keeps the same rule, a value opens only for its own member, without a Vault.
+privacy:
+  sealing: ${PRIVACY_SEALING:stand-in}
+  address-key: ${PRIVACY_ADDRESS_KEY:api-address}
+  bank-details-key: ${PRIVACY_BANK_DETAILS_KEY:api-bank-details}
+  # The nightly rewrap, which moves sealed values onto the newest key version after a rotation.
+  rewrap-cron: ${PRIVACY_REWRAP_CRON:0 0 4 * * *}
+  # The daily wipe of bank details 13 months after a stopped mandate's last collection.
+  bank-details-wipe-cron: ${PRIVACY_BANK_DETAILS_WIPE_CRON:0 30 4 * * *}
 
 auth:
   issuer: ${AUTH_ISSUER:https://esa-blueshell.nl/api}

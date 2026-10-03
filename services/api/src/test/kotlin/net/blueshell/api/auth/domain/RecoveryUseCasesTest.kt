@@ -34,7 +34,18 @@ class RecoveryUseCasesTest {
     private val useCases =
         RecoveryUseCases(passwordRecoveryService, activationService, completion, previews, jobs)
     private val validator = Validation.buildDefaultValidatorFactory().validator
-    private val signupUseCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activationService, jobs, validator)
+    private val signupUseCases =
+        SignupUseCases(
+            signupTokens,
+            users,
+            memberProfiles,
+            completion,
+            activationService,
+            jobs,
+            validator,
+            net.blueshell.api.user.api.TestSealing.addresses,
+            mock(),
+        )
 
     @Nested
     inner class ResetPassword {

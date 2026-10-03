@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import CohortPicker from "@/components/form/fields/CohortPicker.vue"
+import TargetPicker from "@/components/form/fields/TargetPicker.vue"
 import ContributionPeriodPicker from "@/components/form/fields/ContributionPeriodPicker.vue"
 import EventPicker from "@/components/form/fields/EventPicker.vue"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
@@ -14,7 +14,7 @@ const {mockCohorts, mockEvents, mockPeriods, mockUsers, mockNetworkError} = vi.h
   mockNetworkError: vi.fn(),
 }))
 
-vi.mock("@/domains/cohorts", () => ({fetchCohortOptions: mockCohorts}))
+vi.mock("@/domains/cohorts", () => ({fetchCohortTargets: mockCohorts}))
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   findEvents: mockEvents,
@@ -29,12 +29,12 @@ const picker = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({nam
 const rows = (wrapper: ReturnType<typeof mount>) =>
   picker(wrapper).props("options") as Array<{key: string; label: string; note?: string; terms?: string[]}>
 
-describe("CohortPicker", () => {
+describe("TargetPicker", () => {
   beforeEach(() => mockCohorts.mockReset())
 
   it("says what a cohort is, and what it can be found by", async () => {
     mockCohorts.mockResolvedValue([{id: 4, label: "Members", system: "BREVO", kind: "LIST", memberCount: 12}])
-    const wrapper = mount(CohortPicker, {props: {modelValue: 4}, global: {stubs}})
+    const wrapper = mount(TargetPicker, {props: {modelValue: 4}, global: {stubs}})
     await flushPromises()
 
     expect(rows(wrapper)).toEqual([
@@ -46,7 +46,7 @@ describe("CohortPicker", () => {
 
   it("reports a number, not the text of a key", async () => {
     mockCohorts.mockResolvedValue([])
-    const wrapper = mount(CohortPicker, {props: {modelValue: undefined}, global: {stubs}})
+    const wrapper = mount(TargetPicker, {props: {modelValue: undefined}, global: {stubs}})
     await flushPromises()
 
     picker(wrapper).vm.$emit("pick", "9")
@@ -58,7 +58,7 @@ describe("CohortPicker", () => {
 
   it("shows what is wrong with it under the field", () => {
     mockCohorts.mockResolvedValue([])
-    const wrapper = mount(CohortPicker, {props: {errorMessages: ["Pick one."]}})
+    const wrapper = mount(TargetPicker, {props: {errorMessages: ["Pick one."]}})
 
     expect(wrapper.find(".island-field__said").text()).toBe("Pick one.")
   })

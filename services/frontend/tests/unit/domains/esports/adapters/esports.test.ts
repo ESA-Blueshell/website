@@ -3,6 +3,7 @@ import {
   addToRoster,
   dropSeasonOrReason,
   dropTeam,
+  setTeamArchived,
   enterGameInSeason,
   fieldTeamInSeason,
   leaveGameInSeason,
@@ -21,6 +22,7 @@ import {
   apiUrl,
   createSeason,
   deleteSeason,
+  archiveTeam,
   deleteTeam,
   enterGame,
   fieldTeam,
@@ -45,6 +47,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   createSeason: vi.fn(),
   deleteSeason: vi.fn(),
   deleteTeam: vi.fn(),
+  archiveTeam: vi.fn(),
   enterGame: vi.fn(),
   fieldTeam: vi.fn(),
   findGame: vi.fn(),
@@ -294,5 +297,8 @@ describe("the removals", () => {
     await expect(dropSeasonOrReason(20)).resolves.toEqual({ok: false, reason: "The season could not be removed."})
     await expect(dropTeam(1)).resolves.toEqual({ok: true})
     await expect(dropTeam(1)).resolves.toEqual({ok: false, reason: "The team could not be removed."})
+    vi.mocked(archiveTeam).mockResolvedValueOnce(answer(archiveTeam, {id: 1, name: "BS", archived: true}))
+    await expect(setTeamArchived(1, true)).resolves.toEqual({ok: true})
+    expect(archiveTeam).toHaveBeenCalledWith({path: {id: 1}, body: {archived: true}})
   })
 })

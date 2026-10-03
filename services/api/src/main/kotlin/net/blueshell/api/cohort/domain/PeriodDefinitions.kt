@@ -1,6 +1,6 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
@@ -8,7 +8,6 @@ import net.blueshell.api.user.api.MembershipService
 import org.springframework.stereotype.Component
 
 /** Where a period's cohorts are filed on the external system. */
-const val PERIOD_FOLDER = "Periods"
 
 private fun ContributionPeriod.years(): String = "${startDate.year} - ${endDate.year}"
 
@@ -26,11 +25,11 @@ class PeriodMembersDefinition(
     private val period: ContributionPeriod,
     private val memberships: MembershipService,
 ) : CohortDefinition {
-    override val key = "${CohortSubjectType.PERIOD_MEMBERS}:${period.id}"
-    override val type = CohortSubjectType.PERIOD_MEMBERS
+    override val key = "${CohortType.PERIOD_MEMBERS}:${period.id}"
+    override val type = CohortType.PERIOD_MEMBERS
     override val scope = period.id
     override val label = "Members ${period.years()}"
-    override val folder = PERIOD_FOLDER
+    override val folder = CohortFolders.MEMBERS
 
     override fun members(): Set<Long> = memberships.findUserIdsOverlapping(period.startDate, period.endDate)
 
@@ -42,7 +41,7 @@ class PeriodMembersProvider(
     private val periods: ContributionPeriodService,
     private val memberships: MembershipService,
 ) : CohortDefinitionProvider {
-    override val type = CohortSubjectType.PERIOD_MEMBERS
+    override val type = CohortType.PERIOD_MEMBERS
 
     override fun definitions(): List<CohortDefinition> =
         periods.findAll().filter { it.id != null }.map { PeriodMembersDefinition(it, memberships) }
@@ -57,11 +56,11 @@ class PeriodPayersDefinition(
     private val period: ContributionPeriod,
     private val contributions: ContributionService,
 ) : CohortDefinition {
-    override val key = "${CohortSubjectType.PERIOD_PAYERS}:${period.id}"
-    override val type = CohortSubjectType.PERIOD_PAYERS
+    override val key = "${CohortType.PERIOD_PAYERS}:${period.id}"
+    override val type = CohortType.PERIOD_PAYERS
     override val scope = period.id
     override val label = "Contribution Paid ${period.years()}"
-    override val folder = PERIOD_FOLDER
+    override val folder = CohortFolders.CONTRIBUTION_PAID
 
     override fun members(): Set<Long> = contributions.findByContributionPeriodId(period.id!!).map { it.userId }.toSet()
 
@@ -73,7 +72,7 @@ class PeriodPayersProvider(
     private val periods: ContributionPeriodService,
     private val contributions: ContributionService,
 ) : CohortDefinitionProvider {
-    override val type = CohortSubjectType.PERIOD_PAYERS
+    override val type = CohortType.PERIOD_PAYERS
 
     override fun definitions(): List<CohortDefinition> =
         periods.findAll().filter { it.id != null }.map { PeriodPayersDefinition(it, contributions) }

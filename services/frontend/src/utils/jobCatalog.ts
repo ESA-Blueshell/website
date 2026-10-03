@@ -247,6 +247,14 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "address key in Vault and empties its plaintext columns. Run once after the sealing " +
       "release; running it again seals nothing and is skipped.",
   },
+  "user.rewrap-sealed-values": {
+    title: "Rewrap sealed values",
+    description:
+      "Moves every sealed value that sits below the newest version of its key in Vault onto " +
+      "that version, without opening it. Runs every night, so a rotated key is in use by the " +
+      "next morning. A value that cannot be moved is named in the failure and tried again by " +
+      "the next run; running it again changes nothing.",
+  },
 }
 
 export const humanizeJobType = (jobType: string): string =>

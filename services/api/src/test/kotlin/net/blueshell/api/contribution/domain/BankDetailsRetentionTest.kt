@@ -39,16 +39,20 @@ class BankDetailsRetentionTest {
         val dayShort = stopped(2, LocalDate.of(2025, 9, 4))
         val never = stopped(3, null)
         val changedInBetween = stopped(4, null)
-        whenever(mandates.stopped(today)).thenReturn(listOf(thirteenMonthsAgo, dayShort, never, changedInBetween))
-        whenever(mandates.wipe(1)).thenReturn(true)
-        whenever(mandates.wipe(3)).thenReturn(true)
-        whenever(mandates.wipe(4)).thenReturn(false)
+        val onItsWay = stopped(5, null)
+        whenever(notifications.countPendingCollections(onItsWay.userId, onItsWay.reference, today)).thenReturn(1)
+        whenever(mandates.stopped(today)).thenReturn(listOf(thirteenMonthsAgo, dayShort, never, changedInBetween, onItsWay))
+        whenever(mandates.wipe(thirteenMonthsAgo, today)).thenReturn(true)
+        whenever(mandates.wipe(never, today)).thenReturn(true)
+        whenever(mandates.wipe(changedInBetween, today)).thenReturn(false)
 
         assertThat(retention.wipeExpired()).isEqualTo(2)
 
-        verify(mandates).wipe(1)
-        verify(mandates, never()).wipe(2)
-        verify(mandates).wipe(3)
+        verify(mandates).wipe(thirteenMonthsAgo, today)
+        verify(mandates, never()).wipe(dayShort, today)
+        verify(mandates).wipe(never, today)
+        // A run not yet marked as submitted, its date still ahead, may be in ING already.
+        verify(mandates, never()).wipe(onItsWay, today)
     }
 
     @Test
@@ -61,7 +65,7 @@ class BankDetailsRetentionTest {
         val payload = mapper.writeValueAsString(ContributionJobs.WipeBankDetailsPayload())
         val never = stopped(3, null)
         whenever(mandates.stopped(today)).thenReturn(listOf(never), emptyList())
-        whenever(mandates.wipe(3)).thenReturn(true)
+        whenever(mandates.wipe(never, today)).thenReturn(true)
 
         assertThat(job.handle(payload, 5, forced = false)).isInstanceOf(JobOutcome.Done::class.java)
         assertThat(job.handle(payload, 6, forced = false)).isInstanceOf(JobOutcome.Skipped::class.java)

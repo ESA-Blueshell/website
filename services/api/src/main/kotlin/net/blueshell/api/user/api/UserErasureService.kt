@@ -89,8 +89,8 @@ class UserErasureService(
 
         userRepository.saveAndFlush(user)
         deletedUsers.save(snapshot)
-        // A pending mandate was never collected from. A recorded one starts its 13 months here.
-        mandateRetention.forgetPending(userId)
+        // Collecting stops here: a recorded mandate starts its 13 months, and a pending one goes.
+        mandateRetention.accountErased(userId)
 
         trackedEvents.publish { actor ->
             UserDeleted(userId = user.id!!, actor = actor)
@@ -228,7 +228,7 @@ class UserErasureService(
         val suffix = "$userId-${now.toEpochMilli()}"
         return AnonymizedIdentity(
             username = "deleted-$suffix",
-            email = "deleted-$suffix@${MandateRetention.ERASED_EMAIL_DOMAIN}",
+            email = "deleted-$suffix@deleted.invalid",
         )
     }
 

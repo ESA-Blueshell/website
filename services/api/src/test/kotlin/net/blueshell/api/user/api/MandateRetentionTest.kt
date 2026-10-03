@@ -16,7 +16,7 @@ class MandateRetentionTest {
     private val retention = MandateRetention(mandates, pending)
 
     @Test
-    fun `names the mandates no longer collected from, an erased account's among them, and wipes one`() {
+    fun `names the mandates no longer collected from, and wipes one only while it still is the one judged`() {
         val today = LocalDate.of(2026, 10, 3)
         val row =
             object : StoppedMandateRow {
@@ -24,18 +24,21 @@ class MandateRetentionTest {
                 override val userId = 7L
                 override val reference = "BLUESHELL-12-20250901"
             }
-        whenever(mandates.findStopped(today, "%@deleted.invalid")).thenReturn(listOf(row))
-        whenever(mandates.wipe(12)).thenReturn(1, 0)
+        whenever(mandates.findStopped(today)).thenReturn(listOf(row))
+        // The write checks the row again: the second time the mandate was recorded anew, so it is left.
+        whenever(mandates.wipe(12, "BLUESHELL-12-20250901", today)).thenReturn(1, 0)
 
-        assertThat(retention.stopped(today)).containsExactly(StoppedMandate(12, 7, "BLUESHELL-12-20250901"))
-        assertThat(retention.wipe(12)).isTrue()
-        assertThat(retention.wipe(12)).isFalse()
+        val stopped = retention.stopped(today).single()
+        assertThat(stopped).isEqualTo(StoppedMandate(12, 7, "BLUESHELL-12-20250901"))
+        assertThat(retention.wipe(stopped, today)).isTrue()
+        assertThat(retention.wipe(stopped, today)).isFalse()
     }
 
     @Test
-    fun `a pending mandate goes with its account`() {
-        retention.forgetPending(7)
+    fun `an erased account comes off incasso, and its pending mandate goes with it`() {
+        retention.accountErased(7)
 
+        verify(mandates).stopCollecting(7)
         verify(pending).deleteByUserId(7)
     }
 }

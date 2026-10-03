@@ -102,13 +102,9 @@ class IncassoRunsTest {
     }
 
     @Test
-    fun `a member whose bank details were wiped has none to collect from, and one off incasso is not listed for a wiped mandate`() {
+    fun `a member whose bank details were wiped has none to collect from, and one off incasso is not collected from whatever is on file`() {
         val wiped = held(mila, "NL34").apply { mandate!!.sealedIban = null }
-        val stopped =
-            held(zoe, "DE18").apply {
-                incasso = false
-                mandate!!.sealedIban = null
-            }
+        val stopped = held(zoe, "DE18").apply { incasso = false }
         whenever(memberships.findOverlappingWithMembers(period.startDate, period.endDate)).thenReturn(listOf(wiped, stopped))
 
         val plan = incasso.plan(4).associateBy { it.name }

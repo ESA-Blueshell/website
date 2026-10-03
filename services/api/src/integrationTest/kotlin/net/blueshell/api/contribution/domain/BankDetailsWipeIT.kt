@@ -136,6 +136,30 @@ class BankDetailsWipeIT : UserTestSupport() {
     }
 
     @Test
+    fun `a run not yet marked as submitted holds the wipe off until its collection date has passed`() {
+        val board = createUserWithRole(Role.BOARD)
+        val (member, membershipId) = onIncasso()
+        val period = createContributionPeriodFixture()
+        val collection = LocalDate.now().plusDays(7)
+        mvc
+            .perform(
+                post("/contributionPeriods/${period.id}/incassoRuns")
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"userIds":[${member.id}],"collectionDate":"$collection","statementText":"Contributie"}"""),
+            ).andExpect(status().isCreated)
+        jdbc.update("UPDATE memberships SET incasso = FALSE WHERE id = ?", membershipId)
+
+        // Its file may be in ING already, so the bank details stay while the debit can still come.
+        assertThat(runOn(collection)).isInstanceOf(JobOutcome.Skipped::class.java)
+        assertThat(sealedOf(membershipId)).doesNotContainNull()
+
+        // Never marked as submitted, and its date gone: nothing was collected under it.
+        assertThat(runOn(collection.plusDays(1))).isInstanceOf(JobOutcome.Done::class.java)
+        assertThat(sealedOf(membershipId)).containsOnlyNulls()
+    }
+
+    @Test
     fun `erasing an account wipes its pending mandate at once and starts the 13 months for a mandate collected under`() {
         val board = createUserWithRole(Role.BOARD)
         val applicant = createUserWithRole(Role.GUEST)
@@ -148,6 +172,7 @@ class BankDetailsWipeIT : UserTestSupport() {
         erasure.deleteUser(member.id!!)
 
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM pending_mandates WHERE user_id = ?", Int::class.java, applicant.id)).isZero()
+        assertThat(jdbc.queryForObject("SELECT incasso FROM memberships WHERE id = ?", Boolean::class.java, membershipId)).isFalse()
         runOn(collection.plusMonths(13).minusDays(1))
         assertThat(sealedOf(membershipId)).doesNotContainNull()
         assertThat(runOn(collection.plusMonths(13))).isInstanceOf(JobOutcome.Done::class.java)

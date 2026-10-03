@@ -18,26 +18,41 @@ interface StoppedMandateRow {
 interface MandateRetentionRepository : Repository<Membership, Long> {
     @Query(
         value =
-            "SELECT m.id AS id, m.user_id AS userId, m.mandate_reference AS reference " +
-                "FROM memberships m JOIN users u ON u.id = m.user_id " +
-                "WHERE m.mandate_iban IS NOT NULL " +
-                "AND ((m.end_date IS NOT NULL AND m.end_date <= :today) OR m.incasso = FALSE " +
-                "OR m.deleted_at <> '" + SoftDelete.LIVE + "' OR u.email LIKE :erased)",
+            "SELECT id AS id, user_id AS userId, mandate_reference AS reference FROM memberships " +
+                "WHERE mandate_iban IS NOT NULL AND " + STOPPED,
         nativeQuery = true,
     )
     fun findStopped(
         @Param("today") today: LocalDate,
-        @Param("erased") erased: String,
     ): List<StoppedMandateRow>
 
+    /**
+     * Wipes the mandate only if it is still the one that was judged and still stopped: the row is
+     * checked again in the write itself, so a mandate recorded anew or put back on incasso since
+     * the judgement keeps its bank details.
+     */
     @Modifying
     @Query(
         value =
             "UPDATE memberships SET mandate_iban = NULL, mandate_account_holder = NULL, mandate_address = NULL " +
-                "WHERE id = :id AND mandate_iban IS NOT NULL",
+                "WHERE id = :id AND mandate_iban IS NOT NULL AND mandate_reference = :reference AND " + STOPPED,
         nativeQuery = true,
     )
     fun wipe(
         @Param("id") id: Long,
+        @Param("reference") reference: String,
+        @Param("today") today: LocalDate,
     ): Int
+
+    /** An erased account is no longer collected from: every membership of it comes off incasso. */
+    @Modifying
+    @Query(value = "UPDATE memberships SET incasso = FALSE WHERE user_id = :userId", nativeQuery = true)
+    fun stopCollecting(
+        @Param("userId") userId: Long,
+    ): Int
+
+    private companion object {
+        const val STOPPED =
+            "((end_date IS NOT NULL AND end_date <= :today) OR incasso = FALSE OR deleted_at <> '" + SoftDelete.LIVE + "')"
+    }
 }

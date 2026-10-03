@@ -68,9 +68,8 @@ class UserErasureDiscordTest {
         assertThat(kept.firstValue.discordId).isEqualTo("1144058844004233369")
         assertThat(user.discordId).isNull()
         assertThat(user.discord).isNull()
-        // A pending mandate was never collected from, so it goes with the account.
-        verify(mandateRetention).forgetPending(7)
-        assertThat(user.email).endsWith("@${MandateRetention.ERASED_EMAIL_DOMAIN}")
+        // Collecting stops with the account: its memberships come off incasso and a pending mandate goes.
+        verify(mandateRetention).accountErased(7)
     }
 
     @Test

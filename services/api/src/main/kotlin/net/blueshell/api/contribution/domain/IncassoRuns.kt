@@ -226,7 +226,8 @@ class IncassoRuns(
                 .groupBy { it.userId }
                 .mapValues { (_, held) -> held.filter { it.endDate == null }.maxByOrNull { it.startDate } ?: held.maxBy { it.startDate } }
                 .values
-                .filter { it.incasso || it.mandate?.wiped == false }
+                // Off incasso is not collected from, whatever mandate is still on file.
+                .filter { it.incasso }
         val deleted = erasure.deletedIdsAmong(judged.map { it.userId })
         return judged
             .map { membership ->

@@ -65,5 +65,11 @@ test.describe("one user's mandate", () => {
 
     await expect(page.getByTestId("mandate-facts")).toContainText("NL•• … ••00")
     await expect(page.getByTestId("mandate-panel")).not.toContainText("0417")
+
+    // A reveal shows the full number until it is hidden again.
+    await page.getByTestId("mandate-reveal").click()
+    await expect(page.getByTestId("mandate-account")).toContainText("NL91 ABNA 0417 1643 00")
+    await page.getByTestId("mandate-reveal").click()
+    await expect(page.getByTestId("mandate-panel")).not.toContainText("0417")
   })
 })

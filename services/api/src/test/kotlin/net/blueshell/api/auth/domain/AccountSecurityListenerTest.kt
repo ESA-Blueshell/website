@@ -135,4 +135,46 @@ class AccountSecurityListenerTest {
             anyOrNull(),
         )
     }
+
+    @Test
+    fun `a reveal is logged on the member, naming who revealed which membership and never the IBAN`() {
+        listener.onIbanRevealed(
+            net.blueshell.api.user.api
+                .IbanRevealed(userId = 7, membershipId = 12, revealedBy = 3),
+        )
+
+        verify(events).record(
+            eq(7L),
+            eq(SecurityEventKind.IBAN_REVEALED),
+            eq(SecurityActor.Person(3)),
+            eq("membership 12"),
+            anyOrNull(),
+            anyOrNull(),
+        )
+    }
+
+    @Test
+    fun `a download of ING's file is logged on who downloaded it, with the run, the file and how many members it holds`() {
+        val downloaded =
+            net.blueshell.api.contribution.api.IncassoFileDownloaded(
+                downloadedBy = 3,
+                runId = 11,
+                part = 2,
+                parts = 2,
+                members = 23,
+            )
+        listener.onIncassoFileDownloaded(downloaded)
+        listener.onIncassoFileDownloaded(downloaded.copy(part = 1, parts = 1, members = 1))
+
+        for (note in listOf("incasso run 11, file 2 of 2, 23 members", "incasso run 11, file 1 of 1, 1 member")) {
+            verify(events).record(
+                eq(3L),
+                eq(SecurityEventKind.INCASSO_FILE_DOWNLOADED),
+                eq(SecurityActor.Person(3)),
+                eq(note),
+                anyOrNull(),
+                anyOrNull(),
+            )
+        }
+    }
 }

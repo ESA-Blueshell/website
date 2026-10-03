@@ -1,10 +1,12 @@
 package net.blueshell.api.contribution.domain
 
+import net.blueshell.api.contribution.api.IncassoFileDownloaded
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.contribution.persistence.IncassoRunRepository
 import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.user.api.CollectionAccounts
 import net.blueshell.api.user.api.MembershipService
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -29,11 +31,14 @@ class IncassoFiles(
     private val accounts: CollectionAccounts,
     private val bank: BankProperties,
     private val clock: Clock,
+    private val events: ApplicationEventPublisher,
 ) {
+    /** The file for [downloadedBy], whose security log records the download before the file is answered. */
     @Transactional(readOnly = true)
     fun file(
         runId: Long,
         part: Int,
+        downloadedBy: Long,
     ): IncassoFile {
         val run = runs.findById(runId).orElseThrow { IncassoRunNotFound() }
         if (run.submittedAt != null) throw IncassoRunSubmitted()
@@ -72,6 +77,7 @@ class IncassoFiles(
                     mandateSignedOn = requireNotNull(told.mandateSignedOn),
                 )
             }
+        events.publishEvent(IncassoFileDownloaded(downloadedBy, runId, part, chunks.size, theirs.size))
         val suffix = if (chunks.size > 1) "-$part-of-${chunks.size}" else ""
         return IncassoFile("incassobatch-${run.collectionDate}$suffix.xlsx", IngIncassoFile.write(header, collections))
     }

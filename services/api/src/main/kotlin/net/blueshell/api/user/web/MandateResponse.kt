@@ -42,6 +42,19 @@ data class RecordMandateRequest(
     }
 }
 
+/** A mandate's full IBAN, answered to a board member's reveal and to nothing else. */
+@Schema(name = "RevealedIbanResponse")
+data class RevealedIbanResponse(
+    val iban: String,
+) {
+    // The one response that carries the account number; a log line never does.
+    override fun toString(): String = "RevealedIbanResponse(****${iban.takeLast(SHOWN)})"
+
+    private companion object {
+        const val SHOWN = 4
+    }
+}
+
 /** A person's own mandate, the account masked to its last four. */
 @Schema(name = "OwnMandateResponse")
 data class OwnMandateResponse(

@@ -14,6 +14,8 @@ class InvalidIban : MandateRefusal(HttpStatus.BAD_REQUEST, "InvalidIban", "That 
 
 class MandateSignedInFuture : MandateRefusal(HttpStatus.BAD_REQUEST, "MandateSignedInFuture", "A mandate cannot be signed after today.")
 
+class NoMandateRecorded : MandateRefusal(HttpStatus.NOT_FOUND, "NoMandateRecorded", "No mandate is recorded on this membership.")
+
 class AccountHolderMissing : MandateRefusal(HttpStatus.BAD_REQUEST, "AccountHolderMissing", "A mandate names the account holder.")
 
 /** A mandate's sealed bank details do not open for their member: they were changed outside the site. */

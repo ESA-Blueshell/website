@@ -17,6 +17,13 @@ interface AddressPlaintext {
     val zipCode: String?
 }
 
+/** A sealed address and the member it is bound to, read past soft deletion. */
+interface SealedAddressRow {
+    val id: Long
+    val userId: Long?
+    val sealed: String
+}
+
 @Repository
 interface AddressRepository : BaseRepository<Address, Long> {
     /** Every address with plaintext left, soft-deleted ones and their members included: what sealing still has to reach. */
@@ -44,6 +51,29 @@ interface AddressRepository : BaseRepository<Address, Long> {
     )
     fun writeSealed(
         @Param("id") id: Long,
+        @Param("sealed") sealed: String,
+    ): Int
+
+    /** Every sealed address, soft-deleted ones and their members included: what a key rotation has to move. */
+    @Query(
+        value = """
+            SELECT a.id AS id, u.id AS userId, a.sealed_address AS sealed
+            FROM addresses a LEFT JOIN users u ON u.address_id = a.id
+            WHERE a.sealed_address IS NOT NULL
+        """,
+        nativeQuery = true,
+    )
+    fun findSealed(): List<SealedAddressRow>
+
+    /** Swaps [was] for [sealed], and leaves an address somebody saved in between alone. */
+    @Modifying
+    @Query(
+        value = "UPDATE addresses SET sealed_address = :sealed WHERE id = :id AND sealed_address = :was",
+        nativeQuery = true,
+    )
+    fun swapSealed(
+        @Param("id") id: Long,
+        @Param("was") was: String,
         @Param("sealed") sealed: String,
     ): Int
 }

@@ -35,8 +35,10 @@ class SealedAddresses(
     private val addresses: AddressRepository,
     private val mapper: ObjectMapper,
     private val transactions: TransactionTemplate,
-    @param:Value($$"${privacy.address-key:api-address}") private val key: String,
-) {
+    @param:Value($$"${privacy.address-key:api-address}") override val key: String,
+) : SealedField {
+    override val name: String = FIELD
+
     /** Seals [fields] onto [address] and empties its plaintext. */
     fun seal(
         address: Address,
@@ -84,6 +86,20 @@ class SealedAddresses(
             val sealed = sealer.seal(key, listOf(Sealed(mapper.writeValueAsString(fields), sealingContext(FIELD, userId)))).single()
             transactions.execute { addresses.writeSealed(row.id, sealed) } == 1
         }
+
+    /** Every sealed address with the member it is bound to. One no member holds has no context to move under, and is logged. */
+    override fun sealedValues(): List<SealedValue> =
+        addresses.findSealed().mapNotNull { row ->
+            val userId = row.userId
+            if (userId == null) log.warn("[privacy] sealed address {} belongs to no member, so it stays on its key version", row.id)
+            userId?.let { SealedValue(row.id, row.sealed, sealingContext(FIELD, it)) }
+        }
+
+    override fun swap(
+        id: Long,
+        was: String,
+        sealed: String,
+    ): Boolean = addresses.swapSealed(id, was, sealed) == 1
 
     private companion object {
         const val FIELD = "address"

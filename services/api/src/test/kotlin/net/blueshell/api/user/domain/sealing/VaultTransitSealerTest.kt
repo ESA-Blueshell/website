@@ -7,6 +7,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.vault.core.VaultTemplate
@@ -87,5 +88,28 @@ class VaultTransitSealerTest {
                 listOf(Sealed("vault:v1:a", "address:7")),
             )
         }.isInstanceOf(SealingUnavailable::class.java)
+    }
+
+    @Test
+    fun `rewraps through Transit's own rewrap and never decrypts, and answers null for a value Vault refuses`() {
+        whenever(vault.write(eq("transit/rewrap/api-address"), any())).thenReturn(
+            answer(mapOf("ciphertext" to "vault:v2:a"), mapOf("error" to "cipher: message authentication failed")),
+        )
+
+        val moved = sealer.rewrap("api-address", listOf(Sealed("vault:v1:a", "address:7"), Sealed("vault:v1:b", "address:8")))
+
+        assertThat(moved).containsExactly("vault:v2:a", null)
+        val body = argumentCaptor<Any>()
+        verify(vault).write(eq("transit/rewrap/api-address"), body.capture())
+        assertThat(body.firstValue).isEqualTo(
+            mapOf(
+                "batch_input" to
+                    listOf(
+                        mapOf("ciphertext" to "vault:v1:a", "context" to b64("address:7")),
+                        mapOf("ciphertext" to "vault:v1:b", "context" to b64("address:8")),
+                    ),
+            ),
+        )
+        verify(vault, never()).write(eq("transit/decrypt/api-address"), any())
     }
 }

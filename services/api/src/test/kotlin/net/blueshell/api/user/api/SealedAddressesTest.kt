@@ -7,6 +7,7 @@ import net.blueshell.api.user.domain.sealing.SealingUnavailable
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.AddressPlaintext
 import net.blueshell.api.user.persistence.AddressRepository
+import net.blueshell.api.user.persistence.SealedAddressRow
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -76,6 +77,28 @@ class SealedAddressesTest {
         assertThat(addresses().sealEvery()).isEqualTo(1)
         verify(repository, never()).writeSealed(eq(2L), any())
     }
+
+    @Test
+    fun `offers every sealed address under its member's context, leaves out one no member holds, and swaps a moved one in`() {
+        whenever(repository.findSealed()).thenReturn(listOf(sealedRow(1, 7), sealedRow(2, null)))
+        whenever(repository.swapSealed(1, "local:v1:a", "local:v2:a")).thenReturn(1)
+
+        assertThat(addresses().name).isEqualTo("address")
+        assertThat(addresses().key).isEqualTo("api-address")
+        assertThat(addresses().sealedValues()).containsExactly(SealedValue(1, "local:v1:a", "address:7"))
+        assertThat(addresses().swap(1, "local:v1:a", "local:v2:a")).isTrue()
+        assertThat(addresses().swap(2, "local:v1:a", "local:v2:a")).isFalse()
+    }
+
+    private fun sealedRow(
+        id: Long,
+        userId: Long?,
+    ): SealedAddressRow =
+        object : SealedAddressRow {
+            override val id = id
+            override val userId = userId
+            override val sealed = "local:v1:a"
+        }
 
     private fun row(
         id: Long,

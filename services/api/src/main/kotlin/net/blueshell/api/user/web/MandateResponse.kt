@@ -13,6 +13,7 @@ import java.time.LocalDate
 data class MandateResponse(
     val membershipId: Long,
     val standing: IncassoStanding,
+    @field:Schema(description = "Null where no mandate is recorded, or where it cannot be opened now.")
     val accountHolder: String?,
     @field:Schema(description = "The IBAN's country code; with the last two, all a response carries of it.")
     val ibanCountry: String?,

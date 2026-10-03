@@ -1,4 +1,4 @@
-package net.blueshell.api.shared.crypto
+package net.blueshell.api.auth.domain.twofactor
 
 import java.security.GeneralSecurityException
 import java.security.SecureRandom

@@ -44,6 +44,14 @@ describe("the mandate panel", () => {
     expect(wrapper.get('[data-testid="mandate-record"]').text()).toBe("Replace the mandate")
   })
 
+  it("shows the masked account alone where the account holder cannot be opened", async () => {
+    api.findMandate.mockResolvedValue({status: 200, data: {...recorded, accountHolder: null}})
+    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    await settle()
+
+    expect(wrapper.get('[data-testid="mandate-facts"]').find("dd").text()).toBe("NL•• … ••00")
+  })
+
   it("says why a mandate was refused, and cancels", async () => {
     api.recordMandate.mockResolvedValue({status: 400, error: {code: "InvalidIban", detail: "That is not a valid IBAN."}})
     api.findMandate.mockResolvedValue({status: 200, data: {membershipId: 9, standing: IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS}})
@@ -56,7 +64,10 @@ describe("the mandate panel", () => {
     await settle()
     expect(wrapper.get('[data-testid="mandate-failure"]').text()).toContain("not a valid IBAN")
 
-    for (const [code, words] of [["MandateSignedInFuture", "signed today or before"], ["AccountHolderMissing", "whose account"]] as const) {
+    const refusals = [
+      ["MandateSignedInFuture", "signed today or before"], ["AccountHolderMissing", "whose account"], ["SealingUnavailable", "Try again in a moment"],
+    ] as const
+    for (const [code, words] of refusals) {
       api.recordMandate.mockResolvedValue({status: 400, error: {code, detail: code}})
       await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
       await settle()

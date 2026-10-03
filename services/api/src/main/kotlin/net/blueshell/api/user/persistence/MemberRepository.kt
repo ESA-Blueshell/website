@@ -115,6 +115,35 @@ interface MemberRepository : BaseRepository<Membership, Long> {
         @Param("id") id: Long,
     ): Int
 
+    /** Every mandate's sealed values, on ended and soft-deleted memberships too: what a key rotation has to move. */
+    @Query(
+        value =
+            "SELECT id AS id, user_id AS userId, mandate_iban AS iban, mandate_account_holder AS accountHolder " +
+                "FROM memberships WHERE mandate_iban IS NOT NULL",
+        nativeQuery = true,
+    )
+    fun findSealedMandates(): List<SealedAccountRow>
+
+    /** Swaps [was] for [sealed], and leaves a mandate somebody recorded in between alone. */
+    @Modifying
+    @Query(value = "UPDATE memberships SET mandate_iban = :sealed WHERE id = :id AND mandate_iban = :was", nativeQuery = true)
+    fun swapSealedIban(
+        @Param("id") id: Long,
+        @Param("was") was: String,
+        @Param("sealed") sealed: String,
+    ): Int
+
+    @Modifying
+    @Query(
+        value = "UPDATE memberships SET mandate_account_holder = :sealed WHERE id = :id AND mandate_account_holder = :was",
+        nativeQuery = true,
+    )
+    fun swapSealedAccountHolder(
+        @Param("id") id: Long,
+        @Param("was") was: String,
+        @Param("sealed") sealed: String,
+    ): Int
+
     companion object {
         private const val SENTINEL = "'${SoftDelete.LIVE}'"
     }

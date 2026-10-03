@@ -15,7 +15,6 @@ databaseChangeLog:
                   autoIncrement: true
                   constraints: {primaryKey: true, primaryKeyName: pk_pending_mandates, nullable: false}
               - column: {name: user_id, type: BIGINT, constraints: {nullable: false, unique: true, uniqueConstraintName: uk_pending_mandates_user}}
-              - column: {name: key_id, type: VARCHAR(32), constraints: {nullable: false}}
               - column: {name: iban, type: VARCHAR(255), constraints: {nullable: false}}
               - column: {name: account_holder, type: VARCHAR(512), constraints: {nullable: false}}
               - column: {name: iban_masked, type: CHAR(4), constraints: {nullable: false}}

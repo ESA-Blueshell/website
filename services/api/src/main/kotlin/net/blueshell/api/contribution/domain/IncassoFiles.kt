@@ -59,9 +59,10 @@ class IncassoFiles(
         val changed = mandates.filterValues { it == null }.keys.sorted()
         if (changed.isNotEmpty()) throw MandateChanged(changed)
 
+        // One call opens the whole part, so a file costs Vault one request however many rows it has.
+        val opened = accounts.of(theirs.map { told -> told.userId to requireNotNull(mandates[told.userId]) })
         val collections =
-            theirs.map { told ->
-                val account = accounts.of(requireNotNull(mandates[told.userId]))
+            theirs.zip(opened).map { (told, account) ->
                 IngCollection(
                     name = ingText(account.accountHolder).take(NAME_MAX),
                     iban = account.iban,

@@ -4677,6 +4677,7 @@ components:
     MandateResponse:
       properties:
         accountHolder:
+          description: Null where no mandate is recorded, or where it cannot be opened now.
           type:
           - string
           - 'null'

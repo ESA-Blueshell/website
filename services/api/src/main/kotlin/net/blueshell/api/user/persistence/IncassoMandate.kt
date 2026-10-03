@@ -7,16 +7,14 @@ import java.time.LocalDate
 
 /**
  * The bank details and mandate a membership is collected under. The IBAN and account holder are
- * sealed; only the IBAN's last four are kept readable, which is all any response carries.
+ * sealed by Vault Transit to the member (api ADR-038); only the masked IBAN is kept readable.
  */
 @Embeddable
 class IncassoMandate(
-    @Column(name = "mandate_key_id", length = 32)
-    var keyId: String,
     @Column(name = "mandate_iban", length = 255)
-    var ibanCiphertext: String,
+    var sealedIban: String,
     @Column(name = "mandate_account_holder", length = 512)
-    var accountHolderCiphertext: String,
+    var sealedAccountHolder: String,
     /** The IBAN's country code and last two characters, as `NL34`; see `MaskedIban`. */
     @Column(name = "mandate_iban_masked", length = 4)
     var ibanMasked: String,

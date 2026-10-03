@@ -43,7 +43,7 @@ class IncassoFilesTest {
     ) = IncassoRun(4, date, "Contributie", 9, Instant.EPOCH, submittedAt = submittedAt).also { it.id = 11 }
 
     private fun mandate(reference: String) =
-        IncassoMandate("k1", "sealed", "sealed", "4300", reference, LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
+        IncassoMandate("sealed", "sealed", "4300", reference, LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
 
     private fun told(user: User) =
         IncassoNotification(
@@ -84,7 +84,10 @@ class IncassoFilesTest {
                 )
             }
         }
-        whenever(accounts.of(any())).thenReturn(CollectionAccount("NL91ABNA0417164300", "Zoë Bakker"))
+        // One answer per member asked for, as the one batched call gives them.
+        whenever(accounts.of(any())).thenAnswer { asked ->
+            (asked.arguments[0] as List<*>).map { CollectionAccount("NL91ABNA0417164300", "Zoë Bakker") }
+        }
     }
 
     @Test

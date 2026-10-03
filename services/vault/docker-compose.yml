@@ -38,5 +38,6 @@ services:
         vault secrets enable -path=transit transit || true
         vault write -f transit/keys/api-jwt type=rsa-2048
         vault read transit/keys/api-jwt
-        # Derived key sealing members' addresses (api ADR-038).
+        # Derived keys sealing members' addresses and bank details (api ADR-038).
         vault write -f transit/keys/api-address derived=true
+        vault write -f transit/keys/api-bank-details derived=true

@@ -307,6 +307,7 @@ management:
 privacy:
   sealing: ${PRIVACY_SEALING:stand-in}
   address-key: ${PRIVACY_ADDRESS_KEY:api-address}
+  bank-details-key: ${PRIVACY_BANK_DETAILS_KEY:api-bank-details}
   # The nightly rewrap, which moves sealed values onto the newest key version after a rotation.
   rewrap-cron: ${PRIVACY_REWRAP_CRON:0 0 4 * * *}
 

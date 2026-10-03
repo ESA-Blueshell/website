@@ -53,7 +53,7 @@ class IncassoRunsTest {
     private val hon = Entities.user(id = 6, username = "hon", firstName = "Hon", lastName = "Ored")
 
     private fun mandate(masked: String) =
-        IncassoMandate("k1", "sealed", "sealed", masked, "BLUESHELL-$masked", LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
+        IncassoMandate("sealed", "sealed", masked, "BLUESHELL-$masked", LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
 
     private fun held(
         user: User,

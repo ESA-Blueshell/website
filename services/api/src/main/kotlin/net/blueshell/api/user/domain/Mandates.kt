@@ -1,7 +1,6 @@
 package net.blueshell.api.user.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.shared.crypto.Sealed
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
@@ -53,7 +52,7 @@ fun Membership.incassoStanding(): IncassoStanding =
 class Mandates(
     private val memberships: MemberRepository,
     private val pendingMandates: PendingMandateRepository,
-    private val cipher: BankDetailsCipher,
+    private val sealing: SealedBankDetails,
     private val clock: Clock,
     private val events: ApplicationEventPublisher,
 ) {
@@ -73,18 +72,25 @@ class Mandates(
         val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
         if (signedOn.isAfter(LocalDate.now(clock))) throw MandateSignedInFuture()
         val membership = find(membershipId)
-        val before = membership.mandate?.let { bankDetailsOf(it) }
+        // A mandate that no longer opens for its member is replaced as a new one, under a new reference.
+        val before =
+            membership.mandate?.let { held ->
+                try {
+                    bankDetailsOf(membership.userId, held)
+                } catch (_: BankDetailsUnopenable) {
+                    null
+                }
+            }
         val reference =
             membership.mandate
                 ?.takeIf { before?.iban == iban }
                 ?.reference
                 ?: referenceFor(membershipId, signedOn)
-        val sealedIban = cipher.seal(iban.value)
+        val sealed = sealing.seal(membership.userId, iban, holder)
         membership.mandate =
             IncassoMandate(
-                keyId = sealedIban.keyId,
-                ibanCiphertext = sealedIban.ciphertext,
-                accountHolderCiphertext = cipher.seal(holder).ciphertext,
+                sealedIban = sealed.iban,
+                sealedAccountHolder = sealed.accountHolder,
                 ibanMasked = iban.masked,
                 reference = reference,
                 signedOn = signedOn,
@@ -127,16 +133,15 @@ class Mandates(
         }
         val iban = Iban.parse(rawIban) ?: throw InvalidIban()
         val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
-        val sealedIban = cipher.seal(iban.value)
+        val sealed = sealing.seal(userId, iban, holder)
         val pending = pendingMandates.findByUserId(userId)
         val kept =
             pending?.apply {
-                keyId = sealedIban.keyId
-                ibanCiphertext = sealedIban.ciphertext
-                accountHolderCiphertext = cipher.seal(holder).ciphertext
+                sealedIban = sealed.iban
+                sealedAccountHolder = sealed.accountHolder
                 ibanMasked = iban.masked
                 signedOn = today
-            } ?: PendingMandate(userId, sealedIban.keyId, sealedIban.ciphertext, cipher.seal(holder).ciphertext, iban.masked, today)
+            } ?: PendingMandate(userId, sealed.iban, sealed.accountHolder, iban.masked, today)
         pendingMandates.save(kept)
         return own(userId)
     }
@@ -160,15 +165,17 @@ class Mandates(
         return OwnMandate(running?.incassoStanding() ?: IncassoStanding.NONE, null, null, null, false)
     }
 
-    /** Moves a waiting mandate onto the membership that just started, which puts it on incasso. */
+    /**
+     * Moves a waiting mandate onto the membership that just started, which puts it on incasso. The
+     * sealed values move as they are: both belong to the same member, so their context holds.
+     */
     @Transactional
     fun adoptPending(membership: Membership) {
         val pending = pendingMandates.findByUserId(membership.userId) ?: return
         membership.mandate =
             IncassoMandate(
-                keyId = pending.keyId,
-                ibanCiphertext = pending.ibanCiphertext,
-                accountHolderCiphertext = pending.accountHolderCiphertext,
+                sealedIban = pending.sealedIban,
+                sealedAccountHolder = pending.sealedAccountHolder,
                 ibanMasked = pending.ibanMasked,
                 reference = referenceFor(requireNotNull(membership.id), pending.signedOn),
                 signedOn = pending.signedOn,
@@ -186,15 +193,26 @@ class Mandates(
             ResponseStatusException(HttpStatus.NOT_FOUND, "Membership not found with id: $membershipId")
         }
 
-    /** The account holder as recorded, which a response may carry; the IBAN it never does. */
-    fun accountHolderOf(mandate: IncassoMandate): String = cipher.open(Sealed(mandate.keyId, mandate.accountHolderCiphertext))
+    /** The account holder as recorded, which a response may carry, or null where it cannot be opened now. The IBAN it never carries. */
+    fun accountHolderOf(
+        userId: Long,
+        mandate: IncassoMandate,
+    ): String? = sealing.accountHolder(held(userId, mandate))
 
-    /** The full bank details, for ING's batch file and nothing else. */
-    fun bankDetailsOf(mandate: IncassoMandate): BankDetails =
-        BankDetails(
-            iban = requireNotNull(Iban.parse(cipher.open(Sealed(mandate.keyId, mandate.ibanCiphertext)))),
-            accountHolder = accountHolderOf(mandate),
-        )
+    /** The full bank details of one mandate. */
+    fun bankDetailsOf(
+        userId: Long,
+        mandate: IncassoMandate,
+    ): BankDetails = sealing.open(listOf(held(userId, mandate))).single()
+
+    /** The full bank details of every mandate, opened in one call, for ING's batch file and nothing else. */
+    fun bankDetailsOf(mandates: List<Pair<Long, IncassoMandate>>): List<BankDetails> =
+        sealing.open(mandates.map { (userId, mandate) -> held(userId, mandate) })
+
+    private fun held(
+        userId: Long,
+        mandate: IncassoMandate,
+    ) = HeldAccount(userId, SealedAccount(mandate.sealedIban, mandate.sealedAccountHolder))
 
     private fun referenceFor(
         membershipId: Long,

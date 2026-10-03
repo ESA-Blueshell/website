@@ -4,6 +4,11 @@ import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.SignupMandates
+import net.blueshell.api.user.domain.sealing.LocalSealer
+import net.blueshell.api.user.domain.sealing.Sealed
+import net.blueshell.api.user.domain.sealing.Sealer
+import net.blueshell.api.user.domain.sealing.SealingUnavailable
+import net.blueshell.api.user.domain.sealing.keyVersionOf
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.PendingMandate
 import net.blueshell.api.user.persistence.PendingMandateRepository
@@ -15,27 +20,31 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.mock.env.MockEnvironment
 import org.springframework.web.server.ResponseStatusException
 import tools.jackson.databind.json.JsonMapper
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import java.util.Base64
 import java.util.Optional
 
 class MandatesTest {
     private val now = Instant.parse("2026-09-30T10:00:00Z")
     private val repository: MemberRepository = mock()
-    private val cipher = BankDetailsCipher("1", Base64.getEncoder().encodeToString(ByteArray(32) { 7 }), "", MockEnvironment())
+    private val sealer: Sealer = spy(LocalSealer())
+    private val sealing = SealedBankDetails(sealer, "api-bank-details")
     private val pending: PendingMandateRepository = mock()
     private val published: org.springframework.context.ApplicationEventPublisher = mock()
     private val stepUp: net.blueshell.api.security.StepUp = mock()
-    private val mandates = Mandates(repository, pending, cipher, Clock.fixed(now, ZoneOffset.UTC), published)
+    private val mandates = Mandates(repository, pending, sealing, Clock.fixed(now, ZoneOffset.UTC), published)
     private val currentUser: CurrentUserProvider = mock()
     private val controller = MandateController(mandates, currentUser, stepUp)
     private val membership =
@@ -64,8 +73,8 @@ class MandatesTest {
         assertThat(answer.recordedBy).isEqualTo(3)
         assertThat(answer.recordedAt).isEqualTo(now)
         assertThat(membership.incasso).isTrue()
-        assertThat(membership.mandate!!.ibanCiphertext).doesNotContain("0417164300")
-        assertThat(mandates.bankDetailsOf(membership.mandate!!).iban.value).isEqualTo("NL91ABNA0417164300")
+        assertThat(membership.mandate!!.sealedIban).doesNotContain("0417164300")
+        assertThat(mandates.bankDetailsOf(membership.userId, membership.mandate!!).iban.value).isEqualTo("NL91ABNA0417164300")
 
         val json = JsonMapper.builder().findAndAddModules().build()
         for (response in listOf(answer, controller.findMandate(12), membership.asResponse())) {
@@ -106,11 +115,11 @@ class MandatesTest {
         assertThat(request.toString()).doesNotContain("0417").contains("****4300")
         mandates.record(12, request.iban, request.accountHolder, request.signedOn, null)
         assertThat(membership.mandate.toString()).doesNotContain("0417")
-        assertThat(mandates.bankDetailsOf(membership.mandate!!).toString()).doesNotContain("0417")
+        assertThat(mandates.bankDetailsOf(membership.userId, membership.mandate!!).toString()).doesNotContain("0417")
         val empty = net.blueshell.api.user.persistence.IncassoMandate::class.java.getDeclaredConstructor().newInstance()
         assertThat(empty).isNotNull
         assertThat(PendingMandate::class.java.getDeclaredConstructor().newInstance()).isNotNull
-        val waiting = PendingMandate(3, "k1", "sealed", "sealed", "NL00", LocalDate.of(2026, 9, 30))
+        val waiting = PendingMandate(3, "sealed", "sealed", "NL00", LocalDate.of(2026, 9, 30))
         assertThat(waiting.toString()).isEqualTo("PendingMandate(NL00)")
         assertThat(waiting.userId).isEqualTo(3)
     }
@@ -157,6 +166,8 @@ class MandatesTest {
 
         mandates.adoptPending(membership)
 
+        // The sealed values moved as they were, and still open for the same member.
+        assertThat(mandates.bankDetailsOf(membership.userId, membership.mandate!!).iban.value).isEqualTo("GB82WEST12345698765432")
         assertThat(membership.mandate!!.ibanMasked).isEqualTo("GB32")
         assertThat(membership.mandate!!.reference).isEqualTo("BLUESHELL-12-20260930")
         assertThat(membership.incasso).isTrue()
@@ -202,5 +213,66 @@ class MandatesTest {
         assertThatThrownBy { controller.setUpOwnMandate(SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true)) }
             .isInstanceOf(net.blueshell.api.security.StepUpRequiredException::class.java)
         org.mockito.kotlin.verifyNoMoreInteractions(published)
+    }
+
+    @Test
+    fun `seals the IBAN and the account holder in one call, each to its field and the member, on one key version`() {
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+        val held = membership.mandate!!
+
+        verify(sealer).seal(
+            "api-bank-details",
+            listOf(
+                Sealed("NL91ABNA0417164300", "iban:${membership.userId}"),
+                Sealed("Ann Vos", "account-holder:${membership.userId}"),
+            ),
+        )
+        assertThat(held.sealedAccountHolder).doesNotContain("Ann")
+        assertThat(keyVersionOf(held.sealedIban)).isEqualTo(keyVersionOf(held.sealedAccountHolder))
+    }
+
+    @Test
+    fun `a sealed account does not open for another member, and many open in one call`() {
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+        val held = membership.mandate!!
+
+        assertThatThrownBy { mandates.bankDetailsOf(membership.userId + 1, held) }.isInstanceOf(BankDetailsUnopenable::class.java)
+        assertThat(controller.findMandate(12).accountHolder).isEqualTo("Ann Vos")
+
+        val opened = mandates.bankDetailsOf(listOf(membership.userId to held, membership.userId to held))
+        assertThat(opened.map { it.accountHolder }).containsExactly("Ann Vos", "Ann Vos")
+        verify(sealer).open(eq("api-bank-details"), argThat { size == 4 })
+    }
+
+    @Test
+    fun `with the key out of reach a mandate is refused, and the panel shows no account holder`() {
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+        val recorded = membership.mandate!!.sealedIban
+        doThrow(SealingUnavailable()).whenever(sealer).seal(any(), any())
+        doThrow(SealingUnavailable()).whenever(sealer).open(any(), any())
+
+        assertThatThrownBy { mandates.record(12, "GB82WEST12345698765432", "Ann Vos", LocalDate.of(2026, 9, 2), 3) }
+            .isInstanceOf(SealingUnavailable::class.java)
+        whenever(repository.findByUser_Id(99)).thenReturn(mutableListOf())
+        assertThatThrownBy { mandates.setUpOwn(99, "GB82WEST12345698765432", "Ann Vos") }.isInstanceOf(SealingUnavailable::class.java)
+        verify(pending, times(0)).save(any<PendingMandate>())
+
+        assertThat(membership.mandate!!.sealedIban).isEqualTo(recorded)
+        val panel = controller.findMandate(12)
+        assertThat(panel.accountHolder).isNull()
+        assertThat(listOf(panel.ibanCountry, panel.ibanLastTwo)).containsExactly("NL", "00")
+    }
+
+    @Test
+    fun `a mandate that no longer opens for its member can be recorded again, under a new reference`() {
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+        val elsewhere = sealing.seal(membership.userId + 1, requireNotNull(Iban.parse("NL91ABNA0417164300")), "Somebody Else")
+        membership.mandate!!.sealedIban = elsewhere.iban
+        membership.mandate!!.sealedAccountHolder = elsewhere.accountHolder
+
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 20), 3)
+
+        assertThat(membership.mandate!!.reference).isEqualTo("BLUESHELL-12-20260920")
+        assertThat(mandates.bankDetailsOf(membership.userId, membership.mandate!!).accountHolder).isEqualTo("Ann Vos")
     }
 }

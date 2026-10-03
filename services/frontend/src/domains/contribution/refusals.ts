@@ -22,6 +22,10 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   MandateChanged: (r) =>
     `${r.userIds?.length ?? "Some"} of the members changed their bank details after they were told. Run a new incasso for them.`,
   IncassoFilePartNotFound: () => "This incasso has no such file.",
+  // Declared in `user`, which opens the bank details the file is filled with.
+  SealingUnavailable: () => "The bank details cannot be opened right now, so ING's file cannot be made. Try again in a moment.",
+  BankDetailsUnopenable: () =>
+    "A member's bank details were changed outside the site and no longer open, so ING's file cannot be made. Ask an admin.",
 }
 
 export const {refusable} = refusalReader(sentences)

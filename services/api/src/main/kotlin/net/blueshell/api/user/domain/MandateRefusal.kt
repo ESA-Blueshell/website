@@ -15,3 +15,12 @@ class InvalidIban : MandateRefusal(HttpStatus.BAD_REQUEST, "InvalidIban", "That 
 class MandateSignedInFuture : MandateRefusal(HttpStatus.BAD_REQUEST, "MandateSignedInFuture", "A mandate cannot be signed after today.")
 
 class AccountHolderMissing : MandateRefusal(HttpStatus.BAD_REQUEST, "AccountHolderMissing", "A mandate names the account holder.")
+
+/** A mandate's sealed bank details do not open for their member: they were changed outside the site. */
+class BankDetailsUnopenable(
+    cause: Throwable?,
+) : MandateRefusal(HttpStatus.CONFLICT, "BankDetailsUnopenable", "A mandate's bank details do not open for their member.") {
+    init {
+        cause?.let(::initCause)
+    }
+}

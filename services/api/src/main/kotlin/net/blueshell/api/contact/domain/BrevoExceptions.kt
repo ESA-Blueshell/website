@@ -58,12 +58,11 @@ class BrevoApiException(
  */
 class BrevoDuplicateContactException(
     val duplicates: Set<BrevoDuplicateIdentifier>,
-    val email: String?,
-    val phone: String?,
+    val userId: Long,
     cause: Throwable? = null,
 ) : ContactServiceException(
         "Brevo contact already exists (duplicate ${duplicates.joinToString(", ")}) " +
-            "but could not be resolved for email=$email phone=$phone",
+            "but could not be resolved for user $userId",
         cause,
     )
 

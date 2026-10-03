@@ -62,8 +62,7 @@ class MockContactAdapter :
                 isMember = data.isMember,
                 attributes = data.attributes.toMutableMap(),
             )
-        val safeEmail = sanitizeForLog(data.email)
-        log.info("Mock: Created contact id={} for {}", contactId, safeEmail)
+        log.info("Mock: Created contact id={} for user {}", contactId, data.userId)
         return contactId
     }
 
@@ -88,12 +87,10 @@ class MockContactAdapter :
     }
 
     override fun deleteContact(externalId: Long) {
-        val removed =
-            contacts.remove(externalId)
-                ?: throw ContactServiceException("Mock: Contact not found: $externalId")
+        contacts.remove(externalId)
+            ?: throw ContactServiceException("Mock: Contact not found: $externalId")
         memberships.keys.removeIf { (contactId, _) -> contactId == externalId }
-        val safeEmail = sanitizeForLog(removed.email)
-        log.info("Mock: Deleted contact id={} ({})", externalId, safeEmail)
+        log.info("Mock: Deleted contact id={}", externalId)
     }
 
     override fun createList(

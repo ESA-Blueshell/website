@@ -209,6 +209,7 @@ class MockContactAdapterTest {
         attributes: Map<String, Any> = mapOf("source" to "test"),
     ): ContactData =
         ContactData(
+            userId = 1,
             email = email,
             firstName = firstName,
             lastName = lastName,

@@ -66,7 +66,6 @@ class SmtpEmailClient(
 
         (mailSender as? JavaMailSenderImpl)?.password = password.current()
         mailSender.send(mime)
-        log.info("Sent email via SMTP to={} subject='{}' messageId={}", toEmail, subject, messageId)
         return messageId
     }
 

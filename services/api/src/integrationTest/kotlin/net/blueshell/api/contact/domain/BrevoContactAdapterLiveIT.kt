@@ -48,6 +48,7 @@ class BrevoContactAdapterLiveIT {
 
     private fun contactData(firstName: String = "LiveTest") =
         ContactData(
+            userId = 1,
             email = testEmail,
             firstName = firstName,
             lastName = "Integration",

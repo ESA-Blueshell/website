@@ -44,7 +44,18 @@ class SignupWriteUseCasesTest {
 
     private val mandates = mock<SignupMandates>()
 
-    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs, validator, mandates)
+    private val useCases =
+        SignupUseCases(
+            signupTokens,
+            users,
+            memberProfiles,
+            completion,
+            activation,
+            jobs,
+            validator,
+            net.blueshell.api.user.api.TestSealing.addresses,
+            mandates,
+        )
 
     private fun applicant(withProfile: Boolean): User {
         val user =
@@ -96,7 +107,11 @@ class SignupWriteUseCasesTest {
             save()
 
             assertThat(user.address).isNotNull()
-            assertThat(user.address!!.houseNumber).isEqualTo("5")
+            assertThat(
+                net.blueshell.api.user.api.TestSealing.addresses
+                    .open(user.address!!)
+                    ?.houseNumber,
+            ).isEqualTo("5")
             verify(users).update(user)
         }
 
@@ -107,7 +122,11 @@ class SignupWriteUseCasesTest {
 
             save(houseNumber = "7")
 
-            assertThat(user.address!!.houseNumber).isEqualTo("7")
+            assertThat(
+                net.blueshell.api.user.api.TestSealing.addresses
+                    .open(user.address!!)
+                    ?.houseNumber,
+            ).isEqualTo("7")
         }
     }
 

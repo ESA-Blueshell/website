@@ -120,6 +120,7 @@ export const anAddress = (over: Partial<AddressResponse> = {}): AddressResponse 
   zipCode: "7521 AA",
   city: "Enschede",
   country: "NL",
+  opened: true,
   ...over,
 })
 

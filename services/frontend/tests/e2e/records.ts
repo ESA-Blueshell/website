@@ -82,6 +82,7 @@ export const anAddress = (over: Partial<Wire<AddressResponse>> = {}): Wire<Addre
   zipCode: "1234AB",
   city: "Enschede",
   country: "NL",
+  opened: true,
   ...over,
 })
 

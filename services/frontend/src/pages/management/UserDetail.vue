@@ -271,6 +271,12 @@ watch(id, load, {immediate: true})
         </section>
         <section class="person__block">
           <h2>Address</h2>
+          <p
+            v-if="address.opened === false"
+            data-testid="user-address-unopened"
+          >
+            This address cannot be shown. Saving writes it anew.
+          </p>
           <address-form
             v-model="address"
             data-testid="user-address-form"

@@ -18,7 +18,6 @@ export {
   saveSignupDetails,
   saveUser,
   startSignup,
-  listAddresses,
   listDeletedUsers,
   listMemberships,
   listUsers,

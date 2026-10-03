@@ -240,6 +240,13 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     title: "Create a cohort's list (older job)",
     description: "Queued before creating a cohort's list got its own job; it now does the same.",
   },
+  "user.seal-addresses": {
+    title: "Seal addresses",
+    description:
+      "Seals every address still held in plaintext, soft-deleted ones included, under the " +
+      "address key in Vault and empties its plaintext columns. Run once after the sealing " +
+      "release; running it again seals nothing and is skipped.",
+  },
 }
 
 export const humanizeJobType = (jobType: string): string =>

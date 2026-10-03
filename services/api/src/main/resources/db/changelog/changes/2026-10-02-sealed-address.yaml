@@ -1,0 +1,14 @@
+# A member's address sealed through Vault Transit as one value. The plaintext columns stay until a
+# later release drops them, once the sealing job has emptied them and the previous release is gone.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-sealed-address.yaml
+      id: sealed-address
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: addresses
+            columns:
+              - column: {name: sealed_address, type: TEXT}
+      rollback:
+        - dropColumn: {tableName: addresses, columnName: sealed_address}

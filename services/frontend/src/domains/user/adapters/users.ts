@@ -11,7 +11,6 @@ import {
   deleteAddressById,
   deleteUserById,
   findAddressById,
-  findAllAddresses,
   findDeletedUsers,
   findMemberships,
   findUserById,
@@ -117,12 +116,6 @@ export async function listMemberships(): Promise<MembershipResponse[]> {
 /** Deletes the account, throwing on a refusal so the caller reports it rather than reading on. */
 export async function deleteUser(userId: number): Promise<void> {
   await deleteUserById({path: {userId}, throwOnError: true})
-}
-
-/** Every address on file, which the address manager pairs with the accounts above. */
-export async function listAddresses(): Promise<AddressResponse[]> {
-  const res = await findAllAddresses({throwOnError: true})
-  return res.data ?? []
 }
 
 /** Removes the address, throwing on a refusal so the caller reports it rather than reading on. */

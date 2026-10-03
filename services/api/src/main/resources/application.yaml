@@ -302,6 +302,12 @@ management:
       percentiles:
         http.server.requests: 0.5, 0.95, 0.99
 
+# Private details sealed through Vault Transit (api ADR-038). `vault` in production; the stand-in
+# keeps the same rule, a value opens only for its own member, without a Vault.
+privacy:
+  sealing: ${PRIVACY_SEALING:stand-in}
+  address-key: ${PRIVACY_ADDRESS_KEY:api-address}
+
 auth:
   issuer: ${AUTH_ISSUER:https://esa-blueshell.nl/api}
   transit:

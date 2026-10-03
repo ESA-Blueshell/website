@@ -9,6 +9,13 @@
           Here you can edit your address details. This address may be used for communication and billing purposes,
           so please make sure it is correct before saving.
         </p>
+        <p
+          v-if="address.opened === false"
+          class="mb-6"
+          data-testid="account-address-unopened"
+        >
+          Your address cannot be shown. Saving writes it anew.
+        </p>
         <address-form
           v-if="login"
           v-model="address"

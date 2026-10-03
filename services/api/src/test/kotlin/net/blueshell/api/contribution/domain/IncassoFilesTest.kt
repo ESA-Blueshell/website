@@ -1,5 +1,6 @@
 package net.blueshell.api.contribution.domain
 
+import net.blueshell.api.contribution.api.IncassoFileDownloaded
 import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.contribution.persistence.IncassoRun
@@ -17,7 +18,10 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.context.ApplicationEventPublisher
 import java.io.ByteArrayInputStream
 import java.time.Clock
 import java.time.Instant
@@ -35,7 +39,9 @@ class IncassoFilesTest {
     private val bank = BankProperties(incassantId = "NL00 ZZZ0 0000 0000 000")
     private val period = Entities.period(4)
 
-    private fun files(bank: BankProperties = this.bank) = IncassoFiles(runs, notifications, memberships, accounts, bank, clock)
+    private val published: ApplicationEventPublisher = mock()
+
+    private fun files(bank: BankProperties = this.bank) = IncassoFiles(runs, notifications, memberships, accounts, bank, clock, published)
 
     private fun run(
         date: LocalDate = LocalDate.of(2026, 11, 1),
@@ -94,9 +100,10 @@ class IncassoFilesTest {
     fun `fills one file with each member's full account under the reference they were told`() {
         given(listOf(Entities.user(id = 1, firstName = "Zoë", lastName = "Bakker")))
 
-        val file = files().file(11, 1)
+        val file = files().file(11, 1, 9)
 
         assertThat(file.name).isEqualTo("incassobatch-2026-11-01.xlsx")
+        verify(published).publishEvent(IncassoFileDownloaded(downloadedBy = 9, runId = 11, part = 1, parts = 1, members = 1))
         val sheet =
             ZipInputStream(ByteArrayInputStream(file.bytes)).use { zip ->
                 generateSequence { zip.nextEntry }.first { it.name == "xl/worksheets/sheet1.xml" }.let { zip.readBytes().decodeToString() }
@@ -108,27 +115,29 @@ class IncassoFilesTest {
     fun `splits more than a thousand collections over several files`() {
         given((1L..1001L).map { Entities.user(id = it, username = "u$it") })
 
-        assertThat(files().file(11, 2).name).isEqualTo("incassobatch-2026-11-01-2-of-2.xlsx")
-        assertThatThrownBy { files().file(11, 3) }.isInstanceOf(IncassoFilePartNotFound::class.java)
-        assertThatThrownBy { files().file(11, 0) }.isInstanceOf(IncassoFilePartNotFound::class.java)
+        assertThat(files().file(11, 2, 9).name).isEqualTo("incassobatch-2026-11-01-2-of-2.xlsx")
+        assertThatThrownBy { files().file(11, 3, 9) }.isInstanceOf(IncassoFilePartNotFound::class.java)
+        assertThatThrownBy { files().file(11, 0, 9) }.isInstanceOf(IncassoFilePartNotFound::class.java)
     }
 
     @Test
     fun `refuses a run in ING, past its date, without the association's details, or whose mandates changed`() {
         whenever(runs.findById(12)).thenReturn(Optional.empty())
-        assertThatThrownBy { files().file(12, 1) }.isInstanceOf(IncassoRunNotFound::class.java)
+        assertThatThrownBy { files().file(12, 1, 9) }.isInstanceOf(IncassoRunNotFound::class.java)
 
         whenever(runs.findById(11)).thenReturn(Optional.of(run(submittedAt = Instant.EPOCH)))
-        assertThatThrownBy { files().file(11, 1) }.isInstanceOf(IncassoRunSubmitted::class.java)
+        assertThatThrownBy { files().file(11, 1, 9) }.isInstanceOf(IncassoRunSubmitted::class.java)
         whenever(runs.findById(11)).thenReturn(Optional.of(run(date = LocalDate.of(2026, 10, 1))))
-        assertThatThrownBy { files().file(11, 1) }.isInstanceOf(CollectionDatePassed::class.java)
+        assertThatThrownBy { files().file(11, 1, 9) }.isInstanceOf(CollectionDatePassed::class.java)
         whenever(runs.findById(11)).thenReturn(Optional.of(run()))
-        assertThatThrownBy { files(BankProperties()).file(11, 1) }.isInstanceOf(IngDetailsMissing::class.java)
-        assertThatThrownBy { files(BankProperties(iban = "NL19", incassantId = bank.incassantId)).file(11, 1) }
+        assertThatThrownBy { files(BankProperties()).file(11, 1, 9) }.isInstanceOf(IngDetailsMissing::class.java)
+        assertThatThrownBy { files(BankProperties(iban = "NL19", incassantId = bank.incassantId)).file(11, 1, 9) }
             .isInstanceOf(IngDetailsMissing::class.java)
 
         given(listOf(Entities.user(id = 1), Entities.user(id = 2, username = "two")), changed = setOf(2))
-        assertThatThrownBy { files().file(11, 1) }
+        // A file that is refused was not downloaded, so nothing is logged for it.
+        verify(published, never()).publishEvent(any<IncassoFileDownloaded>())
+        assertThatThrownBy { files().file(11, 1, 9) }
             .isInstanceOf(MandateChanged::class.java)
             .extracting("facts")
             .isEqualTo(mapOf("userIds" to listOf(2L)))

@@ -1,6 +1,6 @@
 /**
- * A membership's mandate. Every answer masks the account to its last four; the full number
- * never comes back to the browser.
+ * A membership's mandate. Every answer masks the account; the full number comes back to the
+ * browser only for a board member's reveal.
  */
 import {
   findMandate,
@@ -10,6 +10,7 @@ import {
   type OwnMandateResponse,
   recordMandate,
   type RecordMandateRequest,
+  revealIban,
   setUpMandate,
   setUpOwnMandate,
 } from "@/services/api"
@@ -29,6 +30,15 @@ export const readMandate = (membershipId: number): Promise<MandateResponse | nul
 /** Records a paper mandate, or replaces the one before it. */
 export const saveMandate = (membershipId: number, body: RecordMandateRequest): Promise<Saved<MandateResponse> | Refused> =>
   refusable(recordMandate({path: {membershipId}, body}), "That mandate could not be recorded.")
+
+/**
+ * The membership's full IBAN, for a board member. The api writes each reveal to the member's
+ * security log; the caller keeps the answer in memory only, never in storage.
+ */
+export async function revealMandateIban(membershipId: number): Promise<Saved<string> | Refused> {
+  const answered = await refusable(revealIban({path: {membershipId}}), "The IBAN could not be shown.")
+  return answered.ok ? {ok: true, saved: answered.saved.iban} : answered
+}
 
 /** The reader's own mandate, masked, or nothing where it could not be read. */
 export const readOwnMandate = (): Promise<OwnMandateResponse | null> => readOr(findOwnMandate(), null)

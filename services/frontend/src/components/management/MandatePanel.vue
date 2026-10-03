@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 /* A membership's incasso standing and mandate, with the board's way to record a paper mandate or
-   replace one. The account number is only ever shown by its last four. */
+   replace one. The account number shows masked until a board member reveals it; the revealed
+   number lives in this component's memory alone, so it is gone when the panel closes. */
 import {computed, ref, watch} from "vue"
 import {maskedIban} from "@/domains/contribution"
-import {IncassoStanding, type MandateResponse, readMandate, saveMandate} from "@/domains/user"
+import {IncassoStanding, type MandateResponse, readMandate, revealMandateIban, saveMandate} from "@/domains/user"
 import {formatDate} from "@/utils/timestamps"
 
 defineOptions({name: "MandatePanel"})
@@ -24,11 +25,29 @@ const holder = ref("")
 const signedOn = ref(new Date().toISOString().slice(0, 10))
 const failure = ref<string | null>(null)
 const saving = ref(false)
+const revealed = ref<string | null>(null)
+const revealFailure = ref<string | null>(null)
+const revealing = ref(false)
 
 const standing = computed(() => (mandate.value ? WORDS[mandate.value.standing] : ""))
 
+const account = computed(() =>
+  mandate.value ? [revealed.value ?? maskedIban(mandate.value), mandate.value.accountHolder].filter(Boolean).join(", ") : "")
+
 const load = async () => {
+  revealed.value = null
+  revealFailure.value = null
   mandate.value = await readMandate(membershipId)
+}
+
+const reveal = async () => {
+  if (revealing.value) return
+  revealing.value = true
+  revealFailure.value = null
+  const answered = await revealMandateIban(membershipId)
+  revealing.value = false
+  if (answered.ok) revealed.value = answered.saved.replace(/(.{4})/g, "$1 ").trim()
+  else revealFailure.value = answered.reason
 }
 
 const save = async () => {
@@ -42,6 +61,7 @@ const save = async () => {
     return
   }
   mandate.value = answered.saved
+  revealed.value = null
   open.value = false
   iban.value = ""
   emit("changed")
@@ -68,7 +88,26 @@ watch(() => membershipId, load, {immediate: true})
     >
       <div>
         <dt>Account</dt>
-        <dd>{{ [maskedIban(mandate), mandate.accountHolder].filter(Boolean).join(", ") }}</dd>
+        <dd data-testid="mandate-account">
+          {{ account }}
+        </dd>
+        <button
+          class="mandate__action mandate__action--inline"
+          data-testid="mandate-reveal"
+          :disabled="revealing"
+          type="button"
+          @click="revealed ? (revealed = null) : reveal()"
+        >
+          {{ revealed ? "Hide the IBAN" : "Reveal the IBAN" }}
+        </button>
+        <p
+          v-if="revealFailure"
+          class="mandate__failure"
+          data-testid="mandate-reveal-failure"
+          role="alert"
+        >
+          {{ revealFailure }}
+        </p>
       </div>
       <div>
         <dt>Mandate</dt>
@@ -198,6 +237,12 @@ watch(() => membershipId, load, {immediate: true})
   font-size: 0.86rem;
   color: var(--color-chalk);
   cursor: pointer;
+}
+
+.mandate__action--inline {
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
 }
 
 .mandate__action--main {

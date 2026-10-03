@@ -4,7 +4,7 @@ import MandatePanel from "@/components/management/MandatePanel.vue"
 import {IncassoStanding} from "@/services/api"
 import {settle} from "../../helpers/testUtils"
 
-const api = vi.hoisted(() => ({findMandate: vi.fn(), recordMandate: vi.fn()}))
+const api = vi.hoisted(() => ({findMandate: vi.fn(), recordMandate: vi.fn(), revealIban: vi.fn()}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -49,7 +49,52 @@ describe("the mandate panel", () => {
     const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
     await settle()
 
-    expect(wrapper.get('[data-testid="mandate-facts"]').find("dd").text()).toBe("NL•• … ••00")
+    expect(wrapper.get('[data-testid="mandate-account"]').text()).toBe("NL•• … ••00")
+  })
+
+  it("reveals the full IBAN on asking, hides it again, and forgets it when the mandate is read anew", async () => {
+    api.findMandate.mockResolvedValue({status: 200, data: recorded})
+    api.revealIban.mockResolvedValue({status: 200, data: {iban: "NL91ABNA0417164300"}})
+    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    await settle()
+    const account = () => wrapper.get('[data-testid="mandate-account"]').text()
+    expect(account()).toBe("NL•• … ••00, Ann Vos")
+
+    await wrapper.get('[data-testid="mandate-reveal"]').trigger("click")
+    await settle()
+    expect(api.revealIban).toHaveBeenCalledWith({path: {membershipId: 9}})
+    expect(account()).toBe("NL91 ABNA 0417 1643 00, Ann Vos")
+    expect(wrapper.get('[data-testid="mandate-reveal"]').text()).toBe("Hide the IBAN")
+
+    await wrapper.get('[data-testid="mandate-reveal"]').trigger("click")
+    expect(account()).toBe("NL•• … ••00, Ann Vos")
+
+    await wrapper.get('[data-testid="mandate-reveal"]').trigger("click")
+    await settle()
+    await wrapper.setProps({membershipId: 10})
+    await settle()
+    expect(account()).not.toContain("0417")
+    expect(api.revealIban).toHaveBeenCalledTimes(2)
+  })
+
+  it("says why a reveal was refused, and keeps the account masked", async () => {
+    api.findMandate.mockResolvedValue({status: 200, data: recorded})
+    api.revealIban.mockResolvedValue({status: 503, error: {code: "SealingUnavailable"}})
+    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    await settle()
+
+    await wrapper.get('[data-testid="mandate-reveal"]').trigger("click")
+    await settle()
+
+    expect(wrapper.get('[data-testid="mandate-reveal-failure"]').text()).toContain("Try again in a moment")
+    expect(wrapper.get('[data-testid="mandate-account"]').text()).toBe("NL•• … ••00, Ann Vos")
+
+    for (const [code, words] of [["NoMandateRecorded", "No mandate is recorded"], ["BankDetailsUnopenable", "Record the mandate again"]] as const) {
+      api.revealIban.mockResolvedValue({status: 409, error: {code}})
+      await wrapper.get('[data-testid="mandate-reveal"]').trigger("click")
+      await settle()
+      expect(wrapper.get('[data-testid="mandate-reveal-failure"]').text()).toContain(words)
+    }
   })
 
   it("says why a mandate was refused, and cancels", async () => {

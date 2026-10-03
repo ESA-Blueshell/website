@@ -2796,6 +2796,10 @@ export type ReplyRequest = {
     replyTo?: string | null;
 };
 
+export type RevealedIbanResponse = {
+    iban: string;
+};
+
 export enum Role {
     ANONYMOUS = 'ANONYMOUS',
     VEGAN = 'VEGAN',
@@ -2994,7 +2998,9 @@ export enum SecurityEventKind {
     SIGNED_OUT_EVERYWHERE = 'SIGNED_OUT_EVERYWHERE',
     SIGNED_OUT_ELSEWHERE = 'SIGNED_OUT_ELSEWHERE',
     ROLES_CHANGED = 'ROLES_CHANGED',
-    BANK_DETAILS_CHANGED = 'BANK_DETAILS_CHANGED'
+    BANK_DETAILS_CHANGED = 'BANK_DETAILS_CHANGED',
+    IBAN_REVEALED = 'IBAN_REVEALED',
+    INCASSO_FILE_DOWNLOADED = 'INCASSO_FILE_DOWNLOADED'
 }
 
 export type SecurityEventPageResponse = {
@@ -13140,6 +13146,49 @@ export type RecordMandateResponses = {
 };
 
 export type RecordMandateResponse = RecordMandateResponses[keyof RecordMandateResponses];
+
+export type RevealIbanData = {
+    body?: never;
+    path: {
+        membershipId: number;
+    };
+    query?: never;
+    url: '/memberships/{membershipId}/mandate/reveal';
+};
+
+export type RevealIbanErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RevealIbanError = RevealIbanErrors[keyof RevealIbanErrors];
+
+export type RevealIbanResponses = {
+    /**
+     * OK
+     */
+    200: RevealedIbanResponse;
+};
+
+export type RevealIbanResponse = RevealIbanResponses[keyof RevealIbanResponses];
 
 export type ForwardAuthData = {
     body?: never;

@@ -32,6 +32,14 @@ logged and shown as none.
 **No list of people opens a sealed value.** Opening costs a Vault call and an audit line, so only
 one person's page, a reveal or ING's file opens one.
 
+**A full IBAN leaves the api in two ways only, and both are logged.** Every other response carries
+the masked IBAN. A board member can **reveal** one membership's full IBAN from its mandate panel:
+the answer is sent `no-store`, shown until the panel closes and kept nowhere. ING's batch file is
+the other. Each reveal is a security event on the member's log, naming who revealed which
+membership and when; each download of ING's file is one on the downloader's log, naming the run,
+the file and how many members it holds. Neither event holds an IBAN. With Vault out of reach a
+reveal is refused with a 503.
+
 **Phone number, date of birth and student number stay plaintext.** They are read on too many
 pages to be worth a Vault call each.
 
@@ -64,6 +72,11 @@ database backup still kept, so a restored backup still opens.
 - Sealing is per row, in one Vault call per value or batch. A list never pays for it.
 - The stand-in means a dev or test database holds values the stand-in opens; that is fine, since
   it holds no real member.
+- The context binds a value to its field and its member, not to one of that member's mandates. An
+  earlier sealed IBAN of the same member still opens for them, so write access to the database
+  could put a member's previous account back on their mandate. It cannot put anybody else's there.
+  Binding to the mandate reference too would close this, and would mean re-sealing when a pending
+  mandate moves onto its membership.
 
 ## Related
 

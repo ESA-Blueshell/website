@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
 
 @Schema(name = "StartIncassoRunRequest")
@@ -88,7 +89,8 @@ class IncassoRunController(
         @PathVariable runId: Long,
         @RequestParam(defaultValue = "1") part: Int,
     ): ResponseEntity<ByteArray> {
-        val file = files.file(runId, part)
+        val reader = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
+        val file = files.file(runId, part, reader)
         return ResponseEntity
             .ok()
             .contentType(MediaType.parseMediaType(XLSX))

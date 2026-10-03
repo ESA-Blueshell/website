@@ -20,6 +20,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
@@ -157,6 +158,10 @@ class SealedBankDetailsIT : UserTestSupport() {
             .perform(get("/incassoRuns/$runId/file").with(signedIn(board)))
             .andExpect(status().isServiceUnavailable)
             .andExpect(jsonPath("$.code").value("SealingUnavailable"))
+        mvc
+            .perform(post("/memberships/$annsMembership/mandate/reveal").with(signedIn(board)))
+            .andExpect(status().isServiceUnavailable)
+            .andExpect(jsonPath("$.code").value("SealingUnavailable"))
 
         assertThat(sealedOf(unrecorded.id!!).values).containsOnlyNulls()
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM pending_mandates WHERE user_id = ?", Int::class.java, applicant.id)).isZero()
@@ -182,5 +187,39 @@ class SealedBankDetailsIT : UserTestSupport() {
         mvc
             .perform(get("/memberships/$membershipId/mandate").with(signedIn(board)))
             .andExpect(jsonPath("$.accountHolder").value("Ann Vos"))
+    }
+
+    @Test
+    fun `a board member reveals a full IBAN and nobody below board can, and each reveal and download is logged without it`() {
+        val board = createUserWithRole(Role.BOARD)
+        val admin = createUserWithRole(Role.ADMIN)
+        val (ann, annsMembership) = onIncasso(board, "Ann Vos")
+        val runId = runFor(board, ann)
+
+        mvc
+            .perform(post("/memberships/$annsMembership/mandate/reveal").with(signedIn(board)))
+            .andExpect(status().isOk)
+            .andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(jsonPath("$.iban").value(iban))
+        mvc.perform(post("/memberships/$annsMembership/mandate/reveal").with(signedIn(ann))).andExpect(status().isForbidden)
+        mvc.perform(get("/incassoRuns/$runId/file").with(signedIn(board))).andExpect(status().isOk)
+
+        val annsLog =
+            mvc
+                .perform(get("/users/${ann.id}/security-events").with(signedIn(admin)))
+                .andExpect(jsonPath("$.events[0].kind").value("IBAN_REVEALED"))
+                .andExpect(jsonPath("$.events[0].actorName").value(board.fullName))
+                .andExpect(jsonPath("$.events[0].note").value("membership $annsMembership"))
+                .andExpect(jsonPath("$.events.length()").value(1))
+                .andReturn()
+                .response.contentAsString
+        val boardsLog =
+            mvc
+                .perform(get("/users/${board.id}/security-events").with(signedIn(admin)))
+                .andExpect(jsonPath("$.events[0].kind").value("INCASSO_FILE_DOWNLOADED"))
+                .andExpect(jsonPath("$.events[0].note").value("incasso run $runId, file 1 of 1, 1 member"))
+                .andReturn()
+                .response.contentAsString
+        assertThat(annsLog + boardsLog).doesNotContain(iban).doesNotContain("0417")
     }
 }

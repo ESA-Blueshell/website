@@ -563,10 +563,18 @@ member received. Neither quotes an amount without the reason that amount applies
 An IBAN as it shows without a reveal: its country code and its last two characters,
 written out as `NL•• … ••34`. It is all that the overview, the mandate panel, the incasso
 run page, a member's own account page and the incasso notification email show. Beside
-the sealed IBAN the site keeps only those four characters, so no row and no response
-holds more of the account.
+the sealed IBAN the site keeps only those four characters, so no row holds more of the
+account, and no response does except a **reveal** and ING's batch file.
 
 _Avoid_: last four, account ending in.
+
+### Reveal
+
+A board member opening one membership's full IBAN from its mandate panel. The number shows until
+the panel closes and is kept nowhere. Each reveal is written to the member's security log: who
+revealed which membership and when, never the IBAN.
+
+_Avoid_: unmask, show IBAN, decrypt.
 
 ### Bank details
 

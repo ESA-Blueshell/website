@@ -47,7 +47,7 @@ class IncassoRunControllerTest {
 
     @Test
     fun `answers ING's file as an attachment kept nowhere, and marks the run submitted by who said so`() {
-        whenever(files.file(11, 2)).thenReturn(IncassoFile("incassobatch-2026-11-01-2-of-2.xlsx", byteArrayOf(1, 2)))
+        whenever(files.file(11, 2, 9)).thenReturn(IncassoFile("incassobatch-2026-11-01-2-of-2.xlsx", byteArrayOf(1, 2)))
         whenever(currentUser.currentUser()).thenReturn(CurrentUser(id = 9, roles = emptySet(), addressId = null))
         whenever(runs.markSubmitted(11, 9)).thenReturn(view)
 

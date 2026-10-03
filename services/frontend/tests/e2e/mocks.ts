@@ -1018,6 +1018,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       return answer(route, "restoreDeletedUserById", {}, 204)
     }
+    if (method === "POST" && /^\/memberships\/\d+\/mandate\/reveal$/.test(path)) {
+      return answer(route, "revealIban", {iban: "NL91ABNA0417164300"})
+    }
     if (/^\/memberships\/\d+\/mandate$/.test(path)) {
       const membershipId = Number(path.split("/")[2])
       if (method === "PUT") {

@@ -2,6 +2,7 @@ package net.blueshell.api.user.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.security.StepUp
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.user.api.MaskedIban
@@ -9,10 +10,13 @@ import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.domain.Mandates
 import net.blueshell.api.user.domain.incassoStanding
 import net.blueshell.api.user.persistence.Membership
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -41,6 +45,20 @@ class MandateController(
         mandates
             .record(membershipId, request.iban, request.accountHolder, request.signedOn, currentUser.currentUser()?.id)
             .asMandateResponse()
+
+    /**
+     * The membership's full IBAN, for a board member who needs it. Every reveal is written to the
+     * member's security log, and the answer is never stored: not by the api, not by a cache.
+     */
+    @BoardOnly
+    @PostMapping("/memberships/{membershipId}/mandate/reveal")
+    fun revealIban(
+        @PathVariable membershipId: Long,
+    ): ResponseEntity<RevealedIbanResponse> =
+        ResponseEntity
+            .ok()
+            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .body(RevealedIbanResponse(mandates.reveal(membershipId, reader()).value))
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/users/me/mandate")

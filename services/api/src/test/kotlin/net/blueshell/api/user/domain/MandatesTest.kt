@@ -3,6 +3,7 @@ package net.blueshell.api.user.domain
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.testsupport.Entities
+import net.blueshell.api.user.api.IbanRevealed
 import net.blueshell.api.user.api.SignupMandates
 import net.blueshell.api.user.domain.sealing.LocalSealer
 import net.blueshell.api.user.domain.sealing.Sealed
@@ -274,5 +275,29 @@ class MandatesTest {
 
         assertThat(membership.mandate!!.reference).isEqualTo("BLUESHELL-12-20260920")
         assertThat(mandates.bankDetailsOf(membership.userId, membership.mandate!!).accountHolder).isEqualTo("Ann Vos")
+    }
+
+    @Test
+    fun `a board member reveals the full IBAN, sent no-store, and the reveal is published without it`() {
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+
+        val answer = controller.revealIban(12)
+
+        assertThat(answer.body!!.iban).isEqualTo("NL91ABNA0417164300")
+        assertThat(answer.headers.cacheControl).isEqualTo("no-store")
+        assertThat(answer.body.toString()).doesNotContain("0417").contains("****4300")
+        val revealed = IbanRevealed(userId = membership.userId, membershipId = 12, revealedBy = 3)
+        verify(published).publishEvent(revealed)
+        assertThat(revealed.toString()).doesNotContain("NL91")
+    }
+
+    @Test
+    fun `a reveal is refused where no mandate is recorded or the key is out of reach, and nothing is published`() {
+        assertThatThrownBy { controller.revealIban(12) }.isInstanceOf(NoMandateRecorded::class.java)
+
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+        doThrow(SealingUnavailable()).whenever(sealer).open(any(), any())
+        assertThatThrownBy { controller.revealIban(12) }.isInstanceOf(SealingUnavailable::class.java)
+        verify(published, times(0)).publishEvent(any<IbanRevealed>())
     }
 }

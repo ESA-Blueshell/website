@@ -77,6 +77,7 @@ export {highestRole, highestRoleLabel} from "./roles"
 export {
   IncassoStanding,
   readMandate,
+  revealMandateIban,
   readOwnMandate,
   saveMandate,
   setUpIncasso,

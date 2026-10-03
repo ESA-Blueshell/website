@@ -2,6 +2,7 @@ package net.blueshell.api.user.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.user.api.BankDetailsChanged
+import net.blueshell.api.user.api.IbanRevealed
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.persistence.IncassoMandate
@@ -193,7 +194,23 @@ class Mandates(
             ResponseStatusException(HttpStatus.NOT_FOUND, "Membership not found with id: $membershipId")
         }
 
-    /** The account holder as recorded, which a response may carry, or null where it cannot be opened now. The IBAN it never carries. */
+    /**
+     * The membership's full IBAN, for a board member who asked for it. The reveal is written to the
+     * member's security log before the IBAN is answered, so none goes out unrecorded.
+     */
+    @Transactional
+    fun reveal(
+        membershipId: Long,
+        revealedBy: Long,
+    ): Iban {
+        val membership = find(membershipId)
+        val mandate = membership.mandate ?: throw NoMandateRecorded()
+        val iban = bankDetailsOf(membership.userId, mandate).iban
+        events.publishEvent(IbanRevealed(membership.userId, membershipId, revealedBy))
+        return iban
+    }
+
+    /** The account holder as recorded, or null where it cannot be opened now. Only a reveal carries the IBAN. */
     fun accountHolderOf(
         userId: Long,
         mandate: IncassoMandate,

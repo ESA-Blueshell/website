@@ -16,7 +16,9 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   InvalidIban: () => "That is not a valid IBAN. Check it against the bank card or statement.",
   MandateSignedInFuture: () => "A mandate is signed today or before, not after.",
   AccountHolderMissing: () => "Say whose account it is.",
-  SealingUnavailable: () => "Private details cannot be saved right now, and nothing was changed. Try again in a moment.",
+  NoMandateRecorded: () => "No mandate is recorded on this membership.",
+  BankDetailsUnopenable: () => "These bank details were changed outside the site and no longer open. Record the mandate again.",
+  SealingUnavailable: () => "Private details cannot be saved or shown right now, and nothing was changed. Try again in a moment.",
 }
 
 export const {refusable, accepted, reasonFor} = refusalReader(sentences)

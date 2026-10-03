@@ -21,6 +21,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.KArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
@@ -34,6 +35,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
+import java.util.Optional
 
 class EventSignUpUseCasesTest {
     private val eventSignUpService = mock<EventSignUpService>()
@@ -77,12 +79,13 @@ class EventSignUpUseCasesTest {
     inner class CreateEventSignUp {
         @Test
         fun `creates sign up and overrides user id with principal id`() {
+            whenever(currentUser.currentUser()).thenReturn(CurrentUser(id = 42L, roles = setOf(Role.MEMBER), addressId = null))
             val eventRef = Entities.event()
             val questionRef = Entities.question()
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             whenever(questionService.getReferenceById(200L)).thenReturn(questionRef)
             val captured = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
+            whenever(eventSignUpService.create(captured.capture(), eq(true))).thenAnswer { captured.firstValue }
 
             val result =
                 useCases.create(
@@ -141,7 +144,7 @@ class EventSignUpUseCasesTest {
             val eventRef = Entities.event()
             whenever(eventRepository.getReferenceById(101L)).thenReturn(eventRef)
             val captured = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
+            whenever(eventSignUpService.create(captured.capture(), eq(true))).thenAnswer { captured.firstValue }
 
             val result =
                 useCases.create(
@@ -173,7 +176,7 @@ class EventSignUpUseCasesTest {
             val eventRef = Entities.event()
             whenever(eventRepository.getReferenceById(102L)).thenReturn(eventRef)
             val captured = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
+            whenever(eventSignUpService.create(captured.capture(), eq(true))).thenAnswer { captured.firstValue }
 
             val result =
                 useCases.create(
@@ -214,6 +217,208 @@ class EventSignUpUseCasesTest {
             }.isInstanceOfSatisfying(ResponseStatusException::class.java) { ex ->
                 assertThat(ex.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
             }
+        }
+    }
+
+    @Nested
+    inner class AddForSomebodyElse {
+        private fun event(
+            eventId: Long = 100L,
+            membersOnly: Boolean = false,
+        ): KArgumentCaptor<EventSignUp> {
+            val event = Entities.event(id = eventId, membersOnly = membersOnly)
+            whenever(eventRepository.findById(eventId)).thenReturn(Optional.of(event))
+            whenever(eventRepository.getReferenceById(eventId)).thenReturn(event)
+            val stored = argumentCaptor<EventSignUp>()
+            whenever(eventSignUpService.create(stored.capture(), eq(false))).thenAnswer { stored.firstValue.also { it.id = 77L } }
+            return stored
+        }
+
+        @Test
+        fun `a board member adds a sign-up for another account`() {
+            event()
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.MEMBER))
+
+            val added = useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 1L)
+
+            assertThat(added.userId).isEqualTo(9L)
+            assertThat(added.guest).isNull()
+        }
+
+        @Test
+        fun `a board member adds a sign-up for a guest`() {
+            event()
+
+            val added = useCases.create(EventSignUpData(eventId = 100L, guest = gordon), principalId = 1L)
+
+            assertThat(added.userId).isNull()
+            assertThat(added.guest?.name).isEqualTo("Guest Gordon")
+        }
+
+        @Test
+        fun `the deadline and the limit do not bind a sign-up the board adds`() {
+            event()
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.MEMBER))
+
+            useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 1L)
+
+            val validated = argumentCaptor<EventSignUpData>()
+            verify(validator).validate(validated.capture())
+            assertThat(validated.firstValue.boardEdit).isTrue()
+        }
+
+        @Test
+        fun `a sign-up the validator refuses is not added`() {
+            event()
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.MEMBER))
+            whenever(validator.validate(any<EventSignUpData>()))
+                .thenReturn(setOf(mock<ConstraintViolation<EventSignUpData>>()))
+
+            assertThatThrownBy { useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 1L) }
+                .isInstanceOf(ConstraintViolationException::class.java)
+
+            verify(eventSignUpService, never()).create(any(), any())
+        }
+
+        @Test
+        fun `refuses an account that already has a sign-up for the event`() {
+            event()
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.MEMBER))
+            whenever(eventSignUpService.existsByUserIdAndEventId(9L, 100L)).thenReturn(true)
+
+            assertThatThrownBy { useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 1L) }
+                .isInstanceOf(ResponseStatusException::class.java)
+                .extracting { (it as ResponseStatusException).statusCode }
+                .isEqualTo(HttpStatus.CONFLICT)
+        }
+
+        @Test
+        fun `refuses a non-member account on a members-only event`() {
+            event(membersOnly = true)
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.GUEST))
+
+            assertThatThrownBy { useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 1L) }
+                .isInstanceOf(ResponseStatusException::class.java)
+                .extracting { (it as ResponseStatusException).statusCode }
+                .isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT)
+        }
+
+        @Test
+        fun `refuses a guest on a members-only event`() {
+            event(membersOnly = true)
+
+            assertThatThrownBy { useCases.create(EventSignUpData(eventId = 100L, guest = gordon), principalId = 1L) }
+                .isInstanceOf(ResponseStatusException::class.java)
+                .extracting { (it as ResponseStatusException).statusCode }
+                .isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT)
+        }
+
+        @Test
+        fun `lets an inherited membership onto a members-only event`() {
+            event(membersOnly = true)
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.BOARD))
+
+            val added = useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 1L)
+
+            assertThat(added.userId).isEqualTo(9L)
+        }
+
+        @Test
+        fun `refuses a body that names both an account and a guest`() {
+            event()
+
+            assertThatThrownBy {
+                useCases.create(EventSignUpData(eventId = 100L, userId = 9L, guest = gordon), principalId = 1L)
+            }.isInstanceOf(ResponseStatusException::class.java)
+                .extracting { (it as ResponseStatusException).statusCode }
+                .isEqualTo(HttpStatus.BAD_REQUEST)
+        }
+
+        @Test
+        fun `an event that is not there is not found`() {
+            whenever(eventRepository.findById(404L)).thenReturn(Optional.empty())
+
+            assertThatThrownBy { useCases.create(EventSignUpData(eventId = 404L, userId = 9L), principalId = 1L) }
+                .isInstanceOf(ResponseStatusException::class.java)
+                .extracting { (it as ResponseStatusException).statusCode }
+                .isEqualTo(HttpStatus.NOT_FOUND)
+        }
+
+        @Test
+        fun `a board member who names their own account signs up themselves`() {
+            val eventRef = Entities.event(id = 100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
+            val stored = argumentCaptor<EventSignUp>()
+            whenever(eventSignUpService.create(stored.capture(), eq(true))).thenAnswer { stored.firstValue }
+
+            val own = useCases.create(EventSignUpData(eventId = 100L, userId = 1L), principalId = 1L)
+
+            assertThat(own.userId).isEqualTo(1L)
+            val validated = argumentCaptor<EventSignUpData>()
+            verify(validator).validate(validated.capture())
+            assertThat(validated.firstValue.boardEdit).isFalse()
+        }
+
+        @Test
+        fun `a member who names another account signs up themselves, bound by the deadline and the limit`() {
+            whenever(currentUser.currentUser()).thenReturn(CurrentUser(id = 42L, roles = setOf(Role.MEMBER), addressId = null))
+            val eventRef = Entities.event(id = 100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
+            val stored = argumentCaptor<EventSignUp>()
+            whenever(eventSignUpService.create(stored.capture(), eq(true))).thenAnswer { stored.firstValue }
+
+            val own = useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 42L)
+
+            assertThat(own.userId).isEqualTo(42L)
+            val validated = argumentCaptor<EventSignUpData>()
+            verify(validator).validate(validated.capture())
+            assertThat(validated.firstValue.boardEdit).isFalse()
+        }
+
+        @Test
+        fun `nobody is emailed unless the board asks for it`() {
+            event()
+
+            useCases.create(EventSignUpData(eventId = 100L, guest = gordon), principalId = 1L)
+
+            verifyNoInteractions(jobs)
+        }
+
+        @Test
+        fun `tells a guest the board added them when asked to, with their access link`() {
+            event()
+
+            useCases.create(EventSignUpData(eventId = 100L, guest = gordon), principalId = 1L, notify = true)
+
+            verify(jobs).runAsync(
+                eq(EventJobs.EventSignUpAdded),
+                eq(EventJobs.EventSignUpAddedPayload(eventSignUpId = 77L, guestAccessToken = "GORDON-TOKEN")),
+                eq(JobTrigger.SITE_ACTION),
+                anyOrNull(),
+            )
+        }
+
+        @Test
+        fun `an account the board adds is not emailed, even asking for it`() {
+            event()
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.MEMBER))
+
+            useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 1L, notify = true)
+
+            verifyNoInteractions(jobs)
+        }
+
+        @Test
+        fun `a guest signing up themselves gets the confirmation, not the board's email, even asking for it`() {
+            whenever(currentUser.currentUser()).thenReturn(null)
+            val eventRef = Entities.event(id = 100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
+            val stored = argumentCaptor<EventSignUp>()
+            whenever(eventSignUpService.create(stored.capture(), eq(true))).thenAnswer { stored.firstValue }
+
+            useCases.create(EventSignUpData(eventId = 100L, guest = gordon), principalId = null, notify = true)
+
+            verifyNoInteractions(jobs)
         }
     }
 
@@ -784,6 +989,15 @@ class EventSignUpUseCasesTest {
             verify(eventSignUpService, never()).deleteById(eq(36L))
         }
     }
+
+    private val gordon =
+        GuestData(
+            name = "Guest Gordon",
+            email = "gordon@example.com",
+            discord = "gordon#0001",
+            phoneNumber = "0611111111",
+            accessToken = "GORDON-TOKEN",
+        )
 
     private fun emptySignUp(): EventSignUp = EventSignUp(event = Entities.event())
 }

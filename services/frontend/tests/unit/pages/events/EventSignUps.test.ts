@@ -9,6 +9,7 @@ const renderingStubs = {
   RouterLink: RouterLinkStub,
   RemoveSignUpDialog: {name: "RemoveSignUpDialog", props: ["modelValue", "personName"], template: "<div />"},
   EditSignUpDialog: {name: "EditSignUpDialog", props: ["modelValue", "event", "signUp"], template: "<div />"},
+  AddSignUpDialog: {name: "AddSignUpDialog", props: ["modelValue", "event"], template: "<div />"},
 }
 
 const {
@@ -468,6 +469,34 @@ describe("EventSignUps page", () => {
     const remove = wrapper.findComponent({name: "RemoveSignUpDialog"})
     expect(remove.props("modelValue")).toBe(true)
     expect(remove.props("personName")).toBe("Alice")
+  })
+
+  it("opens the add dialog for the event, and reads the roster back once somebody is added", async () => {
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+    const add = wrapper.findComponent({name: "AddSignUpDialog"})
+    expect(add.props("modelValue")).toBe(false)
+
+    await wrapper.get('[data-testid="signups-add-btn"]').trigger("click")
+    expect(add.props("modelValue")).toBe(true)
+    expect(add.props("event")).toMatchObject({id: 55})
+
+    await add.vm.$emit("added", {id: 13})
+    await settle()
+    expect(mockListEventSignUps).toHaveBeenCalledTimes(2)
+
+    await add.vm.$emit("update:modelValue", false)
+    expect(add.props("modelValue")).toBe(false)
+  })
+
+  it("offers no add to a reader who is not board", async () => {
+    mockGetters.isBoard = false
+
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+
+    expect(wrapper.find('[data-testid="signups-add-btn"]').exists()).toBe(false)
+    expect(wrapper.findComponent({name: "AddSignUpDialog"}).exists()).toBe(false)
   })
 
   it("closes a dialog the reader dismissed", async () => {

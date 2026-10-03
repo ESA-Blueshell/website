@@ -21,7 +21,20 @@ object EventJobs {
         override fun dedupKey(payload: EventSignUpRemovedPayload): String? = null
     }
 
+    /** Tells a guest a board member added them to an event, which the confirmation's wording does not fit. */
+    object EventSignUpAdded : JobDefinition<EventSignUpAddedPayload> {
+        override val type: String = "email.event-signup-added"
+        override val payloadType: Class<EventSignUpAddedPayload> = EventSignUpAddedPayload::class.java
+
+        override fun dedupKey(payload: EventSignUpAddedPayload): String? = null
+    }
+
     data class EventSignupPayload(
+        val eventSignUpId: Long,
+        val guestAccessToken: String,
+    )
+
+    data class EventSignUpAddedPayload(
         val eventSignUpId: Long,
         val guestAccessToken: String,
     )

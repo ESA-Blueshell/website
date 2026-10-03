@@ -4,6 +4,7 @@ import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.PickerHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import net.blueshell.systemtests.pollFor
@@ -247,6 +248,44 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
 
         pollFor("guest is gone from the roster") {
             page.getByText(seeded.guestName, Page.GetByTextOptions().setExact(true)).count() == 0
+        }
+    }
+
+    @Test
+    fun `board adds an account to an event that has ended`() {
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val walkIn = TestHelper.registerActivateAndPromote("MEMBER")
+        val eventId =
+            TestHelper.createEvent(
+                committeeId = TestHelper.createCommittee(name = "Ended Event Committee ${TestHelper.uniqueSuffix()}"),
+                title = "Ended Event ${TestHelper.uniqueSuffix()}",
+                startTime = Instant.now().minusSeconds(3 * 3600),
+                endTime = Instant.now().minusSeconds(2 * 3600),
+                approved = true,
+                signUp = true,
+            )
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/events/signups/$eventId")
+        page.getByTestId("signups-add-btn").click()
+        pollFor("add dialog open") { page.getByTestId("add-signup-dialog").count() > 0 }
+
+        PickerHelper.pickOnlyMatch(page, "add-signup-account", walkIn.email)
+        // Awaiting the request says whether the dialog refused the add, which a roster poll alone
+        // reports as a timeout with no reason.
+        page.waitForRequest(
+            Predicate { request -> request.method() == "POST" && request.url().contains("/events/$eventId/signups") },
+        ) {
+            page.getByTestId("add-signup-confirm-btn").click()
+        }
+
+        pollFor("the added account on the roster of event=$eventId") {
+            page
+                .locator(".attendees-table tbody tr")
+                .filter(Locator.FilterOptions().setHasText(walkIn.email))
+                .count() == 1
         }
     }
 

@@ -34,13 +34,17 @@ class EventSignUpService
         fun findById(id: Long): EventSignUp =
             repository.findById(id).orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "EventSignUp not found with id: $id") }
 
+        /** [confirmToGuest] is off for a sign-up the board adds, which mails only where the board asks. */
         @Transactional
-        fun create(entity: EventSignUp): EventSignUp {
+        fun create(
+            entity: EventSignUp,
+            confirmToGuest: Boolean = true,
+        ): EventSignUp {
             val saved = written(entity)
             trackedEvents.publish { actor ->
                 EventSignUpCreated(
                     saved.id!!,
-                    guestAccessToken = saved.guest?.accessTokenRaw,
+                    guestAccessToken = saved.guest?.accessTokenRaw.takeIf { confirmToGuest },
                     actor = actor,
                 )
             }

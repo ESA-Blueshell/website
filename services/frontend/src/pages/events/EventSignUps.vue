@@ -11,6 +11,7 @@ import NumberBand from "@/domains/association/island/NumberBand.vue"
 import type {Figure} from "@/domains/association"
 import QuestionResponses from "@/domains/events/island/QuestionResponses.vue"
 import SignUpRoster, {type RosterRow} from "@/domains/events/island/SignUpRoster.vue"
+import AddSignUpDialog from "@/components/common/modals/AddSignUpDialog.vue"
 import EditSignUpDialog from "@/components/common/modals/EditSignUpDialog.vue"
 import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vue"
 import {useTableSort} from "@/composables/useTableSort"
@@ -98,6 +99,8 @@ async function onSignUpSaved(): Promise<void> {
   signUpToEdit.value = null
   await loadSignUps()
 }
+
+const addDialogOpen = ref(false)
 
 function askToRemove(row: RespondentRow): void {
   signUpToRemove.value = row
@@ -227,12 +230,21 @@ function exportCsv(): void {
           count-said="people signed up"
           heading="Attendees"
         >
-          <form-control
-            v-model="search"
-            class="signups-search"
-            data-testid="signups-search"
-            label="Search attendees"
-          />
+          <div class="signups-tools">
+            <form-control
+              v-model="search"
+              class="signups-search"
+              data-testid="signups-search"
+              label="Search attendees"
+            />
+            <cut-button
+              v-if="mayManageSignUps && event"
+              testid="signups-add-btn"
+              @click="addDialogOpen = true"
+            >
+              Add sign-up
+            </cut-button>
+          </div>
         </band-head>
 
         <sign-up-roster
@@ -279,6 +291,13 @@ function exportCsv(): void {
         :event="event"
         :sign-up="signUpToEdit"
         @saved="onSignUpSaved"
+      />
+
+      <add-sign-up-dialog
+        v-if="mayManageSignUps && event"
+        v-model="addDialogOpen"
+        :event="event"
+        @added="loadSignUps"
       />
 
       <remove-sign-up-dialog
@@ -330,6 +349,14 @@ function exportCsv(): void {
 .signups-head__actions {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.signups-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
   gap: 0.6rem;
 }
 

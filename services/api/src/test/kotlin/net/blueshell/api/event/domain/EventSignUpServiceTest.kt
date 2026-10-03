@@ -4,6 +4,8 @@ import jakarta.persistence.EntityManager
 import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.EventSignUpRepository
+import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.tracking.Actor
@@ -25,9 +27,10 @@ import java.util.Optional
 class EventSignUpServiceTest {
     private val repository = mock<EventSignUpRepository>()
     private val published = mock<ApplicationEventPublisher>()
+    private val afterCommit = mock<AfterCommitEventPublisher>()
     private val actors = mock<ActorProvider> { on { currentOrSystem() } doReturn Actor.system() }
     private val service =
-        EventSignUpService(repository, TrackedEventPublisher(mock(), actors, published), mock<CurrentUserProvider>()).apply {
+        EventSignUpService(repository, TrackedEventPublisher(afterCommit, actors, published), mock<CurrentUserProvider>()).apply {
             // The entity manager is injected by field; create refreshes the saved row through it.
             EventSignUpService::class.java
                 .getDeclaredField("em")
@@ -55,6 +58,38 @@ class EventSignUpServiceTest {
         service.deleteById(5)
 
         assertThat(countsMoved()).containsExactly(100L, 100L, 100L)
+    }
+
+    private fun guestSignUp() =
+        EventSignUp(event).apply {
+            id = 6
+            guest = Guest.withRawToken(name = "Guest Gordon", discord = "gordon#0001", email = "gordon@example.com", accessToken = "TOKEN")
+        }
+
+    private fun created() =
+        argumentCaptor<Any>().let { sent ->
+            verify(afterCommit).publish(sent.capture())
+            sent.firstValue as EventSignUpCreated
+        }
+
+    @Test
+    fun `a guest's own sign-up carries their access link to the confirmation`() {
+        val signUp = guestSignUp()
+        whenever(repository.saveAndFlush(signUp)).thenReturn(signUp)
+
+        service.create(signUp)
+
+        assertThat(created().guestAccessToken).isEqualTo("TOKEN")
+    }
+
+    @Test
+    fun `a guest sign-up the board adds asks for no confirmation`() {
+        val signUp = guestSignUp()
+        whenever(repository.saveAndFlush(signUp)).thenReturn(signUp)
+
+        service.create(signUp, confirmToGuest = false)
+
+        assertThat(created().guestAccessToken).isNull()
     }
 
     @Test

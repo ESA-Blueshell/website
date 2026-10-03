@@ -21,6 +21,7 @@ export {useEventReader} from "./island/useEventReader"
 export {downloadIcs, pageUrlOf} from "./island/eventCalendar"
 export {useAnnouncePrompt} from "./island/announcing"
 export {
+  addSignUpAsBoard,
   changeOwnSignUp,
   listEventSignUps,
   listOwnSignUps,

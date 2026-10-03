@@ -6,6 +6,10 @@
 import {
   apiUrl,
   archiveCommittee,
+  type BrevoPlace,
+  type BrevoPlaceRequest,
+  type DiscordPlace,
+  type DiscordPlaceRequest,
   type CommitteeOwnPageRequest,
   type CommitteePageResponse,
   type CommitteeResponse,
@@ -13,10 +17,14 @@ import {
   type CreateCommitteeRequest,
   deleteCommitteeById,
   FileType,
+  findCommitteeBrevo,
+  findCommitteeDiscord,
   findCommitteePage,
   findCommittees,
   findCommitteesByUserId,
   type Image,
+  setCommitteeBrevo,
+  setCommitteeDiscord,
   setGameOrganisers,
   updateCommittee,
   type UpdateCommitteeRequest,
@@ -28,6 +36,7 @@ import {
 import type {Picture} from "@/components/island/pictures"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
+import {readOr} from "@/utils/answers"
 import {accepted, refusable} from "../refusals"
 
 /** A committee as every reader gets it; its members only where the board or its own members read it. */
@@ -123,3 +132,19 @@ export async function storeCommitteeIcon(file: File, committeeId: number | null)
 /** Sets which committees organise events for a game, from the game's own form. */
 export const saveGameOrganisers = (code: string, committeeIds: number[]): Promise<{ok: true} | Refused> =>
   accepted(setGameOrganisers({path: {game: code}, body: {committeeIds}}), "The committees could not be saved.")
+
+export type {BrevoPlace, BrevoPlaceRequest, DiscordPlace, DiscordPlaceRequest}
+
+/** The role a committee's seats hold and the channels it opens; nothing where it could not be read. */
+export const readCommitteeDiscord = (id: number): Promise<DiscordPlace | null> => readOr(findCommitteeDiscord({path: {id}}), null)
+
+/** Links or makes the committee's role, and opens, closes or makes its channels. */
+export const saveCommitteeDiscord = (id: number, body: DiscordPlaceRequest): Promise<Saved<DiscordPlace> | Refused> =>
+  refusable(setCommitteeDiscord({path: {id}, body}), "Discord could not be set for the committee.")
+
+/** The list a committee's seats are on; nothing where it could not be read. */
+export const readCommitteeBrevo = (id: number): Promise<BrevoPlace | null> => readOr(findCommitteeBrevo({path: {id}}), null)
+
+/** Links or makes the committee's list, where it has none. */
+export const saveCommitteeBrevo = (id: number, body: BrevoPlaceRequest): Promise<Saved<BrevoPlace> | Refused> =>
+  refusable(setCommitteeBrevo({path: {id}, body}), "Brevo could not be set for the committee.")

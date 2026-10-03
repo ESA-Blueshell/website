@@ -1,0 +1,47 @@
+# The catch-all mailbox as the site keeps it: every message once, by its Message-ID, with what it
+# answers and who sent it where that is known, and how far the board got with it. The cursor is
+# the last UID read, so the mailbox is read without anything being deleted from it.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-inbox-message.yaml
+      id: inbox-message
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: inbox_messages
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_inbox_messages, nullable: false}
+              - column: {name: message_id, type: VARCHAR(512), constraints: {nullable: false, unique: true, uniqueConstraintName: uk_inbox_messages_message_id}}
+              - column: {name: in_reply_to, type: VARCHAR(512)}
+              - column: {name: thread_ids, type: TEXT}
+              - column: {name: from_address, type: VARCHAR(320), constraints: {nullable: false}}
+              - column: {name: from_name, type: VARCHAR(255)}
+              - column: {name: to_address, type: VARCHAR(320)}
+              - column: {name: subject, type: VARCHAR(998), constraints: {nullable: false}}
+              - column: {name: body_text, type: LONGTEXT}
+              - column: {name: body_html, type: LONGTEXT}
+              - column: {name: received_at, type: DATETIME(6), constraints: {nullable: false}}
+              - column: {name: automatic, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+              - column: {name: state, type: VARCHAR(16), constraints: {nullable: false}}
+              - column: {name: handled_by, type: BIGINT}
+              - column: {name: handled_at, type: DATETIME(6)}
+              - column: {name: answers_email_id, type: BIGINT}
+              - column: {name: sender_user_id, type: BIGINT}
+        - createIndex:
+            tableName: inbox_messages
+            indexName: idx_inbox_messages_received_at
+            columns:
+              - column: {name: received_at}
+        - createTable:
+            tableName: inbox_cursor
+            columns:
+              - column: {name: folder, type: VARCHAR(255), constraints: {primaryKey: true, primaryKeyName: pk_inbox_cursor, nullable: false}}
+              - column: {name: uid_validity, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: last_uid, type: BIGINT, constraints: {nullable: false}}
+      rollback:
+        - dropTable: {tableName: inbox_cursor}
+        - dropTable: {tableName: inbox_messages}

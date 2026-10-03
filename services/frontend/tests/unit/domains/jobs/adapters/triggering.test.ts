@@ -1,12 +1,13 @@
 import {describe, expect, it, vi} from "vitest"
-import {enqueueJob, listJobTypes} from "@/domains/jobs/adapters/jobs"
-import {enqueue, jobTypes} from "@/services/api"
+import {enqueueJob, listJobTypes, loadJob} from "@/domains/jobs/adapters/jobs"
+import {enqueue, findJobById, jobTypes} from "@/services/api"
 import {aJob} from "../../../helpers/apiFixtures"
 import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   enqueue: vi.fn(),
+  findJobById: vi.fn(),
   jobTypes: vi.fn(),
 }))
 
@@ -32,7 +33,7 @@ describe("enqueueJob", () => {
     expect(enqueue).toHaveBeenCalledWith({body: {jobType: "contact.sync", payload: {userId: 7}}})
   })
 
-  // Pressing Trigger and being told nothing is indistinguishable from pressing nothing at all.
+  // Pressing Queue the job and being told nothing is indistinguishable from pressing nothing at all.
   it("answers with the api's own words when it says no", async () => {
     vi.mocked(enqueue).mockResolvedValue(refusal(enqueue, {detail: "Unknown job type."}))
 
@@ -44,5 +45,20 @@ describe("enqueueJob", () => {
 
     await expect(enqueueJob("contact.sync", {}))
       .resolves.toEqual({ok: false, reason: "That job could not be triggered."})
+  })
+})
+
+describe("loadJob", () => {
+  it("reads one job by its id", async () => {
+    vi.mocked(findJobById).mockResolvedValue(answer(findJobById, aJob({id: 9})))
+
+    await expect(loadJob(9)).resolves.toMatchObject({id: 9})
+    expect(findJobById).toHaveBeenCalledWith({path: {id: 9}})
+  })
+
+  it("answers nothing for a job it could not read", async () => {
+    vi.mocked(findJobById).mockResolvedValue(refusal(findJobById, {detail: "Not found."}))
+
+    await expect(loadJob(9)).resolves.toBeNull()
   })
 })

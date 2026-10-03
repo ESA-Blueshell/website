@@ -15,6 +15,10 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "jobs",
     allowedDependencies = [
+        // Dead jobs raise an alert.
+        "alerts :: api",
+        // A job's unexplained failure is recorded as a fault.
+        "exceptions :: api",
         // Open kernel: the job manager is @AdminOnly, its stats @BoardOnly.
         "security",
         // Open kernel.

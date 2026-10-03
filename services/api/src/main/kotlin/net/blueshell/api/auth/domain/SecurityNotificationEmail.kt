@@ -86,28 +86,37 @@ private fun whenAndWhere(event: SecurityEvent): String {
     return WHEN.format(event.occurredAt) + browser?.let { " from $it" }.orEmpty()
 }
 
+/** What the notification says of each kind; a kind not here is told by who made the change. */
+private val SENTENCES: Map<SecurityEventKind, String> =
+    mapOf(
+        SecurityEventKind.NEW_BROWSER to "Your account was signed in to from a browser it has not used before",
+        SecurityEventKind.SIGN_IN_REUSED to "An old copy of your sign-in cookie was used, so that sign-in was ended",
+        SecurityEventKind.SIGN_IN_BROWSER_CHANGED to "Your sign-in turned up in another browser, so it was ended",
+        SecurityEventKind.CODE_LIMIT_REACHED to
+            "Ten wrong two-factor codes were entered for your account. Whoever entered them knows your password",
+        SecurityEventKind.PASSWORD_RESET to "Your password was reset through the emailed link",
+        SecurityEventKind.PASSWORD_CHANGED to "Your password was changed",
+        SecurityEventKind.EMAIL_CHANGE_REQUESTED to "Somebody asked to move your account to another email address",
+        SecurityEventKind.EMAIL_CHANGED_BY_BOARD to "The board changed the email address of your account",
+        SecurityEventKind.TWO_FACTOR_ON to "Two-factor authentication was turned on",
+        SecurityEventKind.TWO_FACTOR_OFF to "Two-factor authentication was turned off",
+        SecurityEventKind.TWO_FACTOR_REPLACED to "Your authenticator app was replaced, with new backup codes",
+        SecurityEventKind.BACKUP_CODES_REGENERATED to "New backup codes were made, and the old ones stopped working",
+        SecurityEventKind.BACKUP_CODE_USED to "A backup code was used to sign in",
+        SecurityEventKind.TRUSTED_BROWSER_ADDED to "A browser was trusted to skip the code at sign-in",
+        SecurityEventKind.TWO_FACTOR_RESET to "An admin reset your two-factor authentication and signed you out everywhere",
+        SecurityEventKind.ACCOUNT_UNLOCKED to "An admin unlocked your account",
+    )
+
 private fun sentence(event: SecurityEvent): String {
-    val byOther = event.actorKind != SecurityActorKind.PERSON || event.actor?.id != event.subject.id
-    return when (event.kind) {
-        SecurityEventKind.NEW_BROWSER -> "Your account was signed in to from a browser it has not used before"
-        SecurityEventKind.SIGN_IN_REUSED -> "An old copy of your sign-in cookie was used, so that sign-in was ended"
-        SecurityEventKind.SIGN_IN_BROWSER_CHANGED -> "Your sign-in turned up in another browser, so it was ended"
-        SecurityEventKind.CODE_LIMIT_REACHED ->
-            "Ten wrong two-factor codes were entered for your account. Whoever entered them knows your password"
-        SecurityEventKind.PASSWORD_RESET -> "Your password was reset through the emailed link"
-        SecurityEventKind.PASSWORD_CHANGED -> "Your password was changed"
-        SecurityEventKind.EMAIL_CHANGE_REQUESTED -> "Somebody asked to move your account to another email address"
-        SecurityEventKind.EMAIL_CHANGED_BY_BOARD -> "The board changed the email address of your account"
-        SecurityEventKind.TWO_FACTOR_ON -> "Two-factor authentication was turned on"
-        SecurityEventKind.TWO_FACTOR_OFF -> "Two-factor authentication was turned off"
-        SecurityEventKind.TWO_FACTOR_REPLACED -> "Your authenticator app was replaced, with new backup codes"
-        SecurityEventKind.BACKUP_CODES_REGENERATED -> "New backup codes were made, and the old ones stopped working"
-        SecurityEventKind.BACKUP_CODE_USED -> "A backup code was used to sign in"
-        SecurityEventKind.TRUSTED_BROWSER_ADDED -> "A browser was trusted to skip the code at sign-in"
-        SecurityEventKind.TWO_FACTOR_RESET -> "An admin reset your two-factor authentication and signed you out everywhere"
-        SecurityEventKind.ACCOUNT_UNLOCKED -> "An admin unlocked your account"
-        else -> if (byOther) "Something changed about how your account is signed in to" else "You changed how your account is signed in to"
+    if (event.kind ==
+        SecurityEventKind.BANK_DETAILS_CHANGED
+    ) {
+        return "Your bank details for incasso were changed, to the account ${event.note}"
     }
+    SENTENCES[event.kind]?.let { return it }
+    val byOther = event.actorKind != SecurityActorKind.PERSON || event.actor?.id != event.subject.id
+    return if (byOther) "Something changed about how your account is signed in to" else "You changed how your account is signed in to"
 }
 
 private val WHEN: DateTimeFormatter =

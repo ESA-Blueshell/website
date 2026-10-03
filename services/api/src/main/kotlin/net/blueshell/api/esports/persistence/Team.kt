@@ -48,4 +48,7 @@ class Team(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "icon_file_id")
     var icon: File? = null,
+    /** A team that stopped playing: its line-ups stay, its Discord role empties and its channel is archived. */
+    @Column(name = "archived", nullable = false)
+    var archived: Boolean = false,
 ) : AuditedAutoIdEntity()

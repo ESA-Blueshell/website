@@ -1,6 +1,6 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
@@ -17,11 +17,11 @@ class PeriodActiveMembersDefinition(
     private val period: ContributionPeriod,
     private val sources: List<PeriodActivitySource>,
 ) : CohortDefinition {
-    override val key = "${CohortSubjectType.PERIOD_ACTIVE_MEMBERS}:${period.id}"
-    override val type = CohortSubjectType.PERIOD_ACTIVE_MEMBERS
+    override val key = "${CohortType.PERIOD_ACTIVE_MEMBERS}:${period.id}"
+    override val type = CohortType.PERIOD_ACTIVE_MEMBERS
     override val scope = period.id
     override val label = "Active Members ${period.startDate.year} - ${period.endDate.year}"
-    override val folder = PERIOD_FOLDER
+    override val folder = CohortFolders.ACTIVE_MEMBERS
 
     override fun members(): Set<Long> = sources.flatMapTo(mutableSetOf()) { it.activeBetween(period.startDate, period.endDate) }
 
@@ -33,7 +33,7 @@ class PeriodActiveMembersProvider(
     private val periods: ContributionPeriodService,
     private val sources: List<PeriodActivitySource>,
 ) : CohortDefinitionProvider {
-    override val type = CohortSubjectType.PERIOD_ACTIVE_MEMBERS
+    override val type = CohortType.PERIOD_ACTIVE_MEMBERS
 
     override fun definitions(): List<CohortDefinition> =
         periods.findAll().filter { it.id != null }.map { PeriodActiveMembersDefinition(it, sources) }
@@ -49,19 +49,16 @@ class CommitteeMembersDefinition(
     private val committee: Committee,
     private val committeeMembers: CommitteeMemberService,
 ) : CohortDefinition {
-    override val key = "${CohortSubjectType.COMMITTEE_MEMBERS}:${committee.id}"
-    override val type = CohortSubjectType.COMMITTEE_MEMBERS
+    override val key = "${CohortType.COMMITTEE_MEMBERS}:${committee.id}"
+    override val type = CohortType.COMMITTEE_MEMBERS
     override val scope = committee.id
     override val label = committee.name
-    override val folder = COMMITTEE_FOLDER
+    override val folder = CohortFolders.COMMITTEES
 
-    override fun members(): Set<Long> = committeeMembers.findUserIdsOnCommittee(committee.id!!)
+    // An archived committee keeps its seats but holds nobody, so its role and list empty.
+    override fun members(): Set<Long> = if (committee.archived) emptySet() else committeeMembers.findUserIdsOnCommittee(committee.id!!)
 
     override fun contains(userId: Long): Boolean = userId in members()
-
-    companion object {
-        const val COMMITTEE_FOLDER = "Committees"
-    }
 }
 
 /**
@@ -75,7 +72,7 @@ class CommitteeMembersProvider(
     private val committees: CommitteeService,
     private val committeeMembers: CommitteeMemberService,
 ) : CohortDefinitionProvider {
-    override val type = CohortSubjectType.COMMITTEE_MEMBERS
+    override val type = CohortType.COMMITTEE_MEMBERS
 
     override fun definitions(): List<CohortDefinition> =
         committees.findAll().filter { it.id != null }.map { CommitteeMembersDefinition(it, committeeMembers) }
@@ -90,11 +87,11 @@ class CommitteeMembersProvider(
 class NewsletterSubscribersDefinition(
     private val users: UserService,
 ) : CohortDefinition {
-    override val key = CohortSubjectType.NEWSLETTER_SUBSCRIBERS.name
-    override val type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS
+    override val key = CohortType.NEWSLETTER_SUBSCRIBERS.name
+    override val type = CohortType.NEWSLETTER_SUBSCRIBERS
     override val scope = null
     override val label = "Newsletter Subscribers"
-    override val folder = null
+    override val folder = CohortFolders.NEWSLETTER
 
     override fun members(): Set<Long> = users.findNewsletterSubscriberIds()
 
@@ -105,7 +102,7 @@ class NewsletterSubscribersDefinition(
 class NewsletterSubscribersProvider(
     private val users: UserService,
 ) : CohortDefinitionProvider {
-    override val type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS
+    override val type = CohortType.NEWSLETTER_SUBSCRIBERS
 
     override fun definitions(): List<CohortDefinition> = listOf(NewsletterSubscribersDefinition(users))
 }

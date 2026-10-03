@@ -1,19 +1,6 @@
-/**
- * The email manager's reading rules. Every one of these was previously reachable only by driving
- * a browser, which is why `email-manager.spec.ts` asserted 63 things and none of them was a rate,
- * a colour or the retry predicate.
- */
 import {describe, expect, it} from "vitest"
 import type {EmailStats, SentEmail} from "@/domains/emails"
-import {
-  canRetry,
-  deliveryRate,
-  openRate,
-  rowStatusClass,
-  statusColor,
-  statusCounts,
-  statusOptions,
-} from "@/domains/emails"
+import {canResend, canRetry, emailTypeLabel, sentFacts, stateKindOf, statusWord, timelineOf} from "@/domains/emails"
 
 const email = (fields: Partial<SentEmail>): SentEmail => fields as SentEmail
 
@@ -22,73 +9,53 @@ const stats = (fields: Partial<EmailStats>): EmailStats => ({
   deliveredCount: 0,
   failedCount: 0,
   openedCount: 0,
-  pendingCount: 0,
+  queuedCount: 0,
   sentCount: 0,
   totalCount: 0,
   ...fields,
 })
 
 describe("email reading", () => {
-  it("gives each delivery status its colour and its row class", () => {
-    expect(statusColor("DELIVERED")).toBe("success")
-    expect(statusColor("OPENED")).toBe("success")
-    expect(statusColor("BOUNCED")).toBe("error")
-    expect(statusColor("FAILED")).toBe("error")
-    expect(statusColor("SENT")).toBe("info")
-    expect(statusColor("PENDING")).toBe("warning")
-    expect(statusColor(undefined)).toBe("secondary")
-
-    expect(rowStatusClass("OPENED")).toBe("email-row--success")
-    expect(rowStatusClass("BOUNCED")).toBe("email-row--failed")
-    expect(rowStatusClass("SENT")).toBe("email-row--sent")
-    expect(rowStatusClass("PENDING")).toBe("email-row--pending")
-    expect(rowStatusClass(undefined)).toBe("")
-  })
-
-  it("offers a retry only where there is a failed send with a job behind it", () => {
+  it("retries a failed send its job can run again, and resends anything that left the queue", () => {
     expect(canRetry(email({id: 1, deliveryStatus: "FAILED", jobExecutionId: 9}))).toBe(true)
-    // A failure with no job recorded has nothing to run again.
     expect(canRetry(email({id: 1, deliveryStatus: "FAILED"}))).toBe(false)
     expect(canRetry(email({id: 1, deliveryStatus: "BOUNCED", jobExecutionId: 9}))).toBe(false)
-    expect(canRetry(email({deliveryStatus: "FAILED", jobExecutionId: 9}))).toBe(false)
+    expect(canResend(email({id: 1, deliveryStatus: "BOUNCED", jobExecutionId: 9}))).toBe(true)
+    expect(canResend(email({id: 1, deliveryStatus: "SENT", jobExecutionId: 9}))).toBe(true)
+    expect(canResend(email({id: 1, deliveryStatus: "QUEUED", jobExecutionId: 9}))).toBe(false)
+    expect(canResend(email({id: 1, deliveryStatus: "BOUNCED"}))).toBe(false)
   })
 
-  it("counts an opened email as delivered as well as opened", () => {
-    const counted = stats({totalCount: 10, deliveredCount: 4, openedCount: 3})
-
-    expect(deliveryRate(counted)).toBe(70)
-    expect(openRate(counted)).toBe(30)
+  it("names a status and its standing, and an email's kind from its type", () => {
+    expect(statusWord("QUEUED")).toBe("Queued")
+    expect(statusWord(null)).toBe("Unknown")
+    expect(stateKindOf("OPENED")).toBe("in-step")
+    expect(stateKindOf("DELIVERED")).toBe("in-step")
+    expect(stateKindOf("BOUNCED")).toBe("unreachable")
+    expect(stateKindOf("QUEUED")).toBe("not-created")
+    expect(stateKindOf("SENT")).toBe("not-compared")
+    expect(emailTypeLabel("email.contribution-reminder")).toBe("Contribution reminder")
+    expect(emailTypeLabel("auth.security-notification")).toBe("Security notification")
+    expect(emailTypeLabel(null)).toBe("Email")
   })
 
-  it("reports no rate rather than dividing by nothing", () => {
-    expect(deliveryRate(null)).toBe(0)
-    expect(openRate(null)).toBe(0)
-    expect(deliveryRate(stats({totalCount: 0, deliveredCount: 5}))).toBe(0)
-    expect(openRate(stats({totalCount: 0, openedCount: 5}))).toBe(0)
-  })
-
-  it("counts the statuses on the page that is loaded", () => {
-    const counts = statusCounts([
-      email({deliveryStatus: "SENT"}),
-      email({deliveryStatus: "SENT"}),
-      email({deliveryStatus: "OPENED"}),
-      email({}),
+  it("tells what happened, oldest first, with where it went wrong", () => {
+    expect(timelineOf(email({
+      createdAt: "2026-09-29T09:39:00Z", sentAt: "2026-09-29T09:40:00Z", deliveryStatus: "BOUNCED", updatedAt: "2026-09-29T09:41:00Z",
+    }))).toEqual([
+      {what: "Queued", at: "2026-09-29T09:39:00Z", wrong: false},
+      {what: "Sent", at: "2026-09-29T09:40:00Z", wrong: false},
+      {what: "Bounced", at: "2026-09-29T09:41:00Z", wrong: true},
     ])
-
-    expect(counts).toEqual({
-      PENDING: 0, SENT: 2, DELIVERED: 0, OPENED: 1, BOUNCED: 0, FAILED: 0,
-    })
+    expect(timelineOf(email({createdAt: "a", sentAt: "b", deliveredAt: "c", openedAt: "d", deliveryStatus: "OPENED"})).map((one) => one.what))
+      .toEqual(["Queued", "Sent", "Delivered", "Opened"])
+    expect(timelineOf(email({deliveryStatus: "FAILED", createdAt: "a"})).at(-1)).toEqual({what: "Failed", at: "a", wrong: true})
+    expect(timelineOf(email({deliveryStatus: "FAILED"})).at(-1)?.at).toBe("")
   })
 
-  it("offers every status the api declares", () => {
-    expect(statusOptions()).toEqual([
-      {title: "All statuses", value: "all"},
-      {title: "Pending", value: "PENDING"},
-      {title: "Sent", value: "SENT"},
-      {title: "Delivered", value: "DELIVERED"},
-      {title: "Opened", value: "OPENED"},
-      {title: "Bounced", value: "BOUNCED"},
-      {title: "Failed", value: "FAILED"},
-    ])
+  it("counts what waits, what arrived of what was sent, and what needs a look", () => {
+    expect(sentFacts(stats({totalCount: 110, queuedCount: 10, deliveredCount: 60, openedCount: 30, bouncedCount: 4, failedCount: 2})))
+      .toEqual({queued: 10, sent: 100, delivered: 90, opened: 30, needsLook: 6, bounced: 4, failed: 2})
+    expect(sentFacts(null)).toEqual({queued: 0, sent: 0, delivered: 0, opened: 0, needsLook: 0, bounced: 0, failed: 0})
   })
 })

@@ -64,14 +64,12 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
 
         confirmAddressThroughUi(page, credentials.username)
 
-        // The membership row and the MEMBER role are two writes, and the role lands a moment
-        // after the row, so the poll waits for both rather than for the first of them.
         pollFor("membership starts when the second fact arrives") {
-            TestHelper.hasActiveMembership(credentials.username) &&
-                TestHelper.findRoles(credentials.username).contains("MEMBER")
+            TestHelper.hasActiveMembership(credentials.username)
         }
         assertThat(refreshedUser(credentials.username).enabled).isTrue()
-        assertThat(TestHelper.findRoles(credentials.username)).contains("MEMBER")
+        // Pending until the first contribution is paid, so not a member yet (api ADR-036).
+        assertThat(TestHelper.findRoles(credentials.username)).doesNotContain("MEMBER")
         assertThat(TestHelper.membershipCountForUser(user.id))
             .describedAs("the rendezvous may only produce one membership")
             .isEqualTo(1)
@@ -164,7 +162,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
     }
 
     @Test
-    fun `a signed-in applicant becomes a member without a confirmation step`() {
+    fun `a signed-in applicant starts a pending membership without a confirmation step`() {
         givenAContributionPeriod()
 
         val seeded = TestHelper.registerActivateAndPromote("GUEST")
@@ -198,7 +196,8 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         pollFor("membership exists for a confirmed applicant") {
             TestHelper.hasActiveMembership(seeded.username)
         }
-        assertThat(TestHelper.findRoles(seeded.username)).contains("MEMBER")
+        // Pending until the first contribution is paid, so not a member yet (api ADR-036).
+        assertThat(TestHelper.findRoles(seeded.username)).doesNotContain("MEMBER")
         assertThat(TestHelper.conditionsAcceptedAt(seededId)).isNotNull()
     }
 

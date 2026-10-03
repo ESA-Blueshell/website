@@ -240,4 +240,22 @@ class MockContactAdapterTest {
         assertThatThrownBy { adapter.moveList(999, 1) }.isInstanceOf(ContactServiceException::class.java)
         assertThatThrownBy { adapter.moveList(list, 999) }.isInstanceOf(ContactServiceException::class.java)
     }
+
+    @Test
+    fun `renameList renames the list and keeps its folder`() {
+        val listId = adapter.createList("Board", "Committees")
+
+        adapter.renameList(listId, "Board 2026")
+
+        assertThat(adapter.getAllLists().getValue(listId).listName).isEqualTo("Board 2026")
+        assertThat(adapter.getAllLists().getValue(listId).folderName).isEqualTo("Committees")
+    }
+
+    @Test
+    fun `createFolder makes a folder once, by name`() {
+        val first = adapter.createFolder("Archive")
+
+        assertThat(adapter.createFolder("Archive")).isEqualTo(first)
+        assertThat(adapter.listFolders()).containsEntry(first, "Archive")
+    }
 }

@@ -3,9 +3,13 @@
  * (frontend ADR-002). Everything else imports from here.
  */
 import {
+  type EmailDetail,
+  findEmail,
   getStats1,
   list1,
   previewSentEmail,
+  render,
+  resend,
   retry1,
   type Email,
   type EmailStats as EmailStatsDto,
@@ -21,6 +25,7 @@ import {refusalReader} from "@/utils/refusals"
 export type {Refused}
 
 export type SentEmail = Email
+export type {EmailDetail}
 export type EmailStats = EmailStatsDto
 export {EmailDeliveryStatus}
 
@@ -78,6 +83,10 @@ export const loadEmailStats = (): Promise<EmailStats | null> => readOr(getStats1
 export const retrySend = (id: number): Promise<{ok: true} | Refused> =>
   refusable(retry1({path: {id}}), "That email could not be sent again.")
 
+/** Makes the email again for the person's current address, as a new email linked to this one. */
+export const resendEmail = (id: number): Promise<{ok: true} | Refused> =>
+  refusable(resend({path: {id}}), "That email could not be made again.")
+
 /**
  * A sent email read back. The api renders it and strips its urls before answering, so what
  * arrives here has no link in it to follow. Nothing where it could not be rendered, which is what
@@ -85,3 +94,12 @@ export const retrySend = (id: number): Promise<{ok: true} | Refused> =>
  */
 export const readSentEmail = (id: number): Promise<RenderedEmailPreview | null> =>
   readOr(previewSentEmail({path: {id}}), null)
+
+/** One email and the emails made again from it, or nothing where it could not be read. */
+export const readEmail = (id: number): Promise<EmailDetail | null> => readOr(findEmail({path: {id}}), null)
+
+/** An editor's message as the email it becomes, rendered by the api the way a send renders it. */
+export async function renderWritten(subject: string, message: string, recipientName?: string): Promise<RenderedEmailPreview | null> {
+  const answered = await readOr(render({body: {subject, message, recipientName: recipientName ?? "Member"}}), null)
+  return answered ? {subject: answered.subject, html: answered.html, recipientEmail: "", recipientName: recipientName ?? ""} : null
+}

@@ -7,6 +7,8 @@ The api reads the association's Discord server through a bot:
 - the member list that website accounts link to, and any Discord user by ID;
 - posts the site makes to a channel.
 
+It also keeps roles and channels in step with the site: a cohort's role, a committee's or team's private channel, a game's channels.
+
 A bot token cannot sit in the frontend, so everything goes through the api (#1344).
 
 There are two bots:
@@ -28,15 +30,17 @@ A leaked dev token then never touches the real server.
 | Invite links | **Create Invite** in the channel the invite lands in |
 | Posting events | **Send Messages**, **Embed Links**, **Attach Files** and **Read Message History** in `events-info` and `events-calendar`, and **Mention All Roles** so a pinged role Discord does not mark mentionable is still notified |
 | Discord events | **Create Events**, which lets the bot edit and remove the events it made |
+| Roles and channels | **Manage Roles** to add and remove the roles the site keeps, and **Manage Channels** to make, move and set access on the channels it keeps |
 
 In the server it needs:
 - **View Channels** and **Read Message History**, to read, and to find a post of its own before making another;
 - **Create Invite**, for the site's invite links;
 - **Send Messages**, **Embed Links** and **Attach Files**, to post with a banner;
 - **Mention All Roles**, so an event's pinged roles are notified;
-- **Create Events**, to list events in the server.
+- **Create Events**, to list events in the server;
+- **Manage Roles** and **Manage Channels**, to keep the roles and channels the site keeps in step.
 
-Nothing else: it never joins voice, and it cannot manage members, roles or channels. In the invite link below, those eight permissions are the number `17592186293249`.
+Nothing else: it never joins voice, and it cannot kick, ban or rename members. In the invite link below, those ten permissions are the number `17592454728721`.
 
 Below 100 servers, Discord grants privileged intents without review.
 
@@ -62,14 +66,28 @@ Below 100 servers, Discord grants privileged intents without review.
 Somebody who is in the team and has **Manage Server** in the server opens:
 
 ```
-https://discord.com/oauth2/authorize?client_id=<APPLICATION_ID>&scope=bot&permissions=17592186293249
+https://discord.com/oauth2/authorize?client_id=<APPLICATION_ID>&scope=bot&permissions=17592454728721
 ```
 
 Then copy the server ID:
 1. In Discord, go to **User Settings → Advanced** and turn on **Developer Mode**.
 2. Right-click the server icon and choose **Copy Server ID**.
 
-A bot added with an earlier link (`66560`, `84992`, `84993` or `17592186260481`) keeps working, but cannot do what came after: post, make invites, notify pinged roles, list events or attach a banner. Open the link again to grant the new permissions: Discord updates the bot's role in place.
+A bot added with an earlier link (`66560`, `84992`, `84993`, `17592186260481` or `17592186293249`) keeps working, but cannot do what came after: post, make invites, notify pinged roles, list events, attach a banner, or keep roles and channels. Open the link again to grant the new permissions: Discord updates the bot's role in place.
+
+### The bot's role sits above the roles the site keeps
+
+Discord lets a bot add and remove only the roles below its own highest role. In **Server Settings → Roles**, drag the bot's role above every role the site keeps (Member, Activist, the committee and team roles), and below none of them. Admin roles may stay above it: the site never keeps those.
+
+### The role-claim bot's roles stay out
+
+The separate role-claim bot hands out roles such as game roles. List their IDs in `DISCORD_CLAIM_ROLES`, comma apart (`discord.claim-roles` in Vault), and the site never keeps or adopts one.
+
+### The roles that follow a cohort
+
+The server's Member and Activist roles already exist. Put their IDs in `DISCORD_MEMBER_ROLE` and `DISCORD_ACTIVIST_ROLE` (`discord.cohort-roles.CURRENT_MEMBERS` and `discord.cohort-roles.ACTIVISTS` in Vault). The next time the cohorts are registered, each role is linked as its cohort's target and reconciled. From then on, an active membership holds the Member role and a committee or board seat holds the Activist role. People with no linked Discord account are counted as unreachable.
+
+`GET /management/discord/bot`, for the board, answers whether the bot has Manage Roles and Manage Channels, its highest role, the roles the site could keep that sit above it, and the claim bot's roles it found.
 
 What the bot can see follows the channel permissions, like any member's:
 - A room everybody can view but not join is visible to it. The site shows it as locked, with who is inside.

@@ -4,7 +4,7 @@ import {ref} from "vue"
 import BoardEdit from "@/pages/board/BoardEdit.vue"
 import BoardMemberEdit from "@/pages/board/BoardMemberEdit.vue"
 
-const route = vi.hoisted(() => ({params: {} as Record<string, string>}))
+const route = vi.hoisted(() => ({params: {} as Record<string, string>, meta: {} as {portal?: string}}))
 const router = vi.hoisted(() => ({replace: vi.fn(), options: {history: {state: {back: null}}}}))
 vi.mock("vue-router", async importOriginal => ({...(await importOriginal<typeof import("vue-router")>()), useRoute: () => route, useRouter: () => router}))
 const roos = {id: 5, name: "Roos"}
@@ -28,12 +28,27 @@ const mountAt = async (page: typeof BoardEdit, params: Record<string, string>) =
 }
 
 beforeEach(() => {
+  route.meta = {}
   router.replace.mockReset()
   state.refresh.mockReset().mockResolvedValue([])
   Object.assign(state, {may: true, loading: false})
 })
 
 describe("the board edit page", () => {
+  it("stays inside Management when opened there", async () => {
+    route.meta = {portal: "/management/board"}
+    const wrapper = await mountAt(BoardEdit, {number: "10"})
+    const editor = wrapper.getComponent(BoardEditor)
+
+    expect(editor.props("back")).toBe("/management/board")
+    editor.vm.$emit("saved", {...tenth, number: 12})
+    await flushPromises()
+    editor.vm.$emit("removed")
+    await flushPromises()
+
+    expect(router.replace.mock.calls).toEqual([["/management/board/12"], ["/management/board"]])
+  })
+
   it("corrects a board, reads the boards again and shows it on the board page", async () => {
     const wrapper = await mountAt(BoardEdit, {number: "10"})
     const editor = wrapper.getComponent(BoardEditor)

@@ -1,11 +1,11 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.toContactData
 import net.blueshell.api.contact.domain.MockContactAdapter
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
@@ -36,9 +36,9 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
     // Through the registry rather than the bean: a job type nothing handles fails here too.
     @Autowired private lateinit var handlers: JobHandlerRegistry
 
-    @Autowired private lateinit var cohorts: CohortRepository
+    @Autowired private lateinit var targets: TargetRepository
 
-    @Autowired private lateinit var subjects: CohortSubjectRepository
+    @Autowired private lateinit var cohorts: CohortRepository
 
     @Autowired private lateinit var externalIds: ExternalIdMappingRepository
 
@@ -49,14 +49,14 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
     @Test
     fun `membership-sync ADD calls the provider outside any transaction`() {
         val user = createUserWithRole(Role.MEMBER)
-        val cohort = newCohort(newSubject())
+        val target = newTarget(newCohort())
         val contact = port.createContact(user.toContactData())
         externalIds.saveAndFlush(ExternalIdMapping(USER_AGGREGATE, user.id!!, TargetSystem.BREVO.name, contact.toString()))
         port.transactionActiveDuringCalls.clear()
 
         handler(CohortJobs.SyncCohortMembership.type).runJob(
             objectMapper.writeValueAsString(
-                CohortJobs.SyncCohortMembershipPayload(user.id!!, cohort.id!!, SyncCohortMembershipIntent.ADD),
+                CohortJobs.SyncCohortMembershipPayload(user.id!!, target.id!!, SyncCohortMembershipIntent.ADD),
             ),
             executionId = null,
         )
@@ -66,11 +66,11 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
 
     @Test
     fun `reconcile-list verify fetches the member list outside any transaction`() {
-        val cohort = newCohort(newSubject())
+        val target = newTarget(newCohort())
         port.transactionActiveDuringCalls.clear()
 
         handler(CohortJobs.ReconcileList.type).runJob(
-            objectMapper.writeValueAsString(CohortJobs.ReconcileListPayload(cohort.id!!)),
+            objectMapper.writeValueAsString(CohortJobs.ReconcileListPayload(target.id!!)),
             executionId = null,
         )
 
@@ -79,17 +79,16 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
 
     private fun handler(jobType: String) = requireNotNull(handlers.get(jobType)) { "No handler registered for $jobType" }
 
-    private fun newSubject(): CohortSubject =
-        subjects.save(CohortSubject(type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS, label = "Members"))
+    private fun newCohort(): Cohort = cohorts.save(Cohort(type = CohortType.NEWSLETTER_SUBSCRIBERS, label = "Members"))
 
     // The list the cohort names exists on the stand-in Brevo, as it would on Brevo.
-    private fun newCohort(subject: CohortSubject): Cohort =
-        cohorts.save(
-            Cohort(
+    private fun newTarget(cohort: Cohort): Target =
+        targets.save(
+            Target(
                 system = TargetSystem.BREVO.name,
-                kind = CohortKind.LIST,
+                kind = TargetKind.LIST,
                 label = "Members",
-                subjectId = subject.id,
+                cohortId = cohort.id,
                 externalId = port.createList("Members", null).toString(),
             ),
         )

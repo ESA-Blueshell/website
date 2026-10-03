@@ -12,55 +12,36 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
 /**
- * A named group on one external system — a Brevo list, a Discord role, a Google group — holding
- * the users who share some fact. [externalId] is null until an operator creates or links the
- * external target, and `CohortTargetIds` owns it.
+ * A group of people defined by a rule in code, "Web Cmte" or "Members 2025-2026", mirrored by at
+ * most one [Target] per external system. Stored in `cohort_subject` until that table is renamed.
  *
- * `system` is a plain string holding a `TargetSystem.name()`: persistence cannot depend on the
- * `sync.port` package under the layered architecture rule.
+ * Who belongs is not stored here but decided by the definition [definitionKey] names; this row
+ * exists so the cohort can have targets and a membership ledger. A cohort whose key names no
+ * definition any more is orphaned and reported rather than deleted, because its targets may
+ * still be wanted.
  */
 @Entity
 @Table(
-    name = "cohort",
+    name = "cohort_subject",
     indexes = [
-        Index(name = "idx_cohort_system_kind", columnList = "system, kind, deleted_at"),
-        Index(name = "idx_cohort_folder", columnList = "folder"),
-        Index(name = "idx_cohort_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_cohort_subject_type", columnList = "type, deleted_at"),
+        Index(name = "idx_cohort_subject_deleted_at", columnList = "deleted_at"),
     ],
 )
-@SQLDelete(sql = "UPDATE cohort SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
+@SQLDelete(sql = "UPDATE cohort_subject SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction(SoftDelete.ACTIVE)
 class Cohort(
-    @Column(name = "system", nullable = false, length = 32)
-    var system: String,
     @Enumerated(EnumType.STRING)
-    @Column(name = "kind", nullable = false, length = 32)
-    var kind: CohortKind,
+    @Column(name = "type", nullable = false, length = 32)
+    var type: CohortType,
     @Column(name = "label", nullable = false)
     var label: String,
     /**
-     * Optional folder name used to group cohorts in the admin UI. Mirrors
-     * the folder concept on Brevo (and later Discord category / Google
-     * group org-unit) — the column carries the canonical display name and
-     * explicit target creation is responsible for translating that into the
-     * vendor's folder id.
-     * `null` means the cohort sits at the top level / "Other" group.
+     * Which definition produces this cohort: `PERIOD_MEMBERS:14`, `COMMITTEE_MEMBERS:7`,
+     * `NEWSLETTER_SUBSCRIBERS`. Null only on rows soft-deleted before the key existed.
      */
-    @Column(name = "folder", nullable = true, length = 64)
-    var folder: String? = null,
-    /**
-     * Parent subject. After V72 every active cohort row is a per-system
-     * mapping under one subject, but the column is still nullable in the
-     * persistence layer so soft-deleted rows from before the migration
-     * remain readable. New rows MUST populate this — the resolvers do.
-     */
-    @Column(name = "subject_id", nullable = true)
-    var subjectId: Long? = null,
-    /**
-     * Native id of this cohort's target on [system] (e.g. a Brevo list id).
-     * `null` until explicitly created or linked. Written only through `CohortTargetIds`;
-     * `1024` matches the widened `external_id_mapping.external_id` (V61).
-     */
-    @Column(name = "external_id", nullable = true, length = 1024)
-    var externalId: String? = null,
+    @Column(name = "definition_key", nullable = true, length = 64)
+    var definitionKey: String? = null,
+    @Column(name = "description")
+    var description: String? = null,
 ) : AuditedAutoIdEntity()

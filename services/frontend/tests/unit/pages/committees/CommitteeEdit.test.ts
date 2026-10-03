@@ -3,7 +3,7 @@ import {flushPromises, mount} from "@vue/test-utils"
 import {ref} from "vue"
 import CommitteeEdit from "@/pages/committees/CommitteeEdit.vue"
 
-const route = vi.hoisted(() => ({params: {} as Record<string, string>, query: {}, meta: {}}))
+const route = vi.hoisted(() => ({params: {} as Record<string, string>, query: {}, meta: {} as {portal?: string}}))
 const state = vi.hoisted(() => ({back: null as string | null}))
 const router = vi.hoisted(() => ({replace: vi.fn(), options: {history: {state}}}))
 vi.mock("vue-router", async importOriginal => ({...(await importOriginal<typeof import("vue-router")>()), useRoute: () => route, useRouter: () => router}))
@@ -26,6 +26,7 @@ const mountPage = async (address?: string) => {
 }
 
 beforeEach(() => {
+  route.meta = {}
   router.replace.mockReset()
   store.refresh.mockReset().mockResolvedValue([])
   Object.assign(rights, {board: false, sits: false})
@@ -33,6 +34,21 @@ beforeEach(() => {
 })
 
 describe("the committee edit page", () => {
+  it("stays inside Management when opened there: back to its list, and to its editor there once saved", async () => {
+    rights.board = true
+    route.meta = {portal: "/management/committees"}
+    const wrapper = await mountPage("lancie")
+    const editor = wrapper.getComponent(CommitteeEditor)
+
+    expect(editor.props("back")).toBe("/management/committees")
+    editor.vm.$emit("saved", {...lan, slug: "lan"})
+    await flushPromises()
+    editor.vm.$emit("removed")
+    await flushPromises()
+
+    expect(router.replace.mock.calls).toEqual([["/management/committees/lan"], ["/management/committees"]])
+  })
+
   it("lets the board correct a committee, and lands on its page at the address it has once saved", async () => {
     rights.board = true
     const wrapper = await mountPage("lancie")

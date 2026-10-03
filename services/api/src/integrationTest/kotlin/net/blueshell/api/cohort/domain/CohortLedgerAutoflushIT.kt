@@ -1,18 +1,18 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortKind
-import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetMember
+import net.blueshell.api.cohort.persistence.TargetMemberRepository
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.cohort.persistence.state
 import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.contact.domain.MockContactAdapter
-import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
@@ -26,13 +26,13 @@ import java.time.LocalDateTime
 
 class CohortLedgerAutoflushIT : UserTestSupport() {
     @Autowired
+    private lateinit var targets: TargetRepository
+
+    @Autowired
     private lateinit var cohorts: CohortRepository
 
     @Autowired
-    private lateinit var subjects: CohortSubjectRepository
-
-    @Autowired
-    private lateinit var members: CohortMemberRepository
+    private lateinit var members: TargetMemberRepository
 
     @Autowired
     private lateinit var externalIds: ExternalIdMappingRepository
@@ -51,18 +51,18 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
     @Test
     fun `confirming desired row with matching stranger does not violate external unique key`() {
         val user = createUserWithRole(Role.MEMBER)
-        val subject = newSubject()
+        val cohort = newCohort()
         val list = brevo.createList("Members", null)
         val remote = brevo.createContact(ContactData("ada@remote.example", "Ada", "Remote", null, false, false))
         brevo.addToList(remote, list)
         val externalUserId = remote.toString()
-        val cohort = newCohort(subject, externalId = list.toString())
-        members.saveAndFlush(CohortMember(cohort = cohort, userId = user.id!!, subject = subject))
+        val target = newTarget(cohort, externalId = list.toString())
+        members.saveAndFlush(TargetMember(target = target, userId = user.id!!, cohort = cohort))
         members.saveAndFlush(
-            CohortMember(
-                cohort = cohort,
+            TargetMember(
+                target = target,
                 userId = null,
-                subject = subject,
+                cohort = cohort,
                 externalUserId = externalUserId,
                 verifiedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
                 label = "old stranger",
@@ -70,25 +70,25 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
         )
         externalIds.saveAndFlush(ExternalIdMapping("USER", user.id!!, TargetSystem.BREVO.name, externalUserId))
 
-        assertThatCode { remediation.verifyCohort(cohort.id!!) }.doesNotThrowAnyException()
+        assertThatCode { remediation.verifyTarget(target.id!!, null) }.doesNotThrowAnyException()
 
-        val desired = members.findByCohortIdAndUserId(cohort.id!!, user.id!!)!!
+        val desired = members.findByTargetIdAndUserId(target.id!!, user.id!!)!!
         assertThat(desired.externalUserId).isEqualTo(externalUserId)
         assertThat(desired.label).isEqualTo("ada@remote.example")
-        assertThat(desired.state).isEqualTo(CohortMemberState.VERIFIED)
-        assertThat(members.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohort.id!!, externalUserId)).isNull()
+        assertThat(desired.state).isEqualTo(TargetMemberState.VERIFIED)
+        assertThat(members.findByTargetIdAndExternalUserIdAndUserIdIsNull(target.id!!, externalUserId)).isNull()
     }
 
     @Test
     fun `rapid same-key delete re-add delete uses distinct soft-delete timestamps`() {
-        val subject = newSubject()
-        val cohort = newCohort(subject, externalId = "list-fast")
+        val cohort = newCohort()
+        val target = newTarget(cohort, externalId = "list-fast")
         val first =
             members.saveAndFlush(
-                CohortMember(
-                    cohort = cohort,
+                TargetMember(
+                    target = target,
                     userId = null,
-                    subject = subject,
+                    cohort = cohort,
                     externalUserId = "ext-fast",
                     verifiedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
                 ),
@@ -99,10 +99,10 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
             members.flush()
             val second =
                 members.saveAndFlush(
-                    CohortMember(
-                        cohort = cohort,
+                    TargetMember(
+                        target = target,
                         userId = null,
-                        subject = subject,
+                        cohort = cohort,
                         externalUserId = "ext-fast",
                         verifiedAt = LocalDateTime.parse("2026-01-01T12:00:01"),
                     ),
@@ -116,13 +116,13 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
                 .createNativeQuery(
                     """
                     SELECT DATE_FORMAT(deleted_at, '%Y-%m-%d %H:%i:%s.%f')
-                    FROM cohort_member
-                    WHERE cohort_id = :cohortId
+                    FROM target_member
+                    WHERE target_id = :cohortId
                       AND external_user_id = :externalUserId
                       AND deleted_at <> '9999-12-31 23:59:59'
                     ORDER BY id
                     """.trimIndent(),
-                ).setParameter("cohortId", cohort.id!!)
+                ).setParameter("cohortId", target.id!!)
                 .setParameter("externalUserId", "ext-fast")
                 .resultList
                 .map { it.toString() }
@@ -133,19 +133,18 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
         assertThat(deletedAtValues.toSet()).hasSize(2)
     }
 
-    private fun newSubject(): CohortSubject =
-        subjects.saveAndFlush(CohortSubject(type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS, label = "Members"))
+    private fun newCohort(): Cohort = cohorts.saveAndFlush(Cohort(type = CohortType.NEWSLETTER_SUBSCRIBERS, label = "Members"))
 
-    private fun newCohort(
-        subject: CohortSubject,
+    private fun newTarget(
+        cohort: Cohort,
         externalId: String,
-    ): Cohort =
-        cohorts.saveAndFlush(
-            Cohort(
+    ): Target =
+        targets.saveAndFlush(
+            Target(
                 system = TargetSystem.BREVO.name,
-                kind = CohortKind.LIST,
+                kind = TargetKind.LIST,
                 label = "Members",
-                subjectId = subject.id,
+                cohortId = cohort.id,
                 externalId = externalId,
             ),
         )

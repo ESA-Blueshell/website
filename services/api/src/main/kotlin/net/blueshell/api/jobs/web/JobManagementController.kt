@@ -49,6 +49,12 @@ class JobManagementController(
         return PageImpl(content, page.pageable, page.totalElements)
     }
 
+    @GetMapping("/{id}")
+    @AdminOnly
+    fun findJobById(
+        @PathVariable id: Long,
+    ): JobExecutionDTO = views.toDto(jobExecutionService.findById(id))
+
     @PostMapping("/{id}/retry")
     @AdminOnly
     fun retry(

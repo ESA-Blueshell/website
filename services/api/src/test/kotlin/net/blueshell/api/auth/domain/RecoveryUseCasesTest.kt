@@ -44,6 +44,7 @@ class RecoveryUseCasesTest {
             jobs,
             validator,
             net.blueshell.api.user.api.TestSealing.addresses,
+            mock(),
         )
 
     @Nested

@@ -6,37 +6,30 @@ test.describe("management pages", () => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
 
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
     await expect(page.getByTestId("member-manager-table")).toBeVisible()
   })
 
-  test("the user manager calls itself the user manager", async ({page}) => {
+  test("the Users page names itself and what its search box finds", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
 
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
 
-    // The page manages every account, not only the ones holding a membership — the nav
-    // entry has said "Manage users" for a while; the page itself had not caught up.
-    // The banner uppercases its title in the markup and carries no heading role, so this
-    // matches the text it actually renders.
-    await expect(page.getByText("USER MANAGER")).toBeVisible()
     await expect(page.getByTestId("member-manager-table")
       .getByRole("heading", {name: "Users", exact: true})).toBeVisible()
-    await expect(page.getByTestId("member-manager-search-input")).toContainText("Search users")
+    await expect(page.getByTestId("member-manager-search-input")).toHaveAttribute("placeholder", "Search for a user")
   })
 
-  test("renders address and recovery manager lists", async ({page}) => {
+  test("Account recovery lists the accounts, and the old address manager leads to Users", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
 
-    await page.goto("/addresses/manage")
-    await expect(page.getByTestId("address-user-list-with-address")).toBeVisible()
-    await expect(page.getByTestId("address-user-list-without-address")).toBeVisible()
+    await page.goto("/management/recovery")
+    await expect(page.getByTestId("recovery-manager")).toBeVisible()
+    await expect(page.getByTestId("recovery-list")).toBeVisible()
 
-    await page.goto("/recovery/manage")
-    await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible()
-    await expect(page.getByTestId("recovery-user-list-active")).toBeVisible()
-    await expect(page.getByTestId("recovery-user-list-deleted")).toBeVisible()
+    await page.goto("/management/addresses")
+    await expect(page).toHaveURL(/\/management\/users$/)
   })
 })

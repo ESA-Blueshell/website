@@ -1,13 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
-import type {Locator} from "@playwright/test"
 import {aUser} from "./records"
-
-const ensureExpanded = async (toggle: Locator) => {
-  if (await toggle.getAttribute("aria-expanded") !== "true") {
-    await toggle.click()
-  }
-}
 
 test.describe("management recovery lifecycle", () => {
   test("deletes user from member manager and restores in recovery manager", async ({page}) => {
@@ -42,13 +35,14 @@ test.describe("management recovery lifecycle", () => {
     // up; below that it switches to a mobile card list with its own test ids. This
     // test exercises the desktop table, so it pins a desktop viewport.
     await page.setViewportSize({width: 1440, height: 900})
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
     await expect(page.getByTestId("member-manager-table")).toBeVisible()
 
     // The user row should be visible in the unified table
     await expect(page.getByTestId(`member-manager-row-${targetId}`)).toBeVisible()
 
-    // Click the delete button for this user
+    // Delete sits in the row's actions menu.
+    await page.getByTestId(`member-manager-actions-${targetId}`).click()
     await page.getByTestId(`member-manager-delete-btn-${targetId}`).click()
     await expect(page.getByTestId("deletion-confirmation-dialog")).toBeVisible()
     await page.getByTestId("deletion-confirmation-confirm-btn").click()
@@ -56,25 +50,12 @@ test.describe("management recovery lifecycle", () => {
     // Row should be removed from the table
     await expect(page.getByTestId(`member-manager-row-${targetId}`)).toHaveCount(0)
 
-    // Navigate to recovery manager and restore the deleted user
-    await page.goto("/recovery/manage")
-    await expect(page.getByTestId("recovery-user-list-deleted")).toBeVisible()
+    // Account recovery restores the deleted user
+    await page.goto("/management/recovery")
+    await page.getByTestId("recovery-search").fill(targetUsername)
+    await expect(page.getByTestId(`recovery-state-${targetId}`)).toContainText("Deleted")
 
-    const deletedToggle = page.getByTestId("recovery-user-list-toggle-deleted").first()
-    await ensureExpanded(deletedToggle)
-
-    const deletedCard = page.getByTestId("recovery-user-list-deleted").first()
-    await deletedCard.getByTestId("recovery-user-list-search-deleted").locator("input").first().fill(targetUsername)
-    await expect(deletedCard.getByTestId(`recovery-user-row-${targetId}`)).toBeVisible()
-
-    await deletedCard.getByTestId(`recovery-user-action-btn-restore-${targetId}`).click()
-    await expect(deletedCard.getByTestId(`recovery-user-row-${targetId}`)).toHaveCount(0)
-
-    const activeToggle = page.getByTestId("recovery-user-list-toggle-active").first()
-    await ensureExpanded(activeToggle)
-
-    const activeCard = page.getByTestId("recovery-user-list-active").first()
-    await activeCard.getByTestId("recovery-user-list-search-active").locator("input").first().fill(targetUsername)
-    await expect(activeCard.getByTestId(`recovery-user-row-${targetId}`)).toBeVisible()
+    await page.getByTestId(`recovery-user-action-btn-restore-${targetId}`).click()
+    await expect(page.getByTestId(`recovery-state-${targetId}`)).toHaveText("Active")
   })
 })

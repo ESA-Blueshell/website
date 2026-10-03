@@ -126,7 +126,7 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
 
         val categoryResponse =
             page.awaitResponseFrom(
-                control = page.locator("[data-testid='job-filter-category']").first(),
+                control = page.locator("[data-testid='job-filter-kind-search']").first(),
                 expected = "GET /management/jobs?category=calendar",
                 act = { selectCategoryFilter(page, "calendar") },
             ) {
@@ -141,9 +141,9 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
 
         val statusResponse =
             page.awaitResponseFrom(
-                control = page.locator("[data-testid='job-filter-status']").first(),
+                control = page.locator("[data-testid='job-filter-status-search']").first(),
                 expected = "GET /management/jobs?status=FAILED",
-                act = { selectStatusFilter(page, "failed") },
+                act = { selectStatusFilter(page, "FAILED") },
             ) {
                 it.request().method() == "GET" &&
                     it.url().contains("/management/jobs") &&
@@ -155,7 +155,7 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(statusParams["status"]).contains("FAILED")
         waitForOnlyCalendar(page, calendarFailedId, contactQueuedId, emailSuccessId)
 
-        val searchInput = page.locator("[data-testid='job-filter-search'] input").first()
+        val searchInput = page.locator("[data-testid='job-filter-search']").first()
         val searchResponse =
             page.awaitResponseFrom(
                 control = searchInput,
@@ -175,7 +175,7 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
     }
 
     @Test
-    fun `admin triggers a job from the trigger modal`() {
+    fun `admin queues a job from Run a job`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
         TestHelper.clearJobExecutions()
         val adminId =
@@ -187,26 +187,26 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         page.navigate("$frontendUrl/management/jobs")
-        page.locator("[data-testid='job-manager-trigger-btn']").first().waitFor()
+        page.locator("[data-testid='job-run-toggle']").first().waitFor()
 
-        // Opening the modal loads the catalog of triggerable job types.
+        // Opening Run a job loads the catalog of job types.
         val typesResponse =
             page.awaitResponseFrom(
-                control = page.locator("[data-testid='job-manager-trigger-btn']").first(),
+                control = page.locator("[data-testid='job-run-toggle']").first(),
                 expected = "GET /management/jobs/types",
             ) { it.request().method() == "GET" && it.url().contains("/management/jobs/types") }
         assertThat(typesResponse.status()).isEqualTo(200)
 
-        page.locator("[data-testid='job-trigger-dialog']").first().waitFor()
-        SelectHelper.pickFromList(page, "job-trigger-type", "Sync contact")
+        page.locator("[data-testid='job-run-form']").first().waitFor()
+        SelectHelper.pickFromList(page, "job-run-type", "Sync contact")
         // userId is a UserPicker over every user, so it is found by typing the
         // admin's email; the option is labelled "name (discord)", which this test
         // has no handle on, so it takes the single match the filter leaves.
-        PickerHelper.pickOnlyMatch(page, "job-trigger-field-userId", admin.email)
+        PickerHelper.pickOnlyMatch(page, "job-run-field-userId", admin.email)
 
         val enqueueResponse =
             page.awaitResponseFrom(
-                control = page.locator("[data-testid='job-trigger-submit']").first(),
+                control = page.locator("[data-testid='job-run-submit']").first(),
                 expected = "POST /management/jobs/enqueue",
             ) { it.request().method() == "POST" && it.url().contains("/management/jobs/enqueue") }
         assertThat(enqueueResponse.status()).isEqualTo(200)
@@ -259,16 +259,16 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         page: Page,
         category: String,
     ) {
-        page.locator("[data-testid='job-filter-category']").first().click()
-        page.locator("[data-testid='job-filter-category-option-$category']").first().click()
+        page.locator("[data-testid='job-filter-kind-search']").first().click()
+        page.locator("[data-testid='job-filter-kind-$category']").first().click()
     }
 
     private fun selectStatusFilter(
         page: Page,
         status: String,
     ) {
-        page.locator("[data-testid='job-filter-status']").first().click()
-        page.locator("[data-testid='job-filter-status-option-$status']").first().click()
+        page.locator("[data-testid='job-filter-status-search']").first().click()
+        page.locator("[data-testid='job-filter-status-$status']").first().click()
     }
 
     private fun queryParams(url: String): Map<String, List<String>> {

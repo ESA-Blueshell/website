@@ -50,7 +50,7 @@ const TRIGGERS: Record<JobTrigger, string> = {
   [JobTrigger.MORNING_RUN]: "The 08:00 run",
   [JobTrigger.SCHEDULED_RUN]: "A scheduled run",
   [JobTrigger.ANOTHER_JOB]: "Another job",
-  [JobTrigger.BY_HAND]: "The trigger dialog",
+  [JobTrigger.BY_HAND]: "Run a job",
 }
 
 /** What queued the job, and that somebody ran it again by hand; empty on a row too old to say. */
@@ -125,6 +125,15 @@ export function relatedEntityLabel(entity: JobRelatedEntity): string {
   return entity.label ?? `${type} #${entity.id}`
 }
 
+/** Where the page for what a job concerns lives, or nothing where it has none. */
+export function relatedEntityLink(entity: JobRelatedEntity): string | null {
+  if (entity.id == null) return null
+  if (entity.type === "EVENT") return `/events/${entity.id}`
+  if (entity.type === "COHORT") return "/management/platforms/brevo"
+  if (entity.type === "USER") return `/management/users/${entity.id}`
+  return null
+}
+
 export function relatedEntityTypeLabel(type?: string | null): string {
   return titleCase(type ?? "entity")
 }
@@ -183,20 +192,16 @@ export function statusCounts(stats: JobStats | null): Record<JobExecutionStatus,
 
 /** One option in a filter picker: what it says, and the value it filters by. */
 export interface FilterOption {
-  title: string
-  value: string
+  key: string
+  label: string
 }
 
 /**
  * The filters offered, built from the generated enums rather than from the rows on screen, so a
  * category with nothing in it today is still selectable.
  */
-export const categoryOptions = (): FilterOption[] => [
-  {title: "All categories", value: "all"},
-  ...Object.values(JobExecutionCategory).map(value => ({title: titleCase(value), value})),
-]
+export const categoryOptions = (): FilterOption[] =>
+  Object.values(JobExecutionCategory).map(key => ({key, label: titleCase(key)}))
 
-export const statusOptions = (): FilterOption[] => [
-  {title: "All statuses", value: "all"},
-  ...Object.values(JobExecutionStatus).map(value => ({title: titleCase(value), value})),
-]
+export const statusOptions = (): FilterOption[] =>
+  Object.values(JobExecutionStatus).map(key => ({key, label: titleCase(key)}))

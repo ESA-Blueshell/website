@@ -7,6 +7,7 @@ import net.blueshell.api.security.SignInEndReason
 import net.blueshell.api.security.SignInEndedAsSuspicious
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.event.AfterCommitListener
+import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserEmailChangedByBoard
 import net.blueshell.api.user.api.UserRolesChanged
@@ -50,6 +51,11 @@ class AccountSecurityListener(
             evt.actor.userId?.let { SecurityActor.Person(it) } ?: SecurityActor.System,
             oldAddress = evt.oldEmail,
         )
+    }
+
+    @AfterCommitListener
+    fun onBankDetailsChanged(evt: BankDetailsChanged) {
+        events.record(evt.userId, SecurityEventKind.BANK_DETAILS_CHANGED, note = evt.iban.toString())
     }
 
     @AfterCommitListener

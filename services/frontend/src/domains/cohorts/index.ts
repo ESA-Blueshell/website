@@ -6,33 +6,50 @@
  * place a call to the api may be written. Re-exported by name rather than with `export *`,
  * because the list of names is the promise.
  */
-export {
-  categoryLabel,
-  isMember,
-  memberName,
-  memberSystemLabel,
-  syncChipColour,
-  syncLabel,
-  systemLabel,
-} from "./reading"
-export {COHORT_TYPE_LABELS, COHORT_TYPE_ORDER, cohortTypeLabel} from "./cohortTypeLabels"
-export {countLabel, nounFor} from "./cohortSubjectSummaries"
+export {memberName, systemLabel} from "./reading"
+export {COHORT_TYPE_LABELS, cohortTypeLabel} from "./cohortTypeLabels"
 export type {
   CohortMember,
-  CohortOption,
-  CohortSubject,
-  CohortSubjectSummary,
+  TargetOption,
+  Cohort,
+  CohortSummary,
   CohortSyncState,
+  DriftResolutionEntry,
   ExternalTarget,
+  LinkOutcome,
+  LinkProposal,
+  ReconcileRun,
   TargetMapping,
 } from "./adapters/cohorts"
-export {CohortKind, CohortSubjectCategory, CohortSubjectType, TargetSystem} from "./adapters/cohorts"
-export {type ExternalUserConflict} from "./adapters/cohorts"
-export {fetchCohortOptions} from "./adapters/cohorts"
-export {fetchCohortSubject} from "./adapters/cohorts"
-export {fetchCohortSubjects} from "./adapters/cohorts"
-export {linkUserToExternal} from "./adapters/cohorts"
-export {queueCohortJob} from "./adapters/cohorts"
-export {removeExternalMember} from "./adapters/cohorts"
+export {TargetKind, CohortCategory, CohortType, DriftResolutionAction, TargetSystem} from "./adapters/cohorts"
+export {fetchCohortTargets} from "./adapters/cohorts"
+export {
+  applyTidy,
+  archiveTarget,
+  createFolderInSystem,
+  createListInSystem,
+  createMissingLists,
+  fetchTargetFolders,
+  fetchTidyPlan,
+  readListedTarget,
+  readTargetOverview,
+  renameTarget,
+  moveTargetToFolder,
+  deleteTarget,
+  linkExistingTargetForCohort,
+  type LastTidy,
+  type ListedTarget,
+  type MissingTarget,
+  type TidyMove,
+  type TidyPlan,
+  type TargetOverview,
+} from "./adapters/cohorts"
+export {RESOLUTION_WORDS, adoptWord, driftRowsOf, driftWords, inStepOn, isDrift, runBars, whyOf, type DriftWords} from "./listPage"
+export {default as TargetDrift} from "./island/TargetDrift.vue"
+export {default as BrevoListFields} from "./island/BrevoListFields.vue"
+export {ARCHIVE_FOLDER, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
+export {fetchCohort} from "./adapters/cohorts"
+export {fetchCohorts, type SummaryTarget} from "./adapters/cohorts"
+export {linkDriftPeople, proposeDriftLinks, pushDriftPeople, removeDriftPeople, setTargetEnforced} from "./adapters/cohorts"
 export {triggerReconcile} from "./adapters/cohorts"
-export {useTargetOverview} from "./composables/useTargetOverview"
+export {useDriftResolution, type DriftAction} from "./composables/useDriftResolution"

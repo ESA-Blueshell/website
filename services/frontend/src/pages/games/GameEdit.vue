@@ -11,8 +11,8 @@ import NotFound from "@/pages/NotFound.vue"
 defineOptions({name: "GameEditPage"})
 
 /**
- * One game added or corrected, from /casual or /competition. It goes back where it came from,
- * and to the game's own page in that area once one exists and the page it came from is gone.
+ * One game added or corrected, from /casual, /competition or Management. It goes back where it came
+ * from, and to the game's own page in that area once one exists and the page it came from is gone.
  */
 const route = useRoute()
 const router = useRouter()
@@ -29,10 +29,13 @@ const enterIn = computed(() => (route.query.season == null ? null : Number(route
 const fallback = adding.value
   ? enterIn.value == null ? `/${area.value}` : `/competition/seasons/${enterIn.value}/edit`
   : `/${area.value}/${String(route.params.slug)}`
-const back = useReturnTo(fallback)
+// Inside Management the editor goes back to Management's list, and stays in Management once saved.
+const portal = route.meta.portal
+const back = useReturnTo(portal ?? fallback)
 
 /** The page it came from, unless that was the game's own page at an address it no longer has. */
 const saved = (now: CasualGame) => {
+  if (portal) return void router.replace(`${portal}/${now.slug}`)
   const old = `/${area.value}/${String(route.params.slug ?? "")}`
   const moved = !adding.value && router.resolve(back).path === old && now.slug !== route.params.slug
   if (adding.value && area.value === "casual") void router.replace(`/casual/${now.slug}`)
@@ -48,7 +51,7 @@ const saved = (now: CasualGame) => {
     :enter-in="enterIn"
     :game="adding ? null : game"
     @cancel="router.replace(back)"
-    @removed="router.replace(`/${area}`)"
+    @removed="router.replace(portal ?? `/${area}`)"
     @saved="saved"
   />
   <not-found v-else-if="answered" />

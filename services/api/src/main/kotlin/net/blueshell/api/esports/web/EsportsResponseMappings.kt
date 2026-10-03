@@ -35,6 +35,7 @@ fun Team.asResponse() =
         id = id!!,
         name = name,
         icon = icon?.asImage(),
+        archived = archived,
     )
 
 fun RosterMemberView.asResponse() =

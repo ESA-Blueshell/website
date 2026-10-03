@@ -1,0 +1,29 @@
+# Each applied folder tidy: on which system, how many lists moved and failed, who applied it and
+# when. Append-only; the tidy's preview reads the newest back.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-folder-tidy.yaml
+      id: folder-tidy
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: folder_tidy
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_folder_tidy, nullable: false}
+              - column: {name: system, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: moved, type: INT, constraints: {nullable: false}}
+              - column: {name: failed, type: INT, constraints: {nullable: false}}
+              - column: {name: applied_by, type: BIGINT}
+              - column: {name: applied_at, type: DATETIME(6), constraints: {nullable: false}}
+        - createIndex:
+            tableName: folder_tidy
+            indexName: idx_folder_tidy_system_applied
+            columns:
+              - column: {name: system}
+              - column: {name: applied_at}
+      rollback:
+        - dropTable: {tableName: folder_tidy}

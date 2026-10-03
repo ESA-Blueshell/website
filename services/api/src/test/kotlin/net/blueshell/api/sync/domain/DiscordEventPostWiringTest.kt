@@ -123,6 +123,11 @@ class DiscordEventPostWiringTest {
             triggers += trigger to actor
             return null
         }
+
+        override fun runAgain(
+            executionId: Long,
+            trigger: JobTrigger,
+        ): QueuedJob? = null
     }
 
     private fun triggers(

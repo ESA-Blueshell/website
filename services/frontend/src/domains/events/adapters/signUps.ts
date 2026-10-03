@@ -14,7 +14,12 @@ import {
   updateEventSignUpById,
   type UpdateEventSignUpRequest,
 } from "@/services/api"
+import type {Refused} from "@/types/api"
 import {readOr} from "@/utils/answers"
+import {refusalReader, type Saved} from "@/utils/refusals"
+
+// No sentences of this domain's own: a refused add reads as the api says it.
+const {refusable} = refusalReader({})
 
 /** The header a guest is known by, having no account to be known by instead. */
 const GUEST_ACCESS_HEADER = "X-Guest-Access-Token"
@@ -87,6 +92,17 @@ export async function withdrawSignUp(
 export async function removeSignUp(signUpId: number, notify: boolean): Promise<void> {
   await deleteEventSignup({path: {id: signUpId}, query: {notify}, throwOnError: true})
 }
+
+/**
+ * Board-side add, for the account or the guest the body names. [notify] is the board's choice to
+ * email a guest it adds. A refusal is answered rather than thrown, so the dialog can say it.
+ */
+export const addSignUpAsBoard = (
+  eventId: number,
+  body: CreateEventSignUpRequest,
+  notify: boolean,
+): Promise<Saved<EventSignUpResponse> | Refused> =>
+  refusable(createEventSignup({path: {eventId}, body, query: {notify}}), "The sign-up could not be added.")
 
 /** Board-side edit, addressed by the sign-up rather than by who is asking. */
 export async function saveSignUpAsBoard(

@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {
+  addSignUpAsBoard,
   changeOwnSignUp,
   listOwnSignUps,
   listSignUpsByAccessToken,
@@ -14,7 +15,7 @@ import {
   updateEventSignUp,
 } from "@/services/api"
 import {aSignUp} from "../../../helpers/apiFixtures"
-import {answer, emptyAnswer} from "../../../helpers/sdkAnswers"
+import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -180,5 +181,41 @@ describe("withdrawSignUp", () => {
     expect(deleteEventSignup).toHaveBeenCalledWith(
       expect.objectContaining({headers: undefined}),
     )
+  })
+})
+
+describe("addSignUpAsBoard", () => {
+  it("adds the sign-up for whoever the body names, with the board's choice to email them", async () => {
+    vi.mocked(createEventSignup).mockResolvedValue(answer(createEventSignup, aSignUp({id: 8})))
+
+    await expect(addSignUpAsBoard(500, {userId: 9, answers: []}, true)).resolves.toEqual({
+      ok: true,
+      saved: aSignUp({id: 8}),
+    })
+    expect(createEventSignup).toHaveBeenCalledWith({
+      path: {eventId: 500},
+      body: {userId: 9, answers: []},
+      query: {notify: true},
+    })
+  })
+
+  it("answers with the api's own sentence where it refuses", async () => {
+    vi.mocked(createEventSignup).mockResolvedValue(
+      refusal(createEventSignup, {detail: "This person already has a sign-up for this event."}, 409),
+    )
+
+    await expect(addSignUpAsBoard(500, {userId: 9, answers: []}, false)).resolves.toEqual({
+      ok: false,
+      reason: "This person already has a sign-up for this event.",
+    })
+  })
+
+  it("says the sign-up could not be added where the api gives no reason", async () => {
+    vi.mocked(createEventSignup).mockResolvedValue(refusal(createEventSignup, null, 500))
+
+    await expect(addSignUpAsBoard(500, {userId: 9, answers: []}, false)).resolves.toEqual({
+      ok: false,
+      reason: "The sign-up could not be added.",
+    })
   })
 })

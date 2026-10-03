@@ -37,14 +37,14 @@ const renderedRows = (page: import("./test").Page) =>
 // The names the scroller currently has mounted, in order. Read from the name cell rather than
 // through a locator so a failed wait reports the window it ended on instead of "not found".
 const windowedNames = (page: import("./test").Page) =>
-  renderedRows(page).evaluateAll((rows) => rows.map((row) => row.children[1]?.textContent?.trim() ?? ""))
+  renderedRows(page).evaluateAll((rows) => rows.map((row) => row.querySelector(".people__name")?.textContent?.trim() ?? ""))
 
 // Puts the row this many indexes down the list at the middle of the window rather than at its
 // top edge. The scroller re-estimates its item height from the rows it has mounted, so an
 // offset it agreed with a moment ago can move by a row: a row at the edge is evicted by that,
 // a row in the middle is not.
 async function centreOn(page: import("./test").Page, index: number) {
-  await page.locator(".v-table__wrapper").evaluate((el, i) => {
+  await page.getByTestId("member-manager-list").evaluate((el, i) => {
     const row = el.querySelector('[data-testid^="member-manager-row-"]')
     // Measured rather than assumed: the row height is the table's to choose, and a spec that
     // hardcodes it scrolls somewhere else entirely the day it changes.
@@ -58,15 +58,14 @@ test.describe("member manager virtualization", () => {
   test.beforeEach(async ({page}) => {
     await installApiMocks(page, {users, memberships, contributionPeriods, contributions: []})
     await loginAsAdmin(page.context())
-    // The table renders at the lg breakpoint and up; below it the page is a list of cards.
     await page.setViewportSize({width: 1440, height: 900})
-    await page.goto("/user-manager")
+    await page.goto("/management/users")
     await page.getByTestId("member-manager-row-1").waitFor()
   })
 
   test("mounts a screenful of rows rather than every member", async ({page}) => {
-    // The count badge proves all 300 members are loaded and filtered in...
-    await expect(page.getByTestId("member-manager-table").getByText(String(COUNT))).toBeVisible()
+    // The count proves all 300 members are loaded and filtered in...
+    await expect(page.getByTestId("member-manager-count")).toHaveText(`${COUNT} people`)
 
     // ...while the document holds a fraction of them. The bound is generous: it fails on a
     // table that mounts every row, not on a scroller that buffers a few extra.

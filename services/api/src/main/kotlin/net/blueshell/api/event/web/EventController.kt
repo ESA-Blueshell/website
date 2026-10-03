@@ -6,13 +6,16 @@ import jakarta.validation.Valid
 import net.blueshell.api.event.api.AnnounceChoice
 import net.blueshell.api.event.api.AnnouncementLedger
 import net.blueshell.api.event.api.EventService
+import net.blueshell.api.event.domain.EventApprovals
 import net.blueshell.api.event.domain.EventQuery
 import net.blueshell.api.event.domain.EventUseCases
 import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -33,6 +36,7 @@ class EventController(
     service: EventService,
     private val useCases: EventUseCases,
     private val announcements: AnnouncementLedger,
+    private val approvals: EventApprovals,
 ) : BaseController<EventService>(service) {
     // Only one event's answer says whether its post is out: a list would ask once per row.
     private fun Event.asOneResponse(): EventResponse = asResponse().also { it.announced = announcements.announced(id!!) }
@@ -84,6 +88,14 @@ class EventController(
     ): EventResponse {
         val event = service.findById(id)
         return event.asOneResponse()
+    }
+
+    /** Every event waiting for the board, soonest first: new ones, and re-approvals with what changed. */
+    @GetMapping("/events/approval-queue")
+    @BoardOnly
+    fun listApprovalQueue(): List<QueuedEventResponse> {
+        val waiting = service.findByFilter(Pageable.unpaged(Sort.by("startTime")), EventQuery(approved = false)).content
+        return approvals.queued(waiting).map { QueuedEventResponse(it.event.asResponse(), it.reapproval, it.changes) }
     }
 
     @GetMapping("/events")

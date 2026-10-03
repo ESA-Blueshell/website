@@ -29,7 +29,7 @@ class EmailFactory(
             deliveryStatus = deliveryStatus,
             messageId = messageId,
             sentAt = sentAt,
-            attempts = if (deliveryStatus == EmailDeliveryStatus.PENDING) 0 else 1,
+            attempts = if (deliveryStatus == EmailDeliveryStatus.QUEUED) 0 else 1,
             jobExecutionId = jobExecutionId,
             bodyMarkdown = bodyMarkdown,
         )

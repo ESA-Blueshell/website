@@ -1,0 +1,18 @@
+# A membership is pending until its first contribution is paid (api ADR-036). The day it became
+# active is kept; every membership on record before this change counts as active from its start.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-membership-activated.yaml
+      id: membership-activated
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: memberships
+            columns:
+              - column: {name: activated_on, type: DATE}
+        - update:
+            tableName: memberships
+            columns:
+              - column: {name: activated_on, valueComputed: start_date}
+      rollback:
+        - dropColumn: {tableName: memberships, columnName: activated_on}

@@ -2,7 +2,9 @@ package net.blueshell.api.cohort.domain
 
 import io.mockk.every
 import io.mockk.mockk
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortCategory
+import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.api.MembershipService
 import org.assertj.core.api.Assertions.assertThat
@@ -26,7 +28,7 @@ class CohortDefinitionsTest {
         val definition = PeriodMembersDefinition(year, memberships)
 
         assertThat(definition.key).isEqualTo("PERIOD_MEMBERS:14")
-        assertThat(definition.type).isEqualTo(CohortSubjectType.PERIOD_MEMBERS)
+        assertThat(definition.type).isEqualTo(CohortType.PERIOD_MEMBERS)
         assertThat(definition.scope).isEqualTo(14L)
         assertThat(definition.label).isEqualTo("Members 2026 - 2026")
     }
@@ -91,5 +93,52 @@ class CohortDefinitionsTest {
 
         assertThat(definition.members()).containsExactly(7L)
         assertThat(definition.contains(7L)).isTrue()
+    }
+
+    @Test
+    fun `each cohort type names its own Brevo folder`() {
+        val committee = Committee(name = "Sitecie", description = "Builds the site").apply { id = 3L }
+
+        assertThat(PeriodMembersDefinition(year, mockk()).folder).isEqualTo(CohortFolders.MEMBERS)
+        assertThat(PeriodPayersDefinition(year, mockk()).folder).isEqualTo(CohortFolders.CONTRIBUTION_PAID)
+        assertThat(PeriodActiveMembersDefinition(year, emptyList()).folder).isEqualTo(CohortFolders.ACTIVE_MEMBERS)
+        assertThat(CommitteeMembersDefinition(committee, mockk()).folder).isEqualTo(CohortFolders.COMMITTEES)
+        // An archived committee keeps its seats and holds nobody.
+        committee.archived = true
+        assertThat(CommitteeMembersDefinition(committee, mockk()).members()).isEmpty()
+        assertThat(NewsletterSubscribersDefinition(mockk()).folder).isEqualTo(CohortFolders.NEWSLETTER)
+    }
+
+    @Test
+    fun `each provider says which type it produces, and each type which category it browses under`() {
+        val providers =
+            listOf(
+                PeriodMembersProvider(mockk(), mockk()),
+                PeriodPayersProvider(mockk(), mockk()),
+                PeriodActiveMembersProvider(mockk(), emptyList()),
+                CommitteeMembersProvider(mockk(), mockk()),
+                NewsletterSubscribersProvider(mockk()),
+                ActivistsProvider(mockk(), mockk(), mockk()),
+                CurrentMembersProvider(mockk()),
+                TeamPlayersProvider(mockk()),
+                BoardProvider(mockk()),
+                KandiProvider(mockk()),
+            )
+
+        assertThat(providers.map { it.type }).containsExactlyInAnyOrder(*CohortType.entries.toTypedArray())
+        assertThat(CohortType.entries.associateWith { it.category() }).isEqualTo(
+            mapOf(
+                CohortType.COMMITTEE_MEMBERS to CohortCategory.COMMITTEES,
+                CohortType.PERIOD_PAYERS to CohortCategory.PERIODS,
+                CohortType.PERIOD_MEMBERS to CohortCategory.PERIODS,
+                CohortType.PERIOD_ACTIVE_MEMBERS to CohortCategory.PERIODS,
+                CohortType.NEWSLETTER_SUBSCRIBERS to CohortCategory.MEMBERS,
+                CohortType.ACTIVISTS to CohortCategory.MEMBERS,
+                CohortType.CURRENT_MEMBERS to CohortCategory.MEMBERS,
+                CohortType.TEAM_PLAYERS to CohortCategory.TEAMS,
+                CohortType.BOARD to CohortCategory.MEMBERS,
+                CohortType.KANDI to CohortCategory.MEMBERS,
+            ),
+        )
     }
 }

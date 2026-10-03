@@ -15,7 +15,7 @@ export type JobCatalogEntry = {
   title: string
   /**
    * Plain-English paragraph: what does the job do, which subsystem does
-   * it touch, and is it safe to re-run? Shown in the trigger dialog and
+   * it touch, and is it safe to re-run? Shown in Run a job and
    * as a tooltip / expanded-row caption on JobManager rows.
    */
   description: string
@@ -77,6 +77,18 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Emails somebody whose admin or board access an admin changed, naming what they now " +
       "hold or no longer hold. The note the admin left is theirs and stays out of it. " +
       "Re-running sends the same notification again.",
+  },
+  "email.written": {
+    title: "Send a written email",
+    description:
+      "Sends one copy of an email the board wrote on the site to one person, at their address as it " +
+      "is when the job runs, rendered from the site's markdown. Re-running sends that person the email again.",
+  },
+  "email.inbox-reply": {
+    title: "Send a reply from the inbox",
+    description:
+      "Sends the reply a board member wrote on the site to the address a received message came from, " +
+      "threaded with that conversation. Re-running sends the reply again.",
   },
 
   "contact.sync-all": {
@@ -214,12 +226,19 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "into that cohort, as members. Each pick is applied in its own transaction and reports " +
       "its own outcome, so a run that half fails can be re-run for the rest.",
   },
-  "cohort.materialize-target": {
-    title: "Materialize cohort target",
+  "cohort.create-target": {
+    title: "Create a cohort's list",
     description:
-      "Answers with the external target a cohort already has, and fails when it has none. " +
-      "Creating a target is an operator's own action now, so nothing enqueues this any " +
-      "more; it stays registered for rows queued before that changed.",
+      "Creates one cohort's list in its type's folder and links it. Registering a cohort queues " +
+      "it, so a new period or committee gets its lists without anyone asking.",
+  },
+  "cohort.create-missing-targets": {
+    title: "Create every missing list",
+    description: "Queues a list for every cohort that has none yet.",
+  },
+  "cohort.materialize-target": {
+    title: "Create a cohort's list (older job)",
+    description: "Queued before creating a cohort's list got its own job; it now does the same.",
   },
 }
 

@@ -24,6 +24,11 @@ vi.mock("@/domains/committees", () => ({
 }))
 const esports = vi.hoisted(() => ({enterGameInSeason: vi.fn(), refresh: vi.fn()}))
 vi.mock("@/domains/esports", () => ({enterGameInSeason: esports.enterGameInSeason}))
+const board = vi.hoisted(() => ({is: true}))
+vi.mock("@/composables/useIsBoard", async () => {
+  const {ref} = await import("vue")
+  return {useIsBoard: () => ref(board.is)}
+})
 
 const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, (() => VNode[]) | undefined>}) =>
   () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()])})
@@ -38,6 +43,7 @@ const stubs = {
   ArtCells: {name: "ArtCells", props: ["cells"], template: "<div />"},
   ImagePicker: {name: "ImagePicker", props: ["picture", "store", "testid"], emits: ["update:picture"], template: "<div />"},
   GameChannelPicker: picker("GameChannelPicker"),
+  GameAccessSection: {name: "GameAccessSection", props: ["code", "testid"], template: "<div :data-testid='testid' />"},
   GameOrganisersPicker: picker("GameOrganisersPicker"),
   ArchiveGameDialog: dialog("ArchiveGameDialog"),
   RemoveGameDialog: dialog("RemoveGameDialog"),
@@ -240,5 +246,16 @@ describe("the game edit page", () => {
     expect(mountEditor(chess).find("[data-testid=game-edit-remove]").exists()).toBe(false)
     await wrapper.get("[data-testid=game-edit-cancel]").trigger("click")
     expect(wrapper.emitted("cancel")).toHaveLength(1)
+  })
+
+  it("gives the board a Discord access section for a game it corrects, and nobody else", async () => {
+    const corrected = mountEditor(chess)
+    await flushPromises()
+    expect(corrected.getComponent({name: "GameAccessSection"}).props("code")).toBe("CHESS")
+    expect(mountEditor(null).findComponent({name: "GameAccessSection"}).exists()).toBe(false)
+
+    board.is = false
+    expect(mountEditor(chess).findComponent({name: "GameAccessSection"}).exists()).toBe(false)
+    board.is = true
   })
 })

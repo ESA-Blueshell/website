@@ -10,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -20,35 +21,56 @@ import org.springframework.mail.MailSendException
 
 @ExtendWith(OutputCaptureExtension::class)
 class EmailSenderServiceTest {
-    private val templates = mock<EmailTemplateService>()
-    private val client = mock<EmailTransportClient>()
-    private val emails = mock<EmailService>()
+    private val templates: EmailTemplateService = mock()
+    private val transport: EmailTransportClient = mock()
+    private val records: EmailService = mock()
     private val sender =
-        EmailSenderService(templates, client, emails, "https://site", "https://api", "Blueshell", "noreply@club.test", "board@club.test")
-    private val content = EmailContent("ann@example.org", "Ann", "Welcome", "Hello")
-    private val outbox = Email(recipientEmail = "ann@example.org").also { it.id = 5 }
+        EmailSenderService(templates, transport, records, "https://site", "https://api", "Blueshell", "no-reply@b.nl", "board@b.nl")
+    private val content = EmailContent("a@b.nl", "Ann", "Hi", "Body")
+    private val queued = Email(recipientEmail = "a@b.nl", trackingToken = "tok").also { it.id = 5 }
 
     init {
-        whenever(templates.createEmail(any(), any(), any(), any())).thenReturn("<html><body></body></html>")
-        whenever(emails.createPending(content, "welcome", null)).thenReturn(outbox)
+        whenever(templates.createEmail("a@b.nl", "Ann", "Hi", "Body")).thenReturn("<html><body>Hi</body></html>")
+        whenever(records.forSend(content, "email.test", 7)).thenReturn(queued)
+    }
+
+    @Test
+    fun `sends into the record its job queued, with the tracking pixel in it`() {
+        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@b.nl>")
+
+        sender.send(content, "email.test", 7)
+
+        verify(
+            transport,
+        ).send(
+            eq("a@b.nl"),
+            eq("Ann"),
+            eq("Hi"),
+            argThat { contains("https://api/track/email/open/tok") },
+            any(),
+            any(),
+            any(),
+            eq(emptyMap()),
+        )
+        verify(records).markSent(queued, "<m@b.nl>")
     }
 
     @Test
     fun `a sent email is logged by its outbox id`(output: CapturedOutput) {
-        whenever(client.send(any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@club.test>")
+        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@b.nl>")
 
-        sender.send(content, "welcome")
+        sender.send(content, "email.test", 7)
 
-        assertThat(output.all).contains("Sent email id=5 type=welcome").doesNotContain("ann@example.org")
+        assertThat(output.all).contains("Sent email id=5 type=email.test").doesNotContain("a@b.nl")
     }
 
     @Test
     fun `a failed send records and logs the failure without the address it names`(output: CapturedOutput) {
-        whenever(client.send(any(), any(), any(), any(), any(), any(), any())).thenThrow(MailSendException("550 <ann@example.org> unknown"))
+        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any())).thenThrow(MailSendException("550 <a@b.nl> unknown"))
 
-        assertThatThrownBy { sender.send(content, "welcome") }.isInstanceOf(IllegalStateException::class.java)
+        assertThatThrownBy { sender.send(content, "email.test", 7) }.isInstanceOf(IllegalStateException::class.java)
 
-        verify(emails).markFailed(eq(outbox), eq("MailSendException"), eq("550 <[email]> unknown"))
-        assertThat(output.all).contains("Failed to send email id=5 type=welcome")
+        verify(records).markFailed(eq(queued), eq("MailSendException"), eq("550 <[email]> unknown"))
+        assertThat(output.all).contains("Failed to send email id=5 type=email.test")
     }
 }

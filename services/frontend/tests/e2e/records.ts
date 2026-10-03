@@ -53,6 +53,8 @@ export const aMembership = (over: Partial<Wire<MembershipResponse>> = {}): Wire<
   userId: 1,
   memberType: "REGULAR",
   incasso: false,
+  incassoStanding: over.incasso ? "ON_INCASSO_WITHOUT_BANK_DETAILS" : "NONE",
+  pending: false,
   startDate: "2025-01-01",
   ...over,
 })

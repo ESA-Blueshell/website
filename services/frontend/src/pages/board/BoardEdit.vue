@@ -9,7 +9,7 @@ import {useReturnTo} from "@/composables/useReturnTo"
 import NotFound from "@/pages/NotFound.vue"
 import {useIsBoard} from "@/composables/useIsBoard"
 
-/** A board added or corrected on its own page, and back to the board page on that board. */
+/** A board added or corrected on its own page, on the site or inside Management, and back to where it was opened from. */
 defineOptions({name: "BoardEditPage"})
 
 const route = useRoute()
@@ -19,16 +19,18 @@ const mayEdit = useIsBoard()
 
 const adding = computed(() => route.params.number == null)
 const board = computed<Board | null>(() => boards.value.find(one => one.number === Number(route.params.number)) ?? null)
-const back = useReturnTo(adding.value ? "/board" : `/board?board=${String(route.params.number)}`)
+// Inside Management the editor goes back to Management's list, and stays in Management once saved.
+const portal = route.meta.portal
+const back = useReturnTo(portal ?? (adding.value ? "/board" : `/board?board=${String(route.params.number)}`))
 
 /* The board page draws from the one list, so it is read again before the page shows it. */
 const saved = async (now: Board) => {
   await refresh()
-  void router.replace(`/board?board=${now.number}`)
+  void router.replace(portal ? `${portal}/${now.number}` : `/board?board=${now.number}`)
 }
 const removed = async () => {
   await refresh()
-  void router.replace("/board")
+  void router.replace(portal ?? "/board")
 }
 </script>
 

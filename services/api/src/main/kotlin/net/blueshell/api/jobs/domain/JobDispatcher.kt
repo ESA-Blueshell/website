@@ -6,9 +6,11 @@ import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobQueued
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorProvider
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
@@ -28,6 +30,7 @@ class JobDispatcher(
     private val actorProvider: ActorProvider,
     private val jobExecutor: JobExecutor,
     private val properties: JobQueueProperties,
+    private val events: ApplicationEventPublisher,
 ) : JobQueue {
     override fun <T : Any> runAsync(
         job: JobDefinition<T>,
@@ -37,6 +40,14 @@ class JobDispatcher(
     ): JobExecution? {
         val dedupKey = job.dedupKey(payload)
         return runAsync(job.type, payload, trigger, actor, dedupKey, job.queuesBehindRunning)
+    }
+
+    override fun runAgain(
+        executionId: Long,
+        trigger: JobTrigger,
+    ): JobExecution? {
+        val before = jobExecutionService.findById(executionId)
+        return runAsync(before.jobType, before.payload?.let(objectMapper::readTree), trigger)
     }
 
     /**
@@ -64,6 +75,7 @@ class JobDispatcher(
                 queuesBehindRunning = queuesBehindRunning,
                 forced = forced,
             ) ?: return null
+        events.publishEvent(JobQueued(enqueued.execution.id!!, jobType, payloadJson, resolvedActor))
 
         if (properties.autoDispatch && enqueued.dispatch) {
             val executionId = enqueued.execution.id!!

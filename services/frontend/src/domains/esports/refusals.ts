@@ -34,6 +34,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   SeasonDatesOverlap: r => `Those dates overlap ${r.seasonName}.`,
   SeasonEndsBeforeStart: () => "A season cannot end before it starts.",
   PictureNotStored: () => "That picture is not in storage.",
+  TargetSystemUnavailable: () => "Discord cannot be reached now, so the team's role and channel are left as they were.",
 }
 
 export const {sentenceFor, reasonFor, refusable, accepted} = refusalReader(sentences)

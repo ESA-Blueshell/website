@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(enumAsRef = true)
 enum class EmailDeliveryStatus {
-    /** The record exists; nothing has been sent yet. */
-    PENDING,
+    /** Its job is queued; nothing has been sent yet. */
+    QUEUED,
 
     /** Accepted by the SMTP relay. */
     SENT,

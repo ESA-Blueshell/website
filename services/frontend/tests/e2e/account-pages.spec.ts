@@ -24,6 +24,33 @@ test.describe("the account pages", () => {
     await expect(page.locator("h1")).toHaveText("Security")
   })
 
+  test("tell a pending member what their first contribution is", async ({page}) => {
+    await installApiMocks(page, {firstContribution: {
+      membershipStartDate: "2026-09-10", periodId: 4, periodStartDate: "2026-09-01", periodEndDate: "2027-08-31", feeType: "FULL_YEAR_FEE", amount: 30,
+    }})
+    await loginAsMember(page.context())
+
+    await page.goto("/account")
+    await expect(page.getByTestId("pending-membership")).toContainText("€ 30.00, the full-year fee for 2026-2027")
+  })
+
+  test("let a member set up incasso and show the account only by its last four", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsMember(page.context())
+
+    await page.goto("/account")
+    const incasso = page.getByTestId("incasso-set-up")
+    await expect(incasso.getByTestId("incasso-none")).toBeVisible()
+    await incasso.getByTestId("incasso-open").click()
+    await incasso.getByLabel("IBAN").fill("NL91 ABNA 0417 1643 00")
+    await incasso.getByLabel("Account holder").fill("Mock User")
+    await incasso.getByRole("checkbox").check()
+    await incasso.getByTestId("incasso-save").click()
+
+    await expect(incasso.getByTestId("incasso-current")).toContainText("NL•• … ••00")
+    await expect(incasso).not.toContainText("0417")
+  })
+
   test("keep every tab on one row on a phone, scrolling sideways when they do not fit", {tag: "@phone"}, async ({page}) => {
     await page.setViewportSize(PHONE)
     await installApiMocks(page)

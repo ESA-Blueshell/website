@@ -48,6 +48,8 @@ class ExceptionLoggingResolver : HandlerExceptionResolver {
             sanitizeForLog(ex.message?.let(PersonalDetails::scrub)),
             ex,
         )
+        // The recording filter reads it once the response has a status, and records only a 5xx.
+        request.setAttribute(ExceptionRecordingFilter.RESOLVED_EXCEPTION, ex)
         return null
     }
 }

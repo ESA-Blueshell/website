@@ -20,6 +20,8 @@ export {isOnline, noSignUpsOf, plateOf, whenOf} from "./island/eventFacts"
 export {useEventReader} from "./island/useEventReader"
 export {downloadIcs, pageUrlOf} from "./island/eventCalendar"
 export {useAnnouncePrompt} from "./island/announcing"
+export {readApprovalQueue, type QueuedEvent} from "./adapters/approvalQueue"
+export {changesSaid} from "./island/approvalWords"
 export {
   changeOwnSignUp,
   listEventSignUps,

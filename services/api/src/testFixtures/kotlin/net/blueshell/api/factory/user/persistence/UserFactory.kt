@@ -97,6 +97,7 @@ class UserFactory(
         startDate: LocalDate = LocalDate.now().minusDays(30),
         endDate: LocalDate? = null,
         incasso: Boolean = true,
+        activatedOn: LocalDate? = startDate,
     ): Membership =
         Membership(
             user = user,
@@ -104,6 +105,7 @@ class UserFactory(
             endDate = endDate,
             memberType = memberType,
             incasso = incasso,
+            activatedOn = activatedOn,
         )
 
     fun createMembership(
@@ -112,5 +114,6 @@ class UserFactory(
         startDate: LocalDate = LocalDate.now().minusDays(30),
         endDate: LocalDate? = null,
         incasso: Boolean = true,
-    ): Membership = persistence.persist(buildMembership(user, memberType, startDate, endDate, incasso))
+        activatedOn: LocalDate? = startDate,
+    ): Membership = persistence.persist(buildMembership(user, memberType, startDate, endDate, incasso, activatedOn))
 }

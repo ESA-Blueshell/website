@@ -1,4 +1,4 @@
-import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router"
+import {createRouter, createWebHistory, type RouteLocationNormalized, type RouteRecordRaw} from "vue-router"
 import {SECURITY_PAGES} from "@/domains/auth/securityPages"
 import store from "./store"
 import {tabTitle} from "./tabTitle"
@@ -7,7 +7,17 @@ declare module "vue-router" {
   interface RouteMeta {
     /** The page's name in the browser tab; a page that knows a better one sets it once loaded. */
     title?: string
+    /** Where an editor the site and Management share goes back to when it is opened inside Management. */
+    portal?: string
   }
+}
+
+/** The Brevo list a link naming a cohort means, or Brevo where the cohort has none. */
+export async function cohortListRoute(to: RouteLocationNormalized): Promise<string> {
+  const {TargetSystem, fetchCohort} = await import("@/domains/cohorts")
+  const cohort = await fetchCohort(Number(to.params.id)).catch(() => null)
+  const externalId = cohort?.mappings.find((mapping) => mapping.system === TargetSystem.BREVO)?.externalId
+  return externalId ? `/management/platforms/brevo/lists/${externalId}` : "/management/platforms/brevo"
 }
 
 const routes: RouteRecordRaw[] = [
@@ -444,64 +454,204 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Circuit Showdown"},
   },
   {
-    path: "/user-manager",
-    name: "userManager",
-    component: () => import("@/pages/management/UserManager.vue"),
-    meta: {title: "Manage users", requiresAuth: true, requiresBoard: true},
+    // Management is a portal of its own (frontend ADR-009): one layout route, and each child
+    // still carries its own role for the guard.
+    path: "/management",
+    component: () => import("@/components/management/ManagementShell.vue"),
+    meta: {requiresAuth: true, requiresBoard: true, management: true},
+    children: [
+      {path: "", name: "management", component: () => import("@/pages/management/ManagementDashboard.vue"), meta: {title: "Overview"}},
+      {path: "alerts", name: "alertList", component: () => import("@/pages/management/AlertList.vue"), meta: {title: "Alerts"}},
+      {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
+      {path: "users", name: "userManager", component: () => import("@/pages/management/UserManager.vue"), meta: {title: "Users"}},
+      {
+        path: "contributions/periods/new",
+        name: "contributionPeriodNew",
+        component: () => import("@/pages/management/ContributionPeriodPage.vue"),
+        meta: {title: "New contribution period"},
+      },
+      {
+        path: "contributions/periods/:id(\\d+)",
+        name: "contributionPeriod",
+        component: () => import("@/pages/management/ContributionPeriodPage.vue"),
+        meta: {title: "Contribution period"},
+      },
+      {
+        path: "contributions/:periodId(\\d+)/reminders",
+        name: "paymentReminders",
+        component: () => import("@/pages/management/PaymentReminders.vue"),
+        meta: {title: "Payment reminders"},
+      },
+      {
+        path: "contributions/:periodId(\\d+)/incasso/:runId(\\d+)?",
+        name: "incassoRun",
+        component: () => import("@/pages/management/IncassoRun.vue"),
+        meta: {title: "Incassos"},
+      },
+      {
+        path: "contributions/:periodId(\\d+)?",
+        name: "contributions",
+        component: () => import("@/pages/management/ContributionsPage.vue"),
+        meta: {title: "Contributions"},
+      },
+      {
+        path: "users/bulk/:action(start|end|paid|unpaid)",
+        name: "bulkTask",
+        component: () => import("@/pages/management/BulkTask.vue"),
+        meta: {title: "Many members"},
+      },
+      {
+        path: "users/:id(\\d+)/:tab(membership|contributions|profile|account|roles)?",
+        name: "userDetail",
+        component: () => import("@/pages/management/UserDetail.vue"),
+        meta: {title: "User"},
+      },
+      {
+        path: "recovery",
+        name: "recoveryManager",
+        component: () => import("@/pages/management/RecoveryManager.vue"),
+        meta: {title: "Account recovery"},
+      },
+      // People without an address are found on Users, under Needs a look.
+      {path: "addresses", redirect: "/management/users"},
+      {path: "mail/sent", name: "emailManager", component: () => import("@/pages/management/SentEmails.vue"), meta: {title: "Sent"}},
+      {path: "mail/inbox", name: "inbox", component: () => import("@/pages/management/InboxPage.vue"), meta: {title: "Inbox"}},
+      {
+        path: "mail/inbox/:id(\\d+)",
+        name: "inboxMessage",
+        component: () => import("@/pages/management/InboxMessage.vue"),
+        meta: {title: "Inbox"},
+      },
+      {path: "mail/write", name: "writeEmail", component: () => import("@/pages/management/WriteEmail.vue"), meta: {title: "Write an email"}},
+      {
+        path: "mail/sent/:id(\\d+)",
+        name: "sentEmail",
+        component: () => import("@/pages/management/SentEmail.vue"),
+        meta: {title: "Email"},
+      },
+      {
+        path: "jobs",
+        name: "jobManager",
+        component: () => import("@/pages/management/JobManager.vue"),
+        meta: {title: "Jobs", requiresAdmin: true},
+      },
+      {
+        path: "jobs/:id(\\d+)",
+        name: "jobDetail",
+        component: () => import("@/pages/management/JobDetail.vue"),
+        meta: {title: "Job", requiresAdmin: true},
+      },
+      {
+        path: "exceptions",
+        name: "exceptionList",
+        component: () => import("@/pages/management/ExceptionList.vue"),
+        meta: {title: "Exceptions", requiresAdmin: true},
+      },
+      {
+        path: "exceptions/:id(\\d+)",
+        name: "exceptionDetail",
+        component: () => import("@/pages/management/ExceptionDetail.vue"),
+        meta: {title: "Exception", requiresAdmin: true},
+      },
+      {
+        path: "platforms/brevo",
+        name: "brevo",
+        component: () => import("@/pages/management/BrevoPage.vue"),
+        meta: {title: "Brevo"},
+      },
+      {path: "events", name: "eventQueue", component: () => import("@/pages/management/EventQueue.vue"), meta: {title: "Events to approve"}},
+      {path: "committees", name: "managementCommittees", component: () => import("@/pages/management/CommitteeList.vue"), meta: {title: "Committees"}},
+      // The site's own editor, rendered inside the portal.
+      {
+        path: "committees/new",
+        name: "managementCommitteeNew",
+        component: () => import("@/pages/committees/CommitteeEdit.vue"),
+        meta: {title: "Add a committee", portal: "/management/committees"},
+      },
+      {
+        path: "committees/:address",
+        name: "managementCommittee",
+        component: () => import("@/pages/committees/CommitteeEdit.vue"),
+        meta: {title: "Edit committee", portal: "/management/committees"},
+      },
+      {path: "board", name: "managementBoards", component: () => import("@/pages/management/BoardList.vue"), meta: {title: "Boards"}},
+      {
+        path: "board/new",
+        name: "managementBoardNew",
+        component: () => import("@/pages/board/BoardEdit.vue"),
+        meta: {title: "Add a board", portal: "/management/board"},
+      },
+      {
+        path: "board/:number(\\d+)",
+        name: "managementBoard",
+        component: () => import("@/pages/board/BoardEdit.vue"),
+        meta: {title: "Edit board", portal: "/management/board"},
+      },
+      {path: "games", name: "managementGames", component: () => import("@/pages/management/GameList.vue"), meta: {title: "Games"}},
+      {
+        path: "games/new",
+        name: "managementGameNew",
+        component: () => import("@/pages/games/GameEdit.vue"),
+        meta: {title: "Add a game", portal: "/management/games"},
+      },
+      {
+        path: "games/:slug",
+        name: "managementGame",
+        component: () => import("@/pages/games/GameEdit.vue"),
+        meta: {title: "Edit game", portal: "/management/games"},
+      },
+      {path: "competition", name: "managementTeams", component: () => import("@/pages/management/TeamList.vue"), meta: {title: "Competition"}},
+      {
+        path: "competition/:slug/teams/:team",
+        name: "managementTeam",
+        component: () => import("@/pages/competition/TeamEdit.vue"),
+        meta: {title: "Edit team", portal: "/management/competition"},
+      },
+      {
+        path: "platforms/discord",
+        name: "discord",
+        component: () => import("@/pages/management/DiscordPage.vue"),
+        meta: {title: "Discord"},
+      },
+      {
+        path: "platforms/discord/channels",
+        name: "discordChannels",
+        component: () => import("@/pages/management/DiscordPage.vue"),
+        meta: {title: "Discord channels"},
+      },
+      {
+        path: "platforms/discord/roles/:roleId",
+        name: "discordRole",
+        component: () => import("@/pages/management/DiscordRole.vue"),
+        meta: {title: "Discord role"},
+      },
+      // Brevo's lists and cohort categories were pages of their own; every list is on Brevo now.
+      {path: "platforms/brevo/lists", redirect: "/management/platforms/brevo"},
+      {
+        path: "platforms/brevo/lists/:externalId",
+        name: "brevoList",
+        component: () => import("@/pages/management/BrevoList.vue"),
+        meta: {title: "Brevo list"},
+      },
+      // A cohort's page was its own; alerts and old links name the cohort, so they land on its list.
+      {path: "platforms/brevo/cohort/:id", component: () => import("@/pages/management/BrevoList.vue"), beforeEnter: cohortListRoute},
+      {path: "platforms/brevo/:category(committees|periods|members)", redirect: "/management/platforms/brevo"},
+    ],
   },
-  {
-    path: "/addresses/manage",
-    name: "addressManager",
-    component: () => import("@/pages/management/AddressManager.vue"),
-    meta: {title: "Manage addresses", requiresAuth: true, requiresBoard: true},
-  },
-  {
-    path: "/recovery/manage",
-    name: "recoveryManager",
-    component: () => import("@/pages/management/RecoveryManager.vue"),
-    meta: {title: "Manage account recovery", requiresAuth: true, requiresBoard: true},
-  },
-  {
-    path: "/management/jobs",
-    name: "jobManager",
-    component: () => import("@/pages/management/JobManager.vue"),
-    meta: {title: "Manage jobs", requiresAuth: true, requiresAdmin: true},
-  },
-  {
-    path: "/management/emails",
-    name: "emailManager",
-    component: () => import("@/pages/management/EmailManager.vue"),
-    meta: {title: "Manage emails", requiresAuth: true, requiresBoard: true},
-  },
+  // The addresses management had before the portal; bookmarks and old emails keep working.
+  {path: "/user-manager", redirect: "/management/users"},
+  {path: "/addresses/manage", redirect: "/management/users"},
+  {path: "/recovery/manage", redirect: "/management/recovery"},
+  {path: "/management/emails", redirect: "/management/mail/sent"},
+  {path: "/management/cohorts", redirect: "/management/platforms/brevo"},
+  {path: "/management/cohorts/targets", redirect: "/management/platforms/brevo"},
+  {path: "/management/cohort/:id", redirect: (to) => `/management/platforms/brevo/cohort/${String(to.params.id)}`},
+  {path: "/management/cohorts/:category", redirect: "/management/platforms/brevo"},
   {
     // The esports manager is gone: seasons, teams and line-ups are edited on the pages that
     // show them. A bookmark to it lands on those pages rather than on nothing.
     path: "/management/esports",
     redirect: "/competition",
-  },
-  {
-    path: "/management/cohorts",
-    name: "cohortDashboard",
-    component: () => import("@/pages/management/CohortDashboard.vue"),
-    meta: {title: "Manage cohorts", requiresAuth: true, requiresAdmin: true},
-  },
-  {
-    path: "/management/cohorts/targets",
-    name: "cohortTargets",
-    component: () => import("@/pages/management/CohortTargets.vue"),
-    meta: {title: "Cohort targets", requiresAuth: true, requiresAdmin: true},
-  },
-  {
-    path: "/management/cohorts/subjects/:id",
-    name: "cohortSubjectDetail",
-    component: () => import("@/pages/management/CohortSubjectDetail.vue"),
-    meta: {title: "Cohort subject", requiresAuth: true, requiresAdmin: true},
-  },
-  {
-    path: "/management/cohorts/:category",
-    name: "cohortCategory",
-    component: () => import("@/pages/management/CohortCategory.vue"),
-    meta: {title: "Cohort category", requiresAuth: true, requiresAdmin: true},
   },
   {
     path: "/blogs",
@@ -546,6 +696,11 @@ const routes: RouteRecordRaw[] = [
         name: "design/parts",
         component: () => import("@/pages/design/PartsGallery.vue"),
         meta: {title: "Parts"},
+      }, {
+        path: "/design/management",
+        name: "design/management",
+        component: () => import("@/pages/design/ManagementGallery.vue"),
+        meta: {title: "Management parts"},
       }]
     : []),
   {
@@ -599,11 +754,13 @@ router.beforeEach((to) => {
   if (store.getters.twoFactorRequired && !TWO_FACTOR_SET_UP_OPEN.has(to.path)) {
     return {path: SECURITY_PAGES.required, query: {redirect: to.fullPath}}
   }
+  // Inside Management a refusal says so; elsewhere the reader goes home, as before.
+  const refused = to.meta.management ? {path: "/unauthorized"} : {path: "/"}
   if (to.meta.requiresAdmin && !store.getters.isAdmin) {
-    return {path: "/"}
+    return refused
   }
   if (to.meta.requiresBoard && !(store.getters.isBoard || store.getters.isAdmin)) {
-    return {path: "/"}
+    return refused
   }
   // Nothing returned is the navigation going ahead.
   return true

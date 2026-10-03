@@ -1,9 +1,14 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortKind
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import org.springframework.stereotype.Service
 
 /**
@@ -14,13 +19,15 @@ import org.springframework.stereotype.Service
 @Service
 class BrevoTargetStrategy(
     contactListAdapters: List<ContactListAdapter>,
+    private val externalIds: ExternalIdMappingService,
+    private val jobs: JobQueue,
 ) : TargetStrategy {
     private val lists = contactListAdapters.single { it.system == TargetSystem.BREVO }
 
     override val descriptor =
         TargetDescriptor(
             system = TargetSystem.BREVO,
-            kind = CohortKind.LIST,
+            kind = TargetKind.LIST,
         )
 
     override fun catalog(query: String?): List<ExternalTarget> {
@@ -46,37 +53,56 @@ class BrevoTargetStrategy(
             path = pathTo(folder),
         )
 
-    override fun members(target: ExternalTarget): List<ExternalMember> =
+    override fun members(external: ExternalTarget): List<ExternalMember> =
         lists
-            .listMembers(target.externalId.toBrevoId("externalId", "members"))
+            .listMembers(external.externalId.toBrevoId("externalId", "members"))
             .map { ExternalMember(it.externalUserId.toString(), it.email) }
             .filter { it.externalUserId.isNotBlank() }
 
     override fun add(
-        target: ExternalTarget,
+        external: ExternalTarget,
         externalUserId: String,
     ) {
         lists.addToList(
             externalUserId.toBrevoId("externalUserId", "add"),
-            target.externalId.toBrevoId("externalId", "add"),
+            external.externalId.toBrevoId("externalId", "add"),
         )
     }
 
     override fun remove(
-        target: ExternalTarget,
+        external: ExternalTarget,
         externalUserId: String,
     ) {
         lists.removeFromList(
             externalUserId.toBrevoId("externalUserId", "remove"),
-            target.externalId.toBrevoId("externalId", "remove"),
+            external.externalId.toBrevoId("externalId", "remove"),
         )
+    }
+
+    override fun memberIds(userIds: Set<Long>): Map<Long, String> =
+        externalIds
+            .findBatch(USER_AGGREGATE, userIds, system.name)
+            .mapNotNull { mapping -> mapping.externalId?.takeIf { it.isNotBlank() }?.let { mapping.aggregateId to it } }
+            .toMap()
+
+    override fun ownersOf(externalUserIds: Set<String>): Map<String, Long> =
+        externalIds
+            .findByExternalIds(USER_AGGREGATE, system.name, externalUserIds)
+            .mapNotNull { mapping -> mapping.externalId?.let { it to mapping.aggregateId } }
+            .toMap()
+
+    // A member's contact is made by the contact sync, and a push retries once it exists.
+    override val makesMemberIds = true
+
+    override fun makeMemberId(userId: Long) {
+        jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId), JobTrigger.ANOTHER_JOB)
     }
 
     /** Brevo's own folders, including the ones holding nothing. */
     override fun folders(): List<String> = lists.listFolders().values.sorted()
 
     override fun move(
-        target: ExternalTarget,
+        external: ExternalTarget,
         folder: String,
     ): ExternalTarget {
         // Brevo files by folder id, so a name has to name a folder that exists. Refusing an
@@ -89,12 +115,25 @@ class BrevoTargetStrategy(
                 ?.key
                 ?: throw IllegalArgumentException("No folder named '$folder'")
 
-        lists.moveList(target.externalId.toBrevoId("externalId", "move"), folderId)
-        return target.copy(folderLabel = folder, path = pathTo(folder))
+        lists.moveList(external.externalId.toBrevoId("externalId", "move"), folderId)
+        return external.copy(folderLabel = folder, path = pathTo(folder))
     }
 
-    override fun delete(target: ExternalTarget) {
-        lists.deleteList(target.externalId.toBrevoId("externalId", "delete"))
+    override fun rename(
+        external: ExternalTarget,
+        name: String,
+    ): ExternalTarget {
+        lists.renameList(external.externalId.toBrevoId("externalId", "rename"), name)
+        return external.copy(label = name)
+    }
+
+    override fun createFolder(name: String): List<String> {
+        lists.createFolder(name)
+        return folders()
+    }
+
+    override fun delete(external: ExternalTarget) {
+        lists.deleteList(external.externalId.toBrevoId("externalId", "delete"))
     }
 
     /**

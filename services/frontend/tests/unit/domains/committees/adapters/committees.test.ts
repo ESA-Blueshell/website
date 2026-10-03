@@ -7,6 +7,9 @@ import {
   loadCommitteePage,
   loadCommittees,
   saveCommitteeAsBoard,
+  readCommitteeBrevo,
+  saveCommitteeBrevo,
+  saveCommitteeDiscord,
   saveGameOrganisers,
   saveOwnCommitteePage,
   setCommitteeArchived,
@@ -20,6 +23,9 @@ import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   findCommittees: vi.fn(),
+  setCommitteeDiscord: vi.fn(),
+  findCommitteeBrevo: vi.fn(),
+  setCommitteeBrevo: vi.fn(),
   findCommitteesByUserId: vi.fn(),
   deleteCommitteeById: vi.fn(),
   findCommitteePage: vi.fn(),
@@ -151,5 +157,34 @@ describe("writing committees", () => {
     expect(await removeCommittee(5)).toEqual({ok: true})
     expect(api.deleteCommitteeById).toHaveBeenCalledWith({path: {id: 5}})
     expect(await removeCommittee(5)).toEqual({ok: false, reason: "The committee could not be deleted."})
+  })
+})
+
+describe("a committee's Discord", () => {
+  it("is saved as the api answers it, and a Discord that cannot be reached says so", async () => {
+    const state = {available: true, roleId: "900", channels: []}
+    vi.mocked(api.setCommitteeDiscord).mockResolvedValueOnce(answer(api.setCommitteeDiscord, state))
+    await expect(saveCommitteeDiscord(7, {createRole: true, channelIds: []})).resolves.toEqual({ok: true, saved: state})
+    expect(api.setCommitteeDiscord).toHaveBeenCalledWith({path: {id: 7}, body: {createRole: true, channelIds: []}})
+
+    vi.mocked(api.setCommitteeDiscord).mockResolvedValueOnce(refusal(api.setCommitteeDiscord, {code: "TargetSystemUnavailable", system: "Discord"}, 503))
+    await expect(saveCommitteeDiscord(7, {createRole: true, channelIds: []})).resolves.toEqual({
+      ok: false,
+      reason: "Discord cannot be reached now, so its role and channels are left as they were.",
+    })
+  })
+})
+
+describe("a committee's Brevo list", () => {
+  it("is read and saved as the api answers it, and a Brevo that cannot be reached says so", async () => {
+    const state = {available: true, listId: "7", listName: "Sitecie", folder: "Committees"}
+    vi.mocked(api.findCommitteeBrevo).mockResolvedValueOnce(answer(api.findCommitteeBrevo, state))
+    await expect(readCommitteeBrevo(7)).resolves.toEqual(state)
+    vi.mocked(api.setCommitteeBrevo).mockResolvedValueOnce(answer(api.setCommitteeBrevo, state))
+    await expect(saveCommitteeBrevo(7, {createList: true})).resolves.toEqual({ok: true, saved: state})
+    expect(api.setCommitteeBrevo).toHaveBeenCalledWith({path: {id: 7}, body: {createList: true}})
+
+    vi.mocked(api.setCommitteeBrevo).mockResolvedValueOnce(refusal(api.setCommitteeBrevo, {code: "TargetSystemUnavailable", system: "Brevo"}, 503))
+    await expect(saveCommitteeBrevo(7, {createList: true})).resolves.toEqual({ok: false, reason: "Brevo cannot be reached now, so its list is left as it was."})
   })
 })

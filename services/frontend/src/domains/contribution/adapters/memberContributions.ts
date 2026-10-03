@@ -1,0 +1,46 @@
+/**
+ * One person's contributions: every period they were a member in, and recording or withdrawing
+ * their payment for one.
+ */
+import {
+  createContribution,
+  type FirstContribution,
+  findOwnFirstContribution,
+  deleteContribution,
+  findContributionsByPeriodId,
+  findMemberContributions,
+  findPeriodContributions,
+  type MemberPeriodContribution,
+  type PeriodContributionsView,
+  type PeriodMember,
+} from "@/services/api"
+import type {Refused} from "@/types/api"
+import {readOr} from "@/utils/answers"
+import {refusalReader} from "@/utils/refusals"
+
+export type {FirstContribution, MemberPeriodContribution, PeriodContributionsView, PeriodMember}
+
+const {accepted} = refusalReader({})
+
+/** Newest period first, or none where they could not be read. */
+export const listMemberContributions = (userId: number): Promise<MemberPeriodContribution[]> =>
+  readOr(findMemberContributions({path: {userId}}), [])
+
+/** Records that the person paid for the period. */
+export const recordPayment = (userId: number, contributionPeriodId: number): Promise<{ok: true} | Refused> =>
+  accepted(createContribution({body: {userId, contributionPeriodId}}), "That payment could not be recorded.")
+
+/** Takes the person's payment for the period back off the record. */
+export const withdrawPayment = (userId: number, contributionPeriodId: number): Promise<{ok: true} | Refused> =>
+  accepted(deleteContribution({path: {userId, contributionPeriodId}}), "That payment could not be withdrawn.")
+
+/** Who has paid for the period, or nobody where it could not be read. */
+export const listPaidUserIds = async (periodId: number): Promise<Set<number>> =>
+  new Set((await readOr(findContributionsByPeriodId({path: {periodId}}), [])).map((one) => one.userId))
+
+/** A period's members with their payments, and the payment email runs sent for it; nothing where unreadable. */
+export const readPeriodContributions = (periodId: number): Promise<PeriodContributionsView | null> =>
+  readOr(findPeriodContributions({path: {periodId}}), null)
+
+/** What the reader pays to make their pending membership active, or nothing where none is pending. */
+export const readFirstContribution = (): Promise<FirstContribution | null> => readOr(findOwnFirstContribution(), null)

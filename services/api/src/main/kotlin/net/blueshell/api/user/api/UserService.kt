@@ -144,6 +144,10 @@ class UserService @Autowired constructor(
 
     fun findAdministrators(): List<User> = repository.findAdministrators()
 
+    /** Everybody holding [role] itself. */
+    @Transactional(readOnly = true)
+    fun findIdsHolding(role: Role): Set<Long> = repository.findIdsHolding(role).toSet()
+
     fun findAllByIds(ids: Collection<Long>): List<User> =
         if (ids.isEmpty()) emptyList() else repository.findAllById(ids).toList()
 
@@ -271,4 +275,14 @@ class UserService @Autowired constructor(
 
     @Transactional(readOnly = true)
     fun existsById(id: Long): Boolean = repository.existsById(id)
+
+    /** The accounts linked to any of [discordIds]. */
+    @Transactional(readOnly = true)
+    fun findAllByDiscordIds(discordIds: Collection<String>): List<User> =
+        if (discordIds.isEmpty()) emptyList() else repository.findAllByDiscordIdIn(discordIds.toSet())
+
+    /** The accounts holding any of [emails], matched without regard to case. */
+    @Transactional(readOnly = true)
+    fun findAllByEmails(emails: Collection<String>): List<User> =
+        if (emails.isEmpty()) emptyList() else repository.findAllByEmailIn(emails.map { it.trim().lowercase() }.toSet())
 }

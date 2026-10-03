@@ -8,33 +8,52 @@ object UserManagerHelper {
         page: Page,
         frontendUrl: String,
     ) {
-        page.navigate("$frontendUrl/user-manager")
-        page.waitForURL("**/user-manager**")
+        page.navigate("$frontendUrl/management/users")
+        page.waitForURL("**/management/users**")
     }
 
     fun search(
         page: Page,
         query: String,
     ) {
-        UserListHelper.searchUser(page, query, searchTestId = "member-manager-search-input")
+        TestIdLocatorHelper.byTestId(page, "member-manager-search-input").fill(query)
     }
 
     fun clickAddUser(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "bulk-actions-menu-btn").click()
         TestIdLocatorHelper.byTestId(page, "member-manager-add-user-btn").click()
     }
 
-    fun clickEditRoles(
+    /**
+     * A row's actions live in its menu, so each one is reached by opening the menu first. The
+     * trigger toggles, so an entry already showing is taken as it is rather than clicked shut.
+     */
+    private fun action(
         page: Page,
         userId: Long,
-    ) {
-        TestIdLocatorHelper.byTestId(page, "member-manager-edit-roles-btn-$userId").click()
+        testId: String,
+    ): Locator {
+        val entry = TestIdLocatorHelper.byTestId(page, "$testId-$userId")
+        if (!entry.isVisible) TestIdLocatorHelper.byTestId(page, "member-manager-actions-$userId").click()
+        return entry
     }
 
+    /** Opens one of a person's tabs from their name on the list. */
+    fun openTab(
+        page: Page,
+        userId: Long,
+        tab: String,
+    ) {
+        TestIdLocatorHelper.byTestId(page, "member-manager-open-$userId").click()
+        page.waitForURL("**/management/users/$userId")
+        TestIdLocatorHelper.byTestId(page, "user-tab-$tab").click()
+        page.waitForURL("**/management/users/$userId/$tab")
+    }
+
+    /** Opens the row's menu and answers its Delete entry. */
     fun deleteButton(
         page: Page,
         userId: Long,
-    ): Locator = TestIdLocatorHelper.byTestId(page, "member-manager-delete-btn-$userId")
+    ): Locator = action(page, userId, "member-manager-delete-btn")
 
     fun clickDeleteUser(
         page: Page,

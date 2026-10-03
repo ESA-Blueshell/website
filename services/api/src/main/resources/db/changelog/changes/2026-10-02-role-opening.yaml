@@ -1,0 +1,17 @@
+# The access each Discord role was given to a channel or category on the site, so a change made on
+# Discord shows as a difference rather than being undone.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-role-opening.yaml
+      id: role-opening
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: role_opening
+            columns:
+              - column: {name: role_id, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: channel_id, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: access, type: VARCHAR(16), constraints: {nullable: false}}
+        - addPrimaryKey: {tableName: role_opening, columnNames: "role_id, channel_id", constraintName: pk_role_opening}
+      rollback:
+        - dropTable: {tableName: role_opening}

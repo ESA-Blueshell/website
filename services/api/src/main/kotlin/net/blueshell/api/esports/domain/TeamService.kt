@@ -1,10 +1,12 @@
 package net.blueshell.api.esports.domain
 
+import net.blueshell.api.esports.api.TeamArchiveChanged
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.FileType
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -13,6 +15,7 @@ class TeamService(
     private val teams: TeamRepository,
     private val games: GameService,
     private val pictures: StoredPictures,
+    private val events: ApplicationEventPublisher,
 ) {
     /** Every team the association has. The pool is shared, so it is not asked per game. */
     @Transactional(readOnly = true)
@@ -51,4 +54,18 @@ class TeamService(
 
     @Transactional
     fun delete(id: Long) = teams.delete(findById(id))
+
+    /** A team that stopped playing, or plays again; nothing it played is touched. */
+    @Transactional
+    fun archive(
+        id: Long,
+        archived: Boolean,
+    ): Team {
+        val team = findById(id)
+        if (team.archived != archived) {
+            team.archived = archived
+            events.publishEvent(TeamArchiveChanged(id, archived))
+        }
+        return teams.save(team)
+    }
 }

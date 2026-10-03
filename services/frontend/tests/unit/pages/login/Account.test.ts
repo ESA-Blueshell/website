@@ -26,6 +26,11 @@ vi.mock("vuex", async (importOriginal) => {
 
 vi.mock("@/domains/user", () => ({
   readUser: mockReadUser,
+  readOwnMandate: vi.fn().mockResolvedValue(null),
+}))
+
+vi.mock("@/domains/discord", () => ({
+  LinkDiscordAsk: {name: "LinkDiscordAsk", props: ["linked"], template: "<p data-test='link-discord' />"},
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -89,5 +94,16 @@ describe("Account page", () => {
     await settle()
     expect(guest.getComponent(UserForm).props("options")).toEqual({includeMemberProfile: true, memberProfileRequired: false})
     mockStore.getters.isMember = true
+  })
+
+  it("asks for a Discord account while the account has none linked", async () => {
+    const unlinked = mountInApp(Account, {global: {stubs: {UserForm}}})
+    await settle()
+    expect(unlinked.getComponent({name: "LinkDiscordAsk"}).props("linked")).toBe(false)
+
+    mockReadUser.mockResolvedValue({id: 42, firstName: "Jane", discordId: "123"})
+    const linked = mountInApp(Account, {global: {stubs: {UserForm}}})
+    await settle()
+    expect(linked.getComponent({name: "LinkDiscordAsk"}).props("linked")).toBe(true)
   })
 })

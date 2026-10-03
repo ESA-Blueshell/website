@@ -30,8 +30,8 @@ class UserRolesPanelSystemTest : PlaywrightTestBase() {
         UserManagerHelper.search(page, target.username)
         page.locator("[data-testid='member-manager-row-$targetId']").first().waitFor()
 
-        UserManagerHelper.clickEditRoles(page, targetId)
-        TestIdLocatorHelper.byTestId(page, "user-roles-dialog").waitFor()
+        UserManagerHelper.openTab(page, targetId, "roles")
+        TestIdLocatorHelper.byTestId(page, "user-roles-panel").waitFor()
 
         // The request rather than the response: a save that lands re-reads the history, and
         // waiting on the response races the render that follows it.

@@ -1,6 +1,7 @@
 package net.blueshell.api.email.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotBlank
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import java.time.Instant
 
@@ -24,6 +25,10 @@ data class EmailDTO(
     val updatedAt: Instant?,
     @param:Schema(description = "Whether this email's body was stored, so it can be previewed")
     val previewable: Boolean,
+    @param:Schema(description = "The email this one was made again from, when it was resent")
+    val resentFromId: Long? = null,
+    @param:Schema(description = "Who queued it, where a person did")
+    val initiatedByUserId: Long?,
 )
 
 @Schema(name = "SentEmailPreview")
@@ -40,10 +45,32 @@ data class SentEmailPreviewDTO(
 @Schema(name = "EmailStats")
 data class EmailStatsDTO(
     val totalCount: Long,
-    val pendingCount: Long,
+    val queuedCount: Long,
     val sentCount: Long,
     val deliveredCount: Long,
     val openedCount: Long,
     val bouncedCount: Long,
     val failedCount: Long,
+)
+
+@Schema(name = "EmailDetail")
+data class EmailDetailDTO(
+    val email: EmailDTO,
+    @param:Schema(description = "The emails made again from this one, oldest first")
+    val resends: List<EmailDTO>,
+)
+
+@Schema(name = "RenderEmailRequest")
+data class RenderEmailRequest(
+    @field:NotBlank
+    val subject: String = "",
+    @param:Schema(description = "The message as the site's editor writes it, in Discord's markdown")
+    val message: String = "",
+    val recipientName: String = "Member",
+)
+
+@Schema(name = "RenderedEmail")
+data class RenderedEmailDTO(
+    val subject: String,
+    val html: String,
 )

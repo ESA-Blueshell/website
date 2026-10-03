@@ -1,37 +1,39 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import UserManager from "@/pages/management/UserManager.vue"
+import router from "@/plugins/router"
 import {
   deleteUserById,
-  findContributionPeriods,
-  findContributionsByPeriodId,
+  findAllAddresses,
+  findCommittees,
   findMemberships,
-  findUserById,
   findUsers,
   MemberType,
   type MembershipResponse,
   type UserDetailResponse,
 } from "@/services/api"
 import {answer, emptyAnswer, refusal} from "../../helpers/sdkAnswers"
-import {boardLogin, chooseOption, mountPage} from "../../helpers/mountPage"
+import {aCommittee} from "../../helpers/apiFixtures"
+import {boardLogin, mountPage} from "../../helpers/mountPage"
+import type {StoredLogin} from "@/plugins/store"
 import {settle} from "../helpers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   findUsers: vi.fn(),
-  findUserById: vi.fn(),
   findMemberships: vi.fn(),
-  findContributionPeriods: vi.fn(),
-  findContributionsByPeriodId: vi.fn(),
+  findAllAddresses: vi.fn(),
+  findCommittees: vi.fn(),
   deleteUserById: vi.fn(),
+  findDeletedMemberships: vi.fn(async () => ({data: [], request: {}, response: {}})),
 }))
 
 function user(id: number, fullName: string, username: string, extra: Partial<UserDetailResponse> = {}): UserDetailResponse {
   const [firstName, lastName] = fullName.split(" ")
   return {
     id, fullName, username, firstName, lastName, initials: "XX", roles: ["MEMBER"], email: `${username}@test.com`,
-    enabled: true, newsletter: false, photoConsent: false,
-    createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0,
+    enabled: true, newsletter: false, photoConsent: false, locked: false, twoFactorOn: false, awaitingReenrolment: false,
+    nameOnRosters: true, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0,
     ...extra,
   } as UserDetailResponse
 }
@@ -43,167 +45,214 @@ function membership(id: number, userId: number, startDate: string, extra: Partia
   }
 }
 
-// Three standings: Alice is a member now, Bob was one, Carol never was.
-const alice = user(1, "Alice Smith", "alice", {discordId: "111"})
-const bob = user(2, "Bob Jones", "bob")
-const carol = user(3, "Carol Adams", "carol")
+// Three standings: Zoë is a member now, Bob was one, Carol never was.
+const zoe = user(1, "Zoë Smith", "zoe", {discordId: "111", addressId: 5})
+const bob = user(2, "Bob Jones", "bob", {locked: true})
+const carol = user(3, "Carol Adams", "carol", {roles: ["BOARD"]})
 const memberships = [
-  membership(90, 1, "2024-01-01", {incasso: true}),
+  membership(90, 1, "2024-01-01", {memberType: MemberType.ALUMNI}),
   membership(91, 2, "2020-01-01", {endDate: "2021-12-31"}),
 ]
 
-const mount = () => mountPage(UserManager, {path: "/user-manager", login: boardLogin, width: 1400})
+const adminLogin: StoredLogin = {...boardLogin, roles: ["ADMIN", "BOARD"] as StoredLogin["roles"]}
+
+const mount = (login = boardLogin) => mountPage(UserManager, {path: "/management/users", login, width: 1400})
 
 const rowIds = (wrapper: VueWrapper<any>) =>
   wrapper.findAll('[data-testid^="member-manager-row-"]').map((row) => Number(row.attributes("data-testid")!.split("-").at(-1)))
 
-const status = (wrapper: VueWrapper<any>, id: number) => wrapper.get(`[data-testid="member-manager-status-${id}"]`).text()
-
-async function deleteRow(wrapper: VueWrapper<any>, id: number) {
-  await wrapper.get(`[data-testid="member-manager-delete-btn-${id}"]`).trigger("click")
-  await settle()
-  await wrapper.get('[data-testid="deletion-confirmation-confirm-btn"]').trigger("click")
+const pick = async (wrapper: VueWrapper<any>, index: number, key: string | null) => {
+  await wrapper.findAllComponents({name: "FilterPicker"})[index]!.vm.$emit("update:modelValue", key)
   await settle()
 }
 
-describe("the user manager", () => {
+/** Opens a row's actions and chooses one; the menu is a portal, so its items are found as components. */
+async function act(wrapper: VueWrapper<any>, id: number, testid: string) {
+  const find = () => wrapper.findAllComponents({name: "DropdownMenuItem"}).find((one) => one.attributes("data-testid") === `${testid}-${id}`)
+  // A select emitted by hand leaves the menu open, so the next choice finds it still there.
+  if (!find()) {
+    await wrapper.get(`[data-testid="member-manager-actions-${id}"]`).trigger("click")
+    await settle()
+  }
+  const item = find()
+  if (!item) throw new Error(`no ${testid} for ${id}`)
+  item.vm.$emit("select", new Event("select"))
+  await settle()
+}
+
+describe("the Users page", () => {
   beforeEach(() => {
-    vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [alice, bob, carol]}))
-    vi.mocked(findUserById).mockResolvedValue(answer(findUserById, alice))
+    vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [zoe, bob, carol]}))
     vi.mocked(findMemberships).mockResolvedValue(answer(findMemberships, memberships))
-    vi.mocked(findContributionPeriods).mockResolvedValue(
-      answer(findContributionPeriods, [{id: 8, startDate: "2024-01-01", endDate: "2024-12-31", halfYearCutoffDate: "2024-07-01", halfYearFee: 0, fullYearFee: 0, alumniFee: 0, version: 0, createdAt: "", updatedAt: ""}]),
-    )
-    vi.mocked(findContributionsByPeriodId).mockResolvedValue(
-      answer(findContributionsByPeriodId, [{userId: 1, contributionPeriodId: 8, version: 0, createdAt: "", updatedAt: ""}]),
-    )
+    vi.mocked(findAllAddresses).mockResolvedValue(answer(findAllAddresses, [
+      {id: 5, street: "Hallenweg", houseNumber: "5", city: "Enschede", userId: 1, version: 0, createdAt: "", updatedAt: ""},
+    ]))
+    vi.mocked(findCommittees).mockResolvedValue(answer(findCommittees, [
+      aCommittee({id: 4, name: "Sitecie", members: [{committeeId: 4, userId: 3, createdAt: "", updatedAt: "", version: 0}]}),
+    ]))
     vi.mocked(deleteUserById).mockResolvedValue(emptyAnswer(deleteUserById))
   })
 
-  it("lists every account the api holds, in the order it answered them", async () => {
+  it("lists everyone by name, says where each stands and why they need a look", async () => {
     const wrapper = await mount()
 
-    expect(rowIds(wrapper)).toEqual([1, 2, 3])
+    expect(rowIds(wrapper)).toEqual([2, 3, 1])
+    expect(wrapper.get('[data-testid="member-manager-status-1"]').text()).toContain("Member")
+    expect(wrapper.get('[data-testid="member-manager-status-1"]').text()).toContain("alumni")
+    expect(wrapper.get('[data-testid="member-manager-status-2"]').text()).toContain("Former member")
+    expect(wrapper.get('[data-testid="member-manager-status-3"]').text()).toContain("Never a member")
+    expect(wrapper.get('[data-testid="member-manager-needs-2"]').text()).toContain("Locked")
+    expect(wrapper.get('[data-testid="member-manager-needs-3"]').text()).toContain("Role waits on two-factor")
+    expect(wrapper.get('[data-testid="member-manager-count"]').text()).toBe("3 people")
   })
 
-  it("says whether each is a member now, was one, or never was", async () => {
+  it("finds Zoë by typing zoe, and people by their address, committee or role", async () => {
     const wrapper = await mount()
+    const search = wrapper.get('[data-testid="member-manager-search-input"]')
 
-    expect(status(wrapper, 1)).toContain("Current")
-    expect(status(wrapper, 2)).toContain("Former")
-    expect(status(wrapper, 3)).toContain("Never")
+    await search.setValue("zoe")
+    expect(rowIds(wrapper)).toEqual([1])
+    expect(wrapper.get('[data-testid="member-manager-count"]').text()).toBe("1 of 3 people")
+    await search.setValue("hallenweg")
+    expect(rowIds(wrapper)).toEqual([1])
+    await search.setValue("sitecie")
+    expect(rowIds(wrapper)).toEqual([3])
+    await search.setValue("board")
+    expect(rowIds(wrapper)).toEqual([3])
   })
 
-  it("narrows the list to the accounts matching what is typed", async () => {
-    const wrapper = await mount()
+  it("opens searched for the person another page sent here", async () => {
+    const wrapper = await mountPage(UserManager, {path: "/management/users?search=bob", login: boardLogin, width: 1400})
 
-    await wrapper.get('[data-testid="member-manager-search-input"] input').setValue("bob")
-
-    await vi.waitFor(() => expect(rowIds(wrapper)).toEqual([2]))
+    expect(rowIds(wrapper)).toEqual([2])
   })
 
-  it("sorts by name once the name column is chosen, and turns the order round on a second press", async () => {
-    vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [bob, carol, alice]}))
+  it("combines the three filters with the search, and clears them all", async () => {
     const wrapper = await mount()
 
-    await wrapper.get('[data-testid="member-manager-header-name"]').trigger("click")
+    await pick(wrapper, 0, "current")
+    expect(rowIds(wrapper)).toEqual([1])
+    await pick(wrapper, 0, null)
+    await pick(wrapper, 1, "ALUMNI")
+    expect(rowIds(wrapper)).toEqual([1])
+    await pick(wrapper, 1, null)
+    await pick(wrapper, 2, "any")
+    expect(rowIds(wrapper)).toEqual([2, 3])
+    await pick(wrapper, 2, "locked")
+    expect(rowIds(wrapper)).toEqual([2])
+
+    await wrapper.get('[data-testid="member-manager-filters-clear"]').trigger("click")
     await settle()
-    expect(rowIds(wrapper)).toEqual([1, 2, 3])
-
-    await wrapper.get('[data-testid="member-manager-header-name"]').trigger("click")
-    await settle()
-    expect(rowIds(wrapper)).toEqual([3, 2, 1])
+    expect(rowIds(wrapper)).toEqual([2, 3, 1])
   })
 
-  it("sorts members now before former members before those who never were", async () => {
-    vi.mocked(findUsers).mockResolvedValue(answer(findUsers, {content: [carol, bob, alice]}))
+  it("sorts by a column, and turns the order round on a second press", async () => {
     const wrapper = await mount()
 
     await wrapper.get('[data-testid="member-manager-header-status"]').trigger("click")
     await settle()
-
     expect(rowIds(wrapper)).toEqual([1, 2, 3])
+    await wrapper.get('[data-testid="member-manager-header-status"]').trigger("click")
+    await settle()
+    expect(rowIds(wrapper)).toEqual([3, 2, 1])
+    await wrapper.get('[data-testid="member-manager-header-member-since"]').trigger("click")
+    await settle()
+    expect(rowIds(wrapper)).toEqual([2, 1, 3])
   })
 
-  it("shows only members, or only non-members, by the membership filter", async () => {
+  it("takes the people selected to the task page that starts or ends their membership", async () => {
     const wrapper = await mount()
 
-    await chooseOption(wrapper, "member-manager-filter-membership", "Yes")
-    expect(rowIds(wrapper)).toEqual([1])
-    await chooseOption(wrapper, "member-manager-filter-membership", "No")
-    expect(rowIds(wrapper)).toEqual([2, 3])
-  })
-
-  it("shows only those who paid in the period, or only those who did not", async () => {
-    const wrapper = await mount()
-
-    await chooseOption(wrapper, "member-manager-filter-paid", "Yes")
-    expect(rowIds(wrapper)).toEqual([1])
-    await chooseOption(wrapper, "member-manager-filter-paid", "No")
-    expect(rowIds(wrapper)).toEqual([2, 3])
-  })
-
-  it("shows only those paying by incasso, or only those who are not", async () => {
-    const wrapper = await mount()
-
-    await chooseOption(wrapper, "member-manager-filter-incasso", "Yes")
-    expect(rowIds(wrapper)).toEqual([1])
-    await chooseOption(wrapper, "member-manager-filter-incasso", "No")
-    expect(rowIds(wrapper)).toEqual([2, 3])
-  })
-
-  it("shows only those who were members in the chosen period, or only those who were not", async () => {
-    const wrapper = await mount()
-
-    await chooseOption(wrapper, "member-manager-filter-period-member", "Yes")
-    expect(rowIds(wrapper)).toEqual([1])
-    await chooseOption(wrapper, "member-manager-filter-period-member", "No")
-    expect(rowIds(wrapper)).toEqual([2, 3])
-  })
-
-  it("shows only the accounts with no Discord member linked", async () => {
-    const wrapper = await mount()
-
-    await chooseOption(wrapper, "member-manager-filter-discord", "No")
-
-    expect(rowIds(wrapper)).toEqual([2, 3])
-  })
-
-  it("reads the account afresh before offering to edit it", async () => {
-    const wrapper = await mount()
-
-    await wrapper.get('[data-testid="member-manager-edit-profile-btn-1"]').trigger("click")
+    await wrapper.get('[data-testid="member-manager-checkbox-2"]').trigger("change")
+    await settle()
+    expect(wrapper.get('[data-testid="member-manager-selection"]').text()).toContain("1 selected")
+    await wrapper.get('[data-testid="bulk-action-end-membership"]').trigger("click")
     await settle()
 
-    expect(findUserById).toHaveBeenCalledWith({path: {userId: 1}})
-    expect(wrapper.find('[data-testid="member-manager-edit-profile-dialog"]').exists()).toBe(true)
+    // The task page loads lazily, so the navigation settles after it arrives.
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe("/management/users/bulk/end"), {timeout: 10_000})
+    expect(router.currentRoute.value.query).toEqual({ids: "2", back: "/management/users"})
   })
 
-  it("opens a member's memberships, listing the ones on file", async () => {
+  it("takes the people selected to the task page that starts their membership", async () => {
     const wrapper = await mount()
 
-    await wrapper.get('[data-testid="member-manager-manage-membership-btn-1"]').trigger("click")
+    await wrapper.get('[data-testid="member-manager-checkbox-3"]').trigger("change")
+    await settle()
+    await wrapper.get('[data-testid="bulk-action-start-membership"]').trigger("click")
     await settle()
 
-    expect(wrapper.find('[data-testid="manage-membership-dialog"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="manage-membership-row-90"]').exists()).toBe(true)
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe("/management/users/bulk/start"), {timeout: 10_000})
+    expect(router.currentRoute.value.query).toEqual({ids: "3", back: "/management/users"})
+  })
+
+  it("links each person to their own page, and Edit profile to its Profile tab", async () => {
+    const wrapper = await mount(adminLogin)
+
+    expect(wrapper.get('[data-testid="member-manager-open-1"]').attributes("to")).toBe("/management/users/1")
+    await wrapper.get('[data-testid="member-manager-actions-1"]').trigger("click")
+    await settle()
+    const edit = wrapper.findAllComponents({name: "DropdownMenuItem"}).map((item) => item.find('[data-testid="member-manager-open-profile-1"]'))
+      .find((link) => link.exists())
+    expect(edit?.attributes("to")).toBe("/management/users/1/profile")
+  })
+
+  it("adds a user from the Add user form", async () => {
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="member-manager-add-user-btn"]').trigger("click")
+    await settle()
+    expect(wrapper.find('[data-testid="member-manager-add-user-dialog"]').exists()).toBe(true)
+    wrapper.findComponent({name: "UserForm"}).vm.$emit("submitted", false)
+    wrapper.findComponent({name: "UserForm"}).vm.$emit("submitted", true)
+    await settle()
+    expect(findUsers).toHaveBeenCalledTimes(2)
   })
 
   it("deletes an account once the deletion is confirmed, and takes its row off the list", async () => {
     const wrapper = await mount()
 
-    await deleteRow(wrapper, 2)
+    await act(wrapper, 2, "member-manager-delete-btn")
+    await wrapper.get('[data-testid="deletion-confirmation-confirm-btn"]').trigger("click")
+    await settle()
 
     expect(deleteUserById).toHaveBeenCalledWith({path: {userId: 2}, throwOnError: true})
-    expect(rowIds(wrapper)).toEqual([1, 3])
+    expect(rowIds(wrapper)).toEqual([3, 1])
   })
 
   it("keeps the account on the list when the api refuses to delete it", async () => {
     vi.mocked(deleteUserById).mockRejectedValue(refusal(deleteUserById, null, 409))
     const wrapper = await mount()
 
-    await deleteRow(wrapper, 2)
+    await act(wrapper, 2, "member-manager-delete-btn")
+    await wrapper.get('[data-testid="deletion-confirmation-confirm-btn"]').trigger("click")
+    await settle()
 
-    expect(rowIds(wrapper)).toEqual([1, 2, 3])
+    expect(rowIds(wrapper)).toEqual([2, 3, 1])
+  })
+
+  it("saves and cancels the add form, and closes the delete confirmation", async () => {
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="member-manager-add-user-btn"]').trigger("click")
+    for (const modal of wrapper.findAllComponents({name: "BaseModal"})) {
+      modal.vm.$emit("save")
+      modal.vm.$emit("cancel")
+      modal.vm.$emit("update:modelValue", false)
+    }
+    await act(wrapper, 1, "member-manager-delete-btn")
+    wrapper.findComponent({name: "DeletionConfirmationDialog"}).vm.$emit("update:modelValue", false)
+    await settle()
+
+    await wrapper.get('[data-testid="member-manager-header-name"]').trigger("click")
+    await settle()
+    expect(rowIds(wrapper)).toEqual([1, 3, 2])
+  })
+
+  it("says so when nobody matches, and when the people could not be read", async () => {
+    vi.mocked(findUsers).mockRejectedValue(new Error("offline"))
+    const wrapper = await mount()
+
+    expect(wrapper.find('[data-testid="member-manager-empty"]').exists()).toBe(true)
   })
 })

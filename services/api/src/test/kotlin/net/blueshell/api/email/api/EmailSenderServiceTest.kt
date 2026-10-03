@@ -66,7 +66,9 @@ class EmailSenderServiceTest {
 
     @Test
     fun `a failed send records and logs the failure without the address it names`(output: CapturedOutput) {
-        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any())).thenThrow(MailSendException("550 <a@b.nl> unknown"))
+        whenever(
+            transport.send(any(), any(), any(), any(), any(), any(), any(), any()),
+        ).thenThrow(MailSendException("550 <a@b.nl> unknown"))
 
         assertThatThrownBy { sender.send(content, "email.test", 7) }.isInstanceOf(IllegalStateException::class.java)
 

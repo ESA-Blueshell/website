@@ -3,20 +3,20 @@ package net.blueshell.api.user.domain
 import net.blueshell.api.user.api.SealedField
 import net.blueshell.api.user.api.SealedValue
 import net.blueshell.api.user.domain.sealing.sealingContext
-import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.PendingMandateRepository
 import net.blueshell.api.user.persistence.SealedAccountRow
+import net.blueshell.api.user.persistence.SealedMandateRepository
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 /**
- * The four sealed bank columns, each registered with the nightly rewrap: a mandate's IBAN and
- * account holder on a membership, and a pending mandate's. An ended or soft-deleted membership
- * keeps its mandate until it is wiped, so those rows are moved too.
+ * The six sealed bank columns, each registered with the nightly rewrap: the IBAN, the account
+ * holder and an online mandate's address, on a membership's mandate and on a pending one. An ended
+ * or soft-deleted membership keeps its mandate until it is wiped, so those rows are moved too.
  */
 @Configuration
 class SealedBankFields(
-    private val memberships: MemberRepository,
+    private val memberships: SealedMandateRepository,
     private val pending: PendingMandateRepository,
     private val sealing: SealedBankDetails,
 ) {
@@ -48,18 +48,40 @@ class SealedBankFields(
             pending::swapSealedAccountHolder,
         )
 
+    @Bean
+    fun mandateAddresses(): SealedField =
+        column(
+            "mandate address",
+            SealedBankDetails.ADDRESS,
+            memberships::findSealedMandates,
+            SealedAccountRow::address,
+            memberships::swapSealedAddress,
+        )
+
+    @Bean
+    fun pendingMandateAddresses(): SealedField =
+        column(
+            "pending mandate address",
+            SealedBankDetails.ADDRESS,
+            pending::findSealed,
+            SealedAccountRow::address,
+            pending::swapSealedAddress,
+        )
+
+    // A row without the value, a paper mandate's address, has nothing to move.
     private fun column(
         name: String,
         field: String,
         rows: () -> List<SealedAccountRow>,
-        value: (SealedAccountRow) -> String,
+        value: (SealedAccountRow) -> String?,
         swap: (Long, String, String) -> Int,
     ): SealedField =
         object : SealedField {
             override val name = name
             override val key = sealing.key
 
-            override fun sealedValues() = rows().map { SealedValue(it.id, value(it), sealingContext(field, it.userId)) }
+            override fun sealedValues() =
+                rows().mapNotNull { row -> value(row)?.let { SealedValue(row.id, it, sealingContext(field, row.userId)) } }
 
             override fun swap(
                 id: Long,

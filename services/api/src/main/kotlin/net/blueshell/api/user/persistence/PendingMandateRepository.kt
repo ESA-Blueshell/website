@@ -10,7 +10,9 @@ interface PendingMandateRepository : JpaRepository<PendingMandate, Long> {
 
     /** Every pending mandate's sealed values: what a key rotation has to move. */
     @Query(
-        value = "SELECT id AS id, user_id AS userId, iban AS iban, account_holder AS accountHolder FROM pending_mandates",
+        value =
+            "SELECT id AS id, user_id AS userId, iban AS iban, account_holder AS accountHolder, address AS address " +
+                "FROM pending_mandates",
         nativeQuery = true,
     )
     fun findSealed(): List<SealedAccountRow>
@@ -27,6 +29,14 @@ interface PendingMandateRepository : JpaRepository<PendingMandate, Long> {
     @Modifying
     @Query(value = "UPDATE pending_mandates SET account_holder = :sealed WHERE id = :id AND account_holder = :was", nativeQuery = true)
     fun swapSealedAccountHolder(
+        @Param("id") id: Long,
+        @Param("was") was: String,
+        @Param("sealed") sealed: String,
+    ): Int
+
+    @Modifying
+    @Query(value = "UPDATE pending_mandates SET address = :sealed WHERE id = :id AND address = :was", nativeQuery = true)
+    fun swapSealedAddress(
         @Param("id") id: Long,
         @Param("was") was: String,
         @Param("sealed") sealed: String,

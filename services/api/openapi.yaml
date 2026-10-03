@@ -4674,10 +4674,49 @@ components:
       - id
       - name
       type: object
+    MandateAddressRequest:
+      properties:
+        city:
+          maxLength: 150
+          minLength: 0
+          type: string
+        country:
+          minLength: 1
+          type: string
+        houseNumber:
+          maxLength: 20
+          minLength: 0
+          type: string
+        street:
+          maxLength: 150
+          minLength: 0
+          type: string
+        zipCode:
+          maxLength: 20
+          minLength: 0
+          type: string
+      required:
+      - city
+      - country
+      - houseNumber
+      - street
+      - zipCode
+      type: object
+    MandateKind:
+      enum:
+      - ONLINE
+      - PAPER
+      type: string
     MandateResponse:
       properties:
         accountHolder:
           description: Null where no mandate is recorded, or where it cannot be opened now.
+          type:
+          - string
+          - 'null'
+        authorisedAt:
+          description: The moment an online mandate was authorised.
+          format: date-time
           type:
           - string
           - 'null'
@@ -4691,6 +4730,11 @@ components:
           type:
           - string
           - 'null'
+        kind:
+          description: Online where the member authorised it on the site, paper where the board recorded it.
+          oneOf:
+          - $ref: '#/components/schemas/MandateKind'
+          - type: 'null'
         membershipId:
           format: int64
           type: integer
@@ -5517,17 +5561,22 @@ components:
     RecordMandateRequest:
       properties:
         accountHolder:
-          minLength: 1
+          maxLength: 70
+          minLength: 0
           type: string
         iban:
-          minLength: 1
+          maxLength: 42
+          minLength: 0
           type: string
+        replacesOnline:
+          type: boolean
         signedOn:
           format: date
           type: string
       required:
       - accountHolder
       - iban
+      - replacesOnline
       - signedOn
       type: object
     RecordedException:
@@ -6139,17 +6188,29 @@ components:
     SetUpMandateRequest:
       properties:
         accountHolder:
-          minLength: 1
+          maxLength: 70
+          minLength: 0
           type: string
+        address:
+          oneOf:
+          - $ref: '#/components/schemas/MandateAddressRequest'
+          - type: 'null'
         authorised:
           type: boolean
         iban:
-          minLength: 1
+          maxLength: 42
+          minLength: 0
+          type: string
+        wordingVersion:
+          maxLength: 16
+          minLength: 0
           type: string
       required:
       - accountHolder
+      - address
       - authorised
       - iban
+      - wordingVersion
       type: object
     SignInAnswer:
       properties:
@@ -6283,17 +6344,24 @@ components:
     SignupMandateRequest:
       properties:
         accountHolder:
-          minLength: 1
+          maxLength: 70
+          minLength: 0
           type: string
         authorised:
           type: boolean
         iban:
-          minLength: 1
+          maxLength: 42
+          minLength: 0
+          type: string
+        wordingVersion:
+          maxLength: 16
+          minLength: 0
           type: string
       required:
       - accountHolder
       - authorised
       - iban
+      - wordingVersion
       type: object
     SignupOutcomeResponse:
       properties:

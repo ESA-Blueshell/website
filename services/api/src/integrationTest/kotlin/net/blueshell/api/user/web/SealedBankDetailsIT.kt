@@ -54,7 +54,10 @@ class SealedBankDetailsIT : UserTestSupport() {
             put("/users/me/mandate")
                 .with(signedIn(by, steppedUp = true))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"iban":"$iban","accountHolder":"Ann Vos","authorised":true}"""),
+                .content(
+                    """{"iban":"$iban","accountHolder":"Ann Vos","authorised":true,"wordingVersion":"2026-10",""" +
+                        """"address":{"country":"NL","city":"Enschede","street":"Hallenweg","houseNumber":"5","zipCode":"7522NH"}}""",
+                ),
         )
 
     /** A member on incasso with a recorded mandate, and their membership's id. */
@@ -182,8 +185,8 @@ class SealedBankDetailsIT : UserTestSupport() {
 
         rewrap.handle(mapper.writeValueAsString(UserJobs.RewrapSealedValuesPayload()), null, false)
 
-        val pending = jdbc.queryForMap("SELECT iban, account_holder FROM pending_mandates WHERE user_id = ?", applicant.id)
-        assertThat((sealedOf(membershipId).values + pending.values).map { keyVersionOf(it.toString()) }).hasSize(4).containsOnly(newest)
+        val pending = jdbc.queryForMap("SELECT iban, account_holder, address FROM pending_mandates WHERE user_id = ?", applicant.id)
+        assertThat((sealedOf(membershipId).values + pending.values).map { keyVersionOf(it.toString()) }).hasSize(5).containsOnly(newest)
         mvc
             .perform(get("/memberships/$membershipId/mandate").with(signedIn(board)))
             .andExpect(jsonPath("$.accountHolder").value("Ann Vos"))

@@ -2,6 +2,7 @@ package net.blueshell.api.user.api
 
 import net.blueshell.api.user.domain.IncassoStanding
 import net.blueshell.api.user.domain.Mandates
+import net.blueshell.api.user.domain.OnlineAuthorisation
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -20,9 +21,12 @@ data class OwnMandate(
 class SignupMandates(
     private val mandates: Mandates,
 ) {
+    /** Authorised under [wordingVersion], with [address] the address the signup has just taken. */
     fun setUp(
         userId: Long,
         iban: String,
         accountHolder: String,
-    ): OwnMandate = mandates.setUpOwn(userId, iban, accountHolder)
+        wordingVersion: String,
+        address: AddressFields,
+    ): OwnMandate = mandates.setUpOwn(userId, iban, accountHolder, OnlineAuthorisation(wordingVersion, address))
 }

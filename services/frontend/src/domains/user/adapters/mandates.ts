@@ -6,6 +6,8 @@ import {
   findMandate,
   findOwnMandate,
   IncassoStanding,
+  type MandateAddressRequest,
+  MandateKind,
   type MandateResponse,
   type OwnMandateResponse,
   recordMandate,
@@ -18,10 +20,11 @@ import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
 import {readOr} from "@/utils/answers"
+import {MANDATE_WORDING} from "../mandateWording"
 import {accepted, reasonFor, refusable} from "../refusals"
 
-export type {MandateResponse, OwnMandateResponse, RecordMandateRequest}
-export {IncassoStanding}
+export type {MandateAddressRequest, MandateResponse, OwnMandateResponse, RecordMandateRequest}
+export {IncassoStanding, MandateKind}
 
 /** The membership's mandate and incasso standing, or nothing where it could not be read. */
 export const readMandate = (membershipId: number): Promise<MandateResponse | null> =>
@@ -48,15 +51,21 @@ export const readOwnMandate = (): Promise<OwnMandateResponse | null> => readOr(f
  * token and waits for the membership; it answers nothing then, since the reader has no session.
  */
 export async function setUpIncasso(
-  body: {iban: string; accountHolder: string; authorised: boolean},
+  body: {iban: string; accountHolder: string; authorised: boolean; address: MandateAddressRequest},
   signupToken?: string,
 ): Promise<{ok: true; saved: OwnMandateResponse | null} | (Refused & {needsStepUp?: boolean})> {
+  const wordingVersion = MANDATE_WORDING.version
   if (signupToken) {
-    const answered = await accepted(setUpMandate({headers: {[SIGNUP_TOKEN_HEADER]: signupToken}, body}), "Your bank details could not be saved.")
+    // The signup's mandate takes the address the signup has just taken, so it sends none.
+    const {iban, accountHolder, authorised} = body
+    const answered = await accepted(
+      setUpMandate({headers: {[SIGNUP_TOKEN_HEADER]: signupToken}, body: {iban, accountHolder, authorised, wordingVersion}}),
+      "Your bank details could not be saved.",
+    )
     return answered.ok ? {ok: true, saved: null} : answered
   }
   // From the account page a change waits on a step-up, which the page asks for and then saves again.
-  const res = await setUpOwnMandate({body})
+  const res = await setUpOwnMandate({body: {...body, wordingVersion}})
   if (res.data) return {ok: true, saved: res.data}
   return {
     ok: false,

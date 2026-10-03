@@ -81,6 +81,8 @@ export {
   readOwnMandate,
   saveMandate,
   setUpIncasso,
+  type MandateAddressRequest,
+  MandateKind,
   type MandateResponse,
   type OwnMandateResponse,
   type RecordMandateRequest,
@@ -101,3 +103,4 @@ export {
   type PersonRow,
 } from "./peopleList"
 export {MemberType, Role, RoleSource} from "@/services/api"
+export {MANDATE_WORDING} from "./mandateWording"

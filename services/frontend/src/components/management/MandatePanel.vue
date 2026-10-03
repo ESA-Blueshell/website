@@ -4,7 +4,7 @@
    number lives in this component's memory alone, so it is gone when the panel closes. */
 import {computed, ref, watch} from "vue"
 import {maskedIban} from "@/domains/contribution"
-import {IncassoStanding, type MandateResponse, readMandate, revealMandateIban, saveMandate} from "@/domains/user"
+import {IncassoStanding, MandateKind, type MandateResponse, readMandate, revealMandateIban, saveMandate} from "@/domains/user"
 import {formatDate} from "@/utils/timestamps"
 
 defineOptions({name: "MandatePanel"})
@@ -25,6 +25,7 @@ const holder = ref("")
 const signedOn = ref(new Date().toISOString().slice(0, 10))
 const failure = ref<string | null>(null)
 const saving = ref(false)
+const replacesOnline = ref(false)
 const revealed = ref<string | null>(null)
 const revealFailure = ref<string | null>(null)
 const revealing = ref(false)
@@ -33,6 +34,15 @@ const standing = computed(() => (mandate.value ? WORDS[mandate.value.standing] :
 
 const account = computed(() =>
   mandate.value ? [revealed.value ?? maskedIban(mandate.value), mandate.value.accountHolder].filter(Boolean).join(", ") : "")
+
+/* Online or paper, and for an online mandate the day the member authorised it. A paper mandate
+   recorded over an online one loses that record, so the board confirms it first. */
+const online = computed(() => mandate.value?.kind === MandateKind.ONLINE)
+const authorisedOn = computed(() => (mandate.value?.authorisedAt ? formatDate(mandate.value.authorisedAt) : ""))
+const kind = computed(() => {
+  if (!mandate.value?.kind) return ""
+  return online.value ? `Online mandate, authorised on ${authorisedOn.value}` : "Paper mandate"
+})
 
 const load = async () => {
   revealed.value = null
@@ -54,7 +64,9 @@ const save = async () => {
   if (saving.value) return
   saving.value = true
   failure.value = null
-  const answered = await saveMandate(membershipId, {iban: iban.value, accountHolder: holder.value, signedOn: signedOn.value})
+  const answered = await saveMandate(membershipId, {
+    iban: iban.value, accountHolder: holder.value, signedOn: signedOn.value, replacesOnline: online.value && replacesOnline.value,
+  })
   saving.value = false
   if (!answered.ok) {
     failure.value = answered.reason
@@ -62,6 +74,7 @@ const save = async () => {
   }
   mandate.value = answered.saved
   revealed.value = null
+  replacesOnline.value = false
   open.value = false
   iban.value = ""
   emit("changed")
@@ -113,6 +126,12 @@ watch(() => membershipId, load, {immediate: true})
         <dt>Mandate</dt>
         <dd>{{ mandate.reference }}, signed {{ mandate.signedOn }}</dd>
       </div>
+      <div v-if="kind">
+        <dt>Kind</dt>
+        <dd data-testid="mandate-kind">
+          {{ kind }}
+        </dd>
+      </div>
       <div v-if="mandate.recordedAt">
         <dt>Recorded</dt>
         <dd>{{ formatDate(mandate.recordedAt) }}</dd>
@@ -151,6 +170,19 @@ watch(() => membershipId, load, {immediate: true})
         label="Signed on"
         type="date"
       />
+      <template v-if="online">
+        <p
+          class="mandate__failure"
+          data-testid="mandate-replaces-online"
+        >
+          This replaces the online mandate the member authorised on {{ authorisedOn }}. Its PDF will no longer be available.
+        </p>
+        <v-checkbox
+          v-model="replacesOnline"
+          data-testid="mandate-replaces-online-confirm"
+          label="Replace the online mandate"
+        />
+      </template>
       <p
         v-if="failure"
         class="mandate__failure"
@@ -171,7 +203,7 @@ watch(() => membershipId, load, {immediate: true})
         <button
           class="mandate__action mandate__action--main"
           data-testid="mandate-save"
-          :disabled="saving"
+          :disabled="saving || (online && !replacesOnline)"
           type="submit"
         >
           Save mandate

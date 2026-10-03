@@ -85,7 +85,7 @@ class SignupController(
         @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
         @Valid @RequestBody request: SignupMandateRequest,
     ) {
-        signupUseCases.setUpMandate(signupToken, request.iban, request.accountHolder)
+        signupUseCases.setUpMandate(signupToken, request.iban, request.accountHolder, request.wordingVersion)
     }
 
     @PostMapping("/apply")

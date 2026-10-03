@@ -2310,11 +2310,28 @@ export type MadeChannel = {
     name: string;
 };
 
+export type MandateAddressRequest = {
+    city: string;
+    country: string;
+    houseNumber: string;
+    street: string;
+    zipCode: string;
+};
+
+export enum MandateKind {
+    ONLINE = 'ONLINE',
+    PAPER = 'PAPER'
+}
+
 export type MandateResponse = {
     /**
      * Null where no mandate is recorded, or where it cannot be opened now.
      */
     accountHolder?: string | null;
+    /**
+     * The moment an online mandate was authorised.
+     */
+    authorisedAt?: string | null;
     /**
      * The IBAN's country code; with the last two, all a response carries of it.
      */
@@ -2323,6 +2340,10 @@ export type MandateResponse = {
      * The IBAN's last two characters.
      */
     ibanLastTwo?: string | null;
+    /**
+     * Online where the member authorised it on the site, paper where the board recorded it.
+     */
+    kind?: MandateKind | null;
     membershipId: number;
     recordedAt?: string | null;
     recordedBy?: number | null;
@@ -2709,6 +2730,7 @@ export type ReconcileRun = {
 export type RecordMandateRequest = {
     accountHolder: string;
     iban: string;
+    replacesOnline: boolean;
     signedOn: string;
 };
 
@@ -3074,8 +3096,10 @@ export type ServiceEntry = {
 
 export type SetUpMandateRequest = {
     accountHolder: string;
+    address: MandateAddressRequest | null;
     authorised: boolean;
     iban: string;
+    wordingVersion: string;
 };
 
 export type SignInAnswer = {
@@ -3134,6 +3158,7 @@ export type SignupMandateRequest = {
     accountHolder: string;
     authorised: boolean;
     iban: string;
+    wordingVersion: string;
 };
 
 export type SignupOutcomeResponse = {

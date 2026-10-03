@@ -16,6 +16,11 @@ databaseChangeLog:
               - column: {name: mandate_signed_on, type: DATE}
               - column: {name: mandate_recorded_by, type: BIGINT}
               - column: {name: mandate_recorded_at, type: DATETIME(6)}
+              - column: {name: mandate_kind, type: VARCHAR(16)}
+              - column: {name: mandate_authorised_at, type: DATETIME(6)}
+              - column: {name: mandate_wording_version, type: VARCHAR(16)}
+              - column: {name: mandate_authorised_by, type: BIGINT}
+              - column: {name: mandate_address, type: TEXT}
       rollback:
         - dropColumn:
             tableName: memberships
@@ -27,3 +32,8 @@ databaseChangeLog:
               - column: {name: mandate_signed_on}
               - column: {name: mandate_recorded_by}
               - column: {name: mandate_recorded_at}
+              - column: {name: mandate_kind}
+              - column: {name: mandate_authorised_at}
+              - column: {name: mandate_wording_version}
+              - column: {name: mandate_authorised_by}
+              - column: {name: mandate_address}

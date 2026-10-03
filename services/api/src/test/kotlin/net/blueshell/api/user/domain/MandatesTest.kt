@@ -10,9 +10,11 @@ import net.blueshell.api.user.domain.sealing.Sealed
 import net.blueshell.api.user.domain.sealing.Sealer
 import net.blueshell.api.user.domain.sealing.SealingUnavailable
 import net.blueshell.api.user.domain.sealing.keyVersionOf
+import net.blueshell.api.user.persistence.MandateKind
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.PendingMandate
 import net.blueshell.api.user.persistence.PendingMandateRepository
+import net.blueshell.api.user.web.MandateAddressRequest
 import net.blueshell.api.user.web.MandateController
 import net.blueshell.api.user.web.RecordMandateRequest
 import net.blueshell.api.user.web.SetUpMandateRequest
@@ -41,12 +43,14 @@ class MandatesTest {
     private val now = Instant.parse("2026-09-30T10:00:00Z")
     private val repository: MemberRepository = mock()
     private val sealer: Sealer = spy(LocalSealer())
-    private val sealing = SealedBankDetails(sealer, "api-bank-details")
+    private val sealing = SealedBankDetails(sealer, JsonMapper.builder().build(), "api-bank-details")
     private val pending: PendingMandateRepository = mock()
     private val published: org.springframework.context.ApplicationEventPublisher = mock()
     private val stepUp: net.blueshell.api.security.StepUp = mock()
     private val mandates = Mandates(repository, pending, sealing, Clock.fixed(now, ZoneOffset.UTC), published)
     private val currentUser: CurrentUserProvider = mock()
+    private val home = MandateAddressRequest("NL", "Enschede", "Hallenweg", "5", "7522NH")
+    private val online = OnlineAuthorisation("2026-10", home.asFields())
     private val controller = MandateController(mandates, currentUser, stepUp)
     private val membership =
         Entities.membership(id = 12).also {
@@ -120,7 +124,7 @@ class MandatesTest {
         val empty = net.blueshell.api.user.persistence.IncassoMandate::class.java.getDeclaredConstructor().newInstance()
         assertThat(empty).isNotNull
         assertThat(PendingMandate::class.java.getDeclaredConstructor().newInstance()).isNotNull
-        val waiting = PendingMandate(3, "sealed", "sealed", "NL00", LocalDate.of(2026, 9, 30))
+        val waiting = PendingMandate(3, "sealed", "sealed", "NL00", LocalDate.of(2026, 9, 30), now, "2026-10", "sealed")
         assertThat(waiting.toString()).isEqualTo("PendingMandate(NL00)")
         assertThat(waiting.userId).isEqualTo(3)
     }
@@ -130,13 +134,18 @@ class MandatesTest {
         // The signed-in reader is user 3.
         whenever(repository.findByUser_Id(3)).thenReturn(mutableListOf(membership))
 
-        val own = controller.setUpOwnMandate(SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true))
+        val own =
+            controller.setUpOwnMandate(
+                SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
+            )
 
         assertThat(own.standing).isEqualTo(IncassoStanding.MANDATE_RECORDED)
         assertThat(own.signedOn).isEqualTo(LocalDate.of(2026, 9, 30))
         assertThat(own.pending).isFalse()
         assertThat(membership.mandate!!.recordedBy).isEqualTo(3)
-        controller.setUpOwnMandate(SetUpMandateRequest("GB82WEST12345698765432", "Ann Vos", authorised = true))
+        controller.setUpOwnMandate(
+            SetUpMandateRequest("GB82WEST12345698765432", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
+        )
         assertThat(controller.findOwnMandate().reference).isEqualTo("BLUESHELL-12-20260930")
         assertThat(controller.findOwnMandate().let { listOf(it.ibanCountry, it.ibanLastTwo) }).containsExactly("GB", "32")
         assertThat(SetUpMandateRequest("NL91ABNA0417164300", "Ann").toString()).doesNotContain("0417")
@@ -152,8 +161,8 @@ class MandatesTest {
         whenever(pending.findByUserId(membership.userId)).thenAnswer { waiting }
 
         assertThat(mandates.own(membership.userId).standing).isEqualTo(IncassoStanding.NONE)
-        mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", "Ann Vos")
-        val again = mandates.setUpOwn(membership.userId, "GB82WEST12345698765432", "Ann Vos")
+        mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", "Ann Vos", online)
+        val again = mandates.setUpOwn(membership.userId, "GB82WEST12345698765432", "Ann Vos", online)
         assertThat(again.pending).isTrue()
         assertThat(again.iban).isEqualTo(
             net.blueshell.api.user.api
@@ -161,18 +170,20 @@ class MandatesTest {
         )
         assertThat(again.iban.toString()).isEqualTo("GB•• … ••32")
         assertThat(waiting.toString()).doesNotContain("1234")
-        assertThatThrownBy { mandates.setUpOwn(membership.userId, "nope", "Ann") }.isInstanceOf(InvalidIban::class.java)
-        assertThatThrownBy { mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", " ") }
+        assertThatThrownBy { mandates.setUpOwn(membership.userId, "nope", "Ann", online) }.isInstanceOf(InvalidIban::class.java)
+        assertThatThrownBy { mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", " ", online) }
             .isInstanceOf(AccountHolderMissing::class.java)
 
         mandates.adoptPending(membership)
 
-        // The sealed values moved as they were, and still open for the same member.
+        // The sealed values moved as they were, the address among them, and still open for the same member.
+        assertThat(membership.mandate!!.let { listOf(it.kind, it.authorisedAt, it.wordingVersion, it.authorisedBy, it.sealedAddress) })
+            .containsExactly(MandateKind.ONLINE, now, "2026-10", membership.userId, waiting!!.sealedAddress)
         assertThat(mandates.bankDetailsOf(membership.userId, membership.mandate!!).iban.value).isEqualTo("GB82WEST12345698765432")
         assertThat(membership.mandate!!.ibanMasked).isEqualTo("GB32")
         assertThat(membership.mandate!!.reference).isEqualTo("BLUESHELL-12-20260930")
         assertThat(membership.incasso).isTrue()
-        verify(pending).delete(waiting!!)
+        verify(pending).delete(waiting)
         assertThat(PendingMandate::class.java.getDeclaredConstructor().newInstance()).isNotNull
     }
 
@@ -184,7 +195,7 @@ class MandatesTest {
         membership.incasso = true
         whenever(repository.findByUser_Id(membership.userId)).thenReturn(mutableListOf(membership))
         assertThat(mandates.own(membership.userId).standing).isEqualTo(IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS)
-        assertThat(SignupMandates(mandates).setUp(membership.userId, "NL91ABNA0417164300", "Ann").standing)
+        assertThat(SignupMandates(mandates).setUp(membership.userId, "NL91ABNA0417164300", "Ann", "2026-10", online.address).standing)
             .isEqualTo(IncassoStanding.MANDATE_RECORDED)
         whenever(currentUser.currentUser()).thenReturn(null)
         assertThatThrownBy { controller.findOwnMandate() }.isInstanceOf(ResponseStatusException::class.java)
@@ -193,7 +204,9 @@ class MandatesTest {
     @Test
     fun `a change from the account page asks a step-up, and tells the security log with the account masked`() {
         whenever(repository.findByUser_Id(3)).thenReturn(mutableListOf(membership))
-        controller.setUpOwnMandate(SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true))
+        controller.setUpOwnMandate(
+            SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
+        )
 
         org.mockito.kotlin
             .verify(stepUp)
@@ -211,8 +224,11 @@ class MandatesTest {
             net.blueshell.api.security
                 .StepUpRequiredException(),
         )
-        assertThatThrownBy { controller.setUpOwnMandate(SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true)) }
-            .isInstanceOf(net.blueshell.api.security.StepUpRequiredException::class.java)
+        assertThatThrownBy {
+            controller.setUpOwnMandate(
+                SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
+            )
+        }.isInstanceOf(net.blueshell.api.security.StepUpRequiredException::class.java)
         org.mockito.kotlin.verifyNoMoreInteractions(published)
     }
 
@@ -255,7 +271,14 @@ class MandatesTest {
         assertThatThrownBy { mandates.record(12, "GB82WEST12345698765432", "Ann Vos", LocalDate.of(2026, 9, 2), 3) }
             .isInstanceOf(SealingUnavailable::class.java)
         whenever(repository.findByUser_Id(99)).thenReturn(mutableListOf())
-        assertThatThrownBy { mandates.setUpOwn(99, "GB82WEST12345698765432", "Ann Vos") }.isInstanceOf(SealingUnavailable::class.java)
+        assertThatThrownBy {
+            mandates.setUpOwn(
+                99,
+                "GB82WEST12345698765432",
+                "Ann Vos",
+                online,
+            )
+        }.isInstanceOf(SealingUnavailable::class.java)
         verify(pending, times(0)).save(any<PendingMandate>())
 
         assertThat(membership.mandate!!.sealedIban).isEqualTo(recorded)
@@ -299,5 +322,81 @@ class MandatesTest {
         doThrow(SealingUnavailable()).whenever(sealer).open(any(), any())
         assertThatThrownBy { controller.revealIban(12) }.isInstanceOf(SealingUnavailable::class.java)
         verify(published, times(0)).publishEvent(any<IbanRevealed>())
+    }
+
+    @Test
+    fun `an online mandate records its kind, the moment, the wording and who authorised it, and seals the address with the account`() {
+        whenever(repository.findByUser_Id(3)).thenReturn(mutableListOf(membership))
+
+        controller.setUpOwnMandate(
+            SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
+        )
+        val held = membership.mandate!!
+
+        assertThat(held.kind).isEqualTo(MandateKind.ONLINE)
+        assertThat(held.authorisedAt).isEqualTo(now)
+        assertThat(held.wordingVersion).isEqualTo(MandateWording.CURRENT)
+        assertThat(held.authorisedBy).isEqualTo(membership.userId)
+        assertThat(held.sealedAddress).isNotNull().doesNotContain("Hallenweg").doesNotContain("Enschede")
+        verify(sealer).seal(eq("api-bank-details"), argThat { size == 3 && this[2].context == "mandate-address:${membership.userId}" })
+        assertThat(listOf(held.sealedIban, held.sealedAccountHolder, held.sealedAddress!!).map(::keyVersionOf).distinct()).hasSize(1)
+        assertThat(controller.findMandate(12).let { it.kind to it.authorisedAt }).isEqualTo(MandateKind.ONLINE to now)
+        assertThat(MandateWording.textOf(held.wordingVersion!!)).startsWith("I authorise ESA Blueshell")
+        assertThat(MandateWording.textOf("1999-01")).isNull()
+        // A request that leaves the address out fails validation rather than parsing.
+        assertThat(MandateAddressRequest().asFields().street).isEmpty()
+    }
+
+    @Test
+    fun `a paper mandate records that it is one, with no authorisation and no address`() {
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+        val held = membership.mandate!!
+
+        assertThat(held.kind).isEqualTo(MandateKind.PAPER)
+        assertThat(listOf(held.authorisedAt, held.wordingVersion, held.authorisedBy, held.sealedAddress)).containsOnlyNulls()
+        assertThat(controller.findMandate(12).kind).isEqualTo(MandateKind.PAPER)
+    }
+
+    @Test
+    fun `an online mandate is refused under another wording than the current one, or without a whole address`() {
+        whenever(repository.findByUser_Id(3)).thenReturn(mutableListOf(membership))
+
+        assertThatThrownBy { mandates.setUpOwn(3, "NL91ABNA0417164300", "Ann Vos", online.copy(wordingVersion = "2025-01")) }
+            .isInstanceOf(MandateWordingOutdated::class.java)
+        assertThatThrownBy {
+            mandates.setUpOwn(
+                3,
+                "NL91ABNA0417164300",
+                "Ann Vos",
+                online.copy(address = online.address.copy(street = " ")),
+            )
+        }.isInstanceOf(MandateAddressMissing::class.java)
+        assertThatThrownBy {
+            mandates.setUpOwn(
+                3,
+                "NL91ABNA0417164300",
+                "Ann Vos",
+                online.copy(address = online.address.copy(zipCode = null)),
+            )
+        }.isInstanceOf(MandateAddressMissing::class.java)
+        assertThat(membership.mandate).isNull()
+    }
+
+    @Test
+    fun `a paper mandate replaces an online one only once the board confirmed it, and an online one replaces a paper one without asking`() {
+        whenever(repository.findByUser_Id(membership.userId)).thenReturn(mutableListOf(membership))
+        mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", "Ann Vos", online)
+
+        assertThatThrownBy { mandates.record(12, "GB82WEST12345698765432", "Ann Vos", LocalDate.of(2026, 9, 20), 3) }
+            .isInstanceOf(ReplacesOnlineMandate::class.java)
+            .satisfies({ assertThat((it as ReplacesOnlineMandate).facts).containsEntry("authorisedAt", now.toString()) })
+        assertThat(membership.mandate!!.kind).isEqualTo(MandateKind.ONLINE)
+
+        val request = RecordMandateRequest("GB82WEST12345698765432", "Ann Vos", LocalDate.of(2026, 9, 20), replacesOnline = true)
+        assertThat(controller.recordMandate(12, request).kind).isEqualTo(MandateKind.PAPER)
+        assertThat(membership.mandate!!.sealedAddress).isNull()
+
+        mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", "Ann Vos", online)
+        assertThat(membership.mandate!!.kind).isEqualTo(MandateKind.ONLINE)
     }
 }

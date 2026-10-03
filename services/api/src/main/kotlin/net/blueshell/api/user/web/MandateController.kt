@@ -8,6 +8,7 @@ import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.domain.Mandates
+import net.blueshell.api.user.domain.OnlineAuthorisation
 import net.blueshell.api.user.domain.incassoStanding
 import net.blueshell.api.user.persistence.Membership
 import org.springframework.http.HttpHeaders
@@ -43,8 +44,14 @@ class MandateController(
         @Valid @RequestBody request: RecordMandateRequest,
     ): MandateResponse =
         mandates
-            .record(membershipId, request.iban, request.accountHolder, request.signedOn, currentUser.currentUser()?.id)
-            .asMandateResponse()
+            .record(
+                membershipId,
+                request.iban,
+                request.accountHolder,
+                request.signedOn,
+                currentUser.currentUser()?.id,
+                request.replacesOnline,
+            ).asMandateResponse()
 
     /**
      * The membership's full IBAN, for a board member who needs it. Every reveal is written to the
@@ -74,7 +81,8 @@ class MandateController(
         @Valid @RequestBody request: SetUpMandateRequest,
     ): OwnMandateResponse {
         stepUp.require()
-        return mandates.changeOwn(reader(), request.iban, request.accountHolder).asResponse()
+        val authorisation = OnlineAuthorisation(request.wordingVersion, requireNotNull(request.address).asFields())
+        return mandates.changeOwn(reader(), request.iban, request.accountHolder, authorisation).asResponse()
     }
 
     private fun reader(): Long = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
@@ -91,6 +99,8 @@ class MandateController(
             signedOn = held?.signedOn,
             recordedBy = held?.recordedBy,
             recordedAt = held?.recordedAt,
+            kind = held?.kind,
+            authorisedAt = held?.authorisedAt,
         )
     }
 }

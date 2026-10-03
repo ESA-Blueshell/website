@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import MandatePanel from "@/components/management/MandatePanel.vue"
-import {IncassoStanding} from "@/services/api"
+import {IncassoStanding, MandateKind} from "@/services/api"
 import {settle} from "../../helpers/testUtils"
 
 const api = vi.hoisted(() => ({findMandate: vi.fn(), recordMandate: vi.fn(), revealIban: vi.fn()}))
@@ -36,7 +36,7 @@ describe("the mandate panel", () => {
     await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
     await settle()
 
-    expect(api.recordMandate).toHaveBeenCalledWith({path: {membershipId: 9}, body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", signedOn: "2026-09-01"}})
+    expect(api.recordMandate).toHaveBeenCalledWith({path: {membershipId: 9}, body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", signedOn: "2026-09-01", replacesOnline: false}})
     expect(wrapper.get('[data-testid="mandate-standing"]').text()).toBe("Collected by incasso")
     expect(wrapper.get('[data-testid="mandate-facts"]').text()).toContain("NL•• … ••00")
     expect(wrapper.text()).not.toContain("0417")
@@ -97,6 +97,30 @@ describe("the mandate panel", () => {
     }
   })
 
+  it("says what kind of mandate it is, and replaces an online one only once that is confirmed", async () => {
+    api.findMandate.mockResolvedValue({status: 200, data: {...recorded, kind: MandateKind.PAPER}})
+    const paper = mount(MandatePanel, {props: {membershipId: 9}})
+    await settle()
+    expect(paper.get('[data-testid="mandate-kind"]').text()).toBe("Paper mandate")
+    await paper.get('[data-testid="mandate-record"]').trigger("click")
+    expect(paper.find('[data-testid="mandate-replaces-online"]').exists()).toBe(false)
+
+    api.findMandate.mockResolvedValue({status: 200, data: {...recorded, kind: MandateKind.ONLINE, authorisedAt: "2026-09-30T10:00:00Z"}})
+    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    await settle()
+    expect(wrapper.get('[data-testid="mandate-kind"]').text()).toContain("Online mandate, authorised on")
+
+    await wrapper.get('[data-testid="mandate-record"]').trigger("click")
+    expect(wrapper.get('[data-testid="mandate-replaces-online"]').text()).toContain("Its PDF will no longer be available.")
+    expect(wrapper.get('[data-testid="mandate-save"]').attributes("disabled")).toBeDefined()
+
+    await wrapper.findComponent({name: "VCheckbox"}).vm.$emit("update:modelValue", true)
+    expect(wrapper.get('[data-testid="mandate-save"]').attributes("disabled")).toBeUndefined()
+    await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
+    await settle()
+    expect(api.recordMandate.mock.calls[0]![0].body.replacesOnline).toBe(true)
+  })
+
   it("says why a mandate was refused, and cancels", async () => {
     api.recordMandate.mockResolvedValue({status: 400, error: {code: "InvalidIban", detail: "That is not a valid IBAN."}})
     api.findMandate.mockResolvedValue({status: 200, data: {membershipId: 9, standing: IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS}})
@@ -111,6 +135,7 @@ describe("the mandate panel", () => {
 
     const refusals = [
       ["MandateSignedInFuture", "signed today or before"], ["AccountHolderMissing", "whose account"], ["SealingUnavailable", "Try again in a moment"],
+      ["MandateAddressMissing", "whole address"], ["MandateWordingOutdated", "Reload the page"],
     ] as const
     for (const [code, words] of refusals) {
       api.recordMandate.mockResolvedValue({status: 400, error: {code, detail: code}})
@@ -118,6 +143,14 @@ describe("the mandate panel", () => {
       await settle()
       expect(wrapper.get('[data-testid="mandate-failure"]').text()).toContain(words)
     }
+    api.recordMandate.mockResolvedValue({status: 409, error: {code: "ReplacesOnlineMandate", authorisedAt: "2026-09-30T10:00:00Z"}})
+    await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
+    await settle()
+    expect(wrapper.get('[data-testid="mandate-failure"]').text()).toContain("authorised on 30 September 2026")
+    api.recordMandate.mockResolvedValue({status: 409, error: {code: "ReplacesOnlineMandate"}})
+    await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
+    await settle()
+    expect(wrapper.get('[data-testid="mandate-failure"]').text()).toContain("authorised on an earlier day")
 
     await wrapper.get('[data-testid="mandate-cancel"]').trigger("click")
     expect(wrapper.find('[data-testid="mandate-form"]').exists()).toBe(false)

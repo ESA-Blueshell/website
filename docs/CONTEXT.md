@@ -594,11 +594,29 @@ A new IBAN makes a new mandate with a new reference; the same IBAN keeps its ref
 
 _Avoid_: incasso (the collection itself), authorisation, SEPA form.
 
+### Online mandate
+
+A mandate the member authorised on the site, on their account page or in the signup's incasso
+step. It records the moment of authorisation, the version of the wording they agreed to, the
+account that authorised it and the address they confirmed, sealed with the bank details. That
+address is the mandate's own record: the address on the member's account is not changed by it.
+Online is dominant: it replaces a paper mandate without asking.
+
+_Avoid_: e-mandate, digital mandate.
+
+### Paper mandate
+
+A mandate signed on paper and recorded by a board member. The paper is the record, so the site
+keeps only who recorded it and when. Recording one over an online mandate needs the board's
+confirmation, since the online mandate's record goes with it.
+
+_Avoid_: manual mandate.
+
 ### Pending mandate
 
 Bank details an applicant set up before their membership started. They wait, sealed to the
 applicant, and move onto the membership as its mandate when it starts. The sealed values move as
-they are, since both belong to the same person.
+they are, since both belong to the same person. A pending mandate is always an **online mandate**.
 
 _Avoid_: draft mandate, provisional mandate.
 

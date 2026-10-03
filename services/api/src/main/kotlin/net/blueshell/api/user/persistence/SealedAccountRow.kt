@@ -6,4 +6,7 @@ interface SealedAccountRow {
     val userId: Long
     val iban: String
     val accountHolder: String
+
+    /** An online mandate's sealed address, which a paper mandate has none of. */
+    val address: String?
 }

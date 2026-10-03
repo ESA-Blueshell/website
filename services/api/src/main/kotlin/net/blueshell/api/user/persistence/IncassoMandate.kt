@@ -1,9 +1,19 @@
 package net.blueshell.api.user.persistence
 
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import java.time.Instant
 import java.time.LocalDate
+
+/** How a mandate was signed: by the member on the site, or on paper and recorded by the board. */
+@Schema(enumAsRef = true)
+enum class MandateKind {
+    ONLINE,
+    PAPER,
+}
 
 /**
  * The bank details and mandate a membership is collected under. The IBAN and account holder are
@@ -26,6 +36,21 @@ class IncassoMandate(
     var recordedBy: Long?,
     @Column(name = "mandate_recorded_at")
     var recordedAt: Instant,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mandate_kind", length = 16)
+    var kind: MandateKind = MandateKind.PAPER,
+    /** The moment an online mandate was authorised; a paper one has only the date it was signed on. */
+    @Column(name = "mandate_authorised_at")
+    var authorisedAt: Instant? = null,
+    /** Which wording the member agreed to online; see `MandateWording`. */
+    @Column(name = "mandate_wording_version", length = 16)
+    var wordingVersion: String? = null,
+    /** The account that authorised it online. */
+    @Column(name = "mandate_authorised_by")
+    var authorisedBy: Long? = null,
+    /** The address the member confirmed when authorising online, sealed: the mandate's own record, not their account's address. */
+    @Column(name = "mandate_address", length = 1024)
+    var sealedAddress: String? = null,
 ) {
     // Nothing of the account reaches a log line.
     override fun toString(): String = "IncassoMandate($ibanMasked, $reference)"

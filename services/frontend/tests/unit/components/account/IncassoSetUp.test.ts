@@ -5,7 +5,9 @@ import {IncassoStanding} from "@/services/api"
 import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 import {settle} from "../../helpers/testUtils"
 
-const api = vi.hoisted(() => ({findOwnMandate: vi.fn(), setUpOwnMandate: vi.fn(), setUpMandate: vi.fn(), twoFactorStanding: vi.fn()}))
+const api = vi.hoisted(() => ({
+  findOwnMandate: vi.fn(), setUpOwnMandate: vi.fn(), setUpMandate: vi.fn(), twoFactorStanding: vi.fn(), findAddressById: vi.fn(),
+}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -60,10 +62,14 @@ describe("setting up incasso", () => {
     expect(wrapper.get('[data-testid="incasso-open"]').text()).toBe("Pay by incasso")
 
     await fill(wrapper)
+    expect(wrapper.findComponent({name: "VCheckbox"}).props("label")).toContain("I authorise ESA Blueshell")
     await wrapper.get('[data-testid="incasso-form"]').trigger("submit")
     await settle()
 
-    expect(api.setUpOwnMandate).toHaveBeenCalledWith({body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", authorised: true}})
+    expect(api.setUpOwnMandate).toHaveBeenCalledWith({body: {
+      iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", authorised: true, wordingVersion: "2026-10",
+      address: {country: "NL", city: "", street: "", houseNumber: "", zipCode: ""},
+    }})
     expect(wrapper.get('[data-testid="incasso-current"]').text()).toContain("from the account NL•• … ••00")
     expect(wrapper.text()).not.toContain("0417")
     expect(wrapper.find('[data-testid="incasso-saved"]').exists()).toBe(true)
@@ -84,15 +90,50 @@ describe("setting up incasso", () => {
     expect(api.findOwnMandate).not.toHaveBeenCalled()
 
     await fill(wrapper)
+    // The signup's mandate takes the address the signup just took, so the step asks for none.
+    expect(wrapper.find('[data-testid="incasso-street"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="incasso-address-note"]').text()).toContain("address you gave in this signup")
     await wrapper.get('[data-testid="incasso-form"]').trigger("submit")
     await settle()
 
     expect(api.setUpMandate).toHaveBeenCalledWith({
       headers: {[SIGNUP_TOKEN_HEADER]: "tok"},
-      body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", authorised: true},
+      body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", authorised: true, wordingVersion: "2026-10"},
     })
     expect(api.setUpOwnMandate).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="incasso-saved"]').exists()).toBe(true)
+  })
+
+  it("shows the address on the account to confirm or correct, and sends what is confirmed", async () => {
+    api.findAddressById.mockResolvedValue({status: 200, data: {
+      id: 5, opened: true, country: "NL", city: "Enschede", street: "Hallenweg", houseNumber: "5", zipCode: "7522NH", version: 0, createdAt: "", updatedAt: "",
+    }})
+    const wrapper = mount(IncassoSetUp, {props: {addressId: 5}})
+    await settle()
+    await fill(wrapper)
+    expect(wrapper.findAllComponents({name: "VTextField"})[2]!.props("modelValue")).toBe("Hallenweg")
+
+    const typed = wrapper.findAllComponents({name: "VTextField"})
+    await typed[2]!.vm.$emit("update:modelValue", "Hallenweg")
+    await typed[3]!.vm.$emit("update:modelValue", "7")
+    await typed[4]!.vm.$emit("update:modelValue", "7522NH")
+    await typed[5]!.vm.$emit("update:modelValue", "Enschede")
+    await wrapper.findComponent({name: "CountrySelect"}).vm.$emit("update:modelValue", "DE")
+    await wrapper.get('[data-testid="incasso-form"]').trigger("submit")
+    await settle()
+
+    expect(api.findAddressById).toHaveBeenCalledWith({path: {id: 5}, throwOnError: true})
+    expect(api.setUpOwnMandate.mock.calls[0]![0].body.address)
+      .toEqual({country: "DE", city: "Enschede", street: "Hallenweg", houseNumber: "7", zipCode: "7522NH"})
+  })
+
+  it("leaves the address to type in where the one on the account does not open", async () => {
+    api.findAddressById.mockResolvedValue({status: 200, data: {id: 5, opened: false, version: 0, createdAt: "", updatedAt: ""}})
+    const wrapper = mount(IncassoSetUp, {props: {addressId: 5}})
+    await settle()
+    await fill(wrapper)
+
+    expect(wrapper.findAllComponents({name: "VTextField"})[2]!.props("modelValue")).toBe("")
   })
 
   it("says why the details were refused, and cancels", async () => {

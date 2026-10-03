@@ -1,11 +1,13 @@
 package net.blueshell.api.user.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
+import net.blueshell.api.user.api.AddressFields
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.IbanRevealed
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.persistence.IncassoMandate
+import net.blueshell.api.user.persistence.MandateKind
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.PendingMandate
@@ -31,6 +33,12 @@ enum class IncassoStanding {
     /** Marked as paying by incasso, but no bank details are on file to collect from. */
     ON_INCASSO_WITHOUT_BANK_DETAILS,
 }
+
+/** What a member confirmed when authorising incasso on the site: the wording they saw and their address then. */
+data class OnlineAuthorisation(
+    val wordingVersion: String,
+    val address: AddressFields,
+)
 
 /** A membership's bank details opened, for the one place the full number may go: ING's file. */
 data class BankDetails(
@@ -58,8 +66,9 @@ class Mandates(
     private val events: ApplicationEventPublisher,
 ) {
     /**
-     * Records the bank details and mandate, replacing any before them, and puts the membership on
-     * incasso. A new IBAN gets a new mandate reference; the same IBAN keeps its reference.
+     * Records a paper mandate, replacing any before it, and puts the membership on incasso. A
+     * mandate the member authorised online is replaced only where the board confirmed that with
+     * [replacesOnline], since its record of the authorisation goes with it.
      */
     @Transactional
     fun record(
@@ -68,11 +77,27 @@ class Mandates(
         accountHolder: String,
         signedOn: LocalDate,
         recordedBy: Long?,
+        replacesOnline: Boolean = false,
     ): Membership {
         val iban = Iban.parse(rawIban) ?: throw InvalidIban()
         val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
         if (signedOn.isAfter(LocalDate.now(clock))) throw MandateSignedInFuture()
         val membership = find(membershipId)
+        val online = membership.mandate?.takeIf { it.kind == MandateKind.ONLINE }
+        if (online != null && !replacesOnline) throw ReplacesOnlineMandate(online.authorisedAt ?: online.recordedAt)
+        return write(membership, iban, holder, signedOn, recordedBy, null)
+    }
+
+    // A new IBAN gets a new mandate reference; the same IBAN keeps its reference.
+    private fun write(
+        membership: Membership,
+        iban: Iban,
+        holder: String,
+        signedOn: LocalDate,
+        recordedBy: Long?,
+        online: OnlineAuthorisation?,
+    ): Membership {
+        val membershipId = requireNotNull(membership.id)
         // A mandate that no longer opens for its member is replaced as a new one, under a new reference.
         val before =
             membership.mandate?.let { held ->
@@ -87,7 +112,8 @@ class Mandates(
                 ?.takeIf { before?.iban == iban }
                 ?.reference
                 ?: referenceFor(membershipId, signedOn)
-        val sealed = sealing.seal(membership.userId, iban, holder)
+        val sealed = sealing.seal(membership.userId, iban, holder, online?.address)
+        val now = clock.instant()
         membership.mandate =
             IncassoMandate(
                 sealedIban = sealed.iban,
@@ -96,7 +122,12 @@ class Mandates(
                 reference = reference,
                 signedOn = signedOn,
                 recordedBy = recordedBy,
-                recordedAt = clock.instant(),
+                recordedAt = now,
+                kind = if (online == null) MandateKind.PAPER else MandateKind.ONLINE,
+                authorisedAt = online?.let { now },
+                wordingVersion = online?.wordingVersion,
+                authorisedBy = online?.let { membership.userId },
+                sealedAddress = sealed.address,
             )
         membership.incasso = true
         return memberships.save(membership)
@@ -111,30 +142,40 @@ class Mandates(
         userId: Long,
         rawIban: String,
         accountHolder: String,
+        authorisation: OnlineAuthorisation,
     ): OwnMandate =
-        setUpOwn(userId, rawIban, accountHolder).also { own ->
+        setUpOwn(userId, rawIban, accountHolder, authorisation).also { own ->
             own.iban?.let { events.publishEvent(BankDetailsChanged(userId, it)) }
         }
 
     /**
-     * A member setting up or changing incasso themselves: signed today, on the site. Before their
-     * membership starts the details wait as a pending mandate and move onto it when it does.
+     * A member setting up or changing incasso themselves: an online mandate, authorised now under
+     * the wording and the address they confirmed. It replaces a paper mandate without asking.
+     * Before their membership starts it waits as a pending mandate and moves onto it when it does.
      */
     @Transactional
     fun setUpOwn(
         userId: Long,
         rawIban: String,
         accountHolder: String,
+        authorisation: OnlineAuthorisation,
     ): OwnMandate {
+        val iban = Iban.parse(rawIban) ?: throw InvalidIban()
+        val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
+        if (authorisation.wordingVersion != MandateWording.CURRENT) throw MandateWordingOutdated()
+        val address = authorisation.address
+        if (listOf(address.country, address.city, address.street, address.houseNumber, address.zipCode).any { it.isNullOrBlank() }) {
+            throw MandateAddressMissing()
+        }
         val today = LocalDate.now(clock)
         val running = memberships.findByUser_Id(userId).firstOrNull { it.endDate == null }
         if (running != null) {
-            record(requireNotNull(running.id), rawIban, accountHolder, today, userId)
+            write(running, iban, holder, today, userId, authorisation)
             return own(userId)
         }
-        val iban = Iban.parse(rawIban) ?: throw InvalidIban()
-        val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
-        val sealed = sealing.seal(userId, iban, holder)
+        val sealed = sealing.seal(userId, iban, holder, address)
+        val sealedAddress = requireNotNull(sealed.address)
+        val now = clock.instant()
         val pending = pendingMandates.findByUserId(userId)
         val kept =
             pending?.apply {
@@ -142,7 +183,20 @@ class Mandates(
                 sealedAccountHolder = sealed.accountHolder
                 ibanMasked = iban.masked
                 signedOn = today
-            } ?: PendingMandate(userId, sealed.iban, sealed.accountHolder, iban.masked, today)
+                authorisedAt = now
+                wordingVersion = authorisation.wordingVersion
+                this.sealedAddress = sealedAddress
+            }
+                ?: PendingMandate(
+                    userId,
+                    sealed.iban,
+                    sealed.accountHolder,
+                    iban.masked,
+                    today,
+                    now,
+                    authorisation.wordingVersion,
+                    sealedAddress,
+                )
         pendingMandates.save(kept)
         return own(userId)
     }
@@ -182,6 +236,11 @@ class Mandates(
                 signedOn = pending.signedOn,
                 recordedBy = membership.userId,
                 recordedAt = clock.instant(),
+                kind = MandateKind.ONLINE,
+                authorisedAt = pending.authorisedAt,
+                wordingVersion = pending.wordingVersion,
+                authorisedBy = pending.userId,
+                sealedAddress = pending.sealedAddress,
             )
         membership.incasso = true
         memberships.save(membership)

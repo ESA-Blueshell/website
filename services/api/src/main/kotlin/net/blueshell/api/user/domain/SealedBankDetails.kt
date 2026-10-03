@@ -1,5 +1,6 @@
 package net.blueshell.api.user.domain
 
+import net.blueshell.api.user.api.AddressFields
 import net.blueshell.api.user.domain.sealing.Sealed
 import net.blueshell.api.user.domain.sealing.SealedValueUnopenable
 import net.blueshell.api.user.domain.sealing.Sealer
@@ -8,11 +9,13 @@ import net.blueshell.api.user.domain.sealing.sealingContext
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import tools.jackson.databind.ObjectMapper
 
-/** A mandate's IBAN and account holder as they are stored, each sealed. */
+/** A mandate's IBAN and account holder as they are stored, each sealed, with an online mandate's address. */
 data class SealedAccount(
     val iban: String,
     val accountHolder: String,
+    val address: String? = null,
 )
 
 /** A sealed account and the member it is bound to, which opening it needs. */
@@ -31,19 +34,24 @@ data class HeldAccount(
 @Service
 class SealedBankDetails(
     private val sealer: Sealer,
+    private val mapper: ObjectMapper,
     @param:Value($$"${privacy.bank-details-key:api-bank-details}") val key: String,
 ) {
+    /** Seals the account, and with it the address an online mandate was authorised under, all in one call. */
     fun seal(
         userId: Long,
         iban: Iban,
         accountHolder: String,
+        address: AddressFields? = null,
     ): SealedAccount {
-        val (sealedIban, sealedHolder) =
-            sealer.seal(
-                key,
-                listOf(Sealed(iban.value, sealingContext(IBAN, userId)), Sealed(accountHolder, sealingContext(ACCOUNT_HOLDER, userId))),
+        val values =
+            listOfNotNull(
+                Sealed(iban.value, sealingContext(IBAN, userId)),
+                Sealed(accountHolder, sealingContext(ACCOUNT_HOLDER, userId)),
+                address?.let { Sealed(mapper.writeValueAsString(it), sealingContext(ADDRESS, userId)) },
             )
-        return SealedAccount(sealedIban, sealedHolder)
+        val sealed = sealer.seal(key, values)
+        return SealedAccount(sealed[0], sealed[1], sealed.getOrNull(2))
     }
 
     /** Opens every account in one call. One that does not open for its member refuses them all with [BankDetailsUnopenable]. */
@@ -79,6 +87,7 @@ class SealedBankDetails(
     companion object {
         const val IBAN = "iban"
         const val ACCOUNT_HOLDER = "account-holder"
+        const val ADDRESS = "mandate-address"
         private val log = LoggerFactory.getLogger(SealedBankDetails::class.java)
     }
 }

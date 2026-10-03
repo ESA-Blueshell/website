@@ -62,7 +62,7 @@
           <p class="text-h5">
             Incasso
           </p>
-          <incasso-set-up />
+          <incasso-set-up :address-id="addressId" />
         </div>
       </div>
     </div>
@@ -84,6 +84,7 @@ import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useIsBoard} from "@/composables/useIsBoard"
 
 const user = ref<EditableUser>()
+const addressId = ref<number | null>(null)
 const store = useStore()
 const isBoard = useIsBoard()
 const isMember = computed<boolean>(() => store.getters.isMember)
@@ -97,6 +98,7 @@ onMounted(async () => {
 
     if (found) {
       user.value = toEditableUser(found)
+      addressId.value = found.addressId ?? null
     }
   } catch (e) {
     $handleNetworkError(e)

@@ -1,10 +1,13 @@
 package net.blueshell.api.user.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import net.blueshell.api.user.api.AddressFields
 import net.blueshell.api.user.domain.IncassoStanding
+import net.blueshell.api.user.persistence.MandateKind
 import java.time.Instant
 import java.time.LocalDate
 
@@ -23,6 +26,10 @@ data class MandateResponse(
     val signedOn: LocalDate?,
     val recordedBy: Long?,
     val recordedAt: Instant?,
+    @field:Schema(description = "Online where the member authorised it on the site, paper where the board recorded it.")
+    val kind: MandateKind?,
+    @field:Schema(description = "The moment an online mandate was authorised.")
+    val authorisedAt: Instant?,
 )
 
 @Schema(name = "RecordMandateRequest")
@@ -33,6 +40,8 @@ data class RecordMandateRequest(
     val accountHolder: String,
     @field:NotNull
     val signedOn: LocalDate,
+    /** The board confirmed that this paper mandate replaces one the member authorised online. */
+    val replacesOnline: Boolean = false,
 ) {
     // A request is logged on a failure; the account number is not.
     override fun toString(): String = "RecordMandateRequest(iban=****${iban.takeLast(SHOWN)}, signedOn=$signedOn)"
@@ -67,6 +76,23 @@ data class OwnMandateResponse(
     val pending: Boolean,
 )
 
+/** The address a member confirms when authorising incasso online. */
+@Schema(name = "MandateAddressRequest")
+data class MandateAddressRequest(
+    @field:NotBlank
+    val country: String = "",
+    @field:NotBlank
+    val city: String = "",
+    @field:NotBlank
+    val street: String = "",
+    @field:NotBlank
+    val houseNumber: String = "",
+    @field:NotBlank
+    val zipCode: String = "",
+) {
+    fun asFields() = AddressFields(country.trim(), city.trim(), street.trim(), houseNumber.trim(), zipCode.trim())
+}
+
 /** A member's own bank details; the mandate is signed on the day they are sent. */
 @Schema(name = "SetUpMandateRequest")
 data class SetUpMandateRequest(
@@ -76,6 +102,13 @@ data class SetUpMandateRequest(
     val accountHolder: String,
     @field:AssertTrue(message = "Authorise the collection to set up incasso.")
     val authorised: Boolean = false,
+    /** The version of the authorisation wording the member was shown. */
+    @field:NotBlank
+    val wordingVersion: String = "",
+    /** The address the member confirmed, which the mandate keeps as its own record. */
+    @field:Valid
+    @field:NotNull
+    val address: MandateAddressRequest? = null,
 ) {
     // A request is logged on a failure; the account number is not.
     override fun toString(): String = "SetUpMandateRequest(iban=****${iban.takeLast(SHOWN)})"

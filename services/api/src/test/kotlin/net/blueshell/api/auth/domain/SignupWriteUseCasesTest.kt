@@ -6,11 +6,14 @@ import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.model.SignupOutcome
+import net.blueshell.api.user.api.AddressFields
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.SignupDetailsData
 import net.blueshell.api.user.api.SignupMandates
+import net.blueshell.api.user.api.TestSealing
 import net.blueshell.api.user.api.UpsertMemberProfileData
 import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -81,11 +84,17 @@ class SignupWriteUseCasesTest {
 
     @Test
     fun `sets up incasso for the account the token speaks for`() {
-        applicant(withProfile = false)
+        val applicant = applicant(withProfile = false)
+        whenever(users.findById(APPLICANT_ID)).thenReturn(applicant)
+        val address = AddressFields("NL", "Enschede", "Hallenweg", "5", "7522NH")
 
-        useCases.setUpMandate("sel.ver", "NL91ABNA0417164300", "App Licant")
+        // Without an address on the account the mandate gets none, which the mandate itself refuses.
+        useCases.setUpMandate("sel.ver", "NL91ABNA0417164300", "App Licant", "2026-10")
+        verify(mandates).setUp(APPLICANT_ID, "NL91ABNA0417164300", "App Licant", "2026-10", AddressFields(null, null, null, null, null))
 
-        verify(mandates).setUp(APPLICANT_ID, "NL91ABNA0417164300", "App Licant")
+        applicant.address = Address(user = applicant).also { TestSealing.addresses.seal(it, address) }
+        useCases.setUpMandate("sel.ver", "NL91ABNA0417164300", "App Licant", "2026-10")
+        verify(mandates).setUp(APPLICANT_ID, "NL91ABNA0417164300", "App Licant", "2026-10", address)
     }
 
     @Nested

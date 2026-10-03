@@ -175,13 +175,20 @@ class SignupUseCases(
         )
     }
 
-    /** The optional incasso step: the bank details wait for the membership this signup starts. */
+    /**
+     * The optional incasso step: the bank details wait for the membership this signup starts. The
+     * mandate takes the address the signup has just taken as its own record of it.
+     */
+    @Transactional
     fun setUpMandate(
         signupToken: String,
         iban: String,
         accountHolder: String,
+        wordingVersion: String,
     ) {
-        mandates.setUp(signupTokens.resolveAccount(signupToken).id, iban, accountHolder)
+        val account = signupTokens.resolveAccount(signupToken)
+        val address = users.findById(account.id).address?.let(sealedAddresses::open) ?: AddressFields(null, null, null, null, null)
+        mandates.setUp(account.id, iban, accountHolder, wordingVersion, address)
     }
 
     // Transactional so the account resolved from the token stays managed: without

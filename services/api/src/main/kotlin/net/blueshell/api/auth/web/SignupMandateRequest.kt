@@ -13,6 +13,9 @@ data class SignupMandateRequest(
     val accountHolder: String,
     @field:AssertTrue(message = "Authorise the collection to set up incasso.")
     val authorised: Boolean = false,
+    /** The version of the authorisation wording the applicant was shown. */
+    @field:NotBlank
+    val wordingVersion: String = "",
 ) {
     // A request is logged on a failure; the account number is not.
     override fun toString(): String = "SignupMandateRequest(iban=****${iban.takeLast(SHOWN)})"

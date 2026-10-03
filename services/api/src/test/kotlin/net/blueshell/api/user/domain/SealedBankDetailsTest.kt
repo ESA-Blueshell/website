@@ -4,10 +4,11 @@ import net.blueshell.api.user.domain.sealing.LocalSealer
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import tools.jackson.databind.json.JsonMapper
 
 class SealedBankDetailsTest {
     private val sealer = LocalSealer()
-    private val sealing = SealedBankDetails(sealer, "api-bank-details")
+    private val sealing = SealedBankDetails(sealer, JsonMapper.builder().build(), "api-bank-details")
     private val iban = requireNotNull(Iban.parse("NL91ABNA0417164300"))
 
     @Test

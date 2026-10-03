@@ -886,7 +886,7 @@ object TestHelper {
         }
 
     /**
-     * Emails the in-process `MockListmonkEmailClient` captured, via the test-only
+     * Emails the in-process `InMemoryEmailClient` captured, via the test-only
      * `/test-support/emails` endpoint. Empty when nothing matches.
      */
     fun findEmails(

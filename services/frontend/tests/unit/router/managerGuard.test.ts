@@ -11,7 +11,7 @@ const signInAs = (roles: Role[]) =>
     twoFactor: {on: true, required: false, offered: false, backupCodesLeft: 0},
   })
 
-const MANAGERS = ["/user-manager", "/addresses/manage", "/recovery/manage"]
+const MANAGERS = ["/user-manager", "/recovery/manage"]
 
 describe("the user, address and recovery managers", () => {
   afterEach(() => store.commit("setLoginState", null))

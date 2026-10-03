@@ -27,12 +27,26 @@ class VaultTransitSealer(
         batch("transit/decrypt/$key", values, "plaintext") { mapOf("ciphertext" to it.value, "context" to encode(it.context)) }
             .map { String(Base64.getDecoder().decode(it)) }
 
+    // Transit's own rewrap: Vault opens and seals again inside itself, so no plaintext is answered.
+    override fun rewrap(
+        key: String,
+        values: List<Sealed>,
+    ): List<String?> =
+        results("transit/rewrap/$key", values) { mapOf("ciphertext" to it.value, "context" to encode(it.context)) }
+            .map { result -> result["ciphertext"]?.toString()?.takeIf { result["error"] == null } }
+
     private fun batch(
         path: String,
         values: List<Sealed>,
         field: String,
         item: (Sealed) -> Map<String, String>,
-    ): List<String> {
+    ): List<String> = results(path, values, item).map { answerOf(it, field) }
+
+    private fun results(
+        path: String,
+        values: List<Sealed>,
+        item: (Sealed) -> Map<String, String>,
+    ): List<Map<String, Any?>> {
         if (values.isEmpty()) return emptyList()
         val response =
             try {
@@ -42,8 +56,7 @@ class VaultTransitSealer(
             }
 
         @Suppress("UNCHECKED_CAST")
-        val results = response?.data?.get("batch_results") as? List<Map<String, Any?>> ?: throw SealingUnavailable()
-        return results.map { answerOf(it, field) }
+        return response?.data?.get("batch_results") as? List<Map<String, Any?>> ?: throw SealingUnavailable()
     }
 
     private fun answerOf(

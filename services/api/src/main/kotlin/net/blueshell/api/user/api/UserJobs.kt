@@ -29,4 +29,15 @@ object UserJobs {
     data class SealAddressesPayload(
         val reason: String? = null,
     )
+
+    /** Moves every sealed value below the newest version of its key onto it. Safe to run again. */
+    object RewrapSealedValues : JobDefinition<RewrapSealedValuesPayload> {
+        override val type: String = "user.rewrap-sealed-values"
+        override val payloadType: Class<RewrapSealedValuesPayload> = RewrapSealedValuesPayload::class.java
+    }
+
+    /** Nothing to say: the job reaches every sealed field. */
+    data class RewrapSealedValuesPayload(
+        val reason: String? = null,
+    )
 }

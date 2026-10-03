@@ -41,7 +41,26 @@ interface Sealer {
         key: String,
         values: List<Sealed>,
     ): List<String>
+
+    /**
+     * Moves each sealed [Sealed.value] onto the newest version of [key] without opening it to the
+     * api, in one call. A value that cannot be moved answers null and does not stop the others.
+     */
+    fun rewrap(
+        key: String,
+        values: List<Sealed>,
+    ): List<String?>
 }
+
+/** The key version a sealed value sits on, which both sealers write as `scheme:vN:value`. */
+fun keyVersionOf(sealed: String): Int =
+    requireNotNull(
+        sealed
+            .split(':')
+            .getOrNull(1)
+            ?.removePrefix("v")
+            ?.toIntOrNull(),
+    ) { "A sealed value names its key version" }
 
 /** The context a member's field is sealed under: the field and the user id. */
 fun sealingContext(

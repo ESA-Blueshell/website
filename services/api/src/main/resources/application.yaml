@@ -295,6 +295,8 @@ management:
 privacy:
   sealing: ${PRIVACY_SEALING:stand-in}
   address-key: ${PRIVACY_ADDRESS_KEY:api-address}
+  # The nightly rewrap, which moves sealed values onto the newest key version after a rotation.
+  rewrap-cron: ${PRIVACY_REWRAP_CRON:0 0 4 * * *}
 
 auth:
   issuer: ${AUTH_ISSUER:https://esa-blueshell.nl/api}

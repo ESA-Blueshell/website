@@ -85,7 +85,7 @@ class EventSignUpUseCasesTest {
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             whenever(questionService.getReferenceById(200L)).thenReturn(questionRef)
             val captured = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(captured.capture(), eq(true))).thenAnswer { captured.firstValue }
+            whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
 
             val result =
                 useCases.create(
@@ -144,7 +144,7 @@ class EventSignUpUseCasesTest {
             val eventRef = Entities.event()
             whenever(eventRepository.getReferenceById(101L)).thenReturn(eventRef)
             val captured = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(captured.capture(), eq(true))).thenAnswer { captured.firstValue }
+            whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
 
             val result =
                 useCases.create(
@@ -176,7 +176,7 @@ class EventSignUpUseCasesTest {
             val eventRef = Entities.event()
             whenever(eventRepository.getReferenceById(102L)).thenReturn(eventRef)
             val captured = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(captured.capture(), eq(true))).thenAnswer { captured.firstValue }
+            whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
 
             val result =
                 useCases.create(
@@ -230,7 +230,7 @@ class EventSignUpUseCasesTest {
             whenever(eventRepository.findById(eventId)).thenReturn(Optional.of(event))
             whenever(eventRepository.getReferenceById(eventId)).thenReturn(event)
             val stored = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(stored.capture(), eq(false))).thenAnswer { stored.firstValue.also { it.id = 77L } }
+            whenever(eventSignUpService.add(stored.capture())).thenAnswer { stored.firstValue.also { it.id = 77L } }
             return stored
         }
 
@@ -277,7 +277,7 @@ class EventSignUpUseCasesTest {
             assertThatThrownBy { useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 1L) }
                 .isInstanceOf(ConstraintViolationException::class.java)
 
-            verify(eventSignUpService, never()).create(any(), any())
+            verify(eventSignUpService, never()).add(any())
         }
 
         @Test
@@ -349,7 +349,7 @@ class EventSignUpUseCasesTest {
             val eventRef = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             val stored = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(stored.capture(), eq(true))).thenAnswer { stored.firstValue }
+            whenever(eventSignUpService.create(stored.capture())).thenAnswer { stored.firstValue }
 
             val own = useCases.create(EventSignUpData(eventId = 100L, userId = 1L), principalId = 1L)
 
@@ -365,7 +365,7 @@ class EventSignUpUseCasesTest {
             val eventRef = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             val stored = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(stored.capture(), eq(true))).thenAnswer { stored.firstValue }
+            whenever(eventSignUpService.create(stored.capture())).thenAnswer { stored.firstValue }
 
             val own = useCases.create(EventSignUpData(eventId = 100L, userId = 9L), principalId = 42L)
 
@@ -392,7 +392,7 @@ class EventSignUpUseCasesTest {
 
             verify(jobs).runAsync(
                 eq(EventJobs.EventSignUpAdded),
-                eq(EventJobs.EventSignUpAddedPayload(eventSignUpId = 77L, guestAccessToken = "GORDON-TOKEN")),
+                eq(EventJobs.EventSignupPayload(eventSignUpId = 77L, guestAccessToken = "GORDON-TOKEN")),
                 eq(JobTrigger.SITE_ACTION),
                 anyOrNull(),
             )
@@ -414,7 +414,7 @@ class EventSignUpUseCasesTest {
             val eventRef = Entities.event(id = 100L)
             whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
             val stored = argumentCaptor<EventSignUp>()
-            whenever(eventSignUpService.create(stored.capture(), eq(true))).thenAnswer { stored.firstValue }
+            whenever(eventSignUpService.create(stored.capture())).thenAnswer { stored.firstValue }
 
             useCases.create(EventSignUpData(eventId = 100L, guest = gordon), principalId = null, notify = true)
 

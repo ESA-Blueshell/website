@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Instant
@@ -117,14 +118,12 @@ class EventSignUpControllerIT : UserTestSupport() {
     inner class FindEventSignUpsByAccessToken {
         @Test
         fun `guest finds signups by access token`() {
-            val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture(approved = true, membersOnly = false, signUp = true)
 
             val createResult =
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)
@@ -454,6 +453,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.user").doesNotExist())
                 .andExpect(jsonPath("$.guest.name").value("Walked In"))
                 .andExpect(jsonPath("$.kind").value("GUEST"))
+                .andExpect(header().doesNotExist(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER))
 
             rosterOf(event)
                 .andExpect(jsonPath("$.length()").value(1))
@@ -579,6 +579,37 @@ class EventSignUpControllerIT : UserTestSupport() {
                         .content(eventSignUpRequestFactory.createUserSignUpPayload(other.id!!)),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.user.id").value(member.id))
+        }
+
+        @Test
+        fun `a member who names another account is still bound by the deadline`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val other = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true, signUpDeadline = Instant.now().minusSeconds(1))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(other.id!!)),
+                ).andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `a member who names another account is still bound by the limit`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val other = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true, signUpLimit = 1)
+            createEventSignUpFixture(event = event, user = createUserWithRole(Role.MEMBER))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(other.id!!)),
+                ).andExpect(status().isBadRequest)
         }
 
         @Test
@@ -917,14 +948,12 @@ class EventSignUpControllerIT : UserTestSupport() {
 
         @Test
         fun `guest updates signup using access token`() {
-            val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture(approved = true, membersOnly = false, signUp = true)
 
             val createResult =
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)
@@ -975,14 +1004,12 @@ class EventSignUpControllerIT : UserTestSupport() {
 
         @Test
         fun `guest deletes signup using access token`() {
-            val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture(approved = true, membersOnly = false, signUp = true)
 
             val createResult =
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)

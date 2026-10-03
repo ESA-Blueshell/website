@@ -87,7 +87,7 @@ class EventSignUpServiceTest {
         val signUp = guestSignUp()
         whenever(repository.saveAndFlush(signUp)).thenReturn(signUp)
 
-        service.create(signUp, confirmToGuest = false)
+        service.add(signUp)
 
         assertThat(created().guestAccessToken).isNull()
     }

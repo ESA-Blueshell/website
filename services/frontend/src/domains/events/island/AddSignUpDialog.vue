@@ -14,7 +14,7 @@ import {
   type CreateGuestRequest,
   type EventResponse,
   type EventSignUpResponse,
-} from "@/domains/events"
+} from ".."
 
 defineOptions({name: "AddSignUpDialog"})
 
@@ -114,7 +114,7 @@ async function add(): Promise<void> {
         v-if="!event.membersOnly"
         v-model="holder"
         :options="HOLDERS"
-        testid-prefix="add-signup-kind"
+        testid-prefix="add-signup-holder"
       />
 
       <template v-if="forGuest">

@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import AddSignUpDialog from "@/components/common/modals/AddSignUpDialog.vue"
+import AddSignUpDialog from "@/domains/events/island/AddSignUpDialog.vue"
 import {aQuestion, aSignUp, aSurvey, anEvent} from "../../../helpers/apiFixtures"
 
 const {mockAddSignUpAsBoard, guestValid, answersValid} = vi.hoisted(() => ({
@@ -61,7 +61,7 @@ const add = async (wrapper: Dialog) => {
 }
 
 const asGuest = async (wrapper: Dialog) => {
-  await wrapper.get("[data-testid=add-signup-kind-guest]").trigger("click")
+  await wrapper.get("[data-testid=add-signup-holder-guest]").trigger("click")
   await wrapper.findComponent(GuestForm).vm.$emit("update:modelValue", gordon)
 }
 
@@ -77,7 +77,7 @@ describe("AddSignUpDialog", () => {
     const wrapper = dialog()
 
     expect(wrapper.text()).toContain("Add sign-up")
-    expect(wrapper.get("[data-testid=add-signup-kind-account]").attributes("aria-checked")).toBe("true")
+    expect(wrapper.get("[data-testid=add-signup-holder-account]").attributes("aria-checked")).toBe("true")
     expect(wrapper.find("[data-testid=add-signup-account]").exists()).toBe(true)
     expect(wrapper.find("[data-testid=guest-form]").exists()).toBe(false)
     expect(wrapper.find("[data-testid=add-signup-notify]").exists()).toBe(false)
@@ -126,7 +126,7 @@ describe("AddSignUpDialog", () => {
     const wrapper = dialog()
     await asGuest(wrapper)
     await wrapper.get("[data-testid=add-signup-notify]").setValue(true)
-    await wrapper.get("[data-testid=add-signup-kind-account]").trigger("click")
+    await wrapper.get("[data-testid=add-signup-holder-account]").trigger("click")
     await wrapper.findComponent(UserPicker).vm.$emit("update:modelValue", 9)
 
     await add(wrapper)
@@ -184,7 +184,7 @@ describe("AddSignUpDialog", () => {
   it("offers no guest on a members-only event, and tells the picker so", () => {
     const wrapper = dialog({membersOnly: true})
 
-    expect(wrapper.find("[data-testid=add-signup-kind-guest]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=add-signup-holder-guest]").exists()).toBe(false)
     expect(wrapper.findComponent(UserPicker).props("membersOnly")).toBe(true)
   })
 
@@ -214,7 +214,7 @@ describe("AddSignUpDialog", () => {
 
     await wrapper.setProps({modelValue: true})
 
-    expect(wrapper.get("[data-testid=add-signup-kind-account]").attributes("aria-checked")).toBe("true")
+    expect(wrapper.get("[data-testid=add-signup-holder-account]").attributes("aria-checked")).toBe("true")
     expect(wrapper.find("[data-testid=add-signup-failure]").exists()).toBe(false)
   })
 })

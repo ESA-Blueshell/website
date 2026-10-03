@@ -393,6 +393,16 @@ describe("EventSignUps page", () => {
     expect(figures[2].value).toBe(22)
   })
 
+  it("counts no places left, never fewer, where the board added past the limit", async () => {
+    mockReadEvent.mockResolvedValueOnce({id: 55, title: "LAN", signUpLimit: 1})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+
+    const figures = wrapper.getComponent({name: "NumberBand"}).props("figures")
+    expect(figures[0].value).toBe(2)
+    expect(figures[2]).toMatchObject({label: "places left", value: 0})
+  })
+
   it("counts no places where the event has no limit, and reads a place-less event plainly", async () => {
     mockReadEvent.mockResolvedValueOnce({id: 55, title: "LAN"})
     const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})

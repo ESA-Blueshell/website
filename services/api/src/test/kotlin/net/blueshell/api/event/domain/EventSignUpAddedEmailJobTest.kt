@@ -23,7 +23,7 @@ class EventSignUpAddedEmailJobTest {
     private val emails: EmailSenderService = mockk(relaxed = true)
     private val job = EventSignUpAddedEmailJob(objectMapper, eventSignUps, emails, "https://blueshell.test")
 
-    private val payload = EventJobs.EventSignUpAddedPayload(eventSignUpId = 77L, guestAccessToken = "GORDON-TOKEN")
+    private val payload = EventJobs.EventSignupPayload(eventSignUpId = 77L, guestAccessToken = "GORDON-TOKEN")
 
     @Test
     fun `tells the guest on the sign-up, under its own type, with their access link`() {

@@ -254,7 +254,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
     @Test
     fun `board adds an account to an event that has ended`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
-        val walkIn = TestHelper.registerActivateAndPromote("MEMBER")
+        val attendee = TestHelper.registerActivateAndPromote("MEMBER")
         val eventId =
             TestHelper.createEvent(
                 committeeId = TestHelper.createCommittee(name = "Ended Event Committee ${TestHelper.uniqueSuffix()}"),
@@ -272,7 +272,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         page.getByTestId("signups-add-btn").click()
         pollFor("add dialog open") { page.getByTestId("add-signup-dialog").count() > 0 }
 
-        PickerHelper.pickOnlyMatch(page, "add-signup-account", walkIn.email)
+        PickerHelper.pickOnlyMatch(page, "add-signup-account", attendee.email)
         // Awaiting the request says whether the dialog refused the add, which a roster poll alone
         // reports as a timeout with no reason.
         page.waitForRequest(
@@ -284,7 +284,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         pollFor("the added account on the roster of event=$eventId") {
             page
                 .locator(".attendees-table tbody tr")
-                .filter(Locator.FilterOptions().setHasText(walkIn.email))
+                .filter(Locator.FilterOptions().setHasText(attendee.email))
                 .count() == 1
         }
     }

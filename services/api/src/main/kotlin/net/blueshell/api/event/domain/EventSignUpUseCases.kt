@@ -99,19 +99,19 @@ class EventSignUpUseCases(
                 ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found with id: ${data.eventId}")
             }
         if (data.userId != null) {
-            checkHolder(event, data.eventId, data.userId)
+            checkHolder(event, data.userId)
         } else if (event.membersOnly) {
             throw notAMember()
         }
 
         val signUpData = data.copy(boardEdit = true)
         validate(signUpData)
-        val added = service.create(mapSignUp(signUpData, eventRepository, questionService), confirmToGuest = false)
+        val added = service.add(mapSignUp(signUpData, eventRepository, questionService))
         if (notify) {
             added.guest?.accessTokenRaw?.let { token ->
                 jobs.runAsync(
                     EventJobs.EventSignUpAdded,
-                    EventJobs.EventSignUpAddedPayload(added.id!!, token),
+                    EventJobs.EventSignupPayload(added.id!!, token),
                     JobTrigger.SITE_ACTION,
                 )
             }
@@ -122,12 +122,11 @@ class EventSignUpUseCases(
     /** Refuses an account the event would not take: a non-member on members-only, or one already on it. */
     private fun checkHolder(
         event: Event,
-        eventId: Long,
         userId: Long,
     ) {
         val holder = users.findById(userId)
         if (event.membersOnly && !holder.hasAuthority(Role.MEMBER)) throw notAMember()
-        if (service.existsByUserIdAndEventId(userId, eventId)) {
+        if (service.existsByUserIdAndEventId(userId, requireNotNull(event.id))) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
                 "This person already has a sign-up for this event.",
@@ -207,7 +206,7 @@ class EventSignUpUseCases(
         signUp: EventSignUp,
         targetUserId: Long,
     ): Guest {
-        checkHolder(signUp.event, signUp.eventId, targetUserId)
+        checkHolder(signUp.event, targetUserId)
         return signUp.guest!!
     }
 

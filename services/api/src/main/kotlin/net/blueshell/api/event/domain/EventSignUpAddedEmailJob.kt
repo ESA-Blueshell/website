@@ -13,11 +13,11 @@ class EventSignUpAddedEmailJob(
     private val eventSignUps: EventSignUpService,
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
-) : AbstractJsonJobHandler<EventJobs.EventSignUpAddedPayload>(
+) : AbstractJsonJobHandler<EventJobs.EventSignupPayload>(
         objectMapper,
         EventJobs.EventSignUpAdded,
     ) {
-    override fun handlePayload(payload: EventJobs.EventSignUpAddedPayload) {
+    override fun handlePayload(payload: EventJobs.EventSignupPayload) {
         val eventSignUp = requireExists { eventSignUps.findById(payload.eventSignUpId) }
         emails.send(
             createEventSignUpAddedEmail(eventSignUp, frontendUrl, payload.guestAccessToken),

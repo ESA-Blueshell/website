@@ -4677,19 +4677,23 @@ components:
     MandateAddressRequest:
       properties:
         city:
-          minLength: 1
+          maxLength: 150
+          minLength: 0
           type: string
         country:
           minLength: 1
           type: string
         houseNumber:
-          minLength: 1
+          maxLength: 20
+          minLength: 0
           type: string
         street:
-          minLength: 1
+          maxLength: 150
+          minLength: 0
           type: string
         zipCode:
-          minLength: 1
+          maxLength: 20
+          minLength: 0
           type: string
       required:
       - city
@@ -5557,10 +5561,12 @@ components:
     RecordMandateRequest:
       properties:
         accountHolder:
-          minLength: 1
+          maxLength: 70
+          minLength: 0
           type: string
         iban:
-          minLength: 1
+          maxLength: 42
+          minLength: 0
           type: string
         replacesOnline:
           type: boolean
@@ -6182,7 +6188,8 @@ components:
     SetUpMandateRequest:
       properties:
         accountHolder:
-          minLength: 1
+          maxLength: 70
+          minLength: 0
           type: string
         address:
           oneOf:
@@ -6191,10 +6198,12 @@ components:
         authorised:
           type: boolean
         iban:
-          minLength: 1
+          maxLength: 42
+          minLength: 0
           type: string
         wordingVersion:
-          minLength: 1
+          maxLength: 16
+          minLength: 0
           type: string
       required:
       - accountHolder
@@ -6335,15 +6344,18 @@ components:
     SignupMandateRequest:
       properties:
         accountHolder:
-          minLength: 1
+          maxLength: 70
+          minLength: 0
           type: string
         authorised:
           type: boolean
         iban:
-          minLength: 1
+          maxLength: 42
+          minLength: 0
           type: string
         wordingVersion:
-          minLength: 1
+          maxLength: 16
+          minLength: 0
           type: string
       required:
       - accountHolder

@@ -21,6 +21,6 @@ databaseChangeLog:
               - column: {name: signed_on, type: DATE, constraints: {nullable: false}}
               - column: {name: authorised_at, type: DATETIME(6), constraints: {nullable: false}}
               - column: {name: wording_version, type: VARCHAR(16), constraints: {nullable: false}}
-              - column: {name: address, type: VARCHAR(1024), constraints: {nullable: false}}
+              - column: {name: address, type: TEXT, constraints: {nullable: false}}
       rollback:
         - dropTable: {tableName: pending_mandates}

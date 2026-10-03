@@ -20,7 +20,7 @@ databaseChangeLog:
               - column: {name: mandate_authorised_at, type: DATETIME(6)}
               - column: {name: mandate_wording_version, type: VARCHAR(16)}
               - column: {name: mandate_authorised_by, type: BIGINT}
-              - column: {name: mandate_address, type: VARCHAR(1024)}
+              - column: {name: mandate_address, type: TEXT}
       rollback:
         - dropColumn:
             tableName: memberships

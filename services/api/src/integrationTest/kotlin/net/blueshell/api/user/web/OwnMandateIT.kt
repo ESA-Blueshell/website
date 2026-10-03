@@ -58,6 +58,10 @@ class OwnMandateIT : UserTestSupport() {
             .perform(get("/users/me/mandate").with(signedIn(member)))
             .andExpect(jsonPath("$.ibanLastTwo").value("00"))
         setUp(member, body.replace("true", "false")).andExpect(status().isBadRequest)
+        // What a request may carry is bounded, so a sealed value always fits its column.
+        setUp(member, body.replace("Ann Vos", "A".repeat(71))).andExpect(status().isBadRequest)
+        setUp(member, body.replace("Hallenweg", "H".repeat(151))).andExpect(status().isBadRequest)
+        setUp(member, body.replace("\"NL\"", "\"Nowhere\"")).andExpect(status().isBadRequest)
     }
 
     @Test

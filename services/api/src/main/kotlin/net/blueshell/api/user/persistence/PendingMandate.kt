@@ -29,7 +29,7 @@ class PendingMandate(
     var authorisedAt: Instant,
     @Column(name = "wording_version", nullable = false, length = 16)
     var wordingVersion: String,
-    @Column(name = "address", nullable = false, length = 1024)
+    @Column(name = "address", nullable = false, columnDefinition = "TEXT")
     var sealedAddress: String,
 ) : AutoIdEntity() {
     // Nothing of the account reaches a log line.

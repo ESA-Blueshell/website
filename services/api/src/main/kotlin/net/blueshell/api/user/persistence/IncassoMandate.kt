@@ -49,7 +49,7 @@ class IncassoMandate(
     @Column(name = "mandate_authorised_by")
     var authorisedBy: Long? = null,
     /** The address the member confirmed when authorising online, sealed: the mandate's own record, not their account's address. */
-    @Column(name = "mandate_address", length = 1024)
+    @Column(name = "mandate_address", columnDefinition = "TEXT")
     var sealedAddress: String? = null,
 ) {
     // Nothing of the account reaches a log line.

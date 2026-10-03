@@ -245,7 +245,7 @@ class MandatesTest {
             ),
         )
         assertThat(held.sealedAccountHolder).doesNotContain("Ann")
-        assertThat(keyVersionOf(held.sealedIban)).isEqualTo(keyVersionOf(held.sealedAccountHolder))
+        assertThat(keyVersionOf(held.sealedIban!!)).isEqualTo(keyVersionOf(held.sealedAccountHolder!!))
     }
 
     @Test
@@ -339,7 +339,7 @@ class MandatesTest {
         assertThat(held.authorisedBy).isEqualTo(membership.userId)
         assertThat(held.sealedAddress).isNotNull().doesNotContain("Hallenweg").doesNotContain("Enschede")
         verify(sealer).seal(eq("api-bank-details"), argThat { size == 3 && this[2].context == "mandate-address:${membership.userId}" })
-        assertThat(listOf(held.sealedIban, held.sealedAccountHolder, held.sealedAddress!!).map(::keyVersionOf).distinct()).hasSize(1)
+        assertThat(listOf(held.sealedIban!!, held.sealedAccountHolder!!, held.sealedAddress!!).map(::keyVersionOf).distinct()).hasSize(1)
         assertThat(controller.findMandate(12).let { it.kind to it.authorisedAt }).isEqualTo(MandateKind.ONLINE to now)
         assertThat(MandateWording.textOf(held.wordingVersion!!)).startsWith("I authorise ESA Blueshell")
         assertThat(MandateWording.textOf("1999-01")).isNull()
@@ -398,5 +398,34 @@ class MandatesTest {
 
         mandates.setUpOwn(membership.userId, "NL91ABNA0417164300", "Ann Vos", online)
         assertThat(membership.mandate!!.kind).isEqualTo(MandateKind.ONLINE)
+    }
+
+    @Test
+    fun `a wiped mandate is a record only, with nothing to collect from or reveal, and recording anew starts a new one`() {
+        whenever(repository.findByUser_Id(membership.userId)).thenReturn(mutableListOf(membership))
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+        val held = membership.mandate!!
+        held.sealedIban = null
+        held.sealedAccountHolder = null
+        membership.incasso = false
+
+        assertThat(held.wiped).isTrue()
+        assertThat(membership.collectableMandate).isNull()
+        assertThat(membership.incassoStanding()).isEqualTo(IncassoStanding.NONE)
+        assertThat(mandates.own(membership.userId).standing).isEqualTo(IncassoStanding.NONE)
+        assertThatThrownBy { controller.revealIban(12) }.isInstanceOf(NoMandateRecorded::class.java)
+        assertThatThrownBy { mandates.bankDetailsOf(membership.userId, held) }.isInstanceOf(NoMandateRecorded::class.java)
+        held.sealedIban = "local:v1:x"
+        assertThatThrownBy { mandates.bankDetailsOf(membership.userId, held) }.isInstanceOf(NoMandateRecorded::class.java)
+        held.sealedIban = null
+
+        val panel = controller.findMandate(12)
+        assertThat(panel.bankDetailsWiped).isTrue()
+        assertThat(panel.accountHolder).isNull()
+        assertThat(listOf(panel.reference, panel.ibanCountry, panel.ibanLastTwo)).containsExactly("BLUESHELL-12-20260901", "NL", "00")
+
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 20), 3)
+        assertThat(membership.mandate!!.reference).isEqualTo("BLUESHELL-12-20260920")
+        assertThat(controller.findMandate(12).bankDetailsWiped).isFalse()
     }
 }

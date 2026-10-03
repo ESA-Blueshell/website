@@ -21,10 +21,11 @@ enum class MandateKind {
  */
 @Embeddable
 class IncassoMandate(
+    /** Null once wiped, 13 months after the last collection: the rest of the mandate stays as the record. */
     @Column(name = "mandate_iban", length = 255)
-    var sealedIban: String,
+    var sealedIban: String?,
     @Column(name = "mandate_account_holder", length = 512)
-    var sealedAccountHolder: String,
+    var sealedAccountHolder: String?,
     /** The IBAN's country code and last two characters, as `NL34`; see `MaskedIban`. */
     @Column(name = "mandate_iban_masked", length = 4)
     var ibanMasked: String,
@@ -52,6 +53,10 @@ class IncassoMandate(
     @Column(name = "mandate_address", columnDefinition = "TEXT")
     var sealedAddress: String? = null,
 ) {
+    /** Whether its sealed bank details are gone, which leaves nothing to collect from or to reveal. */
+    val wiped: Boolean
+        get() = sealedIban == null
+
     // Nothing of the account reaches a log line.
     override fun toString(): String = "IncassoMandate($ibanMasked, $reference)"
 }

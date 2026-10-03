@@ -2333,6 +2333,10 @@ export type MandateResponse = {
      */
     authorisedAt?: string | null;
     /**
+     * True once the sealed bank details were wiped; the reference, signing date and masked IBAN stay as the record.
+     */
+    bankDetailsWiped: boolean;
+    /**
      * The IBAN's country code; with the last two, all a response carries of it.
      */
     ibanCountry?: string | null;

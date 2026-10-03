@@ -41,4 +41,15 @@ object ContributionJobs {
     data class IncassoNotificationPayload(
         val incassoNotificationId: Long,
     )
+
+    /** Wipes the sealed bank details of mandates whose 13 months after the last collection are over. Safe to run again. */
+    object WipeBankDetails : JobDefinition<WipeBankDetailsPayload> {
+        override val type: String = "contribution.wipe-bank-details"
+        override val payloadType: Class<WipeBankDetailsPayload> = WipeBankDetailsPayload::class.java
+    }
+
+    /** Nothing to say: the job judges every mandate no longer collected from. */
+    data class WipeBankDetailsPayload(
+        val reason: String? = null,
+    )
 }

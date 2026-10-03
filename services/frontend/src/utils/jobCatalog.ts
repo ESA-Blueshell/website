@@ -240,6 +240,14 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     title: "Create a cohort's list (older job)",
     description: "Queued before creating a cohort's list got its own job; it now does the same.",
   },
+  "contribution.wipe-bank-details": {
+    title: "Wipe bank details",
+    description:
+      "Wipes the sealed IBAN, account holder and address of every mandate that is no longer " +
+      "collected from and whose last collection was 13 months ago or more, or that was never " +
+      "collected from. The mandate reference, the signing date and the masked IBAN stay as the " +
+      "record. Runs every day; running it again wipes nothing that is not due.",
+  },
   "user.seal-addresses": {
     title: "Seal addresses",
     description:

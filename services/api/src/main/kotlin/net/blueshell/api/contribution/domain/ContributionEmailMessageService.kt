@@ -57,7 +57,7 @@ class ContributionEmailMessageService(
                     val mandate =
                         memberships
                             .findByUserIdsWithMembers(listOf(userId))[userId]
-                            ?.filter { it.mandate != null }
+                            ?.filter { it.mandate?.wiped == false }
                             ?.maxByOrNull { it.startDate }
                             ?.mandate
                     createIncassoNotificationEmail(

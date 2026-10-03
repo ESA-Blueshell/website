@@ -1,6 +1,6 @@
 # Privacybeleid van Blueshell E-Sports Association Enschede
 
-Laatst bijgewerkt: 25 september 2026  
+Laatst bijgewerkt: 3 oktober 2026  
 Locatie: Enschede, Nederland
 
 ## Afkortingen
@@ -219,6 +219,20 @@ Bewaartermijnen verschillen per verwerkingsdoel en technisch subsysteem.
 - Na 90 dagen worden je accountgegevens onherroepelijk verwijderd of geanonimiseerd en is herstel niet meer mogelijk.
 - Waar wettelijke of financiele verplichtingen gelden, kunnen specifieke registraties in geminimaliseerde of wettelijk
   vereiste vorm worden bewaard.
+
+### Bankgegevens voor incasso
+
+- Je IBAN, de naam van de rekeninghouder en, bij een machtiging die je op de website hebt gegeven, het adres dat je
+  daarbij hebt bevestigd worden versleuteld opgeslagen. Een kopie van onze database laat ze niet zien.
+- Ze worden bewaard zolang je contributie via incasso wordt geind.
+- Zodra het incasseren stopt, omdat je lidmaatschap eindigt, je niet meer via incasso betaalt of je account wordt
+  verwijderd, worden ze nog 13 maanden na de laatste incasso bewaard. Dat is de periode waarin een incasso kan
+  worden betwist. Daarna worden ze verwijderd. Is er nooit geincasseerd, dan worden ze verwijderd zodra het
+  incasseren stopt.
+- Het machtigingskenmerk, de datum waarop de machtiging is getekend en een gemaskeerd rekeningnummer (de landcode en
+  de laatste twee tekens) blijven bewaard als registratie van wat er is geincasseerd.
+- Bankgegevens die zijn opgegeven bij een aanmelding die geen lidmaatschap is geworden, worden verwijderd wanneer dat
+  account wordt verwijderd.
 
 ### Activiteitenformulier / eventinschrijvingen
 

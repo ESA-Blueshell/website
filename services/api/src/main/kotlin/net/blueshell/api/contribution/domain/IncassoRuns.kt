@@ -226,12 +226,13 @@ class IncassoRuns(
                 .groupBy { it.userId }
                 .mapValues { (_, held) -> held.filter { it.endDate == null }.maxByOrNull { it.startDate } ?: held.maxBy { it.startDate } }
                 .values
-                .filter { it.incasso || it.mandate != null }
+                // Off incasso is not collected from, whatever mandate is still on file.
+                .filter { it.incasso }
         val deleted = erasure.deletedIdsAmong(judged.map { it.userId })
         return judged
             .map { membership ->
                 val feeType = resolveFeeType(membership.memberType, membership.startDate, period)
-                val mandate = membership.mandate
+                val mandate = membership.mandate?.takeUnless { it.wiped }
                 val leftOut =
                     when {
                         feeType == null -> IncassoLeftOut.OWES_NOTHING

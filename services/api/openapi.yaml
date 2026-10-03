@@ -4720,6 +4720,9 @@ components:
           type:
           - string
           - 'null'
+        bankDetailsWiped:
+          description: True once the sealed bank details were wiped; the reference, signing date and masked IBAN stay as the record.
+          type: boolean
         ibanCountry:
           description: The IBAN's country code; with the last two, all a response carries of it.
           type:
@@ -4760,6 +4763,7 @@ components:
         standing:
           $ref: '#/components/schemas/IncassoStanding'
       required:
+      - bankDetailsWiped
       - membershipId
       - standing
       type: object

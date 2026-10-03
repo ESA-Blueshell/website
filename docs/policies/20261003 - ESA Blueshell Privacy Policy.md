@@ -1,6 +1,6 @@
 # Privacy Policy of Blueshell E-Sports Association Enschede
 
-Last updated: September 25, 2026  
+Last updated: October 3, 2026  
 Location: Enschede, The Netherlands
 
 ## Abbreviations
@@ -211,6 +211,18 @@ Retention periods vary per processing purpose and technical subsystem.
 - After 90 days, your account data is irreversibly removed or anonymized, and restoration is no longer possible.
 - Where legal or financial obligations apply, specific records may be retained in a minimized or legally required
   form.
+
+### Bank details for direct debit
+
+- Your IBAN, the name of the account holder and, for a mandate you authorised on the website, the address you confirmed
+  with it are stored encrypted. A copy of our database does not show them.
+- They are kept for as long as your contribution is collected by direct debit.
+- Once collection stops, because your membership ends, you stop paying by direct debit or your account is deleted,
+  they are kept for 13 more months after the last collection. That is the period in which a direct debit can be
+  disputed. After it they are removed. If nothing was ever collected, they are removed as soon as collection stops.
+- The mandate reference, the date the mandate was signed and a masked account number (its country code and last two
+  characters) are kept as the record of what was collected.
+- Bank details given during a signup that did not become a membership are removed when that account is deleted.
 
 ### Activity form / event sign-ups
 

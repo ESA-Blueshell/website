@@ -59,7 +59,8 @@ class IncassoFiles(
         val held = memberships.findByUserIdsWithMembers(theirs.map { it.userId })
         val mandates =
             theirs.associate { told ->
-                told.userId to held[told.userId].orEmpty().mapNotNull { it.mandate }.firstOrNull { it.reference == told.mandateReference }
+                told.userId to
+                    held[told.userId].orEmpty().mapNotNull { it.mandate }.firstOrNull { !it.wiped && it.reference == told.mandateReference }
             }
         val changed = mandates.filterValues { it == null }.keys.sorted()
         if (changed.isNotEmpty()) throw MandateChanged(changed)

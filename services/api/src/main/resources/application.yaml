@@ -310,6 +310,8 @@ privacy:
   bank-details-key: ${PRIVACY_BANK_DETAILS_KEY:api-bank-details}
   # The nightly rewrap, which moves sealed values onto the newest key version after a rotation.
   rewrap-cron: ${PRIVACY_REWRAP_CRON:0 0 4 * * *}
+  # The daily wipe of bank details 13 months after a stopped mandate's last collection.
+  bank-details-wipe-cron: ${PRIVACY_BANK_DETAILS_WIPE_CRON:0 30 4 * * *}
 
 auth:
   issuer: ${AUTH_ISSUER:https://esa-blueshell.nl/api}

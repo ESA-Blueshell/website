@@ -77,6 +77,16 @@ describe("the mandate panel", () => {
     expect(api.revealIban).toHaveBeenCalledTimes(2)
   })
 
+  it("says a wiped mandate's bank details are gone, and offers no reveal", async () => {
+    api.findMandate.mockResolvedValue({status: 200, data: {...recorded, standing: IncassoStanding.NONE, accountHolder: null, bankDetailsWiped: true}})
+    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    await settle()
+
+    expect(wrapper.get('[data-testid="mandate-wiped"]').text()).toContain("wiped 13 months after the last collection")
+    expect(wrapper.find('[data-testid="mandate-reveal"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="mandate-account"]').text()).toBe("NL•• … ••00")
+  })
+
   it("says why a reveal was refused, and keeps the account masked", async () => {
     api.findMandate.mockResolvedValue({status: 200, data: recorded})
     api.revealIban.mockResolvedValue({status: 503, error: {code: "SealingUnavailable"}})

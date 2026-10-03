@@ -49,9 +49,13 @@ data class BankDetails(
     override fun toString(): String = "BankDetails($iban)"
 }
 
+/** The mandate the membership can be collected under: one whose bank details were wiped is a record only. */
+val Membership.collectableMandate: IncassoMandate?
+    get() = mandate?.takeUnless { it.wiped }
+
 fun Membership.incassoStanding(): IncassoStanding =
     when {
-        mandate != null -> IncassoStanding.MANDATE_RECORDED
+        collectableMandate != null -> IncassoStanding.MANDATE_RECORDED
         incasso -> IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS
         else -> IncassoStanding.NONE
     }
@@ -83,7 +87,7 @@ class Mandates(
         val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
         if (signedOn.isAfter(LocalDate.now(clock))) throw MandateSignedInFuture()
         val membership = find(membershipId)
-        val online = membership.mandate?.takeIf { it.kind == MandateKind.ONLINE }
+        val online = membership.collectableMandate?.takeIf { it.kind == MandateKind.ONLINE }
         if (online != null && !replacesOnline) throw ReplacesOnlineMandate(online.authorisedAt ?: online.recordedAt)
         return write(membership, iban, holder, signedOn, recordedBy, null)
     }
@@ -100,7 +104,7 @@ class Mandates(
         val membershipId = requireNotNull(membership.id)
         // A mandate that no longer opens for its member is replaced as a new one, under a new reference.
         val before =
-            membership.mandate?.let { held ->
+            membership.collectableMandate?.let { held ->
                 try {
                     bankDetailsOf(membership.userId, held)
                 } catch (_: BankDetailsUnopenable) {
@@ -108,7 +112,7 @@ class Mandates(
                 }
             }
         val reference =
-            membership.mandate
+            membership.collectableMandate
                 ?.takeIf { before?.iban == iban }
                 ?.reference
                 ?: referenceFor(membershipId, signedOn)
@@ -205,7 +209,7 @@ class Mandates(
     @Transactional(readOnly = true)
     fun own(userId: Long): OwnMandate {
         val running = memberships.findByUser_Id(userId).firstOrNull { it.endDate == null }
-        val held = running?.mandate
+        val held = running?.collectableMandate
         if (held !=
             null
         ) {
@@ -263,7 +267,7 @@ class Mandates(
         revealedBy: Long,
     ): Iban {
         val membership = find(membershipId)
-        val mandate = membership.mandate ?: throw NoMandateRecorded()
+        val mandate = membership.collectableMandate ?: throw NoMandateRecorded()
         val iban = bankDetailsOf(membership.userId, mandate).iban
         events.publishEvent(IbanRevealed(membership.userId, membershipId, revealedBy))
         return iban
@@ -288,7 +292,13 @@ class Mandates(
     private fun held(
         userId: Long,
         mandate: IncassoMandate,
-    ) = HeldAccount(userId, SealedAccount(mandate.sealedIban, mandate.sealedAccountHolder))
+    ) = HeldAccount(
+        userId,
+        SealedAccount(
+            mandate.sealedIban ?: throw NoMandateRecorded(),
+            mandate.sealedAccountHolder ?: throw NoMandateRecorded(),
+        ),
+    )
 
     private fun referenceFor(
         membershipId: Long,

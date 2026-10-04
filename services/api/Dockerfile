@@ -2,7 +2,7 @@
 #
 # Build context: repo root (see services/api/docker-compose.yml).
 
-FROM eclipse-temurin:25-jdk-alpine@sha256:09349d79941fd53bb3d487b393ca118d8853c08c09193f416fe6a8718df9e732 AS build
+FROM eclipse-temurin:25-jdk-alpine@sha256:3fd2d245c4e0eba615fe366a71b8bd25f5db7104f53e4026b24bf508b880bd2a AS build
 
 WORKDIR /src
 
@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.gradle \
     GITHUB_ACTOR="${GITHUB_ACTOR}" \
     ./gradlew --no-daemon :services:api:bootJar -x test
 
-FROM eclipse-temurin:25-jre-alpine@sha256:3137541deb3cac6626b5d9a4a2187bc0d6a34312f858bd2c67dd01e732e6b682 AS runtime
+FROM eclipse-temurin:25-jre-alpine@sha256:3c0a9084927a221ccd1d007fcaf614465672c0af37aaa834c5184483afe56d61 AS runtime
 
 RUN apk add --no-cache libwebp-tools
 

@@ -3,10 +3,14 @@
    missing its role or list stands out. Opening one renders the site's own committee editor inside
    Management. */
 import {computed, onMounted, ref} from "vue"
-import FoldOut from "@/components/island/FoldOut.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FactList from "@/components/island/FactList.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import {type CohortSummary, type SummaryTarget, TargetSystem, fetchCohorts} from "@/domains/cohorts"
 import {type Committee, listCommittees} from "@/domains/committees"
 
@@ -32,9 +36,27 @@ const matches = (committee: Committee) => {
   const needle = search.value.trim().toLowerCase()
   return needle === "" || [committee.name, committee.slug].some((value) => value.toLowerCase().includes(needle))
 }
-const shown = computed(() => committees.value.filter(matches).sort((a, b) => a.name.localeCompare(b.name)))
-const live = computed(() => shown.value.filter((one) => !one.archived))
-const archived = computed(() => shown.value.filter((one) => one.archived))
+const COLUMNS: TableColumn[] = [
+  {key: "name", label: "Committee", wrap: true},
+  {key: "seats", label: "Seats"},
+  {key: "discord", label: "Discord"},
+  {key: "brevo", label: "Brevo"},
+  {key: "state", label: "State"},
+]
+
+// The committees at work first, the archived ones after them, each by name.
+const shown = computed(() => committees.value.filter(matches)
+  .sort((a, b) => Number(a.archived) - Number(b.archived) || a.name.localeCompare(b.name)))
+const live = computed(() => committees.value.filter((one) => !one.archived))
+
+const facts = computed(() => {
+  const people = new Set(live.value.flatMap((one) => (one.members ?? []).map((seat) => seat.userId)))
+  return [
+    {label: "Committees", value: String(live.value.length), sub: `${committees.value.length - live.value.length} archived`},
+    {label: "Seats", value: `${people.size} ${people.size === 1 ? "person" : "people"}`, sub: "Across every committee"},
+    {label: "Needs a look", value: String(missing.value.length), sub: "Missing a role or a list"},
+  ]
+})
 const missing = computed(() => committees.value.filter((one) => !one.archived && lacking(one).length > 0))
 
 const seats = (committee: Committee) => {
@@ -55,30 +77,27 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="committees"
-    data-testid="committee-list"
+  <management-page
+    eyebrow="Content"
+    testid="committee-list"
+    title="Committees"
   >
-    <header class="committees__head">
-      <div>
-        <p class="committees__eyebrow">
-          Content
-        </p>
-        <h1 class="committees__title">
-          Committees
-        </h1>
-        <p class="committees__note">
-          Each committee's seats, and the role and list its people hold.
-        </p>
-      </div>
-      <router-link
-        class="committees__action"
-        data-testid="committee-list-new"
-        to="/management/committees/new"
+    <template #lede>
+      Every committee, its seats, and the role and list its people hold.
+    </template>
+    <template #actions>
+      <cut-button
+        href="/management/committees/new"
+        testid="committee-list-new"
       >
         Add a committee
-      </router-link>
-    </header>
+      </cut-button>
+    </template>
+
+    <fact-list
+      class="committees__facts"
+      :facts="facts"
+    />
 
     <p
       v-if="failed"
@@ -87,162 +106,103 @@ onMounted(async () => {
     >
       The committees could not be read. Try again in a moment.
     </p>
-
     <notice-box
       v-if="missing.length"
+      class="committees__notice"
       testid="committee-list-missing"
       :title="`${missing.length} ${missing.length === 1 ? 'committee is' : 'committees are'} missing a role or a list`"
+      tone="warning"
     >
       <p>
         {{ missing.map((one) => `${one.name} (${lacking(one).join(", ")})`).join(", ") }}.
       </p>
     </notice-box>
 
-    <search-box
-      v-model="search"
-      label="Search committees"
-      testid="committee-list-search"
-    />
-
-    <p
-      v-if="loaded && !failed && shown.length === 0"
-      class="committees__note"
-      data-testid="committee-list-empty"
+    <management-table
+      :columns="COLUMNS"
+      :row-key="(committee) => committee.id"
+      :row-testid="(committee) => `committee-row-${committee.id}`"
+      :rows="shown"
+      testid="committee-list-table"
+      :to="(committee) => `/management/committees/${committee.slug}`"
     >
-      No committee matches.
-    </p>
-
-    <component
-      :is="index === 1 ? FoldOut : 'section'"
-      v-for="(group, index) in [live, archived]"
-      :key="index"
-      v-bind="index === 1 ? {label: `Archived · ${group.length}`, testid: 'committee-list-archived'} : {}"
-    >
-      <ul
-        v-if="group.length"
-        class="committees__rows"
+      <template #count>
+        <b>{{ shown.length }}</b> of {{ committees.length }} committees
+      </template>
+      <template #search>
+        <search-box
+          v-model="search"
+          label="Search committees"
+          testid="committee-list-search"
+        />
+      </template>
+      <template
+        v-if="loaded && !failed"
+        #empty
       >
-        <li
-          v-for="committee in group"
-          :key="committee.id"
-          class="committees__row"
-          :data-testid="`committee-row-${committee.id}`"
+        <span data-testid="committee-list-empty">No committee matches.</span>
+      </template>
+      <template #name="{row}">
+        <router-link
+          class="mg-name"
+          :to="`/management/committees/${row.slug}`"
         >
-          <span class="committees__name">
-            <router-link :to="`/management/committees/${committee.slug}`">{{ committee.name }}</router-link>
-          </span>
-          <span class="committees__sub">{{ seats(committee) }}</span>
-          <template
-            v-for="one in SYSTEMS"
-            :key="one.system"
-          >
-            <span
-              v-if="madeOn(committee, one.system)"
-              class="committees__sub"
-              :data-testid="`committee-${one.system.toLowerCase()}-${committee.id}`"
-            >{{ one.mark(madeOn(committee, one.system)!) }}</span>
-            <state-mark
-              v-else
-              kind="missing"
-              :testid="`committee-${one.system.toLowerCase()}-${committee.id}`"
-            >
-              {{ one.none }}
-            </state-mark>
-          </template>
-        </li>
-      </ul>
-    </component>
-  </div>
+          {{ row.name }}
+        </router-link>
+        <span class="mg-sub">{{ row.slug }}</span>
+      </template>
+      <template #seats="{row}">
+        {{ seats(row) }}
+      </template>
+      <template
+        v-for="one in SYSTEMS"
+        :key="one.system"
+        #[one.system.toLowerCase()]="{row}"
+      >
+        <span
+          v-if="madeOn(row, one.system)"
+          :data-testid="`committee-${one.system.toLowerCase()}-${row.id}`"
+        >{{ one.mark(madeOn(row, one.system)!) }}</span>
+        <state-mark
+          v-else
+          :kind="row.archived ? 'not-compared' : 'not-created'"
+          :testid="`committee-${one.system.toLowerCase()}-${row.id}`"
+        >
+          {{ one.none }}
+        </state-mark>
+      </template>
+      <template #state="{row}">
+        <state-mark :kind="row.archived ? 'not-compared' : 'in-step'">
+          {{ row.archived ? "Archived" : "Active" }}
+        </state-mark>
+      </template>
+      <template #phone="{row}">
+        <management-row
+          :meta="`${seats(row)} · ${row.slug}`"
+          :name="row.name"
+          :testid="`committee-row-${row.id}`"
+          :to="`/management/committees/${row.slug}`"
+        >
+          <state-mark :kind="row.archived ? 'not-compared' : lacking(row).length ? 'not-created' : 'in-step'">
+            {{ row.archived ? "Archived" : lacking(row).length ? `Missing: ${lacking(row).join(", ")}` : "Active" }}
+          </state-mark>
+        </management-row>
+      </template>
+    </management-table>
+  </management-page>
 </template>
 
 <style scoped>
-.committees {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 76rem;
-  padding: 2rem 2.4rem 3rem;
+.committees__facts {
+  padding: 1.1rem 0 1.2rem;
 }
 
-.committees__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.committees__eyebrow {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow, var(--color-ash));
-}
-
-.committees__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
+.committees__notice {
+  margin-bottom: 1.2rem;
 }
 
 .committees__note {
-  margin: 0;
-  max-width: 48rem;
+  margin-bottom: 1rem;
   color: var(--color-ash);
-}
-
-.committees__action {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  text-decoration: none;
-}
-
-.committees__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.committees__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) 6rem minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.committees__name {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-}
-
-.committees__name a {
-  color: var(--color-chalk);
-}
-
-.committees__sub {
-  overflow: hidden;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 839px) {
-  .committees {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
-  .committees__row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
 }
 </style>

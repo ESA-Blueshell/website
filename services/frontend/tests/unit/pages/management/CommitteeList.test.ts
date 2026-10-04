@@ -56,10 +56,22 @@ describe("the committees in Management", () => {
     expect(wrapper.get('[data-testid="committee-brevo-2"]').text()).toBe("No list")
     expect(wrapper.get('[data-testid="committee-list-missing"]').text()).toContain("1 committee is missing a role or a list")
     expect(wrapper.get('[data-testid="committee-list-missing"]').text()).toContain("Nintenco (no role, no list)")
-    expect(wrapper.find('[data-testid="committee-row-3"]').exists()).toBe(false)
+    const archived = wrapper.get('[data-testid="committee-row-3"]')
+    expect(archived.text()).toContain("0 seats")
+    expect(archived.text()).toContain("Archived")
+    expect(wrapper.findAll('[data-testid^="committee-row-"]').at(-1)!.attributes("data-testid")).toBe("committee-row-3")
+    expect(wrapper.findComponent({name: "FactList"}).text()).toContain("1 archived")
+    expect(wrapper.findComponent({name: "FactList"}).text()).toContain("Needs a look1")
+  })
 
-    await wrapper.get('[data-testid="committee-list-archived-toggle"]').trigger("click")
-    expect(wrapper.get('[data-testid="committee-row-3"]').text()).toContain("0 seats")
+  it("draws each committee as a row on a phone, saying what one is missing", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="committee-row-1"]').text()).toContain("Active")
+    expect(wrapper.get('[data-testid="committee-row-2"]').text()).toContain("Missing: no role, no list")
+    expect(wrapper.get('[data-testid="committee-row-3"]').text()).toContain("Archived")
   })
 
   it("narrows the list by search, and says when nothing matches", async () => {

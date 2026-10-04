@@ -52,6 +52,15 @@ describe("the boards in Management", () => {
     expect(wrapper.get('[data-testid="board-row-10"] a').attributes("to")).toBe("/management/board/10")
   })
 
+  it("draws each board as a row on a phone, and names the board in office among the facts", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.findAllComponents({name: "ManagementRow"}).length).toBeGreaterThan(0)
+    expect(wrapper.findComponent({name: "FactList"}).text()).toContain("In office")
+  })
+
   it("narrows by a name, a member or a year, and says when nothing matches", async () => {
     const wrapper = await mount()
 

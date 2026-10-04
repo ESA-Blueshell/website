@@ -235,7 +235,7 @@ watch(() => membershipId, load, {immediate: true})
         testid="mandate-record"
         @click="open = true"
       >
-        {{ mandate?.ibanLastTwo ? "Replace the mandate" : "Record a paper mandate" }}
+        {{ mandate?.ibanLastTwo ? "Replace the IBAN and mandate" : "Add an IBAN and paper mandate" }}
       </cut-button>
     </div>
 

@@ -35,7 +35,7 @@ import {formatDay, formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "UserDetailPage"})
 
-const TABS = ["Overview", "Membership", "Contributions", "Profile", "Address", "Account", "Roles"]
+const TABS = ["Overview", "Membership", "Incasso", "Contributions", "Profile", "Address", "Account", "Roles"]
 
 const PERIOD_COLUMNS: TableColumn[] = [
   {key: "period", label: "Period"},
@@ -104,6 +104,7 @@ const contributionLine = computed(() => (latest.value
 const profileLine = computed(() => (person.value
   ? [person.value.email, person.value.phoneNumber, person.value.discordId ? `@${person.value.discord}` : "No Discord linked"].filter(Boolean).join(" · ")
   : ""))
+const incassoLine = computed(() => `IBAN and mandate · ${latestMembership.value ? incasso.value ?? "no running membership" : "needs a membership first"}`)
 const addressLine = computed(() => {
   if (person.value?.addressId == null) return "No address"
   const held = address.value
@@ -237,6 +238,12 @@ watch(id, load, {immediate: true})
           </template>
         </cut-row>
         <cut-row
+          :meta="incassoLine"
+          testid="user-row-incasso"
+          title="Incasso"
+          :to="`${base}/incasso`"
+        />
+        <cut-row
           :meta="contributionLine"
           testid="user-row-contributions"
           title="Contributions"
@@ -314,6 +321,17 @@ watch(id, load, {immediate: true})
       class="person__stack"
       data-testid="user-membership"
     >
+      <membership-panel
+        :user-id="id"
+        @changed="reloadMemberships"
+      />
+    </div>
+
+    <div
+      v-else-if="tab === 'incasso'"
+      class="person__stack"
+      data-testid="user-incasso-tab"
+    >
       <p
         v-if="incasso"
         class="person__note"
@@ -334,10 +352,22 @@ watch(id, load, {immediate: true})
         :membership-id="latestMembership.id"
         @changed="reloadMemberships"
       />
-      <membership-panel
-        :user-id="id"
-        @changed="reloadMemberships"
-      />
+      <div
+        v-else
+        class="person__none"
+        data-testid="user-incasso-no-membership"
+      >
+        <p class="person__note">
+          An IBAN and its mandate are saved on a membership, and {{ person.fullName }} has none. Add a membership first, then
+          add the IBAN here.
+        </p>
+        <cut-button
+          :href="`${base}/membership`"
+          testid="user-incasso-add-membership"
+        >
+          Add a membership
+        </cut-button>
+      </div>
     </div>
 
     <div
@@ -532,6 +562,13 @@ watch(id, load, {immediate: true})
   flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem 1rem;
+}
+
+.person__none {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
 }
 
 .person__note,

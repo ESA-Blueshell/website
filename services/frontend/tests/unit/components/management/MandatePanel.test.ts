@@ -40,7 +40,7 @@ describe("the mandate panel", () => {
     expect(wrapper.get('[data-testid="mandate-facts"]').text()).toContain("NL•• … ••00")
     expect(wrapper.text()).not.toContain("0417")
     expect(wrapper.emitted("changed")).toHaveLength(1)
-    expect(wrapper.get('[data-testid="mandate-record"]').text()).toBe("Replace the mandate")
+    expect(wrapper.get('[data-testid="mandate-record"]').text()).toBe("Replace the IBAN and mandate")
   })
 
   it("shows the masked account alone where the account holder cannot be opened", async () => {

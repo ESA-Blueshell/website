@@ -114,13 +114,24 @@ describe("one user's page", () => {
   })
 
   it("opens the tab its address names", async () => {
-    const wrapper = await mount("membership")
+    const incasso = await mount("incasso")
+    expect(incasso.get('[data-testid="user-incasso"]').text()).toBe("Pays by incasso")
+    expect(incasso.findComponent({name: "MandatePanel"}).exists()).toBe(true)
+    expect(incasso.find('[data-testid="user-incasso-no-membership"]').exists()).toBe(false)
+    incasso.findComponent({name: "MandatePanel"}).vm.$emit("changed")
+    await settle()
 
-    expect(wrapper.get('[data-testid="user-incasso"]').text()).toBe("Pays by incasso")
+    const overview = await mount()
+    expect(overview.get('[data-testid="user-row-incasso"]').attributes("to")).toBe("/management/users/7/incasso")
+    expect(overview.get('[data-testid="user-row-incasso"]').text()).toContain("IBAN and mandate · Pays by incasso")
+
+    const wrapper = await mount("membership")
+    expect(wrapper.find('[data-testid="user-incasso"]').exists()).toBe(false)
     expect(wrapper.findComponent({name: "MembershipPanel"}).exists()).toBe(true)
     wrapper.findComponent({name: "MembershipPanel"}).vm.$emit("changed")
     await settle()
-    expect(api.findMemberContributions).toHaveBeenCalledTimes(2)
+    // Once for each of the three pages opened, and again for each of the two changes.
+    expect(api.findMemberContributions).toHaveBeenCalledTimes(5)
   })
 
   it("names a pending membership, and calls them a member once the first payment is recorded", async () => {
@@ -224,8 +235,11 @@ describe("one user's page", () => {
   it("says a mandate waiting for the membership to start has its PDF once it does", async () => {
     api.findMemberships.mockResolvedValue({status: 200, data: []})
     api.findMandateOf.mockResolvedValue({status: 200, data: {standing: "MANDATE_RECORDED", ibanCountry: "NL", ibanLastTwo: "00", signedOn: "2026-09-30", pending: true}})
-    const wrapper = await mount("membership")
+    const wrapper = await mount("incasso")
 
+    expect(wrapper.get('[data-testid="user-incasso-no-membership"]').text()).toContain("Add a membership first")
+    expect(wrapper.get('[data-testid="user-incasso-add-membership"]').attributes("to") ?? wrapper.get('[data-testid="user-incasso-add-membership"]').attributes("href")).toBe("/management/users/7/membership")
+    expect((await mount()).get('[data-testid="user-row-incasso"]').text()).toContain("needs a membership first")
     expect(api.findMandateOf).toHaveBeenCalledWith({path: {userId: 7}})
     expect(wrapper.get('[data-testid="user-pending-mandate"]').text()).toContain("NL•• … ••00")
     expect(wrapper.get('[data-testid="user-pending-mandate"]').text()).toContain("available once the membership starts")

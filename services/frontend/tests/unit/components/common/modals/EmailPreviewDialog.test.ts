@@ -142,4 +142,19 @@ describe("EmailPreviewDialog", () => {
       expect(wrapper.find('[data-testid="email-preview-send-btn"]').exists()).toBe(false)
     })
   })
+
+  it("says the links were taken out of an email that was already sent", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {props: {modelValue: true, preview: {...preview, linksRedacted: true}}})
+
+    expect(wrapper.find('[data-testid="email-preview-redacted-notice"]').text()).toContain("one-time credentials")
+  })
+
+  it("closes from its Close button and from the dialog's own cross", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
+
+    await wrapper.find('[data-testid="email-preview-close"]').trigger("click")
+    await wrapper.find('[data-testid="island-dialog-close"]').trigger("click")
+
+    expect(wrapper.emitted("update:modelValue")).toEqual([[false], [false]])
+  })
 })

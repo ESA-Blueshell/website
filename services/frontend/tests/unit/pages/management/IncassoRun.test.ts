@@ -87,12 +87,12 @@ describe("the incasso task", () => {
 
     expect(wrapper.get('[data-testid="incasso-run-with-mandate"]').text()).toBe("3 with a mandate")
     expect(wrapper.get('[data-testid="incasso-run-row-1"]').text()).toContain("NL•• … ••11")
-    expect(wrapper.get('[data-testid="incasso-run-left-out-3"]').text()).toContain("No bank details recorded. Ask them to add")
+    expect(wrapper.get('[data-testid="incasso-run-left-out-3"]').text()).toContain("Ask them to add")
     expect(wrapper.get('[data-testid="incasso-run-left-out-4"]').text()).toBe("Already paid")
 
     await wrapper.get('[data-testid="incasso-run-next"]').trigger("click")
     await settle()
-    wrapper.findComponent({name: "VSelect"}).vm.$emit("update:modelValue", BulkFeeType.HALF_YEAR_FEE)
+    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", BulkFeeType.HALF_YEAR_FEE)
     await settle()
     expect(wrapper.get('[data-testid="incasso-run-amounts"]').text()).toContain("€ 15.00")
 

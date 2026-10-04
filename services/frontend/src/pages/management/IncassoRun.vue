@@ -5,10 +5,21 @@
    run's id, the page shows that run's last step. */
 import {computed, onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import FormField from "@/components/island/FormField.vue"
+import CutButton from "@/components/island/CutButton.vue"
 import DateInput from "@/components/island/DateInput.vue"
+import FormField from "@/components/island/FormField.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
+import StateMark from "@/components/island/StateMark.vue"
+import StateTag from "@/components/island/StateTag.vue"
 import TextInput from "@/components/island/TextInput.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
+import PairList from "@/components/management/PairList.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
+import StepStrip from "@/components/management/StepStrip.vue"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
 import {useEmailPreview} from "@/composables/useEmailPreview"
 import {
@@ -62,7 +73,33 @@ const fetching = ref<number | null>(null)
 const submitting = ref(false)
 const doneFailure = ref<string | null>(null)
 
-const feeOptions = (Object.values(BulkFeeType) as BulkFeeType[]).map((value) => ({title: feeTypeLabels[value], value}))
+const feeOptions = (Object.values(BulkFeeType) as BulkFeeType[]).map((value) => ({key: value, label: feeTypeLabels[value]}))
+
+const WHO_COLUMNS: TableColumn[] = [
+  {key: "name", label: "Member"},
+  {key: "account", label: "Account"},
+  {key: "mandate", label: "Mandate"},
+  {key: "why", label: "Why", wrap: true},
+]
+const AMOUNT_COLUMNS: TableColumn[] = [
+  {key: "name", label: "Member"},
+  {key: "since", label: "Membership started"},
+  {key: "fee", label: "Fee type"},
+  {key: "amount", label: "Amount"},
+]
+const COLLECT_COLUMNS: TableColumn[] = [
+  {key: "name", label: "Member"},
+  {key: "account", label: "Account"},
+  {key: "mandate", label: "Mandate"},
+  {key: "fee", label: "Fee type"},
+  {key: "amount", label: "Amount"},
+]
+const DONE_COLUMNS: TableColumn[] = [
+  {key: "name", label: "Member"},
+  {key: "account", label: "Account"},
+  {key: "mandate", label: "Mandate"},
+  {key: "amount", label: "Amount"},
+]
 const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`
 
@@ -176,39 +213,33 @@ onMounted(async () => {
     loaded.value = true
   }
 })
+
+const leftOutPairs = computed(() => [
+  ...groups.value.map((group) => ({label: leftOutLabels[group.reason], value: group.names.join(", ")})),
+  ...(collectable.value.length > chosen.value.length
+    ? [{label: "Not chosen", value: collectable.value.filter((one) => !ticked.value[one.userId]).map((one) => one.name).join(", ")}]
+    : []),
+])
 </script>
 
-<template>
-  <div
-    class="incasso"
-    data-testid="incasso-run"
-  >
-    <router-link
-      class="incasso__back"
-      :to="back"
-    >
-      Contributions
-    </router-link>
-    <h1 class="incasso__title">
-      Incassos
-    </h1>
-    <p class="incasso__note">
-      Collect what members on incasso owe: email them the incasso notification, then put the collection in ING for that same date.
-    </p>
 
-    <ol
-      class="incasso__steps"
-      data-testid="incasso-run-steps"
-    >
-      <li
-        v-for="(name, index) in STEPS"
-        :key="name"
-        :aria-current="step === index ? 'step' : undefined"
-        :class="{'incasso__step--on': step === index}"
-      >
-        {{ index + 1 }}. {{ name }}
-      </li>
-    </ol>
+<template>
+  <management-page
+    :back="{to: back, label: 'Contributions'}"
+    eyebrow="Contributions"
+    testid="incasso-run"
+    title="Incassos"
+  >
+    <template #lede>
+      Collect what members on incasso owe: email them the incasso notification, then put the collection in ING for that
+      same date.
+    </template>
+
+    <step-strip
+      :current="step"
+      :steps="STEPS"
+      testid="incasso-run-steps"
+    />
 
     <p
       v-if="loaded && step < 3 && candidates.length === 0"
@@ -220,81 +251,112 @@ onMounted(async () => {
 
     <section
       v-else-if="step === 0"
+      class="incasso__stage"
       data-testid="incasso-run-who"
     >
-      <h2>Whose contribution is collected</h2>
+      <h2 class="incasso__heading">
+        Whose contribution is collected
+      </h2>
       <p class="incasso__tags">
-        <span data-testid="incasso-run-with-mandate">{{ withMandate }} with a mandate</span>
-        <span
-          v-if="withoutDetails"
-          class="incasso__warn"
-        >{{ withoutDetails }} on incasso without bank details</span>
-      </p>
-      <ul class="incasso__rows">
-        <li
-          v-for="one in candidates"
-          :key="one.userId"
-          :data-testid="`incasso-run-row-${one.userId}`"
+        <state-tag
+          testid="incasso-run-with-mandate"
+          tone="ok"
         >
-          <label v-if="!one.leftOut">
-            <input
-              v-model="ticked[one.userId]"
-              :data-testid="`incasso-run-tick-${one.userId}`"
-              type="checkbox"
-            >
-            {{ one.name }}
-          </label>
-          <span v-else>{{ one.name }}</span>
-          <span class="incasso__account">{{ maskedIban(one) }}</span>
-          <span class="incasso__sub">{{ one.mandateReference ? `${one.mandateReference}, signed ${dayName(one.mandateSignedOn)}` : "No mandate" }}</span>
+          {{ withMandate }} with a mandate
+        </state-tag>
+        <state-tag
+          v-if="withoutDetails"
+          tone="warn"
+        >
+          {{ withoutDetails }} on incasso without bank details
+        </state-tag>
+      </p>
+      <management-table
+        :columns="WHO_COLUMNS"
+        :row-key="(one) => one.userId"
+        :row-testid="(one) => `incasso-run-row-${one.userId}`"
+        :rows="candidates"
+      >
+        <template #check="{row}">
+          <row-check
+            v-if="!row.leftOut"
+            :checked="ticked[row.userId] === true"
+            :label="`Include ${row.name}`"
+            :testid="`incasso-run-tick-${row.userId}`"
+            @toggle="ticked[row.userId] = !ticked[row.userId]"
+          />
+        </template>
+        <template #name="{row}">
+          {{ row.name }}
+        </template>
+        <template #account="{row}">
+          <span class="incasso__account">{{ maskedIban(row) }}</span>
+        </template>
+        <template #mandate="{row}">
+          <span :class="{'mg-quiet': !row.mandateReference}">{{ row.mandateReference ? `${row.mandateReference}, signed ${dayName(row.mandateSignedOn)}` : "None" }}</span>
+        </template>
+        <template #why="{row}">
           <span
-            v-if="one.leftOut"
-            class="incasso__why"
-            :data-testid="`incasso-run-left-out-${one.userId}`"
+            v-if="row.leftOut"
+            :data-testid="`incasso-run-left-out-${row.userId}`"
           >
-            {{ leftOutLabels[one.leftOut] }}<template v-if="leftOutHelp[one.leftOut]">. {{ leftOutHelp[one.leftOut] }}</template>
+            <state-mark kind="not-created">{{ leftOutLabels[row.leftOut] }}</state-mark>
+            <span
+              v-if="leftOutHelp[row.leftOut]"
+              class="mg-why"
+            >{{ leftOutHelp[row.leftOut] }}</span>
           </span>
-        </li>
-      </ul>
+        </template>
+      </management-table>
     </section>
 
     <section
       v-else-if="step === 1"
+      class="incasso__stage"
       data-testid="incasso-run-amounts"
     >
-      <h2>What is collected</h2>
-      <p
-        v-if="period"
-        class="incasso__note"
+      <h2 class="incasso__heading">
+        What is collected
+      </h2>
+      <notice-box v-if="period">
+        Half-year cutoff {{ dayName(period.halfYearCutoffDate) }}. A regular membership starting after it pays the
+        half-year fee; one starting on it or before pays the full year. Alumni pay the alumni fee.
+      </notice-box>
+      <management-table
+        :columns="AMOUNT_COLUMNS"
+        :row-key="(one) => one.userId"
+        :rows="chosen"
       >
-        Half-year cutoff {{ dayName(period.halfYearCutoffDate) }}. A regular membership starting after it pays the half-year fee;
-        one starting on it or before pays the full year. Alumni pay the alumni fee.
-      </p>
-      <ul class="incasso__rows">
-        <li
-          v-for="one in chosen"
-          :key="one.userId"
-        >
-          <span>{{ one.name }}</span>
-          <span class="incasso__sub">Member since {{ dayName(one.memberSince) }}</span>
-          <v-select
-            density="compact"
-            :data-testid="`incasso-run-fee-${one.userId}`"
-            hide-details
-            :items="feeOptions"
-            :model-value="feeOf(one)"
-            @update:model-value="fees[one.userId] = $event"
+        <template #name="{row}">
+          {{ row.name }}
+        </template>
+        <template #since="{row}">
+          {{ dayName(row.memberSince) }}
+        </template>
+        <template #fee="{row}">
+          <search-picker
+            class="incasso__fee"
+            compact
+            :options="feeOptions"
+            :selected-key="feeOf(row)"
+            :testid-prefix="`incasso-run-fee-${row.userId}`"
+            @pick="fees[row.userId] = $event as BulkFeeType"
           />
-          <span class="incasso__sub">{{ euro(amountOf(one)) }}</span>
-        </li>
-      </ul>
+        </template>
+        <template #amount="{row}">
+          {{ euro(amountOf(row)) }}
+        </template>
+      </management-table>
     </section>
 
     <section
       v-else-if="step === 2"
+      class="incasso__stage"
       data-testid="incasso-run-check"
     >
-      <h2>{{ euro(total) }} will be collected from {{ chosen.length }} member{{ chosen.length === 1 ? "" : "s" }}</h2>
+      <h2 class="incasso__heading">
+        {{ euro(total) }} will be collected from {{ chosen.length }} member{{ chosen.length === 1 ? "" : "s" }}
+      </h2>
       <div class="incasso__fields">
         <form-field
           v-slot="field"
@@ -324,28 +386,40 @@ onMounted(async () => {
         </form-field>
       </div>
 
-      <h3>Will collect · {{ chosen.length }}</h3>
-      <ul class="incasso__rows">
-        <li
-          v-for="one in chosen"
-          :key="one.userId"
-          :data-testid="`incasso-run-collect-${one.userId}`"
-        >
-          <span>{{ one.name }}</span>
-          <span class="incasso__account">{{ maskedIban(one) }}</span>
-          <span class="incasso__sub">{{ one.mandateReference }} · signed {{ dayName(one.mandateSignedOn) }}</span>
-          <span class="incasso__sub">{{ feeTypeLabels[feeOf(one)] }}, {{ euro(amountOf(one)) }}</span>
-          <button
-            class="incasso__action"
-            :data-testid="`incasso-run-preview-${one.userId}`"
+      <list-head :title="`Will collect · ${chosen.length}`">
+        {{ dateValid ? `On ${dayName(collectionDate)} · ` : "" }}{{ euro(total) }} in total
+      </list-head>
+      <management-table
+        :columns="COLLECT_COLUMNS"
+        :row-key="(one) => one.userId"
+        :row-testid="(one) => `incasso-run-collect-${one.userId}`"
+        :rows="chosen"
+      >
+        <template #name="{row}">
+          {{ row.name }}
+        </template>
+        <template #account="{row}">
+          <span class="incasso__account">{{ maskedIban(row) }}</span>
+        </template>
+        <template #mandate="{row}">
+          {{ row.mandateReference }} · signed {{ dayName(row.mandateSignedOn) }}
+        </template>
+        <template #fee="{row}">
+          {{ feeTypeLabels[feeOf(row)] }}
+        </template>
+        <template #amount="{row}">
+          {{ euro(amountOf(row)) }}
+        </template>
+        <template #acts="{row}">
+          <mini-button
             :disabled="!dateValid"
-            type="button"
-            @click="previewFor(one)"
+            :testid="`incasso-run-preview-${row.userId}`"
+            @click="previewFor(row)"
           >
             Preview
-          </button>
-        </li>
-      </ul>
+          </mini-button>
+        </template>
+      </management-table>
 
       <notice-box
         v-if="renamed.length"
@@ -353,32 +427,21 @@ onMounted(async () => {
         :title="`${renamed.length} name${renamed.length === 1 ? '' : 's'} go${renamed.length === 1 ? 'es' : ''} to ING without accents`"
         tone="warning"
       >
-        {{ renamed.map((one) => `${one.name} as ${one.ingName}`).join(", ") }}. ING refuses accents and other special characters in its file.
+        {{ renamed.map((one) => `${one.name} as ${one.ingName}`).join(", ") }}. ING refuses accents and other special
+        characters in its file.
       </notice-box>
 
       <template v-if="leftOut.length">
-        <h3>Left out · {{ leftOut.length }}</h3>
-        <ul
-          class="incasso__rows"
-          data-testid="incasso-run-left-out"
-        >
-          <li
-            v-for="group in groups"
-            :key="group.reason"
-          >
-            <span>{{ leftOutLabels[group.reason] }}</span>
-            <span class="incasso__sub">{{ group.names.join(", ") }}</span>
-          </li>
-          <li v-if="collectable.length > chosen.length">
-            <span>Not chosen</span>
-            <span class="incasso__sub">{{ collectable.filter((one) => !ticked[one.userId]).map((one) => one.name).join(", ") }}</span>
-          </li>
-        </ul>
+        <list-head :title="`Left out · ${leftOut.length}`" />
+        <pair-list
+          :pairs="leftOutPairs"
+          testid="incasso-run-left-out"
+        />
       </template>
 
       <p
         v-if="failure"
-        class="incasso__warn"
+        class="incasso__failure"
         data-testid="incasso-run-failure"
         role="alert"
       >
@@ -388,12 +451,15 @@ onMounted(async () => {
 
     <section
       v-else-if="run"
+      class="incasso__stage"
       data-testid="incasso-run-done"
     >
-      <h2>{{ run.collections.length }} incasso notification{{ run.collections.length === 1 ? "" : "s" }} sent</h2>
+      <h2 class="incasso__heading">
+        {{ run.collections.length }} incasso notification{{ run.collections.length === 1 ? "" : "s" }} sent
+      </h2>
       <template v-if="!run.submittedAt">
         <p
-          class="incasso__note"
+          class="incasso__lede"
           data-testid="incasso-run-waiting"
         >
           One thing left: put the collection in ING, so the money is actually taken on {{ dayName(run.collectionDate) }}.
@@ -404,24 +470,23 @@ onMounted(async () => {
         >
           <p>
             {{ incassoFileName(run.collectionDate, 1, run.fileParts) }} · ING's incasso batch template, filled in:
-            {{ run.collections.length }} collection{{ run.collections.length === 1 ? "" : "s" }}, {{ euro(run.total) }},
-            on {{ dayName(run.collectionDate) }}, Core, doorlopend.
+            {{ run.collections.length }} collection{{ run.collections.length === 1 ? "" : "s" }}, {{ euro(run.total) }}, on
+            {{ dayName(run.collectionDate) }}, Core, doorlopend.
             <template v-if="run.fileParts > 1">
               ING takes at most 1000 collections a file, so there are {{ run.fileParts }}.
             </template>
           </p>
-          <div class="incasso__downloads">
-            <button
+          <div class="incasso__acts">
+            <cut-button
               v-for="part in run.fileParts"
               :key="part"
-              class="incasso__action incasso__action--main"
-              :data-testid="`incasso-run-download-${part}`"
               :disabled="fetching !== null"
-              type="button"
+              :testid="`incasso-run-download-${part}`"
+              tone="solid"
               @click="download(part)"
             >
               {{ run.fileParts > 1 ? `Download file ${part} of ${run.fileParts}` : "Download incasso file" }}
-            </button>
+            </cut-button>
           </div>
         </notice-box>
         <ol class="incasso__how">
@@ -429,85 +494,100 @@ onMounted(async () => {
           <li>Check it says {{ dayName(run.collectionDate) }} and {{ euro(run.total) }}, then confirm it there.</li>
           <li>Come back and press Submitted to ING.</li>
         </ol>
-        <div class="incasso__nav incasso__nav--start">
-          <button
-            class="incasso__action"
-            data-testid="incasso-run-submitted"
-            :disabled="submitting"
-            type="button"
-            @click="submitted"
-          >
-            Submitted to ING
-          </button>
-        </div>
       </template>
       <p
         v-else
-        class="incasso__note"
+        class="incasso__lede"
         data-testid="incasso-run-in-ing"
       >
         Submitted to ING on {{ dayName(run.submittedAt.slice(0, 10)) }}.
       </p>
       <p
         v-if="doneFailure"
-        class="incasso__warn"
+        class="incasso__failure"
         data-testid="incasso-run-done-failure"
         role="alert"
       >
         {{ doneFailure }}
       </p>
-      <p class="incasso__sub">
-        {{ run.collections.length }} collection{{ run.collections.length === 1 ? "" : "s" }}, {{ euro(run.total) }}, on {{ dayName(run.collectionDate) }}: {{ run.statementText }}
-      </p>
-      <ul class="incasso__rows">
-        <li
-          v-for="one in run.collections"
-          :key="one.userId"
+
+      <list-head :title="`Collected · ${run.collections.length}`">
+        {{ euro(run.total) }} on {{ dayName(run.collectionDate) }}: {{ run.statementText }}
+      </list-head>
+      <management-table
+        :columns="DONE_COLUMNS"
+        :row-key="(one) => one.userId"
+        :rows="run.collections"
+      >
+        <template #name="{row}">
+          {{ row.name }}
+        </template>
+        <template #account="{row}">
+          <span class="incasso__account">{{ maskedIban(row) }}</span>
+        </template>
+        <template #mandate="{row}">
+          {{ row.mandateReference }} · signed {{ dayName(row.mandateSignedOn) }}
+        </template>
+        <template #amount="{row}">
+          {{ euro(row.amount) }}
+        </template>
+      </management-table>
+
+      <div class="incasso__acts">
+        <cut-button
+          v-if="!run.submittedAt"
+          :disabled="submitting"
+          testid="incasso-run-submitted"
+          @click="submitted"
         >
-          <span>{{ one.name }}</span>
-          <span class="incasso__account">{{ maskedIban(one) }}</span>
-          <span class="incasso__sub">{{ one.mandateReference }} · signed {{ dayName(one.mandateSignedOn) }}</span>
-          <span class="incasso__sub">{{ euro(one.amount) }}</span>
-        </li>
-      </ul>
-      <router-link :to="back">
-        Back to Contributions
-      </router-link>
+          Submitted to ING
+        </cut-button>
+        <cut-button
+          :href="back"
+          tone="quiet"
+        >
+          Back to contributions
+        </cut-button>
+      </div>
     </section>
 
     <div
       v-if="candidates.length > 0 && step < 3"
-      class="incasso__nav"
+      class="incasso__acts"
     >
-      <button
-        v-if="step > 0"
-        class="incasso__action"
-        data-testid="incasso-run-previous"
-        type="button"
-        @click="step -= 1"
-      >
-        Back
-      </button>
-      <button
+      <cut-button
         v-if="step < 2"
-        class="incasso__action incasso__action--main"
-        data-testid="incasso-run-next"
         :disabled="chosen.length === 0"
-        type="button"
+        testid="incasso-run-next"
+        tone="solid"
         @click="step += 1"
       >
         {{ step === 0 ? "Next: amounts" : "Next: date and check" }}
-      </button>
-      <button
+      </cut-button>
+      <cut-button
         v-else
-        class="incasso__action incasso__action--main"
-        data-testid="incasso-run-start"
         :disabled="chosen.length === 0 || !dateValid || !textValid || starting"
-        type="button"
+        testid="incasso-run-start"
+        tone="solid"
         @click="start"
       >
         Email the incasso notification to {{ chosen.length }} member{{ chosen.length === 1 ? "" : "s" }}
-      </button>
+      </cut-button>
+      <cut-button
+        v-if="step > 0"
+        testid="incasso-run-previous"
+        tone="quiet"
+        @click="step -= 1"
+      >
+        Back
+      </cut-button>
+      <cut-button
+        v-else
+        :href="back"
+        tone="quiet"
+      >
+        Cancel
+      </cut-button>
     </div>
 
     <email-preview-dialog
@@ -517,64 +597,32 @@ onMounted(async () => {
       :preview="preview"
       title="Incasso notification"
     />
-  </div>
+  </management-page>
 </template>
 
 <style scoped>
-.incasso {
+.incasso__stage {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 60rem;
-  padding: 2rem 2.4rem 3rem;
+  gap: 1.15rem;
+  padding-top: 1.6rem;
 }
 
-.incasso__back {
-  align-self: flex-start;
-  font-size: 0.84rem;
-  color: var(--color-brand);
-}
-
-.incasso__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.incasso__steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-ash);
-}
-
-.incasso__step--on {
-  color: var(--color-chalk);
-  box-shadow: inset 0 -2px 0 var(--color-brand);
-}
-
-.incasso h2 {
-  margin: 0.4rem 0;
-  font-size: 1.15rem;
-}
-
-.incasso h3 {
-  margin: 1rem 0 0.4rem;
-  font-size: 0.8rem;
-  letter-spacing: 0.2em;
+.incasso__heading {
+  font-size: 2.1rem;
+  line-height: 1.02;
   text-transform: uppercase;
-  color: var(--color-ash);
 }
 
 .incasso__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin: 0 0 0.6rem;
-  font-size: 0.86rem;
+  gap: 0.5rem;
+}
+
+.incasso__account {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
 }
 
 .incasso__fields {
@@ -583,108 +631,51 @@ onMounted(async () => {
   gap: 1rem;
 }
 
-.incasso__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
+.incasso__fee {
+  min-width: 12rem;
 }
 
-.incasso__rows li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 1rem;
-  padding: 0.6rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.incasso__rows li > :first-child {
-  flex: 1 1 12rem;
-}
-
-.incasso__account {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.03em;
-}
-
-.incasso__sub {
-  font-size: 0.84rem;
-  color: var(--color-ash);
-}
-
-.incasso__why {
-  flex-basis: 100%;
-  font-size: 0.84rem;
-  color: var(--color-warning);
-}
-
-.incasso__warn {
-  margin: 0;
-  color: var(--color-warning);
-}
-
-.incasso__note {
-  margin: 0;
-  color: var(--color-ash);
-}
-
-.incasso__nav {
-  display: flex;
-  gap: 0.6rem;
-  justify-content: flex-end;
-}
-
-.incasso__nav--start {
-  justify-content: flex-start;
-}
-
-.incasso__downloads {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.6rem;
+.incasso__lede {
+  max-width: 38rem;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: color-mix(in oklab, var(--color-chalk) 86%, transparent);
 }
 
 .incasso__how {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  margin: 0;
   padding-left: 1.2rem;
   font-size: 0.92rem;
+  list-style: decimal;
   color: var(--color-ash);
 }
 
-.incasso__action {
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
+.incasso__acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding-top: 1rem;
 }
 
-.incasso__action--main {
-  border-color: var(--color-brand);
-  color: var(--color-brand);
+.incasso__note {
+  margin-top: 1.4rem;
+  color: var(--color-ash);
 }
 
-.incasso__action:disabled {
-  opacity: 0.45;
-  cursor: default;
+.incasso__failure {
+  color: var(--color-danger);
 }
 
-@media (max-width: 839px) {
-  .incasso {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
+@media (--phone) {
   .incasso__fields {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .incasso__heading {
+    font-size: 1.5rem;
   }
 }
 </style>

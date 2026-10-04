@@ -2711,6 +2711,12 @@ components:
         resolvedAt:
           format: date-time
           type: string
+        resolvedById:
+          description: The account that resolved it, where it still exists
+          format: int64
+          type:
+          - integer
+          - 'null'
         resolvedByName:
           description: Who resolved it; null when the api did so on its own behalf
           type:

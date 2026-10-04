@@ -101,7 +101,7 @@ const make = async () => {
       :testid="`${testid}-make`"
       @click="make"
     >
-      Make #{{ createName.trim() }}
+      Create a new channel #{{ createName.trim() }}
     </cut-button>
   </div>
 </template>

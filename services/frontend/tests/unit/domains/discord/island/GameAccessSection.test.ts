@@ -36,9 +36,10 @@ describe("a game's Discord access", () => {
   it("shows the access every channel shares, says which channel Discord has otherwise, and sets them back only when asked", async () => {
     const wrapper = await mount()
 
-    const choices = wrapper.findAllComponents({name: "SegmentedChoice"})
-    expect(choices[0]!.props("modelValue")).toBe("READ")
-    expect(choices[1]!.props("modelValue")).toBe("WRITE")
+    const choices = wrapper.findAllComponents({name: "SearchPicker"})
+    expect(choices[0]!.props("selectedKey")).toBe("READ")
+    expect(choices[1]!.props("selectedKey")).toBe("WRITE")
+    expect(choices[1]!.props("options")).toEqual([{key: "READ", label: "Can read"}, {key: "WRITE", label: "Can read and write"}])
     expect(wrapper.get('[data-testid="access-differs-1"]').text()).toBe("On Discord everybody read and write, members read and write. Discord is left as it is.")
     expect(wrapper.find('[data-testid="access-differs-2"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="access-rewrite"]').text()).toBe("Set it back on Discord")
@@ -51,13 +52,13 @@ describe("a game's Discord access", () => {
 
   it("writes a changed access for every channel, and says why where it could not", async () => {
     const wrapper = await mount()
-    wrapper.findAllComponents({name: "SegmentedChoice"})[0]!.vm.$emit("update:modelValue", "HIDDEN")
+    wrapper.findAllComponents({name: "SearchPicker"})[0]!.vm.$emit("pick", "HIDDEN")
     await settle()
     expect(api.setGameAccess).toHaveBeenCalledWith({path: {code: "VALO"}, body: policy("HIDDEN", "WRITE")})
     expect(wrapper.find('[data-testid="access-rewrite"]').exists()).toBe(false)
 
     api.setGameAccess.mockResolvedValueOnce({status: 503, error: {code: "DiscordUnreachable"}})
-    wrapper.findAllComponents({name: "SegmentedChoice"})[1]!.vm.$emit("update:modelValue", "READ")
+    wrapper.findAllComponents({name: "SearchPicker"})[1]!.vm.$emit("pick", "READ")
     await settle()
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now; try again in a moment.")
   })

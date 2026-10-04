@@ -71,14 +71,14 @@ describe("the payment reminders task", () => {
 
     await wrapper.get('[data-testid="payment-reminders-next"]').trigger("click")
     await settle()
-    wrapper.findComponent({name: "VSelect"}).vm.$emit("update:modelValue", BulkFeeType.ALUMNI_FEE)
+    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", BulkFeeType.ALUMNI_FEE)
     await settle()
     expect(wrapper.get('[data-testid="payment-reminders-fees"]').text()).toContain("€ 5.00")
 
     await wrapper.get('[data-testid="payment-reminders-next"]').trigger("click")
     await settle()
     expect(wrapper.get('[data-testid="payment-reminders-send"]').attributes("disabled")).toBeDefined()
-    await wrapper.findComponent({name: "VTextField"}).vm.$emit("update:modelValue", later)
+    wrapper.findComponent({name: "DateInput"}).vm.$emit("update:modelValue", later)
     await settle()
 
     await wrapper.get('[data-testid="payment-reminders-preview-1"]').trigger("click")
@@ -109,7 +109,7 @@ describe("the payment reminders task", () => {
     await wrapper.get('[data-testid="payment-reminders-next"]').trigger("click")
     await wrapper.get('[data-testid="payment-reminders-next"]').trigger("click")
     await settle()
-    await wrapper.findComponent({name: "VTextField"}).vm.$emit("update:modelValue", later)
+    wrapper.findComponent({name: "DateInput"}).vm.$emit("update:modelValue", later)
     await settle()
     await wrapper.get('[data-testid="payment-reminders-preview-1"]').trigger("click")
     await settle()

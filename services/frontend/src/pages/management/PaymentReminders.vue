@@ -4,6 +4,18 @@
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import DateInput from "@/components/island/DateInput.vue"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
+import StateMark from "@/components/island/StateMark.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
+import PairList from "@/components/management/PairList.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
+import StepStrip from "@/components/management/StepStrip.vue"
 import {useEmailPreview} from "@/composables/useEmailPreview"
 import {
   type ContributionPeriodResponse,
@@ -41,12 +53,30 @@ const sending = ref(false)
 const failure = ref<string | null>(null)
 const sent = ref<number | null>(null)
 
-const feeOptions = (Object.values(BulkFeeType) as BulkFeeType[]).map((value) => ({title: feeTypeLabels[value], value}))
+const feeOptions = (Object.values(BulkFeeType) as BulkFeeType[]).map((value) => ({key: value, label: feeTypeLabels[value]}))
+
+const WHO_COLUMNS: TableColumn[] = [
+  {key: "name", label: "Member"},
+  {key: "what", label: "Reminder", wrap: true},
+  {key: "before", label: "Reminded before", wrap: true},
+]
+const FEE_COLUMNS: TableColumn[] = [
+  {key: "name", label: "Member"},
+  {key: "fee", label: "Fee type"},
+  {key: "amount", label: "Amount"},
+]
+const CHECK_COLUMNS: TableColumn[] = [
+  {key: "name", label: "Member"},
+  {key: "what", label: "Reminder", wrap: true},
+  {key: "amount", label: "Amount"},
+]
 const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
 
 const writable = computed(() => rows.value.filter((one) => one.leftOut === null))
 const leftOut = computed(() => rows.value.filter((one) => one.leftOut !== null))
 const chosen = computed(() => writable.value.filter((one) => ticked.value[one.userId]))
+const leftOutPairs = computed(() => leftOut.value.map((one) => ({label: one.name, value: one.leftOut ?? "", testid: `payment-reminders-left-out-${one.userId}`})))
+const euro = (amount: number) => `€ ${amount.toFixed(2)}`
 const feeOf = (one: ReminderRow) => fees.value[one.userId] ?? one.row.feeType ?? BulkFeeType.FULL_YEAR_FEE
 const amountOf = (one: ReminderRow) => effectiveAmount(feeOf(one), period.value) ?? 0
 const dueDateValid = computed(() => dueDate.value >= tomorrow)
@@ -107,139 +137,161 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="reminders"
-    data-testid="payment-reminders"
+  <management-page
+    :back="{to: back, label: 'Contributions'}"
+    eyebrow="Contributions"
+    testid="payment-reminders"
+    title="Payment reminders"
   >
-    <router-link
-      class="reminders__back"
-      :to="back"
-    >
-      Contributions
-    </router-link>
-    <h1 class="reminders__title">
-      Payment reminders
-    </h1>
+    <template #lede>
+      Email members who pay by transfer what they owe and by when. Each email can be previewed before anything is sent.
+    </template>
 
-    <ol
-      class="reminders__steps"
-      data-testid="payment-reminders-steps"
-    >
-      <li
-        v-for="(name, index) in STEPS"
-        :key="name"
-        :aria-current="step === index ? 'step' : undefined"
-        :class="{'reminders__step--on': step === index}"
-      >
-        {{ index + 1 }}. {{ name }}
-      </li>
-    </ol>
+    <step-strip
+      :current="step"
+      :steps="STEPS"
+      testid="payment-reminders-steps"
+    />
 
     <p
       v-if="loaded && rows.length === 0"
       class="reminders__note"
       data-testid="payment-reminders-empty"
     >
-      Nobody is selected. Pick the people on Contributions first.
+      Nobody is selected. Go back to Contributions and tick the people first.
     </p>
 
     <section
       v-else-if="step === 0"
+      class="reminders__stage"
       data-testid="payment-reminders-who"
     >
-      <ul class="reminders__rows">
-        <li
-          v-for="one in writable"
-          :key="one.userId"
-          :data-testid="`payment-reminders-row-${one.userId}`"
-        >
-          <label>
-            <input
-              v-model="ticked[one.userId]"
-              :data-testid="`payment-reminders-tick-${one.userId}`"
-              type="checkbox"
-            >
-            {{ one.name }}
-          </label>
-          <span class="reminders__sub">{{ reminderName(one) }}</span>
-          <span
-            v-if="one.remindedBefore"
-            class="reminders__warn"
-            :data-testid="`payment-reminders-before-${one.userId}`"
-          >Reminded before on {{ formatBulkDate(one.remindedBefore) }}</span>
-        </li>
-      </ul>
-      <h2 v-if="leftOut.length">
-        Left out
+      <h2 class="reminders__heading">
+        Who gets a reminder
       </h2>
-      <ul class="reminders__rows">
-        <li
-          v-for="one in leftOut"
-          :key="one.userId"
-          :data-testid="`payment-reminders-left-out-${one.userId}`"
-        >
-          <span>{{ one.name }}</span>
-          <span class="reminders__sub">{{ one.leftOut }}</span>
-        </li>
-      </ul>
+      <management-table
+        :columns="WHO_COLUMNS"
+        :row-key="(one) => one.userId"
+        :row-testid="(one) => `payment-reminders-row-${one.userId}`"
+        :rows="writable"
+      >
+        <template #check="{row}">
+          <row-check
+            :checked="ticked[row.userId] === true"
+            :label="`Include ${row.name}`"
+            :testid="`payment-reminders-tick-${row.userId}`"
+            @toggle="ticked[row.userId] = !ticked[row.userId]"
+          />
+        </template>
+        <template #name="{row}">
+          {{ row.name }}
+        </template>
+        <template #what="{row}">
+          <span class="mg-quiet">{{ reminderName(row) }}</span>
+        </template>
+        <template #before="{row}">
+          <state-mark
+            v-if="row.remindedBefore"
+            kind="extra"
+            :testid="`payment-reminders-before-${row.userId}`"
+          >
+            Reminded before on {{ formatBulkDate(row.remindedBefore) }}
+          </state-mark>
+          <span
+            v-else
+            class="mg-quiet"
+          >Not yet</span>
+        </template>
+      </management-table>
+
+      <template v-if="leftOut.length">
+        <list-head :title="`Left out · ${leftOut.length}`" />
+        <pair-list :pairs="leftOutPairs" />
+      </template>
     </section>
 
     <section
       v-else-if="step === 1"
+      class="reminders__stage"
       data-testid="payment-reminders-fees"
     >
-      <ul class="reminders__rows">
-        <li
-          v-for="one in chosen"
-          :key="one.userId"
-        >
-          <span>{{ one.name }}</span>
-          <v-select
-            density="compact"
-            :data-testid="`payment-reminders-fee-${one.userId}`"
-            hide-details
-            :items="feeOptions"
-            :model-value="feeOf(one)"
-            @update:model-value="fees[one.userId] = $event"
+      <h2 class="reminders__heading">
+        What each is asked to pay
+      </h2>
+      <management-table
+        :columns="FEE_COLUMNS"
+        :row-key="(one) => one.userId"
+        :rows="chosen"
+      >
+        <template #name="{row}">
+          {{ row.name }}
+        </template>
+        <template #fee="{row}">
+          <search-picker
+            class="reminders__fee"
+            compact
+            :options="feeOptions"
+            :selected-key="feeOf(row)"
+            :testid-prefix="`payment-reminders-fee-${row.userId}`"
+            @pick="fees[row.userId] = $event as BulkFeeType"
           />
-          <span class="reminders__sub">€ {{ amountOf(one).toFixed(2) }}</span>
-        </li>
-      </ul>
+        </template>
+        <template #amount="{row}">
+          {{ euro(amountOf(row)) }}
+        </template>
+      </management-table>
     </section>
 
     <section
       v-else-if="step === 2"
+      class="reminders__stage"
       data-testid="payment-reminders-check"
     >
-      <v-text-field
-        v-model="dueDate"
-        data-testid="payment-reminders-due-date"
-        :error-messages="dueDate && !dueDateValid ? 'A due date must be after today.' : undefined"
-        label="Pay by"
-        :min="tomorrow"
-        type="date"
-      />
-      <ul class="reminders__rows">
-        <li
-          v-for="one in chosen"
-          :key="one.userId"
+      <h2 class="reminders__heading">
+        {{ chosen.length }} reminder{{ chosen.length === 1 ? "" : "s" }} will be sent
+      </h2>
+      <div class="reminders__fields">
+        <form-field
+          v-slot="field"
+          :error="dueDate && !dueDateValid ? 'The date to pay by has to be after today.' : ''"
+          label="Pay by"
+          testid="payment-reminders-due-date"
         >
-          <span>{{ one.name }}</span>
-          <span class="reminders__sub">{{ reminderName(one) }}, € {{ amountOf(one).toFixed(2) }}</span>
-          <button
-            class="reminders__action"
-            :data-testid="`payment-reminders-preview-${one.userId}`"
+          <date-input
+            v-model="dueDate"
+            :control-id="field.controlId"
+            :invalid="field.invalid"
+            :min="tomorrow"
+          />
+        </form-field>
+      </div>
+      <management-table
+        :columns="CHECK_COLUMNS"
+        :row-key="(one) => one.userId"
+        :rows="chosen"
+      >
+        <template #name="{row}">
+          {{ row.name }}
+        </template>
+        <template #what="{row}">
+          <span class="mg-quiet">{{ reminderName(row) }}</span>
+        </template>
+        <template #amount="{row}">
+          {{ euro(amountOf(row)) }}
+        </template>
+        <template #acts="{row}">
+          <mini-button
             :disabled="!dueDateValid"
-            type="button"
-            @click="previewFor(one)"
+            :testid="`payment-reminders-preview-${row.userId}`"
+            @click="previewFor(row)"
           >
             Preview
-          </button>
-        </li>
-      </ul>
+          </mini-button>
+        </template>
+      </management-table>
       <p
         v-if="failure"
-        class="reminders__warn"
+        class="reminders__failure"
         data-testid="payment-reminders-failure"
         role="alert"
       >
@@ -249,47 +301,59 @@ onMounted(async () => {
 
     <section
       v-else
+      class="reminders__stage"
       data-testid="payment-reminders-sent"
     >
-      <p>{{ sent }} reminder{{ sent === 1 ? "" : "s" }} sent. Each counts as that member's last payment email.</p>
-      <router-link :to="back">
-        Back to Contributions
-      </router-link>
+      <h2 class="reminders__heading">
+        {{ sent }} reminder{{ sent === 1 ? "" : "s" }} sent
+      </h2>
+      <p class="reminders__note">
+        Each counts as that member's last payment email.
+      </p>
+      <div class="reminders__acts">
+        <cut-button :href="back">
+          Back to contributions
+        </cut-button>
+      </div>
     </section>
 
     <div
       v-if="rows.length > 0 && step < 3"
-      class="reminders__nav"
+      class="reminders__acts"
     >
-      <button
-        v-if="step > 0"
-        class="reminders__action"
-        data-testid="payment-reminders-previous"
-        type="button"
-        @click="step -= 1"
-      >
-        Back
-      </button>
-      <button
+      <cut-button
         v-if="step < 2"
-        class="reminders__action reminders__action--main"
-        data-testid="payment-reminders-next"
         :disabled="chosen.length === 0"
-        type="button"
+        testid="payment-reminders-next"
+        tone="solid"
         @click="step += 1"
       >
-        Next
-      </button>
-      <button
+        {{ step === 0 ? "Next: fees" : "Next: check" }}
+      </cut-button>
+      <cut-button
         v-else
-        class="reminders__action reminders__action--main"
-        data-testid="payment-reminders-send"
         :disabled="chosen.length === 0 || !dueDateValid || sending"
-        type="button"
+        testid="payment-reminders-send"
+        tone="solid"
         @click="send"
       >
         Send {{ chosen.length }} reminder{{ chosen.length === 1 ? "" : "s" }}
-      </button>
+      </cut-button>
+      <cut-button
+        v-if="step > 0"
+        testid="payment-reminders-previous"
+        tone="quiet"
+        @click="step -= 1"
+      >
+        Back
+      </cut-button>
+      <cut-button
+        v-else
+        :href="back"
+        tone="quiet"
+      >
+        Cancel
+      </cut-button>
     </div>
 
     <email-preview-dialog
@@ -299,120 +363,51 @@ onMounted(async () => {
       :preview="preview"
       title="Payment reminder"
     />
-  </div>
+  </management-page>
 </template>
 
 <style scoped>
-.reminders {
+.reminders__stage {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 52rem;
-  padding: 2rem 2.4rem 3rem;
+  gap: 1.15rem;
+  padding-top: 1.6rem;
 }
 
-.reminders__back {
-  align-self: flex-start;
-  font-size: 0.84rem;
-  color: var(--color-brand);
-}
-
-.reminders__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.reminders__steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-ash);
-}
-
-.reminders__step--on {
-  color: var(--color-chalk);
-  box-shadow: inset 0 -2px 0 var(--color-brand);
-}
-
-.reminders h2 {
-  margin: 1rem 0 0.4rem;
-  font-size: 0.8rem;
-  letter-spacing: 0.2em;
+.reminders__heading {
+  font-size: 2.1rem;
+  line-height: 1.02;
   text-transform: uppercase;
-  color: var(--color-ash);
 }
 
-.reminders__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
+.reminders__fields {
+  max-width: 16rem;
 }
 
-.reminders__rows li {
+.reminders__fee {
+  min-width: 12rem;
+}
+
+.reminders__acts {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem 1rem;
-  padding: 0.6rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.reminders__rows li > :first-child {
-  flex: 1 1 12rem;
-}
-
-.reminders__sub {
-  font-size: 0.84rem;
-  color: var(--color-ash);
-}
-
-.reminders__warn {
-  margin: 0;
-  font-size: 0.84rem;
-  color: var(--color-warning);
+  gap: 0.6rem;
+  padding-top: 1rem;
 }
 
 .reminders__note {
-  margin: 0;
+  margin-top: 0.4rem;
   color: var(--color-ash);
 }
 
-.reminders__nav {
-  display: flex;
-  gap: 0.6rem;
-  justify-content: flex-end;
+.reminders__failure {
+  color: var(--color-danger);
 }
 
-.reminders__action {
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-.reminders__action--main {
-  border-color: var(--color-brand);
-  color: var(--color-brand);
-}
-
-.reminders__action:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-@media (max-width: 839px) {
-  .reminders {
-    padding: 1.2rem 1.1rem 2rem;
+@media (--phone) {
+  .reminders__heading {
+    font-size: 1.5rem;
   }
 }
 </style>

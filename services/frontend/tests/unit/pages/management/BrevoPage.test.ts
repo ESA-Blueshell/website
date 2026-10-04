@@ -192,6 +192,15 @@ describe("the Brevo page", () => {
     expect(api.createTargetFolder).toHaveBeenLastCalledWith({path: {system: "BREVO"}, body: {name: "Other"}})
   })
 
+  it("draws each list as a row on a phone, a missing one saying so", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="brevo-row-missing-3"]').text()).toContain("Not created yet")
+    expect(wrapper.get('[data-testid="brevo-row-list-7-open"]').attributes("to")).toBe("/management/platforms/brevo/lists/7")
+  })
+
   it("says Brevo could not be read", async () => {
     api.findTargetOverview.mockResolvedValue({status: 502, error: {}})
     api.listCohortTargetFolders.mockRejectedValue(new Error("down"))

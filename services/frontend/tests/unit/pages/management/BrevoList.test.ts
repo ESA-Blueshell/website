@@ -205,6 +205,22 @@ describe("one Brevo list", () => {
     expect(mockStore.commit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", "The list could not be moved.")
   })
 
+  it("draws each person who differs as a row on a phone, ticked from the row, one out of reach saying so", async () => {
+    api.findCohortById.mockResolvedValue({status: 200, data: cohort({members: [
+      ledger(1, "DESIRED", {userId: 11, userFullName: "Sanne Jansen", userEmail: "sanne@example.com"}),
+      ledger(5, "DESIRED", {userId: 15, userFullName: "No Brevo", unreachable: true}),
+    ]})})
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.findAllComponents({name: "ManagementRow"})).toHaveLength(2)
+    expect(wrapper.find('[data-testid="brevo-list-select-5"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="brevo-list-select-1"]').trigger("change")
+    await settle()
+    expect(wrapper.get('[data-testid="brevo-list-selection"]').text()).toContain("1 selected")
+  })
+
   it("links a list that follows nothing to a cohort whose list is missing, and an admin deletes it by its name", async () => {
     mockStore.getters.isAdmin = true
     api.findListedTarget.mockResolvedValue({status: 200, data: {externalId: "9", label: "Old test", memberCount: 4, enforced: false}})

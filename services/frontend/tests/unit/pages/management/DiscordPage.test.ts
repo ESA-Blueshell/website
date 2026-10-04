@@ -193,6 +193,15 @@ describe("the Discord page", () => {
     expect(unread.find('[data-testid="discord-matches"]').exists()).toBe(false)
   })
 
+  it("says so where Discord has no roles or no channels yet", async () => {
+    api.findTargetOverview.mockResolvedValue({status: 200, data: {lists: [], missing: []}})
+    api.listCataloguedChannels.mockResolvedValue({status: 200, data: []})
+    expect((await mount()).get('[data-testid="discord-roles"]').text()).toContain("No roles yet.")
+
+    here.path = "/management/platforms/discord/channels"
+    expect((await mount()).get('[data-testid="discord-channels"]').text()).toContain("No channels yet.")
+  })
+
   it("draws roles and channels as rows on a phone", async () => {
     vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
     const roles = await mount()

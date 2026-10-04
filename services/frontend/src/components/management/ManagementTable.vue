@@ -429,9 +429,13 @@ tr.mg-table__gap {
 /* One ground for every control on the bar, solid as the table under them, and a line between
    each and the next so they read as separate. */
 .mg-table__search :deep(.search-box),
-.mg-table__bar :deep(.island-field__box),
-.mg-table__bar :deep(.picker__field) {
+.mg-table__bar :deep(.island-field__box) {
   background-color: var(--color-surface);
+}
+
+/* The picker stands on its field's ground; a ground of its own would cover the label. */
+.mg-table__bar :deep(.picker__field) {
+  background-color: transparent;
 }
 
 .mg-table__search,

@@ -168,7 +168,8 @@ describe("one user's page", () => {
     expect(overview).toContain("Has never been a member")
     expect(overview).toContain("No Discord linked")
     expect(overview).toContain("Locked · Two-factor on · waiting to set up again")
-    expect(overview).toContain("Address on file")
+    expect(overview).toContain("Hallenweg")
+    expect(overview).toContain("No Discord linked")
 
     const contributions = await mount("contributions")
     expect(contributions.get('[data-testid="user-period-5"]').text()).toContain("Owes nothing")
@@ -183,28 +184,41 @@ describe("one user's page", () => {
     expect(wrapper.get('[data-testid="user-detail-missing"]').text()).toBe("There is nobody with number 7.")
   })
 
-  it("edits the details and the address on the Profile tab", async () => {
+  it("edits the details on the Profile tab and the address on its own tab", async () => {
     api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, addressId: 3})})
-    const wrapper = await mount("profile")
+    const profile = await mount("profile")
 
-    expect(wrapper.findComponent({name: "UserForm"}).exists()).toBe(true)
+    expect(profile.findComponent({name: "UserForm"}).exists()).toBe(true)
+    expect(profile.findComponent({name: "AddressForm"}).exists()).toBe(false)
     expect(api.findAddressById).toHaveBeenCalledWith({path: {id: 3}, throwOnError: true})
-    await wrapper.get('[data-testid="user-profile-save"]').trigger("click")
+    await profile.get('[data-testid="user-profile-save"]').trigger("click")
     await settle()
-    expect(wrapper.text()).toContain("Saved.")
-    wrapper.findComponent({name: "UserForm"}).vm.$emit("update:modelValue", aUser({id: 7, fullName: "Changed"}))
-    wrapper.findComponent({name: "AddressForm"}).vm.$emit("update:modelValue", {street: "Elsewhere"})
-    wrapper.findComponent({name: "AddressForm"}).vm.$emit("submitted", true)
+    expect(profile.text()).toContain("Saved.")
+    profile.findComponent({name: "UserForm"}).vm.$emit("update:modelValue", aUser({id: 7, fullName: "Changed"}))
+    profile.findComponent({name: "UserForm"}).vm.$emit("submitted", true)
     await settle()
     expect(api.findUserById).toHaveBeenCalledTimes(2)
+
+    const address = await mount("address")
+    expect(address.findComponent({name: "UserForm"}).exists()).toBe(false)
+    address.findComponent({name: "AddressForm"}).vm.$emit("update:modelValue", {street: "Elsewhere"})
+    address.findComponent({name: "AddressForm"}).vm.$emit("submitted", true)
+    await settle()
+    expect(api.findUserById).toHaveBeenCalledTimes(4)
   })
 
-  it("says an address that cannot be opened is written anew by saving", async () => {
+  it("says an address that cannot be opened is written anew by saving, and sums the address up on the overview", async () => {
     api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, addressId: 3})})
     api.findAddressById.mockResolvedValue({status: 200, data: {id: 3, opened: false, version: 0, createdAt: "", updatedAt: ""}})
-    const wrapper = await mount("profile")
+    const wrapper = await mount("address")
 
     expect(wrapper.get('[data-testid="user-address-unopened"]').text()).toContain("Saving writes it anew")
+    expect((await mount()).get('[data-testid="user-row-address"]').text()).toContain("On file, but it cannot be shown")
+
+    api.findAddressById.mockResolvedValue({status: 200, data: {id: 3, street: "Hallenweg", houseNumber: "19", city: "Enschede", version: 0, createdAt: "", updatedAt: ""}})
+    expect((await mount()).get('[data-testid="user-row-address"]').text()).toContain("Hallenweg 19, Enschede")
+    api.findAddressById.mockResolvedValue({status: 200, data: {id: 3, version: 0, createdAt: "", updatedAt: ""}})
+    expect((await mount()).get('[data-testid="user-row-address"]').text()).toContain("Address on file")
   })
 
   it("says a mandate waiting for the membership to start has its PDF once it does", async () => {
@@ -217,12 +231,15 @@ describe("one user's page", () => {
     expect(wrapper.get('[data-testid="user-pending-mandate"]').text()).toContain("available once the membership starts")
   })
 
-  it("offers the emails the account can be sent and its security on the Account tab", async () => {
+  it("offers the emails the account can be sent on the Account tab, and its security to an admin only", async () => {
     api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, enabled: false})})
     const wrapper = await mount("account")
 
     expect(wrapper.findAllComponents({name: "RecoveryAction"}).map((one) => one.props("action"))).toEqual(["password", "activation"])
-    expect(wrapper.findComponent({name: "AccountSecurityPanel"}).exists()).toBe(true)
+    expect(wrapper.findComponent({name: "AccountSecurityPanel"}).exists()).toBe(false)
+
+    mockStore.getters.isAdmin = true
+    expect((await mount("account")).findComponent({name: "AccountSecurityPanel"}).exists()).toBe(true)
   })
 
   it("deletes the account from the overview's danger zone, once that is confirmed", async () => {

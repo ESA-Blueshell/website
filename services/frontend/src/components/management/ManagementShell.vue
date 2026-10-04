@@ -48,12 +48,7 @@
 
     <main class="mg-main">
       <router-view />
-      <p class="mg-foot">
-        ESA Blueshell · Management ·
-        <router-link to="/">
-          Back to the site
-        </router-link>
-      </p>
+      <footer-banner class="mg-footer" />
     </main>
 
     <nav
@@ -93,6 +88,7 @@
 import {computed, onMounted, watch} from "vue"
 import {useRoute} from "vue-router"
 import {useStore} from "vuex"
+import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import RoleMark from "@/components/island/RoleMark.vue"
 import {isOn, managementFor} from "@/components/management/managementNav"
 import {useAlerts} from "@/domains/alerts"
@@ -231,18 +227,9 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
   min-width: 0;
 }
 
-.mg-foot {
-  margin: auto 0 0;
-  padding: 1.2rem 2.4rem;
-  font-size: 0.78rem;
-  color: var(--color-ash);
-  border-top: 1px solid var(--color-hairline);
-}
-
-.mg-foot a {
-  color: var(--color-brand);
-  /* A link inside a sentence is told apart by more than its colour. */
-  text-decoration: underline;
+/* The site's own footer, at the end of whatever page is open. */
+.mg-footer {
+  margin-top: auto;
 }
 
 .mg-tabbar {
@@ -259,9 +246,6 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
     display: none;
   }
 
-  .mg-foot {
-    padding: 1.2rem 1.1rem;
-  }
 
   .mg-tabbar {
     position: fixed;

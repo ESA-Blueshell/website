@@ -35,7 +35,7 @@ import {formatDay, formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "UserDetailPage"})
 
-const TABS = ["Overview", "Membership", "Contributions", "Profile", "Account", "Roles"]
+const TABS = ["Overview", "Membership", "Contributions", "Profile", "Address", "Account", "Roles"]
 
 const PERIOD_COLUMNS: TableColumn[] = [
   {key: "period", label: "Period"},
@@ -102,8 +102,14 @@ const contributionLine = computed(() => (latest.value
   ? `${latest.value.paid ? "Paid" : "Not paid"} ${periodName(latest.value)}${latest.value.lastEmailAt ? `. Last payment email ${formatDay(latest.value.lastEmailAt)}` : ""}`
   : "No period as a member yet"))
 const profileLine = computed(() => (person.value
-  ? [person.value.email, person.value.discordId ? `@${person.value.discord}` : "No Discord linked", person.value.addressId == null ? "No address" : "Address on file"].join(" · ")
+  ? [person.value.email, person.value.phoneNumber, person.value.discordId ? `@${person.value.discord}` : "No Discord linked"].filter(Boolean).join(" · ")
   : ""))
+const addressLine = computed(() => {
+  if (person.value?.addressId == null) return "No address"
+  const held = address.value
+  if (held.opened === false) return "On file, but it cannot be shown"
+  return [held.street && `${held.street} ${held.houseNumber ?? ""}`.trim(), held.city].filter(Boolean).join(", ") || "Address on file"
+})
 const accountLine = computed(() => (person.value
   ? [person.value.locked ? "Locked" : "", person.value.twoFactorOn ? "Two-factor on" : "No two-factor", person.value.awaitingReenrolment ? "waiting to set up again" : "",
       "password reset, activation and restore"].filter(Boolean).join(" · ")
@@ -248,8 +254,14 @@ watch(id, load, {immediate: true})
         <cut-row
           :meta="profileLine"
           testid="user-row-profile"
-          title="Profile and address"
+          title="Profile"
           :to="`${base}/profile`"
+        />
+        <cut-row
+          :meta="addressLine"
+          testid="user-row-address"
+          title="Address"
+          :to="`${base}/address`"
         />
         <cut-row
           :meta="accountLine"
@@ -356,8 +368,14 @@ watch(id, load, {immediate: true})
           >{{ profileSaved }}</span>
         </div>
       </section>
+    </div>
+
+    <div
+      v-else-if="tab === 'address'"
+      class="person__stack"
+      data-testid="user-address"
+    >
       <section>
-        <list-head title="Address" />
         <p
           v-if="address.opened === false"
           class="person__note"
@@ -397,7 +415,8 @@ watch(id, load, {immediate: true})
           />
         </div>
       </section>
-      <section>
+      <!-- Only an admin may read an account's security, so nobody else is shown an empty heading. -->
+      <section v-if="isAdmin">
         <list-head title="Security" />
         <account-security-panel :user-id="id" />
       </section>

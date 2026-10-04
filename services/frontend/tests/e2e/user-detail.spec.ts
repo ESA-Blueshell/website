@@ -48,7 +48,7 @@ test.describe("one user's Account and Roles", () => {
 
     await page.getByTestId("user-tab-account").click()
     await expect(page.getByTestId("recovery-user-send-btn-PASSWORD_RESET-71")).toBeVisible()
-    await expect(page.getByTestId("account-security-panel")).toBeVisible()
+    await expect(page.getByTestId("account-security-panel")).toHaveCount(0)
   })
 })
 

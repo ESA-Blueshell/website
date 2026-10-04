@@ -45,5 +45,7 @@ Alternatives considered:
 
 - Management pages are designed and built in the portal frame; a page stays in the public
   frame only if the public reads it.
+- The portal keeps its own bar and sidebar, and ends each page with the site's footer: the
+  footer is the association's, and a board member is on the association's site there too.
 - The router gains a management layout route whose children are the portal's pages; the
   guard keeps evaluating each child's own role.

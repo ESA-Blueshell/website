@@ -3,6 +3,3 @@
 .git
 frontend/
 mailserver/
-# Keep only listmonk/openapi.yaml (needed by the listmonk client generator)
-listmonk/*
-!listmonk/openapi.yaml

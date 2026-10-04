@@ -8202,7 +8202,9 @@ export type CreateEventSignupData = {
     path: {
         eventId: number;
     };
-    query?: never;
+    query?: {
+        notify?: boolean;
+    };
     url: '/events/{eventId}/signups';
 };
 

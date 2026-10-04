@@ -23,6 +23,7 @@ export {useAnnouncePrompt} from "./island/announcing"
 export {readApprovalQueue, type QueuedEvent} from "./adapters/approvalQueue"
 export {changesSaid} from "./island/approvalWords"
 export {
+  addSignUpAsBoard,
   changeOwnSignUp,
   listEventSignUps,
   listOwnSignUps,

@@ -375,6 +375,14 @@ both and never to neither.
 
 Removing a sign-up retains it: the row leaves the roster, the record stays.
 
+**The board adds a sign-up for somebody else.** It does so at any time, for an account or
+for a guest, so the roster of an event that has ended can be corrected to who was there.
+A sign-up the board adds is a sign-up like any other: the deadline and the limit do not
+bind it, **members-only** does, and the board answers the event's questions for the person.
+Nobody is emailed unless the board asks for it.
+
+_Avoid_: attendance, walk-in, late sign-up
+
 ### Guest
 
 Somebody who signed up without an account. A guest is a record of its own, holding a name,

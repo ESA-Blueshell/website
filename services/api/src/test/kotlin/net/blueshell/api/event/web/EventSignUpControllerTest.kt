@@ -5,15 +5,18 @@ import net.blueshell.api.event.domain.EventSignUpService
 import net.blueshell.api.event.domain.EventSignUpUseCases
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.mock.web.MockHttpServletResponse
 import java.time.Instant
 
 /**
@@ -29,18 +32,19 @@ class EventSignUpControllerTest {
     private fun guestSignUp(): EventSignUp {
         val stamp = Instant.parse("2026-02-20T12:34:00Z")
         val storedGuest =
-            Guest(
-                name = "Guest Gordon",
-                discord = "gordon#0001",
-                email = "gordon@example.com",
-                phoneNumber = "0611111111",
-                accessTokenHash = "hash",
-            ).also {
-                it.id = 7L
-                it.version = 1L
-                it.createdAt = stamp
-                it.updatedAt = stamp
-            }
+            Guest
+                .withRawToken(
+                    name = "Guest Gordon",
+                    discord = "gordon#0001",
+                    email = "gordon@example.com",
+                    phoneNumber = "0611111111",
+                    accessToken = "TOKEN",
+                ).also {
+                    it.id = 7L
+                    it.version = 1L
+                    it.createdAt = stamp
+                    it.updatedAt = stamp
+                }
         return Entities.signUp(id = 44L, event = Entities.event(id = 100L), guest = storedGuest).also {
             it.version = 3L
             it.createdAt = stamp
@@ -72,6 +76,37 @@ class EventSignUpControllerTest {
         assertThat(response.id).isEqualTo(44L)
         assertThat(response.kind).isEqualTo(EventSignUpKind.GUEST)
         assertThat(response.guest?.name).isEqualTo("Guest Gordon")
+    }
+
+    @Test
+    fun `an add passes the body, the caller and the board's notify choice on, and keeps the guest's token from the board`() {
+        whenever(useCases.create(any(), eq(1L), eq(true))).thenReturn(guestSignUp())
+        val request =
+            CreateEventSignUpRequest(
+                guest = CreateGuestRequest(name = "Guest Gordon", discord = "gordon#0001", email = "gordon@example.com"),
+            )
+        val caller = mock<UserPrincipal> { on { id } doReturn 1L }
+
+        val sent = MockHttpServletResponse()
+
+        val response = controller.createEventSignup(100L, request, caller, notify = true, response = sent)
+
+        val command = argumentCaptor<EventSignUpData>()
+        verify(useCases).create(command.capture(), eq(1L), eq(true))
+        assertThat(command.firstValue.eventId).isEqualTo(100L)
+        assertThat(command.firstValue.guest?.name).isEqualTo("Guest Gordon")
+        assertThat(response.kind).isEqualTo(EventSignUpKind.GUEST)
+        assertThat(sent.getHeader(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER)).isNull()
+    }
+
+    @Test
+    fun `a guest signing up themselves is handed the token they are remembered by`() {
+        whenever(useCases.create(any(), eq(null), eq(false))).thenReturn(guestSignUp())
+        val sent = MockHttpServletResponse()
+
+        controller.createEventSignup(100L, CreateEventSignUpRequest(), principal = null, notify = false, response = sent)
+
+        assertThat(sent.getHeader(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER)).isEqualTo("TOKEN")
     }
 
     @Test

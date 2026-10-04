@@ -147,45 +147,7 @@ onMounted(load)
       :facts="facts"
     />
 
-    <filter-bar
-      :active="filtered"
-      testid="recovery-filters"
-      @clear="clear"
-    >
-      <search-box
-        v-model="search"
-        label="Search for a user"
-        testid="recovery-search"
-      />
-      <filter-picker
-        v-model="standing"
-        label="State"
-        :options="standingOptions"
-        testid="recovery-filter-state"
-      />
-      <filter-picker
-        v-model="needs"
-        any-label="Anybody"
-        label="Needs a look"
-        :options="needsOptions"
-        testid="recovery-filter-needs"
-      />
-    </filter-bar>
-
-    <p class="recovery__count">
-      <b>{{ shown.length }}</b> of {{ rows.length }} accounts
-    </p>
-
-    <p
-      v-if="loaded && shown.length === 0"
-      class="recovery__note"
-      data-testid="recovery-empty"
-    >
-      Nobody matches.
-    </p>
-
     <management-table
-      v-else
       :columns="COLUMNS"
       :descending="descending"
       :height="tableHeight"
@@ -196,6 +158,43 @@ onMounted(load)
       testid="recovery-list"
       @sort="sortBy"
     >
+      <template #count>
+        <span><b>{{ shown.length }}</b> of {{ rows.length }} accounts</span>
+      </template>
+      <template #filters>
+        <filter-bar
+          :active="filtered"
+          testid="recovery-filters"
+          @clear="clear"
+        >
+          <filter-picker
+            v-model="standing"
+            label="State"
+            :options="standingOptions"
+            testid="recovery-filter-state"
+          />
+          <filter-picker
+            v-model="needs"
+            any-label="Anybody"
+            label="Needs a look"
+            :options="needsOptions"
+            testid="recovery-filter-needs"
+          />
+        </filter-bar>
+      </template>
+      <template #search>
+        <search-box
+          v-model="search"
+          label="Search for a user"
+          testid="recovery-search"
+        />
+      </template>
+      <template
+        v-if="loaded"
+        #empty
+      >
+        <span data-testid="recovery-empty">Nobody matches.</span>
+      </template>
       <template #name="{row}">
         <router-link
           v-if="row.standing !== 'deleted'"

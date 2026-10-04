@@ -146,8 +146,9 @@ describe("ManagementTable", () => {
       global: {stubs},
     })
 
-    expect(wrapper.get("[data-testid=table]").classes()).toContain("mg-table--boxed")
-    expect(wrapper.get("[data-testid=table]").attributes("style")).toContain("max-height: 300px")
+    expect(wrapper.get("[data-testid=table] .mg-table__scroll").classes()).toContain("mg-table__scroll--boxed")
+    expect(wrapper.get("[data-testid=table] .mg-table__scroll").attributes("style")).toContain("max-height: 300px")
+    expect(wrapper.find(".mg-table__bar").exists()).toBe(false)
     expect(wrapper.findAll("tbody tr")).toHaveLength(2)
     expect(wrapper.get("[data-testid=row-2]").text()).toContain("Kandi")
     expect(wrapper.get("th[aria-sort]").attributes("aria-sort")).toBe("descending")
@@ -169,7 +170,7 @@ describe("ManagementTable", () => {
     expect(acting.get("th[aria-sort]").attributes("aria-sort")).toBe("ascending")
     expect(acting.findAll("td.mg-table__acts")).toHaveLength(2)
     expect(acting.find("td.mg-table__go").exists()).toBe(false)
-    expect(acting.get(".mg-table").attributes("style")).toBeUndefined()
+    expect(acting.get(".mg-table__scroll").attributes("style")).toBeUndefined()
     expect(unsorted.get(".mg-table__sort").attributes("aria-label")).toBe("Sort by Name")
     expect(unsorted.find("th[aria-sort]").exists()).toBe(false)
     expect(unsorted.findAll("thead th")).toHaveLength(2)
@@ -231,5 +232,22 @@ describe("ManagementTable", () => {
     await wrapper.setProps({selectedCount: 5})
     await wrapper.get("[data-testid=table-select-all]").trigger("click")
     expect(wrapper.emitted("clearSelection")).toHaveLength(1)
+  })
+
+  it("carries how many, the filters and the search on its own top bar, and says so when nothing is left", () => {
+    const bar = {count: () => h("b", "0"), filters: () => h("select"), search: () => h("input", {type: "search"}), empty: () => "Nobody matches."}
+    const wide = mount(ManagementTable<Row>, {props: {columns, rows: [], rowKey: (row: Row) => row.id}, slots: {...cells, ...bar, check: () => h("input")}, global: {stubs}})
+
+    expect(wide.get(".mg-table__bar .mg-table__count").text()).toBe("0")
+    expect(wide.get(".mg-table__bar .mg-table__search input").attributes("type")).toBe("search")
+    expect(wide.get("td.mg-table__empty").text()).toBe("Nobody matches.")
+    expect(wide.get("td.mg-table__empty").attributes("colspan")).toBe("3")
+
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const phone = mount(ManagementTable<Row>, {props: {columns, rows: [], rowKey: (row: Row) => row.id}, slots: {...cells, ...bar, phone: () => h("p")}, global: {stubs}})
+
+    expect(phone.classes()).toContain("mg-rows")
+    expect(phone.get(".mg-table__bar .mg-table__count").text()).toBe("0")
+    expect(phone.get("p.mg-table__empty").text()).toBe("Nobody matches.")
   })
 })

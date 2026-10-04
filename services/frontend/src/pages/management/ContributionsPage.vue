@@ -281,38 +281,7 @@ void loadPeriods()
         :facts="facts"
       />
 
-      <filter-bar
-        :active="filtered"
-        testid="contribution-filters"
-        @clear="clear"
-      >
-        <search-box
-          v-model="search"
-          label="Search for a user"
-          testid="contribution-search"
-        />
-        <filter-picker
-          v-model="paid"
-          label="Paid"
-          :options="paidOptions"
-          testid="contribution-filter-paid"
-        />
-      </filter-bar>
-
-      <p class="money__count">
-        <b>{{ shown.length }}</b> of {{ members.length }} members
-      </p>
-
-      <p
-        v-if="view && shown.length === 0"
-        class="money__note"
-        data-testid="contributions-empty"
-      >
-        Nobody matches.
-      </p>
-
       <management-table
-        v-else
         :columns="COLUMNS"
         :descending="descending"
         :row-key="(one) => one.userId"
@@ -328,6 +297,36 @@ void loadPeriods()
         @toggle-shown="toggleHeader"
         @sort="sortBy"
       >
+        <template #count>
+          <span><b>{{ shown.length }}</b> of {{ members.length }} members</span>
+        </template>
+        <template #filters>
+          <filter-bar
+            :active="filtered"
+            testid="contribution-filters"
+            @clear="clear"
+          >
+            <filter-picker
+              v-model="paid"
+              label="Paid"
+              :options="paidOptions"
+              testid="contribution-filter-paid"
+            />
+          </filter-bar>
+        </template>
+        <template #search>
+          <search-box
+            v-model="search"
+            label="Search for a user"
+            testid="contribution-search"
+          />
+        </template>
+        <template
+          v-if="view"
+          #empty
+        >
+          <span data-testid="contributions-empty">Nobody matches.</span>
+        </template>
         <template #check="{row}">
           <row-check
             :checked="isSelected(row.userId)"

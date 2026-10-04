@@ -159,7 +159,6 @@ const addForm = ref<InstanceType<typeof UserForm> | null>(null)
 const addSaving = ref(false)
 const {submitState: addState, showSubmitStatus: addStatus, setSubmitResult: addResult} = useSubmitFeedback()
 
-
 function blankUser(): EditableUser {
   return {
     discord: "", email: "", phoneNumber: "", initials: "", firstName: "", lastName: "", username: "",
@@ -215,54 +214,7 @@ onMounted(load)
         :facts="facts"
       />
 
-      <filter-bar
-        :active="filtered"
-        testid="member-manager-filters"
-        @clear="clearFilters"
-      >
-        <search-box
-          v-model="search"
-          label="Search for a user"
-          testid="member-manager-search-input"
-        />
-        <filter-picker
-          v-model="membership"
-          label="Membership"
-          :options="membershipOptions"
-          testid="member-manager-filter-membership"
-        />
-        <filter-picker
-          v-model="type"
-          label="Type"
-          :options="typeOptions"
-          testid="member-manager-filter-type"
-        />
-        <filter-picker
-          v-model="needs"
-          any-label="Anybody"
-          label="Needs a look"
-          :options="needsOptions"
-          testid="member-manager-filter-needs"
-        />
-      </filter-bar>
-
-      <p
-        class="people__count"
-        data-testid="member-manager-count"
-      >
-        <b>{{ shown.length }}</b> of {{ rows.length }} people
-      </p>
-
-      <p
-        v-if="loaded && shown.length === 0"
-        class="people__note"
-        data-testid="member-manager-empty"
-      >
-        Nobody matches.
-      </p>
-
       <management-table
-        v-else
         :columns="COLUMNS"
         :descending="descending"
         :height="tableHeight"
@@ -280,6 +232,49 @@ onMounted(load)
         @toggle-shown="toggleHeader"
         @sort="sortBy"
       >
+        <template #count>
+          <span data-testid="member-manager-count"><b>{{ shown.length }}</b> of {{ rows.length }} people</span>
+        </template>
+        <template #filters>
+          <filter-bar
+            :active="filtered"
+            testid="member-manager-filters"
+            @clear="clearFilters"
+          >
+            <filter-picker
+              v-model="membership"
+              label="Membership"
+              :options="membershipOptions"
+              testid="member-manager-filter-membership"
+            />
+            <filter-picker
+              v-model="type"
+              label="Type"
+              :options="typeOptions"
+              testid="member-manager-filter-type"
+            />
+            <filter-picker
+              v-model="needs"
+              any-label="Anybody"
+              label="Needs a look"
+              :options="needsOptions"
+              testid="member-manager-filter-needs"
+            />
+          </filter-bar>
+        </template>
+        <template #search>
+          <search-box
+            v-model="search"
+            label="Search for a user"
+            testid="member-manager-search-input"
+          />
+        </template>
+        <template
+          v-if="loaded"
+          #empty
+        >
+          <span data-testid="member-manager-empty">Nobody matches.</span>
+        </template>
         <template #check="{row}">
           <row-check
             :checked="isSelected(row.id)"

@@ -5,6 +5,17 @@
     :data-testid="testid"
   >
     <div
+      v-if="$slots.count || $slots.filters || $slots.search"
+      class="mg-table__bar"
+    >
+      <span
+        v-if="$slots.count"
+        class="mg-table__count"
+      ><slot name="count" /></span>
+      <slot name="filters" />
+      <span class="mg-table__search"><slot name="search" /></span>
+    </div>
+    <div
       v-if="headerState"
       class="mg-rows__head"
     >
@@ -26,6 +37,12 @@
         {{ offerAll ? `Select all ${total}` : "Clear the selection" }}
       </button>
     </div>
+    <p
+      v-if="rows.length === 0 && $slots.empty"
+      class="mg-table__empty"
+    >
+      <slot name="empty" />
+    </p>
     <template
       v-for="row in rows"
       :key="rowKey(row)"
@@ -39,133 +56,156 @@
   <div
     v-else
     class="mg-table"
-    :class="{'mg-table--boxed': height > 0}"
     :data-testid="testid"
-    :style="height > 0 ? {maxHeight: `${height}px`} : undefined"
   >
-    <table>
-      <thead>
-        <tr>
-          <th
-            v-if="$slots.check"
-            class="mg-table__check"
-          >
-            <row-check
-              v-if="headerState"
-              :checked="headerState === 'checked'"
-              :indeterminate="headerState === 'indeterminate'"
-              :label="`Select the ${rows.length} shown`"
-              :testid="testid ? `${testid}-select-shown` : undefined"
-              @toggle="emit('toggleShown')"
-            />
-            <span
-              v-else
-              class="mg-table__said"
-            >Select</span>
-          </th>
-          <th
-            v-for="column in columns"
-            :key="column.key"
-            :aria-sort="column.key === sortKey ? (descending ? 'descending' : 'ascending') : undefined"
-          >
-            <button
-              v-if="column.sortable"
-              :aria-label="column.key === sortKey ? `${column.label}, sorted ${descending ? 'descending' : 'ascending'}` : `Sort by ${column.label}`"
-              class="mg-table__sort"
-              :class="{'mg-table__sort--on': column.key === sortKey}"
-              :data-testid="column.testid"
-              type="button"
-              @click="emit('sort', column.key)"
+    <div
+      v-if="$slots.count || $slots.filters || $slots.search"
+      class="mg-table__bar"
+    >
+      <span
+        v-if="$slots.count"
+        class="mg-table__count"
+      ><slot name="count" /></span>
+      <slot name="filters" />
+      <span class="mg-table__search"><slot name="search" /></span>
+    </div>
+    <div
+      class="mg-table__scroll"
+      :class="{'mg-table__scroll--boxed': height > 0}"
+      :style="height > 0 ? {maxHeight: `${height}px`} : undefined"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th
+              v-if="$slots.check"
+              class="mg-table__check"
             >
-              {{ column.label }}
-              <svg
-                aria-hidden="true"
-                fill="none"
-                viewBox="0 0 12 12"
+              <row-check
+                v-if="headerState"
+                :checked="headerState === 'checked'"
+                :indeterminate="headerState === 'indeterminate'"
+                :label="`Select the ${rows.length} shown`"
+                :testid="testid ? `${testid}-select-shown` : undefined"
+                @toggle="emit('toggleShown')"
+              />
+              <span
+                v-else
+                class="mg-table__said"
+              >Select</span>
+            </th>
+            <th
+              v-for="column in columns"
+              :key="column.key"
+              :aria-sort="column.key === sortKey ? (descending ? 'descending' : 'ascending') : undefined"
+            >
+              <button
+                v-if="column.sortable"
+                :aria-label="column.key === sortKey ? `${column.label}, sorted ${descending ? 'descending' : 'ascending'}` : `Sort by ${column.label}`"
+                class="mg-table__sort"
+                :class="{'mg-table__sort--on': column.key === sortKey}"
+                :data-testid="column.testid"
+                type="button"
+                @click="emit('sort', column.key)"
               >
-                <path
-                  :d="column.key !== sortKey ? UNSORTED : descending ? DESCENDING : ASCENDING"
-                  stroke="currentColor"
-                  :stroke-width="column.key === sortKey ? 1.4 : 1.2"
-                />
-              </svg>
-            </button>
-            <template v-else>
-              {{ column.label }}
-            </template>
-          </th>
-          <th v-if="$slots.acts || to">
-            <span class="mg-table__said">More</span>
-          </th>
-        </tr>
-        <tr
-          v-if="offerAll || allSelected"
-          class="mg-table__all"
-        >
-          <th :colspan="columns.length + 1 + ($slots.acts || to ? 1 : 0)">
-            {{ selectionLine }}
-            <button
-              class="mg-table__all-act"
-              :data-testid="testid ? `${testid}-select-all` : undefined"
-              type="button"
-              @click="offerAll ? emit('selectAll') : emit('clearSelection')"
+                {{ column.label }}
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  viewBox="0 0 12 12"
+                >
+                  <path
+                    :d="column.key !== sortKey ? UNSORTED : descending ? DESCENDING : ASCENDING"
+                    stroke="currentColor"
+                    :stroke-width="column.key === sortKey ? 1.4 : 1.2"
+                  />
+                </svg>
+              </button>
+              <template v-else>
+                {{ column.label }}
+              </template>
+            </th>
+            <th v-if="$slots.acts || to">
+              <span class="mg-table__said">More</span>
+            </th>
+          </tr>
+          <tr
+            v-if="offerAll || allSelected"
+            class="mg-table__all"
+          >
+            <th :colspan="columns.length + 1 + ($slots.acts || to ? 1 : 0)">
+              {{ selectionLine }}
+              <button
+                class="mg-table__all-act"
+                :data-testid="testid ? `${testid}-select-all` : undefined"
+                type="button"
+                @click="offerAll ? emit('selectAll') : emit('clearSelection')"
+              >
+                {{ offerAll ? `Select all ${total}` : "Clear the selection" }}
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="rows.length === 0 && $slots.empty">
+            <td
+              class="mg-table__empty"
+              :colspan="columns.length + ($slots.check ? 1 : 0) + ($slots.acts || to ? 1 : 0)"
             >
-              {{ offerAll ? `Select all ${total}` : "Clear the selection" }}
-            </button>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="row in rows"
-          :key="rowKey(row)"
-          :data-testid="rowTestid?.(row)"
-        >
-          <td
-            v-if="$slots.check"
-            class="mg-table__check"
+              <slot name="empty" />
+            </td>
+          </tr>
+          <tr
+            v-for="row in rows"
+            :key="rowKey(row)"
+            :data-testid="rowTestid?.(row)"
           >
-            <slot
-              name="check"
-              :row="row"
-            />
-          </td>
-          <td
-            v-for="column in columns"
-            :key="column.key"
-            :class="{'mg-table__wrap': column.wrap}"
-          >
-            <slot
-              :name="column.key"
-              :row="row"
-            />
-          </td>
-          <td
-            v-if="$slots.acts"
-            class="mg-table__acts"
-          >
-            <span>
+            <td
+              v-if="$slots.check"
+              class="mg-table__check"
+            >
               <slot
-                name="acts"
+                name="check"
                 :row="row"
               />
-            </span>
-          </td>
-          <td
-            v-else-if="to"
-            class="mg-table__go"
-          >
-            <router-link
-              aria-label="Open"
-              tabindex="-1"
-              :to="to(row)"
+            </td>
+            <td
+              v-for="column in columns"
+              :key="column.key"
+              :class="{'mg-table__wrap': column.wrap}"
             >
-              <go-arrow />
-            </router-link>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+              <slot
+                :name="column.key"
+                :row="row"
+              />
+            </td>
+            <td
+              v-if="$slots.acts"
+              class="mg-table__acts"
+            >
+              <span>
+                <slot
+                  name="acts"
+                  :row="row"
+                />
+              </span>
+            </td>
+            <td
+              v-else-if="to"
+              class="mg-table__go"
+            >
+              <router-link
+                aria-label="Open"
+                tabindex="-1"
+                :to="to(row)"
+              >
+                <go-arrow />
+              </router-link>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -233,6 +273,78 @@ const UNSORTED = "M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7"
 /* Every table stands in the same hairline box under the same head, so two lists never differ
    at the top. A table too wide for its page scrolls in that box, never the page. */
 .mg-table {
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+}
+
+.mg-table__scroll {
+  overflow-x: auto;
+}
+
+.mg-table thead {
+  background: var(--color-surface);
+}
+
+/* Contained, so a scroll that reaches either end stops there: an elastic end drags the head
+   that stays off the rows, and hands the rest of the gesture to the page. */
+.mg-table__scroll--boxed {
+  overflow-y: auto;
+  overscroll-behavior: none;
+}
+
+.mg-table__scroll--boxed thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* What the list is narrowed by sits on the table itself: how many, the filters, and the search
+   at the far end, flush with the corner. */
+.mg-table__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding-left: 1.4rem;
+  background: var(--color-surface);
+  box-shadow: inset 0 -1px 0 var(--color-hairline);
+}
+
+.mg-table__count {
+  align-self: center;
+  margin-right: 0.6rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  color: var(--color-ash);
+}
+
+.mg-table__count :deep(b) {
+  color: var(--color-chalk);
+}
+
+.mg-table__search {
+  display: flex;
+  margin-left: auto;
+}
+
+.mg-table__bar :deep(.filter-bar) {
+  margin-top: 0;
+}
+
+/* The search takes the height of the filters beside it, never more. */
+.mg-table__search :deep(.search-box__input) {
+  padding-block: 0.4rem;
+}
+
+.mg-rows .mg-table__bar {
+  padding: 0.6rem 1rem;
+}
+
+.mg-rows .mg-table__search {
+  flex: 1 1 100%;
+  margin-left: 0;
+}
+
+table {
   overflow-x: auto;
   box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
@@ -413,6 +525,17 @@ tbody tr:hover .mg-table__go {
   font-size: 0.86rem;
   color: var(--color-ash);
   background-color: var(--band-ground);
+}
+
+.mg-table__empty,
+td.mg-table__empty {
+  padding: 1.2rem 1.4rem;
+  font-size: 0.9rem;
+  color: var(--color-ash);
+}
+
+td.mg-table__empty::before {
+  display: none;
 }
 
 .mg-table__said {

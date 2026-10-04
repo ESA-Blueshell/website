@@ -44,4 +44,10 @@ const pick = (key: string) => {
 .filter-picker {
   width: 11.5rem;
 }
+
+/* A filter never has a message, so the line a field keeps for one would only make it taller
+   than the search box beside it. */
+.filter-picker :deep(.island-field__said) {
+  display: none;
+}
 </style>

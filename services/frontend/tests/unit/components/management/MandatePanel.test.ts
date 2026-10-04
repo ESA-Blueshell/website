@@ -29,10 +29,9 @@ describe("the mandate panel", () => {
     expect(wrapper.get('[data-testid="mandate-standing"]').text()).toBe("Pays by transfer")
 
     await wrapper.get('[data-testid="mandate-record"]').trigger("click")
-    const fields = wrapper.findAllComponents({name: "VTextField"})
-    await fields[0]!.vm.$emit("update:modelValue", "NL91 ABNA 0417 1643 00")
-    await fields[1]!.vm.$emit("update:modelValue", "Ann Vos")
-    await fields[2]!.vm.$emit("update:modelValue", "2026-09-01")
+    await wrapper.get('[data-testid="mandate-iban"] input').setValue("NL91 ABNA 0417 1643 00")
+    await wrapper.get('[data-testid="mandate-holder"] input').setValue("Ann Vos")
+    await wrapper.findComponent({name: "DateInput"}).vm.$emit("update:modelValue", "2026-09-01")
     await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
     await settle()
 
@@ -125,7 +124,7 @@ describe("the mandate panel", () => {
     expect(wrapper.get('[data-testid="mandate-replaces-online"]').text()).toContain("Its PDF will no longer be available.")
     expect(wrapper.get('[data-testid="mandate-save"]').attributes("disabled")).toBeDefined()
 
-    await wrapper.findComponent({name: "VCheckbox"}).vm.$emit("update:modelValue", true)
+    await wrapper.get('[data-testid="mandate-replaces-online-confirm"]').setValue(true)
     expect(wrapper.get('[data-testid="mandate-save"]').attributes("disabled")).toBeUndefined()
     await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
     await settle()

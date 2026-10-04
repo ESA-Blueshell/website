@@ -3,9 +3,17 @@
    replace one. The account number shows masked until a board member reveals it; the revealed
    number lives in this component's memory alone, so it is gone when the panel closes. */
 import {computed, ref, watch} from "vue"
+import CheckBox from "@/components/island/CheckBox.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import DateInput from "@/components/island/DateInput.vue"
+import FormField from "@/components/island/FormField.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
+import TextInput from "@/components/island/TextInput.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
 import {maskedIban} from "@/domains/contribution"
 import {IncassoStanding, MandateKind, type MandateResponse, fetchMandatePdf, readMandate, revealMandateIban, saveMandate} from "@/domains/user"
-import {formatDate} from "@/utils/timestamps"
+import {formatDate, formatDay} from "@/utils/timestamps"
 
 defineOptions({name: "MandatePanel"})
 
@@ -120,38 +128,41 @@ watch(() => membershipId, load, {immediate: true})
     class="mandate"
     data-testid="mandate-panel"
   >
-    <h3 class="mandate__title">
-      Incasso
-    </h3>
-    <p data-testid="mandate-standing">
-      {{ standing }}
-    </p>
-    <dl
+    <list-head title="Incasso">
+      <span data-testid="mandate-standing">{{ standing }}</span>
+    </list-head>
+
+    <div
       v-if="mandate?.ibanLastTwo"
       class="mandate__facts"
       data-testid="mandate-facts"
     >
-      <div>
-        <dt>Account</dt>
-        <dd data-testid="mandate-account">
+      <div class="mandate__fact">
+        <p class="mandate__label">
+          Account
+        </p>
+        <p
+          class="mandate__value"
+          data-testid="mandate-account"
+        >
           {{ account }}
-        </dd>
+        </p>
         <p
           v-if="mandate.bankDetailsWiped"
+          class="mandate__sub"
           data-testid="mandate-wiped"
         >
           The bank details were wiped 13 months after the last collection. What is left is the record of what was collected.
         </p>
-        <button
+        <mini-button
           v-else
-          class="mandate__action mandate__action--inline"
-          data-testid="mandate-reveal"
+          class="mandate__act"
           :disabled="revealing"
-          type="button"
+          testid="mandate-reveal"
           @click="revealed ? (revealed = null) : reveal()"
         >
           {{ revealed ? "Hide the IBAN" : "Reveal the IBAN" }}
-        </button>
+        </mini-button>
         <p
           v-if="revealFailure"
           class="mandate__failure"
@@ -161,25 +172,39 @@ watch(() => membershipId, load, {immediate: true})
           {{ revealFailure }}
         </p>
       </div>
-      <div>
-        <dt>Mandate</dt>
-        <dd>{{ mandate.reference }}, signed {{ mandate.signedOn }}</dd>
+      <div class="mandate__fact">
+        <p class="mandate__label">
+          Mandate
+        </p>
+        <p class="mandate__value">
+          {{ mandate.reference }}
+        </p>
+        <p class="mandate__sub">
+          Signed {{ formatDay(mandate.signedOn) }}
+        </p>
       </div>
-      <div v-if="kind">
-        <dt>Kind</dt>
-        <dd data-testid="mandate-kind">
+      <div
+        v-if="kind"
+        class="mandate__fact"
+      >
+        <p class="mandate__label">
+          Kind
+        </p>
+        <p
+          class="mandate__sub"
+          data-testid="mandate-kind"
+        >
           {{ paperNote || kind }}
-        </dd>
-        <button
+        </p>
+        <mini-button
           v-if="hasPdf"
-          class="mandate__action mandate__action--inline"
-          data-testid="mandate-pdf"
+          class="mandate__act"
           :disabled="fetchingPdf"
-          type="button"
+          testid="mandate-pdf"
           @click="downloadPdf"
         >
           Download the mandate PDF
-        </button>
+        </mini-button>
         <p
           v-if="pdfFailure"
           class="mandate__failure"
@@ -189,55 +214,78 @@ watch(() => membershipId, load, {immediate: true})
           {{ pdfFailure }}
         </p>
       </div>
-      <div v-if="mandate.recordedAt">
-        <dt>Recorded</dt>
-        <dd>{{ formatDate(mandate.recordedAt) }}</dd>
+      <div
+        v-if="mandate.recordedAt"
+        class="mandate__fact"
+      >
+        <p class="mandate__label">
+          Recorded
+        </p>
+        <p class="mandate__sub">
+          {{ formatDate(mandate.recordedAt) }}
+        </p>
       </div>
-    </dl>
+    </div>
 
-    <button
+    <div
       v-if="!open"
-      class="mandate__action"
-      data-testid="mandate-record"
-      type="button"
-      @click="open = true"
+      class="mandate__acts"
     >
-      {{ mandate?.ibanLastTwo ? "Replace the mandate" : "Record a paper mandate" }}
-    </button>
+      <cut-button
+        testid="mandate-record"
+        @click="open = true"
+      >
+        {{ mandate?.ibanLastTwo ? "Replace the mandate" : "Record a paper mandate" }}
+      </cut-button>
+    </div>
+
     <form
       v-else
       class="mandate__form"
       data-testid="mandate-form"
       @submit.prevent="save"
     >
-      <v-text-field
-        v-model="iban"
-        autocomplete="off"
-        data-testid="mandate-iban"
+      <form-field
+        v-slot="field"
         label="IBAN"
-      />
-      <v-text-field
-        v-model="holder"
-        data-testid="mandate-holder"
+        testid="mandate-iban"
+      >
+        <text-input
+          v-model="iban"
+          :control-id="field.controlId"
+        />
+      </form-field>
+      <form-field
+        v-slot="field"
         label="Account holder"
-      />
-      <v-text-field
-        v-model="signedOn"
-        data-testid="mandate-signed-on"
+        testid="mandate-holder"
+      >
+        <text-input
+          v-model="holder"
+          :control-id="field.controlId"
+        />
+      </form-field>
+      <form-field
+        v-slot="field"
         label="Signed on"
-        type="date"
-      />
+        testid="mandate-signed-on"
+      >
+        <date-input
+          v-model="signedOn"
+          :control-id="field.controlId"
+        />
+      </form-field>
       <template v-if="online">
-        <p
-          class="mandate__failure"
-          data-testid="mandate-replaces-online"
+        <notice-box
+          testid="mandate-replaces-online"
+          tone="warning"
         >
           This replaces the online mandate the member authorised on {{ authorisedOn }}. Its PDF will no longer be available.
-        </p>
-        <v-checkbox
+        </notice-box>
+        <check-box
           v-model="replacesOnline"
-          data-testid="mandate-replaces-online-confirm"
           label="Replace the online mandate"
+          testid="mandate-replaces-online-confirm"
         />
       </template>
       <p
@@ -248,98 +296,104 @@ watch(() => membershipId, load, {immediate: true})
       >
         {{ failure }}
       </p>
-      <div class="mandate__buttons">
-        <button
-          class="mandate__action"
-          data-testid="mandate-cancel"
-          type="button"
+      <div class="mandate__acts">
+        <cut-button
+          :disabled="saving || (online && !replacesOnline)"
+          submit
+          testid="mandate-save"
+          tone="solid"
+        >
+          Save mandate
+        </cut-button>
+        <cut-button
+          testid="mandate-cancel"
+          tone="quiet"
           @click="open = false"
         >
           Cancel
-        </button>
-        <button
-          class="mandate__action mandate__action--main"
-          data-testid="mandate-save"
-          :disabled="saving || (online && !replacesOnline)"
-          type="submit"
-        >
-          Save mandate
-        </button>
+        </cut-button>
       </div>
     </form>
   </section>
 </template>
 
 <style scoped>
-.mandate {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  margin-bottom: 1.2rem;
-  padding: 1rem;
-  background-color: var(--band-ground);
-  border: 1px solid var(--color-hairline);
-}
-
-.mandate__title {
-  margin: 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
-}
-
-.mandate p {
-  margin: 0;
-}
-
 .mandate__facts {
   display: grid;
-  gap: 0.4rem;
-  margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1.2rem 0;
+  padding-bottom: 1rem;
 }
 
-.mandate__facts dt {
-  font-size: 0.72rem;
+.mandate__fact {
+  position: relative;
+  min-width: 0;
+  padding-inline: 1.25rem;
+}
+
+.mandate__fact::before {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  bottom: 0.2rem;
+  left: 0;
+  width: 1px;
+  background-color: var(--color-hairline);
+  transform: skewX(-12deg);
+}
+
+.mandate__fact:first-child {
+  padding-inline-start: 0;
+}
+
+.mandate__fact:first-child::before {
+  display: none;
+}
+
+.mandate__label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
   color: var(--color-ash);
 }
 
-.mandate__facts dd {
-  margin: 0;
+.mandate__value {
+  margin-top: 0.45rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.mandate__sub {
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--color-ash);
+}
+
+.mandate__act {
+  margin-top: 0.5rem;
 }
 
 .mandate__form {
-  max-width: 28rem;
-}
-
-.mandate__buttons {
   display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  max-width: 32rem;
+}
+
+.mandate__acts {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.6rem;
-}
-
-.mandate__action {
-  align-self: flex-start;
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-.mandate__action--inline {
-  margin-top: 0.3rem;
-  padding: 0.2rem 0.6rem;
-  font-size: 0.78rem;
-}
-
-.mandate__action--main {
-  border-color: var(--color-brand);
-  color: var(--color-brand);
+  padding-top: 0.4rem;
 }
 
 .mandate__failure {
-  color: var(--color-error, #e5484d);
+  margin-top: 0.4rem;
+  font-size: 0.86rem;
+  color: var(--color-danger);
 }
 </style>

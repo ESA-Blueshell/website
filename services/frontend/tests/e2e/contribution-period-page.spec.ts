@@ -12,7 +12,7 @@ async function openPeriods(page: Page): Promise<void> {
 async function openEditDialog(page: Page, periodId: number): Promise<void> {
   await page.getByTestId(`contribution-period-${periodId}`).click()
   await page.getByTestId("contribution-period-edit").click()
-  await expect(page.getByTestId("contribution-period-dialog")).toContainText("Edit Contribution Period")
+  await expect(page.getByTestId("contribution-period-page-head")).toContainText("Contribution period 20")
 }
 
 const field = (page: Page, name: string) => page.getByTestId(`contribution-period-${name}-field`).locator("input")
@@ -48,8 +48,7 @@ test.describe("a contribution period's page", () => {
 
     await page.getByTestId("contribution-period-new").click()
 
-    const dialog = page.getByTestId("contribution-period-dialog")
-    await expect(dialog).toContainText("Add Contribution Period")
+    await expect(page.getByTestId("contribution-period-page-head")).toContainText("New contribution period")
     await expect(field(page, "start-date")).toHaveValue("")
     await expect(field(page, "end-date")).toHaveValue("")
     await expect(field(page, "half-year-cutoff")).toHaveValue("")
@@ -104,7 +103,7 @@ test.describe("a contribution period's page", () => {
 
     await openEditDialog(page, 201)
 
-    await expect(field(page, "full-year-fee")).toHaveValue("20")
+    await expect(field(page, "full-year-fee")).toHaveValue("20.00")
   })
 
   test("deletes a period only once its name is typed in the danger zone", async ({page}) => {

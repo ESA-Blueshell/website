@@ -1,6 +1,7 @@
 <template>
   <label class="row-check">
     <input
+      ref="box"
       :aria-label="label"
       :checked="checked"
       class="row-check__box"
@@ -17,7 +18,7 @@
         viewBox="0 0 12 12"
       >
         <path
-          d="m2.5 6.2 2.3 2.3 4.7-5"
+          :d="indeterminate ? 'M2.5 6h7' : 'm2.5 6.2 2.3 2.3 4.7-5'"
           stroke="currentColor"
           stroke-width="1.8"
         />
@@ -27,14 +28,27 @@
 </template>
 
 <script lang="ts" setup>
-/* The tick that selects one row. Its name is said, not shown: the row beside it names it. */
-const {checked, label, testid = undefined} = defineProps<{
+/* The tick that selects one row, or every row from the head of a list. Its name is said, not
+   shown: the row beside it names it. */
+import {onMounted, ref, watch} from "vue"
+
+const {checked, label, indeterminate = false, testid = undefined} = defineProps<{
   checked: boolean
   label: string
+  /** Some of what it stands for is selected, not all: drawn as a dash. */
+  indeterminate?: boolean
   testid?: string
 }>()
 
 const emit = defineEmits<{toggle: []}>()
+
+// The browser keeps this state on the element, not in an attribute.
+const box = ref<HTMLInputElement | null>(null)
+const mark = () => {
+  if (box.value) box.value.indeterminate = indeterminate
+}
+onMounted(mark)
+watch(() => indeterminate, mark)
 </script>
 
 <style scoped>
@@ -55,7 +69,8 @@ const emit = defineEmits<{toggle: []}>()
   cursor: pointer;
 }
 
-.row-check__box:checked {
+.row-check__box:checked,
+.row-check__box:indeterminate {
   background-color: var(--color-brand);
   box-shadow: none;
 }
@@ -76,7 +91,8 @@ const emit = defineEmits<{toggle: []}>()
   pointer-events: none;
 }
 
-.row-check__box:checked + .row-check__mark {
+.row-check__box:checked + .row-check__mark,
+.row-check__box:indeterminate + .row-check__mark {
   opacity: 1;
 }
 

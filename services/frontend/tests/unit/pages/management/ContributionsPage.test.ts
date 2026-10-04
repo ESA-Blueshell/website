@@ -151,6 +151,22 @@ describe("the Contributions page", () => {
     expect(mockPush).toHaveBeenLastCalledWith(expect.objectContaining({path: "/management/users/bulk/unpaid"}))
   })
 
+  it("selects every member shown from the head of the list, then every member, and lets go", async () => {
+    const wrapper = await mount()
+    const selection = () => wrapper.find('[data-testid="contribution-selection"]')
+
+    await wrapper.get('[data-testid="contribution-search"]').setValue("ann")
+    await wrapper.get('[data-testid="contribution-list-select-shown"]').trigger("change")
+    await settle()
+    expect(selection().text()).toContain("1 selected")
+    await wrapper.get('[data-testid="contribution-list-select-all"]').trigger("click")
+    await settle()
+    expect(selection().text()).toContain("3 selected")
+    await wrapper.get('[data-testid="contribution-list-select-all"]').trigger("click")
+    await settle()
+    expect(selection().exists()).toBe(false)
+  })
+
   it("marks one member's payment from their own row, or withdraws it where they paid", async () => {
     const wrapper = await mount()
 

@@ -132,7 +132,7 @@ const facts = computed(() => {
 })
 
 const displayedIds = computed(() => shown.value.map((row) => row.id))
-const {selectedIdsArray, isSelected, toggle, clear: clearSelection} = useUserSelection(displayedIds)
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMany, clear: clearSelection} = useUserSelection(displayedIds)
 
 /** The task page takes the selection by id and says what will happen before anything does. */
 const openBulk = (action: "start" | "end") =>
@@ -271,7 +271,13 @@ onMounted(load)
         :rows="shown"
         :sort-key="sortKey"
         testid="member-manager-list"
+        :header-state="headerState"
+        :selected-count="selectedIdsArray.length"
+        :total="rows.length"
         :to="(row) => `/management/users/${row.id}`"
+        @clear-selection="clearSelection"
+        @select-all="selectMany(rows.map((row) => row.id))"
+        @toggle-shown="toggleHeader"
         @sort="sortBy"
       >
         <template #check="{row}">

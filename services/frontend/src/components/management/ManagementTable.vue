@@ -4,6 +4,28 @@
     class="mg-rows"
     :data-testid="testid"
   >
+    <div
+      v-if="headerState"
+      class="mg-rows__head"
+    >
+      <row-check
+        :checked="headerState === 'checked'"
+        :indeterminate="headerState === 'indeterminate'"
+        :label="`Select the ${rows.length} shown`"
+        :testid="testid ? `${testid}-select-shown` : undefined"
+        @toggle="emit('toggleShown')"
+      />
+      <span>{{ selectionLine || `Select the ${rows.length} shown` }}</span>
+      <button
+        v-if="offerAll || allSelected"
+        class="mg-table__all-act"
+        :data-testid="testid ? `${testid}-select-all` : undefined"
+        type="button"
+        @click="offerAll ? emit('selectAll') : emit('clearSelection')"
+      >
+        {{ offerAll ? `Select all ${total}` : "Clear the selection" }}
+      </button>
+    </div>
     <template
       v-for="row in rows"
       :key="rowKey(row)"
@@ -28,7 +50,18 @@
             v-if="$slots.check"
             class="mg-table__check"
           >
-            <span class="mg-table__said">Select</span>
+            <row-check
+              v-if="headerState"
+              :checked="headerState === 'checked'"
+              :indeterminate="headerState === 'indeterminate'"
+              :label="`Select the ${rows.length} shown`"
+              :testid="testid ? `${testid}-select-shown` : undefined"
+              @toggle="emit('toggleShown')"
+            />
+            <span
+              v-else
+              class="mg-table__said"
+            >Select</span>
           </th>
           <th
             v-for="column in columns"
@@ -63,6 +96,22 @@
           </th>
           <th v-if="$slots.acts || to">
             <span class="mg-table__said">More</span>
+          </th>
+        </tr>
+        <tr
+          v-if="offerAll || allSelected"
+          class="mg-table__all"
+        >
+          <th :colspan="columns.length + 1 + ($slots.acts || to ? 1 : 0)">
+            {{ selectionLine }}
+            <button
+              class="mg-table__all-act"
+              :data-testid="testid ? `${testid}-select-all` : undefined"
+              type="button"
+              @click="offerAll ? emit('selectAll') : emit('clearSelection')"
+            >
+              {{ offerAll ? `Select all ${total}` : "Clear the selection" }}
+            </button>
           </th>
         </tr>
       </thead>
@@ -124,7 +173,9 @@
 /* A Management table: flat rows a step off the page, sortable heads, and at its end either a
    row's own acts or the arrow to its page. On a phone it hands each row to the page to draw as
    a ManagementRow, where a page gives one. */
+import {computed} from "vue"
 import GoArrow from "@/components/management/GoArrow.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
 import {usePhone} from "@/composables/usePhone"
 
 export interface TableColumn {
@@ -137,7 +188,10 @@ export interface TableColumn {
   testid?: string
 }
 
-const {columns, rows, rowKey, sortKey = "", descending = false, to = undefined, height = 0, testid = undefined, rowTestid = undefined} = defineProps<{
+const {
+  columns, rows, rowKey, sortKey = "", descending = false, to = undefined, height = 0, testid = undefined, rowTestid = undefined,
+  headerState = undefined, total = 0, selectedCount = 0,
+} = defineProps<{
   columns: TableColumn[]
   rows: T[]
   rowKey: (row: T) => string | number
@@ -149,9 +203,24 @@ const {columns, rows, rowKey, sortKey = "", descending = false, to = undefined, 
   height?: number
   testid?: string
   rowTestid?: (row: T) => string
+  /** How the rows shown stand against the selection. Gives the head its own tick, which takes them all. */
+  headerState?: "checked" | "indeterminate" | "unchecked"
+  /** Every row there is, shown or filtered away: what "select all" reaches past the ones shown. */
+  total?: number
+  /** How many are selected, shown or not. */
+  selectedCount?: number
 }>()
 
-const emit = defineEmits<{sort: [key: string]}>()
+const emit = defineEmits<{sort: [key: string]; toggleShown: []; selectAll: []; clearSelection: []}>()
+
+/* Once everything shown is ticked the head offers the rest, as a mail list does; once everything
+   is, it says so and offers to let go. Neither where what is shown is all there is. */
+const offerAll = computed(() => headerState === "checked" && total > rows.length && selectedCount < total)
+const allSelected = computed(() => headerState === "checked" && total > rows.length && selectedCount >= total)
+const selectionLine = computed(() => {
+  if (offerAll.value) return `All ${rows.length} shown are selected.`
+  return allSelected.value ? `All ${total} are selected.` : ""
+})
 
 const phone = usePhone()
 
@@ -161,20 +230,28 @@ const UNSORTED = "M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7"
 </script>
 
 <style scoped>
+/* Every table stands in the same hairline box under the same head, so two lists never differ
+   at the top. A table too wide for its page scrolls in that box, never the page. */
+.mg-table {
+  overflow-x: auto;
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+}
+
+.mg-table thead {
+  background: var(--color-surface);
+}
+
 .mg-table--boxed {
   overflow-y: auto;
-  box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
 
 .mg-table--boxed thead {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--color-surface);
 }
 
-/* A table too wide for its page scrolls in its own box, never the page. */
-.mg-table {
+table {
   overflow-x: auto;
 }
 
@@ -302,6 +379,40 @@ tbody tr:hover .mg-table__go {
 
 .mg-table__sort--on svg {
   opacity: 1;
+}
+
+.mg-table__all th {
+  padding: 0.55rem 1.4rem;
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-chalk);
+  background-color: color-mix(in oklab, var(--color-brand) 12%, var(--band-ground));
+}
+
+.mg-table__all-act {
+  margin-left: 0.6rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-brand-ink);
+  cursor: pointer;
+}
+
+.mg-table__all-act:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mg-rows__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.86rem;
+  color: var(--color-ash);
+  background-color: var(--band-ground);
 }
 
 .mg-table__said {

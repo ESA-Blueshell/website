@@ -63,6 +63,11 @@ export function useUserSelection(displayedIds: Ref<number[]>) {
     selectedIds.value = next
   }
 
+  /** Select every one of these, shown or not: what "select all" does once everyone shown is ticked. */
+  function selectMany(ids: number[]) {
+    selectedIds.value = new Set([...selectedIds.value, ...ids])
+  }
+
   const selectionCount = computed(() => selectedIds.value.size)
   const hasSelection = computed(() => selectedIds.value.size > 0)
 
@@ -84,6 +89,7 @@ export function useUserSelection(displayedIds: Ref<number[]>) {
     headerChecked,
     headerIndeterminate,
     toggleHeader,
+    selectMany,
     clear,
   }
 }

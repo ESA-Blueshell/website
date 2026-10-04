@@ -55,6 +55,17 @@ describe("RowCheck", () => {
   })
 })
 
+describe("RowCheck at the head of a list", () => {
+  it("draws a dash while only some of what it stands for is selected", async () => {
+    const wrapper = mount(RowCheck, {props: {checked: false, indeterminate: true, label: "Select the 3 shown"}})
+    const box = wrapper.get("input").element as HTMLInputElement
+
+    expect(box.indeterminate).toBe(true)
+    await wrapper.setProps({indeterminate: false, checked: true})
+    expect(box.indeterminate).toBe(false)
+  })
+})
+
 describe("ManagementRow", () => {
   it("opens its record by its name and by its arrow", () => {
     const wrapper = mount(ManagementRow, {
@@ -176,5 +187,49 @@ describe("ManagementTable", () => {
     expect(asRows.get("[data-testid=table]").classes()).toContain("mg-rows")
     expect(asRows.findAll(".as-row").map((one) => one.text())).toEqual(["Sitecie", "Kandi"])
     expect(asTable.find("table").exists()).toBe(true)
+  })
+
+  it("ticks everything shown from its head, then offers the rest and to let go of it all", async () => {
+    const check = {check: () => h("input", {type: "checkbox"})}
+    const props = {columns, rows, rowKey: (row: Row) => row.id, testid: "table", total: 5}
+    const some = mount(ManagementTable<Row>, {props: {...props, headerState: "indeterminate", selectedCount: 1}, slots: {...cells, ...check}, global: {stubs}})
+
+    expect(some.find(".mg-table__all").exists()).toBe(false)
+    await some.get("[data-testid=table-select-shown]").trigger("change")
+    expect(some.emitted("toggleShown")).toHaveLength(1)
+
+    await some.setProps({headerState: "checked", selectedCount: 2})
+    expect(some.get(".mg-table__all").text()).toContain("All 2 shown are selected.")
+    expect(some.get(".mg-table__all th").attributes("colspan")).toBe("3")
+    await some.get("[data-testid=table-select-all]").trigger("click")
+    expect(some.emitted("selectAll")).toHaveLength(1)
+
+    await some.setProps({selectedCount: 5})
+    expect(some.get(".mg-table__all").text()).toContain("All 5 are selected.")
+    await some.get("[data-testid=table-select-all]").trigger("click")
+    expect(some.emitted("clearSelection")).toHaveLength(1)
+
+    await some.setProps({total: 2, selectedCount: 2})
+    expect(some.find(".mg-table__all").exists()).toBe(false)
+  })
+
+  it("gives a phone's rows the same head: the tick, what it took and the rest on offer", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = mount(ManagementTable<Row>, {
+      props: {columns, rows, rowKey: (row: Row) => row.id, testid: "table", total: 5, headerState: "unchecked", selectedCount: 0, to: (row: Row) => `/x/${row.id}`},
+      slots: {...cells, phone: ({row}: {row: Row}) => h("p", row.name)},
+      global: {stubs},
+    })
+
+    expect(wrapper.get(".mg-rows__head").text()).toContain("Select the 2 shown")
+    await wrapper.get("[data-testid=table-select-shown]").trigger("change")
+    expect(wrapper.emitted("toggleShown")).toHaveLength(1)
+    await wrapper.setProps({headerState: "checked", selectedCount: 2})
+    expect(wrapper.get(".mg-rows__head").text()).toContain("All 2 shown are selected.")
+    await wrapper.get("[data-testid=table-select-all]").trigger("click")
+    expect(wrapper.emitted("selectAll")).toHaveLength(1)
+    await wrapper.setProps({selectedCount: 5})
+    await wrapper.get("[data-testid=table-select-all]").trigger("click")
+    expect(wrapper.emitted("clearSelection")).toHaveLength(1)
   })
 })

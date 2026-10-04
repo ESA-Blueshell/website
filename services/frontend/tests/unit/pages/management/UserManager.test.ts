@@ -155,6 +155,26 @@ describe("the Users page", () => {
     expect(router.currentRoute.value.query).toEqual({ids: "2", back: "/management/users"})
   })
 
+  it("selects everyone shown from the head of the list, then everyone there is, and lets go", async () => {
+    const wrapper = await mount()
+    const selection = () => wrapper.find('[data-testid="member-manager-selection"]')
+
+    await wrapper.get('[data-testid="member-manager-search-input"]').setValue("zoe")
+    await wrapper.get('[data-testid="member-manager-list-select-shown"]').trigger("change")
+    await settle()
+    expect(selection().text()).toContain("1 selected")
+    expect(wrapper.get('[data-testid="member-manager-list"]').text()).toContain("All 1 shown are selected.")
+
+    await wrapper.get('[data-testid="member-manager-list-select-all"]').trigger("click")
+    await settle()
+    expect(selection().text()).toContain("3 selected")
+    expect(wrapper.get('[data-testid="member-manager-list"]').text()).toContain("All 3 are selected.")
+
+    await wrapper.get('[data-testid="member-manager-list-select-all"]').trigger("click")
+    await settle()
+    expect(selection().exists()).toBe(false)
+  })
+
   it("takes the people selected to the task page that starts their membership", async () => {
     const wrapper = await mount()
 

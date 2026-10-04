@@ -75,7 +75,7 @@ const paidCount = computed(() => members.value.filter((one) => one.paid).length)
 const incassoCount = computed(() => members.value.filter((one) => one.incasso).length)
 const filtered = computed(() => search.value !== "" || paid.value !== null)
 
-const {selectedIdsArray, isSelected, toggle, clear: clearSelection} = useUserSelection(computed(() => shown.value.map((one) => one.userId)))
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMany, clear: clearSelection} = useUserSelection(computed(() => shown.value.map((one) => one.userId)))
 
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`
 
@@ -320,6 +320,12 @@ void loadPeriods()
         :rows="shown"
         :sort-key="sortKey"
         testid="contribution-list"
+        :header-state="headerState"
+        :selected-count="selectedIdsArray.length"
+        :total="members.length"
+        @clear-selection="clearSelection"
+        @select-all="selectMany(members.map((one) => one.userId))"
+        @toggle-shown="toggleHeader"
         @sort="sortBy"
       >
         <template #check="{row}">

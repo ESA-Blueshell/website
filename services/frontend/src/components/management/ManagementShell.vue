@@ -140,6 +140,13 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
   padding: 1rem 0.8rem 2rem;
   background-color: var(--band-ground);
   border-right: 1px solid var(--color-hairline);
+
+  /* The navigation stays where it is: the page beside it is what scrolls. */
+  position: sticky;
+  top: 60px;
+  align-self: start;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
 }
 
 .mg-side__group {

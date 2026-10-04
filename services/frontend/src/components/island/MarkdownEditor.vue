@@ -3,7 +3,7 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {autocompletion} from "@codemirror/autocomplete"
 import {Compartment, EditorState} from "@codemirror/state"
-import {EditorView, placeholder as showPlaceholder} from "@codemirror/view"
+import {drawSelection, EditorView, placeholder as showPlaceholder} from "@codemirror/view"
 import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
 import {CODE_FONT} from "@/components/island/markdownLive"
 import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
@@ -228,6 +228,8 @@ onMounted(() => {
           addToOptions: [emojiOption, mentionOption],
           optionClass: mentionOptionClass,
         }),
+        // The browser's own caret sits off the line beside the placeholder in some browsers; this one is measured off the text.
+        drawSelection(),
         showPlaceholder(placeholder),
         EditorView.lineWrapping,
         // Without this the editor is a div to a screen reader, not a textbox with a label.

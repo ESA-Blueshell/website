@@ -4,7 +4,7 @@ import DiscordPlaceFields from "@/domains/discord/island/DiscordPlaceFields.vue"
 import {findCommitteeDiscord} from "@/services/api"
 import {mountInApp, settle, unmountAll} from "../../../pages/helpers"
 
-const api = vi.hoisted(() => ({findCommitteeDiscord: vi.fn(), listKeptRoles: vi.fn(), listKeptChannels: vi.fn()}))
+const api = vi.hoisted(() => ({findCommitteeDiscord: vi.fn(), listKeptRoles: vi.fn(), listKeptChannels: vi.fn(), listRoleOpenings: vi.fn()}))
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   ...api,
@@ -30,6 +30,7 @@ describe("a committee's Discord on its form", () => {
     vi.clearAllMocks()
     api.listKeptRoles.mockResolvedValue({status: 200, data: [{id: "900", name: "Sitecie", assignable: true}, {id: "905", name: "Admin", assignable: false}]})
     api.listKeptChannels.mockResolvedValue({status: 200, data: channels})
+    api.listRoleOpenings.mockResolvedValue({status: 200, data: []})
     api.findCommitteeDiscord.mockResolvedValue({status: 200, data: {available: true, roleId: "900", roleName: "Sitecie", channels: [channels[1]]}})
   })
 
@@ -50,6 +51,23 @@ describe("a committee's Discord on its form", () => {
     wrapper.findComponent({name: "ChipPicker"}).vm.$emit("remove", "2")
     await settle()
     expect(choice(wrapper)?.channelIds).toEqual([])
+  })
+
+  it("fills in the channels a picked role already has access to and unticks the new channel", async () => {
+    api.listRoleOpenings.mockResolvedValue({status: 200, data: [
+      {channel: channels[0], actual: "READ", differs: false},
+      {channel: channels[1], actual: "READ", differs: false},
+      {channel: channels[2], differs: false},
+    ]})
+    const wrapper = await mount({committeeId: null, name: "Pub Quiz", slug: "pub-quiz"})
+    expect(wrapper.find('[data-testid="committee-edit-discord-already"]').exists()).toBe(false)
+
+    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", "900")
+    await settle()
+
+    expect(api.listRoleOpenings).toHaveBeenCalledWith({path: {roleId: "900"}})
+    expect(wrapper.get('[data-testid="committee-edit-discord-already"]').text()).toContain("already has access to #sitecie.")
+    expect(choice(wrapper)).toEqual({roleId: "900", createRole: false, channelIds: ["1"], createChannel: null})
   })
 
   it("shows the role an existing committee holds with the channels it opens, and offers no new role", async () => {

@@ -150,6 +150,13 @@ const pick = (key: string, on: boolean) => {
 const channelNames = (match: AdoptionMatch) =>
   match.channels.length === 0 ? "no channel" : match.channels.map((one) => `#${one.name}`).join(", ")
 
+/* What the role has access to before the link, so nobody links a channel it already has. */
+const alreadyOpenTo = (match: AdoptionMatch) => {
+  const held = channels.value.filter((one) => one.kind !== "CATEGORY" && one.roleIds.includes(match.roleId))
+  if (held.length === 0) return `@${match.roleName} has access to no channels yet.`
+  return `@${match.roleName} already has access to ${held.map((one) => `#${one.name}`).join(", ")}.`
+}
+
 const adopt = async () => {
   if (picked.value.size === 0 || acting.value) return
   acting.value = true
@@ -376,6 +383,7 @@ onMounted(load)
             :key="match.key"
           >
             <check-box
+              :hint="alreadyOpenTo(match)"
               :label="`${match.label}: @${match.roleName} and ${channelNames(match)}`"
               :model-value="picked.has(match.key)"
               :testid="`discord-match-${match.key}`"

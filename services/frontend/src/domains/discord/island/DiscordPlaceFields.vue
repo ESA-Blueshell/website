@@ -10,6 +10,7 @@ import FormSection from "@/components/island/FormSection.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
 import {type KeptChannel, type KeptRole, listKeepableChannels, listKeepableRoles} from "../adapters/keeping"
+import {readOpenings} from "../adapters/roleOpenings"
 
 defineOptions({name: "DiscordPlaceFields"})
 
@@ -61,6 +62,20 @@ watch([available, roleKey, channelIds, makeChannel, () => slug], () => {
     }
     : null
 }, {deep: true, immediate: true})
+
+/* A role picked to be linked may have access to channels already. They are filled in and the new
+   channel is unticked, so the form shows them and none is linked or made a second time. */
+const alreadyOpen = ref<string[]>([])
+watch(roleKey, async (key) => {
+  alreadyOpen.value = []
+  if (!key || key === NEW_ROLE) return
+  const openings = await readOpenings(key)
+  if (roleKey.value !== key || !openings) return
+  const held = openings.filter((one) => (one.actual ?? one.kept) != null && one.channel.kind !== "CATEGORY").map((one) => one.channel)
+  alreadyOpen.value = held.map((one) => one.name)
+  channelIds.value = [...new Set([...channelIds.value, ...held.map((one) => one.id)])]
+  if (held.length > 0) makeChannel.value = false
+})
 
 onMounted(async () => {
   const [found, held, open] = await Promise.all([
@@ -131,6 +146,14 @@ onMounted(async () => {
             />
           </template>
         </form-field>
+        <p
+          v-if="alreadyOpen.length"
+          class="discord-place__already"
+          :data-testid="`${testid}-already`"
+        >
+          This role already has access to {{ alreadyOpen.map((name) => `#${name}`).join(", ") }}. These channels are filled
+          in above.
+        </p>
         <check-box
           v-model="makeChannel"
           :hint="`Under ${category}, accessible only by the role.`"
@@ -155,6 +178,11 @@ onMounted(async () => {
   gap: 0.6rem;
   margin: 0;
   font-weight: 600;
+}
+
+.discord-place__already {
+  font-size: 0.86rem;
+  color: var(--color-ash);
 }
 
 .discord-place__note {

@@ -37,7 +37,7 @@ const channels = [
   {id: "1", name: "sitecie", kind: "TEXT", category: "Committees", private: true, roleIds: ["900"]},
   {id: "2", name: "bs-valo", kind: "TEXT", category: "Games", private: false, roleIds: [], game: {code: "VALO", name: "Valorant", kind: "CASUAL"},
     access: {kept: {everyone: "READ", members: "WRITE"}, actual: {everyone: "WRITE", members: "WRITE"}, differs: true}},
-  {id: "3", name: "old-lan", kind: "VOICE", category: "Archive", private: true, roleIds: []},
+  {id: "3", name: "old-lan", kind: "VOICE", category: "Archive", private: true, roleIds: ["960"]},
   {id: "4", name: "Committees", kind: "CATEGORY", private: true, roleIds: ["900"]},
 ]
 const matches = [
@@ -148,6 +148,8 @@ describe("the Discord page", () => {
     await settle()
     expect(document.body.textContent).toContain("Lancie: @Lancie and #lancie")
     expect(document.body.textContent).toContain("Blueshell CS2: @Blueshell CS2 and no channel")
+    expect(document.body.textContent).toContain("@Lancie already has access to #old-lan.")
+    expect(document.body.textContent).toContain("@Blueshell CS2 has access to no channels yet.")
     const boxes = () => wrapper.findAllComponents({name: "CheckBox"})
     boxes()[1]!.vm.$emit("update:modelValue", false)
     boxes()[1]!.vm.$emit("update:modelValue", true)

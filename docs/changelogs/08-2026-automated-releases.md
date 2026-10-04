@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.0](https://github.com/ESA-Blueshell/website/compare/v1.16.0...v1.17.0) (2026-10-04)
+
+
+### Features
+
+* the board adds a sign-up for somebody else, also after the event has ended ([#2115](https://github.com/ESA-Blueshell/website/issues/2115)) ([7baa156](https://github.com/ESA-Blueshell/website/commit/7baa15660e648021b28e67b5d7d7b73737e3cfea))
+
 ## [1.16.0](https://github.com/ESA-Blueshell/website/compare/v1.15.0...v1.16.0) (2026-10-01)
 
 

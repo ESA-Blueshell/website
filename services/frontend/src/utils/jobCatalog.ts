@@ -36,6 +36,13 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Sends the confirmation email for one event sign-up to the signer, including " +
       "their guest-access link. Triggered automatically after a sign-up; safe to re-run.",
   },
+  "email.event-signup-added": {
+    title: "Send sign-up added email",
+    description:
+      "Tells one guest a board member added them to an event, with the event's details and " +
+      "their guest-access link. Sent only when the board asks for it while adding the " +
+      "sign-up; safe to re-run.",
+  },
   "email.event-signup-removed": {
     title: "Send sign-up removed email",
     description:
@@ -94,9 +101,8 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
   "contact.sync-all": {
     title: "Sync all contacts",
     description:
-      "Walks every active user and enqueues a per-user contact sync against every " +
-      "configured external contact system (today: Listmonk, Brevo). Use this to " +
-      "recover from drift after a config change or a downstream outage.",
+      "Walks every active user and enqueues a per-user contact sync against Brevo. " +
+      "Use this to recover from drift after a config change or a downstream outage.",
   },
   "contact.sync": {
     title: "Sync contact",

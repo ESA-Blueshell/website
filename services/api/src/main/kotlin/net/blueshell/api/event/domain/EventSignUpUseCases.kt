@@ -2,6 +2,7 @@ package net.blueshell.api.event.domain
 
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
+import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
@@ -19,9 +20,9 @@ import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 
 /**
- * Sign-up writes. Who the sign-up belongs to is decided here, never taken from
- * the payload: an authenticated caller can only act as themselves, and an
- * anonymous one must supply guest details.
+ * Sign-up writes. Who the sign-up belongs to is decided here: an authenticated caller acts as
+ * themselves whatever the payload says, an anonymous one must supply guest details, and only the
+ * board may name somebody else.
  */
 @Service
 class EventSignUpUseCases(
@@ -46,10 +47,16 @@ class EventSignUpUseCases(
         if (violations.isNotEmpty()) throw ConstraintViolationException(violations)
     }
 
+    /**
+     * [notify] is the board's choice to tell a guest it adds, and is honoured for a board caller
+     * alone: a guest signing up themselves gets the confirmation either way.
+     */
     fun create(
         data: EventSignUpData,
         principalId: Long?,
+        notify: Boolean = false,
     ): EventSignUp {
+        if (namesSomebodyElse(data, principalId) && callerIsBoard()) return add(data, notify)
         val signUpData =
             if (principalId != null) {
                 // Authenticated users can only act as themselves.
@@ -67,6 +74,71 @@ class EventSignUpUseCases(
         validate(signUpData)
         return service.create(mapSignUp(signUpData, eventRepository, questionService))
     }
+
+    private fun namesSomebodyElse(
+        data: EventSignUpData,
+        principalId: Long?,
+    ): Boolean = principalId != null && (data.guest != null || (data.userId != null && data.userId != principalId))
+
+    /**
+     * The board adding a sign-up for the account or the guest the body names. The deadline and the
+     * limit do not bind it; members-only does, since that rule binds whoever attends.
+     */
+    private fun add(
+        data: EventSignUpData,
+        notify: Boolean,
+    ): EventSignUp {
+        if (data.userId != null && data.guest != null) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "A sign-up belongs to an account or to a guest, not to both.",
+            )
+        }
+        val event =
+            eventRepository.findById(data.eventId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found with id: ${data.eventId}")
+            }
+        if (data.userId != null) {
+            checkHolder(event, data.userId)
+        } else if (event.membersOnly) {
+            throw notAMember()
+        }
+
+        val signUpData = data.copy(boardEdit = true)
+        validate(signUpData)
+        val added = service.add(mapSignUp(signUpData, eventRepository, questionService))
+        if (notify) {
+            added.guest?.accessTokenRaw?.let { token ->
+                jobs.runAsync(
+                    EventJobs.EventSignUpAdded,
+                    EventJobs.EventSignupPayload(added.id!!, token),
+                    JobTrigger.SITE_ACTION,
+                )
+            }
+        }
+        return added
+    }
+
+    /** Refuses an account the event would not take: a non-member on members-only, or one already on it. */
+    private fun checkHolder(
+        event: Event,
+        userId: Long,
+    ) {
+        val holder = users.findById(userId)
+        if (event.membersOnly && !holder.hasAuthority(Role.MEMBER)) throw notAMember()
+        if (service.existsByUserIdAndEventId(userId, requireNotNull(event.id))) {
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "This person already has a sign-up for this event.",
+            )
+        }
+    }
+
+    private fun notAMember() =
+        ResponseStatusException(
+            HttpStatus.UNPROCESSABLE_CONTENT,
+            "This event is members-only, and this person is not a member.",
+        )
 
     fun update(
         eventId: Long,
@@ -134,19 +206,7 @@ class EventSignUpUseCases(
         signUp: EventSignUp,
         targetUserId: Long,
     ): Guest {
-        val target = users.findById(targetUserId)
-        if (signUp.event.membersOnly && !target.hasAuthority(Role.MEMBER)) {
-            throw ResponseStatusException(
-                HttpStatus.UNPROCESSABLE_CONTENT,
-                "This event is members-only, and this person is not a member.",
-            )
-        }
-        if (service.existsByUserIdAndEventId(targetUserId, signUp.eventId)) {
-            throw ResponseStatusException(
-                HttpStatus.CONFLICT,
-                "This person already has a sign-up for this event.",
-            )
-        }
+        checkHolder(signUp.event, targetUserId)
         return signUp.guest!!
     }
 

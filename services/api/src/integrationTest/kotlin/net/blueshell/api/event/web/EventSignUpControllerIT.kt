@@ -18,9 +18,11 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 @SpringBootTest
 class EventSignUpControllerIT : UserTestSupport() {
@@ -116,14 +118,12 @@ class EventSignUpControllerIT : UserTestSupport() {
     inner class FindEventSignUpsByAccessToken {
         @Test
         fun `guest finds signups by access token`() {
-            val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture(approved = true, membersOnly = false, signUp = true)
 
             val createResult =
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)
@@ -407,6 +407,287 @@ class EventSignUpControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class AddSignUpForSomebodyElse {
+        private fun ended(event: Event): Event {
+            event.startTime = Instant.now().minus(2, ChronoUnit.DAYS)
+            event.endTime = Instant.now().minus(1, ChronoUnit.DAYS)
+            return persist(event)
+        }
+
+        private fun rosterOf(event: Event) =
+            mvc.perform(get("/events/{eventId}/signups", event.id).with(signedIn(createUserWithRole(Role.BOARD))))
+
+        @Test
+        fun `board adds another account to an event that has ended, and the roster shows it`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event = ended(createEventFixture(approved = true, signUp = true))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.user.id").value(member.id))
+                .andExpect(jsonPath("$.kind").value("MEMBER"))
+
+            rosterOf(event)
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].user.id").value(member.id))
+        }
+
+        @Test
+        fun `board adds a guest to an event that has ended, and the roster shows them`() {
+            val board = createUserWithRole(Role.BOARD)
+            val event = ended(createEventFixture(approved = true, signUp = true))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createGuestSignUpPayload(name = "Walked In")),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.user").doesNotExist())
+                .andExpect(jsonPath("$.guest.name").value("Walked In"))
+                .andExpect(jsonPath("$.kind").value("GUEST"))
+                .andExpect(header().doesNotExist(EventSignUpController.GUEST_ACCESS_TOKEN_HEADER))
+
+            rosterOf(event)
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].guest.name").value("Walked In"))
+        }
+
+        @Test
+        fun `board adds after the deadline and over the limit`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event =
+                createEventFixture(
+                    approved = true,
+                    signUp = true,
+                    signUpDeadline = Instant.now().minusSeconds(1),
+                    signUpLimit = 1,
+                )
+            createEventSignUpFixture(event = event, user = createUserWithRole(Role.MEMBER))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
+                ).andExpect(status().isCreated)
+
+            rosterOf(event).andExpect(jsonPath("$.length()").value(2))
+        }
+
+        @Test
+        fun `a non-member account is refused on a members-only event`() {
+            val board = createUserWithRole(Role.BOARD)
+            val outsider = createUserWithRole(Role.GUEST)
+            val event = createEventFixture(approved = true, membersOnly = true, signUp = true)
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(outsider.id!!)),
+                ).andExpect(status().isUnprocessableContent)
+        }
+
+        @Test
+        fun `a guest is refused on a members-only event`() {
+            val board = createUserWithRole(Role.BOARD)
+            val event = createEventFixture(approved = true, membersOnly = true, signUp = true)
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
+                ).andExpect(status().isUnprocessableContent)
+        }
+
+        @Test
+        fun `an account that already has a sign-up is refused`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true)
+            createEventSignUpFixture(event = event, user = member)
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
+                ).andExpect(status().isConflict)
+        }
+
+        @Test
+        fun `somebody whose sign-up was removed is added again`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true)
+            val removed = createEventSignUpFixture(event = event, user = member)
+            mvc
+                .perform(delete("/events/signups/{id}", removed.id).with(signedIn(board)))
+                .andExpect(status().isNoContent)
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
+                ).andExpect(status().isCreated)
+
+            rosterOf(event).andExpect(jsonPath("$.length()").value(1))
+        }
+
+        @Test
+        fun `a sign-up with an answer missing is refused`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event = attachSurvey(createEventFixture(approved = true, signUp = true), openQuestion(0, "Diet", required = true))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
+                ).andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `a member who names another account signs up themselves`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val other = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true)
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(other.id!!)),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.user.id").value(member.id))
+        }
+
+        @Test
+        fun `a member who names another account is still bound by the deadline`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val other = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true, signUpDeadline = Instant.now().minusSeconds(1))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(other.id!!)),
+                ).andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `a member who names another account is still bound by the limit`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val other = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true, signUpLimit = 1)
+            createEventSignUpFixture(event = event, user = createUserWithRole(Role.MEMBER))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(other.id!!)),
+                ).andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `a member adds nobody to an event that has ended`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val other = createUserWithRole(Role.MEMBER)
+            val event = ended(createEventFixture(approved = true, signUp = true))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(other.id!!)),
+                ).andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `a board member who names nobody signs up themselves`() {
+            val board = createUserWithRole(Role.BOARD)
+            val event = createEventFixture(approved = true, signUp = true)
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.user.id").value(board.id))
+        }
+
+        @Test
+        fun `a guest the board adds is emailed only when the board asks for it`() {
+            val board = createUserWithRole(Role.BOARD)
+            val event = ended(createEventFixture(approved = true, signUp = true))
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createGuestSignUpPayload(email = "quiet@example.com")),
+                ).andExpect(status().isCreated)
+
+            assertThat(findJobsByType("email.event-signup-added")).isEmpty()
+            assertThat(findJobsByType("email.event-signup")).isEmpty()
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .param("notify", "true")
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createGuestSignUpPayload(email = "told@example.com")),
+                ).andExpect(status().isCreated)
+
+            assertThat(findJobsByType("email.event-signup-added")).hasSize(1)
+            assertThat(findJobsByType("email.event-signup")).isEmpty()
+        }
+
+        @Test
+        fun `a guest who signs up themselves still gets the confirmation`() {
+            val event = createEventFixture(approved = true, signUp = true)
+
+            mvc
+                .perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
+                ).andExpect(status().isCreated)
+
+            assertThat(findJobsByType("email.event-signup")).hasSize(1)
+            assertThat(findJobsByType("email.event-signup-added")).isEmpty()
+        }
+    }
+
+    @Nested
     inner class RequiredAndOptionalAnswers {
         @Test
         fun `accepts signup with blank optional open answer`() {
@@ -667,14 +948,12 @@ class EventSignUpControllerIT : UserTestSupport() {
 
         @Test
         fun `guest updates signup using access token`() {
-            val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture(approved = true, membersOnly = false, signUp = true)
 
             val createResult =
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)
@@ -725,14 +1004,12 @@ class EventSignUpControllerIT : UserTestSupport() {
 
         @Test
         fun `guest deletes signup using access token`() {
-            val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture(approved = true, membersOnly = false, signUp = true)
 
             val createResult =
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)

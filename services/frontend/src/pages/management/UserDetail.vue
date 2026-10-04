@@ -3,12 +3,23 @@
    opens the tab it names. */
 import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
+import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import CutRow from "@/components/island/CutRow.vue"
+import FactList from "@/components/island/FactList.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
+import PageTabs from "@/components/island/PageTabs.vue"
+import RoleMark from "@/components/island/RoleMark.vue"
 import StateMark from "@/components/island/StateMark.vue"
-import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
+import StateTag from "@/components/island/StateTag.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import UserForm from "@/components/form/UserForm.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import MandatePanel from "@/components/management/MandatePanel.vue"
 import MembershipPanel from "@/components/management/MembershipPanel.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
 import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
 import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
@@ -20,18 +31,19 @@ import store from "@/plugins/store"
 import {type EditableUser, toEditableUser} from "@/utils/editableUser"
 import {feeTypeLabels} from "@/utils/feePreview"
 import {memberTypeLabel} from "@/utils/memberType"
-import {formatDate} from "@/utils/timestamps"
+import {formatDay, formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "UserDetailPage"})
 
-const TABS = [
-  {key: "overview", label: "Overview"},
-  {key: "membership", label: "Membership"},
-  {key: "contributions", label: "Contributions"},
-  {key: "profile", label: "Profile"},
-  {key: "account", label: "Account"},
-  {key: "roles", label: "Roles"},
-] as const
+const TABS = ["Overview", "Membership", "Contributions", "Profile", "Account", "Roles"]
+
+const PERIOD_COLUMNS: TableColumn[] = [
+  {key: "period", label: "Period"},
+  {key: "fee", label: "Fee type"},
+  {key: "amount", label: "Amount"},
+  {key: "paid", label: "Paid"},
+  {key: "lastEmail", label: "Last payment email", wrap: true},
+]
 
 const route = useRoute()
 const router = useRouter()
@@ -63,8 +75,52 @@ const incasso = computed(() => (current.value ? (current.value.incasso ? "Pays b
 const latest = computed(() => periods.value[0] ?? null)
 
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`
-const feeOf = (period: MemberPeriodContribution) =>
-  period.feeType && period.fee != null ? `${feeTypeLabels[period.feeType]}, ${euro(period.fee)}` : "Owes nothing"
+
+const base = computed(() => `/management/users/${id.value}`)
+const tabs = computed(() => TABS.map((label) => ({label, to: label === "Overview" ? base.value : `${base.value}/${label.toLowerCase()}`})))
+
+/** "2026-2027", or the one year a period starts and ends in. */
+const periodName = (period: {startDate: string; endDate: string}) => {
+  const [from, until] = [period.startDate.slice(0, 4), period.endDate.slice(0, 4)]
+  return from === until ? from : `${from}-${until}`
+}
+
+const typeName = computed(() => (latestMembership.value ? memberTypeLabel(latestMembership.value.memberType) : ""))
+const eyebrow = computed(() => [standing.value, typeName.value].filter(Boolean).join(" · "))
+const contact = computed(() => (person.value
+  ? [person.value.username, person.value.email, person.value.discord ? `@${person.value.discord}` : ""].filter(Boolean).join(" · ")
+  : ""))
+const topRole = computed(() => {
+  const role = person.value ? highestRoleLabel(person.value.roles) : ""
+  return role.charAt(0).toUpperCase() + role.slice(1)
+})
+
+const membershipLine = computed(() => (current.value && since.value
+  ? `${typeName.value} since ${formatDay(since.value)}, ${current.value.incasso ? "pays by incasso" : "pays by transfer"}`
+  : memberships.value.length > 0 ? `Ended ${formatDay(latestMembership.value?.endDate)}` : "Has never been a member"))
+const contributionLine = computed(() => (latest.value
+  ? `${latest.value.paid ? "Paid" : "Not paid"} ${periodName(latest.value)}${latest.value.lastEmailAt ? `. Last payment email ${formatDay(latest.value.lastEmailAt)}` : ""}`
+  : "No period as a member yet"))
+const profileLine = computed(() => (person.value
+  ? [person.value.email, person.value.discordId ? `@${person.value.discord}` : "No Discord linked", person.value.addressId == null ? "No address" : "Address on file"].join(" · ")
+  : ""))
+const accountLine = computed(() => (person.value
+  ? [person.value.locked ? "Locked" : "", person.value.twoFactorOn ? "Two-factor on" : "No two-factor", person.value.awaitingReenrolment ? "waiting to set up again" : "",
+      "password reset, activation and restore"].filter(Boolean).join(" · ")
+  : ""))
+
+const facts = computed(() => [
+  {
+    label: "Membership",
+    value: [standing.value, typeName.value.toLowerCase()].filter(Boolean).join(", "),
+    sub: since.value ? `Since ${formatDay(since.value)}${incasso.value ? ` · ${incasso.value}` : ""}` : "",
+    testid: "user-standing",
+  },
+  latest.value
+    ? {label: `Contribution ${periodName(latest.value)}`, value: latest.value.paid ? "Paid" : "Not paid", sub: latest.value.paidAt ? `Recorded ${formatDay(latest.value.paidAt)}` : ""}
+    : {label: "Contribution", value: "None yet", sub: "No period as a member"},
+  {label: "Account", value: person.value?.twoFactorOn ? "Two-factor on" : "No two-factor", sub: person.value?.locked ? "Locked" : "Open"},
+])
 
 const load = async () => {
   const [found, held, owed] = await Promise.all([readUser(id.value), listMembershipsFor(id.value), listMemberContributions(id.value)])
@@ -122,432 +178,348 @@ watch(id, load, {immediate: true})
 </script>
 
 <template>
-  <div
-    class="person"
-    data-testid="user-detail"
+  <management-page
+    v-if="loaded && !person"
+    :back="{to: '/management/users', label: 'Users'}"
+    eyebrow="Members"
+    testid="user-detail"
+    title="Nobody here"
   >
-    <router-link
-      class="person__back"
-      to="/management/users"
-    >
-      Users
-    </router-link>
-
     <p
-      v-if="loaded && !person"
       class="person__note"
       data-testid="user-detail-missing"
     >
       There is nobody with number {{ id }}.
     </p>
+  </management-page>
+  <management-page
+    v-else-if="person"
+    :back="{to: '/management/users', label: 'Users'}"
+    :eyebrow="eyebrow"
+    testid="user-detail"
+    :title="person.fullName"
+  >
+    <template #lede>
+      {{ contact }}
+    </template>
 
-    <template v-if="person">
-      <header class="person__head">
-        <h1 class="person__title">
-          {{ person.fullName }}
-        </h1>
-        <span class="person__note">@{{ person.username }}</span>
-        <state-mark
-          :kind="membershipState === 'current' ? 'in-step' : membershipState === 'pending' ? 'not-created' : memberships.length > 0 ? 'missing' : 'not-compared'"
-          testid="user-standing"
+    <page-tabs
+      :entries="tabs"
+      label="About this person"
+      testid="user-tab"
+    />
+
+    <div
+      v-if="tab === 'overview'"
+      data-testid="user-overview"
+    >
+      <fact-list
+        class="person__facts"
+        :facts="facts"
+      />
+      <div class="person__rows">
+        <cut-row
+          :meta="membershipLine"
+          testid="user-row-membership"
+          title="Membership"
+          :to="`${base}/membership`"
         >
-          {{ standing }}
-        </state-mark>
-      </header>
-
-      <nav
-        aria-label="About this person"
-        class="person__tabs"
-      >
-        <router-link
-          v-for="one in TABS"
-          :key="one.key"
-          :aria-current="tab === one.key ? 'page' : undefined"
-          class="person__tab"
-          :class="{'person__tab--on': tab === one.key}"
-          :data-testid="`user-tab-${one.key}`"
-          :to="one.key === 'overview' ? `/management/users/${id}` : `/management/users/${id}/${one.key}`"
+          <template #end>
+            <state-tag :tone="membershipState === 'current' ? 'ok' : membershipState === 'pending' ? 'warn' : 'quiet'">
+              {{ standing }}
+            </state-tag>
+          </template>
+        </cut-row>
+        <cut-row
+          :meta="contributionLine"
+          testid="user-row-contributions"
+          title="Contributions"
+          :to="`${base}/contributions`"
         >
-          {{ one.label }}
-        </router-link>
-      </nav>
-
-      <div
-        v-if="tab === 'overview'"
-        class="person__grid"
-        data-testid="user-overview"
-      >
-        <section class="person__block">
-          <h2>Membership</h2>
-          <p>{{ standing }}<span v-if="since"> since {{ since }}</span></p>
-          <p v-if="current">
-            {{ memberTypeLabel(current.memberType) }}
-          </p>
-          <p v-if="incasso">
-            {{ incasso }}
-          </p>
-        </section>
-        <section class="person__block">
-          <h2>Contributions</h2>
-          <p v-if="latest">
-            {{ latest.startDate }} to {{ latest.endDate }}: {{ latest.paid ? "paid" : "not paid" }}
-          </p>
-          <p v-else>
-            No period as a member yet.
-          </p>
-        </section>
-        <section class="person__block">
-          <h2>Profile</h2>
-          <p>{{ person.email }}</p>
-          <p v-if="person.phoneNumber">
-            {{ person.phoneNumber }}
-          </p>
-          <p>{{ person.discordId ? `Discord: ${person.discord}` : "No Discord linked" }}</p>
-          <p>{{ person.addressId == null ? "No address" : "Address on file" }}</p>
-        </section>
-        <section class="person__block">
-          <h2>Account</h2>
-          <p>{{ person.locked ? "Locked" : "Open" }}</p>
-          <p>{{ person.twoFactorOn ? "Two-factor on" : "No two-factor" }}</p>
-          <p v-if="person.awaitingReenrolment">
-            Waiting to set up again
-          </p>
-        </section>
-        <section class="person__block">
-          <h2>Roles</h2>
-          <p>{{ highestRoleLabel(person.roles) }}</p>
-          <p class="person__note">
-            {{ person.roles.join(", ") }}
-          </p>
-        </section>
+          <template
+            v-if="latest"
+            #end
+          >
+            <state-tag :tone="latest.paid ? 'ok' : 'warn'">
+              {{ latest.paid ? "Paid" : "Not paid" }}
+            </state-tag>
+          </template>
+        </cut-row>
+        <cut-row
+          :meta="profileLine"
+          testid="user-row-profile"
+          title="Profile and address"
+          :to="`${base}/profile`"
+        />
+        <cut-row
+          :meta="accountLine"
+          testid="user-row-account"
+          title="Account"
+          :to="`${base}/account`"
+        />
+        <cut-row
+          :meta="person.roles.join(', ')"
+          testid="user-row-roles"
+          title="Roles"
+          :to="`${base}/roles`"
+        >
+          <template #end>
+            <role-mark :role="topRole" />
+          </template>
+        </cut-row>
       </div>
 
-      <div
-        v-else-if="tab === 'membership'"
-        data-testid="user-membership"
+      <list-head title="Danger zone" />
+      <notice-box
+        title="Delete this user"
+        tone="danger"
       >
-        <p
-          v-if="incasso"
-          class="person__note"
-          data-testid="user-incasso"
-        >
-          {{ incasso }}
-        </p>
-        <p
-          v-if="pendingMandate"
-          class="person__note"
-          data-testid="user-pending-mandate"
-        >
-          Pending online mandate for the account {{ maskedIban(pendingMandate) }}, authorised on {{ pendingMandate.signedOn }}.
-          Its PDF is available once the membership starts.
-        </p>
-        <mandate-panel
-          v-if="latestMembership"
-          :membership-id="latestMembership.id"
-          @changed="reloadMemberships"
-        />
-        <membership-panel
-          :user-id="id"
-          @changed="reloadMemberships"
-        />
-      </div>
+        <div class="person__danger">
+          <p>Their account goes. It can be restored from Account recovery for a while.</p>
+          <cut-button
+            testid="user-delete"
+            tone="danger"
+            @click="deleteOpen = true"
+          >
+            Delete user
+          </cut-button>
+        </div>
+      </notice-box>
+      <confirm-dialog
+        confirm-label="Delete user"
+        :open="deleteOpen"
+        :question="`${person.fullName}'s account goes. It can be restored from Account recovery for a while.`"
+        testid="user-delete-dialog"
+        :title="`Delete ${person.fullName}?`"
+        working-label="Deleting"
+        @confirm="confirmDelete"
+        @update:open="deleteOpen = $event"
+      />
+    </div>
 
-      <div
-        v-else-if="tab === 'profile'"
-        class="person__stack"
-        data-testid="user-profile"
+    <div
+      v-else-if="tab === 'membership'"
+      class="person__stack"
+      data-testid="user-membership"
+    >
+      <p
+        v-if="incasso"
+        class="person__note"
+        data-testid="user-incasso"
       >
-        <section
-          v-if="profile"
-          class="person__block"
-        >
-          <h2>Details</h2>
-          <user-form
-            ref="profileForm"
-            v-model="profile"
-            :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
-            @submitted="load"
-          />
-          <button
-            class="person__action"
-            data-testid="user-profile-save"
-            type="button"
+        {{ incasso }}
+      </p>
+      <p
+        v-if="pendingMandate"
+        class="person__note"
+        data-testid="user-pending-mandate"
+      >
+        Pending online mandate for the account {{ maskedIban(pendingMandate) }}, authorised on {{ pendingMandate.signedOn }}.
+        Its PDF is available once the membership starts.
+      </p>
+      <mandate-panel
+        v-if="latestMembership"
+        :membership-id="latestMembership.id"
+        @changed="reloadMemberships"
+      />
+      <membership-panel
+        :user-id="id"
+        @changed="reloadMemberships"
+      />
+    </div>
+
+    <div
+      v-else-if="tab === 'profile'"
+      class="person__stack"
+      data-testid="user-profile"
+    >
+      <section v-if="profile">
+        <list-head title="Details" />
+        <user-form
+          ref="profileForm"
+          v-model="profile"
+          :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
+          @submitted="load"
+        />
+        <div class="person__acts">
+          <cut-button
+            testid="user-profile-save"
+            tone="solid"
             @click="saveProfile"
           >
             Save details
-          </button>
+          </cut-button>
           <span
             v-if="profileSaved"
             class="person__said"
             role="status"
           >{{ profileSaved }}</span>
-        </section>
-        <section class="person__block">
-          <h2>Address</h2>
-          <p
-            v-if="address.opened === false"
-            data-testid="user-address-unopened"
-          >
-            This address cannot be shown. Saving writes it anew.
-          </p>
-          <address-form
-            v-model="address"
-            data-testid="user-address-form"
-            show-submit
-            submit-text="Save address"
-            :user-id="id"
-            @submitted="load"
-          />
-        </section>
-      </div>
-
-      <div
-        v-else-if="tab === 'account'"
-        class="person__stack"
-        data-testid="user-account"
-      >
-        <section class="person__block">
-          <h2>Emails</h2>
-          <div class="person__emails">
-            <recovery-action
-              action="password"
-              :user="person"
-            />
-            <recovery-action
-              v-if="activation"
-              action="activation"
-              :pending-activation="activation"
-              :user="person"
-              @done="load"
-            />
-          </div>
-        </section>
-        <section class="person__block">
-          <h2>Security</h2>
-          <account-security-panel :user-id="id" />
-        </section>
-        <section class="person__block">
-          <h2>Delete</h2>
-          <p class="person__note">
-            Deleting anonymises the account; it can be restored from Account recovery for a while.
-          </p>
-          <button
-            class="person__action person__action--danger"
-            data-testid="user-delete"
-            type="button"
-            @click="deleteOpen = true"
-          >
-            Delete this account
-          </button>
-        </section>
-        <deletion-confirmation-dialog
-          v-model="deleteOpen"
-          :message="`Are you sure you want to delete ${person.fullName}?`"
-          title="Confirm User Deletion"
-          @confirm="confirmDelete"
-        />
-      </div>
-
-      <div
-        v-else-if="tab === 'roles'"
-        data-testid="user-roles"
-      >
-        <user-roles-panel
-          :editable="isAdmin"
-          :user-id="id"
-          @changed="onRolesChanged"
-        />
-      </div>
-
-      <div
-        v-else-if="tab === 'contributions'"
-        data-testid="user-contributions"
-      >
+        </div>
+      </section>
+      <section>
+        <list-head title="Address" />
         <p
-          v-if="periods.length === 0"
+          v-if="address.opened === false"
           class="person__note"
+          data-testid="user-address-unopened"
         >
-          No period as a member yet.
+          This address cannot be shown. Saving writes it anew.
         </p>
-        <ul class="person__periods">
-          <li
-            v-for="period in periods"
-            :key="period.periodId"
-            class="person__period"
-            :data-testid="`user-period-${period.periodId}`"
+        <address-form
+          v-model="address"
+          data-testid="user-address-form"
+          show-submit
+          submit-text="Save address"
+          :user-id="id"
+          @submitted="load"
+        />
+      </section>
+    </div>
+
+    <div
+      v-else-if="tab === 'account'"
+      class="person__stack"
+      data-testid="user-account"
+    >
+      <section>
+        <list-head title="Help them in" />
+        <div class="person__acts">
+          <recovery-action
+            action="password"
+            :user="person"
+          />
+          <recovery-action
+            v-if="activation"
+            action="activation"
+            :pending-activation="activation"
+            :user="person"
+            @done="load"
+          />
+        </div>
+      </section>
+      <section>
+        <list-head title="Security" />
+        <account-security-panel :user-id="id" />
+      </section>
+    </div>
+
+    <div
+      v-else-if="tab === 'roles'"
+      data-testid="user-roles"
+    >
+      <user-roles-panel
+        :editable="isAdmin"
+        :user-id="id"
+        @changed="onRolesChanged"
+      />
+    </div>
+
+    <div
+      v-else-if="tab === 'contributions'"
+      data-testid="user-contributions"
+    >
+      <p
+        v-if="periods.length === 0"
+        class="person__note"
+      >
+        No period as a member yet.
+      </p>
+      <management-table
+        v-else
+        class="person__periods"
+        :columns="PERIOD_COLUMNS"
+        :row-key="(period) => period.periodId"
+        :row-testid="(period) => `user-period-${period.periodId}`"
+        :rows="periods"
+      >
+        <template #period="{row}">
+          <span class="mg-name">{{ periodName(row) }}</span>
+          <span class="mg-sub">{{ formatDay(row.startDate) }} to {{ formatDay(row.endDate) }}</span>
+        </template>
+        <template #fee="{row}">
+          {{ row.feeType && row.fee != null ? feeTypeLabels[row.feeType] : "Owes nothing" }}
+        </template>
+        <template #amount="{row}">
+          <span :class="{'mg-quiet': row.fee == null}">{{ row.fee != null ? euro(row.fee) : "·" }}</span>
+        </template>
+        <template #paid="{row}">
+          <state-mark :kind="row.paid ? 'in-step' : 'extra'">
+            {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
+          </state-mark>
+          <span
+            v-if="said?.periodId === row.periodId"
+            class="mg-why"
+            :data-testid="`user-period-said-${row.periodId}`"
+            role="status"
+          >{{ said.text }}</span>
+        </template>
+        <template #lastEmail="{row}">
+          <template v-if="row.lastEmailAt && row.lastEmailKind">
+            {{ formatMoment(row.lastEmailAt) }}
+            <span class="mg-sub">{{ contributionEmailLabels[row.lastEmailKind] }}</span>
+          </template>
+          <span
+            v-else
+            class="mg-quiet"
+          >None yet</span>
+        </template>
+        <template #acts="{row}">
+          <mini-button
+            :testid="`user-period-toggle-${row.periodId}`"
+            @click="togglePayment(row)"
           >
-            <span class="person__what">
-              <strong>{{ period.startDate }} to {{ period.endDate }}</strong>
-              <span class="person__note">{{ feeOf(period) }}</span>
-            </span>
-            <span>
-              {{ period.paid ? `Paid${period.paidAt ? ` on ${formatDate(period.paidAt)}` : ""}` : "Not paid" }}
-            </span>
-            <span class="person__note">
-              {{ period.lastEmailAt && period.lastEmailKind
-                ? `${contributionEmailLabels[period.lastEmailKind]}, ${formatDate(period.lastEmailAt)}`
-                : "No payment email yet" }}
-            </span>
-            <button
-              class="person__action"
-              :data-testid="`user-period-toggle-${period.periodId}`"
-              type="button"
-              @click="togglePayment(period)"
-            >
-              {{ period.paid ? "Withdraw payment" : "Record payment" }}
-            </button>
-            <span
-              v-if="said?.periodId === period.periodId"
-              class="person__said"
-              :data-testid="`user-period-said-${period.periodId}`"
-              role="status"
-            >{{ said.text }}</span>
-          </li>
-        </ul>
-      </div>
-    </template>
-  </div>
+            {{ row.paid ? "Withdraw payment" : "Record payment" }}
+          </mini-button>
+        </template>
+      </management-table>
+    </div>
+  </management-page>
 </template>
 
 <style scoped>
-.person {
+.person__facts {
+  padding: 1.1rem 0 1.2rem;
+}
+
+.person__rows {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 64rem;
-  padding: 2rem 2.4rem 3rem;
+  gap: 2px;
 }
 
-.person__back {
-  align-self: flex-start;
-  font-size: 0.84rem;
-  color: var(--color-brand);
-}
-
-.person__head {
+.person__danger {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem 1rem;
-}
-
-.person__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.person__note {
-  margin: 0;
-  font-size: 0.86rem;
-  color: var(--color-ash);
-}
-
-.person__tabs {
-  display: flex;
-  gap: 0.2rem;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.person__tab {
-  padding: 0.6rem 0.9rem;
-  font-size: 0.9rem;
-  color: var(--color-ash);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.person__tab--on {
-  color: var(--color-chalk);
-  box-shadow: inset 0 -2px 0 var(--color-brand);
-}
-
-.person__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
-  gap: 1rem;
-}
-
-.person__block {
-  padding: 1rem;
-  background-color: var(--band-ground);
-  border: 1px solid var(--color-hairline);
-}
-
-.person__block h2 {
-  margin: 0 0 0.5rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
-}
-
-.person__emails {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem 2rem;
 }
 
 .person__stack {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.person__action--danger {
-  border-color: var(--color-error, #e5484d);
-  color: var(--color-error, #e5484d);
-}
-
-.person__block p {
-  margin: 0 0 0.25rem;
-  overflow-wrap: anywhere;
+  padding-top: 1rem;
 }
 
 .person__periods {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
+  margin-top: 1.2rem;
 }
 
-.person__period {
+.person__acts {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 1.2rem;
-  padding: 0.8rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
+  gap: 0.6rem 1rem;
 }
 
-.person__what {
-  display: flex;
-  flex: 1 1 14rem;
-  flex-direction: column;
-}
-
-.person__action {
-  padding: 0.35rem 0.8rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.84rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
+.person__note,
 .person__said {
-  flex-basis: 100%;
-  font-size: 0.84rem;
-  color: var(--color-brand);
+  font-size: 0.9rem;
+  color: var(--color-ash);
 }
 
-@media (max-width: 839px) {
-  .person {
-    padding: 1.2rem 1.1rem 2rem;
-  }
+.person__note {
+  margin-top: 1rem;
 }
 </style>

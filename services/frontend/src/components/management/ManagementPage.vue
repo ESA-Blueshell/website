@@ -11,6 +11,7 @@
     />
     <management-head
       :eyebrow="eyebrow"
+      :testid="testid ? `${testid}-head` : undefined"
       :title="title"
     >
       <template
@@ -56,6 +57,12 @@ const {eyebrow, title, back = undefined, testid = undefined} = defineProps<{
 .mg-page :deep(.back-bar__column) {
   max-width: none;
   padding-inline: 2.4rem;
+}
+
+/* The chevrons stand inside the margin here: there is no band to their left to hang into. */
+.mg-page :deep(.back-bar__column > :first-child) {
+  width: 30px;
+  margin-left: 0;
 }
 
 @media (--phone) {

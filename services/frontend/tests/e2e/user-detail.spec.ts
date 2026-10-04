@@ -12,13 +12,13 @@ test.describe("one user's page", () => {
 
     await page.getByTestId("member-manager-open-71").click()
     await expect(page).toHaveURL(/\/management\/users\/71$/)
-    await expect(page.getByTestId("user-overview")).toContainText("Pays by transfer")
+    await expect(page.getByTestId("user-overview")).toContainText("pays by transfer")
 
     await page.getByTestId("user-tab-contributions").click()
     await expect(page).toHaveURL(/\/management\/users\/71\/contributions$/)
     await page.getByTestId("user-period-toggle-1").click()
     await expect(page.getByTestId("user-period-said-1")).toHaveText("Payment recorded.")
-    await expect(page.getByTestId("user-period-1")).toContainText("Paid on")
+    await expect(page.getByTestId("user-period-1")).toContainText("Paid")
 
     await page.reload()
     await expect(page.getByTestId("user-contributions")).toBeVisible()

@@ -21,10 +21,12 @@ const {to = "", meta = "", testid = undefined} = defineProps<{
   <router-link
     v-if="to"
     class="cut-row cut-row--link"
+    :class="{'cut-row--bare': !$slots.glyph}"
     :data-testid="testid"
     :to="to"
   >
     <span
+      v-if="$slots.glyph"
       aria-hidden="true"
       class="cut-row__glyph"
     ><slot name="glyph" /></span>
@@ -51,9 +53,11 @@ const {to = "", meta = "", testid = undefined} = defineProps<{
   <div
     v-else
     class="cut-row"
+    :class="{'cut-row--bare': !$slots.glyph}"
     :data-testid="testid"
   >
     <span
+      v-if="$slots.glyph"
       aria-hidden="true"
       class="cut-row__glyph"
     ><slot name="glyph" /></span>
@@ -92,6 +96,15 @@ const {to = "", meta = "", testid = undefined} = defineProps<{
   grid-template-columns: 2.75rem minmax(0, 1fr) auto 1.5rem;
   padding: 0 calc(var(--cut) + 1rem) 0 calc(var(--cut) + 1.1rem);
   transition: background-color 220ms ease;
+}
+
+/* A row with no glyph gives its place to the words. */
+.cut-row--bare {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.cut-row--link.cut-row--bare {
+  grid-template-columns: minmax(0, 1fr) auto 1.5rem;
 }
 
 .cut-row--link::before {

@@ -4,7 +4,10 @@
     :data-testid="testid"
   >
     <div class="mg-head__words">
-      <p class="mg-head__eyebrow">
+      <p
+        class="mg-head__eyebrow"
+        :data-testid="testid ? `${testid}-eyebrow` : undefined"
+      >
         {{ eyebrow }}
       </p>
       <h1 class="mg-head__title">

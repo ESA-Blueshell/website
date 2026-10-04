@@ -35,13 +35,16 @@ object UserManagerHelper {
         page.waitForURL("**/management/users/$userId/$tab")
     }
 
-    /** Deleting lives on a person's own page: opens their Account tab and answers its Delete button. */
+    /** Deleting lives on a person's own page: opens it from the list and answers its Delete button. */
     fun deleteButton(
         page: Page,
         userId: Long,
     ): Locator {
         val button = TestIdLocatorHelper.byTestId(page, "user-delete")
-        if (!button.isVisible) openTab(page, userId, "account")
+        if (!button.isVisible) {
+            TestIdLocatorHelper.byTestId(page, "member-manager-open-$userId").click()
+            page.waitForURL("**/management/users/$userId")
+        }
         return button
     }
 
@@ -53,6 +56,6 @@ object UserManagerHelper {
     }
 
     fun confirmDelete(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "deletion-confirmation-confirm-btn").click()
+        TestIdLocatorHelper.byTestId(page, "confirm-go").click()
     }
 }

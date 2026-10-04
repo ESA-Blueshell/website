@@ -3,7 +3,6 @@ package net.blueshell.api.system.frontend.management
 import com.microsoft.playwright.Page
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.PickerHelper
-import net.blueshell.api.system.frontend.helper.SelectHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import net.blueshell.systemtests.awaitResponseFrom
@@ -57,8 +56,8 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
             }
         assertThat(listResponse.status()).isEqualTo(200)
 
+        // The reason and the retry stand on the row itself; a press on the row opens the job's page.
         page.locator("[data-testid='job-row-$failedId']").first().waitFor()
-        page.locator("[data-testid='job-row-$failedId']").first().click()
 
         assertThat(
             page.locator("[data-testid='job-error-reason-$failedId']").innerText(),
@@ -198,7 +197,7 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(typesResponse.status()).isEqualTo(200)
 
         page.locator("[data-testid='job-run-form']").first().waitFor()
-        SelectHelper.pickFromList(page, "job-run-type", "Sync contact")
+        PickerHelper.pickByTyping(page, "job-run-type-picker", "Sync contact")
         // userId is a UserPicker over every user, so it is found by typing the
         // admin's email; the option is labelled "name (discord)", which this test
         // has no handle on, so it takes the single match the filter leaves.

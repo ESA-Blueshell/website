@@ -98,9 +98,9 @@ describe("the Discord catalogue words", () => {
     const lounge = {id: "1", name: "lounge", kind: "TEXT" as const}
     expect(openingDiffers({channel: lounge, kept: RoleAccess.WRITE, actual: RoleAccess.WRITE, differs: false})).toBeNull()
     expect(openingDiffers({channel: lounge, actual: RoleAccess.READ, differs: true})).toBe("On Discord only, at read only")
-    expect(openingDiffers({channel: lounge, kept: RoleAccess.READ, differs: true})).toBe("Not open on Discord, where the site keeps read only")
+    expect(openingDiffers({channel: lounge, kept: RoleAccess.READ, differs: true})).toBe("Not open on Discord, on the site read only")
     expect(openingDiffers({channel: lounge, kept: RoleAccess.WRITE, actual: RoleAccess.SPEAK, differs: true}))
-      .toBe("On Discord join and speak, where the site keeps read and write")
+      .toBe("On Discord join and speak, on the site read and write")
 
     const listed = [channel({id: "9", kind: "CATEGORY", name: "Games"}), channel({category: "Games"}), channel({id: "2", category: "Games"}), channel({id: "3", category: "Voice"})]
     expect(openingKind({channel: {id: "9", name: "Games", kind: "CATEGORY"}, differs: false}, listed)).toBe("Category · 2 channels")

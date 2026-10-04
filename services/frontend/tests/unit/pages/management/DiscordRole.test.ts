@@ -99,9 +99,9 @@ describe("a Discord role's page", () => {
     expect(wrapper.get('[data-testid="discord-opening-10"]').text()).toContain("Category · 1 channel")
     expect(picker(wrapper, "discord-opening-access-10").props("selectedKey")).toBe("WRITE")
     expect(wrapper.find('[data-testid="discord-opening-archive-10"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="discord-opening-differs-1"]').text()).toContain("On Discord read only, where the site keeps read and write.")
+    expect(wrapper.get('[data-testid="discord-opening-differs-1"]').text()).toContain("On Discord read only, on the site read and write.")
     expect(wrapper.get('[data-testid="discord-opening-set-1"]').text()).toBe("Set it on Discord")
-    expect(wrapper.get('[data-testid="discord-opening-set-3"]').text()).toBe("Keep it on the site")
+    expect(wrapper.get('[data-testid="discord-opening-set-3"]').text()).toBe("Set it on the site")
     expect(picker(wrapper, "discord-open-another").props("options").map((one: {key: string}) => one.key)).toEqual(["11", "20", "2"])
   })
 

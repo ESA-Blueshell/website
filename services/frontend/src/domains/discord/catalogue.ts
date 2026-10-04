@@ -80,7 +80,7 @@ export function catalogueFacts(roles: RoleRow[], toCreate: number, channels: Cat
   const listed = channels.filter((one) => one.kind !== "CATEGORY")
   const differing = listed.filter((one) => one.access?.differs).length
   return [
-    {label: "Roles kept", value: String(kept.length), sub: `${toCreate} still to create`, testid: "discord-fact-roles"},
+    {label: "Roles managed", value: String(kept.length), sub: `${toCreate} still to create`, testid: "discord-fact-roles"},
     {label: "Drift", value: plural(drifting.length, "role"), sub: `${plural(unlinked, "person", "people")} with no Discord linked`, testid: "discord-fact-drift"},
     {
       label: "Channels",
@@ -101,8 +101,8 @@ export function roleAccessWord(access: RoleAccess): string {
 export function openingDiffers(state: RoleOpeningState): string | null {
   if (!state.differs) return null
   if (!state.kept) return `On Discord only, at ${roleAccessWord(state.actual!).toLowerCase()}`
-  if (!state.actual) return `Not open on Discord, where the site keeps ${roleAccessWord(state.kept).toLowerCase()}`
-  return `On Discord ${roleAccessWord(state.actual).toLowerCase()}, where the site keeps ${roleAccessWord(state.kept).toLowerCase()}`
+  if (!state.actual) return `Not open on Discord, on the site ${roleAccessWord(state.kept).toLowerCase()}`
+  return `On Discord ${roleAccessWord(state.actual).toLowerCase()}, on the site ${roleAccessWord(state.kept).toLowerCase()}`
 }
 
 /** What one opening is: a category and how many channels sit in it, or a text or voice channel. */

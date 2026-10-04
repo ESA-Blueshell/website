@@ -281,7 +281,7 @@ onMounted(load)
                 type="button"
                 @click="setAccess(state, state.kept ?? state.actual!)"
               >
-                {{ state.kept ? "Set it on Discord" : "Keep it on the site" }}
+                {{ state.kept ? "Set it on Discord" : "Set it on the site" }}
               </button>
             </p>
           </li>

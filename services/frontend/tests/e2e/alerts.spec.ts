@@ -19,7 +19,7 @@ test.describe("Alerts in Management", () => {
     await expect(page.getByTestId("alert-open-cohort-without-list:5")).toHaveAttribute("href", "/management/platforms/brevo/cohort/5")
 
     await page.getByTestId("alert-hide-job-dead:700").click()
-    await expect(page.getByTestId("alert-hidden-toggle")).toContainText("Hidden for you (1)")
+    await expect(page.getByText("Hidden for you · 1")).toBeVisible()
 
     await page.getByTestId("alert-open-cohort-without-list:5").click()
     await expect(page.getByTestId("management-nav-alerts-count")).toContainText("1")

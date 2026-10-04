@@ -203,13 +203,14 @@ onMounted(async () => {
         :columns="6"
         :facts="facts"
       />
-      <list-head title="Since start-up" />
-      <fact-list
-        class="jobs__runtime"
-        :columns="4"
-        data-testid="job-stats-runtime"
-        :facts="sinceStartup"
-      />
+      <div data-testid="job-stats-runtime">
+        <list-head title="Since start-up" />
+        <fact-list
+          class="jobs__runtime"
+          :columns="4"
+          :facts="sinceStartup"
+        />
+      </div>
     </template>
 
     <div

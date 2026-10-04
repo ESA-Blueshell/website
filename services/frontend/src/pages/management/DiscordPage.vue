@@ -5,14 +5,20 @@
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import CheckBox from "@/components/island/CheckBox.vue"
+import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
+import CutButton from "@/components/island/CutButton.vue"
 import FactList from "@/components/island/FactList.vue"
-import FoldOut from "@/components/island/FoldOut.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import PageTabs from "@/components/island/PageTabs.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
 import {
   type ListedTarget,
+  type MissingTarget,
   type TargetOverview,
   TargetSystem,
   createMissingLists,
@@ -73,12 +79,49 @@ const load = async () => {
 
 const said = (message: string) => store.commit("setStatusSnackbarMessage", message)
 
-const create = async (targetIds: number[]) => {
-  if (acting.value) return
+const ROLE_COLUMNS: TableColumn[] = [
+  {key: "role", label: "Role", wrap: true},
+  {key: "follows", label: "Follows", wrap: true},
+  {key: "state", label: "State"},
+  {key: "access", label: "Has access to", wrap: true},
+]
+const CHANNEL_COLUMNS: TableColumn[] = [
+  {key: "channel", label: "Channel", wrap: true},
+  {key: "kind", label: "Kind"},
+  {key: "belongs", label: "Belongs to", wrap: true},
+  {key: "access", label: "Access", wrap: true},
+  {key: "state", label: "Differs on Discord"},
+]
+
+interface RoleRow {
+  key: string
+  missing: MissingTarget | null
+  role: ListedTarget | null
+  managed: boolean
+}
+
+// The roles still to create first, then the ones the site manages, then the ones made by hand.
+const roleRows = computed<RoleRow[]>(() => [
+  ...missing.value.map((one) => ({key: `missing-${one.targetId}`, missing: one, role: null, managed: true})),
+  ...kept.value.map((one) => ({key: one.externalId, missing: null, role: one, managed: true})),
+  ...others.value.map((one) => ({key: one.externalId, missing: null, role: one, managed: false})),
+])
+const roleLink = (row: RoleRow) => (row.role ? `/management/platforms/discord/roles/${row.role.externalId}` : null)
+
+type ChannelRow = CataloguedChannel & {category: string}
+const channelRows = computed<ChannelRow[]>(() => groups.value.flatMap((group) => group.channels.map((one) => ({...one, category: group.name}))))
+
+/* A role is created on Discord only after it is named once more and confirmed. */
+const pendingRole = ref<MissingTarget | null>(null)
+const createFailure = ref<string | null>(null)
+const create = async () => {
+  const role = pendingRole.value
+  if (acting.value || !role) return
   acting.value = true
-  const answered = await createMissingLists(SYSTEM, targetIds)
+  const answered = await createMissingLists(SYSTEM, [role.targetId])
   acting.value = false
-  if (!answered.ok) return said(answered.reason)
+  if (!answered.ok) return void (createFailure.value = answered.reason)
+  pendingRole.value = null
   said(answered.saved === 1 ? "The role is being created." : `${answered.saved} roles are being created.`)
   await load()
 }
@@ -122,21 +165,14 @@ onMounted(load)
 </script>
 
 <template>
-  <div
-    class="discord"
-    data-testid="discord-page"
+  <management-page
+    eyebrow="Platforms"
+    testid="discord-page"
+    title="Discord"
   >
-    <header class="discord__head">
-      <p class="discord__eyebrow">
-        Platforms
-      </p>
-      <h1 class="discord__title">
-        Discord
-      </h1>
-      <p class="discord__note">
-        The roles and channels the site manages in the association's server, and where Discord differs.
-      </p>
-    </header>
+    <template #lede>
+      The roles and channels the site manages in the association's server, and where Discord differs.
+    </template>
 
     <p
       v-if="loaded && !overview"
@@ -146,27 +182,32 @@ onMounted(load)
       Discord could not be read. Try again in a moment.
     </p>
 
-    <notice-box
-      v-if="matches.length"
-      testid="discord-matches"
-      :title="`${matches.length} existing ${matches.length === 1 ? 'role matches' : 'roles match'} by name`"
-    >
-      <p>
-        Committees and teams on the site have a role or channel on Discord with the same name. Check the matches and
-        link them in one go; history on Discord stays.
-      </p>
-      <button
-        class="discord__action discord__action--on-notice"
-        data-testid="discord-review-matches"
-        type="button"
-        @click="openReview"
-      >
-        Review matches
-      </button>
-    </notice-box>
-
     <template v-if="overview">
-      <fact-list :facts="facts" />
+      <fact-list
+        class="discord__facts"
+        :facts="facts"
+      />
+
+      <notice-box
+        v-if="matches.length"
+        class="discord__notice"
+        testid="discord-matches"
+        :title="`${matches.length} existing ${matches.length === 1 ? 'role matches' : 'roles match'} by name`"
+      >
+        <p>
+          Committees and teams on the site have a role or channel on Discord with the same name. Check the matches and
+          link them in one go. Nothing on Discord is changed or lost.
+        </p>
+        <div class="discord__acts">
+          <cut-button
+            small
+            testid="discord-review-matches"
+            @click="openReview"
+          >
+            Review matches
+          </cut-button>
+        </div>
+      </notice-box>
 
       <page-tabs
         :entries="TABS"
@@ -174,120 +215,149 @@ onMounted(load)
         testid="discord-tabs"
       />
 
-      <section
+      <management-table
         v-if="!onChannels"
-        class="discord__group"
-        data-testid="discord-roles"
+        class="discord__table"
+        :columns="ROLE_COLUMNS"
+        :row-key="(row) => row.key"
+        :row-testid="(row) => (row.missing ? `discord-role-missing-${row.missing.targetId}` : `discord-role-${row.key}`)"
+        :rows="roleRows"
+        testid="discord-roles"
+        :to="roleLink"
       >
-        <p class="discord__folder">
-          <span>Managed by the site</span>
-          <span class="discord__sub">{{ kept.length + missing.length }} {{ kept.length + missing.length === 1 ? "role" : "roles" }}</span>
-        </p>
-        <ul class="discord__rows">
-          <li
-            v-for="role in missing"
-            :key="`missing-${role.targetId}`"
-            class="discord__row"
-            :data-testid="`discord-role-missing-${role.targetId}`"
+        <template #count>
+          {{ kept.length + missing.length }} managed by the site, {{ others.length }} not
+        </template>
+        <template #empty>
+          No roles yet.
+        </template>
+        <template #role="{row}">
+          <span
+            v-if="row.missing"
+            class="mg-name"
+          >{{ row.missing.cohortLabel }}</span>
+          <router-link
+            v-else-if="row.role"
+            class="mg-name discord__mention"
+            :to="`/management/platforms/discord/roles/${row.role.externalId}`"
           >
-            <span class="discord__name">{{ role.cohortLabel }}</span>
-            <span class="discord__sub">{{ followsOf({missing: role}) }}</span>
-            <state-mark kind="not-created">
-              {{ role.creating ? "Being created" : "No role yet" }}
-            </state-mark>
-            <span class="discord__sub" />
-            <span class="discord__row-acts">
-              <button
-                class="discord__mini"
-                :data-testid="`discord-create-${role.targetId}`"
-                :disabled="acting || role.creating"
-                type="button"
-                @click="create([role.targetId])"
-              >
-                Create
-              </button>
-            </span>
-          </li>
-          <li
-            v-for="role in kept"
-            :key="role.externalId"
-            class="discord__row"
-            :data-testid="`discord-role-${role.externalId}`"
+            @{{ row.role.label }}
+          </router-link>
+          <span class="mg-sub">{{ row.managed ? "Managed by the site" : "Made by hand on Discord, not managed by the site" }}</span>
+        </template>
+        <template #follows="{row}">
+          <span class="mg-quiet">{{ row.missing ? followsOf({missing: row.missing}) : row.managed && row.role ? followsRow(row.role) : "Nothing" }}</span>
+        </template>
+        <template #state="{row}">
+          <state-mark
+            v-if="row.missing"
+            kind="not-created"
           >
-            <span class="discord__name"><router-link :to="`/management/platforms/discord/roles/${role.externalId}`">@{{ role.label }}</router-link></span>
-            <span class="discord__sub">{{ followsRow(role) }}</span>
-            <state-mark
-              :kind="driftOf(role).kind"
-              :testid="`discord-role-state-${role.externalId}`"
-            >
-              {{ driftOf(role).word }}
+            {{ row.missing.creating ? "Being created" : "No role yet" }}
+          </state-mark>
+          <state-mark
+            v-else-if="row.managed && row.role"
+            :kind="driftOf(row.role).kind"
+            :testid="`discord-role-state-${row.role.externalId}`"
+          >
+            {{ driftOf(row.role).word }}
+          </state-mark>
+          <state-mark
+            v-else
+            kind="not-compared"
+          >
+            Not compared
+          </state-mark>
+        </template>
+        <template #access="{row}">
+          <span class="mg-quiet">{{ row.role ? opensOf(row.role.externalId, channels) : "" }}</span>
+        </template>
+        <template #acts="{row}">
+          <mini-button
+            v-if="row.missing"
+            :disabled="acting || row.missing.creating"
+            :testid="`discord-create-${row.missing.targetId}`"
+            @click="pendingRole = row.missing; createFailure = null"
+          >
+            Create
+          </mini-button>
+        </template>
+        <template #phone="{row}">
+          <management-row
+            :meta="row.managed ? 'Managed by the site' : 'Not managed by the site'"
+            :name="row.missing ? row.missing.cohortLabel : `@${row.role?.label}`"
+            :testid="row.missing ? `discord-role-missing-${row.missing.targetId}` : `discord-role-${row.key}`"
+            :to="roleLink(row) ?? ''"
+          >
+            <state-mark :kind="row.missing ? 'not-created' : row.managed && row.role ? driftOf(row.role).kind : 'not-compared'">
+              {{ row.missing ? "No role yet" : row.managed && row.role ? driftOf(row.role).word : "Not compared" }}
             </state-mark>
-            <span class="discord__sub">{{ opensOf(role.externalId, channels) }}</span>
-            <span class="discord__row-acts" />
-          </li>
-        </ul>
-      </section>
+          </management-row>
+        </template>
+      </management-table>
 
-      <fold-out
-        v-if="!onChannels && others.length"
-        :label="`Not managed by the site · ${others.length}`"
-        testid="discord-other-roles"
+      <management-table
+        v-else
+        class="discord__table"
+        :columns="CHANNEL_COLUMNS"
+        :row-key="(channel) => channel.id"
+        :row-testid="(channel) => `discord-channel-${channel.id}`"
+        :rows="channelRows"
+        testid="discord-channels"
       >
-        <p class="discord__note discord__note--small">
-          Roles made by hand on Discord. The site leaves their holders alone; the role bot's roles are never listed.
-        </p>
-        <ul class="discord__rows">
-          <li
-            v-for="role in others"
-            :key="role.externalId"
-            class="discord__row"
-            :data-testid="`discord-role-${role.externalId}`"
+        <template #count>
+          {{ channelRows.length }} {{ channelRows.length === 1 ? "channel" : "channels" }} in {{ groups.length }} {{ groups.length === 1 ? "category" : "categories" }}
+        </template>
+        <template #empty>
+          No channels yet.
+        </template>
+        <template #channel="{row}">
+          <span class="discord__channel">#{{ row.name }}</span>
+          <span class="mg-sub">{{ row.category === ARCHIVE_CATEGORY ? `${row.category} · read only, kept for history` : row.category }}</span>
+        </template>
+        <template #kind="{row}">
+          {{ kindOf(row) }}
+        </template>
+        <template #belongs="{row}">
+          <span class="mg-quiet">{{ belongsTo(row, roles) }}</span>
+        </template>
+        <template #access="{row}">
+          <span class="mg-quiet">{{ accessOf(row, roles) }}</span>
+        </template>
+        <template #state="{row}">
+          <state-mark
+            :kind="row.access?.differs ? 'extra' : 'in-step'"
+            :testid="`discord-channel-differs-${row.id}`"
           >
-            <span class="discord__name"><router-link :to="`/management/platforms/discord/roles/${role.externalId}`">@{{ role.label }}</router-link></span>
-            <span class="discord__sub">Nothing</span>
-            <span />
-            <span class="discord__sub">{{ opensOf(role.externalId, channels) }}</span>
-            <span />
-          </li>
-        </ul>
-      </fold-out>
-
-      <component
-        :is="group.name === ARCHIVE_CATEGORY ? FoldOut : 'section'"
-        v-for="group in onChannels ? groups : []"
-        :key="group.name"
-        class="discord__group"
-        :data-testid="`discord-channels-${group.name}`"
-        v-bind="group.name === ARCHIVE_CATEGORY ? {label: `${group.name} · ${group.channels.length} channels · read only, kept for history`, testid: `discord-channels-${group.name}`} : {}"
-      >
-        <p
-          v-if="group.name !== ARCHIVE_CATEGORY"
-          class="discord__folder"
-        >
-          <span>{{ group.name }}</span>
-          <span class="discord__sub">{{ group.channels.length }} {{ group.channels.length === 1 ? "channel" : "channels" }}</span>
-        </p>
-        <ul class="discord__rows">
-          <li
-            v-for="channel in group.channels"
-            :key="channel.id"
-            class="discord__row discord__row--channel"
-            :data-testid="`discord-channel-${channel.id}`"
+            {{ differsOf(row) }}
+          </state-mark>
+        </template>
+        <template #phone="{row}">
+          <management-row
+            :meta="`${row.category} · ${kindOf(row)} · ${accessOf(row, roles)}`"
+            :name="`#${row.name}`"
+            :testid="`discord-channel-${row.id}`"
           >
-            <span class="discord__name">#{{ channel.name }}</span>
-            <span class="discord__sub">{{ kindOf(channel) }}</span>
-            <span class="discord__sub">{{ belongsTo(channel, roles) }}</span>
-            <span class="discord__sub">{{ accessOf(channel, roles) }}</span>
-            <state-mark
-              :kind="channel.access?.differs ? 'extra' : 'in-step'"
-              :testid="`discord-channel-differs-${channel.id}`"
-            >
-              {{ differsOf(channel) }}
+            <state-mark :kind="row.access?.differs ? 'extra' : 'in-step'">
+              {{ differsOf(row) }}
             </state-mark>
-          </li>
-        </ul>
-      </component>
+          </management-row>
+        </template>
+      </management-table>
     </template>
+
+    <confirm-dialog
+      confirm-label="Create the role"
+      :failure="createFailure"
+      :open="pendingRole !== null"
+      :question="pendingRole ? `The role @${pendingRole.cohortLabel} is created on Discord and given to the ${pendingRole.memberCount} ${pendingRole.memberCount === 1 ? 'person' : 'people'} it is for. A role is deleted on Discord itself, not from here.` : ''"
+      testid="discord-create-dialog"
+      :title="pendingRole ? `Create @${pendingRole.cohortLabel} on Discord?` : ''"
+      :working="acting"
+      working-label="Creating"
+      @confirm="create"
+      @update:open="pendingRole = $event ? pendingRole : null"
+    />
 
     <modal-dialog
       :open="reviewing"
@@ -297,8 +367,8 @@ onMounted(load)
     >
       <div class="discord__form">
         <p class="discord__note">
-          Each committee or team ticked takes the role and channels named as it is. Channels the role already has access to stay
-          as they are.
+          Each committee or team you tick is linked to the role and the channels named. Channels the role already has
+          access to stay as they are.
         </p>
         <ul class="discord__moves">
           <li
@@ -323,184 +393,66 @@ onMounted(load)
         </p>
       </div>
       <template #footer>
-        <button
-          class="discord__action discord__action--main"
-          data-testid="discord-matches-link"
+        <cut-button
           :disabled="acting || picked.size === 0"
-          type="button"
+          testid="discord-matches-link"
+          tone="solid"
           @click="adopt"
         >
           Link {{ picked.size }} {{ picked.size === 1 ? "match" : "matches" }}
-        </button>
+        </cut-button>
       </template>
     </modal-dialog>
-  </div>
+  </management-page>
 </template>
 
 <style scoped>
-.discord {
+.discord__facts {
+  padding: 1.1rem 0 1.2rem;
+}
+
+.discord__notice {
+  margin-bottom: 0.4rem;
+}
+
+.discord__table {
+  margin-top: 1.2rem;
+}
+
+.discord__acts {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 76rem;
-  padding: 2rem 2.4rem 3rem;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
-.discord__head {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+.discord__mention {
+  text-transform: none;
 }
 
-.discord__eyebrow {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow, var(--color-ash));
-}
-
-.discord__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.discord__note {
-  margin: 0;
-  max-width: 48rem;
-  color: var(--color-ash);
-}
-
-.discord__note--small {
-  font-size: 0.86rem;
-}
-
-.discord__failure {
-  margin: 0;
-  color: var(--color-error, #e5484d);
-}
-
-.discord__action,
-.discord__mini {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-.discord__mini {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
-}
-
-/* The notice's tint takes the brand text below contrast, so the button keeps the page's ink. */
-.discord__action--on-notice {
-  align-self: flex-start;
-  border-color: var(--color-brand);
-}
-
-.discord__action--main {
-  align-self: flex-start;
-  border-color: var(--color-brand);
-  color: var(--color-brand);
-}
-
-.discord__action:disabled,
-.discord__mini:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.discord__group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.discord__folder {
-  display: flex;
-  align-items: baseline;
-  gap: 0.8rem;
-  margin: 0.8rem 0 0;
+.discord__channel {
   font-weight: 600;
-}
-
-.discord__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.discord__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) 10rem minmax(0, 1fr) 5rem;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.discord__row--channel {
-  grid-template-columns: minmax(0, 1.2fr) 5rem minmax(0, 1.2fr) minmax(0, 1.4fr) 10rem;
-}
-
-.discord__name {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-}
-
-.discord__name a {
-  color: var(--color-chalk);
-}
-
-.discord__sub {
-  overflow: hidden;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.discord__row-acts {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.discord__moves {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .discord__form {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.8rem;
 }
 
-@media (max-width: 839px) {
-  .discord {
-    padding: 1.2rem 1.1rem 2rem;
-  }
+.discord__moves {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
-  .discord__row,
-  .discord__row--channel {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
+.discord__note {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--color-ash);
+}
 
-  .discord__row > .discord__sub {
-    display: none;
-  }
+.discord__failure {
+  font-size: 0.88rem;
+  color: var(--color-danger);
 }
 </style>

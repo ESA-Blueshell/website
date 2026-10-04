@@ -69,7 +69,7 @@ describe("the Discord page", () => {
 
   afterEach(() => unmountAll(wrappers, "DiscordPage"))
 
-  it("lists the kept roles with their drift and what they open, and the roles kept by nobody folded", async () => {
+  it("lists the roles in one table: the missing first, the managed with their drift and access, then the ones made by hand", async () => {
     const wrapper = await mount()
 
     expect(api.findTargetOverview).toHaveBeenCalledWith({path: {system: "DISCORD"}})
@@ -79,10 +79,11 @@ describe("the Discord page", () => {
     expect(wrapper.get('[data-testid="discord-role-900"]').text()).toContain("1 category, 1 channel")
     expect(wrapper.get('[data-testid="discord-role-missing-3"]').text()).toContain("No role yet")
     expect(wrapper.get('[data-testid="discord-fact-drift"]').text()).toContain("2 people with no Discord linked")
-    expect(wrapper.find('[data-testid="discord-role-950"]').exists()).toBe(false)
-
-    await wrapper.get('[data-testid="discord-other-roles-toggle"]').trigger("click")
+    expect(wrapper.get('[data-testid="discord-role-900"]').text()).toContain("Managed by the site")
     expect(wrapper.get('[data-testid="discord-role-950"]').text()).toContain("@Gamers")
+    expect(wrapper.get('[data-testid="discord-role-950"]').text()).toContain("not managed by the site")
+    expect(wrapper.get('[data-testid="discord-role-900"] a').attributes("to")).toBe("/management/platforms/discord/roles/900")
+    expect(wrapper.findAll('[data-testid^="discord-role-"]')[0]!.attributes("data-testid")).toBe("discord-role-missing-3")
   })
 
   it("lists the channels by category with what they belong to, who gets in and where Discord differs", async () => {
@@ -100,30 +101,42 @@ describe("the Discord page", () => {
     expect(valo).toContain("Everyone reads, @Member writes")
     expect(wrapper.get('[data-testid="discord-channel-differs-2"]').text()).toBe("Everyone writes")
     expect(wrapper.get('[data-testid="discord-channel-differs-1"]').text()).toBe("No")
-    expect(wrapper.find('[data-testid="discord-channel-3"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="discord-channel-4"]').exists()).toBe(false)
-
-    await wrapper.get('[data-testid="discord-channels-Archive-toggle"]').trigger("click")
     expect(wrapper.get('[data-testid="discord-channel-3"]').text()).toContain("Voice")
+    expect(wrapper.get('[data-testid="discord-channel-3"]').text()).toContain("read only, kept for history")
   })
 
-  it("creates a missing role", async () => {
+  it("creates a missing role only once that is confirmed, and says why when Discord refuses", async () => {
     const wrapper = await mount()
 
+    const dialog = () => wrapper.findComponent({name: "ConfirmDialog"})
+    const confirm = async () => {
+      await wrapper.get('[data-testid="discord-create-3"]').trigger("click")
+      await settle()
+      expect(dialog().props("open")).toBe(true)
+      dialog().vm.$emit("confirm")
+      await settle()
+    }
+
+    // Nothing is created by the first press: the role is named once more and confirmed.
     await wrapper.get('[data-testid="discord-create-3"]').trigger("click")
     await settle()
+    expect(dialog().props("title")).toContain("on Discord?")
+    expect(api.createMissingTargets).not.toHaveBeenCalled()
+    dialog().vm.$emit("update:open", false)
+    await settle()
+    expect(dialog().props("open")).toBe(false)
 
+    await confirm()
     expect(api.createMissingTargets).toHaveBeenCalledWith({path: {system: "DISCORD"}, body: {targetIds: [3]}})
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The role is being created.")
 
     api.createMissingTargets.mockResolvedValueOnce({status: 200, data: {queued: 2}})
-    await wrapper.get('[data-testid="discord-create-3"]').trigger("click")
-    await settle()
+    await confirm()
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "2 roles are being created.")
 
     api.createMissingTargets.mockResolvedValueOnce({status: 503, error: {code: "TargetSystemUnavailable", message: "Discord cannot be reached now."}, response: {status: 503}})
-    await wrapper.get('[data-testid="discord-create-3"]').trigger("click")
-    await settle()
+    await confirm()
+    expect(dialog().props("failure")).toContain("cannot be reached now")
     expect(api.findTargetOverview).toHaveBeenCalledTimes(3)
   })
 
@@ -178,5 +191,18 @@ describe("the Discord page", () => {
     const unread = await mount()
     expect(unread.get('[data-testid="discord-unreadable"]').text()).toContain("Discord could not be read")
     expect(unread.find('[data-testid="discord-matches"]').exists()).toBe(false)
+  })
+
+  it("draws roles and channels as rows on a phone", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const roles = await mount()
+    expect(roles.get('[data-testid="discord-role-900-open"]').attributes("to")).toBe("/management/platforms/discord/roles/900")
+    expect(roles.get('[data-testid="discord-role-missing-3"]').text()).toContain("No role yet")
+    expect(roles.get('[data-testid="discord-role-950"]').text()).toContain("Not compared")
+
+    here.path = "/management/platforms/discord/channels"
+    const channels = await mount()
+    vi.unstubAllGlobals()
+    expect(channels.get('[data-testid="discord-channel-1"]').text()).toContain("#")
   })
 })

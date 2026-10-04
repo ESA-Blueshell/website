@@ -333,12 +333,15 @@ const selectionLine = computed(() => {
 const phone = usePhone()
 const router = useRouter()
 
-/* The table's own search: the rows whose text holds what is typed, whatever the case. */
+/* The table's own search: the rows whose text holds what is typed, whatever the case. Each row's
+   text is worked out once as the rows arrive, not again for every letter typed. */
 const query = ref("")
+const texts = computed(() => (searchText ? rows.map((row) => searchText(row).toLowerCase()) : []))
 const kept = computed(() => {
+  const found = texts.value
   const wanted = query.value.trim().toLowerCase()
   if (!searchText || wanted === "") return rows
-  return rows.filter((row) => searchText(row).toLowerCase().includes(wanted))
+  return rows.filter((_, index) => found[index]?.includes(wanted))
 })
 const counted = computed(() => (kept.value.length === rows.length ? `Showing ${rows.length}` : `Showing ${kept.value.length} of ${rows.length}`))
 

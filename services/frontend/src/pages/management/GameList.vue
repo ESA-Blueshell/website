@@ -54,7 +54,7 @@ onMounted(async () => {
           Games
         </h1>
         <p class="games__note">
-          Every game, its channels on Discord and where Discord differs from the access the site keeps.
+          Every game, its channels on Discord and where Discord differs from the access set on the site.
         </p>
       </div>
       <router-link

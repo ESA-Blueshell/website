@@ -1,6 +1,13 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import {safeFormatISO} from "@/utils/datetime"
+import CheckBox from "@/components/island/CheckBox.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FormField from "@/components/island/FormField.vue"
+import RoleMark from "@/components/island/RoleMark.vue"
+import TextInput from "@/components/island/TextInput.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import {formatMoment} from "@/utils/timestamps"
 import {
   listRoleChanges,
   readRoleStanding,
@@ -43,8 +50,15 @@ const sourceLabels: Record<string, string> = {
   [RoleSource.ACCOUNT]: "every account has it",
   [RoleSource.MEMBERSHIP]: "from their membership",
   [RoleSource.COMMITTEE_SEAT]: "from their committee seat",
-  [RoleSource.GRANT]: "granted",
+  [RoleSource.GRANT]: "added by an admin",
 }
+
+const HISTORY: TableColumn[] = [
+  {key: "when", label: "When"},
+  {key: "change", label: "Change", wrap: true},
+  {key: "by", label: "By"},
+  {key: "why", label: "Why", wrap: true},
+]
 
 const dirty = computed(() => {
   const before = [...(standing.value?.granted ?? [])].sort()
@@ -94,6 +108,13 @@ function label(role: Role): string {
   return `${role}`.toLocaleLowerCase()
 }
 
+/** A role as its mark writes it: "Board". */
+const named = (role: Role) => `${role}`.charAt(0) + label(role).slice(1)
+
+const tick = (role: Role, on: boolean) => {
+  chosen.value = on ? [...chosen.value, role] : chosen.value.filter((one) => one !== role)
+}
+
 watch(() => props.userId, load, {immediate: true})
 </script>
 
@@ -102,150 +123,197 @@ watch(() => props.userId, load, {immediate: true})
     class="roles-panel"
     data-testid="user-roles-panel"
   >
-    <v-alert
+    <p
       v-if="loadFailure"
-      class="mb-4"
+      class="roles-panel__failure"
       data-testid="user-roles-load-failure"
-      type="error"
-      variant="tonal"
+      role="alert"
     >
       {{ loadFailure }}
-    </v-alert>
-
-    <v-progress-linear
+    </p>
+    <p
       v-if="loading"
-      indeterminate
-    />
+      class="roles-panel__note"
+      role="status"
+    >
+      Reading the roles.
+    </p>
 
     <template v-if="standing">
-      <div class="mb-2 text-subtitle-2">
-        Roles an admin grants
+      <list-head title="Roles an admin adds" />
+      <div class="roles-panel__ticks">
+        <span
+          v-for="role in standing.assignable"
+          :key="role"
+          :data-testid="`user-roles-checkbox-${label(role)}`"
+        >
+          <check-box
+            :disabled="!editable"
+            :hint="standing.dormant?.includes(role) ? 'Dormant' : ''"
+            :label="named(role)"
+            :model-value="chosen.includes(role)"
+            @update:model-value="tick(role, $event)"
+          />
+        </span>
       </div>
-      <v-checkbox
-        v-for="role in standing.assignable"
-        :key="role"
-        v-model="chosen"
-        class="text-capitalize"
-        :data-testid="`user-roles-checkbox-${label(role)}`"
-        :disabled="!editable"
-        hide-details
-        :label="standing.dormant?.includes(role) ? `${label(role)} — dormant` : label(role)"
-        :value="role"
-      />
       <p
         v-if="standing.dormant?.length"
-        class="text-body-2 text-medium-emphasis mt-1"
+        class="roles-panel__note"
         data-testid="user-roles-dormant"
       >
         A dormant role allows nothing until this person sets up two-factor authentication.
       </p>
 
-      <div class="mb-2 mt-4 text-subtitle-2">
-        Roles that follow a record
-      </div>
-      <div
+      <list-head title="Roles that follow a record" />
+      <ul
         v-if="standing.derived.length"
-        class="d-flex flex-wrap ga-2"
+        class="roles-panel__marks"
       >
-        <v-chip
+        <li
           v-for="entry in standing.derived"
           :key="entry.role"
           :data-testid="`user-roles-derived-${label(entry.role)}`"
-          size="small"
-          variant="flat"
         >
-          <span class="text-capitalize">{{ label(entry.role) }}</span>
-          <span class="ml-1 text-medium-emphasis">— {{ sourceLabels[entry.source] ?? entry.source }}</span>
-        </v-chip>
-      </div>
-      <div
+          <role-mark :role="named(entry.role)" />
+          <span>{{ sourceLabels[entry.source] ?? entry.source }}</span>
+        </li>
+      </ul>
+      <p
         v-else
-        class="text-medium-emphasis"
+        class="roles-panel__note"
       >
         None.
-      </div>
+      </p>
 
       <template v-if="standing.implied.length">
-        <div class="mb-2 mt-4 text-subtitle-2">
-          Roles that come with the ones above
-        </div>
-        <div class="d-flex flex-wrap ga-2">
-          <v-chip
+        <list-head title="Roles that come with the ones above" />
+        <ul class="roles-panel__marks">
+          <li
             v-for="role in standing.implied"
             :key="role"
             :data-testid="`user-roles-implied-${label(role)}`"
-            size="small"
-            variant="outlined"
           >
-            <span class="text-capitalize">{{ label(role) }}</span>
-            <span class="ml-1 text-medium-emphasis">— implied</span>
-          </v-chip>
-        </div>
+            <role-mark :role="named(role)" />
+          </li>
+        </ul>
       </template>
 
-      <template v-if="editable">
-        <v-text-field
-          v-model="note"
-          class="mt-4"
-          data-testid="user-roles-note"
+      <form
+        v-if="editable"
+        class="roles-panel__save"
+        @submit.prevent="save"
+      >
+        <form-field
+          v-slot="field"
           label="Why (optional)"
-          maxlength="1023"
-        />
-        <v-btn
-          color="primary"
-          data-testid="user-roles-save-btn"
-          :disabled="!dirty"
-          :loading="saving"
-          variant="flat"
-          @click="save"
+          testid="user-roles-note"
         >
-          Save roles
-        </v-btn>
-      </template>
+          <text-input
+            v-model="note"
+            :control-id="field.controlId"
+            maxlength="1023"
+          />
+        </form-field>
+        <cut-button
+          :disabled="!dirty || saving"
+          submit
+          testid="user-roles-save-btn"
+          tone="solid"
+        >
+          {{ saving ? "Saving" : "Save roles" }}
+        </cut-button>
+      </form>
 
-      <v-alert
+      <p
         v-if="failure"
-        class="mb-4"
+        class="roles-panel__failure"
         data-testid="user-roles-failure"
-        type="error"
-        variant="tonal"
+        role="alert"
       >
         {{ failure }}
-      </v-alert>
+      </p>
 
-      <div class="mb-2 mt-2 text-subtitle-2">
-        History
-      </div>
-      <div
+      <list-head title="History" />
+      <p
         v-if="!history.length"
-        class="text-medium-emphasis"
+        class="roles-panel__note"
         data-testid="user-roles-history-empty"
       >
         No role has been changed here yet.
-      </div>
-      <v-list
+      </p>
+      <management-table
         v-else
-        density="compact"
-        data-testid="user-roles-history"
+        :columns="HISTORY"
+        :row-key="(change) => change.id"
+        :row-testid="(change) => `user-roles-history-${change.id}`"
+        search-label="Search changes"
+        :search-text="(change) => `${change.actorName} ${change.note ?? ''} ${[...change.before, ...change.after].join(' ')}`"
+        :rows="history"
+        testid="user-roles-history"
       >
-        <v-list-item
-          v-for="change in history"
-          :key="change.id"
-          :data-testid="`user-roles-history-${change.id}`"
-        >
-          <v-list-item-title>
-            {{ change.before.map(label).join(", ") || "nothing" }}
-            →
-            {{ change.after.map(label).join(", ") || "nothing" }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            {{ change.actorName }}, {{ safeFormatISO(change.changedAt, "dd LLL yyyy HH:mm") }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle v-if="change.note">
-            {{ change.note }}
-          </v-list-item-subtitle>
-        </v-list-item>
-      </v-list>
+        <template #when="{row}">
+          {{ formatMoment(row.changedAt) }}
+        </template>
+        <template #change="{row}">
+          {{ row.before.map(named).join(", ") || "Nothing" }} to {{ row.after.map(named).join(", ") || "nothing" }}
+        </template>
+        <template #by="{row}">
+          {{ row.actorName }}
+        </template>
+        <template #why="{row}">
+          <span class="mg-quiet">{{ row.note }}</span>
+        </template>
+      </management-table>
     </template>
   </section>
 </template>
+
+<style scoped>
+.roles-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.roles-panel__ticks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 2rem;
+}
+
+.roles-panel__note {
+  font-size: 0.88rem;
+  color: var(--color-ash);
+}
+
+.roles-panel__failure {
+  color: var(--color-danger);
+}
+
+.roles-panel__marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.6rem;
+}
+
+.roles-panel__marks li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--color-ash);
+}
+
+.roles-panel__save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.8rem 1.2rem;
+  margin-top: 0.6rem;
+}
+
+.roles-panel__save :deep(.island-field) {
+  flex: 1 1 20rem;
+  max-width: 36rem;
+}
+</style>

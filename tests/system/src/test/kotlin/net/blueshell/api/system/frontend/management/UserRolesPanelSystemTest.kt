@@ -55,7 +55,7 @@ class UserRolesPanelSystemTest : PlaywrightTestBase() {
 
         val history = TestIdLocatorHelper.byTestId(page, "user-roles-history")
         history.waitFor()
-        assertThat(history.textContent()).contains("board").contains("Took office today")
+        assertThat(history.textContent()).contains("Board").contains("Took office today")
 
         // Guest is the account's own role, so the panel says so rather than offering a box.
         TestIdLocatorHelper.byTestId(page, "user-roles-derived-guest").waitFor()

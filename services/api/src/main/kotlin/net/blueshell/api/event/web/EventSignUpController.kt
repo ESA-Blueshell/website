@@ -74,10 +74,14 @@ class EventSignUpController
             @PathVariable eventId: Long,
             @Valid @RequestBody request: CreateEventSignUpRequest,
             @AuthenticationPrincipal principal: UserPrincipal?,
+            @RequestParam(required = false, defaultValue = "false") notify: Boolean,
             response: HttpServletResponse,
         ): EventSignUpResponse {
-            val eventSignUp = useCases.create(request.asData(eventId), principal?.id)
-            eventSignUp.guest?.accessTokenRaw?.let { response.setHeader(GUEST_ACCESS_TOKEN_HEADER, it) }
+            val eventSignUp = useCases.create(request.asData(eventId), principal?.id, notify)
+            // The token is the guest's own: a signed-in caller added somebody else and is not handed it.
+            if (principal == null) {
+                eventSignUp.guest?.accessTokenRaw?.let { response.setHeader(GUEST_ACCESS_TOKEN_HEADER, it) }
+            }
             return eventSignUp.asResponse()
         }
 

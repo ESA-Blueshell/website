@@ -16543,6 +16543,12 @@ paths:
         schema:
           format: int64
           type: integer
+      - in: query
+        name: notify
+        required: false
+        schema:
+          default: false
+          type: boolean
       requestBody:
         content:
           application/json:

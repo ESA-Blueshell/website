@@ -34,6 +34,7 @@ class EventSignUpService
         fun findById(id: Long): EventSignUp =
             repository.findById(id).orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "EventSignUp not found with id: $id") }
 
+        /** Somebody's own sign-up. A guest's access link travels with it, to the confirmation. */
         @Transactional
         fun create(entity: EventSignUp): EventSignUp {
             val saved = written(entity)
@@ -44,6 +45,15 @@ class EventSignUpService
                     actor = actor,
                 )
             }
+            countMoved(saved.eventId)
+            return saved
+        }
+
+        /** A sign-up the board adds. It carries no access link, so no confirmation goes to a guest. */
+        @Transactional
+        fun add(entity: EventSignUp): EventSignUp {
+            val saved = written(entity)
+            trackedEvents.publish { actor -> EventSignUpCreated(saved.id!!, actor = actor) }
             countMoved(saved.eventId)
             return saved
         }

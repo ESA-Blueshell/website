@@ -112,18 +112,18 @@ onMounted(async () => {
 
       <template v-if="hasRole">
         <form-field
-          label="Channels the role opens"
+          label="Channels the role has access to"
           :testid="`${testid}-channels`"
         >
           <template #default="{controlId, labelId}">
             <chip-picker
               :chosen="chosenChannels"
               :control-id="controlId"
-              empty-note="Every channel is opened already."
+              empty-note="The role has access to every channel already."
               :labelled-by="labelId"
               :options="pickable"
-              placeholder="Open a channel to the role"
-              :remove-label="(label: string) => `Stop opening #${label}`"
+              placeholder="Link an existing channel"
+              :remove-label="(label: string) => `Remove access to #${label}`"
               sigil="#"
               :testid-prefix="`${testid}-channel-picker`"
               @add="(keys: string[]) => channelIds = [...channelIds, ...keys]"
@@ -133,8 +133,8 @@ onMounted(async () => {
         </form-field>
         <check-box
           v-model="makeChannel"
-          :hint="`Under ${category}, readable only by the role.`"
-          :label="`Make a private channel #${slug.trim() || 'named after it'}`"
+          :hint="`Under ${category}, accessible only by the role.`"
+          :label="`Create a new private channel #${slug.trim() || 'named after it'}`"
           :testid="`${testid}-make-channel`"
         />
       </template>

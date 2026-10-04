@@ -193,7 +193,7 @@ describe("a Discord role's page", () => {
     api.listRoleOpenings.mockResolvedValue({status: 200, data: []})
     api.listCataloguedChannels.mockResolvedValue({status: 200, data: []})
     const empty = await mount()
-    expect(empty.get('[data-testid="discord-role-opens-nothing"]').text()).toBe("The role opens nothing yet.")
+    expect(empty.get('[data-testid="discord-role-opens-nothing"]').text()).toBe("The role has access to no channel yet.")
     expect(empty.text()).toContain("Made by hand on Discord")
     await empty.get('[data-testid="discord-create-channel"]').trigger("click")
     await settle()

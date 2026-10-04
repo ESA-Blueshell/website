@@ -223,14 +223,14 @@ onMounted(load)
         data-testid="discord-role-openings"
       >
         <p class="role__folder">
-          What it opens
+          Channels the role has access to
         </p>
         <p
           v-if="openings.length === 0"
           class="role__note"
           data-testid="discord-role-opens-nothing"
         >
-          The role opens nothing yet.
+          The role has access to no channel yet.
         </p>
         <ul class="role__rows">
           <li

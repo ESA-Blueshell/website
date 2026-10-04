@@ -63,7 +63,7 @@ describe("a committee's Discord on its form", () => {
     wrapper.findComponent({name: "CheckBox"}).vm.$emit("update:modelValue", true)
     await settle()
     expect(choice(wrapper)?.createChannel).toBeNull()
-    expect(wrapper.findComponent({name: "CheckBox"}).props("label")).toBe("Make a private channel #named after it")
+    expect(wrapper.findComponent({name: "CheckBox"}).props("label")).toBe("Create a new private channel #named after it")
   })
 
   it("stays hidden and asks nothing where Discord is away", async () => {

@@ -297,8 +297,8 @@ onMounted(load)
     >
       <div class="discord__form">
         <p class="discord__note">
-          Each committee or team ticked takes the role and channels named as it is. Channels the role opens already stay
-          open to it.
+          Each committee or team ticked takes the role and channels named as it is. Channels the role already has access to stay
+          as they are.
         </p>
         <ul class="discord__moves">
           <li

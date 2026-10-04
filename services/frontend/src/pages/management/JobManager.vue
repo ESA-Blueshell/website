@@ -16,6 +16,7 @@ import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import PairList from "@/components/management/PairList.vue"
+import TablePager from "@/components/management/TablePager.vue"
 import {loadJob, loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
 import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, payloadChips, previewActorDisplay, previewTitle, retryLabel, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
@@ -355,30 +356,12 @@ onMounted(async () => {
       </template>
     </management-table>
 
-    <div
-      class="jobs__pages"
-      data-testid="job-manager-pagination"
-    >
-      <span>Page {{ page }} of {{ totalPages }} · {{ totalElements }} jobs</span>
-      <cut-button
-        :disabled="page <= 1"
-        small
-        testid="job-manager-previous"
-        tone="quiet"
-        @click="page -= 1"
-      >
-        Previous
-      </cut-button>
-      <cut-button
-        :disabled="page >= totalPages"
-        small
-        testid="job-manager-next"
-        tone="quiet"
-        @click="page += 1"
-      >
-        Next
-      </cut-button>
-    </div>
+    <table-pager
+      v-model:page="page"
+      :label="`Page ${page} of ${totalPages} · ${totalElements} jobs`"
+      testid="job-manager"
+      :total-pages="totalPages"
+    />
   </management-page>
 </template>
 
@@ -409,20 +392,6 @@ onMounted(async () => {
 .jobs__title:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-.jobs__pages {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding-top: 0.8rem;
-  font-size: 0.85rem;
-  color: var(--color-ash);
-}
-
-.jobs__pages span {
-  margin-right: auto;
 }
 
 @media (--phone) {

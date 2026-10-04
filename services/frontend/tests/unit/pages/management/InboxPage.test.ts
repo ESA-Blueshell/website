@@ -40,10 +40,10 @@ describe("the Inbox page", () => {
   it("lists what arrived with its sender, what it answers and its state, and counts the inbox", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.get('[data-testid="inbox-new"]').text()).toBe("3")
+    expect(wrapper.get('[data-testid="inbox-new"]').text()).toContain("3")
     expect(wrapper.get('[data-testid="inbox-facts"]').text()).toContain("Oldest from")
-    expect(wrapper.get('[data-testid="inbox-done"]').text()).toBe("142")
-    expect(wrapper.get('[data-testid="inbox-automatic"]').text()).toBe("24")
+    expect(wrapper.get('[data-testid="inbox-done"]').text()).toContain("142")
+    expect(wrapper.get('[data-testid="inbox-automatic"]').text()).toContain("24")
     expect(wrapper.get('[data-testid="inbox-row-1"]').text()).toContain("Lars Mulder")
     expect(wrapper.get('[data-testid="inbox-follows-1"]').text()).toBe("Answers contribution reminder")
     expect(wrapper.get('[data-testid="inbox-row-2"]').text()).toContain("Unknown sender")

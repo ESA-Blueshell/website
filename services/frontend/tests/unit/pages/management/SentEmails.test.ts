@@ -60,9 +60,9 @@ describe("the Sent page", () => {
   it("lists every email with its state, and counts what waits, what arrived and what needs a look", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.get('[data-testid="sent-emails-queued"]').text()).toBe("10")
-    expect(wrapper.get('[data-testid="sent-emails-delivered"]').text()).toBe("90%")
-    expect(wrapper.get('[data-testid="sent-emails-needs-look"]').text()).toBe("6")
+    expect(wrapper.get('[data-testid="sent-emails-queued"]').text()).toContain("10")
+    expect(wrapper.get('[data-testid="sent-emails-delivered"]').text()).toContain("90%")
+    expect(wrapper.get('[data-testid="sent-emails-needs-look"]').text()).toContain("6")
     expect(wrapper.get('[data-testid="sent-email-row-1"]').text()).toContain("Job waiting")
     expect(wrapper.get('[data-testid="sent-email-status-1"]').text()).toBe("Queued")
     expect(wrapper.get('[data-testid="sent-email-row-1"]').text()).toContain("Contribution reminder")

@@ -38,7 +38,7 @@ test.describe("the account pages", () => {
     await installApiMocks(page)
     await loginAsMember(page.context())
 
-    await page.goto("/account/incasso")
+    await page.goto("/account/payment-details")
     const incasso = page.getByTestId("incasso-set-up")
     await expect(incasso.getByTestId("incasso-none")).toBeVisible()
     await incasso.getByTestId("incasso-open").click()

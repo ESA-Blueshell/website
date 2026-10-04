@@ -259,10 +259,10 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Account", requiresAuth: true},
   },
   {
-    path: "/account/incasso",
-    name: "accountIncasso",
-    component: () => import("@/pages/login/Incasso.vue"),
-    meta: {title: "Incasso", requiresAuth: true},
+    path: "/account/payment-details",
+    name: "accountPaymentDetails",
+    component: () => import("@/pages/login/PaymentDetails.vue"),
+    meta: {title: "Payment details", requiresAuth: true},
   },
   {
     path: SECURITY_PAGES.hub,

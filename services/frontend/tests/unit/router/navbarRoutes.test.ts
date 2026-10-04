@@ -28,7 +28,7 @@ const navbarPaths = [
   "/account",
   "/account/security",
   "/account/games",
-  "/account/incasso",
+  "/account/payment-details",
   "/management/addresses",
   "/management/recovery",
   "/management/users",
@@ -51,7 +51,7 @@ describe("Navbar route targets", () => {
 
 describe("the account security pages", () => {
   it.each([
-    "twoFactorOffer", "lockAccount", "confirmEmail", "reenrol", "accountIncasso", "accountSecurity", "accountPassword", "accountEmail",
+    "twoFactorOffer", "lockAccount", "confirmEmail", "reenrol", "accountPaymentDetails", "accountSecurity", "accountPassword", "accountEmail",
     "accountTwoFactor", "accountTwoFactorSetUp", "accountSignIns", "accountSecurityLog", "twoFactorRequired",
   ])("loads %s", async (name) => {
     const load = router.getRoutes().find(one => one.name === name)?.components?.default as () => Promise<unknown>

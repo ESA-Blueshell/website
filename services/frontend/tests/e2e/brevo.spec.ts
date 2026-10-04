@@ -2,18 +2,23 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
 test.describe("the Brevo page", () => {
-  test("lists every list by folder with the missing one first, and creates it", async ({page}) => {
+  test("lists every list with the missing one first, and creates it after a preview and a confirmation", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto("/management/platforms/brevo")
 
     await expect(page.getByTestId("brevo-missing")).toContainText("1 list the site expects is missing")
-    await expect(page.getByTestId("brevo-group-Contribution paid")).toContainText("Paid 2026-2027")
+    await expect(page.getByTestId("brevo-row-missing-3")).toContainText("Paid 2026-2027")
     await expect(page.getByTestId("brevo-state-list-33")).toHaveText("1 missing")
-    await expect(page.getByTestId("brevo-group-Follows nothing")).toContainText("Old newsletter test")
+    await expect(page.getByTestId("brevo-table")).toContainText("Old newsletter test")
 
-    const created = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/cohort-targets/BREVO/missing"))
+    // Nothing is created by the first press: the list is shown, then asked about once more.
     await page.getByTestId("brevo-create-3").click()
+    await expect(page.getByTestId("brevo-create-preview")).toContainText("Nothing is made in Brevo yet.")
+    await page.getByTestId("brevo-create-continue").click()
+    await expect(page.getByTestId("brevo-create-confirm")).toBeVisible()
+    const created = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/cohort-targets/BREVO/missing"))
+    await page.getByTestId("brevo-create-go").click()
     expect((await created).postDataJSON()).toEqual({targetIds: [3]})
 
     await page.getByTestId("brevo-row-list-7").getByRole("link").click()

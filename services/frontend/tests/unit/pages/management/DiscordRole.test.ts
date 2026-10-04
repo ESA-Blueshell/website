@@ -188,7 +188,7 @@ describe("a Discord role's page", () => {
     const wrapper = await mount()
 
     expect(wrapper.get('[data-testid="discord-role-unreadable"]').text()).toContain("Discord could not be read")
-    expect(wrapper.text()).toContain("Nothing on the site fills this role")
+    expect(wrapper.text()).toContain("Nothing on the site decides who holds this role")
 
     api.listRoleOpenings.mockResolvedValue({status: 200, data: []})
     api.listCataloguedChannels.mockResolvedValue({status: 200, data: []})
@@ -243,7 +243,7 @@ describe("a Discord role's page", () => {
     await settle()
     expect(api.reconcileTarget).toHaveBeenCalled()
 
-    expect(wrapper.get('[data-testid="discord-role-enforce"]').text()).toContain("Off.")
+    expect(wrapper.findComponent({name: "CutRow"}).text()).toContain("Off.")
     await wrapper.get('[data-testid="discord-role-enforce"]').trigger("click")
     await settle()
     expect(api.enforceTarget).toHaveBeenCalledWith(expect.objectContaining({path: {id: 4, targetId: 40}}))

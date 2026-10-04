@@ -46,6 +46,8 @@ test.describe("management recovery lifecycle", () => {
     await page.getByTestId("user-delete").click()
     await expect(page.getByTestId("user-delete-dialog")).toBeVisible()
     await page.getByTestId("confirm-go").click()
+    // The person's page goes back to the list only once the account is gone.
+    await page.waitForURL("**/management/users")
 
     // Row should be removed from the table
     await expect(page.getByTestId(`member-manager-row-${targetId}`)).toHaveCount(0)

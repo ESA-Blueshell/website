@@ -21,6 +21,24 @@ export function alertTitle(alert: Alert): string {
   }
 }
 
+/** An alert as a short row: what is wrong, what it is about, and the page it comes from. */
+export function alertRow(alert: Alert): {name: string; meta: string; from: string} {
+  switch (alert.kind) {
+    case AlertKind.TARGET_DRIFT:
+      return {name: "A list is out of step", meta: `${alert.subjectLabel ?? "A list"} · ${counted(alert.count, "person differs", "people differ")}`, from: "Brevo"}
+    case AlertKind.COHORT_WITHOUT_LIST:
+      return {name: "A Brevo list is missing", meta: alert.subjectLabel ?? "A cohort", from: "Brevo"}
+    case AlertKind.EMAIL_FAILED:
+      return {name: `${counted(alert.count, "email", "emails")} failed or bounced`, meta: "This month", from: "Sent"}
+    case AlertKind.JOB_DEAD:
+      return {name: `${counted(alert.count, "job is", "jobs are")} dead`, meta: "After every retry", from: "Jobs"}
+    case AlertKind.EXCEPTION_OPEN:
+      return {name: `${counted(alert.count, "exception is", "exceptions are")} open`, meta: "Not resolved yet", from: "Exceptions"}
+    case AlertKind.ROLE_AWAITING_TWO_FACTOR:
+      return {name: "A role waits on two-factor", meta: `@${alert.subjectLabel}`, from: "Users"}
+  }
+}
+
 /** Where an alert is dealt with. */
 export function alertLink(alert: Alert): string {
   switch (alert.kind) {

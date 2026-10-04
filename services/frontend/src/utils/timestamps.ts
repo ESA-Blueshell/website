@@ -25,3 +25,25 @@ export function formatDateNoSeconds(value?: string | null): string {
     minute: "2-digit",
   })
 }
+
+// Written out, not read from the locale: en-GB abbreviates September to "Sept", and a table reads better at three letters.
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+/** A day as Management writes one: "1 Sep 2024". */
+export function formatDay(value?: string | null): string {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+}
+
+/** A moment as Management writes one: "Tue 29 Sep 03:00", with the year once it is not this one. */
+export function formatMoment(value?: string | null): string {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const day = `${WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`
+  const dated = date.getFullYear() === new Date().getFullYear() ? day : `${day} ${date.getFullYear()}`
+  return `${dated} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`
+}

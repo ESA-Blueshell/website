@@ -104,7 +104,7 @@ describe("SelectionBar", () => {
 
     expect(bar.text()).toContain("3 selected")
     expect(plain.text()).toContain("1 list")
-    expect(plain.get(".selection-bar__clear").attributes("data-testid")).toBeUndefined()
+    expect(plain.get(".island-cut--quiet").attributes("data-testid")).toBeUndefined()
     await bar.get("[data-testid=sel-clear]").trigger("click")
     expect(bar.emitted("clear")).toHaveLength(1)
   })

@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import CutButton from "@/components/island/CutButton.vue"
+
 /* Shown under a list once rows are ticked: how many, what can be done with them, and a way to clear. */
 const {count, noun = "selected", testid = undefined} = defineProps<{
   count: number
@@ -18,14 +20,14 @@ const emit = defineEmits<{clear: []}>()
     <span class="selection-bar__n">{{ count }} {{ noun }}</span>
     <span class="selection-bar__gap" />
     <slot />
-    <button
-      class="selection-bar__clear"
-      :data-testid="testid ? `${testid}-clear` : undefined"
-      type="button"
+    <cut-button
+      small
+      :testid="testid ? `${testid}-clear` : undefined"
+      tone="quiet"
       @click="emit('clear')"
     >
       Clear
-    </button>
+    </cut-button>
   </div>
 </template>
 
@@ -49,15 +51,5 @@ const emit = defineEmits<{clear: []}>()
 
 .selection-bar__gap {
   flex-grow: 1;
-}
-
-.selection-bar__clear {
-  padding: 0.4rem 0.3rem;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-  cursor: pointer;
 }
 </style>

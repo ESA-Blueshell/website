@@ -18,10 +18,10 @@
           class="mg-side__label"
         >
           {{ group.label }}
-          <span
+          <role-mark
             v-if="group.adminOnly"
-            class="mg-admin"
-          >@Admin</span>
+            role="Admin"
+          />
         </p>
         <router-link
           v-for="entry in group.entries"
@@ -32,19 +32,16 @@
           :data-testid="`management-nav-${slug(entry.label)}`"
           :to="entry.to"
         >
-          <span>
-            {{ entry.label }}
-            <count-badge
-              v-if="entry.counted && count > 0"
-              :count="count"
-              said="alerts"
-              :testid="`management-nav-${slug(entry.label)}-count`"
-            />
-          </span>
-          <span
+          {{ entry.label }}
+          <role-mark
             v-if="entry.adminOnly && !group.adminOnly"
-            class="mg-admin"
-          >@Admin</span>
+            role="Admin"
+          />
+          <span
+            v-if="entry.counted && count > 0"
+            class="mg-side__count"
+            :data-testid="`management-nav-${slug(entry.label)}-count`"
+          >{{ count }}<span class="mg-side__said"> alerts</span></span>
         </router-link>
       </div>
     </nav>
@@ -96,7 +93,7 @@
 import {computed, onMounted, watch} from "vue"
 import {useRoute} from "vue-router"
 import {useStore} from "vuex"
-import CountBadge from "@/components/island/CountBadge.vue"
+import RoleMark from "@/components/island/RoleMark.vue"
 import {isOn, managementFor} from "@/components/management/managementNav"
 import {useAlerts} from "@/domains/alerts"
 
@@ -134,8 +131,6 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   min-height: calc(100vh - 60px);
-  background: var(--color-pit);
-  color: var(--color-chalk);
 }
 
 .mg-side {
@@ -170,7 +165,6 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.6rem;
   min-height: 38px;
   padding: 0 0.7rem 0 1rem;
@@ -201,12 +195,21 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
   transform: skewX(-12deg);
 }
 
-.mg-admin {
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  color: var(--color-warning);
+.mg-side__count {
+  min-width: 1.45rem;
+  margin-left: auto;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-void);
+  background: var(--color-warning);
+}
+
+.mg-side__said {
+  position: absolute;
+  left: -9999px;
 }
 
 .mg-main {
@@ -290,8 +293,10 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
   font-size: 0.66rem;
   line-height: 1.1rem;
   text-align: center;
-  color: var(--color-pit);
-  background: var(--color-brand);
+  border-radius: 9999px;
+  font-weight: 700;
+  color: var(--color-void);
+  background: var(--color-warning);
 }
 
 .mg-tab--on {

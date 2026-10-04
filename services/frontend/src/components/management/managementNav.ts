@@ -27,7 +27,7 @@ export interface ManagementGroup {
 
 const GROUPS: ManagementGroup[] = [
   {
-    label: "Overview",
+    label: null,
     entries: [
       {label: "Dashboard", to: "/management", exact: true},
       {label: "Alerts", to: "/management/alerts", tab: "alerts", counted: true},

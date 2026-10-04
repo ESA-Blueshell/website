@@ -59,7 +59,7 @@ describe("the one email page", () => {
   it("tells what happened, shows the bounce and the email as sent, and links the person, the job and its resends", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.get('[data-testid="sent-email-status"]').text()).toBe("Bounced")
+    expect(wrapper.get('[data-testid="sent-email-head"] h1').text()).toBe("Bounced")
     expect(wrapper.get('[data-testid="sent-email-problem"]').text()).toContain("550 5.1.1 no such mailbox")
     expect(wrapper.get('[data-testid="sent-email-person-fix"]').attributes("to")).toBe("/management/users?search=lars%40example.com")
     expect(wrapper.get('[data-testid="sent-email-timeline"]').text()).toContain("Bounced")

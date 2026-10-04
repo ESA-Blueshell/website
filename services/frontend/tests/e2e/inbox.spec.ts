@@ -30,6 +30,6 @@ test.describe("the Inbox", () => {
     await page.getByTestId("inbox-send-reply").click()
     expect((await sent).postDataJSON()).toEqual({message: "Thanks, it is marked as paid.", replyTo: "board@esa-blueshell.nl"})
     await expect(page.getByTestId("inbox-message-item-2")).toContainText("Mock User, from the site")
-    await expect(page.getByTestId("inbox-message-state")).toHaveText("Inbox · Replied")
+    await expect(page.getByTestId("inbox-message-head-eyebrow")).toHaveText("Inbox · Replied")
   })
 })

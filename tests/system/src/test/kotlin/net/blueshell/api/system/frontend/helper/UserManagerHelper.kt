@@ -55,7 +55,9 @@ object UserManagerHelper {
         deleteButton(page, userId).click()
     }
 
+    /** Confirms, then waits for the list: the person's page only goes back there once the account is gone. */
     fun confirmDelete(page: Page) {
         TestIdLocatorHelper.byTestId(page, "confirm-go").click()
+        page.waitForURL("**/management/users")
     }
 }

@@ -5,8 +5,11 @@ import FilterBar from "@/components/island/FilterBar.vue"
 import FilterPicker from "@/components/island/FilterPicker.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import {type RecordedException, loadExceptions, matchesSearch, shortPlace, shortType} from "@/domains/exceptions"
-import {formatDateNoSeconds} from "@/utils/timestamps"
+import {formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "ExceptionListPage"})
 
@@ -19,6 +22,13 @@ const state = ref<string | null>("open")
 const states = [
   {key: "open", label: "Open"},
   {key: "resolved", label: "Resolved"},
+]
+
+const COLUMNS: TableColumn[] = [
+  {key: "what", label: "Exception", wrap: true},
+  {key: "times", label: "Times"},
+  {key: "seen", label: "Last seen"},
+  {key: "state", label: "State"},
 ]
 
 const load = async () => {
@@ -40,150 +50,96 @@ onMounted(load)
 </script>
 
 <template>
-  <div
-    class="exceptions"
-    data-testid="exception-list"
+  <management-page
+    eyebrow="System"
+    testid="exception-list"
+    title="Exceptions"
   >
-    <h1 class="exceptions__title">
-      Exceptions
-    </h1>
-    <p class="exceptions__note">
+    <template #lede>
       Every exception the api did not handle, one row per type and place however often it fired.
-    </p>
+    </template>
 
-    <filter-bar
-      :active="filtered"
-      testid="exception-filters"
-      @clear="clear"
+    <management-table
+      class="exceptions__table"
+      :columns="COLUMNS"
+      :row-key="(fault) => fault.id"
+      :row-testid="(fault) => `exception-row-${fault.id}`"
+      :rows="shown"
+      testid="exception-table"
+      :to="(fault) => `/management/exceptions/${fault.id}`"
     >
-      <search-box
-        v-model="search"
-        label="Search exceptions"
-        testid="exception-search"
-      />
-      <filter-picker
-        v-model="state"
-        label="State"
-        :options="states"
-        testid="exception-state"
-      />
-    </filter-bar>
-
-    <p
-      v-if="loaded && shown.length === 0"
-      class="exceptions__note"
-      data-testid="exception-list-empty"
-    >
-      No exceptions to show.
-    </p>
-
-    <ul class="exceptions__rows">
-      <li
-        v-for="fault in shown"
-        :key="fault.id"
-      >
-        <router-link
-          class="exceptions__row"
-          :data-testid="`exception-row-${fault.id}`"
-          :to="`/management/exceptions/${fault.id}`"
+      <template #count>
+        {{ shown.length }} of {{ faults.length }} exceptions
+      </template>
+      <template #filters>
+        <filter-bar
+          :active="filtered"
+          testid="exception-filters"
+          @clear="clear"
         >
-          <span class="exceptions__what">
-            <strong>{{ shortType(fault.exceptionType) }}</strong>
-            <span class="exceptions__where">{{ shortPlace(fault.thrownAt) }} · {{ fault.latestConcern }}</span>
-            <span
-              v-if="fault.latestMessage"
-              class="exceptions__message"
-            >{{ fault.latestMessage }}</span>
-          </span>
-          <span class="exceptions__count">{{ fault.occurrences }}×</span>
-          <span class="exceptions__when">{{ formatDateNoSeconds(fault.lastSeenAt) }}</span>
-          <state-mark :kind="fault.resolvedAt ? 'in-step' : 'unreachable'">
-            {{ fault.resolvedAt ? "Resolved" : "Open" }}
-          </state-mark>
+          <filter-picker
+            v-model="state"
+            label="State"
+            :options="states"
+            testid="exception-state"
+          />
+        </filter-bar>
+      </template>
+      <template #search>
+        <search-box
+          v-model="search"
+          label="Search exceptions"
+          testid="exception-search"
+        />
+      </template>
+      <template
+        v-if="loaded"
+        #empty
+      >
+        <span data-testid="exception-list-empty">No exceptions to show.</span>
+      </template>
+      <template #what="{row}">
+        <router-link
+          class="mg-name"
+          :to="`/management/exceptions/${row.id}`"
+        >
+          {{ shortType(row.exceptionType) }}
         </router-link>
-      </li>
-    </ul>
-  </div>
+        <span class="mg-sub">{{ shortPlace(row.thrownAt) }} · {{ row.latestConcern }}</span>
+        <span
+          v-if="row.latestMessage"
+          class="mg-why"
+        >{{ row.latestMessage }}</span>
+      </template>
+      <template #times="{row}">
+        {{ row.occurrences }}×
+      </template>
+      <template #seen="{row}">
+        {{ formatMoment(row.lastSeenAt) }}
+      </template>
+      <template #state="{row}">
+        <state-mark :kind="row.resolvedAt ? 'in-step' : 'extra'">
+          {{ row.resolvedAt ? "Resolved" : "Open" }}
+        </state-mark>
+      </template>
+      <template #phone="{row}">
+        <management-row
+          :meta="`${shortPlace(row.thrownAt)} · ${row.occurrences}× · ${formatMoment(row.lastSeenAt)}`"
+          :name="shortType(row.exceptionType)"
+          :testid="`exception-row-${row.id}`"
+          :to="`/management/exceptions/${row.id}`"
+        >
+          <state-mark :kind="row.resolvedAt ? 'in-step' : 'extra'">
+            {{ row.resolvedAt ? "Resolved" : "Open" }}
+          </state-mark>
+        </management-row>
+      </template>
+    </management-table>
+  </management-page>
 </template>
 
 <style scoped>
-.exceptions {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 64rem;
-  padding: 2rem 2.4rem 3rem;
-}
-
-.exceptions__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.exceptions__note {
-  margin: 0;
-  color: var(--color-ash);
-}
-
-.exceptions__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.exceptions__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto 7rem;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.8rem 0.4rem;
-  color: var(--color-chalk);
-  text-decoration: none;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.exceptions__row:hover {
-  background: color-mix(in oklab, var(--color-chalk) 5%, transparent);
-}
-
-.exceptions__what {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  min-width: 0;
-}
-
-.exceptions__where,
-.exceptions__message {
-  overflow: hidden;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.exceptions__count,
-.exceptions__when {
-  font-size: 0.84rem;
-  color: var(--color-ash);
-  white-space: nowrap;
-}
-
-@media (max-width: 839px) {
-  .exceptions {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
-  .exceptions__row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .exceptions__when {
-    display: none;
-  }
+.exceptions__table {
+  margin-top: 1.2rem;
 }
 </style>

@@ -8,6 +8,7 @@ import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable from "@/components/management/ManagementTable.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import PairList from "@/components/management/PairList.vue"
+import PersonLink from "@/components/management/PersonLink.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 
 const {push} = vi.hoisted(() => ({push: vi.fn()}))
@@ -18,6 +19,18 @@ vi.mock("vue-router", async (importOriginal) => ({
 }))
 
 const stubs = {RouterLink: {props: ["to"], template: '<a :to="to"><slot /></a>'}}
+
+describe("PersonLink", () => {
+  it("leads to the person's page, and only names somebody who has no account", () => {
+    const known = mount(PersonLink, {props: {userId: 9, name: "Bo Board", testid: "who"}, global: {stubs}})
+    const unknown = mount(PersonLink, {props: {userId: null, name: "c@example.com", testid: "who"}, global: {stubs}})
+
+    expect(known.get("[data-testid=who]").attributes("to")).toBe("/management/users/9")
+    expect(known.text()).toBe("Bo Board")
+    expect(unknown.get("[data-testid=who]").element.tagName).toBe("SPAN")
+    expect(unknown.text()).toBe("c@example.com")
+  })
+})
 
 describe("ManagementHead", () => {
   it("names the group and the page, and says what the page is for and what it can do", () => {

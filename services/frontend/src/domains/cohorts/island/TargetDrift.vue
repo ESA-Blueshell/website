@@ -12,6 +12,7 @@ import ListHead from "@/components/management/ListHead.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
+import PersonLink from "@/components/management/PersonLink.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {formatMoment} from "@/utils/timestamps"
 import type {Cohort, CohortMember, TargetMapping} from "../adapters/cohorts"
@@ -243,13 +244,19 @@ const markOf = (row: CohortMember) => (row.sync === "ONLY_HERE" ? "missing" : "e
       {{ formatMoment(row.resolvedAt) }}
     </template>
     <template #by="{row}">
-      {{ row.resolvedByName ?? "The site" }}
+      <person-link
+        :name="row.resolvedByName ?? 'The site'"
+        :user-id="row.resolvedById"
+      />
     </template>
     <template #what="{row}">
       {{ words.resolved[row.action] }}
     </template>
     <template #who="{row}">
-      {{ row.personName ?? "" }}
+      <person-link
+        :name="row.personName"
+        :user-id="row.userId"
+      />
     </template>
   </management-table>
   <p

@@ -7,6 +7,7 @@ import StateMark, {type StateKind} from "@/components/island/StateMark.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import PersonLink from "@/components/management/PersonLink.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import type {SubmitState} from "@/composables/formUtils"
 import type {BulkActionCounts, BulkDisposition, BulkRow} from "@/utils/bulkRow"
@@ -137,7 +138,11 @@ const onSave = () => {
       @sort="sortBy"
     >
       <template #name="{row}">
-        <span class="bulk__name">{{ row.name }}</span>
+        <person-link
+          class="bulk__name"
+          :name="row.name"
+          :user-id="row.userId"
+        />
       </template>
       <template #memberType="{row}">
         <span class="mg-quiet">{{ memberTypeLabel(row.memberType) }}</span>

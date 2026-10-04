@@ -56,7 +56,7 @@ const cohort = (fields: Record<string, unknown> = {}) => ({
     ledger(3, "STRANGER", {externalUserId: "e3", externalLabel: "jan@example.com"}),
     ledger(4, "SYNCED", {userId: 14, userFullName: "In Step"}),
   ],
-  resolutions: [{system: "BREVO", action: "PUSH", personName: "Kim Vos", resolvedByName: "Treasurer", resolvedAt: "2026-09-23T10:15:00Z"},
+  resolutions: [{system: "BREVO", action: "PUSH", userId: 31, personName: "Kim Vos", resolvedById: 4, resolvedByName: "Treasurer", resolvedAt: "2026-09-23T10:15:00Z"},
     {system: "GOOGLE_WORKSPACE", action: "REMOVE", resolvedAt: "2026-09-23T10:15:00Z"}],
   ...fields,
 })
@@ -110,6 +110,9 @@ describe("one Brevo list", () => {
     expect(wrapper.find('[data-testid="brevo-list-row-4"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="brevo-list-resolved"]').text()).toContain("Pushed to the list")
     expect(wrapper.findAll('[data-testid="brevo-list-resolved"] tbody tr')).toHaveLength(1)
+    // Both names in a resolution lead to that person's page.
+    expect(wrapper.findAll('[data-testid="brevo-list-resolved"] tbody a').map((one) => [one.text(), one.attributes("href") ?? one.attributes("to")]))
+      .toEqual([["Treasurer", "/management/users/4"], ["Kim Vos", "/management/users/31"]])
     expect(wrapper.find('[data-testid="brevo-list-link"]').exists()).toBe(false)
 
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "nobody")

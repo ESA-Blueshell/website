@@ -1419,6 +1419,10 @@ export type DriftResolutionEntry = {
     personName?: string | null;
     resolvedAt: string;
     /**
+     * The account that resolved it, where it still exists
+     */
+    resolvedById?: number | null;
+    /**
      * Who resolved it; null when the api did so on its own behalf
      */
     resolvedByName?: string | null;

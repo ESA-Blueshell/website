@@ -394,8 +394,12 @@ export type DriftResolutionEntry = {
   system: TargetSystem
   action: DriftResolutionAction
   personName: string | null
+  /** The person's account, where they have one. */
+  userId: number | null
   /** Null when the api resolved it on its own behalf. */
   resolvedByName: string | null
+  /** The account that resolved it, where it still exists. */
+  resolvedById: number | null
   resolvedAt: string
 }
 
@@ -472,7 +476,9 @@ function toCohort(raw: ApiCohortDetail): Cohort {
       system: r.system,
       action: r.action,
       personName: r.personName ?? null,
+      userId: r.userId ?? null,
       resolvedByName: r.resolvedByName ?? null,
+      resolvedById: r.resolvedById ?? null,
       resolvedAt: r.resolvedAt,
     })),
   }

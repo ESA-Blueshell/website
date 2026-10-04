@@ -16,6 +16,7 @@ import TextInput from "@/components/island/TextInput.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import PersonLink from "@/components/management/PersonLink.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import PairList from "@/components/management/PairList.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
@@ -289,7 +290,10 @@ const leftOutPairs = computed(() => [
           />
         </template>
         <template #name="{row}">
-          {{ row.name }}
+          <person-link
+            :name="row.name"
+            :user-id="row.userId"
+          />
         </template>
         <template #account="{row}">
           <span class="incasso__account">{{ maskedIban(row) }}</span>
@@ -332,7 +336,10 @@ const leftOutPairs = computed(() => [
         :rows="chosen"
       >
         <template #name="{row}">
-          {{ row.name }}
+          <person-link
+            :name="row.name"
+            :user-id="row.userId"
+          />
         </template>
         <template #since="{row}">
           {{ dayName(row.memberSince) }}
@@ -402,7 +409,10 @@ const leftOutPairs = computed(() => [
         :rows="chosen"
       >
         <template #name="{row}">
-          {{ row.name }}
+          <person-link
+            :name="row.name"
+            :user-id="row.userId"
+          />
         </template>
         <template #account="{row}">
           <span class="incasso__account">{{ maskedIban(row) }}</span>
@@ -528,7 +538,10 @@ const leftOutPairs = computed(() => [
         :rows="run.collections"
       >
         <template #name="{row}">
-          {{ row.name }}
+          <person-link
+            :name="row.name"
+            :user-id="row.userId"
+          />
         </template>
         <template #account="{row}">
           <span class="incasso__account">{{ maskedIban(row) }}</span>

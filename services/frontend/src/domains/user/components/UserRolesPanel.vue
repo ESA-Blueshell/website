@@ -7,6 +7,7 @@ import RoleMark from "@/components/island/RoleMark.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import PersonLink from "@/components/management/PersonLink.vue"
 import {formatMoment} from "@/utils/timestamps"
 import {
   listRoleChanges,
@@ -258,7 +259,10 @@ watch(() => props.userId, load, {immediate: true})
           {{ row.before.map(named).join(", ") || "Nothing" }} to {{ row.after.map(named).join(", ") || "nothing" }}
         </template>
         <template #by="{row}">
-          {{ row.actorName }}
+          <person-link
+            :name="row.actorName"
+            :user-id="row.actorId"
+          />
         </template>
         <template #why="{row}">
           <span class="mg-quiet">{{ row.note }}</span>

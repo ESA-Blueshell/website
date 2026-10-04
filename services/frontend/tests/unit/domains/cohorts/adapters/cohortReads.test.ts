@@ -121,8 +121,16 @@ describe("a cohort cohort arrives with its absences already decided", () => {
     const cohort = await fetchCohort(7)
 
     expect(cohort?.resolutions).toEqual([
-      {system: TargetSystem.BREVO, action: "REMOVE", personName: null, resolvedByName: null, resolvedAt: "2026-09-29T20:00:00Z"},
+      {system: TargetSystem.BREVO, action: "REMOVE", personName: null, userId: null, resolvedByName: null, resolvedById: null, resolvedAt: "2026-09-29T20:00:00Z"},
     ])
+  })
+
+  it("a resolution carries the accounts of the person and of who resolved it, for the page to link", async () => {
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
+        resolutions: [{targetId: 3, system: TargetSystem.BREVO, action: "PUSH", userId: 9, personName: "Bo Board", resolvedById: 4, resolvedByName: "Ada Admin", resolvedAt: "2026-10-04T19:36:00Z"}],
+      })))
+
+    expect((await fetchCohort(7))?.resolutions[0]).toMatchObject({userId: 9, personName: "Bo Board", resolvedById: 4, resolvedByName: "Ada Admin"})
   })
 
   it("a listing that came back with nothing reads as no cohorts", async () => {

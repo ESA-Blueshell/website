@@ -12,6 +12,7 @@ import StateMark from "@/components/island/StateMark.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import PersonLink from "@/components/management/PersonLink.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import PairList from "@/components/management/PairList.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
@@ -186,7 +187,10 @@ onMounted(async () => {
           />
         </template>
         <template #name="{row}">
-          {{ row.name }}
+          <person-link
+            :name="row.name"
+            :user-id="row.userId"
+          />
         </template>
         <template #what="{row}">
           <span class="mg-quiet">{{ reminderName(row) }}</span>
@@ -228,7 +232,10 @@ onMounted(async () => {
         :rows="chosen"
       >
         <template #name="{row}">
-          {{ row.name }}
+          <person-link
+            :name="row.name"
+            :user-id="row.userId"
+          />
         </template>
         <template #fee="{row}">
           <search-picker
@@ -277,7 +284,10 @@ onMounted(async () => {
         :rows="chosen"
       >
         <template #name="{row}">
-          {{ row.name }}
+          <person-link
+            :name="row.name"
+            :user-id="row.userId"
+          />
         </template>
         <template #what="{row}">
           <span class="mg-quiet">{{ reminderName(row) }}</span>

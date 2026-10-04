@@ -52,9 +52,18 @@ describe("the games in Management", () => {
     expect(wrapper.get('[data-testid="game-row-CHESS"]').text()).toContain("No channel")
     expect(wrapper.get('[data-testid="game-row-CHESS"]').text()).toContain("Casual")
     expect(wrapper.get('[data-testid="game-differs-CHESS"]').text()).toBe("In step")
-    expect(wrapper.find('[data-testid="game-row-OLD"]').exists()).toBe(false)
-    await wrapper.get('[data-testid="game-list-archived-toggle"]').trigger("click")
-    expect(wrapper.find('[data-testid="game-row-OLD"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="game-differs-OLD"]').text()).toBe("Archived")
+    expect(wrapper.findAll('[data-testid^="game-row-"]').at(-1)!.attributes("data-testid")).toBe("game-row-OLD")
+    expect(wrapper.findComponent({name: "FactList"}).text()).toContain("1 archived")
+  })
+
+  it("draws each game as a row on a phone", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="game-row-CHESS"]').text()).toContain("Casual · No channel")
+    expect(wrapper.get('[data-testid="game-differs-CHESS"]').text()).toBe("In step")
   })
 
   it("narrows by a name, code or channel, and says when nothing matches", async () => {

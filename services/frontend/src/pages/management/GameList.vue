@@ -3,9 +3,13 @@
    any of its channels otherwise than the site keeps them. Opening one renders the site's own game
    editor inside Management. */
 import {computed, onMounted, ref} from "vue"
-import FoldOut from "@/components/island/FoldOut.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FactList from "@/components/island/FactList.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import {type CataloguedChannel, listCatalogue} from "@/domains/discord"
 import {type CasualGame, useCasualGames} from "@/domains/games"
 
@@ -24,14 +28,34 @@ const named = (game: CasualGame) => {
   return channels.length === 0 ? "No channel" : channels.map((one) => `#${one.name}`).join(", ")
 }
 
+const COLUMNS: TableColumn[] = [
+  {key: "name", label: "Game", wrap: true},
+  {key: "channels", label: "Channels", wrap: true},
+  {key: "kind", label: "Kind"},
+  {key: "state", label: "State"},
+]
+
+// The games played first, the archived ones after them, each by name.
 const shown = computed(() => {
   const needle = search.value.trim().toLowerCase()
   return games.value
     .filter((game) => needle === "" || [game.name, game.code, ...channelsOf(game).map((one) => one.name)].some((value) => value.toLowerCase().includes(needle)))
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => Number(a.archived) - Number(b.archived) || a.name.localeCompare(b.name))
 })
-const live = computed(() => shown.value.filter((one) => !one.archived))
-const archived = computed(() => shown.value.filter((one) => one.archived))
+
+const stateOf = (game: CasualGame): {kind: "not-compared" | "extra" | "in-step"; word: string} => {
+  if (game.archived) return {kind: "not-compared", word: "Archived"}
+  return differs(game) ? {kind: "extra", word: "Differs on Discord"} : {kind: "in-step", word: "In step"}
+}
+
+const facts = computed(() => {
+  const live = games.value.filter((one) => !one.archived)
+  return [
+    {label: "Games", value: String(live.length), sub: `${games.value.length - live.length} archived`},
+    {label: "In competition", value: String(live.filter((one) => one.inCompetition).length), sub: "The rest are casual"},
+    {label: "Differ on Discord", value: String(live.filter(differs).length), sub: "A channel opened otherwise than set on the site"},
+  ]
+})
 
 onMounted(async () => {
   const [, listed] = await Promise.all([ready, listCatalogue()])
@@ -41,166 +65,95 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="games"
-    data-testid="game-list"
+  <management-page
+    eyebrow="Content"
+    testid="game-list"
+    title="Games"
   >
-    <header class="games__head">
-      <div>
-        <p class="games__eyebrow">
-          Content
-        </p>
-        <h1 class="games__title">
-          Games
-        </h1>
-        <p class="games__note">
-          Every game, its channels on Discord and where Discord differs from the access set on the site.
-        </p>
-      </div>
-      <router-link
-        class="games__action"
-        data-testid="game-list-new"
-        to="/management/games/new"
+    <template #lede>
+      Every game, its channels on Discord and where Discord differs from the access set on the site.
+    </template>
+    <template #actions>
+      <cut-button
+        href="/management/games/new"
+        testid="game-list-new"
       >
         Add a game
-      </router-link>
-    </header>
+      </cut-button>
+    </template>
 
-    <search-box
-      v-model="search"
-      label="Search games"
-      testid="game-list-search"
+    <fact-list
+      class="games__facts"
+      :facts="facts"
     />
 
-    <p
-      v-if="loaded && shown.length === 0"
-      class="games__note"
-      data-testid="game-list-empty"
+    <management-table
+      :columns="COLUMNS"
+      :row-key="(game) => game.code"
+      :row-testid="(game) => `game-row-${game.code}`"
+      :rows="shown"
+      testid="game-list-table"
+      :to="(game) => `/management/games/${game.slug}`"
     >
-      No game matches.
-    </p>
-
-    <component
-      :is="index === 1 ? FoldOut : 'section'"
-      v-for="(group, index) in [live, archived]"
-      :key="index"
-      v-bind="index === 1 ? {label: `Archived · ${group.length}`, testid: 'game-list-archived'} : {}"
-    >
-      <ul
-        v-if="group.length"
-        class="games__rows"
+      <template #count>
+        <b>{{ shown.length }}</b> of {{ games.length }} games
+      </template>
+      <template #search>
+        <search-box
+          v-model="search"
+          label="Search games"
+          testid="game-list-search"
+        />
+      </template>
+      <template
+        v-if="loaded"
+        #empty
       >
-        <li
-          v-for="game in group"
-          :key="game.code"
-          class="games__row"
-          :data-testid="`game-row-${game.code}`"
+        <span data-testid="game-list-empty">No game matches.</span>
+      </template>
+      <template #name="{row}">
+        <router-link
+          class="mg-name"
+          :to="`/management/games/${row.slug}`"
         >
-          <span class="games__name">
-            <router-link :to="`/management/games/${game.slug}`">{{ game.name }}</router-link>
-          </span>
-          <span class="games__sub">{{ named(game) }}</span>
-          <span class="games__sub">{{ game.inCompetition ? "In competition" : "Casual" }}</span>
+          {{ row.name }}
+        </router-link>
+      </template>
+      <template #channels="{row}">
+        <span :class="{'mg-quiet': channelsOf(row).length === 0}">{{ named(row) }}</span>
+      </template>
+      <template #kind="{row}">
+        {{ row.inCompetition ? "In competition" : "Casual" }}
+      </template>
+      <template #state="{row}">
+        <state-mark
+          :kind="stateOf(row).kind"
+          :testid="`game-differs-${row.code}`"
+        >
+          {{ stateOf(row).word }}
+        </state-mark>
+      </template>
+      <template #phone="{row}">
+        <management-row
+          :meta="`${row.inCompetition ? 'In competition' : 'Casual'} · ${named(row)}`"
+          :name="row.name"
+          :testid="`game-row-${row.code}`"
+          :to="`/management/games/${row.slug}`"
+        >
           <state-mark
-            :kind="differs(game) ? 'extra' : 'in-step'"
-            :testid="`game-differs-${game.code}`"
+            :kind="stateOf(row).kind"
+            :testid="`game-differs-${row.code}`"
           >
-            {{ differs(game) ? "Differs on Discord" : "In step" }}
+            {{ stateOf(row).word }}
           </state-mark>
-        </li>
-      </ul>
-    </component>
-  </div>
+        </management-row>
+      </template>
+    </management-table>
+  </management-page>
 </template>
 
 <style scoped>
-.games {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 76rem;
-  padding: 2rem 2.4rem 3rem;
-}
-
-.games__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.games__eyebrow {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow, var(--color-ash));
-}
-
-.games__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.games__note {
-  margin: 0;
-  max-width: 48rem;
-  color: var(--color-ash);
-}
-
-.games__action {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  text-decoration: none;
-}
-
-.games__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.games__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) 8rem 10rem;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.games__name {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-}
-
-.games__name a {
-  color: var(--color-chalk);
-}
-
-.games__sub {
-  overflow: hidden;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 839px) {
-  .games {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
-  .games__row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
+.games__facts {
+  padding: 1.1rem 0 1.2rem;
 }
 </style>

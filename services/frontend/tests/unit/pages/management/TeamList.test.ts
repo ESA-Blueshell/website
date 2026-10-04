@@ -50,8 +50,19 @@ describe("the competition teams in Management", () => {
     expect(valorant.get("a").attributes("to")).toBe("/management/competition/valorant/teams/1?season=4")
     expect(wrapper.get('[data-testid="team-row-2"]').text()).toContain("LOL")
     expect(wrapper.get('[data-testid="team-row-2"]').find("a").exists()).toBe(false)
-    expect(wrapper.find('[data-testid="team-row-3"]').exists()).toBe(false)
-    await wrapper.get('[data-testid="team-list-archived-toggle"]').trigger("click")
+    expect(wrapper.get('[data-testid="team-row-3"]').text()).toContain("Never fielded")
+    expect(wrapper.get('[data-testid="team-row-3"]').text()).toContain("Archived")
+    expect(wrapper.findAll('[data-testid^="team-row-"]').at(-1)!.attributes("data-testid")).toBe("team-row-3")
+    expect(wrapper.findComponent({name: "FactList"}).text()).toContain("1 archived")
+  })
+
+  it("draws each team as a row on a phone, one never fielded opening nothing", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="team-row-1-open"]').attributes("to")).toBe("/management/competition/valorant/teams/1?season=4")
+    expect(wrapper.find('[data-testid="team-row-3-open"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="team-row-3"]').text()).toContain("Never fielded")
   })
 

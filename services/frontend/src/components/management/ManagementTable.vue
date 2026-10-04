@@ -272,12 +272,11 @@ const UNSORTED = "M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7"
 <style scoped>
 /* Every table stands in the same hairline box under the same head, so two lists never differ
    at the top. A table too wide for its page scrolls in that box, never the page. */
-.mg-table {
-  box-shadow: inset 0 0 0 1px var(--color-hairline);
-}
-
 .mg-table__scroll {
   overflow-x: auto;
+  /* Solid, rows and the lines between them alike: the page's pattern stays behind the table. */
+  background-color: var(--color-ground);
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
 
 .mg-table thead {
@@ -297,37 +296,49 @@ const UNSORTED = "M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7"
   z-index: 1;
 }
 
-/* What the list is narrowed by sits on the table itself: how many, the filters, and the search
-   at the far end, flush with the corner. */
+/* What the list is narrowed by sits on the table's own top edge: how many at the start, the
+   filters and the search at the far end, flush with the corner. */
 .mg-table__bar {
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
+  justify-content: flex-end;
   gap: 0.5rem;
-  padding-left: 1.4rem;
-  background: var(--color-surface);
-  box-shadow: inset 0 -1px 0 var(--color-hairline);
 }
 
 .mg-table__count {
   align-self: center;
-  margin-right: 0.6rem;
+  margin-right: auto;
+  padding-left: 0.2rem;
   font-size: 0.85rem;
   white-space: nowrap;
   color: var(--color-ash);
 }
 
 .mg-table__count :deep(b) {
-  color: var(--color-chalk);
+  font-weight: inherit;
 }
 
 .mg-table__search {
   display: flex;
-  margin-left: auto;
 }
 
 .mg-table__bar :deep(.filter-bar) {
   margin-top: 0;
+}
+
+.mg-rows .mg-table__bar {
+  padding-bottom: 0.5rem;
+}
+
+.mg-rows .mg-table__search {
+  flex: 1 1 100%;
+}
+
+/* Solid as the table under them, so nothing of the page shows through a control. */
+.mg-table__search :deep(.search-box),
+.mg-table__bar :deep(.island-field__box) {
+  background-color: var(--color-surface);
 }
 
 /* The search takes the height of the filters beside it, never more. */
@@ -385,16 +396,17 @@ th {
 }
 
 td {
-  padding: 0.65rem 0.9rem;
+  padding: 0.4rem 0.9rem;
   font-size: 0.9rem;
+  line-height: 1.3;
   white-space: nowrap;
   color: var(--color-chalk);
-  background-color: var(--band-ground);
+  background-color: var(--color-pit);
   transition: background-color 220ms ease;
 }
 
 tbody tr:hover td {
-  background-color: color-mix(in oklab, var(--color-surface) 94%, transparent);
+  background-color: var(--color-surface);
 }
 
 td:first-child {
@@ -412,8 +424,8 @@ th:first-child {
 td:first-child::before {
   content: "";
   position: absolute;
-  top: 0.55rem;
-  bottom: 0.55rem;
+  top: 0.4rem;
+  bottom: 0.4rem;
   left: 0.5rem;
   width: 3px;
   background: var(--color-brand);
@@ -436,8 +448,8 @@ tbody tr:hover td:first-child::before {
 }
 
 .mg-table__acts {
-  padding-top: 0.2rem;
-  padding-bottom: 0.2rem;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
   text-align: right;
 }
 
@@ -554,7 +566,7 @@ td.mg-table__empty::before {
 <style>
 .mg-name {
   font-family: var(--font-display);
-  font-size: 0.98rem;
+  font-size: 0.92rem;
   font-weight: 400;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -568,7 +580,8 @@ a.mg-name:hover {
 
 .mg-sub {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1.25;
   color: var(--color-ash);
 }
 

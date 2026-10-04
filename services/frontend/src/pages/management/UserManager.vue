@@ -443,8 +443,8 @@ onMounted(load)
 
 .people__needs {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.9rem;
 }
 
 @media (--phone) {

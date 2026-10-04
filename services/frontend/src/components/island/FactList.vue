@@ -18,7 +18,7 @@ defineOptions({name: "FactList"})
 
 const {facts, columns = 3} = defineProps<{
   facts: Fact[]
-  columns?: 2 | 3
+  columns?: 2 | 3 | 6
 }>()
 </script>
 
@@ -68,6 +68,10 @@ const {facts, columns = 3} = defineProps<{
 
 .facts--2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.facts--6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .facts__one {
@@ -138,7 +142,8 @@ const {facts, columns = 3} = defineProps<{
 
 /* Two to a row, the third across the foot, so no value is squeezed to a word a line. */
 @media (--phone) {
-  .facts--3 {
+  .facts--3,
+  .facts--6 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

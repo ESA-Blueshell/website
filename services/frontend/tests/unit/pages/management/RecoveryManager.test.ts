@@ -59,12 +59,25 @@ describe("the Account recovery page", () => {
 
     expect(rowIds(wrapper)).toEqual([2, 3, 4, 1])
     expect(wrapper.get('[data-testid="recovery-state-1"]').text()).toBe("Not activated")
-    expect(wrapper.get('[data-testid="recovery-state-3"]').text()).toBe("Deleted, 3 days left")
-    expect(wrapper.get('[data-testid="recovery-state-4"]').text()).toBe("Deleted, window passed")
-    expect(wrapper.get('[data-testid="recovery-last-email-3"]').text()).toBe("Never")
+    expect(wrapper.get('[data-testid="recovery-state-3"]').text()).toBe("Deleted")
+    expect(wrapper.get('[data-testid="recovery-user-row-3"]').text()).toContain("Restorable for 3 more days")
+    expect(wrapper.get('[data-testid="recovery-user-row-4"]').text()).toContain("Window passed")
+    expect(wrapper.get('[data-testid="recovery-last-email-3"]').text()).toBe("None yet")
+    expect(wrapper.get('[data-testid="recovery-fact-deleted"]').text()).toContain("1 can still be restored")
+    expect(wrapper.get('[data-testid="recovery-fact-not-activated"]').text()).toContain("1")
     expect(wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="recovery-user-send-btn-PASSWORD_RESET-2"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="recovery-user-action-btn-restore-4"]').attributes("disabled")).toBeDefined()
+  })
+
+  it("draws each account as a row on a phone, its one act at the end", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.findAllComponents({name: "ManagementRow"})).toHaveLength(4)
+    expect(wrapper.get('[data-testid="recovery-user-row-3"]').text()).toContain("Restorable for 3 more days")
+    expect(wrapper.get('[data-testid="recovery-user-row-4"]').find('[data-testid="recovery-user-action-btn-restore-4"]').exists()).toBe(true)
   })
 
   it("sorts the last recovery email as a date, newest first, and back", async () => {

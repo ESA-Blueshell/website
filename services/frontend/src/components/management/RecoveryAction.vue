@@ -3,6 +3,7 @@
    it would send, with its send button on it, or restore a deleted account inside its window. */
 import {computed, ref} from "vue"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
 import {useEmailPreview} from "@/composables/useEmailPreview"
 import {previewRecoveryMail, requestPasswordReset, resendRecoveryMail, restoreDeletedUser, TokenPurpose} from "@/domains/recovery"
 import type {UserDetailResponse} from "@/domains/user"
@@ -68,25 +69,21 @@ const restore = async () => {
 
 <template>
   <span class="recovery-action">
-    <button
+    <mini-button
       v-if="purpose"
-      class="recovery-action__button"
-      :data-testid="`recovery-user-send-btn-${purpose}-${user.id}`"
-      type="button"
+      :testid="`recovery-user-send-btn-${purpose}-${user.id}`"
       @click="openEmail"
     >
       {{ WORDS[purpose] ?? "Send" }}
-    </button>
-    <button
+    </mini-button>
+    <mini-button
       v-else-if="action === 'restore'"
-      class="recovery-action__button"
-      :data-testid="`recovery-user-action-btn-restore-${user.id}`"
+      :testid="`recovery-user-action-btn-restore-${user.id}`"
       :disabled="busy || windowPassed"
-      type="button"
       @click="restore"
     >
       {{ windowPassed ? "Window passed" : "Restore" }}
-    </button>
+    </mini-button>
 
     <email-preview-dialog
       v-model="open"
@@ -100,21 +97,3 @@ const restore = async () => {
     />
   </span>
 </template>
-
-<style scoped>
-.recovery-action__button {
-  padding: 0.35rem 0.8rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.84rem;
-  color: var(--color-chalk);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.recovery-action__button:disabled {
-  color: var(--color-ash);
-  cursor: default;
-}
-</style>

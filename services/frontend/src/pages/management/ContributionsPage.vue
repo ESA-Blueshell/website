@@ -5,10 +5,17 @@ import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import FilterBar from "@/components/island/FilterBar.vue"
 import FilterPicker from "@/components/island/FilterPicker.vue"
-import FullList from "@/components/island/FullList.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FactList from "@/components/island/FactList.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import SelectionBar from "@/components/island/SelectionBar.vue"
-import SortHeader from "@/components/island/SortHeader.vue"
+import StateMark from "@/components/island/StateMark.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {
   type ContributionPeriodResponse,
@@ -22,7 +29,7 @@ import {
 import {fold} from "@/domains/user"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {feeTypeLabels} from "@/utils/feePreview"
-import {formatDateNoSeconds} from "@/utils/timestamps"
+import {formatDay, formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "ContributionsPage"})
 
@@ -71,15 +78,86 @@ const filtered = computed(() => search.value !== "" || paid.value !== null)
 const {selectedIdsArray, isSelected, toggle, clear: clearSelection} = useUserSelection(computed(() => shown.value.map((one) => one.userId)))
 
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`
-const feeOf = (one: PeriodMember) => (one.feeType && one.fee != null ? `${feeTypeLabels[one.feeType]}, ${euro(one.fee)}` : "Owes nothing")
 
-const sortBy = (key: "name" | "lastEmail") => {
-  // A date starts newest first; a name starts at the top of the alphabet.
-  descending.value = sortKey.value === key ? !descending.value : key === "lastEmail"
-  sortKey.value = key
+const COLUMNS: TableColumn[] = [
+  {key: "name", label: "Member", sortable: true, wrap: true, testid: "contribution-sort-name"},
+  {key: "fee", label: "Fee type", wrap: true},
+  {key: "incasso", label: "Incasso"},
+  {key: "paid", label: "Paid"},
+  {key: "lastEmail", label: "Last payment email", sortable: true, wrap: true, testid: "contribution-sort-last-email"},
+]
+
+const RUN_COLUMNS: TableColumn[] = [
+  {key: "sent", label: "Sent"},
+  {key: "what", label: "What", wrap: true},
+  {key: "members", label: "Members"},
+  {key: "total", label: "Total"},
+  {key: "state", label: "State"},
+]
+
+const today = new Date().toISOString().slice(0, 10)
+/** "2026-2027", or the one year a period starts and ends in. */
+const periodName = (one: ContributionPeriodResponse) => {
+  const [from, until] = [one.startDate.slice(0, 4), one.endDate.slice(0, 4)]
+  return from === until ? from : `${from}-${until}`
+}
+const isCurrent = (one: ContributionPeriodResponse) => one.startDate <= today && today <= one.endDate
+
+const facts = computed(() => (period.value
+  ? [
+      {label: "Full-year fee", value: euro(period.value.fullYearFee)},
+      {label: "Half-year fee", value: euro(period.value.halfYearFee)},
+      {label: "Alumni fee", value: euro(period.value.alumniFee)},
+      {label: "Half-year cutoff", value: formatDay(period.value.halfYearCutoffDate)},
+      {label: "Paid", value: `${paidCount.value} of ${members.value.length}`, testid: "contribution-paid-count"},
+      {label: "On incasso", value: String(incassoCount.value), testid: "contribution-incasso-count"},
+    ]
+  : []))
+
+interface RunRow {
+  key: string
+  testid: string
+  sent: string
+  what: string
+  members: number
+  total: string
+  waiting: boolean
+  state: string
+  to: string
 }
 
-const direction = (key: "name" | "lastEmail") => (sortKey.value === key ? (descending.value ? "desc" : "asc") : null)
+/** What went out this period, incassos and payment emails in one list, newest first. */
+const runs = computed<RunRow[]>(() => {
+  const incassos = (view.value?.incassoRuns ?? []).map((run): RunRow => ({
+    key: `incasso-${run.id}`,
+    testid: `contribution-incasso-${run.id}`,
+    sent: run.collectionDate,
+    what: `Incasso, collected ${dayName(run.collectionDate)}`,
+    members: run.collections,
+    total: euro(run.total),
+    waiting: !run.submittedAt,
+    state: run.submittedAt ? `Submitted to ING ${dayName(run.submittedAt.slice(0, 10))}` : "Waiting for upload to ING",
+    to: `/management/contributions/${period.value?.id}/incasso/${run.id}`,
+  }))
+  const emails = (view.value?.runs ?? []).map((run): RunRow => ({
+    key: `${run.kind}-${run.sentAt}`,
+    testid: `contribution-run-${run.kind}-${run.sentAt}`,
+    sent: run.sentAt,
+    what: contributionEmailLabels[run.kind],
+    members: run.recipients,
+    total: "·",
+    waiting: false,
+    state: "Sent",
+    to: "/management/mail/sent",
+  }))
+  return [...incassos, ...emails].sort((a, b) => b.sent.localeCompare(a.sent))
+})
+
+const sortBy = (key: string) => {
+  // A date starts newest first; a name starts at the top of the alphabet.
+  descending.value = sortKey.value === key ? !descending.value : key === "lastEmail"
+  sortKey.value = key as "name" | "lastEmail"
+}
 
 const clear = () => {
   search.value = ""
@@ -105,15 +183,16 @@ const sendReminders = () => {
 }
 
 /** Marking payments happens on the bulk task page, which comes back here once done. */
-const markPayments = (action: "paid" | "unpaid") => {
+const markPayments = (action: "paid" | "unpaid", ids: number[] = selectedIdsArray.value) => {
   if (!period.value) return
   void router.push({
     path: `/management/users/bulk/${action}`,
-    query: {ids: selectedIdsArray.value.join(","), period: String(period.value.id), back: `/management/contributions/${period.value.id}`},
+    query: {ids: ids.join(","), period: String(period.value.id), back: `/management/contributions/${period.value.id}`},
   })
 }
 
-const listHeight = ref(Math.max(320, globalThis.innerHeight - 520))
+const feeName = (one: PeriodMember) => (one.feeType && one.fee != null ? feeTypeLabels[one.feeType] : "Owes nothing")
+const lastEmail = (one: PeriodMember) => (one.lastEmailAt && one.lastEmailKind ? formatMoment(one.lastEmailAt) : "None yet")
 
 watch(() => period.value?.id, () => {
   clearSelection()
@@ -123,13 +202,25 @@ void loadPeriods()
 </script>
 
 <template>
-  <div
-    class="money"
-    data-testid="contributions-page"
+  <management-page
+    eyebrow="Money"
+    testid="contributions-page"
+    title="Contributions"
   >
-    <h1 class="money__title">
-      Contributions
-    </h1>
+    <template #lede>
+      Who owes what for a contribution period, who paid and who was asked. People and their accounts live in Users.
+    </template>
+    <template
+      v-if="period"
+      #actions
+    >
+      <cut-button
+        :href="`/management/contributions/periods/${period.id}`"
+        testid="contribution-period-edit"
+      >
+        Edit this period
+      </cut-button>
+    </template>
 
     <nav
       aria-label="Contribution periods"
@@ -145,13 +236,31 @@ void loadPeriods()
         :data-testid="`contribution-period-${one.id}`"
         :to="`/management/contributions/${one.id}`"
       >
-        {{ one.startDate.slice(0, 4) }}–{{ one.endDate.slice(2, 4) }}
+        <span>
+          <span class="money__period">{{ periodName(one) }}</span>
+          <span class="money__dates">{{ formatDay(one.startDate) }} to {{ formatDay(one.endDate) }}</span>
+        </span>
+        <span
+          v-if="isCurrent(one)"
+          class="money__current"
+        >Current</span>
       </router-link>
       <router-link
         class="money__tile money__tile--new"
         data-testid="contribution-period-new"
         to="/management/contributions/periods/new"
       >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          viewBox="0 0 12 12"
+        >
+          <path
+            d="M6 1v10M1 6h10"
+            stroke="currentColor"
+            stroke-width="1.6"
+          />
+        </svg>
         New period
       </router-link>
     </nav>
@@ -165,51 +274,12 @@ void loadPeriods()
     </p>
 
     <template v-else>
-      <section
+      <fact-list
         class="money__facts"
+        :columns="6"
         data-testid="contribution-period-facts"
-      >
-        <dl>
-          <div>
-            <dt>Period</dt>
-            <dd>{{ period.startDate }} to {{ period.endDate }}</dd>
-          </div>
-          <div>
-            <dt>Fees</dt>
-            <dd>{{ euro(period.fullYearFee) }} · half year {{ euro(period.halfYearFee) }} · alumni {{ euro(period.alumniFee) }}</dd>
-          </div>
-          <div>
-            <dt>Half-year cutoff</dt>
-            <dd>{{ period.halfYearCutoffDate }}</dd>
-          </div>
-          <div>
-            <dt>Paid</dt>
-            <dd data-testid="contribution-paid-count">
-              {{ paidCount }} of {{ members.length }}
-            </dd>
-          </div>
-          <div>
-            <dt>On incasso</dt>
-            <dd data-testid="contribution-incasso-count">
-              {{ incassoCount }}
-            </dd>
-          </div>
-        </dl>
-        <router-link
-          class="money__action"
-          data-testid="contribution-period-edit"
-          :to="`/management/contributions/periods/${period.id}`"
-        >
-          Edit period
-        </router-link>
-        <router-link
-          class="money__action"
-          data-testid="contribution-incasso-run"
-          :to="`/management/contributions/${period.id}/incasso`"
-        >
-          Run an incasso
-        </router-link>
-      </section>
+        :facts="facts"
+      />
 
       <filter-bar
         :active="filtered"
@@ -229,55 +299,9 @@ void loadPeriods()
         />
       </filter-bar>
 
-      <selection-bar
-        :count="selectedIdsArray.length"
-        testid="contribution-selection"
-        @clear="clearSelection"
-      >
-        <button
-          class="money__action"
-          data-testid="bulk-action-send-payment-reminders"
-          type="button"
-          @click="sendReminders"
-        >
-          Send payment reminders
-        </button>
-        <button
-          class="money__action"
-          data-testid="bulk-action-mark-paid"
-          type="button"
-          @click="markPayments('paid')"
-        >
-          Mark paid
-        </button>
-        <button
-          class="money__action"
-          data-testid="bulk-action-mark-unpaid"
-          type="button"
-          @click="markPayments('unpaid')"
-        >
-          Mark unpaid
-        </button>
-      </selection-bar>
-
-      <div class="money__columns">
-        <span />
-        <sort-header
-          :direction="direction('name')"
-          label="Name"
-          testid="contribution-sort-name"
-          @sort="sortBy('name')"
-        />
-        <span class="money__wide">Fee</span>
-        <span>Paid</span>
-        <sort-header
-          class="money__wide"
-          :direction="direction('lastEmail')"
-          label="Last payment email"
-          testid="contribution-sort-last-email"
-          @sort="sortBy('lastEmail')"
-        />
-      </div>
+      <p class="money__count">
+        <b>{{ shown.length }}</b> of {{ members.length }} members
+      </p>
 
       <p
         v-if="view && shown.length === 0"
@@ -287,279 +311,256 @@ void loadPeriods()
         Nobody matches.
       </p>
 
-      <full-list
-        :height="listHeight"
-        :row-height="56"
+      <management-table
+        v-else
+        :columns="COLUMNS"
+        :descending="descending"
         :row-key="(one) => one.userId"
+        :row-testid="(one) => `contribution-row-${one.userId}`"
         :rows="shown"
+        :sort-key="sortKey"
         testid="contribution-list"
+        @sort="sortBy"
       >
-        <template #row="{row}">
-          <div
-            class="money__row"
-            :data-testid="`contribution-row-${row.userId}`"
-          >
-            <input
-              :aria-label="`Select ${row.name}`"
-              :checked="isSelected(row.userId)"
-              :data-testid="`contribution-checkbox-${row.userId}`"
-              type="checkbox"
-              @change="toggle(row.userId)"
-            >
-            <span class="money__who">
-              <router-link
-                class="money__name"
-                :to="`/management/users/${row.userId}/contributions`"
-              >{{ row.name }}</router-link>
-              <span class="money__sub">@{{ row.username }}{{ row.incasso ? " · incasso" : "" }}</span>
-            </span>
-            <span class="money__wide money__sub">{{ feeOf(row) }}</span>
-            <span
-              class="money__sub"
-              :data-testid="`contribution-paid-${row.userId}`"
-            >{{ row.paid ? `Paid${row.paidAt ? ` ${formatDateNoSeconds(row.paidAt)}` : ""}` : "Not paid" }}</span>
-            <span
-              class="money__wide money__sub"
-              :data-testid="`contribution-last-email-${row.userId}`"
-            >{{ row.lastEmailAt && row.lastEmailKind
-              ? `${formatDateNoSeconds(row.lastEmailAt)}, ${contributionEmailLabels[row.lastEmailKind].toLowerCase()}`
-              : "None yet" }}</span>
-          </div>
+        <template #check="{row}">
+          <row-check
+            :checked="isSelected(row.userId)"
+            :label="`Select ${row.name}`"
+            :testid="`contribution-checkbox-${row.userId}`"
+            @toggle="toggle(row.userId)"
+          />
         </template>
-      </full-list>
-
-      <section
-        v-if="(view?.incassoRuns ?? []).length > 0"
-        class="money__runs"
-        data-testid="contribution-incasso-runs"
-      >
-        <h2>Incassos</h2>
-        <ul>
-          <li
-            v-for="run in view?.incassoRuns ?? []"
-            :key="run.id"
-            :data-testid="`contribution-incasso-${run.id}`"
+        <template #name="{row}">
+          <router-link
+            class="mg-name"
+            :to="`/management/users/${row.userId}/contributions`"
           >
-            <span>{{ dayName(run.collectionDate) }}, {{ run.collections }} collection{{ run.collections === 1 ? "" : "s" }}, {{ euro(run.total) }}</span>
+            {{ row.name }}
+          </router-link>
+          <span class="mg-sub">{{ row.username }}</span>
+        </template>
+        <template #fee="{row}">
+          {{ feeName(row) }}
+          <span
+            v-if="row.fee != null && row.feeType"
+            class="mg-sub"
+          >{{ euro(row.fee) }}</span>
+        </template>
+        <template #incasso="{row}">
+          <span :class="{'mg-quiet': !row.incasso}">{{ row.incasso ? "On incasso" : "No" }}</span>
+        </template>
+        <template #paid="{row}">
+          <state-mark
+            :kind="row.paid ? 'in-step' : 'extra'"
+            :testid="`contribution-paid-${row.userId}`"
+          >
+            {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
+          </state-mark>
+        </template>
+        <template #lastEmail="{row}">
+          <span :data-testid="`contribution-last-email-${row.userId}`">
+            <span :class="{'mg-quiet': !row.lastEmailAt}">{{ lastEmail(row) }}</span>
             <span
-              class="money__sub"
-              :class="{'money__waiting': !run.submittedAt}"
-            >{{ run.submittedAt ? `Submitted to ING ${dayName(run.submittedAt.slice(0, 10))}` : "Waiting for upload to ING" }}</span>
-            <router-link :to="`/management/contributions/${period.id}/incasso/${run.id}`">
-              Open
-            </router-link>
-          </li>
-        </ul>
-      </section>
-
-      <section
-        class="money__runs"
-        data-testid="contribution-runs"
-      >
-        <h2>Payment email runs</h2>
-        <p
-          v-if="(view?.runs ?? []).length === 0"
-          class="money__note"
-        >
-          No payment emails have gone out for this period yet.
-        </p>
-        <ul>
-          <li
-            v-for="run in view?.runs ?? []"
-            :key="`${run.kind}-${run.sentAt}`"
-            :data-testid="`contribution-run-${run.kind}-${run.sentAt}`"
+              v-if="row.lastEmailAt && row.lastEmailKind"
+              class="mg-sub"
+            >{{ contributionEmailLabels[row.lastEmailKind] }}</span>
+          </span>
+        </template>
+        <template #acts="{row}">
+          <mini-button
+            :testid="`contribution-mark-${row.userId}`"
+            @click="markPayments(row.paid ? 'unpaid' : 'paid', [row.userId])"
           >
-            <span>{{ contributionEmailLabels[run.kind] }}, {{ formatDateNoSeconds(run.sentAt) }}</span>
-            <span class="money__sub">Sent to {{ run.recipients }}</span>
-            <router-link to="/management/mail/sent">
-              See the emails
-            </router-link>
-          </li>
-        </ul>
-      </section>
+            {{ row.paid ? "Withdraw" : "Mark paid" }}
+          </mini-button>
+        </template>
+        <template #phone="{row}">
+          <management-row
+            :meta="`${feeName(row)}${row.incasso ? ' · incasso' : ''}`"
+            :name="row.name"
+            :testid="`contribution-row-${row.userId}`"
+            :to="`/management/users/${row.userId}/contributions`"
+          >
+            <template #check>
+              <row-check
+                :checked="isSelected(row.userId)"
+                :label="`Select ${row.name}`"
+                :testid="`contribution-checkbox-${row.userId}`"
+                @toggle="toggle(row.userId)"
+              />
+            </template>
+            <state-mark
+              :kind="row.paid ? 'in-step' : 'extra'"
+              :testid="`contribution-paid-${row.userId}`"
+            >
+              {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
+            </state-mark>
+          </management-row>
+        </template>
+      </management-table>
+
+      <selection-bar
+        :count="selectedIdsArray.length"
+        testid="contribution-selection"
+        @clear="clearSelection"
+      >
+        <cut-button
+          small
+          testid="bulk-action-send-payment-reminders"
+          tone="solid"
+          @click="sendReminders"
+        >
+          Send payment reminders
+        </cut-button>
+        <cut-button
+          small
+          testid="bulk-action-mark-paid"
+          @click="markPayments('paid')"
+        >
+          Mark paid
+        </cut-button>
+        <cut-button
+          small
+          testid="bulk-action-mark-unpaid"
+          @click="markPayments('unpaid')"
+        >
+          Mark unpaid
+        </cut-button>
+      </selection-bar>
+
+      <list-head title="Reminders and incassos this period">
+        <cut-button
+          :href="`/management/contributions/${period.id}/incasso`"
+          small
+          testid="contribution-incasso-run"
+        >
+          Run an incasso
+        </cut-button>
+      </list-head>
+      <p
+        v-if="runs.length === 0"
+        class="money__note"
+        data-testid="contribution-runs-empty"
+      >
+        No payment emails or incassos have gone out for this period yet.
+      </p>
+      <management-table
+        v-else
+        :columns="RUN_COLUMNS"
+        :row-key="(run) => run.key"
+        :row-testid="(run) => run.testid"
+        :rows="runs"
+        testid="contribution-runs"
+      >
+        <template #sent="{row}">
+          {{ formatDay(row.sent) }}
+        </template>
+        <template #what="{row}">
+          {{ row.what }}
+        </template>
+        <template #members="{row}">
+          {{ row.members }}
+        </template>
+        <template #total="{row}">
+          <span :class="{'mg-quiet': row.total === '·'}">{{ row.total }}</span>
+        </template>
+        <template #state="{row}">
+          <state-mark :kind="row.waiting ? 'extra' : 'in-step'">
+            {{ row.state }}
+          </state-mark>
+        </template>
+        <template #acts="{row}">
+          <mini-button :to="row.to">
+            {{ row.to.includes("/incasso/") ? "Open" : "See the emails" }}
+          </mini-button>
+        </template>
+      </management-table>
     </template>
-  </div>
+  </management-page>
 </template>
 
 <style scoped>
-.money {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  padding: 2rem 2.4rem 3rem;
-}
-
-.money__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.money__note {
-  margin: 0;
-  color: var(--color-ash);
-}
-
 .money__strip {
   display: flex;
-  gap: 0.4rem;
-  overflow-x: auto;
-  padding-bottom: 0.3rem;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 1rem;
 }
 
 .money__tile {
-  flex: 0 0 auto;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.9rem;
+  position: relative;
+  display: flex;
+  flex: 1 1 12rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.9rem;
+  padding: 0.7rem 1rem;
+  color: var(--color-ash);
+  background-color: var(--band-ground);
+}
+
+.money__tile:hover {
   color: var(--color-chalk);
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
 }
 
 .money__tile--on {
-  border-color: var(--color-brand);
-  box-shadow: inset 0 -3px 0 var(--color-brand);
+  color: var(--color-chalk);
+  box-shadow: inset 0 -3px 0 var(--color-eyebrow);
 }
 
-.money__tile--new {
-  border-style: dashed;
-  color: var(--color-brand);
+.money__period {
+  display: block;
+  font-weight: 600;
 }
 
-.money__facts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: var(--band-ground);
-  border: 1px solid var(--color-hairline);
+.money__dates {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--color-ash);
 }
 
-.money__facts dl {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem 1.8rem;
-  margin: 0;
-}
-
-.money__facts dt {
-  font-size: 0.72rem;
+.money__current {
+  padding: 0.26rem 0.55rem;
+  border: 1px solid currentColor;
+  font-size: 0.68rem;
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--color-eyebrow);
 }
 
-.money__facts dd {
-  margin: 0.2rem 0 0;
-}
-
-.money__action {
-  text-decoration: none;
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-.money__columns,
-.money__row {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) 12rem 9rem 13rem;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-.money__columns {
-  padding: 0 0.6rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-ash);
-}
-
-.money__row {
-  height: 56px;
-  padding: 0 0.6rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.money__who {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.money__name {
+.money__tile--new {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  gap: 0.6rem;
   font-weight: 600;
+  color: var(--color-brand-ink);
+}
+
+.money__tile--new svg {
+  width: 12px;
+  height: 12px;
+}
+
+.money__facts {
+  padding: 1.4rem 0 0.4rem;
+}
+
+.money__count {
+  padding: 1rem 0.2rem 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-ash);
+}
+
+.money__count b {
   color: var(--color-chalk);
-  text-decoration: none;
 }
 
-.money__name,
-.money__sub {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.money__waiting {
-  color: var(--color-warning);
-}
-
-.money__sub {
-  font-size: 0.8rem;
+.money__note {
+  margin-top: 1rem;
   color: var(--color-ash);
-}
-
-.money__runs h2 {
-  margin: 0 0 0.5rem;
-  font-size: 0.8rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-ash);
-}
-
-.money__runs ul {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.money__runs li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-}
-
-.money__runs a {
-  color: var(--color-brand);
-}
-
-@media (max-width: 839px) {
-  .money {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
-  .money__columns,
-  .money__row {
-    grid-template-columns: 1.6rem minmax(0, 1fr) 6rem;
-    gap: 0.5rem;
-  }
-
-  .money__wide {
-    display: none;
-  }
 }
 </style>

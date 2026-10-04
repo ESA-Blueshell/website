@@ -129,6 +129,8 @@ const onSave = () => {
       :descending="descending"
       :row-key="(row) => row.userId"
       :row-testid="(row) => `bulk-preview-row-${row.userId}`"
+      search-label="Search members"
+      :search-text="(row) => row.name"
       :rows="sortedRows"
       :sort-key="sortKey"
       testid="bulk-action-preview-table"

@@ -173,6 +173,8 @@ onMounted(async () => {
         :columns="WHO_COLUMNS"
         :row-key="(one) => one.userId"
         :row-testid="(one) => `payment-reminders-row-${one.userId}`"
+        search-label="Search members"
+        :search-text="(one) => one.name"
         :rows="writable"
       >
         <template #check="{row}">
@@ -221,6 +223,8 @@ onMounted(async () => {
       <management-table
         :columns="FEE_COLUMNS"
         :row-key="(one) => one.userId"
+        search-label="Search members"
+        :search-text="(one) => one.name"
         :rows="chosen"
       >
         <template #name="{row}">
@@ -268,6 +272,8 @@ onMounted(async () => {
       <management-table
         :columns="CHECK_COLUMNS"
         :row-key="(one) => one.userId"
+        search-label="Search members"
+        :search-text="(one) => one.name"
         :rows="chosen"
       >
         <template #name="{row}">

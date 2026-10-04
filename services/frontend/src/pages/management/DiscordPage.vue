@@ -228,6 +228,8 @@ onMounted(load)
         :columns="ROLE_COLUMNS"
         :row-key="(row) => row.key"
         :row-testid="(row) => (row.missing ? `discord-role-missing-${row.missing.targetId}` : `discord-role-${row.key}`)"
+        search-label="Search roles"
+        :search-text="(row) => row.role?.label ?? row.missing?.cohortLabel ?? ''"
         :rows="roleRows"
         testid="discord-roles"
         :to="roleLink"
@@ -309,6 +311,8 @@ onMounted(load)
         :columns="CHANNEL_COLUMNS"
         :row-key="(channel) => channel.id"
         :row-testid="(channel) => `discord-channel-${channel.id}`"
+        search-label="Search channels"
+        :search-text="(channel) => `${channel.name} ${channel.category}`"
         :rows="channelRows"
         testid="discord-channels"
       >

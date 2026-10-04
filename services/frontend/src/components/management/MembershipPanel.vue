@@ -221,6 +221,8 @@ defineExpose({
         :columns="COLUMNS"
         :row-key="(m) => m.id"
         :row-testid="(m) => `manage-membership-row-${m.id}`"
+        search-label="Search memberships"
+        :search-text="(m) => `${memberTypeLabel(m.memberType)} ${formatDay(m.startDate)}`"
         :rows="memberships"
       >
         <template #started="{row}">
@@ -331,6 +333,8 @@ defineExpose({
           :columns="COLUMNS.slice(0, 3)"
           :row-key="(m) => m.id"
           :row-testid="(m) => `manage-membership-deleted-row-${m.id}`"
+          search-label="Search memberships"
+          :search-text="(m) => `${memberTypeLabel(m.memberType)} ${formatDay(m.startDate)}`"
           :rows="deletedMemberships"
         >
           <template #started="{row}">

@@ -228,6 +228,8 @@ onMounted(load)
         :columns="COLUMNS"
         :row-key="(state) => state.channel.id"
         :row-testid="(state) => `discord-opening-${state.channel.id}`"
+        search-label="Search channels"
+        :search-text="(state) => nameOf(state)"
         :rows="openings"
         testid="discord-role-openings"
       >

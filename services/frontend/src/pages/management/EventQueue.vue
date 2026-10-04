@@ -92,6 +92,8 @@ onMounted(load)
       :columns="COLUMNS"
       :row-key="(queued) => queued.event.id"
       :row-testid="(queued) => `event-queue-row-${queued.event.id}`"
+      search-label="Search events"
+      :search-text="(queued) => queued.event.title"
       :rows="rows"
       testid="event-queue-table"
       :to="(queued) => `/events/${queued.event.id}`"

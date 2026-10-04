@@ -275,6 +275,8 @@ const leftOutPairs = computed(() => [
         :columns="WHO_COLUMNS"
         :row-key="(one) => one.userId"
         :row-testid="(one) => `incasso-run-row-${one.userId}`"
+        search-label="Search members"
+        :search-text="(one) => one.name"
         :rows="candidates"
       >
         <template #check="{row}">
@@ -325,6 +327,8 @@ const leftOutPairs = computed(() => [
       <management-table
         :columns="AMOUNT_COLUMNS"
         :row-key="(one) => one.userId"
+        search-label="Search members"
+        :search-text="(one) => one.name"
         :rows="chosen"
       >
         <template #name="{row}">
@@ -393,6 +397,8 @@ const leftOutPairs = computed(() => [
         :columns="COLLECT_COLUMNS"
         :row-key="(one) => one.userId"
         :row-testid="(one) => `incasso-run-collect-${one.userId}`"
+        search-label="Search members"
+        :search-text="(one) => one.name"
         :rows="chosen"
       >
         <template #name="{row}">
@@ -517,6 +523,8 @@ const leftOutPairs = computed(() => [
       <management-table
         :columns="DONE_COLUMNS"
         :row-key="(one) => one.userId"
+        search-label="Search members"
+        :search-text="(one) => one.name"
         :rows="run.collections"
       >
         <template #name="{row}">

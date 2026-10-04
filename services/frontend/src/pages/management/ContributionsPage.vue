@@ -471,6 +471,8 @@ void loadPeriods()
         :columns="RUN_COLUMNS"
         :row-key="(run) => run.key"
         :row-testid="(run) => run.testid"
+        search-label="Search runs"
+        :search-text="(run) => `${run.what} ${run.state}`"
         :rows="runs"
         testid="contribution-runs"
       >

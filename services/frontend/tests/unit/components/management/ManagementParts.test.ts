@@ -325,27 +325,71 @@ describe("ManagementTable", () => {
     wrapper.unmount()
   })
 
-  it("hands the wheel to the page once the table is at its end, and when it has nothing to scroll", async () => {
+  it("hands a scroll to the page only when it starts with the table already at that end", () => {
     const scrollBy = vi.fn()
     vi.stubGlobal("scrollBy", scrollBy)
     const wrapper = mount(ManagementTable<Row>, {props: {columns, rows: [{id: 1, name: "Row 1"}], rowKey: (row: Row) => row.id}, slots: cells, global: {stubs}, attachTo: document.body})
-    const scroller = wrapper.get(".mg-table__scroll")
-    const at = (scrollTop: number) => Object.defineProperties(scroller.element, {scrollTop: {value: scrollTop, configurable: true}, clientHeight: {value: 600, configurable: true}, scrollHeight: {value: 1500, configurable: true}})
+    const box = wrapper.get(".mg-table__scroll").element
+    const at = (scrollTop: number) => Object.defineProperties(box, {scrollTop: {value: scrollTop, configurable: true}, clientHeight: {value: 600, configurable: true}, scrollHeight: {value: 1500, configurable: true}})
+    const wheel = (when: number, deltaY: number, deltaMode = 0) => {
+      const event = new WheelEvent("wheel", {deltaY, deltaMode})
+      Object.defineProperty(event, "timeStamp", {value: when})
+      box.dispatchEvent(event)
+    }
 
+    // Started in the rows: it stays the rows' scroll, even once they reach their end.
     at(400)
-    await scroller.trigger("wheel", {deltaY: 120, deltaMode: 0})
-    await scroller.trigger("wheel", {deltaY: -120, deltaMode: 0})
+    wheel(1000, 120)
+    at(900)
+    wheel(1016, 120)
+    wheel(1032, 120)
     expect(scrollBy).not.toHaveBeenCalled()
 
-    at(900)
-    await scroller.trigger("wheel", {deltaY: 120, deltaMode: 0})
-    expect(scrollBy).toHaveBeenLastCalledWith(0, 120)
+    // A new scroll, with the rows already at their end: the page takes it, drift and all.
+    wheel(2000, 120)
+    wheel(2016, 60)
+    expect(scrollBy).toHaveBeenCalledTimes(2)
+    expect(scrollBy).toHaveBeenLastCalledWith(0, 60)
+
+    // The other way from the end goes back into the rows.
+    wheel(3000, -120)
+    expect(scrollBy).toHaveBeenCalledTimes(2)
+
     at(0)
-    await scroller.trigger("wheel", {deltaY: -3, deltaMode: 1})
+    wheel(4000, -3, 1)
     expect(scrollBy).toHaveBeenLastCalledWith(0, -96)
-    await scroller.trigger("wheel", {deltaY: -5, deltaMode: 9})
+    wheel(5000, -5, 9)
     expect(scrollBy).toHaveBeenLastCalledWith(0, -5)
     wrapper.unmount()
+    vi.unstubAllGlobals()
+  })
+
+  it("searches its own rows where the page brings no search, and says how many it shows", async () => {
+    const people = [{id: 1, name: "Ada"}, {id: 2, name: "Bo"}, {id: 3, name: "Adam"}]
+    const props = {columns, rows: people, rowKey: (row: Row) => row.id, rowTestid: (row: Row) => `row-${row.id}`, searchText: (row: Row) => row.name, searchLabel: "Search people", testid: "people"}
+    const wrapper = mount(ManagementTable<Row>, {props, slots: {...cells, empty: "Nobody yet."}, global: {stubs}})
+    const shown = () => wrapper.findAll("tr[data-row]").map((row) => row.attributes("data-testid"))
+
+    expect(wrapper.get(".mg-table__count").text()).toBe("Showing 3")
+    await wrapper.get('[data-testid="people-search"]').setValue(" AD ")
+    expect(shown()).toEqual(["row-1", "row-3"])
+    expect(wrapper.get(".mg-table__count").text()).toBe("Showing 2 of 3")
+
+    await wrapper.get('[data-testid="people-search"]').setValue("zz")
+    expect(shown()).toEqual([])
+    expect(wrapper.get(".mg-table__empty").text()).toBe("Nothing matches the search.")
+
+    await wrapper.setProps({rows: []})
+    expect(wrapper.get(".mg-table__empty").text()).toBe("Nobody yet.")
+
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const phone = mount(ManagementTable<Row>, {props, slots: {...cells, empty: "Nobody yet.", phone: ({row}: {row: Row}) => h("p", {class: "person"}, row.name)}, global: {stubs}})
+    await phone.get('[data-testid="people-search"]').setValue("bo")
+    expect(phone.findAll(".person").map((one) => one.text())).toEqual(["Bo"])
+    await phone.get('[data-testid="people-search"]').setValue("zz")
+    expect(phone.get(".mg-table__empty").text()).toBe("Nothing matches the search.")
+    await phone.setProps({rows: []})
+    expect(phone.get(".mg-table__empty").text()).toBe("Nobody yet.")
     vi.unstubAllGlobals()
   })
 })

@@ -181,9 +181,15 @@ describe("JobManager page", () => {
     expect(wrapper.find('[data-testid="job-row-effect-7"]').exists()).toBe(false)
 
     mockList.mockClear()
-    await wrapper.get('[data-testid="job-filter-hide-skipped"]').setValue(true)
+    const skipped = () => wrapper.findAllComponents({name: "FilterPicker"}).find((one) => one.props("testid") === "job-filter-hide-skipped")!
+    expect(skipped().props("modelValue")).toBeNull()
+    skipped().vm.$emit("update:modelValue", "hidden")
     await settle()
     expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({page: 0, hideSkipped: true})})
+    expect(skipped().props("modelValue")).toBe("hidden")
+    skipped().vm.$emit("update:modelValue", null)
+    await settle()
+    expect(mockList).toHaveBeenLastCalledWith({query: expect.not.objectContaining({hideSkipped: true})})
   })
 
   // Pressing Retry and being told nothing is indistinguishable from pressing nothing at all.

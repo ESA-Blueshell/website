@@ -449,6 +449,8 @@ watch(id, load, {immediate: true})
         :columns="PERIOD_COLUMNS"
         :row-key="(period) => period.periodId"
         :row-testid="(period) => `user-period-${period.periodId}`"
+        search-label="Search periods"
+        :search-text="(period) => periodName(period)"
         :rows="periods"
       >
         <template #period="{row}">

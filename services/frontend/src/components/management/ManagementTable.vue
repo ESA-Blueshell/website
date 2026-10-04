@@ -5,15 +5,24 @@
     :data-testid="testid"
   >
     <div
-      v-if="$slots.count || $slots.filters || $slots.search"
+      v-if="$slots.count || $slots.filters || $slots.search || searchText"
       class="mg-table__bar"
     >
       <span
-        v-if="$slots.count"
+        v-if="$slots.count || searchText"
         class="mg-table__count"
-      ><slot name="count" /></span>
+      ><slot name="count">{{ counted }}</slot></span>
       <slot name="filters" />
-      <span class="mg-table__search"><slot name="search" /></span>
+      <span class="mg-table__search">
+        <slot name="search">
+          <search-box
+            v-if="searchText"
+            v-model="query"
+            :label="searchLabel"
+            :testid="testid ? `${testid}-search` : undefined"
+          />
+        </slot>
+      </span>
     </div>
     <div
       v-if="headerState"
@@ -38,13 +47,19 @@
       </button>
     </div>
     <p
-      v-if="rows.length === 0 && $slots.empty"
+      v-if="kept.length === 0 && ($slots.empty || rows.length > 0)"
       class="mg-table__empty"
     >
-      <slot name="empty" />
+      <template v-if="rows.length > 0">
+        Nothing matches the search.
+      </template>
+      <slot
+        v-else
+        name="empty"
+      />
     </p>
     <template
-      v-for="row in rows"
+      v-for="row in kept"
       :key="rowKey(row)"
     >
       <slot
@@ -59,15 +74,24 @@
     :data-testid="testid"
   >
     <div
-      v-if="$slots.count || $slots.filters || $slots.search"
+      v-if="$slots.count || $slots.filters || $slots.search || searchText"
       class="mg-table__bar"
     >
       <span
-        v-if="$slots.count"
+        v-if="$slots.count || searchText"
         class="mg-table__count"
-      ><slot name="count" /></span>
+      ><slot name="count">{{ counted }}</slot></span>
       <slot name="filters" />
-      <span class="mg-table__search"><slot name="search" /></span>
+      <span class="mg-table__search">
+        <slot name="search">
+          <search-box
+            v-if="searchText"
+            v-model="query"
+            :label="searchLabel"
+            :testid="testid ? `${testid}-search` : undefined"
+          />
+        </slot>
+      </span>
     </div>
     <div
       ref="scroller"
@@ -156,12 +180,18 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-if="rows.length === 0 && $slots.empty">
+          <tr v-if="kept.length === 0 && ($slots.empty || rows.length > 0)">
             <td
               class="mg-table__empty"
               :colspan="columns.length + ($slots.check ? 1 : 0) + ($slots.acts || to ? 1 : 0)"
             >
-              <slot name="empty" />
+              <template v-if="rows.length > 0">
+                Nothing matches the search.
+              </template>
+              <slot
+                v-else
+                name="empty"
+              />
             </td>
           </tr>
           <tr
@@ -241,6 +271,7 @@
 import {computed, nextTick, onMounted, ref, useTemplateRef, watch} from "vue"
 import {useRouter} from "vue-router"
 import GoArrow from "@/components/management/GoArrow.vue"
+import SearchBox from "@/components/island/SearchBox.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {usePhone} from "@/composables/usePhone"
 
@@ -256,7 +287,7 @@ export interface TableColumn {
 
 const {
   columns, rows, rowKey, sortKey = "", descending = false, to = undefined, height = 0, testid = undefined, rowTestid = undefined,
-  headerState = undefined, total = 0, selectedCount = 0,
+  headerState = undefined, total = 0, selectedCount = 0, searchText = undefined, searchLabel = "Search",
 } = defineProps<{
   columns: TableColumn[]
   rows: T[]
@@ -276,6 +307,9 @@ const {
   total?: number
   /** How many are selected, shown or not. */
   selectedCount?: number
+  /** What a row is found by. Gives the table a search of its own, where the page brings none. */
+  searchText?: (row: T) => string
+  searchLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -299,6 +333,15 @@ const selectionLine = computed(() => {
 const phone = usePhone()
 const router = useRouter()
 
+/* The table's own search: the rows whose text holds what is typed, whatever the case. */
+const query = ref("")
+const kept = computed(() => {
+  const wanted = query.value.trim().toLowerCase()
+  if (!searchText || wanted === "") return rows
+  return rows.filter((row) => searchText(row).toLowerCase().includes(wanted))
+})
+const counted = computed(() => (kept.value.length === rows.length ? `Showing ${rows.length}` : `Showing ${kept.value.length} of ${rows.length}`))
+
 /* Only the rows in the window, and a few either side, are in the document: a list of hundreds
    scrolls like a list of twenty. Short lists are drawn whole. A row's height is measured off the
    rows drawn, so the gaps that stand for the rest stay true as cells wrap. */
@@ -311,14 +354,15 @@ const rowHeight = ref(50)
 const windowHeight = ref(800)
 
 const span = computed(() => {
-  if (rows.length <= WHOLE_UP_TO) return {from: 0, until: rows.length}
+  const count = kept.value.length
+  if (count <= WHOLE_UP_TO) return {from: 0, until: count}
   const from = Math.max(0, Math.floor(scrolled.value / rowHeight.value) - OVERSCAN)
-  const until = Math.min(rows.length, Math.ceil((scrolled.value + windowHeight.value) / rowHeight.value) + OVERSCAN)
+  const until = Math.min(count, Math.ceil((scrolled.value + windowHeight.value) / rowHeight.value) + OVERSCAN)
   return {from, until}
 })
-const drawn = computed(() => rows.slice(span.value.from, span.value.until))
+const drawn = computed(() => kept.value.slice(span.value.from, span.value.until))
 const before = computed(() => span.value.from * rowHeight.value)
-const after = computed(() => (rows.length - span.value.until) * rowHeight.value)
+const after = computed(() => (kept.value.length - span.value.until) * rowHeight.value)
 
 /* A table sizes its columns to the rows in the document, and here those change as it scrolls. So
    the columns are measured once, off the first rows drawn, and held: each keeps its share of the
@@ -336,16 +380,23 @@ const measure = () => {
   if (box.clientHeight > 0) windowHeight.value = box.clientHeight
   const heights = [...box.querySelectorAll<HTMLElement>("tr[data-row]")].map((row) => row.offsetHeight).filter((one) => one > 0)
   if (heights.length > 0) rowHeight.value = heights.reduce((sum, one) => sum + one, 0) / heights.length
-  if (rows.length > WHOLE_UP_TO && shares.value.length === 0) hold(box)
+  if (kept.value.length > WHOLE_UP_TO && shares.value.length === 0) hold(box)
 }
 
-/* The box stops dead at either end, so the head never drags off the rows. What the wheel still
-   asks for there goes to the page, or a pointer over a table could not scroll the page at all. */
+/* The box stops dead at either end, so the head never drags off the rows. A scroll that starts
+   with the box already at that end goes to the page instead, or a pointer over a table could not
+   scroll the page at all. One that starts in the rows stays in the rows to its last drift: handed
+   over half way, the page and the table's bar would move under a hand that is scrolling the rows. */
 const WHEEL_UNIT = [1, 32, 800]
+const NEW_SCROLL_AFTER = 180
+let lastWheel = -NEW_SCROLL_AFTER
+let forPage = false
 const passOn = (event: WheelEvent) => {
   const box = event.currentTarget as HTMLElement
-  const spent = event.deltaY > 0 ? box.scrollTop + box.clientHeight >= box.scrollHeight - 1 : box.scrollTop <= 0
-  if (spent) window.scrollBy(0, event.deltaY * (WHEEL_UNIT[event.deltaMode] ?? 1))
+  const starts = event.timeStamp - lastWheel > NEW_SCROLL_AFTER
+  lastWheel = event.timeStamp
+  if (starts) forPage = event.deltaY > 0 ? box.scrollTop + box.clientHeight >= box.scrollHeight - 1 : box.scrollTop <= 0
+  if (forPage) window.scrollBy(0, event.deltaY * (WHEEL_UNIT[event.deltaMode] ?? 1))
 }
 
 const onScroll = () => {
@@ -356,7 +407,7 @@ const onScroll = () => {
 }
 
 onMounted(measure)
-watch(() => rows.length, (count) => {
+watch(() => kept.value.length, (count) => {
   if (count <= WHOLE_UP_TO) shares.value = []
   void nextTick(measure)
 })

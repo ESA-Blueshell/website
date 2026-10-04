@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import {computed, nextTick, onMounted, ref, useTemplateRef, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FactList from "@/components/island/FactList.vue"
 import FilterBar from "@/components/island/FilterBar.vue"
@@ -33,6 +32,7 @@ const selectedCategory = ref<string | null>(null)
 // An alert links here with the status it is about.
 const selectedStatus = ref<string | null>(typeof route.query.status === "string" ? route.query.status : null)
 const hideSkipped = ref(false)
+const HIDDEN = "hidden"
 const runOpen = ref(false)
 const preset = ref<JobPreset | null>(null)
 const runPanel = useTemplateRef<HTMLElement>("runPanel")
@@ -72,12 +72,13 @@ const onJobQueued = () => {
   resetToFirstPage()
 }
 
-const filtered = computed(() => (searchQuery.value ?? "") !== "" || selectedCategory.value !== null || selectedStatus.value !== null)
+const filtered = computed(() => (searchQuery.value ?? "") !== "" || selectedCategory.value !== null || selectedStatus.value !== null || hideSkipped.value)
 
 const clearFilters = () => {
   searchQuery.value = ""
   selectedCategory.value = null
   selectedStatus.value = null
+  hideSkipped.value = false
 }
 
 /** Opens Run a job filled in from a job already run; the list under it stays where it was. */
@@ -242,12 +243,6 @@ onMounted(async () => {
         {{ loading ? "Refreshing" : `Showing ${pageRangeLabel}` }}
       </template>
       <template #filters>
-        <check-box
-          v-model="hideSkipped"
-          class="jobs__skip"
-          label="Hide skipped"
-          testid="job-filter-hide-skipped"
-        />
         <filter-bar
           :active="filtered"
           testid="job-filters"
@@ -264,6 +259,14 @@ onMounted(async () => {
             label="Kind"
             :options="categoryOptions"
             testid="job-filter-kind"
+          />
+          <filter-picker
+            any-label="Shown"
+            label="Skipped runs"
+            :model-value="hideSkipped ? HIDDEN : null"
+            :options="[{key: HIDDEN, label: 'Hidden'}]"
+            testid="job-filter-hide-skipped"
+            @update:model-value="hideSkipped = $event === HIDDEN"
           />
         </filter-bar>
       </template>
@@ -371,10 +374,6 @@ onMounted(async () => {
   margin: 1.2rem 0;
 }
 
-.jobs__skip {
-  align-self: center;
-  margin-right: 0.4rem;
-}
 
 .jobs__title {
   font-weight: 600;

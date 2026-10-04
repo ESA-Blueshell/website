@@ -207,6 +207,12 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
   background: var(--color-warning);
 }
 
+/* The warning tone is dark on the light ground, so its count reads in white there. */
+:global([data-theme="light"]) .mg-side__count,
+:global([data-theme="light"]) .mg-tab__count {
+  color: #fff;
+}
+
 .mg-side__said {
   position: absolute;
   left: -9999px;

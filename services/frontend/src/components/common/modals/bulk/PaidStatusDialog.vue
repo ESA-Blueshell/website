@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {recordPaid, recordUnpaid, type BulkContributionCall} from "@/domains/contribution"
@@ -22,7 +23,6 @@ interface Props {
   targets: BulkTarget[]
   contributionPeriodId: number | null
   /** Drawn on the bulk task page rather than over the list. */
-  inline?: boolean
 }
 
 const props = defineProps<Props>()
@@ -32,11 +32,6 @@ const emit = defineEmits<{
   /** The api refused the selection because the table is out of date. */
   (e: "stale"): void
 }>()
-
-const open = computed({
-  get: () => props.modelValue,
-  set: (v) => emit("update:modelValue", v),
-})
 
 const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
@@ -154,19 +149,14 @@ watch(computedRows, (newRows) => {
 
 <template>
   <bulk-dialog-scaffold
-    v-model="open"
     v-model:reinclude-overrides="reincludeOverrides"
-    :inline="inline"
     :confirm-label="config.confirmLabel"
     :counts="counts"
-    :help="config.help"
-    :icon="config.icon"
     :included-count="includedUserIds.length"
     :rows="rows"
     :show-submit-status="showSubmitStatus"
     :submit-state="submitState"
     :submitting="submitting"
-    :title="config.title"
     @cancel="emit('update:modelValue', false)"
     @confirm="onConfirm"
   >
@@ -174,31 +164,22 @@ watch(computedRows, (newRows) => {
       v-if="rejection"
       #info-box
     >
-      <v-alert
-        class="mb-0"
-        data-testid="bulk-paid-rejection"
-        density="compact"
-        type="warning"
-        variant="tonal"
+      <notice-box
+        testid="bulk-paid-rejection"
+        title="Nothing was changed"
+        tone="warning"
       >
-        <div class="font-weight-medium mb-1">
-          Nothing was changed.
-        </div>
-        <div
+        <p
           v-for="reason in rejection.reasons"
           :key="reason.code"
-          class="text-body-2"
         >
           {{ reason.message }}
-          <span v-if="reason.userIds.length"> {{ namesFor(reason.userIds) }}</span>
-        </div>
-        <div
-          v-if="rejection.requiresReload"
-          class="text-body-2 mt-1"
-        >
-          The list has been reloaded; check the selection and try again.
-        </div>
-      </v-alert>
+          <span v-if="reason.userIds.length">{{ namesFor(reason.userIds) }}</span>
+        </p>
+        <p v-if="rejection.requiresReload">
+          The list has been reloaded. Check the selection and try again.
+        </p>
+      </notice-box>
     </template>
   </bulk-dialog-scaffold>
 </template>

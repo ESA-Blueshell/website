@@ -25,9 +25,12 @@ import {
   dayName,
   listPeriods,
   readPeriodContributions,
+  recordPayment,
+  withdrawPayment,
 } from "@/domains/contribution"
 import {fold} from "@/domains/user"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import store from "@/plugins/store"
 import {feeTypeLabels} from "@/utils/feePreview"
 import {formatDay, formatMoment} from "@/utils/timestamps"
 
@@ -183,12 +186,24 @@ const sendReminders = () => {
 }
 
 /** Marking payments happens on the bulk task page, which comes back here once done. */
-const markPayments = (action: "paid" | "unpaid", ids: number[] = selectedIdsArray.value) => {
+const markPayments = (action: "paid" | "unpaid") => {
   if (!period.value) return
   void router.push({
     path: `/management/users/bulk/${action}`,
-    query: {ids: ids.join(","), period: String(period.value.id), back: `/management/contributions/${period.value.id}`},
+    query: {ids: selectedIdsArray.value.join(","), period: String(period.value.id), back: `/management/contributions/${period.value.id}`},
   })
+}
+
+/** One person's payment is recorded or withdrawn on the spot; only a selection goes through the task page. */
+const marking = ref<number | null>(null)
+const markOne = async (one: PeriodMember) => {
+  if (!period.value || marking.value !== null) return
+  marking.value = one.userId
+  const answered = one.paid ? await withdrawPayment(one.userId, period.value.id) : await recordPayment(one.userId, period.value.id)
+  marking.value = null
+  if (!answered.ok) return void store.commit("setStatusSnackbarMessage", answered.reason)
+  store.commit("setStatusSnackbarMessage", one.paid ? `${one.name}'s payment is withdrawn.` : `${one.name} is marked as paid.`)
+  await loadView()
 }
 
 const feeName = (one: PeriodMember) => (one.feeType && one.fee != null ? feeTypeLabels[one.feeType] : "Owes nothing")
@@ -374,8 +389,9 @@ void loadPeriods()
         </template>
         <template #acts="{row}">
           <mini-button
+            :disabled="marking !== null"
             :testid="`contribution-mark-${row.userId}`"
-            @click="markPayments(row.paid ? 'unpaid' : 'paid', [row.userId])"
+            @click="markOne(row)"
           >
             {{ row.paid ? "Withdraw" : "Mark paid" }}
           </mini-button>

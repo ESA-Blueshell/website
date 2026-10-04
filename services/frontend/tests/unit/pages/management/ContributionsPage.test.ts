@@ -8,7 +8,10 @@ import {mountInApp, settle, unmountAll} from "../helpers"
 const api = vi.hoisted(() => ({
   findContributionPeriods: vi.fn(),
   findPeriodContributions: vi.fn(),
+  createContribution: vi.fn(),
+  deleteContribution: vi.fn(),
 }))
+const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {}}}))
 const {mockRoute, mockPush, mockHandleNetworkError} = vi.hoisted(() => ({
   mockRoute: {params: {} as Record<string, string>},
   mockPush: vi.fn(),
@@ -22,6 +25,8 @@ vi.mock("vue-router", async (importOriginal) => ({
 }))
 
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
+
+vi.mock("@/plugins/store", () => ({default: mockStore}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -167,14 +172,27 @@ describe("the Contributions page", () => {
     expect(selection().exists()).toBe(false)
   })
 
-  it("marks one member's payment from their own row, or withdraws it where they paid", async () => {
+  it("records one member's payment from their own row without a task page, or withdraws it where they paid", async () => {
+    api.createContribution.mockResolvedValue({status: 201, data: {}})
+    api.deleteContribution.mockResolvedValueOnce({status: 204, data: undefined}).mockResolvedValue({status: 409, error: {detail: "Already withdrawn."}})
     const wrapper = await mount()
 
     expect(wrapper.get('[data-testid="contribution-mark-1"]').text()).toBe("Withdraw")
     await wrapper.get('[data-testid="contribution-mark-1"]').trigger("click")
-    expect(mockPush).toHaveBeenLastCalledWith({path: "/management/users/bulk/unpaid", query: {ids: "1", period: "2", back: "/management/contributions/2"}})
+    await settle()
+    expect(api.deleteContribution).toHaveBeenCalledWith({path: {userId: 1, contributionPeriodId: 2}})
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("payment is withdrawn"))
+    expect(api.findPeriodContributions).toHaveBeenCalledTimes(2)
+
     await wrapper.get('[data-testid="contribution-mark-2"]').trigger("click")
-    expect(mockPush).toHaveBeenLastCalledWith(expect.objectContaining({path: "/management/users/bulk/paid", query: expect.objectContaining({ids: "2"})}))
+    await settle()
+    expect(api.createContribution).toHaveBeenCalledWith({body: {userId: 2, contributionPeriodId: 2}})
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("is marked as paid"))
+    expect(mockPush).not.toHaveBeenCalledWith(expect.objectContaining({path: "/management/users/bulk/paid"}))
+
+    await wrapper.get('[data-testid="contribution-mark-1"]').trigger("click")
+    await settle()
+    expect(mockStore.commit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", "Already withdrawn.")
   })
 
   it("draws each member as a row on a phone, and names a period inside one year by that year", async () => {

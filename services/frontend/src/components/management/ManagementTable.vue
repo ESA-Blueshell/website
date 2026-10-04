@@ -344,8 +344,8 @@ const UNSORTED = "M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7"
 </script>
 
 <style scoped>
-/* Every table stands in the same hairline box under the same head, so two lists never differ
-   at the top. A table too wide for its page scrolls in that box, never the page. */
+/* Every table stands under the same head, so two lists never differ at the top. A table too
+   wide for its page scrolls in its own box, never the page. */
 .mg-table__scroll {
   /* As tall as the window leaves, and the rows scroll inside it under a head that stays.
      Contained, so a scroll that reaches either end stops there: an elastic end drags the head
@@ -355,7 +355,6 @@ const UNSORTED = "M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7"
   overscroll-behavior: none;
   /* Solid, rows and the lines between them alike: the page's pattern stays behind the table. */
   background-color: var(--color-ground);
-  box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
 
 .mg-table thead {
@@ -455,11 +454,6 @@ tr.mg-table__gap {
 .mg-rows .mg-table__search {
   flex: 1 1 100%;
   margin-left: 0;
-}
-
-table {
-  overflow-x: auto;
-  box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
 
 .mg-table thead {

@@ -1,6 +1,6 @@
 import {afterEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
-import {h} from "vue"
+import {h, nextTick} from "vue"
 import GoArrow from "@/components/management/GoArrow.vue"
 import ManagementHead from "@/components/management/ManagementHead.vue"
 import ManagementPanel from "@/components/management/ManagementPanel.vue"
@@ -296,6 +296,32 @@ describe("ManagementTable", () => {
     await wrapper.get(".mg-table__scroll").trigger("scroll")
     expect(wrapper.emitted("more")).toHaveLength(1)
     expect(wrapper.find("[data-testid=row-300]").exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it("holds each column's share of the width once measured, so a long list cannot shift as it scrolls", async () => {
+    const many = Array.from({length: 300}, (_, index) => ({id: index + 1, name: `Row ${index + 1}`}))
+    const measured = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      return {width: this.tagName === "TH" ? 150 : 0} as DOMRect
+    })
+    const wrapper = mount(ManagementTable<Row>, {props: {columns, rows: many, rowKey: (row: Row) => row.id}, slots: cells, global: {stubs}, attachTo: document.body})
+    const shares = () => wrapper.findAll("col").map((one) => one.attributes("style"))
+    const heads = wrapper.findAll("thead tr:first-child th").length
+    await nextTick()
+
+    expect(wrapper.get("table").classes()).toContain("mg-table__locked")
+    expect(shares()).toEqual(Array.from({length: heads}, () => `width: ${100 / heads}%;`))
+
+    await wrapper.setProps({columns: columns.slice(0, 1)})
+    await nextTick()
+    await nextTick()
+    expect(shares()).toHaveLength(wrapper.findAll("thead tr:first-child th").length)
+
+    await wrapper.setProps({rows: many.slice(0, 5)})
+    await nextTick()
+    expect(wrapper.find("colgroup").exists()).toBe(false)
+    expect(wrapper.get("table").classes()).not.toContain("mg-table__locked")
+    measured.mockRestore()
     wrapper.unmount()
   })
 

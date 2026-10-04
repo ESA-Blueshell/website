@@ -76,7 +76,14 @@
       @scroll.passive="onScroll"
       @wheel.passive="passOn"
     >
-      <table>
+      <table :class="{'mg-table__locked': shares.length > 0}">
+        <colgroup v-if="shares.length > 0">
+          <col
+            v-for="(share, index) in shares"
+            :key="index"
+            :style="{width: `${share}%`}"
+          >
+        </colgroup>
         <thead>
           <tr>
             <th
@@ -313,12 +320,23 @@ const drawn = computed(() => rows.slice(span.value.from, span.value.until))
 const before = computed(() => span.value.from * rowHeight.value)
 const after = computed(() => (rows.length - span.value.until) * rowHeight.value)
 
+/* A table sizes its columns to the rows in the document, and here those change as it scrolls. So
+   the columns are measured once, off the first rows drawn, and held: each keeps its share of the
+   width whatever scrolls into view. A list short enough to be drawn whole has no need. */
+const shares = ref<number[]>([])
+const hold = (box: HTMLElement) => {
+  const widths = [...box.querySelectorAll<HTMLElement>("thead tr:first-child th")].map((head) => head.getBoundingClientRect().width)
+  const whole = widths.reduce((sum, one) => sum + one, 0)
+  if (whole > 0) shares.value = widths.map((one) => (one / whole) * 100)
+}
+
 const measure = () => {
   const box = scroller.value
   if (!box) return
   if (box.clientHeight > 0) windowHeight.value = box.clientHeight
   const heights = [...box.querySelectorAll<HTMLElement>("tr[data-row]")].map((row) => row.offsetHeight).filter((one) => one > 0)
   if (heights.length > 0) rowHeight.value = heights.reduce((sum, one) => sum + one, 0) / heights.length
+  if (rows.length > WHOLE_UP_TO && shares.value.length === 0) hold(box)
 }
 
 /* The box stops dead at either end, so the head never drags off the rows. What the wheel still
@@ -338,7 +356,15 @@ const onScroll = () => {
 }
 
 onMounted(measure)
-watch(() => rows.length, () => void nextTick(measure))
+watch(() => rows.length, (count) => {
+  if (count <= WHOLE_UP_TO) shares.value = []
+  void nextTick(measure)
+})
+// Other columns have other widths: let the table size them, then hold those.
+watch(() => columns.map((one) => one.key).join(), () => {
+  shares.value = []
+  void nextTick(measure)
+})
 
 /* The whole row opens its page. What stands on the row and acts by itself, a tick, a button or
    a link elsewhere, keeps its own press. */
@@ -549,6 +575,18 @@ tbody tr:hover td:first-child::before {
 
 .mg-table__wrap {
   white-space: normal;
+}
+
+/* Held columns: a cell longer than its column is cut short with an ellipsis, never pushed wider. */
+.mg-table__locked {
+  table-layout: fixed;
+}
+
+.mg-table__locked td,
+.mg-table__locked td :deep(.mg-name),
+.mg-table__locked td :deep(.mg-sub) {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mg-table__check {

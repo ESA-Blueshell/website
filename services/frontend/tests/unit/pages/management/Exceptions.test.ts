@@ -62,7 +62,7 @@ describe("the Exceptions pages", () => {
     const wrapper = await mount(ExceptionList)
 
     expect(mockList).toHaveBeenCalledWith({query: {resolved: false}})
-    expect(wrapper.find('[data-testid="exception-row-3"]').attributes("to")).toBe("/management/exceptions/3")
+    expect(wrapper.get('[data-testid="exception-row-3"] a').attributes("to")).toBe("/management/exceptions/3")
     expect(wrapper.find('[data-testid="exception-row-3"]').text()).toContain("IllegalStateException")
     expect(wrapper.find('[data-testid="exception-row-4"]').text()).toContain("Resolved")
   })

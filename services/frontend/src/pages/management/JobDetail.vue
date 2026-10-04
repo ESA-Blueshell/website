@@ -6,7 +6,7 @@ import CutButton from "@/components/island/CutButton.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import PairList from "@/components/management/PairList.vue"
-import {type Job, canRetry, effectLabel, errorSummary, hasStackTrace, jobDescription, loadJob, payloadChips, previewTitle, relatedEntityLabel, relatedEntityLink, relatedEntityTypeLabel, retryJob, retryLabel, stackTrace, statusTitle, titleCase, triggerLabel, actorDisplay} from "@/domains/jobs"
+import {type Job, canRetry, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, loadJob, payloadChips, previewTitle, relatedEntityLabel, relatedEntityLink, relatedEntityTypeLabel, retryJob, retryLabel, stackTrace, statusTitle, titleCase, triggerLabel, actorDisplay} from "@/domains/jobs"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
 import {formatDate} from "@/utils/timestamps"
@@ -32,6 +32,12 @@ const facts = computed(() => {
     {label: "Kind", value: titleCase(one.category ?? "other")},
     {label: "Attempts", value: attemptsLabel(one.attempts)},
     {label: "Queued by", value: one.trigger ? triggerLabel(one) : actorDisplay(one)},
+    ...(one.foldedTriggers ?? []).map((folded, index) => ({
+      label: index === 0 ? "Also queued by" : `Also queued by (${index + 1})`,
+      value: `${foldedTriggerLabel(folded)} · ${folded.initiatedByDisplay} · ${formatDate(folded.at)}`,
+      testid: `job-detail-folded-${index}`,
+    })),
+    ...(one.forced ? [{label: "Forced", value: "Run although it would have been skipped", testid: "job-detail-forced"}] : []),
     {label: "Queued", value: formatDate(one.queuedAt)},
     {label: "Started", value: formatDate(one.startedAt)},
     {label: "Finished", value: formatDate(one.finishedAt)},
@@ -144,6 +150,14 @@ onMounted(load)
       <list-head title="Outcome" />
       <p class="job-detail__line">
         {{ effectLabel(job) }}
+        <a
+          v-if="job.effectLink"
+          class="job-detail__link"
+          data-testid="job-detail-effect-link"
+          :href="job.effectLink"
+          rel="noopener"
+          target="_blank"
+        >Open in Discord</a>
       </p>
     </template>
 

@@ -82,6 +82,7 @@ onMounted(async () => {
       :row-testid="(team) => `team-row-${team.id}`"
       :rows="shown"
       testid="team-list-table"
+      :to="linkOf"
     >
       <template #count>
         <b>{{ shown.length }}</b> of {{ teams.length }} teams

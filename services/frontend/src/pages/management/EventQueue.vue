@@ -94,6 +94,7 @@ onMounted(load)
       :row-testid="(queued) => `event-queue-row-${queued.event.id}`"
       :rows="rows"
       testid="event-queue-table"
+      :to="(queued) => `/events/${queued.event.id}`"
     >
       <template
         v-if="loaded"

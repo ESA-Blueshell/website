@@ -15,8 +15,6 @@ import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
-import PairList from "@/components/management/PairList.vue"
-import TablePager from "@/components/management/TablePager.vue"
 import {loadJob, loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
 import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, payloadChips, previewActorDisplay, previewTitle, retryLabel, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
@@ -58,12 +56,10 @@ const table = usePagedTable<Job>(loadPage, {pageSize: PAGE_SIZE})
 const {
   rows: executions,
   loading,
-  page,
-  totalPages,
-  totalElements,
   search: searchQuery,
   pageRangeLabel,
   refresh,
+  more,
   resetToFirstPage,
 } = table
 
@@ -123,8 +119,8 @@ const facts = computed(() => {
   return [
     {label: "Total", value: String(read.totalCount), testid: "job-stats-total"},
     {label: "Succeeded", value: String(read.successCount), sub: read.totalCount > 0 ? `${successRate.value}%` : "", testid: "job-stats-success"},
-    {label: "Failed", value: String(read.failedCount), testid: "job-stats-failed"},
-    {label: "Dead", value: String(read.deadCount), testid: "job-stats-dead"},
+    {label: "Failed", value: String(read.failedCount), tone: read.failedCount > 0 ? "warning" as const : undefined, testid: "job-stats-failed"},
+    {label: "Dead", value: String(read.deadCount), tone: read.deadCount > 0 ? "danger" as const : undefined, testid: "job-stats-dead"},
     {label: "Queued", value: String(read.queuedCount), testid: "job-stats-queued"},
     {label: "Running", value: String(read.runningCount), testid: "job-stats-running"},
   ]
@@ -134,10 +130,10 @@ const sinceStartup = computed(() => {
   const read = stats.value
   if (!read) return []
   return [
-    {label: "Dead", value: read.deadSinceStartup.toFixed(0)},
-    {label: "Failed", value: read.failedSinceStartup.toFixed(0)},
+    {label: "Dead", value: read.deadSinceStartup.toFixed(0), tone: read.deadSinceStartup > 0 ? "danger" as const : undefined},
+    {label: "Failed", value: read.failedSinceStartup.toFixed(0), tone: read.failedSinceStartup > 0 ? "warning" as const : undefined},
     {label: "Average run", value: `${read.avgSuccessDurationSeconds.toFixed(2)} s`},
-    {label: "Recoveries", value: read.recoveriesSinceStartup.toFixed(0)},
+    {label: "Recoveries", value: read.recoveriesSinceStartup.toFixed(0), tone: read.recoveriesSinceStartup > 0 ? "warning" as const : undefined},
   ]
 })
 
@@ -208,10 +204,11 @@ onMounted(async () => {
         :facts="facts"
       />
       <list-head title="Since start-up" />
-      <pair-list
+      <fact-list
         class="jobs__runtime"
-        :pairs="sinceStartup"
-        testid="job-stats-runtime"
+        :columns="4"
+        data-testid="job-stats-runtime"
+        :facts="sinceStartup"
       />
     </template>
 
@@ -237,6 +234,8 @@ onMounted(async () => {
       :row-testid="(execution) => `job-row-${execution.id}`"
       :rows="executions"
       testid="job-manager-table"
+      :to="(execution) => `/management/jobs/${execution.id}`"
+      @more="more"
     >
       <template #count>
         {{ loading ? "Refreshing" : `Showing ${pageRangeLabel}` }}
@@ -355,13 +354,6 @@ onMounted(async () => {
         </management-row>
       </template>
     </management-table>
-
-    <table-pager
-      v-model:page="page"
-      :label="`Page ${page} of ${totalPages} · ${totalElements} jobs`"
-      testid="job-manager"
-      :total-pages="totalPages"
-    />
   </management-page>
 </template>
 
@@ -371,8 +363,7 @@ onMounted(async () => {
 }
 
 .jobs__runtime {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding-bottom: 0.4rem;
 }
 
 .jobs__run {
@@ -392,11 +383,5 @@ onMounted(async () => {
 .jobs__title:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-@media (--phone) {
-  .jobs__runtime {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 </style>

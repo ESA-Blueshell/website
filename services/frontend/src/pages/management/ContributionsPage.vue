@@ -289,6 +289,7 @@ void loadPeriods()
         :rows="shown"
         :sort-key="sortKey"
         testid="contribution-list"
+        :to="(one) => `/management/users/${one.userId}/contributions`"
         :header-state="headerState"
         :selected-count="selectedIdsArray.length"
         :total="members.length"

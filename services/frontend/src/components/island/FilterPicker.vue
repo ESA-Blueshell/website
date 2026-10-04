@@ -26,6 +26,7 @@ const pick = (key: string) => {
 <template>
   <form-field
     class="filter-picker"
+    :class="{'filter-picker--any': chosen === null}"
     :filled="true"
     :label="label"
     variant="inside"
@@ -49,5 +50,11 @@ const pick = (key: string) => {
    than the search box beside it. */
 .filter-picker :deep(.island-field__said) {
   display: none;
+}
+
+/* The line under a field marks a choice. A filter left at Any has made none, so it rests
+   without one until it is opened. */
+.filter-picker--any :deep(.picker__field:not(:focus-within)) {
+  border-bottom-color: transparent;
 }
 </style>

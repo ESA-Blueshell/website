@@ -126,8 +126,6 @@ const load = async () => {
   }
 }
 
-const tableHeight = ref(Math.max(360, globalThis.innerHeight - 440))
-
 onMounted(load)
 </script>
 
@@ -150,12 +148,12 @@ onMounted(load)
     <management-table
       :columns="COLUMNS"
       :descending="descending"
-      :height="tableHeight"
       :row-key="(row) => `${row.standing}-${row.user.id}`"
       :row-testid="(row) => `recovery-user-row-${row.user.id}`"
       :rows="shown"
       :sort-key="sortKey"
       testid="recovery-list"
+      :to="(row) => (row.standing === 'deleted' ? null : `/management/users/${row.user.id}/account`)"
       @sort="sortBy"
     >
       <template #count>

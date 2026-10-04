@@ -30,18 +30,27 @@ const contributionPeriods = [
 ]
 
 test.describe("the Users table at full length", () => {
-  test("holds every member in a window that scrolls under a head that stays", async ({page}) => {
+  test("holds every member, draws the ones in its window and scrolls to the last under a head that stays", async ({page}) => {
     await installApiMocks(page, {users, memberships, contributionPeriods, contributions: []})
     await loginAsAdmin(page.context())
     await page.setViewportSize({width: 1440, height: 900})
     await page.goto("/management/users")
 
     await expect(page.getByTestId("member-manager-count")).toHaveText(`${COUNT} of ${COUNT} people`)
-    await expect(page.locator('[data-testid^="member-manager-row-"]')).toHaveCount(COUNT)
+    const rows = page.locator('[data-testid^="member-manager-row-"]')
+    // The document holds a window of them, not all 300.
+    await expect.poll(async () => rows.count()).toBeLessThan(80)
 
     const last = page.getByTestId(`member-manager-row-${COUNT}`)
-    await last.scrollIntoViewIfNeeded()
-    await expect(last).toBeInViewport()
+    await expect
+      .poll(async () => {
+        await page.locator('[data-testid="member-manager-list"] .mg-table__scroll').evaluate((box) => {
+          box.scrollTop = box.scrollHeight
+        })
+        return last.isVisible()
+      }, {message: "the last member, once the table is scrolled to its end"})
+      .toBe(true)
     await expect(page.getByTestId("member-manager-header-name")).toBeInViewport()
+    await expect.poll(async () => rows.count()).toBeLessThan(80)
   })
 })

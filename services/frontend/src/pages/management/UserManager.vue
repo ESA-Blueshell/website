@@ -105,9 +105,6 @@ const sortBy = (key: string) => {
   sortKey.value = key as PeopleSortKey
 }
 
-// The table takes what the window leaves below the filters, but never less than a few rows.
-const tableHeight = ref(Math.max(360, globalThis.innerHeight - 440))
-
 const typeName = (type: MemberType): string => type.charAt(0) + type.slice(1).toLowerCase()
 
 /** "Regular · since 1 Sep 2024", or nothing for someone never a member. */
@@ -217,7 +214,6 @@ onMounted(load)
       <management-table
         :columns="COLUMNS"
         :descending="descending"
-        :height="tableHeight"
         :row-key="(row) => row.id"
         :row-testid="(row) => `member-manager-row-${row.id}`"
         :rows="shown"

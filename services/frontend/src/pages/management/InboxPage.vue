@@ -9,7 +9,6 @@ import StateMark from "@/components/island/StateMark.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import TablePager from "@/components/management/TablePager.vue"
 import {emailTypeLabel} from "@/domains/emails"
 import {type InboxCounts, type InboxEntry, InboxState, followsOf, inboxStateWord, loadInboxPage, readInboxCounts} from "@/domains/mail"
 import {usePagedTable} from "@/composables/usePagedTable"
@@ -25,7 +24,7 @@ const table = usePagedTable<InboxEntry>((query) => {
   })
   return loadInboxPage(query)
 }, {pageSize: 50})
-const {rows, page, totalPages, search, pageRangeLabel, refresh} = table
+const {rows, search, pageRangeLabel, refresh, more} = table
 
 const COLUMNS: TableColumn[] = [
   {key: "received", label: "Received"},
@@ -81,6 +80,7 @@ onMounted(refresh)
       :rows="rows"
       testid="inbox-table"
       :to="(entry) => `/management/mail/inbox/${entry.id}`"
+      @more="more"
     >
       <template #count>
         {{ pageRangeLabel }}
@@ -151,14 +151,6 @@ onMounted(refresh)
         </management-row>
       </template>
     </management-table>
-
-    <table-pager
-      v-if="totalPages > 1"
-      v-model:page="page"
-      :label="pageRangeLabel"
-      testid="inbox"
-      :total-pages="totalPages"
-    />
   </management-page>
 </template>
 

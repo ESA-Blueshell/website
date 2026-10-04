@@ -5,6 +5,8 @@ export interface Fact {
   sub?: string
   /** How full the meter under the value is, from 0 to 1. */
   share?: number
+  /** A value that is a fault, or one worth a look, is drawn in that colour. */
+  tone?: "danger" | "warning"
   testid?: string
 }
 </script>
@@ -18,7 +20,7 @@ defineOptions({name: "FactList"})
 
 const {facts, columns = 3} = defineProps<{
   facts: Fact[]
-  columns?: 2 | 3 | 6
+  columns?: 2 | 3 | 4 | 6
 }>()
 </script>
 
@@ -36,7 +38,10 @@ const {facts, columns = 3} = defineProps<{
       <p class="facts__label">
         {{ fact.label }}
       </p>
-      <p class="facts__value">
+      <p
+        class="facts__value"
+        :class="fact.tone ? `facts__value--${fact.tone}` : undefined"
+      >
         {{ fact.value }}
       </p>
       <p
@@ -70,8 +75,20 @@ const {facts, columns = 3} = defineProps<{
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.facts--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .facts--6 {
   grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.facts__value--danger {
+  color: var(--color-danger);
+}
+
+.facts__value--warning {
+  color: var(--color-warning);
 }
 
 .facts__one {
@@ -143,6 +160,7 @@ const {facts, columns = 3} = defineProps<{
 /* Two to a row, the third across the foot, so no value is squeezed to a word a line. */
 @media (--phone) {
   .facts--3,
+  .facts--4,
   .facts--6 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

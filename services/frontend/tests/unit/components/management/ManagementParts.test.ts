@@ -10,6 +10,13 @@ import MiniButton from "@/components/management/MiniButton.vue"
 import PairList from "@/components/management/PairList.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 
+const {push} = vi.hoisted(() => ({push: vi.fn()}))
+
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRouter: () => ({push}),
+}))
+
 const stubs = {RouterLink: {props: ["to"], template: '<a :to="to"><slot /></a>'}}
 
 describe("ManagementHead", () => {
@@ -146,7 +153,6 @@ describe("ManagementTable", () => {
       global: {stubs},
     })
 
-    expect(wrapper.get("[data-testid=table] .mg-table__scroll").classes()).toContain("mg-table__scroll--boxed")
     expect(wrapper.get("[data-testid=table] .mg-table__scroll").attributes("style")).toContain("max-height: 300px")
     expect(wrapper.find(".mg-table__bar").exists()).toBe(false)
     expect(wrapper.findAll("tbody tr")).toHaveLength(2)
@@ -249,5 +255,47 @@ describe("ManagementTable", () => {
     expect(phone.classes()).toContain("mg-rows")
     expect(phone.get(".mg-table__bar .mg-table__count").text()).toBe("0")
     expect(phone.get("p.mg-table__empty").text()).toBe("Nobody matches.")
+  })
+
+  it("opens a row's page from anywhere on the row, but leaves a button or a link on it its own press", async () => {
+    push.mockClear()
+    const wrapper = mount(ManagementTable<Row>, {
+      props: {columns, rows, rowKey: (row: Row) => row.id, to: (row: Row) => (row.id === 1 ? "/management/committees/1" : null), rowTestid: (row: Row) => `row-${row.id}`},
+      slots: {...cells, acts: () => h("button", {class: "act"}, "Approve")},
+      global: {stubs},
+    })
+
+    expect(wrapper.get("[data-testid=row-1]").classes()).toContain("mg-table__row--opens")
+    expect(wrapper.get("[data-testid=row-2]").classes()).not.toContain("mg-table__row--opens")
+    await wrapper.get("[data-testid=row-1] .act").trigger("click")
+    await wrapper.get("[data-testid=row-2] td").trigger("click")
+    expect(push).not.toHaveBeenCalled()
+    await wrapper.get("[data-testid=row-1] td").trigger("click")
+    expect(push).toHaveBeenCalledWith("/management/committees/1")
+  })
+
+  it("draws only the rows in its window once a list is long, and asks for more near the end", async () => {
+    const many = Array.from({length: 300}, (_, index) => ({id: index + 1, name: `Row ${index + 1}`}))
+    const wrapper = mount(ManagementTable<Row>, {props: {columns, rows: many, rowKey: (row: Row) => row.id, rowTestid: (row: Row) => `row-${row.id}`}, slots: cells, global: {stubs}, attachTo: document.body})
+
+    const drawn = () => wrapper.findAll("tr[data-row]").length
+    expect(drawn()).toBeLessThan(60)
+    expect(wrapper.find("[data-testid=row-1]").exists()).toBe(true)
+    expect(wrapper.find("[data-testid=row-300]").exists()).toBe(false)
+    expect(wrapper.findAll("tr.mg-table__gap")).toHaveLength(1)
+
+    const box = wrapper.get(".mg-table__scroll").element as HTMLElement
+    Object.defineProperties(box, {scrollTop: {value: 7000, configurable: true}, clientHeight: {value: 600, configurable: true}, scrollHeight: {value: 15000, configurable: true}})
+    await wrapper.get(".mg-table__scroll").trigger("scroll")
+    expect(wrapper.find("[data-testid=row-1]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=row-145]").exists()).toBe(true)
+    expect(wrapper.findAll("tr.mg-table__gap")).toHaveLength(2)
+    expect(wrapper.emitted("more")).toBeUndefined()
+
+    Object.defineProperty(box, "scrollTop", {value: 14300, configurable: true})
+    await wrapper.get(".mg-table__scroll").trigger("scroll")
+    expect(wrapper.emitted("more")).toHaveLength(1)
+    expect(wrapper.find("[data-testid=row-300]").exists()).toBe(true)
+    wrapper.unmount()
   })
 })

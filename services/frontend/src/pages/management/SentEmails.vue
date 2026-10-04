@@ -9,7 +9,6 @@ import StateMark from "@/components/island/StateMark.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import TablePager from "@/components/management/TablePager.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import {
   type EmailStats,
@@ -42,7 +41,7 @@ const table = usePagedTable<SentEmail>((query) => {
   void loadStats()
   return loadEmailPage(query)
 }, {pageSize: 50})
-const {rows, page, totalPages, search, pageRangeLabel, refresh} = table
+const {rows, search, pageRangeLabel, refresh, more} = table
 
 const COLUMNS: TableColumn[] = [
   {key: "when", label: "Sent"},
@@ -116,6 +115,8 @@ onMounted(refresh)
       :row-testid="(email) => `sent-email-row-${email.id}`"
       :rows="rows"
       testid="sent-emails-table"
+      :to="(email) => `/management/mail/sent/${email.id}`"
+      @more="more"
     >
       <template #count>
         {{ pageRangeLabel }}
@@ -196,14 +197,6 @@ onMounted(refresh)
         </management-row>
       </template>
     </management-table>
-
-    <table-pager
-      v-if="totalPages > 1"
-      v-model:page="page"
-      :label="pageRangeLabel"
-      testid="sent-emails"
-      :total-pages="totalPages"
-    />
   </management-page>
 </template>
 

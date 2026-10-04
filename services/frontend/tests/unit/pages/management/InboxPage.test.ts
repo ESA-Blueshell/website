@@ -52,12 +52,11 @@ describe("the Inbox page", () => {
     expect(wrapper.get('[data-testid="inbox-row-4"]').text()).toContain("Alice Board")
   })
 
-  it("pages, refreshes, searches, and says when nothing arrived", async () => {
+  it("reads more as the list is scrolled, refreshes, searches, and says when nothing arrived", async () => {
     const wrapper = await mount()
-    await wrapper.get('[data-testid="inbox-next"]').trigger("click")
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("more")
     await settle()
     expect(api.findInbox).toHaveBeenLastCalledWith({query: {page: 1}})
-    await wrapper.get('[data-testid="inbox-previous"]').trigger("click")
     await wrapper.get('[data-testid="inbox-refresh"]').trigger("click")
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "lars")
     await vi.waitFor(() => expect(api.findInbox).toHaveBeenLastCalledWith({query: {page: 0, search: "lars"}}))

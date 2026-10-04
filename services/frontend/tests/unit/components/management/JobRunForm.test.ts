@@ -49,7 +49,7 @@ describe("JobRunForm", () => {
     const wrapper = await mountForm()
 
     expect(mockListJobTypes).toHaveBeenCalledTimes(1)
-    expect((wrapper.vm as any).typeOptions.map((option: {value: string}) => option.value))
+    expect((wrapper.vm as any).typeOptions.map((option: {key: string}) => option.key))
       .toEqual(["cohort.reconcile", "contact.sync", "contact.sync-all"])
   })
 
@@ -154,12 +154,12 @@ describe("JobRunForm", () => {
     ])
     const wrapper = await mountForm()
 
-    await wrapper.findComponent({name: "VSelect"}).vm.$emit("update:modelValue", "everything")
+    ;(wrapper.vm as any).selectedType = "everything"
     await settle()
     for (const [name, value] of [["UserPicker", 1], ["TargetPicker", 2], ["EventPicker", 3], ["ContributionPeriodPicker", 4], ["EnumPicker", "ADD"]] as const) {
       await wrapper.findComponent({name}).vm.$emit("update:modelValue", value)
     }
-    await wrapper.findComponent({name: "VTextField"}).vm.$emit("update:modelValue", "hello")
+    ;(wrapper.vm as any).fieldValues.note = "hello"
 
     expect((wrapper.vm as any).fieldValues).toEqual({userId: 1, cohortId: 2, eventId: 3, periodId: 4, intent: "ADD", note: "hello"})
   })
@@ -172,7 +172,7 @@ describe("JobRunForm", () => {
     await (wrapper.vm as any).submit()
     await settle()
 
-    expect(wrapper.find('[data-testid="job-run-error"]').text()).toBe("No.")
+    expect(wrapper.findComponent({name: "NoticeBox"}).text()).toBe("No.")
   })
 
   it("keeps an empty list of types when they cannot be read", async () => {

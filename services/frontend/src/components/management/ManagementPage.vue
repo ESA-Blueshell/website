@@ -3,12 +3,6 @@
     class="mg-page"
     :data-testid="testid"
   >
-    <back-bar
-      v-if="back"
-      :label="back.label"
-      :testid="testid ? `${testid}-back` : undefined"
-      :to="back.to"
-    />
     <management-head
       :eyebrow="eyebrow"
       :testid="testid ? `${testid}-head` : undefined"
@@ -27,6 +21,12 @@
         <slot name="actions" />
       </template>
     </management-head>
+    <back-bar
+      v-if="back"
+      :label="back.label"
+      :testid="testid ? `${testid}-back` : undefined"
+      :to="back.to"
+    />
     <div class="mg-page__body">
       <slot />
     </div>
@@ -59,10 +59,23 @@ const {eyebrow, title, back = undefined, testid = undefined} = defineProps<{
   padding-inline: 2.4rem;
 }
 
-/* The chevrons stand inside the margin here: there is no band to their left to hang into. */
+/* The way back stands under the head. Its chevrons rest inside the margin, there being no
+   band to their left to hang into, and reach back to the edge under the pointer as they do on
+   the site. */
+.mg-page :deep(.back-bar) {
+  margin-top: 0.8rem;
+  border-top: 1px solid var(--color-hairline);
+}
+
 .mg-page :deep(.back-bar__column > :first-child) {
   width: 30px;
   margin-left: 0;
+}
+
+.mg-page :deep(.back-bar:hover .back-bar__column > :first-child),
+.mg-page :deep(.back-bar:focus-visible .back-bar__column > :first-child) {
+  width: calc(30px + 2.4rem);
+  margin-left: -2.4rem;
 }
 
 @media (--phone) {

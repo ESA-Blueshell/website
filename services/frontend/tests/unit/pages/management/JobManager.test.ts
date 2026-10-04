@@ -316,17 +316,14 @@ describe("JobManager page", () => {
     expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({status: "DEAD"})})
   })
 
-  it("links each row to the job's own page, and turns its pages", async () => {
+  it("links each row to the job's own page, and reads more as the list is scrolled", async () => {
     mockList.mockResolvedValue({status: 200, data: {content: [job({id: 1})], page: {number: 0, size: 50, totalElements: 120, totalPages: 3}}})
     const wrapper = mountJobManager()
     await settle()
 
-    await wrapper.get('[data-testid="job-manager-next"]').trigger("click")
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("more")
     await settle()
     expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({page: 1})})
-    await wrapper.get('[data-testid="job-manager-previous"]').trigger("click")
-    await settle()
-    expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({page: 0})})
     await wrapper.get('[data-testid="job-run-open"]').trigger("click")
     expect(wrapper.findComponent({name: "FoldOut"}).props("open")).toBe(true)
 
@@ -352,7 +349,6 @@ describe("JobManager page", () => {
     const wrapper = mountJobManager()
     await settle()
 
-    expect((wrapper.vm as any).totalPages).toBe(1)
     expect(wrapper.find('[data-testid="job-row-3"]').exists()).toBe(true)
   })
 

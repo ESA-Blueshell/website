@@ -89,16 +89,14 @@ describe("the Sent page", () => {
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The same email is already queued")
   })
 
-  it("pages, refreshes, searches, and says when there is nothing", async () => {
+  it("reads more as the list is scrolled, refreshes, searches, and says when there is nothing", async () => {
     const wrapper = await mount()
-    await wrapper.get('[data-testid="sent-emails-next"]').trigger("click")
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("more")
     await settle()
     expect(mockList).toHaveBeenLastCalledWith(expect.objectContaining({query: expect.objectContaining({page: 1})}))
-    await wrapper.get('[data-testid="sent-emails-previous"]').trigger("click")
-    await settle()
     await wrapper.get('[data-testid="sent-emails-refresh"]').trigger("click")
     await settle()
-    expect(mockList).toHaveBeenCalledTimes(4)
+    expect(mockList).toHaveBeenLastCalledWith(expect.objectContaining({query: expect.objectContaining({page: 0})}))
 
     await wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "lars")
     await vi.waitFor(() => expect(mockList).toHaveBeenLastCalledWith(expect.objectContaining({query: expect.objectContaining({search: "lars"})})))

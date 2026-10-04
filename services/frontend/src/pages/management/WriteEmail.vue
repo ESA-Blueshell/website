@@ -5,10 +5,13 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {useRouter} from "vue-router"
 import ChipPicker from "@/components/island/ChipPicker.vue"
+import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import TextInput from "@/components/island/TextInput.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
 import {renderWritten} from "@/domains/emails"
 import {
   type Addressee,
@@ -131,24 +134,17 @@ onBeforeUnmount(() => clearTimeout(previewTimer))
 </script>
 
 <template>
-  <div
-    class="write"
-    data-testid="write-email"
+  <management-page
+    :back="{to: '/management/mail/sent', label: 'Sent'}"
+    eyebrow="Mail"
+    testid="write-email"
+    title="Write an email"
   >
-    <router-link
-      class="write__back"
-      to="/management/mail/sent"
-    >
-      Sent
-    </router-link>
-    <h1 class="write__title">
-      Write an email
-    </h1>
-    <p class="write__note">
-      Sent in the association's own template, from the site.
-    </p>
+    <template #lede>
+      The email goes out from the site in the association's template.
+    </template>
 
-    <div class="write__grid">
+    <div class="write">
       <form
         class="write__form"
         @submit.prevent="send"
@@ -240,36 +236,32 @@ onBeforeUnmount(() => clearTimeout(previewTimer))
         </p>
 
         <div class="write__acts">
-          <button
-            class="write__action write__action--main"
-            data-testid="write-send"
+          <cut-button
             :disabled="sending || !ready || recipients === 0"
-            type="submit"
+            submit
+            testid="write-send"
+            tone="solid"
           >
             Send to {{ recipients }} {{ recipients === 1 ? "person" : "people" }}
-          </button>
-          <button
-            class="write__action"
-            data-testid="write-test"
+          </cut-button>
+          <cut-button
             :disabled="sending || !ready"
-            type="button"
+            testid="write-test"
             @click="test"
           >
             Send a test to me
-          </button>
-          <router-link
-            class="write__action write__action--quiet"
-            to="/management/mail/sent"
+          </cut-button>
+          <cut-button
+            href="/management/mail/sent"
+            tone="quiet"
           >
             Cancel
-          </router-link>
+          </cut-button>
         </div>
       </form>
 
       <section class="write__preview">
-        <p class="write__part-title">
-          Preview
-        </p>
+        <list-head title="Preview" />
         <iframe
           v-if="preview"
           class="write__frame"
@@ -287,45 +279,16 @@ onBeforeUnmount(() => clearTimeout(previewTimer))
         </p>
       </section>
     </div>
-  </div>
+  </management-page>
 </template>
 
 <style scoped>
 .write {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 80rem;
-  padding: 2rem 2.4rem 3rem;
-}
-
-.write__back {
-  align-self: flex-start;
-  font-size: 0.84rem;
-  color: var(--color-brand);
-}
-
-.write__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.write__note {
-  margin: 0;
-  color: var(--color-ash);
-}
-
-.write__failure {
-  margin: 0;
-  color: var(--color-error, #e5484d);
-}
-
-.write__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 36rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 2.5rem;
   align-items: start;
+  padding-top: 1.2rem;
 }
 
 .write__form {
@@ -334,19 +297,19 @@ onBeforeUnmount(() => clearTimeout(previewTimer))
   gap: 0.6rem;
 }
 
-.write__part-title {
-  margin: 0 0 0.6rem;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
+.write__note {
   color: var(--color-ash);
+}
+
+.write__failure {
+  color: var(--color-danger);
 }
 
 .write__frame {
   width: 100%;
   min-height: 40rem;
   border: 0;
-  background: #1e1e1e;
+  background-color: var(--color-pit);
 }
 
 .write__acts {
@@ -356,37 +319,8 @@ onBeforeUnmount(() => clearTimeout(previewTimer))
   margin-top: 0.6rem;
 }
 
-.write__action {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.write__action--main {
-  border-color: var(--color-brand);
-  color: var(--color-brand);
-}
-
-.write__action--quiet {
-  border-color: transparent;
-}
-
-.write__action:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-@media (max-width: 839px) {
+@media (--phone) {
   .write {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
-  .write__grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }

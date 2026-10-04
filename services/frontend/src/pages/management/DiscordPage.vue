@@ -134,7 +134,7 @@ onMounted(load)
         Discord
       </h1>
       <p class="discord__note">
-        The roles and channels the site keeps in the association's server, and where Discord differs.
+        The roles and channels the site manages in the association's server, and where Discord differs.
       </p>
     </header>
 
@@ -180,7 +180,7 @@ onMounted(load)
         data-testid="discord-roles"
       >
         <p class="discord__folder">
-          <span>Kept by the site</span>
+          <span>Managed by the site</span>
           <span class="discord__sub">{{ kept.length + missing.length }} {{ kept.length + missing.length === 1 ? "role" : "roles" }}</span>
         </p>
         <ul class="discord__rows">
@@ -230,7 +230,7 @@ onMounted(load)
 
       <fold-out
         v-if="!onChannels && others.length"
-        :label="`Not kept by the site · ${others.length}`"
+        :label="`Not managed by the site · ${others.length}`"
         testid="discord-other-roles"
       >
         <p class="discord__note discord__note--small">

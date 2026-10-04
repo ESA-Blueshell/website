@@ -89,9 +89,8 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
   "contact.sync-all": {
     title: "Sync all contacts",
     description:
-      "Walks every active user and enqueues a per-user contact sync against every " +
-      "configured external contact system (today: Listmonk, Brevo). Use this to " +
-      "recover from drift after a config change or a downstream outage.",
+      "Walks every active user and enqueues a per-user contact sync against Brevo. " +
+      "Use this to recover from drift after a config change or a downstream outage.",
   },
   "contact.sync": {
     title: "Sync contact",

@@ -34,7 +34,7 @@ test.describe("one user's page", () => {
     const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(await overflow()).toBeLessThanOrEqual(0)
 
-    await page.goto("/management/users/71/incasso")
+    await page.goto("/management/users/71/payment-details")
     await expect(page.getByTestId("mandate-standing")).toHaveText("Pays by transfer")
     expect(await overflow()).toBeLessThanOrEqual(0)
   })
@@ -60,8 +60,8 @@ test.describe("one user's mandate", () => {
     await installApiMocks(page, {users: [ann], memberships: [aMembership({id: 171, userId: 71, startDate: "2024-09-01"})]})
     await loginAsBoard(page.context())
     await page.goto("/management/users/71")
-    await page.getByTestId("user-row-incasso").click()
-    await expect(page).toHaveURL(/\/management\/users\/71\/incasso$/)
+    await page.getByTestId("user-row-payment-details").click()
+    await expect(page).toHaveURL(/\/management\/users\/71\/payment-details$/)
 
     await page.getByTestId("mandate-record").click()
     await page.getByTestId("mandate-iban").locator("input").fill("NL91 ABNA 0417 1643 00")

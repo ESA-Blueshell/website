@@ -507,7 +507,7 @@ const routes: RouteRecordRaw[] = [
         meta: {title: "Many members"},
       },
       {
-        path: "users/:id(\\d+)/:tab(membership|incasso|contributions|profile|address|account|roles)?",
+        path: "users/:id(\\d+)/:tab(membership|payment-details|contributions|profile|address|account|roles)?",
         name: "userDetail",
         component: () => import("@/pages/management/UserDetail.vue"),
         meta: {title: "User"},

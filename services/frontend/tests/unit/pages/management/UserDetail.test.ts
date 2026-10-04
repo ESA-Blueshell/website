@@ -13,6 +13,7 @@ const api = vi.hoisted(() => ({
   deleteContribution: vi.fn(),
   findAddressById: vi.fn(),
   findMandateOf: vi.fn(),
+  updateMembership: vi.fn(),
   pendingActivations: vi.fn(),
   deleteUserById: vi.fn(),
   readRoleStanding: vi.fn(),
@@ -114,19 +115,20 @@ describe("one user's page", () => {
   })
 
   it("opens the tab its address names", async () => {
-    const incasso = await mount("incasso")
-    expect(incasso.get('[data-testid="user-incasso"]').text()).toBe("Pays by incasso")
-    expect(incasso.findComponent({name: "MandatePanel"}).exists()).toBe(true)
-    expect(incasso.find('[data-testid="user-incasso-no-membership"]').exists()).toBe(false)
-    incasso.findComponent({name: "MandatePanel"}).vm.$emit("changed")
+    const payment = await mount("payment-details")
+    expect(payment.get('[data-testid="user-tab-payment-details"]').attributes("to")).toBe("/management/users/7/payment-details")
+    expect(payment.findComponent({name: "SearchPicker"}).props("selectedKey")).toBe("incasso")
+    expect(payment.findComponent({name: "MandatePanel"}).exists()).toBe(true)
+    expect(payment.find('[data-testid="user-payment-no-membership"]').exists()).toBe(false)
+    payment.findComponent({name: "MandatePanel"}).vm.$emit("changed")
     await settle()
 
     const overview = await mount()
-    expect(overview.get('[data-testid="user-row-incasso"]').attributes("to")).toBe("/management/users/7/incasso")
-    expect(overview.get('[data-testid="user-row-incasso"]').text()).toContain("IBAN and mandate · Pays by incasso")
+    expect(overview.get('[data-testid="user-row-payment-details"]').attributes("to")).toBe("/management/users/7/payment-details")
+    expect(overview.get('[data-testid="user-row-payment-details"]').text()).toContain("Pays by incasso · incasso details")
 
     const wrapper = await mount("membership")
-    expect(wrapper.find('[data-testid="user-incasso"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="user-pays-by"]').exists()).toBe(false)
     expect(wrapper.findComponent({name: "MembershipPanel"}).exists()).toBe(true)
     wrapper.findComponent({name: "MembershipPanel"}).vm.$emit("changed")
     await settle()
@@ -232,14 +234,38 @@ describe("one user's page", () => {
     expect((await mount()).get('[data-testid="user-row-address"]').text()).toContain("Address on file")
   })
 
+  it("changes how the person pays from the payment details, and says so", async () => {
+    const membership = aMembership({id: 3, userId: 7, startDate: "2023-09-01", endDate: null, incasso: true, memberType: MemberType.REGULAR})
+    api.updateMembership.mockResolvedValue({status: 200, data: {...membership, incasso: false}})
+    const wrapper = await mount("payment-details")
+    const picker = () => wrapper.findComponent({name: "SearchPicker"})
+
+    picker().vm.$emit("pick", "incasso")
+    await settle()
+    expect(api.updateMembership).not.toHaveBeenCalled()
+
+    api.findMemberships.mockResolvedValue({status: 200, data: [{...membership, incasso: false}]})
+    picker().vm.$emit("pick", "transfer")
+    await settle()
+    expect(api.updateMembership).toHaveBeenCalledWith({path: {id: 3}, body: expect.objectContaining({incasso: false, userId: 7}), throwOnError: true})
+    expect(picker().props("selectedKey")).toBe("transfer")
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("now pays by bank transfer."))
+
+    api.updateMembership.mockRejectedValue(new Error("stale"))
+    picker().vm.$emit("pick", "incasso")
+    await settle()
+    expect(mockStore.commit).not.toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("now pays by incasso."))
+    expect(picker().props("selectedKey")).toBe("transfer")
+  })
+
   it("says a mandate waiting for the membership to start has its PDF once it does", async () => {
     api.findMemberships.mockResolvedValue({status: 200, data: []})
     api.findMandateOf.mockResolvedValue({status: 200, data: {standing: "MANDATE_RECORDED", ibanCountry: "NL", ibanLastTwo: "00", signedOn: "2026-09-30", pending: true}})
-    const wrapper = await mount("incasso")
+    const wrapper = await mount("payment-details")
 
-    expect(wrapper.get('[data-testid="user-incasso-no-membership"]').text()).toContain("Add a membership first")
-    expect(wrapper.get('[data-testid="user-incasso-add-membership"]').attributes("to") ?? wrapper.get('[data-testid="user-incasso-add-membership"]').attributes("href")).toBe("/management/users/7/membership")
-    expect((await mount()).get('[data-testid="user-row-incasso"]').text()).toContain("needs a membership first")
+    expect(wrapper.get('[data-testid="user-payment-no-membership"]').text()).toContain("Add a membership first")
+    expect(wrapper.get('[data-testid="user-payment-add-membership"]').attributes("to") ?? wrapper.get('[data-testid="user-payment-add-membership"]').attributes("href")).toBe("/management/users/7/membership")
+    expect((await mount()).get('[data-testid="user-row-payment-details"]').text()).toContain("Needs a membership first")
     expect(api.findMandateOf).toHaveBeenCalledWith({path: {userId: 7}})
     expect(wrapper.get('[data-testid="user-pending-mandate"]').text()).toContain("NL•• … ••00")
     expect(wrapper.get('[data-testid="user-pending-mandate"]').text()).toContain("available once the membership starts")

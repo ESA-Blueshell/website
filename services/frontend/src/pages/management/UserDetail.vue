@@ -17,6 +17,8 @@ import UserForm from "@/components/form/UserForm.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import MandatePanel from "@/components/management/MandatePanel.vue"
 import MembershipPanel from "@/components/management/MembershipPanel.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
@@ -24,7 +26,7 @@ import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
 import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
 import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, maskedIban, recordPayment, withdrawPayment} from "@/domains/contribution"
-import {type AddressResponse, MEMBERSHIP_WORDS, type MembershipResponse, type OwnMandateResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandateOf, readUser} from "@/domains/user"
+import {type AddressResponse, MEMBERSHIP_WORDS, type MembershipResponse, type OwnMandateResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandateOf, readUser, saveMembership} from "@/domains/user"
 import UserRolesPanel from "@/domains/user/components/UserRolesPanel.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import store from "@/plugins/store"
@@ -35,7 +37,7 @@ import {formatDay, formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "UserDetailPage"})
 
-const TABS = ["Overview", "Membership", "Incasso", "Contributions", "Profile", "Address", "Account", "Roles"]
+const TABS = ["Overview", "Membership", "Payment details", "Contributions", "Profile", "Address", "Account", "Roles"]
 
 const PERIOD_COLUMNS: TableColumn[] = [
   {key: "period", label: "Period"},
@@ -77,7 +79,7 @@ const latest = computed(() => periods.value[0] ?? null)
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`
 
 const base = computed(() => `/management/users/${id.value}`)
-const tabs = computed(() => TABS.map((label) => ({label, to: label === "Overview" ? base.value : `${base.value}/${label.toLowerCase()}`})))
+const tabs = computed(() => TABS.map((label) => ({label, to: label === "Overview" ? base.value : `${base.value}/${label.toLowerCase().replace(" ", "-")}`})))
 
 /** "2026-2027", or the one year a period starts and ends in. */
 const periodName = (period: {startDate: string; endDate: string}) => {
@@ -104,7 +106,28 @@ const contributionLine = computed(() => (latest.value
 const profileLine = computed(() => (person.value
   ? [person.value.email, person.value.phoneNumber, person.value.discordId ? `@${person.value.discord}` : "No Discord linked"].filter(Boolean).join(" · ")
   : ""))
-const incassoLine = computed(() => `IBAN and mandate · ${latestMembership.value ? incasso.value ?? "no running membership" : "needs a membership first"}`)
+const paymentLine = computed(() => (latestMembership.value
+  ? `${latestMembership.value.incasso ? "Pays by incasso" : "Pays by transfer"} · incasso details`
+  : "Needs a membership first"))
+
+/* How they pay is the membership's own choice, so it is saved on the one the incasso details stand on. */
+const PAY_BY = [{key: "incasso", label: "Incasso"}, {key: "transfer", label: "Bank transfer"}]
+const changingPay = ref(false)
+const payBy = async (key: string) => {
+  const membership = latestMembership.value
+  const incassoNext = key === "incasso"
+  if (!membership || changingPay.value || membership.incasso === incassoNext) return
+  changingPay.value = true
+  try {
+    await saveMembership(membership.id, {...membership, incasso: incassoNext})
+    await reloadMemberships()
+    store.commit("setStatusSnackbarMessage", `${person.value?.fullName} now pays by ${incassoNext ? "incasso" : "bank transfer"}.`)
+  } catch (error) {
+    $handleNetworkError(error)
+  } finally {
+    changingPay.value = false
+  }
+}
 const addressLine = computed(() => {
   if (person.value?.addressId == null) return "No address"
   const held = address.value
@@ -238,10 +261,10 @@ watch(id, load, {immediate: true})
           </template>
         </cut-row>
         <cut-row
-          :meta="incassoLine"
-          testid="user-row-incasso"
-          title="Incasso"
-          :to="`${base}/incasso`"
+          :meta="paymentLine"
+          testid="user-row-payment-details"
+          title="Payment details"
+          :to="`${base}/payment-details`"
         />
         <cut-row
           :meta="contributionLine"
@@ -328,42 +351,63 @@ watch(id, load, {immediate: true})
     </div>
 
     <div
-      v-else-if="tab === 'incasso'"
+      v-else-if="tab === 'payment-details'"
       class="person__stack"
-      data-testid="user-incasso-tab"
+      data-testid="user-payment-details"
     >
-      <p
-        v-if="incasso"
-        class="person__note"
-        data-testid="user-incasso"
-      >
-        {{ incasso }}
-      </p>
-      <p
-        v-if="pendingMandate"
-        class="person__note"
-        data-testid="user-pending-mandate"
-      >
-        Pending online mandate for the account {{ maskedIban(pendingMandate) }}, authorised on {{ pendingMandate.signedOn }}.
-        Its PDF is available once the membership starts.
-      </p>
-      <mandate-panel
-        v-if="latestMembership"
-        :membership-id="latestMembership.id"
-        @changed="reloadMemberships"
-      />
+      <template v-if="latestMembership">
+        <form-field
+          class="person__pay"
+          hint="Incasso collects the contribution from their account. It needs incasso details."
+          label="Pays by"
+          testid="user-pays-by"
+        >
+          <template #default="{controlId, labelId}">
+            <search-picker
+              :control-id="controlId"
+              :disabled="changingPay"
+              :labelled-by="labelId"
+              :options="PAY_BY"
+              :selected-key="latestMembership.incasso ? 'incasso' : 'transfer'"
+              testid-prefix="user-pays-by-picker"
+              @pick="payBy"
+            />
+          </template>
+        </form-field>
+        <p
+          v-if="pendingMandate"
+          class="person__note"
+          data-testid="user-pending-mandate"
+        >
+          Pending online mandate for the account {{ maskedIban(pendingMandate) }}, authorised on {{ pendingMandate.signedOn }}.
+          Its PDF is available once the membership starts.
+        </p>
+        <mandate-panel
+          :key="`${latestMembership.id}-${latestMembership.incasso}`"
+          :membership-id="latestMembership.id"
+          @changed="reloadMemberships"
+        />
+      </template>
       <div
         v-else
         class="person__none"
-        data-testid="user-incasso-no-membership"
+        data-testid="user-payment-no-membership"
       >
+        <p
+          v-if="pendingMandate"
+          class="person__note"
+          data-testid="user-pending-mandate"
+        >
+          Pending online mandate for the account {{ maskedIban(pendingMandate) }}, authorised on {{ pendingMandate.signedOn }}.
+          Its PDF is available once the membership starts.
+        </p>
         <p class="person__note">
-          An IBAN and its mandate are saved on a membership, and {{ person.fullName }} has none. Add a membership first, then
-          add the IBAN here.
+          Payment details are saved on a membership, and {{ person.fullName }} has none. Add a membership first, then set how
+          they pay here.
         </p>
         <cut-button
           :href="`${base}/membership`"
-          testid="user-incasso-add-membership"
+          testid="user-payment-add-membership"
         >
           Add a membership
         </cut-button>
@@ -562,6 +606,10 @@ watch(id, load, {immediate: true})
   flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem 1rem;
+}
+
+.person__pay {
+  max-width: 24rem;
 }
 
 .person__none {

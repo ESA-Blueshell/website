@@ -128,7 +128,7 @@ watch(() => membershipId, load, {immediate: true})
     class="mandate"
     data-testid="mandate-panel"
   >
-    <list-head title="Incasso">
+    <list-head title="Incasso details">
       <span data-testid="mandate-standing">{{ standing }}</span>
     </list-head>
 
@@ -235,7 +235,7 @@ watch(() => membershipId, load, {immediate: true})
         testid="mandate-record"
         @click="open = true"
       >
-        {{ mandate?.ibanLastTwo ? "Replace the IBAN and mandate" : "Add an IBAN and paper mandate" }}
+        {{ mandate?.ibanLastTwo ? "Replace incasso details" : "Add incasso details" }}
       </cut-button>
     </div>
 
@@ -303,7 +303,7 @@ watch(() => membershipId, load, {immediate: true})
           testid="mandate-save"
           tone="solid"
         >
-          Save mandate
+          Save incasso details
         </cut-button>
         <cut-button
           testid="mandate-cancel"

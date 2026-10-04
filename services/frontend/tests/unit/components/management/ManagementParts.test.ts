@@ -298,4 +298,28 @@ describe("ManagementTable", () => {
     expect(wrapper.find("[data-testid=row-300]").exists()).toBe(true)
     wrapper.unmount()
   })
+
+  it("hands the wheel to the page once the table is at its end, and when it has nothing to scroll", async () => {
+    const scrollBy = vi.fn()
+    vi.stubGlobal("scrollBy", scrollBy)
+    const wrapper = mount(ManagementTable<Row>, {props: {columns, rows: [{id: 1, name: "Row 1"}], rowKey: (row: Row) => row.id}, slots: cells, global: {stubs}, attachTo: document.body})
+    const scroller = wrapper.get(".mg-table__scroll")
+    const at = (scrollTop: number) => Object.defineProperties(scroller.element, {scrollTop: {value: scrollTop, configurable: true}, clientHeight: {value: 600, configurable: true}, scrollHeight: {value: 1500, configurable: true}})
+
+    at(400)
+    await scroller.trigger("wheel", {deltaY: 120, deltaMode: 0})
+    await scroller.trigger("wheel", {deltaY: -120, deltaMode: 0})
+    expect(scrollBy).not.toHaveBeenCalled()
+
+    at(900)
+    await scroller.trigger("wheel", {deltaY: 120, deltaMode: 0})
+    expect(scrollBy).toHaveBeenLastCalledWith(0, 120)
+    at(0)
+    await scroller.trigger("wheel", {deltaY: -3, deltaMode: 1})
+    expect(scrollBy).toHaveBeenLastCalledWith(0, -96)
+    await scroller.trigger("wheel", {deltaY: -5, deltaMode: 9})
+    expect(scrollBy).toHaveBeenLastCalledWith(0, -5)
+    wrapper.unmount()
+    vi.unstubAllGlobals()
+  })
 })

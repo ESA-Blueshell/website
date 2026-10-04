@@ -74,6 +74,7 @@
       class="mg-table__scroll"
       :style="height > 0 ? {maxHeight: `${height}px`} : undefined"
       @scroll.passive="onScroll"
+      @wheel.passive="passOn"
     >
       <table>
         <thead>
@@ -320,6 +321,15 @@ const measure = () => {
   if (heights.length > 0) rowHeight.value = heights.reduce((sum, one) => sum + one, 0) / heights.length
 }
 
+/* The box stops dead at either end, so the head never drags off the rows. What the wheel still
+   asks for there goes to the page, or a pointer over a table could not scroll the page at all. */
+const WHEEL_UNIT = [1, 32, 800]
+const passOn = (event: WheelEvent) => {
+  const box = event.currentTarget as HTMLElement
+  const spent = event.deltaY > 0 ? box.scrollTop + box.clientHeight >= box.scrollHeight - 1 : box.scrollTop <= 0
+  if (spent) window.scrollBy(0, event.deltaY * (WHEEL_UNIT[event.deltaMode] ?? 1))
+}
+
 const onScroll = () => {
   const box = scroller.value
   if (!box) return
@@ -348,8 +358,7 @@ const UNSORTED = "M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7"
    wide for its page scrolls in its own box, never the page. */
 .mg-table__scroll {
   /* As tall as the window leaves, and the rows scroll inside it under a head that stays.
-     Contained, so a scroll that reaches either end stops there: an elastic end drags the head
-     off the rows and hands the rest of the gesture to the page. */
+     No elastic end, which drags the head off the rows; passOn hands the page what is left. */
   max-height: calc(100vh - 7rem);
   overflow: auto;
   overscroll-behavior: none;

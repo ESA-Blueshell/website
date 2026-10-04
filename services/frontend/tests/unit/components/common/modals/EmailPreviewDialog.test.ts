@@ -1,5 +1,5 @@
-import {describe, expect, it} from "vitest"
-import {mount} from "@vue/test-utils"
+import {afterEach, describe, expect, it} from "vitest"
+import {DOMWrapper, flushPromises, mount as mountInPage, type VueWrapper} from "@vue/test-utils"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
 
 const preview = {
@@ -9,17 +9,31 @@ const preview = {
   recipientName: "Alice Regular",
 }
 
+// The dialog is drawn in the page's body, outside the component that opens it.
+const opened: VueWrapper[] = []
+const mount = async (...args: Parameters<typeof mountInPage>) => {
+  const wrapper = mountInPage(args[0], {...args[1], attachTo: document.body})
+  opened.push(wrapper)
+  await flushPromises()
+  return Object.assign(wrapper, {find: (selector: string) => new DOMWrapper(document.body).find(selector)})
+}
+
+afterEach(() => {
+  for (const wrapper of opened.splice(0)) wrapper.unmount()
+  document.body.innerHTML = ""
+})
+
 describe("EmailPreviewDialog", () => {
-  it("shows the subject and who the email would go to", () => {
-    const wrapper = mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
+  it("shows the subject and who the email would go to", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
 
     expect(wrapper.find('[data-testid="email-preview-subject"]').text()).toBe("Activate your Account")
     expect(wrapper.find('[data-testid="email-preview-recipient"]').text())
       .toContain("Alice Regular <alice@example.com>")
   })
 
-  it("renders the email inside a sandboxed frame", () => {
-    const wrapper = mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
+  it("renders the email inside a sandboxed frame", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
     const frame = wrapper.find('[data-testid="email-preview-frame"]')
 
     expect(frame.attributes("srcdoc")).toBe("<p>Dear Alice Regular</p>")
@@ -27,8 +41,8 @@ describe("EmailPreviewDialog", () => {
     expect(frame.attributes("sandbox")).toBe("")
   })
 
-  it("says the links are inert when a placeholder stands in for a token", () => {
-    const wrapper = mount(EmailPreviewDialog, {
+  it("says the links are inert when a placeholder stands in for a token", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {
       props: {modelValue: true, preview: {...preview, linkPlaceholder: "PREVIEW-ONLY-NO-TOKEN-ISSUED"}},
     })
 
@@ -36,21 +50,21 @@ describe("EmailPreviewDialog", () => {
       .toContain("do not work")
   })
 
-  it("stays quiet about links when the email carries no credential", () => {
-    const wrapper = mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
+  it("stays quiet about links when the email carries no credential", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
 
     expect(wrapper.find('[data-testid="email-preview-placeholder-notice"]').exists()).toBe(false)
   })
 
-  it("shows progress instead of an empty frame while rendering", () => {
-    const wrapper = mount(EmailPreviewDialog, {props: {modelValue: true, loading: true}})
+  it("shows progress instead of an empty frame while rendering", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {props: {modelValue: true, loading: true}})
 
     expect(wrapper.find('[data-testid="email-preview-loading"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="email-preview-frame"]').exists()).toBe(false)
   })
 
-  it("shows the error instead of the email when rendering failed", () => {
-    const wrapper = mount(EmailPreviewDialog, {
+  it("shows the error instead of the email when rendering failed", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {
       props: {modelValue: true, preview, error: "The preview could not be rendered."},
     })
 
@@ -58,24 +72,24 @@ describe("EmailPreviewDialog", () => {
     expect(wrapper.find('[data-testid="email-preview-frame"]').exists()).toBe(false)
   })
 
-  it("falls back to the address when no name is known", () => {
-    const wrapper = mount(EmailPreviewDialog, {
+  it("falls back to the address when no name is known", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {
       props: {modelValue: true, preview: {...preview, recipientName: null}},
     })
 
     expect(wrapper.find('[data-testid="email-preview-recipient"]').text()).toContain("alice@example.com")
   })
 
-  it("names no recipient when the render did not identify one", () => {
-    const wrapper = mount(EmailPreviewDialog, {
+  it("names no recipient when the render did not identify one", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {
       props: {modelValue: true, preview: {subject: "s", html: "<p>x</p>"}},
     })
 
     expect(wrapper.find('[data-testid="email-preview-recipient"]').exists()).toBe(false)
   })
 
-  it("hosts a caller's own controls beside the email", () => {
-    const wrapper = mount(EmailPreviewDialog, {
+  it("hosts a caller's own controls beside the email", async () => {
+    const wrapper = await mount(EmailPreviewDialog, {
       props: {modelValue: true, preview},
       slots: {recipient: '<div data-testid="pick-recipient">choose</div>'},
     })
@@ -85,14 +99,14 @@ describe("EmailPreviewDialog", () => {
   })
 
   describe("as the confirmation step for sending", () => {
-    it("offers no send button when the caller did not ask for one", () => {
-      const wrapper = mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
+    it("offers no send button when the caller did not ask for one", async () => {
+      const wrapper = await mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
 
       expect(wrapper.find('[data-testid="email-preview-send-btn"]').exists()).toBe(false)
     })
 
-    it("offers the send the caller named", () => {
-      const wrapper = mount(EmailPreviewDialog, {
+    it("offers the send the caller named", async () => {
+      const wrapper = await mount(EmailPreviewDialog, {
         props: {modelValue: true, preview, confirmLabel: "Resend Member Activation"},
       })
 
@@ -102,7 +116,7 @@ describe("EmailPreviewDialog", () => {
     })
 
     it("asks the caller to send when it is pressed", async () => {
-      const wrapper = mount(EmailPreviewDialog, {
+      const wrapper = await mount(EmailPreviewDialog, {
         props: {modelValue: true, preview, confirmLabel: "Send"},
       })
 
@@ -111,8 +125,8 @@ describe("EmailPreviewDialog", () => {
       expect(wrapper.emitted("confirm")).toHaveLength(1)
     })
 
-    it("will not send an email nobody has read yet", () => {
-      const wrapper = mount(EmailPreviewDialog, {
+    it("will not send an email nobody has read yet", async () => {
+      const wrapper = await mount(EmailPreviewDialog, {
         props: {modelValue: true, loading: true, confirmLabel: "Send"},
       })
 
@@ -120,8 +134,8 @@ describe("EmailPreviewDialog", () => {
       expect(wrapper.find('[data-testid="email-preview-send-btn"]').exists()).toBe(false)
     })
 
-    it("will not send when rendering failed", () => {
-      const wrapper = mount(EmailPreviewDialog, {
+    it("will not send when rendering failed", async () => {
+      const wrapper = await mount(EmailPreviewDialog, {
         props: {modelValue: true, preview, error: "boom", confirmLabel: "Send"},
       })
 

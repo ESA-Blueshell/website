@@ -18,6 +18,8 @@ defineProps<{
   testid?: string
   /** The game's colour, so the dialog belongs to the page it was opened from. */
   accent?: string
+  /** Room for something read at full width, such as an email. */
+  wide?: boolean
 }>()
 
 const emit = defineEmits<{(event: "update:open", open: boolean): void}>()
@@ -37,7 +39,7 @@ const {decorative} = useMotionAllowed()
       />
       <dialog-content
         class="island island-dialog"
-        :class="{'island-dialog--still': !decorative}"
+        :class="{'island-dialog--still': !decorative, 'island-dialog--wide': wide}"
         :data-testid="testid ?? 'island-dialog'"
         :style="accent ? {'--dialog-accent': accent} : undefined"
       >
@@ -109,6 +111,10 @@ const {decorative} = useMotionAllowed()
   color: var(--color-chalk);
   font-family: "Barlow Semi Condensed", system-ui, sans-serif;
   animation: island-dialog-rise 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.island-dialog--wide {
+  width: min(56rem, calc(100vw - 2rem));
 }
 
 .island-dialog__scrim--still,

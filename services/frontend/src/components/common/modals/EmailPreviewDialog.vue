@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import {computed} from "vue"
-import BaseModal from "@/components/common/modals/BaseModal.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import type {RenderedEmailPreview} from "@/composables/useEmailPreview"
 
 defineOptions({name: "EmailPreviewDialog"})
@@ -58,134 +60,137 @@ const recipientLabel = computed(() => {
 </script>
 
 <template>
-  <base-modal
-    v-model="open"
-    cancel-label="Close"
-    max-width="900"
-    save-testid="email-preview-send-btn"
-    :save-disabled="!canConfirm"
-    :save-label="confirmLabel ?? 'Send'"
-    :save-loading="confirmLoading"
-    :show-save="canConfirm"
-    :title="title"
+  <modal-dialog
+    :open="open"
     testid="email-preview-dialog"
-    @save="emit('confirm')"
+    :title="title"
+    wide
+    @update:open="open = $event"
   >
-    <template
-      v-if="preview?.subject"
-      #title-append
-    >
-      <!-- Beside the title rather than under it: the two together are the header. -->
-      <span class="email-preview__subject text-h6 text-medium-emphasis">
-        <span class="email-preview__subject-sep">—</span>
-        <span data-testid="email-preview-subject">{{ preview.subject }}</span>
-      </span>
-    </template>
-
-    <!-- Changing the recipient re-renders, so the control belongs beside the email. -->
-    <div
-      v-if="$slots.recipient"
-      class="mb-3"
-    >
-      <slot name="recipient" />
-    </div>
-
-    <v-alert
-      v-if="error"
-      class="mb-0"
-      data-testid="email-preview-error"
-      density="compact"
-      type="error"
-      variant="tonal"
-    >
-      {{ error }}
-    </v-alert>
-
-    <div
-      v-else-if="loading"
-      class="d-flex justify-center py-10"
-      data-testid="email-preview-loading"
-    >
-      <v-progress-circular indeterminate />
-    </div>
-
-    <template v-else-if="preview">
-      <div
-        v-if="recipientLabel"
-        class="email-preview__recipient text-body-2 text-medium-emphasis mb-3"
-        data-testid="email-preview-recipient"
+    <div class="email-preview">
+      <p
+        v-if="preview?.subject"
+        class="email-preview__subject"
+        data-testid="email-preview-subject"
       >
-        To: {{ recipientLabel }}
+        {{ preview.subject }}
+      </p>
+
+      <!-- Changing the recipient re-renders, so the control belongs beside the email. -->
+      <div v-if="$slots.recipient">
+        <slot name="recipient" />
       </div>
 
-      <v-alert
-        v-if="preview.linkPlaceholder"
-        class="mb-3"
-        data-testid="email-preview-placeholder-notice"
-        density="compact"
-        type="info"
-        variant="tonal"
+      <notice-box
+        v-if="error"
+        testid="email-preview-error"
+        tone="danger"
       >
-        The links in this preview do not work. A real one is created only when the email is
-        actually sent.
-      </v-alert>
+        {{ error }}
+      </notice-box>
 
-      <!-- A sent email's links are live credentials, so they never reach this dialog. -->
-      <v-alert
-        v-else-if="preview.linksRedacted"
-        class="mb-3"
-        data-testid="email-preview-redacted-notice"
-        density="compact"
-        type="info"
-        variant="tonal"
+      <p
+        v-else-if="loading"
+        class="email-preview__note"
+        data-testid="email-preview-loading"
+        role="status"
       >
-        The links are removed from this preview. They are one-time credentials belonging to
-        the recipient, so following one from here would spend it.
-      </v-alert>
+        Loading the email.
+      </p>
 
-      <!--
-        Sandboxed srcdoc rather than v-html: the email's own styles cannot reach the app,
-        nothing in it executes, and it gets no same-origin access.
-      -->
-      <iframe
-        class="email-preview__frame"
-        data-testid="email-preview-frame"
-        sandbox=""
-        :srcdoc="preview.html"
-        title="Email preview"
-      />
+      <template v-else-if="preview">
+        <p
+          v-if="recipientLabel"
+          class="email-preview__note"
+          data-testid="email-preview-recipient"
+        >
+          To: {{ recipientLabel }}
+        </p>
+
+        <notice-box
+          v-if="preview.linkPlaceholder"
+          testid="email-preview-placeholder-notice"
+        >
+          The links in this preview do not work. A real one is created only when the email is
+          actually sent.
+        </notice-box>
+
+        <!-- A sent email's links are live credentials, so they never reach this dialog. -->
+        <notice-box
+          v-else-if="preview.linksRedacted"
+          testid="email-preview-redacted-notice"
+        >
+          The links are removed from this preview. They are one-time credentials belonging to
+          the recipient, so following one from here would spend it.
+        </notice-box>
+
+        <!--
+          Sandboxed srcdoc rather than v-html: the email's own styles cannot reach the app,
+          nothing in it executes, and it gets no same-origin access.
+        -->
+        <iframe
+          class="email-preview__frame"
+          data-testid="email-preview-frame"
+          sandbox=""
+          :srcdoc="preview.html"
+          title="Email preview"
+        />
+      </template>
+    </div>
+
+    <template #footer>
+      <div class="email-preview__acts">
+        <cut-button
+          v-if="canConfirm"
+          :disabled="confirmLoading"
+          testid="email-preview-send-btn"
+          tone="solid"
+          @click="emit('confirm')"
+        >
+          {{ confirmLoading ? "Sending" : confirmLabel }}
+        </cut-button>
+        <cut-button
+          testid="email-preview-close"
+          tone="quiet"
+          @click="open = false"
+        >
+          Close
+        </cut-button>
+      </div>
     </template>
-  </base-modal>
+  </modal-dialog>
 </template>
 
-<style lang="scss" scoped>
-// Borderless, dark: matches the email's own canvas so the dialog reads as one pane
-// rather than a frame inside a frame.
-// Subject sits beside the title and may be long, so it truncates rather than pushing the
-// send button off the band.
-.email-preview__subject {
+<style scoped>
+.email-preview {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  flex-direction: column;
+  gap: 0.8rem;
 }
 
-.email-preview__subject-sep {
-  opacity: 0.5;
+.email-preview__subject {
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
-.email-preview__recipient {
-  font-size: 0.95rem;
+.email-preview__note {
+  font-size: 0.9rem;
+  color: var(--color-ash);
 }
 
+/* Borderless and dark, the email's own canvas, so the dialog reads as one pane. */
 .email-preview__frame {
+  display: block;
   width: 100%;
   min-height: 60vh;
   border: 0;
-  display: block;
-  background: #1e1e1e;
+  background-color: var(--color-pit);
+}
+
+.email-preview__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding-top: 1rem;
 }
 </style>

@@ -81,14 +81,14 @@ describe("an admin's account security panel", () => {
   it("unlocks, resets and resends with the reason given, then reads the standing again", async () => {
     const wrapper = await open()
 
-    await wrapper.find("[data-testid=account-security-reason-field] textarea").setValue(" heard from them ")
+    await wrapper.find("[data-testid=account-security-reason-field] input").setValue(" heard from them ")
     await wrapper.find("[data-testid=account-security-email-field] input").setValue(" fixed@example.com ")
     await button(wrapper, "account-security-unlock-btn").trigger("click")
     await settle()
     expect(security.unlockAccount).toHaveBeenCalledWith(9, "heard from them", "fixed@example.com")
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Unlocked. A password reset is on its way.")
 
-    await wrapper.find("[data-testid=account-security-reason-field] textarea").setValue("lost phone")
+    await wrapper.find("[data-testid=account-security-reason-field] input").setValue("lost phone")
     await button(wrapper, "account-security-reset-btn").trigger("click")
     await settle()
     expect(security.resetTwoFactorOf).toHaveBeenCalledWith(9, "lost phone")

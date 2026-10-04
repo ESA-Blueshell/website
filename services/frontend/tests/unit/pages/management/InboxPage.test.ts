@@ -52,6 +52,16 @@ describe("the Inbox page", () => {
     expect(wrapper.get('[data-testid="inbox-row-4"]').text()).toContain("Alice Board")
   })
 
+  it("draws each message as a row on a phone, opening the message", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="inbox-row-1-open"]').attributes("to")).toBe("/management/mail/inbox/1")
+    expect(wrapper.get('[data-testid="inbox-row-1"]').text()).toContain("Lars Mulder")
+    expect(wrapper.get('[data-testid="inbox-state-3"]').text()).toBe("Automatic reply")
+  })
+
   it("reads more as the list is scrolled, refreshes, searches, and says when nothing arrived", async () => {
     const wrapper = await mount()
     wrapper.findComponent({name: "ManagementTable"}).vm.$emit("more")

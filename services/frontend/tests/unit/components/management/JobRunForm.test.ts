@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount, shallowMount} from "@vue/test-utils"
 import JobRunForm from "@/components/management/JobRunForm.vue"
 import {settle} from "../../helpers/testUtils"
 
@@ -162,6 +162,24 @@ describe("JobRunForm", () => {
     ;(wrapper.vm as any).fieldValues.note = "hello"
 
     expect((wrapper.vm as any).fieldValues).toEqual({userId: 1, cohortId: 2, eventId: 3, periodId: 4, intent: "ADD", note: "hello"})
+  })
+
+  it("takes the job from its picker and a plain field from its input", async () => {
+    mockListJobTypes.mockResolvedValue([{type: "note.write", payloadFields: [{name: "note", type: "String", required: true}, {name: "count", type: "Int", required: false}]}])
+    const wrapper = mount(JobRunForm, {props: {preset: null}})
+    await settle()
+
+    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", "note.write")
+    await settle()
+    expect((wrapper.vm as any).selectedType).toBe("note.write")
+    const inputs = wrapper.findAllComponents({name: "TextInput"})
+    expect(inputs).toHaveLength(2)
+    inputs[0]!.vm.$emit("update:modelValue", "hello")
+    inputs[1]!.vm.$emit("update:modelValue", "3")
+    await settle()
+    expect((wrapper.vm as any).fieldValues).toEqual({note: "hello", count: "3"})
+    expect(inputs[1]!.props("type")).toBe("number")
+    wrapper.unmount()
   })
 
   it("draws the refusal it was given", async () => {

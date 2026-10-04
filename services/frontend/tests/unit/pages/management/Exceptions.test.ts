@@ -67,6 +67,15 @@ describe("the Exceptions pages", () => {
     expect(wrapper.find('[data-testid="exception-row-4"]').text()).toContain("Resolved")
   })
 
+  it("draws each fault as a row on a phone, opening its own page", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount(ExceptionList)
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="exception-row-3-open"]').attributes("to")).toBe("/management/exceptions/3")
+    expect(wrapper.get('[data-testid="exception-row-4"]').text()).toContain("Resolved")
+  })
+
   it("narrows by search and state, and clears both", async () => {
     const wrapper = await mount(ExceptionList)
 

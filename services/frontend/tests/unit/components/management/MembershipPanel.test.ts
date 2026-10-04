@@ -415,6 +415,16 @@ describe("MembershipPanel", () => {
     expect(dialog.props("open")).toBe(false)
   })
 
+  it("resumes an ended membership from its row while none is running", async () => {
+    mockListMembershipsFor.mockResolvedValue([makeMembership({id: 30, userId: 42, startDate: "2023-01-01", endDate: "2023-12-31"})])
+    const wrapper = mountDialog()
+    await settle()
+
+    await wrapper.get("[data-testid='manage-membership-reopen-btn-30']").trigger("click")
+    await settle()
+    expect(mockReopenOneMembership).toHaveBeenCalled()
+  })
+
   it("folds the add form out from its button, and takes what the form holds", async () => {
     mockListMembershipsFor.mockResolvedValue([])
     const wrapper = mountDialog()

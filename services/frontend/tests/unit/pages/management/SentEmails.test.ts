@@ -89,6 +89,17 @@ describe("the Sent page", () => {
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The same email is already queued")
   })
 
+  it("draws each email as a row on a phone, opening the email", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    const rows = wrapper.findAllComponents({name: "ManagementRow"})
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows[0]!.props("to")).toMatch(/^\/management\/mail\/sent\/\d+$/)
+    expect(rows[0]!.findComponent({name: "StateMark"}).exists()).toBe(true)
+  })
+
   it("reads more as the list is scrolled, refreshes, searches, and says when there is nothing", async () => {
     const wrapper = await mount()
     wrapper.findComponent({name: "ManagementTable"}).vm.$emit("more")

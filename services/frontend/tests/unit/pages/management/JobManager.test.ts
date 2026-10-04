@@ -116,6 +116,16 @@ describe("JobManager page", () => {
     expect(chips.text()).not.toContain("User Id")
   })
 
+  it("draws each job as a row on a phone, opening the job's own page", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = mountJobManager()
+    await settle()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="job-row-1-open"]').attributes("to")).toBe("/management/jobs/1")
+    expect(wrapper.findAllComponents({name: "ManagementRow"})[0]!.findComponent({name: "StateMark"}).exists()).toBe(true)
+  })
+
   it("offers Retry only on a job that stopped without succeeding", async () => {
     const wrapper = mountJobManager()
     await settle()

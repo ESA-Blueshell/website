@@ -426,10 +426,17 @@ tr.mg-table__gap {
   flex: 1 1 100%;
 }
 
-/* Solid as the table under them, so nothing of the page shows through a control. */
+/* One ground for every control on the bar, solid as the table under them, and a line between
+   each and the next so they read as separate. */
 .mg-table__search :deep(.search-box),
-.mg-table__bar :deep(.island-field__box) {
+.mg-table__bar :deep(.island-field__box),
+.mg-table__bar :deep(.picker__field) {
   background-color: var(--color-surface);
+}
+
+.mg-table__search,
+.mg-table__bar :deep(.filter-picker) {
+  border-left: 1px solid color-mix(in oklab, var(--color-chalk) 16%, transparent);
 }
 
 /* The search takes the height of the filters beside it, never more. */

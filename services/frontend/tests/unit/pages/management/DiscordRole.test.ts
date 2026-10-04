@@ -153,6 +153,10 @@ describe("a Discord role's page", () => {
     expect(picker(wrapper, "discord-open-another").props("selectedKey")).toBe("2")
   })
 
+  // The page holds more than one dialog, so the create dialog is found by its own test id.
+  const createDialog = (wrapper: VueWrapper) =>
+    wrapper.findAllComponents({name: "ModalDialog"}).find((one) => one.props("testid") === "discord-create-dialog")!
+
   it("makes a channel for the role under the category picked", async () => {
     const wrapper = await mount()
 
@@ -167,13 +171,15 @@ describe("a Discord role's page", () => {
 
     expect(api.createRoleChannel).toHaveBeenCalledWith({path: {roleId: "500"}, body: {name: "lounge-2", category: "Members", access: "WRITE"}})
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "#lounge-2 is made under Members.")
-    expect(wrapper.findAllComponents({name: "ModalDialog"})[0]!.props("open")).toBe(false)
+    expect(createDialog(wrapper).props("open")).toBe(false)
     expect(api.listCataloguedChannels).toHaveBeenCalledTimes(2)
 
     await wrapper.get('[data-testid="discord-create-channel"]').trigger("click")
-    wrapper.findAllComponents({name: "ModalDialog"})[0]!.vm.$emit("update:open", false)
     await settle()
-    expect(wrapper.findAllComponents({name: "ModalDialog"})[0]!.props("open")).toBe(false)
+    expect(createDialog(wrapper).props("open")).toBe(true)
+    createDialog(wrapper).vm.$emit("update:open", false)
+    await settle()
+    expect(createDialog(wrapper).props("open")).toBe(false)
   })
 
   it("says when Discord cannot be read, and words a role nothing fills", async () => {

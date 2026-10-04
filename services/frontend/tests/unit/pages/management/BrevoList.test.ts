@@ -114,7 +114,7 @@ describe("one Brevo list", () => {
 
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "nobody")
     await settle()
-    expect(wrapper.get('[data-testid="brevo-list-in-step"]').text()).toBe("Nobody drifting matches.")
+    expect(wrapper.get('[data-testid="brevo-list-in-step"]').text()).toBe("Nobody who differs matches.")
   })
 
   it("resolves one person and a selection, and reconciles by hand", async () => {
@@ -133,8 +133,8 @@ describe("one Brevo list", () => {
     await settle()
     expect(api.linkDrift).toHaveBeenCalledWith({path: {id: 3, targetId: 40}, body: {links: [{externalUserId: "e3", userId: 15}]}})
 
-    wrapper.findAllComponents({name: "CheckBox"})[0].vm.$emit("update:modelValue", true)
-    wrapper.findAllComponents({name: "CheckBox"})[1].vm.$emit("update:modelValue", true)
+    // The head's tick takes everybody who can be selected.
+    await wrapper.get('[data-testid="brevo-list-drift-select-shown"]').trigger("change")
     await settle()
     expect(wrapper.get('[data-testid="brevo-list-bulk-remove"]').text()).toBe("Remove: 2")
     expect(wrapper.get('[data-testid="brevo-list-bulk-adopt"]').text()).toBe("Record as paid: 1")
@@ -214,7 +214,7 @@ describe("one Brevo list", () => {
     api.deleteExternalTarget.mockResolvedValueOnce({status: 409, error: {code: "TargetNameMismatch"}}).mockResolvedValue({status: 204, data: undefined})
     const wrapper = await mount()
 
-    expect(wrapper.text()).toContain("This list follows nothing")
+    expect(wrapper.text()).toContain("This list is not linked to a cohort")
     expect(wrapper.text()).toContain("Brevo list · No folder")
     expect(wrapper.find('[data-testid="brevo-list-reconcile"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="brevo-list-enforce"]').exists()).toBe(false)
@@ -245,10 +245,10 @@ describe("one Brevo list", () => {
     const typed = wrapper.findAllComponents({name: "TextInput"}).at(-1)!
     typed.vm.$emit("update:modelValue", "Old test")
     await settle()
-    await new DOMWrapper(document.body.querySelector("form.list__delete")!).trigger("submit")
+    await new DOMWrapper(document.body.querySelector('[data-testid="brevo-list-delete-form"]')!).trigger("submit")
     await settle()
     expect(document.body.querySelector('[data-testid="brevo-list-delete-failure"]')).not.toBeNull()
-    await new DOMWrapper(document.body.querySelector("form.list__delete")!).trigger("submit")
+    await new DOMWrapper(document.body.querySelector('[data-testid="brevo-list-delete-form"]')!).trigger("submit")
     await settle()
     expect(api.deleteExternalTarget).toHaveBeenLastCalledWith({path: {system: "BREVO", externalId: "9"}, body: {name: "Old test"}})
     expect(push).toHaveBeenCalledWith("/management/platforms/brevo")

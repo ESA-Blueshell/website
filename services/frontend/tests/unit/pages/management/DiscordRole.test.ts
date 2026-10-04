@@ -230,7 +230,7 @@ describe("a Discord role's page", () => {
     mockStore.getters.isAdmin = true
     const wrapper = await mount()
 
-    wrapper.findAllComponents({name: "CheckBox"}).find((one) => one.props("testid") === "discord-role-drift-select-1")!.vm.$emit("update:modelValue", true)
+    await wrapper.get('[data-testid="discord-role-drift-select-1"]').trigger("change")
     await settle()
     expect(wrapper.get('[data-testid="discord-role-drift-bulk-push"]').text()).toBe("Add the role: 1")
     await wrapper.get('[data-testid="discord-role-drift-bulk-push"]').trigger("click")

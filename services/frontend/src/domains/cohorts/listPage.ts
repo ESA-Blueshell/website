@@ -15,7 +15,7 @@ export function driftRowsOf(members: CohortMember[], system: TargetSystem, searc
 }
 
 /** How many people on one system's list are where they should be. */
-export const inStepOn = (members: CohortMember[], system: TargetSystem): number =>
+export const inSyncOn = (members: CohortMember[], system: TargetSystem): number =>
   members.filter((member) => member.system === system && member.sync === "IN_SYNC").length
 
 /** How a target's page words its drift: a Brevo list's people are pushed, a Discord role is added. */

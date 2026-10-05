@@ -39,9 +39,12 @@ export interface PersonRow {
   /** The type of their latest membership, or null for someone never a member. */
   type: MemberType | null
   memberSince: string | null
-  committees: string[]
+  /** The committees they sit on, by name and by the address their edit page goes by. */
+  committees: Array<{name: string; slug: string}>
   /** Their Discord name, or null where none is linked. */
   discord: string | null
+  /** Their Discord user id, which a link to their Discord profile needs. */
+  discordId: string | null
   needs: NeedsLook[]
   /** Every searchable field, folded the way a search is. */
   haystack: string
@@ -79,9 +82,10 @@ export function peopleRows(
 ): PersonRow[] {
   const held = new Map<number, MembershipResponse[]>()
   for (const one of memberships) held.set(one.userId, [...(held.get(one.userId) ?? []), one])
-  const committeesOf = new Map<number, string[]>()
+  const committeesOf = new Map<number, Array<{name: string; slug: string}>>()
   for (const committee of committees) {
-    for (const seat of committee.members ?? []) committeesOf.set(seat.userId, [...(committeesOf.get(seat.userId) ?? []), committee.name])
+    const one = {name: committee.name, slug: committee.slug}
+    for (const seat of committee.members ?? []) committeesOf.set(seat.userId, [...(committeesOf.get(seat.userId) ?? []), one])
   }
 
   return users.map((user) => {
@@ -100,10 +104,11 @@ export function peopleRows(
       memberSince: own.length === 0 ? null : own.map((one) => one.startDate).sort()[0]!,
       committees: committeesOf.get(user.id) ?? [],
       discord: user.discord || null,
+      discordId: user.discordId || null,
       needs: needsLookOf(user),
       haystack: fold([
         user.fullName, user.firstName, user.lastName, user.username, user.email, user.discord ?? "", user.phoneNumber ?? "",
-        ...(committeesOf.get(user.id) ?? []), ...user.roles, MEMBERSHIP_WORDS[membership], type ?? "",
+        ...(committeesOf.get(user.id) ?? []).map((one) => one.name), ...user.roles, MEMBERSHIP_WORDS[membership], type ?? "",
       ].join(" ")),
     }
   })

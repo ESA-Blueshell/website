@@ -2,6 +2,7 @@
 /* One Discord channel: which roles have access to it, and at what. The same access a role's own
    page sets, set here from the channel's side: a role is given access, its access is changed, or it
    is removed, and each change is written to Discord. */
+import RoleMark from "@/components/island/RoleMark.vue"
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import CutButton from "@/components/island/CutButton.vue"
@@ -100,7 +101,7 @@ onMounted(load)
     :title="name || channelId"
   >
     <template #lede>
-      The roles that have access to this channel. Give a role access, change what it may do, or remove it.
+      The roles that have access to this channel. Add a role, change its access or remove it.
     </template>
 
     <p
@@ -136,7 +137,7 @@ onMounted(load)
             class="mg-name"
             :to="`/management/platforms/discord/roles/${row.roleId}`"
           >
-            @{{ row.name }}
+            <role-mark :role="row.name" />
           </router-link>
           <span class="mg-sub">{{ row.follows ? `Follows ${row.follows}` : "Follows nothing on the site" }}</span>
         </template>
@@ -166,7 +167,7 @@ onMounted(load)
         <search-picker
           class="channel__pick"
           :options="addable"
-          placeholder="Give another role access"
+          placeholder="Add another role"
           :selected-key="adding"
           testid-prefix="discord-channel-add"
           @pick="(key: string) => adding = key"
@@ -184,7 +185,7 @@ onMounted(load)
           tone="solid"
           @click="add"
         >
-          Give access
+          Add access
         </cut-button>
       </div>
     </template>

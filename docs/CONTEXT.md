@@ -184,7 +184,7 @@ people, because that is what they need to know. "Roster place" is jargon and app
 nowhere a reader can see.
 
 **On the wire the count of them is `players`.** A third word, kept because it is the
-one the api already answers with: renaming it would put a refusal out of step with the
+one the api already answers with: renaming it would put a refusal out of sync with the
 endpoint the dialog reads before it asks.
 
 ### Banner and Icon
@@ -235,7 +235,7 @@ made it, when, the roles before and after, and the reason if one was given.
 
 ### Derived role
 
-A role a listener keeps in step with something else the person has. **Member** follows
+A role a listener keeps in sync with something else the person has. **Member** follows
 an active membership; **committee** follows a committee seat.
 
 Never granted and never revoked by hand. Ticking one would be a lie — the listener
@@ -483,7 +483,7 @@ when the event is deleted or unapproved before it is over. Once the event is ove
 leaves it alone, and Discord ends it by itself; an event moved ahead again after that
 gets a new one. An event approved while it runs is listed from then until it is over.
 **"Event" alone means the site's event**; the Discord event is its
-listing in the server, kept in step with it.
+listing in the server, kept in sync with it.
 
 ### Event page
 
@@ -679,7 +679,7 @@ kind, because it is the only question where the kind changes the answer.
 
 ### Platform
 
-An outside system the site keeps in step with who is who: **Brevo** for mail, **Discord**
+An outside system the site keeps in sync with who is who: **Brevo** for mail, **Discord**
 for roles and channels, **Google** (the association's Workspace) for groups and shared
 drives. Each is spoken of in its own nouns: lists and folders, roles and channels, groups
 and shared drives.

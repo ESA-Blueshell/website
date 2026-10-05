@@ -90,8 +90,8 @@ class User(
     var nameOnRosters: Boolean = false,
     // Four sources, and only the last is a decision somebody made:
     // - GUEST: the default every account is created with
-    // - MEMBER: follows an active membership, kept in step by MembershipEventListener
-    // - COMMITTEE: follows a committee seat, kept in step by CommitteeMembershipChangedListener
+    // - MEMBER: follows an active membership, kept in sync by MembershipEventListener
+    // - COMMITTEE: follows a committee seat, kept in sync by CommitteeMembershipChangedListener
     // - BOARD/TREASURER/ADMIN: granted by an admin through PUT /users/{userId}/roles, which
     //   records every change. See ADR-028.
     @ElementCollection(fetch = FetchType.LAZY)

@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import ActivateMember from "@/pages/activate/ActivateMember.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
@@ -100,5 +100,21 @@ describe("ActivateMember page", () => {
     await settle()
 
     expect(mockRouterReplace).toHaveBeenCalledWith({name: "home"})
+  })
+
+  it("takes the username and both passwords as typed, and says when the account is activated", async () => {
+    const wrapper = mountInApp(ActivateMember, {global: {stubs: {VvField: true}}})
+    await settle()
+    const [username, password, again] = wrapper.findAllComponents({name: "VvField"})
+    username!.vm.$emit("update:modelValue", "tester")
+    password!.vm.$emit("update:modelValue", "Password123!")
+    again!.vm.$emit("update:modelValue", "Password123!")
+    ;(wrapper.vm as any).succeeded = true
+    await settle()
+
+    expect((wrapper.vm as any).form).toMatchObject({username: "tester", password: "Password123!"})
+    expect((wrapper.vm as any).passwordAgain).toBe("Password123!")
+    expect(wrapper.get('[data-testid="activate-member-submit-btn"]').text()).toBe("Activate Member")
+    expect(wrapper.get('[data-testid="activate-member-success-alert"]').text()).toContain("Account activated!")
   })
 })

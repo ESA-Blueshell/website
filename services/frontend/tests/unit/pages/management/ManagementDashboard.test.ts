@@ -66,7 +66,7 @@ describe("the Management dashboard", () => {
     const wrapper = await mount()
 
     const alerts = wrapper.get('[data-testid="dashboard-alerts"]')
-    expect(alerts.text()).toContain("A list is out of step")
+    expect(alerts.text()).toContain("A list is out of sync")
     expect(alerts.text()).toContain("Sitecie · 3 people differ")
     expect(alerts.get('[data-testid="dashboard-alerts-link"]').text()).toBe("All 2 alerts")
     const membership = wrapper.get('[data-testid="dashboard-membership"]').text()
@@ -82,7 +82,7 @@ describe("the Management dashboard", () => {
     expect(wrapper.get('[data-testid="dashboard-mail"]').text()).toContain("40 delivered · 3 failed or bounced")
     const platforms = wrapper.get('[data-testid="dashboard-platforms"]')
     expect(platforms.get('[data-testid="dashboard-platforms-link"]').attributes("to")).toBe("/management/platforms/brevo")
-    expect(platforms.text()).toContain("2 cohorts · 1 out of step · 1 without a list")
+    expect(platforms.text()).toContain("2 cohorts · 1 out of sync · 1 without a list")
 
     expect(wrapper.find('[data-testid="dashboard-system"]').exists()).toBe(false)
     expect(api.getStats).not.toHaveBeenCalled()

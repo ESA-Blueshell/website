@@ -34,6 +34,7 @@ import {
   createFolderInSystem,
   createListInSystem,
   createMissingLists,
+  driftMarksOf,
   driftOf,
   fetchTargetFolders,
   fetchTidyPlan,
@@ -276,11 +277,6 @@ onMounted(load)
     </p>
 
     <template v-if="overview">
-      <fact-list
-        class="brevo__facts"
-        :facts="facts"
-      />
-
       <notice-box
         v-if="notice"
         class="brevo__notice"
@@ -307,6 +303,11 @@ onMounted(load)
         :system="SYSTEM"
         testid="brevo-folders"
         @changed="load"
+      />
+
+      <fact-list
+        class="brevo__facts"
+        :facts="facts"
       />
 
       <management-table
@@ -377,12 +378,25 @@ onMounted(load)
             {{ stateWord(row) }}
           </state-mark>
           <state-mark
-            v-else
-            :kind="row.kind === 'archive' ? 'not-compared' : driftOf(row.list).kind"
+            v-else-if="row.kind === 'archive'"
+            kind="not-compared"
             :testid="`brevo-state-${keyOf(row)}`"
           >
             {{ stateWord(row) }}
           </state-mark>
+          <span
+            v-else
+            class="mg-marks"
+            :data-testid="`brevo-state-${keyOf(row)}`"
+          >
+            <state-mark
+              v-for="mark in driftMarksOf(row.list)"
+              :key="mark.word"
+              :kind="mark.kind"
+            >
+              {{ mark.word }}
+            </state-mark>
+          </span>
         </template>
         <template #reconciled="{row}">
           <span :class="{'mg-quiet': !row.list?.lastReconciledAt}">{{ row.list?.lastReconciledAt ? formatMoment(row.list.lastReconciledAt) : "Never" }}</span>
@@ -541,6 +555,7 @@ onMounted(load)
     >
       <form
         v-if="newStep === 'fill'"
+        id="brevo-new-form"
         class="brevo__form"
         @submit.prevent="newStep = 'preview'"
       >
@@ -580,16 +595,6 @@ onMounted(load)
             :control-id="field.controlId"
           />
         </form-field>
-        <div class="brevo__acts">
-          <cut-button
-            :disabled="newName.trim() === ''"
-            submit
-            testid="brevo-new-preview"
-            tone="solid"
-          >
-            Preview
-          </cut-button>
-        </div>
       </form>
       <div
         v-else
@@ -618,33 +623,44 @@ onMounted(load)
         >
           {{ refusal }}
         </p>
-        <div class="brevo__acts">
-          <cut-button
-            testid="brevo-new-back"
-            tone="quiet"
-            @click="newStep = newStep === 'confirm' ? 'preview' : 'fill'"
-          >
-            Back
-          </cut-button>
-          <cut-button
-            v-if="newStep === 'preview'"
-            testid="brevo-new-continue"
-            tone="solid"
-            @click="newStep = 'confirm'"
-          >
-            Continue
-          </cut-button>
-          <cut-button
-            v-else
-            :disabled="acting"
-            testid="brevo-new-confirm"
-            tone="solid"
-            @click="confirmCreate"
-          >
-            Create the list
-          </cut-button>
-        </div>
       </div>
+      <template #footer>
+        <cut-button
+          v-if="newStep !== 'fill'"
+          testid="brevo-new-back"
+          tone="quiet"
+          @click="newStep = newStep === 'confirm' ? 'preview' : 'fill'"
+        >
+          Back
+        </cut-button>
+        <cut-button
+          v-if="newStep === 'fill'"
+          :disabled="newName.trim() === ''"
+          form="brevo-new-form"
+          submit
+          testid="brevo-new-preview"
+          tone="solid"
+        >
+          Preview
+        </cut-button>
+        <cut-button
+          v-else-if="newStep === 'preview'"
+          testid="brevo-new-continue"
+          tone="solid"
+          @click="newStep = 'confirm'"
+        >
+          Continue
+        </cut-button>
+        <cut-button
+          v-else
+          :disabled="acting"
+          testid="brevo-new-confirm"
+          tone="solid"
+          @click="confirmCreate"
+        >
+          Create the list
+        </cut-button>
+      </template>
     </modal-dialog>
     <modal-dialog
       :open="pending.length > 0"

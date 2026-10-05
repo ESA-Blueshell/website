@@ -461,7 +461,7 @@ defineExpose({validate, save})
             <VvField
               v-model="event.signUp"
               :component="CheckBox"
-              label="Take sign-ups"
+              label="Allow sign-ups"
               name="signUp"
               test-id="event-form-signup-field"
             />

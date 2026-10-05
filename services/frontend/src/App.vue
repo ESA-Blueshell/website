@@ -51,21 +51,20 @@
       <!-- eslint-disable-next-line vue/no-v-html -->
       <span v-html="DOMPurify.sanitize(statusSnackbarMessage)" />
       <template #actions>
-        <v-btn
+        <cut-button
           v-if="statusSnackbarAction"
-          color="primary"
-          variant="text"
+          small
           @click="handleSnackbarAction(statusSnackbarAction)"
         >
           {{ statusSnackbarAction.label }}
-        </v-btn>
-        <v-btn
-          color="blue"
-          variant="text"
+        </cut-button>
+        <cut-button
+          small
+          tone="quiet"
           @click="statusSnackbarMessage = ''"
         >
           Close
-        </v-btn>
+        </cut-button>
       </template>
     </v-snackbar>
 
@@ -82,13 +81,12 @@
       >Cookie Policy</a>.
 
       <template #actions>
-        <v-btn
-          color="primary"
-          variant="text"
+        <cut-button
+          small
           @click="acceptCookies"
         >
           Got it
-        </v-btn>
+        </cut-button>
       </template>
     </v-snackbar>
   </v-app>
@@ -100,6 +98,7 @@ import {useStore} from "vuex"
 import {useRoute, useRouter} from "vue-router"
 import type {SnackbarAction, StoredLogin} from "@/plugins/store"
 import {useTheme} from "vuetify"
+import CutButton from "@/components/island/CutButton.vue"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import SiteBar from "@/components/common/SiteBar.vue"
 import ManagementBar from "@/components/management/ManagementBar.vue"

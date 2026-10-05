@@ -58,19 +58,19 @@ const onFile = {country: "NL", city: "Enschede", street: "Straat", houseNumber: 
 
 const mount = () => mountPage(MembershipSignUp, {path: "/membership/signup"})
 
-/** The steps the stepper offers, and which one it stands on, marked with a star. */
-const steps = (wrapper: VueWrapper<any>) =>
-  wrapper.findAll(".v-stepper-item").map((item) => {
-    const title = item.find(".v-stepper-item__title").text()
-    return item.classes().includes("v-stepper-item--selected") ? `${title}*` : title
-  })
-
 // The details form reads the profile of any account it holds, a resumed one included.
 beforeEach(() => {
   vi.mocked(findMemberProfileByUserId).mockResolvedValue(emptyAnswer(findMemberProfileByUserId))
   vi.mocked(findCurrentContributionPeriod).mockResolvedValue(emptyAnswer(findCurrentContributionPeriod))
   store.commit("setStatusSnackbarMessage", null)
 })
+
+/** The steps the strip offers, and which one it stands on, marked with a star. */
+const steps = (wrapper: VueWrapper<any>) =>
+  wrapper.findAll(".steps__one").map((item) => {
+    const title = item.find(".steps__name").text()
+    return item.attributes("aria-current") === "step" ? `${title}*` : title
+  })
 
 async function press(wrapper: VueWrapper<any>, testid: string) {
   await wrapper.get(`[data-testid="${testid}"]`).trigger("click")

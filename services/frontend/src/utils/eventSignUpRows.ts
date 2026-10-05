@@ -3,6 +3,8 @@ import {type AnswerResponse, EventSignUpKind, type EventSignUpResponse} from "@/
 export type SignUpPerson = {
   name: string;
   discord: string;
+  /** Only an account links a Discord member; a guest types a name. */
+  discordId: string | null;
   email: string;
   phoneNumber: string;
 }
@@ -25,6 +27,7 @@ export function signUpPerson(signUp: EventSignUpResponse): SignUpPerson {
   return {
     name: signUp.user?.fullName ?? signUp.guest?.name ?? "",
     discord: source?.discord ?? "",
+    discordId: signUp.user?.discordId ?? null,
     email: source?.email ?? "",
     phoneNumber: source?.phoneNumber ?? "",
   }

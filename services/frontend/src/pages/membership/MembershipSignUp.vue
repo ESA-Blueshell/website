@@ -6,16 +6,20 @@
       class="mx-auto my-6"
       style="max-width: 800px"
     >
-      <v-stepper
+      <div
         v-if="!finished"
-        v-model="currentStep"
+        class="signup"
         data-testid="membership-signup-stepper"
-        :items="stepItems"
-        hide-actions
       >
+        <step-strip
+          :current="currentStep - 1"
+          :steps="stepItems.map((one) => one.title)"
+        />
         <!-- Step 1: who they are -->
-        <template #[`item.1`]>
-          <v-card class="pa-4">
+        <div v-show="currentStep === 1">
+          <div
+            class="island-panel"
+          >
             <div
               v-if="preparing"
               class="d-flex align-center justify-center pa-6"
@@ -36,72 +40,63 @@
               :show-password="isNewApplicant"
               :signup-token="signupToken"
             />
-            <v-row align="center">
-              <v-spacer />
-              <v-col cols="auto">
-                <v-btn
-                  :disabled="submitting || preparing"
-                  :loading="submitting || preparing"
-                  color="primary"
-                  data-testid="membership-details-next-btn"
-                  @click="saveDetails"
-                >
-                  Next
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card>
-        </template>
+            <div class="form-save">
+              <cut-button
+                tone="solid"
+                :disabled="submitting || preparing"
+                data-testid="membership-details-next-btn"
+                @click="saveDetails"
+              >
+                Next
+              </cut-button>
+            </div>
+          </div>
+        </div>
 
         <!-- Step 2: where they live -->
-        <template #[`item.2`]>
-          <v-card class="pa-4">
+        <div v-show="currentStep === 2">
+          <div
+            class="island-panel"
+          >
             <address-form
               ref="addressRef"
               v-model="address"
               :user-id="user?.id"
               :signup-token="signupToken"
             />
-            <v-row align="center">
-              <v-col cols="auto">
-                <v-btn
-                  data-testid="membership-address-back-btn"
-                  variant="outlined"
-                  @click="currentStep = Steps.Details"
-                >
-                  Previous
-                </v-btn>
-              </v-col>
-              <v-spacer />
-              <v-col cols="auto">
-                <v-btn
-                  :disabled="submitting"
-                  :loading="submitting"
-                  color="primary"
-                  data-testid="membership-address-next-btn"
-                  @click="saveAddressStep"
-                >
-                  Next
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card>
-        </template>
+            <div class="form-save">
+              <cut-button
+                tone="plain"
+                data-testid="membership-address-back-btn"
+                @click="currentStep = Steps.Details"
+              >
+                Previous
+              </cut-button>
+              <cut-button
+                tone="solid"
+                :disabled="submitting"
+                data-testid="membership-address-next-btn"
+                @click="saveAddressStep"
+              >
+                Next
+              </cut-button>
+            </div>
+          </div>
+        </div>
 
         <!-- Step 3: the application itself -->
-        <template #[`item.3`]>
-          <v-card class="pa-4">
-            <v-alert
+        <div v-show="currentStep === 3">
+          <div
+            class="island-panel"
+          >
+            <notice-box
               v-if="applicationSubmitted"
-              border="start"
-              class="mb-4"
-              color="success"
-              data-testid="membership-conditions-accepted"
-              variant="tonal"
+              tone="info"
+              testid="membership-conditions-accepted"
             >
               Your application is in and you agreed to the membership conditions.
               Details and address can still be changed; the agreement stands.
-            </v-alert>
+            </notice-box>
             <membership-form
               v-else
               ref="membershipRef"
@@ -118,43 +113,37 @@
               </p>
               <incasso-set-up :signup-token="signupToken" />
             </div>
-            <v-row align="center">
-              <v-col cols="auto">
-                <v-btn
-                  data-testid="membership-conditions-back-btn"
-                  variant="outlined"
-                  @click="currentStep = Steps.Address"
-                >
-                  Previous
-                </v-btn>
-              </v-col>
-              <v-spacer />
-              <v-col cols="auto">
-                <v-btn
-                  v-if="applicationSubmitted && awaitsEmailConfirmation"
-                  color="primary"
-                  data-testid="membership-conditions-continue-btn"
-                  @click="currentStep = Steps.ConfirmEmail"
-                >
-                  Continue
-                </v-btn>
-                <v-btn
-                  v-else
-                  :disabled="submitting"
-                  :loading="submitting"
-                  color="primary"
-                  data-testid="membership-conditions-submit-btn"
-                  @click="submitApplication"
-                >
-                  Complete Membership
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card>
-        </template>
+            <div class="form-save">
+              <cut-button
+                tone="plain"
+                data-testid="membership-conditions-back-btn"
+                @click="currentStep = Steps.Address"
+              >
+                Previous
+              </cut-button>
+              <cut-button
+                v-if="applicationSubmitted && awaitsEmailConfirmation"
+                tone="solid"
+                data-testid="membership-conditions-continue-btn"
+                @click="currentStep = Steps.ConfirmEmail"
+              >
+                Continue
+              </cut-button>
+              <cut-button
+                v-else
+                tone="solid"
+                :disabled="submitting"
+                data-testid="membership-conditions-submit-btn"
+                @click="submitApplication"
+              >
+                Complete Membership
+              </cut-button>
+            </div>
+          </div>
+        </div>
 
         <!-- Step 4: confirm the email address. New applicants only. -->
-        <template #[`item.4`]>
+        <div v-show="currentStep === 4">
           <email-confirmation-panel
             :email="user?.email ?? ''"
             :username="user?.username ?? ''"
@@ -163,21 +152,14 @@
             @back="currentStep = Steps.Membership"
             @email-corrected="onEmailCorrected"
           />
-        </template>
-      </v-stepper>
+        </div>
+      </div>
 
-      <v-card
+      <div
         v-else
-        class="pa-6 text-center"
+        class="island-panel"
         data-testid="membership-complete-panel"
       >
-        <v-icon
-          class="mb-4"
-          color="success"
-          size="64"
-        >
-          mdi-check-circle
-        </v-icon>
         <p class="text-h6 font-weight-medium mb-2">
           Welcome to Blueshell
         </p>
@@ -185,20 +167,22 @@
           Your membership has started and is pending until your first contribution is paid. You become a member once
           the treasurer records it.
         </p>
-        <v-btn
-          class="mt-4"
-          color="primary"
+        <cut-button
+          tone="solid"
           data-testid="membership-home-btn"
           @click="$goto('/')"
         >
           Go to Homepage
-        </v-btn>
-      </v-card>
+        </cut-button>
+      </div>
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
+import CutButton from "@/components/island/CutButton.vue"
+import StepStrip from "@/components/management/StepStrip.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {computed, onMounted, onUnmounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import UserForm from "@/components/form/UserForm.vue"
@@ -557,6 +541,12 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.signup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
 .v-stepper {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
+import CountBadge from "@/components/island/CountBadge.vue"
+import IconButton from "@/components/island/IconButton.vue"
 
 defineOptions({name: "InfoBox"})
 
@@ -58,20 +60,11 @@ const bodyShown = computed(() => !props.expandable || open.value)
       @keydown.space.prevent="canToggle && (open = !open)"
     >
       <div class="info-box__heading">
-        <v-badge
+        <span class="info-box__label">{{ label }}<count-badge
           v-if="count != null"
-          color="primary"
-          :content="count"
-          data-testid="info-box-count"
-          :offset-x="-6"
-          :offset-y="-2"
-        >
-          <span class="info-box__label">{{ label }}</span>
-        </v-badge>
-        <span
-          v-else
-          class="info-box__label"
-        >{{ label }}</span>
+          :count="count"
+          testid="info-box-count"
+        /></span>
       </div>
 
       <div
@@ -80,27 +73,34 @@ const bodyShown = computed(() => !props.expandable || open.value)
         @click.stop
       >
         <slot name="actions" />
-        <v-btn
+        <icon-button
           v-if="canToggle"
-          :aria-label="open ? `Hide ${label}` : `Show ${label}`"
-          data-testid="info-box-toggle"
-          :icon="open ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-          size="small"
-          variant="text"
+          :label="open ? `Hide ${label}` : `Show ${label}`"
+          testid="info-box-toggle"
           @click="open = !open"
-        />
+        >
+          <svg
+            aria-hidden="true"
+            class="info-box__chevron"
+            :class="{'info-box__chevron--open': open}"
+            viewBox="0 0 24 24"
+          ><path
+            d="M6 9l6 6 6-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          /></svg>
+        </icon-button>
       </div>
     </div>
 
-    <v-expand-transition>
-      <div
-        v-if="bodyShown && $slots.default"
-        class="info-box__body"
-        data-testid="info-box-body"
-      >
-        <slot />
-      </div>
-    </v-expand-transition>
+    <div
+      v-if="bodyShown && $slots.default"
+      class="info-box__body"
+      data-testid="info-box-body"
+    >
+      <slot />
+    </div>
   </div>
 </template>
 
@@ -110,8 +110,7 @@ const bodyShown = computed(() => !props.expandable || open.value)
 .info-box {
   min-width: 0;
   padding: 14px 16px;
-  border-radius: 6px;
-  background: rgba(var(--v-theme-on-surface), 0.04);
+  background: var(--color-raised);
 }
 
 .info-box__header {
@@ -133,16 +132,7 @@ const bodyShown = computed(() => !props.expandable || open.value)
 }
 
 // A section heading rather than an overline: these name the halves of a page, so they carry
-// the weight of one. Vuetify 4 (MD3) dropped `.text-overline`, so the caps are spelled here.
-// Clear of the word rather than over its last letter: the label is short and the badge is
-// nearly as tall as it, so the default overlap swallowed a glyph.
-.info-box__heading :deep(.v-badge__badge) {
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  font-size: 0.625rem;
-}
-
+// the weight of one.
 .info-box__label {
   display: block;
   font-size: 0.9375rem;
@@ -150,7 +140,7 @@ const bodyShown = computed(() => !props.expandable || open.value)
   letter-spacing: 0.06em;
   line-height: 1.3;
   text-transform: uppercase;
-  color: rgb(var(--v-theme-on-surface));
+  color: var(--color-chalk);
 }
 
 .info-box__actions {
@@ -158,6 +148,16 @@ const bodyShown = computed(() => !props.expandable || open.value)
   align-items: center;
   gap: 4px;
   flex: 0 0 auto;
+}
+
+.info-box__chevron {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: transform 160ms ease;
+}
+
+.info-box__chevron--open {
+  transform: rotate(180deg);
 }
 
 .info-box__body {

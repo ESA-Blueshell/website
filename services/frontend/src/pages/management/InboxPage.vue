@@ -42,7 +42,7 @@ const facts = computed(() => [
   {label: "Automatic replies", value: String(counts.value?.automatic ?? 0), sub: "Kept apart from what needs an answer", testid: "inbox-automatic"},
 ])
 const senderOf = (entry: InboxEntry) => entry.senderName ?? entry.fromName ?? entry.fromAddress
-const markOf = (entry: InboxEntry) => (entry.automatic ? "not-compared" : entry.state === InboxState.NEW ? "not-created" : "in-step")
+const markOf = (entry: InboxEntry) => (entry.automatic ? "not-compared" : entry.state === InboxState.NEW ? "not-created" : "in-sync")
 const follows = (entry: InboxEntry) => followsOf(entry, emailTypeLabel)
 
 onMounted(refresh)

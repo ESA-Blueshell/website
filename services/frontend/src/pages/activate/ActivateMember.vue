@@ -6,7 +6,9 @@
       class="mx-auto my-10"
       style="max-width: 600px"
     >
-      <v-card class="pa-6">
+      <div
+        class="island-panel"
+      >
         <Form
           ref="formRef"
           v-slot="{ meta }"
@@ -14,89 +16,73 @@
           data-testid="activate-member-form"
           @submit="onSubmit"
         >
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="form.username"
-                :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'activate-member-username-field' }"
-                name="username"
-                rules="required|alphaNum"
-              />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="form.password"
-                :component-props="{
-                  label: 'Password',
-                  autocomplete: 'new-password',
-                  'data-testid': 'activate-member-password-field',
-                  ...passwordFieldProps
-                }"
-                name="password"
-                rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-              />
-            </v-col>
-          </v-row>
+          <VvField
+            v-model="form.username"
+            :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'activate-member-username-field' }"
+            name="username"
+            rules="required|alphaNum"
+          />
 
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="passwordAgain"
-                :component-props="{
-                  label: 'Repeat Password',
-                  autocomplete: 'new-password',
-                  'data-testid': 'activate-member-repeat-password-field',
-                  ...passwordFieldProps
-                }"
-                name="passwordAgain"
-                rules="required|match:@password"
-              />
-            </v-col>
-          </v-row>
+          
+          <VvField
+            v-model="form.password"
+            :component-props="{
+              label: 'Password',
+              autocomplete: 'new-password',
+              'data-testid': 'activate-member-password-field',
+              ...passwordFieldProps
+            }"
+            name="password"
+            rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
+          />
 
-          <v-row
-            align="center"
-            class="mt-2"
-            justify="end"
-          >
-            <v-btn
+          <VvField
+            v-model="passwordAgain"
+            :component-props="{
+              label: 'Repeat Password',
+              autocomplete: 'new-password',
+              'data-testid': 'activate-member-repeat-password-field',
+              ...passwordFieldProps
+            }"
+            name="passwordAgain"
+            rules="required|match:@password"
+          />
+
+          <div class="form-save">
+            <cut-button
+              tone="solid"
+              submit
               :disabled="!meta.valid || loading"
-              :loading="loading"
-              color="primary"
               data-testid="activate-member-submit-btn"
-              type="submit"
             >
               Activate Member
-            </v-btn>
-          </v-row>
+            </cut-button>
+          </div>
 
-          <v-alert
+          <notice-box
             v-if="errorMessage"
-            class="mt-4"
-            data-testid="activate-member-error-alert"
-            type="error"
-            variant="tonal"
+            tone="danger"
+            testid="activate-member-error-alert"
           >
             {{ errorMessage }}
-          </v-alert>
+          </notice-box>
 
-          <v-alert
+          <notice-box
             v-if="succeeded"
-            class="mb-2"
-            data-testid="activate-member-success-alert"
-            type="success"
+            tone="info"
+            testid="activate-member-success-alert"
           >
             Account activated! You will be redirected to the login page.
-          </v-alert>
+          </notice-box>
         </Form>
-      </v-card>
+      </div>
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
+import CutButton from "@/components/island/CutButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Form} from "vee-validate"

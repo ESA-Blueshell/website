@@ -21,6 +21,12 @@
         <slot name="actions" />
       </template>
     </management-head>
+    <div
+      v-if="$slots.tabs"
+      class="mg-page__tabs"
+    >
+      <slot name="tabs" />
+    </div>
     <back-bar
       v-if="back"
       :label="back.label"
@@ -34,8 +40,8 @@
 </template>
 
 <script lang="ts" setup>
-/* A Management page: the way back where it sits inside another, its head, and its body at the
-   portal's margins. */
+/* A Management page: its head, the tabs that close the head where it has some, the way back where
+   it sits inside another, and its body at the portal's margins. */
 import BackBar from "@/components/island/BackBar.vue"
 import ManagementHead from "@/components/management/ManagementHead.vue"
 
@@ -51,6 +57,15 @@ const {eyebrow, title, back = undefined, testid = undefined} = defineProps<{
 <style scoped>
 .mg-page__body {
   padding: 0 2.4rem 3rem;
+}
+
+/* The tabs close the head block, under its words and over the way back. */
+.mg-page__tabs {
+  padding: 0.6rem 2.4rem 0;
+}
+
+.mg-page__tabs :deep(.page-tabs) {
+  margin: 0;
 }
 
 /* The bar keeps the portal's margin, where the island centres its own. */

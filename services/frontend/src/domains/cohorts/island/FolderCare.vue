@@ -149,6 +149,7 @@ const remove = async () => {
     </modal-dialog>
 
     <modal-dialog
+      danger
       :open="removing"
       :testid="`${testid}-remove-dialog`"
       title="Remove empty folders"
@@ -169,7 +170,7 @@ const remove = async () => {
         <cut-button
           :disabled="acting || picked.size === 0"
           :testid="`${testid}-remove-confirm`"
-          tone="solid"
+          tone="danger"
           @click="remove"
         >
           Remove {{ plural(picked.size, "folder", "folders") }}

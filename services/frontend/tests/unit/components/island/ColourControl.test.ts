@@ -9,7 +9,7 @@ const hex = (wrapper: ReturnType<typeof control>) => wrapper.get("[data-testid=a
 const swatch = (wrapper: ReturnType<typeof control>) => wrapper.get("[data-testid=accent-swatch]")
 
 describe("ColourControl", () => {
-  it("shows the colour in its swatch and as a hex, kept in step", async () => {
+  it("shows the colour in its swatch and as a hex, kept in sync", async () => {
     const wrapper = control({modelValue: "#ff4655"})
 
     expect((swatch(wrapper).element as HTMLInputElement).value).toBe("#ff4655")

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import CutButton from "./CutButton.vue"
 import ModalDialog from "./ModalDialog.vue"
 
 /**
@@ -39,6 +40,8 @@ const emit = defineEmits<{
 <template>
   <modal-dialog
     :accent="accent"
+    cancel-testid="confirm-cancel"
+    danger
     :open="open"
     :testid="testid"
     :title="title"
@@ -60,27 +63,17 @@ const emit = defineEmits<{
       >
         {{ failure }}
       </p>
-
-      <div class="confirm__actions">
-        <button
-          class="confirm__button confirm__button--ghost"
-          data-testid="confirm-cancel"
-          type="button"
-          @click="emit('update:open', false)"
-        >
-          Keep it
-        </button>
-        <button
-          class="confirm__button confirm__button--go"
-          data-testid="confirm-go"
-          :disabled="working"
-          type="button"
-          @click="emit('confirm')"
-        >
-          {{ working ? workingLabel : confirmLabel }}
-        </button>
-      </div>
     </div>
+    <template #footer>
+      <cut-button
+        :disabled="working"
+        testid="confirm-go"
+        tone="danger"
+        @click="emit('confirm')"
+      >
+        {{ working ? workingLabel : confirmLabel }}
+      </cut-button>
+    </template>
   </modal-dialog>
 </template>
 
@@ -105,37 +98,4 @@ const emit = defineEmits<{
   font-size: 0.85rem;
 }
 
-.confirm__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.6rem;
-}
-
-.confirm__button {
-  padding: 0.45rem 1.1rem;
-  border: 0;
-  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  font-family: "Shellhouse One", system-ui, sans-serif;
-  font-size: 0.8rem;
-  font-style: italic;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.confirm__button--ghost {
-  background: var(--color-raised);
-  color: var(--color-ash);
-}
-
-/* The fill does not follow the theme, so its ink must not either. */
-.confirm__button--go {
-  background: var(--color-danger-fill);
-  color: var(--color-danger-on-fill);
-}
-
-.confirm__button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
 </style>

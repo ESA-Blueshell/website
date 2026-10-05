@@ -2,6 +2,7 @@
 /* What a committee, board or team has on Discord or Brevo, in a list: its role or list by name,
    leading to that role's or list's own page, or a mark saying it has none yet. */
 import {computed} from "vue"
+import RoleMark from "@/components/island/RoleMark.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import {type SummaryTarget, TargetSystem} from "../adapters/cohorts"
 
@@ -22,7 +23,6 @@ const PAGES: Partial<Record<TargetSystem, string>> = {
 }
 
 const made = computed(() => targets.find((one) => one.system === system && one.made) ?? null)
-const word = computed(() => (system === TargetSystem.DISCORD ? `@${made.value?.label}` : made.value?.label))
 const page = computed(() => (made.value?.externalId && PAGES[system] ? `${PAGES[system]}/${made.value.externalId}` : null))
 </script>
 
@@ -33,12 +33,24 @@ const page = computed(() => (made.value?.externalId && PAGES[system] ? `${PAGES[
     :data-testid="testid"
     :to="page"
   >
-    {{ word }}
+    <role-mark
+      v-if="system === TargetSystem.DISCORD"
+      :role="made.label"
+    />
+    <template v-else>
+      {{ made.label }}
+    </template>
   </router-link>
   <span
     v-else-if="made"
     :data-testid="testid"
-  >{{ word }}</span>
+  >
+    <role-mark
+      v-if="system === TargetSystem.DISCORD"
+      :role="made.label"
+    />
+    <template v-else>{{ made.label }}</template>
+  </span>
   <state-mark
     v-else
     :kind="quiet ? 'not-compared' : 'not-created'"

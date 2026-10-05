@@ -36,7 +36,7 @@ data class CreateGameChannelRequest(
 
 @RestController
 @RequestMapping("/management/discord")
-@Tag(name = "Discord management", description = "What the site keeps in step on Discord")
+@Tag(name = "Discord management", description = "What the site keeps in sync on Discord")
 @BoardOnly
 class DiscordBotController(
     private val standing: BotStanding,

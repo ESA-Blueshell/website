@@ -2,6 +2,7 @@
 /* A committee's or a team's Discord on its form: the role its people hold and the channels that role
    opens. A new one gets a new role and a private channel by default; an existing role and channels can
    be linked instead, on adding and on editing. Hidden where the api has no bot in the server. */
+import RoleMark from "@/components/island/RoleMark.vue"
 import {computed, onMounted, ref, watch} from "vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import ChipPicker from "@/components/island/ChipPicker.vue"
@@ -107,7 +108,7 @@ onMounted(async () => {
         class="discord-place__role"
         :data-testid="`${testid}-role`"
       >
-        @{{ state?.roleName ?? linkedRole }}<span class="discord-place__note">{{ holders }}</span>
+        <role-mark :role="state?.roleName ?? linkedRole" /><span class="discord-place__note">{{ holders }}</span>
       </p>
       <form-field
         v-else

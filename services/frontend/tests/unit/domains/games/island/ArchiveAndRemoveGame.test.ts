@@ -6,7 +6,7 @@ import RemoveGameDialog from "@/domains/games/island/RemoveGameDialog.vue"
 const adapter = vi.hoisted(() => ({setGameArchived: vi.fn(), loadGameHoldings: vi.fn(), removeCasualGame: vi.fn()}))
 vi.mock("@/domains/games/adapters/games", () => adapter)
 
-const ModalDialog = {name: "ModalDialog", props: ["open", "title", "testid"], emits: ["update:open"], template: "<div><slot /><slot name=\"footer\" /></div>"}
+const ModalDialog = {name: "ModalDialog", props: ["open", "title", "testid", "cancelTestid"], emits: ["update:open"], template: "<div><slot /><button :data-testid=\"cancelTestid\" @click=\"$emit('update:open', false)\" /><slot name=\"footer\" /></div>"}
 const ConfirmDialog = {name: "ConfirmDialog", props: ["open", "title", "question", "confirmLabel", "workingLabel", "failure", "working", "testid"], emits: ["confirm", "update:open"], template: "<div />"}
 
 const chess = {code: "CHESS", name: "Chess", slug: "chess", accent: null, intro: null, sortIndex: 1, archived: false, inCompetition: false, banner: null, icon: null, channels: []}

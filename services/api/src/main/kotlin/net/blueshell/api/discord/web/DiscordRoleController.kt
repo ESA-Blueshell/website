@@ -30,7 +30,7 @@ data class RoleChannelRequest(
 /** What a Discord role opens, as its page sets it. Each change answers what the role opens now. */
 @RestController
 @RequestMapping("/management/discord/roles/{roleId}/opens")
-@Tag(name = "Discord management", description = "What the site keeps in step on Discord")
+@Tag(name = "Discord management", description = "What the site keeps in sync on Discord")
 @BoardOnly
 class DiscordRoleController(
     private val openings: RoleOpenings,

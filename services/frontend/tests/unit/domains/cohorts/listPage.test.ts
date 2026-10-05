@@ -6,7 +6,7 @@ import {
   TargetSystem,
   adoptWord,
   driftRowsOf,
-  inStepOn,
+  inSyncOn,
   isDrift,
   runBars,
   whyOf,
@@ -18,7 +18,7 @@ const member = (over: Partial<CohortMember> = {}): CohortMember => ({
   targetMemberId: 1, userId: 5, userFullName: "Ada Lovelace", userEmail: "ada@example.com", isUserDeleted: false,
   joinedAt: "2026-01-05T10:00:00Z", externalLabel: null, externalUserId: null, system: TargetSystem.BREVO, sync: "IN_SYNC", ...over,
 })
-const run = (missing: number, extra: number): ReconcileRun => ({startedAt: "2026-02-10T09:00:00Z", trigger: null, inStep: 40, missing, extra})
+const run = (missing: number, extra: number): ReconcileRun => ({startedAt: "2026-02-10T09:00:00Z", trigger: null, inSync: 40, missing, extra})
 
 describe("one list's drift", () => {
   it("keeps the people on one side only of that system's list, by name, and searches them", () => {
@@ -30,7 +30,7 @@ describe("one list's drift", () => {
     ]
     expect(driftRowsOf(rows, TargetSystem.BREVO).map((row) => row.targetMemberId)).toEqual([2, 1])
     expect(driftRowsOf(rows, TargetSystem.BREVO, " ANN@x ").map((row) => row.targetMemberId)).toEqual([2])
-    expect(inStepOn(rows, TargetSystem.BREVO)).toBe(1)
+    expect(inSyncOn(rows, TargetSystem.BREVO)).toBe(1)
     expect(isDrift(member({sync: "BROKEN"}))).toBe(false)
   })
 

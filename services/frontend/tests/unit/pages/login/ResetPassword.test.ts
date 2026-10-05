@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import ResetPassword from "@/pages/login/ResetPassword.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
@@ -94,5 +94,18 @@ describe("ResetPassword page", () => {
     await settle()
 
     expect(mockRouterReplace).toHaveBeenCalledWith({name: "home"})
+  })
+
+  it("takes the new password and its repeat as typed, under a Reset Password button", async () => {
+    const wrapper = mountInApp(ResetPassword, {global: {stubs: {VvField: true}}})
+    await settle()
+    const [password, again] = wrapper.findAllComponents({name: "VvField"})
+    password!.vm.$emit("update:modelValue", "NewPass123!")
+    again!.vm.$emit("update:modelValue", "NewPass123!")
+    await settle()
+
+    expect((wrapper.vm as any).form.password).toBe("NewPass123!")
+    expect((wrapper.vm as any).passwordAgain).toBe("NewPass123!")
+    expect(wrapper.get('[data-testid="reset-password-submit-btn"]').text()).toBe("Reset Password")
   })
 })

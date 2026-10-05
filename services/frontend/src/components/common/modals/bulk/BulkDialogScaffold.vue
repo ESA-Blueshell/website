@@ -48,7 +48,7 @@ const COLUMNS: TableColumn<BulkRow>[] = [
   {key: "note", label: "Why", wrap: true, sortBy: (row) => reasonLabel(row.reason)},
 ]
 
-const MARKS: Record<BulkDisposition, StateKind> = {INCLUDED: "in-step", WARNING: "extra", EXCLUDED: "not-created", SKIPPED: "not-compared"}
+const MARKS: Record<BulkDisposition, StateKind> = {INCLUDED: "in-sync", WARNING: "extra", EXCLUDED: "not-created", SKIPPED: "not-compared"}
 
 const hasReincludable = computed(() => props.rows.some((row) => row.disposition === "WARNING"))
 const effective = (row: BulkRow) => effectiveDisposition(row, props.reincludeOverrides)
@@ -177,7 +177,21 @@ const onSave = () => {
       </template>
     </management-table>
 
-    <div class="bulk__acts">
+    <div class="panel-acts">
+      <span
+        v-if="showSubmitStatus"
+        class="bulk__said"
+        :class="{'bulk__said--wrong': submitState === 'error'}"
+        data-testid="bulk-action-status"
+        role="status"
+      >{{ submitState === "error" ? "Nothing was changed." : "Done." }}</span>
+      <cut-button
+        testid="bulk-action-cancel-btn"
+        tone="quiet"
+        @click="emit('cancel')"
+      >
+        Cancel
+      </cut-button>
       <cut-button
         :disabled="submitting || includedCount === 0"
         testid="bulk-action-confirm-btn"
@@ -186,20 +200,6 @@ const onSave = () => {
       >
         {{ confirmLabel }}
       </cut-button>
-      <cut-button
-        testid="bulk-action-cancel-btn"
-        tone="quiet"
-        @click="emit('cancel')"
-      >
-        Cancel
-      </cut-button>
-      <span
-        v-if="showSubmitStatus"
-        class="bulk__said"
-        :class="{'bulk__said--wrong': submitState === 'error'}"
-        data-testid="bulk-action-status"
-        role="status"
-      >{{ submitState === "error" ? "Nothing was changed." : "Done." }}</span>
     </div>
   </div>
 </template>
@@ -232,14 +232,8 @@ const onSave = () => {
   color: var(--color-chalk);
 }
 
-.bulk__acts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-}
-
 .bulk__said {
+  margin-right: auto;
   font-size: 0.88rem;
   color: var(--color-ok);
 }

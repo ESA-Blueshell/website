@@ -21,11 +21,11 @@ import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import DiscordMemberPicker from "@/domains/discord/island/DiscordMemberPicker.vue"
 import {defineRule, Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
-import {VCheckbox} from "vuetify/components"
+import CheckBox from "@/components/island/CheckBox.vue"
+import FormFields from "@/components/island/FormFields.vue"
 import {$require} from "@/plugins/require.ts"
 import type {FieldMap} from "@/plugins/validation"
 import SubmitButton from "@/components/form/SubmitButton.vue"
-
 
 import {
   handleSubmitError,
@@ -33,7 +33,6 @@ import {
   usePasswordToggle,
   useReadonly,
   useSaving,
-  useSubmitFeedback,
   useVeeForm,
 } from "@/composables/formUtils"
 
@@ -127,7 +126,6 @@ const requiresPrivacyConsent = computed<boolean>(() => isCreating.value && effec
 const {country, onCountryUpdate} = useCountry("NL")
 const {isSaving, withSaving} = useSaving()
 const {formRef, validate} = useVeeForm()
-const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 const confirmPassword = ref<string>("")
 // Set by a public registration; the stepper reads it to carry the applicant on.
 const signupSession = ref<SignupSessionResponse>()
@@ -310,7 +308,6 @@ const save = async (): Promise<EditableUser | null> => {
   await memberProfileLoad
   if (!(await validate())) {
     emit("submitted", false)
-    setSubmitResult(false)
     return null
   }
   try {
@@ -322,7 +319,6 @@ const save = async (): Promise<EditableUser | null> => {
       await withSaving(async () =>
         await saveSignupDetails(props.signupToken!, toSignupDetailsRequest(user.value!)))
       emit("submitted", true)
-      setSubmitResult(true)
       return user.value
     }
 
@@ -334,7 +330,6 @@ const save = async (): Promise<EditableUser | null> => {
       const registered = {...user.value, id: session.userId, email: session.email, password: ""}
       user.value = registered
       emit("submitted", true)
-      setSubmitResult(true)
       return registered
     }
 
@@ -356,14 +351,12 @@ const save = async (): Promise<EditableUser | null> => {
 
     user.value = updated
     emit("submitted", true)
-    setSubmitResult(true)
     // Bound through v-model, user.value still reads the copy from before the save.
     return updated
   } catch (error: unknown) {
     if (needsStepUp(error)) stepUpOpen.value = true
     else handleSubmitError(formRef.value, error, userFieldMap)
     emit("submitted", false)
-    setSubmitResult(false)
     return null
   }
 }
@@ -386,214 +379,142 @@ defineExpose({validate, save, signupSession})
       ref="formRef"
       as="div"
     >
-      <v-row>
-        <v-col
-          cols="12"
-          sm="4"
-        >
-          <VvField
-            v-model="user.initials"
-            test-id="user-form-initials-field"
-            :disabled="isReadonly || !canEditIdentity"
-            label="Initials*"
-            name="initials"
-            :rules="canEditIdentity ? 'required' : ''"
-          />
-        </v-col>
-        <v-col
-          cols="12"
-          sm="8"
-        >
-          <VvField
-            v-model="user.firstName"
-            test-id="user-form-first-name-field"
-            :disabled="isReadonly || !canEditIdentity"
-            label="First Name*"
-            name="firstName"
-            :rules="canEditIdentity ? 'required' : ''"
-          />
-        </v-col>
-      </v-row>
+      <form-fields class="user-form__third">
+        <VvField
+          v-model="user.initials"
+          test-id="user-form-initials-field"
+          :disabled="isReadonly || !canEditIdentity"
+          label="Initials*"
+          name="initials"
+          :rules="canEditIdentity ? 'required' : ''"
+        />
+        <VvField
+          v-model="user.firstName"
+          test-id="user-form-first-name-field"
+          :disabled="isReadonly || !canEditIdentity"
+          label="First Name*"
+          name="firstName"
+          :rules="canEditIdentity ? 'required' : ''"
+        />
+      </form-fields>
 
-      <v-row>
-        <v-col
-          cols="12"
-          sm="4"
-        >
-          <VvField
-            v-model="user.prefix"
-            test-id="user-form-prefix-field"
-            :disabled="isReadonly || !canEditIdentity"
-            label="Surname Prefix"
-            name="prefix"
-          />
-        </v-col>
-        <v-col
-          cols="12"
-          sm="8"
-        >
-          <VvField
-            v-model="user.lastName"
-            test-id="user-form-last-name-field"
-            :disabled="isReadonly || !canEditIdentity"
-            label="Surname*"
-            name="lastName"
-            :rules="canEditIdentity ? 'required' : ''"
-          />
-        </v-col>
-      </v-row>
+      <form-fields class="user-form__third">
+        <VvField
+          v-model="user.prefix"
+          test-id="user-form-prefix-field"
+          :disabled="isReadonly || !canEditIdentity"
+          label="Surname Prefix"
+          name="prefix"
+        />
+        <VvField
+          v-model="user.lastName"
+          test-id="user-form-last-name-field"
+          :disabled="isReadonly || !canEditIdentity"
+          label="Surname*"
+          name="lastName"
+          :rules="canEditIdentity ? 'required' : ''"
+        />
+      </form-fields>
 
-      <v-row>
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <VvField
-            v-model="user.username"
-            test-id="user-form-username-field"
-            :disabled="isReadonly || !canEditIdentity"
-            label="Username*"
-            name="username"
-            :rules="canEditIdentity ? 'required|alphaNum' : ''"
-          />
-        </v-col>
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <VvField
-            v-model="user.discord"
-            :component="DiscordMemberPicker"
-            :component-props="{discordId: user.discordId, 'onUpdate:discordId': (id: string | null) => (user.discordId = id)}"
-            test-id="user-form-discord-field"
-            label="Discord*"
-            name="discord"
-            rules="required"
-          />
-        </v-col>
-      </v-row>
+      <form-fields>
+        <VvField
+          v-model="user.username"
+          test-id="user-form-username-field"
+          :disabled="isReadonly || !canEditIdentity"
+          label="Username*"
+          name="username"
+          :rules="canEditIdentity ? 'required|alphaNum' : ''"
+        />
+        <VvField
+          v-model="user.discord"
+          :component="DiscordMemberPicker"
+          :component-props="{discordId: user.discordId, 'onUpdate:discordId': (id: string | null) => (user.discordId = id)}"
+          test-id="user-form-discord-field"
+          label="Discord*"
+          name="discord"
+          rules="required"
+        />
+      </form-fields>
 
-      <v-row>
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <VvField
-            v-model="user.email"
-            test-id="user-form-email-field"
-            :disabled="isReadonly || !canEditEmail"
-            :rules="canEditEmail ? 'required|email' : ''"
-            label="E-mail*"
-            name="email"
-          />
-        </v-col>
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <VvField
-            v-model="user.phoneNumber"
-            test-id="user-form-phone-number-field"
-            :component-props="{kind: 'phone', defaultCountry: 'NL'}"
-            :rules="`required|phoneMobile:${country}`"
-            label="Phone Number*"
-            name="phoneNumber"
-            @update:country="onCountryUpdate"
-          />
-        </v-col>
-      </v-row>
+      <form-fields>
+        <VvField
+          v-model="user.email"
+          test-id="user-form-email-field"
+          :disabled="isReadonly || !canEditEmail"
+          :rules="canEditEmail ? 'required|email' : ''"
+          label="E-mail*"
+          name="email"
+        />
+        <VvField
+          v-model="user.phoneNumber"
+          test-id="user-form-phone-number-field"
+          :component-props="{kind: 'phone', defaultCountry: 'NL'}"
+          :rules="`required|phoneMobile:${country}`"
+          label="Phone Number*"
+          name="phoneNumber"
+          @update:country="onCountryUpdate"
+        />
+      </form-fields>
 
-      <v-row v-if="canSetPassword">
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <VvField
-            v-model="user.password"
-            test-id="user-form-password-field"
-            :component-props="passwordFieldProps"
-            label="Password*"
-            name="password"
-            rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-          />
-        </v-col>
-
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <VvField
-            v-model="confirmPassword"
-            test-id="user-form-password-repeat-field"
-            :component-props="passwordFieldProps"
-            label="Password (repeated)"
-            name="confirmPassword"
-            rules="required|match:@password"
-          />
-        </v-col>
-      </v-row>
+      <form-fields v-if="canSetPassword">
+        <VvField
+          v-model="user.password"
+          test-id="user-form-password-field"
+          :component-props="passwordFieldProps"
+          label="Password*"
+          name="password"
+          rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
+        />
+        <VvField
+          v-model="confirmPassword"
+          test-id="user-form-password-repeat-field"
+          :component-props="passwordFieldProps"
+          label="Password (repeated)"
+          name="confirmPassword"
+          rules="required|match:@password"
+        />
+      </form-fields>
 
       <template v-if="includeMemberProfile">
-        <v-row>
-          <v-col
-            cols="12"
-            sm="6"
-          >
-            <VvField
-              v-model="memberProfileModel.dateOfBirth"
-              test-id="user-form-date-of-birth-field"
-              :component-props="{ type: 'date' }"
-              :label="memberProfileRequired ? 'Date of Birth*' : 'Date of Birth'"
-              name="dateOfBirth"
-              :rules="memberProfileRequired ? 'dateRequired' : ''"
-            />
-          </v-col>
-          <v-col
-            cols="12"
-            sm="6"
-          >
-            <VvField
-              v-model="memberProfileModel.nationality"
-              test-id="user-form-nationality-field"
-              :component="NationalitySelect"
-              :label="memberProfileRequired ? 'Nationality*' : 'Nationality'"
-              name="nationality"
-              :rules="memberProfileRequired ? 'required' : ''"
-            />
-          </v-col>
-        </v-row>
+        <form-fields>
+          <VvField
+            v-model="memberProfileModel.dateOfBirth"
+            test-id="user-form-date-of-birth-field"
+            :component-props="{ type: 'date' }"
+            :label="memberProfileRequired ? 'Date of Birth*' : 'Date of Birth'"
+            name="dateOfBirth"
+            :rules="memberProfileRequired ? 'dateRequired' : ''"
+          />
+          <VvField
+            v-model="memberProfileModel.nationality"
+            test-id="user-form-nationality-field"
+            :component="NationalitySelect"
+            :label="memberProfileRequired ? 'Nationality*' : 'Nationality'"
+            name="nationality"
+            :rules="memberProfileRequired ? 'required' : ''"
+          />
+        </form-fields>
 
-        <v-row>
-          <v-col
-            cols="12"
-            sm="6"
-          >
-            <VvField
-              v-model="memberProfileModel.gender"
-              test-id="user-form-gender-field"
-              label="Gender"
-              name="gender"
-            />
-          </v-col>
-          <v-col
-            cols="12"
-            sm="6"
-          >
-            <VvField
-              v-model="memberProfileModel.studentNumber"
-              test-id="user-form-student-number-field"
-              label="Student Number"
-              name="studentNumber"
-            />
-          </v-col>
-        </v-row>
+        <form-fields>
+          <VvField
+            v-model="memberProfileModel.gender"
+            test-id="user-form-gender-field"
+            label="Gender"
+            name="gender"
+          />
+          <VvField
+            v-model="memberProfileModel.studentNumber"
+            test-id="user-form-student-number-field"
+            label="Student Number"
+            name="studentNumber"
+          />
+        </form-fields>
 
         <div class="checkbox-row">
           <VvField
             v-model="memberProfileModel.ehbo"
             test-id="user-form-ehbo-field"
-            :component="VCheckbox"
-            :component-props="{ hideDetails: true, class: 'w-100' }"
+            :component="CheckBox"
             label="I hold a valid EHBO (first aid) diploma."
             name="ehbo"
           />
@@ -603,8 +524,7 @@ defineExpose({validate, save, signupSession})
           <VvField
             v-model="memberProfileModel.bhv"
             test-id="user-form-bhv-field"
-            :component="VCheckbox"
-            :component-props="{ hideDetails: true, class: 'w-100' }"
+            :component="CheckBox"
             label="I hold a valid BHV diploma."
             name="bhv"
           />
@@ -614,8 +534,7 @@ defineExpose({validate, save, signupSession})
           <VvField
             v-model="memberProfileModel.nameOnRosters"
             test-id="user-form-name-on-rosters-field"
-            :component="VCheckbox"
-            :component-props="{ hideDetails: true, class: 'w-100' }"
+            :component="CheckBox"
             label="Show my name next to my handle on the esports team pages."
             name="nameOnRosters"
           />
@@ -626,8 +545,7 @@ defineExpose({validate, save, signupSession})
         <VvField
           v-model="user.newsletter"
           test-id="user-form-newsletter-field"
-          :component="VCheckbox"
-          :component-props="{ hideDetails: true, class: 'w-100' }"
+          :component="CheckBox"
           label="I want to receive the monthly ESA Blueshell newsletter by email."
           name="newsletter"
         />
@@ -637,8 +555,7 @@ defineExpose({validate, save, signupSession})
         <VvField
           v-model="user.photoConsent"
           test-id="user-form-photo-consent-field"
-          :component="VCheckbox"
-          :component-props="{ hideDetails: true, class: 'w-100' }"
+          :component="CheckBox"
           label="I give consent to having my picture taken at ESA Blueshell events."
           name="photoConsent"
         />
@@ -651,8 +568,7 @@ defineExpose({validate, save, signupSession})
         <VvField
           v-model="user.consentPrivacy"
           test-id="user-form-privacy-consent-field"
-          :component="VCheckbox"
-          :component-props="{ hideDetails: true, class: 'w-100' }"
+          :component="CheckBox"
           name="consentPrivacy"
           :rules="requiresPrivacyConsent ? 'acceptedPrivacyPolicy' : ''"
         >
@@ -667,60 +583,45 @@ defineExpose({validate, save, signupSession})
         </VvField>
       </div>
 
-      <v-row
-        align="end"
-        class="mb-5 mt-3"
-        justify="end"
+      <div
+        v-if="showSubmit"
+        class="user-form__save"
       >
-        <v-col
-          v-if="showSubmit"
-          cols="auto"
-        >
-          <submit-button
-            :disabled="isSaving"
-            :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-            :loading="isSaving"
-            :show-submit-status="showSubmitStatus"
-            :submit-state="submitState"
-            :text="submitText"
-            data-testid="user-form-submit-btn"
-            :data-submit-mode="isCreating ? 'create' : 'update'"
-            @click="save"
-          />
-        </v-col>
-      </v-row>
+        <submit-button
+          :disabled="isSaving"
+          :loading="isSaving"
+          :text="submitText"
+          data-testid="user-form-submit-btn"
+          :data-submit-mode="isCreating ? 'create' : 'update'"
+          @click="save"
+        />
+      </div>
     </Form>
   </div>
 </template>
 
 <style lang="scss" scoped>
-span {
-  font-weight: bold;
+/* Initials beside the first name and the prefix beside the surname: a narrow field and a wide one. */
+.user-form__third {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
 }
 
-.btn-tight {
-  padding-inline: 6px !important;
-  min-width: auto !important;
+.form-fields + .form-fields {
+  margin-top: 0.5rem;
 }
 
 .checkbox-row {
   width: 100%;
-}
-
-.checkbox-row :deep(.v-selection-control) {
-  align-items: center;
-}
-
-.checkbox-row :deep(.v-label) {
-  white-space: normal;
-  text-wrap: pretty;
-}
-
-.checkbox-row--multiline :deep(.v-selection-control) {
-  align-items: flex-start;
+  margin-top: 0.6rem;
 }
 
 .checkbox-label-text {
   font-weight: normal;
+}
+
+.user-form__save {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1.2rem 0 1.25rem;
 }
 </style>

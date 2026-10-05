@@ -335,10 +335,13 @@ watch(matches, () => {
       type="button"
       @click="open = !open"
     >
+      <!-- What is chosen reads in the button unless the page draws it itself. -->
       <slot
         name="chosen"
         :option="shownOption"
-      />
+      >
+        <span class="picker__shut-label">{{ shownOption?.label ?? "" }}</span>
+      </slot>
       <span
         aria-hidden="true"
         class="picker__caret"
@@ -582,7 +585,6 @@ watch(matches, () => {
   background-color: color-mix(in oklab, var(--color-chalk) 10%, transparent);
 }
 
-
 /* Same width as the phone field's dial cell, so a column of fields lines up down its edge. */
 .picker__field--unmatched .picker__search {
   color: var(--color-danger);
@@ -823,7 +825,6 @@ watch(matches, () => {
   font-size: 0.78rem;
   color: var(--color-ash);
 }
-
 
 @media (prefers-reduced-motion: reduce) {
   .picker__row::before {

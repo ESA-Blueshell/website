@@ -122,7 +122,7 @@ const pages = computed(() => accountFor(reader.value))
   background-repeat: repeat;
 }
 
-:global([data-theme="light"]) .account-main {
+:where([data-theme="light"]) .account-main {
   background-image:
     linear-gradient(var(--tile-veil), var(--tile-veil)),
     url("@/assets/bg/shelly-bg-white.jpg");

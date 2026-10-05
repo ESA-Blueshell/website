@@ -61,6 +61,7 @@ const recipientLabel = computed(() => {
 
 <template>
   <modal-dialog
+    :cancel="false"
     :open="open"
     testid="email-preview-dialog"
     :title="title"
@@ -139,24 +140,22 @@ const recipientLabel = computed(() => {
     </div>
 
     <template #footer>
-      <div class="email-preview__acts">
-        <cut-button
-          v-if="canConfirm"
-          :disabled="confirmLoading"
-          testid="email-preview-send-btn"
-          tone="solid"
-          @click="emit('confirm')"
-        >
-          {{ confirmLoading ? "Sending" : confirmLabel }}
-        </cut-button>
-        <cut-button
-          testid="email-preview-close"
-          tone="quiet"
-          @click="open = false"
-        >
-          Close
-        </cut-button>
-      </div>
+      <cut-button
+        testid="email-preview-close"
+        tone="quiet"
+        @click="open = false"
+      >
+        Close
+      </cut-button>
+      <cut-button
+        v-if="canConfirm"
+        :disabled="confirmLoading"
+        testid="email-preview-send-btn"
+        tone="solid"
+        @click="emit('confirm')"
+      >
+        {{ confirmLoading ? "Sending" : confirmLabel }}
+      </cut-button>
     </template>
   </modal-dialog>
 </template>
@@ -185,12 +184,5 @@ const recipientLabel = computed(() => {
   min-height: 60vh;
   border: 0;
   background-color: var(--color-pit);
-}
-
-.email-preview__acts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  padding-top: 1rem;
 }
 </style>

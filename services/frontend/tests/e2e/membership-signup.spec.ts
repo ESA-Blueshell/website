@@ -82,7 +82,7 @@ test.describe("membership signup", () => {
     await page.getByTestId("membership-details-next-btn").click()
 
     await expect(page.getByTestId("membership-details-next-btn")).toBeVisible()
-    await expect(page.getByTestId("membership-address-next-btn")).toHaveCount(0)
+    await expect(page.getByTestId("membership-address-next-btn")).toBeHidden()
     await expect(inputByTestId(page, "user-form-privacy-consent-field")).not.toBeChecked()
 
     await inputByTestId(page, "user-form-privacy-consent-field").check()

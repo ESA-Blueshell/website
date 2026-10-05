@@ -7,7 +7,7 @@ import net.blueshell.api.shared.enums.Role
  * Which roles an admin may hand out, and where the rest come from.
  *
  * A **granted** role is written onto a person by hand and is the only kind this module lets an
- * admin change. A **derived** role is kept in step with something else the person has, so
+ * admin change. A **derived** role is kept in sync with something else the person has, so
  * granting one would be a lie: the listener that owns it takes it straight back off. See
  * api ADR-028.
  */

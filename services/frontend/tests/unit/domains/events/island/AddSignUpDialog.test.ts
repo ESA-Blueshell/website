@@ -14,7 +14,7 @@ vi.mock("@/domains/events", () => ({addSignUpAsBoard: mockAddSignUpAsBoard}))
 // The island's dialog portals to the body; a stand-in keeps what it holds where it can be read.
 const ModalDialog = {
   name: "ModalDialog",
-  props: ["open", "title", "testid"],
+  props: ["open", "title", "testid", "cancelTestid"],
   emits: ["update:open"],
   template: "<div><h2>{{ title }}</h2><slot /><slot name='footer' /></div>",
 }
@@ -188,10 +188,12 @@ describe("AddSignUpDialog", () => {
     expect(wrapper.findComponent(UserPicker).props("membersOnly")).toBe(true)
   })
 
-  it("closes without adding on cancel", async () => {
+  it("closes without adding on the dialog's Cancel", async () => {
     const wrapper = dialog()
+    const modal = wrapper.getComponent({name: "ModalDialog"})
 
-    await wrapper.get("[data-testid=add-signup-cancel-btn]").trigger("click")
+    expect(modal.props("cancelTestid")).toBe("add-signup-cancel-btn")
+    modal.vm.$emit("update:open", false)
 
     expect(wrapper.emitted("update:modelValue")).toEqual([[false]])
     expect(mockAddSignUpAsBoard).not.toHaveBeenCalled()

@@ -24,7 +24,7 @@ const status = ref<string | null>(null)
 // Picker values come from the generated SDK, never restated here.
 const statuses = Object.values(JobExecutionStatus).map((value) => ({key: value, label: value.toLowerCase()}))
 
-const kinds: StateKind[] = ["in-step", "missing", "extra", "unreachable", "not-created", "not-compared"]
+const kinds: StateKind[] = ["in-sync", "missing", "extra", "unreachable", "not-created", "not-compared"]
 
 const facts = [
   {label: "Members", value: "[ 211 ]", sub: "[ 9 ] pending their first contribution"},

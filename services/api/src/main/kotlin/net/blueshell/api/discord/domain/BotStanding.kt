@@ -2,6 +2,9 @@ package net.blueshell.api.discord.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.channel.ChannelType
+import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -13,6 +16,16 @@ data class BotGrant(
     @field:Schema(description = "What the site cannot do without it.")
     val neededFor: String,
     val granted: Boolean,
+)
+
+/** A channel the bot cannot see, with what a link into it and a Discord-styled mark need. */
+@Schema(name = "BotHiddenChannel")
+data class BotHiddenChannel(
+    val id: String,
+    val guildId: String,
+    val name: String,
+    val category: String?,
+    val voice: Boolean,
 )
 
 /**
@@ -33,7 +46,7 @@ data class BotStandingResult(
     /** Every permission the site's work needs, and whether the bot holds it in the server. */
     val permissions: List<BotGrant> = emptyList(),
     /** The channels the bot cannot see, which the site can neither read nor change. */
-    val hidden: List<String> = emptyList(),
+    val hidden: List<BotHiddenChannel> = emptyList(),
 )
 
 /** Whether the bot may manage roles and channels, and which roles stay out of the site's hands. */
@@ -62,10 +75,21 @@ class BotStanding(
             above = keepable.filterNot { it in bot.roles || bot.canInteract(it) }.map(::describedRole),
             claimed = guild.roles.filter { it.id in claimRoleIds }.map(::describedRole),
             permissions = NEEDED.map { BotGrant(it.name, it.why, bot.hasPermission(it.permission)) },
-            hidden = guild.channels.filterNot { bot.hasPermission(it, Permission.VIEW_CHANNEL) }.map { it.name },
+            hidden = guild.channels.filterNot { bot.hasPermission(it, Permission.VIEW_CHANNEL) }.map { hiddenChannel(it, guild.id) },
         )
     }
 }
+
+private fun hiddenChannel(
+    channel: GuildChannel,
+    guildId: String,
+) = BotHiddenChannel(
+    id = channel.id,
+    guildId = guildId,
+    name = channel.name,
+    category = (channel as? ICategorizableChannel)?.parentCategory?.name,
+    voice = channel.type == ChannelType.VOICE,
+)
 
 /** A permission the site needs, under the name Discord's role settings give it, with what it is needed for. */
 private data class Needed(

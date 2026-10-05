@@ -45,14 +45,15 @@ describe("the games in Management", () => {
     const wrapper = await mount()
 
     const valorant = wrapper.get('[data-testid="game-row-VALO"]')
-    expect(valorant.text()).toContain("#bs-valo, #blueshell-valorant")
+    // Each channel is a Discord mention, its glyph where the hash was.
+    expect(valorant.findAll(".channel-mark").map((one) => one.text())).toEqual(["bs-valo", "blueshell-valorant"])
     expect(valorant.text()).toContain("Casual and Esports")
     expect(wrapper.get('[data-testid="game-row-OLD"]').text()).toContain("Neither")
     expect(wrapper.get('[data-testid="game-differs-VALO"]').text()).toBe("Differs on Discord")
     expect(valorant.get("a").attributes("to")).toBe("/management/games/valorant")
     expect(wrapper.get('[data-testid="game-row-CHESS"]').text()).toContain("No channel")
     expect(wrapper.get('[data-testid="game-row-CHESS"]').text()).toContain("Casual")
-    expect(wrapper.get('[data-testid="game-differs-CHESS"]').text()).toBe("In step")
+    expect(wrapper.get('[data-testid="game-differs-CHESS"]').text()).toBe("In sync")
     expect(wrapper.get('[data-testid="game-differs-OLD"]').text()).toBe("Archived")
     expect(wrapper.findAll('[data-testid^="game-row-"]').at(-1)!.attributes("data-testid")).toBe("game-row-OLD")
     expect(wrapper.findComponent({name: "FactList"}).text()).toContain("1 archived")
@@ -64,7 +65,7 @@ describe("the games in Management", () => {
     vi.unstubAllGlobals()
 
     expect(wrapper.get('[data-testid="game-row-CHESS"]').text()).toContain("Casual · No channel")
-    expect(wrapper.get('[data-testid="game-differs-CHESS"]').text()).toBe("In step")
+    expect(wrapper.get('[data-testid="game-differs-CHESS"]').text()).toBe("In sync")
   })
 
   it("narrows by a name, code or channel, and says when nothing matches", async () => {

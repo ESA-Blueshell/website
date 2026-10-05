@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import {Field} from "vee-validate"
+import CheckBox from "@/components/island/CheckBox.vue"
+import RadioGroup from "@/components/island/RadioGroup.vue"
+import TextArea from "@/components/island/TextArea.vue"
 import {computed, watch} from "vue"
 import {type AnswerRequest, type QuestionResponse, QuestionType} from "@/domains/events"
 
@@ -69,16 +72,21 @@ watch(
       :rules="requireText"
       :validate-on-mount="false"
     >
-      <v-textarea
+      <text-area
         class="answer-field__open"
-        :error-messages="meta.touched ? errors : []"
-        :model-value="value"
+        :invalid="meta.touched && errors.length > 0"
+        :model-value="value ?? ''"
         placeholder="Your answer"
-        :rows="1"
-        auto-grow
+        :rows="2"
         @blur="handleBlur"
         @update:model-value="(v: string) => handleChange(v)"
       />
+      <p
+        v-if="meta.touched && errors.length"
+        class="answer-field__said"
+      >
+        {{ errors[0] }}
+      </p>
     </Field>
   </template>
 
@@ -90,29 +98,27 @@ watch(
       :rules="requireExactlyOneSelection"
       :validate-on-mount="false"
     >
-      <v-radio-group
+      <radio-group
         class="answer-field__radio"
-        :error-messages="meta.touched ? errors : []"
         :model-value="(() => {
           const i = (value ?? []).findIndex(Boolean)
-          return i >= 0 ? i : null
+          return i >= 0 ? String(i) : null
         })()"
-        hide-details="auto"
-        @blur="handleBlur"
-        @update:model-value="(idx: number) => {
+        :name="`answer-${question.idx}`"
+        :options="(question.choiceLabels ?? []).map((label, j) => ({key: String(j), label}))"
+        @focusout="handleBlur"
+        @update:model-value="(key: string | null) => {
           const arr = new Array(question.choiceLabels!.length).fill(false)
-          if (idx != null && idx >= 0) arr[idx] = true
+          if (key !== null) arr[Number(key)] = true
           handleChange(arr)
         }"
+      />
+      <p
+        v-if="meta.touched && errors.length"
+        class="answer-field__said"
       >
-        <v-radio
-          v-for="(opt, j) in question.choiceLabels"
-          :key="j"
-          :label="opt"
-          :value="j"
-          class="answer-field__option"
-        />
-      </v-radio-group>
+        {{ errors[0] }}
+      </p>
     </Field>
   </template>
 
@@ -125,15 +131,12 @@ watch(
       :validate-on-mount="false"
     >
       <div class="answer-field__checkbox">
-        <v-checkbox
+        <check-box
           v-for="(opt, j) in question.choiceLabels"
           :key="j"
           :label="opt"
           :model-value="value?.[j] ?? false"
-          hide-details
-          density="comfortable"
-          class="answer-field__option"
-          @blur="handleBlur"
+          @focusout="handleBlur"
           @update:model-value="(checked: boolean) => {
             const arr = Array.isArray(value)
               ? [...value]
@@ -142,44 +145,27 @@ watch(
             handleChange(arr)
           }"
         />
-        <div
+        <p
           v-if="meta.touched && errors?.length"
-          class="text-error text-caption mt-1 ms-1"
+          class="answer-field__said"
         >
           {{ errors[0] }}
-        </div>
+        </p>
       </div>
     </Field>
   </template>
 </template>
 
 <style lang="scss" scoped>
-.answer-field {
-  &__radio,
-  &__checkbox {
-    margin-inline-start: 0.75rem;
-  }
+.answer-field__checkbox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
 
-  &__option :deep(.v-selection-control) {
-    min-height: 36px;
-  }
-
-  &__option :deep(.v-label) {
-    opacity: 0.95;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  &__checkbox {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-  }
-
-  &__radio :deep(.v-input__details),
-  &__checkbox + .text-error {
-    padding-inline: 0;
-  }
+.answer-field__said {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-danger);
 }
 </style>

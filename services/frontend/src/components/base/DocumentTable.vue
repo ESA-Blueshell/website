@@ -1,54 +1,38 @@
 <template>
-  <v-sheet
-    class="pa-2"
-    color="grey-darken-4"
-    rounded="lg"
-  >
-    <template
-      v-for="(document, index) in documents"
+  <ul class="documents">
+    <li
+      v-for="document in documents"
       :key="document.title"
+      class="documents__row"
     >
-      <v-divider
-        v-if="index > 0"
-        class="my-2"
-      />
-
-      <v-row class="text-center py-4">
-        <v-col
-          class="text-h6"
-          cols="4"
+      <span class="documents__title">{{ document.title }}</span>
+      <!-- The cell is kept when a document has no Dutch edition, so the English
+           buttons stay in one column down the list. -->
+      <span class="documents__cell">
+        <cut-button
+          v-if="document.dutch"
+          :download="document.dutch.fileName"
+          :href="documentUrl(document.dutch.path)"
+          small
         >
-          {{ document.title }}
-        </v-col>
-        <!-- The cell is kept when a document has no Dutch edition, so the English
-             buttons stay in one column down the table. -->
-        <v-col cols="4">
-          <v-btn
-            v-if="document.dutch"
-            :download="document.dutch.fileName"
-            :href="documentUrl(document.dutch.path)"
-            class="w-100"
-            color="primary"
-          >
-            Dutch
-          </v-btn>
-        </v-col>
-        <v-col cols="4">
-          <v-btn
-            :download="document.english.fileName"
-            :href="documentUrl(document.english.path)"
-            class="w-100"
-            color="primary"
-          >
-            English
-          </v-btn>
-        </v-col>
-      </v-row>
-    </template>
-  </v-sheet>
+          Dutch
+        </cut-button>
+      </span>
+      <span class="documents__cell">
+        <cut-button
+          :download="document.english.fileName"
+          :href="documentUrl(document.english.path)"
+          small
+        >
+          English
+        </cut-button>
+      </span>
+    </li>
+  </ul>
 </template>
 
 <script lang="ts" setup>
+import CutButton from "@/components/island/CutButton.vue"
 import {$require} from "@/plugins/require.ts"
 import {
   ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES,
@@ -136,3 +120,34 @@ function documentUrl(path: string): string {
   return path.startsWith("http") ? path : $require(path)
 }
 </script>
+
+<style scoped>
+.documents {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background-color: var(--color-surface);
+}
+
+.documents__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.9rem 1.2rem;
+}
+
+.documents__row + .documents__row {
+  border-top: 1px solid var(--color-hairline);
+}
+
+.documents__title {
+  font-weight: 600;
+}
+
+.documents__cell {
+  min-width: 6.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+</style>

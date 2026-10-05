@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  * re-deriving it. Lives in `shared.enums` rather than beside the entity because it crosses the
  * wire, and an enum that reaches a response carries a schema.
  */
-@Schema(description = "Whether a cohort ledger row is in step with the external system")
+@Schema(description = "Whether a cohort ledger row is in sync with the external system")
 enum class TargetMemberState {
     /** The rule engine wants this user here, and nothing has been pushed yet. */
     DESIRED,

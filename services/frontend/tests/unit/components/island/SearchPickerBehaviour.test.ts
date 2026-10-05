@@ -226,6 +226,12 @@ describe("the compact picker", () => {
     wrapper.unmount()
   })
 
+  it("says what was chosen by its label where the page draws nothing of its own", () => {
+    const bare = mount(SearchPicker, {props: {options: rows(4), testidPrefix: "pick", compact: true, selectedKey: "k2"}})
+
+    expect(bare.get('[data-testid="pick-shut"]').text()).toBe("Row 2")
+  })
+
   it("puts the list away when it is pressed again", async () => {
     const wrapper = compact()
     const trigger = wrapper.find('[data-testid="pick-shut"]')

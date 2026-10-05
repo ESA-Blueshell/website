@@ -1,19 +1,15 @@
-import {describe, expect, it, vi} from "vitest"
+import {describe, expect, it} from "vitest"
+import {RouterLinkStub} from "@vue/test-utils"
 import Contact from "@/pages/Contact.vue"
 import {hrefs, mountInApp} from "./helpers"
 
-const mockGoto = vi.hoisted(() => vi.fn())
-
-vi.mock("@/plugins/goto", () => ({
-  $goto: mockGoto,
-}))
-
 describe("Contact page", () => {
-  it("contains contact links and routes to membership via goto", async () => {
-    const wrapper = mountInApp(Contact)
+  it("contains contact links and links to the membership page", () => {
+    const wrapper = mountInApp(Contact, {global: {stubs: {RouterLink: RouterLinkStub}}})
 
-    await wrapper.get("span.text-decoration-underline").trigger("click")
-    expect(mockGoto).toHaveBeenCalledWith("membership")
+    const join = wrapper.getComponent(RouterLinkStub)
+    expect(join.text()).toBe("Join us!")
+    expect(join.props("to")).toBe("/membership")
 
     const allHrefs = hrefs(wrapper)
     expect(allHrefs).toContain("mailto:board@blueshell.utwente.nl")

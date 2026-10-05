@@ -28,7 +28,7 @@ describe("what to change on Discord for the bot", () => {
   })
 
   it("says to move the bot's role up and to let it into a channel, where that is what is in the way", () => {
-    const steps = botSteps(standing({botRole: null, above: [{id: "905", name: "Admin"}], hidden: ["mods"]}))
+    const steps = botSteps(standing({botRole: null, above: [{id: "905", name: "Admin"}], hidden: [{id: "907", guildId: "324", name: "mods", category: null, voice: false}]}))
 
     expect(steps).toHaveLength(2)
     expect(steps[0]).toContain("drag the bot's role above every role the site adds to people. It is now below @Admin")

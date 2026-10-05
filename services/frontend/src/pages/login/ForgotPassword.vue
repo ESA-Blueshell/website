@@ -6,22 +6,22 @@
       class="mx-auto my-10"
       style="max-width: 600px"
     >
-      <v-card class="pa-6">
+      <div
+        class="island-panel"
+      >
         <div
           v-if="!succeeded"
           data-testid="forgot-password-form-state"
         >
           <p>Enter your username, and we’ll email you a link to reset your password.</p>
 
-          <v-alert
+          <notice-box
             v-if="failed"
-            class="mb-4"
-            data-testid="forgot-password-failed-alert"
-            type="warning"
-            variant="tonal"
+            tone="warning"
+            testid="forgot-password-failed-alert"
           >
             We could not send that just now, so no email is on its way. Please try again.
-          </v-alert>
+          </notice-box>
 
           <Form
             v-slot="{ meta }"
@@ -29,31 +29,23 @@
             data-testid="forgot-password-form"
             @submit="() => onSubmit()"
           >
-            <v-row>
-              <v-col cols="12">
-                <VvField
-                  v-model="form.username"
-                  :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'forgot-password-username-field' }"
-                  name="username"
-                  rules="required|alphaNum"
-                />
-              </v-col>
-            </v-row>
+            <VvField
+              v-model="form.username"
+              :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'forgot-password-username-field' }"
+              name="username"
+              rules="required|alphaNum"
+            />
 
-            <v-row>
-              <v-spacer />
-              <v-col cols="auto">
-                <v-btn
-                  :disabled="!meta.valid || loading"
-                  :loading="loading"
-                  color="primary"
-                  data-testid="forgot-password-submit-btn"
-                  type="submit"
-                >
-                  Send reset mail
-                </v-btn>
-              </v-col>
-            </v-row>
+            <div class="form-save">
+              <cut-button
+                tone="solid"
+                submit
+                :disabled="!meta.valid || loading"
+                data-testid="forgot-password-submit-btn"
+              >
+                Send reset mail
+              </cut-button>
+            </div>
           </Form>
         </div>
 
@@ -66,12 +58,14 @@
             Didn’t get it? Check your spam folder or try again later.
           </p>
         </div>
-      </v-card>
+      </div>
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
+import CutButton from "@/components/island/CutButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"

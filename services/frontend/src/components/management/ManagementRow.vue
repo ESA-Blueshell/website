@@ -39,17 +39,8 @@
         <slot />
       </p>
     </div>
-    <router-link
-      v-if="to"
-      :aria-label="`Open ${name}`"
-      class="mg-row__go"
-      tabindex="-1"
-      :to="to"
-    >
-      <go-arrow />
-    </router-link>
     <span
-      v-else-if="$slots.acts"
+      v-if="$slots.acts"
       class="mg-row__acts"
     >
       <slot name="acts" />
@@ -58,9 +49,9 @@
 </template>
 
 <script lang="ts" setup>
-/* One record as a row: its name, one line about it, its state and the way in. What a table's
-   row becomes on a phone, and what a short list on a wider page is built from. */
-import GoArrow from "@/components/management/GoArrow.vue"
+/* One record as a row: its name, one line about it, its state and its acts. A row with a page of
+   its own opens it on a press anywhere. What a table's row becomes on a phone, and what a short
+   list on a wider page is built from. */
 
 const {name, to = "", meta = "", testid = undefined} = defineProps<{
   name: string
@@ -111,16 +102,17 @@ const {name, to = "", meta = "", testid = undefined} = defineProps<{
   margin-top: 0.35rem;
 }
 
-.mg-row__go {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  color: var(--color-ash);
+/* The name's link covers the whole row; the tick and the acts stand above it to stay pressable. */
+a.mg-row__name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
 }
 
-.mg-row:hover .mg-row__go {
-  color: var(--color-chalk);
+.mg-row :deep(.island-check),
+.mg-row__acts {
+  position: relative;
+  z-index: 1;
 }
 
 .mg-row__acts {

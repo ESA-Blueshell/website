@@ -59,7 +59,7 @@ describe("GameChannelPicker", () => {
 
     expect(picker(wrapper).props("chosen")).toEqual([{key: "900", label: "chess"}, {key: "901", label: "fighting-games"}])
     expect(picker(wrapper).props("chipTestid")("900")).toBe("game-channels-900")
-    expect(picker(wrapper).props("removeLabel")("#chess")).toBe("Take away #chess")
+    expect(picker(wrapper).props("removeLabel")("#chess")).toBe("Remove #chess")
     picker(wrapper).vm.$emit("remove", "900")
 
     expect(wrapper.emitted("update:modelValue")).toEqual([[[FIGHTING]]])

@@ -25,6 +25,7 @@ function accountSignUp(overrides: Partial<EventSignUpResponse> = {}): EventSignU
       fullName: "Alice Ash",
       email: "alice@example.com",
       discord: "alice#1234",
+      discordId: "111",
       phoneNumber: "123",
     },
     ...overrides,
@@ -55,19 +56,21 @@ function guestSignUp(overrides: Partial<EventSignUpResponse> = {}): EventSignUpR
 }
 
 describe("signUpPerson", () => {
-  it("reads an account signup from the user", () => {
+  it("reads an account signup from the user, with the Discord account it links", () => {
     expect(signUpPerson(accountSignUp())).toEqual({
       name: "Alice Ash",
       discord: "alice#1234",
+      discordId: "111",
       email: "alice@example.com",
       phoneNumber: "123",
     })
   })
 
-  it("reads a guest signup from the guest", () => {
+  it("reads a guest signup from the guest, who links no Discord account", () => {
     expect(signUpPerson(guestSignUp())).toEqual({
       name: "Bob Birch",
       discord: "bob#5555",
+      discordId: null,
       email: "bob@example.com",
       phoneNumber: "456",
     })
@@ -75,7 +78,7 @@ describe("signUpPerson", () => {
 
   it("answers empty strings when neither side carries a detail", () => {
     const bare = {...guestSignUp(), guest: undefined} as EventSignUpResponse
-    expect(signUpPerson(bare)).toEqual({name: "", discord: "", email: "", phoneNumber: ""})
+    expect(signUpPerson(bare)).toEqual({name: "", discord: "", discordId: null, email: "", phoneNumber: ""})
   })
 })
 

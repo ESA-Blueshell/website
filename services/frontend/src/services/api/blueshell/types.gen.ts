@@ -425,12 +425,20 @@ export type BotGrant = {
     neededFor: string;
 };
 
+export type BotHiddenChannel = {
+    category?: string | null;
+    guildId: string;
+    id: string;
+    name: string;
+    voice: boolean;
+};
+
 export type BotStandingResult = {
     above: Array<DiscordRole>;
     botRole?: DiscordRole | null;
     claimed: Array<DiscordRole>;
     connected: boolean;
-    hidden: Array<string>;
+    hidden: Array<BotHiddenChannel>;
     manageChannels: boolean;
     manageRoles: boolean;
     permissions: Array<BotGrant>;
@@ -777,7 +785,7 @@ export type CohortMember = {
     isUserDeleted: boolean;
     joinedAt: string;
     /**
-     * Whether this row is in step with the external system
+     * Whether this row is in sync with the external system
      */
     state?: 'DESIRED' | 'SYNCED' | 'VERIFIED' | 'STRANGER' | 'INVALID';
     /**

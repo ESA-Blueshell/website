@@ -103,6 +103,7 @@ async function add(): Promise<void> {
 
 <template>
   <modal-dialog
+    cancel-testid="add-signup-cancel-btn"
     :open="modelValue"
     testid="add-signup-dialog"
     title="Add sign-up"
@@ -157,13 +158,6 @@ async function add(): Promise<void> {
 
     <template #footer>
       <div class="add-signup__actions">
-        <cut-button
-          testid="add-signup-cancel-btn"
-          tone="quiet"
-          @click="emit('update:modelValue', false)"
-        >
-          Cancel
-        </cut-button>
         <cut-button
           :disabled="adding"
           testid="add-signup-confirm-btn"

@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import FormControl from "@/components/island/FormControl.vue"
+import CheckBox from "@/components/island/CheckBox.vue"
+import CutButton from "@/components/island/CutButton.vue"
 /* A member's own bank details for incasso. Saving authorises an online mandate at that moment,
    under the wording shown and the address confirmed here; the account number is shown back only
    masked. From the account page a change asks the person to prove it is them first, and saves
@@ -104,27 +107,28 @@ onMounted(async () => {
       Your bank details are saved.
     </p>
 
-    <v-btn
+    <cut-button
       v-if="!open"
+      tone="plain"
       data-testid="incasso-open"
-      variant="outlined"
       @click="open = true"
     >
       {{ own?.ibanLastTwo ? "Change bank details" : "Set up incasso" }}
-    </v-btn>
+    </cut-button>
     <form
       v-else
       v-first-field
+      class="island-form"
       data-testid="incasso-form"
       @submit.prevent="save"
     >
-      <v-text-field
+      <form-control
         v-model="iban"
         autocomplete="off"
         data-testid="incasso-iban"
         label="IBAN"
       />
-      <v-text-field
+      <form-control
         v-model="holder"
         data-testid="incasso-holder"
         label="Account holder"
@@ -133,22 +137,22 @@ onMounted(async () => {
         <p data-testid="incasso-address-note">
           Your address is recorded with the mandate. Check it, and correct it here if it has changed.
         </p>
-        <v-text-field
+        <form-control
           v-model="address.street"
           data-testid="incasso-street"
           label="Street"
         />
-        <v-text-field
+        <form-control
           v-model="address.houseNumber"
           data-testid="incasso-house-number"
           label="House number"
         />
-        <v-text-field
+        <form-control
           v-model="address.zipCode"
           data-testid="incasso-zip-code"
           label="Zipcode"
         />
-        <v-text-field
+        <form-control
           v-model="address.city"
           data-testid="incasso-city"
           label="City"
@@ -164,7 +168,7 @@ onMounted(async () => {
       >
         The address you gave in this signup is recorded with the mandate.
       </p>
-      <v-checkbox
+      <check-box
         v-model="authorised"
         data-testid="incasso-authorised"
         :label="MANDATE_WORDING.text"
@@ -177,22 +181,23 @@ onMounted(async () => {
       >
         {{ failure }}
       </p>
-      <v-btn
-        class="mr-2"
-        data-testid="incasso-cancel"
-        variant="text"
-        @click="open = false"
-      >
-        Cancel
-      </v-btn>
-      <v-btn
-        color="primary"
-        data-testid="incasso-save"
-        :disabled="!authorised || saving"
-        type="submit"
-      >
-        Save bank details
-      </v-btn>
+      <div class="form-save">
+        <cut-button
+          tone="quiet"
+          data-testid="incasso-cancel"
+          @click="open = false"
+        >
+          Cancel
+        </cut-button>
+        <cut-button
+          tone="solid"
+          submit
+          data-testid="incasso-save"
+          :disabled="!authorised || saving"
+        >
+          Save bank details
+        </cut-button>
+      </div>
     </form>
     <step-up-dialog
       v-model="stepUpOpen"
@@ -204,10 +209,10 @@ onMounted(async () => {
 
 <style scoped>
 .incasso__saved {
-  color: rgb(var(--v-theme-success));
+  color: var(--color-ok);
 }
 
 .incasso__failure {
-  color: rgb(var(--v-theme-error));
+  color: var(--color-danger);
 }
 </style>

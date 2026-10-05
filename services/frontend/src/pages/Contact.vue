@@ -8,11 +8,12 @@
       >
         <p class="text-body-1">
           If you want to become a member see the
-          <span
-            class="text-decoration-underline text-primary"
-            style="cursor: pointer;"
-            @click="$goto('membership')"
-          >Join us!</span>
+          <router-link
+            class="contact__link"
+            to="/membership"
+          >
+            Join us!
+          </router-link>
           page. If you are just looking for
           more information, you can contact the board at
           <a
@@ -33,12 +34,8 @@
           Do you want to ask your question in person? Usually, you can find a board member in the
           Esports Lounge Twente during the break.
         </p>
-        <v-row class="mt-8">
-          <v-col
-            class="pa-0"
-            cols="12"
-            sm="4"
-          >
+        <div class="contact__where">
+          <div>
             <p class="text-body-1">
               The post address for Blueshell is as follows:
               <br> Blueshell Esports
@@ -46,18 +43,8 @@
               <br> 7500 AE Enschede
               <br> Netherlands
             </p>
-          </v-col>
-          <v-col
-            class="pa-0"
-            cols="12"
-            md="8"
-          >
-            <v-skeleton-loader
-              v-if="mapLoading"
-              height="450"
-              type="image,image,image"
-              width="600"
-            />
+          </div>
+          <div>
             <iframe
               allowfullscreen
               height="450"
@@ -67,10 +54,9 @@
               style="border:0;max-width: 100%"
               title="Map"
               width="600"
-              @load="mapLoading=false"
             />
-          </v-col>
-        </v-row>
+          </div>
+        </div>
       </div>
     </div>
   </v-main>
@@ -78,11 +64,7 @@
 
 <script lang="ts" setup>
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {$goto} from "@/plugins/goto"
 import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
-import {ref} from "vue"
-
-const mapLoading = ref(true)
 </script>
 
 <style lang="scss" scoped>
@@ -90,5 +72,22 @@ const mapLoading = ref(true)
 
 iframe {
   border-radius: settings.$border-radius-root;
+}
+
+.contact__link {
+  color: var(--color-brand);
+}
+
+.contact__where {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+@media (width >= 600px) {
+  .contact__where {
+    grid-template-columns: 1fr 2fr;
+  }
 }
 </style>

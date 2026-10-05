@@ -48,8 +48,8 @@ describe("the alerts adapter", () => {
 
 describe("reading an alert", () => {
   it.each([
-    [alert(AlertKind.TARGET_DRIFT, {subjectId: 2, subjectLabel: "Sitecie", count: 3}), "Sitecie is out of step with Brevo: 3 people differ", "/management/platforms/brevo/cohort/2"],
-    [alert(AlertKind.TARGET_DRIFT, {count: 1}), "A list is out of step with Brevo: 1 person differs", "/management/platforms/brevo"],
+    [alert(AlertKind.TARGET_DRIFT, {subjectId: 2, subjectLabel: "Sitecie", count: 3}), "Sitecie is out of sync with Brevo: 3 people differ", "/management/platforms/brevo/cohort/2"],
+    [alert(AlertKind.TARGET_DRIFT, {count: 1}), "A list is out of sync with Brevo: 1 person differs", "/management/platforms/brevo"],
     [alert(AlertKind.COHORT_WITHOUT_LIST, {subjectId: 5, subjectLabel: "Paid 2026"}), "Paid 2026 has no Brevo list", "/management/platforms/brevo/cohort/5"],
     [alert(AlertKind.COHORT_WITHOUT_LIST), "A cohort has no Brevo list", "/management/platforms/brevo"],
     [alert(AlertKind.EMAIL_FAILED, {count: 2}), "2 emails failed or bounced this month", "/management/mail/sent"],
@@ -69,8 +69,8 @@ describe("reading an alert", () => {
 
 describe("an alert as a short row", () => {
   it.each([
-    [alert(AlertKind.TARGET_DRIFT, {subjectLabel: "Sitecie", count: 3}), "A list is out of step", "Sitecie · 3 people differ", "Brevo"],
-    [alert(AlertKind.TARGET_DRIFT, {count: 1}), "A list is out of step", "A list · 1 person differs", "Brevo"],
+    [alert(AlertKind.TARGET_DRIFT, {subjectLabel: "Sitecie", count: 3}), "A list is out of sync", "Sitecie · 3 people differ", "Brevo"],
+    [alert(AlertKind.TARGET_DRIFT, {count: 1}), "A list is out of sync", "A list · 1 person differs", "Brevo"],
     [alert(AlertKind.COHORT_WITHOUT_LIST, {subjectLabel: "Paid 2026"}), "A Brevo list is missing", "Paid 2026", "Brevo"],
     [alert(AlertKind.COHORT_WITHOUT_LIST), "A Brevo list is missing", "A cohort", "Brevo"],
     [alert(AlertKind.EMAIL_FAILED, {count: 2}), "2 emails failed or bounced", "This month", "Sent"],

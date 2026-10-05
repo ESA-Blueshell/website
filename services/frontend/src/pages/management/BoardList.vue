@@ -23,8 +23,8 @@ defineOptions({name: "BoardListPage"})
 const {boards, loading} = useBoards()
 const search = ref("")
 
-const STANDING: Record<BoardStanding, {kind: "in-step" | "not-created" | "not-compared"; word: string}> = {
-  "in office": {kind: "in-step", word: "In office"},
+const STANDING: Record<BoardStanding, {kind: "in-sync" | "not-created" | "not-compared"; word: string}> = {
+  "in office": {kind: "in-sync", word: "In office"},
   candidate: {kind: "not-created", word: "Kandi"},
   past: {kind: "not-compared", word: "Handed over"},
 }

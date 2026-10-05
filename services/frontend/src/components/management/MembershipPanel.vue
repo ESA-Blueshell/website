@@ -195,7 +195,7 @@ defineExpose({
         <template #ends="{row}">
           <state-mark
             v-if="!row.endDate"
-            kind="in-step"
+            kind="in-sync"
           >
             Active
           </state-mark>

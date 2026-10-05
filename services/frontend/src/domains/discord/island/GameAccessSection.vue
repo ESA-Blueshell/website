@@ -2,6 +2,7 @@
 /* How far everybody and members get into every channel of a game, set once for all of them. A
    change is written to Discord; where Discord has a channel otherwise, the channel says so and
    Discord is left as it is until the board sets it back. Each channel can be archived. */
+import ChannelMark from "./ChannelMark.vue"
 import {computed, onMounted, ref} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
@@ -122,7 +123,11 @@ onMounted(async () => {
         class="game-access__channel"
         :data-testid="`${testid}-channel-${channel.id}`"
       >
-        <span class="game-access__name">#{{ channel.name }}</span>
+        <channel-mark
+          :id="channel.id"
+          class="game-access__name"
+          :name="channel.name"
+        />
         <span
           v-if="channel.state.differs"
           class="game-access__label"

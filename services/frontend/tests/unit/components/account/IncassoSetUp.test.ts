@@ -18,10 +18,10 @@ const own = {standing: IncassoStanding.MANDATE_RECORDED, ibanCountry: "NL", iban
 
 const fill = async (wrapper: ReturnType<typeof mount>) => {
   await wrapper.get('[data-testid="incasso-open"]').trigger("click")
-  const fields = wrapper.findAllComponents({name: "VTextField"})
+  const fields = wrapper.findAllComponents({name: "FormControl"})
   await fields[0]!.vm.$emit("update:modelValue", "NL91 ABNA 0417 1643 00")
   await fields[1]!.vm.$emit("update:modelValue", "Ann Vos")
-  await wrapper.findComponent({name: "VCheckbox"}).vm.$emit("update:modelValue", true)
+  await wrapper.findComponent({name: "CheckBox"}).vm.$emit("update:modelValue", true)
 }
 
 describe("setting up incasso", () => {
@@ -62,7 +62,7 @@ describe("setting up incasso", () => {
     expect(wrapper.get('[data-testid="incasso-open"]').text()).toBe("Set up incasso")
 
     await fill(wrapper)
-    expect(wrapper.findComponent({name: "VCheckbox"}).props("label")).toContain("I authorise ESA Blueshell")
+    expect(wrapper.findComponent({name: "CheckBox"}).props("label")).toContain("I authorise ESA Blueshell")
     await wrapper.get('[data-testid="incasso-form"]').trigger("submit")
     await settle()
 
@@ -111,9 +111,9 @@ describe("setting up incasso", () => {
     const wrapper = mount(IncassoSetUp, {props: {addressId: 5}})
     await settle()
     await fill(wrapper)
-    expect(wrapper.findAllComponents({name: "VTextField"})[2]!.props("modelValue")).toBe("Hallenweg")
+    expect(wrapper.findAllComponents({name: "FormControl"})[2]!.props("modelValue")).toBe("Hallenweg")
 
-    const typed = wrapper.findAllComponents({name: "VTextField"})
+    const typed = wrapper.findAllComponents({name: "FormControl"})
     await typed[2]!.vm.$emit("update:modelValue", "Hallenweg")
     await typed[3]!.vm.$emit("update:modelValue", "7")
     await typed[4]!.vm.$emit("update:modelValue", "7522NH")
@@ -133,7 +133,7 @@ describe("setting up incasso", () => {
     await settle()
     await fill(wrapper)
 
-    expect(wrapper.findAllComponents({name: "VTextField"})[2]!.props("modelValue")).toBe("")
+    expect(wrapper.findAllComponents({name: "FormControl"})[2]!.props("modelValue")).toBe("")
   })
 
   it("says why the details were refused, and cancels", async () => {

@@ -285,7 +285,7 @@ test.describe("a board is corrected on the page it is read on", () => {
     await expect(page.getByTestId("board-band-description")).toHaveText("The year the kitchen burned.")
   })
 
-  test("the colour field shows the board's colour in its swatch, kept in step with the hex", async ({page}) => {
+  test("the colour field shows the board's colour in its swatch, kept in sync with the hex", async ({page}) => {
     await installApiMocks(page, {boards: history})
     await loginAsBoard(page.context())
 

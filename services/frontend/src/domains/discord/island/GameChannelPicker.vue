@@ -93,7 +93,7 @@ const make = async () => {
         :labelled-by="labelId"
         :options="options"
         placeholder="Add a channel"
-        :remove-label="(name: string) => `Take away ${name}`"
+        :remove-label="(name: string) => `Remove ${name}`"
         sigil="#"
         :testid-prefix="`${testid}-picker`"
         @add="add"

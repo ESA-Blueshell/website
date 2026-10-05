@@ -30,7 +30,7 @@ interface RecoveryRow {
 const STANDING_WORDS: Record<Standing, string> = {"not-activated": "Not activated", "active": "Active", "deleted": "Deleted"}
 const ACTION: Record<Standing, "activation" | "password" | "restore"> = {"not-activated": "activation", "active": "password", "deleted": "restore"}
 
-const STANDING_MARKS: Record<Standing, StateKind> = {"not-activated": "missing", "active": "in-step", "deleted": "not-created"}
+const STANDING_MARKS: Record<Standing, StateKind> = {"not-activated": "missing", "active": "in-sync", "deleted": "not-created"}
 
 const COLUMNS: TableColumn<RecoveryRow>[] = [
   {key: "name", label: "Name", wrap: true, testid: "recovery-sort-name", sortBy: (row) => row.user.fullName},

@@ -108,12 +108,10 @@ class DiscordAdoption(
     }
 
     private fun plain(name: String) = name.lowercase().filter { it.isLetterOrDigit() }
-
-    private companion object {
-        val NAMED_CHANNELS = setOf(CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS)
-        val BOARDS = listOf(CohortType.BOARD, CohortType.KANDI, CohortType.BOARD_YEAR_MEMBERS)
-
-        // In the order they are matched: a role called after a board goes to the board.
-        val ADOPTED = BOARDS + NAMED_CHANNELS
-    }
 }
+
+/** The cohorts a channel of the same name is offered with. */
+private val NAMED_CHANNELS = setOf(CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS)
+
+/** What is matched, in the order it is: a role called after a board goes to the board. */
+private val ADOPTED = listOf(CohortType.BOARD, CohortType.KANDI, CohortType.BOARD_YEAR_MEMBERS) + NAMED_CHANNELS

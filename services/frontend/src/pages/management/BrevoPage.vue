@@ -17,6 +17,10 @@ import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import PairList from "@/components/management/PairList.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
+import BulkAdd from "@/components/management/BulkAdd.vue"
+import SelectionBar from "@/components/island/SelectionBar.vue"
+import {useUserSelection} from "@/composables/useUserSelection"
 import {
   FolderCare,
   type ListedTarget,
@@ -39,6 +43,7 @@ import {
   missingNotice,
   overviewFacts,
   readTargetOverview,
+  useTargetSync,
 } from "@/domains/cohorts"
 import store from "@/plugins/store"
 import {formatMoment} from "@/utils/timestamps"
@@ -80,6 +85,18 @@ const notice = computed(() => missingNotice(overview.value?.missing ?? []))
 const load = async () => {
   overview.value = await readTargetOverview(SYSTEM)
   loaded.value = true
+}
+
+/* Ticked lists are compared with Brevo or filled with who is missing together. A list still to be
+   created has nothing to compare, so it carries no tick. */
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMany, clear: clearSelection} =
+  useUserSelection(computed(() => rows.value.filter((row) => row.list).map(keyOf)))
+const everyList = computed(() => (overview.value ? groupsOf(overview.value, "").flatMap((group) => group.rows) : []).filter((row) => row.list))
+const ticked = computed(() => everyList.value.filter((row) => isSelected(keyOf(row))).map((row) => row.list!))
+const sync = useTargetSync(SYSTEM, ticked, ["list", "lists"])
+const synced = async () => {
+  clearSelection()
+  await load()
 }
 
 const said = (message: string) => store.commit("setStatusSnackbarMessage", message)
@@ -296,10 +313,25 @@ onMounted(load)
         :columns="COLUMNS"
         :row-key="keyOf"
         :row-testid="(row) => `brevo-row-${keyOf(row)}`"
+        :header-state="headerState"
         :rows="rows"
+        :selected-count="selectedIdsArray.length"
         testid="brevo-table"
         :to="linkOf"
+        :total="everyList.length"
+        @clear-selection="clearSelection"
+        @select-all="selectMany(everyList.map(keyOf))"
+        @toggle-shown="toggleHeader"
       >
+        <template #check="{row}">
+          <row-check
+            v-if="row.list"
+            :checked="isSelected(keyOf(row))"
+            :label="`Select ${row.list.label}`"
+            :testid="`brevo-check-${keyOf(row)}`"
+            @toggle="toggle(keyOf(row))"
+          />
+        </template>
         <template #count>
           {{ rows.length }} of {{ total }} lists
         </template>
@@ -386,6 +418,42 @@ onMounted(load)
           </management-row>
         </template>
       </management-table>
+
+      <selection-bar
+        always
+        :count="selectedIdsArray.length"
+        testid="brevo-selection"
+        @clear="clearSelection"
+      >
+        <cut-button
+          small
+          testid="brevo-bulk-compare"
+          tone="solid"
+          @click="sync.task.value = 'compare'"
+        >
+          Compare with Brevo
+        </cut-button>
+        <cut-button
+          small
+          testid="brevo-bulk-push"
+          @click="sync.task.value = 'push'"
+        >
+          Add missing people
+        </cut-button>
+      </selection-bar>
+
+      <bulk-add
+        :items="sync.items.value"
+        :noun="['list', 'lists']"
+        :open="sync.task.value !== null"
+        :run="sync.run"
+        :skipped="sync.skipped.value"
+        testid="brevo-bulk-sync"
+        :title="sync.title.value"
+        :words="sync.words.value"
+        @done="synced"
+        @update:open="sync.task.value = null"
+      />
     </template>
 
     <modal-dialog

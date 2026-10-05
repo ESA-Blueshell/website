@@ -44,6 +44,9 @@ describe("adding to many rows at once", () => {
     expect(inPage("bulk-done").text()).toContain("1 of 2 added.")
     expect(inPage("bulk-failures").text()).toContain("LancieDiscord refused.")
     expect(wrapper.emitted("done")).toHaveLength(1)
+    // The page clears its ticks once the work is done; the count of what was done stays.
+    await wrapper.setProps({items: []})
+    expect(inPage("bulk-done").text()).toContain("1 of 2 added.")
     await inPage("bulk-close").trigger("click")
     expect(wrapper.emitted("update:open")?.at(-1)).toEqual([false])
   })

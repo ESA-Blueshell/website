@@ -8,6 +8,8 @@ import CheckBox from "@/components/island/CheckBox.vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FactList from "@/components/island/FactList.vue"
+import FilterBar from "@/components/island/FilterBar.vue"
+import FilterPicker from "@/components/island/FilterPicker.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import PageTabs from "@/components/island/PageTabs.vue"
@@ -27,7 +29,7 @@ import {
   readTargetOverview,
 } from "@/domains/cohorts"
 import {
-  ARCHIVE_CATEGORY,
+  ChannelGlyph,
   type AdoptionMatch,
   type CataloguedChannel,
   type NamedRole,
@@ -37,6 +39,7 @@ import {
   catalogueFacts,
   channelGroups,
   differsOf,
+  isArchive,
   listCatalogue,
   listMatches,
   opensOf,
@@ -87,7 +90,6 @@ const ROLE_COLUMNS: TableColumn[] = [
 ]
 const CHANNEL_COLUMNS: TableColumn[] = [
   {key: "channel", label: "Channel", wrap: true},
-  {key: "kind", label: "Kind"},
   {key: "belongs", label: "Belongs to", wrap: true},
   {key: "access", label: "Access", wrap: true},
   {key: "state", label: "Differs on Discord"},
@@ -109,7 +111,12 @@ const roleRows = computed<RoleRow[]>(() => [
 const roleLink = (row: RoleRow) => (row.role ? `/management/platforms/discord/roles/${row.role.externalId}` : null)
 
 type ChannelRow = CataloguedChannel & {category: string}
-const channelRows = computed<ChannelRow[]>(() => groups.value.flatMap((group) => group.channels.map((one) => ({...one, category: group.name}))))
+const everyChannel = computed<ChannelRow[]>(() => groups.value.flatMap((group) => group.channels.map((one) => ({...one, category: group.name}))))
+/* Archived channels are kept for history and nobody works in them, so the list leaves them out until asked. */
+const ARCHIVED_SHOWN = "shown"
+const archivedShown = ref(false)
+const channelRows = computed(() => everyChannel.value.filter((one) => archivedShown.value || !isArchive(one.category)))
+const archivedCount = computed(() => everyChannel.value.filter((one) => isArchive(one.category)).length)
 
 /* A role is created on Discord only after it is named once more and confirmed. */
 const pendingRole = ref<MissingTarget | null>(null)
@@ -317,17 +324,36 @@ onMounted(load)
         testid="discord-channels"
       >
         <template #count>
-          {{ channelRows.length }} {{ channelRows.length === 1 ? "channel" : "channels" }} in {{ groups.length }} {{ groups.length === 1 ? "category" : "categories" }}
+          {{ channelRows.length }} {{ channelRows.length === 1 ? "channel" : "channels" }}{{ archivedShown || archivedCount === 0 ? "" : `, ${archivedCount} archived hidden` }}
+        </template>
+        <template #filters>
+          <filter-bar
+            :active="archivedShown"
+            testid="discord-channel-filters"
+            @clear="archivedShown = false"
+          >
+            <filter-picker
+              any-label="Hidden"
+              label="Archived channels"
+              :model-value="archivedShown ? ARCHIVED_SHOWN : null"
+              :options="[{key: ARCHIVED_SHOWN, label: 'Shown'}]"
+              testid="discord-channel-archived"
+              @update:model-value="archivedShown = $event === ARCHIVED_SHOWN"
+            />
+          </filter-bar>
         </template>
         <template #empty>
           No channels yet.
         </template>
         <template #channel="{row}">
-          <span class="discord__channel">#{{ row.name }}</span>
-          <span class="mg-sub">{{ row.category === ARCHIVE_CATEGORY ? `${row.category} · read only, kept for history` : row.category }}</span>
-        </template>
-        <template #kind="{row}">
-          {{ kindOf(row) }}
+          <span class="discord__channel">
+            <channel-glyph
+              :locked="row.private"
+              :voice="row.kind === 'VOICE'"
+            />
+            {{ row.name }}
+          </span>
+          <span class="mg-sub">{{ isArchive(row.category) ? `${row.category} · read only, kept for history` : row.category }}</span>
         </template>
         <template #belongs="{row}">
           <span class="mg-quiet">{{ belongsTo(row, roles) }}</span>
@@ -442,6 +468,9 @@ onMounted(load)
 }
 
 .discord__channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   font-weight: 600;
 }
 

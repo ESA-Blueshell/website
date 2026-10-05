@@ -11,6 +11,7 @@ import SearchPicker from "@/components/island/SearchPicker.vue"
 import type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
 import {type KeptChannel, type KeptRole, listKeepableChannels, listKeepableRoles} from "../adapters/keeping"
 import {readOpenings} from "../adapters/roleOpenings"
+import {isArchive} from "../catalogue"
 
 defineOptions({name: "DiscordPlaceFields"})
 
@@ -47,7 +48,8 @@ const roleOptions = computed(() => [
   ...roles.value.filter((one) => one.assignable).map((one) => ({key: one.id, label: `@${one.name}`})),
 ])
 const asOption = (channel: KeptChannel) => ({key: channel.id, label: channel.name, note: channel.category ?? undefined})
-const channelOptions = computed(() => channels.value.filter((one: KeptChannel) => one.kind !== "CATEGORY").map(asOption))
+// An archived channel is kept for history, so it is not offered to link.
+const channelOptions = computed(() => channels.value.filter((one: KeptChannel) => one.kind !== "CATEGORY" && !isArchive(one.category)).map(asOption))
 const chosenChannels = computed(() => channelIds.value.map((id) => channelOptions.value.find((one) => one.key === id) ?? {key: id, label: id}))
 const pickable = computed(() => channelOptions.value.filter((one) => !channelIds.value.includes(one.key)))
 const hasRole = computed(() => linkedRole.value != null || roleKey.value != null)

@@ -14,6 +14,7 @@ const channels = [
   {id: "10", name: "Committees", kind: "CATEGORY"},
   {id: "1", name: "sitecie", kind: "TEXT", category: "Committees"},
   {id: "2", name: "sitecie-voice", kind: "VOICE"},
+  {id: "3", name: "sitecie-2023", kind: "TEXT", category: "Archive"},
 ]
 
 describe("a committee's Discord on its form", () => {

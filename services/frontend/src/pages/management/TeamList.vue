@@ -10,7 +10,7 @@ import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts} from "@/domains/cohorts"
-import {type CataloguedChannel, listCatalogue} from "@/domains/discord"
+import {type CataloguedChannel, isArchive, listCatalogue} from "@/domains/discord"
 import {type Fielding, type Team, loadFieldings, loadTeamSeasons, loadTeams, useGames} from "@/domains/esports"
 
 defineOptions({name: "TeamListPage"})
@@ -37,7 +37,7 @@ const targetsOf = (team: Team): SummaryTarget[] => cohorts.value.find((one) => o
 const channelsOf = (team: Team): string[] => {
   const role = targetsOf(team).find((one) => one.system === TargetSystem.DISCORD && one.made)?.externalId
   if (!role) return []
-  return channels.value.filter((one) => one.kind !== "CATEGORY" && one.roleIds.includes(role)).map((one) => `#${one.name}`)
+  return channels.value.filter((one) => one.kind !== "CATEGORY" && !isArchive(one.category) && one.roleIds.includes(role)).map((one) => `#${one.name}`)
 }
 
 const COLUMNS: TableColumn[] = [

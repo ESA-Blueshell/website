@@ -93,16 +93,29 @@ describe("the Discord page", () => {
     const wrapper = await mount()
     expect(wrapper.find('[data-testid="discord-roles"]').exists()).toBe(false)
 
+    const glyph = (id: string) => wrapper.get(`[data-testid="discord-channel-${id}"] [role="img"]`).attributes("aria-label")
     const sitecie = wrapper.get('[data-testid="discord-channel-1"]').text()
-    expect(sitecie).toContain("Private")
+    expect(glyph("1")).toBe("Private text channel")
+    expect(glyph("2")).toBe("Public text channel")
     expect(sitecie).toContain("Only @Sitecie")
     const valo = wrapper.get('[data-testid="discord-channel-2"]').text()
     expect(valo).toContain("Game Valorant")
     expect(valo).toContain("Everyone reads, @Member writes")
     expect(wrapper.get('[data-testid="discord-channel-differs-2"]').text()).toBe("Everyone writes")
     expect(wrapper.get('[data-testid="discord-channel-differs-1"]').text()).toBe("No")
-    expect(wrapper.get('[data-testid="discord-channel-3"]').text()).toContain("Voice")
+
+    // An archived channel is left out until the filter asks for it.
+    expect(wrapper.find('[data-testid="discord-channel-3"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="discord-channels"]').text()).toContain("2 channels, 1 archived hidden")
+    const archived = () => wrapper.findAllComponents({name: "FilterPicker"}).find((one) => one.props("testid") === "discord-channel-archived")!
+    archived().vm.$emit("update:modelValue", "shown")
+    await settle()
+    expect(glyph("3")).toBe("Private voice channel")
     expect(wrapper.get('[data-testid="discord-channel-3"]').text()).toContain("read only, kept for history")
+    expect(wrapper.get('[data-testid="discord-channels"]').text()).toContain("3 channels")
+    wrapper.findComponent({name: "FilterBar"}).vm.$emit("clear")
+    await settle()
+    expect(wrapper.find('[data-testid="discord-channel-3"]').exists()).toBe(false)
   })
 
   it("creates a missing role only once that is confirmed, and says why when Discord refuses", async () => {

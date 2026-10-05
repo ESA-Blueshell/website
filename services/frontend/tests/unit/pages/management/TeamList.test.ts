@@ -45,6 +45,7 @@ describe("the competition teams in Management", () => {
       {id: "1", name: "bs-valorant", kind: "TEXT", private: true, roleIds: ["960"]},
       {id: "2", name: "Esports", kind: "CATEGORY", private: true, roleIds: ["960"]},
       {id: "3", name: "general", kind: "TEXT", private: false, roleIds: []},
+      {id: "4", name: "bs-valorant-2023", kind: "TEXT", category: "Archive", private: true, roleIds: ["960"]},
     ]})
     api.findTeamSeasons.mockImplementation(({path}: {path: {teamId: number}}) => Promise.resolve({status: 200, data: ({
       1: [{game: "VAL", season: season(3, "Autumn 2025", "2025-09-01")}, {game: "VAL", season: season(4, "Spring 2026", "2026-02-01")}],

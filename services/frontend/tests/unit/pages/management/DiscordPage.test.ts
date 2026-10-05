@@ -4,6 +4,7 @@ import DiscordPage from "@/pages/management/DiscordPage.vue"
 import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
+  reconcileTarget: vi.fn(),
   findTargetOverview: vi.fn(),
   createMissingTargets: vi.fn(),
   listCataloguedChannels: vi.fn(),
@@ -85,6 +86,41 @@ describe("the Discord page", () => {
     expect(wrapper.get('[data-testid="discord-role-900"] a').attributes("to")).toBe("/management/platforms/discord/roles/900")
     expect(wrapper.findAll('[data-testid^="discord-role-"]')[0]!.attributes("data-testid")).toBe("discord-role-missing-3")
     expect(await sortByEveryHead(wrapper)).toBe(4)
+  })
+
+  it("compares the ticked roles with Discord together, and adds the role to who is missing it", async () => {
+    api.reconcileTarget.mockResolvedValue({status: 202, data: undefined})
+    const wrapper = await mount()
+    const bulk = () => wrapper.findComponent({name: "BulkAdd"})
+
+    expect(wrapper.find('[data-testid="discord-role-check-missing-3"]').exists()).toBe(false)
+    wrapper.findAllComponents({name: "ManagementTable"})[0]!.vm.$emit("toggleShown")
+    await settle()
+    expect(wrapper.get('[data-testid="discord-role-selection"]').text()).toContain("2 selected")
+    wrapper.findAllComponents({name: "ManagementTable"})[0]!.vm.$emit("clearSelection")
+    await settle()
+    await wrapper.get('[data-testid="discord-role-check-900"]').setValue(true)
+    await wrapper.get('[data-testid="discord-role-check-950"]').setValue(true)
+
+    await wrapper.get('[data-testid="discord-bulk-push"]').trigger("click")
+    await settle()
+    expect(bulk().props("title")).toBe("Add missing people")
+    expect(bulk().props("skipped")).toEqual([{name: "Sitecie", why: "Nobody is missing"}, {name: "Gamers", why: "Follows nothing on the site"}])
+    bulk().vm.$emit("update:open", false)
+    await settle()
+
+    await wrapper.get('[data-testid="discord-bulk-compare"]').trigger("click")
+    await settle()
+    expect(bulk().props("title")).toBe("Compare with Discord")
+    expect(bulk().props("items").map((one: {name: string}) => one.name)).toEqual(["Sitecie"])
+    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: true})
+    expect(api.reconcileTarget).toHaveBeenCalledWith({path: {id: 101, targetId: 1}})
+
+    api.findTargetOverview.mockClear()
+    bulk().vm.$emit("done")
+    await settle()
+    expect(api.findTargetOverview).toHaveBeenCalledTimes(1)
+    expect(wrapper.get('[data-testid="discord-role-selection"]').text()).toContain("0 selected")
   })
 
   it("lists the channels by category with what they belong to, who gets in and where Discord differs", async () => {

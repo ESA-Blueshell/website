@@ -28,6 +28,8 @@ const emit = defineEmits<{"update:open": [open: boolean]; done: []}>()
 type Step = "preview" | "confirm" | "working" | "done"
 const step = ref<Step>("preview")
 const finished = ref(0)
+// How many rows the work started with: the page may clear its ticks when the work is done.
+const total = ref(0)
 const failures = ref<{name: string; reason: string}[]>([])
 
 watch(() => open, (now) => {
@@ -48,7 +50,8 @@ const said = computed(() => words ?? {
 
 const go = async () => {
   step.value = "working"
-  for (const item of items) {
+  total.value = items.length
+  for (const item of [...items]) {
     const answered = await run(item)
     if (!answered.ok) failures.value = [...failures.value, {name: item.name, reason: answered.reason}]
     finished.value += 1
@@ -110,11 +113,11 @@ const go = async () => {
         v-else-if="step === 'working'"
         role="status"
       >
-        {{ said.doing }}, {{ finished }} of {{ items.length }} done.
+        {{ said.doing }}, {{ finished }} of {{ total }} done.
       </p>
       <template v-else>
         <p role="status">
-          {{ items.length - failures.length }} of {{ items.length }} {{ said.done }}.
+          {{ total - failures.length }} of {{ total }} {{ said.done }}.
         </p>
         <ul
           v-if="failures.length"

@@ -912,6 +912,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "POST" && path === "/users/me/two-factor/setup") {
       return answer(route, "setUpTwoFactor", {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})
     }
+    if (method === "GET" && path === "/contributions/bank-account") {
+      return answer(route, "findBankAccount", {iban: "NL19 INGB 0008 0964 62", bic: "INGBNL2A", accountName: "Blueshell E-Sports Vereniging"})
+    }
+    if (method === "GET" && path === "/users/me/contributions") {
+      return answer(route, "findOwnContributions", [
+        {periodId: 201, startDate: "2025-07-01", endDate: "2025-12-31", feeType: "FULL_YEAR_FEE", fee: 20, paid: true, paidAt: "2025-07-15T10:00:00Z"},
+      ])
+    }
     if (method === "GET" && path === "/users/me/first-contribution") {
       return fixtures.firstContribution ? answer(route, "findOwnFirstContribution", fixtures.firstContribution) : route.fulfill({status: 204, body: ""})
     }

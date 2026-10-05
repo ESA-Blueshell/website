@@ -5,7 +5,7 @@ const GAMES = [{name: "Valorant", slug: "valorant"}, {name: "Trackmania", slug: 
 
 describe("the bar's own declaration", () => {
   it("offers a game's page for every game the association fields", () => {
-    const esports = sectionsFor(GAMES).find(section => section.label === "Competition")
+    const esports = sectionsFor(GAMES).find(section => section.label === "Esports")
 
     expect(esports?.entries?.map(entry => entry.to)).toEqual([
       "/competition",
@@ -45,7 +45,7 @@ describe("the bar's own declaration", () => {
     const sections = sectionsFor([])
     const named = (label: string) => sections.find(section => section.label === label)!
 
-    expect(covers("/competition/valorant", named("Competition"))).toBe(true)
+    expect(covers("/competition/valorant", named("Esports"))).toBe(true)
     expect(covers("/casual/chess", named("Casual"))).toBe(true)
     expect(covers("/board", named("Association"))).toBe(true)
     expect(covers("/board", named("Home"))).toBe(false)
@@ -70,7 +70,7 @@ describe("the bar's own declaration", () => {
     const withAddress = accountFor({loggedIn: true, board: false, admin: false, addressId: 12})
     const without = accountFor({loggedIn: true, board: false, admin: false, addressId: null})
 
-    expect(withAddress.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses/12"])
-    expect(without.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses"])
+    expect(withAddress.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses/12", "/account/payment-details"])
+    expect(without.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses", "/account/payment-details"])
   })
 })

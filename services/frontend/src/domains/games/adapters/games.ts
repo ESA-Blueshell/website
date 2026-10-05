@@ -42,6 +42,24 @@ export const addCasualGame = async (body: CasualGameRequest): Promise<Saved<Casu
 export const saveCasualGame = async (code: string, body: CasualGameRequest): Promise<Saved<CasualGame> | Refused> =>
   withArtSaved(await refusable(updateCasualGame({path: {game: code}, body}), "The game could not be saved."))
 
+/**
+ * Adds one Discord channel to the game's own, and changes nothing else: the save says again
+ * everything the record holds, since a field left empty in it is one taken away.
+ */
+export const addGameChannel = (game: CasualGame, channel: {id: string; guildId: string; name: string}): Promise<Saved<CasualGame> | Refused> =>
+  saveCasualGame(game.code, {
+    name: game.name,
+    slug: game.slug,
+    intro: game.intro?.trim() || null,
+    accent: game.accent || null,
+    banner: game.banner?.path ?? null,
+    icon: game.icon?.path ?? null,
+    channels: [...game.channels, channel],
+    competitionIntro: game.competitionIntro?.trim() || null,
+    esportsChannels: game.esportsChannels,
+    sortIndex: game.sortIndex,
+  })
+
 export const setGameArchived = async (code: string, archived: boolean): Promise<Saved<CasualGame> | Refused> =>
   withArtSaved(await refusable(
     archiveGame({path: {game: code}, body: {archived}}),

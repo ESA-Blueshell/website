@@ -120,6 +120,23 @@ describe("JobDetail page", () => {
     expect(wrapper.text()).toContain("Nothing in particular.")
   })
 
+  it("says a run was forced, what else queued it, and links what it did on Discord", async () => {
+    mockFindJob.mockResolvedValue({status: 200, data: {
+      ...failed, status: "SUCCESS", forced: true, effect: "EDITED", effectLink: "https://discord.com/channels/1/2/3", jobType: "discord.post",
+      foldedTriggers: [
+        {trigger: "EVENT_UPDATED", at: "2026-10-01T10:00:00Z", initiatedByType: "USER", initiatedByDisplay: "Jane Doe (@jdoe)"},
+        {trigger: "EVENT_UPDATED", at: "2026-10-01T11:00:00Z", initiatedByType: "USER", initiatedByDisplay: "Jan Smit (@jsmit)"},
+      ],
+    }})
+    const wrapper = await mountDetail()
+
+    expect(wrapper.get('[data-testid="job-detail-forced"]').text()).toContain("Run although it would have been skipped")
+    expect(wrapper.get('[data-testid="job-detail-folded-0"]').text()).toContain("Also queued by")
+    expect(wrapper.get('[data-testid="job-detail-folded-0"]').text()).toContain("Jane Doe (@jdoe)")
+    expect(wrapper.get('[data-testid="job-detail-folded-1"]').text()).toContain("Also queued by (2)")
+    expect(wrapper.get('[data-testid="job-detail-effect-link"]').attributes("href")).toBe("https://discord.com/channels/1/2/3")
+  })
+
   it("says there is no such job when it cannot be read", async () => {
     mockFindJob.mockResolvedValue({status: 404, error: {detail: "Not found"}})
     const wrapper = await mountDetail()

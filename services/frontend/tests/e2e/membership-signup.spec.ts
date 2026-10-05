@@ -213,7 +213,7 @@ test.describe("membership signup", () => {
     await page.getByTestId("membership-address-next-btn").click()
 
     const step = page.getByTestId("membership-incasso-step")
-    await expect(step).toContainText("handled by hand")
+    await expect(step).toContainText("Without incasso you pay by hand")
     await step.getByTestId("incasso-open").click()
     await step.getByLabel("IBAN").fill("NL91 ABNA 0417 1643 00")
     await step.getByLabel("Account holder").fill("Membership Privacy")

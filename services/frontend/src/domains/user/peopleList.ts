@@ -39,6 +39,9 @@ export interface PersonRow {
   /** The type of their latest membership, or null for someone never a member. */
   type: MemberType | null
   memberSince: string | null
+  committees: string[]
+  /** Their Discord name, or null where none is linked. */
+  discord: string | null
   needs: NeedsLook[]
   /** Every searchable field, folded the way a search is. */
   haystack: string
@@ -97,6 +100,8 @@ export function peopleRows(
       membership,
       type,
       memberSince: own.length === 0 ? null : own.map((one) => one.startDate).sort()[0]!,
+      committees: committeesOf.get(user.id) ?? [],
+      discord: user.discord || null,
       needs: needsLookOf(user),
       haystack: fold([
         user.fullName, user.firstName, user.lastName, user.username, user.email, user.discord ?? "", user.phoneNumber ?? "",

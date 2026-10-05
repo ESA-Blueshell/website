@@ -21,24 +21,35 @@ const tone = computed(() => (["admin", "board", "treasurer"].includes(role.toLow
 
 <style scoped>
 .role-mark {
-  display: inline-block;
-  padding: 0.05rem 0.4rem;
-  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05em 0.35em;
+  border-radius: 3px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
+  text-transform: none;
   white-space: nowrap;
-  color: var(--color-brand-lit, var(--color-brand));
-  background: color-mix(in oklab, var(--color-brand) 16%, transparent);
+  color: color-mix(in oklab, var(--mention-lit) 70%, var(--color-chalk));
+  background: color-mix(in oklab, var(--mention) 22%, transparent);
+
+  --mention: var(--color-brand);
+  --mention-lit: var(--color-brand-lit);
 }
 
 .role-mark--admin {
-  color: var(--color-warning);
-  background: color-mix(in oklab, var(--color-warning) 14%, transparent);
+  --mention: #e8594f;
+  --mention-lit: #e8594f;
 }
 
-.role-mark--board,
+.role-mark--board {
+  --mention: #3387fa;
+  --mention-lit: #3387fa;
+}
+
 .role-mark--treasurer {
-  color: var(--color-chalk);
-  background: color-mix(in oklab, var(--color-chalk) 10%, transparent);
+  --mention: #e0a100;
+  --mention-lit: #e0a100;
 }
 </style>

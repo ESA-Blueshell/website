@@ -115,6 +115,10 @@ export type AdoptDiscord = {
 
 export type AdoptedDiscord = {
     linked: number;
+    /**
+     * The confirmed matches Discord refused, each as its name and why
+     */
+    refused: Array<RefusedMatch>;
 };
 
 export type AdoptionMatch = {
@@ -272,6 +276,15 @@ export type Audience = {
 
 export type BackupCodesResponse = {
     codes: Array<string>;
+};
+
+/**
+ * The association's own bank account, as a member needs it to make a transfer
+ */
+export type BankAccountResponse = {
+    accountName: string;
+    bic: string;
+    iban: string;
 };
 
 export type BlogResponse = {
@@ -830,7 +843,8 @@ export enum CohortType {
     CURRENT_MEMBERS = 'CURRENT_MEMBERS',
     TEAM_PLAYERS = 'TEAM_PLAYERS',
     BOARD = 'BOARD',
-    KANDI = 'KANDI'
+    KANDI = 'KANDI',
+    BOARD_YEAR_MEMBERS = 'BOARD_YEAR_MEMBERS'
 }
 
 export type CommitteeMemberRequest = {
@@ -1418,6 +1432,10 @@ export type DriftResolutionEntry = {
      */
     personName?: string | null;
     resolvedAt: string;
+    /**
+     * The account that resolved it, where it still exists
+     */
+    resolvedById?: number | null;
     /**
      * Who resolved it; null when the api did so on its own behalf
      */
@@ -2797,6 +2815,11 @@ export type ReenrolRequest = {
     username: string;
 };
 
+export type RefusedMatch = {
+    label: string;
+    reason: string;
+};
+
 /**
  * Another name for a target.
  */
@@ -3292,6 +3315,7 @@ export type StepUpRequest = {
 };
 
 export type SummaryTarget = {
+    externalId?: string | null;
     label: string;
     made: boolean;
     system: TargetSystem;
@@ -3352,6 +3376,15 @@ export enum TargetSystem {
     GOOGLE_CALENDAR = 'GOOGLE_CALENDAR',
     DISCORD = 'DISCORD'
 }
+
+/**
+ * One team's fielding in a game in a season, named by the team it belongs to
+ */
+export type TeamFieldingResponse = {
+    game: string;
+    season: SeasonResponse;
+    teamId: number;
+};
 
 /**
  * A team as a write says it stands. A team is the association's rather than a game's, so it names none
@@ -5925,6 +5958,47 @@ export type CreateContributionResponses = {
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
 
+export type FindBankAccountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contributions/bank-account';
+};
+
+export type FindBankAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBankAccountError = FindBankAccountErrors[keyof FindBankAccountErrors];
+
+export type FindBankAccountResponses = {
+    /**
+     * OK
+     */
+    200: BankAccountResponse;
+};
+
+export type FindBankAccountResponse = FindBankAccountResponses[keyof FindBankAccountResponses];
+
 export type ReadContributionEmailData = {
     body?: never;
     path?: never;
@@ -6706,6 +6780,47 @@ export type ReadStarboardResponses = {
 };
 
 export type ReadStarboardResponse = ReadStarboardResponses[keyof ReadStarboardResponses];
+
+export type FindFieldingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/esports/fieldings';
+};
+
+export type FindFieldingsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindFieldingsError = FindFieldingsErrors[keyof FindFieldingsErrors];
+
+export type FindFieldingsResponses = {
+    /**
+     * OK
+     */
+    200: Array<TeamFieldingResponse>;
+};
+
+export type FindFieldingsResponse = FindFieldingsResponses[keyof FindFieldingsResponses];
 
 export type FindGameData = {
     body?: never;
@@ -14604,6 +14719,47 @@ export type FindDeletedUsersResponses = {
 };
 
 export type FindDeletedUsersResponse = FindDeletedUsersResponses[keyof FindDeletedUsersResponses];
+
+export type FindOwnContributionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/contributions';
+};
+
+export type FindOwnContributionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnContributionsError = FindOwnContributionsErrors[keyof FindOwnContributionsErrors];
+
+export type FindOwnContributionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<MemberPeriodContribution>;
+};
+
+export type FindOwnContributionsResponse = FindOwnContributionsResponses[keyof FindOwnContributionsResponses];
 
 export type EmailAddressData = {
     body?: never;

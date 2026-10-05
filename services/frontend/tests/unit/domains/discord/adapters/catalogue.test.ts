@@ -16,11 +16,15 @@ describe("the catalogue adapter", () => {
   })
 
   it("links the confirmed matches and says how many, or why not", async () => {
-    vi.mocked(adoptDiscordMatches).mockResolvedValue(answer(adoptDiscordMatches, {linked: 2}))
-    expect(await adoptMatches(["COMMITTEE_MEMBERS:1", "TEAM_PLAYERS:2"])).toEqual({ok: true, saved: 2})
+    vi.mocked(adoptDiscordMatches).mockResolvedValue(answer(adoptDiscordMatches, {linked: 2, refused: [{label: "Lancie", reason: "The bot may not change lancie."}]}))
+    expect(await adoptMatches(["COMMITTEE_MEMBERS:1", "TEAM_PLAYERS:2"])).toEqual({ok: true, saved: {linked: 2, refused: [{label: "Lancie", reason: "The bot may not change lancie."}]}})
     expect(adoptDiscordMatches).toHaveBeenCalledWith({body: {keys: ["COMMITTEE_MEMBERS:1", "TEAM_PLAYERS:2"]}})
 
     vi.mocked(adoptDiscordMatches).mockResolvedValue(refusal(adoptDiscordMatches, {code: "DiscordUnreachable"}, 503))
     expect(await adoptMatches(["COMMITTEE_MEMBERS:1"])).toEqual({ok: false, reason: "Discord cannot be reached now; try again in a moment."})
+    vi.mocked(adoptDiscordMatches).mockResolvedValue(refusal(adoptDiscordMatches, {code: "TargetSystemRefused", reason: "The bot may not change lancie."}, 502))
+    expect(await adoptMatches(["COMMITTEE_MEMBERS:1"])).toEqual({ok: false, reason: "Discord refused it. The bot may not change lancie."})
+    vi.mocked(adoptDiscordMatches).mockResolvedValue(refusal(adoptDiscordMatches, {code: "TargetSystemUnavailable"}, 503))
+    expect((await adoptMatches(["COMMITTEE_MEMBERS:1"])).ok).toBe(false)
   })
 })

@@ -151,12 +151,18 @@ class CohortControllerTest {
                 members = emptyList(),
                 definitionKey = null,
                 orphaned = false,
-                resolutions = listOf(DriftResolutionRow(resolution, TargetSystem.BREVO, "c@example.com", "Board Member")),
+                resolutions =
+                    listOf(
+                        DriftResolutionRow(resolution, TargetSystem.BREVO, "c@example.com", "Board Member"),
+                        DriftResolutionRow(resolution, TargetSystem.BREVO, "c@example.com", null),
+                    ),
             ),
         )
 
-        val entry = controller.findCohortById(10L).resolutions.single()
+        val (entry, byAGoneAccount) = controller.findCohortById(10L).resolutions
 
+        // An account that is gone has no page to open, so its id is not handed out.
+        assertThat(byAGoneAccount.resolvedById).isNull()
         assertThat(entry).isEqualTo(
             DriftResolutionResponse(
                 targetId = 3L,
@@ -166,6 +172,7 @@ class CohortControllerTest {
                 externalUserId = "ext-1",
                 personName = "c@example.com",
                 resolvedByName = "Board Member",
+                resolvedById = 4L,
                 resolvedAt = at,
             ),
         )

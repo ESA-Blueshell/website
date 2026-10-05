@@ -3,12 +3,15 @@
  * their payment for one.
  */
 import {
+  type BankAccountResponse,
   createContribution,
   type FirstContribution,
   findOwnFirstContribution,
   deleteContribution,
+  findBankAccount,
   findContributionsByPeriodId,
   findMemberContributions,
+  findOwnContributions,
   findPeriodContributions,
   type MemberPeriodContribution,
   type PeriodContributionsView,
@@ -25,6 +28,14 @@ const {accepted} = refusalReader({})
 /** Newest period first, or none where they could not be read. */
 export const listMemberContributions = (userId: number): Promise<MemberPeriodContribution[]> =>
   readOr(findMemberContributions({path: {userId}}), [])
+
+/** The reader's own periods, newest first, or none where they could not be read. */
+export const listOwnContributions = (): Promise<MemberPeriodContribution[]> => readOr(findOwnContributions(), [])
+
+export type BankAccount = BankAccountResponse
+
+/** The association's account, for a transfer by hand; nothing where it could not be read. */
+export const readBankAccount = (): Promise<BankAccount | null> => readOr(findBankAccount(), null)
 
 /** Records that the person paid for the period. */
 export const recordPayment = (userId: number, contributionPeriodId: number): Promise<{ok: true} | Refused> =>

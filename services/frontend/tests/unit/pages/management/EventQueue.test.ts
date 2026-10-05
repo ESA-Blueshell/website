@@ -42,12 +42,29 @@ describe("the events to approve", () => {
   it("lists new events and re-approvals apart, a re-approval with what changed", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.get('[data-testid="event-queue-new"]').text()).toContain("Pub quiz")
-    expect(wrapper.get('[data-testid="event-queue-reapproval"]').text()).toContain("LAN party")
+    expect(wrapper.get('[data-testid="event-queue-row-1"]').text()).toContain("Pub quiz")
+    expect(wrapper.get('[data-testid="event-queue-new-1"]').text()).toBe("Awaiting approval")
+    expect(wrapper.get('[data-testid="event-queue-row-2"]').text()).toContain("LAN party")
+    expect(wrapper.get('[data-testid="event-queue-reapproval-2"]').text()).toBe("Awaiting re-approval")
+    expect(wrapper.findAll('[data-testid^="event-queue-row-"]')[0]!.attributes("data-testid")).toBe("event-queue-row-1")
+    expect(wrapper.findComponent({name: "FactList"}).text()).toContain("1 new, 2 changed since approval")
     expect(wrapper.get('[data-testid="event-queue-changes-2"]').text()).toBe("Changed: title and times")
     expect(wrapper.get('[data-testid="event-queue-changes-3"]').text()).toBe("Changed since it was approved")
-    expect(wrapper.get('[data-testid="event-queue-changes-1"]').text()).toBe("")
+    expect(wrapper.get('[data-testid="event-queue-changes-1"]').text()).toBe("New")
     expect(wrapper.get('[data-testid="event-queue-open-1"]').attributes("to")).toBe("/events/1")
+  })
+
+  it("draws each waiting event as a row on a phone, with approving and opening at its end", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="event-queue-row-1"]').text()).toContain("Awaiting approval")
+    expect(wrapper.get('[data-testid="event-queue-row-2"]').text()).toContain("Changed: title and times")
+    expect(wrapper.get('[data-testid="event-queue-open-1"]').attributes("to")).toBe("/events/1")
+    await wrapper.get('[data-testid="event-queue-approve-1"]').trigger("click")
+    await settle()
+    expect(wrapper.findComponent({name: "AnnounceDialog"}).props("open")).toBe(true)
   })
 
   it("approves as the event page does: asking when the post goes out, and not at all when cancelled", async () => {

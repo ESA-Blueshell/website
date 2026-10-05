@@ -35,8 +35,9 @@ code.
 ### Casual
 
 Every game the association plays for fun, which is every game that is not archived.
-**"Casual" is the word on screen**, beside **Competition**: a game appears under
-Casual, under Competition, or under both, and the two never share a page.
+**"Casual" is the word on screen**, beside **Esports**: a game appears under
+Casual, under Esports, or under both, and the two never share a page. The Esports
+pages keep their addresses under `/competition`.
 
 ### Archived
 
@@ -46,7 +47,7 @@ but keeps its page, and every event and committee that already names it keeps
 naming it. Its Games channel is usually archived on Discord at the same time.
 
 Archiving is casual only. A game fielded in the current season still shows under
-Competition when it is archived, and its history never goes.
+Esports when it is archived, and its history never goes.
 
 ### Removed
 
@@ -862,6 +863,16 @@ after midnight, so on the day the new board takes office its members move from K
 Board, the old board's members leave Board, and nobody has to act.
 
 _Avoid_: candidate board in the interface, new board.
+
+### Board year
+
+Everybody who sat on one board, named by its years: **Board 2024-2025**. A cohort for each
+board that has taken office, with a Discord role of the same name and no Brevo list. The
+board in office holds **@Board** as well; the board year's role is the one its people keep
+after they hand over. The roles the server already has for past years are linked by name
+from the Discord page, as a committee's are.
+
+_Avoid_: old board, past board in the interface.
 
 ## Writing
 

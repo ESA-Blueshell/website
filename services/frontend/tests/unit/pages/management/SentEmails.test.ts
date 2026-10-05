@@ -60,9 +60,9 @@ describe("the Sent page", () => {
   it("lists every email with its state, and counts what waits, what arrived and what needs a look", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.get('[data-testid="sent-emails-queued"]').text()).toBe("10")
-    expect(wrapper.get('[data-testid="sent-emails-delivered"]').text()).toBe("90%")
-    expect(wrapper.get('[data-testid="sent-emails-needs-look"]').text()).toBe("6")
+    expect(wrapper.get('[data-testid="sent-emails-queued"]').text()).toContain("10")
+    expect(wrapper.get('[data-testid="sent-emails-delivered"]').text()).toContain("90%")
+    expect(wrapper.get('[data-testid="sent-emails-needs-look"]').text()).toContain("6")
     expect(wrapper.get('[data-testid="sent-email-row-1"]').text()).toContain("Job waiting")
     expect(wrapper.get('[data-testid="sent-email-status-1"]').text()).toBe("Queued")
     expect(wrapper.get('[data-testid="sent-email-row-1"]').text()).toContain("Contribution reminder")
@@ -89,16 +89,25 @@ describe("the Sent page", () => {
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The same email is already queued")
   })
 
-  it("pages, refreshes, searches, and says when there is nothing", async () => {
+  it("draws each email as a row on a phone, opening the email", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
     const wrapper = await mount()
-    await wrapper.get('[data-testid="sent-emails-next"]').trigger("click")
+    vi.unstubAllGlobals()
+
+    const rows = wrapper.findAllComponents({name: "ManagementRow"})
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows[0]!.props("to")).toMatch(/^\/management\/mail\/sent\/\d+$/)
+    expect(rows[0]!.findComponent({name: "StateMark"}).exists()).toBe(true)
+  })
+
+  it("reads more as the list is scrolled, refreshes, searches, and says when there is nothing", async () => {
+    const wrapper = await mount()
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("more")
     await settle()
     expect(mockList).toHaveBeenLastCalledWith(expect.objectContaining({query: expect.objectContaining({page: 1})}))
-    await wrapper.get('[data-testid="sent-emails-previous"]').trigger("click")
-    await settle()
     await wrapper.get('[data-testid="sent-emails-refresh"]').trigger("click")
     await settle()
-    expect(mockList).toHaveBeenCalledTimes(4)
+    expect(mockList).toHaveBeenLastCalledWith(expect.objectContaining({query: expect.objectContaining({page: 0})}))
 
     await wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "lars")
     await vi.waitFor(() => expect(mockList).toHaveBeenLastCalledWith(expect.objectContaining({query: expect.objectContaining({search: "lars"})})))

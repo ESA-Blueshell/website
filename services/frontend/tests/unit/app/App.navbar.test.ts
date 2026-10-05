@@ -214,7 +214,7 @@ describe("App navbar behavior", () => {
   it("keeps a section's link beside its menu button, never inside it", async () => {
     const wrapper = await mountWithLinks()
 
-    for (const section of ["association", "committees", "competition"]) {
+    for (const section of ["association", "committees", "esports"]) {
       const button = wrapper.get(`[data-testid='nav-${section}-more']`)
       const link = wrapper.get(`[data-testid='nav-${section}']`)
       expect(button.element.tagName).toBe("BUTTON")
@@ -230,7 +230,7 @@ describe("App navbar behavior", () => {
     expect(destinations(wrapper)).not.toContain("/login")
 
     // A section's pages are drawn once it is opened, which is what a reader does to reach them.
-    await wrapper.get("[data-testid='nav-competition-more']").trigger("click")
+    await wrapper.get("[data-testid='nav-esports-more']").trigger("click")
     await settle()
 
     expect(destinations(wrapper)).toContain("/competition/geoguessr")
@@ -294,15 +294,15 @@ describe("App navbar behavior", () => {
     expect(destinations(wrapper)).toContain("/membership")
 
     await wrapper.get("[data-testid='nav-drawer-association-more']").trigger("click")
-    await wrapper.get("[data-testid='nav-drawer-competition-more']").trigger("click")
+    await wrapper.get("[data-testid='nav-drawer-esports-more']").trigger("click")
 
     expect(destinations(wrapper)).toContain("/blogs")
     expect(destinations(wrapper)).toContain("/competition/geoguessr")
     expect(destinations(wrapper)).toContain("/competition/trackmania")
-    expect(wrapper.get("[data-testid='nav-drawer-competition-more']").attributes("aria-expanded"))
+    expect(wrapper.get("[data-testid='nav-drawer-esports-more']").attributes("aria-expanded"))
       .toBe("true")
 
-    await wrapper.get("[data-testid='nav-drawer-competition-more']").trigger("click")
+    await wrapper.get("[data-testid='nav-drawer-esports-more']").trigger("click")
     expect(destinations(wrapper)).not.toContain("/competition/geoguessr")
 
     // Following a page closes the drawer, whether it is a section or a page under one.

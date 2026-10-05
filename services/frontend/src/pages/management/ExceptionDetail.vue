@@ -3,7 +3,11 @@
    concerned. Resolving it holds until it fires again. */
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
+import CutButton from "@/components/island/CutButton.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import PairList from "@/components/management/PairList.vue"
 import {type RecordedException, concernLink, loadException, markResolved, shortType} from "@/domains/exceptions"
 import store from "@/plugins/store"
 import {formatDate} from "@/utils/timestamps"
@@ -46,186 +50,115 @@ onMounted(load)
 </script>
 
 <template>
-  <div
-    class="exception"
-    data-testid="exception-detail"
+  <management-page
+    v-if="loaded && !fault"
+    :back="{to: '/management/exceptions', label: 'Exceptions'}"
+    eyebrow="System"
+    testid="exception-detail"
+    title="No such exception"
   >
-    <router-link
-      class="exception__back"
-      to="/management/exceptions"
-    >
-      Exceptions
-    </router-link>
-
     <p
-      v-if="loaded && !fault"
       class="exception__note"
       data-testid="exception-detail-missing"
     >
       There is no exception {{ id }}.
     </p>
-
-    <template v-if="fault">
-      <header class="exception__head">
-        <h1 class="exception__title">
-          {{ shortType(fault.exceptionType) }}
-        </h1>
-        <state-mark :kind="fault.resolvedAt ? 'in-step' : 'unreachable'">
-          {{ fault.resolvedAt ? "Resolved" : "Open" }}
-        </state-mark>
-        <button
-          v-if="!fault.resolvedAt"
-          class="exception__action"
-          data-testid="exception-resolve"
-          type="button"
-          @click="resolve"
-        >
-          Mark resolved
-        </button>
-      </header>
-
-      <p class="exception__note">
-        {{ fault.exceptionType }}
-      </p>
-
-      <dl
-        class="exception__facts"
-        data-testid="exception-facts"
-      >
-        <div
-          v-for="fact in facts"
-          :key="fact.label"
-        >
-          <dt>{{ fact.label }}</dt>
-          <dd>{{ fact.value }}</dd>
-        </div>
-      </dl>
-
-      <section class="exception__part">
-        <h2>What it concerned last</h2>
-        <p data-testid="exception-concern">
-          {{ fault.latestSource === "JOB" ? "The job" : "The request" }}
-          <router-link
-            v-if="concernLink(fault)"
-            data-testid="exception-concern-link"
-            :to="concernLink(fault) ?? ''"
-          >
-            {{ fault.latestConcern }}
-          </router-link>
-          <span v-else>{{ fault.latestConcern }}</span>
-        </p>
-      </section>
-
-      <section class="exception__part">
-        <h2>Latest message</h2>
-        <p data-testid="exception-message">
-          {{ fault.latestMessage || "It carried no message." }}
-        </p>
-        <pre
-          v-if="fault.latestStackTrace"
-          class="exception__trace"
-          data-testid="exception-stacktrace"
-        >{{ fault.latestStackTrace }}</pre>
-      </section>
+  </management-page>
+  <management-page
+    v-else-if="fault"
+    :back="{to: '/management/exceptions', label: 'Exceptions'}"
+    eyebrow="System · Exception"
+    testid="exception-detail"
+    :title="shortType(fault.exceptionType)"
+  >
+    <template #lede>
+      {{ fault.exceptionType }}
     </template>
-  </div>
+    <template
+      v-if="!fault.resolvedAt"
+      #actions
+    >
+      <cut-button
+        testid="exception-resolve"
+        @click="resolve"
+      >
+        Mark resolved
+      </cut-button>
+    </template>
+
+    <p class="exception__state">
+      <state-mark :kind="fault.resolvedAt ? 'in-step' : 'extra'">
+        {{ fault.resolvedAt ? "Resolved" : "Open" }}
+      </state-mark>
+    </p>
+    <pair-list
+      :pairs="facts"
+      testid="exception-facts"
+    />
+
+    <list-head title="What it concerned last" />
+    <p
+      class="exception__line"
+      data-testid="exception-concern"
+    >
+      {{ fault.latestSource === "JOB" ? "The job" : "The request" }}
+      <router-link
+        v-if="concernLink(fault)"
+        class="exception__link"
+        data-testid="exception-concern-link"
+        :to="concernLink(fault) ?? ''"
+      >
+        {{ fault.latestConcern }}
+      </router-link>
+      <span v-else>{{ fault.latestConcern }}</span>
+    </p>
+
+    <list-head title="Latest message" />
+    <p
+      class="exception__line"
+      data-testid="exception-message"
+    >
+      {{ fault.latestMessage || "It carried no message." }}
+    </p>
+    <pre
+      v-if="fault.latestStackTrace"
+      class="exception__trace"
+      data-testid="exception-stacktrace"
+    >{{ fault.latestStackTrace }}</pre>
+  </management-page>
 </template>
 
 <style scoped>
-.exception {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  max-width: 64rem;
-  padding: 2rem 2.4rem 3rem;
+.exception__state {
+  padding: 1rem 0 0.8rem;
 }
 
-.exception__back {
-  align-self: flex-start;
-  font-size: 0.84rem;
-  color: var(--color-brand);
+.exception__line {
+  margin-bottom: 0.8rem;
+  font-size: 0.92rem;
 }
 
-.exception__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-}
-
-.exception__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.3rem, 3vw, 1.9rem);
-}
-
-.exception__action {
-  margin-left: auto;
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
+.exception__link {
+  color: var(--color-brand-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .exception__note {
-  margin: 0;
+  margin-top: 1.4rem;
   color: var(--color-ash);
-  overflow-wrap: anywhere;
-}
-
-.exception__facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: 0.9rem 1.5rem;
-  margin: 0;
-}
-
-.exception__facts dt {
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
-}
-
-.exception__facts dd {
-  margin: 0.2rem 0 0;
-  overflow-wrap: anywhere;
-}
-
-.exception__part h2 {
-  margin: 0 0 0.5rem;
-  font-size: 0.8rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-ash);
-}
-
-.exception__part p {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.exception__part a {
-  color: var(--color-brand);
 }
 
 .exception__trace {
-  max-height: 32rem;
-  margin-top: 0.8rem;
+  max-height: 28rem;
   overflow: auto;
-  padding: 1rem;
+  padding: 1rem 1.2rem;
+  font-family: ui-monospace, monospace;
   font-size: 0.78rem;
+  line-height: 1.5;
   white-space: pre;
-  background: var(--band-ground);
-  border: 1px solid var(--color-hairline);
-}
-
-@media (max-width: 839px) {
-  .exception {
-    padding: 1.2rem 1.1rem 2rem;
-  }
+  color: var(--color-ash);
+  background-color: var(--color-pit);
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
 </style>

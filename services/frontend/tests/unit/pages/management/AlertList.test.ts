@@ -56,7 +56,6 @@ describe("the Alerts page", () => {
     expect(mockHide).toHaveBeenCalledWith({body: {key: "job-dead:4"}})
     expect(mockList).toHaveBeenCalledTimes(2)
 
-    await wrapper.find('[data-testid="alert-hidden-toggle"]').trigger("click")
     await wrapper.find('[data-testid="alert-show-exception-open:1"]').trigger("click")
     await settle()
     expect(mockShow).toHaveBeenCalledWith({body: {key: "exception-open:1"}})
@@ -79,5 +78,15 @@ describe("the Alerts page", () => {
 
     expect(wrapper.find('[data-testid="alert-list-empty"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="alert-hidden"]').exists()).toBe(false)
+  })
+
+  it("draws each alert as a row on a phone, naming where it comes from", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    const rows = wrapper.findAllComponents({name: "ManagementRow"})
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows[0]!.text()).toMatch(/Jobs|Exceptions|Brevo|Sent|Users/)
   })
 })

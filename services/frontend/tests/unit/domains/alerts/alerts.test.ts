@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest"
 import {AlertKind, hideAlert as hideSdk, listAlerts, showAlert as showSdk} from "@/services/api"
-import {type Alert, alertLink, alertTitle, hideAlert, loadAlerts, showAlert, useAlerts} from "@/domains/alerts"
+import {type Alert, alertLink, alertRow, alertTitle, hideAlert, loadAlerts, showAlert, useAlerts} from "@/domains/alerts"
 import {answer, emptyAnswer, refusal} from "../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
@@ -59,5 +59,20 @@ describe("reading an alert", () => {
   ])("words %o and links it", (one, title, link) => {
     expect(alertTitle(one)).toBe(title)
     expect(alertLink(one)).toBe(link)
+  })
+})
+
+describe("an alert as a short row", () => {
+  it.each([
+    [alert(AlertKind.TARGET_DRIFT, {subjectLabel: "Sitecie", count: 3}), "A list is out of step", "Sitecie · 3 people differ", "Brevo"],
+    [alert(AlertKind.TARGET_DRIFT, {count: 1}), "A list is out of step", "A list · 1 person differs", "Brevo"],
+    [alert(AlertKind.COHORT_WITHOUT_LIST, {subjectLabel: "Paid 2026"}), "A Brevo list is missing", "Paid 2026", "Brevo"],
+    [alert(AlertKind.COHORT_WITHOUT_LIST), "A Brevo list is missing", "A cohort", "Brevo"],
+    [alert(AlertKind.EMAIL_FAILED, {count: 2}), "2 emails failed or bounced", "This month", "Sent"],
+    [alert(AlertKind.JOB_DEAD), "1 job is dead", "After every retry", "Jobs"],
+    [alert(AlertKind.EXCEPTION_OPEN, {count: 4}), "4 exceptions are open", "Not resolved yet", "Exceptions"],
+    [alert(AlertKind.ROLE_AWAITING_TWO_FACTOR, {subjectLabel: "ada"}), "A role waits on two-factor", "@ada", "Users"],
+  ])("names %o, says what it is about and where it comes from", (one, name, meta, from) => {
+    expect(alertRow(one)).toEqual({name, meta, from})
   })
 })

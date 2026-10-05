@@ -18,6 +18,11 @@ class DiscordUnavailable(
     message: String,
 ) : RuntimeException(message)
 
+/** Discord would not let the bot do it: the bot lacks a permission where the change was to be made. */
+class DiscordRefused(
+    message: String,
+) : RuntimeException(message)
+
 /**
  * The server's roles, as the site keeps some of them in step: listing, holding, making and naming them.
  * Every call needs the bot; [available] says whether there is one in the server now.

@@ -193,7 +193,7 @@ const removed = async () => {
   await refreshSharedLists()
 }
 
-const backLabel = computed(() => (props.area === "casual" ? "Casual" : "Competition"))
+const backLabel = computed(() => (props.area === "casual" ? "Casual" : "Esports"))
 const count = (value: unknown) => (value == null ? "" : String(value))
 const toCount = (raw: string, handle: (value: number | null) => void) => handle(raw === "" ? null : Number(raw))
 </script>
@@ -202,7 +202,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
   <edit-page
     :accent="accent"
     :back="{to: back, label: backLabel}"
-    :eyebrow="game ? game.name : 'Casual and competition'"
+    :eyebrow="game ? game.name : 'Casual and esports'"
     testid="game-edit"
     :title="game ? 'Edit game' : 'Add a game'"
   >
@@ -221,7 +221,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
         :href="`/competition/${game.slug}`"
         testid="game-edit-see-competition"
       >
-        See it in competition
+        See it in esports
       </cut-button>
     </template>
 
@@ -308,7 +308,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
 
       <form-section
         testid="game-edit-competition"
-        title="Competition"
+        title="Esports"
       >
         <vv-field
           v-model="competitionIntro"
@@ -410,7 +410,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
           data-testid="game-edit-preview-competition"
         >
           <h3 class="game-previews__label">
-            Competition
+            Esports
           </h3>
           <preview-frame>
             <esports-game-head

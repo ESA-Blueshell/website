@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -147,6 +148,19 @@ class JdaChannelKeeperTest {
 
         verify(denying).complete()
         verify(deleting).complete()
+    }
+
+    @Test
+    fun `a channel the bot may not change is refused by name, with the permission it lacks`() {
+        val unseen: net.dv8tion.jda.api.exceptions.InsufficientPermissionException = mock()
+        whenever(unseen.permission).thenReturn(Permission.VIEW_CHANNEL)
+        doThrow(unseen).whenever(text).upsertPermissionOverride(sitecieRole)
+        doThrow(unseen).whenever(opened).delete()
+
+        assertThatThrownBy { keeper().open("1", "900", private = true) }
+            .isInstanceOf(net.blueshell.api.discord.api.DiscordRefused::class.java)
+            .hasMessageContaining("it lacks View Channel")
+        assertThatThrownBy { keeper().close("1", "900") }.isInstanceOf(net.blueshell.api.discord.api.DiscordRefused::class.java)
     }
 
     @Test

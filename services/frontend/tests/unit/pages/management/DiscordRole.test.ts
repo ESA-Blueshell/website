@@ -188,12 +188,12 @@ describe("a Discord role's page", () => {
     const wrapper = await mount()
 
     expect(wrapper.get('[data-testid="discord-role-unreadable"]').text()).toContain("Discord could not be read")
-    expect(wrapper.text()).toContain("Nothing on the site fills this role")
+    expect(wrapper.text()).toContain("Nothing on the site decides who holds this role")
 
     api.listRoleOpenings.mockResolvedValue({status: 200, data: []})
     api.listCataloguedChannels.mockResolvedValue({status: 200, data: []})
     const empty = await mount()
-    expect(empty.get('[data-testid="discord-role-opens-nothing"]').text()).toBe("The role opens nothing yet.")
+    expect(empty.get('[data-testid="discord-role-opens-nothing"]').text()).toBe("The role has access to no channel yet.")
     expect(empty.text()).toContain("Made by hand on Discord")
     await empty.get('[data-testid="discord-create-channel"]').trigger("click")
     await settle()
@@ -230,7 +230,7 @@ describe("a Discord role's page", () => {
     mockStore.getters.isAdmin = true
     const wrapper = await mount()
 
-    wrapper.findAllComponents({name: "CheckBox"}).find((one) => one.props("testid") === "discord-role-drift-select-1")!.vm.$emit("update:modelValue", true)
+    await wrapper.get('[data-testid="discord-role-drift-select-1"]').trigger("change")
     await settle()
     expect(wrapper.get('[data-testid="discord-role-drift-bulk-push"]').text()).toBe("Add the role: 1")
     await wrapper.get('[data-testid="discord-role-drift-bulk-push"]').trigger("click")
@@ -243,7 +243,7 @@ describe("a Discord role's page", () => {
     await settle()
     expect(api.reconcileTarget).toHaveBeenCalled()
 
-    expect(wrapper.get('[data-testid="discord-role-enforce"]').text()).toContain("Off.")
+    expect(wrapper.findComponent({name: "CutRow"}).text()).toContain("Off.")
     await wrapper.get('[data-testid="discord-role-enforce"]').trigger("click")
     await settle()
     expect(api.enforceTarget).toHaveBeenCalledWith(expect.objectContaining({path: {id: 4, targetId: 40}}))

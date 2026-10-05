@@ -3,12 +3,18 @@
    ticked ones resolved together after a plan is confirmed, and the resolutions so far. A person
    with no account on a system that cannot make one is linked from their own page instead. */
 import {computed, ref} from "vue"
-import CheckBox from "@/components/island/CheckBox.vue"
+import CutButton from "@/components/island/CutButton.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import SelectionBar from "@/components/island/SelectionBar.vue"
 import StateMark from "@/components/island/StateMark.vue"
-import {formatDateNoSeconds} from "@/utils/timestamps"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
+import PersonLink from "@/components/management/PersonLink.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
+import {formatMoment} from "@/utils/timestamps"
 import type {Cohort, CohortMember, TargetMapping} from "../adapters/cohorts"
 import {type DriftAction, useDriftResolution} from "../composables/useDriftResolution"
 import {adoptWord, driftRowsOf, driftWords, whyOf} from "../listPage"
@@ -50,6 +56,30 @@ const bulkActions = computed(() =>
     .map((action) => ({action, count: resolution.selectedFor(action, reachable.value)}))
     .filter((one) => one.count > 0))
 const ticked = (row: CohortMember) => selection.value.has(row.targetMemberId)
+
+const COLUMNS: TableColumn[] = [
+  {key: "who", label: "Person", wrap: true},
+  {key: "state", label: "State"},
+  {key: "why", label: "Why", wrap: true},
+]
+const LOG_COLUMNS: TableColumn[] = [
+  {key: "when", label: "When"},
+  {key: "by", label: "By"},
+  {key: "what", label: "What", wrap: true},
+  {key: "who", label: "Who it concerned"},
+]
+
+/** How the people who can be selected stand against the selection; nobody reachable leaves the head unticked. */
+const headerState = computed(() => {
+  const picked = reachable.value.filter(ticked).length
+  if (picked === 0) return "unchecked"
+  return picked === reachable.value.length ? "checked" : "indeterminate"
+})
+/** The head's tick takes everyone reachable, or lets go of them once they are all taken. */
+const toggleShown = () => {
+  const all = headerState.value === "checked"
+  for (const row of reachable.value) if (ticked(row) === all) resolution.toggle(row)
+}
 const prepareSelected = (action: DriftAction) => resolution.prepare(action, reachable.value.filter(ticked))
 const planTitle = computed(() => (plan.value ? `${actionWord(plan.value.action)}: ${planCount.value} ${planCount.value === 1 ? "person" : "people"}` : ""))
 const planPeople = computed(() => plan.value?.groups.flatMap((group) => group.people) ?? [])
@@ -58,14 +88,7 @@ const markOf = (row: CohortMember) => (row.sync === "ONLY_HERE" ? "missing" : "e
 </script>
 
 <template>
-  <h2 class="drift__part">
-    Drift
-  </h2>
-  <search-box
-    v-model="search"
-    label="Search for a user"
-    :testid="`${testid}-search`"
-  />
+  <list-head title="Drift" />
   <p
     v-if="resolution.message.value"
     class="drift__note"
@@ -82,35 +105,52 @@ const markOf = (row: CohortMember) => (row.sync === "ONLY_HERE" ? "missing" : "e
   >
     {{ resolution.error.value }}
   </p>
-  <p
-    v-if="drift.length === 0"
-    class="drift__note"
-    :data-testid="`${testid}-in-step`"
+  <management-table
+    :columns="COLUMNS"
+    :header-state="headerState"
+    :row-key="(row) => row.targetMemberId"
+    :row-testid="(row) => `${testid}-row-${row.targetMemberId}`"
+    :rows="drift"
+    :testid="`${testid}-drift`"
+    @toggle-shown="toggleShown"
   >
-    {{ search ? "Nobody drifting matches." : "Everybody is where they should be." }}
-  </p>
-  <ul class="drift__rows">
-    <li
-      v-for="row in drift"
-      :key="row.targetMemberId"
-      class="drift__row"
-      :data-testid="`${testid}-row-${row.targetMemberId}`"
-    >
-      <check-box
-        :disabled="row.unreachable"
-        :label="`Select ${memberName(row)}`"
-        :model-value="ticked(row)"
-        :testid="`${testid}-select-${row.targetMemberId}`"
-        @update:model-value="resolution.toggle(row)"
+    <template #count>
+      {{ drift.length }} {{ drift.length === 1 ? "person differs" : "people differ" }}
+    </template>
+    <template #search>
+      <search-box
+        v-model="search"
+        label="Search for a user"
+        :testid="`${testid}-search`"
       />
-      <span class="drift__who">
-        <router-link
-          v-if="row.userId != null"
-          :to="`/management/users/${row.userId}`"
-        >{{ memberName(row) }}</router-link>
-        <span v-else>{{ words.nameless }}</span>
-        <span class="drift__sub">{{ row.userEmail ?? row.externalLabel ?? "" }}</span>
-      </span>
+    </template>
+    <template #empty>
+      <span :data-testid="`${testid}-in-step`">{{ search ? "Nobody who differs matches." : "Everybody is where they should be." }}</span>
+    </template>
+    <template #check="{row}">
+      <row-check
+        v-if="!row.unreachable"
+        :checked="ticked(row)"
+        :label="`Select ${memberName(row)}`"
+        :testid="`${testid}-select-${row.targetMemberId}`"
+        @toggle="resolution.toggle(row)"
+      />
+    </template>
+    <template #who="{row}">
+      <router-link
+        v-if="row.userId != null"
+        class="mg-name"
+        :to="`/management/users/${row.userId}`"
+      >
+        {{ memberName(row) }}
+      </router-link>
+      <span
+        v-else
+        class="mg-name"
+      >{{ words.nameless }}</span>
+      <span class="mg-sub">{{ row.userEmail ?? row.externalLabel ?? "" }}</span>
+    </template>
+    <template #state="{row}">
       <state-mark
         v-if="row.unreachable"
         kind="unreachable"
@@ -121,77 +161,104 @@ const markOf = (row: CohortMember) => (row.sync === "ONLY_HERE" ? "missing" : "e
         v-else
         :kind="markOf(row)"
       />
-      <span class="drift__sub drift__why">{{ whyOf(row, cohort.label, words) }}</span>
-      <span class="drift__row-acts">
-        <router-link
-          v-if="row.unreachable && row.userId != null"
-          class="drift__mini"
-          :data-testid="`${testid}-link-account-${row.targetMemberId}`"
-          :to="`/management/users/${row.userId}`"
+    </template>
+    <template #why="{row}">
+      <span class="mg-quiet">{{ whyOf(row, cohort.label, words) }}</span>
+    </template>
+    <template #acts="{row}">
+      <mini-button
+        v-if="row.unreachable && row.userId != null"
+        :testid="`${testid}-link-account-${row.targetMemberId}`"
+        :to="`/management/users/${row.userId}`"
+      >
+        Link an account
+      </mini-button>
+      <mini-button
+        v-for="action in rowActions(row)"
+        :key="action"
+        :disabled="working"
+        :testid="`${testid}-${action}-${row.targetMemberId}`"
+        :tone="action === 'remove' ? 'danger' : 'plain'"
+        @click="resolution.prepare(action, [row])"
+      >
+        {{ actionWord(action) }}
+      </mini-button>
+    </template>
+    <template #phone="{row}">
+      <management-row
+        :meta="whyOf(row, cohort.label, words)"
+        :name="row.userId != null ? memberName(row) : words.nameless"
+        :testid="`${testid}-row-${row.targetMemberId}`"
+      >
+        <template
+          v-if="!row.unreachable"
+          #check
         >
-          Link an account
-        </router-link>
-        <button
-          v-for="action in rowActions(row)"
-          :key="action"
-          class="drift__mini"
-          :class="{'drift__mini--danger': action === 'remove'}"
-          :data-testid="`${testid}-${action}-${row.targetMemberId}`"
-          :disabled="working"
-          type="button"
-          @click="resolution.prepare(action, [row])"
+          <row-check
+            :checked="ticked(row)"
+            :label="`Select ${memberName(row)}`"
+            :testid="`${testid}-select-${row.targetMemberId}`"
+            @toggle="resolution.toggle(row)"
+          />
+        </template>
+        <state-mark
+          v-if="row.unreachable"
+          kind="unreachable"
         >
-          {{ actionWord(action) }}
-        </button>
-      </span>
-    </li>
-  </ul>
+          {{ words.unreachableMark }}
+        </state-mark>
+        <state-mark
+          v-else
+          :kind="markOf(row)"
+        />
+      </management-row>
+    </template>
+  </management-table>
+
   <selection-bar
     :count="selection.size"
     :testid="`${testid}-selection`"
     @clear="resolution.clear"
   >
-    <button
+    <cut-button
       v-for="one in bulkActions"
       :key="one.action"
-      class="drift__action"
-      :data-testid="`${testid}-bulk-${one.action}`"
       :disabled="working"
-      type="button"
+      small
+      :testid="`${testid}-bulk-${one.action}`"
       @click="prepareSelected(one.action)"
     >
       {{ actionWord(one.action) }}: {{ one.count }}
-    </button>
+    </cut-button>
   </selection-bar>
 
-  <h2 class="drift__part">
-    Resolved
-  </h2>
-  <table
+  <list-head title="Resolved" />
+  <management-table
     v-if="resolutions.length"
-    class="drift__log"
-    :data-testid="`${testid}-resolved`"
+    :columns="LOG_COLUMNS"
+    :row-key="(one) => `${one.resolvedAt}-${one.action}-${one.personName}`"
+    :rows="resolutions"
+    :testid="`${testid}-resolved`"
   >
-    <thead>
-      <tr>
-        <th>When</th>
-        <th>Who</th>
-        <th>What</th>
-        <th>Who it concerned</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr
-        v-for="(one, index) in resolutions"
-        :key="index"
-      >
-        <td>{{ formatDateNoSeconds(one.resolvedAt) }}</td>
-        <td>{{ one.resolvedByName ?? "The site" }}</td>
-        <td>{{ words.resolved[one.action] }}</td>
-        <td>{{ one.personName ?? "" }}</td>
-      </tr>
-    </tbody>
-  </table>
+    <template #when="{row}">
+      {{ formatMoment(row.resolvedAt) }}
+    </template>
+    <template #by="{row}">
+      <person-link
+        :name="row.resolvedByName ?? 'The site'"
+        :user-id="row.resolvedById"
+      />
+    </template>
+    <template #what="{row}">
+      {{ words.resolved[row.action] }}
+    </template>
+    <template #who="{row}">
+      <person-link
+        :name="row.personName"
+        :user-id="row.userId"
+      />
+    </template>
+  </management-table>
   <p
     v-else
     class="drift__note"
@@ -217,152 +284,35 @@ const markOf = (row: CohortMember) => (row.sync === "ONLY_HERE" ? "missing" : "e
       </li>
     </ul>
     <template #footer>
-      <button
-        class="drift__action drift__action--main"
-        :data-testid="`${testid}-plan-confirm`"
+      <cut-button
         :disabled="working"
-        type="button"
+        :testid="`${testid}-plan-confirm`"
+        tone="solid"
         @click="resolution.confirm"
       >
         {{ plan ? actionWord(plan.action) : "" }}
-      </button>
+      </cut-button>
     </template>
   </modal-dialog>
 </template>
 
 <style scoped>
-.drift__part {
-  margin: 1rem 0 0;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-ash);
-}
-
 .drift__note {
-  margin: 0;
-  max-width: 48rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
   color: var(--color-ash);
 }
 
 .drift__failure {
-  margin: 0;
-  color: var(--color-error, #e5484d);
-}
-
-.drift__action,
-.drift__mini {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.drift__mini {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
-}
-
-/* Red text falls below contrast on the page; the border carries the warning instead. */
-.drift__mini--danger {
-  border-color: var(--color-error, #e5484d);
-}
-
-.drift__action--main {
-  align-self: flex-start;
-  border-color: var(--color-brand);
-  color: var(--color-brand);
-}
-
-.drift__action:disabled,
-.drift__mini:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.drift__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.drift__row {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) 6rem minmax(0, 1.4fr) auto;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.drift__who {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.drift__who a {
-  color: var(--color-chalk);
-  font-weight: 600;
-}
-
-.drift__sub {
-  display: block;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-}
-
-.drift__why {
-  white-space: normal;
-}
-
-.drift__row-acts {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.4rem;
-}
-
-.drift__log {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.86rem;
-}
-
-.drift__log th,
-.drift__log td {
-  padding: 0.5rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-  text-align: left;
-}
-
-.drift__log th {
-  font-weight: 400;
-  color: var(--color-ash);
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+  color: var(--color-danger);
 }
 
 .drift__plan {
-  margin: 0;
-  padding-left: 1.2rem;
-}
-
-@media (max-width: 839px) {
-  .drift__row {
-    grid-template-columns: 2rem minmax(0, 1fr) auto;
-  }
-
-  .drift__why,
-  .drift__row-acts {
-    grid-column: 2 / -1;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.92rem;
 }
 </style>

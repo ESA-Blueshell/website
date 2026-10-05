@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount, shallowMount} from "@vue/test-utils"
 import JobRunForm from "@/components/management/JobRunForm.vue"
 import {settle} from "../../helpers/testUtils"
 
@@ -49,7 +49,7 @@ describe("JobRunForm", () => {
     const wrapper = await mountForm()
 
     expect(mockListJobTypes).toHaveBeenCalledTimes(1)
-    expect((wrapper.vm as any).typeOptions.map((option: {value: string}) => option.value))
+    expect((wrapper.vm as any).typeOptions.map((option: {key: string}) => option.key))
       .toEqual(["cohort.reconcile", "contact.sync", "contact.sync-all"])
   })
 
@@ -154,14 +154,32 @@ describe("JobRunForm", () => {
     ])
     const wrapper = await mountForm()
 
-    await wrapper.findComponent({name: "VSelect"}).vm.$emit("update:modelValue", "everything")
+    ;(wrapper.vm as any).selectedType = "everything"
     await settle()
     for (const [name, value] of [["UserPicker", 1], ["TargetPicker", 2], ["EventPicker", 3], ["ContributionPeriodPicker", 4], ["EnumPicker", "ADD"]] as const) {
       await wrapper.findComponent({name}).vm.$emit("update:modelValue", value)
     }
-    await wrapper.findComponent({name: "VTextField"}).vm.$emit("update:modelValue", "hello")
+    ;(wrapper.vm as any).fieldValues.note = "hello"
 
     expect((wrapper.vm as any).fieldValues).toEqual({userId: 1, cohortId: 2, eventId: 3, periodId: 4, intent: "ADD", note: "hello"})
+  })
+
+  it("takes the job from its picker and a plain field from its input", async () => {
+    mockListJobTypes.mockResolvedValue([{type: "note.write", payloadFields: [{name: "note", type: "String", required: true}, {name: "count", type: "Int", required: false}]}])
+    const wrapper = mount(JobRunForm, {props: {preset: null}})
+    await settle()
+
+    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", "note.write")
+    await settle()
+    expect((wrapper.vm as any).selectedType).toBe("note.write")
+    const inputs = wrapper.findAllComponents({name: "TextInput"})
+    expect(inputs).toHaveLength(2)
+    inputs[0]!.vm.$emit("update:modelValue", "hello")
+    inputs[1]!.vm.$emit("update:modelValue", "3")
+    await settle()
+    expect((wrapper.vm as any).fieldValues).toEqual({note: "hello", count: "3"})
+    expect(inputs[1]!.props("type")).toBe("number")
+    wrapper.unmount()
   })
 
   it("draws the refusal it was given", async () => {
@@ -172,7 +190,7 @@ describe("JobRunForm", () => {
     await (wrapper.vm as any).submit()
     await settle()
 
-    expect(wrapper.find('[data-testid="job-run-error"]').text()).toBe("No.")
+    expect(wrapper.findComponent({name: "NoticeBox"}).text()).toBe("No.")
   })
 
   it("keeps an empty list of types when they cannot be read", async () => {

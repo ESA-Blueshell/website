@@ -153,7 +153,7 @@ class AccountSecuritySystemTest : PlaywrightTestBase() {
         UserManagerHelper.search(page, member.username)
         UserManagerHelper.openTab(page, memberId, "account")
         byTestId("account-security-two-factor-chip").waitFor()
-        byTestId("account-security-reason-field").locator("textarea").first().fill("lost the phone and the codes")
+        byTestId("account-security-reason-field").locator("input").first().fill("lost the phone and the codes")
         page.awaitResponseFrom(
             control = byTestId("account-security-reset-btn"),
             expected = "POST /users/{id}/two-factor/reset",

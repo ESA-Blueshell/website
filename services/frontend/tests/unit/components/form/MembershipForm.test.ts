@@ -2,26 +2,20 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import {validate} from "vee-validate"
 import MembershipForm from "@/components/form/MembershipForm.vue"
-import {MemberType} from "@/services/api"
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
-const {mockStartMembershipAsBoard, mockStartOwnMembership, mockSaveMembership, mockApplyForMembership, mockValidate} =
-  vi.hoisted(() => ({
-    mockStartMembershipAsBoard: vi.fn(),
-    mockStartOwnMembership: vi.fn(),
-    mockSaveMembership: vi.fn(),
-    mockApplyForMembership: vi.fn(),
-    mockValidate: vi.fn(),
-  }))
+const {mockStartOwnMembership, mockApplyForMembership, mockValidate} = vi.hoisted(() => ({
+  mockStartOwnMembership: vi.fn(),
+  mockApplyForMembership: vi.fn(),
+  mockValidate: vi.fn(),
+}))
 
 vi.mock("@/domains/user", async () => {
   const {MemberType} = await import("@/services/api")
   return {
     MemberType,
-    startMembershipAsBoard: mockStartMembershipAsBoard,
     startOwnMembership: mockStartOwnMembership,
-    saveMembership: mockSaveMembership,
     applyForMembership: mockApplyForMembership,
   }
 })
@@ -46,42 +40,10 @@ const vvFieldStub = {
   template: "<div class='vv-field-stub' :data-name='name' :data-rules='rules' />",
 }
 const formStub = {template: "<div><slot v-bind='{ meta: { valid: true } }' /></div>"}
-const emittingStub = (name: string) => ({
-  name,
-  props: ["modelValue"],
-  emits: ["update:modelValue"],
-  template: "<div />",
-})
 const submitButtonStub = {
   name: "SubmitButton",
   props: ["text", "loading", "disabled"],
   template: "<button :data-testid=\"$attrs['data-testid']\" />",
-}
-
-function makeNewMembership(): import("@/services/api").MembershipResponse {
-  return {
-    id: 0,
-    userId: 42,
-    startDate: "2025-06-01",
-    memberType: MemberType.REGULAR,
-    incasso: false,
-    version: 0,
-    createdAt: "",
-    updatedAt: "",
-  } as import("@/services/api").MembershipResponse
-}
-
-function makeExistingMembership(): import("@/services/api").MembershipResponse {
-  return {
-    id: 99,
-    userId: 42,
-    startDate: "2025-01-01",
-    memberType: MemberType.REGULAR,
-    incasso: false,
-    version: 2,
-    createdAt: "2025-01-01T00:00:00.000Z",
-    updatedAt: "2025-01-01T00:00:00.000Z",
-  }
 }
 
 function rulesByName(wrapper: ReturnType<typeof mount>) {
@@ -130,73 +92,17 @@ describe("MembershipForm", () => {
     expect(result.errors[0]).toBe("You must accept the membership conditions to continue.")
   })
 
-  // ── Board mode ─────────────────────────────────────────────────────────────
-
-  it("board mode shows startDate and memberType fields with required rules", () => {
-    const wrapper = mount(MembershipForm, {
-      props: {userId: 42},
-      global: {
-        stubs: {
-          Form: formStub,
-          VvField: vvFieldStub,
-        },
-      },
-    })
-    const rules = rulesByName(wrapper)
-    expect(rules).toMatchObject({
-      startDate: "required",
-      memberType: "required",
-    })
-    // No consent field in board mode
-    expect(rules["consented"]).toBeUndefined()
-  })
-
-  it("board create: save() calls boardCreateMembership and emits submitted(true)", async () => {
-    const membership = makeNewMembership()
-    const created = {...membership, id: 5}
-    mockStartMembershipAsBoard.mockResolvedValue(created)
-
-    const wrapper = mount(MembershipForm, {
-      props: {userId: 42, showSubmit: true},
-      attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
-    })
-
-    await (wrapper.vm as any).save()
-
-    expect(mockStartMembershipAsBoard).toHaveBeenCalledWith(42, expect.any(Object))
-    expect(wrapper.emitted("submitted")).toEqual([[true]])
-  })
-
-  it("board update: save() calls updateMembership when membership has an id", async () => {
-    const membership = makeExistingMembership()
-    mockSaveMembership.mockResolvedValue(membership)
-
-    const wrapper = mount(MembershipForm, {
-      props: {userId: 42, showSubmit: true},
-      attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
-    })
-
-    await (wrapper.vm as any).save()
-
-    expect(mockSaveMembership).toHaveBeenCalledWith(99, expect.any(Object))
-    expect(wrapper.emitted("submitted")).toEqual([[true]])
-  })
-
-  it("self-service create: save() calls createMembership when no userId prop", async () => {
-    mockStartOwnMembership.mockResolvedValue(makeExistingMembership())
+  it("a signed-in account applies through its own route", async () => {
+    mockStartOwnMembership.mockResolvedValue({emailConfirmed: true, membershipStarted: true})
 
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true},
-      attrs: {"onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
     })
 
     await (wrapper.vm as any).save()
 
     expect(mockStartOwnMembership).toHaveBeenCalled()
-    expect(mockStartMembershipAsBoard).not.toHaveBeenCalled()
     expect(wrapper.emitted("submitted")).toEqual([[true]])
   })
 
@@ -205,7 +111,6 @@ describe("MembershipForm", () => {
 
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
-      attrs: {"onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
     })
 
@@ -223,7 +128,6 @@ describe("MembershipForm", () => {
 
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
-      attrs: {"onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
     })
 
@@ -236,7 +140,6 @@ describe("MembershipForm", () => {
 
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
-      attrs: {"onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
     })
 
@@ -246,37 +149,12 @@ describe("MembershipForm", () => {
     expect(wrapper.emitted("submitted")).toEqual([[false]])
   })
 
-  it("board mode writes every field edit back to the membership", async () => {
-    const membership = makeNewMembership()
-    const wrapper = mount(MembershipForm, {
-      props: {userId: 42},
-      attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, VCheckbox: emittingStub("VCheckbox")}},
-    })
-
-    await fieldNamed(wrapper, "startDate").vm.$emit("update:modelValue", "2026-03-01")
-    await fieldNamed(wrapper, "endDate").vm.$emit("update:modelValue", "2026-09-01")
-    await fieldNamed(wrapper, "memberType").vm.$emit("update:modelValue", MemberType.ALUMNI)
-    await wrapper.findComponent({name: "VCheckbox"}).vm.$emit("update:modelValue", true)
-
-    expect(membership).toMatchObject({
-      startDate: "2026-03-01",
-      endDate: "2026-09-01",
-      memberType: MemberType.ALUMNI,
-      incasso: true,
-    })
-  })
-
   it("self-service sends the acceptance and nothing else", async () => {
-    const membership = makeNewMembership()
-    const wrapper = mount(MembershipForm, {
-      attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
-    })
+    const wrapper = mount(MembershipForm, {global: {stubs: {Form: formStub, VvField: vvFieldStub}}})
 
     await fieldNamed(wrapper, "consented").vm.$emit("update:modelValue", true)
 
-    mockStartOwnMembership.mockResolvedValue(makeExistingMembership())
+    mockStartOwnMembership.mockResolvedValue({emailConfirmed: true, membershipStarted: true})
     await (wrapper.vm as any).save()
 
     // The member type is the association's call, not the applicant's.
@@ -287,33 +165,30 @@ describe("MembershipForm", () => {
   // has to arrive on that field. Runs against the real <Form> and real VvField, so it
   // fails if formRef never populates.
   it("a refused field lands on the field the api named", async () => {
-    mockSaveMembership.mockRejectedValue({
+    mockStartOwnMembership.mockRejectedValue({
       response: {
         status: 400,
         data: {
           status: 400,
-          errors: [{objectName: "membership", field: "startDate", message: "Pick a start date in the future."}],
+          errors: [{objectName: "membership", field: "conditionsAccepted", message: "Accept the conditions first."}],
         },
       },
     })
 
-    const wrapper = mount(MembershipForm, {
-      props: {userId: 42, showSubmit: true},
-      attrs: {modelValue: makeExistingMembership(), "onUpdate:modelValue": vi.fn()},
-    })
+    const wrapper = mount(MembershipForm, {props: {showSubmit: true}})
 
     await (wrapper.vm as any).save()
     await flushPromises()
 
-    expect(wrapper.text()).toContain("Pick a start date in the future.")
+    expect(wrapper.text()).toContain("Accept the conditions first.")
   })
 
   it("submitTestId is forwarded to SubmitButton as data-testid", () => {
     const wrapper = mount(MembershipForm, {
-      props: {userId: 42, showSubmit: true, submitTestId: "manage-membership-create-btn"},
+      props: {showSubmit: true, submitTestId: "membership-apply-btn"},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
     })
     const btn = wrapper.find("button")
-    expect(btn.attributes("data-testid")).toBe("manage-membership-create-btn")
+    expect(btn.attributes("data-testid")).toBe("membership-apply-btn")
   })
 })

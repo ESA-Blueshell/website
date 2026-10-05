@@ -4,7 +4,8 @@
    Discord is left as it is until the board sets it back. Each channel can be archived. */
 import {computed, onMounted, ref} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
-import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import store from "@/plugins/store"
 import {
   ChannelAccess,
@@ -28,9 +29,9 @@ const WORDS: Record<ChannelAccess, string> = {
   [ChannelAccess.WRITE]: "read and write",
 }
 const everyoneOptions = [
-  {key: ChannelAccess.HIDDEN, label: "Hidden"},
-  {key: ChannelAccess.READ, label: "Read"},
-  {key: ChannelAccess.WRITE, label: "Write"},
+  {key: ChannelAccess.HIDDEN, label: "Cannot see the channels"},
+  {key: ChannelAccess.READ, label: "Can read"},
+  {key: ChannelAccess.WRITE, label: "Can read and write"},
 ]
 const memberOptions = everyoneOptions.slice(1)
 
@@ -77,20 +78,36 @@ onMounted(async () => {
     :data-testid="testid"
   >
     <div class="game-access__choices">
-      <span class="game-access__label">Everybody in the server</span>
-      <segmented-choice
-        :model-value="policy.everyone"
-        :options="everyoneOptions"
-        :testid-prefix="`${testid}-everyone`"
-        @update:model-value="(key: string) => change('everyone', key)"
-      />
-      <span class="game-access__label">Members</span>
-      <segmented-choice
-        :model-value="policy.members"
-        :options="memberOptions"
-        :testid-prefix="`${testid}-members`"
-        @update:model-value="(key: string) => change('members', key)"
-      />
+      <form-field
+        label="Everybody in the server"
+        :testid="`${testid}-everyone-field`"
+      >
+        <template #default="{controlId, labelId}">
+          <search-picker
+            :control-id="controlId"
+            :labelled-by="labelId"
+            :options="everyoneOptions"
+            :selected-key="policy.everyone"
+            :testid-prefix="`${testid}-everyone`"
+            @pick="(key: string) => change('everyone', key)"
+          />
+        </template>
+      </form-field>
+      <form-field
+        label="Members"
+        :testid="`${testid}-members-field`"
+      >
+        <template #default="{controlId, labelId}">
+          <search-picker
+            :control-id="controlId"
+            :labelled-by="labelId"
+            :options="memberOptions"
+            :selected-key="policy.members"
+            :testid-prefix="`${testid}-members`"
+            @pick="(key: string) => change('members', key)"
+          />
+        </template>
+      </form-field>
     </div>
     <p
       v-if="state.channels.length === 0"
@@ -112,9 +129,10 @@ onMounted(async () => {
           :data-testid="`${testid}-differs-${channel.id}`"
         >On Discord {{ said(channel.state.actual) }}. Discord is left as it is.</span>
         <cut-button
-          tone="quiet"
           :disabled="saving"
+          small
           :testid="`${testid}-archive-${channel.id}`"
+          tone="quiet"
           @click="archive(channel.id, channel.name)"
         >
           Archive
@@ -126,9 +144,10 @@ onMounted(async () => {
       class="game-access__label"
     >
       <cut-button
-        tone="quiet"
         :disabled="saving"
+        small
         :testid="`${testid}-rewrite`"
+        tone="quiet"
         @click="save(policy)"
       >
         Set {{ differing.length === 1 ? "it" : "them" }} back on Discord
@@ -146,9 +165,14 @@ onMounted(async () => {
 
 .game-access__choices {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.4rem 0.8rem;
-  align-items: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem 1.2rem;
+}
+
+@media (--phone) {
+  .game-access__choices {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .game-access__label {

@@ -68,7 +68,7 @@ describe("a conversation in the inbox", () => {
     const wrapper = await mount()
 
     expect(api.findConversation).toHaveBeenCalledWith({path: {id: 2}})
-    expect(wrapper.get('[data-testid="inbox-message-state"]').text()).toBe("Inbox · New")
+    expect(wrapper.get('[data-testid="inbox-message-head-eyebrow"]').text()).toBe("Inbox · New")
     expect(wrapper.text()).toContain("Lars Mulder and the site, 2 emails")
     expect(wrapper.get('[data-testid="inbox-message-item-0"]').text()).toContain("The site · Your contribution")
     expect(wrapper.get('[data-testid="inbox-message-item-0"] .conversation__link').attributes("to")).toBe("/management/mail/sent/9")
@@ -105,7 +105,7 @@ describe("a conversation in the inbox", () => {
 
     await wrapper.get('[data-testid="inbox-mark-handled"]').trigger("click")
     await settle()
-    expect(wrapper.get('[data-testid="inbox-message-state"]').text()).toBe("Inbox · Handled")
+    expect(wrapper.get('[data-testid="inbox-message-head-eyebrow"]').text()).toBe("Inbox · Handled")
     expect(wrapper.find('[data-testid="inbox-message-failure"]').exists()).toBe(false)
 
     api.findConversation.mockResolvedValueOnce({status: 404, error: {code: "InboxMessageNotFound"}})

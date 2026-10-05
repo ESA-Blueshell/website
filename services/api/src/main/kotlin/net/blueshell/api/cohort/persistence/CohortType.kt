@@ -37,17 +37,20 @@ enum class CohortType {
 
     /** Kandi: the next board, from when it is named until the day it takes office. */
     KANDI,
+
+    /** Everybody who sat on one board, kept after it hands over. Pivots on `BOARD`. */
+    BOARD_YEAR_MEMBERS,
     ;
 
     /** Whether registering a cohort of this type makes it a Brevo list; the others exist for Discord and Workspace. */
-    val listedOnBrevo: Boolean get() = this != ACTIVISTS && this != CURRENT_MEMBERS && this != TEAM_PLAYERS
+    val listedOnBrevo: Boolean get() = this !in setOf(ACTIVISTS, CURRENT_MEMBERS, TEAM_PLAYERS, BOARD_YEAR_MEMBERS)
 
     /** The bucket the dashboard browses by: every per-period cohort collapses into PERIODS. */
     fun category(): CohortCategory =
         when (this) {
             COMMITTEE_MEMBERS -> CohortCategory.COMMITTEES
             PERIOD_PAYERS, PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS -> CohortCategory.PERIODS
-            NEWSLETTER_SUBSCRIBERS, ACTIVISTS, CURRENT_MEMBERS, BOARD, KANDI -> CohortCategory.MEMBERS
+            NEWSLETTER_SUBSCRIBERS, ACTIVISTS, CURRENT_MEMBERS, BOARD, KANDI, BOARD_YEAR_MEMBERS -> CohortCategory.MEMBERS
             TEAM_PLAYERS -> CohortCategory.TEAMS
         }
 }

@@ -1,15 +1,18 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import {useStore} from "vuex"
-import ConfirmationDialog from "@/components/common/modals/ConfirmationDialog.vue"
-import MembershipForm from "@/components/form/MembershipForm.vue"
+import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import StateMark from "@/components/island/StateMark.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MembershipFields from "@/components/management/MembershipFields.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
 import {
-  IncassoStanding,
   deleteOneMembership,
   endOneMembership,
   listDeletedMembershipsFor,
   listMembershipsFor,
-  MemberType,
   type MembershipResponse,
   reopenOneMembership,
   restoreOneMembership,
@@ -17,6 +20,7 @@ import {
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import type {TypedStore} from "@/plugins/store"
 import {memberTypeLabel} from "@/utils/memberType"
+import {formatDay} from "@/utils/timestamps"
 
 /* A person's memberships, newest first: start, edit, end, resume, delete and, for an admin,
    restore a deleted one, all in place. */
@@ -28,6 +32,12 @@ const emit = defineEmits<{(e: "changed"): void}>()
 const store = useStore<TypedStore>()
 const isAdmin = computed(() => store.getters.isAdmin)
 
+const COLUMNS: TableColumn[] = [
+  {key: "started", label: "Started"},
+  {key: "ends", label: "Ends"},
+  {key: "type", label: "Type"},
+]
+
 const memberships = ref<MembershipResponse[]>([])
 const deletedMemberships = ref<MembershipResponse[]>([])
 const isLoading = ref(false)
@@ -37,24 +47,7 @@ const addOpen = ref(false)
 
 const hasActive = computed(() => memberships.value.some((m) => !m.endDate))
 
-/** The create form's blank model, for MembershipForm in board mode. */
-const blankMembership = (): MembershipResponse => ({
-  id: 0,
-  userId: props.userId,
-  startDate: "",
-  memberType: MemberType.REGULAR,
-  incasso: false,
-  incassoStanding: IncassoStanding.NONE,
-  pending: false,
-  version: 0,
-  createdAt: "",
-  updatedAt: "",
-})
-
-const createModel = ref<MembershipResponse>(blankMembership())
-
-// Inline edit models per membership id — each is a copy of the membership for editing
-const editModels = ref<Record<number, MembershipResponse | undefined>>({})
+// The memberships whose edit form is open under the table.
 const editingIds = ref<Set<number>>(new Set())
 
 const deleteTarget = ref<MembershipResponse | null>(null)
@@ -78,41 +71,29 @@ watch(
   () => props.userId,
   async () => {
     editingIds.value = new Set()
-    editModels.value = {}
     addOpen.value = false
-    createModel.value = blankMembership()
     await loadMemberships()
   },
   {immediate: true},
 )
 
 function toggleInlineEdit(m: MembershipResponse) {
-  const id = m.id
-  if (editingIds.value.has(id)) {
-    editingIds.value.delete(id)
-    editModels.value[id] = undefined
-    // Force reactivity
-    editingIds.value = new Set(editingIds.value)
-  } else {
-    // Make a shallow copy so edits don't affect the list until saved
-    editModels.value[id] = {...m}
-    editingIds.value = new Set([...editingIds.value, id])
-  }
+  const open = new Set(editingIds.value)
+  if (!open.delete(m.id)) open.add(m.id)
+  editingIds.value = open
 }
 
 function isEditing(id: number): boolean {
   return editingIds.value.has(id)
 }
 
-async function onCreateSubmitted(ok: boolean) {
-  if (!ok) return
-  createModel.value = blankMembership()
+async function onCreated() {
+  addOpen.value = false
   await loadMemberships()
   emit("changed")
 }
 
-async function onEditSubmitted(m: MembershipResponse, ok: boolean) {
-  if (!ok) return
+async function onEdited(m: MembershipResponse) {
   toggleInlineEdit(m)
   await loadMemberships()
   emit("changed")
@@ -180,12 +161,8 @@ defineExpose({
   deleteConfirmOpen,
   addOpen,
   // Exposed for tests
-  createModel,
-  editModels,
   editingIds,
   toggleInlineEdit,
-  onCreateSubmitted,
-  onEditSubmitted,
 })
 </script>
 
@@ -194,288 +171,173 @@ defineExpose({
     class="membership-panel"
     data-testid="membership-panel"
   >
-    <div
-      v-if="isLoading"
-      class="text-center py-4"
-    >
-      <v-progress-circular indeterminate />
-    </div>
-
-    <template v-else>
-      <!-- Existing memberships -->
-      <div class="mb-4">
-        <div class="d-flex align-center text-subtitle-1 font-weight-bold mb-2">
-          <v-icon
-            class="mr-2"
-            icon="mdi-card-account-details-outline"
-            size="20"
-          />
-          Memberships
-        </div>
-
-        <v-empty-state
-          v-if="memberships.length === 0"
-          class="py-4"
-          icon="mdi-card-account-details-outline"
-          text="Create a membership period to track this user's association membership history."
-          title="No memberships yet"
-        />
-
-        <template
-          v-for="(m, index) in memberships"
-          :key="m.id"
-        >
-          <div :data-testid="`manage-membership-row-${m.id}`">
-            <!-- Clickable summary row — folds out the edit form -->
-            <div
-              class="mm-row d-flex align-center justify-space-between gap-2"
-              :class="{ 'mm-row--open': isEditing(m.id) }"
-              role="button"
-              tabindex="0"
-              @click="toggleInlineEdit(m)"
-              @keydown.enter="toggleInlineEdit(m)"
-              @keydown.space.prevent="toggleInlineEdit(m)"
-            >
-              <div
-                class="flex-grow-1"
-                style="min-width: 0"
-              >
-                <div class="font-weight-medium text-truncate">
-                  {{ m.startDate }} –
-                  <span v-if="m.endDate">{{ m.endDate }}</span>
-                  <span v-else>active</span>
-                </div>
-                <div class="text-medium-emphasis text-body-2">
-                  <span>{{ memberTypeLabel(m.memberType) }}</span>
-                  <v-icon
-                    v-if="m.incasso"
-                    class="ml-1"
-                    color="teal"
-                    icon="mdi-bank-transfer"
-                    size="16"
-                  />
-                </div>
-              </div>
-
-              <div class="d-flex align-center gap-1 flex-nowrap flex-shrink-0">
-                <template v-if="!m.endDate">
-                  <v-btn
-                    :data-testid="`manage-membership-end-btn-${m.id}`"
-                    class="btn-tight"
-                    color="orange"
-                    size="small"
-                    variant="text"
-                    @click.stop="onEnd(m)"
-                  >
-                    End
-                  </v-btn>
-                </template>
-                <template v-else>
-                  <v-btn
-                    :data-testid="`manage-membership-reopen-btn-${m.id}`"
-                    :disabled="hasActive"
-                    class="btn-tight"
-                    color="green"
-                    size="small"
-                    variant="text"
-                    @click.stop="onReopen(m)"
-                  >
-                    Resume
-                  </v-btn>
-                </template>
-
-                <v-btn
-                  :data-testid="`manage-membership-delete-btn-${m.id}`"
-                  class="btn-tight"
-                  color="red"
-                  size="small"
-                  variant="text"
-                  @click.stop="onDelete(m)"
-                >
-                  Delete
-                </v-btn>
-
-                <v-icon
-                  class="mm-chevron ml-1"
-                  :icon="isEditing(m.id) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                />
-              </div>
-            </div>
-
-            <!-- Fold-out edit form (animated) — uses MembershipForm in board mode -->
-            <v-expand-transition>
-              <div
-                v-if="isEditing(m.id) && editModels[m.id]"
-                class="pt-1 pb-3"
-                data-testid="manage-membership-edit-pane"
-              >
-                <membership-form
-                  v-model="editModels[m.id]!"
-                  :user-id="userId"
-                  :submit-test-id="`manage-membership-save-btn-${m.id}`"
-                  show-submit
-                  submit-text="Save"
-                  @submitted="onEditSubmitted(m, $event)"
-                />
-              </div>
-            </v-expand-transition>
-
-            <v-divider v-if="index < memberships.length - 1" />
-          </div>
+    <template v-if="!isLoading">
+      <list-head title="Memberships" />
+      <p
+        v-if="memberships.length === 0"
+        class="membership-panel__note"
+        data-testid="manage-membership-empty"
+      >
+        No memberships yet. Add one to start this person's membership history.
+      </p>
+      <management-table
+        v-else
+        :columns="COLUMNS"
+        :row-key="(m) => m.id"
+        :row-testid="(m) => `manage-membership-row-${m.id}`"
+        search-label="Search memberships"
+        :search-text="(m) => `${memberTypeLabel(m.memberType)} ${formatDay(m.startDate)}`"
+        :rows="memberships"
+      >
+        <template #started="{row}">
+          <span class="membership-panel__date">{{ formatDay(row.startDate) }}</span>
         </template>
-      </div>
+        <template #ends="{row}">
+          <state-mark
+            v-if="!row.endDate"
+            kind="in-step"
+          >
+            Active
+          </state-mark>
+          <template v-else>
+            {{ formatDay(row.endDate) }}
+          </template>
+        </template>
+        <template #type="{row}">
+          {{ memberTypeLabel(row.memberType) }}
+        </template>
+        <template #acts="{row}">
+          <mini-button
+            :testid="`manage-membership-edit-btn-${row.id}`"
+            @click="toggleInlineEdit(row)"
+          >
+            {{ isEditing(row.id) ? "Close" : "Edit" }}
+          </mini-button>
+          <mini-button
+            v-if="!row.endDate"
+            :testid="`manage-membership-end-btn-${row.id}`"
+            @click="onEnd(row)"
+          >
+            End today
+          </mini-button>
+          <mini-button
+            v-else
+            :disabled="hasActive"
+            :testid="`manage-membership-reopen-btn-${row.id}`"
+            @click="onReopen(row)"
+          >
+            Resume
+          </mini-button>
+          <mini-button
+            :testid="`manage-membership-delete-btn-${row.id}`"
+            tone="danger"
+            @click="onDelete(row)"
+          >
+            Delete
+          </mini-button>
+        </template>
+      </management-table>
 
-      <!-- Add membership (only when no active membership) — collapsed by default -->
+      <template
+        v-for="m in memberships"
+        :key="m.id"
+      >
+        <div
+          v-if="isEditing(m.id)"
+          class="membership-panel__form"
+          data-testid="manage-membership-edit-pane"
+        >
+          <list-head :title="`Edit the membership started ${formatDay(m.startDate)}`" />
+          <membership-fields
+            :membership="m"
+            submit-text="Save"
+            :submit-testid="`manage-membership-save-btn-${m.id}`"
+            :user-id="userId"
+            @saved="onEdited(m)"
+          />
+        </div>
+      </template>
+
       <div
         v-if="!hasActive"
-        class="mb-4"
         data-testid="manage-membership-add-pane"
       >
-        <v-divider class="mb-2" />
+        <list-head title="Add a membership">
+          <cut-button
+            small
+            testid="manage-membership-add-toggle"
+            @click="addOpen = !addOpen"
+          >
+            {{ addOpen ? "Close" : "Add a membership" }}
+          </cut-button>
+        </list-head>
         <div
-          class="mm-row d-flex align-center"
-          :class="{ 'mm-row--open': addOpen }"
-          role="button"
-          tabindex="0"
-          data-testid="manage-membership-add-toggle"
-          @click="addOpen = !addOpen"
-          @keydown.enter="addOpen = !addOpen"
-          @keydown.space.prevent="addOpen = !addOpen"
+          v-if="addOpen"
+          class="membership-panel__form"
+          data-testid="manage-membership-create"
         >
-          <v-icon
-            class="mr-2"
-            icon="mdi-plus-circle-outline"
-            size="20"
-          />
-          <span class="text-subtitle-1 font-weight-bold">Add membership</span>
-          <v-spacer />
-          <v-icon
-            class="mm-chevron"
-            :icon="addOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+          <membership-fields
+            submit-testid="manage-membership-create-btn"
+            submit-text="Add membership"
+            :user-id="userId"
+            @saved="onCreated"
           />
         </div>
-
-        <v-expand-transition>
-          <div
-            v-if="addOpen"
-            class="pb-3"
-            data-testid="manage-membership-create"
-          >
-            <membership-form
-              v-model="createModel"
-              :user-id="userId"
-              submit-test-id="manage-membership-create-btn"
-              show-submit
-              submit-text="Add membership"
-              @submitted="onCreateSubmitted"
-            />
-          </div>
-        </v-expand-transition>
       </div>
 
-      <!-- Admin: deleted memberships -->
-      <div
-        v-if="isAdmin && deletedMemberships.length > 0"
-        class="mb-4"
-      >
-        <div class="d-flex align-center text-subtitle-1 font-weight-bold mb-1">
-          <v-icon
-            class="mr-2"
-            icon="mdi-delete-clock-outline"
-            size="20"
-          />
-          Deleted memberships
-        </div>
-        <v-divider class="mb-2" />
-
-        <template
-          v-for="(m, index) in deletedMemberships"
-          :key="m.id"
+      <template v-if="isAdmin && deletedMemberships.length > 0">
+        <list-head title="Deleted memberships" />
+        <management-table
+          :columns="COLUMNS"
+          :row-key="(m) => m.id"
+          :row-testid="(m) => `manage-membership-deleted-row-${m.id}`"
+          search-label="Search memberships"
+          :search-text="(m) => `${memberTypeLabel(m.memberType)} ${formatDay(m.startDate)}`"
+          :rows="deletedMemberships"
         >
-          <div
-            class="mm-row d-flex align-center justify-space-between gap-2"
-            :data-testid="`manage-membership-deleted-row-${m.id}`"
-          >
-            <div
-              class="flex-grow-1"
-              style="min-width: 0"
-            >
-              <div class="font-weight-medium text-truncate">
-                {{ m.startDate }}
-                <span v-if="m.endDate"> – {{ m.endDate }}</span>
-              </div>
-              <div class="text-medium-emphasis text-body-2">
-                <span>{{ memberTypeLabel(m.memberType) }}</span>
-                <span class="ml-2 text-error">(deleted)</span>
-              </div>
-            </div>
-            <v-btn
-              :data-testid="`manage-membership-restore-btn-${m.id}`"
-              class="btn-tight"
-              color="primary"
-              size="small"
-              variant="text"
-              @click="onRestore(m)"
+          <template #started="{row}">
+            {{ formatDay(row.startDate) }}
+          </template>
+          <template #ends="{row}">
+            <span :class="{'mg-quiet': !row.endDate}">{{ row.endDate ? formatDay(row.endDate) : "·" }}</span>
+          </template>
+          <template #type="{row}">
+            {{ memberTypeLabel(row.memberType) }}
+          </template>
+          <template #acts="{row}">
+            <mini-button
+              :testid="`manage-membership-restore-btn-${row.id}`"
+              @click="onRestore(row)"
             >
               Restore
-            </v-btn>
-          </div>
-          <v-divider v-if="index < deletedMemberships.length - 1" />
-        </template>
-      </div>
+            </mini-button>
+          </template>
+        </management-table>
+      </template>
     </template>
-  </section>
 
-  <!-- Delete membership confirmation -->
-  <confirmation-dialog
-    v-model="deleteConfirmOpen"
-    :message="deleteTarget ? `Delete membership from ${deleteTarget.startDate} to ${deleteTarget.endDate ?? 'active'}?` : ''"
-    confirm-label="Delete"
-    testid="manage-membership-delete-confirmation"
-    title="Delete membership"
-    @confirm="onDeleteConfirmed"
-  />
+    <confirm-dialog
+      confirm-label="Delete"
+      :open="deleteConfirmOpen"
+      :question="deleteTarget ? `The membership from ${formatDay(deleteTarget.startDate)} to ${deleteTarget.endDate ? formatDay(deleteTarget.endDate) : 'today'} goes. An admin can restore it.` : ''"
+      testid="manage-membership-delete-confirmation"
+      title="Delete this membership?"
+      working-label="Deleting"
+      @confirm="onDeleteConfirmed"
+      @update:open="deleteConfirmOpen = $event"
+    />
+  </section>
 </template>
 
-<style lang="scss" scoped>
-.btn-tight {
-  padding-inline: 6px !important;
-  min-width: auto !important;
+<style scoped>
+.membership-panel__note {
+  font-size: 0.9rem;
+  color: var(--color-ash);
 }
 
-// Interactive summary rows: whole row is the fold-out toggle.
-.mm-row {
-  cursor: pointer;
-  padding: 10px 4px;
-  border-radius: 4px;
-  transition: background-color 0.15s ease;
-
-  &:hover,
-  &:focus-visible {
-    background-color: rgba(255, 255, 255, 0.04);
-  }
-
-  &:focus-visible {
-    outline: none;
-  }
+.membership-panel__date {
+  font-size: 0.9rem;
+  color: var(--color-chalk);
 }
 
-.mm-chevron {
-  opacity: 0.6;
-}
-
-// Vuetify spells its gap utilities `ga-1`, so this one is the row's own, the same as in
-// the user manager's rows.
-.gap-1 {
-  gap: 4px;
-}
-
-// The house green divider (housestyle.scss) is scoped under
-// `.v-application.v-theme--dark`, which the teleported dialog escapes — so the
-// modal's dividers fall back to grey. Apply the same accent token here so they
-// match the default house divider instead.
-:deep(.v-divider) {
-  border-color: rgb(var(--v-theme-accent));
-  opacity: 1;
-}
 </style>

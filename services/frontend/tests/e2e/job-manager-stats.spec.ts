@@ -44,7 +44,7 @@ test.describe("job manager stats panel", () => {
     await page.goto("/management/jobs")
 
     await expect(page.getByTestId("job-stats-runtime")).toBeVisible()
-    await expect(page.getByTestId("job-stats-runtime")).toContainText("Since last startup")
+    await expect(page.getByTestId("job-stats-runtime")).toContainText("Since start-up")
   })
 
   test("stats panel is not visible to non-admin users", async ({page}) => {

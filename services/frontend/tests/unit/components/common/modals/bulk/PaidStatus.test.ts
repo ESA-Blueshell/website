@@ -32,7 +32,7 @@ function unpaidRegularTarget(userId: number) {
 }
 
 describe("PaidStatusDialog (Mark as paid)", () => {
-  it("renders the dialog with paid title and confirm button", () => {
+  it("draws the paid task with its confirm button", () => {
     const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
@@ -43,7 +43,7 @@ describe("PaidStatusDialog (Mark as paid)", () => {
     })
 
     expect(wrapper.find('[data-testid="bulk-action-dialog"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain("Mark as paid")
+    expect(wrapper.get('[data-testid="bulk-action-confirm-btn"]').text()).toBe("Mark paid")
   })
 
   it("shows preview table with single unpaid member marked INCLUDED", async () => {
@@ -229,7 +229,7 @@ describe("PaidStatusDialog (Mark as paid)", () => {
 })
 
 describe("PaidStatusDialog (Mark as unpaid)", () => {
-  it("renders the dialog with unpaid title and confirm button", () => {
+  it("draws the unpaid task with its confirm button", () => {
     const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
@@ -240,7 +240,7 @@ describe("PaidStatusDialog (Mark as unpaid)", () => {
     })
 
     expect(wrapper.find('[data-testid="bulk-action-dialog"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain("Mark as unpaid")
+    expect(wrapper.get('[data-testid="bulk-action-confirm-btn"]').text()).toBe("Mark unpaid")
   })
 
   it("marks paid member as INCLUDED", async () => {

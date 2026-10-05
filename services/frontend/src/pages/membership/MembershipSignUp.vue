@@ -105,7 +105,6 @@
             <membership-form
               v-else
               ref="membershipRef"
-              v-model="membership"
               :signup-token="signupToken"
             />
             <!-- Optional: without it the membership still starts, and paying is arranged by hand. -->
@@ -115,7 +114,7 @@
               data-testid="membership-incasso-step"
             >
               <p class="text-subtitle-1 font-weight-bold">
-                Pay by incasso (optional)
+                Set up incasso (optional)
               </p>
               <incasso-set-up :signup-token="signupToken" />
             </div>
@@ -209,7 +208,6 @@ import IncassoSetUp from "@/components/account/IncassoSetUp.vue"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 import {
   type AddressResponse,
-  type MembershipResponse,
   readAddress,
   readUser,
   resumeSignupSession,
@@ -254,7 +252,6 @@ const user = ref<EditableUser>()
 // Partial, because a signup read back on its token carries what the form asks for and
 // not the id or the version: the signup route upserts, so there is nothing to track.
 const address = ref<Partial<AddressResponse>>()
-const membership = ref<MembershipResponse>()
 const signupToken = ref<string | undefined>(readSignupToken())
 
 const userRef = ref<InstanceType<typeof UserForm>>()

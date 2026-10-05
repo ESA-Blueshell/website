@@ -2,6 +2,10 @@
 /* One Brevo list: the cohort that fills it, its people in step and its drift, each drifting person
    with why and what can be done, the resolutions so far, and the list itself to rename, move,
    archive, enforce or delete. */
+import CutButton from "@/components/island/CutButton.vue"
+import CutRow from "@/components/island/CutRow.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
 import {computed, onMounted, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import FactList from "@/components/island/FactList.vue"
@@ -177,92 +181,85 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="list"
-    data-testid="brevo-list"
+  <management-page
+    v-if="loaded && !list"
+    :back="{to: '/management/platforms/brevo', label: 'Brevo'}"
+    eyebrow="Platforms · Brevo"
+    testid="brevo-list"
+    title="No such list"
   >
-    <router-link
-      class="list__back"
-      to="/management/platforms/brevo"
-    >
-      Brevo
-    </router-link>
-
     <p
-      v-if="loaded && !list"
       class="list__note"
       data-testid="brevo-list-missing"
     >
       Brevo has no such list. It may have been deleted there.
     </p>
-
-    <template v-if="list">
-      <header class="list__head">
-        <div>
-          <p class="list__eyebrow">
-            Brevo list · {{ list.folderLabel ? `${list.folderLabel} folder` : "No folder" }}
-          </p>
-          <h1 class="list__title">
-            {{ list.label }}
-          </h1>
-          <p class="list__note">
-            <template v-if="cohort">
-              Mail sent to this list reaches {{ cohort.label }}: {{ cohortTypeLabel(cohort.type).toLowerCase() }}.
-            </template>
-            <template v-else>
-              This list follows nothing, so the site leaves its people alone.
-            </template>
-          </p>
-        </div>
-        <button
-          v-if="mapping"
-          class="list__action"
-          data-testid="brevo-list-reconcile"
-          :disabled="acting"
-          type="button"
-          @click="reconcile"
-        >
-          Reconcile now
-        </button>
-      </header>
-
-      <template v-if="cohort && mapping">
-        <fact-list :facts="facts" />
-        <p
-          v-if="bars.length"
-          class="list__runs"
-          :aria-label="`Drift over the last ${bars.length} runs`"
-          data-testid="brevo-list-runs"
-          role="img"
-        >
-          <span
-            v-for="(bar, index) in bars"
-            :key="index"
-            class="list__bar"
-            :class="{'list__bar--drift': bar.drift}"
-            :style="{height: `${bar.height}px`}"
-          />
-        </p>
-
-        <target-drift
-          :cohort="cohort"
-          :mapping="mapping"
-          :reload="load"
-          testid="brevo-list"
-        />
+  </management-page>
+  <management-page
+    v-else-if="list"
+    :back="{to: '/management/platforms/brevo', label: 'Brevo'}"
+    :eyebrow="`Brevo list · ${list.folderLabel ? `${list.folderLabel} folder` : 'No folder'}`"
+    testid="brevo-list"
+    :title="list.label"
+  >
+    <template #lede>
+      <template v-if="cohort">
+        Mail sent to this list reaches {{ cohort.label }}: {{ cohortTypeLabel(cohort.type).toLowerCase() }}.
       </template>
-
-      <section
-        v-if="!list.cohortId"
-        class="list__link"
-        data-testid="brevo-list-link"
+      <template v-else>
+        This list is not linked to a cohort, so the site leaves its people alone.
+      </template>
+    </template>
+    <template
+      v-if="mapping"
+      #actions
+    >
+      <cut-button
+        :disabled="acting"
+        testid="brevo-list-reconcile"
+        @click="reconcile"
       >
-        <h2 class="list__part">
-          Follows nothing
-        </h2>
-        <p class="list__note">
-          Link the list to a cohort whose list is missing, and the site fills it from then on.
-        </p>
+        Compare with Brevo now
+      </cut-button>
+    </template>
+
+    <template v-if="cohort && mapping">
+      <fact-list
+        class="list__facts"
+        :facts="facts"
+      />
+      <p
+        v-if="bars.length"
+        :aria-label="`Drift over the last ${bars.length} runs`"
+        class="list__runs"
+        data-testid="brevo-list-runs"
+        role="img"
+      >
+        <span
+          v-for="(bar, index) in bars"
+          :key="index"
+          class="list__bar"
+          :class="{'list__bar--drift': bar.drift}"
+          :style="{height: `${bar.height}px`}"
+        />
+      </p>
+      <target-drift
+        :cohort="cohort"
+        :mapping="mapping"
+        :reload="load"
+        testid="brevo-list"
+      />
+    </template>
+
+    <section
+      v-if="!list.cohortId"
+      data-testid="brevo-list-link"
+    >
+      <list-head title="Not linked to a cohort" />
+      <p class="list__note">
+        Link the list to a cohort whose list is missing, and the site fills it from then on.
+      </p>
+      <div class="list__form">
         <form-field
           label="Cohort"
           testid="brevo-list-link-cohort"
@@ -279,104 +276,113 @@ onMounted(async () => {
             />
           </template>
         </form-field>
-        <button
-          class="list__action"
-          data-testid="brevo-list-link-confirm"
-          :disabled="acting || linkTo == null"
-          type="button"
-          @click="link"
-        >
-          Link
-        </button>
-      </section>
+        <div class="list__acts">
+          <cut-button
+            :disabled="acting || linkTo == null"
+            testid="brevo-list-link-confirm"
+            tone="solid"
+            @click="link"
+          >
+            Link
+          </cut-button>
+        </div>
+      </div>
+    </section>
 
-      <h2 class="list__part">
-        This list
-      </h2>
-      <form
-        class="list__form"
-        @submit.prevent="save"
+    <list-head title="This list" />
+    <form
+      class="list__form"
+      @submit.prevent="save"
+    >
+      <form-field
+        v-slot="field"
+        label="Name in Brevo"
+        testid="brevo-list-name"
       >
-        <form-field
-          v-slot="field"
-          label="Name in Brevo"
-          testid="brevo-list-name"
-        >
-          <text-input
-            v-model="name"
-            :control-id="field.controlId"
+        <text-input
+          v-model="name"
+          :control-id="field.controlId"
+        />
+      </form-field>
+      <form-field
+        label="Folder"
+        testid="brevo-list-folder"
+      >
+        <template #default="{controlId, labelId}">
+          <search-picker
+            :control-id="controlId"
+            :labelled-by="labelId"
+            :options="folderOptions"
+            :selected-key="folder"
+            testid-prefix="brevo-list-folder-picker"
+            @pick="(key: string) => folder = key"
           />
-        </form-field>
-        <form-field
-          label="Folder"
-          testid="brevo-list-folder"
-        >
-          <template #default="{controlId, labelId}">
-            <search-picker
-              :control-id="controlId"
-              :labelled-by="labelId"
-              :options="folderOptions"
-              :selected-key="folder"
-              testid-prefix="brevo-list-folder-picker"
-              @pick="(key: string) => folder = key"
-            />
-          </template>
-        </form-field>
-        <button
-          class="list__action list__action--main"
-          data-testid="brevo-list-save"
+        </template>
+      </form-field>
+      <div class="list__acts">
+        <cut-button
           :disabled="acting || !changed"
-          type="submit"
+          submit
+          testid="brevo-list-save"
+          tone="solid"
         >
           Save
-        </button>
-      </form>
-
-      <div class="list__settings">
-        <button
-          v-if="mapping && isAdmin"
-          class="list__setting"
-          data-testid="brevo-list-enforce"
-          :disabled="acting"
-          type="button"
-          @click="enforce"
-        >
-          <span>
-            <span class="list__setting-title">Enforce</span>
-            <span class="list__sub">Remove extra people automatically at every reconcile. {{ mapping.enforced ? "On." : "Off." }}</span>
-          </span>
-          <span class="list__sub">{{ mapping.enforced ? "Turn off" : "Turn on" }}</span>
-        </button>
-        <button
-          v-if="list.folderLabel !== ARCHIVE_FOLDER"
-          class="list__setting"
-          data-testid="brevo-list-archive"
-          :disabled="acting"
-          type="button"
-          @click="archive"
-        >
-          <span>
-            <span class="list__setting-title">Archive</span>
-            <span class="list__sub">Moves the list to the Archive folder in Brevo. It keeps its people and can be moved back.</span>
-          </span>
-        </button>
-        <button
-          v-if="isAdmin"
-          class="list__setting"
-          data-testid="brevo-list-delete"
-          :disabled="acting || list.cohortId != null"
-          type="button"
-          @click="deleting = true; typedName = ''; deleteFailure = null"
-        >
-          <span>
-            <span class="list__setting-title">Delete</span>
-            <span class="list__sub">
-              {{ list.cohortId != null ? "Only a list that follows nothing can be deleted." : "Deletes the list and its contacts from Brevo for good." }}
-            </span>
-          </span>
-        </button>
+        </cut-button>
       </div>
-    </template>
+    </form>
+
+    <list-head title="Settings" />
+    <div class="list__settings">
+      <cut-row
+        v-if="mapping && isAdmin"
+        :meta="`Remove extra people automatically every time the list is compared. ${mapping.enforced ? 'On.' : 'Off.'}`"
+        title="Enforce"
+      >
+        <template #end>
+          <cut-button
+            :disabled="acting"
+            small
+            testid="brevo-list-enforce"
+            @click="enforce"
+          >
+            {{ mapping.enforced ? "Turn off" : "Turn on" }}
+          </cut-button>
+        </template>
+      </cut-row>
+      <cut-row
+        v-if="list.folderLabel !== ARCHIVE_FOLDER"
+        meta="Moves the list to the Archive folder in Brevo. It keeps its people and can be moved back."
+        title="Archive"
+      >
+        <template #end>
+          <cut-button
+            :disabled="acting"
+            small
+            testid="brevo-list-archive"
+            @click="archive"
+          >
+            Archive
+          </cut-button>
+        </template>
+      </cut-row>
+      <cut-row
+        v-if="isAdmin"
+        :meta="list.cohortId != null ? 'Only a list that is not linked to a cohort can be deleted.' : 'Deletes the list and its contacts from Brevo for good.'"
+        title="Delete"
+      >
+        <template #end>
+          <cut-button
+            :disabled="acting || list.cohortId != null"
+            small
+            testid="brevo-list-delete"
+            tone="danger"
+            @click="deleting = true; typedName = ''; deleteFailure = null"
+          >
+            Delete
+          </cut-button>
+        </template>
+      </cut-row>
+    </div>
 
     <modal-dialog
       :open="deleting"
@@ -385,11 +391,12 @@ onMounted(async () => {
       @update:open="deleting = $event"
     >
       <form
-        class="list__delete"
+        class="list__form"
+        data-testid="brevo-list-delete-form"
         @submit.prevent="confirmDelete"
       >
         <p class="list__note">
-          Brevo cannot undo this. Type the list's name, {{ list?.label }}, to delete it and its contacts for good.
+          Brevo cannot undo this. Type the list's name, {{ list.label }}, to delete it and its contacts for good.
         </p>
         <form-field
           v-slot="field"
@@ -409,214 +416,56 @@ onMounted(async () => {
         >
           {{ deleteFailure }}
         </p>
-        <button
-          class="list__action list__action--danger"
-          data-testid="brevo-list-delete-confirm"
-          :disabled="acting || typedName !== list?.label"
-          type="submit"
-        >
-          Delete
-        </button>
+        <div class="list__acts">
+          <cut-button
+            :disabled="acting || typedName !== list.label"
+            submit
+            testid="brevo-list-delete-confirm"
+            tone="danger"
+          >
+            Delete
+          </cut-button>
+        </div>
       </form>
     </modal-dialog>
-  </div>
+  </management-page>
 </template>
 
 <style scoped>
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 76rem;
-  padding: 2rem 2.4rem 3rem;
-}
-
-.list__back {
-  align-self: flex-start;
-  font-size: 0.84rem;
-  color: var(--color-brand);
-}
-
-.list__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.list__eyebrow {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow, var(--color-ash));
-}
-
-.list__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.list__part {
-  margin: 1rem 0 0;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-ash);
-}
-
-.list__note {
-  margin: 0;
-  max-width: 48rem;
-  color: var(--color-ash);
-}
-
-.list__failure {
-  margin: 0;
-  color: var(--color-error, #e5484d);
+.list__facts {
+  padding: 1.1rem 0 0.6rem;
 }
 
 .list__runs {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
-  height: 22px;
-  margin: 0;
+  gap: 4px;
+  height: 26px;
+  margin-bottom: 0.4rem;
 }
 
 .list__bar {
-  width: 6px;
-  background-color: var(--color-hairline);
+  width: 9px;
+  min-height: 2px;
+  background: color-mix(in oklab, var(--color-chalk) 18%, transparent);
+  transform: skewX(-12deg);
 }
 
 .list__bar--drift {
-  background-color: var(--color-brand);
+  background: var(--color-warning);
 }
 
-.list__action,
-.list__mini {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-.list__mini {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
-}
-
-/* Red text falls below contrast on the page; the border carries the warning instead. */
-.list__mini--danger {
-  border-color: var(--color-error, #e5484d);
-}
-
-.list__action--danger {
-  align-self: flex-start;
-  border-color: var(--color-error, #e5484d);
-}
-
-.list__delete {
+.list__form {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  max-width: 34rem;
 }
 
-.list__action--main {
-  align-self: flex-start;
-  border-color: var(--color-brand);
-  color: var(--color-brand);
-}
-
-.list__action:disabled,
-.list__mini:disabled,
-.list__setting:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.list__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.list__row {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) 6rem minmax(0, 1.4fr) auto;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.list__who {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.list__who a {
-  color: var(--color-chalk);
-  font-weight: 600;
-}
-
-.list__sub {
-  display: block;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-}
-
-.list__why {
-  white-space: normal;
-}
-
-.list__row-acts {
+.list__acts {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.4rem;
-}
-
-.list__log {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.86rem;
-}
-
-.list__log th,
-.list__log td {
-  padding: 0.5rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-  text-align: left;
-}
-
-.list__log th {
-  font-weight: 400;
-  color: var(--color-ash);
-}
-
-.list__form,
-.list__link {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-  align-items: end;
-}
-
-.list__link .list__part,
-.list__link .list__note {
-  grid-column: 1 / -1;
+  gap: 0.6rem;
 }
 
 .list__settings {
@@ -625,46 +474,14 @@ onMounted(async () => {
   gap: 2px;
 }
 
-.list__setting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.9rem 1.1rem;
-  border: 0;
-  background-color: var(--band-ground);
-  font: inherit;
-  color: var(--color-chalk);
-  text-align: left;
-  cursor: pointer;
+.list__note {
+  margin-bottom: 0.8rem;
+  font-size: 0.92rem;
+  color: var(--color-ash);
 }
 
-.list__setting-title {
-  font-weight: 600;
-}
-
-.list__plan {
-  margin: 0;
-  padding-left: 1.2rem;
-}
-
-@media (max-width: 839px) {
-  .list {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
-  .list__row {
-    grid-template-columns: 2rem minmax(0, 1fr) auto;
-  }
-
-  .list__why,
-  .list__row-acts {
-    grid-column: 2 / -1;
-  }
-
-  .list__form,
-  .list__link {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.list__failure {
+  font-size: 0.88rem;
+  color: var(--color-danger);
 }
 </style>

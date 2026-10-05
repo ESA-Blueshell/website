@@ -586,7 +586,7 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
 <template>
   <edit-page
     :accent="accent"
-    :back="{to: back, label: gameName || 'Competition'}"
+    :back="{to: back, label: gameName || 'Esports'}"
     :eyebrow="season ? `${gameName} in ${season.name}` : gameName"
     testid="team-edit"
     :title="adding ? 'Add a team' : teamName"

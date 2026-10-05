@@ -3,6 +3,7 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.board.api.BoardMemberService
+import net.blueshell.api.board.api.BoardYear
 import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.committee.api.CommitteeMemberService
@@ -66,7 +67,27 @@ class PresentDefinitionsTest {
     @Test
     fun `neither is listed on Brevo, nor is a team, and both browse under members`() {
         assertThat(CohortType.entries.filterNot { it.listedOnBrevo })
-            .containsExactly(CohortType.ACTIVISTS, CohortType.CURRENT_MEMBERS, CohortType.TEAM_PLAYERS)
+            .containsExactly(CohortType.ACTIVISTS, CohortType.CURRENT_MEMBERS, CohortType.TEAM_PLAYERS, CohortType.BOARD_YEAR_MEMBERS)
+    }
+
+    @Test
+    fun `each board that has taken office keeps its people under its years`() {
+        every { boardMembers.boardYearsBy(today) } returns
+            listOf(BoardYear(4, LocalDate.of(2024, 9, 1), LocalDate.of(2025, 8, 31)), BoardYear(5, LocalDate.of(2025, 9, 1), null))
+        every { boardMembers.everOn(4) } returns setOf(20L, 21L)
+        every { boardMembers.everOn(5) } returns setOf(22L)
+
+        val provider = BoardYearProvider(boardMembers)
+        val (past, inOffice) = provider.definitions()
+
+        assertThat(provider.type).isEqualTo(CohortType.BOARD_YEAR_MEMBERS)
+        assertThat(listOf(past.key, past.label)).containsExactly("BOARD_YEAR_MEMBERS:4", "Board 2024-2025")
+        assertThat(listOf(past.folder, past.scope)).containsExactly("Board", 4L)
+        assertThat(past.members()).containsExactly(20L, 21L)
+        assertThat(listOf(20L, 22L).map(past::contains)).containsExactly(true, false)
+        // A board with no end set yet is named by the year after it took office.
+        assertThat(inOffice.label).isEqualTo("Board 2025-2026")
+        assertThat(CohortFolders.forType(CohortType.BOARD_YEAR_MEMBERS)).isEqualTo("Board")
     }
 
     @Test

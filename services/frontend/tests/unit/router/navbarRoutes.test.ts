@@ -28,6 +28,7 @@ const navbarPaths = [
   "/account",
   "/account/security",
   "/account/games",
+  "/account/payment-details",
   "/management/addresses",
   "/management/recovery",
   "/management/users",
@@ -50,7 +51,7 @@ describe("Navbar route targets", () => {
 
 describe("the account security pages", () => {
   it.each([
-    "twoFactorOffer", "lockAccount", "confirmEmail", "reenrol", "accountSecurity", "accountPassword", "accountEmail",
+    "twoFactorOffer", "lockAccount", "confirmEmail", "reenrol", "accountPaymentDetails", "accountSecurity", "accountPassword", "accountEmail",
     "accountTwoFactor", "accountTwoFactorSetUp", "accountSignIns", "accountSecurityLog", "twoFactorRequired",
   ])("loads %s", async (name) => {
     const load = router.getRoutes().find(one => one.name === name)?.components?.default as () => Promise<unknown>
@@ -59,7 +60,7 @@ describe("the account security pages", () => {
 })
 
 describe("the System pages", () => {
-  it.each(["jobDetail", "exceptionList", "exceptionDetail", "alertList", "management", "userDetail", "bulkTask", "contributions", "contributionPeriod", "contributionPeriodNew", "paymentReminders", "emailManager", "sentEmail", "writeEmail", "inbox", "inboxMessage", "incassoRun", "brevo", "brevoList", "discord", "discordChannels", "discordRole", "managementCommittees", "managementCommitteeNew", "managementCommittee", "managementBoards", "managementBoardNew", "managementBoard", "managementGames", "managementGameNew", "managementGame", "managementTeams", "managementTeam", "eventQueue"])("loads %s", async (name) => {
+  it.each(["jobDetail", "exceptionList", "exceptionDetail", "alertList", "management", "userDetail", "bulkTask", "contributions", "contributionPeriod", "contributionPeriodNew", "paymentReminders", "emailManager", "sentEmail", "writeEmail", "inbox", "inboxMessage", "incassoRun", "brevo", "brevoList", "discord", "discordChannels", "discordChannel", "discordRole", "managementCommittees", "managementCommitteeNew", "managementCommittee", "managementBoards", "managementBoardNew", "managementBoard", "managementGames", "managementGameNew", "managementGame", "managementTeams", "managementTeam", "eventQueue"])("loads %s", async (name) => {
     const load = router.getRoutes().find(one => one.name === name)?.components?.default as () => Promise<unknown>
     await expect(load()).resolves.toBeDefined()
   }, 20_000)

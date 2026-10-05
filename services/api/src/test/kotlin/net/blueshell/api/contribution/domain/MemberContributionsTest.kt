@@ -5,7 +5,9 @@ import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
+import net.blueshell.api.contribution.web.BankAccountResponse
 import net.blueshell.api.contribution.web.MemberContributionController
+import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.security.CurrentUser
@@ -32,12 +34,19 @@ class MemberContributionsTest {
     private val notifications: IncassoNotificationRepository = mock()
     private val firsts: FirstContributions = mock()
     private val currentUser: CurrentUserProvider = mock()
+    private val bank = BankProperties(iban = "NL00 TEST 0000 0000 00", bic = "TESTNL2A", accountName = "Test Vereniging")
     private val controller =
         MemberContributionController(
             MemberContributions(periods, memberships, contributions, reminders, notifications),
             firsts,
             currentUser,
+            PaymentChannels(bank, "https://site.test"),
         )
+
+    @Test
+    fun `answers the account a member transfers the contribution to`() {
+        assertThat(controller.findBankAccount()).isEqualTo(BankAccountResponse("NL00 TEST 0000 0000 00", "TESTNL2A", "Test Vereniging"))
+    }
 
     @Test
     fun `lists each period the person was a member in, newest first, with the fee, the payment and the last email`() {
@@ -122,5 +131,23 @@ class MemberContributionsTest {
 
         whenever(currentUser.currentUser()).thenReturn(null)
         assertThatThrownBy { controller.findOwnFirstContribution() }.isInstanceOf(ResponseStatusException::class.java)
+    }
+
+    @Test
+    fun `answers the reader's own periods, and refuses nobody signed in`() {
+        val ann = Entities.user(id = 7)
+        val period = Entities.period(1, startDate = LocalDate.of(2024, 9, 1))
+        whenever(periods.findAll()).thenReturn(listOf(period))
+        whenever(
+            memberships.findByUserId(7),
+        ).thenReturn(mutableListOf(Entities.membership(user = ann, startDate = LocalDate.of(2024, 10, 1))))
+        whenever(contributions.findById(any())).thenReturn(Optional.empty())
+        whenever(currentUser.currentUser()).thenReturn(CurrentUser(id = 7, roles = emptySet(), addressId = null))
+
+        assertThat(controller.findOwnContributions()).isEqualTo(controller.findMemberContributions(7))
+        assertThat(controller.findOwnContributions().single().periodId).isEqualTo(1)
+
+        whenever(currentUser.currentUser()).thenReturn(null)
+        assertThatThrownBy { controller.findOwnContributions() }.isInstanceOf(ResponseStatusException::class.java)
     }
 }

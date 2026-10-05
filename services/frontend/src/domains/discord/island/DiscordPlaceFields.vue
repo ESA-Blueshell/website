@@ -10,6 +10,8 @@ import FormSection from "@/components/island/FormSection.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
 import {type KeptChannel, type KeptRole, listKeepableChannels, listKeepableRoles} from "../adapters/keeping"
+import {readOpenings} from "../adapters/roleOpenings"
+import {isArchive} from "../catalogue"
 
 defineOptions({name: "DiscordPlaceFields"})
 
@@ -46,7 +48,8 @@ const roleOptions = computed(() => [
   ...roles.value.filter((one) => one.assignable).map((one) => ({key: one.id, label: `@${one.name}`})),
 ])
 const asOption = (channel: KeptChannel) => ({key: channel.id, label: channel.name, note: channel.category ?? undefined})
-const channelOptions = computed(() => channels.value.filter((one: KeptChannel) => one.kind !== "CATEGORY").map(asOption))
+// An archived channel is kept for history, so it is not offered to link.
+const channelOptions = computed(() => channels.value.filter((one: KeptChannel) => one.kind !== "CATEGORY" && !isArchive(one.category)).map(asOption))
 const chosenChannels = computed(() => channelIds.value.map((id) => channelOptions.value.find((one) => one.key === id) ?? {key: id, label: id}))
 const pickable = computed(() => channelOptions.value.filter((one) => !channelIds.value.includes(one.key)))
 const hasRole = computed(() => linkedRole.value != null || roleKey.value != null)
@@ -61,6 +64,20 @@ watch([available, roleKey, channelIds, makeChannel, () => slug], () => {
     }
     : null
 }, {deep: true, immediate: true})
+
+/* A role picked to be linked may have access to channels already. They are filled in and the new
+   channel is unticked, so the form shows them and none is linked or made a second time. */
+const alreadyOpen = ref<string[]>([])
+watch(roleKey, async (key) => {
+  alreadyOpen.value = []
+  if (!key || key === NEW_ROLE) return
+  const openings = await readOpenings(key)
+  if (roleKey.value !== key || !openings) return
+  const held = openings.filter((one) => (one.actual ?? one.kept) != null && one.channel.kind !== "CATEGORY").map((one) => one.channel)
+  alreadyOpen.value = held.map((one) => one.name)
+  channelIds.value = [...new Set([...channelIds.value, ...held.map((one) => one.id)])]
+  if (held.length > 0) makeChannel.value = false
+})
 
 onMounted(async () => {
   const [found, held, open] = await Promise.all([
@@ -112,18 +129,18 @@ onMounted(async () => {
 
       <template v-if="hasRole">
         <form-field
-          label="Channels the role opens"
+          label="Channels the role has access to"
           :testid="`${testid}-channels`"
         >
           <template #default="{controlId, labelId}">
             <chip-picker
               :chosen="chosenChannels"
               :control-id="controlId"
-              empty-note="Every channel is opened already."
+              empty-note="The role has access to every channel already."
               :labelled-by="labelId"
               :options="pickable"
-              placeholder="Open a channel to the role"
-              :remove-label="(label: string) => `Stop opening #${label}`"
+              placeholder="Link an existing channel"
+              :remove-label="(label: string) => `Remove access to #${label}`"
               sigil="#"
               :testid-prefix="`${testid}-channel-picker`"
               @add="(keys: string[]) => channelIds = [...channelIds, ...keys]"
@@ -131,10 +148,18 @@ onMounted(async () => {
             />
           </template>
         </form-field>
+        <p
+          v-if="alreadyOpen.length"
+          class="discord-place__already"
+          :data-testid="`${testid}-already`"
+        >
+          This role already has access to {{ alreadyOpen.map((name) => `#${name}`).join(", ") }}. These channels are filled
+          in above.
+        </p>
         <check-box
           v-model="makeChannel"
-          :hint="`Under ${category}, readable only by the role.`"
-          :label="`Make a private channel #${slug.trim() || 'named after it'}`"
+          :hint="`Under ${category}, accessible only by the role.`"
+          :label="`Create a new private channel #${slug.trim() || 'named after it'}`"
           :testid="`${testid}-make-channel`"
         />
       </template>
@@ -155,6 +180,11 @@ onMounted(async () => {
   gap: 0.6rem;
   margin: 0;
   font-weight: 600;
+}
+
+.discord-place__already {
+  font-size: 0.86rem;
+  color: var(--color-ash);
 }
 
 .discord-place__note {

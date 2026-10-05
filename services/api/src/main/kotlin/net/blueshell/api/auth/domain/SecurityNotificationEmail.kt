@@ -50,7 +50,7 @@ private fun toPerson(
     if (lockToken != null) {
         val link = "$frontendUrl/account/lock#token=${URLEncoder.encode(lockToken, StandardCharsets.UTF_8)}"
         lines += ""
-        lines += "If this was you, there is nothing to do."
+        lines += "If this was you, feel free to ignore this message."
         lines += ""
         lines += "If it was not, [lock your account]($link) now. Locking signs it out everywhere and"
         lines += "stops anybody signing in to it; it does not undo this change. The link works once, for"

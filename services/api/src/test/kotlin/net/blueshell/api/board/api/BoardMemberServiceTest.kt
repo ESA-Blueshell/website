@@ -88,4 +88,23 @@ class BoardMemberServiceTest {
             .assertThat(service.servingOn(day))
             .containsExactly(1L)
     }
+
+    @Test
+    fun `names each board that has taken office by its years, and everybody with an account who sat on one`() {
+        val day = java.time.LocalDate.parse("2026-09-01")
+        val past = Entities.boardMember(id = 6).apply { user = Entities.user(id = 9L) }
+        past.board.id = 4
+        past.board.startDate = java.time.LocalDate.parse("2024-09-01")
+        past.board.endDate = java.time.LocalDate.parse("2025-08-31")
+        val open = Entities.boardMember(id = 7)
+        open.board.id = 5
+        open.board.startDate = java.time.LocalDate.parse("2025-09-01")
+        open.board.endDate = null
+        whenever(repository.findBoardsInOfficeBy(day)).thenReturn(listOf(past.board, open.board))
+        whenever(repository.findByBoardId(4)).thenReturn(listOf(past, Entities.boardMember(id = 8)))
+
+        assertThat(service.boardYearsBy(day).map { it.boardId to it.years }).containsExactly(4L to "2024-2025", 5L to "2025-2026")
+        // A place held by somebody with no account here is nobody the site can give a role.
+        assertThat(service.everOn(4)).containsExactly(9L)
+    }
 }

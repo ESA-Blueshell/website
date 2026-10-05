@@ -54,9 +54,10 @@ class CohortQueryService(
                     mappingCount = targets.countByCohortId(cohortId).toInt(),
                     targets =
                         targetsByCohort[cohortId].orEmpty().mapNotNull { target ->
-                            targetSystemOrNull(
-                                target.system,
-                            )?.let { SummaryTarget(it, target.label, targetExternalIds.find(target) != null) }
+                            targetSystemOrNull(target.system)?.let {
+                                val externalId = targetExternalIds.find(target)
+                                SummaryTarget(it, target.label, externalId != null, externalId)
+                            }
                         },
                 )
             }.sortedWith(
@@ -249,6 +250,8 @@ data class SummaryTarget(
     val system: TargetSystem,
     val label: String,
     val made: Boolean,
+    /** What the system calls it once it is made there, which is how its own page is addressed. */
+    val externalId: String? = null,
 )
 
 /** Read-model projection for the dashboard's top-level list. */

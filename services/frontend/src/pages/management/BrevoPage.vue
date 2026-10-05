@@ -2,8 +2,8 @@
 /* Every list in the association's Brevo account by the folder it is really in, with the cohort that
    fills it, its people and its drift. Lists the site expects and that are missing come first. */
 import {computed, onMounted, ref} from "vue"
+import CutButton from "@/components/island/CutButton.vue"
 import FactList from "@/components/island/FactList.vue"
-import FoldOut from "@/components/island/FoldOut.vue"
 import FormField from "@/components/island/FormField.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
@@ -12,8 +12,14 @@ import SearchPicker from "@/components/island/SearchPicker.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import TextInput from "@/components/island/TextInput.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
+import PairList from "@/components/management/PairList.vue"
 import {
   type ListedTarget,
+  type MissingTarget,
   type OverviewRow,
   type TargetOverview,
   TargetSystem,
@@ -34,7 +40,7 @@ import {
   readTargetOverview,
 } from "@/domains/cohorts"
 import store from "@/plugins/store"
-import {formatDateNoSeconds} from "@/utils/timestamps"
+import {formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "BrevoPage"})
 
@@ -47,6 +53,21 @@ const search = ref("")
 const acting = ref(false)
 
 const groups = computed(() => (overview.value ? groupsOf(overview.value, search.value) : []))
+
+const COLUMNS: TableColumn[] = [
+  {key: "name", label: "List", wrap: true},
+  {key: "follows", label: "Follows", wrap: true},
+  {key: "people", label: "People"},
+  {key: "state", label: "State"},
+  {key: "reconciled", label: "Compared"},
+]
+
+type ListRow = OverviewRow & {folder: string; kind: string}
+
+// One table for every list, in the order of the folders they are in; each row names its folder.
+const rows = computed<ListRow[]>(() => groups.value.flatMap((group) => group.rows.map((row) => ({...row, folder: group.name, kind: group.kind}))))
+const total = computed(() => (overview.value ? groupsOf(overview.value, "").reduce((sum, group) => sum + group.rows.length, 0) : 0))
+const linkOf = (row: ListRow) => (row.missing ? null : `/management/platforms/brevo/lists/${row.list.externalId}`)
 const facts = computed(() => (overview.value ? overviewFacts(overview.value) : []))
 const notice = computed(() => missingNotice(overview.value?.missing ?? []))
 
@@ -57,17 +78,34 @@ const load = async () => {
 
 const said = (message: string) => store.commit("setStatusSnackbarMessage", message)
 
-/** Creating a missing list is a job per list; the row says so until the list exists. */
-const createMissing = async (targetIds: number[]) => {
-  if (acting.value) return
+/* Creating lists goes in three steps, so nothing is made in Brevo by one press: the lists are
+   shown first, then asked about once more, and only then created, a job per list. */
+const pending = ref<MissingTarget[]>([])
+const createStep = ref<"preview" | "confirm">("preview")
+const createRefusal = ref<string | null>(null)
+const pendingPeople = computed(() => pending.value.reduce((sum, one) => sum + one.memberCount, 0))
+const pendingPairs = computed(() => pending.value.map((one) => ({
+  label: one.cohortLabel,
+  value: `${one.folder ?? "No folder"} · ${one.memberCount} ${one.memberCount === 1 ? "person" : "people"}`,
+})))
+
+const previewMissing = (targetIds: number[]) => {
+  const missing = overview.value?.missing ?? []
+  pending.value = targetIds.length === 0 ? missing : missing.filter((one) => targetIds.includes(one.targetId))
+  createStep.value = "preview"
+  createRefusal.value = null
+}
+
+const createMissing = async () => {
+  if (acting.value || pending.value.length === 0) return
   acting.value = true
-  const answered = await createMissingLists(SYSTEM, targetIds)
+  const answered = await createMissingLists(SYSTEM, pending.value.map((one) => one.targetId))
   acting.value = false
-  if (!answered.ok) return said(answered.reason)
+  if (!answered.ok) return void (createRefusal.value = answered.reason)
+  pending.value = []
   said(answered.saved === 1 ? "The list is being created." : `${answered.saved} lists are being created.`)
   await load()
 }
-
 const archive = async (list: ListedTarget) => {
   if (acting.value) return
   acting.value = true
@@ -88,6 +126,17 @@ const newName = ref("")
 const newFolder = ref<string | null>(null)
 const newFolderName = ref("")
 const refusal = ref<string | null>(null)
+const newStep = ref<"fill" | "preview" | "confirm">("fill")
+const newFolderSaid = computed(() => {
+  if (newFolder.value === NEW_FOLDER) return newFolderName.value.trim() ? `${newFolderName.value.trim()}, a new folder created first` : "No folder"
+  return newFolder.value ?? "No folder"
+})
+const newPairs = computed(() => [
+  {label: "Name in Brevo", value: newName.value.trim()},
+  {label: "Folder", value: newFolderSaid.value},
+  {label: "People", value: "None. A list made by hand starts empty"},
+  {label: "Follows", value: "Nothing, until a cohort is linked to it"},
+])
 const folderOptions = computed(() => [
   ...folders.value.map((name) => ({key: name, label: name})),
   {key: NEW_FOLDER, label: "New folder…"},
@@ -95,6 +144,7 @@ const folderOptions = computed(() => [
 
 const openCreate = async () => {
   creating.value = true
+  newStep.value = "fill"
   newName.value = ""
   newFolder.value = null
   newFolderName.value = ""
@@ -170,41 +220,29 @@ onMounted(load)
 </script>
 
 <template>
-  <div
-    class="brevo"
-    data-testid="brevo-page"
+  <management-page
+    eyebrow="Platforms"
+    testid="brevo-page"
+    title="Brevo"
   >
-    <header class="brevo__head">
-      <div>
-        <p class="brevo__eyebrow">
-          Platforms
-        </p>
-        <h1 class="brevo__title">
-          Brevo
-        </h1>
-        <p class="brevo__note">
-          The mailing lists in the association's Brevo account: which rule fills each one, and where it differs from Brevo.
-        </p>
-      </div>
-      <div class="brevo__acts">
-        <button
-          class="brevo__action"
-          data-testid="brevo-new-list"
-          type="button"
-          @click="openCreate"
-        >
-          New list
-        </button>
-        <button
-          class="brevo__action"
-          data-testid="brevo-tidy"
-          type="button"
-          @click="openTidy"
-        >
-          Tidy folders
-        </button>
-      </div>
-    </header>
+    <template #lede>
+      The mailing lists in the association's Brevo account: which rule fills each one, and where it differs from Brevo.
+    </template>
+    <template #actions>
+      <cut-button
+        testid="brevo-new-list"
+        @click="openCreate"
+      >
+        New list
+      </cut-button>
+      <cut-button
+        testid="brevo-tidy"
+        tone="quiet"
+        @click="openTidy"
+      >
+        Tidy folders
+      </cut-button>
+    </template>
 
     <p
       v-if="loaded && !overview"
@@ -214,118 +252,126 @@ onMounted(load)
       Brevo could not be read. Try again in a moment.
     </p>
 
-    <notice-box
-      v-if="notice"
-      testid="brevo-missing"
-      :title="notice.title"
-      tone="danger"
-    >
-      <p>{{ notice.body }}</p>
-      <button
-        class="brevo__action brevo__action--on-notice"
-        data-testid="brevo-create-missing"
-        :disabled="acting"
-        type="button"
-        @click="createMissing([])"
-      >
-        {{ overview!.missing.length === 1 ? "Create the list" : `Create ${overview!.missing.length} lists` }}
-      </button>
-    </notice-box>
-
     <template v-if="overview">
-      <fact-list :facts="facts" />
-
-      <search-box
-        v-model="search"
-        label="Search lists"
-        testid="brevo-search"
+      <fact-list
+        class="brevo__facts"
+        :facts="facts"
       />
 
-      <p
-        v-if="groups.length === 0"
-        class="brevo__note"
-        data-testid="brevo-empty"
+      <notice-box
+        v-if="notice"
+        class="brevo__notice"
+        testid="brevo-missing"
+        :title="notice.title"
+        tone="danger"
       >
-        No list matches.
-      </p>
-
-      <component
-        :is="group.kind === 'archive' ? FoldOut : 'section'"
-        v-for="group in groups"
-        :key="group.name"
-        class="brevo__group"
-        :data-testid="`brevo-group-${group.name}`"
-        v-bind="group.kind === 'archive' ? {label: `${group.name} · ${group.rows.length}`, testid: `brevo-group-${group.name}`} : {}"
-      >
-        <p
-          v-if="group.kind !== 'archive'"
-          class="brevo__folder"
-        >
-          <span>{{ group.name }}</span>
-          <span class="brevo__sub">{{ group.rows.length }} {{ group.rows.length === 1 ? "list" : "lists" }}</span>
-        </p>
-        <p
-          v-if="group.kind === 'unlinked'"
-          class="brevo__note brevo__note--small"
-        >
-          Lists made by hand in Brevo. The site leaves their people alone: link one from its cohort's page, or archive it.
-        </p>
-        <ul class="brevo__rows">
-          <li
-            v-for="row in group.rows"
-            :key="keyOf(row)"
-            class="brevo__row"
-            :data-testid="`brevo-row-${keyOf(row)}`"
+        <p>{{ notice.body }}</p>
+        <div class="brevo__acts">
+          <cut-button
+            :disabled="acting"
+            small
+            testid="brevo-create-missing"
+            @click="previewMissing([])"
           >
-            <span class="brevo__name">
-              <template v-if="row.missing">{{ row.missing.cohortLabel }}</template>
-              <router-link
-                v-else
-                :to="`/management/platforms/brevo/lists/${row.list.externalId}`"
-              >{{ row.list.label }}</router-link>
-            </span>
-            <span class="brevo__sub brevo__follows">{{ followsOf(row) }}</span>
-            <span class="brevo__sub">{{ people(row) }}</span>
-            <state-mark
-              v-if="row.missing"
-              kind="not-created"
-              :testid="`brevo-state-${keyOf(row)}`"
-            >
-              {{ row.missing.creating ? "Being created" : "Not created yet" }}
+            {{ overview.missing.length === 1 ? "Review and create the list" : `Review and create ${overview.missing.length} lists` }}
+          </cut-button>
+        </div>
+      </notice-box>
+
+      <management-table
+        :columns="COLUMNS"
+        :row-key="keyOf"
+        :row-testid="(row) => `brevo-row-${keyOf(row)}`"
+        :rows="rows"
+        testid="brevo-table"
+        :to="linkOf"
+      >
+        <template #count>
+          {{ rows.length }} of {{ total }} lists
+        </template>
+        <template #search>
+          <search-box
+            v-model="search"
+            label="Search lists"
+            testid="brevo-search"
+          />
+        </template>
+        <template #empty>
+          <span data-testid="brevo-empty">No list matches.</span>
+        </template>
+        <template #name="{row}">
+          <span
+            v-if="row.missing"
+            class="mg-name"
+          >{{ row.missing.cohortLabel }}</span>
+          <router-link
+            v-else
+            class="mg-name"
+            :to="`/management/platforms/brevo/lists/${row.list.externalId}`"
+          >
+            {{ row.list.label }}
+          </router-link>
+          <span
+            class="mg-sub"
+            :data-testid="`brevo-folder-${keyOf(row)}`"
+          >{{ row.kind === "unlinked" ? `${row.folder} · made by hand in Brevo` : row.folder }}</span>
+        </template>
+        <template #follows="{row}">
+          <span class="brevo__follows">{{ followsOf(row) }}</span>
+        </template>
+        <template #people="{row}">
+          {{ people(row) }}
+        </template>
+        <template #state="{row}">
+          <state-mark
+            v-if="row.missing"
+            kind="not-created"
+            :testid="`brevo-state-${keyOf(row)}`"
+          >
+            {{ row.missing.creating ? "Being created" : "Not created yet" }}
+          </state-mark>
+          <state-mark
+            v-else
+            :kind="row.kind === 'archive' ? 'not-compared' : driftOf(row.list).kind"
+            :testid="`brevo-state-${keyOf(row)}`"
+          >
+            {{ row.kind === "archive" ? "Archived" : driftOf(row.list).word }}
+          </state-mark>
+        </template>
+        <template #reconciled="{row}">
+          <span :class="{'mg-quiet': !row.list?.lastReconciledAt}">{{ row.list?.lastReconciledAt ? formatMoment(row.list.lastReconciledAt) : "Never" }}</span>
+        </template>
+        <template #acts="{row}">
+          <mini-button
+            v-if="row.missing"
+            :disabled="acting || row.missing.creating"
+            :testid="`brevo-create-${row.missing.targetId}`"
+            @click="previewMissing([row.missing.targetId])"
+          >
+            Create
+          </mini-button>
+          <mini-button
+            v-else-if="row.list.targetId == null && row.kind !== 'archive'"
+            :disabled="acting"
+            :testid="`brevo-archive-${row.list.externalId}`"
+            @click="archive(row.list)"
+          >
+            Archive
+          </mini-button>
+        </template>
+        <template #phone="{row}">
+          <management-row
+            :meta="`${row.folder} · ${followsOf(row)}`"
+            :name="row.missing ? row.missing.cohortLabel : row.list.label"
+            :testid="`brevo-row-${keyOf(row)}`"
+            :to="linkOf(row) ?? ''"
+          >
+            <state-mark :kind="row.missing ? 'not-created' : driftOf(row.list).kind">
+              {{ row.missing ? "Not created yet" : driftOf(row.list).word }}
             </state-mark>
-            <state-mark
-              v-else
-              :kind="driftOf(row.list).kind"
-              :testid="`brevo-state-${keyOf(row)}`"
-            >
-              {{ driftOf(row.list).word }}
-            </state-mark>
-            <span class="brevo__sub">{{ row.list?.lastReconciledAt ? formatDateNoSeconds(row.list.lastReconciledAt) : "Never" }}</span>
-            <span class="brevo__row-acts">
-              <button
-                v-if="row.missing"
-                class="brevo__mini"
-                :data-testid="`brevo-create-${row.missing.targetId}`"
-                :disabled="acting"
-                type="button"
-                @click="createMissing([row.missing.targetId])"
-              >
-                Create
-              </button>
-              <button
-                v-else-if="row.list.targetId == null && group.kind !== 'archive'"
-                class="brevo__mini"
-                :data-testid="`brevo-archive-${row.list.externalId}`"
-                :disabled="acting"
-                type="button"
-                @click="archive(row.list)"
-              >
-                Archive
-              </button>
-            </span>
-          </li>
-        </ul>
-      </component>
+          </management-row>
+        </template>
+      </management-table>
     </template>
 
     <modal-dialog
@@ -336,7 +382,8 @@ onMounted(load)
     >
       <div class="brevo__form">
         <p class="brevo__note">
-          Moves each list that follows a cohort into its cohort type's folder. Nothing moves until you apply it, and nothing moves a list back afterwards.
+          Moves each list that follows a cohort into its cohort type's folder. Nothing moves until you apply it, and nothing
+          moves a list back afterwards.
         </p>
         <p
           v-if="tidy"
@@ -373,7 +420,7 @@ onMounted(load)
           v-if="tidy && tidy.foldersToCreate.length"
           class="brevo__note brevo__note--small"
         >
-          Makes {{ tidy.foldersToCreate.join(", ") }} first.
+          Creates {{ tidy.foldersToCreate.join(", ") }} first.
         </p>
         <p
           v-for="failure in tidyFailures"
@@ -393,15 +440,14 @@ onMounted(load)
         </p>
       </div>
       <template #footer>
-        <button
-          class="brevo__action brevo__action--main"
-          data-testid="brevo-tidy-apply"
+        <cut-button
           :disabled="acting || tidyPicked.size === 0"
-          type="button"
+          testid="brevo-tidy-apply"
+          tone="solid"
           @click="applyPicked"
         >
           Move {{ tidyPicked.size }} {{ tidyPicked.size === 1 ? "list" : "lists" }}
-        </button>
+        </cut-button>
       </template>
     </modal-dialog>
 
@@ -412,8 +458,9 @@ onMounted(load)
       @update:open="creating = $event"
     >
       <form
+        v-if="newStep === 'fill'"
         class="brevo__form"
-        @submit.prevent="confirmCreate"
+        @submit.prevent="newStep = 'preview'"
       >
         <form-field
           v-slot="field"
@@ -451,6 +498,36 @@ onMounted(load)
             :control-id="field.controlId"
           />
         </form-field>
+        <div class="brevo__acts">
+          <cut-button
+            :disabled="newName.trim() === ''"
+            submit
+            testid="brevo-new-preview"
+            tone="solid"
+          >
+            Preview
+          </cut-button>
+        </div>
+      </form>
+      <div
+        v-else
+        class="brevo__form"
+        :data-testid="`brevo-new-step-${newStep}`"
+      >
+        <p
+          v-if="newStep === 'preview'"
+          class="brevo__note"
+        >
+          This is what will be created. Nothing is made in Brevo yet.
+        </p>
+        <notice-box
+          v-else
+          :title="`Create ${newName.trim()} in Brevo?`"
+          tone="warning"
+        >
+          A list cannot be taken back from here: it is deleted in Brevo itself.
+        </notice-box>
+        <pair-list :pairs="newPairs" />
         <p
           v-if="refusal"
           class="brevo__failure"
@@ -459,189 +536,150 @@ onMounted(load)
         >
           {{ refusal }}
         </p>
-        <button
-          class="brevo__action brevo__action--main"
-          data-testid="brevo-new-confirm"
-          :disabled="acting || newName.trim() === ''"
-          type="submit"
-        >
-          Make the list
-        </button>
-      </form>
+        <div class="brevo__acts">
+          <cut-button
+            testid="brevo-new-back"
+            tone="quiet"
+            @click="newStep = newStep === 'confirm' ? 'preview' : 'fill'"
+          >
+            Back
+          </cut-button>
+          <cut-button
+            v-if="newStep === 'preview'"
+            testid="brevo-new-continue"
+            tone="solid"
+            @click="newStep = 'confirm'"
+          >
+            Continue
+          </cut-button>
+          <cut-button
+            v-else
+            :disabled="acting"
+            testid="brevo-new-confirm"
+            tone="solid"
+            @click="confirmCreate"
+          >
+            Create the list
+          </cut-button>
+        </div>
+      </div>
     </modal-dialog>
-  </div>
+    <modal-dialog
+      :open="pending.length > 0"
+      testid="brevo-create-dialog"
+      :title="pending.length === 1 ? 'Create a list in Brevo' : `Create ${pending.length} lists in Brevo`"
+      @update:open="pending = $event ? pending : []"
+    >
+      <div
+        v-if="createStep === 'preview'"
+        class="brevo__form"
+        data-testid="brevo-create-preview"
+      >
+        <p class="brevo__note">
+          This is what will be created. Nothing is made in Brevo yet.
+        </p>
+        <pair-list :pairs="pendingPairs" />
+        <p class="brevo__note brevo__note--small">
+          Each list is created in its folder, and the people its rule covers are added to it.
+        </p>
+      </div>
+      <div
+        v-else
+        class="brevo__form"
+        data-testid="brevo-create-confirm"
+      >
+        <notice-box
+          :title="pending.length === 1 ? `Create ${pending[0]!.cohortLabel} in Brevo?` : `Create these ${pending.length} lists in Brevo?`"
+          tone="warning"
+        >
+          {{ pendingPeople }} {{ pendingPeople === 1 ? "person is" : "people are" }} added across {{ pending.length === 1 ? "it" : "them" }}.
+          A list cannot be taken back from here: it is deleted in Brevo itself.
+        </notice-box>
+        <p
+          v-if="createRefusal"
+          class="brevo__failure"
+          data-testid="brevo-create-refusal"
+          role="alert"
+        >
+          {{ createRefusal }}
+        </p>
+      </div>
+      <template #footer>
+        <cut-button
+          v-if="createStep === 'preview'"
+          testid="brevo-create-continue"
+          tone="solid"
+          @click="createStep = 'confirm'"
+        >
+          Continue
+        </cut-button>
+        <template v-else>
+          <cut-button
+            testid="brevo-create-back"
+            tone="quiet"
+            @click="createStep = 'preview'"
+          >
+            Back
+          </cut-button>
+          <cut-button
+            :disabled="acting"
+            testid="brevo-create-go"
+            tone="solid"
+            @click="createMissing"
+          >
+            {{ pending.length === 1 ? "Create the list" : `Create ${pending.length} lists` }}
+          </cut-button>
+        </template>
+      </template>
+    </modal-dialog>
+  </management-page>
 </template>
 
 <style scoped>
-.brevo {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 76rem;
-  padding: 2rem 2.4rem 3rem;
+.brevo__facts {
+  padding: 1.1rem 0 1.2rem;
 }
 
-.brevo__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
+.brevo__notice {
+  margin-bottom: 1.2rem;
 }
 
-.brevo__eyebrow {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow, var(--color-ash));
-}
-
-.brevo__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.brevo__note {
-  margin: 0;
-  max-width: 48rem;
-  color: var(--color-ash);
-}
-
-.brevo__note--small {
-  font-size: 0.86rem;
-}
-
-.brevo__failure {
-  margin: 0;
-  color: var(--color-error, #e5484d);
-}
-
-.brevo__acts {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.brevo__action,
-.brevo__mini {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-.brevo__mini {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
-}
-
-/* The notice's tint takes the brand text below contrast, so the button keeps the page's ink. */
-.brevo__action--on-notice {
-  align-self: flex-start;
-  border-color: var(--color-brand);
-}
-
-.brevo__action--main {
-  align-self: flex-start;
-  border-color: var(--color-brand);
-  color: var(--color-brand);
-}
-
-.brevo__action:disabled,
-.brevo__mini:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.brevo__group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.brevo__folder {
-  display: flex;
-  align-items: baseline;
-  gap: 0.8rem;
-  margin: 0.8rem 0 0;
-  font-weight: 600;
-}
-
-.brevo__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.brevo__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) 4rem 10rem 8.5rem 6rem;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.brevo__name {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-}
-
-.brevo__name a {
-  color: var(--color-chalk);
-}
-
-.brevo__sub {
-  overflow: hidden;
+.brevo__follows {
   font-size: 0.84rem;
   color: var(--color-ash);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.brevo__row-acts {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.brevo__moves {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .brevo__form {
   display: flex;
   flex-direction: column;
+  gap: 0.8rem;
+}
+
+.brevo__acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.6rem;
 }
 
-@media (max-width: 839px) {
-  .brevo {
-    padding: 1.2rem 1.1rem 2rem;
-  }
+.brevo__moves {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
-  .brevo__row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
+.brevo__note {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--color-ash);
+}
 
-  .brevo__row > .brevo__sub:not(.brevo__follows) {
-    display: none;
-  }
+.brevo__note--small {
+  font-size: 0.84rem;
+}
 
-  .brevo__follows {
-    grid-row: 2;
-  }
+.brevo__failure {
+  font-size: 0.88rem;
+  color: var(--color-danger);
 }
 </style>

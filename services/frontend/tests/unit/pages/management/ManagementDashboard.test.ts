@@ -65,18 +65,24 @@ describe("the Management dashboard", () => {
   it("sums up each area and links it to its page, reading no admin figure for the board", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.get('[data-testid="dashboard-alerts"]').text()).toContain("Sitecie is out of step with Brevo")
+    const alerts = wrapper.get('[data-testid="dashboard-alerts"]')
+    expect(alerts.text()).toContain("A list is out of step")
+    expect(alerts.text()).toContain("Sitecie · 3 people differ")
+    expect(alerts.get('[data-testid="dashboard-alerts-link"]').text()).toBe("All 2 alerts")
     const membership = wrapper.get('[data-testid="dashboard-membership"]').text()
+    expect(membership).toContain("Members, 2026-2027")
     expect(membership).toContain("211")
-    expect(membership).toContain("Pending their first contribution")
+    expect(membership).toContain("9 pending their first contribution")
+    expect(membership).toContain("31 still to pay")
     const events = wrapper.get('[data-testid="dashboard-events"]')
-    expect(events.text()).toContain("4 awaiting approval")
+    expect(events.get('[data-testid="dashboard-events-queue"]').text()).toBe("4 awaiting approval")
     expect(events.text()).toContain("Pub quiz")
     expect(events.text()).toContain("LAN party")
-    expect(wrapper.get('[data-testid="dashboard-mail"]').text()).toContain("3")
+    expect(events.text()).toContain("20 Oct 19:00")
+    expect(wrapper.get('[data-testid="dashboard-mail"]').text()).toContain("40 delivered · 3 failed or bounced")
     const platforms = wrapper.get('[data-testid="dashboard-platforms"]')
-    expect(platforms.find('a').attributes("to")).toBe("/management/platforms/brevo")
-    expect(platforms.text()).toContain("Out of step")
+    expect(platforms.get('[data-testid="dashboard-platforms-link"]').attributes("to")).toBe("/management/platforms/brevo")
+    expect(platforms.text()).toContain("2 cohorts · 1 out of step · 1 without a list")
 
     expect(wrapper.find('[data-testid="dashboard-system"]').exists()).toBe(false)
     expect(api.getStats).not.toHaveBeenCalled()
@@ -89,7 +95,8 @@ describe("the Management dashboard", () => {
 
     const system = wrapper.get('[data-testid="dashboard-system"]')
     expect(system.text()).toContain("@Admin")
-    expect(system.text()).toContain("Dead")
+    expect(system.text()).toContain("4 dead · 3 failed")
+    expect(wrapper.get('[data-testid="dashboard-platforms"]').text()).toContain("2 open")
     expect(api.listExceptions).toHaveBeenCalledWith({query: {resolved: false}})
   })
 
@@ -103,5 +110,18 @@ describe("the Management dashboard", () => {
     expect(wrapper.get('[data-testid="dashboard-alerts"]').text()).toContain("Nothing needs you right now.")
     expect(wrapper.get('[data-testid="dashboard-membership"]').text()).toContain("There is no contribution period yet.")
     expect(wrapper.get('[data-testid="dashboard-events"]').text()).toContain("0 awaiting approval")
+    expect(wrapper.find('[data-testid="dashboard-mail"]').exists()).toBe(false)
+  })
+
+  it("names a period that starts and ends in one year by that year, and greets by the hour", async () => {
+    api.findCurrentPeriodStanding.mockResolvedValue({
+      status: 200,
+      data: {periodId: 3, startDate: "2026-01-01", endDate: "2026-12-31", members: 6, paid: 1, stillToPay: 5, pendingFirstContribution: 0},
+    })
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="dashboard-membership"]').text()).toContain("Members, 2026")
+    expect(wrapper.get('[data-testid="dashboard-membership"]').text()).not.toContain("2026-2026")
+    expect(wrapper.text()).toMatch(/Good (morning|afternoon|evening)\. Here is what needs you/)
   })
 })

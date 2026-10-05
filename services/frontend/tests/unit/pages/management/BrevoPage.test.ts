@@ -36,6 +36,18 @@ const overview = (missing = [{targetId: 3, cohortId: 103, cohortLabel: "Paid 202
 const made = {system: "BREVO", externalId: "11", kind: "LIST", label: "Pub quiz", folderLabel: "Projects", path: ["Brevo", "Projects"]}
 
 const form = () => new DOMWrapper(document.body.querySelector("form")!)
+const inBody = (testid: string) => document.body.querySelector(`[data-testid="${testid}"]`)
+const press = async (testid: string) => {
+  await new DOMWrapper(inBody(testid)!).trigger("click")
+  await settle()
+}
+/** Sends the form to its preview, then goes on to the confirmation and confirms. */
+const createTheList = async () => {
+  await form().trigger("submit")
+  await settle()
+  await press("brevo-new-continue")
+  await press("brevo-new-confirm")
+}
 
 describe("the Brevo page", () => {
   const wrappers: VueWrapper[] = []
@@ -64,20 +76,20 @@ describe("the Brevo page", () => {
 
   afterEach(() => unmountAll(wrappers, "BrevoPage"))
 
-  it("shows the missing list first with a notice, every list by folder, and the archive folded", async () => {
+  it("shows the missing list first with a notice, and every list in one table with its folder", async () => {
     const wrapper = await mount()
 
     expect(api.findTargetOverview).toHaveBeenCalledWith({path: {system: "BREVO"}})
     expect(wrapper.get('[data-testid="brevo-missing"]').text()).toContain("1 list the site expects is missing")
-    expect(wrapper.get('[data-testid="brevo-create-missing"]').text()).toBe("Create the list")
+    expect(wrapper.get('[data-testid="brevo-create-missing"]').text()).toBe("Review and create the list")
     expect(wrapper.get('[data-testid="brevo-state-missing-3"]').text()).toBe("Not created yet")
     expect(wrapper.get('[data-testid="brevo-state-list-7"]').text()).toBe("In step")
-    expect(wrapper.get('[data-testid="brevo-row-list-7"] .brevo__name > *').attributes("to")).toBe("/management/platforms/brevo/lists/7")
-    expect(wrapper.get('[data-testid="brevo-group-Follows nothing"]').text()).toContain("Old newsletter test")
-    expect(wrapper.find('[data-testid="brevo-row-list-10"]').exists()).toBe(false)
-
-    await wrapper.get('[data-testid="brevo-group-Archive-toggle"]').trigger("click")
+    expect(wrapper.get('[data-testid="brevo-row-list-7"] a').attributes("to")).toBe("/management/platforms/brevo/lists/7")
+    expect(wrapper.get('[data-testid="brevo-folder-list-7"]').text()).toBe("Members")
+    expect(wrapper.get('[data-testid="brevo-folder-list-9"]').text()).toContain("made by hand in Brevo")
     expect(wrapper.get('[data-testid="brevo-row-list-10"]').text()).toContain("LAN party 2024")
+    expect(wrapper.get('[data-testid="brevo-state-list-10"]').text()).toBe("Archived")
+    expect(wrapper.findAll('[data-testid^="brevo-row-"]')[0]!.attributes("data-testid")).toBe("brevo-row-missing-3")
     expect(wrapper.find('[data-testid="brevo-archive-10"]').exists()).toBe(false)
 
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "nothing like it")
@@ -88,15 +100,27 @@ describe("the Brevo page", () => {
   it("creates one missing list or all of them, archives a list made by hand, and says a refusal", async () => {
     const wrapper = await mount()
 
+    // Nothing is created by the first press: the list is shown, then asked about once more.
     await wrapper.get('[data-testid="brevo-create-3"]').trigger("click")
     await settle()
+    expect(inBody("brevo-create-preview")?.textContent).toContain("Nothing is made in Brevo yet.")
+    expect(api.createMissingTargets).not.toHaveBeenCalled()
+    await press("brevo-create-continue")
+    expect(inBody("brevo-create-confirm")?.textContent).toContain("cannot be taken back from here")
+    await press("brevo-create-back")
+    expect(inBody("brevo-create-preview")).not.toBeNull()
+    await press("brevo-create-continue")
+    expect(api.createMissingTargets).not.toHaveBeenCalled()
+    await press("brevo-create-go")
     expect(api.createMissingTargets).toHaveBeenCalledWith({path: {system: "BREVO"}, body: {targetIds: [3]}})
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The list is being created.")
 
     api.createMissingTargets.mockResolvedValueOnce({status: 200, data: {queued: 2}})
     await wrapper.get('[data-testid="brevo-create-missing"]').trigger("click")
     await settle()
-    expect(api.createMissingTargets).toHaveBeenLastCalledWith({path: {system: "BREVO"}, body: {targetIds: []}})
+    await press("brevo-create-continue")
+    await press("brevo-create-go")
+    expect(api.createMissingTargets).toHaveBeenLastCalledWith({path: {system: "BREVO"}, body: {targetIds: [3]}})
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "2 lists are being created.")
 
     await wrapper.get('[data-testid="brevo-archive-9"]').trigger("click")
@@ -110,7 +134,12 @@ describe("the Brevo page", () => {
     api.createMissingTargets.mockResolvedValueOnce({status: 500, error: {}})
     await wrapper.get('[data-testid="brevo-create-3"]').trigger("click")
     await settle()
-    expect(mockStore.commit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", "The lists could not be created.")
+    await press("brevo-create-continue")
+    await press("brevo-create-go")
+    expect(inBody("brevo-create-refusal")?.textContent).toContain("The lists could not be created.")
+    wrapper.findAllComponents({name: "ModalDialog"})[2]!.vm.$emit("update:open", false)
+    await settle()
+    expect(wrapper.findAllComponents({name: "ModalDialog"})[2]!.props("open")).toBe(false)
   })
 
   it("makes a new list in a new folder, and says why Brevo refused one", async () => {
@@ -119,7 +148,7 @@ describe("the Brevo page", () => {
       folder: null, memberCount: 1, creating: false}])})
     const wrapper = await mount()
     expect(wrapper.get('[data-testid="brevo-state-missing-3"]').text()).toBe("Being created")
-    expect(wrapper.get('[data-testid="brevo-create-missing"]').text()).toBe("Create 2 lists")
+    expect(wrapper.get('[data-testid="brevo-create-missing"]').text()).toBe("Review and create 2 lists")
 
     await wrapper.get('[data-testid="brevo-new-list"]').trigger("click")
     await settle()
@@ -131,6 +160,13 @@ describe("the Brevo page", () => {
     await settle()
     await form().trigger("submit")
     await settle()
+    expect(inBody("brevo-new-step-preview")?.textContent).toContain("New, a new folder created first")
+    expect(api.createExternalTarget).not.toHaveBeenCalled()
+    await press("brevo-new-continue")
+    expect(inBody("brevo-new-step-confirm")).not.toBeNull()
+    await press("brevo-new-back")
+    await press("brevo-new-continue")
+    await press("brevo-new-confirm")
     expect(api.createTargetFolder).toHaveBeenCalledWith({path: {system: "BREVO"}, body: {name: "New"}})
     expect(api.createExternalTarget).toHaveBeenCalledWith({path: {system: "BREVO"}, body: {name: "Pub quiz", folder: "New"}})
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Pub quiz is made.")
@@ -141,19 +177,28 @@ describe("the Brevo page", () => {
     wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", "Members")
     api.createExternalTarget.mockResolvedValueOnce({status: 502, error: {code: "TargetSystemRefused", system: "Brevo", reason: "Name taken"}})
     await settle()
-    await form().trigger("submit")
-    await settle()
+    await createTheList()
     expect(api.createExternalTarget).toHaveBeenLastCalledWith({path: {system: "BREVO"}, body: {name: "Pub quiz", folder: "Members"}})
     expect(document.body.querySelector('[data-testid="brevo-new-refusal"]')?.textContent).toContain("Name taken")
 
     api.createTargetFolder.mockResolvedValueOnce({status: 502, error: {code: "TargetSystemRefused", system: "Brevo", reason: "No"}})
+    await press("brevo-new-back")
+    await press("brevo-new-back")
     wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", "__new__")
     await settle()
     inputs()[1].vm.$emit("update:modelValue", "Other")
     await settle()
-    await form().trigger("submit")
-    await settle()
+    await createTheList()
     expect(api.createTargetFolder).toHaveBeenLastCalledWith({path: {system: "BREVO"}, body: {name: "Other"}})
+  })
+
+  it("draws each list as a row on a phone, a missing one saying so", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="brevo-row-missing-3"]').text()).toContain("Not created yet")
+    expect(wrapper.get('[data-testid="brevo-row-list-7-open"]').attributes("to")).toBe("/management/platforms/brevo/lists/7")
   })
 
   it("says Brevo could not be read", async () => {
@@ -178,7 +223,7 @@ describe("the Brevo page", () => {
     expect(api.previewFolderTidy).toHaveBeenCalledWith({path: {system: "BREVO"}, throwOnError: true})
     expect(document.body.querySelector('[data-testid="brevo-tidy-last"]')?.textContent).toContain("by Alice Board: 2 lists moved")
     expect(document.body.textContent).toContain("Members 2025-2026: no folder to Members")
-    expect(document.body.textContent).toContain("Makes Committees first.")
+    expect(document.body.textContent).toContain("Creates Committees first.")
     const boxes = () => wrapper.findAllComponents({name: "CheckBox"})
     boxes()[1].vm.$emit("update:modelValue", false)
     boxes()[1].vm.$emit("update:modelValue", true)

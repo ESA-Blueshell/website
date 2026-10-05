@@ -1,39 +1,36 @@
 <template>
-  <section
-    class="mg-more"
-    data-testid="management-more"
+  <management-page
+    eyebrow="Management"
+    testid="management-more"
+    title="More"
   >
-    <p class="eyebrow">
-      Management
-    </p>
-    <h1 class="h-page">
-      More
-    </h1>
     <div
       v-for="group in groups"
       :key="group.label ?? ''"
       class="mg-more__group"
     >
-      <p class="mg-more__label">
-        {{ group.label }}
-      </p>
-      <router-link
+      <list-head
+        v-if="group.label"
+        :title="group.label"
+      />
+      <management-row
         v-for="entry in group.entries"
         :key="entry.to"
-        class="mg-more__item"
         :data-testid="`management-more-${entry.label.toLowerCase().replace(/\s+/g, '-')}`"
+        :name="entry.label"
         :to="entry.to"
-      >
-        {{ entry.label }}
-      </router-link>
+      />
     </div>
-  </section>
+  </management-page>
 </template>
 
 <script lang="ts" setup>
 import {computed} from "vue"
 import {useStore} from "vuex"
+import ListHead from "@/components/management/ListHead.vue"
 import {managementFor} from "@/components/management/managementNav"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
 
 defineOptions({name: "ManagementMore"})
 
@@ -44,31 +41,10 @@ const groups = computed(() => managementFor({board: store.getters.isBoard === tr
 </script>
 
 <style scoped>
-.mg-more {
-  padding: 1.3rem 1.1rem 2rem;
-}
-
 .mg-more__group {
   display: flex;
   flex-direction: column;
-  margin-top: 1.4rem;
-}
-
-.mg-more__label {
-  margin: 0 0 0.35rem;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
-}
-
-.mg-more__item {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--color-hairline);
-  font-size: 1rem;
-  font-weight: 500;
-  text-decoration: none;
-  color: var(--color-chalk);
+  gap: 2px;
+  margin-top: 1.2rem;
 }
 </style>

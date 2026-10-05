@@ -27,7 +27,7 @@ export interface ManagementGroup {
 
 const GROUPS: ManagementGroup[] = [
   {
-    label: "Overview",
+    label: null,
     entries: [
       {label: "Dashboard", to: "/management", exact: true},
       {label: "Alerts", to: "/management/alerts", tab: "alerts", counted: true},
@@ -48,7 +48,7 @@ const GROUPS: ManagementGroup[] = [
       {label: "Committees", to: "/management/committees"},
       {label: "Board", to: "/management/board"},
       {label: "Games", to: "/management/games"},
-      {label: "Competition", to: "/management/competition"},
+      {label: "Esports", to: "/management/competition"},
     ],
   },
   {label: "Mail", entries: [{label: "Sent", to: "/management/mail/sent"}, {label: "Inbox", to: "/management/mail/inbox"}]},

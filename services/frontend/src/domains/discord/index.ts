@@ -14,9 +14,10 @@ export {listKeepableChannels, listKeepableRoles, type KeptChannel, type KeptRole
 export {default as DiscordPlaceFields} from "./island/DiscordPlaceFields.vue"
 export {default as LinkDiscordAsk} from "./island/LinkDiscordAsk.vue"
 export {listMyUnlinkedRoles} from "./adapters/unlinked"
-export {adoptMatches, listCatalogue, listMatches, type AdoptionMatch, type CataloguedChannel} from "./adapters/catalogue"
+export {adoptMatches, listCatalogue, listMatches, type Adopted, type AdoptionMatch, type CataloguedChannel} from "./adapters/catalogue"
 export {
   ARCHIVE_CATEGORY,
+  isArchive,
   accessOf,
   belongsTo,
   catalogueFacts,
@@ -38,3 +39,5 @@ export {readGuildCounts, readGuildWidget, voiceRoomUrl, type GuildCounts, type G
 export {readDiscordRooms, watchDiscordRooms, liveOf, howFull, fitting, SERVER_NAME, type DiscordRooms, type VoicePerson, type VoiceRoom} from "./rooms"
 export {GameChannelCategory} from "@/services/api"
 export type {DiscordChannelResponse, DiscordEmojiResponse, DiscordMemberResponse, DiscordMentionChannelResponse, DiscordRoleResponse, PingedRoleRequest, StarboardEntryResponse} from "@/services/api"
+export {default as ChannelGlyph} from "./island/ChannelGlyph.vue"
+export {makeGameChannel} from "./adapters/channelAccess"

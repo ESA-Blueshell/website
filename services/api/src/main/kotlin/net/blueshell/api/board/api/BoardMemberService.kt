@@ -89,7 +89,26 @@ class BoardMemberService(
     @Transactional(readOnly = true)
     fun candidatesOn(day: LocalDate): Set<Long> = repository.findUserIdsOnBoardsStartingAfter(day).toSet()
 
+    /** Every board that has taken office by [day], each with the years it stands for. */
+    @Transactional(readOnly = true)
+    fun boardYearsBy(day: LocalDate): List<BoardYear> =
+        repository.findBoardsInOfficeBy(day).map { BoardYear(requireNotNull(it.id), it.startDate, it.endDate) }
+
+    /** Everybody with an account who has a place on the board, whenever they held it. */
+    @Transactional(readOnly = true)
+    fun everOn(boardId: Long): Set<Long> = repository.findByBoardId(boardId).mapNotNull { it.user?.id }.toSet()
+
     /** Everybody serving on [day] on a board that has taken office by then. */
     @Transactional(readOnly = true)
     fun servingOn(day: LocalDate): Set<Long> = repository.findUserIdsServingOn(day).toSet()
+}
+
+/** One board that has taken office, as the year it is remembered by. */
+data class BoardYear(
+    val boardId: Long,
+    val startDate: LocalDate,
+    val endDate: LocalDate?,
+) {
+    /** "2024-2025": the year it took office and the year it hands over, a year on where no end is set. */
+    val years: String get() = "${startDate.year}-${endDate?.year ?: (startDate.year + 1)}"
 }

@@ -2,6 +2,7 @@ package net.blueshell.api.discord.domain
 
 import net.blueshell.api.discord.api.ChannelOpening
 import net.blueshell.api.discord.api.DiscordChannelKeeper
+import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptChannelKind
@@ -14,6 +15,7 @@ import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel
 import net.dv8tion.jda.api.entities.channel.attribute.IPermissionContainer
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -77,8 +79,10 @@ class JdaChannelKeeper(
         val guild = guild()
         val channel = containerOf(guild, channelId)
         val access = if ((channel as GuildChannel).type == ChannelType.VOICE) VOICE_ACCESS else TEXT_ACCESS
-        channel.upsertPermissionOverride(roleOf(guild, roleId)).grant(access).complete()
-        if (private) channel.upsertPermissionOverride(guild.publicRole).deny(Permission.VIEW_CHANNEL).complete()
+        permitted(channel) {
+            channel.upsertPermissionOverride(roleOf(guild, roleId)).grant(access).complete()
+            if (private) channel.upsertPermissionOverride(guild.publicRole).deny(Permission.VIEW_CHANNEL).complete()
+        }
     }
 
     override fun close(
@@ -86,7 +90,8 @@ class JdaChannelKeeper(
         roleId: String,
     ) {
         val guild = guild()
-        containerOf(guild, channelId).getPermissionOverride(roleOf(guild, roleId))?.delete()?.complete()
+        val channel = containerOf(guild, channelId)
+        permitted(channel) { channel.getPermissionOverride(roleOf(guild, roleId))?.delete()?.complete() }
     }
 
     override fun archive(channelIds: Collection<String>) {
@@ -125,6 +130,16 @@ class JdaChannelKeeper(
         channelId: String,
     ): IPermissionContainer =
         guild.getGuildChannelById(channelId) as? IPermissionContainer ?: throw DiscordUnavailable("Discord has no channel $channelId.")
+
+    // The bot sees every channel's name and still may not change one it has no access to itself.
+    private fun permitted(
+        channel: IPermissionContainer,
+        change: () -> Unit,
+    ) = try {
+        change()
+    } catch (e: InsufficientPermissionException) {
+        throw DiscordRefused("The bot may not change ${channel.name}: it lacks ${e.permission.getName()} there.").apply { initCause(e) }
+    }
 
     private fun kept(channel: GuildChannel): KeptChannel? = keptOf(channel)
 

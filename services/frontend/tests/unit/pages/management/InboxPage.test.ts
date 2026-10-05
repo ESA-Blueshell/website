@@ -40,10 +40,10 @@ describe("the Inbox page", () => {
   it("lists what arrived with its sender, what it answers and its state, and counts the inbox", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.get('[data-testid="inbox-new"]').text()).toBe("3")
+    expect(wrapper.get('[data-testid="inbox-new"]').text()).toContain("3")
     expect(wrapper.get('[data-testid="inbox-facts"]').text()).toContain("Oldest from")
-    expect(wrapper.get('[data-testid="inbox-done"]').text()).toBe("142")
-    expect(wrapper.get('[data-testid="inbox-automatic"]').text()).toBe("24")
+    expect(wrapper.get('[data-testid="inbox-done"]').text()).toContain("142")
+    expect(wrapper.get('[data-testid="inbox-automatic"]').text()).toContain("24")
     expect(wrapper.get('[data-testid="inbox-row-1"]').text()).toContain("Lars Mulder")
     expect(wrapper.get('[data-testid="inbox-follows-1"]').text()).toBe("Answers contribution reminder")
     expect(wrapper.get('[data-testid="inbox-row-2"]').text()).toContain("Unknown sender")
@@ -52,12 +52,21 @@ describe("the Inbox page", () => {
     expect(wrapper.get('[data-testid="inbox-row-4"]').text()).toContain("Alice Board")
   })
 
-  it("pages, refreshes, searches, and says when nothing arrived", async () => {
+  it("draws each message as a row on a phone, opening the message", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
     const wrapper = await mount()
-    await wrapper.get('[data-testid="inbox-next"]').trigger("click")
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="inbox-row-1-open"]').attributes("to")).toBe("/management/mail/inbox/1")
+    expect(wrapper.get('[data-testid="inbox-row-1"]').text()).toContain("Lars Mulder")
+    expect(wrapper.get('[data-testid="inbox-state-3"]').text()).toBe("Automatic reply")
+  })
+
+  it("reads more as the list is scrolled, refreshes, searches, and says when nothing arrived", async () => {
+    const wrapper = await mount()
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("more")
     await settle()
     expect(api.findInbox).toHaveBeenLastCalledWith({query: {page: 1}})
-    await wrapper.get('[data-testid="inbox-previous"]').trigger("click")
     await wrapper.get('[data-testid="inbox-refresh"]').trigger("click")
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "lars")
     await vi.waitFor(() => expect(api.findInbox).toHaveBeenLastCalledWith({query: {page: 0, search: "lars"}}))

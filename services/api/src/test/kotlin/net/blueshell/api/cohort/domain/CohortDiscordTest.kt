@@ -4,6 +4,7 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.discord.api.DiscordChannelKeeper
+import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordRoleKeeper
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
@@ -74,12 +75,15 @@ class CohortDiscordTest {
     fun `links an existing role, opens the channels chosen and closes the ones left out, keeping a linked role`() {
         given(linked = false)
         whenever(targeting.linkExisting(5, TargetSystem.DISCORD, "901")).thenReturn(CohortTargetRow(role, "901"))
-        whenever(channels.openedTo("901")).thenReturn(listOf(sitecie))
+        val committees = KeptChannel("9", "Committees", KeptChannelKind.CATEGORY, null)
+        whenever(channels.openedTo("901")).thenReturn(listOf(sitecie, committees))
 
         discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "901", channelIds = listOf("2")), "Committees")
 
         verify(channels).open("2", "901", true)
         verify(channels).close("1", "901")
+        // A category is never named on a form, so leaving it out takes nothing off the role.
+        verify(channels, never()).close("9", "901")
 
         given(linked = true)
         whenever(channels.openedTo("900")).thenReturn(emptyList())
@@ -103,6 +107,16 @@ class CohortDiscordTest {
         given(linked = true)
         whenever(channels.openedTo("900")).thenThrow(DiscordUnavailable("gone"))
         assertThatThrownBy { discord.read("COMMITTEE_MEMBERS:7") }.isInstanceOf(TargetSystemUnavailable::class.java)
+    }
+
+    @Test
+    fun `a change Discord will not let the bot make is refused with Discord's reason`() {
+        given(linked = true)
+        whenever(channels.openedTo("900")).thenReturn(emptyList())
+        whenever(channels.open("2", "900", true)).thenThrow(DiscordRefused("The bot may not change lancie: it lacks View Channels there."))
+
+        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(channelIds = listOf("2")), "Committees") }
+            .isInstanceOfSatisfying(TargetSystemRefused::class.java) { assertThat(it.reason).contains("lacks View Channels") }
     }
 
     @Test

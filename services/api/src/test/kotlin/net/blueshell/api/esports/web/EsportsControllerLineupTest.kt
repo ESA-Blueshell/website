@@ -5,6 +5,7 @@ import net.blueshell.api.esports.api.LineupDraft
 import net.blueshell.api.esports.api.PublishedLineup
 import net.blueshell.api.esports.api.RosterEntryInput
 import net.blueshell.api.esports.api.TeamRosterService
+import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
@@ -21,7 +22,27 @@ import java.time.LocalDate
 
 class EsportsControllerLineupTest {
     private val rosters = mock<TeamRosterService>()
-    private val controller = EsportsController(mock(), mock(), mock(), rosters, mock(), mock())
+    private val fielded = mock<TeamSeasonService>()
+    private val controller = EsportsController(mock(), mock(), mock(), rosters, fielded, mock())
+
+    @Test
+    fun `answers every team's fieldings in one read, each named by its team`() {
+        val season = Season(name = "Autumn 2030", startDate = LocalDate.of(2030, 9, 1), endDate = LocalDate.of(2031, 1, 31))
+        season.id = 5
+        val draft = Team(name = "BS Draft").also { it.id = 3 }
+        val other = Team(name = "BS Other").also { it.id = 4 }
+        whenever(fielded.everyFielding()).thenReturn(
+            listOf(
+                TeamSeason(team = draft, game = "CS2", season = season),
+                TeamSeason(team = other, game = "VALORANT", season = season),
+            ),
+        )
+
+        val answered = controller.findFieldings()
+
+        assertThat(answered.map { it.teamId to it.game }).containsExactly(3L to "CS2", 4L to "VALORANT")
+        assertThat(answered.map { it.season.id }).containsOnly(5L)
+    }
 
     @Test
     fun `hands the whole draft to one publish and answers with the team and its roster`() {

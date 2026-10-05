@@ -1,10 +1,12 @@
 package net.blueshell.api.cohort.web
 
 import net.blueshell.api.cohort.domain.AdoptionMatch
+import net.blueshell.api.cohort.domain.AdoptionOutcome
 import net.blueshell.api.cohort.domain.CohortDiscord
 import net.blueshell.api.cohort.domain.DiscordAdoption
 import net.blueshell.api.cohort.domain.DiscordChoice
 import net.blueshell.api.cohort.domain.DiscordPlace
+import net.blueshell.api.cohort.domain.RefusedMatch
 import net.blueshell.api.cohort.persistence.CohortType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -45,9 +47,12 @@ class DiscordPlaceControllerTest {
     fun `lists the matches by name and links the confirmed ones`() {
         val matches = listOf(AdoptionMatch("COMMITTEE_MEMBERS:1", "Sitecie", CohortType.COMMITTEE_MEMBERS, "901", "Sitecie", emptyList()))
         whenever(adoption.proposals()).thenReturn(matches)
-        whenever(adoption.adopt(listOf("COMMITTEE_MEMBERS:1"))).thenReturn(1)
+        val refused = listOf(RefusedMatch("Lancie", "The bot may not change lancie."))
+        whenever(adoption.adopt(listOf("COMMITTEE_MEMBERS:1"))).thenReturn(AdoptionOutcome(1, refused))
 
         assertThat(controller.listDiscordMatches()).isSameAs(matches)
-        assertThat(controller.adoptDiscordMatches(AdoptDiscordRequest(listOf("COMMITTEE_MEMBERS:1")))).isEqualTo(AdoptDiscordResponse(1))
+        val answered = controller.adoptDiscordMatches(AdoptDiscordRequest(listOf("COMMITTEE_MEMBERS:1")))
+        assertThat(answered).isEqualTo(AdoptDiscordResponse(1, refused))
+        assertThat(answered.refused.single().label).isEqualTo("Lancie")
     }
 }

@@ -3,6 +3,12 @@
    says what changed since it was approved. Approving here is the event page's own approving: the
    same call, and the same question of when its events-info post goes out. */
 import {computed, onMounted, ref} from "vue"
+import FactList from "@/components/island/FactList.vue"
+import StateMark from "@/components/island/StateMark.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
 import AnnounceDialog from "@/domains/events/island/AnnounceDialog.vue"
 import {type QueuedEvent, changesSaid, readApprovalQueue, setEventApproved, useAnnouncePrompt, whenOf} from "@/domains/events"
 import store from "@/plugins/store"
@@ -15,9 +21,20 @@ const acting = ref<number | null>(null)
 
 const fresh = computed(() => queue.value?.filter((one) => !one.reapproval) ?? [])
 const changed = computed(() => queue.value?.filter((one) => one.reapproval) ?? [])
-const groups = computed(() => [
-  {key: "new", title: "New", rows: fresh.value},
-  {key: "reapproval", title: "Changed since approval", rows: changed.value},
+const COLUMNS: TableColumn[] = [
+  {key: "event", label: "Event", wrap: true},
+  {key: "when", label: "When"},
+  {key: "state", label: "State"},
+  {key: "changed", label: "Changed", wrap: true},
+]
+
+// New events first, then the ones changed since they were approved.
+const rows = computed(() => [...fresh.value, ...changed.value])
+
+const facts = computed(() => [
+  {label: "Awaiting", value: String(rows.value.length), sub: `${fresh.value.length} new, ${changed.value.length} changed since approval`},
+  {label: "New", value: String(fresh.value.length), sub: "Never listed yet"},
+  {label: "Changed since approval", value: String(changed.value.length), sub: "Their Discord posts stay as last approved"},
 ])
 
 const load = async () => {
@@ -47,21 +64,20 @@ onMounted(load)
 </script>
 
 <template>
-  <div
-    class="queue"
-    data-testid="event-queue"
+  <management-page
+    eyebrow="Content"
+    testid="event-queue"
+    title="Events to approve"
   >
-    <header class="queue__head">
-      <p class="queue__eyebrow">
-        Content
-      </p>
-      <h1 class="queue__title">
-        Events to approve
-      </h1>
-      <p class="queue__note">
-        Events a committee made or changed, waiting for the board. Approving posts them on Discord as approving on the event page does.
-      </p>
-    </header>
+    <template #lede>
+      Events a committee made or changed, waiting for the board. Approving posts them on Discord as approving on the
+      event page does.
+    </template>
+
+    <fact-list
+      class="queue__facts"
+      :facts="facts"
+    />
 
     <p
       v-if="loaded && queue == null"
@@ -70,188 +86,106 @@ onMounted(load)
     >
       The queue could not be read. Try again in a moment.
     </p>
-    <p
-      v-else-if="loaded && queue?.length === 0"
-      class="queue__note"
-      data-testid="event-queue-empty"
-    >
-      Nothing is waiting for the board.
-    </p>
 
-    <template
-      v-for="group in groups"
-      :key="group.key"
+    <management-table
+      v-else
+      :columns="COLUMNS"
+      :row-key="(queued) => queued.event.id"
+      :row-testid="(queued) => `event-queue-row-${queued.event.id}`"
+      search-label="Search events"
+      :search-text="(queued) => queued.event.title"
+      :rows="rows"
+      testid="event-queue-table"
+      :to="(queued) => `/events/${queued.event.id}`"
     >
-      <section
-        v-if="group.rows.length"
-        class="queue__group"
-        :data-testid="`event-queue-${group.key}`"
+      <template
+        v-if="loaded"
+        #empty
       >
-        <p class="queue__folder">
-          <span>{{ group.title }}</span>
-          <span class="queue__sub">{{ group.rows.length }}</span>
-        </p>
-        <ul class="queue__rows">
-          <li
-            v-for="queued in group.rows"
-            :key="queued.event.id"
-            class="queue__row"
-            :data-testid="`event-queue-row-${queued.event.id}`"
-          >
-            <span class="queue__name">{{ queued.event.title }}</span>
-            <span class="queue__sub">{{ whenOf(queued.event).day }} · {{ whenOf(queued.event).hours }}</span>
-            <span
-              class="queue__sub queue__changes"
-              :data-testid="`event-queue-changes-${queued.event.id}`"
-            >{{ queued.reapproval ? changesSaid(queued.changes) : "" }}</span>
-            <span class="queue__acts">
-              <button
-                class="queue__mini queue__mini--main"
-                :data-testid="`event-queue-approve-${queued.event.id}`"
-                :disabled="acting != null"
-                type="button"
-                @click="approve(queued)"
-              >
-                Approve
-              </button>
-              <router-link
-                class="queue__mini"
-                :data-testid="`event-queue-open-${queued.event.id}`"
-                :to="`/events/${queued.event.id}`"
-              >
-                Open
-              </router-link>
-            </span>
-          </li>
-        </ul>
-      </section>
-    </template>
+        <span data-testid="event-queue-empty">Nothing is waiting for the board.</span>
+      </template>
+      <template #event="{row}">
+        <router-link
+          class="mg-name"
+          :to="`/events/${row.event.id}`"
+        >
+          {{ row.event.title }}
+        </router-link>
+      </template>
+      <template #when="{row}">
+        {{ whenOf(row.event).day }} · {{ whenOf(row.event).hours }}
+      </template>
+      <template #state="{row}">
+        <state-mark
+          kind="extra"
+          :testid="`event-queue-${row.reapproval ? 'reapproval' : 'new'}-${row.event.id}`"
+        >
+          {{ row.reapproval ? "Awaiting re-approval" : "Awaiting approval" }}
+        </state-mark>
+      </template>
+      <template #changed="{row}">
+        <span
+          :class="{'mg-quiet': !row.reapproval}"
+          :data-testid="`event-queue-changes-${row.event.id}`"
+        >{{ row.reapproval ? changesSaid(row.changes) : "New" }}</span>
+      </template>
+      <template #acts="{row}">
+        <mini-button
+          :disabled="acting != null"
+          :testid="`event-queue-approve-${row.event.id}`"
+          @click="approve(row)"
+        >
+          Approve
+        </mini-button>
+        <mini-button
+          :testid="`event-queue-open-${row.event.id}`"
+          :to="`/events/${row.event.id}`"
+        >
+          Open
+        </mini-button>
+      </template>
+      <template #phone="{row}">
+        <management-row
+          :meta="`${whenOf(row.event).day} · ${whenOf(row.event).hours}`"
+          :name="row.event.title"
+          :testid="`event-queue-row-${row.event.id}`"
+        >
+          <state-mark kind="extra">
+            {{ row.reapproval ? changesSaid(row.changes) : "Awaiting approval" }}
+          </state-mark>
+          <template #acts>
+            <mini-button
+              :disabled="acting != null"
+              :testid="`event-queue-approve-${row.event.id}`"
+              @click="approve(row)"
+            >
+              Approve
+            </mini-button>
+            <mini-button
+              :testid="`event-queue-open-${row.event.id}`"
+              :to="`/events/${row.event.id}`"
+            >
+              Open
+            </mini-button>
+          </template>
+        </management-row>
+      </template>
+    </management-table>
 
     <announce-dialog
       :later="announceLater"
       :open="announceOpen"
       @answer="answerAnnounce"
     />
-  </div>
+  </management-page>
 </template>
 
 <style scoped>
-.queue {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 76rem;
-  padding: 2rem 2.4rem 3rem;
-}
-
-.queue__head {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.queue__eyebrow {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow, var(--color-ash));
-}
-
-.queue__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
+.queue__facts {
+  padding: 1.1rem 0 1.2rem;
 }
 
 .queue__note {
-  margin: 0;
-  max-width: 48rem;
   color: var(--color-ash);
-}
-
-.queue__group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.queue__folder {
-  display: flex;
-  align-items: baseline;
-  gap: 0.8rem;
-  margin: 0.8rem 0 0;
-  font-weight: 600;
-}
-
-.queue__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.queue__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr) auto;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.queue__name {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-}
-
-.queue__sub {
-  overflow: hidden;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.queue__changes {
-  white-space: normal;
-}
-
-.queue__acts {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.queue__mini {
-  padding: 0.25rem 0.6rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.8rem;
-  color: var(--color-chalk);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.queue__mini--main {
-  border-color: var(--color-brand);
-}
-
-.queue__mini:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-@media (max-width: 839px) {
-  .queue {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
-  .queue__row {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 </style>

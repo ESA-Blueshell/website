@@ -104,9 +104,20 @@ describe("SelectionBar", () => {
 
     expect(bar.text()).toContain("3 selected")
     expect(plain.text()).toContain("1 list")
-    expect(plain.get(".selection-bar__clear").attributes("data-testid")).toBeUndefined()
+    expect(plain.get(".island-cut--quiet").attributes("data-testid")).toBeUndefined()
     await bar.get("[data-testid=sel-clear]").trigger("click")
     expect(bar.emitted("clear")).toHaveLength(1)
+  })
+
+  it("stays in view where asked, saying what ticking is for, with its actions disabled until something is ticked", () => {
+    const idle = mount(SelectionBar, {props: {count: 0, always: true, testid: "sel"}, slots: {default: "<button>Archive</button>"}})
+    const busy = mount(SelectionBar, {props: {count: 2, always: true, testid: "sel"}, slots: {default: "<button>Archive</button>"}})
+
+    expect(idle.text()).toContain("0 selected")
+    expect(idle.get("fieldset").attributes("disabled")).toBeDefined()
+    expect(idle.find("[data-testid=sel-clear]").exists()).toBe(false)
+    expect(busy.get("fieldset").attributes("disabled")).toBeUndefined()
+    expect(busy.text()).toContain("2 selected")
   })
 })
 

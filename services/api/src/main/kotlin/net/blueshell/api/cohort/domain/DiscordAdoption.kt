@@ -10,7 +10,7 @@ import net.blueshell.api.discord.api.KeptChannelKind
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.stereotype.Service
 
-/** A committee or team with no role yet, and the existing role and channels named as it is. */
+/** A committee, team or board year with no role yet, and the existing role and channels named as it is. */
 data class AdoptionMatch(
     val key: String,
     val label: String,
@@ -20,8 +20,20 @@ data class AdoptionMatch(
     val channels: List<KeptChannel>,
 )
 
+/** A confirmed match Discord would not let the site finish, and why. */
+data class RefusedMatch(
+    val label: String,
+    val reason: String,
+)
+
+/** How many matches were linked, and the ones Discord refused. */
+data class AdoptionOutcome(
+    val linked: Int,
+    val refused: List<RefusedMatch>,
+)
+
 /**
- * Proposes linking committees and teams to the roles and channels already in the server by name, and
+ * Proposes linking committees, teams and board years to the roles and channels already in the server by name, and
  * links the ones the board confirms. Only roles the site could keep are proposed, so the claim bot's
  * never are, and a name two roles share is proposed for neither.
  */
@@ -68,21 +80,31 @@ class DiscordAdoption(
             }.sortedBy { it.label.lowercase() }
     }
 
-    /** Links each confirmed match, keeping every channel its role opens already; answers how many were linked. */
-    fun adopt(keys: Collection<String>): Int {
+    /**
+     * Links each confirmed match. What the role has access to already is left as it is, and the
+     * channels named as the match is are opened to it. A match Discord refuses is named with why, and
+     * the rest are still linked.
+     */
+    fun adopt(keys: Collection<String>): AdoptionOutcome {
         val confirmed = proposals().filter { it.key in keys }
-        confirmed.forEach { match ->
-            val opened = channels.openedTo(match.roleId).filter { it.kind != KeptChannelKind.CATEGORY }.map { it.id }
-            val channelIds = (opened + match.channels.map { it.id }).distinct()
-            // Nothing is made, so the category for a new channel is never read.
-            discord.apply(match.key, DiscordChoice(roleId = match.roleId, channelIds = channelIds), category = "")
-        }
-        return confirmed.size
+        val refused =
+            confirmed.mapNotNull { match ->
+                val opened = channels.openedTo(match.roleId).filter { it.kind != KeptChannelKind.CATEGORY }.map { it.id }
+                val channelIds = (opened + match.channels.map { it.id }).distinct()
+                try {
+                    // Nothing is made, so the category for a new channel is never read.
+                    discord.apply(match.key, DiscordChoice(roleId = match.roleId, channelIds = channelIds), category = "")
+                    null
+                } catch (e: TargetSystemRefused) {
+                    RefusedMatch(match.label, e.reason)
+                }
+            }
+        return AdoptionOutcome(confirmed.size - refused.size, refused)
     }
 
     private fun plain(name: String) = name.lowercase().filter { it.isLetterOrDigit() }
 
     private companion object {
-        val ADOPTED = setOf(CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS)
+        val ADOPTED = setOf(CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS, CohortType.BOARD_YEAR_MEMBERS)
     }
 }

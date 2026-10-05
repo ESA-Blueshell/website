@@ -3,10 +3,12 @@
    a reply in the site's template threaded with the conversation, or marking it handled. */
 import {computed, onMounted, ref, watch} from "vue"
 import {useRoute} from "vue-router"
+import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
 import {
   type Conversation,
   ConversationKind,
@@ -19,7 +21,7 @@ import {
   sendReply,
 } from "@/domains/mail"
 import store from "@/plugins/store"
-import {formatDateNoSeconds} from "@/utils/timestamps"
+import {formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "InboxMessagePage"})
 
@@ -70,202 +72,175 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="conversation"
-    data-testid="inbox-message"
+  <management-page
+    v-if="loaded && !conversation"
+    :back="{to: '/management/mail/inbox', label: 'Inbox'}"
+    eyebrow="Mail"
+    testid="inbox-message"
+    title="No such message"
   >
-    <router-link
-      class="conversation__back"
-      to="/management/mail/inbox"
-    >
-      Inbox
-    </router-link>
-
     <p
-      v-if="loaded && !conversation"
       class="conversation__note"
       data-testid="inbox-message-missing"
     >
       There is no message {{ id }} in the inbox.
     </p>
+  </management-page>
+  <management-page
+    v-else-if="conversation && message"
+    :back="{to: '/management/mail/inbox', label: 'Inbox'}"
+    :eyebrow="`Inbox · ${inboxStateWord(message)}`"
+    testid="inbox-message"
+    :title="message.subject || '(no subject)'"
+  >
+    <template #lede>
+      {{ conversationSummary(conversation) }}
+    </template>
 
-    <template v-if="conversation && message">
-      <header>
-        <p
-          class="conversation__eyebrow"
-          data-testid="inbox-message-state"
+    <task-layout>
+      <ol
+        class="conversation__items"
+        data-testid="inbox-message-items"
+      >
+        <li
+          v-for="(item, index) in conversation.items"
+          :key="index"
+          class="conversation__item"
+          :class="{
+            'conversation__item--site': item.kind !== ConversationKind.RECEIVED,
+            'conversation__item--current': item.inboxMessageId === message.id && item.kind === ConversationKind.RECEIVED,
+          }"
+          :data-testid="`inbox-message-item-${index}`"
         >
-          Inbox · {{ inboxStateWord(message) }}
-        </p>
-        <h1 class="conversation__title">
-          {{ message.subject || "(no subject)" }}
-        </h1>
-        <p class="conversation__note">
-          {{ conversationSummary(conversation) }}
-        </p>
-      </header>
+          <p class="conversation__meta">
+            <span><b class="conversation__who">{{ authorOf(item, message) }}</b><template v-if="item.subject"> · {{ item.subject }}</template></span>
+            <span>{{ formatMoment(item.at) }}</span>
+          </p>
+          <p
+            v-if="item.body"
+            class="conversation__body"
+          >
+            {{ item.body }}
+          </p>
+          <router-link
+            v-if="item.emailId"
+            class="conversation__link"
+            :to="`/management/mail/sent/${item.emailId}`"
+          >
+            Open the email
+          </router-link>
+        </li>
+      </ol>
 
-      <task-layout>
-        <ol
-          class="conversation__items"
-          data-testid="inbox-message-items"
+      <form
+        class="conversation__form"
+        @submit.prevent="act('reply')"
+      >
+        <form-field
+          label="Reply"
+          testid="inbox-reply"
+        >
+          <template #default="{labelId}">
+            <markdown-editor
+              v-model="reply"
+              :labelled-by="labelId"
+              min-height="14rem"
+              testid="inbox-reply-editor"
+            />
+          </template>
+        </form-field>
+        <form-field
+          label="Replies go to"
+          testid="inbox-reply-to"
+        >
+          <template #default="{controlId, labelId}">
+            <search-picker
+              :control-id="controlId"
+              :labelled-by="labelId"
+              :options="replyPickerOptions"
+              :selected-key="replyTo"
+              testid-prefix="inbox-reply-to-picker"
+              @pick="(key: string) => replyTo = key"
+            />
+          </template>
+        </form-field>
+        <p
+          v-if="failure"
+          class="conversation__failure"
+          data-testid="inbox-message-failure"
+          role="alert"
+        >
+          {{ failure }}
+        </p>
+        <div class="conversation__acts">
+          <cut-button
+            :disabled="acting || reply.trim() === ''"
+            submit
+            testid="inbox-send-reply"
+            tone="solid"
+          >
+            Send the reply
+          </cut-button>
+          <cut-button
+            v-if="message.state === 'NEW'"
+            :disabled="acting"
+            testid="inbox-mark-handled"
+            @click="act('handled')"
+          >
+            Mark handled without a reply
+          </cut-button>
+        </div>
+        <p
+          v-if="message.handledAt"
+          class="conversation__note"
+          data-testid="inbox-message-handled"
+        >
+          {{ inboxStateWord(message) }} {{ formatMoment(message.handledAt) }}<template v-if="message.handledByName">
+            by {{ message.handledByName }}
+          </template>
+        </p>
+      </form>
+
+      <template #aside>
+        <p class="conversation__aside-title">
+          From
+        </p>
+        <p data-testid="inbox-message-from">
+          {{ sender }}<br>{{ message.fromAddress }}
+          <template v-if="message.senderUserId">
+            <br>
+            <router-link :to="`/management/users/${message.senderUserId}`">
+              Open {{ sender }}
+            </router-link>
+          </template>
+        </p>
+        <p class="conversation__aside-title">
+          Earlier mail with {{ sender }}
+        </p>
+        <ul
+          v-if="conversation.earlier.length"
+          class="conversation__earlier"
+          data-testid="inbox-message-earlier"
         >
           <li
-            v-for="(item, index) in conversation.items"
+            v-for="(mail, index) in conversation.earlier"
             :key="index"
-            class="conversation__item"
-            :class="{
-              'conversation__item--site': item.kind !== ConversationKind.RECEIVED,
-              'conversation__item--current': item.inboxMessageId === message.id && item.kind === ConversationKind.RECEIVED,
-            }"
-            :data-testid="`inbox-message-item-${index}`"
           >
-            <p class="conversation__meta">
-              <span><b class="conversation__who">{{ authorOf(item, message) }}</b><template v-if="item.subject"> · {{ item.subject }}</template></span>
-              <span>{{ formatDateNoSeconds(item.at) }}</span>
-            </p>
-            <p
-              v-if="item.body"
-              class="conversation__body"
-            >
-              {{ item.body }}
-            </p>
-            <router-link
-              v-if="item.emailId"
-              class="conversation__link"
-              :to="`/management/mail/sent/${item.emailId}`"
-            >
-              Open the email
+            <router-link :to="mail.emailId ? `/management/mail/sent/${mail.emailId}` : `/management/mail/inbox/${mail.inboxMessageId}`">
+              {{ mail.subject || "(no subject)" }}
             </router-link>
+            <span>{{ formatMoment(mail.at) }}</span>
           </li>
-        </ol>
-
-        <form
-          class="conversation__form"
-          @submit.prevent="act('reply')"
-        >
-          <form-field
-            label="Reply"
-            testid="inbox-reply"
-          >
-            <template #default="{labelId}">
-              <markdown-editor
-                v-model="reply"
-                :labelled-by="labelId"
-                min-height="14rem"
-                testid="inbox-reply-editor"
-              />
-            </template>
-          </form-field>
-          <form-field
-            label="Replies go to"
-            testid="inbox-reply-to"
-          >
-            <template #default="{controlId, labelId}">
-              <search-picker
-                :control-id="controlId"
-                :labelled-by="labelId"
-                :options="replyPickerOptions"
-                :selected-key="replyTo"
-                testid-prefix="inbox-reply-to-picker"
-                @pick="(key: string) => replyTo = key"
-              />
-            </template>
-          </form-field>
-          <p
-            v-if="failure"
-            class="conversation__failure"
-            data-testid="inbox-message-failure"
-            role="alert"
-          >
-            {{ failure }}
-          </p>
-          <div class="conversation__acts">
-            <button
-              class="conversation__action conversation__action--main"
-              data-testid="inbox-send-reply"
-              :disabled="acting || reply.trim() === ''"
-              type="submit"
-            >
-              Send the reply
-            </button>
-            <button
-              v-if="message.state === 'NEW'"
-              class="conversation__action"
-              data-testid="inbox-mark-handled"
-              :disabled="acting"
-              type="button"
-              @click="act('handled')"
-            >
-              Mark handled without a reply
-            </button>
-          </div>
-          <p
-            v-if="message.handledAt"
-            class="conversation__note"
-            data-testid="inbox-message-handled"
-          >
-            {{ inboxStateWord(message) }} {{ formatDateNoSeconds(message.handledAt) }}<template v-if="message.handledByName">
-              by {{ message.handledByName }}
-            </template>
-          </p>
-        </form>
-
-        <template #aside>
-          <p class="conversation__aside-title">
-            From
-          </p>
-          <p data-testid="inbox-message-from">
-            {{ sender }}<br>{{ message.fromAddress }}
-            <template v-if="message.senderUserId">
-              <br>
-              <router-link :to="`/management/users/${message.senderUserId}`">
-                Open {{ sender }}
-              </router-link>
-            </template>
-          </p>
-          <p class="conversation__aside-title">
-            Earlier mail with {{ sender }}
-          </p>
-          <ul
-            v-if="conversation.earlier.length"
-            class="conversation__earlier"
-            data-testid="inbox-message-earlier"
-          >
-            <li
-              v-for="(mail, index) in conversation.earlier"
-              :key="index"
-            >
-              <router-link :to="mail.emailId ? `/management/mail/sent/${mail.emailId}` : `/management/mail/inbox/${mail.inboxMessageId}`">
-                {{ mail.subject || "(no subject)" }}
-              </router-link>
-              <span>{{ formatDateNoSeconds(mail.at) }}</span>
-            </li>
-          </ul>
-          <p v-else>
-            None.
-          </p>
-        </template>
-      </task-layout>
-    </template>
-  </div>
+        </ul>
+        <p v-else>
+          None.
+        </p>
+      </template>
+    </task-layout>
+  </management-page>
 </template>
 
 <style scoped>
-.conversation {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 76rem;
-  padding: 2rem 2.4rem 3rem;
-}
-
-.conversation__back {
-  align-self: flex-start;
-  font-size: 0.84rem;
-  color: var(--color-brand);
-}
-
 .conversation__eyebrow,
 .conversation__aside-title {
   margin: 0;
@@ -273,12 +248,6 @@ onMounted(async () => {
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--color-eyebrow, var(--color-ash));
-}
-
-.conversation__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
 }
 
 .conversation__note {
@@ -352,26 +321,6 @@ onMounted(async () => {
   gap: 0.6rem;
 }
 
-.conversation__action {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-.conversation__action--main {
-  border-color: var(--color-brand);
-  color: var(--color-brand);
-}
-
-.conversation__action:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
 .conversation__earlier {
   display: flex;
   flex-direction: column;
@@ -385,11 +334,5 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-}
-
-@media (max-width: 839px) {
-  .conversation {
-    padding: 1.2rem 1.1rem 2rem;
-  }
 }
 </style>

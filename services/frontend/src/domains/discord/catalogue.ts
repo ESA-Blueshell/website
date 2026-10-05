@@ -6,6 +6,9 @@ import type {RoleOpeningState} from "./adapters/roleOpenings"
 /** The category archived channels sit in; it reads last. */
 export const ARCHIVE_CATEGORY = "Archive"
 
+/** Whether a category holds archived channels: any whose name has "Archive" in it. */
+export const isArchive = (category?: string | null): boolean => /archive/i.test(category ?? "")
+
 /** A role as the page names it, with what fills it where the site keeps it. */
 export type NamedRole = {id: string; name: string; follows: string | null}
 
@@ -18,7 +21,7 @@ export function channelGroups(channels: CataloguedChannel[]): ChannelGroup[] {
     const name = channel.category ?? "No category"
     groups.set(name, [...(groups.get(name) ?? []), channel])
   }
-  const rank = (name: string) => (name === "No category" ? 0 : name === ARCHIVE_CATEGORY ? 2 : 1)
+  const rank = (name: string) => (name === "No category" ? 0 : isArchive(name) ? 2 : 1)
   return [...groups].map(([name, listed]) => ({name, channels: listed})).sort((a, b) => rank(a.name) - rank(b.name))
 }
 

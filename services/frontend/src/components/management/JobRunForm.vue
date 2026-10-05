@@ -4,6 +4,11 @@
 import {computed, nextTick, onMounted, ref, watch} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {enqueueJob, type JobPayloadField, type JobTypeDescriptor, listJobTypes} from "@/domains/jobs"
+import CutButton from "@/components/island/CutButton.vue"
+import FormField from "@/components/island/FormField.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
+import TextInput from "@/components/island/TextInput.vue"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import TargetPicker from "@/components/form/fields/TargetPicker.vue"
 import EventPicker from "@/components/form/fields/EventPicker.vue"
@@ -35,8 +40,9 @@ const humanize = (value: string): string => humanizeJobType(value)
 
 const typeOptions = computed(() =>
   descriptors.value.map((descriptor) => ({
-    title: jobCatalogEntry(descriptor.type).title,
-    value: descriptor.type,
+    key: descriptor.type,
+    label: jobCatalogEntry(descriptor.type).title,
+    terms: [descriptor.type],
   })),
 )
 
@@ -174,41 +180,33 @@ const submit = async () => {
     class="job-run"
     data-testid="job-run-form"
   >
-    <v-select
-      v-model="selectedType"
-      :items="typeOptions"
-      :loading="loadingTypes"
-      data-testid="job-run-type"
-      item-title="title"
-      item-value="value"
-      label="Job type"
-    />
-
-    <!-- Mounted always, so choosing a job type does not shift the payload form. -->
-    <p
-      v-show="selectedDescription"
-      class="text-caption text-medium-emphasis mt-n2 mb-3"
-      data-testid="job-run-description"
-    >
-      {{ selectedDescription }}
-    </p>
-
-    <template v-if="selectedDescriptor">
-      <p
-        v-if="selectedDescriptor.payloadFields.length === 0"
-        class="text-medium-emphasis mb-0"
+    <div class="job-run__fields">
+      <form-field
+        :filled="selectedType != null"
+        label="Job"
+        testid="job-run-type"
+        variant="inside"
       >
-        This job takes no arguments.
-      </p>
+        <template #default="{controlId, labelId}">
+          <search-picker
+            :control-id="controlId"
+            :labelled-by="labelId"
+            :loading="loadingTypes"
+            :options="typeOptions"
+            :selected-key="selectedType"
+            testid-prefix="job-run-type-picker"
+            @pick="selectedType = $event"
+          />
+        </template>
+      </form-field>
+
       <template
-        v-for="field in selectedDescriptor.payloadFields"
+        v-for="field in selectedDescriptor?.payloadFields ?? []"
         :key="field.name"
       >
-        <!-- Reusable id pickers; the form itself stays generic
-                 and any new payload field that follows the naming convention
-                 (xxxUserId / xxxCohortId / xxxEventId / xxxPeriodId) picks
-                 up the same control automatically. -->
-        <UserPicker
+        <!-- A payload field named xxxUserId, xxxCohortId, xxxEventId or xxxPeriodId takes that
+             record's picker, so a new job type needs nothing here. -->
+        <user-picker
           v-if="pickerForField(field) === 'user'"
           :data-testid="`job-run-field-${field.name}`"
           :label="humanize(field.name)"
@@ -216,7 +214,7 @@ const submit = async () => {
           :required="field.required"
           @update:model-value="fieldValues[field.name] = $event"
         />
-        <TargetPicker
+        <target-picker
           v-else-if="pickerForField(field) === 'cohort'"
           :data-testid="`job-run-field-${field.name}`"
           :label="humanize(field.name)"
@@ -224,7 +222,7 @@ const submit = async () => {
           :required="field.required"
           @update:model-value="fieldValues[field.name] = $event"
         />
-        <EventPicker
+        <event-picker
           v-else-if="pickerForField(field) === 'event'"
           :data-testid="`job-run-field-${field.name}`"
           :label="humanize(field.name)"
@@ -232,7 +230,7 @@ const submit = async () => {
           :required="field.required"
           @update:model-value="fieldValues[field.name] = $event"
         />
-        <ContributionPeriodPicker
+        <contribution-period-picker
           v-else-if="pickerForField(field) === 'contributionPeriod'"
           :data-testid="`job-run-field-${field.name}`"
           :label="humanize(field.name)"
@@ -240,7 +238,7 @@ const submit = async () => {
           :required="field.required"
           @update:model-value="fieldValues[field.name] = $event"
         />
-        <EnumPicker
+        <enum-picker
           v-else-if="isEnum(field)"
           :data-testid="`job-run-field-${field.name}`"
           :label="humanize(field.name)"
@@ -249,49 +247,61 @@ const submit = async () => {
           :values="field.enumValues ?? []"
           @update:model-value="fieldValues[field.name] = $event"
         />
-        <v-text-field
+        <form-field
           v-else
-          :data-testid="`job-run-field-${field.name}`"
-          :hint="field.required ? 'Required' : 'Optional'"
+          v-slot="slot"
+          :filled="(stringValue(field.name) ?? '') !== ''"
           :label="humanize(field.name)"
-          :model-value="stringValue(field.name) ?? ''"
-          :type="isNumeric(field) ? 'number' : 'text'"
-          persistent-hint
-          @update:model-value="fieldValues[field.name] = $event"
-        />
+          :required="field.required"
+          :testid="`job-run-field-${field.name}`"
+          variant="inside"
+        >
+          <text-input
+            :control-id="slot.controlId"
+            :model-value="stringValue(field.name) ?? ''"
+            :type="isNumeric(field) ? 'number' : 'text'"
+            @update:model-value="fieldValues[field.name] = $event"
+          />
+        </form-field>
       </template>
-    </template>
-
-    <v-alert
-      v-if="errorMessage"
-      class="mt-3"
-      data-testid="job-run-error"
-      density="compact"
-      type="error"
-    >
-      {{ errorMessage }}
-    </v-alert>
+    </div>
 
     <p
-      v-if="queuedType"
-      class="job-run__queued"
-      data-testid="job-run-queued"
-      role="status"
+      v-if="selectedDescription"
+      class="job-run__note"
+      data-testid="job-run-description"
     >
-      {{ jobCatalogEntry(queuedType).title }} is queued.
+      {{ selectedDescription }}
+      <template v-if="selectedDescriptor && selectedDescriptor.payloadFields.length === 0">
+        This job takes no arguments.
+      </template>
     </p>
 
+    <notice-box
+      v-if="errorMessage"
+      testid="job-run-error"
+      tone="danger"
+    >
+      {{ errorMessage }}
+    </notice-box>
+
     <div class="job-run__actions">
-      <v-btn
-        :disabled="!selectedType || requiredMissing"
-        :loading="submitting"
-        color="primary"
-        data-testid="job-run-submit"
-        variant="flat"
+      <cut-button
+        :disabled="!selectedType || requiredMissing || submitting"
+        testid="job-run-submit"
+        tone="solid"
         @click="submit"
       >
         Queue the job
-      </v-btn>
+      </cut-button>
+      <p
+        v-if="queuedType"
+        class="job-run__queued"
+        data-testid="job-run-queued"
+        role="status"
+      >
+        {{ jobCatalogEntry(queuedType).title }} is queued.
+      </p>
     </div>
   </div>
 </template>
@@ -300,18 +310,31 @@ const submit = async () => {
 .job-run {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  max-width: 36rem;
+  gap: 0.8rem;
 }
 
-.job-run__queued {
-  margin: 0.5rem 0 0;
+/* Every field the same width, as many to a row as fit. */
+.job-run__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.job-run__note {
+  font-size: 0.88rem;
   color: var(--color-ash);
 }
 
 .job-run__actions {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.job-run__queued {
+  font-size: 0.88rem;
+  color: var(--color-ok);
 }
 </style>

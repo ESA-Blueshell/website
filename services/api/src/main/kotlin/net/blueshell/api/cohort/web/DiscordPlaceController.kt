@@ -7,6 +7,7 @@ import net.blueshell.api.cohort.domain.CohortDiscord
 import net.blueshell.api.cohort.domain.DiscordAdoption
 import net.blueshell.api.cohort.domain.DiscordChoice
 import net.blueshell.api.cohort.domain.DiscordPlace
+import net.blueshell.api.cohort.domain.RefusedMatch
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.security.BoardOnly
 import org.springframework.beans.factory.annotation.Value
@@ -42,6 +43,8 @@ data class AdoptDiscordRequest(
 @Schema(name = "AdoptedDiscord")
 data class AdoptDiscordResponse(
     val linked: Int,
+    @param:Schema(description = "The confirmed matches Discord refused, each as its name and why")
+    val refused: List<RefusedMatch>,
 )
 
 /** A committee's and a team's role and private channels on Discord. */
@@ -91,7 +94,7 @@ class DiscordPlaceController(
     @PostMapping("/management/discord/adoption")
     fun adoptDiscordMatches(
         @RequestBody request: AdoptDiscordRequest,
-    ): AdoptDiscordResponse = AdoptDiscordResponse(adoption.adopt(request.keys))
+    ): AdoptDiscordResponse = adoption.adopt(request.keys).let { AdoptDiscordResponse(it.linked, it.refused) }
 
     private fun committee(id: Long) = "${CohortType.COMMITTEE_MEMBERS}:$id"
 

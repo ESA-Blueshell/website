@@ -56,7 +56,7 @@ const cohort = (fields: Record<string, unknown> = {}) => ({
     ledger(3, "STRANGER", {externalUserId: "e3", externalLabel: "jan@example.com"}),
     ledger(4, "SYNCED", {userId: 14, userFullName: "In Step"}),
   ],
-  resolutions: [{system: "BREVO", action: "PUSH", personName: "Kim Vos", resolvedByName: "Treasurer", resolvedAt: "2026-09-23T10:15:00Z"},
+  resolutions: [{system: "BREVO", action: "PUSH", userId: 31, personName: "Kim Vos", resolvedById: 4, resolvedByName: "Treasurer", resolvedAt: "2026-09-23T10:15:00Z"},
     {system: "GOOGLE_WORKSPACE", action: "REMOVE", resolvedAt: "2026-09-23T10:15:00Z"}],
   ...fields,
 })
@@ -110,11 +110,14 @@ describe("one Brevo list", () => {
     expect(wrapper.find('[data-testid="brevo-list-row-4"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="brevo-list-resolved"]').text()).toContain("Pushed to the list")
     expect(wrapper.findAll('[data-testid="brevo-list-resolved"] tbody tr')).toHaveLength(1)
+    // Both names in a resolution lead to that person's page.
+    expect(wrapper.findAll('[data-testid="brevo-list-resolved"] tbody a').map((one) => [one.text(), one.attributes("href") ?? one.attributes("to")]))
+      .toEqual([["Treasurer", "/management/users/4"], ["Kim Vos", "/management/users/31"]])
     expect(wrapper.find('[data-testid="brevo-list-link"]').exists()).toBe(false)
 
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "nobody")
     await settle()
-    expect(wrapper.get('[data-testid="brevo-list-in-step"]').text()).toBe("Nobody drifting matches.")
+    expect(wrapper.get('[data-testid="brevo-list-in-step"]').text()).toBe("Nobody who differs matches.")
   })
 
   it("resolves one person and a selection, and reconciles by hand", async () => {
@@ -133,8 +136,8 @@ describe("one Brevo list", () => {
     await settle()
     expect(api.linkDrift).toHaveBeenCalledWith({path: {id: 3, targetId: 40}, body: {links: [{externalUserId: "e3", userId: 15}]}})
 
-    wrapper.findAllComponents({name: "CheckBox"})[0].vm.$emit("update:modelValue", true)
-    wrapper.findAllComponents({name: "CheckBox"})[1].vm.$emit("update:modelValue", true)
+    // The head's tick takes everybody who can be selected.
+    await wrapper.get('[data-testid="brevo-list-drift-select-shown"]').trigger("change")
     await settle()
     expect(wrapper.get('[data-testid="brevo-list-bulk-remove"]').text()).toBe("Remove: 2")
     expect(wrapper.get('[data-testid="brevo-list-bulk-adopt"]').text()).toBe("Record as paid: 1")
@@ -205,6 +208,22 @@ describe("one Brevo list", () => {
     expect(mockStore.commit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", "The list could not be moved.")
   })
 
+  it("draws each person who differs as a row on a phone, ticked from the row, one out of reach saying so", async () => {
+    api.findCohortById.mockResolvedValue({status: 200, data: cohort({members: [
+      ledger(1, "DESIRED", {userId: 11, userFullName: "Sanne Jansen", userEmail: "sanne@example.com"}),
+      ledger(5, "DESIRED", {userId: 15, userFullName: "No Brevo", unreachable: true}),
+    ]})})
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.findAllComponents({name: "ManagementRow"})).toHaveLength(2)
+    expect(wrapper.find('[data-testid="brevo-list-select-5"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="brevo-list-select-1"]').trigger("change")
+    await settle()
+    expect(wrapper.get('[data-testid="brevo-list-selection"]').text()).toContain("1 selected")
+  })
+
   it("links a list that follows nothing to a cohort whose list is missing, and an admin deletes it by its name", async () => {
     mockStore.getters.isAdmin = true
     api.findListedTarget.mockResolvedValue({status: 200, data: {externalId: "9", label: "Old test", memberCount: 4, enforced: false}})
@@ -214,7 +233,7 @@ describe("one Brevo list", () => {
     api.deleteExternalTarget.mockResolvedValueOnce({status: 409, error: {code: "TargetNameMismatch"}}).mockResolvedValue({status: 204, data: undefined})
     const wrapper = await mount()
 
-    expect(wrapper.text()).toContain("This list follows nothing")
+    expect(wrapper.text()).toContain("This list is not linked to a cohort")
     expect(wrapper.text()).toContain("Brevo list · No folder")
     expect(wrapper.find('[data-testid="brevo-list-reconcile"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="brevo-list-enforce"]').exists()).toBe(false)
@@ -245,10 +264,10 @@ describe("one Brevo list", () => {
     const typed = wrapper.findAllComponents({name: "TextInput"}).at(-1)!
     typed.vm.$emit("update:modelValue", "Old test")
     await settle()
-    await new DOMWrapper(document.body.querySelector("form.list__delete")!).trigger("submit")
+    await new DOMWrapper(document.body.querySelector('[data-testid="brevo-list-delete-form"]')!).trigger("submit")
     await settle()
     expect(document.body.querySelector('[data-testid="brevo-list-delete-failure"]')).not.toBeNull()
-    await new DOMWrapper(document.body.querySelector("form.list__delete")!).trigger("submit")
+    await new DOMWrapper(document.body.querySelector('[data-testid="brevo-list-delete-form"]')!).trigger("submit")
     await settle()
     expect(api.deleteExternalTarget).toHaveBeenLastCalledWith({path: {system: "BREVO", externalId: "9"}, body: {name: "Old test"}})
     expect(push).toHaveBeenCalledWith("/management/platforms/brevo")

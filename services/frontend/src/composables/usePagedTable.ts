@@ -47,6 +47,8 @@ export interface PagedTable<T> {
   isExpanded: (row: T) => boolean
   toggleExpanded: (row: T) => void
   refresh: () => Promise<void>
+  /** Reads the next page onto the end of the rows held, for a list that grows as it is scrolled. */
+  more: () => Promise<void>
   /** Back to the first page and re-read, for a filter change or anything that adds a row. */
   resetToFirstPage: () => void
 }
@@ -81,6 +83,9 @@ export function usePagedTable<T extends Expandable>(
     debounceHandle = undefined
   }
 
+  // How many pages the rows hold, counted from the page they started on.
+  const held = ref(1)
+
   const pageRangeLabel = computed(() => {
     if (totalElements.value === 0 || rows.value.length === 0) return `0 of ${totalElements.value}`
     const start = (page.value - 1) * size + 1
@@ -112,6 +117,23 @@ export function usePagedTable<T extends Expandable>(
         return
       }
       rows.value = answered.rows
+      held.value = 1
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const more = async (): Promise<void> => {
+    const next = page.value - 1 + held.value
+    if (loading.value || next >= totalPages.value) return
+    loading.value = true
+    try {
+      const typed = (search.value ?? "").trim()
+      const answered = await load({page: next, size, search: typed || undefined})
+      totalElements.value = answered.totalElements
+      totalPages.value = Math.max(1, answered.totalPages)
+      rows.value = [...rows.value, ...answered.rows]
+      held.value += 1
     } finally {
       loading.value = false
     }
@@ -153,6 +175,7 @@ export function usePagedTable<T extends Expandable>(
     isExpanded,
     toggleExpanded,
     refresh,
+    more,
     resetToFirstPage,
   }
 }

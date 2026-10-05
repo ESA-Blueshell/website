@@ -23,20 +23,6 @@ object UserManagerHelper {
         TestIdLocatorHelper.byTestId(page, "member-manager-add-user-btn").click()
     }
 
-    /**
-     * A row's actions live in its menu, so each one is reached by opening the menu first. The
-     * trigger toggles, so an entry already showing is taken as it is rather than clicked shut.
-     */
-    private fun action(
-        page: Page,
-        userId: Long,
-        testId: String,
-    ): Locator {
-        val entry = TestIdLocatorHelper.byTestId(page, "$testId-$userId")
-        if (!entry.isVisible) TestIdLocatorHelper.byTestId(page, "member-manager-actions-$userId").click()
-        return entry
-    }
-
     /** Opens one of a person's tabs from their name on the list. */
     fun openTab(
         page: Page,
@@ -49,11 +35,18 @@ object UserManagerHelper {
         page.waitForURL("**/management/users/$userId/$tab")
     }
 
-    /** Opens the row's menu and answers its Delete entry. */
+    /** Deleting lives on a person's own page: opens it from the list and answers its Delete button. */
     fun deleteButton(
         page: Page,
         userId: Long,
-    ): Locator = action(page, userId, "member-manager-delete-btn")
+    ): Locator {
+        val button = TestIdLocatorHelper.byTestId(page, "user-delete")
+        if (!button.isVisible) {
+            TestIdLocatorHelper.byTestId(page, "member-manager-open-$userId").click()
+            page.waitForURL("**/management/users/$userId")
+        }
+        return button
+    }
 
     fun clickDeleteUser(
         page: Page,
@@ -62,7 +55,9 @@ object UserManagerHelper {
         deleteButton(page, userId).click()
     }
 
+    /** Confirms, then waits for the list: the person's page only goes back there once the account is gone. */
     fun confirmDelete(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "deletion-confirmation-confirm-btn").click()
+        TestIdLocatorHelper.byTestId(page, "confirm-go").click()
+        page.waitForURL("**/management/users")
     }
 }

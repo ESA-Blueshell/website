@@ -35,6 +35,9 @@ export {
 export {recordPaid, recordUnpaid, type BulkContributionCall} from "./adapters/contributions"
 export {
   listMemberContributions,
+  listOwnContributions,
+  readBankAccount,
+  type BankAccount,
   readFirstContribution,
   listPaidUserIds,
   readPeriodContributions,

@@ -116,21 +116,14 @@ describe("JobManager page", () => {
     expect(chips.text()).not.toContain("User Id")
   })
 
-  it("opens a row into its detail and closes it again", async () => {
+  it("draws each job as a row on a phone, opening the job's own page", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
     const wrapper = mountJobManager()
     await settle()
+    vi.unstubAllGlobals()
 
-    expect(wrapper.find('[data-testid="job-detail-1"]').exists()).toBe(false)
-
-    await wrapper.find('[data-testid="job-row-1"]').trigger("click")
-    await settle()
-    expect(wrapper.find('[data-testid="job-detail-1"]').exists()).toBe(true)
-
-    await wrapper.find('[data-testid="job-row-1"]').trigger("click")
-    await settle()
-    // Read off the state rather than the dom: the collapse is a transition, so the panel is
-    // still mounted at this point on its way out.
-    expect((wrapper.vm as any).isExpanded({id: 1})).toBe(false)
+    expect(wrapper.get('[data-testid="job-row-1-open"]').attributes("to")).toBe("/management/jobs/1")
+    expect(wrapper.findAllComponents({name: "ManagementRow"})[0]!.findComponent({name: "StateMark"}).exists()).toBe(true)
   })
 
   it("offers Retry only on a job that stopped without succeeding", async () => {
@@ -161,44 +154,21 @@ describe("JobManager page", () => {
     await settle()
 
     expect(wrapper.find('[data-testid="job-retry-btn-3"]').text()).toBe("Run anyway")
-    expect(wrapper.text()).toContain("Skipped 0")
-    await wrapper.find('[data-testid="job-row-3"]').trigger("click")
-    await settle()
+    expect(wrapper.find('[data-testid="job-row-3"]').text()).toContain("Skipped")
     expect(wrapper.find('[data-testid="job-skip-reason-3"]').text()).toBe("The event is over.")
-    expect(wrapper.find('[data-testid="job-forced-3"]').exists()).toBe(true)
   })
 
-  it("says what queued each job, on the row and in its detail", async () => {
+  it("says what queued each job on its row, or who did", async () => {
     mockList.mockResolvedValue(pageOf([job({id: 4, trigger: "SIGN_UPS_CHANGED"}), job({id: 5})]))
 
     const wrapper = mountJobManager()
     await settle()
 
     expect(wrapper.find('[data-testid="job-row-trigger-4"]').text()).toBe("A change in sign-ups")
-    expect(wrapper.find('[data-testid="job-row-trigger-5"]').exists()).toBe(false)
-    await wrapper.find('[data-testid="job-row-4"]').trigger("click")
-    await settle()
-    expect(wrapper.find('[data-testid="job-trigger-4"]').text()).toBe("Queued by: A change in sign-ups")
+    expect(wrapper.find('[data-testid="job-row-trigger-5"]').text()).not.toBe("")
   })
 
-  it("lists the triggers folded into a job, with who made them", async () => {
-    mockList.mockResolvedValue(pageOf([job({
-      id: 9,
-      trigger: "EVENT_CREATED",
-      foldedTriggers: [{trigger: "EVENT_UPDATED", at: "2026-10-01T10:00:00Z", initiatedByType: "USER", initiatedByDisplay: "Jane Doe (@jdoe)"}],
-    })]))
-
-    const wrapper = mountJobManager()
-    await settle()
-    await wrapper.find('[data-testid="job-row-9"]').trigger("click")
-    await settle()
-
-    const folded = wrapper.find('[data-testid="job-folded-trigger-9-0"]').text()
-    expect(folded).toContain("Also queued by: Editing the event")
-    expect(folded).toContain("Jane Doe (@jdoe)")
-  })
-
-  it("says what a run did, linking to it, and hides skipped runs on request", async () => {
+  it("says what a run did, and hides skipped runs on request", async () => {
     mockList.mockResolvedValue(pageOf([
       job({id: 6, jobType: "discord.post", effect: "EDITED", effectLink: "https://discord.com/channels/1/2/3"}),
       job({id: 7}),
@@ -209,14 +179,17 @@ describe("JobManager page", () => {
 
     expect(wrapper.find('[data-testid="job-row-effect-6"]').text()).toBe("Edited the #events-calendar post")
     expect(wrapper.find('[data-testid="job-row-effect-7"]').exists()).toBe(false)
-    await wrapper.find('[data-testid="job-row-6"]').trigger("click")
-    await settle()
-    expect(wrapper.find('[data-testid="job-effect-link-6"]').attributes("href")).toBe("https://discord.com/channels/1/2/3")
 
     mockList.mockClear()
-    await wrapper.findComponent('[data-testid="job-filter-hide-skipped"]').vm.$emit("update:modelValue", true)
+    const skipped = () => wrapper.findAllComponents({name: "FilterPicker"}).find((one) => one.props("testid") === "job-filter-hide-skipped")!
+    expect(skipped().props("modelValue")).toBeNull()
+    skipped().vm.$emit("update:modelValue", "hidden")
     await settle()
     expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({page: 0, hideSkipped: true})})
+    expect(skipped().props("modelValue")).toBe("hidden")
+    skipped().vm.$emit("update:modelValue", null)
+    await settle()
+    expect(mockList).toHaveBeenLastCalledWith({query: expect.not.objectContaining({hideSkipped: true})})
   })
 
   // Pressing Retry and being told nothing is indistinguishable from pressing nothing at all.
@@ -359,11 +332,16 @@ describe("JobManager page", () => {
     expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({status: "DEAD"})})
   })
 
-  it("links an opened row to the job's own page", async () => {
+  it("links each row to the job's own page, and reads more as the list is scrolled", async () => {
+    mockList.mockResolvedValue({status: 200, data: {content: [job({id: 1})], page: {number: 0, size: 50, totalElements: 120, totalPages: 3}}})
     const wrapper = mountJobManager()
     await settle()
-    await wrapper.find('[data-testid="job-row-1"]').trigger("click")
+
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("more")
     await settle()
+    expect(mockList).toHaveBeenLastCalledWith({query: expect.objectContaining({page: 1})})
+    await wrapper.get('[data-testid="job-run-open"]').trigger("click")
+    expect(wrapper.findComponent({name: "FoldOut"}).props("open")).toBe(true)
 
     expect(wrapper.find('[data-testid="job-open-1"]').attributes("to")).toBe("/management/jobs/1")
   })
@@ -375,7 +353,7 @@ describe("JobManager page", () => {
     await settle()
 
     expect(wrapper.find('[data-testid="job-row-1"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain("No job executions found.")
+    expect(wrapper.text()).toContain("No jobs match.")
   })
 
   it("reads the older list shape, in which the api answers with a bare array", async () => {
@@ -387,7 +365,6 @@ describe("JobManager page", () => {
     const wrapper = mountJobManager()
     await settle()
 
-    expect((wrapper.vm as any).totalPages).toBe(1)
     expect(wrapper.find('[data-testid="job-row-3"]').exists()).toBe(true)
   })
 

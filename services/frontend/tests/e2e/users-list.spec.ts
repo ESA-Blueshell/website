@@ -21,14 +21,13 @@ test.describe("the Users list", () => {
     await expect(page.getByTestId("member-manager-count")).toHaveText("1 of 2 people")
   })
 
-  test("fits a phone, with each row's actions a tap away", {tag: "@phone"}, async ({page}) => {
+  test("fits a phone, with each person a row that opens their page", {tag: "@phone"}, async ({page}) => {
     await page.setViewportSize({width: 390, height: 844})
     await installApiMocks(page, {users})
     await loginAsBoard(page.context())
     await page.goto("/management/users")
 
-    await page.getByTestId("member-manager-actions-61").click()
-    await expect(page.getByTestId("member-manager-open-profile-61")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-61-open")).toHaveAttribute("href", "/management/users/61")
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(0)
   })

@@ -56,7 +56,8 @@ describe("the bulk task page", () => {
     const wrapper = await mount("end", {ids: "2,x,3"})
 
     const task = wrapper.findComponent({name: "MembershipStatusDialog"})
-    expect(task.props("inline")).toBe(true)
+    expect(wrapper.get('[data-testid="bulk-task-head"] h1').text()).toBe("End membership")
+    expect(wrapper.get('[data-testid="bulk-task-back"]').text()).toContain("Users")
     expect(task.props("targets").map((one: {userId: number}) => one.userId)).toEqual([2, 3])
     expect(api.findContributionsByPeriodId).not.toHaveBeenCalled()
   })
@@ -66,6 +67,8 @@ describe("the bulk task page", () => {
 
     const task = wrapper.findComponent({name: "PaidStatusDialog"})
     expect(task.props("contributionPeriodId")).toBe(5)
+    expect(wrapper.get('[data-testid="bulk-task-head"] h1').text()).toBe("Mark as paid")
+    expect(wrapper.get('[data-testid="bulk-task-back"]').text()).toContain("Contributions")
     expect(task.props("targets").find((one: {userId: number}) => one.userId === 3).mostRecentContribution.paid).toBe(true)
 
     task.vm.$emit("done")

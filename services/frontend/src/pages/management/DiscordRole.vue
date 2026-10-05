@@ -5,11 +5,17 @@
    archived from here. */
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
+import CutButton from "@/components/island/CutButton.vue"
+import CutRow from "@/components/island/CutRow.vue"
 import FactList from "@/components/island/FactList.vue"
 import FormField from "@/components/island/FormField.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import TextInput from "@/components/island/TextInput.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
 import {
   type Cohort,
   type ListedTarget,
@@ -54,6 +60,12 @@ const loaded = ref(false)
 const acting = ref(false)
 
 const ACCESSES = [RoleAccess.WRITE, RoleAccess.READ, RoleAccess.SPEAK]
+const COLUMNS: TableColumn[] = [
+  {key: "channel", label: "Channel", wrap: true},
+  {key: "access", label: "Access"},
+  {key: "differs", label: "On Discord", wrap: true},
+]
+
 const accessOptions = computed(() => ACCESSES.map((one) => ({key: one, label: roleAccessWord(one)})))
 const opened = computed(() => new Set((openings.value ?? []).map((one) => one.channel.id)))
 const openable = computed(() => channels.value
@@ -164,37 +176,29 @@ onMounted(load)
 </script>
 
 <template>
-  <div
-    class="role"
-    data-testid="discord-role-page"
+  <management-page
+    :back="{to: '/management/platforms/discord', label: 'Discord'}"
+    :eyebrow="`Discord role${role?.cohortType ? ` · ${cohortTypeLabel(role.cohortType)}` : ''}`"
+    testid="discord-role-page"
+    :title="`@${role?.label ?? roleId}`"
   >
-    <router-link
-      class="role__back"
-      to="/management/platforms/discord"
+    <template #lede>
+      {{ role?.cohortLabel
+        ? `Everyone in ${role.cohortLabel} holds this role, and with it access to the channels below.`
+        : "Nothing on the site decides who holds this role. The channels it has access to are set below." }}
+    </template>
+    <template
+      v-if="mapping"
+      #actions
     >
-      Discord
-    </router-link>
-    <header class="role__head">
-      <p class="role__eyebrow">
-        Discord role{{ role?.cohortType ? ` · ${cohortTypeLabel(role.cohortType)}` : "" }}
-      </p>
-      <h1 class="role__title">
-        @{{ role?.label ?? roleId }}
-      </h1>
-      <p class="role__note">
-        {{ role?.cohortLabel ? `Everyone in ${role.cohortLabel} holds this role, and with it what it opens below.` : "Nothing on the site fills this role; what it opens is set below." }}
-      </p>
-      <button
-        v-if="mapping"
-        class="role__action role__reconcile"
-        data-testid="discord-role-reconcile"
+      <cut-button
         :disabled="acting"
-        type="button"
+        testid="discord-role-reconcile"
         @click="reconcile"
       >
-        Reconcile now
-      </button>
-    </header>
+        Compare with Discord now
+      </cut-button>
+    </template>
 
     <p
       v-if="loaded && openings == null"
@@ -206,6 +210,7 @@ onMounted(load)
 
     <template v-if="openings">
       <fact-list
+        class="role__facts"
         :columns="cohort ? 3 : 2"
         :facts="facts"
       />
@@ -218,129 +223,129 @@ onMounted(load)
         testid="discord-role-drift"
       />
 
-      <section
-        class="role__group"
-        data-testid="discord-role-openings"
+      <list-head title="Channels the role has access to" />
+      <management-table
+        :columns="COLUMNS"
+        :row-key="(state) => state.channel.id"
+        :row-testid="(state) => `discord-opening-${state.channel.id}`"
+        search-label="Search channels"
+        :search-text="(state) => nameOf(state)"
+        :rows="openings"
+        testid="discord-role-openings"
       >
-        <p class="role__folder">
-          What it opens
-        </p>
-        <p
-          v-if="openings.length === 0"
-          class="role__note"
-          data-testid="discord-role-opens-nothing"
-        >
-          The role opens nothing yet.
-        </p>
-        <ul class="role__rows">
-          <li
-            v-for="state in openings"
-            :key="state.channel.id"
-            class="role__row"
-            :data-testid="`discord-opening-${state.channel.id}`"
-          >
-            <span class="role__name">{{ nameOf(state) }}</span>
-            <span class="role__sub">{{ openingKind(state, channels) }}</span>
-            <search-picker
-              :options="accessOptions"
-              :selected-key="state.kept ?? state.actual ?? null"
-              :testid-prefix="`discord-opening-access-${state.channel.id}`"
-              @pick="(key: string) => setAccess(state, key)"
-            />
-            <span class="role__acts">
-              <button
-                class="role__mini"
-                :data-testid="`discord-opening-remove-${state.channel.id}`"
-                :disabled="acting"
-                type="button"
-                @click="remove(state)"
-              >
-                Remove
-              </button>
-              <button
-                v-if="state.channel.kind !== 'CATEGORY'"
-                class="role__mini"
-                :data-testid="`discord-opening-archive-${state.channel.id}`"
-                :disabled="acting"
-                type="button"
-                @click="archive(state)"
-              >
-                Archive
-              </button>
-            </span>
-            <p
-              v-if="openingDiffers(state)"
-              class="role__differs"
-              :data-testid="`discord-opening-differs-${state.channel.id}`"
-            >
-              {{ openingDiffers(state) }}.
-              <button
-                class="role__mini"
-                :data-testid="`discord-opening-set-${state.channel.id}`"
-                :disabled="acting"
-                type="button"
-                @click="setAccess(state, state.kept ?? state.actual!)"
-              >
-                {{ state.kept ? "Set it on Discord" : "Set it on the site" }}
-              </button>
-            </p>
-          </li>
-        </ul>
-
-        <div class="role__add">
+        <template #empty>
+          <span data-testid="discord-role-opens-nothing">The role has access to no channel yet.</span>
+        </template>
+        <template #channel="{row}">
+          <span class="role__channel">{{ nameOf(row) }}</span>
+          <span class="mg-sub">{{ openingKind(row, channels) }}</span>
+        </template>
+        <template #access="{row}">
           <search-picker
-            :options="openable"
-            placeholder="Open another channel or category"
-            :selected-key="adding"
-            testid-prefix="discord-open-another"
-            @pick="(key: string) => adding = key"
-          />
-          <search-picker
+            class="role__access"
+            compact
             :options="accessOptions"
-            :selected-key="addingAccess"
-            testid-prefix="discord-open-access"
-            @pick="(key: string) => addingAccess = key"
+            :selected-key="row.kept ?? row.actual ?? null"
+            :testid-prefix="`discord-opening-access-${row.channel.id}`"
+            @pick="(key: string) => setAccess(row, key)"
           />
-          <button
-            class="role__action"
-            data-testid="discord-open-add"
-            :disabled="acting || adding == null"
-            type="button"
-            @click="add"
+        </template>
+        <template #differs="{row}">
+          <span
+            v-if="openingDiffers(row)"
+            class="role__differs"
+            :data-testid="`discord-opening-differs-${row.channel.id}`"
           >
-            Open it
-          </button>
-          <button
-            class="role__action"
-            data-testid="discord-create-channel"
-            type="button"
-            @click="openCreate"
+            {{ openingDiffers(row) }}.
+            <mini-button
+              :disabled="acting"
+              :testid="`discord-opening-set-${row.channel.id}`"
+              @click="setAccess(row, row.kept ?? row.actual!)"
+            >
+              {{ row.kept ? "Set it on Discord" : "Set it on the site" }}
+            </mini-button>
+          </span>
+          <span
+            v-else
+            class="mg-quiet"
+          >The same</span>
+        </template>
+        <template #acts="{row}">
+          <mini-button
+            :disabled="acting"
+            :testid="`discord-opening-remove-${row.channel.id}`"
+            tone="danger"
+            @click="remove(row)"
           >
-            Create a channel
-          </button>
-        </div>
-      </section>
+            Remove access
+          </mini-button>
+          <mini-button
+            v-if="row.channel.kind !== 'CATEGORY'"
+            :disabled="acting"
+            :testid="`discord-opening-archive-${row.channel.id}`"
+            @click="archive(row)"
+          >
+            Archive
+          </mini-button>
+        </template>
+      </management-table>
 
-      <button
-        v-if="mapping && isAdmin"
-        class="role__setting"
-        data-testid="discord-role-enforce"
-        :disabled="acting"
-        type="button"
-        @click="enforce"
-      >
-        <span>
-          <span class="role__setting-title">Enforce</span>
-          <span class="role__sub">Remove the role from extra holders at every reconcile. {{ mapping.enforced ? "On." : "Off." }}</span>
-        </span>
-        <span class="role__sub">{{ mapping.enforced ? "Turn off" : "Turn on" }}</span>
-      </button>
+      <div class="role__add">
+        <search-picker
+          class="role__pick"
+          :options="openable"
+          placeholder="Link an existing channel or category"
+          :selected-key="adding"
+          testid-prefix="discord-open-another"
+          @pick="(key: string) => adding = key"
+        />
+        <search-picker
+          class="role__access"
+          :options="accessOptions"
+          :selected-key="addingAccess"
+          testid-prefix="discord-open-access"
+          @pick="(key: string) => addingAccess = key"
+        />
+        <cut-button
+          :disabled="acting || adding == null"
+          testid="discord-open-add"
+          tone="solid"
+          @click="add"
+        >
+          Give access
+        </cut-button>
+        <cut-button
+          testid="discord-create-channel"
+          @click="openCreate"
+        >
+          Create a new channel
+        </cut-button>
+      </div>
+
+      <template v-if="mapping && isAdmin">
+        <list-head title="Settings" />
+        <cut-row
+          :meta="`Remove the role from extra holders every time it is compared. ${mapping.enforced ? 'On.' : 'Off.'}`"
+          title="Enforce"
+        >
+          <template #end>
+            <cut-button
+              :disabled="acting"
+              small
+              testid="discord-role-enforce"
+              @click="enforce"
+            >
+              {{ mapping.enforced ? "Turn off" : "Turn on" }}
+            </cut-button>
+          </template>
+        </cut-row>
+      </template>
     </template>
 
     <modal-dialog
       :open="creating"
       testid="discord-create-dialog"
-      title="Create a channel"
+      title="Create a new channel"
       @update:open="creating = $event"
     >
       <form
@@ -348,7 +353,7 @@ onMounted(load)
         @submit.prevent="create"
       >
         <p class="role__note">
-          A text channel only this role sees, under the category picked.
+          A new text channel that only this role can access, under the category you pick.
         </p>
         <form-field
           v-slot="field"
@@ -377,200 +382,63 @@ onMounted(load)
         </form-field>
       </form>
       <template #footer>
-        <button
-          class="role__action role__action--main"
-          data-testid="discord-create-confirm"
+        <cut-button
           :disabled="acting || newName.trim() === '' || !newCategory"
-          type="button"
+          testid="discord-create-confirm"
+          tone="solid"
           @click="create"
         >
-          Create
-        </button>
+          Create the channel
+        </cut-button>
       </template>
     </modal-dialog>
-  </div>
+  </management-page>
 </template>
 
 <style scoped>
-.role {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 76rem;
-  padding: 2rem 2.4rem 3rem;
+.role__facts {
+  padding: 1.1rem 0 0.6rem;
 }
 
-.role__back {
-  align-self: flex-start;
-  font-size: 0.84rem;
-  color: var(--color-brand);
-}
-
-.role__head {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.role__eyebrow {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow, var(--color-ash));
-}
-
-.role__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.role__note {
-  margin: 0;
-  max-width: 48rem;
-  color: var(--color-ash);
-}
-
-.role__action,
-.role__mini {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  background: none;
-  font: inherit;
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-.role__mini {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
-}
-
-.role__action--main {
-  border-color: var(--color-brand);
-  color: var(--color-brand);
-}
-
-.role__action:disabled,
-.role__mini:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.role__reconcile {
-  align-self: flex-start;
-  margin-top: 0.4rem;
-}
-
-.role__setting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.9rem 1.1rem;
-  border: 0;
-  background-color: var(--band-ground);
-  font: inherit;
-  color: var(--color-chalk);
-  text-align: left;
-  cursor: pointer;
-}
-
-.role__setting:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.role__setting-title {
-  display: block;
+.role__channel {
   font-weight: 600;
 }
 
-.role__group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+.role__access {
+  min-width: 11rem;
 }
 
-.role__folder {
-  margin: 0.8rem 0 0;
-  font-weight: 600;
-}
-
-.role__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.role__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 12rem auto;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.role__name {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-}
-
-.role__sub {
-  overflow: hidden;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.role__acts {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.4rem;
+.role__pick {
+  flex: 1 1 18rem;
+  max-width: 28rem;
 }
 
 .role__differs {
-  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.6rem;
-  margin: 0;
-  padding-left: 0.6rem;
-  border-left: 3px solid var(--color-brand);
+  gap: 0.3rem 0.6rem;
   font-size: 0.84rem;
+  color: var(--color-warning);
 }
 
 .role__add {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) 12rem auto auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.6rem;
-  margin-top: 0.6rem;
+  gap: 0.5rem;
+  padding-top: 0.8rem;
 }
 
 .role__form {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.8rem;
 }
 
-@media (max-width: 839px) {
-  .role {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
-  .role__row,
-  .role__add {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.role__note {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--color-ash);
 }
 </style>

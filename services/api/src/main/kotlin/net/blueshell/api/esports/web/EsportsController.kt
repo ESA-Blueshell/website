@@ -253,6 +253,16 @@ class EsportsController(
         @PathVariable teamId: Long,
     ): List<FieldingResponse> = fielded.seasonsOf(teamId).map { FieldingResponse(game = it.game, season = it.season.asResponse()) }
 
+    /**
+     * Every team's fieldings in one answer, newest first, for a page that lists every team. Asking
+     * team by team is a request per team, and a list that draws before they all answer shows
+     * every team as never fielded.
+     */
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/fieldings")
+    fun findFieldings(): List<TeamFieldingResponse> =
+        fielded.everyFielding().map { TeamFieldingResponse(teamId = it.team.id!!, game = it.game, season = it.season.asResponse()) }
+
     /** The admin view of a roster: the same rows the public read has, with the names attached. */
     @BoardOnly
     @GetMapping("/teams/{teamId}/roster")

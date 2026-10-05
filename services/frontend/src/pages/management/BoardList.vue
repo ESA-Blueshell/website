@@ -1,10 +1,22 @@
 <script lang="ts" setup>
-/* Every board, newest first: its year, its members and where it stands. Opening one renders the
-   site's own board editor inside Management. */
-import {computed, ref} from "vue"
+/* Every board, newest first: its year, its members, where it stands and the role and list it
+   holds. The ticked boards whose years name a role on Discord can be linked to it together.
+   Opening one renders the site's own board editor inside Management. */
+import {computed, onMounted, ref} from "vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FactList from "@/components/island/FactList.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
+import SelectionBar from "@/components/island/SelectionBar.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import BulkAdd from "@/components/management/BulkAdd.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
+import {useUserSelection} from "@/composables/useUserSelection"
 import {type Board, type BoardStanding, academicYear, boardName, standingOf, useBoards} from "@/domains/boards"
+import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts} from "@/domains/cohorts"
+import {type AdoptionMatch, adoptMatches, listMatches} from "@/domains/discord"
 
 defineOptions({name: "BoardListPage"})
 
@@ -17,167 +29,225 @@ const STANDING: Record<BoardStanding, {kind: "in-step" | "not-created" | "not-co
   past: {kind: "not-compared", word: "Handed over"},
 }
 
+/* The role and the list follow the standing: the board in office holds the board's, the candidate
+   board the kandi's, and a board that handed over the role of its own years. */
+const cohorts = ref<CohortSummary[]>([])
+const cohortOf = (board: Board): string => {
+  const standing = standingOf(board, boards.value)
+  return standing === "in office" ? "BOARD" : standing === "candidate" ? "KANDI" : `BOARD_YEAR_MEMBERS:${board.id}`
+}
+const targetsOf = (board: Board): SummaryTarget[] => cohorts.value.find((one) => one.definitionKey === cohortOf(board))?.targets ?? []
+const SYSTEMS = [TargetSystem.DISCORD, TargetSystem.BREVO]
+
+/* The server already has a role for most board years. A ticked board is linked to the role that
+   carries its name; one with a role already, or with no role of its name, is left out and said so. */
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMany, clear: clearSelection} =
+  useUserSelection(computed(() => shown.value.map((one) => one.id)))
+const ticked = computed(() => boards.value.filter((one) => isSelected(one.id)))
+const matches = ref<AdoptionMatch[]>([])
+const linking = ref(false)
+const hasRole = (board: Board) => targetsOf(board).some((one) => one.system === TargetSystem.DISCORD && one.made)
+const matchOf = (board: Board) => matches.value.find((one) => one.key === cohortOf(board))
+const toLink = computed(() => ticked.value.flatMap((board) => {
+  const match = hasRole(board) ? undefined : matchOf(board)
+  return match ? [{key: board.id, name: boardName(board.number, board.name), note: `@${match.roleName}`, match}] : []
+}))
+const leftOut = computed(() => ticked.value
+  .filter((board) => hasRole(board) || !matchOf(board))
+  .map((board) => ({name: boardName(board.number, board.name), why: hasRole(board) ? "Has a role already" : "No role on Discord carries its name"})))
+const link = async ({match}: {match: AdoptionMatch}) => {
+  const answered = await adoptMatches([match.key])
+  if (!answered.ok) return answered
+  const [refused] = answered.saved.refused
+  return refused ? {ok: false as const, reason: refused.reason} : {ok: true as const}
+}
+const startLinking = async () => {
+  matches.value = await listMatches()
+  linking.value = true
+}
+const linked = async () => {
+  cohorts.value = await fetchCohorts().catch(() => [])
+  clearSelection()
+}
+
+onMounted(async () => {
+  cohorts.value = await fetchCohorts().catch(() => [])
+})
+
 const shown = computed(() => {
   const needle = search.value.trim().toLowerCase()
   return boards.value.filter((board) => needle === "" ||
     [boardName(board.number, board.name), academicYear(board.startDate, board.endDate), ...board.members.map((one) => one.name ?? "")]
       .some((value) => value.toLowerCase().includes(needle)))
 })
+const COLUMNS: TableColumn[] = [
+  {key: "name", label: "Board", wrap: true},
+  {key: "year", label: "Year"},
+  {key: "people", label: "Members"},
+  {key: "discord", label: "Discord"},
+  {key: "brevo", label: "Brevo"},
+  {key: "state", label: "State"},
+]
+
+const facts = computed(() => {
+  const named = (state: BoardStanding) => boards.value.filter((board) => standingOf(board, boards.value) === state)
+    .map((board) => boardName(board.number, board.name)).join(", ")
+  return [
+    {label: "Boards", value: String(boards.value.length), sub: "Since the association began"},
+    {label: "In office", value: named("in office") || "Nobody", sub: ""},
+    {label: "Kandi", value: named("candidate") || "None yet", sub: "The next board, before it takes office"},
+  ]
+})
+
 const standing = (board: Board) => STANDING[standingOf(board, boards.value)]
 const people = (board: Board) => `${board.members.length} ${board.members.length === 1 ? "member" : "members"}`
 </script>
 
 <template>
-  <div
-    class="boards"
-    data-testid="board-list"
+  <management-page
+    eyebrow="Content"
+    testid="board-list"
+    title="Board"
   >
-    <header class="boards__head">
-      <div>
-        <p class="boards__eyebrow">
-          Content
-        </p>
-        <h1 class="boards__title">
-          Board
-        </h1>
-        <p class="boards__note">
-          Every board the association has had, the one in office and the one about to take over.
-        </p>
-      </div>
-      <router-link
-        class="boards__action"
-        data-testid="board-list-new"
-        to="/management/board/new"
+    <template #lede>
+      Every board the association has had, the one in office and the one about to take over.
+    </template>
+    <template #actions>
+      <cut-button
+        href="/management/board/new"
+        testid="board-list-new"
       >
         Add a board
-      </router-link>
-    </header>
+      </cut-button>
+    </template>
 
-    <search-box
-      v-model="search"
-      label="Search boards"
-      testid="board-list-search"
+    <fact-list
+      class="boards__facts"
+      :facts="facts"
     />
 
-    <p
-      v-if="!loading && shown.length === 0"
-      class="boards__note"
-      data-testid="board-list-empty"
+    <management-table
+      :columns="COLUMNS"
+      :row-key="(board) => board.number"
+      :row-testid="(board) => `board-row-${board.number}`"
+      :rows="shown"
+      :header-state="headerState"
+      :selected-count="selectedIdsArray.length"
+      testid="board-list-table"
+      :to="(board) => `/management/board/${board.number}`"
+      :total="boards.length"
+      @clear-selection="clearSelection"
+      @select-all="selectMany(boards.map((one) => one.id))"
+      @toggle-shown="toggleHeader"
     >
-      No board matches.
-    </p>
-
-    <ul class="boards__rows">
-      <li
-        v-for="board in shown"
-        :key="board.number"
-        class="boards__row"
-        :data-testid="`board-row-${board.number}`"
+      <template #check="{row}">
+        <row-check
+          :checked="isSelected(row.id)"
+          :label="`Select ${boardName(row.number, row.name)}`"
+          :testid="`board-check-${row.number}`"
+          @toggle="toggle(row.id)"
+        />
+      </template>
+      <template #count>
+        <b>{{ shown.length }}</b> of {{ boards.length }} boards
+      </template>
+      <template #search>
+        <search-box
+          v-model="search"
+          label="Search boards"
+          testid="board-list-search"
+        />
+      </template>
+      <template
+        v-if="!loading"
+        #empty
       >
-        <span class="boards__name">
-          <router-link :to="`/management/board/${board.number}`">{{ boardName(board.number, board.name) }}</router-link>
-        </span>
-        <span class="boards__sub">{{ academicYear(board.startDate, board.endDate) }}</span>
-        <span class="boards__sub">{{ people(board) }}</span>
-        <state-mark
-          :kind="standing(board).kind"
-          :testid="`board-standing-${board.number}`"
+        <span data-testid="board-list-empty">No board matches.</span>
+      </template>
+      <template #name="{row}">
+        <router-link
+          class="mg-name"
+          :to="`/management/board/${row.number}`"
         >
-          {{ standing(board).word }}
+          {{ boardName(row.number, row.name) }}
+        </router-link>
+      </template>
+      <template #year="{row}">
+        {{ academicYear(row.startDate, row.endDate) }}
+      </template>
+      <template #people="{row}">
+        {{ people(row) }}
+      </template>
+      <template
+        v-for="system in SYSTEMS"
+        :key="system"
+        #[system.toLowerCase()]="{row}"
+      >
+        <target-mark
+          :quiet="system === TargetSystem.BREVO && standingOf(row, boards) === 'past'"
+          :system="system"
+          :targets="targetsOf(row)"
+          :testid="`board-${system.toLowerCase()}-${row.number}`"
+        />
+      </template>
+      <template #state="{row}">
+        <state-mark
+          :kind="standing(row).kind"
+          :testid="`board-standing-${row.number}`"
+        >
+          {{ standing(row).word }}
         </state-mark>
-      </li>
-    </ul>
-  </div>
+      </template>
+      <template #phone="{row}">
+        <management-row
+          :meta="`${academicYear(row.startDate, row.endDate)} · ${people(row)}`"
+          :name="boardName(row.number, row.name)"
+          :testid="`board-row-${row.number}`"
+          :to="`/management/board/${row.number}`"
+        >
+          <state-mark
+            :kind="standing(row).kind"
+            :testid="`board-standing-${row.number}`"
+          >
+            {{ standing(row).word }}
+          </state-mark>
+        </management-row>
+      </template>
+    </management-table>
+
+    <selection-bar
+      always
+      :count="selectedIdsArray.length"
+      testid="board-list-selection"
+      @clear="clearSelection"
+    >
+      <cut-button
+        small
+        testid="board-link-roles"
+        tone="solid"
+        @click="startLinking"
+      >
+        Link Discord roles by name
+      </cut-button>
+    </selection-bar>
+
+    <bulk-add
+      each="the Discord role that carries its name"
+      :items="toLink"
+      :noun="['board', 'boards']"
+      :open="linking"
+      :run="link"
+      :skipped="leftOut"
+      testid="board-bulk-link"
+      title="Link Discord roles by name"
+      @done="linked"
+      @update:open="linking = $event"
+    />
+  </management-page>
 </template>
 
 <style scoped>
-.boards {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 76rem;
-  padding: 2rem 2.4rem 3rem;
-}
-
-.boards__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.boards__eyebrow {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow, var(--color-ash));
-}
-
-.boards__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-}
-
-.boards__note {
-  margin: 0;
-  max-width: 48rem;
-  color: var(--color-ash);
-}
-
-.boards__action {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-hairline);
-  font-size: 0.86rem;
-  color: var(--color-chalk);
-  text-decoration: none;
-}
-
-.boards__rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.boards__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) 7rem 7rem 9rem;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.boards__name {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-}
-
-.boards__name a {
-  color: var(--color-chalk);
-}
-
-.boards__sub {
-  overflow: hidden;
-  font-size: 0.84rem;
-  color: var(--color-ash);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 839px) {
-  .boards {
-    padding: 1.2rem 1.1rem 2rem;
-  }
-
-  .boards__row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
+.boards__facts {
+  padding: 1.1rem 0 1.2rem;
 }
 </style>

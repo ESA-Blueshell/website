@@ -87,6 +87,8 @@ class CohortRuleListener(
 
     @AfterCommitListener
     fun onBoardMembershipChanged(evt: BoardMembershipChanged) {
+        // A board with its first member has a board-year definition but no record yet.
+        registrar.register()
         updater.updateMember(evt.userId)
     }
 

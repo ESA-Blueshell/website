@@ -11,8 +11,11 @@ export const listCatalogue = (): Promise<CataloguedChannel[]> => readOr(listCata
 
 export const listMatches = (): Promise<AdoptionMatch[]> => readOr(listDiscordMatches(), [])
 
-/** Links the confirmed matches by their cohort's key; answers how many were linked. */
-export async function adoptMatches(keys: string[]): Promise<Saved<number> | Refused> {
+/** What linking the confirmed matches came to: how many were linked, and the ones Discord refused with why. */
+export type Adopted = {linked: number; refused: {label: string; reason: string}[]}
+
+/** Links the confirmed matches by their cohort's key. A match Discord refuses does not stop the others. */
+export async function adoptMatches(keys: string[]): Promise<Saved<Adopted> | Refused> {
   const answer = await refusable(adoptDiscordMatches({body: {keys}}), "The matches could not be linked.")
-  return answer.ok ? {ok: true, saved: answer.saved.linked} : answer
+  return answer.ok ? {ok: true, saved: {linked: answer.saved.linked, refused: answer.saved.refused}} : answer
 }

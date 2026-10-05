@@ -1,8 +1,116 @@
+<template>
+  <div
+    class="dash"
+    data-testid="management-dashboard"
+  >
+    <management-head
+      eyebrow="Management"
+      title="Dashboard"
+    >
+      {{ greeting }}. Here is what needs you and how the association stands.
+    </management-head>
+    <div class="dash__grid">
+      <management-panel
+        :link="`All ${shown.length} alerts`"
+        testid="dashboard-alerts"
+        title="Alerts for you"
+        to="/management/alerts"
+      >
+        <p
+          v-if="shown.length === 0"
+          class="dash__quiet"
+        >
+          Nothing needs you right now.
+        </p>
+        <div class="dash__rows">
+          <management-row
+            v-for="alert in shown.slice(0, 3)"
+            :key="alert.key"
+            :meta="alertRow(alert).meta"
+            :name="alertRow(alert).name"
+            :to="alertLink(alert)"
+          >
+            <state-mark :kind="ALERT_MARKS[alert.kind]">
+              {{ alertRow(alert).from }}
+            </state-mark>
+          </management-row>
+        </div>
+      </management-panel>
+
+      <management-panel
+        link="Contributions"
+        testid="dashboard-membership"
+        :title="standing ? `Members, ${periodName}` : 'Members'"
+        to="/management/contributions"
+      >
+        <p
+          v-if="!standing"
+          class="dash__quiet"
+        >
+          There is no contribution period yet.
+        </p>
+        <fact-list
+          v-else
+          :columns="2"
+          :facts="membership"
+        />
+      </management-panel>
+
+      <management-panel
+        link="Events to approve"
+        testid="dashboard-events"
+        title="Events"
+        to="/management/events"
+      >
+        <p
+          class="dash__sub"
+          :class="{'dash__sub--waiting': awaitingCount > 0}"
+          data-testid="dashboard-events-queue"
+        >
+          {{ awaitingCount }} awaiting approval
+        </p>
+        <div class="dash__rows">
+          <management-row
+            v-for="event in awaiting"
+            :key="event.id"
+            :meta="formatMoment(event.startTime)"
+            :name="event.title"
+            :to="`/events/${event.id}`"
+          >
+            <state-mark kind="extra">
+              Awaiting approval
+            </state-mark>
+          </management-row>
+        </div>
+        <p class="dash__sub">
+          Coming up
+        </p>
+        <pair-list :pairs="comingUp" />
+      </management-panel>
+
+      <management-panel
+        link="Platforms"
+        testid="dashboard-platforms"
+        title="Platforms and mail"
+        to="/management/platforms/brevo"
+      >
+        <pair-list :pairs="standings" />
+      </management-panel>
+    </div>
+  </div>
+</template>
+
 <script lang="ts" setup>
 /* Management's first page: the reader's alerts and a block per area, each linking to the page it
    sums up. Admin figures are read only for an admin, so the board never calls an admin endpoint. */
 import {computed, onMounted, ref} from "vue"
-import {AlertKind, alertLink, alertTitle, useAlerts} from "@/domains/alerts"
+import FactList from "@/components/island/FactList.vue"
+import StateMark, {type StateKind} from "@/components/island/StateMark.vue"
+import ManagementHead from "@/components/management/ManagementHead.vue"
+import ManagementPanel from "@/components/management/ManagementPanel.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import PairList, {type Pair} from "@/components/management/PairList.vue"
+import {AlertKind, alertLink, alertRow, useAlerts} from "@/domains/alerts"
 import {fetchCohorts} from "@/domains/cohorts"
 import {type PeriodStanding, readPeriodStanding} from "@/domains/contribution"
 import {type EmailStats, loadEmailStats} from "@/domains/emails"
@@ -10,7 +118,7 @@ import {type EventResponse, readEventPage} from "@/domains/events"
 import {loadExceptions} from "@/domains/exceptions"
 import {type JobStats, loadJobStats} from "@/domains/jobs"
 import store from "@/plugins/store"
-import {formatDateNoSeconds} from "@/utils/timestamps"
+import {formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "ManagementDashboard"})
 
@@ -29,32 +137,57 @@ const openExceptions = ref(0)
 const drifting = computed(() => shown.value.filter((alert) => alert.kind === AlertKind.TARGET_DRIFT).length)
 const withoutList = computed(() => shown.value.filter((alert) => alert.kind === AlertKind.COHORT_WITHOUT_LIST).length)
 
+const ALERT_MARKS: Record<AlertKind, StateKind> = {
+  [AlertKind.TARGET_DRIFT]: "extra",
+  [AlertKind.COHORT_WITHOUT_LIST]: "not-created",
+  [AlertKind.EMAIL_FAILED]: "extra",
+  [AlertKind.JOB_DEAD]: "not-created",
+  [AlertKind.EXCEPTION_OPEN]: "extra",
+  [AlertKind.ROLE_AWAITING_TWO_FACTOR]: "missing",
+}
+
+const hour = new Date().getHours()
+const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
+
+/** "2026-2027", or the one year a period starts and ends in. */
+const periodName = computed(() => {
+  if (!standing.value) return ""
+  const [from, until] = [standing.value.startDate.slice(0, 4), standing.value.endDate.slice(0, 4)]
+  return from === until ? from : `${from}-${until}`
+})
+
 const membership = computed(() => (standing.value
   ? [
-      {label: "Members", value: standing.value.members},
-      {label: "Paid", value: standing.value.paid},
-      {label: "Still to pay", value: standing.value.stillToPay},
-      {label: "Pending their first contribution", value: standing.value.pendingFirstContribution},
+      {label: "Members", value: String(standing.value.members), sub: `${standing.value.pendingFirstContribution} pending their first contribution`},
+      {label: "Paid", value: String(standing.value.paid), sub: `${standing.value.stillToPay} still to pay`},
     ]
   : []))
 
-const mailFigures = computed(() => (mail.value
-  ? [
-      {label: "Sent", value: mail.value.totalCount},
-      {label: "Delivered", value: mail.value.deliveredCount},
-      {label: "Opened", value: mail.value.openedCount},
-      {label: "Failed or bounced", value: mail.value.failedCount + mail.value.bouncedCount},
-    ]
-  : []))
+const comingUp = computed<Pair[]>(() => upcoming.value.map((event) => ({
+  label: event.title, value: formatMoment(event.startTime), to: `/events/${event.id}`,
+})))
 
-const jobFigures = computed(() => (jobs.value
-  ? [
-      {label: "Queued", value: jobs.value.queuedCount},
-      {label: "Running", value: jobs.value.runningCount},
-      {label: "Failed", value: jobs.value.failedCount},
-      {label: "Dead", value: jobs.value.deadCount},
-    ]
-  : []))
+/** How each platform and the mail stand, one line each; the admin's own lines last. */
+const standings = computed<Pair[]>(() => {
+  const lines: Pair[] = [
+    {label: "Brevo", value: `${cohortCount.value} cohorts · ${drifting.value} out of step · ${withoutList.value} without a list`, to: "/management/platforms/brevo"},
+  ]
+  if (mail.value) {
+    lines.push({
+      label: "Sent mail",
+      value: `${mail.value.deliveredCount} delivered · ${mail.value.failedCount + mail.value.bouncedCount} failed or bounced`,
+      to: "/management/mail/sent",
+      testid: "dashboard-mail",
+    })
+  }
+  if (jobs.value) {
+    lines.push({
+      label: "Jobs", value: `${jobs.value.deadCount} dead · ${jobs.value.failedCount} failed`, to: "/management/jobs", adminOnly: true, testid: "dashboard-system",
+    })
+    lines.push({label: "Exceptions", value: `${openExceptions.value} open`, to: "/management/exceptions", adminOnly: true})
+  }
+  return lines
+})
 
 const loadEvents = async () => {
   const soonest = ["startTime,asc"]
@@ -85,305 +218,45 @@ onMounted(async () => {
 })
 </script>
 
-<template>
-  <div
-    class="dash"
-    data-testid="management-dashboard"
-  >
-    <h1 class="dash__title">
-      Overview
-    </h1>
-
-    <div class="dash__grid">
-      <section
-        class="dash__block dash__block--wide"
-        data-testid="dashboard-alerts"
-      >
-        <header class="dash__head">
-          <h2>Alerts</h2>
-          <router-link to="/management/alerts">
-            All alerts ({{ shown.length }})
-          </router-link>
-        </header>
-        <p
-          v-if="shown.length === 0"
-          class="dash__quiet"
-        >
-          Nothing needs you right now.
-        </p>
-        <ul class="dash__list">
-          <li
-            v-for="alert in shown.slice(0, 4)"
-            :key="alert.key"
-          >
-            <router-link :to="alertLink(alert)">
-              {{ alertTitle(alert) }}
-            </router-link>
-          </li>
-        </ul>
-      </section>
-
-      <section
-        class="dash__block"
-        data-testid="dashboard-membership"
-      >
-        <header class="dash__head">
-          <h2>Membership</h2>
-          <router-link to="/management/users">
-            Users
-          </router-link>
-        </header>
-        <p
-          v-if="standing"
-          class="dash__quiet"
-        >
-          This period, since {{ standing.startDate }}
-        </p>
-        <p
-          v-else
-          class="dash__quiet"
-        >
-          There is no contribution period yet.
-        </p>
-        <dl class="dash__figures">
-          <div
-            v-for="figure in membership"
-            :key="figure.label"
-          >
-            <dt>{{ figure.label }}</dt>
-            <dd>{{ figure.value }}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section
-        class="dash__block"
-        data-testid="dashboard-events"
-      >
-        <header class="dash__head">
-          <h2>Events</h2>
-          <router-link to="/events">
-            Events
-          </router-link>
-        </header>
-        <p class="dash__quiet">
-          <router-link
-            data-testid="dashboard-events-queue"
-            to="/management/events"
-          >
-            {{ awaitingCount }} awaiting approval
-          </router-link>
-        </p>
-        <ul class="dash__list">
-          <li
-            v-for="event in awaiting"
-            :key="event.id"
-          >
-            <router-link :to="`/events/${event.id}`">
-              {{ event.title }}
-            </router-link>
-          </li>
-        </ul>
-        <p class="dash__quiet">
-          Coming up
-        </p>
-        <ul class="dash__list">
-          <li
-            v-for="event in upcoming"
-            :key="event.id"
-          >
-            <router-link :to="`/events/${event.id}`">
-              {{ event.title }}
-            </router-link>
-            <span class="dash__when">{{ formatDateNoSeconds(event.startTime) }}</span>
-          </li>
-        </ul>
-      </section>
-
-      <section
-        class="dash__block"
-        data-testid="dashboard-mail"
-      >
-        <header class="dash__head">
-          <h2>Mail</h2>
-          <router-link to="/management/mail/sent">
-            Sent mail
-          </router-link>
-        </header>
-        <dl class="dash__figures">
-          <div
-            v-for="figure in mailFigures"
-            :key="figure.label"
-          >
-            <dt>{{ figure.label }}</dt>
-            <dd>{{ figure.value }}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section
-        class="dash__block"
-        data-testid="dashboard-platforms"
-      >
-        <header class="dash__head">
-          <h2>Platforms</h2>
-          <router-link to="/management/platforms/brevo">
-            Brevo
-          </router-link>
-        </header>
-        <dl class="dash__figures">
-          <div>
-            <dt>Cohorts</dt>
-            <dd>{{ cohortCount }}</dd>
-          </div>
-          <div>
-            <dt>Out of step</dt>
-            <dd>{{ drifting }}</dd>
-          </div>
-          <div>
-            <dt>Without a list</dt>
-            <dd>{{ withoutList }}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section
-        v-if="admin"
-        class="dash__block"
-        data-testid="dashboard-system"
-      >
-        <header class="dash__head">
-          <h2>System <span class="dash__admin">@Admin</span></h2>
-          <router-link to="/management/jobs">
-            Jobs
-          </router-link>
-        </header>
-        <dl class="dash__figures">
-          <div
-            v-for="figure in jobFigures"
-            :key="figure.label"
-          >
-            <dt>{{ figure.label }}</dt>
-            <dd>{{ figure.value }}</dd>
-          </div>
-          <div>
-            <dt>
-              <router-link to="/management/exceptions">
-                Open exceptions
-              </router-link>
-            </dt>
-            <dd>{{ openExceptions }}</dd>
-          </div>
-        </dl>
-      </section>
-    </div>
-  </div>
-</template>
-
 <style scoped>
 .dash {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  padding: 2rem 2.4rem 3rem;
-}
-
-.dash__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3vw, 2rem);
+  padding-bottom: 2rem;
 }
 
 .dash__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+  margin-top: 1rem;
+  padding: 0 2.4rem;
 }
 
-.dash__block {
+.dash__rows {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  min-width: 0;
-  padding: 1rem 1.1rem;
-  background-color: var(--band-ground);
-  border: 1px solid var(--color-hairline);
-}
-
-.dash__block--wide {
-  grid-column: 1 / -1;
-}
-
-.dash__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.dash__head h2 {
-  margin: 0;
-  font-size: 0.8rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
-}
-
-.dash a {
-  color: var(--color-brand);
-  font-size: 0.88rem;
-  overflow-wrap: anywhere;
-}
-
-.dash__admin {
-  letter-spacing: 0.04em;
-  text-transform: none;
-  color: var(--color-warning);
+  gap: 2px;
 }
 
 .dash__quiet {
-  margin: 0;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   color: var(--color-ash);
 }
 
-.dash__list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.dash__when {
-  margin-left: 0.5rem;
-  font-size: 0.8rem;
+.dash__sub {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
   color: var(--color-ash);
 }
 
-.dash__figures {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem 1rem;
-  margin: 0;
+.dash__sub--waiting {
+  color: var(--color-warning);
 }
 
-.dash__figures dt {
-  font-size: 0.72rem;
-  color: var(--color-ash);
-}
-
-.dash__figures dd {
-  margin: 0.1rem 0 0;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-}
-
-@media (max-width: 839px) {
-  .dash {
-    padding: 1.2rem 1.1rem 2rem;
+@media (--phone) {
+  .dash__grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 1.1rem;
   }
 }
 </style>

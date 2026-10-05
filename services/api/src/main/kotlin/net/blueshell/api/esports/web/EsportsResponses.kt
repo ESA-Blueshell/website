@@ -44,6 +44,13 @@ data class FieldingResponse(
     val season: SeasonResponse,
 )
 
+@Schema(description = "One team's fielding in a game in a season, named by the team it belongs to")
+data class TeamFieldingResponse(
+    val teamId: Long,
+    val game: String,
+    val season: SeasonResponse,
+)
+
 @Schema(description = "One person on a team's roster, as the public read has them")
 data class RosterMemberResponse(
     val role: TeamRole,

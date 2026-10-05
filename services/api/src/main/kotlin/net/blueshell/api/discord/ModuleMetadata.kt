@@ -16,6 +16,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "discord",
     allowedDependencies = [
+        // The bot lacking a permission raises an alert.
+        "alerts :: api",
         // Open kernel: the starboard is @MemberOnly, the management endpoints the board's.
         "security",
         // Open kernel.

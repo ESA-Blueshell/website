@@ -305,6 +305,7 @@ components:
       - JOB_DEAD
       - EXCEPTION_OPEN
       - ROLE_AWAITING_TWO_FACTOR
+      - DISCORD_BOT_PERMISSIONS
       type: string
     AnnounceChoice:
       enum:
@@ -767,6 +768,20 @@ components:
       - updatedAt
       - version
       type: object
+    BotPermission:
+      properties:
+        granted:
+          type: boolean
+        name:
+          type: string
+        neededFor:
+          description: What the site cannot do without it.
+          type: string
+      required:
+      - granted
+      - name
+      - neededFor
+      type: object
     BotStandingResult:
       properties:
         above:
@@ -783,16 +798,26 @@ components:
           type: array
         connected:
           type: boolean
+        hidden:
+          items:
+            type: string
+          type: array
         manageChannels:
           type: boolean
         manageRoles:
           type: boolean
+        permissions:
+          items:
+            $ref: '#/components/schemas/BotPermission'
+          type: array
       required:
       - above
       - claimed
       - connected
+      - hidden
       - manageChannels
       - manageRoles
+      - permissions
       type: object
     BrevoPlace:
       properties:

@@ -144,6 +144,7 @@ const ALERT_MARKS: Record<AlertKind, StateKind> = {
   [AlertKind.JOB_DEAD]: "not-created",
   [AlertKind.EXCEPTION_OPEN]: "extra",
   [AlertKind.ROLE_AWAITING_TWO_FACTOR]: "missing",
+  [AlertKind.DISCORD_BOT_PERMISSIONS]: "not-created",
 }
 
 const hour = new Date().getHours()

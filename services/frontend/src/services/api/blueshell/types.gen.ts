@@ -150,7 +150,8 @@ export enum AlertKind {
     EMAIL_FAILED = 'EMAIL_FAILED',
     JOB_DEAD = 'JOB_DEAD',
     EXCEPTION_OPEN = 'EXCEPTION_OPEN',
-    ROLE_AWAITING_TWO_FACTOR = 'ROLE_AWAITING_TWO_FACTOR'
+    ROLE_AWAITING_TWO_FACTOR = 'ROLE_AWAITING_TWO_FACTOR',
+    DISCORD_BOT_PERMISSIONS = 'DISCORD_BOT_PERMISSIONS'
 }
 
 export enum AnnounceChoice {
@@ -415,13 +416,24 @@ export type BoardResponse = {
     version: number;
 };
 
+export type BotPermission = {
+    granted: boolean;
+    name: string;
+    /**
+     * What the site cannot do without it.
+     */
+    neededFor: string;
+};
+
 export type BotStandingResult = {
     above: Array<DiscordRole>;
     botRole?: DiscordRole | null;
     claimed: Array<DiscordRole>;
     connected: boolean;
+    hidden: Array<string>;
     manageChannels: boolean;
     manageRoles: boolean;
+    permissions: Array<BotPermission>;
 };
 
 export type BrevoPlace = {

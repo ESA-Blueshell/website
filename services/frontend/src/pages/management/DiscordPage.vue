@@ -35,6 +35,7 @@ import {
 } from "@/domains/cohorts"
 import {
   ChannelGlyph,
+  DISCORD_TABS,
   type AdoptionMatch,
   type CataloguedChannel,
   type NamedRole,
@@ -54,9 +55,7 @@ import store from "@/plugins/store"
 defineOptions({name: "DiscordPage"})
 
 const SYSTEM = TargetSystem.DISCORD
-const ROLES = "/management/platforms/discord"
 const CHANNELS = "/management/platforms/discord/channels"
-const TABS = [{label: "Roles", to: ROLES}, {label: "Channels", to: CHANNELS}]
 
 const route = useRoute()
 const onChannels = computed(() => route.path === CHANNELS)
@@ -263,7 +262,7 @@ onMounted(load)
       </notice-box>
 
       <page-tabs
-        :entries="TABS"
+        :entries="DISCORD_TABS"
         label="Discord"
         testid="discord-tabs"
       />

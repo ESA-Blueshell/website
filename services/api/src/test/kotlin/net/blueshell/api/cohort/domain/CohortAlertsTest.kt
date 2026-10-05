@@ -5,6 +5,8 @@ import net.blueshell.api.alerts.api.AlertKind
 import net.blueshell.api.alerts.api.RaisedAlert
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.TargetCount
+import net.blueshell.api.cohort.persistence.TargetMemberRepository
 import net.blueshell.api.cohort.persistence.TargetReconcileRun
 import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
@@ -19,7 +21,17 @@ class CohortAlertsTest {
     private val cohorts: CohortRepository = mock()
     private val targets: TargetRepository = mock()
     private val runs: TargetReconcileRunRepository = mock()
-    private val alerts = CohortAlerts(cohorts, targets, runs)
+    private val members: TargetMemberRepository = mock()
+    private val alerts = CohortAlerts(cohorts, targets, runs, LedgerDrift(members))
+
+    private fun counted(
+        targetId: Long,
+        people: Long,
+    ) = object : TargetCount {
+        override val targetId = targetId
+        override val people = people
+    }
+
     private val at = Instant.parse("2026-09-30T03:00:00Z")
 
     @Test
@@ -42,7 +54,7 @@ class CohortAlertsTest {
     }
 
     @Test
-    fun `a target whose latest reconcile found drift raises a board alert on its cohort`() {
+    fun `a reconciled target whose ledger has drift raises a board alert on its cohort`() {
         whenever(targets.findAll()).thenReturn(
             listOf(
                 Entities.target(20, label = "Sitecie", cohortId = 2, externalId = "7"),
@@ -52,7 +64,10 @@ class CohortAlertsTest {
             ),
         )
         whenever(runs.findFirstByTargetIdOrderByStartedAtDesc(20)).thenReturn(TargetReconcileRun(20, at, null, 10, 2, 1))
-        whenever(runs.findFirstByTargetIdOrderByStartedAtDesc(21)).thenReturn(TargetReconcileRun(21, at, null, 10, 0, 0))
+        // The run on 21 found two people missing, who were pushed since; 22 was never reconciled.
+        whenever(runs.findFirstByTargetIdOrderByStartedAtDesc(21)).thenReturn(TargetReconcileRun(21, at, null, 10, 2, 0))
+        whenever(members.countDesiredByTarget()).thenReturn(listOf(counted(20, 2), counted(22, 5)))
+        whenever(members.countStrangersByTarget()).thenReturn(listOf(counted(20, 1)))
 
         assertThat(alerts.raised()).containsExactly(RaisedAlert("target-drift:20", AlertKind.TARGET_DRIFT, 2, "Sitecie", 3, at))
     }

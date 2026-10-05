@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.TargetCount
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetMemberRepository
 import net.blueshell.api.cohort.persistence.TargetReconcileRun
@@ -28,7 +29,15 @@ class TargetOverviewTest {
     private val members = mock<TargetMemberRepository>()
     private val runs = mock<TargetReconcileRunRepository>()
     private val jobs = mock<JobQueue>()
-    private val overview = TargetOverview(catalog, targets, cohorts, members, runs, jobs)
+    private val overview = TargetOverview(catalog, targets, cohorts, members, runs, jobs, LedgerDrift(members))
+
+    private fun counted(
+        targetId: Long,
+        people: Long,
+    ) = object : TargetCount {
+        override val targetId = targetId
+        override val people = people
+    }
 
     private val paid = Entities.cohort(id = 1, type = CohortType.PERIOD_PAYERS, label = "Paid 2025-2026")
     private val newPaid = Entities.cohort(id = 2, type = CohortType.PERIOD_PAYERS, label = "Paid 2026-2027")
@@ -50,10 +59,26 @@ class TargetOverviewTest {
             TargetReconcileRun(10, Instant.parse("2026-10-01T03:00:00Z"), null, 186, 1, 2, unreachable = 3),
         )
         whenever(members.countByTargetIdAndUserIdIsNotNull(11)).thenReturn(142)
+        // Four people wait to be pushed, three of them with no account there, and two are on it uninvited.
+        whenever(members.countDesiredByTarget()).thenReturn(listOf(counted(10, 4)))
+        whenever(members.countStrangersByTarget()).thenReturn(listOf(counted(10, 2)))
     }
 
     @Test
-    fun `lists every list with the cohort it follows and its newest drift, and the expected lists that are missing`() {
+    fun `counts drift from the ledger as it stands, not from what the newest run found`() {
+        given()
+        // Everybody the run found missing has been pushed since, and the extras removed.
+        whenever(members.countDesiredByTarget()).thenReturn(emptyList())
+        whenever(members.countStrangersByTarget()).thenReturn(emptyList())
+
+        val list = overview.of(TargetSystem.BREVO).lists.first()
+
+        assertThat(listOf(list.missing, list.extra, list.unreachable)).containsExactly(0, 0, 0)
+        assertThat(list.lastReconciledAt).isEqualTo(Instant.parse("2026-10-01T03:00:00Z"))
+    }
+
+    @Test
+    fun `lists every list with the cohort it follows and its drift, and the expected lists that are missing`() {
         given()
 
         val read = overview.of(TargetSystem.BREVO)

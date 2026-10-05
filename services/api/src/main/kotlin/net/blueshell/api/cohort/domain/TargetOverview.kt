@@ -24,9 +24,9 @@ data class ListedTarget(
     val cohortId: Long?,
     val cohortLabel: String?,
     val cohortType: CohortType?,
-    /** From the newest reconcile: people who should be on the list and are not. */
+    /** As the ledger stands now: people who should be on the list and are not. */
     val missing: Int?,
-    /** From the newest reconcile: people on the list who should not be. */
+    /** As the ledger stands now: people on the list who should not be. */
     val extra: Int?,
     /** From the newest reconcile: people who should be on it and have no account there to put on it. */
     val unreachable: Int?,
@@ -63,8 +63,10 @@ class TargetOverview(
     private val targetMembers: TargetMemberRepository,
     private val runs: TargetReconcileRunRepository,
     private val jobs: JobQueue,
+    private val ledger: LedgerDrift,
 ) {
     fun of(system: TargetSystem): TargetOverviewResult {
+        val drift = ledger.now()
         val external = catalog.search(system, null)
         val ours = targets.findAllBySystem(system.name)
         val cohortById = cohorts.findAllById(ours.mapNotNull { it.cohortId }.toSet()).associateBy { requireNotNull(it.id) }
@@ -72,7 +74,7 @@ class TargetOverview(
         val lists =
             external.map { list ->
                 val target = byExternalId[list.externalId]
-                rowOf(list, target, target?.cohortId?.let(cohortById::get))
+                rowOf(list, target, target?.cohortId?.let(cohortById::get), drift)
             }
         val missing =
             missingOf(system).mapNotNull { target ->
@@ -98,15 +100,18 @@ class TargetOverview(
         val list = catalog.find(system, externalId)
         val target = targets.findFirstBySystemAndExternalId(system.name, externalId)
         val cohort = target?.cohortId?.let { cohorts.findById(it).orElse(null) }
-        return rowOf(list, target, cohort)
+        return rowOf(list, target, cohort, ledger.now())
     }
 
     private fun rowOf(
         list: ExternalTarget,
         target: Target?,
         cohort: Cohort?,
+        drift: LedgerDrift.Now,
     ): ListedTarget {
         val newest = target?.id?.let(runs::findFirstByTargetIdOrderByStartedAtDesc)
+        // A target never reconciled has not been compared, so it claims no drift at all.
+        val now = newest?.let { drift.of(it.targetId, it) }
         return ListedTarget(
             externalId = list.externalId,
             label = list.label,
@@ -116,9 +121,9 @@ class TargetOverview(
             cohortId = cohort?.id,
             cohortLabel = cohort?.label,
             cohortType = cohort?.type,
-            missing = newest?.oursOnly,
-            extra = newest?.theirsOnly,
-            unreachable = newest?.unreachable,
+            missing = now?.missing,
+            extra = now?.extra,
+            unreachable = now?.unreachable,
             lastReconciledAt = newest?.startedAt,
             enforced = target?.enforced ?: false,
         )

@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * For the board: a cohort that should have a Brevo list and has none, and a target whose latest
- * reconcile found people on one side only. The subject of either is the cohort, whose page deals
+ * For the board: a cohort that should have a Brevo list and has none, and a reconciled target whose
+ * ledger has people on one side only. The subject of either is the cohort, whose page deals
  * with both; a drifting target without a cohort has none.
  */
 @Component
@@ -21,6 +21,7 @@ class CohortAlerts(
     private val cohorts: CohortRepository,
     private val targets: TargetRepository,
     private val runs: TargetReconcileRunRepository,
+    private val ledger: LedgerDrift,
 ) : AlertSource {
     override val audience = AlertAudience.BOARD
 
@@ -43,10 +44,11 @@ class CohortAlerts(
                 )
             }
 
-    private fun drifting(): List<RaisedAlert> =
-        targets.findAll().filter { it.externalId != null }.mapNotNull { target ->
+    private fun drifting(): List<RaisedAlert> {
+        val now = ledger.now()
+        return targets.findAll().filter { it.externalId != null }.mapNotNull { target ->
             val run = runs.findFirstByTargetIdOrderByStartedAtDesc(requireNotNull(target.id))
-            val drift = run?.let { it.oursOnly + it.theirsOnly } ?: 0
+            val drift = run?.let { now.of(it.targetId, it) }?.let { it.missing + it.extra } ?: 0
             if (run == null || drift == 0) return@mapNotNull null
             RaisedAlert(
                 key = "target-drift:${target.id}",
@@ -57,4 +59,5 @@ class CohortAlerts(
                 since = run.startedAt,
             )
         }
+    }
 }

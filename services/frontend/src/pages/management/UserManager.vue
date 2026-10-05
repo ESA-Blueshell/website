@@ -359,6 +359,7 @@ onMounted(load)
       </management-table>
 
       <selection-bar
+        always
         :count="selectedIdsArray.length"
         testid="member-manager-selection"
         @clear="clearSelection"

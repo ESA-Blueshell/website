@@ -1,21 +1,25 @@
 <script lang="ts" setup>
 /* Every game: its games and esports channels, whether it is in competition and whether Discord has
-   any of its channels otherwise than the site keeps them. Opening one renders the site's own game
-   editor inside Management. */
+   any of its channels otherwise than the site keeps them. The ticked games without a channel can be
+   given one together. Opening one renders the site's own game editor inside Management. */
 import {computed, onMounted, ref} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FactList from "@/components/island/FactList.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
+import SelectionBar from "@/components/island/SelectionBar.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import BulkAdd from "@/components/management/BulkAdd.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import {type CataloguedChannel, listCatalogue} from "@/domains/discord"
-import {type CasualGame, useCasualGames} from "@/domains/games"
+import RowCheck from "@/components/management/RowCheck.vue"
+import {useUserSelection} from "@/composables/useUserSelection"
+import {type CataloguedChannel, GameChannelCategory, listCatalogue, makeGameChannel} from "@/domains/discord"
+import {type CasualGame, addGameChannel, useCasualGames} from "@/domains/games"
 
 defineOptions({name: "GameListPage"})
 
-const {games, ready} = useCasualGames()
+const {games, ready, refresh} = useCasualGames()
 const catalogue = ref<CataloguedChannel[]>([])
 const loaded = ref(false)
 const search = ref("")
@@ -57,6 +61,30 @@ const facts = computed(() => {
   ]
 })
 
+/* Ticked games are given a channel in the Games category together, named by the game's address. A
+   game that has a channel, or is archived, is left out and said so before anything is made. */
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMany, clear: clearSelection} =
+  useUserSelection(computed(() => shown.value.map((one) => one.code)))
+const ticked = computed(() => games.value.filter((one) => isSelected(one.code)))
+const adding = ref(false)
+const toAdd = computed(() => ticked.value
+  .filter((one) => !one.archived && one.channels.length === 0)
+  .map((one) => ({key: one.code, name: one.name, note: `#${one.slug} under Games`, game: one})))
+const leftOut = computed(() => ticked.value
+  .filter((one) => one.archived || one.channels.length > 0)
+  .map((one) => ({name: one.name, why: one.archived ? "Archived" : "Has a channel already"})))
+const addChannel = async ({game}: {game: CasualGame}) => {
+  const made = await makeGameChannel(game.slug, GameChannelCategory.GAMES)
+  if (!made.ok) return made
+  const saved = await addGameChannel(game, {id: made.saved.id, guildId: made.saved.guildId, name: made.saved.name})
+  return saved.ok ? {ok: true as const} : saved
+}
+const added = async () => {
+  await refresh()
+  catalogue.value = await listCatalogue()
+  clearSelection()
+}
+
 onMounted(async () => {
   const [, listed] = await Promise.all([ready, listCatalogue()])
   catalogue.value = listed
@@ -92,9 +120,23 @@ onMounted(async () => {
       :row-key="(game) => game.code"
       :row-testid="(game) => `game-row-${game.code}`"
       :rows="shown"
+      :header-state="headerState"
+      :selected-count="selectedIdsArray.length"
       testid="game-list-table"
       :to="(game) => `/management/games/${game.slug}`"
+      :total="games.length"
+      @clear-selection="clearSelection"
+      @select-all="selectMany(games.map((one) => one.code))"
+      @toggle-shown="toggleHeader"
     >
+      <template #check="{row}">
+        <row-check
+          :checked="isSelected(row.code)"
+          :label="`Select ${row.name}`"
+          :testid="`game-check-${row.code}`"
+          @toggle="toggle(row.code)"
+        />
+      </template>
       <template #count>
         <b>{{ shown.length }}</b> of {{ games.length }} games
       </template>
@@ -149,6 +191,35 @@ onMounted(async () => {
         </management-row>
       </template>
     </management-table>
+
+    <selection-bar
+      always
+      :count="selectedIdsArray.length"
+      testid="game-list-selection"
+      @clear="clearSelection"
+    >
+      <cut-button
+        small
+        testid="game-add-channels"
+        tone="solid"
+        @click="adding = true"
+      >
+        Add Discord channel
+      </cut-button>
+    </selection-bar>
+
+    <bulk-add
+      each="a channel in the Games category on Discord"
+      :items="toAdd"
+      :noun="['game', 'games']"
+      :open="adding"
+      :run="addChannel"
+      :skipped="leftOut"
+      testid="game-bulk-add"
+      title="Add Discord channels"
+      @done="added"
+      @update:open="adding = $event"
+    />
   </management-page>
 </template>
 

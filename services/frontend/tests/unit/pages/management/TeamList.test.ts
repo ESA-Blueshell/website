@@ -147,7 +147,7 @@ describe("the competition teams in Management", () => {
     bulk().vm.$emit("done")
     await settle()
     expect(api.findCohorts).toHaveBeenCalledTimes(1)
-    expect(wrapper.find('[data-testid="team-list-selection"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="team-list-selection"]').text()).toContain("Tick rows to use these")
     bulk().vm.$emit("update:open", false)
     await settle()
     expect(bulk().props("open")).toBe(false)

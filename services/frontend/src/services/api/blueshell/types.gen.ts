@@ -115,6 +115,10 @@ export type AdoptDiscord = {
 
 export type AdoptedDiscord = {
     linked: number;
+    /**
+     * The confirmed matches Discord refused, each as its name and why
+     */
+    refused: Array<RefusedMatch>;
 };
 
 export type AdoptionMatch = {
@@ -2809,6 +2813,11 @@ export type ReenrolRequest = {
     password: string;
     token: string;
     username: string;
+};
+
+export type RefusedMatch = {
+    label: string;
+    reason: string;
 };
 
 /**

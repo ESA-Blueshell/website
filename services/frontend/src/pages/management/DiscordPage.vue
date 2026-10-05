@@ -115,7 +115,19 @@ const everyChannel = computed<ChannelRow[]>(() => groups.value.flatMap((group) =
 /* Archived channels are kept for history and nobody works in them, so the list leaves them out until asked. */
 const ARCHIVED_SHOWN = "shown"
 const archivedShown = ref(false)
-const channelRows = computed(() => everyChannel.value.filter((one) => archivedShown.value || !isArchive(one.category)))
+const KINDS = [{key: "TEXT", label: "Text"}, {key: "VOICE", label: "Voice"}]
+const VISIBILITIES = [{key: "private", label: "Private"}, {key: "public", label: "Public"}]
+const kindShown = ref<string | null>(null)
+const visibilityShown = ref<string | null>(null)
+const channelRows = computed(() => everyChannel.value
+  .filter((one) => archivedShown.value || !isArchive(one.category))
+  .filter((one) => kindShown.value === null || one.kind === kindShown.value)
+  .filter((one) => visibilityShown.value === null || one.private === (visibilityShown.value === "private")))
+const clearChannelFilters = () => {
+  archivedShown.value = false
+  kindShown.value = null
+  visibilityShown.value = null
+}
 const archivedCount = computed(() => everyChannel.value.filter((one) => isArchive(one.category)).length)
 
 /* A role is created on Discord only after it is named once more and confirmed. */
@@ -154,14 +166,13 @@ const pick = (key: string, on: boolean) => {
   picked.value = next
 }
 
-const channelNames = (match: AdoptionMatch) =>
-  match.channels.length === 0 ? "no channel" : match.channels.map((one) => `#${one.name}`).join(", ")
 
-/* What the role has access to before the link, so nobody links a channel it already has. */
-const alreadyOpenTo = (match: AdoptionMatch) => {
-  const held = channels.value.filter((one) => one.kind !== "CATEGORY" && one.roleIds.includes(match.roleId))
-  if (held.length === 0) return `@${match.roleName} has access to no channels yet.`
-  return `@${match.roleName} already has access to ${held.map((one) => `#${one.name}`).join(", ")}.`
+/* One line a match: the channels the role has access to once linked, which are the ones it has now
+   and the ones named as the committee or team is. */
+const matchAccess = (match: AdoptionMatch) => {
+  const held = channels.value.filter((one) => one.kind !== "CATEGORY" && one.roleIds.includes(match.roleId)).map((one) => one.name)
+  const names = [...new Set([...held, ...match.channels.map((one) => one.name)])]
+  return names.length === 0 ? "Has access to no channels yet." : `Has access to ${names.map((name) => `#${name}`).join(", ")}.`
 }
 
 const adopt = async () => {
@@ -170,8 +181,11 @@ const adopt = async () => {
   const answered = await adoptMatches([...picked.value])
   acting.value = false
   if (!answered.ok) return void (refusal.value = answered.reason)
-  reviewing.value = false
-  said(answered.saved === 1 ? "1 match is linked." : `${answered.saved} matches are linked.`)
+  const {linked, refused} = answered.saved
+  said(linked === 1 ? "1 match is linked." : `${linked} matches are linked.`)
+  // A match Discord refused stays on the dialog with why; the rest are linked and gone from it.
+  refusal.value = refused.length ? refused.map((one) => `${one.label}: ${one.reason}`).join(" ") : null
+  reviewing.value = refused.length > 0
   await load()
 }
 
@@ -322,16 +336,29 @@ onMounted(load)
         :search-text="(channel) => `${channel.name} ${channel.category}`"
         :rows="channelRows"
         testid="discord-channels"
+        :to="(channel) => `/management/platforms/discord/channels/${channel.id}`"
       >
         <template #count>
           {{ channelRows.length }} {{ channelRows.length === 1 ? "channel" : "channels" }}{{ archivedShown || archivedCount === 0 ? "" : `, ${archivedCount} archived hidden` }}
         </template>
         <template #filters>
           <filter-bar
-            :active="archivedShown"
+            :active="archivedShown || kindShown !== null || visibilityShown !== null"
             testid="discord-channel-filters"
-            @clear="archivedShown = false"
+            @clear="clearChannelFilters"
           >
+            <filter-picker
+              v-model="kindShown"
+              label="Kind"
+              :options="KINDS"
+              testid="discord-channel-kind"
+            />
+            <filter-picker
+              v-model="visibilityShown"
+              label="Visibility"
+              :options="VISIBILITIES"
+              testid="discord-channel-visibility"
+            />
             <filter-picker
               any-label="Hidden"
               label="Archived channels"
@@ -404,8 +431,8 @@ onMounted(load)
     >
       <div class="discord__form">
         <p class="discord__note">
-          Each committee or team you tick is linked to the role and the channels named. Channels the role already has
-          access to stay as they are.
+          Each one you tick is linked to the role named. The role keeps the channels it has access to, and they can be
+          changed afterwards on the committee, team or role.
         </p>
         <ul class="discord__moves">
           <li
@@ -413,8 +440,8 @@ onMounted(load)
             :key="match.key"
           >
             <check-box
-              :hint="alreadyOpenTo(match)"
-              :label="`${match.label}: @${match.roleName} and ${channelNames(match)}`"
+              :hint="matchAccess(match)"
+              :label="`${match.label}: @${match.roleName}`"
               :model-value="picked.has(match.key)"
               :testid="`discord-match-${match.key}`"
               @update:model-value="pick(match.key, $event)"

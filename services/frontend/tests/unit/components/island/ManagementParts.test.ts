@@ -108,6 +108,17 @@ describe("SelectionBar", () => {
     await bar.get("[data-testid=sel-clear]").trigger("click")
     expect(bar.emitted("clear")).toHaveLength(1)
   })
+
+  it("stays in view where asked, saying what ticking is for, with its actions disabled until something is ticked", () => {
+    const idle = mount(SelectionBar, {props: {count: 0, always: true, testid: "sel"}, slots: {default: "<button>Archive</button>"}})
+    const busy = mount(SelectionBar, {props: {count: 2, always: true, testid: "sel"}, slots: {default: "<button>Archive</button>"}})
+
+    expect(idle.text()).toContain("Tick rows to use these")
+    expect(idle.get("fieldset").attributes("disabled")).toBeDefined()
+    expect(idle.find("[data-testid=sel-clear]").exists()).toBe(false)
+    expect(busy.get("fieldset").attributes("disabled")).toBeUndefined()
+    expect(busy.text()).toContain("2 selected")
+  })
 })
 
 describe("FoldOut", () => {

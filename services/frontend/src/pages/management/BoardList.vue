@@ -57,7 +57,9 @@ const leftOut = computed(() => ticked.value
   .map((board) => ({name: boardName(board.number, board.name), why: hasRole(board) ? "Has a role already" : "No role on Discord carries its name"})))
 const link = async ({match}: {match: AdoptionMatch}) => {
   const answered = await adoptMatches([match.key])
-  return answered.ok ? {ok: true as const} : answered
+  if (!answered.ok) return answered
+  const [refused] = answered.saved.refused
+  return refused ? {ok: false as const, reason: refused.reason} : {ok: true as const}
 }
 const startLinking = async () => {
   matches.value = await listMatches()
@@ -214,6 +216,7 @@ const people = (board: Board) => `${board.members.length} ${board.members.length
     </management-table>
 
     <selection-bar
+      always
       :count="selectedIdsArray.length"
       testid="board-list-selection"
       @clear="clearSelection"

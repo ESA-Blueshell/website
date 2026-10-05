@@ -244,6 +244,7 @@ onMounted(async () => {
     </management-table>
 
     <selection-bar
+      always
       :count="selectedIdsArray.length"
       testid="committee-list-selection"
       @clear="clearSelection"

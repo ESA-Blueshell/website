@@ -55,16 +55,17 @@ test.describe("ending and starting membership in bulk", () => {
 })
 
 test.describe("bulk membership without a selection", () => {
-  test("the membership actions appear once somebody is picked", async ({page}) => {
+  test("the membership actions wait in view, and can be used once somebody is picked", async ({page}) => {
     await page.setViewportSize({width: 1400, height: 900})
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto("/management/users")
     await page.getByTestId("member-manager-table").waitFor()
 
-    await expect(page.getByTestId("bulk-action-end-membership")).toHaveCount(0)
+    await expect(page.getByTestId("member-manager-selection")).toContainText("Tick rows to use these")
+    await expect(page.getByTestId("bulk-action-end-membership")).toBeDisabled()
     await page.getByTestId("member-manager-checkbox-1").click()
-    await expect(page.getByTestId("bulk-action-end-membership")).toBeVisible()
-    await expect(page.getByTestId("bulk-action-start-membership")).toBeVisible()
+    await expect(page.getByTestId("bulk-action-end-membership")).toBeEnabled()
+    await expect(page.getByTestId("bulk-action-start-membership")).toBeEnabled()
   })
 })

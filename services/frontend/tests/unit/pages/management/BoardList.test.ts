@@ -107,7 +107,7 @@ describe("the boards in Management", () => {
     api.listDiscordMatches.mockResolvedValue({status: 200, data: [
       {key: "BOARD_YEAR_MEMBERS:9", label: "Board 2023-2024", type: "BOARD_YEAR_MEMBERS", roleId: "69", roleName: "Board 2023-2024", channels: []},
     ]})
-    api.adoptDiscordMatches.mockResolvedValue({status: 200, data: {linked: 1}})
+    api.adoptDiscordMatches.mockResolvedValue({status: 200, data: {linked: 1, refused: []}})
     const wrapper = await mount()
     const bulk = () => wrapper.findComponent({name: "BulkAdd"})
 
@@ -131,12 +131,15 @@ describe("the boards in Management", () => {
     expect(api.adoptDiscordMatches).toHaveBeenCalledWith({body: {keys: ["BOARD_YEAR_MEMBERS:9"]}})
     api.adoptDiscordMatches.mockResolvedValue({status: 503, error: {message: "Discord is away."}})
     expect((await bulk().props("run")(bulk().props("items")[0])).ok).toBe(false)
+    api.adoptDiscordMatches.mockResolvedValue({status: 200, data: {linked: 0, refused: [{label: "Board 2023-2024", reason: "The bot may not change it."}]}})
+    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: false, reason: "The bot may not change it."})
 
     api.findCohorts.mockClear()
     bulk().vm.$emit("done")
     await settle()
     expect(api.findCohorts).toHaveBeenCalledTimes(1)
-    expect(wrapper.find('[data-testid="board-list-selection"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="board-list-selection"]').text()).toContain("Tick rows to use these")
+    expect(wrapper.get('[data-testid="board-link-roles"]').element.closest("fieldset")?.disabled).toBe(true)
     bulk().vm.$emit("update:open", false)
     await settle()
     expect(bulk().props("open")).toBe(false)

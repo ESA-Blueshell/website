@@ -422,6 +422,7 @@ void loadPeriods()
       </management-table>
 
       <selection-bar
+        always
         :count="selectedIdsArray.length"
         testid="contribution-selection"
         @clear="clearSelection"

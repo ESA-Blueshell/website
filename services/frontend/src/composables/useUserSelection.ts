@@ -19,15 +19,15 @@ import {computed, ref, type Ref} from "vue"
 
 export type HeaderCheckboxState = "checked" | "indeterminate" | "unchecked"
 
-export function useUserSelection(displayedIds: Ref<number[]>) {
+export function useUserSelection<K extends string | number = number>(displayedIds: Ref<K[]>) {
   /** Persistent selected set — survives filter/sort changes. */
-  const selectedIds = ref<Set<number>>(new Set())
+  const selectedIds = ref(new Set<K>()) as Ref<Set<K>>
 
-  function isSelected(userId: number): boolean {
+  function isSelected(userId: K): boolean {
     return selectedIds.value.has(userId)
   }
 
-  function toggle(userId: number) {
+  function toggle(userId: K) {
     const next = new Set(selectedIds.value)
     if (next.has(userId)) {
       next.delete(userId)
@@ -64,7 +64,7 @@ export function useUserSelection(displayedIds: Ref<number[]>) {
   }
 
   /** Select every one of these, shown or not: what "select all" does once everyone shown is ticked. */
-  function selectMany(ids: number[]) {
+  function selectMany(ids: K[]) {
     selectedIds.value = new Set([...selectedIds.value, ...ids])
   }
 

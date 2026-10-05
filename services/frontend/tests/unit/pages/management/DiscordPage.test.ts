@@ -64,7 +64,7 @@ describe("the Discord page", () => {
     api.createMissingTargets.mockResolvedValue({status: 200, data: {queued: 1}})
     api.listCataloguedChannels.mockResolvedValue({status: 200, data: channels})
     api.listDiscordMatches.mockResolvedValue({status: 200, data: matches})
-    api.adoptDiscordMatches.mockResolvedValue({status: 200, data: {linked: 1}})
+    api.adoptDiscordMatches.mockResolvedValue({status: 200, data: {linked: 1, refused: []}})
   })
 
   afterEach(() => unmountAll(wrappers, "DiscordPage"))
@@ -113,9 +113,25 @@ describe("the Discord page", () => {
     expect(glyph("3")).toBe("Private voice channel")
     expect(wrapper.get('[data-testid="discord-channel-3"]').text()).toContain("read only, kept for history")
     expect(wrapper.get('[data-testid="discord-channels"]').text()).toContain("3 channels")
+    // Narrowed by kind and by who it is open to, and a row opens the channel's own page.
+    const picker = (testid: string) => wrapper.findAllComponents({name: "FilterPicker"}).find((one) => one.props("testid") === testid)!
+    const shown = () => wrapper.findAll('[data-testid^="discord-channel-"][data-row]').map((one) => one.attributes("data-testid"))
+    picker("discord-channel-kind").vm.$emit("update:modelValue", "VOICE")
+    await settle()
+    expect(shown()).toEqual(["discord-channel-3"])
+    picker("discord-channel-kind").vm.$emit("update:modelValue", null)
+    picker("discord-channel-visibility").vm.$emit("update:modelValue", "public")
+    await settle()
+    expect(shown()).toEqual(["discord-channel-2"])
+    picker("discord-channel-visibility").vm.$emit("update:modelValue", "private")
+    await settle()
+    expect(shown()).toEqual(["discord-channel-1", "discord-channel-3"])
+    expect(wrapper.findAllComponents({name: "ManagementTable"}).at(-1)!.props("to")({id: "1"})).toBe("/management/platforms/discord/channels/1")
+
     wrapper.findComponent({name: "FilterBar"}).vm.$emit("clear")
     await settle()
     expect(wrapper.find('[data-testid="discord-channel-3"]').exists()).toBe(false)
+    expect(shown()).toEqual(["discord-channel-1", "discord-channel-2"])
   })
 
   it("creates a missing role only once that is confirmed, and says why when Discord refuses", async () => {
@@ -159,10 +175,12 @@ describe("the Discord page", () => {
     expect(wrapper.get('[data-testid="discord-matches"]').text()).toContain("2 existing roles match by name")
     await wrapper.get('[data-testid="discord-review-matches"]').trigger("click")
     await settle()
-    expect(document.body.textContent).toContain("Lancie: @Lancie and #lancie")
-    expect(document.body.textContent).toContain("Blueshell CS2: @Blueshell CS2 and no channel")
-    expect(document.body.textContent).toContain("@Lancie already has access to #old-lan.")
-    expect(document.body.textContent).toContain("@Blueshell CS2 has access to no channels yet.")
+    // One entry a match: the role, and under it every channel it has access to once linked.
+    expect(document.body.textContent).toContain("Lancie: @Lancie")
+    expect(document.body.textContent).toContain("Has access to #old-lan, #lancie.")
+    expect(document.body.textContent).toContain("Blueshell CS2: @Blueshell CS2")
+    expect(document.body.textContent).toContain("Has access to no channels yet.")
+    expect(document.body.textContent).not.toContain("and no channel")
     const boxes = () => wrapper.findAllComponents({name: "CheckBox"})
     boxes()[1]!.vm.$emit("update:modelValue", false)
     boxes()[1]!.vm.$emit("update:modelValue", true)
@@ -191,7 +209,7 @@ describe("the Discord page", () => {
 
   it("says how many matches were linked, and says when Discord cannot be read", async () => {
     api.listDiscordMatches.mockResolvedValue({status: 200, data: [matches[0]]})
-    api.adoptDiscordMatches.mockResolvedValue({status: 200, data: {linked: 3}})
+    api.adoptDiscordMatches.mockResolvedValue({status: 200, data: {linked: 3, refused: []}})
     const wrapper = await mount()
     expect(wrapper.get('[data-testid="discord-matches"]').text()).toContain("1 existing role matches by name")
     await wrapper.get('[data-testid="discord-review-matches"]').trigger("click")
@@ -200,6 +218,16 @@ describe("the Discord page", () => {
     await inDialog("discord-matches-link").trigger("click")
     await settle()
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "3 matches are linked.")
+
+    // A match Discord refused stays on the dialog with why, while the others are linked.
+    api.adoptDiscordMatches.mockResolvedValue({status: 200, data: {linked: 0, refused: [{label: "Lancie", reason: "The bot may not change lancie."}]}})
+    await wrapper.get('[data-testid="discord-review-matches"]').trigger("click")
+    await settle()
+    await inDialog("discord-matches-link").trigger("click")
+    await settle()
+    expect(inDialog("discord-matches-refusal").text()).toContain("Lancie: The bot may not change lancie.")
+    const matchesDialog = wrapper.findAllComponents({name: "ModalDialog"}).find((one) => one.props("testid") === "discord-matches-dialog")!
+    expect(matchesDialog.props("open")).toBe(true)
 
     api.findTargetOverview.mockResolvedValue({status: 503, error: null, response: {status: 503}})
     api.listDiscordMatches.mockResolvedValue({status: 200, data: []})

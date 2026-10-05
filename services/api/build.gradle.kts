@@ -89,7 +89,7 @@ dependencies {
 
     implementation("com.nimbusds:nimbus-jose-jwt:10.10")
     // Nimbus RSAKey.parseFromPEMEncodedObjects needs JcaPEMKeyConverter (bcpkix); bcprov alone is insufficient.
-    runtimeOnly("org.bouncycastle:bcpkix-jdk18on:1.85")
+    runtimeOnly("org.bouncycastle:bcpkix-jdk18on:1.86")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")

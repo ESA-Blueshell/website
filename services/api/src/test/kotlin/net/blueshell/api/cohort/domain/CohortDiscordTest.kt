@@ -19,6 +19,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.web.server.ResponseStatusException
 import java.util.Optional
@@ -107,6 +108,19 @@ class CohortDiscordTest {
         given(linked = true)
         whenever(channels.openedTo("900")).thenThrow(DiscordUnavailable("gone"))
         assertThatThrownBy { discord.read("COMMITTEE_MEMBERS:7") }.isInstanceOf(TargetSystemUnavailable::class.java)
+    }
+
+    @Test
+    fun `unlinking takes the role off its cohort and asks nothing of Discord`() {
+        whenever(targets.findAllBySystem("DISCORD")).thenReturn(listOf(role))
+        whenever(targetIds.find(role)).thenReturn("900")
+
+        discord.unlink("999")
+        verify(targets, never()).delete(role)
+        discord.unlink("900")
+
+        verify(targets).delete(role)
+        verifyNoInteractions(roles, channels)
     }
 
     @Test

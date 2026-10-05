@@ -10,7 +10,7 @@ import net.blueshell.api.discord.api.KeptChannelKind
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.stereotype.Service
 
-/** A committee, team or board year with no role yet, and the existing role and channels named as it is. */
+/** A committee, team, board or board year with no role yet, and the existing role and channels named as it is. */
 data class AdoptionMatch(
     val key: String,
     val label: String,
@@ -33,7 +33,7 @@ data class AdoptionOutcome(
 )
 
 /**
- * Proposes linking committees, teams and board years to the roles and channels already in the server by name, and
+ * Proposes linking committees, teams, the board, Kandi and board years to the roles already in the server by name, and
  * links the ones the board confirms. Only roles the site could keep are proposed, so the claim bot's
  * never are, and a name two roles share is proposed for neither.
  */
@@ -45,9 +45,12 @@ class DiscordAdoption(
     private val roles: DiscordRoleKeeper,
     private val channels: DiscordChannelKeeper,
     private val discord: CohortDiscord,
+    private val registrar: CohortRegistrar,
 ) {
     fun proposals(): List<AdoptionMatch> {
         if (!roles.available() || !channels.available()) return emptyList()
+        // A definition newer than the last sweep, such as a board year, has no cohort yet and so nothing to match.
+        registrar.register()
         val linked = targets.findAllBySystem(TargetSystem.DISCORD.name).mapNotNull(targetIds::find).toSet()
         val roleByName =
             roles
@@ -63,7 +66,11 @@ class DiscordAdoption(
             .filter { cohort ->
                 targets.findByCohortIdAndSystem(requireNotNull(cohort.id), TargetSystem.DISCORD.name)?.let(targetIds::find) ==
                     null
-            }.mapNotNull { cohort ->
+            }
+            // Where two are called the same, the board's own cohort is matched before a committee of that name.
+            .sortedBy { ADOPTED.indexOf(it.type) }
+            .distinctBy { plain(it.label) }
+            .mapNotNull { cohort ->
                 val name = plain(cohort.label)
                 val role = roleByName[name] ?: return@mapNotNull null
                 AdoptionMatch(
@@ -72,10 +79,8 @@ class DiscordAdoption(
                     cohort.type,
                     role.id,
                     role.name,
-                    texts.filter {
-                        plain(it.name) ==
-                            name
-                    },
+                    // A board's role keeps the channels it has; only a committee or a team takes the channel named as it is.
+                    if (cohort.type in NAMED_CHANNELS) texts.filter { plain(it.name) == name } else emptyList(),
                 )
             }.sortedBy { it.label.lowercase() }
     }
@@ -105,6 +110,8 @@ class DiscordAdoption(
     private fun plain(name: String) = name.lowercase().filter { it.isLetterOrDigit() }
 
     private companion object {
-        val ADOPTED = setOf(CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS, CohortType.BOARD_YEAR_MEMBERS)
+        val NAMED_CHANNELS = setOf(CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS)
+        val ADOPTED =
+            listOf(CohortType.BOARD, CohortType.KANDI, CohortType.BOARD_YEAR_MEMBERS, CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS)
     }
 }

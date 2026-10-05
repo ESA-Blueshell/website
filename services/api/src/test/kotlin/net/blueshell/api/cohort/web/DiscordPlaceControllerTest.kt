@@ -44,6 +44,13 @@ class DiscordPlaceControllerTest {
     }
 
     @Test
+    fun `unlinks a role from the cohort that follows it`() {
+        controller.unlinkDiscordRole("900")
+
+        verify(discord).unlink("900")
+    }
+
+    @Test
     fun `lists the matches by name and links the confirmed ones`() {
         val matches = listOf(AdoptionMatch("COMMITTEE_MEMBERS:1", "Sitecie", CohortType.COMMITTEE_MEMBERS, "901", "Sitecie", emptyList()))
         whenever(adoption.proposals()).thenReturn(matches)

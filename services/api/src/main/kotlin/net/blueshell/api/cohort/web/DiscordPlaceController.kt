@@ -86,6 +86,13 @@ class DiscordPlaceController(
         @PathVariable id: Long,
     ) = discord.remove(team(id))
 
+    /** Takes the role off the cohort that follows it. Discord keeps the role, its holders and its channels. */
+    @DeleteMapping("/management/discord/roles/{roleId}/link")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun unlinkDiscordRole(
+        @PathVariable roleId: String,
+    ) = discord.unlink(roleId)
+
     /** Committees and teams with no role yet, matched by name to the roles and channels already in the server. */
     @GetMapping("/management/discord/adoption")
     fun listDiscordMatches(): List<AdoptionMatch> = adoption.proposals()

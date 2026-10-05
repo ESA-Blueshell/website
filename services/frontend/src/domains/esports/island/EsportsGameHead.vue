@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
-import {gameRoomUrl} from "@/domains/discord"
+import {ChannelMark} from "@/domains/discord"
 
 /**
  * The head of a game's competition page: its colour, its logo, its name and what the page says
@@ -75,12 +75,12 @@ defineProps<{
           <template v-if="index > 0">
             ·
           </template>
-          <a
-            :data-testid="`esports-game-channel-${channel.id}`"
-            :href="gameRoomUrl(channel)"
-            rel="noopener"
-            target="_blank"
-          >#{{ channel.name }}</a>
+          <channel-mark
+            :id="channel.id"
+            :guild-id="channel.guildId"
+            :name="channel.name"
+            :testid="`esports-game-channel-${channel.id}`"
+          />
         </template>
       </p>
     </template>

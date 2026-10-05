@@ -60,7 +60,7 @@ import {BRAND_ACCENT} from "@/utils/brand"
  */
 defineOptions({name: "TeamEditor"})
 
-/** The parts a roster is grouped by, from the api's own enum rather than a list kept in step. */
+/** The parts a roster is grouped by, from the api's own enum rather than a list kept in sync. */
 const PARTS: Array<{value: TeamRole; label: string}> = [
   {value: TeamRoleEnum.PLAYER, label: "Player"},
   {value: TeamRoleEnum.SUBSTITUTE, label: "Substitute"},
@@ -568,8 +568,8 @@ const submit = async () => {
   }
 }
 
-/** The parts, as the part picker offers them. */
-const partOptions = PARTS.map(part => ({key: part.value, label: part.label}))
+/** The roles, as the role picker offers them. */
+const roleOptions = PARTS.map(part => ({key: part.value, label: part.label}))
 
 /** Every member account, searched in the picker by name and address alike. */
 const memberOptions = computed(() => members.value.map(one => ({
@@ -846,17 +846,16 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
             </div>
 
             <div class="lineup__body">
-              <image-picker
-                class="lineup__icon"
-                label="Icon"
-                layout="tile"
-                :picture="row.icon"
-                shape="icon"
-                :store="storeRosterIcon"
-                :testid="`lineup-icon-${index}`"
-                @update:picture="stageIcon(index, $event)"
-              />
               <form-fields>
+                <image-picker
+                  class="form-span"
+                  label="Icon"
+                  :picture="row.icon"
+                  shape="icon"
+                  :store="storeRosterIcon"
+                  :testid="`lineup-icon-${index}`"
+                  @update:picture="stageIcon(index, $event)"
+                />
                 <form-control
                   v-model="row.handle"
                   :data-testid="`lineup-handle-${index}`"
@@ -865,14 +864,14 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
                 />
                 <form-field
                   filled
-                  label="Part"
+                  label="Role"
                   variant="inside"
                 >
                   <template #default="{controlId, labelId}">
                     <search-picker
                       :control-id="controlId"
                       :labelled-by="labelId"
-                      :options="partOptions"
+                      :options="roleOptions"
                       :selected-key="row.role"
                       :testid-prefix="`lineup-role-${index}`"
                       @pick="key => row.role = key as TeamRole"
@@ -1054,12 +1053,12 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
 
   <confirm-dialog
     :accent="accent"
-    confirm-label="Take them off"
+    confirm-label="Remove"
     :open="dropping !== null"
     :question="`${droppingName} comes off this season's line-up when it is saved. `
       + `The seasons they played before are untouched.`"
     testid="lineup-remove-dialog"
-    title="Take this player off?"
+    title="Remove this player?"
     @confirm="dropping !== null && remove(dropping)"
     @update:open="dropping = $event ? dropping : null"
   />
@@ -1100,8 +1099,8 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
 .lineup__row {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding: 1rem 1.2rem 1.1rem;
+  gap: 0.6rem;
+  padding: 0.8rem 1.2rem 0.9rem;
   background-color: var(--band-ground);
 }
 
@@ -1138,11 +1137,9 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
   margin-left: auto;
 }
 
-.lineup__body {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 1rem;
-  align-items: start;
+/* Rows a step closer than a form's, so a line-up of several people fits in view. */
+.lineup__body :deep(.form-fields) {
+  row-gap: 0.25rem;
 }
 
 .lineup__attached {
@@ -1187,10 +1184,6 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
 @media (--phone) {
   .lineup__row {
     padding: 0.9rem 0.9rem 1rem;
-  }
-
-  .lineup__body {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 

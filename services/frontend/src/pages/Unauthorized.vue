@@ -14,20 +14,16 @@
       <p class="mt-3 text-body-1">
         If you think this is a mistake, ask board to bump your role.
       </p>
-      <div class="mt-8 d-flex justify-center ga-3 flex-wrap">
-        <v-btn
-          color="primary"
-          variant="elevated"
-          to="/myapps"
+      <div class="unauthorized__acts">
+        <cut-button
+          href="/myapps"
+          tone="solid"
         >
           Back to My Apps
-        </v-btn>
-        <v-btn
-          variant="outlined"
-          to="/"
-        >
+        </cut-button>
+        <cut-button href="/">
           Home
-        </v-btn>
+        </cut-button>
       </div>
     </div>
   </v-main>
@@ -35,6 +31,7 @@
 
 <script lang="ts">
 import {defineComponent} from "vue"
+import CutButton from "@/components/island/CutButton.vue"
 
 const SERVICE_LABELS: Record<string, string> = {
   "traefik.esa-blueshell.nl": "the Traefik dashboard",
@@ -45,6 +42,7 @@ const SERVICE_LABELS: Record<string, string> = {
 
 export default defineComponent({
   name: "Unauthorized",
+  components: {CutButton},
   computed: {
     serviceParam(): string {
       const raw = this.$route.query.service
@@ -56,3 +54,13 @@ export default defineComponent({
   },
 })
 </script>
+
+<style scoped>
+.unauthorized__acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+</style>

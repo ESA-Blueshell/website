@@ -24,12 +24,12 @@ import {
   cohortTypeLabel,
   driftRowsOf,
   fetchCohort,
-  inStepOn,
+  inSyncOn,
   readListedTarget,
   setTargetEnforced,
   triggerReconcile,
 } from "@/domains/cohorts"
-import {
+import {ChannelMark, 
   type CataloguedChannel,
   RoleAccess,
   type RoleOpeningState,
@@ -84,8 +84,8 @@ const holders = computed(() => {
   const extra = drift.filter((one) => one.sync === "ONLY_EXTERNAL").length
   return {
     label: "Holders",
-    value: `${inStepOn(members, TargetSystem.DISCORD)} in step`,
-    sub: `${missing} missing · ${extra} extra · ${unlinked} with no Discord linked`,
+    value: `${inSyncOn(members, TargetSystem.DISCORD)} in sync`,
+    sub: `${missing} missing · ${extra} additional · ${unlinked} with no Discord linked`,
     testid: "discord-role-holders",
   }
 })
@@ -252,7 +252,12 @@ onMounted(load)
           <span data-testid="discord-role-opens-nothing">The role has access to no channel yet.</span>
         </template>
         <template #channel="{row}">
-          <span class="role__channel">{{ nameOf(row) }}</span>
+          <channel-mark
+            :id="row.channel.id"
+            :category="row.channel.kind === 'CATEGORY'"
+            :name="row.channel.name"
+            :voice="row.channel.kind === 'VOICE'"
+          />
           <span class="mg-sub">{{ openingKind(row, channels) }}</span>
         </template>
         <template #access="{row}">
@@ -277,7 +282,7 @@ onMounted(load)
               :testid="`discord-opening-set-${row.channel.id}`"
               @click="setAccess(row, row.kept ?? row.actual!)"
             >
-              {{ row.kept ? "Set it on Discord" : "Set it on the site" }}
+              {{ row.kept ? "Set it on Discord" : "Add it to the site" }}
             </mini-button>
           </span>
           <span
@@ -327,7 +332,7 @@ onMounted(load)
           tone="solid"
           @click="add"
         >
-          Give access
+          Add access
         </cut-button>
         <cut-button
           testid="discord-create-channel"
@@ -356,7 +361,7 @@ onMounted(load)
         </cut-row>
         <cut-row
           v-if="isAdmin"
-          :meta="`Remove the role from extra holders every time it is compared. ${mapping.enforced ? 'On.' : 'Off.'}`"
+          :meta="`Remove the role from additional holders every time it is compared. ${mapping.enforced ? 'On.' : 'Off.'}`"
           title="Enforce"
         >
           <template #end>
@@ -374,6 +379,7 @@ onMounted(load)
     </template>
 
     <modal-dialog
+      danger
       :open="unlinking"
       testid="discord-unlink-dialog"
       :title="`Unlink @${role?.label ?? roleId}`"
@@ -387,7 +393,7 @@ onMounted(load)
         <cut-button
           :disabled="acting"
           testid="discord-unlink-confirm"
-          tone="solid"
+          tone="danger"
           @click="unlink"
         >
           Unlink the role

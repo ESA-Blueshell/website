@@ -113,7 +113,7 @@ const COLUMNS: TableColumn[] = [
 const STATUS_MARKS: Record<JobExecutionStatus, StateKind> = {
   [JobExecutionStatus.QUEUED]: "missing",
   [JobExecutionStatus.RUNNING]: "missing",
-  [JobExecutionStatus.SUCCESS]: "in-step",
+  [JobExecutionStatus.SUCCESS]: "in-sync",
   [JobExecutionStatus.SKIPPED]: "not-compared",
   [JobExecutionStatus.FAILED]: "extra",
   [JobExecutionStatus.DEAD]: "not-created",
@@ -381,7 +381,6 @@ onMounted(async () => {
 .jobs__run {
   margin: 1.2rem 0;
 }
-
 
 .jobs__title {
   font-weight: 600;

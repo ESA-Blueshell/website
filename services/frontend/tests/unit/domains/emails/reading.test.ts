@@ -29,8 +29,8 @@ describe("email reading", () => {
   it("names a status and its standing, and an email's kind from its type", () => {
     expect(statusWord("QUEUED")).toBe("Queued")
     expect(statusWord(null)).toBe("Unknown")
-    expect(stateKindOf("OPENED")).toBe("in-step")
-    expect(stateKindOf("DELIVERED")).toBe("in-step")
+    expect(stateKindOf("OPENED")).toBe("in-sync")
+    expect(stateKindOf("DELIVERED")).toBe("in-sync")
     expect(stateKindOf("BOUNCED")).toBe("unreachable")
     expect(stateKindOf("QUEUED")).toBe("not-created")
     expect(stateKindOf("SENT")).toBe("not-compared")

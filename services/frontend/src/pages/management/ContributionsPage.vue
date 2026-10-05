@@ -363,7 +363,7 @@ void loadPeriods()
         </template>
         <template #paid="{row}">
           <state-mark
-            :kind="row.paid ? 'in-step' : 'extra'"
+            :kind="row.paid ? 'in-sync' : 'extra'"
             :testid="`contribution-paid-${row.userId}`"
           >
             {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
@@ -403,7 +403,7 @@ void loadPeriods()
               />
             </template>
             <state-mark
-              :kind="row.paid ? 'in-step' : 'extra'"
+              :kind="row.paid ? 'in-sync' : 'extra'"
               :testid="`contribution-paid-${row.userId}`"
             >
               {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
@@ -481,7 +481,7 @@ void loadPeriods()
           <span :class="{'mg-quiet': row.total === '·'}">{{ row.total }}</span>
         </template>
         <template #state="{row}">
-          <state-mark :kind="row.waiting ? 'extra' : 'in-step'">
+          <state-mark :kind="row.waiting ? 'extra' : 'in-sync'">
             {{ row.state }}
           </state-mark>
         </template>

@@ -7,6 +7,7 @@ export type RosterRow = SignUpRow & {person: SignUpPerson}
 
 <script lang="ts" setup>
 import IconButton from "@/components/island/IconButton.vue"
+import {DiscordUser} from "@/domains/discord"
 import {isSignUpEditable, signUpKindLabel} from "@/utils/eventSignUpRows"
 
 /**
@@ -82,8 +83,13 @@ const KIND_TONE: Record<string, string> = {MEMBER: "", NON_MEMBER: "roster__kind
             :data-testid="`signup-kind-${row.signUp.id}`"
           >{{ signUpKindLabel(row.signUp.kind) }}</span>
         </td>
-        <td class="roster__muted">
-          {{ row.person.discord }}
+        <td>
+          <discord-user
+            v-if="row.person.discord"
+            :id="row.person.discordId"
+            :name="row.person.discord"
+            size="sm"
+          />
         </td>
         <td>{{ row.person.email }}</td>
         <td class="roster__muted">

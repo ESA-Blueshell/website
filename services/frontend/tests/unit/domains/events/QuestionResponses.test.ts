@@ -7,7 +7,7 @@ import {anAnswer, aQuestion, aSignUp} from "../../helpers/apiFixtures"
 
 const row = (id: number, name: string, answers: Array<Partial<AnswerResponse>>): RosterRow => ({
   signUp: aSignUp({id}),
-  person: {name, discord: "", email: "", phoneNumber: ""},
+  person: {name, discord: "", email: "", phoneNumber: "", discordId: null},
   answers: new Map(answers.map(one => [one.questionId ?? 0, anAnswer(one)])),
 })
 

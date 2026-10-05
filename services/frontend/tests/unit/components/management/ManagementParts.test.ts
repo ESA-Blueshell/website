@@ -1,7 +1,6 @@
 import {afterEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {h, nextTick} from "vue"
-import GoArrow from "@/components/management/GoArrow.vue"
 import ManagementHead from "@/components/management/ManagementHead.vue"
 import ManagementPanel from "@/components/management/ManagementPanel.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
@@ -87,19 +86,18 @@ describe("RowCheck at the head of a list", () => {
 })
 
 describe("ManagementRow", () => {
-  it("opens its record by its name and by its arrow", () => {
+  it("opens its record by a press anywhere, through its name, and keeps its acts beside it", () => {
     const wrapper = mount(ManagementRow, {
       props: {name: "Sitecie", to: "/management/committees/4", meta: "9 seats", testid: "row"},
-      slots: {default: "In step", check: "<input type=checkbox>"},
+      slots: {default: "In sync", check: "<input type=checkbox>", acts: "<button>Archive</button>"},
       global: {stubs},
     })
 
     expect(wrapper.classes()).toContain("mg-row--check")
     expect(wrapper.get("[data-testid=row-open]").attributes("to")).toBe("/management/committees/4")
     expect(wrapper.get(".mg-row__meta").text()).toBe("9 seats")
-    expect(wrapper.get(".mg-row__state").text()).toBe("In step")
-    expect(wrapper.get(".mg-row__go").attributes("aria-label")).toBe("Open Sitecie")
-    expect(wrapper.findComponent(GoArrow).exists()).toBe(true)
+    expect(wrapper.get(".mg-row__state").text()).toBe("In sync")
+    expect(wrapper.get(".mg-row__acts").text()).toBe("Archive")
   })
 
   it("stands as plain words where it opens nothing, with its own acts at the end", () => {
@@ -172,13 +170,12 @@ describe("ManagementTable", () => {
     expect(wrapper.get("[data-testid=row-2]").text()).toContain("Kandi")
     expect(wrapper.get("th[aria-sort]").attributes("aria-sort")).toBe("descending")
     expect(wrapper.get("[data-testid=head-name]").attributes("aria-label")).toBe("Name, sorted descending")
-    expect(wrapper.get("[data-testid=row-1] .mg-table__go a").attributes("to")).toBe("/management/committees/1")
     expect(wrapper.findAll("td.mg-table__check")).toHaveLength(2)
     await wrapper.get("[data-testid=head-name]").trigger("click")
     expect(wrapper.emitted("sort")).toEqual([["name"]])
   })
 
-  it("ends each row with its own acts instead, and says how an unsorted or ascending head sorts", async () => {
+  it("ends each row with its own acts, and says how an unsorted or ascending head sorts", async () => {
     const acting = mount(ManagementTable<Row>, {
       props: {columns, rows, rowKey: (row: Row) => row.id, sortKey: "name"},
       slots: {...cells, acts: () => h("button", "Approve")},
@@ -188,8 +185,16 @@ describe("ManagementTable", () => {
 
     expect(acting.get("th[aria-sort]").attributes("aria-sort")).toBe("ascending")
     expect(acting.findAll("td.mg-table__acts")).toHaveLength(2)
-    expect(acting.find("td.mg-table__go").exists()).toBe(false)
     expect(acting.get(".mg-table__scroll").attributes("style")).toBeUndefined()
+    // A row with acts and a page of its own keeps its acts and opens on a press, with no arrow column.
+    const both = mount(ManagementTable<Row>, {
+      props: {columns, rows, rowKey: (row: Row) => row.id, to: (row: Row) => `/management/committees/${row.id}`},
+      slots: {...cells, acts: () => h("button", "Approve")},
+      global: {stubs},
+    })
+    expect(both.findAll("td.mg-table__acts")).toHaveLength(2)
+    expect(both.findAll("tr.mg-table__row--opens")).toHaveLength(2)
+    expect(both.findAll("thead th")).toHaveLength(3)
     expect(unsorted.get(".mg-table__sort").attributes("aria-label")).toBe("Sort by Name")
     expect(unsorted.find("th[aria-sort]").exists()).toBe(false)
     expect(unsorted.findAll("thead th")).toHaveLength(2)

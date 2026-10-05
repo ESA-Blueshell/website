@@ -14,6 +14,16 @@ describe("CheckBox", () => {
 
     expect(wrapper.emitted("update:modelValue")?.at(-1)?.[0]).toBe(true)
   })
+
+  it("says a refusal under its label in place of the hint", async () => {
+    const wrapper = mount(CheckBox, {props: {modelValue: false, label: "I agree", hint: "Required to join"}})
+    expect(wrapper.text()).toContain("Required to join")
+
+    await wrapper.setProps({errorMessages: ["Accept the conditions first."]})
+
+    expect(wrapper.get('[role="alert"]').text()).toBe("Accept the conditions first.")
+    expect(wrapper.text()).not.toContain("Required to join")
+  })
 })
 
 describe("RadioGroup", () => {

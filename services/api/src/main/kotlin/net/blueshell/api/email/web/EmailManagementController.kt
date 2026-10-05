@@ -56,7 +56,7 @@ class EmailManagementController(
     }
 
     // Counts over the same rows the listing shows, so they answer to the same permission
-    // rather than to a second spelling of it that has to be kept in step.
+    // rather than to a second spelling of it that has to be kept in sync.
     @GetMapping("/stats")
     @BoardOnly
     fun getStats(): EmailStatsDTO =

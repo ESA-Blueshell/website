@@ -44,21 +44,18 @@
           v-if="user"
           class="mt-10"
         >
-          <v-form ref="form">
-            <user-form
-              v-model="user"
-              data-testid="account-user-form"
-              :options="{ includeMemberProfile: true, memberProfileRequired: isMember }"
-              show-submit
-            />
-          </v-form>
+          <user-form
+            v-model="user"
+            data-testid="account-user-form"
+            :options="{ includeMemberProfile: true, memberProfileRequired: isMember }"
+            show-submit
+          />
         </div>
         <v-progress-circular v-else />
       </div>
     </div>
   </account-frame>
 </template>
-
 
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
@@ -92,7 +89,6 @@ onMounted(async () => {
   }
 })
 </script>
-
 
 <style lang="scss" scoped>
 .v-col:first-child {

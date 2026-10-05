@@ -63,6 +63,7 @@ const go = async () => {
 
 <template>
   <modal-dialog
+    :cancel="false"
     :open="open"
     :testid="testid"
     :title="title"
@@ -135,41 +136,39 @@ const go = async () => {
       </template>
     </div>
     <template #footer>
-      <div class="bulk-add__acts">
-        <cut-button
-          v-if="step === 'preview'"
-          :disabled="items.length === 0"
-          :testid="`${testid}-continue`"
-          tone="solid"
-          @click="step = 'confirm'"
-        >
-          Continue
-        </cut-button>
-        <template v-else-if="step === 'confirm'">
-          <cut-button
-            :testid="`${testid}-go`"
-            tone="solid"
-            @click="go"
-          >
-            {{ said.go }}
-          </cut-button>
-          <cut-button
-            :testid="`${testid}-back`"
-            tone="quiet"
-            @click="step = 'preview'"
-          >
-            Back
-          </cut-button>
-        </template>
-        <cut-button
-          v-if="step !== 'working'"
-          :testid="`${testid}-close`"
-          tone="quiet"
-          @click="emit('update:open', false)"
-        >
-          {{ step === "done" ? "Close" : "Cancel" }}
-        </cut-button>
-      </div>
+      <cut-button
+        v-if="step !== 'working'"
+        :testid="`${testid}-close`"
+        tone="quiet"
+        @click="emit('update:open', false)"
+      >
+        {{ step === "done" ? "Close" : "Cancel" }}
+      </cut-button>
+      <cut-button
+        v-if="step === 'confirm'"
+        :testid="`${testid}-back`"
+        tone="quiet"
+        @click="step = 'preview'"
+      >
+        Back
+      </cut-button>
+      <cut-button
+        v-if="step === 'preview'"
+        :disabled="items.length === 0"
+        :testid="`${testid}-continue`"
+        tone="solid"
+        @click="step = 'confirm'"
+      >
+        Continue
+      </cut-button>
+      <cut-button
+        v-else-if="step === 'confirm'"
+        :testid="`${testid}-go`"
+        tone="solid"
+        @click="go"
+      >
+        {{ said.go }}
+      </cut-button>
     </template>
   </modal-dialog>
 </template>
@@ -203,12 +202,5 @@ const go = async () => {
 
 .bulk-add__failure {
   color: var(--color-danger);
-}
-
-.bulk-add__acts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  padding-top: 1rem;
 }
 </style>

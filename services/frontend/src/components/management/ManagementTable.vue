@@ -158,15 +158,15 @@
                 {{ column.label }}
               </template>
             </th>
-            <th v-if="$slots.acts || to">
-              <span class="mg-table__said">More</span>
+            <th v-if="$slots.acts">
+              <span class="mg-table__said">Actions</span>
             </th>
           </tr>
           <tr
             v-if="offerAll || allSelected"
             class="mg-table__all"
           >
-            <th :colspan="columns.length + 1 + ($slots.acts || to ? 1 : 0)">
+            <th :colspan="columns.length + 1 + ($slots.acts ? 1 : 0)">
               {{ selectionLine }}
               <button
                 class="mg-table__all-act"
@@ -183,7 +183,7 @@
           <tr v-if="kept.length === 0 && ($slots.empty || rows.length > 0)">
             <td
               class="mg-table__empty"
-              :colspan="columns.length + ($slots.check ? 1 : 0) + ($slots.acts || to ? 1 : 0)"
+              :colspan="columns.length + ($slots.check ? 1 : 0) + ($slots.acts ? 1 : 0)"
             >
               <template v-if="rows.length > 0">
                 Nothing matches the search.
@@ -238,19 +238,6 @@
                 />
               </span>
             </td>
-            <td
-              v-else-if="to"
-              class="mg-table__go"
-            >
-              <router-link
-                v-if="to(row)"
-                aria-label="Open"
-                tabindex="-1"
-                :to="to(row) ?? ''"
-              >
-                <go-arrow />
-              </router-link>
-            </td>
           </tr>
           <tr
             v-if="after > 0"
@@ -265,12 +252,11 @@
 </template>
 
 <script lang="ts" setup generic="T">
-/* A Management table: flat rows a step off the page, sortable heads, and at its end either a
-   row's own acts or the arrow to its page. On a phone it hands each row to the page to draw as
+/* A Management table: flat rows a step off the page, sortable heads, a row's own acts at its end,
+   and a row that has a page opens it when pressed anywhere. On a phone it hands each row to the page to draw as
    a ManagementRow, where a page gives one. */
 import {computed, nextTick, onMounted, ref, useTemplateRef, watch} from "vue"
 import {useRouter} from "vue-router"
-import GoArrow from "@/components/management/GoArrow.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {usePhone} from "@/composables/usePhone"
@@ -305,8 +291,7 @@ const {
   descending?: boolean
   /** The order the table opens in, under one of its own heads; the reader can turn it round or let it go. */
   startSort?: {key: string; descending?: boolean}
-  /** A row's own page, or nothing for a row that has none. A press anywhere on the row opens it,
-   * and the row ends in the arrow unless the page fills the acts slot. */
+  /** A row's own page, or nothing for a row that has none. A press anywhere on the row opens it. */
   to?: (row: T) => string | null
   /** How tall the window the rows scroll in may grow, in px; 0 leaves it at what the page's own window leaves. */
   height?: number
@@ -492,7 +477,12 @@ const UNSORTED = "M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7"
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--color-surface);
+  background: var(--color-raised);
+}
+
+/* The line between the bar and the list, on the head row's top edge so the rows never cover it. */
+.mg-table__bar + .mg-table__scroll thead th {
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--color-chalk) 22%, transparent);
 }
 
 .mg-table__gap td,
@@ -509,13 +499,29 @@ tr.mg-table__gap {
   flex-wrap: wrap;
   align-items: stretch;
   justify-content: flex-end;
+  background-color: var(--color-raised);
+}
+
+/* The count first, then the filters, the search, and Clear filters last. */
+.mg-table__bar :deep(.filter-bar) {
+  display: contents;
+}
+
+.mg-table__search {
+  order: 2;
+}
+
+.mg-table__bar :deep(.filter-bar__clear) {
+  order: 3;
+  padding: 0 0.8rem;
+  border-left: 1px solid color-mix(in oklab, var(--color-chalk) 16%, transparent);
 }
 
 .mg-table__count {
   align-self: center;
   margin-right: auto;
   padding-block: 0.6rem;
-  padding-left: 0.2rem;
+  padding-left: 1.4rem;
   font-size: 0.85rem;
   white-space: nowrap;
   color: var(--color-ash);
@@ -529,10 +535,10 @@ tr.mg-table__gap {
   display: flex;
 }
 
-/* The filters and the search stand shoulder to shoulder, lower than a form's fields. */
-.mg-table__bar :deep(.filter-bar) {
-  gap: 0;
-  margin-top: 0;
+/* The filters and the search stand shoulder to shoulder, lower than a form's fields. A filter in
+   the bar never carries a line, set or not: Clear filters says one is set. */
+.mg-table__bar :deep(.picker__field:not(:focus-within)) {
+  border-bottom-color: transparent;
 }
 
 .mg-table__bar :deep(.picker__search) {
@@ -556,11 +562,10 @@ tr.mg-table__gap {
   flex: 1 1 100%;
 }
 
-/* One ground for every control on the bar, solid as the table under them, and a line between
-   each and the next so they read as separate. */
+/* Every control takes the bar's own ground, and a line between each and the next keeps them apart. */
 .mg-table__search :deep(.search-box),
 .mg-table__bar :deep(.island-field__box) {
-  background-color: var(--color-surface);
+  background-color: transparent;
 }
 
 /* The picker stands on its field's ground; a ground of its own would cover the label. */
@@ -587,10 +592,6 @@ tr.mg-table__gap {
   margin-left: 0;
 }
 
-.mg-table thead {
-  background: var(--color-surface);
-}
-
 .mg-table--boxed {
   overflow-y: auto;
 }
@@ -609,6 +610,8 @@ table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0 2px;
+  /* The spacing also stands above the head row; pulled back so the head meets the bar. */
+  margin-top: -2px;
 }
 
 th {
@@ -702,25 +705,6 @@ tbody tr:hover td:first-child::before {
   gap: 0.35rem;
 }
 
-.mg-table__go {
-  width: 3.4rem;
-  padding-left: 0;
-  color: var(--color-ash);
-}
-
-.mg-table__go a {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.mg-table__go svg {
-  flex: none;
-}
-
-tbody tr:hover .mg-table__go {
-  color: var(--color-chalk);
-}
-
 .mg-table__sort {
   display: inline-flex;
   align-items: center;
@@ -733,9 +717,18 @@ tbody tr:hover .mg-table__go {
   cursor: pointer;
 }
 
-.mg-table__sort:hover,
-.mg-table__sort--on {
+.mg-table__sort:hover {
   color: var(--color-chalk);
+}
+
+/* The table's one accent: the head the list is ordered by. The lit blue in the dark, since the
+   plain brand blue falls short of 4.5:1 on the raised ground at this size. */
+.mg-table__sort--on {
+  color: var(--color-brand-lit);
+}
+
+:where([data-theme="light"]) .mg-table__sort--on {
+  color: var(--color-brand-ink);
 }
 
 .mg-table__sort svg {
@@ -837,5 +830,13 @@ a.mg-name:hover {
 
 .mg-quiet {
   color: var(--color-ash);
+}
+
+/* Several marks in one cell, each on a line of its own. */
+.mg-marks {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
 }
 </style>

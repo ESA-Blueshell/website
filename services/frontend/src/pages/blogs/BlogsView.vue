@@ -1,11 +1,8 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {useRouter} from "vue-router"
 import {DateTime} from "luxon"
 import {type BlogResponse, listBlogs} from "@/domains/blogs"
-
-const router = useRouter()
 
 const blogs = ref<BlogResponse[]>([])
 const failedToLoad = ref(false)
@@ -18,10 +15,6 @@ onMounted(async () => {
     console.error("Error fetching blog list:", error)
   }
 })
-
-const navigateToBlog = (blogId: number) => {
-  router.push(`/blogs/${blogId}`)
-}
 </script>
 
 <template>
@@ -31,7 +24,6 @@ const navigateToBlog = (blogId: number) => {
       class="mx-auto my-10"
       style="max-width: 900px"
     >
-      <!-- Updated Introduction Section -->
       <div class="mx-3">
         <p class="text-body-1">
           Welcome to our newsletters page! Here you'll find the latest updates, insights, and stories from our
@@ -49,30 +41,56 @@ const navigateToBlog = (blogId: number) => {
         </p>
       </div>
 
-      <!-- Newsletters List -->
-      <v-list
+      <ul
         v-else
-        class="pt-0"
+        class="blogs"
       >
-        <v-list-item
+        <li
           v-for="blog in blogs"
           :key="blog.id"
-          :value="blog.id"
-          class="px-0"
-          ripple
-          @click="navigateToBlog(blog.id)"
         >
-          <v-divider />
-          <div class="flex-grow-1 ml-3 my-1">
-            <v-list-item-title>
-              {{ blog.title }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
-              {{ DateTime.fromISO(blog.publishedAt as string).toLocaleString() }}
-            </v-list-item-subtitle>
-          </div>
-        </v-list-item>
-      </v-list>
+          <router-link
+            class="blogs__row"
+            :data-testid="`blog-row-${blog.id}`"
+            :to="`/blogs/${blog.id}`"
+          >
+            <span class="blogs__title">{{ blog.title }}</span>
+            <span class="blogs__date">{{ DateTime.fromISO(blog.publishedAt as string).toLocaleString() }}</span>
+          </router-link>
+        </li>
+      </ul>
     </div>
   </v-main>
 </template>
+
+<style scoped>
+.blogs {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.blogs__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.8rem 0.75rem;
+  color: inherit;
+  text-decoration: none;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.blogs__row:hover,
+.blogs__row:focus-visible {
+  background-color: var(--color-raised);
+}
+
+.blogs__title {
+  font-weight: 600;
+}
+
+.blogs__date {
+  font-size: 0.85rem;
+  color: var(--color-ash);
+}
+</style>

@@ -11,13 +11,14 @@ import RoleMark from "@/components/island/RoleMark.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import SelectionBar from "@/components/island/SelectionBar.vue"
 import StateMark, {type StateKind} from "@/components/island/StateMark.vue"
-import BaseModal from "@/components/common/modals/BaseModal.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
+import SubmitButton from "@/components/form/SubmitButton.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import ManagementHead from "@/components/management/ManagementHead.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
+import {DiscordUser} from "@/domains/discord"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
-import {useSubmitFeedback} from "@/composables/formUtils"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {type Committee, listCommittees} from "@/domains/committees"
 import {readCurrentPeriod} from "@/domains/contribution"
@@ -55,7 +56,7 @@ const membership = ref<string | null>(null)
 const type = ref<string | null>(null)
 const needs = ref<string | null>(null)
 
-const MEMBERSHIP_MARKS: Record<MembershipState, StateKind> = {current: "in-step", pending: "missing", former: "not-compared", never: "not-compared"}
+const MEMBERSHIP_MARKS: Record<MembershipState, StateKind> = {current: "in-sync", pending: "missing", former: "not-compared", never: "not-compared"}
 const MEMBERSHIP_SHORT: Record<MembershipState, string> = {current: "Active", pending: "Pending", former: "Former", never: "Never a member"}
 const NEEDS_MARKS: Record<NeedsLook, StateKind> = {"locked": "not-created", "role-waiting": "unreachable", "no-discord": "unreachable", "no-address": "unreachable"}
 const MARKED_ROLES = ["admin", "board", "treasurer"]
@@ -63,7 +64,7 @@ const MARKED_ROLES = ["admin", "board", "treasurer"]
 const COLUMNS: TableColumn<PersonRow>[] = [
   {key: "name", label: "Name", wrap: true, testid: "member-manager-header-name", sortBy: (row) => row.fullName},
   {key: "membership", label: "Membership", wrap: true, testid: "member-manager-header-status", sortBy: membershipRank},
-  {key: "committees", label: "Committees", wrap: true, sortBy: (row) => row.committees.join(", ")},
+  {key: "committees", label: "Committees", wrap: true, sortBy: (row) => row.committees.map((one) => one.name).join(", ")},
   {key: "discord", label: "Discord", sortBy: (row) => row.discord},
   {key: "needs", label: "Needs a look", wrap: true, sortBy: (row) => row.needs.map((one) => NEEDS_LOOK_WORDS[one]).join(", ")},
 ]
@@ -142,7 +143,6 @@ const addOpen = ref(false)
 const addModel = ref<EditableUser>(blankUser())
 const addForm = ref<InstanceType<typeof UserForm> | null>(null)
 const addSaving = ref(false)
-const {submitState: addState, showSubmitStatus: addStatus, setSubmitResult: addResult} = useSubmitFeedback()
 
 function blankUser(): EditableUser {
   return {
@@ -158,9 +158,8 @@ function openAdd() {
 
 async function onAddSave() {
   addSaving.value = true
-  const saved = await addForm.value?.save()
+  await addForm.value?.save()
   addSaving.value = false
-  addResult(saved != null)
 }
 
 function onSaved(ok: boolean) {
@@ -290,10 +289,35 @@ onMounted(load)
           <span class="mg-sub">{{ standingOf(row) }}</span>
         </template>
         <template #committees="{row}">
-          <span :class="{'mg-quiet': row.committees.length === 0}">{{ row.committees.join(", ") || "·" }}</span>
+          <span
+            v-if="row.committees.length > 0"
+            class="people__committees"
+          >
+            <router-link
+              v-for="committee in row.committees"
+              :key="committee.slug"
+              class="people__committee"
+              :data-testid="`member-manager-committee-${row.id}-${committee.slug}`"
+              :to="`/management/committees/${committee.slug}`"
+              @click.stop
+            >{{ committee.name }}</router-link>
+          </span>
+          <span
+            v-else
+            class="mg-quiet"
+          >·</span>
         </template>
         <template #discord="{row}">
-          <span :class="{'mg-quiet': !row.discord}">{{ row.discord ? `@${row.discord}` : "·" }}</span>
+          <discord-user
+            v-if="row.discord"
+            :id="row.discordId"
+            :name="row.discord"
+            :testid="`member-manager-discord-${row.id}`"
+          />
+          <span
+            v-else
+            class="mg-quiet"
+          >·</span>
         </template>
         <template #needs="{row}">
           <span
@@ -315,7 +339,7 @@ onMounted(load)
         </template>
         <template #phone="{row}">
           <management-row
-            :meta="[standingOf(row), ...row.committees].filter(Boolean).join(' · ')"
+            :meta="[standingOf(row), ...row.committees.map((one) => one.name)].filter(Boolean).join(' · ')"
             :name="row.fullName"
             :testid="`member-manager-row-${row.id}`"
             :to="`/management/users/${row.id}`"
@@ -368,21 +392,12 @@ onMounted(load)
       </selection-bar>
     </div>
 
-    <base-modal
-      v-model="addOpen"
+    <modal-dialog
+      v-model:open="addOpen"
+      cancel-testid="member-manager-add-user-cancel"
       testid="member-manager-add-user-dialog"
       title="Add user"
-      show-save
-      save-label="Create user"
-      save-testid="user-form-submit-btn"
-      save-icon="mdi-content-save"
-      :save-loading="addSaving"
-      :save-submit-state="addState"
-      :save-show-status="addStatus"
-      show-cancel
-      cancel-label="Cancel"
-      @save="onAddSave"
-      @cancel="addOpen = false"
+      wide
     >
       <user-form
         ref="addForm"
@@ -391,11 +406,37 @@ onMounted(load)
         :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
         @submitted="onSaved"
       />
-    </base-modal>
+      <template #footer>
+        <submit-button
+          data-testid="user-form-submit-btn"
+          :loading="addSaving"
+          text="Create user"
+          working-text="Creating"
+          @click="onAddSave"
+        />
+      </template>
+    </modal-dialog>
   </div>
 </template>
 
 <style scoped>
+.people__committees {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+}
+
+.people__committee {
+  color: var(--color-chalk);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--color-chalk) 35%, transparent);
+  text-underline-offset: 3px;
+}
+
+.people__committee:hover {
+  color: var(--color-brand);
+}
+
 .people__body {
   padding: 0 2.4rem 3rem;
 }

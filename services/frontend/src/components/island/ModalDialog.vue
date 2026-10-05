@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {useTemplateRef} from "vue"
 import {DialogClose, DialogContent, DialogOverlay, DialogPortal, DialogRoot, DialogTitle} from "reka-ui"
+import CutButton from "./CutButton.vue"
 import {focusFirstField} from "@/utils/firstField"
 import {useMotionAllowed} from "./useMotionAllowed"
 
@@ -14,7 +15,7 @@ import {useMotionAllowed} from "./useMotionAllowed"
  */
 defineOptions({name: "ModalDialog"})
 
-defineProps<{
+const {cancel = true, testid = undefined, accent = undefined, cancelTestid = undefined} = defineProps<{
   open: boolean
   title: string
   testid?: string
@@ -22,6 +23,11 @@ defineProps<{
   accent?: string
   /** Room for something read at full width, such as an email. */
   wide?: boolean
+  /** It removes or deletes something: the top line and the title take the danger colour. */
+  danger?: boolean
+  /** The quiet Cancel every foot starts with; false for a dialog that draws its own way out. */
+  cancel?: boolean
+  cancelTestid?: string
 }>()
 
 const emit = defineEmits<{(event: "update:open", open: boolean): void}>()
@@ -47,7 +53,7 @@ const toFirstField = (event: Event) => {
       />
       <dialog-content
         class="island island-dialog"
-        :class="{'island-dialog--still': !decorative, 'island-dialog--wide': wide}"
+        :class="{'island-dialog--still': !decorative, 'island-dialog--wide': wide, 'island-dialog--danger': danger}"
         :data-testid="testid ?? 'island-dialog'"
         :style="accent ? {'--dialog-accent': accent} : undefined"
         @open-auto-focus="toFirstField"
@@ -79,7 +85,20 @@ const toFirstField = (event: Event) => {
           dialogs that have no buttons to put here yet.
         -->
         <div class="island-dialog__foot">
-          <slot name="footer" />
+          <div
+            v-if="$slots.footer"
+            class="island-dialog__acts"
+          >
+            <cut-button
+              v-if="cancel"
+              :testid="cancelTestid ?? `${testid ?? 'island-dialog'}-cancel`"
+              tone="quiet"
+              @click="emit('update:open', false)"
+            >
+              Cancel
+            </cut-button>
+            <slot name="footer" />
+          </div>
         </div>
       </dialog-content>
     </dialog-portal>
@@ -142,6 +161,24 @@ const toFirstField = (event: Event) => {
 
 .island-dialog__foot {
   flex: 0 0 auto;
+}
+
+/* The way out first and the main act last, both at the right, as every dialog's foot reads. */
+.island-dialog__acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.island-dialog--danger {
+  --dialog-accent: var(--color-danger);
+}
+
+.island-dialog--danger .island-dialog__title {
+  color: var(--color-danger);
 }
 
 .island-dialog__head {

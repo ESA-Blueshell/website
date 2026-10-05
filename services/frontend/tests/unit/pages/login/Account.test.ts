@@ -96,6 +96,16 @@ describe("Account page", () => {
     mockStore.getters.isMember = true
   })
 
+  it("keeps what the user form changes", async () => {
+    const wrapper = mountInApp(Account, {global: {stubs: {UserForm}}})
+    await settle()
+    const changed = {...(wrapper.vm as any).user, firstName: "Janet"}
+    wrapper.getComponent(UserForm).vm.$emit("update:modelValue", changed)
+    await settle()
+
+    expect((wrapper.vm as any).user.firstName).toBe("Janet")
+  })
+
   it("asks for a Discord account while the account has none linked", async () => {
     const unlinked = mountInApp(Account, {global: {stubs: {UserForm}}})
     await settle()

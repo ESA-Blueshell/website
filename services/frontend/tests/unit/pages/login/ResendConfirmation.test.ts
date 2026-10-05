@@ -104,4 +104,13 @@ describe("ResendConfirmation page", () => {
     expect(wrapper.find('[data-testid="resend-confirmation-form-state"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="resend-confirmation-success-state"]').exists()).toBe(false)
   })
+
+  it("takes the username as typed", async () => {
+    const wrapper = mountInApp(ResendConfirmation, {global: {stubs: {VvField: true}}})
+    await settle()
+    wrapper.getComponent({name: "VvField"}).vm.$emit("update:modelValue", "bob")
+    await settle()
+
+    expect((wrapper.vm as any).form.username).toBe("bob")
+  })
 })

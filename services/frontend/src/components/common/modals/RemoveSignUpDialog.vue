@@ -26,6 +26,8 @@ watch(() => modelValue, (open: boolean) => {
 
 <template>
   <modal-dialog
+    cancel-testid="remove-signup-cancel-btn"
+    danger
     :open="modelValue"
     testid="remove-signup-dialog"
     title="Remove sign-up"
@@ -42,13 +44,6 @@ watch(() => modelValue, (open: boolean) => {
 
     <template #footer>
       <div class="remove-signup__actions">
-        <cut-button
-          testid="remove-signup-cancel-btn"
-          tone="quiet"
-          @click="emit('update:modelValue', false)"
-        >
-          Cancel
-        </cut-button>
         <cut-button
           testid="remove-signup-confirm-btn"
           tone="danger"

@@ -89,7 +89,7 @@ describe("a cohort cohort arrives with its absences already decided", () => {
 
     const cohort = await fetchCohort(7)
 
-    expect(cohort?.mappings[0]?.runs).toEqual([{startedAt: "2026-09-29T03:00:00Z", trigger: null, inStep: 40, missing: 1, extra: 2}])
+    expect(cohort?.mappings[0]?.runs).toEqual([{startedAt: "2026-09-29T03:00:00Z", trigger: null, inSync: 40, missing: 1, extra: 2}])
   })
 
   it("a target that has never agreed, and one filed nowhere, both read as nothing", async () => {

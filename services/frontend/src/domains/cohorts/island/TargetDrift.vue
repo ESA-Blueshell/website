@@ -15,7 +15,8 @@ import MiniButton from "@/components/management/MiniButton.vue"
 import PersonLink from "@/components/management/PersonLink.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {formatMoment} from "@/utils/timestamps"
-import type {Cohort, CohortMember, TargetMapping} from "../adapters/cohorts"
+import {type Cohort, type CohortMember, type TargetMapping, TargetSystem} from "../adapters/cohorts"
+import {DiscordUser} from "@/domains/discord"
 import {type DriftAction, useDriftResolution} from "../composables/useDriftResolution"
 import {adoptWord, driftRowsOf, driftWords, whyOf} from "../listPage"
 import {memberName} from "../reading"
@@ -44,7 +45,7 @@ const {selection, plan, planCount, working} = resolution
 
 const ACTIONS: DriftAction[] = ["push", "adopt", "link", "remove"]
 const actionWord = (action: DriftAction) => {
-  if (action === "adopt") return adopt.value ?? "Take in"
+  if (action === "adopt") return adopt.value ?? "Add to the site"
   return words.value[action]
 }
 const rowActions = (row: CohortMember): DriftAction[] =>
@@ -125,7 +126,7 @@ const proposalFor = (row: CohortMember) => plan.value?.proposals.find((one) => o
       />
     </template>
     <template #empty>
-      <span :data-testid="`${testid}-in-step`">{{ search ? "Nobody who differs matches." : "Everybody is where they should be." }}</span>
+      <span :data-testid="`${testid}-in-sync`">{{ search ? "Nobody who differs matches." : "Everybody is where they should be." }}</span>
     </template>
     <template #check="{row}">
       <row-check
@@ -148,7 +149,20 @@ const proposalFor = (row: CohortMember) => plan.value?.proposals.find((one) => o
         v-else
         class="mg-name"
       >{{ words.nameless }}</span>
-      <span class="mg-sub">{{ row.userEmail ?? row.externalLabel ?? "" }}</span>
+      <span
+        v-if="system === TargetSystem.DISCORD && row.externalLabel"
+        class="mg-sub"
+      >
+        <discord-user
+          :id="row.externalUserId"
+          :name="row.externalLabel"
+          size="sm"
+        />
+      </span>
+      <span
+        v-else
+        class="mg-sub"
+      >{{ row.userEmail ?? row.externalLabel ?? "" }}</span>
     </template>
     <template #state="{row}">
       <state-mark

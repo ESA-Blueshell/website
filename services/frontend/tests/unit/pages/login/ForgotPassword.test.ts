@@ -86,4 +86,13 @@ describe("ForgotPassword page", () => {
 
     expect(wrapper.find('[data-testid="forgot-password-failed-alert"]').exists()).toBe(false)
   })
+
+  it("takes the username as typed", async () => {
+    const wrapper = mountInApp(ForgotPassword, {global: {stubs: {VvField: true}}})
+    await settle()
+    wrapper.getComponent({name: "VvField"}).vm.$emit("update:modelValue", "bob")
+    await settle()
+
+    expect((wrapper.vm as any).form.username).toBe("bob")
+  })
 })

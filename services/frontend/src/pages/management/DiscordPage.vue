@@ -2,6 +2,7 @@
 /* The roles and channels the site keeps in the association's Discord server: what fills each role
    and where it drifts, what each channel belongs to and who gets in, and where Discord differs.
    Committees and teams with no role yet are offered the roles and channels named as they are. */
+import RoleMark from "@/components/island/RoleMark.vue"
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import CheckBox from "@/components/island/CheckBox.vue"
@@ -28,13 +29,14 @@ import {
   type TargetOverview,
   TargetSystem,
   createMissingLists,
+  driftMarksOf,
   driftOf,
   followsOf,
   readTargetOverview,
   useTargetSync,
 } from "@/domains/cohorts"
 import {
-  ChannelGlyph,
+  ChannelMark,
   DISCORD_TABS,
   type AdoptionMatch,
   type CataloguedChannel,
@@ -190,7 +192,6 @@ const pick = (key: string, on: boolean) => {
   picked.value = next
 }
 
-
 /* One line a match: the channels the role has access to once linked, which are the ones it has now
    and the ones named as the committee or team is. */
 const matchAccess = (match: AdoptionMatch) => {
@@ -222,6 +223,14 @@ onMounted(load)
     testid="discord-page"
     title="Discord"
   >
+    <template #tabs>
+      <page-tabs
+        :entries="DISCORD_TABS"
+        label="Discord"
+        testid="discord-tabs"
+      />
+    </template>
+
     <template #lede>
       The roles and channels the site manages in the association's server, and where Discord differs.
     </template>
@@ -235,11 +244,6 @@ onMounted(load)
     </p>
 
     <template v-if="overview">
-      <fact-list
-        class="discord__facts"
-        :facts="facts"
-      />
-
       <notice-box
         v-if="matches.length"
         class="discord__notice"
@@ -261,10 +265,9 @@ onMounted(load)
         </div>
       </notice-box>
 
-      <page-tabs
-        :entries="DISCORD_TABS"
-        label="Discord"
-        testid="discord-tabs"
+      <fact-list
+        class="discord__facts"
+        :facts="facts"
       />
 
       <management-table
@@ -306,10 +309,10 @@ onMounted(load)
           >{{ row.missing.cohortLabel }}</span>
           <router-link
             v-else-if="row.role"
-            class="mg-name discord__mention"
+            class="mg-name"
             :to="`/management/platforms/discord/roles/${row.role.externalId}`"
           >
-            @{{ row.role.label }}
+            <role-mark :role="row.role.label" />
           </router-link>
           <span class="mg-sub">{{ row.managed ? "Managed by the site" : "Made by hand on Discord, not managed by the site" }}</span>
         </template>
@@ -323,13 +326,19 @@ onMounted(load)
           >
             {{ stateWord(row) }}
           </state-mark>
-          <state-mark
+          <span
             v-else-if="row.managed && row.role"
-            :kind="driftOf(row.role).kind"
-            :testid="`discord-role-state-${row.role.externalId}`"
+            class="mg-marks"
+            :data-testid="`discord-role-state-${row.role.externalId}`"
           >
-            {{ stateWord(row) }}
-          </state-mark>
+            <state-mark
+              v-for="mark in driftMarksOf(row.role)"
+              :key="mark.word"
+              :kind="mark.kind"
+            >
+              {{ mark.word }}
+            </state-mark>
+          </span>
           <state-mark
             v-else
             kind="not-compared"
@@ -449,13 +458,14 @@ onMounted(load)
           No channels yet.
         </template>
         <template #channel="{row}">
-          <span class="discord__channel">
-            <channel-glyph
-              :locked="row.private"
-              :voice="row.kind === 'VOICE'"
-            />
-            {{ row.name }}
-          </span>
+          <channel-mark
+            :id="row.id"
+            :category="row.kind === 'CATEGORY'"
+            :locked="row.private"
+            :name="row.name"
+            :testid="`discord-channel-name-${row.id}`"
+            :voice="row.kind === 'VOICE'"
+          />
           <span class="mg-sub">{{ isArchive(row.category) ? `${row.category} · read only, kept for history` : row.category }}</span>
         </template>
         <template #belongs="{row}">
@@ -466,7 +476,7 @@ onMounted(load)
         </template>
         <template #state="{row}">
           <state-mark
-            :kind="row.access?.differs ? 'extra' : 'in-step'"
+            :kind="row.access?.differs ? 'extra' : 'in-sync'"
             :testid="`discord-channel-differs-${row.id}`"
           >
             {{ differsOf(row) }}
@@ -478,7 +488,7 @@ onMounted(load)
             :name="`#${row.name}`"
             :testid="`discord-channel-${row.id}`"
           >
-            <state-mark :kind="row.access?.differs ? 'extra' : 'in-step'">
+            <state-mark :kind="row.access?.differs ? 'extra' : 'in-sync'">
               {{ differsOf(row) }}
             </state-mark>
           </management-row>
@@ -564,10 +574,6 @@ onMounted(load)
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
-}
-
-.discord__mention {
-  text-transform: none;
 }
 
 .discord__channel {

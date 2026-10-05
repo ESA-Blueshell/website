@@ -118,7 +118,7 @@ onMounted(load)
         {{ formatMoment(row.lastSeenAt) }}
       </template>
       <template #state="{row}">
-        <state-mark :kind="row.resolvedAt ? 'in-step' : 'extra'">
+        <state-mark :kind="row.resolvedAt ? 'in-sync' : 'extra'">
           {{ row.resolvedAt ? "Resolved" : "Open" }}
         </state-mark>
       </template>
@@ -129,7 +129,7 @@ onMounted(load)
           :testid="`exception-row-${row.id}`"
           :to="`/management/exceptions/${row.id}`"
         >
-          <state-mark :kind="row.resolvedAt ? 'in-step' : 'extra'">
+          <state-mark :kind="row.resolvedAt ? 'in-sync' : 'extra'">
             {{ row.resolvedAt ? "Resolved" : "Open" }}
           </state-mark>
         </management-row>

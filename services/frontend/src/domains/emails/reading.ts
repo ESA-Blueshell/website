@@ -30,9 +30,9 @@ const titleCase = (value: string): string =>
 /** What a status is called, such as Queued or Bounced. */
 export const statusWord = (status?: Status): string => (status ? titleCase(status) : "Unknown")
 
-/** How a status stands against arriving: in step once it arrived, unreachable when it did not. */
+/** How a status stands against arriving: in sync once it arrived, unreachable when it did not. */
 export function stateKindOf(status?: Status): StateKind {
-  if (status === "DELIVERED" || status === "OPENED") return "in-step"
+  if (status === "DELIVERED" || status === "OPENED") return "in-sync"
   if (status === "BOUNCED" || status === "FAILED") return "unreachable"
   if (status === "QUEUED") return "not-created"
   return "not-compared"

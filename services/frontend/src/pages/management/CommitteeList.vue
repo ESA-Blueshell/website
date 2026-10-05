@@ -138,11 +138,6 @@ onMounted(async () => {
       </cut-button>
     </template>
 
-    <fact-list
-      class="committees__facts"
-      :facts="facts"
-    />
-
     <p
       v-if="failed"
       class="committees__note"
@@ -161,6 +156,11 @@ onMounted(async () => {
         {{ missing.map((one) => `${one.name} (${lacking(one).join(", ")})`).join(", ") }}.
       </p>
     </notice-box>
+
+    <fact-list
+      class="committees__facts"
+      :facts="facts"
+    />
 
     <management-table
       :columns="COLUMNS"
@@ -225,7 +225,7 @@ onMounted(async () => {
         />
       </template>
       <template #state="{row}">
-        <state-mark :kind="row.archived ? 'not-compared' : 'in-step'">
+        <state-mark :kind="row.archived ? 'not-compared' : 'in-sync'">
           {{ row.archived ? "Archived" : "Active" }}
         </state-mark>
       </template>
@@ -236,7 +236,7 @@ onMounted(async () => {
           :testid="`committee-row-${row.id}`"
           :to="`/management/committees/${row.slug}`"
         >
-          <state-mark :kind="row.archived ? 'not-compared' : lacking(row).length ? 'not-created' : 'in-step'">
+          <state-mark :kind="row.archived ? 'not-compared' : lacking(row).length ? 'not-created' : 'in-sync'">
             {{ row.archived ? "Archived" : lacking(row).length ? `Missing: ${lacking(row).join(", ")}` : "Active" }}
           </state-mark>
         </management-row>

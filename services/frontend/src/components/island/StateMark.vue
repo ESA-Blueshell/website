@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 /* Where something stands against what it should be. The marks differ by shape and lightness as
    well as colour, so they read apart without it. */
-export type StateKind = "in-step" | "missing" | "extra" | "unreachable" | "not-created" | "not-compared"
+export type StateKind = "in-sync" | "missing" | "extra" | "unreachable" | "not-created" | "not-compared"
 
 const {kind, testid = undefined} = defineProps<{
   kind: StateKind
@@ -9,9 +9,9 @@ const {kind, testid = undefined} = defineProps<{
 }>()
 
 const WORDS: Record<StateKind, string> = {
-  "in-step": "In step",
+  "in-sync": "In sync",
   missing: "Missing",
-  extra: "Extra",
+  extra: "Additional",
   unreachable: "Unreachable",
   "not-created": "Not created yet",
   "not-compared": "Not compared",
@@ -45,7 +45,7 @@ const WORDS: Record<StateKind, string> = {
   transform: skewX(-12deg);
 }
 
-.state-mark--in-step {
+.state-mark--in-sync {
   color: var(--color-ash);
 }
 

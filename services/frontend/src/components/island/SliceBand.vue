@@ -419,7 +419,6 @@ const onResize = () => {
  */
 const sizesOf = (index: number): string => `${askedFor.value[index]}px`
 
-
 /**
  * Opening a slice and going to it are the same gesture, one after the other: a slice that is
  * already showing what it holds has said what it has to say, so the next click follows it.
@@ -813,7 +812,7 @@ watch(open, (index) => {
 }
 
 /* The cut edge, drawn. Two slices of the same tone meet on an invisible diagonal in light, so
-   the boundary is a sliver clipped to the same geometry, with no angle to keep in step with the
+   the boundary is a sliver clipped to the same geometry, with no angle to keep in sync with the
    slice's height. Not on the first: there is nothing to its left to divide it from. */
 .slice:not(.slice--first)::after {
   content: "";
@@ -1581,7 +1580,6 @@ watch(open, (index) => {
   color: var(--color-chalk);
 }
 
-
 /* Above the panel and the scrim: the words are what they exist to make readable. */
 .slice--aside .slice__heading,
 .slice--aside .slice__reveal {
@@ -1875,7 +1873,7 @@ watch(open, (index) => {
    * photograph, and eases to `--photo-dissolve` as the words grow in underneath. The mask itself
    * still switches on at once — a shut slice has none, which is the rule above and the reason a
    * band of faces does not read as a stack of unfinished photographs — but at nothing deep it is
-   * the whole picture, so what a reader sees is the foot of the face going to ground in step with
+   * the whole picture, so what a reader sees is the foot of the face going to ground in sync with
    * the room opening below it.
    *
    * On the way out it goes at once, like everything else here: there is nothing to explain about

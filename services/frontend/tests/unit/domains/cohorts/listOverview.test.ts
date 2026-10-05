@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {CohortType, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type ListedTarget, type MissingTarget} from "@/domains/cohorts"
+import {CohortType, driftMarksOf, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type ListedTarget, type MissingTarget} from "@/domains/cohorts"
 
 const list = (fields: Partial<ListedTarget>): ListedTarget => ({externalId: "1", label: "List", enforced: false, ...fields})
 const missing = (fields: Partial<MissingTarget> = {}): MissingTarget => ({
@@ -11,10 +11,17 @@ describe("the Brevo page's reading", () => {
   it("names a list's drift from its newest reconcile", () => {
     expect(driftOf(list({}))).toEqual({kind: "not-compared", word: "Not compared"})
     expect(driftOf(list({targetId: 1}))).toEqual({kind: "not-compared", word: "Not reconciled yet"})
-    expect(driftOf(list({targetId: 1, missing: 0, extra: 0}))).toEqual({kind: "in-step", word: "In step"})
+    expect(driftOf(list({targetId: 1, missing: 0, extra: 0}))).toEqual({kind: "in-sync", word: "In sync"})
     expect(driftOf(list({targetId: 1, missing: 2, extra: 0}))).toEqual({kind: "missing", word: "2 missing"})
-    expect(driftOf(list({targetId: 1, missing: 0, extra: 1}))).toEqual({kind: "extra", word: "1 extra"})
-    expect(driftOf(list({targetId: 1, missing: 1, extra: 3}))).toEqual({kind: "missing", word: "1 missing, 3 extra"})
+    expect(driftOf(list({targetId: 1, missing: 0, extra: 1}))).toEqual({kind: "extra", word: "1 additional"})
+    expect(driftOf(list({targetId: 1, missing: 1, extra: 3}))).toEqual({kind: "missing", word: "1 missing, 3 additional"})
+  })
+
+  it("draws missing and extra as a mark each, and otherwise the one drift mark", () => {
+    expect(driftMarksOf(list({targetId: 1, missing: 1, extra: 3}))).toEqual([{kind: "missing", word: "1 missing"}, {kind: "extra", word: "3 additional"}])
+    expect(driftMarksOf(list({targetId: 1, missing: 0, extra: 2}))).toEqual([{kind: "extra", word: "2 additional"}])
+    expect(driftMarksOf(list({targetId: 1, missing: 0, extra: 0}))).toEqual([{kind: "in-sync", word: "In sync"}])
+    expect(driftMarksOf(list({}))).toEqual([{kind: "not-compared", word: "Not compared"}])
   })
 
   it("says what fills a list, or nothing for one made by hand", () => {
@@ -59,7 +66,7 @@ describe("the Brevo page's reading", () => {
     })
     expect(facts.map((fact) => [fact.value, fact.sub])).toEqual([
       ["3", "in 2 folders"],
-      ["1 list", "2 people missing, 1 extra"],
+      ["1 list", "2 people missing, 1 additional"],
       [expect.stringContaining("2026"), "Nightly, and after every change"],
     ])
     expect(overviewFacts({lists: [list({targetId: 1, missing: 1})], missing: []}).map((fact) => fact.value)).toEqual(["1", "1 list", "Never"])

@@ -76,7 +76,7 @@ describe("the Discord page", () => {
     expect(api.findTargetOverview).toHaveBeenCalledWith({path: {system: "DISCORD"}})
     expect(wrapper.get('[data-testid="discord-role-900"]').text()).toContain("@Sitecie")
     expect(wrapper.get('[data-testid="discord-role-900"]').text()).toContain("Committee members · Sitecie")
-    expect(wrapper.get('[data-testid="discord-role-state-900"]').text()).toBe("2 extra")
+    expect(wrapper.get('[data-testid="discord-role-state-900"]').text()).toBe("2 additional")
     expect(wrapper.get('[data-testid="discord-role-900"]').text()).toContain("1 category, 1 channel")
     expect(wrapper.get('[data-testid="discord-role-missing-3"]').text()).toContain("No role yet")
     expect(wrapper.get('[data-testid="discord-fact-drift"]').text()).toContain("2 people with no Discord linked")

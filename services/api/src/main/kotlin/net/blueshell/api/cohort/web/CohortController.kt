@@ -250,7 +250,7 @@ data class CohortMemberResponse(
     val targetMemberId: Long,
     @param:Schema(description = "Which system's ledger this row belongs to")
     val system: TargetSystem?,
-    @param:Schema(description = "Whether this row is in step with the external system")
+    @param:Schema(description = "Whether this row is in sync with the external system")
     val state: TargetMemberState?,
     @param:Schema(description = "Null for a row present externally with no local account")
     val userId: Long?,

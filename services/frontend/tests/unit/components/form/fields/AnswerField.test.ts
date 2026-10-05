@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {flushPromises, mount, shallowMount} from "@vue/test-utils"
 import AnswerField from "@/components/form/fields/AnswerField.vue"
 import {QuestionType} from "@/domains/events"
 
@@ -84,5 +84,38 @@ describe("AnswerField", () => {
 
     expect(rule([false, false])).toBe(true)
     expect(rule([true, false])).toBe(true)
+  })
+  it("offers a radio question's choices and records the one picked", async () => {
+    const picked = {questionId: 3, textResponse: "", optionSelections: [false, false]}
+    const wrapper = mount(AnswerField, {
+      props: {
+        question: {id: 3, idx: 2, type: QuestionType.RADIO, label: "Which?", choiceLabels: ["Tea", "Coffee"], required: true},
+        modelValue: picked,
+      },
+    })
+    const radio = wrapper.getComponent({name: "RadioGroup"})
+    expect(radio.props("options")).toEqual([{key: "0", label: "Tea"}, {key: "1", label: "Coffee"}])
+
+    radio.vm.$emit("update:modelValue", "1")
+    await flushPromises()
+
+    expect(picked.optionSelections).toEqual([false, true])
+  })
+
+  it("records each ticked choice of a checkbox question", async () => {
+    const ticked = {questionId: 4, textResponse: "", optionSelections: [false, false]}
+    const wrapper = mount(AnswerField, {
+      props: {
+        question: {id: 4, idx: 3, type: QuestionType.CHECKBOX, label: "Which?", choiceLabels: ["A", "B"], required: false},
+        modelValue: ticked,
+      },
+    })
+    const boxes = wrapper.findAllComponents({name: "CheckBox"})
+    expect(boxes.map(box => box.props("label"))).toEqual(["A", "B"])
+
+    boxes[1]!.vm.$emit("update:modelValue", true)
+    await flushPromises()
+
+    expect(ticked.optionSelections).toEqual([false, true])
   })
 })

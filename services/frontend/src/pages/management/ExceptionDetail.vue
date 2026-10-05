@@ -87,7 +87,7 @@ onMounted(load)
     </template>
 
     <p class="exception__state">
-      <state-mark :kind="fault.resolvedAt ? 'in-step' : 'extra'">
+      <state-mark :kind="fault.resolvedAt ? 'in-sync' : 'extra'">
         {{ fault.resolvedAt ? "Resolved" : "Open" }}
       </state-mark>
     </p>

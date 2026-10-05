@@ -10,7 +10,7 @@ import RecordFact from "@/components/island/RecordFact.vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
 import RecordHead from "@/components/island/RecordHead.vue"
 import {cellOf as committeeCellOf, useCommittees} from "@/domains/committees"
-import {gameRoomUrl} from "@/domains/discord"
+import {ChannelMark, gameRoomUrl} from "@/domains/discord"
 import ScopedEvents from "@/domains/events/island/ScopedEvents.vue"
 import type {CasualGame} from "../adapters/games"
 import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
@@ -99,12 +99,12 @@ const accent = computed(() => game.accent || BRAND_ACCENT)
               <template v-if="at > 0">
                 ·
               </template>
-              <a
-                :data-testid="`casual-game-channel-${channel.id}`"
-                :href="gameRoomUrl(channel)"
-                rel="noopener"
-                target="_blank"
-              >#{{ channel.name }}</a>
+              <channel-mark
+                :id="channel.id"
+                :guild-id="channel.guildId"
+                :name="channel.name"
+                :testid="`casual-game-channel-${channel.id}`"
+              />
             </template>
           </record-fact>
           <record-fact

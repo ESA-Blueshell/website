@@ -21,10 +21,21 @@ export function driftOf(list: ListedTarget): {kind: StateKind; word: string} {
   const missing = list.missing ?? 0
   const extra = list.extra ?? 0
   if (list.missing == null && list.extra == null) return {kind: "not-compared", word: "Not reconciled yet"}
-  if (missing > 0 && extra > 0) return {kind: "missing", word: `${missing} missing, ${extra} extra`}
+  if (missing > 0 && extra > 0) return {kind: "missing", word: `${missing} missing, ${extra} additional`}
   if (missing > 0) return {kind: "missing", word: `${missing} missing`}
-  if (extra > 0) return {kind: "extra", word: `${extra} extra`}
-  return {kind: "in-step", word: "In step"}
+  if (extra > 0) return {kind: "extra", word: `${extra} additional`}
+  return {kind: "in-sync", word: "In sync"}
+}
+
+/** The same drift as marks, one a line: missing and extra each get a mark of their own. */
+export function driftMarksOf(list: ListedTarget): Array<{kind: StateKind; word: string}> {
+  const missing = list.missing ?? 0
+  const extra = list.extra ?? 0
+  if (list.targetId == null || (list.missing == null && list.extra == null) || (missing === 0 && extra === 0)) return [driftOf(list)]
+  return [
+    ...(missing > 0 ? [{kind: "missing" as const, word: `${missing} missing`}] : []),
+    ...(extra > 0 ? [{kind: "extra" as const, word: `${extra} additional`}] : []),
+  ]
 }
 
 /** What fills a list: the kind of cohort and its name, or nothing for a list made by hand. */
@@ -75,7 +86,7 @@ export function overviewFacts(overview: TargetOverview): Fact[] {
   const extra = drifting.reduce((sum, list) => sum + (list.extra ?? 0), 0)
   return [
     {label: "Lists", value: String(overview.lists.length), sub: `in ${plural(folders.size, "folder")}`, testid: "brevo-fact-lists"},
-    {label: "Drift", value: plural(drifting.length, "list"), sub: `${plural(missing, "person", "people")} missing, ${extra} extra`, testid: "brevo-fact-drift"},
+    {label: "Drift", value: plural(drifting.length, "list"), sub: `${plural(missing, "person", "people")} missing, ${extra} additional`, testid: "brevo-fact-drift"},
     {
       label: "Last reconcile",
       value: overview.lastReconciledAt ? formatDateNoSeconds(overview.lastReconciledAt) : "Never",

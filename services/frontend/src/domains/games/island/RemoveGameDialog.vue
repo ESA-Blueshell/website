@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FormField from "@/components/island/FormField.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
+import TextInput from "@/components/island/TextInput.vue"
 import {loadGameHoldings, removeCasualGame, type CasualGame, type GameHoldings} from "../adapters/games"
 import {sentenceFor} from "../refusals"
 import {countOf} from "@/utils/countOf"
@@ -38,7 +41,6 @@ watch(() => props.open, async open => {
   if (holdings.value == null) failure.value = "What this game holds could not be read, so it cannot be removed yet. Try again."
   step.value = "touches"
 }, {immediate: true})
-
 
 const held = computed(() => (holdings.value?.teams ?? 0) > 0)
 
@@ -80,6 +82,8 @@ const remove = async () => {
 
 <template>
   <modal-dialog
+    cancel-testid="remove-game-cancel"
+    danger
     :open="open"
     testid="remove-game-dialog"
     :title="`Remove ${game.name}?`"
@@ -105,16 +109,17 @@ const remove = async () => {
       class="remove-game__form"
       @submit.prevent="remove"
     >
-      <label class="remove-game__field">
-        <span class="remove-game__label">Type {{ game.name }} to remove it</span>
-        <input
+      <form-field
+        v-slot="field"
+        :label="`Type ${game.name} to remove it`"
+      >
+        <text-input
           v-model="typed"
           autocomplete="off"
-          class="remove-game__input"
-          data-testid="remove-game-name"
-          type="text"
-        >
-      </label>
+          :control-id="field.controlId"
+          testid="remove-game-name"
+        />
+      </form-field>
     </form>
     <p
       v-if="failure"
@@ -126,35 +131,24 @@ const remove = async () => {
     </p>
 
     <template #footer>
-      <div class="remove-game__actions">
-        <button
-          class="remove-game__button"
-          data-testid="remove-game-cancel"
-          type="button"
-          @click="emit('update:open', false)"
-        >
-          Keep it
-        </button>
-        <button
-          v-if="step === 'touches' && holdings && !held"
-          class="remove-game__button remove-game__button--drop"
-          data-testid="remove-game-next"
-          type="button"
-          @click="step = 'type-name'"
-        >
-          Remove
-        </button>
-        <button
-          v-if="step === 'type-name'"
-          class="remove-game__button remove-game__button--drop"
-          data-testid="remove-game-confirm"
-          :disabled="!matches || working"
-          form="remove-game-form"
-          type="submit"
-        >
-          {{ working ? "Removing" : "Remove for good" }}
-        </button>
-      </div>
+      <cut-button
+        v-if="step === 'touches' && holdings && !held"
+        testid="remove-game-next"
+        tone="danger"
+        @click="step = 'type-name'"
+      >
+        Remove
+      </cut-button>
+      <cut-button
+        v-if="step === 'type-name'"
+        :disabled="!matches || working"
+        form="remove-game-form"
+        submit
+        testid="remove-game-confirm"
+        tone="danger"
+      >
+        {{ working ? "Removing" : "Remove for good" }}
+      </cut-button>
     </template>
   </modal-dialog>
 </template>
@@ -172,67 +166,9 @@ const remove = async () => {
   flex-direction: column;
 }
 
-.remove-game__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.remove-game__label {
-  font-family: var(--font-display);
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-ash);
-}
-
-.remove-game__input {
-  width: 100%;
-  padding: 0.55rem 0.75rem;
-  font-family: inherit;
-  font-size: 0.92rem;
-  color: var(--color-chalk);
-  background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-  border: 0;
-}
-
 .remove-game__failure {
   margin: 0.8rem 0 0;
   font-size: 0.85rem;
   color: var(--color-danger);
-}
-
-.remove-game__actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-  margin-top: 1rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
-}
-
-.remove-game__button {
-  padding: 0.45rem 0.9rem;
-  font-family: inherit;
-  font-size: 0.85rem;
-  color: var(--color-chalk);
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid color-mix(in oklab, var(--color-chalk) 16%, transparent);
-}
-
-.remove-game__button--drop {
-  color: var(--color-danger-ink);
-  background: color-mix(in oklab, var(--color-danger-tint) 18%, transparent);
-}
-
-.remove-game__button--drop:hover {
-  color: var(--color-danger-ink-strong);
-  background: color-mix(in oklab, var(--color-danger-tint) 34%, transparent);
-}
-
-.remove-game__button:disabled {
-  cursor: default;
-  opacity: 0.5;
 }
 </style>

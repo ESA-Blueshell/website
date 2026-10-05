@@ -1,61 +1,51 @@
 <template>
   <v-main>
-    <v-container class="my-10">
-      <p class="text-h4 font-weight-light mb-6">
+    <div class="apps">
+      <h1 class="apps__title">
         My Apps
+      </h1>
+
+      <p
+        v-if="loading"
+        class="apps__said"
+      >
+        Loading
       </p>
 
-      <v-row v-if="loading">
-        <v-col
-          v-for="n in 4"
-          :key="n"
-          cols="12"
-          sm="6"
-          md="3"
-        >
-          <v-skeleton-loader type="card" />
-        </v-col>
-      </v-row>
-
-      <v-row v-else-if="services.length > 0">
-        <v-col
+      <ul
+        v-else-if="services.length > 0"
+        class="apps__grid"
+      >
+        <li
           v-for="service in services"
           :key="service.id"
-          cols="12"
-          sm="6"
-          md="3"
         >
-          <v-card
+          <a
+            class="apps__tile"
             :href="service.url"
-            target="_blank"
             rel="noopener noreferrer"
-            hover
-            class="d-flex flex-column align-center pa-4"
-            height="160"
+            target="_blank"
           >
-            <v-img
+            <img
+              alt=""
+              class="apps__icon"
+              height="48"
               :src="service.iconUrl"
               width="48"
-              height="48"
-              class="mb-3"
-            />
-            <v-card-title class="text-body-1 font-weight-medium pa-0">
-              {{ service.name }}
-            </v-card-title>
-            <v-card-subtitle class="text-caption pa-0 text-center mt-1">
-              {{ service.description }}
-            </v-card-subtitle>
-          </v-card>
-        </v-col>
-      </v-row>
+            >
+            <span class="apps__name">{{ service.name }}</span>
+            <span class="apps__about">{{ service.description }}</span>
+          </a>
+        </li>
+      </ul>
 
       <p
         v-else
-        class="text-body-1 text-medium-emphasis"
+        class="apps__said"
       >
         No services available.
       </p>
-    </v-container>
+    </div>
   </v-main>
 </template>
 
@@ -84,3 +74,64 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.apps {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.5rem 1rem;
+}
+
+.apps__title {
+  margin: 0 0 1.5rem;
+  font-family: "Shellhouse One", sans-serif;
+  font-size: 2rem;
+  text-transform: uppercase;
+}
+
+.apps__said {
+  color: var(--color-ash);
+}
+
+.apps__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.apps__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 10rem;
+  padding: 1rem;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  background-color: var(--color-surface);
+  border-top: 3px solid transparent;
+}
+
+.apps__tile:hover,
+.apps__tile:focus-visible {
+  border-top-color: var(--color-brand);
+}
+
+.apps__icon {
+  margin-bottom: 0.5rem;
+  object-fit: contain;
+}
+
+.apps__name {
+  font-weight: 600;
+}
+
+.apps__about {
+  font-size: 0.85rem;
+  color: var(--color-ash);
+}
+</style>

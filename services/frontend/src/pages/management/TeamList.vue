@@ -15,7 +15,7 @@ import ManagementTable, {type TableColumn} from "@/components/management/Managem
 import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts, targetLabel} from "@/domains/cohorts"
-import {type CataloguedChannel, isArchive, listCatalogue} from "@/domains/discord"
+import {type CataloguedChannel, ChannelMark, isArchive, listCatalogue} from "@/domains/discord"
 import {type Fielding, type Team, loadFieldings, loadTeamSeasons, loadTeams, saveTeamDiscord, useGames} from "@/domains/esports"
 
 defineOptions({name: "TeamListPage"})
@@ -39,10 +39,10 @@ const linkOf = (team: Team) => {
 
 /* A team's role is its cohort's Discord target, and its channels are the ones that role has access to. */
 const targetsOf = (team: Team): SummaryTarget[] => cohorts.value.find((one) => one.definitionKey === `TEAM_PLAYERS:${team.id}`)?.targets ?? []
-const channelsOf = (team: Team): string[] => {
+const channelsOf = (team: Team): CataloguedChannel[] => {
   const role = targetsOf(team).find((one) => one.system === TargetSystem.DISCORD && one.made)?.externalId
   if (!role) return []
-  return channels.value.filter((one) => one.kind !== "CATEGORY" && !isArchive(one.category) && one.roleIds.includes(role)).map((one) => `#${one.name}`)
+  return channels.value.filter((one) => one.kind !== "CATEGORY" && !isArchive(one.category) && one.roleIds.includes(role))
 }
 
 const COLUMNS: TableColumn<Team>[] = [
@@ -50,7 +50,7 @@ const COLUMNS: TableColumn<Team>[] = [
   {key: "games", label: "Games", wrap: true, sortBy: (team) => gamesOf(team).join(", ")},
   {key: "season", label: "Latest season", sortBy: (team) => latest(team)?.season.startDate},
   {key: "discord", label: "Discord", sortBy: (team) => targetLabel(targetsOf(team), TargetSystem.DISCORD)},
-  {key: "channels", label: "Channels", wrap: true, sortBy: (team) => channelsOf(team).join(", ")},
+  {key: "channels", label: "Channels", wrap: true, sortBy: (team) => channelsOf(team).map((one) => one.name).join(", ")},
   {key: "state", label: "State", sortBy: (team) => (team.archived ? "Archived" : "Active")},
 ]
 
@@ -191,23 +191,34 @@ onMounted(async () => {
       </template>
       <template #channels="{row}">
         <span
+          class="teams__channels"
           :class="{'mg-quiet': channelsOf(row).length === 0}"
           :data-testid="`team-channels-${row.id}`"
-        >{{ channelsOf(row).join(", ") || "No channel" }}</span>
+        >
+          <channel-mark
+            v-for="channel in channelsOf(row)"
+            :id="channel.id"
+            :key="channel.id"
+            :locked="channel.private"
+            :name="channel.name"
+            :voice="channel.kind === 'VOICE'"
+          />
+          <template v-if="channelsOf(row).length === 0">No channel</template>
+        </span>
       </template>
       <template #state="{row}">
-        <state-mark :kind="row.archived ? 'not-compared' : 'in-step'">
+        <state-mark :kind="row.archived ? 'not-compared' : 'in-sync'">
           {{ row.archived ? "Archived" : "Active" }}
         </state-mark>
       </template>
       <template #phone="{row}">
         <management-row
-          :meta="[gamesOf(row).join(', ') || 'Never fielded', latest(row)?.season.name, ...channelsOf(row)].filter(Boolean).join(' · ')"
+          :meta="[gamesOf(row).join(', ') || 'Never fielded', latest(row)?.season.name, ...channelsOf(row).map((one) => `#${one.name}`)].filter(Boolean).join(' · ')"
           :name="row.name"
           :testid="`team-row-${row.id}`"
           :to="linkOf(row) ?? ''"
         >
-          <state-mark :kind="row.archived ? 'not-compared' : 'in-step'">
+          <state-mark :kind="row.archived ? 'not-compared' : 'in-sync'">
             {{ row.archived ? "Archived" : "Active" }}
           </state-mark>
         </management-row>
@@ -246,6 +257,12 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.teams__channels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.5rem;
+}
+
 .teams__facts {
   padding: 1.1rem 0 1.2rem;
 }

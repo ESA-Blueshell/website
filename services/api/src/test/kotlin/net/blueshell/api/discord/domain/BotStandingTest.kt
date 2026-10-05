@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.RoleColors
 import net.dv8tion.jda.api.entities.SelfMember
+import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -34,7 +35,12 @@ class BotStandingTest {
     private val kandi = role("906", "Kandi")
     private val everyone = role("324", "@everyone", public = true)
     private val lounge: GuildChannel = mock { on { name } doReturn "lounge" }
-    private val mods: GuildChannel = mock { on { name } doReturn "mods" }
+    private val mods: GuildChannel =
+        mock {
+            on { id } doReturn "907"
+            on { name } doReturn "mods"
+            on { type } doReturn ChannelType.TEXT
+        }
 
     private fun standing(
         gateway: GatewayGuild?,
@@ -64,6 +70,7 @@ class BotStandingTest {
                 on { selfMember } doReturn self
                 on { roles } doReturn listOf(admin, kandi, bot, claim, board, everyone)
                 on { channels } doReturn listOf(lounge, mods)
+                on { id } doReturn "324"
             }
 
         val read = standing({ server }).read()
@@ -76,7 +83,7 @@ class BotStandingTest {
                 botRole = DiscordRole("904", "Blueshell bot", null),
                 above = listOf(DiscordRole("905", "Admin", null)),
                 claimed = listOf(DiscordRole("903", "Valorant", null)),
-                hidden = listOf("mods"),
+                hidden = listOf(BotHiddenChannel("907", "324", "mods", null, false)),
             ),
         )
         // Each permission is said by Discord's own name for it, with what the site needs it for.

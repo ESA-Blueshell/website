@@ -782,6 +782,26 @@ components:
       - name
       - neededFor
       type: object
+    BotHiddenChannel:
+      properties:
+        category:
+          type:
+          - string
+          - 'null'
+        guildId:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        voice:
+          type: boolean
+      required:
+      - guildId
+      - id
+      - name
+      - voice
+      type: object
     BotStandingResult:
       properties:
         above:
@@ -800,7 +820,7 @@ components:
           type: boolean
         hidden:
           items:
-            type: string
+            $ref: '#/components/schemas/BotHiddenChannel'
           type: array
         manageChannels:
           type: boolean
@@ -1425,7 +1445,7 @@ components:
           format: date-time
           type: string
         state:
-          description: Whether this row is in step with the external system
+          description: Whether this row is in sync with the external system
           enum:
           - DESIRED
           - SYNCED
@@ -41416,8 +41436,6 @@ tags:
   name: Brevo places
 - description: The games the association plays, casually or in competition
   name: Games
-- description: What the site keeps in step on Discord
-  name: Discord management
 - description: Per-member, per-game handles
   name: Game accounts
 - description: The board's catalog of lists on the external systems
@@ -41428,5 +41446,7 @@ tags:
   name: Cohorts
 - description: Teams, seasons and rosters
   name: Esports
+- description: What the site keeps in sync on Discord
+  name: Discord management
 - description: API for managing job executions
   name: Job Management

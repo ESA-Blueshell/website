@@ -71,7 +71,7 @@ describe("the events of one game or committee", () => {
     expect(wrapper.getComponent(PosterStrip).props("items").map((one: {id: number}) => one.id)).toEqual([1, 2, 3, 4, 5, 6, 7])
   })
 
-  it("keeps the agenda in step with what its rows change", async () => {
+  it("keeps the agenda in sync with what its rows change", async () => {
     adapter.listEvents.mockResolvedValue([event(1), event(3)])
     const wrapper = await mountEvents()
     const agenda = wrapper.getComponent(EventAgenda)

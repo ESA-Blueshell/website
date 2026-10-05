@@ -223,15 +223,16 @@ watch(id, load, {immediate: true})
     testid="user-detail"
     :title="person.fullName"
   >
+    <template #tabs>
+      <page-tabs
+        :entries="tabs"
+        label="About this person"
+        testid="user-tab"
+      />
+    </template>
     <template #lede>
       {{ contact }}
     </template>
-
-    <page-tabs
-      :entries="tabs"
-      label="About this person"
-      testid="user-tab"
-    />
 
     <div
       v-if="tab === 'overview'"
@@ -532,7 +533,7 @@ watch(id, load, {immediate: true})
           <span :class="{'mg-quiet': row.fee == null}">{{ row.fee != null ? euro(row.fee) : "·" }}</span>
         </template>
         <template #paid="{row}">
-          <state-mark :kind="row.paid ? 'in-step' : 'extra'">
+          <state-mark :kind="row.paid ? 'in-sync' : 'extra'">
             {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
           </state-mark>
           <span

@@ -17,7 +17,10 @@ vi.mock("@/services/api", async (importOriginal) => ({
 
 const standing = (fields: Record<string, unknown> = {}) => ({
   connected: true, manageRoles: true, manageChannels: false, botRole: {id: "904", name: "Blueshell bot"}, claimed: [],
-  above: [{id: "905", name: "Admin"}], hidden: ["mods", "board-room"],
+  above: [{id: "905", name: "Admin"}], hidden: [
+    {id: "907", guildId: "324", name: "mods", category: "Moderation", voice: false},
+    {id: "908", guildId: "324", name: "board-room", category: null, voice: true},
+  ],
   permissions: [
     {name: "View Channels", neededFor: "Read the server's channels", granted: true},
     {name: "Manage Channels", neededFor: "Make a channel, archive it and remove it", granted: false},
@@ -52,7 +55,10 @@ describe("the Discord bot's page", () => {
     expect(wrapper.get('[data-testid="discord-bot-permission-View Channels"]').text()).toContain("Granted")
     expect(wrapper.get('[data-testid="discord-bot-steps"]').findAll("li")).toHaveLength(5)
     expect(wrapper.get('[data-testid="discord-bot-steps"]').text()).toContain("Turn on Manage Channels")
-    expect(wrapper.get('[data-testid="discord-bot-hidden"]').text()).toBe("mods, board-room")
+    // Each hidden channel is a Discord mention that opens the channel itself, under its category.
+    expect(wrapper.get('[data-testid="discord-bot-hidden-907"]').attributes("href")).toBe("https://discord.com/channels/324/907")
+    expect(wrapper.get('[data-testid="discord-bot-hidden"]').text()).toContain("Moderation")
+    expect(wrapper.get('[data-testid="discord-bot-hidden-908"]').text()).toBe("board-room")
     expect(wrapper.get('[data-testid="discord-bot-above"]').text()).toContain("@Admin")
     expect(await sortByEveryHead(wrapper)).toBe(3)
   })

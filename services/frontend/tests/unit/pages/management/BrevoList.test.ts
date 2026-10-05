@@ -55,7 +55,7 @@ const cohort = (fields: Record<string, unknown> = {}) => ({
     ledger(1, "DESIRED", {userId: 11, userFullName: "Sanne Jansen", userEmail: "sanne@example.com"}),
     ledger(2, "STRANGER", {userId: 12, userFullName: "Eva de Boer", userEmail: "eva@example.com", externalUserId: "e2"}),
     ledger(3, "STRANGER", {externalUserId: "e3", externalLabel: "jan@example.com"}),
-    ledger(4, "SYNCED", {userId: 14, userFullName: "In Step"}),
+    ledger(4, "SYNCED", {userId: 14, userFullName: "In Sync"}),
   ],
   resolutions: [{system: "BREVO", action: "PUSH", userId: 31, personName: "Kim Vos", resolvedById: 4, resolvedByName: "Treasurer", resolvedAt: "2026-09-23T10:15:00Z"},
     {system: "GOOGLE_WORKSPACE", action: "REMOVE", resolvedAt: "2026-09-23T10:15:00Z"}],
@@ -102,8 +102,8 @@ describe("one Brevo list", () => {
     expect(api.findListedTarget).toHaveBeenCalledWith({path: {system: "BREVO", externalId: "7"}})
     expect(wrapper.text()).toContain("Brevo list · Contribution paid folder")
     expect(wrapper.text()).toContain("Mail sent to this list reaches Paid 2025-2026")
-    expect(wrapper.text()).toContain("1 in step")
-    expect(wrapper.text()).toContain("1 missing · 2 extra")
+    expect(wrapper.text()).toContain("1 in sync")
+    expect(wrapper.text()).toContain("1 missing · 2 additional")
     expect(wrapper.findAll('[data-testid="brevo-list-runs"] span')).toHaveLength(2)
     expect(wrapper.get('[data-testid="brevo-list-row-1"]').text()).toContain("not on the list")
     expect(wrapper.get('[data-testid="brevo-list-row-3"]').text()).toContain("Unknown contact")
@@ -118,7 +118,7 @@ describe("one Brevo list", () => {
 
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "nobody")
     await settle()
-    expect(wrapper.get('[data-testid="brevo-list-in-step"]').text()).toBe("Nobody who differs matches.")
+    expect(wrapper.get('[data-testid="brevo-list-in-sync"]').text()).toBe("Nobody who differs matches.")
   })
 
   it("resolves one person and a selection, and reconciles by hand", async () => {

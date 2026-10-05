@@ -1,6 +1,8 @@
 <script lang="ts" setup>
-/* The row of filters over a list: its search box, the few pickers the page needs, and a way to
-   clear them all once any is set. */
+/* The row of filters over a list: the few pickers the page needs, and a way to clear them all once
+   any is set. Inside a table's bar Clear filters stands last, after the search. */
+import CutButton from "@/components/island/CutButton.vue"
+
 const {active = false, testid = undefined} = defineProps<{
   /** Some filter is set, so clearing them has something to do. */
   active?: boolean
@@ -16,15 +18,19 @@ const emit = defineEmits<{clear: []}>()
     :data-testid="testid"
   >
     <slot />
-    <button
+    <span
       v-if="active"
       class="filter-bar__clear"
-      :data-testid="testid ? `${testid}-clear` : undefined"
-      type="button"
-      @click="emit('clear')"
     >
-      Clear filters
-    </button>
+      <cut-button
+        small
+        :testid="testid ? `${testid}-clear` : undefined"
+        tone="quiet"
+        @click="emit('clear')"
+      >
+        Clear filters
+      </cut-button>
+    </span>
   </div>
 </template>
 
@@ -38,14 +44,7 @@ const emit = defineEmits<{clear: []}>()
 }
 
 .filter-bar__clear {
-  align-self: center;
-  padding: 0.4rem 0.3rem;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 0.84rem;
-  color: var(--color-brand);
-  cursor: pointer;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
 }
 </style>

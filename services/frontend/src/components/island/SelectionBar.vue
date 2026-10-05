@@ -49,7 +49,6 @@ const emit = defineEmits<{clear: []}>()
   flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem 1rem;
-  margin-top: 2px;
   padding: 0.75rem 1rem 0.75rem 1.4rem;
   background-color: var(--color-raised);
   box-shadow: inset 0 2px 0 var(--color-brand);

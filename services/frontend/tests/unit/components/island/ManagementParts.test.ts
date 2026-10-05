@@ -80,11 +80,11 @@ describe("SortHeader", () => {
 
 describe("StateMark and RoleMark", () => {
   it("names each state by default, or in the caller's words", () => {
-    const words = (["in-step", "missing", "extra", "unreachable", "not-created", "not-compared"] as const)
+    const words = (["in-sync", "missing", "extra", "unreachable", "not-created", "not-compared"] as const)
       .map((kind) => mount(StateMark, {props: {kind}}).text())
 
-    expect(words).toEqual(["In step", "Missing", "Extra", "Unreachable", "Not created yet", "Not compared"])
-    expect(mount(StateMark, {props: {kind: "extra", testid: "mark"}, slots: {default: "1 extra"}}).text()).toBe("1 extra")
+    expect(words).toEqual(["In sync", "Missing", "Additional", "Unreachable", "Not created yet", "Not compared"])
+    expect(mount(StateMark, {props: {kind: "extra", testid: "mark"}, slots: {default: "1 additional"}}).text()).toBe("1 additional")
   })
 
   it("writes a role as a mention, toned by what it grants", () => {

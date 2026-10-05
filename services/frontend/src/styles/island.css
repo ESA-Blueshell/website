@@ -388,3 +388,44 @@
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
+
+/*
+ * The shared shapes of a form and the panel it stands in, for every page that is not yet an
+ * island of its own: one look for the sign-in pages, the account pages and the sign-up steps.
+ */
+.island-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.4rem 1.5rem;
+  background-color: var(--band-ground, #2a2a2a);
+}
+
+.island-panel__title {
+  margin: 0;
+  font-family: "Shellhouse One", sans-serif;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.island-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* The buttons at a form's or a panel's foot: the way back first, the main act last, at the right. */
+.form-save,
+.panel-acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+/* A foot whose first button goes back: it stands at the left, the rest at the right. */
+.panel-acts--split > :first-child {
+  margin-right: auto;
+}

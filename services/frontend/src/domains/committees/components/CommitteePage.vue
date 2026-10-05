@@ -9,6 +9,7 @@ import LeadBand from "@/components/island/LeadBand.vue"
 import RecordFact from "@/components/island/RecordFact.vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
 import RecordHead from "@/components/island/RecordHead.vue"
+import {DiscordUser} from "@/domains/discord"
 import ScopedEvents from "@/domains/events/island/ScopedEvents.vue"
 import {cellOf as gameCellOf, useCasualGames} from "@/domains/games"
 import type {Committee, CommitteePage} from "../adapters/committees"
@@ -133,17 +134,19 @@ const archived = async (now: Committee) => {
               class="committee-page__seat"
               :data-testid="`committee-seat-${at}`"
             >
-              <img
-                v-if="seat.avatar"
-                alt=""
-                class="committee-page__avatar"
-                :src="seat.avatar"
-              >
               <span class="committee-page__who">
-                <span
+                <discord-user
+                  v-if="seat.discordName"
+                  :avatar="seat.avatar"
                   class="committee-page__name"
-                  :class="{'committee-page__name--none': !seat.discordName}"
-                >{{ seat.discordName ?? "Discord not linked" }}</span>
+                  icon
+                  :name="seat.discordName"
+                  size="lg"
+                />
+                <span
+                  v-else
+                  class="committee-page__name committee-page__name--none"
+                >Discord not linked</span>
                 <span
                   v-if="seat.role"
                   class="committee-page__role"

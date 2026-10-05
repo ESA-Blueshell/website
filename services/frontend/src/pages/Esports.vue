@@ -358,7 +358,7 @@ const takeOut = async (game: GameCode, season: Season | null) => {
                     type="button"
                     @click.stop="takeOut(String(item.id), season)"
                   >
-                    Take {{ item.title }} out of {{ nameOf(season) }}
+                    Remove {{ item.title }} from {{ nameOf(season) }}
                   </button>
                   <p
                     v-if="dropFailure"

@@ -7,7 +7,7 @@ export function alertTitle(alert: Alert): string {
   const subject = alert.subjectLabel ?? "A list"
   switch (alert.kind) {
     case AlertKind.TARGET_DRIFT:
-      return `${subject} is out of step with Brevo: ${counted(alert.count, "person differs", "people differ")}`
+      return `${subject} is out of sync with Brevo: ${counted(alert.count, "person differs", "people differ")}`
     case AlertKind.COHORT_WITHOUT_LIST:
       return `${alert.subjectLabel ?? "A cohort"} has no Brevo list`
     case AlertKind.EMAIL_FAILED:
@@ -27,7 +27,7 @@ export function alertTitle(alert: Alert): string {
 export function alertRow(alert: Alert): {name: string; meta: string; from: string} {
   switch (alert.kind) {
     case AlertKind.TARGET_DRIFT:
-      return {name: "A list is out of step", meta: `${alert.subjectLabel ?? "A list"} · ${counted(alert.count, "person differs", "people differ")}`, from: "Brevo"}
+      return {name: "A list is out of sync", meta: `${alert.subjectLabel ?? "A list"} · ${counted(alert.count, "person differs", "people differ")}`, from: "Brevo"}
     case AlertKind.COHORT_WITHOUT_LIST:
       return {name: "A Brevo list is missing", meta: alert.subjectLabel ?? "A cohort", from: "Brevo"}
     case AlertKind.EMAIL_FAILED:

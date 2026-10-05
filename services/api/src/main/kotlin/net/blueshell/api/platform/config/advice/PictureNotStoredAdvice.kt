@@ -16,7 +16,7 @@ import java.net.URI
  *
  * Here rather than in a module's own refusal advice because the picture a save points at is
  * resolved the same way on every page that takes an upload, so the answer is the same too and
- * a second copy of it would be a second copy to keep in step.
+ * a second copy of it would be a second copy to keep in sync.
  */
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)

@@ -171,7 +171,7 @@ const comingUp = computed<Pair[]>(() => upcoming.value.map((event) => ({
 /** How each platform and the mail stand, one line each; the admin's own lines last. */
 const standings = computed<Pair[]>(() => {
   const lines: Pair[] = [
-    {label: "Brevo", value: `${cohortCount.value} cohorts · ${drifting.value} out of step · ${withoutList.value} without a list`, to: "/management/platforms/brevo"},
+    {label: "Brevo", value: `${cohortCount.value} cohorts · ${drifting.value} out of sync · ${withoutList.value} without a list`, to: "/management/platforms/brevo"},
   ]
   if (mail.value) {
     lines.push({

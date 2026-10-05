@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-/* One Brevo list: the cohort that fills it, its people in step and its drift, each drifting person
+/* One Brevo list: the cohort that fills it, its people in sync and its drift, each drifting person
    with why and what can be done, the resolutions so far, and the list itself to rename, move,
    archive, enforce or delete. */
 import CutButton from "@/components/island/CutButton.vue"
@@ -27,7 +27,7 @@ import {
   createFolderInSystem,
   fetchCohort,
   fetchTargetFolders,
-  inStepOn,
+  inSyncOn,
   linkExistingTargetForCohort,
   moveTargetToFolder,
   readListedTarget,
@@ -75,14 +75,14 @@ const facts = computed(() => {
     {label: "Follows", value: cohort.value?.label ?? "", sub: cohort.value ? cohortTypeLabel(cohort.value.type) : ""},
     {
       label: "People",
-      value: `${inStepOn(members.value, SYSTEM)} in step`,
-      sub: `${allDrift.value.filter((one) => one.sync === "ONLY_HERE").length} missing · ${allDrift.value.filter((one) => one.sync === "ONLY_EXTERNAL").length} extra`,
+      value: `${inSyncOn(members.value, SYSTEM)} in sync`,
+      sub: `${allDrift.value.filter((one) => one.sync === "ONLY_HERE").length} missing · ${allDrift.value.filter((one) => one.sync === "ONLY_EXTERNAL").length} additional`,
       testid: "brevo-list-people",
     },
     {
       label: "Reconciled",
       value: latest ? formatDateNoSeconds(latest.startedAt) : "Never",
-      sub: mapping.value?.enforced ? "Enforced: extra people are removed at every reconcile" : "Nightly, and after every change",
+      sub: mapping.value?.enforced ? "Enforced: additional people are removed at every reconcile" : "Nightly, and after every change",
     },
   ]
 })
@@ -359,7 +359,7 @@ onMounted(async () => {
     <div class="list__settings">
       <cut-row
         v-if="mapping && isAdmin"
-        :meta="`Remove extra people automatically every time the list is compared. ${mapping.enforced ? 'On.' : 'Off.'}`"
+        :meta="`Remove additional people automatically every time the list is compared. ${mapping.enforced ? 'On.' : 'Off.'}`"
         title="Enforce"
       >
         <template #end>
@@ -409,12 +409,15 @@ onMounted(async () => {
     </div>
 
     <modal-dialog
+      cancel-testid="brevo-list-delete-cancel"
+      danger
       :open="deleting"
       testid="brevo-list-delete-dialog"
       title="Delete the list"
       @update:open="deleting = $event"
     >
       <form
+        id="brevo-list-delete-form"
         class="list__form"
         data-testid="brevo-list-delete-form"
         @submit.prevent="confirmDelete"
@@ -440,17 +443,18 @@ onMounted(async () => {
         >
           {{ deleteFailure }}
         </p>
-        <div class="list__acts">
-          <cut-button
-            :disabled="acting || typedName !== list.label"
-            submit
-            testid="brevo-list-delete-confirm"
-            tone="danger"
-          >
-            Delete
-          </cut-button>
-        </div>
       </form>
+      <template #footer>
+        <cut-button
+          :disabled="acting || typedName !== list.label"
+          form="brevo-list-delete-form"
+          submit
+          testid="brevo-list-delete-confirm"
+          tone="danger"
+        >
+          Delete
+        </cut-button>
+      </template>
     </modal-dialog>
   </management-page>
 </template>

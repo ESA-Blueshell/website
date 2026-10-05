@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Keeps the cohort records in step with the definitions in code, one record per definition.
+ * Keeps the cohort records in sync with the definitions in code, one record per definition.
  *
  * Runs when something could have changed the set of definitions — a period or committee
  * created, a reconcile asked for — and never on startup: writing during boot turns a schema

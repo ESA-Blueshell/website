@@ -23,7 +23,7 @@ describe("the people list", () => {
     )
 
     expect(person).toMatchObject({membership: "current", type: MemberType.HONORARY, memberSince: "2019-01-01", needs: ["no-discord", "no-address"]})
-    expect(person).toMatchObject({committees: [], discord: null})
+    expect(person).toMatchObject({committees: [], discord: null, discordId: null})
   })
 
   it("carries the committees a person sits on and the Discord name they gave", () => {
@@ -33,7 +33,7 @@ describe("the people list", () => {
       [aCommittee({id: 1, name: "Sitecie", members: [{committeeId: 1, userId: 1, createdAt: "", updatedAt: "", version: 0}]})],
     )
 
-    expect(person).toMatchObject({committees: ["Sitecie"], discord: "ann#0001"})
+    expect(person).toMatchObject({committees: [{name: "Sitecie", slug: expect.any(String)}], discord: "ann#0001"})
   })
   it("calls a running membership pending until its first contribution, and sorts and filters on it", () => {
     expect(membershipStateOf([{endDate: null, pending: true}])).toBe("pending")

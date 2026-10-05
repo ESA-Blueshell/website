@@ -14,7 +14,7 @@ import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
-import {type CataloguedChannel, GameChannelCategory, listCatalogue, makeGameChannel} from "@/domains/discord"
+import {type CataloguedChannel, ChannelMark, GameChannelCategory, listCatalogue, makeGameChannel} from "@/domains/discord"
 import {type CasualGame, addGameChannel, setGameArchived, useCasualGames} from "@/domains/games"
 
 defineOptions({name: "GameListPage"})
@@ -51,9 +51,9 @@ const shown = computed(() => {
     .sort((a, b) => Number(a.archived) - Number(b.archived) || a.name.localeCompare(b.name))
 })
 
-const stateOf = (game: CasualGame): {kind: "not-compared" | "extra" | "in-step"; word: string} => {
+const stateOf = (game: CasualGame): {kind: "not-compared" | "extra" | "in-sync"; word: string} => {
   if (game.archived) return {kind: "not-compared", word: "Archived"}
-  return differs(game) ? {kind: "extra", word: "Differs on Discord"} : {kind: "in-step", word: "In step"}
+  return differs(game) ? {kind: "extra", word: "Differs on Discord"} : {kind: "in-sync", word: "In sync"}
 }
 
 const facts = computed(() => {
@@ -189,7 +189,22 @@ onMounted(async () => {
         </router-link>
       </template>
       <template #channels="{row}">
-        <span :class="{'mg-quiet': channelsOf(row).length === 0}">{{ named(row) }}</span>
+        <span
+          v-if="channelsOf(row).length > 0"
+          class="games__channels"
+        >
+          <channel-mark
+            v-for="channel in channelsOf(row)"
+            :id="channel.id"
+            :key="channel.id"
+            :guild-id="channel.guildId"
+            :name="channel.name"
+          />
+        </span>
+        <span
+          v-else
+          class="mg-quiet"
+        >No channel</span>
       </template>
       <template #kind="{row}">
         {{ playedAs(row) }}
@@ -278,6 +293,12 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.games__channels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.5rem;
+}
+
 .games__facts {
   padding: 1.1rem 0 1.2rem;
 }

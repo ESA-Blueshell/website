@@ -6,7 +6,9 @@
       class="mx-auto my-10"
       style="max-width: 600px"
     >
-      <v-card class="pa-6 text-center">
+      <div
+        class="island-panel"
+      >
         <div
           v-if="loading"
           class="d-flex align-center justify-center"
@@ -26,13 +28,6 @@
           v-else-if="succeeded"
           data-testid="activate-user-success-state"
         >
-          <v-icon
-            class="mb-2"
-            color="success"
-            size="48"
-          >
-            mdi-check-circle
-          </v-icon>
           <p class="text-subtitle-1">
             {{ membershipStarted
               ? "Account confirmed and your membership has started. You will be redirected to the login page."
@@ -41,23 +36,23 @@
         </div>
 
         <!-- Error -->
-        <v-alert
+        <notice-box
           v-else
-          data-testid="activate-user-error-alert"
-          type="warning"
-          variant="tonal"
+          tone="warning"
+          testid="activate-user-error-alert"
         >
           <div>{{ errorMessage }}</div>
           <div class="mt-2">
             You will be redirected to the login page.
           </div>
-        </v-alert>
-      </v-card>
+        </notice-box>
+      </div>
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"

@@ -132,7 +132,7 @@ const search = ref("")
 const shown = computed<RespondentRow[]>(() => {
   const term = search.value.trim().toLowerCase()
   if (term === "") return respondents.value
-  return respondents.value.filter(row => Object.values(row.person).some(said => said.toLowerCase().includes(term)))
+  return respondents.value.filter(row => Object.values(row.person).some(said => (said ?? "").toLowerCase().includes(term)))
 })
 
 /* The kind column's order, in the words its header is named with. */

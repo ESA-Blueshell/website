@@ -194,7 +194,7 @@ class CohortQueryServiceTest {
 
         val detail = service.detail(20L)
 
-        // The page reads whether a row is in step with the target off the row itself, rather
+        // The page reads whether a row is in sync with the target off the row itself, rather
         // than from a second call that classifies the same rows again.
         assertThat(detail.members.map { it.state }).containsExactlyInAnyOrder(
             TargetMemberState.DESIRED,

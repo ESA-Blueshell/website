@@ -51,7 +51,7 @@ const members = (fields: Record<string, unknown> = {}) => ({
     ledger(2, "DESIRED", {userId: 12, userFullName: "Noor Hendriks", unreachable: true}),
     ledger(3, "STRANGER", {userId: 13, userFullName: "Jesse Bakker", externalUserId: "d3"}),
     ledger(4, "STRANGER", {externalUserId: "d4", externalLabel: "pixelsam"}),
-    ledger(5, "VERIFIED", {userId: 15, userFullName: "In Step", syncedAt: "x"}),
+    ledger(5, "VERIFIED", {userId: 15, userFullName: "In Sync", syncedAt: "x"}),
   ],
   resolutions: [{system: "DISCORD", action: "PUSH", personName: "Kim Vos", resolvedByName: "Alice", resolvedAt: "2026-09-22T14:02:00Z"}],
   ...fields,
@@ -102,7 +102,7 @@ describe("a Discord role's page", () => {
     expect(wrapper.find('[data-testid="discord-opening-archive-10"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="discord-opening-differs-1"]').text()).toContain("On Discord read only, on the site read and write.")
     expect(wrapper.get('[data-testid="discord-opening-set-1"]').text()).toBe("Set it on Discord")
-    expect(wrapper.get('[data-testid="discord-opening-set-3"]').text()).toBe("Set it on the site")
+    expect(wrapper.get('[data-testid="discord-opening-set-3"]').text()).toBe("Add it to the site")
     expect(picker(wrapper, "discord-open-another").props("options").map((one: {key: string}) => one.key)).toEqual(["11", "20", "2"])
     expect(await sortByEveryHead(wrapper)).toBeGreaterThan(0)
   })
@@ -206,8 +206,8 @@ describe("a Discord role's page", () => {
   it("lists the role's drift in its own words: add and remove the role, and link an account where no Discord is linked", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.get('[data-testid="discord-role-holders"]').text()).toContain("1 in step")
-    expect(wrapper.get('[data-testid="discord-role-holders"]').text()).toContain("1 missing · 2 extra · 1 with no Discord linked")
+    expect(wrapper.get('[data-testid="discord-role-holders"]').text()).toContain("1 in sync")
+    expect(wrapper.get('[data-testid="discord-role-holders"]').text()).toContain("1 missing · 2 additional · 1 with no Discord linked")
     expect(wrapper.get('[data-testid="discord-role-drift-row-1"]').text()).toContain("In Members since")
     expect(wrapper.get('[data-testid="discord-role-drift-row-1"]').text()).toContain("and without the role")
     expect(wrapper.get('[data-testid="discord-role-drift-push-1"]').text()).toBe("Add the role")

@@ -76,10 +76,11 @@ describe("one game's page", () => {
     const channels = wrapper.get("[data-testid=casual-game-channels]")
 
     expect(channels.get(".record-fact__label").text()).toBe("Channels")
-    expect(channels.get(".record-fact__value").text()).toMatch(/#valorant\s+·\s+#hero-shooters/)
+    // Each channel is a Discord mention: its glyph stands where the hash was.
+    expect(channels.get(".record-fact__value").text()).toMatch(/valorant\s+·\s+hero-shooters/)
     expect(wrapper.get("[data-testid=casual-game-channel-6323]").attributes("href")).toBe("https://discord.com/channels/324/6323")
     expect(wrapper.get("[data-testid=casual-game-open-channel]").text()).toBe("Open #valorant")
-    expect(mountPage({...valorant, channels: valorant.channels.slice(0, 1)}).get(".record-head__facts").text()).toContain("Channel#valorant")
+    expect(mountPage({...valorant, channels: valorant.channels.slice(0, 1)}).get(".record-head__facts").text()).toContain("Channelvalorant")
   })
 
   it("lists the events that name the game, with a note for when none do", () => {

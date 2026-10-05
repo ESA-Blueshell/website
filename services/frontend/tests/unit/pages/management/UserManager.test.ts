@@ -191,11 +191,11 @@ describe("the Users page", () => {
     expect(router.currentRoute.value.query).toEqual({ids: "3", back: "/management/users"})
   })
 
-  it("links each person to their own page, by their name and by the row's arrow", async () => {
+  it("links each person to their own page by their name, and the whole row opens it", async () => {
     const wrapper = await mount(adminLogin)
 
     expect(wrapper.get('[data-testid="member-manager-open-1"]').attributes("to")).toBe("/management/users/1")
-    expect(wrapper.get('[data-testid="member-manager-row-1"]').find('a[aria-label="Open"]').attributes("to")).toBe("/management/users/1")
+    expect(wrapper.get('[data-testid="member-manager-row-1"]').classes()).toContain("mg-table__row--opens")
   })
 
   it("counts the members, who joined this period and who needs a look", async () => {
@@ -234,25 +234,32 @@ describe("the Users page", () => {
 
     await wrapper.get('[data-testid="member-manager-add-user-btn"]').trigger("click")
     await settle()
-    expect(wrapper.find('[data-testid="member-manager-add-user-dialog"]').exists()).toBe(true)
+    const dialog = wrapper.getComponent({name: "ModalDialog"})
+    expect(dialog.props("open")).toBe(true)
+    expect(dialog.props("title")).toBe("Add user")
     wrapper.findComponent({name: "UserForm"}).vm.$emit("submitted", false)
+    await settle()
+    expect(dialog.props("open")).toBe(true)
     wrapper.findComponent({name: "UserForm"}).vm.$emit("submitted", true)
     await settle()
+    expect(dialog.props("open")).toBe(false)
     expect(findUsers).toHaveBeenCalledTimes(2)
   })
 
-  it("saves and cancels the add form", async () => {
+  it("saves through the form from the dialog's foot, and cancels", async () => {
     const wrapper = await mount()
 
     await wrapper.get('[data-testid="member-manager-add-user-btn"]').trigger("click")
-    for (const modal of wrapper.findAllComponents({name: "BaseModal"})) {
-      modal.vm.$emit("save")
-      modal.vm.$emit("cancel")
-      modal.vm.$emit("update:modelValue", false)
-    }
     await settle()
+    const save = wrapper.getComponent({name: "SubmitButton"})
+    expect(save.props("text")).toBe("Create user")
+    save.vm.$emit("click")
+    await settle()
+    expect(save.props("loading")).toBe(false)
 
-    expect(wrapper.findComponent({name: "BaseModal"}).props("modelValue")).toBe(false)
+    wrapper.getComponent({name: "ModalDialog"}).vm.$emit("update:open", false)
+    await settle()
+    expect(wrapper.getComponent({name: "ModalDialog"}).props("open")).toBe(false)
   })
 
   it("says so when nobody matches, and when the people could not be read", async () => {

@@ -10,7 +10,7 @@ import StateMark from "@/components/island/StateMark.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import {type BotGrant, type BotStanding, DISCORD_TABS, botSteps, readBotStanding} from "@/domains/discord"
+import {type BotGrant, type BotStanding, ChannelMark, DISCORD_TABS, botSteps, readBotStanding} from "@/domains/discord"
 
 defineOptions({name: "DiscordBotPage"})
 
@@ -22,6 +22,16 @@ const COLUMNS: TableColumn<BotGrant>[] = [
   {key: "why", label: "Needed to", wrap: true, sortBy: (one) => one.neededFor},
   {key: "state", label: "State", sortBy: (one) => one.granted},
 ]
+
+/* The hidden channels by the category they are filed under, as Discord's own channel list shows them. */
+const hiddenByCategory = computed(() => {
+  const groups = new Map<string, NonNullable<typeof standing.value>["hidden"]>()
+  for (const one of standing.value?.hidden ?? []) {
+    const key = one.category ?? ""
+    groups.set(key, [...(groups.get(key) ?? []), one])
+  }
+  return [...groups.entries()].map(([category, channels]) => ({category, channels}))
+})
 
 const lacking = computed(() => standing.value?.permissions.filter((one) => !one.granted) ?? [])
 const steps = computed(() => (standing.value ? botSteps(standing.value) : []))
@@ -48,15 +58,17 @@ onMounted(async () => {
     testid="discord-bot-page"
     title="Discord"
   >
+    <template #tabs>
+      <page-tabs
+        :entries="DISCORD_TABS"
+        label="Discord"
+        testid="discord-tabs"
+      />
+    </template>
+
     <template #lede>
       What the site's bot may do on the Discord server, and what to change on Discord where it may not.
     </template>
-
-    <page-tabs
-      :entries="DISCORD_TABS"
-      label="Discord"
-      testid="discord-tabs"
-    />
 
     <p
       v-if="loaded && !standing?.connected"
@@ -67,11 +79,6 @@ onMounted(async () => {
     </p>
 
     <template v-if="standing?.connected">
-      <fact-list
-        class="bot__facts"
-        :facts="facts"
-      />
-
       <notice-box
         v-if="lacking.length > 0"
         class="bot__notice"
@@ -81,6 +88,11 @@ onMounted(async () => {
       >
         <p>{{ lacking.map((one) => one.name).join(", ") }}. What the site does with them is refused by Discord until they are turned on.</p>
       </notice-box>
+
+      <fact-list
+        class="bot__facts"
+        :facts="facts"
+      />
 
       <template v-if="steps.length > 0">
         <list-head title="What to change on Discord" />
@@ -116,7 +128,7 @@ onMounted(async () => {
           <span class="mg-quiet">{{ row.neededFor }}</span>
         </template>
         <template #state="{row}">
-          <state-mark :kind="row.granted ? 'in-step' : 'not-created'">
+          <state-mark :kind="row.granted ? 'in-sync' : 'not-created'">
             {{ row.granted ? "Granted" : "Missing" }}
           </state-mark>
         </template>
@@ -124,12 +136,37 @@ onMounted(async () => {
 
       <template v-if="standing.hidden.length > 0">
         <list-head :title="`Channels the bot cannot see · ${standing.hidden.length}`" />
-        <p
-          class="bot__note"
+        <div
+          class="bot__channels"
           data-testid="discord-bot-hidden"
         >
-          {{ standing.hidden.join(", ") }}
-        </p>
+          <div
+            v-for="group in hiddenByCategory"
+            :key="group.category"
+            class="bot__group"
+          >
+            <channel-mark
+              v-if="group.category"
+              category
+              :name="group.category"
+            />
+            <ul class="bot__list">
+              <li
+                v-for="channel in group.channels"
+                :key="channel.id"
+              >
+                <channel-mark
+                  :id="channel.id"
+                  :guild-id="channel.guildId"
+                  locked
+                  :name="channel.name"
+                  :testid="`discord-bot-hidden-${channel.id}`"
+                  :voice="channel.voice"
+                />
+              </li>
+            </ul>
+          </div>
+        </div>
       </template>
 
       <template v-if="standing.above.length > 0">
@@ -152,6 +189,22 @@ onMounted(async () => {
 
 .bot__notice {
   margin-bottom: 1rem;
+}
+
+.bot__channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2.5rem;
+  margin: 0.6rem 0 1.2rem;
+}
+
+.bot__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .bot__note {

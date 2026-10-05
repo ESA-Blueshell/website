@@ -9,7 +9,7 @@ const EMAIL = "esports-affairs@blueshell.utwente.nl"
  * What the last band of an esports page asks for, and the three ways to answer it.
  *
  * Both esports pages end on this, so the copy is written once and read twice rather than
- * kept in step by hand. The band itself is the island's; what it says is esports'.
+ * kept in sync by hand. The band itself is the island's; what it says is esports'.
  */
 export const JOIN_CALL: Call = {
   headline: "Want in?",

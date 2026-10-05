@@ -140,11 +140,11 @@ export type TargetMapping = {
   enforced: boolean
 }
 
-/** One reconcile of a target: how many were in step, missing from it and extra on it. */
+/** One reconcile of a target: how many were in sync, missing from it and extra on it. */
 export type ReconcileRun = {
   startedAt: string
   trigger: string | null
-  inStep: number
+  inSync: number
   missing: number
   extra: number
 }
@@ -180,7 +180,7 @@ function toTargetMapping(raw: ApiCohortTarget): TargetMapping {
     runs: raw.runs.map((run) => ({
       startedAt: run.startedAt,
       trigger: run.trigger ?? null,
-      inStep: run.inSync,
+      inSync: run.inSync,
       missing: run.oursOnly,
       extra: run.theirsOnly,
     })),

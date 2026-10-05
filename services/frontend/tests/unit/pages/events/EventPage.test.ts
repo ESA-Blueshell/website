@@ -174,7 +174,7 @@ describe("an event's own page", () => {
     expect(mockCommit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Link for 4Funcie Pooling copied")
   })
 
-  it("keeps its count and the reader's sign-up in step with the panel", async () => {
+  it("keeps its count and the reader's sign-up in sync with the panel", async () => {
     reader.signUps = ref([aSignUp({id: 99, eventId: 3})])
     const wrapper = await mountPage()
     const panel = () => wrapper.getComponent({name: "EventSignUpPanel"})

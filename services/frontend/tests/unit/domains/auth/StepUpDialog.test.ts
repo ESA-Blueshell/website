@@ -6,7 +6,8 @@ import {settle} from "../../pages/helpers"
 const {mockStepUp} = vi.hoisted(() => ({mockStepUp: vi.fn()}))
 vi.mock("@/domains/auth/adapters/auth", () => ({stepUp: mockStepUp}))
 
-const inline = {global: {stubs: {VDialog: {name: "VDialog", template: "<div><slot /></div>"}}}}
+const ModalDialog = {name: "ModalDialog", props: ["open", "title", "testid", "cancelTestid"], emits: ["update:open"], template: "<div v-if=\"open\"><slot /><button :data-testid=\"cancelTestid\" @click=\"$emit('update:open', false)\">Cancel</button><slot name=\"footer\" /></div>"}
+const inline = {global: {stubs: {ModalDialog}}}
 const open = (twoFactorOn: boolean) => mount(StepUpDialog, {...inline, props: {modelValue: false, twoFactorOn}})
 
 describe("the step-up dialog", () => {
@@ -18,7 +19,7 @@ describe("the step-up dialog", () => {
     await wrapper.setProps({modelValue: true})
     expect(wrapper.text()).toContain("Enter the code from your authenticator app.")
 
-    await wrapper.find("button.v-btn--variant-text").trigger("click")
+    await wrapper.find("[data-testid=step-up-backup-toggle]").trigger("click")
     expect(wrapper.text()).toContain("Enter one of your backup codes.")
     await wrapper.find("[data-testid=step-up-field] input").setValue(" abcde-fghjk ")
     await wrapper.find("form").trigger("submit")
@@ -50,10 +51,10 @@ describe("the step-up dialog", () => {
 
   it("closes on cancel, or when the dialog asks to", async () => {
     const wrapper = open(false)
+    await wrapper.setProps({modelValue: true})
 
-    const cancel = wrapper.findAll("button").find(button => button.text() === "Cancel")
-    await cancel?.trigger("click")
-    wrapper.findComponent({name: "VDialog"}).vm.$emit("update:modelValue", false)
+    await wrapper.get("[data-testid=step-up-cancel-btn]").trigger("click")
+    wrapper.getComponent(ModalDialog).vm.$emit("update:open", false)
 
     expect(wrapper.emitted("update:modelValue")).toEqual([[false], [false]])
   })

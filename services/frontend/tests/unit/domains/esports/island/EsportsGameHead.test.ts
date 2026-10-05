@@ -35,7 +35,7 @@ describe("the competition head", () => {
       global: {stubs},
     })
 
-    expect(wrapper.get("[data-testid=esports-game-channels]").text()).toMatch(/Esports on Discord\s*#valorant-esports\s*·\s*#scrims/)
+    expect(wrapper.get("[data-testid=esports-game-channels]").text()).toMatch(/Esports on Discord\s*valorant-esports\s*·\s*scrims/)
     expect(wrapper.get("[data-testid=esports-game-channel-7]").attributes("href")).toBe("https://discord.com/channels/324/7")
     expect(mount(EsportsGameHead, {props: {accent: "#f00", name: "Go", channels: []}, global: {stubs}})
       .find("[data-testid=esports-game-channels]").exists()).toBe(false)

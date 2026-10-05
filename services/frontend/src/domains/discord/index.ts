@@ -42,4 +42,6 @@ export {readDiscordRooms, watchDiscordRooms, liveOf, howFull, fitting, SERVER_NA
 export {GameChannelCategory} from "@/services/api"
 export type {DiscordChannelResponse, DiscordEmojiResponse, DiscordMemberResponse, DiscordMentionChannelResponse, DiscordRoleResponse, PingedRoleRequest, StarboardEntryResponse} from "@/services/api"
 export {default as ChannelGlyph} from "./island/ChannelGlyph.vue"
+export {default as ChannelMark} from "./island/ChannelMark.vue"
+export {default as DiscordUser} from "./island/DiscordUser.vue"
 export {makeGameChannel} from "./adapters/channelAccess"

@@ -71,7 +71,7 @@ describe("the competition teams in Management", () => {
     expect(wrapper.findComponent({name: "FactList"}).text()).toContain("1 archived")
     expect(wrapper.get("thead").text()).toContain("Latest season")
     expect(wrapper.get('[data-testid="team-discord-1"]').attributes("to")).toBe("/management/platforms/discord/roles/960")
-    expect(wrapper.get('[data-testid="team-channels-1"]').text()).toBe("#bs-valorant")
+    expect(wrapper.get('[data-testid="team-channels-1"] .channel-mark').text()).toBe("bs-valorant")
     expect(wrapper.get('[data-testid="team-discord-2"]').text()).toBe("No role")
     expect(wrapper.get('[data-testid="team-channels-2"]').text()).toBe("No channel")
     // One read for every team, not one a team.

@@ -3942,6 +3942,10 @@ components:
         memberSince:
           format: date
           type: string
+        membershipId:
+          description: The membership the member is judged on, which their incasso details are recorded against.
+          format: int64
+          type: integer
         name:
           type: string
         userId:
@@ -3950,6 +3954,7 @@ components:
       required:
       - ingName
       - memberSince
+      - membershipId
       - name
       - userId
       type: object

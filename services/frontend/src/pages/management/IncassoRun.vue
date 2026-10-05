@@ -8,12 +8,14 @@ import {useRoute, useRouter} from "vue-router"
 import CutButton from "@/components/island/CutButton.vue"
 import DateInput from "@/components/island/DateInput.vue"
 import FormField from "@/components/island/FormField.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import ListHead from "@/components/management/ListHead.vue"
+import MandatePanel from "@/components/management/MandatePanel.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import PersonLink from "@/components/management/PersonLink.vue"
@@ -120,6 +122,18 @@ const renamed = computed(() => renamedForIng(chosen.value))
 const dateValid = computed(() => collectionDate.value >= tomorrow)
 const textValid = computed(() => statementText.value.trim() !== "" && statementText.value.length <= STATEMENT_TEXT_MAX)
 const withMandate = computed(() => candidates.value.filter((one) => one.ibanLastTwo).length)
+/* A member left out for want of bank details gets them here, from their paper mandate, and is
+   then read again: with details on file they can be collected from in this run. */
+const detailsFor = ref<IncassoCandidate | null>(null)
+const detailsAdded = async () => {
+  const added = detailsFor.value
+  detailsFor.value = null
+  const plan = await readIncassoPlan(periodId.value)
+  candidates.value = plan
+  const now = plan.find((one) => one.userId === added?.userId)
+  if (now && !now.leftOut) ticked.value = {...ticked.value, [now.userId]: true}
+}
+
 const withoutDetails = computed(() => candidates.value.filter((one) => one.leftOut === IncassoLeftOut.NO_BANK_DETAILS).length)
 
 const {open: previewOpen, loading: previewLoading, error: previewError, preview, show: showPreview} = useEmailPreview()
@@ -313,6 +327,13 @@ const leftOutPairs = computed(() => [
               v-if="leftOutHelp[row.leftOut]"
               class="mg-why"
             >{{ leftOutHelp[row.leftOut] }}</span>
+            <mini-button
+              v-if="row.leftOut === IncassoLeftOut.NO_BANK_DETAILS"
+              :testid="`incasso-run-add-details-${row.userId}`"
+              @click="detailsFor = row"
+            >
+              Add incasso details
+            </mini-button>
           </span>
         </template>
       </management-table>
@@ -620,6 +641,19 @@ const leftOutPairs = computed(() => [
       :preview="preview"
       title="Incasso notification"
     />
+    <modal-dialog
+      :open="detailsFor !== null"
+      testid="incasso-run-details-dialog"
+      :title="`Incasso details of ${detailsFor?.name ?? ''}`"
+      @update:open="detailsFor = null"
+    >
+      <mandate-panel
+        v-if="detailsFor"
+        :membership-id="detailsFor.membershipId"
+        start-open
+        @changed="detailsAdded"
+      />
+    </modal-dialog>
   </management-page>
 </template>
 

@@ -18,6 +18,8 @@ export function alertTitle(alert: Alert): string {
       return `${counted(alert.count, "exception is", "exceptions are")} open`
     case AlertKind.ROLE_AWAITING_TWO_FACTOR:
       return `@${alert.subjectLabel}'s granted role waits on two-factor`
+    case AlertKind.DISCORD_BOT_PERMISSIONS:
+      return `The Discord bot lacks ${counted(alert.count, "permission", "permissions")}: ${alert.subjectLabel}`
   }
 }
 
@@ -36,6 +38,8 @@ export function alertRow(alert: Alert): {name: string; meta: string; from: strin
       return {name: `${counted(alert.count, "exception is", "exceptions are")} open`, meta: "Not resolved yet", from: "Exceptions"}
     case AlertKind.ROLE_AWAITING_TWO_FACTOR:
       return {name: "A role waits on two-factor", meta: `@${alert.subjectLabel}`, from: "Users"}
+    case AlertKind.DISCORD_BOT_PERMISSIONS:
+      return {name: `The bot lacks ${counted(alert.count, "permission", "permissions")}`, meta: alert.subjectLabel ?? "", from: "Discord"}
   }
 }
 
@@ -53,5 +57,7 @@ export function alertLink(alert: Alert): string {
       return "/management/exceptions"
     case AlertKind.ROLE_AWAITING_TWO_FACTOR:
       return `/management/users/${alert.subjectId}`
+    case AlertKind.DISCORD_BOT_PERMISSIONS:
+      return "/management/platforms/discord/bot"
   }
 }

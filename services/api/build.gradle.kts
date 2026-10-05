@@ -87,7 +87,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-    implementation("com.nimbusds:nimbus-jose-jwt:10.9.1")
+    implementation("com.nimbusds:nimbus-jose-jwt:10.10")
     // Nimbus RSAKey.parseFromPEMEncodedObjects needs JcaPEMKeyConverter (bcpkix); bcprov alone is insufficient.
     runtimeOnly("org.bouncycastle:bcpkix-jdk18on:1.85")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")

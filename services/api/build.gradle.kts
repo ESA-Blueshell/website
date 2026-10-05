@@ -145,7 +145,7 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-mariadb:2.0.5")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
     testImplementation("org.springframework.modulith:spring-modulith-core")
-    testImplementation("io.github.classgraph:classgraph:4.8.194")
+    testImplementation("io.github.classgraph:classgraph:4.8.196")
     testImplementation("io.mockk:mockk:1.14.11")
     // H2 in-memory database for OpenAPI spec generation (test-scoped only).
     testImplementation("com.h2database:h2:2.5.250")

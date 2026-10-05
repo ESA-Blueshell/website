@@ -12,6 +12,7 @@ export {boardStops, type Stopped} from "./boardAxis"
 export {boardInRoute} from "./boardInRoute"
 export {
   type BoardStanding,
+  boardCohortKey,
   boardInOffice,
   isCandidate,
   standingOf,

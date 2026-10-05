@@ -2633,6 +2633,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const place = {available: true, listId: null, listName: null, folder: "Committees"}
       return method === "GET" ? answer(route, "findCommitteeBrevo", place) : answer(route, "setCommitteeBrevo", place)
     }
+    if (method === "GET" && path.startsWith("/management/boards/discord/")) {
+      return answer(route, "findBoardDiscord", {available: false, channels: []})
+    }
     if (method === "GET" && /^\/management\/(committees|teams)\/\d+\/discord$/.test(path)) {
       return answer(route, path.includes("/teams/") ? "findTeamDiscord" : "findCommitteeDiscord", {available: false, channels: []})
     }

@@ -83,7 +83,7 @@ describe("the games in Management", () => {
     const wrapper = await mount()
     const bulk = () => wrapper.findComponent({name: "BulkAdd"})
 
-    expect(wrapper.get('[data-testid="game-list-selection"]').text()).toContain("Tick rows to use these")
+    expect(wrapper.get('[data-testid="game-list-selection"]').text()).toContain("0 selected")
     wrapper.findComponent({name: "ManagementTable"}).vm.$emit("selectAll")
     await settle()
     wrapper.findComponent({name: "ManagementTable"}).vm.$emit("clearSelection")
@@ -109,7 +109,7 @@ describe("the games in Management", () => {
     bulk().vm.$emit("done")
     await settle()
     expect(api.findCasualGames).toHaveBeenCalledTimes(1)
-    expect(wrapper.get('[data-testid="game-list-selection"]').text()).toContain("Tick rows to use these")
+    expect(wrapper.get('[data-testid="game-list-selection"]').text()).toContain("0 selected")
     bulk().vm.$emit("update:open", false)
     await settle()
     expect(bulk().props("open")).toBe(false)

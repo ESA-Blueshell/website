@@ -2,7 +2,7 @@
 import CutButton from "@/components/island/CutButton.vue"
 
 /* Under a list whose rows can be ticked: how many are, what can be done with them, and a way to
-   clear. A list that keeps it in view with nothing ticked shows what ticking is for; the actions
+   clear. A list that keeps it in view with nothing ticked says so, "0 selected", and its actions
    wait, disabled, until something is. */
 const {count, noun = "selected", always = false, testid = undefined} = defineProps<{
   count: number
@@ -22,7 +22,7 @@ const emit = defineEmits<{clear: []}>()
     :class="{'selection-bar--idle': count === 0}"
     :data-testid="testid"
   >
-    <span class="selection-bar__n">{{ count > 0 ? `${count} ${noun}` : "Tick rows to use these" }}</span>
+    <span class="selection-bar__n">{{ count }} {{ noun }}</span>
     <span class="selection-bar__gap" />
     <!-- A fieldset, because disabling it disables every action in it at once. -->
     <fieldset

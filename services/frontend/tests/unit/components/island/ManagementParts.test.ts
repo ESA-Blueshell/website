@@ -113,7 +113,7 @@ describe("SelectionBar", () => {
     const idle = mount(SelectionBar, {props: {count: 0, always: true, testid: "sel"}, slots: {default: "<button>Archive</button>"}})
     const busy = mount(SelectionBar, {props: {count: 2, always: true, testid: "sel"}, slots: {default: "<button>Archive</button>"}})
 
-    expect(idle.text()).toContain("Tick rows to use these")
+    expect(idle.text()).toContain("0 selected")
     expect(idle.get("fieldset").attributes("disabled")).toBeDefined()
     expect(idle.find("[data-testid=sel-clear]").exists()).toBe(false)
     expect(busy.get("fieldset").attributes("disabled")).toBeUndefined()

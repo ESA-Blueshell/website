@@ -172,7 +172,7 @@ describe("the Users page", () => {
 
     await wrapper.get('[data-testid="member-manager-list-select-all"]').trigger("click")
     await settle()
-    expect(selection().text()).toContain("Tick rows to use these")
+    expect(selection().text()).toContain("0 selected")
   })
 
   it("takes the people selected to the task page that starts their membership", async () => {

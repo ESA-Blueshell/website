@@ -169,7 +169,7 @@ describe("the Contributions page", () => {
     expect(selection().text()).toContain("3 selected")
     await wrapper.get('[data-testid="contribution-list-select-all"]').trigger("click")
     await settle()
-    expect(selection().text()).toContain("Tick rows to use these")
+    expect(selection().text()).toContain("0 selected")
   })
 
   it("records one member's payment from their own row without a task page, or withdraws it where they paid", async () => {

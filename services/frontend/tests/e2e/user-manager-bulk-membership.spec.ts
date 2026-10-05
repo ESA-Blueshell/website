@@ -62,7 +62,7 @@ test.describe("bulk membership without a selection", () => {
     await page.goto("/management/users")
     await page.getByTestId("member-manager-table").waitFor()
 
-    await expect(page.getByTestId("member-manager-selection")).toContainText("Tick rows to use these")
+    await expect(page.getByTestId("member-manager-selection")).toContainText("0 selected")
     await expect(page.getByTestId("bulk-action-end-membership")).toBeDisabled()
     await page.getByTestId("member-manager-checkbox-1").click()
     await expect(page.getByTestId("bulk-action-end-membership")).toBeEnabled()

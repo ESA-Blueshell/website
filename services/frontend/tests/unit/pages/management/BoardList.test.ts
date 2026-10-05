@@ -138,7 +138,7 @@ describe("the boards in Management", () => {
     bulk().vm.$emit("done")
     await settle()
     expect(api.findCohorts).toHaveBeenCalledTimes(1)
-    expect(wrapper.get('[data-testid="board-list-selection"]').text()).toContain("Tick rows to use these")
+    expect(wrapper.get('[data-testid="board-list-selection"]').text()).toContain("0 selected")
     expect(wrapper.get('[data-testid="board-link-roles"]').element.closest("fieldset")?.disabled).toBe(true)
     bulk().vm.$emit("update:open", false)
     await settle()

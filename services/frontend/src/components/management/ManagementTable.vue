@@ -721,8 +721,13 @@ tbody tr:hover td:first-child::before {
   color: var(--color-chalk);
 }
 
-/* The table's one accent: the head the list is ordered by. */
+/* The table's one accent: the head the list is ordered by. The lit blue in the dark, since the
+   plain brand blue falls short of 4.5:1 on the raised ground at this size. */
 .mg-table__sort--on {
+  color: var(--color-brand-lit);
+}
+
+:where([data-theme="light"]) .mg-table__sort--on {
   color: var(--color-brand-ink);
 }
 

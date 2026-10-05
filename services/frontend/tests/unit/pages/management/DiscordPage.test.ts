@@ -136,7 +136,7 @@ describe("the Discord page", () => {
     expect(glyph("2")).toBe("Public text channel")
     expect(sitecie).toContain("Only @Sitecie")
     const valo = wrapper.get('[data-testid="discord-channel-2"]').text()
-    expect(valo).toContain("Game Valorant")
+    expect(valo).toContain("Valorant, casual channel")
     expect(valo).toContain("Everyone reads, @Member writes")
     expect(wrapper.get('[data-testid="discord-channel-differs-2"]').text()).toBe("Everyone writes")
     expect(wrapper.get('[data-testid="discord-channel-differs-1"]').text()).toBe("No")

@@ -40,8 +40,8 @@ describe("the Discord catalogue words", () => {
   })
 
   it("says what a channel belongs to: its game, what fills its roles, or nothing", () => {
-    expect(belongsTo(channel({game: {code: "VALO", name: "Valorant", kind: "CASUAL"}}), roles)).toBe("Game Valorant")
-    expect(belongsTo(channel({game: {code: "VALO", name: "Valorant", kind: "COMPETITION"}}), roles)).toBe("Esports Valorant")
+    expect(belongsTo(channel({game: {code: "VALO", name: "Valorant", kind: "CASUAL"}}), roles)).toBe("Valorant, casual channel")
+    expect(belongsTo(channel({game: {code: "VALO", name: "Valorant", kind: "COMPETITION"}}), roles)).toBe("Valorant, esports channel")
     expect(belongsTo(channel({roleIds: ["900", "901", "902"]}), roles)).toBe("Sitecie")
     expect(belongsTo(channel({roleIds: ["901"]}), roles)).toBe("Nothing")
   })

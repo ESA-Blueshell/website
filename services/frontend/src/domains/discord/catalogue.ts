@@ -29,7 +29,8 @@ const mention = (role: NamedRole | undefined, id: string) => `@${role?.name ?? i
 
 /** What a channel belongs to: its game, or what fills the roles it opens to. */
 export function belongsTo(channel: CataloguedChannel, roles: Map<string, NamedRole>): string {
-  if (channel.game) return `${channel.game.kind === "COMPETITION" ? "Esports" : "Game"} ${channel.game.name}`
+  // A game can have both: a channel for playing it casually and one for its esports teams.
+  if (channel.game) return `${channel.game.name}, ${channel.game.kind === "COMPETITION" ? "esports" : "casual"} channel`
   const follows = channel.roleIds.map((id) => roles.get(id)?.follows).filter((one): one is string => !!one)
   return follows.length > 0 ? follows.join(", ") : "Nothing"
 }

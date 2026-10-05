@@ -17,6 +17,7 @@ export const COHORT_TYPE_LABELS: Record<CohortType, string> = {
   [CohortType.TEAM_PLAYERS]: "Team players",
   [CohortType.BOARD]: "Board in office",
   [CohortType.KANDI]: "Kandi",
+  [CohortType.BOARD_YEAR_MEMBERS]: "Board of one year",
 }
 
 export function cohortTypeLabel(type: CohortType): string {

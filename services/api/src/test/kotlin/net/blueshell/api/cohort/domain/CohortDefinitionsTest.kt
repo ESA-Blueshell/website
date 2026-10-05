@@ -123,6 +123,7 @@ class CohortDefinitionsTest {
                 TeamPlayersProvider(mockk()),
                 BoardProvider(mockk()),
                 KandiProvider(mockk()),
+                BoardYearProvider(mockk()),
             )
 
         assertThat(providers.map { it.type }).containsExactlyInAnyOrder(*CohortType.entries.toTypedArray())
@@ -138,6 +139,7 @@ class CohortDefinitionsTest {
                 CohortType.TEAM_PLAYERS to CohortCategory.TEAMS,
                 CohortType.BOARD to CohortCategory.MEMBERS,
                 CohortType.KANDI to CohortCategory.MEMBERS,
+                CohortType.BOARD_YEAR_MEMBERS to CohortCategory.MEMBERS,
             ),
         )
     }

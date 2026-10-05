@@ -27,6 +27,6 @@ object CohortFolders {
             CohortType.ACTIVISTS -> ACTIVISTS
             CohortType.CURRENT_MEMBERS -> MEMBERS
             CohortType.TEAM_PLAYERS -> TEAMS
-            CohortType.BOARD, CohortType.KANDI -> BOARD
+            CohortType.BOARD, CohortType.KANDI, CohortType.BOARD_YEAR_MEMBERS -> BOARD
         }
 }

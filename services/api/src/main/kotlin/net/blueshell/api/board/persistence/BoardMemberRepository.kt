@@ -111,4 +111,10 @@ interface BoardMemberRepository : BaseRepository<BoardMember, Long> {
     fun findUserIdsServingOn(
         @Param("day") day: LocalDate,
     ): List<Long>
+
+    /** Every board with somebody on it that has taken office by [day]; the candidate board is not one yet. */
+    @Query("SELECT DISTINCT bm.board FROM BoardMember bm WHERE bm.board.startDate <= :day")
+    fun findBoardsInOfficeBy(
+        @Param("day") day: LocalDate,
+    ): List<Board>
 }

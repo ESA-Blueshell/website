@@ -23,14 +23,14 @@ const STANDING: Record<BoardStanding, {kind: "in-step" | "not-created" | "not-co
   past: {kind: "not-compared", word: "Handed over"},
 }
 
-/* The role and the list follow the standing, not the board's record: the board in office holds
-   the board's, the candidate board the kandi's, and a board that handed over holds neither. */
+/* The role and the list follow the standing: the board in office holds the board's, the candidate
+   board the kandi's, and a board that handed over the role of its own years. */
 const cohorts = ref<CohortSummary[]>([])
-const COHORT_OF: Partial<Record<BoardStanding, string>> = {"in office": "BOARD", candidate: "KANDI"}
-const targetsOf = (board: Board): SummaryTarget[] => {
-  const key = COHORT_OF[standingOf(board, boards.value)]
-  return (key && cohorts.value.find((one) => one.definitionKey === key)?.targets) || []
+const cohortOf = (board: Board): string => {
+  const standing = standingOf(board, boards.value)
+  return standing === "in office" ? "BOARD" : standing === "candidate" ? "KANDI" : `BOARD_YEAR_MEMBERS:${board.id}`
 }
+const targetsOf = (board: Board): SummaryTarget[] => cohorts.value.find((one) => one.definitionKey === cohortOf(board))?.targets ?? []
 const SYSTEMS = [TargetSystem.DISCORD, TargetSystem.BREVO]
 
 onMounted(async () => {
@@ -133,7 +133,7 @@ const people = (board: Board) => `${board.members.length} ${board.members.length
         #[system.toLowerCase()]="{row}"
       >
         <target-mark
-          :quiet="standingOf(row, boards) === 'past'"
+          :quiet="system === TargetSystem.BREVO && standingOf(row, boards) === 'past'"
           :system="system"
           :targets="targetsOf(row)"
           :testid="`board-${system.toLowerCase()}-${row.number}`"

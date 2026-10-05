@@ -35,6 +35,7 @@ describe("the boards in Management", () => {
     api.findCohorts.mockResolvedValue({status: 200, data: [
       cohort("BOARD", [{system: "DISCORD", label: "Board", made: true, externalId: "77"}, {system: "BREVO", label: "Board list", made: true, externalId: "5"}]),
       cohort("KANDI", [{system: "DISCORD", label: "Kandi", made: true, externalId: "78"}]),
+      cohort("BOARD_YEAR_MEMBERS:10", [{system: "DISCORD", label: "Board 2024-2025", made: true, externalId: "70"}]),
     ]})
   })
 
@@ -59,7 +60,7 @@ describe("the boards in Management", () => {
     expect(wrapper.get('[data-testid="board-row-10"] a').attributes("to")).toBe("/management/board/10")
   })
 
-  it("links the role and list of the board in office and of the candidate board, and none for a board that handed over", async () => {
+  it("links the role and list of the board in office and of the candidate board, and the role of its years for a board that handed over", async () => {
     const wrapper = await mount()
 
     expect(wrapper.get('[data-testid="board-discord-11"]').text()).toBe("@Board")
@@ -67,7 +68,9 @@ describe("the boards in Management", () => {
     expect(wrapper.get('[data-testid="board-brevo-11"]').attributes("to")).toBe("/management/platforms/brevo/lists/5")
     expect(wrapper.get('[data-testid="board-discord-12"]').attributes("to")).toBe("/management/platforms/discord/roles/78")
     expect(wrapper.get('[data-testid="board-brevo-12"]').text()).toBe("No list")
-    expect(wrapper.get('[data-testid="board-discord-10"]').text()).toBe("No role")
+    expect(wrapper.get('[data-testid="board-discord-10"]').text()).toBe("@Board 2024-2025")
+    expect(wrapper.get('[data-testid="board-discord-10"]').attributes("to")).toBe("/management/platforms/discord/roles/70")
+    expect(wrapper.get('[data-testid="board-brevo-10"]').text()).toBe("No list")
 
     api.findCohorts.mockRejectedValue(new Error("offline"))
     expect((await mount()).get('[data-testid="board-discord-11"]').text()).toBe("No role")

@@ -10,7 +10,7 @@ import net.blueshell.api.discord.api.KeptChannelKind
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.stereotype.Service
 
-/** A committee or team with no role yet, and the existing role and channels named as it is. */
+/** A committee, team or board year with no role yet, and the existing role and channels named as it is. */
 data class AdoptionMatch(
     val key: String,
     val label: String,
@@ -21,7 +21,7 @@ data class AdoptionMatch(
 )
 
 /**
- * Proposes linking committees and teams to the roles and channels already in the server by name, and
+ * Proposes linking committees, teams and board years to the roles and channels already in the server by name, and
  * links the ones the board confirms. Only roles the site could keep are proposed, so the claim bot's
  * never are, and a name two roles share is proposed for neither.
  */
@@ -83,6 +83,6 @@ class DiscordAdoption(
     private fun plain(name: String) = name.lowercase().filter { it.isLetterOrDigit() }
 
     private companion object {
-        val ADOPTED = setOf(CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS)
+        val ADOPTED = setOf(CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS, CohortType.BOARD_YEAR_MEMBERS)
     }
 }

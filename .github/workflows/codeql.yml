@@ -32,9 +32,11 @@ on:
     # avoid the cron stampede.
     - cron: '17 6 * * 1'
 
+# A pull request's newer push supersedes its older scan. A run on main is
+# never grouped, so it is never cancelled and every commit keeps its analysis.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read

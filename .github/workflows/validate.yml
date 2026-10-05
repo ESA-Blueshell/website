@@ -26,14 +26,11 @@ on:
   merge_group:
   workflow_dispatch:
 
-# The pull request, as the other PR-triggered workflows group themselves; the
-# branch when a run is dispatched, which has no pull request to name.
-#
-# A merge queue entry is never cancelled: its run is the only evidence the
-# queue has, and cancelling it fails the merge rather than superseding it.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.merge_group.head_ref || github.event.pull_request.number || github.ref_name }}
-  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
+# No concurrency group, so a run is never cancelled. Even with
+# cancel-in-progress off, a group cancels a queued run once a newer one queues
+# behind it, and pr-report then records that cancellation on the default
+# branch. A superseded run finishes instead, and pr-report skips a run that is
+# no longer its pull request's head, so the newest commit's report stands.
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -891,8 +888,8 @@ jobs:
       # is the one thing selectivity could quietly break.
       #
       # Neither succeeding for any other reason is not that: a failed suite
-      # uploads nothing and reports itself, and a cancelled one is a
-      # superseded run. There is no coverage to read either way, so this stops
+      # uploads nothing and reports itself, and a cancelled one was stopped by
+      # hand. There is no coverage to read either way, so this stops
       # rather than failing a second time for the first job's reason.
       - name: Refuse a measured change no suite measured
         id: measurable

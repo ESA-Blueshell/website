@@ -8,9 +8,9 @@ What runs, when, and how to read the result.
 system-test shards, frontend unit and end-to-end, typecheck, lint, image builds. It triggers on
 `pull_request`. The header comment in `.github/workflows/validate.yml` says why.
 
-So **pushing a branch runs nothing**. Open the PR and the suite starts; push again and the run
-in flight is superseded by one on the new head. To validate a branch with no PR open, ask for a
-run:
+So **pushing a branch runs nothing**. Open the PR and the suite starts; push again and a second
+run starts on the new head. The first is never cancelled: it finishes, and its report is dropped
+because its commit is no longer the head. To validate a branch with no PR open, ask for a run:
 
 ```sh
 gh workflow run validate.yml --ref <branch>

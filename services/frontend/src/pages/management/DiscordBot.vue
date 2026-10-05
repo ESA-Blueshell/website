@@ -10,14 +10,14 @@ import StateMark from "@/components/island/StateMark.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import {type BotPermission, type BotStanding, DISCORD_TABS, botSteps, readBotStanding} from "@/domains/discord"
+import {type BotGrant, type BotStanding, DISCORD_TABS, botSteps, readBotStanding} from "@/domains/discord"
 
 defineOptions({name: "DiscordBotPage"})
 
 const standing = ref<BotStanding | null>(null)
 const loaded = ref(false)
 
-const COLUMNS: TableColumn<BotPermission>[] = [
+const COLUMNS: TableColumn<BotGrant>[] = [
   {key: "name", label: "Permission", wrap: true, sortBy: (one) => one.name},
   {key: "why", label: "Needed to", wrap: true, sortBy: (one) => one.neededFor},
   {key: "state", label: "State", sortBy: (one) => one.granted},

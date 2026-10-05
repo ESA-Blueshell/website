@@ -768,7 +768,7 @@ components:
       - updatedAt
       - version
       type: object
-    BotPermission:
+    BotGrant:
       properties:
         granted:
           type: boolean
@@ -808,7 +808,7 @@ components:
           type: boolean
         permissions:
           items:
-            $ref: '#/components/schemas/BotPermission'
+            $ref: '#/components/schemas/BotGrant'
           type: array
       required:
       - above

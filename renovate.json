@@ -13,8 +13,9 @@
   "labels": [
     "dependencies"
   ],
-  "prConcurrentLimit": 8,
-  "branchConcurrentLimit": 8,
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 20,
+  "branchConcurrentLimit": 20,
   "rebaseWhen": "conflicted",
   "ignorePaths": [
     "**/node_modules/**",
@@ -35,7 +36,9 @@
     ]
   },
   "vulnerabilityAlerts": {
+    "description": "A security fix skips the cooldown, so it never merges itself: a release that has not aged gets a person instead.",
     "enabled": true,
+    "automerge": false,
     "labels": [
       "dependencies",
       "security"
@@ -74,22 +77,10 @@
   ],
   "packageRules": [
     {
-      "description": "A major bump needs code changes, so it never joins a group. Dashboard approval keeps it out of the queue until someone picks it up.",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "dependencyDashboardApproval": true
-    },
-    {
-      "description": "Frontend minor and patch updates ride in one pull request, the way the Dependabot frontend group did.",
+      "description": "No rule here sets a groupName, so every dependency gets its own pull request and a young or failing one holds back nothing else. The only sets left are the ones Renovate builds itself: a monorepo's packages and a shared Gradle version variable, which break when they move apart.",
       "matchManagers": [
         "npm"
       ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "frontend dependencies",
       "addLabels": [
         "javascript"
       ]
@@ -99,11 +90,6 @@
         "gradle",
         "gradle-wrapper"
       ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "gradle dependencies",
       "addLabels": [
         "java"
       ]
@@ -114,7 +100,6 @@
         "github-actions"
       ],
       "pinDigests": true,
-      "groupName": "github actions dependencies",
       "addLabels": [
         "github_actions",
         "ci"
@@ -125,26 +110,43 @@
         "dockerfile",
         "docker-compose"
       ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "digest"
-      ],
-      "groupName": "container base images",
       "addLabels": [
         "docker"
       ]
     },
     {
-      "description": "A patch update merges itself once every required check passes. Minor and major keep waiting for a person, and the cluster rule below turns this back off for the Flux tree.",
+      "description": "A major bump needs code changes. Dashboard approval keeps it out of the queue until someone picks it up, and the automerge rule below leaves it out.",
       "matchUpdateTypes": [
-        "patch"
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Anything short of a major merges itself once every required check passes. Lock file maintenance stays out: it pulls transitive releases that have not waited out the cooldown. The cluster rule below turns this back off for the Flux tree.",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pin",
+        "pinDigest"
       ],
       "automerge": true,
       "platformAutomerge": true
     },
     {
-      "description": "A cluster chart or controller image reaches production the moment it merges, so each one gets its own reviewed pull request instead of a group.",
+      "description": "These are the paths of the ignore bucket in .github/buckets.yml that Renovate updates: every workflow but validate.yml, and the dev stack. A pull request touching only them runs no suite, so it would merge on age alone. Each gets a reviewed pull request, and a path added to that bucket belongs here too.",
+      "matchFileNames": [
+        ".github/workflows/**",
+        "!.github/workflows/validate.yml",
+        "docker-compose.yml",
+        "docker-compose.oidc-e2e.yml",
+        "services/*/docker-compose.yml",
+        "services/stalwart/**"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "A cluster chart or controller image reaches production the moment it merges, so each one gets a reviewed pull request and never merges itself.",
       "matchFileNames": [
         "platform/cluster/flux/**"
       ],
@@ -187,7 +189,6 @@
       "matchDepTypes": [
         "first-party-client"
       ],
-      "groupName": "blueshell generated clients",
       "minimumReleaseAge": null
     },
     {

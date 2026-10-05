@@ -38,6 +38,8 @@ system:
 
 # What no suite reads. `Workflow checks` runs on every pull request, so a
 # workflow other than validate.yml needs no bucket of its own.
+# renovate.json turns automerge off for the paths here that Renovate updates,
+# since green checks say nothing about them. A new one goes there too.
 ignore:
   - '.github/**'
   - '!.github/workflows/validate.yml'

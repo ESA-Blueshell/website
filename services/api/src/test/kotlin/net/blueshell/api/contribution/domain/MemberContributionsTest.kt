@@ -5,7 +5,9 @@ import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
+import net.blueshell.api.contribution.web.BankAccountResponse
 import net.blueshell.api.contribution.web.MemberContributionController
+import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.security.CurrentUser
@@ -32,12 +34,19 @@ class MemberContributionsTest {
     private val notifications: IncassoNotificationRepository = mock()
     private val firsts: FirstContributions = mock()
     private val currentUser: CurrentUserProvider = mock()
+    private val bank = BankProperties(iban = "NL00 TEST 0000 0000 00", bic = "TESTNL2A", accountName = "Test Vereniging")
     private val controller =
         MemberContributionController(
             MemberContributions(periods, memberships, contributions, reminders, notifications),
             firsts,
             currentUser,
+            PaymentChannels(bank, "https://site.test"),
         )
+
+    @Test
+    fun `answers the account a member transfers the contribution to`() {
+        assertThat(controller.findBankAccount()).isEqualTo(BankAccountResponse("NL00 TEST 0000 0000 00", "TESTNL2A", "Test Vereniging"))
+    }
 
     @Test
     fun `lists each period the person was a member in, newest first, with the fee, the payment and the last email`() {

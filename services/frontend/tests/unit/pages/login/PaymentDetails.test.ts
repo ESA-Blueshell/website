@@ -21,6 +21,11 @@ vi.mock("@/components/account/IncassoSetUp.vue", async () => {
   return {default: defineComponent({name: "IncassoSetUp", props: {addressId: {type: Number, default: null}}, setup: () => () => null})}
 })
 
+vi.mock("@/components/account/ManualPayment.vue", async () => {
+  const {defineComponent} = await import("vue")
+  return {default: defineComponent({name: "ManualPayment", setup: () => () => null})}
+})
+
 vi.mock("@/components/account/OwnContributions.vue", async () => {
   const {defineComponent} = await import("vue")
   return {default: defineComponent({name: "OwnContributions", setup: () => () => null})}
@@ -35,6 +40,11 @@ describe("the account's Payment details page", () => {
     expect(wrapper.getComponent({name: "AccountFrame"}).props("heading")).toBe("Payment details")
     expect(wrapper.getComponent({name: "IncassoSetUp"}).props("addressId")).toBe(12)
     expect(wrapper.findComponent({name: "OwnContributions"}).exists()).toBe(true)
+    // Incasso stands under Automated payment, and paying by hand under Manual payment.
+    expect(wrapper.get('[data-testid="payment-automated"]').text()).toContain("Automated payment")
+    expect(wrapper.get('[data-testid="payment-automated"]').findComponent({name: "IncassoSetUp"}).exists()).toBe(true)
+    expect(wrapper.get('[data-testid="payment-manual"]').text()).toContain("Manual payment")
+    expect(wrapper.get('[data-testid="payment-manual"]').findComponent({name: "ManualPayment"}).exists()).toBe(true)
   })
 
   it("hands on no address where none is on file, and nothing to somebody not signed in", async () => {

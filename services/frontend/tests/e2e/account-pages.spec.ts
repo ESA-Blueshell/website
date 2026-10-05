@@ -43,6 +43,7 @@ test.describe("the account pages", () => {
     await expect(incasso.getByTestId("incasso-none")).toContainText("Incasso is automatic")
     await expect(incasso.getByTestId("incasso-open")).toHaveText("Set up incasso")
     await expect(page.getByTestId("own-contribution-201")).toContainText("Paid 15 Jul 2025")
+    await expect(page.getByTestId("payment-manual")).toContainText("NL19 INGB 0008 0964 62")
     await incasso.getByTestId("incasso-open").click()
     await incasso.getByLabel("IBAN").fill("NL91 ABNA 0417 1643 00")
     await incasso.getByLabel("Account holder").fill("Mock User")

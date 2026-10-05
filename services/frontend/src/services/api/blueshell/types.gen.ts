@@ -274,6 +274,12 @@ export type BackupCodesResponse = {
     codes: Array<string>;
 };
 
+export type BankAccountResponse = {
+    accountName: string;
+    bic: string;
+    iban: string;
+};
+
 export type BlogResponse = {
     createdAt: string;
     html: string;
@@ -5938,6 +5944,47 @@ export type CreateContributionResponses = {
 };
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
+
+export type FindBankAccountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contributions/bank-account';
+};
+
+export type FindBankAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBankAccountError = FindBankAccountErrors[keyof FindBankAccountErrors];
+
+export type FindBankAccountResponses = {
+    /**
+     * OK
+     */
+    200: BankAccountResponse;
+};
+
+export type FindBankAccountResponse = FindBankAccountResponses[keyof FindBankAccountResponses];
 
 export type ReadContributionEmailData = {
     body?: never;

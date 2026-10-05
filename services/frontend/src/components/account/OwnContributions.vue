@@ -2,6 +2,7 @@
 /* The reader's own contributions: each period they were a member in, what it cost and whether it
    is paid, so they can keep track without asking the treasurer. */
 import {onMounted, ref} from "vue"
+import SectionTitle from "@/components/account/SectionTitle.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import {type MemberPeriodContribution, listOwnContributions} from "@/domains/contribution"
@@ -32,13 +33,7 @@ onMounted(async () => {
     class="own-contributions"
     data-testid="own-contributions"
   >
-    <p
-      aria-level="2"
-      class="own-contributions__title"
-      role="heading"
-    >
-      Your contributions
-    </p>
+    <section-title>Your contributions</section-title>
     <p
       v-if="periods.length === 0"
       class="own-contributions__note"
@@ -80,20 +75,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  margin-top: 2.5rem;
-}
-
-/* Drawn here, and not as an h2: the page stands outside the island, where the site's own heading
-   styles would take it over. */
-.own-contributions__title {
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
 }
 
 .own-contributions__note {

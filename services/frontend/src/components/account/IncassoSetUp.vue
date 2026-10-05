@@ -91,8 +91,8 @@ onMounted(async () => {
       data-testid="incasso-none"
     >
       Incasso is automatic: the association collects your contribution from your bank account once a contribution
-      period, and emails you before it does. Without incasso you pay by hand: the treasurer sends you a payment request
-      and you transfer the money yourself.
+      period, and emails you before it does. Without incasso you pay by hand, after a payment request from the
+      treasurer.
     </p>
     <p
       v-if="saved"

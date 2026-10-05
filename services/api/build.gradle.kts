@@ -103,7 +103,7 @@ dependencies {
     implementation("org.springframework.data:spring-data-jpa")
     implementation("jakarta.persistence:jakarta.persistence-api")
 
-    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.38")
+    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.40")
     // BlogHtmlSanitizer's safelist. It arrived through flexmark until flexmark went; pinned where it resolved.
     implementation("org.jsoup:jsoup:1.15.4")
 

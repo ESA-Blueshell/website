@@ -148,7 +148,7 @@ dependencies {
     testImplementation("io.github.classgraph:classgraph:4.8.194")
     testImplementation("io.mockk:mockk:1.14.11")
     // H2 in-memory database for OpenAPI spec generation (test-scoped only).
-    testImplementation("com.h2database:h2:2.5.250")
+    testImplementation("com.h2database:h2:2.5.252")
 
     // Shared test-fixture consumers expose main starter deps so factories
     // and support classes compile against Spring / JPA / Jackson / Security.

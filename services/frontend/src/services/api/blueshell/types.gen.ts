@@ -2023,6 +2023,10 @@ export type IncassoCandidate = {
     mandateReference?: string | null;
     mandateSignedOn?: string | null;
     memberSince: string;
+    /**
+     * The membership the member is judged on, which their incasso details are recorded against.
+     */
+    membershipId: number;
     name: string;
     userId: number;
 };

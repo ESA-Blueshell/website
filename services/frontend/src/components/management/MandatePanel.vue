@@ -18,7 +18,11 @@ import {formatDate, formatDay} from "@/utils/timestamps"
 
 defineOptions({name: "MandatePanel"})
 
-const {membershipId} = defineProps<{membershipId: number}>()
+const {membershipId, startOpen = false} = defineProps<{
+  membershipId: number
+  /** Opens on the form, where the panel is asked for in order to fill it in. */
+  startOpen?: boolean
+}>()
 const emit = defineEmits<{changed: []}>()
 
 const WORDS: Record<IncassoStanding, string> = {
@@ -28,7 +32,7 @@ const WORDS: Record<IncassoStanding, string> = {
 }
 
 const mandate = ref<MandateResponse | null>(null)
-const open = ref(false)
+const open = ref(startOpen)
 const iban = ref("")
 const holder = ref("")
 const signedOn = ref(new Date().toISOString().slice(0, 10))

@@ -34,7 +34,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 }))
 
 const candidate = (userId: number, name: string, fields: Record<string, unknown> = {}) => ({
-  userId, name, ingName: name, memberSince: "2025-09-01", feeType: BulkFeeType.FULL_YEAR_FEE, amount: 25,
+  userId, membershipId: 700 + userId, name, ingName: name, memberSince: "2025-09-01", feeType: BulkFeeType.FULL_YEAR_FEE, amount: 25,
   ibanCountry: "NL", ibanLastTwo: `${userId}${userId}`.slice(0, 2), mandateReference: `BLUESHELL-${userId}`, mandateSignedOn: "2025-09-03",
   leftOut: null, lastNotifiedOn: null, ...fields,
 })
@@ -125,6 +125,34 @@ describe("the incasso task", () => {
     expect(wrapper.get('[data-testid="incasso-run-done"]').text()).toContain("1 incasso notification sent")
     expect(wrapper.get('[data-testid="incasso-run-waiting"]').text()).toContain("put the collection in ING")
     expect(mockReplace).toHaveBeenCalledWith("/management/contributions/2/incasso/11")
+  })
+
+  it("records the incasso details of a member left out for want of them, and reads the members again", async () => {
+    const wrapper = await mount()
+    const dialog = () => wrapper.findAllComponents({name: "ModalDialog"}).find((one) => one.props("testid") === "incasso-run-details-dialog")!
+
+    expect(wrapper.find('[data-testid="incasso-run-add-details-4"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="incasso-run-add-details-3"]').trigger("click")
+    await settle()
+    expect(dialog().props("open")).toBe(true)
+    expect(dialog().props("title")).toBe("Incasso details of Lotte Meijer")
+    const panel = wrapper.findComponent({name: "MandatePanel"})
+    expect(panel.props()).toMatchObject({membershipId: 703, startOpen: true})
+    dialog().vm.$emit("update:open", false)
+    await settle()
+    expect(dialog().props("open")).toBe(false)
+
+    await wrapper.get('[data-testid="incasso-run-add-details-3"]').trigger("click")
+    await settle()
+    api.planIncasso.mockResolvedValue({status: 200, data: [candidate(1, "Mila Vries"), candidate(3, "Lotte Meijer")]})
+    wrapper.findComponent({name: "MandatePanel"}).vm.$emit("changed")
+    await settle()
+
+    expect(api.planIncasso).toHaveBeenCalledTimes(2)
+    expect(dialog().props("open")).toBe(false)
+    // With details on file she is collected from, ticked like the others.
+    expect(wrapper.get('[data-testid="incasso-run-with-mandate"]').text()).toBe("2 with a mandate")
+    expect(wrapper.find('[data-testid="incasso-run-left-out-3"]').exists()).toBe(false)
   })
 
   it("leaves out who is unticked, and says why a run was refused", async () => {

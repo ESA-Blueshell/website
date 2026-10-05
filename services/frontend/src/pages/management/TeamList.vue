@@ -69,9 +69,7 @@ const facts = computed(() => {
 /* The teams are shown only once their fieldings are known: a team drawn before that reads as never
    fielded and has no page to open. Where the one read gives no answer, each team is asked for its own. */
 onMounted(async () => {
-  const [read, all, summaries, catalogue] = await Promise.all([
-    loadTeams(), loadFieldings(), fetchCohorts().catch(() => []), listCatalogue(), ready,
-  ])
+  const [read, all, summaries, catalogue] = await Promise.all([loadTeams(), loadFieldings(), fetchCohorts(), listCatalogue(), ready])
   fieldings.value = all ?? new Map(await Promise.all(read.map(async (team) => [team.id, await loadTeamSeasons(team.id)] as const)))
   cohorts.value = summaries
   channels.value = catalogue

@@ -1,5 +1,6 @@
 package net.blueshell.api.contribution.web
 
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.contribution.domain.FirstContribution
 import net.blueshell.api.contribution.domain.FirstContributions
@@ -53,7 +54,7 @@ class MemberContributionController(
     ): List<MemberPeriodContribution> = contributions.of(userId)
 }
 
-/** The association's own bank account, as a member needs it to make a transfer. */
+@Schema(description = "The association's own bank account, as a member needs it to make a transfer")
 data class BankAccountResponse(
     val iban: String,
     val bic: String,

@@ -274,6 +274,9 @@ export type BackupCodesResponse = {
     codes: Array<string>;
 };
 
+/**
+ * The association's own bank account, as a member needs it to make a transfer
+ */
 export type BankAccountResponse = {
     accountName: string;
     bic: string;

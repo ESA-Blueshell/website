@@ -864,6 +864,16 @@ Board, the old board's members leave Board, and nobody has to act.
 
 _Avoid_: candidate board in the interface, new board.
 
+### Board year
+
+Everybody who sat on one board, named by its years: **Board 2024-2025**. A cohort for each
+board that has taken office, with a Discord role of the same name and no Brevo list. The
+board in office holds **@Board** as well; the board year's role is the one its people keep
+after they hand over. The roles the server already has for past years are linked by name
+from the Discord page, as a committee's are.
+
+_Avoid_: old board, past board in the interface.
+
 ## Writing
 
 ### Description

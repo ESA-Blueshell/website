@@ -12,16 +12,16 @@ class DiscordBotAlertsTest {
     private val standing: BotStanding = mock()
     private val alerts = DiscordBotAlerts(standing)
 
-    private fun read(vararg permissions: BotPermission) =
+    private fun read(vararg permissions: BotGrant) =
         BotStandingResult(true, true, true, null, emptyList(), emptyList(), permissions.toList())
 
     @Test
     fun `tells the board which permissions the bot lacks, under a key that changes with them`() {
         whenever(standing.read()).thenReturn(
             read(
-                BotPermission("View Channels", "Read the channels", true),
-                BotPermission("Manage Roles", "Make a role", false),
-                BotPermission("Create Invite", "Make the invite", false),
+                BotGrant("View Channels", "Read the channels", true),
+                BotGrant("Manage Roles", "Make a role", false),
+                BotGrant("Create Invite", "Make the invite", false),
             ),
         )
 
@@ -40,7 +40,7 @@ class DiscordBotAlertsTest {
 
     @Test
     fun `says nothing while the bot holds every permission, or is not connected`() {
-        whenever(standing.read()).thenReturn(read(BotPermission("View Channels", "Read the channels", true)))
+        whenever(standing.read()).thenReturn(read(BotGrant("View Channels", "Read the channels", true)))
         assertThat(alerts.raised()).isEmpty()
 
         whenever(standing.read()).thenReturn(BotStandingResult(false, false, false, null, emptyList(), emptyList()))

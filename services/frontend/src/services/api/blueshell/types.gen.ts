@@ -416,7 +416,7 @@ export type BoardResponse = {
     version: number;
 };
 
-export type BotPermission = {
+export type BotGrant = {
     granted: boolean;
     name: string;
     /**
@@ -433,7 +433,7 @@ export type BotStandingResult = {
     hidden: Array<string>;
     manageChannels: boolean;
     manageRoles: boolean;
-    permissions: Array<BotPermission>;
+    permissions: Array<BotGrant>;
 };
 
 export type BrevoPlace = {

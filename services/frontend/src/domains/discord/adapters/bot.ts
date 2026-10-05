@@ -1,8 +1,8 @@
 /** What the bot may do on the server, read through the api. */
-import {type BotPermission, type BotStandingResult, findBotStanding} from "@/services/api"
+import {type BotGrant, type BotStandingResult, findBotStanding} from "@/services/api"
 import {readOr} from "@/utils/answers"
 
-export type {BotPermission}
+export type {BotGrant}
 export type BotStanding = BotStandingResult
 
 /** The bot's standing, or nothing where it could not be read. A bot that is away reads as not connected. */

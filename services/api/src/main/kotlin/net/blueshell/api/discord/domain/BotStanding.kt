@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 /** One permission the site's work on Discord needs, by the name Discord's own settings give it. */
-@Schema(name = "BotPermission")
-data class BotPermission(
+@Schema(name = "BotGrant")
+data class BotGrant(
     val name: String,
     @field:Schema(description = "What the site cannot do without it.")
     val neededFor: String,
@@ -31,7 +31,7 @@ data class BotStandingResult(
     /** The roles the role-claim bot hands out, which the site never adopts. */
     val claimed: List<DiscordRole>,
     /** Every permission the site's work needs, and whether the bot holds it in the server. */
-    val permissions: List<BotPermission> = emptyList(),
+    val permissions: List<BotGrant> = emptyList(),
     /** The channels the bot cannot see, which the site can neither read nor change. */
     val hidden: List<String> = emptyList(),
 )
@@ -60,7 +60,7 @@ class BotStanding(
             botRole = bot.roles.firstOrNull()?.let(::describedRole),
             above = keepable.filterNot(bot::canInteract).map(::describedRole),
             claimed = guild.roles.filter { it.id in claimRoleIds }.map(::describedRole),
-            permissions = NEEDED.map { BotPermission(it.name, it.why, bot.hasPermission(it.permission)) },
+            permissions = NEEDED.map { BotGrant(it.name, it.why, bot.hasPermission(it.permission)) },
             hidden = guild.channels.filterNot { bot.hasPermission(it, Permission.VIEW_CHANNEL) }.map { it.name },
         )
     }

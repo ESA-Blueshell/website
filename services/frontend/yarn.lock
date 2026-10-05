@@ -931,16 +931,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hey-api/client-axios@npm:0.9.1":
-  version: 0.9.1
-  resolution: "@hey-api/client-axios@npm:0.9.1"
-  peerDependencies:
-    "@hey-api/openapi-ts": < 2
-    axios: ">= 1.0.0 < 2"
-  checksum: 10c0/61cca384edcb1b1a877554d82846837a907b93380c1bee1725b41b048619115d60a5e2405980e7df1e2f0d318a8bc750248f6d2672a5a0f398fcba3b639a8f1c
-  languageName: node
-  linkType: hard
-
 "@hey-api/codegen-core@npm:0.9.1":
   version: 0.9.1
   resolution: "@hey-api/codegen-core@npm:0.9.1"
@@ -2970,7 +2960,6 @@ __metadata:
     "@codemirror/state": "npm:^6.7.5"
     "@codemirror/view": "npm:^6.43.12"
     "@eslint/js": "npm:^10.0.1"
-    "@hey-api/client-axios": "npm:0.9.1"
     "@hey-api/openapi-ts": "npm:0.99.0"
     "@iconify-json/noto": "npm:^1.2.8"
     "@lezer/highlight": "npm:^1.2.3"

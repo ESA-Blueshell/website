@@ -130,8 +130,7 @@ else stays deterministic.
 
 ### HTTP & API
 - **Axios 1.13.5** - HTTP client
-- **@hey-api/openapi-ts 0.92.4** - OpenAPI code generator
-- **@hey-api/client-axios 0.9.1** - OpenAPI Axios client
+- **@hey-api/openapi-ts 0.92.4** - OpenAPI code generator, which writes the Axios client into the generated code
 
 ### Form Handling & Validation
 - **VeeValidate 4.15.1** - Form validation framework

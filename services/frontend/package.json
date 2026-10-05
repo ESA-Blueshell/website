@@ -25,7 +25,6 @@
     "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.7.5",
     "@codemirror/view": "^6.43.12",
-    "@hey-api/client-axios": "0.9.1",
     "@lezer/highlight": "^1.2.3",
     "@lezer/markdown": "^1.7.2",
     "@mdi/font": "^7.4.47",

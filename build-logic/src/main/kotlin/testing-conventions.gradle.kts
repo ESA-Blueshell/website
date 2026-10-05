@@ -36,7 +36,7 @@ fun Task.dependsOnUnlessMerged(producer: Any) {
 }
 
 jacoco {
-    toolVersion = "0.8.14"
+    toolVersion = "0.8.15"
 }
 
 // Unit tests live in src/test/; integration tests live in src/integrationTest/.

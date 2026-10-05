@@ -26,7 +26,7 @@ dependencies {
     testImplementation("tools.jackson.module:jackson-module-kotlin:3.2.2")
 
     testImplementation("io.rest-assured:rest-assured:6.0.1")
-    testImplementation("com.microsoft.playwright:playwright:1.62.0")
+    testImplementation("com.microsoft.playwright:playwright:1.63.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testImplementation("org.assertj:assertj-core:3.27.7")

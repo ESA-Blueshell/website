@@ -192,7 +192,7 @@ spec:
       # owned by systemd-tmpfiles on the node).
       initContainers:
         - name: storage-perms
-          image: busybox:1.37-musl
+          image: busybox:1.38-musl
           command:
             - sh
             - -c

@@ -62,7 +62,7 @@ spec:
       # carry-over PVC on the very first boot of v0.16.
       initContainers:
         - name: stalwart-data-perms
-          image: busybox:1.37-musl
+          image: busybox:1.38-musl
           command:
             - sh
             - -c

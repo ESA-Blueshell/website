@@ -9,6 +9,7 @@ import {
   deleteContribution,
   findContributionsByPeriodId,
   findMemberContributions,
+  findOwnContributions,
   findPeriodContributions,
   type MemberPeriodContribution,
   type PeriodContributionsView,
@@ -25,6 +26,9 @@ const {accepted} = refusalReader({})
 /** Newest period first, or none where they could not be read. */
 export const listMemberContributions = (userId: number): Promise<MemberPeriodContribution[]> =>
   readOr(findMemberContributions({path: {userId}}), [])
+
+/** The reader's own periods, newest first, or none where they could not be read. */
+export const listOwnContributions = (): Promise<MemberPeriodContribution[]> => readOr(findOwnContributions(), [])
 
 /** Records that the person paid for the period. */
 export const recordPayment = (userId: number, contributionPeriodId: number): Promise<{ok: true} | Refused> =>

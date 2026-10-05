@@ -114,7 +114,7 @@
               data-testid="membership-incasso-step"
             >
               <p class="text-subtitle-1 font-weight-bold">
-                Pay by incasso (optional)
+                Set up incasso (optional)
               </p>
               <incasso-set-up :signup-token="signupToken" />
             </div>

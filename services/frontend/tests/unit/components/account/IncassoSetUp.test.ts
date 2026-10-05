@@ -59,7 +59,7 @@ describe("setting up incasso", () => {
     const wrapper = mount(IncassoSetUp)
     await settle()
     expect(wrapper.find('[data-testid="incasso-none"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="incasso-open"]').text()).toBe("Pay by incasso")
+    expect(wrapper.get('[data-testid="incasso-open"]').text()).toBe("Set up incasso")
 
     await fill(wrapper)
     expect(wrapper.findComponent({name: "VCheckbox"}).props("label")).toContain("I authorise ESA Blueshell")

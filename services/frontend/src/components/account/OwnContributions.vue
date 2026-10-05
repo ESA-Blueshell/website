@@ -1,0 +1,102 @@
+<script lang="ts" setup>
+/* The reader's own contributions: each period they were a member in, what it cost and whether it
+   is paid, so they can keep track without asking the treasurer. */
+import {onMounted, ref} from "vue"
+import StateMark from "@/components/island/StateMark.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import {type MemberPeriodContribution, listOwnContributions} from "@/domains/contribution"
+import {feeTypeLabels} from "@/utils/feePreview"
+import {formatDay, periodName} from "@/utils/timestamps"
+
+defineOptions({name: "OwnContributions"})
+
+const COLUMNS: TableColumn[] = [
+  {key: "period", label: "Period"},
+  {key: "fee", label: "Fee"},
+  {key: "amount", label: "Amount"},
+  {key: "paid", label: "Paid"},
+]
+
+const periods = ref<MemberPeriodContribution[]>([])
+const loaded = ref(false)
+
+onMounted(async () => {
+  periods.value = await listOwnContributions()
+  loaded.value = true
+})
+</script>
+
+<template>
+  <section
+    v-if="loaded"
+    class="own-contributions"
+    data-testid="own-contributions"
+  >
+    <p
+      aria-level="2"
+      class="own-contributions__title"
+      role="heading"
+    >
+      Your contributions
+    </p>
+    <p
+      v-if="periods.length === 0"
+      class="own-contributions__note"
+      data-testid="own-contributions-none"
+    >
+      You have no contributions yet. They show here from your first period as a member.
+    </p>
+    <management-table
+      v-else
+      :columns="COLUMNS"
+      :row-key="(period) => period.periodId"
+      :row-testid="(period) => `own-contribution-${period.periodId}`"
+      :rows="periods"
+    >
+      <template #period="{row}">
+        <span class="mg-name">{{ periodName(row) }}</span>
+        <span class="mg-sub">{{ formatDay(row.startDate) }} to {{ formatDay(row.endDate) }}</span>
+      </template>
+      <template #fee="{row}">
+        {{ row.feeType && row.fee != null ? feeTypeLabels[row.feeType] : "Nothing to pay" }}
+      </template>
+      <template #amount="{row}">
+        <span :class="{'mg-quiet': row.fee == null}">{{ row.fee != null ? `€ ${row.fee.toFixed(2)}` : "·" }}</span>
+      </template>
+      <template #paid="{row}">
+        <state-mark
+          v-if="row.fee != null"
+          :kind="row.paid ? 'in-step' : 'extra'"
+        >
+          {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid yet" }}
+        </state-mark>
+      </template>
+    </management-table>
+  </section>
+</template>
+
+<style scoped>
+.own-contributions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 2.5rem;
+}
+
+/* Drawn here, and not as an h2: the page stands outside the island, where the site's own heading
+   styles would take it over. */
+.own-contributions__title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-eyebrow);
+}
+
+.own-contributions__note {
+  color: var(--color-ash);
+}
+</style>

@@ -21,6 +21,11 @@ vi.mock("@/components/account/IncassoSetUp.vue", async () => {
   return {default: defineComponent({name: "IncassoSetUp", props: {addressId: {type: Number, default: null}}, setup: () => () => null})}
 })
 
+vi.mock("@/components/account/OwnContributions.vue", async () => {
+  const {defineComponent} = await import("vue")
+  return {default: defineComponent({name: "OwnContributions", setup: () => () => null})}
+})
+
 describe("the account's Payment details page", () => {
   it("is a page of its own under the account, carrying the address the mandate is written to", async () => {
     mockStore.getters.getLogin = {userId: 5, addressId: 12}
@@ -29,6 +34,7 @@ describe("the account's Payment details page", () => {
 
     expect(wrapper.getComponent({name: "AccountFrame"}).props("heading")).toBe("Payment details")
     expect(wrapper.getComponent({name: "IncassoSetUp"}).props("addressId")).toBe(12)
+    expect(wrapper.findComponent({name: "OwnContributions"}).exists()).toBe(true)
   })
 
   it("hands on no address where none is on file, and nothing to somebody not signed in", async () => {
@@ -37,5 +43,6 @@ describe("the account's Payment details page", () => {
 
     mockStore.getters.getLogin = null
     expect(mountInApp(PaymentDetails).findComponent({name: "IncassoSetUp"}).exists()).toBe(false)
+    expect(mountInApp(PaymentDetails).findComponent({name: "OwnContributions"}).exists()).toBe(false)
   })
 })

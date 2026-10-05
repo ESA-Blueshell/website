@@ -90,8 +90,9 @@ onMounted(async () => {
       v-else
       data-testid="incasso-none"
     >
-      You pay by incasso by giving your bank details here. Other ways to pay exist, but they are handled by hand: the
-      treasurer sends you a payment request.
+      Incasso is automatic: the association collects your contribution from your bank account once a contribution
+      period, and emails you before it does. Without incasso you pay by hand: the treasurer sends you a payment request
+      and you transfer the money yourself.
     </p>
     <p
       v-if="saved"
@@ -108,7 +109,7 @@ onMounted(async () => {
       variant="outlined"
       @click="open = true"
     >
-      {{ own?.ibanLastTwo ? "Change bank details" : "Pay by incasso" }}
+      {{ own?.ibanLastTwo ? "Change bank details" : "Set up incasso" }}
     </v-btn>
     <form
       v-else

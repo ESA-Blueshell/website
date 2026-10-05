@@ -33,7 +33,7 @@ import store from "@/plugins/store"
 import {type EditableUser, toEditableUser} from "@/utils/editableUser"
 import {feeTypeLabels} from "@/utils/feePreview"
 import {memberTypeLabel} from "@/utils/memberType"
-import {formatDay, formatMoment} from "@/utils/timestamps"
+import {formatDay, formatMoment, periodName} from "@/utils/timestamps"
 
 defineOptions({name: "UserDetailPage"})
 
@@ -80,12 +80,6 @@ const euro = (amount: number) => `€ ${amount.toFixed(2)}`
 
 const base = computed(() => `/management/users/${id.value}`)
 const tabs = computed(() => TABS.map((label) => ({label, to: label === "Overview" ? base.value : `${base.value}/${label.toLowerCase().replace(" ", "-")}`})))
-
-/** "2026-2027", or the one year a period starts and ends in. */
-const periodName = (period: {startDate: string; endDate: string}) => {
-  const [from, until] = [period.startDate.slice(0, 4), period.endDate.slice(0, 4)]
-  return from === until ? from : `${from}-${until}`
-}
 
 const typeName = computed(() => (latestMembership.value ? memberTypeLabel(latestMembership.value.memberType) : ""))
 const eyebrow = computed(() => [standing.value, typeName.value].filter(Boolean).join(" · "))
@@ -358,7 +352,7 @@ watch(id, load, {immediate: true})
       <template v-if="latestMembership">
         <form-field
           class="person__pay"
-          hint="Incasso collects the contribution from their account. It needs incasso details."
+          hint="Incasso is automatic and needs incasso details. With bank transfer they pay by hand after a payment request."
           label="Pays by"
           testid="user-pays-by"
         >

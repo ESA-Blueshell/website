@@ -6,13 +6,13 @@
         style="max-width: 800px"
       >
         <p class="mb-6">
-          Here you set up or change how you pay your contribution. With incasso the association collects it from your
-          bank account once a contribution period, and emails you before it does.
+          Here you set up or change how you pay your contribution, and see which contributions you have paid.
         </p>
         <incasso-set-up
           v-if="login"
           :address-id="login.addressId ?? null"
         />
+        <own-contributions v-if="login" />
       </div>
     </div>
   </account-frame>
@@ -22,6 +22,7 @@
 import {computed} from "vue"
 import {useStore} from "vuex"
 import IncassoSetUp from "@/components/account/IncassoSetUp.vue"
+import OwnContributions from "@/components/account/OwnContributions.vue"
 import AccountFrame from "@/components/common/AccountFrame.vue"
 
 defineOptions({name: "AccountPaymentDetails"})

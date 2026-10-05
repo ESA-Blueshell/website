@@ -14609,6 +14609,47 @@ export type FindDeletedUsersResponses = {
 
 export type FindDeletedUsersResponse = FindDeletedUsersResponses[keyof FindDeletedUsersResponses];
 
+export type FindOwnContributionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/contributions';
+};
+
+export type FindOwnContributionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnContributionsError = FindOwnContributionsErrors[keyof FindOwnContributionsErrors];
+
+export type FindOwnContributionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<MemberPeriodContribution>;
+};
+
+export type FindOwnContributionsResponse = FindOwnContributionsResponses[keyof FindOwnContributionsResponses];
+
 export type EmailAddressData = {
     body?: never;
     path?: never;

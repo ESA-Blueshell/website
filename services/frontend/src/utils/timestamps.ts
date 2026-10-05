@@ -47,3 +47,9 @@ export function formatMoment(value?: string | null): string {
   const dated = date.getFullYear() === new Date().getFullYear() ? day : `${day} ${date.getFullYear()}`
   return `${dated} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`
 }
+
+/** A contribution period by its years: "2026-2027", or the one year it starts and ends in. */
+export function periodName(period: {startDate: string; endDate: string}): string {
+  const [from, until] = [period.startDate.slice(0, 4), period.endDate.slice(0, 4)]
+  return from === until ? from : `${from}-${until}`
+}

@@ -32,7 +32,7 @@ describe("what to change on Discord for the bot", () => {
 
     expect(steps).toHaveLength(2)
     expect(steps[0]).toContain("drag the bot's role above every role the site adds to people. It is now below @Admin")
-    expect(steps[1]).toContain("add the bot's role and allow View Channel")
+    expect(steps[1]).toContain("add the bot's role and allow View Channel. A channel synced to its category follows it.")
     expect(botSteps(standing({permissions: [{name: "Send Messages", neededFor: "Post", granted: false}]}))[2]).toBe("Turn on Send Messages, then save the changes.")
   })
 })

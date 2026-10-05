@@ -93,9 +93,22 @@ class DiscordAdoptionTest {
             ),
         )
 
-        assertThat(adoption.adopt(listOf("COMMITTEE_MEMBERS:1", "COMMITTEE_MEMBERS:3"))).isEqualTo(1)
+        assertThat(adoption.adopt(listOf("COMMITTEE_MEMBERS:1", "COMMITTEE_MEMBERS:3"))).isEqualTo(AdoptionOutcome(1, emptyList()))
 
         verify(discord).apply("COMMITTEE_MEMBERS:1", DiscordChoice(roleId = "901", channelIds = listOf("21", "11")), "")
+    }
+
+    @Test
+    fun `a match Discord refuses is named with why, and the others are still linked`() {
+        given()
+        whenever(channels.openedTo(org.mockito.kotlin.any())).thenReturn(emptyList())
+        whenever(discord.apply(org.mockito.kotlin.eq("COMMITTEE_MEMBERS:1"), org.mockito.kotlin.any(), org.mockito.kotlin.any()))
+            .thenThrow(TargetSystemRefused(net.blueshell.api.shared.enums.TargetSystem.DISCORD, "The bot may not change sitecie."))
+
+        val outcome = adoption.adopt(listOf("COMMITTEE_MEMBERS:1", "TEAM_PLAYERS:2"))
+
+        assertThat(outcome).isEqualTo(AdoptionOutcome(1, listOf(RefusedMatch("Sitecie", "The bot may not change sitecie."))))
+        verify(discord).apply(org.mockito.kotlin.eq("TEAM_PLAYERS:2"), org.mockito.kotlin.any(), org.mockito.kotlin.any())
     }
 
     @Test

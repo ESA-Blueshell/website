@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.discord.api.DiscordChannelKeeper
+import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordRoleKeeper
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
@@ -76,9 +77,12 @@ class CohortDiscord(
                 }
                 ?: return read(key)
         unavailableAsRefusal {
-            val open = channels.openedTo(roleId).map { it.id }.toSet()
-            (choice.channelIds - open).forEach { channels.open(it, roleId, private = true) }
-            (open - choice.channelIds.toSet()).forEach { channels.close(it, roleId) }
+            val opened = channels.openedTo(roleId)
+            (choice.channelIds - opened.map { it.id }.toSet()).forEach { channels.open(it, roleId, private = true) }
+            // A category is opened from the role's own page and never named on a form, so one left out is kept.
+            opened
+                .filter { it.kind != KeptChannelKind.CATEGORY && it.id !in choice.channelIds }
+                .forEach { channels.close(it.id, roleId) }
             choice.createChannel
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
@@ -141,6 +145,8 @@ class CohortDiscord(
             call()
         } catch (e: DiscordUnavailable) {
             throw TargetSystemUnavailable(TargetSystem.DISCORD).apply { initCause(e) }
+        } catch (e: DiscordRefused) {
+            throw TargetSystemRefused(TargetSystem.DISCORD, e.message.orEmpty()).apply { initCause(e) }
         }
 
     private companion object {

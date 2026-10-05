@@ -14,7 +14,7 @@ sealed class TargetRefusal(
 
 class TargetSystemRefused(
     system: TargetSystem,
-    reason: String,
+    val reason: String,
 ) : TargetRefusal(
         HttpStatus.BAD_GATEWAY,
         "TargetSystemRefused",

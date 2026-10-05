@@ -226,8 +226,14 @@ components:
         linked:
           format: int32
           type: integer
+        refused:
+          description: The confirmed matches Discord refused, each as its name and why
+          items:
+            $ref: '#/components/schemas/RefusedMatch'
+          type: array
       required:
       - linked
+      - refused
       type: object
     AdoptionMatch:
       properties:
@@ -5717,6 +5723,16 @@ components:
       - password
       - token
       - username
+      type: object
+    RefusedMatch:
+      properties:
+        label:
+          type: string
+        reason:
+          type: string
+      required:
+      - label
+      - reason
       type: object
     RenameExternalTargetRequest:
       description: Another name for a target.

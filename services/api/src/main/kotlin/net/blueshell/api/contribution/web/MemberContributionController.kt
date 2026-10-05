@@ -30,6 +30,14 @@ class MemberContributionController(
         return firsts.owedBy(reader)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.noContent().build()
     }
 
+    /** The reader's own contribution periods, newest first, each with whether it is paid. */
+    @GetMapping("/users/me/contributions")
+    @PreAuthorize("isAuthenticated()")
+    fun findOwnContributions(): List<MemberPeriodContribution> {
+        val reader = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
+        return contributions.of(reader)
+    }
+
     @GetMapping("/users/{userId}/contributions")
     @BoardOnly
     fun findMemberContributions(

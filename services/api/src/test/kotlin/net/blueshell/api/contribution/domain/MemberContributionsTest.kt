@@ -123,4 +123,22 @@ class MemberContributionsTest {
         whenever(currentUser.currentUser()).thenReturn(null)
         assertThatThrownBy { controller.findOwnFirstContribution() }.isInstanceOf(ResponseStatusException::class.java)
     }
+
+    @Test
+    fun `answers the reader's own periods, and refuses nobody signed in`() {
+        val ann = Entities.user(id = 7)
+        val period = Entities.period(1, startDate = LocalDate.of(2024, 9, 1))
+        whenever(periods.findAll()).thenReturn(listOf(period))
+        whenever(
+            memberships.findByUserId(7),
+        ).thenReturn(mutableListOf(Entities.membership(user = ann, startDate = LocalDate.of(2024, 10, 1))))
+        whenever(contributions.findById(any())).thenReturn(Optional.empty())
+        whenever(currentUser.currentUser()).thenReturn(CurrentUser(id = 7, roles = emptySet(), addressId = null))
+
+        assertThat(controller.findOwnContributions()).isEqualTo(controller.findMemberContributions(7))
+        assertThat(controller.findOwnContributions().single().periodId).isEqualTo(1)
+
+        whenever(currentUser.currentUser()).thenReturn(null)
+        assertThatThrownBy { controller.findOwnContributions() }.isInstanceOf(ResponseStatusException::class.java)
+    }
 }

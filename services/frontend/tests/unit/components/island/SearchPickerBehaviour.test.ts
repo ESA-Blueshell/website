@@ -230,6 +230,8 @@ describe("the compact picker", () => {
     const bare = mount(SearchPicker, {props: {options: rows(4), testidPrefix: "pick", compact: true, selectedKey: "k2"}})
 
     expect(bare.get('[data-testid="pick-shut"]').text()).toBe("Row 2")
+    const nothing = mount(SearchPicker, {props: {options: rows(4), testidPrefix: "pick", compact: true, selectedKey: null}})
+    expect(nothing.get(".picker__shut-label").text()).toBe("")
   })
 
   it("puts the list away when it is pressed again", async () => {

@@ -1223,6 +1223,10 @@ export type DerivedRoleResponse = {
  */
 export type DiscordChannelResponse = {
     /**
+     * The category the channel is filed under on the server, if any
+     */
+    category?: string | null;
+    /**
      * The server the channel is in, which a link into it needs
      */
     guildId: string;
@@ -6391,6 +6395,7 @@ export type ListGameChannelsData = {
     path?: never;
     query?: {
         category?: GameChannelCategory;
+        everywhere?: boolean;
     };
     url: '/discord/game-channels';
 };

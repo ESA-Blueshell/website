@@ -2,7 +2,7 @@
  * The Discord domain's public API: what a component may reach for, and nothing else
  * (frontend ADR-001). Re-exported by name, because the list of names is the promise.
  */
-export {gameRoomUrl, listGameRooms, type GameRoom} from "./adapters/channels"
+export {gameRoomUrl, listEveryRoom, listGameRooms, type FiledRoom, type GameRoom} from "./adapters/channels"
 export {discordChannel, discordInvite, type DiscordDoor} from "./adapters/doors"
 export {readLiveServer, readMyRooms} from "./adapters/live"
 export {listServerEmoji} from "./adapters/emoji"

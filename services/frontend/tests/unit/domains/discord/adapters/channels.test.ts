@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest"
-import {gameRoomUrl, listGameRooms} from "@/domains/discord/adapters/channels"
+import {gameRoomUrl, listEveryRoom, listGameRooms} from "@/domains/discord/adapters/channels"
 import {GameChannelCategory, listGameChannels} from "@/services/api"
 import {answer, refusal} from "../../../helpers/sdkAnswers"
 
@@ -15,6 +15,21 @@ describe("listGameRooms", () => {
 
     vi.mocked(listGameChannels).mockResolvedValue(refusal(listGameChannels, {status: 503}))
     expect(await listGameRooms()).toBeNull()
+  })
+
+  it("answers every text channel with its category, or nothing where the api cannot ask", async () => {
+    vi.mocked(listGameChannels).mockResolvedValue(answer(listGameChannels, [
+      {id: "910", guildId: "324", name: "bs-valorant", category: "Valorant"},
+      {id: "911", guildId: "324", name: "rules"},
+    ]))
+    expect(await listEveryRoom()).toEqual([
+      {id: "910", guildId: "324", name: "bs-valorant", category: "Valorant"},
+      {id: "911", guildId: "324", name: "rules", category: null},
+    ])
+    expect(listGameChannels).toHaveBeenLastCalledWith({query: {everywhere: true}})
+
+    vi.mocked(listGameChannels).mockResolvedValue(refusal(listGameChannels, {status: 503}))
+    expect(await listEveryRoom()).toBeNull()
   })
 })
 

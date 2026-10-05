@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 /**
- * The channels a game is played in, picked from the server's games category, or from its esports
- * category for the game's competition. Each chosen channel is kept with its name, so while the
- * bot is away the field still says where the game lives, and says it cannot change them.
+ * The channels a game is played in. The server's games category is offered first, or its esports
+ * category for the game's competition, and after it every other text channel under the category
+ * it is filed in, since a game's channel can live anywhere. Each chosen channel is kept with its
+ * name, so while the bot is away the field still says where the game lives, and says it cannot
+ * change them.
  */
 import {computed, onMounted, ref} from "vue"
 import ChipPicker from "@/components/island/ChipPicker.vue"
@@ -10,7 +12,7 @@ import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import store from "@/plugins/store"
 import {makeGameChannel} from "../adapters/channelAccess"
-import {GameChannelCategory, type GameRoom, listGameRooms} from "../index"
+import {type FiledRoom, GameChannelCategory, type GameRoom, listEveryRoom, listGameRooms} from "../index"
 
 const props = withDefaults(defineProps<{
   modelValue?: GameRoom[] | null
@@ -34,21 +36,28 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{"update:modelValue": [channels: GameRoom[]]}>()
 
 const channels = ref<GameRoom[] | null>(null)
+const elsewhere = ref<FiledRoom[]>([])
 const loaded = ref(false)
 onMounted(async () => {
-  channels.value = await listGameRooms(props.category)
+  const [own, every] = await Promise.all([listGameRooms(props.category), listEveryRoom()])
+  channels.value = own
+  const offered = new Set((own ?? []).map(one => one.id))
+  elsewhere.value = (every ?? []).filter(one => !offered.has(one.id))
   loaded.value = true
 })
 
 const chosen = computed<GameRoom[]>(() => props.modelValue ?? [])
 const unavailable = computed<boolean>(() => loaded.value && channels.value === null)
 
-const options = computed(() => (channels.value ?? []).map(channel => ({key: channel.id, label: channel.name})))
+const options = computed(() => [
+  ...(channels.value ?? []).map(channel => ({key: channel.id, label: channel.name})),
+  ...elsewhere.value.map(channel => ({key: channel.id, label: channel.name, note: channel.category ?? "No category"})),
+])
 const chips = computed(() => chosen.value.map(channel => ({key: channel.id, label: channel.name})))
 
 const add = (ids: string[]) => {
   const picked = ids
-    .map(id => channels.value?.find(one => one.id === id))
+    .map(id => channels.value?.find(one => one.id === id) ?? elsewhere.value.find(one => one.id === id))
     .filter(channel => channel !== undefined)
     .map(channel => ({id: channel.id, guildId: channel.guildId, name: channel.name}))
   if (picked.length > 0) emit("update:modelValue", [...chosen.value, ...picked])

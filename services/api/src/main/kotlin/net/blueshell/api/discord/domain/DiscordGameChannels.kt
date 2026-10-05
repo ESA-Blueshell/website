@@ -21,4 +21,7 @@ class DiscordGameChannels(
             ?.textRooms()
             ?.filter { it.category.equals(named, ignoreCase = true) }
     }
+
+    /** Every text channel on the server, for a game whose channel is filed under a category of its own. */
+    fun everywhere(): List<TextRoom>? = source.ifAvailable?.textRooms()
 }

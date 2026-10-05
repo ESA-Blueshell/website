@@ -51,6 +51,8 @@ data class DiscordChannelResponse(
     @Schema(description = "The server the channel is in, which a link into it needs")
     val guildId: String,
     val name: String,
+    @Schema(description = "The category the channel is filed under on the server, if any")
+    val category: String? = null,
 )
 
 @Schema(description = "A picture uploaded to the Discord server, which a description writes as <:name:id>")

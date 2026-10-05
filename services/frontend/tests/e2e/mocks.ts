@@ -1289,6 +1289,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/discord/channels") {
       return answer(route, "listDiscordChannels", [{id: "323456789012345602", name: "events-info"}])
     }
+    // Every other text channel on the server: none, so a picker offers only its own category.
+    if (method === "GET" && path === "/discord/game-channels" && url.searchParams.get("everywhere") === "true") {
+      return answer(route, "listGameChannels", [])
+    }
     // The games category's channels, and the esports category's where those are asked for.
     if (method === "GET" && path === "/discord/game-channels" && url.searchParams.get("category") === "ESPORTS") {
       return answer(route, "listGameChannels", [

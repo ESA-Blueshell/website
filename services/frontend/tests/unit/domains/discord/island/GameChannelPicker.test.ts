@@ -2,8 +2,8 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, shallowMount} from "@vue/test-utils"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
 
-const {mockChannels} = vi.hoisted(() => ({mockChannels: vi.fn()}))
-vi.mock("@/domains/discord/adapters/channels", () => ({listGameRooms: mockChannels, gameRoomUrl: vi.fn()}))
+const {mockChannels, mockEvery} = vi.hoisted(() => ({mockChannels: vi.fn(), mockEvery: vi.fn()}))
+vi.mock("@/domains/discord/adapters/channels", () => ({listGameRooms: mockChannels, listEveryRoom: mockEvery, gameRoomUrl: vi.fn()}))
 const {mockMake, mockStore} = vi.hoisted(() => ({mockMake: vi.fn(), mockStore: {commit: vi.fn()}}))
 vi.mock("@/domains/discord/adapters/channelAccess", () => ({makeGameChannel: mockMake}))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
@@ -25,6 +25,22 @@ describe("GameChannelPicker", () => {
   beforeEach(() => {
     mockChannels.mockReset()
     mockChannels.mockResolvedValue([CHESS, FIGHTING])
+    mockEvery.mockResolvedValue(null)
+  })
+
+  it("offers every other text channel after the category's own, under the category it is filed in", async () => {
+    const VALORANT = {id: "910", guildId: "324", name: "bs-valorant", category: "Valorant"}
+    mockEvery.mockResolvedValue([{...CHESS, category: "Games"}, VALORANT, {id: "911", guildId: "324", name: "rules", category: null}])
+    const wrapper = await mountPicker([CHESS])
+
+    expect(picker(wrapper).props("options")).toEqual([
+      {key: "900", label: "chess"},
+      {key: "901", label: "fighting-games"},
+      {key: "910", label: "bs-valorant", note: "Valorant"},
+      {key: "911", label: "rules", note: "No category"},
+    ])
+    picker(wrapper).vm.$emit("add", ["910"])
+    expect(wrapper.emitted("update:modelValue")).toEqual([[[CHESS, {id: "910", guildId: "324", name: "bs-valorant"}]]])
   })
 
   it("offers the category's channels, and adds the ones picked with their server and name", async () => {
@@ -83,6 +99,7 @@ describe("making a game's channel", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockChannels.mockResolvedValue([CHESS])
+    mockEvery.mockResolvedValue(null)
   })
 
   it("makes a channel named after the game and adds it", async () => {

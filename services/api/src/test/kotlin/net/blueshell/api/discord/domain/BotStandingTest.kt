@@ -31,6 +31,7 @@ class BotStandingTest {
     private val bot = role("904", "Blueshell bot", managed = true)
     private val claim = role("903", "Valorant")
     private val board = role("902", "Board")
+    private val kandi = role("906", "Kandi")
     private val everyone = role("324", "@everyone", public = true)
     private val lounge: GuildChannel = mock { on { name } doReturn "lounge" }
     private val mods: GuildChannel = mock { on { name } doReturn "mods" }
@@ -52,14 +53,16 @@ class BotStandingTest {
                 on { hasPermission(Permission.VIEW_CHANNEL) } doReturn true
                 on { hasPermission(lounge, Permission.VIEW_CHANNEL) } doReturn true
                 on { hasPermission(mods, Permission.VIEW_CHANNEL) } doReturn false
-                on { roles } doReturn listOf(bot)
+                // The bot also holds a role of the people's, which is neither its own nor above it.
+                on { roles } doReturn listOf(kandi, bot)
                 on { canInteract(admin) } doReturn false
+                on { canInteract(kandi) } doReturn false
                 on { canInteract(board) } doReturn true
             }
         val server: Guild =
             mock {
                 on { selfMember } doReturn self
-                on { roles } doReturn listOf(admin, bot, claim, board, everyone)
+                on { roles } doReturn listOf(admin, kandi, bot, claim, board, everyone)
                 on { channels } doReturn listOf(lounge, mods)
             }
 

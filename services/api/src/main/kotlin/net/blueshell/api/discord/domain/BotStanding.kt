@@ -24,7 +24,7 @@ data class BotStandingResult(
     val connected: Boolean,
     val manageRoles: Boolean,
     val manageChannels: Boolean,
-    /** The bot's highest role; Discord lets it hand out only the roles below it. */
+    /** The role Discord made for the bot, or its highest where it has none; its permissions are set on it. */
     val botRole: DiscordRole?,
     /** Roles the site could keep but the bot cannot hand out, because they sit at or above its own. */
     val above: List<DiscordRole>,
@@ -57,8 +57,9 @@ class BotStanding(
             connected = true,
             manageRoles = bot.hasPermission(Permission.MANAGE_ROLES),
             manageChannels = bot.hasPermission(Permission.MANAGE_CHANNEL),
-            botRole = bot.roles.firstOrNull()?.let(::describedRole),
-            above = keepable.filterNot(bot::canInteract).map(::describedRole),
+            botRole = (bot.roles.firstOrNull { it.isManaged } ?: bot.roles.firstOrNull())?.let(::describedRole),
+            // A role the bot holds itself is never one it has to rise above.
+            above = keepable.filterNot { it in bot.roles || bot.canInteract(it) }.map(::describedRole),
             claimed = guild.roles.filter { it.id in claimRoleIds }.map(::describedRole),
             permissions = NEEDED.map { BotGrant(it.name, it.why, bot.hasPermission(it.permission)) },
             hidden = guild.channels.filterNot { bot.hasPermission(it, Permission.VIEW_CHANNEL) }.map { it.name },

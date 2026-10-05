@@ -29,7 +29,7 @@ export function botSteps(standing: BotStanding): string[] {
     steps.push(`In Server Settings, Roles, drag ${role} above every role the site adds to people. It is now below ${listed(standing.above.map((one) => `@${one.name}`))}, and the bot adds only the roles below its own.`)
   }
   if (standing.hidden.length > 0) {
-    steps.push(`For a channel the site has to manage and the bot cannot see, open the channel's settings, pick Permissions, add ${role} and allow View Channel.`)
+    steps.push(`For a channel the site has to manage and the bot cannot see, open the settings of the channel or of its category, pick Permissions, add ${role} and allow View Channel. A channel synced to its category follows it.`)
   }
   return steps
 }

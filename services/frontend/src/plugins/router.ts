@@ -632,6 +632,12 @@ const routes: RouteRecordRaw[] = [
         meta: {title: "Discord bot"},
       },
       {
+        path: "platforms/discord/settings",
+        name: "discordSettings",
+        component: () => import("@/pages/management/DiscordSettings.vue"),
+        meta: {title: "Discord settings"},
+      },
+      {
         path: "platforms/discord/channels/:channelId",
         name: "discordChannel",
         component: () => import("@/pages/management/DiscordChannel.vue"),

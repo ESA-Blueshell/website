@@ -3,7 +3,6 @@ package net.blueshell.api.discord.domain
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import org.springframework.beans.factory.ObjectProvider
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
@@ -92,9 +91,10 @@ internal fun starredMessageOf(repost: Map<String, Any?>): StarredMessage? {
 class RestStarboardSource(
     private val discordRestClient: RestClient,
     private val doors: DoorSource,
-    @Value($$"${discord.starboard.channel:starboard}") private val channel: String,
+    private val settings: DiscordSettings,
 ) : StarboardSource {
     override fun recent(): List<StarredMessage>? {
+        val channel = settings.starboard()
         val channelId = doors.textRooms().firstOrNull { plain(it.name) == plain(channel) }?.id ?: return null
         return discordRestClient
             .get()

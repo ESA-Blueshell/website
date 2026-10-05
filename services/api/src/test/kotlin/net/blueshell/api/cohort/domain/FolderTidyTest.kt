@@ -150,6 +150,7 @@ class FolderTidyTest {
                 CohortType.NEWSLETTER_SUBSCRIBERS to "Newsletter",
                 CohortType.ACTIVISTS to "Activists",
                 CohortType.CURRENT_MEMBERS to "Members",
+                CohortType.CURRENT_COMMITTEE_MEMBERS to "Committees",
                 CohortType.TEAM_PLAYERS to "Teams",
                 CohortType.BOARD to "Boards",
                 CohortType.KANDI to "Boards",

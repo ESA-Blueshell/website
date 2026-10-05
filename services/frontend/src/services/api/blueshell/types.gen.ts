@@ -861,6 +861,7 @@ export enum CohortType {
     NEWSLETTER_SUBSCRIBERS = 'NEWSLETTER_SUBSCRIBERS',
     ACTIVISTS = 'ACTIVISTS',
     CURRENT_MEMBERS = 'CURRENT_MEMBERS',
+    CURRENT_COMMITTEE_MEMBERS = 'CURRENT_COMMITTEE_MEMBERS',
     TEAM_PLAYERS = 'TEAM_PLAYERS',
     BOARD = 'BOARD',
     KANDI = 'KANDI',
@@ -1236,6 +1237,25 @@ export type DeleteExternalTargetRequest = {
 export type DerivedRoleResponse = {
     role: Role;
     source: RoleSource;
+};
+
+export type DiscordBotSettings = {
+    /**
+     * The channel an event is posted in on its day, by name
+     */
+    calendarChannel: string;
+    /**
+     * The roles the role-claim bot hands out, which the site leaves alone
+     */
+    claimRoleIds: Array<string>;
+    /**
+     * The channel approved events are announced in, by name
+     */
+    infoChannel: string;
+    /**
+     * The channel the starboard bot reposts starred messages to, by name
+     */
+    starboardChannel: string;
 };
 
 /**
@@ -3174,6 +3194,32 @@ export type SentEmailPreview = {
     recipientEmail: string;
     recipientName: string;
     subject: string;
+};
+
+export type ServerCohortRole = {
+    /**
+     * The channels the role is opened to when it is set, by name
+     */
+    defaultChannels: Array<string>;
+    key: string;
+    label: string;
+    roleId?: string | null;
+    roleName?: string | null;
+    type: CohortType;
+};
+
+/**
+ * The role a server-wide cohort follows
+ */
+export type ServerCohortRoleRequest = {
+    /**
+     * Create a new role named after the cohort, where no role is named
+     */
+    create: boolean;
+    /**
+     * An existing role to follow
+     */
+    roleId?: string | null;
 };
 
 export type ServiceEntry = {
@@ -12103,6 +12149,172 @@ export type ArchiveRoleChannelResponses = {
 };
 
 export type ArchiveRoleChannelResponse = ArchiveRoleChannelResponses[keyof ArchiveRoleChannelResponses];
+
+export type FindDiscordBotSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/settings/bot';
+};
+
+export type FindDiscordBotSettingsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindDiscordBotSettingsError = FindDiscordBotSettingsErrors[keyof FindDiscordBotSettingsErrors];
+
+export type FindDiscordBotSettingsResponses = {
+    /**
+     * OK
+     */
+    200: DiscordBotSettings;
+};
+
+export type FindDiscordBotSettingsResponse = FindDiscordBotSettingsResponses[keyof FindDiscordBotSettingsResponses];
+
+export type SetDiscordBotSettingsData = {
+    body: DiscordBotSettings;
+    path?: never;
+    query?: never;
+    url: '/management/discord/settings/bot';
+};
+
+export type SetDiscordBotSettingsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetDiscordBotSettingsError = SetDiscordBotSettingsErrors[keyof SetDiscordBotSettingsErrors];
+
+export type SetDiscordBotSettingsResponses = {
+    /**
+     * OK
+     */
+    200: DiscordBotSettings;
+};
+
+export type SetDiscordBotSettingsResponse = SetDiscordBotSettingsResponses[keyof SetDiscordBotSettingsResponses];
+
+export type ListServerCohortRolesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/settings/cohorts';
+};
+
+export type ListServerCohortRolesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListServerCohortRolesError = ListServerCohortRolesErrors[keyof ListServerCohortRolesErrors];
+
+export type ListServerCohortRolesResponses = {
+    /**
+     * OK
+     */
+    200: Array<ServerCohortRole>;
+};
+
+export type ListServerCohortRolesResponse = ListServerCohortRolesResponses[keyof ListServerCohortRolesResponses];
+
+export type SetServerCohortRoleData = {
+    body: ServerCohortRoleRequest;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/management/discord/settings/cohorts/{key}';
+};
+
+export type SetServerCohortRoleErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetServerCohortRoleError = SetServerCohortRoleErrors[keyof SetServerCohortRoleErrors];
+
+export type SetServerCohortRoleResponses = {
+    /**
+     * OK
+     */
+    200: Array<ServerCohortRole>;
+};
+
+export type SetServerCohortRoleResponse = SetServerCohortRoleResponses[keyof SetServerCohortRoleResponses];
 
 export type List1Data = {
     body?: never;

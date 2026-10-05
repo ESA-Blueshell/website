@@ -192,6 +192,9 @@ discord:
     ACTIVISTS: ${DISCORD_ACTIVIST_ROLE:}
     BOARD: ${DISCORD_BOARD_ROLE:}
     KANDI: ${DISCORD_KANDI_ROLE:}
+  # The channels a server-wide cohort's role is opened to whenever the settings page sets it, by name.
+  default-channels:
+    CURRENT_COMMITTEE_MEMBERS: activists
 
 google:
   calendar:

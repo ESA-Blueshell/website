@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.testsupport.configuredDiscordSettings
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Role
@@ -47,7 +48,7 @@ class BotStandingTest {
         claimRoles: String = " 903 ,",
     ): BotStanding {
         val provider: ObjectProvider<GatewayGuild> = mock { on { ifAvailable } doReturn gateway }
-        return BotStanding(provider, claimRoles)
+        return BotStanding(provider, configuredDiscordSettings(claimRoles))
     }
 
     @Test

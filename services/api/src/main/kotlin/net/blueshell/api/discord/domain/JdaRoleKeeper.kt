@@ -22,25 +22,20 @@ class JdaRoleKeeper(
     private val gateway: ObjectProvider<GatewayGuild>,
     private val api: ObjectProvider<DiscordApi>,
     @Value($$"${discord.guildId:}") private val guildId: String,
-    @Value($$"${discord.claim-roles:}") claimRoles: String,
+    private val settings: DiscordSettings,
 ) : DiscordRoleKeeper {
-    private val claimRoleIds =
-        claimRoles
-            .split(",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .toSet()
-
     override fun available(): Boolean = gateway.ifAvailable?.guild() != null && api.ifAvailable != null
 
     override fun roles(): List<KeptRole> {
         val guild = guild()
-        return guild.roles.filter(::keepable).map { kept(guild, it) }
+        val claimed = settings.claimRoleIds()
+        return guild.roles.filter { keepable(it, claimed) }.map { kept(guild, it) }
     }
 
     override fun role(id: String): KeptRole? {
         val guild = guild()
-        return guild.getRoleById(id)?.takeIf(::keepable)?.let { kept(guild, it) }
+        val claimed = settings.claimRoleIds()
+        return guild.getRoleById(id)?.takeIf { keepable(it, claimed) }?.let { kept(guild, it) }
     }
 
     override fun holders(roleId: String): List<RoleHolder> {
@@ -106,7 +101,10 @@ class JdaRoleKeeper(
         roleId: String,
     ): Role = guild.getRoleById(roleId) ?: throw DiscordUnavailable("Discord has no role $roleId.")
 
-    private fun keepable(role: Role) = !role.isPublicRole && !role.isManaged && role.id !in claimRoleIds
+    private fun keepable(
+        role: Role,
+        claimed: Set<String>,
+    ) = !role.isPublicRole && !role.isManaged && role.id !in claimed
 
     private fun kept(
         guild: Guild,

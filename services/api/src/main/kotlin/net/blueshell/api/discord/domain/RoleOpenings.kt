@@ -1,6 +1,7 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.api.discord.api.DiscordChannelKeeper
+import net.blueshell.api.discord.api.DiscordRoleAccess
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.persistence.RoleAccess
@@ -37,7 +38,15 @@ class RoleOpenings(
     private val gateway: ObjectProvider<GatewayGuild>,
     private val kept: RoleOpeningRepository,
     private val channels: DiscordChannelKeeper,
-) {
+) : DiscordRoleAccess {
+    @Transactional
+    override fun openForWriting(
+        roleId: String,
+        channelId: String,
+    ) {
+        set(roleId, channelId, RoleAccess.WRITE)
+    }
+
     @Transactional(readOnly = true)
     fun read(roleId: String): List<RoleOpeningState> {
         val guild = guild()

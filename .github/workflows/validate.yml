@@ -165,7 +165,7 @@ jobs:
       - name: Install kubectl + kustomize
         uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5
         with:
-          version: v1.37.0
+          version: v1.37.1
 
       - name: Install kubeconform
         env:

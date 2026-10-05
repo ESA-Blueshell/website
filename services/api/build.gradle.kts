@@ -95,7 +95,7 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
     implementation("com.google.apis:google-api-services-calendar:v3-rev20260708-2.0.0")
-    implementation("com.google.auth:google-auth-library-oauth2-http:1.52.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.53.0")
 
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
     implementation("jakarta.validation:jakarta.validation-api")

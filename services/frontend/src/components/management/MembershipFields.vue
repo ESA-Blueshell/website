@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 /* A membership as the board adds or edits it: when it starts, when it ends and what kind it is,
    on one row. How the person pays is not here; it has the Payment details tab. */
+import {vFirstField} from "@/utils/firstField"
 import {ref} from "vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -56,6 +57,7 @@ const save = async () => {
 
 <template>
   <form
+    v-first-field
     class="membership-fields"
     novalidate
     @submit.prevent="save"

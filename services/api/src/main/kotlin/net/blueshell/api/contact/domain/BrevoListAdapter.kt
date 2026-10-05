@@ -152,10 +152,11 @@ class BrevoListAdapter(
     // Under a lock, because two lists made at once would each find no folder and each make one.
     private fun folderNamed(name: String): Long =
         folderLock.withLock {
-            listFolders().filterValues { it.equals(name, ignoreCase = true) }.keys.minOrNull()
-                ?: contactsApi.createFolder(CreateUpdateFolder(name = name)).id.also {
-                    log.info("Created Brevo folder '{}' id={}", sanitizeForLog(name), it)
-                }
+            val found = listFolders().filterValues { it.equals(name, ignoreCase = true) }.keys.minOrNull()
+            if (found != null) return@withLock found
+            val made = contactsApi.createFolder(CreateUpdateFolder(name = name)).id
+            log.info("Created Brevo folder '{}' id={}", sanitizeForLog(name), made)
+            made
         }
 
     private fun sanitizeForLog(value: String): String = buildString(value.length) {

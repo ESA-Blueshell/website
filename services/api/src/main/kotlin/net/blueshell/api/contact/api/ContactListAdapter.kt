@@ -53,7 +53,7 @@ interface ContactListAdapter {
     fun listFolders(): Map<Long, String> = emptyMap()
 
     /** Removes a folder. The system removes the lists in it too, so the caller makes sure it holds none. */
-    fun deleteFolder(folderId: Long): Unit = throw UnsupportedOperationException("This adapter cannot remove a folder")
+    fun deleteFolder(folderId: Long)
 
     /**
      * Every list on the system, whoever it belongs to: the catalogue an operator picks from.

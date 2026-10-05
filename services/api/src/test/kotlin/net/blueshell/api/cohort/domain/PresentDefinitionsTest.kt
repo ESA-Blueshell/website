@@ -82,12 +82,12 @@ class PresentDefinitionsTest {
 
         assertThat(provider.type).isEqualTo(CohortType.BOARD_YEAR_MEMBERS)
         assertThat(listOf(past.key, past.label)).containsExactly("BOARD_YEAR_MEMBERS:4", "Board 2024-2025")
-        assertThat(listOf(past.folder, past.scope)).containsExactly("Board", 4L)
+        assertThat(listOf(past.folder, past.scope)).containsExactly("Boards", 4L)
         assertThat(past.members()).containsExactly(20L, 21L)
         assertThat(listOf(20L, 22L).map(past::contains)).containsExactly(true, false)
         // A board with no end set yet is named by the year after it took office.
         assertThat(inOffice.label).isEqualTo("Board 2025-2026")
-        assertThat(CohortFolders.forType(CohortType.BOARD_YEAR_MEMBERS)).isEqualTo("Board")
+        assertThat(CohortFolders.forType(CohortType.BOARD_YEAR_MEMBERS)).isEqualTo("Boards")
     }
 
     @Test
@@ -101,13 +101,13 @@ class PresentDefinitionsTest {
         assertThat(listOf(20L, 21L).map(board::contains)).containsExactly(true, false)
         assertThat(kandi.members()).containsExactly(30L)
         assertThat(listOf(30L, 20L).map(kandi::contains)).containsExactly(true, false)
-        assertThat(listOf(board.key, board.label, board.folder, board.scope)).containsExactly("BOARD", "Board", "Board", null)
-        assertThat(listOf(kandi.key, kandi.label, kandi.folder, kandi.scope)).containsExactly("KANDI", "Kandi", "Board", null)
+        assertThat(listOf(board.key, board.label, board.folder, board.scope)).containsExactly("BOARD", "Board", "Boards", null)
+        assertThat(listOf(kandi.key, kandi.label, kandi.folder, kandi.scope)).containsExactly("KANDI", "Kandi", "Boards", null)
         assertThat(
             listOf(BoardProvider(boardMembers).type, KandiProvider(boardMembers).type),
         ).containsExactly(CohortType.BOARD, CohortType.KANDI)
         assertThat(listOf(CohortType.BOARD, CohortType.KANDI).map { it.category() }).containsOnly(CohortCategory.MEMBERS)
-        assertThat(listOf(CohortType.BOARD, CohortType.KANDI).map { CohortFolders.forType(it) }).containsOnly("Board")
+        assertThat(listOf(CohortType.BOARD, CohortType.KANDI).map { CohortFolders.forType(it) }).containsOnly("Boards")
     }
 
     private fun membership(

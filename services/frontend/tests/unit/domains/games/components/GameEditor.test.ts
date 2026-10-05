@@ -196,7 +196,7 @@ describe("the game edit page", () => {
     adapter.saveCasualGame.mockResolvedValue({ok: true, saved: chess})
     const wrapper = mountEditor(chess, "competition")
 
-    expect(wrapper.getComponent(stubs.EditPage).props("back")).toEqual({to: "/competition", label: "Competition"})
+    expect(wrapper.getComponent(stubs.EditPage).props("back")).toEqual({to: "/competition", label: "Esports"})
     await field(wrapper, "order").setValue("")
     await wrapper.get("form").trigger("submit")
     await flushPromises()

@@ -64,7 +64,7 @@ onMounted(async () => {
   <management-page
     eyebrow="Content"
     testid="team-list"
-    title="Competition"
+    title="Esports"
   >
     <template #lede>
       The teams the association fields, the games they play and their newest season. A team is added from its game's

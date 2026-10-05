@@ -65,9 +65,9 @@ test.describe("a game's page, by its address", () => {
     const drawerToggle = page.getByTestId("nav-menu-toggle")
     if (await drawerToggle.isVisible()) {
       await drawerToggle.click()
-      await page.getByTestId("nav-drawer-competition-more").click()
+      await page.getByTestId("nav-drawer-esports-more").click()
     } else {
-      await page.getByTestId("nav-competition-more").hover()
+      await page.getByTestId("nav-esports-more").hover()
     }
 
     // CS:GO is history and is not offered; Trackmania is fielded and now is.

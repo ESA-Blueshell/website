@@ -70,7 +70,7 @@ const accent = computed(() => game.accent || BRAND_ACCENT)
         <template #facts>
           <record-fact
             v-if="game.inCompetition"
-            label="Competition"
+            label="Esports"
           >
             <router-link
               data-testid="casual-game-competition"
@@ -82,7 +82,7 @@ const accent = computed(() => game.accent || BRAND_ACCENT)
           <record-fact
             v-else
             data-testid="casual-game-not-competitive"
-            label="Competition"
+            label="Esports"
             quiet
           >
             We don't currently play this game competitively

@@ -186,8 +186,8 @@ const removeSeason = async () => {
 
 <template>
   <edit-page
-    :back="{to: back, label: 'Competition'}"
-    :eyebrow="season ? season.name : 'Competition'"
+    :back="{to: back, label: 'Esports'}"
+    :eyebrow="season ? season.name : 'Esports'"
     testid="season-edit"
     :title="season ? 'Edit season' : 'Add a season'"
   >

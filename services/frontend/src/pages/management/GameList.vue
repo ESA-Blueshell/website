@@ -52,7 +52,7 @@ const facts = computed(() => {
   const live = games.value.filter((one) => !one.archived)
   return [
     {label: "Games", value: String(live.length), sub: `${games.value.length - live.length} archived`},
-    {label: "In competition", value: String(live.filter((one) => one.inCompetition).length), sub: "The rest are casual"},
+    {label: "In esports", value: String(live.filter((one) => one.inCompetition).length), sub: "The rest are casual"},
     {label: "Differ on Discord", value: String(live.filter(differs).length), sub: "A channel opened otherwise than set on the site"},
   ]
 })
@@ -123,7 +123,7 @@ onMounted(async () => {
         <span :class="{'mg-quiet': channelsOf(row).length === 0}">{{ named(row) }}</span>
       </template>
       <template #kind="{row}">
-        {{ row.inCompetition ? "In competition" : "Casual" }}
+        {{ row.inCompetition ? "Esports" : "Casual" }}
       </template>
       <template #state="{row}">
         <state-mark
@@ -135,7 +135,7 @@ onMounted(async () => {
       </template>
       <template #phone="{row}">
         <management-row
-          :meta="`${row.inCompetition ? 'In competition' : 'Casual'} · ${named(row)}`"
+          :meta="`${row.inCompetition ? 'Esports' : 'Casual'} · ${named(row)}`"
           :name="row.name"
           :testid="`game-row-${row.code}`"
           :to="`/management/games/${row.slug}`"

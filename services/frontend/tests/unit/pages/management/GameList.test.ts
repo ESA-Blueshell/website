@@ -46,7 +46,7 @@ describe("the games in Management", () => {
 
     const valorant = wrapper.get('[data-testid="game-row-VALO"]')
     expect(valorant.text()).toContain("#bs-valo, #blueshell-valorant")
-    expect(valorant.text()).toContain("In competition")
+    expect(valorant.text()).toContain("Esports")
     expect(wrapper.get('[data-testid="game-differs-VALO"]').text()).toBe("Differs on Discord")
     expect(valorant.get("a").attributes("to")).toBe("/management/games/valorant")
     expect(wrapper.get('[data-testid="game-row-CHESS"]').text()).toContain("No channel")

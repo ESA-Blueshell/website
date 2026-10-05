@@ -36,7 +36,9 @@
     ]
   },
   "vulnerabilityAlerts": {
+    "description": "A security fix skips the cooldown, so it never merges itself: a release that has not aged gets a person instead.",
     "enabled": true,
+    "automerge": false,
     "labels": [
       "dependencies",
       "security"
@@ -130,6 +132,14 @@
       ],
       "automerge": true,
       "platformAutomerge": true
+    },
+    {
+      "description": "build.yml publishes the production images and release.yml cuts the release, both with credentials, and no pull request check runs either workflow. An action used there would merge on age alone, so it gets a reviewed pull request.",
+      "matchFileNames": [
+        ".github/workflows/build.yml",
+        ".github/workflows/release.yml"
+      ],
+      "automerge": false
     },
     {
       "description": "A cluster chart or controller image reaches production the moment it merges, so each one gets a reviewed pull request and never merges itself.",

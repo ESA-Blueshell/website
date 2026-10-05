@@ -74,4 +74,13 @@ describe("adding to many rows at once", () => {
     expect(inPage("bulk-preview").text()).toContain("None of the selected committees can get a Discord role.")
     expect(inPage("bulk-continue").attributes("disabled")).toBeDefined()
   })
+
+  it("closes from the dialog's own cross as well as from its button", async () => {
+    const {wrapper, run} = await dialog()
+
+    await inPage("island-dialog-close").trigger("click")
+
+    expect(wrapper.emitted("update:open")?.at(-1)).toEqual([false])
+    expect(run).not.toHaveBeenCalled()
+  })
 })

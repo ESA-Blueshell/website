@@ -14,13 +14,15 @@ set -euo pipefail
 dir=coverage-baseline
 mkdir -p "$dir"
 
-# Newest first, and only uploads from the default branch: no other ref may
-# decide what a pull request compares against.
+# Only uploads from the default branch: no other ref may decide what a pull
+# request compares against. Newest by run, not by upload: promotions run in
+# parallel and can finish out of order, while run ids follow the pushes to
+# main, so the newest commit's baseline wins.
 id=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$BASELINE_ARTIFACT&per_page=100" \
   --jq "[.artifacts[]
          | select(.expired == false)
          | select(.workflow_run.head_branch == \"$DEFAULT_BRANCH\")]
-        | sort_by(.created_at) | reverse | .[0].id // \"\"")
+        | sort_by(.workflow_run.id) | reverse | .[0].id // \"\"")
 
 if [ -z "$id" ]; then
   echo "No $BASELINE_ARTIFACT artifact on $DEFAULT_BRANCH yet; nothing to compare against."

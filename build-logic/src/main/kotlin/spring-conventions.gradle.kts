@@ -9,7 +9,7 @@ dependencyManagement {
     imports {
         // The plugin's own BOM, so the managed versions move with the plugin a bot bumps.
         mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
-        mavenBom("tools.jackson:jackson-bom:3.1.0")
+        mavenBom("tools.jackson:jackson-bom:3.2.3")
         mavenBom("org.testcontainers:testcontainers-bom:2.0.5")
     }
 }

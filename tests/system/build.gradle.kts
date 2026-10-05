@@ -23,7 +23,7 @@ dependencies {
     // IMAP/JSON helpers for assertions.
     testImplementation("org.springframework.security:spring-security-crypto:7.1.1")
     testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
-    testImplementation("tools.jackson.module:jackson-module-kotlin:3.2.2")
+    testImplementation("tools.jackson.module:jackson-module-kotlin:3.2.3")
 
     testImplementation("io.rest-assured:rest-assured:6.0.1")
     testImplementation("com.microsoft.playwright:playwright:1.62.0")

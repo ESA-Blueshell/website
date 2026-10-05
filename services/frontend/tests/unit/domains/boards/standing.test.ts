@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {boardInOffice, isCandidate, standingOf, type Termed} from "@/domains/boards"
+import {boardCohortKey, boardInOffice, isCandidate, standingOf, type Termed} from "@/domains/boards"
 import {seededBoards} from "./seed"
 
 /**
@@ -129,5 +129,16 @@ describe("dates that are not dates", () => {
     const stamped = {number: 9, startDate: "2025-09-01T00:00:00Z", endDate: "2026-09-16T23:59:59Z"}
     expect(boardInOffice([stamped], "2026-09-16")?.number).toBe(9)
     expect(isCandidate(stamped, "2025-08-31")).toBe(true)
+  })
+})
+
+describe("the cohort a board's people are kept under", () => {
+  it("is the board's while it is in office, the kandi's before it takes office, and its own years' once it has handed over", () => {
+    const line = [NINTH, TENTH]
+
+    expect(boardCohortKey({...NINTH, id: 9}, line, "2026-09-01")).toBe("BOARD")
+    expect(boardCohortKey({...TENTH, id: 10}, line, "2026-09-01")).toBe("KANDI")
+    expect(boardCohortKey({...NINTH, id: 9}, line, "2026-10-01")).toBe("BOARD_YEAR_MEMBERS:9")
+    expect(boardCohortKey({...TENTH, id: 10}, line, "2026-10-01")).toBe("BOARD")
   })
 })

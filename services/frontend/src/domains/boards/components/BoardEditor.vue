@@ -14,7 +14,18 @@ import NoticeBox from "@/components/island/NoticeBox.vue"
 import PreviewFrame from "@/components/island/PreviewFrame.vue"
 import Timeline from "@/components/island/Timeline.vue"
 import type {Picture} from "@/components/island/pictures"
-import {dropBoard, saveBoardOrReason, storeBoardPhoto, type Board} from "../adapters/boards"
+import {DiscordPlaceFields} from "@/domains/discord"
+import store from "@/plugins/store"
+import {
+  dropBoard,
+  readBoardDiscord,
+  saveBoardDiscord,
+  saveBoardOrReason,
+  storeBoardPhoto,
+  type Board,
+  type DiscordPlaceRequest,
+} from "../adapters/boards"
+import {boardCohortKey, standingOf} from "../standing"
 import {boardStops} from "../boardAxis"
 import {countOf} from "@/utils/countOf"
 import BoardBand from "../island/BoardBand.vue"
@@ -99,6 +110,18 @@ const photoLabel = computed(() => {
   return year ? `${named}, ${year}` : named
 })
 
+/* The board's role on Discord and the channels it has access to. Which role that is follows where
+   the board stands: the board in office holds @Board, the candidate board @Kandi and a board that
+   handed over the role of its own years. */
+const discord = ref<DiscordPlaceRequest | null>(null)
+const discordKey = computed(() => (props.board ? boardCohortKey(props.board, props.boards) : null))
+const discordName = computed(() => {
+  if (!props.board) return ""
+  const standing = standingOf(props.board, props.boards)
+  if (standing === "in office") return "Board"
+  return standing === "candidate" ? "Kandi" : `Board ${academicYear(props.board.startDate, props.board.endDate)}`
+})
+
 const confirming = ref(false)
 const removing = ref(false)
 const removalFailure = ref<string | null>(null)
@@ -150,6 +173,11 @@ const submit = async () => {
     if (!result.ok) {
       failure.value = result.reason
       return
+    }
+    // The board is saved either way; Discord refusing only means its role and channels wait.
+    if (discordKey.value && discord.value) {
+      const set = await saveBoardDiscord(discordKey.value, discord.value)
+      if (!set.ok) store.commit("setStatusSnackbarMessage", set.reason)
     }
     emit("saved", result.saved)
   } finally {
@@ -245,6 +273,17 @@ const submit = async () => {
           />
         </form-fields>
       </form-section>
+
+      <discord-place-fields
+        v-if="discordKey"
+        v-model="discord"
+        category="Board"
+        holders="Everyone on this board holds it."
+        :name="discordName"
+        :read="() => readBoardDiscord(discordKey!)"
+        :slug="discordName.toLowerCase().replace(/[^a-z0-9]+/g, '-')"
+        testid="board-edit-discord"
+      />
 
       <notice-box
         v-if="failure"

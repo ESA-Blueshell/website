@@ -9633,6 +9633,92 @@ export type ShowAlertResponses = {
 
 export type ShowAlertResponse = ShowAlertResponses[keyof ShowAlertResponses];
 
+export type FindBoardDiscordData = {
+    body?: never;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/management/boards/discord/{key}';
+};
+
+export type FindBoardDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBoardDiscordError = FindBoardDiscordErrors[keyof FindBoardDiscordErrors];
+
+export type FindBoardDiscordResponses = {
+    /**
+     * OK
+     */
+    200: DiscordPlace;
+};
+
+export type FindBoardDiscordResponse = FindBoardDiscordResponses[keyof FindBoardDiscordResponses];
+
+export type SetBoardDiscordData = {
+    body: DiscordPlaceRequest;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/management/boards/discord/{key}';
+};
+
+export type SetBoardDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetBoardDiscordError = SetBoardDiscordErrors[keyof SetBoardDiscordErrors];
+
+export type SetBoardDiscordResponses = {
+    /**
+     * OK
+     */
+    200: DiscordPlace;
+};
+
+export type SetBoardDiscordResponse = SetBoardDiscordResponses[keyof SetBoardDiscordResponses];
+
 export type ListCohortTargetSystemsData = {
     body?: never;
     path?: never;

@@ -9,15 +9,17 @@ import net.blueshell.api.cohort.domain.DiscordPlace
 import net.blueshell.api.cohort.domain.RefusedMatch
 import net.blueshell.api.cohort.persistence.CohortType
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.web.server.ResponseStatusException
 
 class DiscordPlaceControllerTest {
     private val discord: CohortDiscord = mock()
     private val adoption: DiscordAdoption = mock()
-    private val controller = DiscordPlaceController(discord, adoption, "Committees", "Esports")
+    private val controller = DiscordPlaceController(discord, adoption, "Committees", "Esports", "Board")
     private val place = DiscordPlace(true, "900", "Sitecie", emptyList())
 
     @Test
@@ -41,6 +43,22 @@ class DiscordPlaceControllerTest {
         assertThat(controller.setTeamDiscord(3, DiscordPlaceRequest(createRole = true))).isSameAs(place)
         controller.removeTeamDiscord(3)
         verify(discord).remove("TEAM_PLAYERS:3")
+    }
+
+    @Test
+    fun `reads and sets a board's role and channels by where the board stands, new channels under Board`() {
+        whenever(discord.read("BOARD")).thenReturn(place)
+        whenever(discord.read("KANDI")).thenReturn(place)
+        whenever(discord.apply("BOARD_YEAR_MEMBERS:12", DiscordChoice(roleId = "910", channelIds = listOf("4")), "Board")).thenReturn(place)
+
+        assertThat(controller.findBoardDiscord("BOARD")).isSameAs(place)
+        assertThat(controller.findBoardDiscord("KANDI")).isSameAs(place)
+        val asked = DiscordPlaceRequest(roleId = "910", channelIds = listOf("4"))
+        assertThat(controller.setBoardDiscord("BOARD_YEAR_MEMBERS:12", asked)).isSameAs(place)
+        // Only a board's own cohorts are reached from here.
+        assertThatThrownBy { controller.findBoardDiscord("COMMITTEE_MEMBERS:7") }
+            .isInstanceOf(ResponseStatusException::class.java)
+            .hasMessageContaining("404")
     }
 
     @Test

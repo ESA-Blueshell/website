@@ -103,3 +103,14 @@ export function standingOf(
   if (isCandidate(board, day)) return "candidate"
   return boardInOffice(boards, day)?.number === board.number ? "in office" : "past"
 }
+
+/**
+ * The cohort a board's people are kept under, by where it stands: the board in office holds the
+ * board's, the candidate board the kandi's, and a board that handed over the one of its own years.
+ * A role on Discord and a list on Brevo follow that cohort.
+ */
+export function boardCohortKey(board: Termed & {id: number}, boards: readonly Termed[], on: string = today()): string {
+  const standing = standingOf(board, boards, on)
+  if (standing === "in office") return "BOARD"
+  return standing === "candidate" ? "KANDI" : `BOARD_YEAR_MEMBERS:${board.id}`
+}

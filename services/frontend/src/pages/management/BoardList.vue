@@ -14,7 +14,7 @@ import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
-import {type Board, type BoardStanding, academicYear, boardName, standingOf, useBoards} from "@/domains/boards"
+import {type Board, type BoardStanding, academicYear, boardCohortKey, boardName, standingOf, useBoards} from "@/domains/boards"
 import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts, targetLabel} from "@/domains/cohorts"
 import {type AdoptionMatch, adoptMatches, listMatches} from "@/domains/discord"
 
@@ -32,10 +32,7 @@ const STANDING: Record<BoardStanding, {kind: "in-step" | "not-created" | "not-co
 /* The role and the list follow the standing: the board in office holds the board's, the candidate
    board the kandi's, and a board that handed over the role of its own years. */
 const cohorts = ref<CohortSummary[]>([])
-const cohortOf = (board: Board): string => {
-  const standing = standingOf(board, boards.value)
-  return standing === "in office" ? "BOARD" : standing === "candidate" ? "KANDI" : `BOARD_YEAR_MEMBERS:${board.id}`
-}
+const cohortOf = (board: Board): string => boardCohortKey(board, boards.value)
 const targetsOf = (board: Board): SummaryTarget[] => cohorts.value.find((one) => one.definitionKey === cohortOf(board))?.targets ?? []
 const SYSTEMS = [TargetSystem.DISCORD, TargetSystem.BREVO]
 

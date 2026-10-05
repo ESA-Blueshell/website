@@ -73,6 +73,20 @@
       "depTypeTemplate": "first-party-client",
       "versioningTemplate": "semver",
       "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "The flux manager rewrites gotk-components.yaml but not the CLI version CI regenerates it with, so the drift check fails every Flux bump. Sharing the flux manager's depName puts both edits in one pull request.",
+      "managerFilePatterns": [
+        "/^scripts/regenerate-flux-components\\.sh$/"
+      ],
+      "matchStrings": [
+        "FLUX_VERSION=\\$\\{FLUX_VERSION:-(?<currentValue>[^}]+)\\}"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "fluxcd/flux2",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^v(?<version>.+)$"
     }
   ],
   "packageRules": [

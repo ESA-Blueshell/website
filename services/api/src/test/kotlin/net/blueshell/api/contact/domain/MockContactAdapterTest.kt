@@ -238,7 +238,12 @@ class MockContactAdapterTest {
     @Test
     fun `a list made without a folder goes into the one for those, and removing a folder takes its lists as Brevo does`() {
         val loose = adapter.createList("Loose", null)
-        val other = adapter.listFolders().entries.single { it.value == ContactListAdapter.UNFILED }.key
+        val other =
+            adapter
+                .listFolders()
+                .entries
+                .single { it.value == ContactListAdapter.UNFILED }
+                .key
 
         assertThat(adapter.listAll().single { it.externalListId == loose }.folderId).isEqualTo(other)
 

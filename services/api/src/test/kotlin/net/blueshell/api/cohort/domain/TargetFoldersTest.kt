@@ -31,7 +31,7 @@ class TargetFoldersTest {
         whenever(keeper.merge()).thenReturn(FolderMerge(removed = 1, moved = 2))
 
         assertThat(folders.states(TargetSystem.BREVO)).containsExactly(FolderState("3", "Committees", 2))
-        assertThat(folders.merge(TargetSystem.BREVO)).isEqualTo(FolderMerge(1, 2))
+        assertThat(folders.merge(TargetSystem.BREVO).let { it.removed to it.moved }).isEqualTo(1 to 2)
         folders.remove(TargetSystem.BREVO, "5")
         verify(keeper).remove("5")
     }

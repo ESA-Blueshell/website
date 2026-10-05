@@ -1,5 +1,6 @@
 <template>
   <form
+    v-first-field
     class="period-form"
     data-testid="contribution-period-dialog"
     novalidate
@@ -92,6 +93,7 @@
 <script lang="ts" setup>
 /* A period's dates, three fees and half-year cutoff; empty for a new one. Deleting sits on the
    page's danger zone rather than here. */
+import {vFirstField} from "@/utils/firstField"
 import {computed, ref, watch} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import DateInput from "@/components/island/DateInput.vue"

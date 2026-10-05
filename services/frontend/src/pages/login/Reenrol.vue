@@ -3,6 +3,7 @@
     <top-banner title="Sign in again" />
     <div class="mx-3">
       <v-form
+        v-first-field
         class="mx-auto mt-10"
         data-testid="reenrol-form"
         style="max-width: 500px"
@@ -48,6 +49,7 @@
 </template>
 
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"

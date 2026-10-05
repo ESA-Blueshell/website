@@ -31,6 +31,7 @@
         </cut-button>
       </notice-box>
       <form
+        v-first-field
         class="security-task__form"
         @submit.prevent="withStepUp(() => move(newEmail.trim()))"
       >
@@ -75,6 +76,7 @@
 </template>
 
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import AccountFrame from "@/components/common/AccountFrame.vue"

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {computed, ref, watch} from "vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -228,6 +229,8 @@ const submit = async () => {
     </template>
 
     <form
+
+      v-first-field
       class="member-editor"
       @submit.prevent="submit"
     >

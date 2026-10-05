@@ -15,6 +15,10 @@ this way is in [architecture ADR-011](../../docs/adr/architecture/ADR-011-backup
 Each owner keeps their own recovery codes in their own password manager, never on the server.
 The second owner holds nothing else: their login is the way in if the Owner is unavailable.
 
+A suspended account takes the backups with it, so the organization is paid from the
+association's bank account, its billing contact is a role mailbox, and a billing alert emails the
+billing contact and both owners. Scaleway has no hard spending cap; the alert is the only guard.
+
 The Kopia password lives in Vault for the nightly job and in Secret Manager for break-glass,
 nowhere else. Secret Manager bills each stored version, so it holds one at a time.
 

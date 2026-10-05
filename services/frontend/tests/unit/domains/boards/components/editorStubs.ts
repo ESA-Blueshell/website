@@ -16,6 +16,7 @@ export const editorStubs = {
   ImagePicker: {name: "ImagePicker", props: ["picture", "store", "testid", "shape"], emits: ["update:picture"], template: "<div />"},
   SearchPicker: {name: "SearchPicker", props: ["options", "emptyNote", "testidPrefix"], emits: ["pick"], template: "<div />"},
   ConfirmDialog: {name: "ConfirmDialog", props: ["open", "question", "failure", "working", "testid"], emits: ["confirm", "update:open"], template: "<div />"},
+  DiscordPlaceFields: {name: "DiscordPlaceFields", props: ["modelValue", "read", "name", "slug", "category", "holders"], emits: ["update:modelValue"], template: "<div />"},
   MarkdownEditor: {name: "MarkdownEditor", props: ["modelValue", "maxLength"], emits: ["update:modelValue"], template: "<div />"},
   // Declares only what CutButton declares, so `disabled` falls through to the button as it does on the real one.
   CutButton: {props: ["href", "testid"], emits: ["click"], template: "<button :data-testid='testid' @click=\"$emit('click')\"><slot /></button>"},

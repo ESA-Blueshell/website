@@ -33,6 +33,8 @@ enum class IncassoLeftOut {
 /** One member on incasso in a period, masked to the last four, and whether they can be collected from. */
 data class IncassoCandidate(
     val userId: Long,
+    @field:Schema(description = "The membership the member is judged on, which their incasso details are recorded against.")
+    val membershipId: Long,
     val name: String,
     /** The name as it goes to ING, accents stripped. */
     val ingName: String,
@@ -245,6 +247,7 @@ class IncassoRuns(
                 membership to
                     IncassoCandidate(
                         userId = membership.userId,
+                        membershipId = requireNotNull(membership.id),
                         name = membership.user.fullName,
                         ingName = ingText(membership.user.fullName),
                         memberSince = membership.startDate,

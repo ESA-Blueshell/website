@@ -98,8 +98,15 @@ class BrevoTargetStrategy(
         jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId), JobTrigger.ANOTHER_JOB)
     }
 
-    /** Brevo's own folders, including the ones holding nothing. */
-    override fun folders(): List<String> = lists.listFolders().values.sorted()
+    /** Brevo's own folders, including the ones holding nothing; a name two folders share is said once. */
+    override fun folders(): List<String> =
+        lists
+            .listFolders()
+            .values
+            .distinctBy { it.lowercase() }
+            .sorted()
+
+    override val folderKeeper: FolderKeeper = BrevoFolders(lists)
 
     override fun move(
         external: ExternalTarget,
@@ -110,9 +117,9 @@ class BrevoTargetStrategy(
         val folderId =
             lists
                 .listFolders()
-                .entries
-                .firstOrNull { it.value.equals(folder, ignoreCase = true) }
-                ?.key
+                .filterValues { it.equals(folder, ignoreCase = true) }
+                .keys
+                .minOrNull()
                 ?: throw IllegalArgumentException("No folder named '$folder'")
 
         lists.moveList(external.externalId.toBrevoId("externalId", "move"), folderId)

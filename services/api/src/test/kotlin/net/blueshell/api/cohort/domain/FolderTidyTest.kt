@@ -67,14 +67,14 @@ class FolderTidyTest {
 
         val plan = tidy.preview(TargetSystem.BREVO)
 
-        assertThat(plan.moves).containsExactly(TidyMove("100", "Paid 2026", "Periods", "Contribution paid"))
+        assertThat(plan.moves).containsExactly(TidyMove("100", "Paid 2026", "Periods", "Contributions"))
         assertThat(plan.moves.single().from).isEqualTo("Periods")
-        assertThat(plan.foldersToCreate).containsExactly("Contribution paid")
+        assertThat(plan.foldersToCreate).containsExactly("Contributions")
     }
 
     @Test
     fun `a tidy already applied proposes nothing`() {
-        given(list("100", "Paid 2026", "Contribution paid"), list("200", "Sitecie", "Committees"))
+        given(list("100", "Paid 2026", "Contributions"), list("200", "Sitecie", "Committees"))
 
         assertThat(tidy.preview(TargetSystem.BREVO).moves).isEmpty()
     }
@@ -94,17 +94,17 @@ class FolderTidyTest {
 
         val result = tidy.apply(TargetSystem.BREVO, listOf("200"))
 
-        verify(strategy, never()).move(paid, "Contribution paid")
+        verify(strategy, never()).move(paid, "Contributions")
         assertThat(result.failed).containsExactly(FailedTargetMove("200", "Sitecie", "Brevo said no"))
 
-        whenever(strategy.move(paid, "Contribution paid")).thenReturn(paid.copy(folderLabel = "Contribution paid"))
+        whenever(strategy.move(paid, "Contributions")).thenReturn(paid.copy(folderLabel = "Contributions"))
         assertThat(
             tidy
                 .apply(TargetSystem.BREVO, listOf("100"))
                 .moved
                 .single()
                 .folderLabel,
-        ).isEqualTo("Contribution paid")
+        ).isEqualTo("Contributions")
     }
 
     @Test
@@ -112,7 +112,7 @@ class FolderTidyTest {
         given(list("100", "Paid 2026", "Periods"))
         val paid = list("100", "Paid 2026", "Periods")
         whenever(strategy.resolve("100")).thenReturn(paid)
-        whenever(strategy.move(paid, "Contribution paid")).thenReturn(paid.copy(folderLabel = "Contribution paid"))
+        whenever(strategy.move(paid, "Contributions")).thenReturn(paid.copy(folderLabel = "Contributions"))
 
         tidy.apply(TargetSystem.BREVO, listOf("100"))
 
@@ -144,16 +144,16 @@ class FolderTidyTest {
         assertThat(CohortType.entries.associateWith(CohortFolders::forType)).isEqualTo(
             mapOf(
                 CohortType.COMMITTEE_MEMBERS to "Committees",
-                CohortType.PERIOD_PAYERS to "Contribution paid",
+                CohortType.PERIOD_PAYERS to "Contributions",
                 CohortType.PERIOD_MEMBERS to "Members",
                 CohortType.PERIOD_ACTIVE_MEMBERS to "Active members",
                 CohortType.NEWSLETTER_SUBSCRIBERS to "Newsletter",
                 CohortType.ACTIVISTS to "Activists",
                 CohortType.CURRENT_MEMBERS to "Members",
                 CohortType.TEAM_PLAYERS to "Teams",
-                CohortType.BOARD to "Board",
-                CohortType.KANDI to "Board",
-                CohortType.BOARD_YEAR_MEMBERS to "Board",
+                CohortType.BOARD to "Boards",
+                CohortType.KANDI to "Boards",
+                CohortType.BOARD_YEAR_MEMBERS to "Boards",
             ),
         )
     }

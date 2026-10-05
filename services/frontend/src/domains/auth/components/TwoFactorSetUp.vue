@@ -32,7 +32,9 @@
       </p>
 
       <form
+
         v-if="stage === 'password'"
+        v-first-field
         class="set-up__form"
         @submit.prevent="start"
       >
@@ -125,7 +127,9 @@
       </template>
 
       <form
+
         v-else-if="stage === 'code'"
+        v-first-field
         class="set-up__form"
         @submit.prevent="confirm"
       >
@@ -213,6 +217,7 @@
 </template>
 
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {computed, onMounted, ref} from "vue"
 import QRCode from "qrcode"
 import CheckBox from "@/components/island/CheckBox.vue"

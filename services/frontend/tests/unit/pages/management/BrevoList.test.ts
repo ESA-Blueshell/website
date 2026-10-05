@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
   findCohortById: vi.fn(),
   findTargetOverview: vi.fn(),
   listCohortTargetFolders: vi.fn(),
+  createTargetFolder: vi.fn(),
   reconcileTarget: vi.fn(),
   enforceTarget: vi.fn(),
   archiveExternalTarget: vi.fn(),
@@ -180,6 +181,31 @@ describe("one Brevo list", () => {
     await settle()
     expect(api.archiveExternalTarget).toHaveBeenCalledWith({path: {system: "BREVO", externalId: "7"}})
     expect(wrapper.get('[data-testid="brevo-list-delete"]').attributes("disabled")).toBeDefined()
+  })
+
+  it("moves the list into a folder Brevo does not have yet, made first, and says why when it cannot be made", async () => {
+    const wrapper = await mount()
+    const folderPicker = () => wrapper.findAllComponents({name: "SearchPicker"}).at(-1)!
+
+    expect(folderPicker().props("options").at(-1)).toEqual({key: "__new__", label: "New folder…"})
+    folderPicker().vm.$emit("pick", "__new__")
+    await settle()
+    // Nothing to save until the new folder has a name.
+    expect(wrapper.get('[data-testid="brevo-list-save"]').attributes("disabled")).toBeDefined()
+    wrapper.findAllComponents({name: "TextInput"}).at(-1)!.vm.$emit("update:modelValue", " Boards ")
+    await settle()
+
+    api.createTargetFolder.mockResolvedValueOnce({status: 502, error: {code: "TargetSystemRefused", message: "Brevo refused."}, response: {status: 502}})
+    await wrapper.get("form.list__form").trigger("submit")
+    await settle()
+    expect(api.moveCohortTarget).not.toHaveBeenCalled()
+
+    api.createTargetFolder.mockResolvedValue({status: 200, data: ["Boards", "Members"]})
+    await wrapper.get("form.list__form").trigger("submit")
+    await settle()
+    expect(api.createTargetFolder).toHaveBeenLastCalledWith({path: {system: "BREVO"}, body: {name: "Boards"}})
+    expect(api.moveCohortTarget).toHaveBeenCalledWith({path: {system: "BREVO", externalId: "7"}, body: {folder: "Boards"}, throwOnError: true})
+    expect(mockStore.commit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", "The list is saved.")
   })
 
   it("says why a write was refused", async () => {

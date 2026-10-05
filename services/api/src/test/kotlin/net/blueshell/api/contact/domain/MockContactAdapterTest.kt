@@ -1,6 +1,7 @@
 package net.blueshell.api.contact.domain
 
 import net.blueshell.api.contact.api.ContactData
+import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactServiceException
 import org.assertj.core.api.Assertions.assertThat
@@ -232,6 +233,25 @@ class MockContactAdapterTest {
         adapter.moveList(first, committees)
 
         assertThat(adapter.listAll().single { it.externalListId == first }.folderId).isEqualTo(committees)
+    }
+
+    @Test
+    fun `a list made without a folder goes into the one for those, and removing a folder takes its lists as Brevo does`() {
+        val loose = adapter.createList("Loose", null)
+        val other =
+            adapter
+                .listFolders()
+                .entries
+                .single { it.value == ContactListAdapter.UNFILED }
+                .key
+
+        assertThat(adapter.listAll().single { it.externalListId == loose }.folderId).isEqualTo(other)
+
+        adapter.deleteFolder(other)
+
+        assertThat(adapter.listFolders()).isEmpty()
+        assertThat(adapter.listAll()).isEmpty()
+        assertThatThrownBy { adapter.deleteFolder(other) }.isInstanceOf(ContactServiceException::class.java)
     }
 
     @Test

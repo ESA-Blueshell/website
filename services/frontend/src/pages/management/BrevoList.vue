@@ -24,6 +24,7 @@ import {
   cohortTypeLabel,
   deleteTarget,
   driftRowsOf,
+  createFolderInSystem,
   fetchCohort,
   fetchTargetFolders,
   inStepOn,
@@ -99,8 +100,15 @@ const reconcile = async () => {
 const name = ref("")
 const folder = ref<string | null>(null)
 const folders = ref<string[]>([])
-const folderOptions = computed(() => folders.value.map((one) => ({key: one, label: one})))
-const changed = computed(() => list.value != null && (name.value.trim() !== list.value.label || folder.value !== (list.value.folderLabel ?? null)))
+// A folder Brevo does not have yet is named here and made as the list is saved.
+const NEW_FOLDER = "__new__"
+const newFolderName = ref("")
+const folderOptions = computed(() => [...folders.value.map((one) => ({key: one, label: one})), {key: NEW_FOLDER, label: "New folder…"}])
+const wanted = computed(() => (folder.value === NEW_FOLDER ? newFolderName.value.trim() || null : folder.value))
+const changed = computed(() => {
+  if (!list.value || (folder.value === NEW_FOLDER && wanted.value === null)) return false
+  return name.value.trim() !== list.value.label || wanted.value !== (list.value.folderLabel ?? null)
+})
 
 const save = async () => {
   const current = list.value
@@ -111,7 +119,12 @@ const save = async () => {
       const renamed = await renameTarget(SYSTEM, current.externalId, name.value.trim())
       if (!renamed.ok) return said(renamed.reason)
     }
-    if (folder.value && folder.value !== current.folderLabel) await moveTargetToFolder(SYSTEM, current.externalId, folder.value)
+    if (folder.value === NEW_FOLDER && wanted.value) {
+      const made = await createFolderInSystem(SYSTEM, wanted.value)
+      if (!made.ok) return said(made.reason)
+    }
+    if (wanted.value && wanted.value !== current.folderLabel) await moveTargetToFolder(SYSTEM, current.externalId, wanted.value)
+    newFolderName.value = ""
     said("The list is saved.")
     await load()
   } catch {
@@ -318,6 +331,17 @@ onMounted(async () => {
             @pick="(key: string) => folder = key"
           />
         </template>
+      </form-field>
+      <form-field
+        v-if="folder === NEW_FOLDER"
+        v-slot="field"
+        label="New folder's name"
+        testid="brevo-list-new-folder"
+      >
+        <text-input
+          v-model="newFolderName"
+          :control-id="field.controlId"
+        />
       </form-field>
       <div class="list__acts">
         <cut-button

@@ -59,7 +59,7 @@ class IncassoRunsTest {
         user: User,
         lastFour: String?,
     ): Membership =
-        Entities.membership(user = user, startDate = LocalDate.of(2025, 9, 1)).apply {
+        Entities.membership(id = 500L + requireNotNull(user.id), user = user, startDate = LocalDate.of(2025, 9, 1)).apply {
             incasso = true
             mandate = lastFour?.let { mandate(it) }
         }
@@ -97,6 +97,7 @@ class IncassoRunsTest {
         assertThat(plan.getValue("Mila Vries").amount).isEqualTo(25.0)
         assertThat(plan.getValue("Zoë Bakker").ingName).isEqualTo("Zoe Bakker")
         assertThat(plan.getValue("Lotte Meijer").leftOut).isEqualTo(IncassoLeftOut.NO_BANK_DETAILS)
+        assertThat(plan.getValue("Lotte Meijer").membershipId).isEqualTo(500L + requireNotNull(lotte.id))
         assertThat(plan.getValue("Bram Kok").leftOut).isEqualTo(IncassoLeftOut.ALREADY_PAID)
         assertThat(plan.getValue("Hon Ored").leftOut).isEqualTo(IncassoLeftOut.OWES_NOTHING)
     }

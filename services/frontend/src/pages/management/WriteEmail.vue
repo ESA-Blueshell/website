@@ -2,6 +2,7 @@
 /* Writing an email in the association's template: to groups, roles and people in one picker, a
    subject, the message in the site's editor and where replies go. The preview is rendered by the
    api the way the send renders it. */
+import {vFirstField} from "@/utils/firstField"
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {useRouter} from "vue-router"
 import ChipPicker from "@/components/island/ChipPicker.vue"
@@ -146,6 +147,7 @@ onBeforeUnmount(() => clearTimeout(previewTimer))
 
     <div class="write">
       <form
+        v-first-field
         class="write__form"
         @submit.prevent="send"
       >

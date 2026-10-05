@@ -15,17 +15,19 @@ import net.blueshell.clients.brevo.model.GetContactsSortParameter
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
 import net.blueshell.clients.brevo.model.UpdateListRequest
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Brevo anti-corruption layer for [ContactListAdapter] (ADR-019), in production only.
  *
  * A new list goes into the folder its `folderName` names, created first when Brevo has none by
- * that name; with no name it goes into [contributionPeriodsFolder], a numeric Brevo folder id.
+ * that name. Brevo lets two folders carry one name, so a folder is found or made one caller at a
+ * time, and where two already share a name the older one is the folder.
  *
  * Brevo answers an add for a contact already in the list with an ambiguous
  * `400 invalid_parameter "Contact already in list and/or does not exist"`, so a follow-up GET
@@ -38,8 +40,8 @@ import tools.jackson.databind.json.JsonMapper
 class BrevoListAdapter(
     private val contactsApi: ContactsApi,
     private val jsonMapper: JsonMapper,
-    @param:Value($$"${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
 ) : ContactListAdapter {
+    private val folderLock = ReentrantLock()
 
     override val system = TargetSystem.BREVO
 
@@ -105,7 +107,7 @@ class BrevoListAdapter(
         val safeName = sanitizeForLog(name)
         log.info("Creating Brevo list '{}'", safeName)
         return try {
-            val folderId = folderName?.let(::folderNamed) ?: contributionPeriodsFolder
+            val folderId = folderNamed(folderName?.takeIf { it.isNotBlank() } ?: ContactListAdapter.UNFILED)
             val response = contactsApi.createList(CreateListRequest(name = name, folderId = folderId))
             log.info("Created Brevo list '{}' id={}", safeName, response.id)
             response.id
@@ -136,12 +138,26 @@ class BrevoListAdapter(
             throw ContactServiceException("Failed to create folder: ${e.statusText}", e)
         }
 
+    override fun deleteFolder(folderId: Long) {
+        log.info("Deleting Brevo folder id={}", folderId)
+        try {
+            contactsApi.deleteFolder(folderId)
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to delete Brevo folder id={}", folderId, e)
+            throw ContactServiceException("Failed to delete folder: ${e.statusText}", e)
+        }
+    }
+
     // Brevo files lists by folder id, and its folders do not nest: find the one by name or make it.
+    // Under a lock, because two lists made at once would each find no folder and each make one.
     private fun folderNamed(name: String): Long =
-        listFolders().entries.firstOrNull { it.value.equals(name, ignoreCase = true) }?.key
-            ?: contactsApi.createFolder(CreateUpdateFolder(name = name)).id.also {
-                log.info("Created Brevo folder '{}' id={}", sanitizeForLog(name), it)
-            }
+        folderLock.withLock {
+            val found = listFolders().filterValues { it.equals(name, ignoreCase = true) }.keys.minOrNull()
+            if (found != null) return@withLock found
+            val made = contactsApi.createFolder(CreateUpdateFolder(name = name)).id
+            log.info("Created Brevo folder '{}' id={}", sanitizeForLog(name), made)
+            made
+        }
 
     private fun sanitizeForLog(value: String): String = buildString(value.length) {
         value.forEach { ch ->

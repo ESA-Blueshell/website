@@ -6,6 +6,8 @@ import {
   linkMemberAccountOrReason,
   loadBoards,
   memberTitle,
+  readBoardDiscord,
+  saveBoardDiscord,
   saveBoardOrReason,
   saveMemberOrReason,
   storeBoardPhoto,
@@ -16,8 +18,10 @@ import {
   createBoard,
   deleteBoard,
   findAllBoards,
+  findBoardDiscord,
   linkMember,
   removeMember,
+  setBoardDiscord,
   updateBoard,
   updateMember,
   uploadPublicImage,
@@ -34,6 +38,8 @@ vi.mock("@/services/api", async (importOriginal) => ({
   createBoard: vi.fn(),
   deleteBoard: vi.fn(),
   findAllBoards: vi.fn(),
+  findBoardDiscord: vi.fn(),
+  setBoardDiscord: vi.fn(),
   linkMember: vi.fn(),
   removeMember: vi.fn(),
   updateBoard: vi.fn(),
@@ -327,5 +333,22 @@ describe("board memberships", () => {
 
     vi.mocked(removeMember).mockResolvedValue(refusal(removeMember, {title: "Forbidden"}))
     await expect(dropMemberOrReason(1, 5)).resolves.toEqual({ok: false, reason: "Forbidden"})
+  })
+
+  it("reads and sets a board's Discord role and channels by the cohort it is kept under", async () => {
+    const place = {available: true, roleId: "910", roleName: "Board", channels: []}
+    vi.mocked(findBoardDiscord).mockResolvedValue(answer(findBoardDiscord, place))
+    vi.mocked(setBoardDiscord).mockResolvedValue(answer(setBoardDiscord, place))
+    const asked = {roleId: "910", createRole: false, channelIds: ["4"], createChannel: null}
+
+    await expect(readBoardDiscord("BOARD")).resolves.toEqual(place)
+    await expect(saveBoardDiscord("BOARD", asked)).resolves.toEqual({ok: true, saved: place})
+    expect(findBoardDiscord).toHaveBeenCalledWith({path: {key: "BOARD"}})
+    expect(setBoardDiscord).toHaveBeenCalledWith({path: {key: "BOARD"}, body: asked})
+
+    vi.mocked(findBoardDiscord).mockResolvedValue(refusal(findBoardDiscord, {status: 503}))
+    vi.mocked(setBoardDiscord).mockResolvedValue(refusal(setBoardDiscord, {}))
+    await expect(readBoardDiscord("KANDI")).resolves.toBeNull()
+    await expect(saveBoardDiscord("KANDI", asked)).resolves.toEqual({ok: false, reason: "Discord could not be set for the board."})
   })
 })

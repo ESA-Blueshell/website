@@ -150,7 +150,8 @@ export enum AlertKind {
     EMAIL_FAILED = 'EMAIL_FAILED',
     JOB_DEAD = 'JOB_DEAD',
     EXCEPTION_OPEN = 'EXCEPTION_OPEN',
-    ROLE_AWAITING_TWO_FACTOR = 'ROLE_AWAITING_TWO_FACTOR'
+    ROLE_AWAITING_TWO_FACTOR = 'ROLE_AWAITING_TWO_FACTOR',
+    DISCORD_BOT_PERMISSIONS = 'DISCORD_BOT_PERMISSIONS'
 }
 
 export enum AnnounceChoice {
@@ -415,13 +416,24 @@ export type BoardResponse = {
     version: number;
 };
 
+export type BotGrant = {
+    granted: boolean;
+    name: string;
+    /**
+     * What the site cannot do without it.
+     */
+    neededFor: string;
+};
+
 export type BotStandingResult = {
     above: Array<DiscordRole>;
     botRole?: DiscordRole | null;
     claimed: Array<DiscordRole>;
     connected: boolean;
+    hidden: Array<string>;
     manageChannels: boolean;
     manageRoles: boolean;
+    permissions: Array<BotGrant>;
 };
 
 export type BrevoPlace = {
@@ -1223,6 +1235,10 @@ export type DerivedRoleResponse = {
  */
 export type DiscordChannelResponse = {
     /**
+     * The category the channel is filed under on the server, if any
+     */
+    category?: string | null;
+    /**
      * The server the channel is in, which a link into it needs
      */
     guildId: string;
@@ -1768,6 +1784,29 @@ export type FirstContribution = {
     periodStartDate?: string | null;
 };
 
+/**
+ * What merging the folders that share a name did.
+ */
+export type FolderMerge = {
+    /**
+     * How many targets moved into the folder that stayed.
+     */
+    moved: number;
+    /**
+     * How many folders were removed.
+     */
+    removed: number;
+};
+
+/**
+ * A folder on the system and how many targets it holds.
+ */
+export type FolderState = {
+    id: string;
+    name: string;
+    targets: number;
+};
+
 export type GameAccessState = {
     channels: Array<GameChannelAccess>;
     policy: ChannelAccessPolicy;
@@ -1996,6 +2035,10 @@ export type IncassoCandidate = {
     mandateReference?: string | null;
     mandateSignedOn?: string | null;
     memberSince: string;
+    /**
+     * The membership the member is judged on, which their incasso details are recorded against.
+     */
+    membershipId: number;
     name: string;
     userId: number;
 };
@@ -6391,6 +6434,7 @@ export type ListGameChannelsData = {
     path?: never;
     query?: {
         category?: GameChannelCategory;
+        everywhere?: boolean;
     };
     url: '/discord/game-channels';
 };
@@ -9601,6 +9645,92 @@ export type ShowAlertResponses = {
 
 export type ShowAlertResponse = ShowAlertResponses[keyof ShowAlertResponses];
 
+export type FindBoardDiscordData = {
+    body?: never;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/management/boards/discord/{key}';
+};
+
+export type FindBoardDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBoardDiscordError = FindBoardDiscordErrors[keyof FindBoardDiscordErrors];
+
+export type FindBoardDiscordResponses = {
+    /**
+     * OK
+     */
+    200: DiscordPlace;
+};
+
+export type FindBoardDiscordResponse = FindBoardDiscordResponses[keyof FindBoardDiscordResponses];
+
+export type SetBoardDiscordData = {
+    body: DiscordPlaceRequest;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/management/boards/discord/{key}';
+};
+
+export type SetBoardDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetBoardDiscordError = SetBoardDiscordErrors[keyof SetBoardDiscordErrors];
+
+export type SetBoardDiscordResponses = {
+    /**
+     * OK
+     */
+    200: DiscordPlace;
+};
+
+export type SetBoardDiscordResponse = SetBoardDiscordResponses[keyof SetBoardDiscordResponses];
+
 export type ListCohortTargetSystemsData = {
     body?: never;
     path?: never;
@@ -9858,6 +9988,136 @@ export type CreateTargetFolderResponses = {
 };
 
 export type CreateTargetFolderResponse = CreateTargetFolderResponses[keyof CreateTargetFolderResponses];
+
+export type MergeTargetFoldersData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/merge';
+};
+
+export type MergeTargetFoldersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MergeTargetFoldersError = MergeTargetFoldersErrors[keyof MergeTargetFoldersErrors];
+
+export type MergeTargetFoldersResponses = {
+    /**
+     * OK
+     */
+    200: FolderMerge;
+};
+
+export type MergeTargetFoldersResponse = MergeTargetFoldersResponses[keyof MergeTargetFoldersResponses];
+
+export type ListTargetFolderStatesData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/states';
+};
+
+export type ListTargetFolderStatesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListTargetFolderStatesError = ListTargetFolderStatesErrors[keyof ListTargetFolderStatesErrors];
+
+export type ListTargetFolderStatesResponses = {
+    /**
+     * OK
+     */
+    200: Array<FolderState>;
+};
+
+export type ListTargetFolderStatesResponse = ListTargetFolderStatesResponses[keyof ListTargetFolderStatesResponses];
+
+export type RemoveTargetFolderData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+        folderId: string;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/{folderId}';
+};
+
+export type RemoveTargetFolderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveTargetFolderError = RemoveTargetFolderErrors[keyof RemoveTargetFolderErrors];
+
+export type RemoveTargetFolderResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveTargetFolderResponse = RemoveTargetFolderResponses[keyof RemoveTargetFolderResponses];
 
 export type FindListedTargetData = {
     body?: never;

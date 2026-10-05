@@ -1,0 +1,17 @@
+# The Brevo folders for boards and paid contributions are called Boards and Contributions. A list
+# not made yet keeps the folder it was registered with, so those are renamed with them.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-05-target-folder-names.yaml
+      id: target-folder-names
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              UPDATE target SET folder = 'Boards' WHERE system = 'BREVO' AND folder = 'Board';
+              UPDATE target SET folder = 'Contributions' WHERE system = 'BREVO' AND folder = 'Contribution paid';
+      rollback:
+        - sql:
+            sql: |
+              UPDATE target SET folder = 'Board' WHERE system = 'BREVO' AND folder = 'Boards';
+              UPDATE target SET folder = 'Contribution paid' WHERE system = 'BREVO' AND folder = 'Contributions';

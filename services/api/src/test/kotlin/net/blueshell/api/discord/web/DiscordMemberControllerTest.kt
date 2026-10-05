@@ -30,6 +30,7 @@ class DiscordMemberControllerTest {
         mock {
             on { offered(GameChannelCategory.GAMES) } doReturn listOf(TextRoom("11", "324", "valorant", "Games"))
             on { offered(GameChannelCategory.ESPORTS) } doReturn listOf(TextRoom("12", "324", "valorant-esports", "Esports"))
+            on { everywhere() } doReturn listOf(TextRoom("13", "324", "bs-valorant", "Valorant"), TextRoom("14", "324", "rules"))
         }
     private val emoji: DiscordEmojiDirectory = mock { on { all() } doReturn listOf(DiscordEmoji("657", "ShellyStar", true)) }
     private val controller = DiscordMemberController(directory, roles, channels, emoji)
@@ -71,7 +72,8 @@ class DiscordMemberControllerTest {
 
     @Test
     fun `answers the channels a game may live in, or 503 without a bot`() {
-        assertThat(controller.channels(GameChannelCategory.GAMES).body).containsExactly(DiscordChannelResponse("11", "324", "valorant"))
+        assertThat(controller.channels(GameChannelCategory.GAMES).body)
+            .containsExactly(DiscordChannelResponse("11", "324", "valorant", "Games"))
         assertThat(
             controller
                 .channels(GameChannelCategory.GAMES)
@@ -80,6 +82,8 @@ class DiscordMemberControllerTest {
                 .guildId,
         ).isEqualTo("324")
         assertThat(controller.channels(GameChannelCategory.ESPORTS).body!!.map { it.name }).containsExactly("valorant-esports")
+        assertThat(controller.channels(GameChannelCategory.ESPORTS, everywhere = true).body!!.map { it.name to it.category })
+            .containsExactly("bs-valorant" to "Valorant", "rules" to null)
         val offline: DiscordGameChannels = mock { on { offered(GameChannelCategory.GAMES) } doReturn null }
         assertThat(DiscordMemberController(directory, roles, offline, emoji).channels(GameChannelCategory.GAMES).statusCode)
             .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)

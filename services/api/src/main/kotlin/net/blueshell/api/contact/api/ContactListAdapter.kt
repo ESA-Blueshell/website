@@ -13,6 +13,7 @@ import net.blueshell.api.shared.enums.TargetSystem
 interface ContactListAdapter {
     val system: TargetSystem
 
+    /** Makes a list in the folder called [folderName], made when there is none; with no name it goes into [UNFILED]. */
     fun createList(
         name: String,
         folderName: String?,
@@ -48,8 +49,11 @@ interface ContactListAdapter {
     /** The folder called [name], made when there is none; answers its id. */
     fun createFolder(name: String): Long
 
-    /** Every folder, as id to name. */
+    /** Every folder, as id to name. Two folders can carry one name. */
     fun listFolders(): Map<Long, String> = emptyMap()
+
+    /** Removes a folder. The system removes the lists in it too, so the caller makes sure it holds none. */
+    fun deleteFolder(folderId: Long)
 
     /**
      * Every list on the system, whoever it belongs to: the catalogue an operator picks from.
@@ -59,6 +63,11 @@ interface ContactListAdapter {
 
     /** Lists all members currently present in the given external list. */
     fun listMembers(externalListId: Long): List<ContactListMember>
+
+    companion object {
+        /** Where a list made without a folder goes. */
+        const val UNFILED = "Other"
+    }
 }
 
 /** One member as the external system knows them: a native numeric id and optional email label. */

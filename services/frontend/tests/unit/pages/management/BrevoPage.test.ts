@@ -12,6 +12,8 @@ const api = vi.hoisted(() => ({
   createTargetFolder: vi.fn(),
   previewFolderTidy: vi.fn(),
   applyFolderTidy: vi.fn(),
+  listTargetFolderStates: vi.fn(),
+  reconcileTarget: vi.fn(),
 }))
 const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {isAdmin: false} as Record<string, unknown>}}))
 
@@ -72,6 +74,53 @@ describe("the Brevo page", () => {
       lastApplied: {appliedAt: "2026-09-01T10:00:00Z", appliedByName: "Alice Board", moved: 2, failed: 0},
     }})
     api.applyFolderTidy.mockResolvedValue({status: 200, data: {moved: [made], failed: []}})
+    api.listTargetFolderStates.mockResolvedValue({status: 200, data: []})
+  })
+
+  it("compares the ticked lists with Brevo together, a list still to be created carrying no tick", async () => {
+    api.reconcileTarget.mockResolvedValue({status: 202, data: undefined})
+    const wrapper = await mount()
+    const bulk = () => wrapper.findComponent({name: "BulkAdd"})
+
+    expect(wrapper.find('[data-testid="brevo-check-missing-3"]').exists()).toBe(false)
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("selectAll")
+    await settle()
+    expect(wrapper.get('[data-testid="brevo-selection"]').text()).toContain("3 selected")
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("clearSelection")
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("toggleShown")
+    await settle()
+    await wrapper.get('[data-testid="brevo-check-list-9"]').setValue(false)
+    await wrapper.get('[data-testid="brevo-bulk-push"]').trigger("click")
+    await settle()
+    expect(bulk().props("title")).toBe("Add missing people")
+    expect(bulk().props("items")).toEqual([])
+    bulk().vm.$emit("update:open", false)
+    await settle()
+
+    await wrapper.get('[data-testid="brevo-bulk-compare"]').trigger("click")
+    await settle()
+    expect(bulk().props("open")).toBe(true)
+    expect(bulk().props("items").map((one: {name: string}) => one.name)).toEqual(["Members 2025-2026"])
+    expect(bulk().props("skipped")).toEqual([{name: "LAN party 2024", why: "Follows nothing on the site"}])
+    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: true})
+    expect(api.reconcileTarget).toHaveBeenCalledWith({path: {id: 101, targetId: 1}})
+
+    api.findTargetOverview.mockClear()
+    bulk().vm.$emit("done")
+    await settle()
+    expect(api.findTargetOverview).toHaveBeenCalledTimes(1)
+    expect(wrapper.get('[data-testid="brevo-selection"]').text()).toContain("0 selected")
+  })
+
+  it("says which folders want a hand, and reads the lists again once they are seen to", async () => {
+    api.listTargetFolderStates.mockResolvedValue({status: 200, data: [{id: "3", name: "Members", targets: 2}, {id: "4", name: "Old", targets: 0}]})
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="brevo-folders-empty"]').text()).toContain("1 folder holds no list: Old.")
+    api.findTargetOverview.mockClear()
+    wrapper.findComponent({name: "FolderCare"}).vm.$emit("changed")
+    await settle()
+    expect(api.findTargetOverview).toHaveBeenCalledTimes(1)
   })
 
   afterEach(() => unmountAll(wrappers, "BrevoPage"))

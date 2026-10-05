@@ -56,6 +56,11 @@ describe("reading an alert", () => {
     [alert(AlertKind.JOB_DEAD), "1 job is dead", "/management/jobs?status=DEAD"],
     [alert(AlertKind.EXCEPTION_OPEN, {count: 4}), "4 exceptions are open", "/management/exceptions"],
     [alert(AlertKind.ROLE_AWAITING_TWO_FACTOR, {subjectId: 5, subjectLabel: "ada"}), "@ada's granted role waits on two-factor", "/management/users/5"],
+    [
+      alert(AlertKind.DISCORD_BOT_PERMISSIONS, {count: 2, subjectLabel: "Manage Roles, Create Invite"}),
+      "The Discord bot lacks 2 permissions: Manage Roles, Create Invite",
+      "/management/platforms/discord/bot",
+    ],
   ])("words %o and links it", (one, title, link) => {
     expect(alertTitle(one)).toBe(title)
     expect(alertLink(one)).toBe(link)
@@ -72,6 +77,8 @@ describe("an alert as a short row", () => {
     [alert(AlertKind.JOB_DEAD), "1 job is dead", "After every retry", "Jobs"],
     [alert(AlertKind.EXCEPTION_OPEN, {count: 4}), "4 exceptions are open", "Not resolved yet", "Exceptions"],
     [alert(AlertKind.ROLE_AWAITING_TWO_FACTOR, {subjectLabel: "ada"}), "A role waits on two-factor", "@ada", "Users"],
+    [alert(AlertKind.DISCORD_BOT_PERMISSIONS, {subjectLabel: "Manage Roles"}), "The bot lacks 1 permission", "Manage Roles", "Discord"],
+    [alert(AlertKind.DISCORD_BOT_PERMISSIONS, {subjectLabel: null}), "The bot lacks 1 permission", "", "Discord"],
   ])("names %o, says what it is about and where it comes from", (one, name, meta, from) => {
     expect(alertRow(one)).toEqual({name, meta, from})
   })

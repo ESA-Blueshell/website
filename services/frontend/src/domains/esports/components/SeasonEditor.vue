@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {computed, onMounted, ref} from "vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import EditPage from "@/components/island/EditPage.vue"
@@ -205,7 +206,9 @@ const removeSeason = async () => {
     </template>
 
     <form
+
       id="season-edit-form"
+      v-first-field
       class="season-form"
       @submit.prevent="submit"
     >

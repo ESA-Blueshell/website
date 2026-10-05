@@ -10,6 +10,11 @@ import {
   createExternalTarget,
   createMissingTargets,
   createTargetFolder,
+  type FolderMerge,
+  type FolderState,
+  listTargetFolderStates,
+  mergeTargetFolders,
+  removeTargetFolder,
   deleteExternalTarget,
   enforceTarget,
   findCohortById,
@@ -563,3 +568,17 @@ export async function adoptPeople(cohortId: number, targetId: number, externalUs
     return {ok: false, reason: "They could not be taken in."}
   }
 }
+
+export type {FolderMerge, FolderState}
+
+/** Every folder with how many lists it holds, two of one name apart; nothing where the system cannot be read. */
+export const readFolderStates = (system: TargetSystem): Promise<FolderState[]> =>
+  readOr(listTargetFolderStates({path: {system}}), [])
+
+/** Files everything under the oldest of the folders sharing a name, and removes the emptied others. */
+export const mergeFolders = (system: TargetSystem): Promise<Saved<FolderMerge> | Refused> =>
+  refusable(mergeTargetFolders({path: {system}}), "The folders could not be merged.")
+
+/** Removes a folder that holds nothing. */
+export const removeFolder = (system: TargetSystem, id: string): Promise<{ok: true} | Refused> =>
+  accepted(removeTargetFolder({path: {system, folderId: id}}), "The folder could not be removed.")

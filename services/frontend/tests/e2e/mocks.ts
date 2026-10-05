@@ -70,13 +70,13 @@ const stampedAt = {createdAt: "2025-01-01T00:00:00Z", updatedAt: "2025-01-01T00:
 
 /** Members on incasso as the first step of a run reads them: two to collect from, one with an accent, and two left out. */
 const INCASSO_CANDIDATES: Wire<IncassoCandidate>[] = [
-  {userId: 201, name: "Mila de Vries", ingName: "Mila de Vries", memberSince: "2024-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+  {userId: 201, membershipId: 901, name: "Mila de Vries", ingName: "Mila de Vries", memberSince: "2024-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
     ibanCountry: "NL", ibanLastTwo: "34", mandateReference: "BLUESHELL-201-20240901", mandateSignedOn: "2024-09-01"},
-  {userId: 202, name: "Zoë Bakker", ingName: "Zoe Bakker", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+  {userId: 202, membershipId: 902, name: "Zoë Bakker", ingName: "Zoe Bakker", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
     ibanCountry: "DE", ibanLastTwo: "18", mandateReference: "BLUESHELL-202-20250904", mandateSignedOn: "2025-09-04"},
-  {userId: 203, name: "Lotte Meijer", ingName: "Lotte Meijer", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+  {userId: 203, membershipId: 903, name: "Lotte Meijer", ingName: "Lotte Meijer", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
     leftOut: "NO_BANK_DETAILS"},
-  {userId: 204, name: "Bram Kok", ingName: "Bram Kok", memberSince: "2020-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+  {userId: 204, membershipId: 904, name: "Bram Kok", ingName: "Bram Kok", memberSince: "2020-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
     ibanCountry: "NL", ibanLastTwo: "60", mandateReference: "BLUESHELL-204-20200901", mandateSignedOn: "2020-09-01", leftOut: "ALREADY_PAID"},
 ]
 
@@ -1289,6 +1289,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/discord/channels") {
       return answer(route, "listDiscordChannels", [{id: "323456789012345602", name: "events-info"}])
     }
+    // Every other text channel on the server: none, so a picker offers only its own category.
+    if (method === "GET" && path === "/discord/game-channels" && url.searchParams.get("everywhere") === "true") {
+      return answer(route, "listGameChannels", [])
+    }
     // The games category's channels, and the esports category's where those are asked for.
     if (method === "GET" && path === "/discord/game-channels" && url.searchParams.get("category") === "ESPORTS") {
       return answer(route, "listGameChannels", [
@@ -1576,6 +1580,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           kind: "LIST",
         },
       ])
+    }
+    if (method === "GET" && path === "/management/cohort-targets/BREVO/folders/states") {
+      return answer(route, "listTargetFolderStates", [])
     }
     if (method === "GET" && path === "/management/cohort-targets/BREVO/folders") {
       // Includes a folder holding nothing, which is exactly where a target tends to head.
@@ -2625,6 +2632,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (/^\/management\/committees\/\d+\/brevo$/.test(path)) {
       const place = {available: true, listId: null, listName: null, folder: "Committees"}
       return method === "GET" ? answer(route, "findCommitteeBrevo", place) : answer(route, "setCommitteeBrevo", place)
+    }
+    if (method === "GET" && path.startsWith("/management/boards/discord/")) {
+      return answer(route, "findBoardDiscord", {available: false, channels: []})
     }
     if (method === "GET" && /^\/management\/(committees|teams)\/\d+\/discord$/.test(path)) {
       return answer(route, path.includes("/teams/") ? "findTeamDiscord" : "findCommitteeDiscord", {available: false, channels: []})

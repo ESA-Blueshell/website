@@ -23,6 +23,13 @@ describe("the mandate panel", () => {
     api.recordMandate.mockResolvedValue({status: 200, data: recorded})
   })
 
+  it("opens on its form where it is asked for in order to fill it in", async () => {
+    const wrapper = mount(MandatePanel, {props: {membershipId: 9, startOpen: true}})
+    await settle()
+
+    expect(wrapper.find('[data-testid="mandate-form"]').exists()).toBe(true)
+  })
+
   it("records a paper mandate and shows only the last four of the account", async () => {
     const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
     await settle()

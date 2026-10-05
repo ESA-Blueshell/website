@@ -3,7 +3,11 @@ import {flushPromises, mount} from "@vue/test-utils"
 import BoardEditor from "@/domains/boards/components/BoardEditor.vue"
 import {editorStubs, write} from "./editorStubs"
 
-const adapter = vi.hoisted(() => ({dropBoard: vi.fn(), saveBoardOrReason: vi.fn(), storeBoardPhoto: vi.fn()}))
+const adapter = vi.hoisted(() => ({
+  dropBoard: vi.fn(), saveBoardOrReason: vi.fn(), storeBoardPhoto: vi.fn(), readBoardDiscord: vi.fn(), saveBoardDiscord: vi.fn(),
+}))
+const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn()}}))
+vi.mock("@/plugins/store", () => ({default: mockStore}))
 vi.mock("@/domains/boards/adapters/boards", async importOriginal => ({
   ...(await importOriginal<typeof import("@/domains/boards/adapters/boards")>()),
   ...adapter,
@@ -70,6 +74,44 @@ describe("the board edit page", () => {
     expect(wrapper.get("[data-testid=board-edit-failure]").text()).toBe("Board 9 already exists.")
     expect(wrapper.emitted("saved")).toBeUndefined()
     expect(wrapper.getComponent(editorStubs.BoardBand).props("label")).toBe("Board IX, 2024-2025")
+  })
+
+  it("sets the role and channels of the cohort the board is kept under, and says so when Discord refuses", async () => {
+    adapter.saveBoardOrReason.mockResolvedValue({ok: true, saved: ninth})
+    adapter.saveBoardDiscord.mockResolvedValue({ok: true, saved: {}})
+    const wrapper = mountEditor(ninth)
+    const fields = wrapper.getComponent(editorStubs.DiscordPlaceFields)
+    const asked = {roleId: "910", createRole: false, channelIds: ["4"], createChannel: null}
+
+    // The tenth board is the newest to take office, so the ninth is kept under its own years.
+    expect(fields.props()).toMatchObject({name: "Board 2024-2025", slug: "board-2024-2025", category: "Board"})
+    await (fields.props("read") as () => Promise<unknown>)()
+    expect(adapter.readBoardDiscord).toHaveBeenCalledWith("BOARD_YEAR_MEMBERS:9")
+    fields.vm.$emit("update:modelValue", asked)
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+    expect(adapter.saveBoardDiscord).toHaveBeenCalledWith("BOARD_YEAR_MEMBERS:9", asked)
+    expect(wrapper.emitted("saved")).toHaveLength(1)
+
+    adapter.saveBoardDiscord.mockResolvedValue({ok: false, reason: "Discord cannot be reached now."})
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now.")
+    expect(wrapper.emitted("saved")).toHaveLength(2)
+
+    // A board being added is under no cohort yet, so it has no Discord to set.
+    expect(mountEditor(null).findComponent(editorStubs.DiscordPlaceFields).exists()).toBe(false)
+  })
+
+  it("names the role of the board in office and of the candidate board after what they are", () => {
+    const year = new Date().getFullYear()
+    const serving = {...tenth, startDate: `${year - 1}-01-01`, endDate: `${year + 1}-12-31`}
+    const coming = {...tenth, id: 11, number: 11, startDate: `${year + 2}-01-01`, endDate: `${year + 3}-01-01`}
+    const editor = (board: typeof tenth) =>
+      mount(BoardEditor, {props: {board, boards: [serving, coming], nextNumber: 12, back: "/board"}, global: {stubs: editorStubs}})
+
+    expect(editor(serving).getComponent(editorStubs.DiscordPlaceFields).props()).toMatchObject({name: "Board", slug: "board"})
+    expect(editor(coming).getComponent(editorStubs.DiscordPlaceFields).props()).toMatchObject({name: "Kandi", slug: "kandi"})
   })
 
   it("never saves without a number and a start", async () => {

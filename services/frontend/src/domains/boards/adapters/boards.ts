@@ -9,8 +9,10 @@ import {
   deleteBoard,
   FileType,
   findAllBoards,
+  findBoardDiscord,
   linkMember,
   removeMember,
+  setBoardDiscord,
   updateBoard,
   updateMember,
   uploadPublicImage,
@@ -20,6 +22,8 @@ import type {
   BoardMemberResponse,
   BoardRequest,
   BoardResponse,
+  DiscordPlace,
+  DiscordPlaceRequest,
   Image,
   UpdateBoardMemberRequest,
 } from "@/services/api"
@@ -27,10 +31,12 @@ import type {PictureStore} from "@/components/island/pictures"
 import {accepted, refusable} from "../refusals"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
+import {readOr} from "@/utils/answers"
 
 // Re-exported so this adapter still answers for its own surface, while the type has one definition.
 export type {Refused}
 
+export type {DiscordPlace, DiscordPlaceRequest}
 export type Board = BoardResponse
 export type BoardMember = BoardMemberResponse
 
@@ -154,3 +160,10 @@ export async function linkMemberAccountOrReason(
 /** A membership is somebody's place in the association's history, so a refusal is worth reporting. */
 export const dropMemberOrReason = (boardId: number, id: number): Promise<{ok: true} | Refused> =>
   accepted(removeMember({path: {boardId, id}}), "That member could not be removed.")
+
+/** The role a board's people hold on Discord and the channels it opens, by the cohort the board is kept under. */
+export const readBoardDiscord = (key: string): Promise<DiscordPlace | null> => readOr(findBoardDiscord({path: {key}}), null)
+
+/** Links or makes the board's role, and opens, closes or makes its channels. */
+export const saveBoardDiscord = (key: string, body: DiscordPlaceRequest): Promise<Saved<DiscordPlace> | Refused> =>
+  refusable(setBoardDiscord({path: {key}, body}), "Discord could not be set for the board.")

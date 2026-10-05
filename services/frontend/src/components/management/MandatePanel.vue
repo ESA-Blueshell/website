@@ -2,6 +2,7 @@
 /* A membership's incasso standing and mandate, with the board's way to record a paper mandate or
    replace one. The account number shows masked until a board member reveals it; the revealed
    number lives in this component's memory alone, so it is gone when the panel closes. */
+import {vFirstField} from "@/utils/firstField"
 import {computed, ref, watch} from "vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -17,7 +18,11 @@ import {formatDate, formatDay} from "@/utils/timestamps"
 
 defineOptions({name: "MandatePanel"})
 
-const {membershipId} = defineProps<{membershipId: number}>()
+const {membershipId, startOpen = false} = defineProps<{
+  membershipId: number
+  /** Opens on the form, where the panel is asked for in order to fill it in. */
+  startOpen?: boolean
+}>()
 const emit = defineEmits<{changed: []}>()
 
 const WORDS: Record<IncassoStanding, string> = {
@@ -27,7 +32,7 @@ const WORDS: Record<IncassoStanding, string> = {
 }
 
 const mandate = ref<MandateResponse | null>(null)
-const open = ref(false)
+const open = ref(startOpen)
 const iban = ref("")
 const holder = ref("")
 const signedOn = ref(new Date().toISOString().slice(0, 10))
@@ -240,7 +245,9 @@ watch(() => membershipId, load, {immediate: true})
     </div>
 
     <form
+
       v-else
+      v-first-field
       class="mandate__form"
       data-testid="mandate-form"
       @submit.prevent="save"

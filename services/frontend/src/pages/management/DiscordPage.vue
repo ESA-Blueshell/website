@@ -13,11 +13,15 @@ import FilterPicker from "@/components/island/FilterPicker.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import PageTabs from "@/components/island/PageTabs.vue"
+import SelectionBar from "@/components/island/SelectionBar.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
+import BulkAdd from "@/components/management/BulkAdd.vue"
+import {useUserSelection} from "@/composables/useUserSelection"
 import {
   type ListedTarget,
   type MissingTarget,
@@ -27,9 +31,11 @@ import {
   driftOf,
   followsOf,
   readTargetOverview,
+  useTargetSync,
 } from "@/domains/cohorts"
 import {
   ChannelGlyph,
+  DISCORD_TABS,
   type AdoptionMatch,
   type CataloguedChannel,
   type NamedRole,
@@ -49,9 +55,7 @@ import store from "@/plugins/store"
 defineOptions({name: "DiscordPage"})
 
 const SYSTEM = TargetSystem.DISCORD
-const ROLES = "/management/platforms/discord"
 const CHANNELS = "/management/platforms/discord/channels"
-const TABS = [{label: "Roles", to: ROLES}, {label: "Channels", to: CHANNELS}]
 
 const route = useRoute()
 const onChannels = computed(() => route.path === CHANNELS)
@@ -119,6 +123,18 @@ const roleRows = computed<RoleRow[]>(() => [
   ...others.value.map((one) => ({key: one.externalId, missing: null, role: one, managed: false})),
 ])
 const roleLink = (row: RoleRow) => (row.role ? `/management/platforms/discord/roles/${row.role.externalId}` : null)
+
+/* Ticked roles are compared with Discord or added to who is missing them together. A role still to
+   be created has nothing to compare, so it carries no tick. */
+const madeRoles = computed(() => roleRows.value.filter((row) => row.role))
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, clear: clearSelection} =
+  useUserSelection(computed(() => madeRoles.value.map((row) => row.key)))
+const ticked = computed(() => madeRoles.value.filter((row) => isSelected(row.key)).map((row) => row.role!))
+const sync = useTargetSync(SYSTEM, ticked, ["role", "roles"])
+const synced = async () => {
+  clearSelection()
+  await load()
+}
 
 const everyChannel = computed<ChannelRow[]>(() => groups.value.flatMap((group) => group.channels.map((one) => ({...one, category: group.name}))))
 /* Archived channels are kept for history and nobody works in them, so the list leaves them out until asked. */
@@ -246,7 +262,7 @@ onMounted(load)
       </notice-box>
 
       <page-tabs
-        :entries="TABS"
+        :entries="DISCORD_TABS"
         label="Discord"
         testid="discord-tabs"
       />
@@ -259,10 +275,24 @@ onMounted(load)
         :row-testid="(row) => (row.missing ? `discord-role-missing-${row.missing.targetId}` : `discord-role-${row.key}`)"
         search-label="Search roles"
         :search-text="(row) => row.role?.label ?? row.missing?.cohortLabel ?? ''"
+        :header-state="headerState"
         :rows="roleRows"
+        :selected-count="selectedIdsArray.length"
         testid="discord-roles"
         :to="roleLink"
+        :total="madeRoles.length"
+        @clear-selection="clearSelection"
+        @toggle-shown="toggleHeader"
       >
+        <template #check="{row}">
+          <row-check
+            v-if="row.role"
+            :checked="isSelected(row.key)"
+            :label="`Select @${row.role.label}`"
+            :testid="`discord-role-check-${row.key}`"
+            @toggle="toggle(row.key)"
+          />
+        </template>
         <template #count>
           {{ kept.length + missing.length }} managed by the site, {{ others.length }} not
         </template>
@@ -333,6 +363,44 @@ onMounted(load)
           </management-row>
         </template>
       </management-table>
+
+      <template v-if="!onChannels">
+        <selection-bar
+          always
+          :count="selectedIdsArray.length"
+          testid="discord-role-selection"
+          @clear="clearSelection"
+        >
+          <cut-button
+            small
+            testid="discord-bulk-compare"
+            tone="solid"
+            @click="sync.task.value = 'compare'"
+          >
+            Compare with Discord
+          </cut-button>
+          <cut-button
+            small
+            testid="discord-bulk-push"
+            @click="sync.task.value = 'push'"
+          >
+            Add missing people
+          </cut-button>
+        </selection-bar>
+
+        <bulk-add
+          :items="sync.items.value"
+          :noun="['role', 'roles']"
+          :open="sync.task.value !== null"
+          :run="sync.run"
+          :skipped="sync.skipped.value"
+          testid="discord-bulk-sync"
+          :title="sync.title.value"
+          :words="sync.words.value"
+          @done="synced"
+          @update:open="sync.task.value = null"
+        />
+      </template>
 
       <management-table
         v-else

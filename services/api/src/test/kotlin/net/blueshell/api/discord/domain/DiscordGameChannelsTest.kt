@@ -36,9 +36,18 @@ class DiscordGameChannelsTest {
     }
 
     @Test
+    fun `offers every text channel on the server for a game filed somewhere else`() {
+        val provider: ObjectProvider<DoorSource> = mock { on { ifAvailable } doReturn rooms }
+
+        assertThat(channels(provider).everywhere()!!.map { it.name })
+            .containsExactly("valorant", "welcome", "chess", "rules", "valorant-esports")
+    }
+
+    @Test
     fun `offers nothing without a bot`() {
         val provider: ObjectProvider<DoorSource> = mock { on { ifAvailable } doReturn null }
 
+        assertThat(channels(provider).everywhere()).isNull()
         assertThat(channels(provider).offered(GameChannelCategory.ESPORTS)).isNull()
     }
 

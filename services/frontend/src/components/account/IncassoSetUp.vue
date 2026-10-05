@@ -4,6 +4,7 @@
    masked. From the account page a change asks the person to prove it is them first, and saves
    once they have. The address is the mandate's own record: saving it here leaves the address on
    the account as it is. */
+import {vFirstField} from "@/utils/firstField"
 import {onMounted, ref, watch} from "vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import {StepUpDialog, readTwoFactor} from "@/domains/auth"
@@ -113,6 +114,7 @@ onMounted(async () => {
     </v-btn>
     <form
       v-else
+      v-first-field
       data-testid="incasso-form"
       @submit.prevent="save"
     >

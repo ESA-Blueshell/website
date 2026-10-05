@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 
 @Schema(name = "DiscordPlaceRequest", description = "The role a cohort's people hold, and the channels it opens.")
 data class DiscordPlaceRequest(
@@ -47,15 +48,16 @@ data class AdoptDiscordResponse(
     val refused: List<RefusedMatch>,
 )
 
-/** A committee's and a team's role and private channels on Discord. */
+/** A committee's, a team's and a board's role and private channels on Discord. */
 @RestController
-@Tag(name = "Discord places", description = "A committee's or a team's role and private channels")
+@Tag(name = "Discord places", description = "A committee's, a team's or a board's role and private channels")
 @BoardOnly
 class DiscordPlaceController(
     private val discord: CohortDiscord,
     private val adoption: DiscordAdoption,
     @param:Value($$"${discord.committees-category:Committees}") private val committees: String,
     @param:Value($$"${discord.esports-category:Esports}") private val esports: String,
+    @param:Value($$"${discord.board-category:Board}") private val boards: String,
 ) {
     @GetMapping("/management/committees/{id}/discord")
     fun findCommitteeDiscord(
@@ -87,6 +89,17 @@ class DiscordPlaceController(
     ) = discord.remove(team(id))
 
     /** Takes the role off the cohort that follows it. Discord keeps the role, its holders and its channels. */
+    @GetMapping("/management/boards/discord/{key}")
+    fun findBoardDiscord(
+        @PathVariable key: String,
+    ): DiscordPlace = discord.read(board(key))
+
+    @PutMapping("/management/boards/discord/{key}")
+    fun setBoardDiscord(
+        @PathVariable key: String,
+        @RequestBody request: DiscordPlaceRequest,
+    ): DiscordPlace = discord.apply(board(key), request.choice(), boards)
+
     @DeleteMapping("/management/discord/roles/{roleId}/link")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun unlinkDiscordRole(
@@ -106,4 +119,9 @@ class DiscordPlaceController(
     private fun committee(id: Long) = "${CohortType.COMMITTEE_MEMBERS}:$id"
 
     private fun team(id: Long) = "${CohortType.TEAM_PLAYERS}:$id"
+
+    // A board's people are one of three cohorts by where it stands: in office, candidate, or its own years.
+    private fun board(key: String) =
+        key.takeIf { it == CohortType.BOARD.name || it == CohortType.KANDI.name || it.startsWith("${CohortType.BOARD_YEAR_MEMBERS}:") }
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No board is kept under $key")
 }

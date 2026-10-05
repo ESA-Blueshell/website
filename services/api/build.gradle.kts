@@ -167,7 +167,7 @@ dependencies {
     testFixturesApi("org.testcontainers:testcontainers:2.0.5")
     testFixturesCompileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
 
-    mockitoAgent("org.mockito:mockito-core:5.23.0")
+    mockitoAgent("org.mockito:mockito-core:5.24.0")
 }
 
 springBoot {

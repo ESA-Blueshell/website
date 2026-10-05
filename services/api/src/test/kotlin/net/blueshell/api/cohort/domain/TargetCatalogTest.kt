@@ -35,8 +35,9 @@ class TargetCatalogTest {
     @Test
     fun `descriptors come from registered target strategies`() {
         assertThat(catalog.descriptors()).containsExactly(strategy.descriptor)
-        // A strategy that says nothing else is always reachable.
+        // A strategy that says nothing else is always reachable, and keeps no folders of its own.
         assertThat(strategy.available()).isTrue()
+        assertThat(strategy.folderKeeper).isNull()
     }
 
     @Test

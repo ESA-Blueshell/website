@@ -42,17 +42,17 @@ const teamsOf = (game: string | number) => entries.value.find(entry => entry.gam
   >
     <band-head
       eyebrow="Competitive gaming for anyone who wants to"
-      heading="Blueshell in competition"
+      heading="Blueshell in esports"
     >
       <template #heading>
-        Blueshell in <span class="text-brand-ink">competition</span>
+        Blueshell in <span class="text-brand-ink">esports</span>
       </template>
       <cut-button
         href="/competition"
         testid="home-esports-more"
         tone="solid"
       >
-        More on competition
+        More on esports
       </cut-button>
     </band-head>
 

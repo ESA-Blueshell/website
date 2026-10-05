@@ -110,7 +110,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/competition/TeamEdit.vue"),
     meta: {requiresAuth: true},
   },
-  // Competition is the word on screen for what the code calls esports. The old addresses
+  // Esports is the word on screen again; the addresses stay at /competition. The old addresses
   // redirect, so a link somebody saved or shared still lands on the same page.
   {
     path: "/competition",
@@ -190,7 +190,7 @@ const routes: RouteRecordRaw[] = [
     path: "/competition/:slug",
     name: "game",
     component: () => import("@/pages/esports/GameBySlug.vue"),
-    meta: {title: "Competition"},
+    meta: {title: "Esports"},
   },
   {
     // Nothing links here, but a hand-typed /partners is a reasonable guess and reached the

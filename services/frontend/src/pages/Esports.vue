@@ -27,7 +27,7 @@ defineOptions({name: "EsportsPage"})
 
 /** What the head of the index says, which no season changes. */
 const HEAD = {
-  eyebrow: "Blueshell Competition",
+  eyebrow: "Blueshell Esports",
   heading: "Any game you want to play,",
   headingTail: "competitively",
   body: "The games below have teams in them right now, and that list is not a limit: bring enough people who want to play something else and the association will arrange it. Tryouts run every season, and there is a room full of people who will help you get better.",

@@ -198,7 +198,7 @@ const removed = async () => {
   await refreshSharedLists()
 }
 
-const backLabel = computed(() => (props.area === "casual" ? "Casual" : "Competition"))
+const backLabel = computed(() => (props.area === "casual" ? "Casual" : "Esports"))
 const toCount = (raw: string | null) => {
   sortIndex.value = raw ? Number(raw) : null
 }
@@ -208,7 +208,7 @@ const toCount = (raw: string | null) => {
   <edit-page
     :accent="accent"
     :back="{to: back, label: backLabel}"
-    :eyebrow="game ? game.name : 'Casual and competition'"
+    :eyebrow="game ? game.name : 'Casual and esports'"
     testid="game-edit"
     :title="game ? 'Edit game' : 'Add a game'"
   >
@@ -227,7 +227,7 @@ const toCount = (raw: string | null) => {
         :href="`/competition/${game.slug}`"
         testid="game-edit-see-competition"
       >
-        See it in competition
+        See it in esports
       </cut-button>
     </template>
 
@@ -317,7 +317,7 @@ const toCount = (raw: string | null) => {
 
       <form-section
         testid="game-edit-competition"
-        title="Competition"
+        title="Esports"
       >
         <div data-testid="game-edit-competition-intro">
           <form-control
@@ -408,7 +408,7 @@ const toCount = (raw: string | null) => {
           data-testid="game-edit-preview-competition"
         >
           <h3 class="game-previews__label">
-            Competition
+            Esports
           </h3>
           <preview-frame>
             <esports-game-head

@@ -36,28 +36,31 @@ describe("the committees in Management", () => {
       committee(3, "Oldcie", {archived: true}),
     ]})
     api.findCohorts.mockResolvedValue({status: 200, data: [
-      cohort(1, [{system: "DISCORD", label: "Sitecie", made: true}, {system: "BREVO", label: "Sitecie list", made: true}]),
+      cohort(1, [{system: "DISCORD", label: "Sitecie", made: true, externalId: "900"}, {system: "BREVO", label: "Sitecie list", made: true, externalId: "31"}]),
       cohort(2, [{system: "BREVO", label: "Nintenco list", made: false}]),
     ]})
   })
 
   afterEach(() => unmountAll(wrappers, "CommitteeListPage"))
 
-  it("lists each committee with its seats, role and list, and makes one missing them stand out", async () => {
+  it("lists each committee with its members, its role and list as links, and makes one missing them stand out", async () => {
     const wrapper = await mount()
 
     const sitecie = wrapper.get('[data-testid="committee-row-1"]')
-    expect(sitecie.text()).toContain("2 seats")
+    expect(sitecie.text()).toContain("2 members")
     expect(wrapper.get('[data-testid="committee-discord-1"]').text()).toBe("@Sitecie")
     expect(wrapper.get('[data-testid="committee-brevo-1"]').text()).toBe("Sitecie list")
+    expect(wrapper.get('[data-testid="committee-discord-1"]').attributes("to")).toBe("/management/platforms/discord/roles/900")
+    expect(wrapper.get('[data-testid="committee-brevo-1"]').attributes("to")).toBe("/management/platforms/brevo/lists/31")
+    expect(wrapper.get("thead").text()).toContain("Members")
     expect(sitecie.get("a").attributes("to")).toBe("/management/committees/sitecie")
-    expect(wrapper.get('[data-testid="committee-row-2"]').text()).toContain("1 seat")
+    expect(wrapper.get('[data-testid="committee-row-2"]').text()).toContain("1 member")
     expect(wrapper.get('[data-testid="committee-discord-2"]').text()).toBe("No role")
     expect(wrapper.get('[data-testid="committee-brevo-2"]').text()).toBe("No list")
     expect(wrapper.get('[data-testid="committee-list-missing"]').text()).toContain("1 committee is missing a role or a list")
     expect(wrapper.get('[data-testid="committee-list-missing"]').text()).toContain("Nintenco (no role, no list)")
     const archived = wrapper.get('[data-testid="committee-row-3"]')
-    expect(archived.text()).toContain("0 seats")
+    expect(archived.text()).toContain("0 members")
     expect(archived.text()).toContain("Archived")
     expect(wrapper.findAll('[data-testid^="committee-row-"]').at(-1)!.attributes("data-testid")).toBe("committee-row-3")
     expect(wrapper.findComponent({name: "FactList"}).text()).toContain("1 archived")

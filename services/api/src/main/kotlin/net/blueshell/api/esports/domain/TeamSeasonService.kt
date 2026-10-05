@@ -36,6 +36,10 @@ class TeamSeasonService(
     @Transactional(readOnly = true)
     fun findSeasonIdsFielded(game: String): List<Long> = fielded.findSeasonIdsFielded(game)
 
+    /** Every team's fieldings, newest first: one read for a list of every team. */
+    @Transactional(readOnly = true)
+    fun everyFielding(): List<TeamSeason> = fielded.findAllWithSeason()
+
     /** The seasons a team was fielded in, newest first. */
     @Transactional(readOnly = true)
     fun seasonsOf(teamId: Long): List<TeamSeason> = fielded.findAllByTeamId(teamId)

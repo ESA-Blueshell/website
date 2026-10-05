@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-/* The association's committees: their seats and what each has on Brevo and Discord. A committee
+/* The association's committees: their members and what each has on Brevo and Discord. A committee
    missing its role or list stands out. Opening one renders the site's own committee editor inside
    Management. */
 import {computed, onMounted, ref} from "vue"
@@ -11,7 +11,7 @@ import StateMark from "@/components/island/StateMark.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import {type CohortSummary, type SummaryTarget, TargetSystem, fetchCohorts} from "@/domains/cohorts"
+import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts} from "@/domains/cohorts"
 import {type Committee, listCommittees} from "@/domains/committees"
 
 defineOptions({name: "CommitteeListPage"})
@@ -23,8 +23,8 @@ const loaded = ref(false)
 const failed = ref(false)
 
 const SYSTEMS = [
-  {system: TargetSystem.DISCORD, none: "No role", mark: (target: SummaryTarget) => `@${target.label}`},
-  {system: TargetSystem.BREVO, none: "No list", mark: (target: SummaryTarget) => target.label},
+  {system: TargetSystem.DISCORD, none: "No role"},
+  {system: TargetSystem.BREVO, none: "No list"},
 ]
 
 const targetsOf = (committee: Committee): SummaryTarget[] =>
@@ -38,7 +38,7 @@ const matches = (committee: Committee) => {
 }
 const COLUMNS: TableColumn[] = [
   {key: "name", label: "Committee", wrap: true},
-  {key: "seats", label: "Seats"},
+  {key: "members", label: "Members"},
   {key: "discord", label: "Discord"},
   {key: "brevo", label: "Brevo"},
   {key: "state", label: "State"},
@@ -53,15 +53,15 @@ const facts = computed(() => {
   const people = new Set(live.value.flatMap((one) => (one.members ?? []).map((seat) => seat.userId)))
   return [
     {label: "Committees", value: String(live.value.length), sub: `${committees.value.length - live.value.length} archived`},
-    {label: "Seats", value: `${people.size} ${people.size === 1 ? "person" : "people"}`, sub: "Across every committee"},
+    {label: "Members", value: `${people.size} ${people.size === 1 ? "person" : "people"}`, sub: "Across every committee"},
     {label: "Needs a look", value: String(missing.value.length), sub: "Missing a role or a list"},
   ]
 })
 const missing = computed(() => committees.value.filter((one) => !one.archived && lacking(one).length > 0))
 
-const seats = (committee: Committee) => {
+const members = (committee: Committee) => {
   const count = committee.members?.length ?? 0
-  return `${count} ${count === 1 ? "seat" : "seats"}`
+  return `${count} ${count === 1 ? "member" : "members"}`
 }
 
 onMounted(async () => {
@@ -83,7 +83,7 @@ onMounted(async () => {
     title="Committees"
   >
     <template #lede>
-      Every committee, its seats, and the role and list its people hold.
+      Every committee, its members, and the role and list they hold.
     </template>
     <template #actions>
       <cut-button
@@ -151,25 +151,20 @@ onMounted(async () => {
         </router-link>
         <span class="mg-sub">{{ row.slug }}</span>
       </template>
-      <template #seats="{row}">
-        {{ seats(row) }}
+      <template #members="{row}">
+        {{ members(row) }}
       </template>
       <template
         v-for="one in SYSTEMS"
         :key="one.system"
         #[one.system.toLowerCase()]="{row}"
       >
-        <span
-          v-if="madeOn(row, one.system)"
-          :data-testid="`committee-${one.system.toLowerCase()}-${row.id}`"
-        >{{ one.mark(madeOn(row, one.system)!) }}</span>
-        <state-mark
-          v-else
-          :kind="row.archived ? 'not-compared' : 'not-created'"
+        <target-mark
+          :quiet="row.archived"
+          :system="one.system"
+          :targets="targetsOf(row)"
           :testid="`committee-${one.system.toLowerCase()}-${row.id}`"
-        >
-          {{ one.none }}
-        </state-mark>
+        />
       </template>
       <template #state="{row}">
         <state-mark :kind="row.archived ? 'not-compared' : 'in-step'">
@@ -178,7 +173,7 @@ onMounted(async () => {
       </template>
       <template #phone="{row}">
         <management-row
-          :meta="`${seats(row)} · ${row.slug}`"
+          :meta="`${members(row)} · ${row.slug}`"
           :name="row.name"
           :testid="`committee-row-${row.id}`"
           :to="`/management/committees/${row.slug}`"

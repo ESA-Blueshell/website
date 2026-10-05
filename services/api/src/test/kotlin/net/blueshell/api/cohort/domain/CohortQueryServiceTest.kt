@@ -87,7 +87,7 @@ class CohortQueryServiceTest {
         every { targetExternalIds.find(role) } returns null
 
         assertThat(service.summaries().single().targets).containsExactly(
-            SummaryTarget(TargetSystem.BREVO, "Cohort 30", true),
+            SummaryTarget(TargetSystem.BREVO, "Cohort 30", true, "7"),
             SummaryTarget(TargetSystem.DISCORD, "Sitecie", false),
         )
         verify(exactly = 1) { targets.findAll() }

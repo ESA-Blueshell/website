@@ -3,7 +3,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import BoardList from "@/pages/management/BoardList.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const api = vi.hoisted(() => ({findAllBoards: vi.fn()}))
+const api = vi.hoisted(() => ({findAllBoards: vi.fn(), findCohorts: vi.fn()}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -32,7 +32,14 @@ describe("the boards in Management", () => {
       board(11, "2025-09-01", null, [{id: 2, name: "Alice"}, {id: 3, name: "Bram"}], "The Golden Board"),
       board(10, "2024-09-01", "2025-08-31", []),
     ]})
+    api.findCohorts.mockResolvedValue({status: 200, data: [
+      cohort("BOARD", [{system: "DISCORD", label: "Board", made: true, externalId: "77"}, {system: "BREVO", label: "Board list", made: true, externalId: "5"}]),
+      cohort("KANDI", [{system: "DISCORD", label: "Kandi", made: true, externalId: "78"}]),
+    ]})
   })
+
+  const cohort = (definitionKey: string, targets: unknown[]) =>
+    ({id: 1, type: definitionKey, category: "BOARD", label: definitionKey, memberCount: 0, mappingCount: targets.length, definitionKey, targets})
 
   afterEach(() => {
     unmountAll(wrappers, "BoardListPage")
@@ -50,6 +57,20 @@ describe("the boards in Management", () => {
     expect(wrapper.get('[data-testid="board-standing-10"]').text()).toBe("Handed over")
     expect(wrapper.get('[data-testid="board-row-10"]').text()).toContain("0 members")
     expect(wrapper.get('[data-testid="board-row-10"] a').attributes("to")).toBe("/management/board/10")
+  })
+
+  it("links the role and list of the board in office and of the candidate board, and none for a board that handed over", async () => {
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="board-discord-11"]').text()).toBe("@Board")
+    expect(wrapper.get('[data-testid="board-discord-11"]').attributes("to")).toBe("/management/platforms/discord/roles/77")
+    expect(wrapper.get('[data-testid="board-brevo-11"]').attributes("to")).toBe("/management/platforms/brevo/lists/5")
+    expect(wrapper.get('[data-testid="board-discord-12"]').attributes("to")).toBe("/management/platforms/discord/roles/78")
+    expect(wrapper.get('[data-testid="board-brevo-12"]').text()).toBe("No list")
+    expect(wrapper.get('[data-testid="board-discord-10"]').text()).toBe("No role")
+
+    api.findCohorts.mockRejectedValue(new Error("offline"))
+    expect((await mount()).get('[data-testid="board-discord-11"]').text()).toBe("No role")
   })
 
   it("draws each board as a row on a phone, and names the board in office among the facts", async () => {

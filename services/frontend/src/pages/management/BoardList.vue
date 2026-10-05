@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-/* Every board, newest first: its year, its members and where it stands. Opening one renders the
-   site's own board editor inside Management. */
-import {computed, ref} from "vue"
+/* Every board, newest first: its year, its members, where it stands and the role and list it
+   holds. Opening one renders the site's own board editor inside Management. */
+import {computed, onMounted, ref} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FactList from "@/components/island/FactList.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
@@ -10,6 +10,7 @@ import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import {type Board, type BoardStanding, academicYear, boardName, standingOf, useBoards} from "@/domains/boards"
+import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts} from "@/domains/cohorts"
 
 defineOptions({name: "BoardListPage"})
 
@@ -22,6 +23,20 @@ const STANDING: Record<BoardStanding, {kind: "in-step" | "not-created" | "not-co
   past: {kind: "not-compared", word: "Handed over"},
 }
 
+/* The role and the list follow the standing, not the board's record: the board in office holds
+   the board's, the candidate board the kandi's, and a board that handed over holds neither. */
+const cohorts = ref<CohortSummary[]>([])
+const COHORT_OF: Partial<Record<BoardStanding, string>> = {"in office": "BOARD", candidate: "KANDI"}
+const targetsOf = (board: Board): SummaryTarget[] => {
+  const key = COHORT_OF[standingOf(board, boards.value)]
+  return (key && cohorts.value.find((one) => one.definitionKey === key)?.targets) || []
+}
+const SYSTEMS = [TargetSystem.DISCORD, TargetSystem.BREVO]
+
+onMounted(async () => {
+  cohorts.value = await fetchCohorts().catch(() => [])
+})
+
 const shown = computed(() => {
   const needle = search.value.trim().toLowerCase()
   return boards.value.filter((board) => needle === "" ||
@@ -32,6 +47,8 @@ const COLUMNS: TableColumn[] = [
   {key: "name", label: "Board", wrap: true},
   {key: "year", label: "Year"},
   {key: "people", label: "Members"},
+  {key: "discord", label: "Discord"},
+  {key: "brevo", label: "Brevo"},
   {key: "state", label: "State"},
 ]
 
@@ -109,6 +126,18 @@ const people = (board: Board) => `${board.members.length} ${board.members.length
       </template>
       <template #people="{row}">
         {{ people(row) }}
+      </template>
+      <template
+        v-for="system in SYSTEMS"
+        :key="system"
+        #[system.toLowerCase()]="{row}"
+      >
+        <target-mark
+          :quiet="standingOf(row, boards) === 'past'"
+          :system="system"
+          :targets="targetsOf(row)"
+          :testid="`board-${system.toLowerCase()}-${row.number}`"
+        />
       </template>
       <template #state="{row}">
         <state-mark

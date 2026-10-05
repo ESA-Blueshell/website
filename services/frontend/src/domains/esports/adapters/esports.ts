@@ -21,6 +21,7 @@ import {
   findRoster,
   findSeasonContents,
   findSeasons,
+  findFieldings,
   findTeamSeasons,
   findTeams,
   unfieldTeam,
@@ -259,6 +260,15 @@ export interface Fielding {
 export async function loadTeamSeasons(teamId: number): Promise<Fielding[]> {
   const res = await findTeamSeasons({path: {teamId}})
   return res.data ?? []
+}
+
+/** Every team's fieldings by team, newest first, in one read; nothing where it gave no answer. */
+export async function loadFieldings(): Promise<Map<number, Fielding[]> | null> {
+  const res = await findFieldings()
+  if (!res.data) return null
+  const byTeam = new Map<number, Fielding[]>()
+  for (const {teamId, game, season} of res.data) byTeam.set(teamId, [...(byTeam.get(teamId) ?? []), {game, season}])
+  return byTeam
 }
 
 /**

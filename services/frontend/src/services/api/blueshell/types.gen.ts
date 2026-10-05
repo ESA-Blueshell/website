@@ -3296,6 +3296,7 @@ export type StepUpRequest = {
 };
 
 export type SummaryTarget = {
+    externalId?: string | null;
     label: string;
     made: boolean;
     system: TargetSystem;
@@ -3356,6 +3357,15 @@ export enum TargetSystem {
     GOOGLE_CALENDAR = 'GOOGLE_CALENDAR',
     DISCORD = 'DISCORD'
 }
+
+/**
+ * One team's fielding in a game in a season, named by the team it belongs to
+ */
+export type TeamFieldingResponse = {
+    game: string;
+    season: SeasonResponse;
+    teamId: number;
+};
 
 /**
  * A team as a write says it stands. A team is the association's rather than a game's, so it names none
@@ -6710,6 +6720,47 @@ export type ReadStarboardResponses = {
 };
 
 export type ReadStarboardResponse = ReadStarboardResponses[keyof ReadStarboardResponses];
+
+export type FindFieldingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/esports/fieldings';
+};
+
+export type FindFieldingsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindFieldingsError = FindFieldingsErrors[keyof FindFieldingsErrors];
+
+export type FindFieldingsResponses = {
+    /**
+     * OK
+     */
+    200: Array<TeamFieldingResponse>;
+};
+
+export type FindFieldingsResponse = FindFieldingsResponses[keyof FindFieldingsResponses];
 
 export type FindGameData = {
     body?: never;

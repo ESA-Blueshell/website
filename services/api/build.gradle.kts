@@ -105,7 +105,7 @@ dependencies {
 
     implementation("com.googlecode.libphonenumber:libphonenumber:9.0.38")
     // BlogHtmlSanitizer's safelist. It arrived through flexmark until flexmark went; pinned where it resolved.
-    implementation("org.jsoup:jsoup:1.15.4")
+    implementation("org.jsoup:jsoup:1.23.2")
 
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
 

@@ -17,7 +17,7 @@ set -euo pipefail
 
 # The cluster runs what this CLI emits, so the version is a deployment decision
 # and belongs in the file, not in whatever happens to be on someone's PATH.
-FLUX_VERSION=${FLUX_VERSION:-2.8.8}
+FLUX_VERSION=${FLUX_VERSION:-2.9.5}
 COMPONENTS_EXTRA=image-reflector-controller,image-automation-controller
 TARGET=${TARGET:-platform/cluster/flux/clusters/production/flux-system/gotk-components.yaml}
 

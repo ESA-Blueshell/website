@@ -88,7 +88,7 @@ class DiscordMemberController(
     @GetMapping("/game-channels")
     @Operation(
         operationId = "listGameChannels",
-        summary = "The text channels in the server's games or esports category, in the server's order",
+        summary = "The text channels in the server's games or esports category, or every text channel, in the server's order",
     )
     @ApiResponse(
         responseCode = "200",
@@ -97,9 +97,12 @@ class DiscordMemberController(
     @ApiResponse(responseCode = "503", description = "The bot is not set up", content = [Content()])
     fun channels(
         @RequestParam(defaultValue = "GAMES") category: GameChannelCategory,
+        @RequestParam(defaultValue = "false") everywhere: Boolean = false,
     ): ResponseEntity<List<DiscordChannelResponse>> {
-        val found = gameChannels.offered(category) ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        return ResponseEntity.ok(found.map { DiscordChannelResponse(it.id, it.guildId, it.name) })
+        val found =
+            (if (everywhere) gameChannels.everywhere() else gameChannels.offered(category))
+                ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        return ResponseEntity.ok(found.map { DiscordChannelResponse(it.id, it.guildId, it.name, it.category) })
     }
 
     // What a description may be written with, for whoever writes one, so it needs a login.

@@ -2440,6 +2440,11 @@ components:
     DiscordChannelResponse:
       description: A text channel a game may live in
       properties:
+        category:
+          description: The category the channel is filed under on the server, if any
+          type:
+          - string
+          - 'null'
         guildId:
           description: The server the channel is in, which a link into it needs
           type: string
@@ -14417,6 +14422,12 @@ paths:
         schema:
           $ref: '#/components/schemas/GameChannelCategory'
           default: GAMES
+      - in: query
+        name: everywhere
+        required: false
+        schema:
+          default: false
+          type: boolean
       responses:
         '200':
           content:
@@ -14517,7 +14528,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up
-      summary: The text channels in the server's games or esports category, in the server's order
+      summary: The text channels in the server's games or esports category, or every text channel, in the server's order
       tags:
       - Discord
   /discord/invite/{door}:

@@ -475,7 +475,7 @@ export const listDiscordEmojis = <ThrowOnError extends boolean = false>(options?
 });
 
 /**
- * The text channels in the server's games or esports category, in the server's order
+ * The text channels in the server's games or esports category, or every text channel, in the server's order
  */
 export const listGameChannels = <ThrowOnError extends boolean = false>(options?: Options<ListGameChannelsData, ThrowOnError>): RequestResult<ListGameChannelsResponses, ListGameChannelsErrors, ThrowOnError> => (options?.client ?? client).get<ListGameChannelsResponses, ListGameChannelsErrors, ThrowOnError>({
     responseType: 'json',

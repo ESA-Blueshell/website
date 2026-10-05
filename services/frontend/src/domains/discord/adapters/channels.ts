@@ -17,5 +17,16 @@ export async function listGameRooms(category: GameChannelCategory = GameChannelC
   return rooms?.map(({id, guildId, name}) => ({id, guildId, name})) ?? null
 }
 
+/** A text channel anywhere on the server, with the category it is filed under. */
+export interface FiledRoom extends GameRoom {
+  category: string | null
+}
+
+/** Every text channel on the server, for a game whose channel is filed outside the games and esports categories. */
+export async function listEveryRoom(): Promise<FiledRoom[] | null> {
+  const rooms = await readOr(listGameChannels({query: {everywhere: true}}), null)
+  return rooms?.map(({id, guildId, name, category}) => ({id, guildId, name, category: category ?? null})) ?? null
+}
+
 /** The channel in the Discord app itself. */
 export const gameRoomUrl = (room: GameRoom): string => `https://discord.com/channels/${room.guildId}/${room.id}`

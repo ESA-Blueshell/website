@@ -4,7 +4,7 @@ import TeamList from "@/pages/management/TeamList.vue"
 import {forgetCasualGames} from "@/domains/games"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const api = vi.hoisted(() => ({findCasualGames: vi.fn(), findTeams: vi.fn(), findTeamSeasons: vi.fn(), findFieldings: vi.fn(), findCohorts: vi.fn(), listCataloguedChannels: vi.fn()}))
+const api = vi.hoisted(() => ({findCasualGames: vi.fn(), findTeams: vi.fn(), findTeamSeasons: vi.fn(), findFieldings: vi.fn(), findCohorts: vi.fn(), listCataloguedChannels: vi.fn(), setTeamDiscord: vi.fn()}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -118,5 +118,38 @@ describe("the competition teams in Management", () => {
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "zzz")
     await settle()
     expect(wrapper.get('[data-testid="team-list-empty"]').text()).toBe("No team matches.")
+  })
+
+  it("gives the ticked teams without a role one, with a channel, and leaves out the rest", async () => {
+    api.setTeamDiscord.mockResolvedValue({status: 200, data: {available: true}})
+    const wrapper = await mount()
+    const bulk = () => wrapper.findComponent({name: "BulkAdd"})
+
+    // The head's own offer to take every row, shown or not, and to let go again.
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("selectAll")
+    await settle()
+    expect(wrapper.get('[data-testid="team-list-selection"]').exists()).toBe(true)
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("clearSelection")
+    await settle()
+    for (const id of [1, 2, 3]) await wrapper.get(`[data-testid="team-check-${id}"]`).setValue(true)
+    await wrapper.get('[data-testid="team-add-roles"]').trigger("click")
+    await settle()
+
+    expect(bulk().props("open")).toBe(true)
+    expect(bulk().props("items").map((one: {name: string; note: string}) => [one.name, one.note])).toEqual([["Blueshell CS", "@Blueshell CS and #blueshell-cs"]])
+    expect(bulk().props("skipped")).toEqual([{name: "Blueshell Valorant", why: "Has a role already"}, {name: "Old team", why: "Archived"}])
+    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: true})
+    expect(api.setTeamDiscord).toHaveBeenCalledWith({path: {id: 2}, body: {createRole: true, channelIds: [], createChannel: "blueshell-cs"}})
+    api.setTeamDiscord.mockResolvedValue({status: 503, error: {message: "Discord is away."}})
+    expect((await bulk().props("run")(bulk().props("items")[0])).ok).toBe(false)
+
+    api.findCohorts.mockClear()
+    bulk().vm.$emit("done")
+    await settle()
+    expect(api.findCohorts).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[data-testid="team-list-selection"]').exists()).toBe(false)
+    bulk().vm.$emit("update:open", false)
+    await settle()
+    expect(bulk().props("open")).toBe(false)
   })
 })

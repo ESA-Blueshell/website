@@ -3,7 +3,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import BoardList from "@/pages/management/BoardList.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const api = vi.hoisted(() => ({findAllBoards: vi.fn(), findCohorts: vi.fn()}))
+const api = vi.hoisted(() => ({findAllBoards: vi.fn(), findCohorts: vi.fn(), listDiscordMatches: vi.fn(), adoptDiscordMatches: vi.fn()}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -95,5 +95,50 @@ describe("the boards in Management", () => {
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "1999")
     await settle()
     expect(wrapper.get('[data-testid="board-list-empty"]').text()).toBe("No board matches.")
+  })
+
+  it("links the ticked boards to the role that carries their years, and leaves out the rest", async () => {
+    api.findAllBoards.mockResolvedValue({status: 200, data: [
+      board(11, "2025-09-01", null, [{id: 2, name: "Alice"}]),
+      board(10, "2024-09-01", "2025-08-31", []),
+      board(9, "2023-09-01", "2024-08-31", []),
+      board(8, "2022-09-01", "2023-08-31", []),
+    ]})
+    api.listDiscordMatches.mockResolvedValue({status: 200, data: [
+      {key: "BOARD_YEAR_MEMBERS:9", label: "Board 2023-2024", type: "BOARD_YEAR_MEMBERS", roleId: "69", roleName: "Board 2023-2024", channels: []},
+    ]})
+    api.adoptDiscordMatches.mockResolvedValue({status: 200, data: {linked: 1}})
+    const wrapper = await mount()
+    const bulk = () => wrapper.findComponent({name: "BulkAdd"})
+
+    // The head's own offer to take every row, shown or not, and to let go again.
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("selectAll")
+    await settle()
+    expect(wrapper.get('[data-testid="board-list-selection"]').exists()).toBe(true)
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("clearSelection")
+    await settle()
+    for (const number of [10, 9, 8]) await wrapper.get(`[data-testid="board-check-${number}"]`).setValue(true)
+    await wrapper.get('[data-testid="board-link-roles"]').trigger("click")
+    await settle()
+
+    expect(bulk().props("open")).toBe(true)
+    expect(bulk().props("items").map((one: {name: string; note: string}) => [one.name, one.note])).toEqual([["Board IX", "@Board 2023-2024"]])
+    expect(bulk().props("skipped")).toEqual([
+      {name: "Board X", why: "Has a role already"},
+      {name: "Board VIII", why: "No role on Discord carries its name"},
+    ])
+    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: true})
+    expect(api.adoptDiscordMatches).toHaveBeenCalledWith({body: {keys: ["BOARD_YEAR_MEMBERS:9"]}})
+    api.adoptDiscordMatches.mockResolvedValue({status: 503, error: {message: "Discord is away."}})
+    expect((await bulk().props("run")(bulk().props("items")[0])).ok).toBe(false)
+
+    api.findCohorts.mockClear()
+    bulk().vm.$emit("done")
+    await settle()
+    expect(api.findCohorts).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[data-testid="board-list-selection"]').exists()).toBe(false)
+    bulk().vm.$emit("update:open", false)
+    await settle()
+    expect(bulk().props("open")).toBe(false)
   })
 })

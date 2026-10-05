@@ -7,6 +7,7 @@ export {
   listCommittees,
   listMyCommittees,
   loadCommitteePage,
+  saveCommitteeDiscord,
   saveGameOrganisers,
   type Committee,
 } from "./adapters/committees"

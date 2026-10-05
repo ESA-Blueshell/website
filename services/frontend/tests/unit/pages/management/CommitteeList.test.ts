@@ -3,7 +3,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import CommitteeList from "@/pages/management/CommitteeList.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const api = vi.hoisted(() => ({findCommittees: vi.fn(), findCohorts: vi.fn()}))
+const api = vi.hoisted(() => ({findCommittees: vi.fn(), findCohorts: vi.fn(), setCommitteeDiscord: vi.fn(), findTargetOverview: vi.fn(), createMissingTargets: vi.fn()}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -98,5 +98,54 @@ describe("the committees in Management", () => {
     api.findCommittees.mockRejectedValue(new Error("500"))
     const failed = await mount()
     expect(failed.get('[data-testid="committee-list-unreadable"]').text()).toContain("could not be read")
+  })
+
+  it("gives the ticked committees a role and channel or a list together, leaving out the ones that have one or are archived", async () => {
+    api.setCommitteeDiscord.mockResolvedValue({status: 200, data: {available: true}})
+    api.findTargetOverview.mockResolvedValue({status: 200, data: {lists: [], missing: [{targetId: 55, cohortId: 102, cohortLabel: "Nintenco", cohortType: "COMMITTEE_MEMBERS", memberCount: 1, creating: false}]}})
+    api.createMissingTargets.mockResolvedValue({status: 200, data: {queued: 1}})
+    const wrapper = await mount()
+    const bulk = () => wrapper.findComponent({name: "BulkAdd"})
+
+    // The head's own offer to take every row, shown or not, and to let go again.
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("selectAll")
+    await settle()
+    expect(wrapper.get('[data-testid="committee-list-selection"]').exists()).toBe(true)
+    wrapper.findComponent({name: "ManagementTable"}).vm.$emit("clearSelection")
+    await settle()
+    expect(wrapper.find('[data-testid="committee-list-selection"]').exists()).toBe(false)
+    for (const id of [1, 2, 3]) await wrapper.get(`[data-testid="committee-check-${id}"]`).setValue(true)
+    await wrapper.get('[data-testid="committee-add-roles"]').trigger("click")
+    await settle()
+
+    expect(bulk().props("open")).toBe(true)
+    expect(bulk().props("items").map((one: {name: string; note: string}) => [one.name, one.note])).toEqual([["Nintenco", "@Nintenco and #nintenco"]])
+    expect(bulk().props("skipped")).toEqual([{name: "Sitecie", why: "Has a role already"}, {name: "Oldcie", why: "Archived"}])
+    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: true})
+    expect(api.setCommitteeDiscord).toHaveBeenCalledWith({path: {id: 2}, body: {createRole: true, channelIds: [], createChannel: "nintenco"}})
+    api.setCommitteeDiscord.mockResolvedValue({status: 503, error: {message: "Discord is away."}})
+    expect((await bulk().props("run")(bulk().props("items")[0])).ok).toBe(false)
+    bulk().vm.$emit("update:open", false)
+    await settle()
+    expect(bulk().props("open")).toBe(false)
+
+    await wrapper.get('[data-testid="committee-add-lists"]').trigger("click")
+    await settle()
+    expect(bulk().props("title")).toBe("Add Brevo lists")
+    expect(bulk().props("skipped")).toEqual([{name: "Sitecie", why: "Has a list already"}, {name: "Oldcie", why: "Archived"}])
+    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: true})
+    expect(api.createMissingTargets).toHaveBeenCalledWith({path: {system: "BREVO"}, body: {targetIds: [55]}})
+
+    // A committee the site expects no list for cannot be given one from here.
+    api.findTargetOverview.mockResolvedValue({status: 200, data: {lists: [], missing: []}})
+    await wrapper.get('[data-testid="committee-add-lists"]').trigger("click")
+    await settle()
+    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: false, reason: "The site expects no list for this committee yet."})
+
+    api.findCohorts.mockClear()
+    bulk().vm.$emit("done")
+    await settle()
+    expect(api.findCohorts).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[data-testid="committee-list-selection"]').exists()).toBe(false)
   })
 })

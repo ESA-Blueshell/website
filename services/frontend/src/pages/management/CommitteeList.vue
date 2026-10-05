@@ -1,18 +1,22 @@
 <script lang="ts" setup>
 /* The association's committees: their members and what each has on Brevo and Discord. A committee
-   missing its role or list stands out. Opening one renders the site's own committee editor inside
-   Management. */
+   missing its role or list stands out, and the ticked ones can be given theirs together. Opening one
+   renders the site's own committee editor inside Management. */
 import {computed, onMounted, ref} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FactList from "@/components/island/FactList.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
+import SelectionBar from "@/components/island/SelectionBar.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import BulkAdd from "@/components/management/BulkAdd.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts} from "@/domains/cohorts"
-import {type Committee, listCommittees} from "@/domains/committees"
+import RowCheck from "@/components/management/RowCheck.vue"
+import {useUserSelection} from "@/composables/useUserSelection"
+import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, createMissingLists, fetchCohorts, readTargetOverview} from "@/domains/cohorts"
+import {type Committee, listCommittees, saveCommitteeDiscord} from "@/domains/committees"
 
 defineOptions({name: "CommitteeListPage"})
 
@@ -58,6 +62,46 @@ const facts = computed(() => {
   ]
 })
 const missing = computed(() => committees.value.filter((one) => !one.archived && lacking(one).length > 0))
+
+/* Ticked committees are given what they miss together: a role with its private channel, or a list.
+   The ones that have it, or are archived, are left out and said so before anything is added. */
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMany, clear: clearSelection} =
+  useUserSelection(computed(() => shown.value.map((one) => one.id)))
+const ticked = computed(() => committees.value.filter((one) => isSelected(one.id)))
+const adding = ref<TargetSystem | null>(null)
+const listTargets = ref<Map<number, number>>(new Map())
+
+type Addition = {key: number; name: string; note: string; committee: Committee}
+const leftOut = (system: TargetSystem) => ticked.value
+  .filter((one) => one.archived || madeOn(one, system))
+  .map((one) => ({name: one.name, why: one.archived ? "Archived" : system === TargetSystem.DISCORD ? "Has a role already" : "Has a list already"}))
+const toAdd = (system: TargetSystem): Addition[] => ticked.value
+  .filter((one) => !one.archived && !madeOn(one, system))
+  .map((one) => ({key: one.id, name: one.name, note: system === TargetSystem.DISCORD ? `@${one.name} and #${one.slug}` : "A list in the Committees folder", committee: one}))
+
+const cohortOf = (committee: Committee) => cohorts.value.find((one) => one.definitionKey === `COMMITTEE_MEMBERS:${committee.id}`)
+const addRole = async ({committee}: Addition) => {
+  const answered = await saveCommitteeDiscord(committee.id, {createRole: true, channelIds: [], createChannel: committee.slug})
+  return answered.ok ? {ok: true as const} : answered
+}
+const addList = async ({committee}: Addition) => {
+  const target = listTargets.value.get(cohortOf(committee)?.id ?? -1)
+  if (target == null) return {ok: false as const, reason: "The site expects no list for this committee yet."}
+  const answered = await createMissingLists(TargetSystem.BREVO, [target])
+  return answered.ok ? {ok: true as const} : answered
+}
+
+const startAdding = async (system: TargetSystem) => {
+  if (system === TargetSystem.BREVO) {
+    const overview = await readTargetOverview(TargetSystem.BREVO)
+    listTargets.value = new Map((overview?.missing ?? []).map((one) => [one.cohortId, one.targetId]))
+  }
+  adding.value = system
+}
+const added = async () => {
+  cohorts.value = await fetchCohorts()
+  clearSelection()
+}
 
 const members = (committee: Committee) => {
   const count = committee.members?.length ?? 0
@@ -123,9 +167,23 @@ onMounted(async () => {
       :row-key="(committee) => committee.id"
       :row-testid="(committee) => `committee-row-${committee.id}`"
       :rows="shown"
+      :header-state="headerState"
+      :selected-count="selectedIdsArray.length"
       testid="committee-list-table"
       :to="(committee) => `/management/committees/${committee.slug}`"
+      :total="committees.length"
+      @clear-selection="clearSelection"
+      @select-all="selectMany(committees.map((one) => one.id))"
+      @toggle-shown="toggleHeader"
     >
+      <template #check="{row}">
+        <row-check
+          :checked="isSelected(row.id)"
+          :label="`Select ${row.name}`"
+          :testid="`committee-check-${row.id}`"
+          @toggle="toggle(row.id)"
+        />
+      </template>
       <template #count>
         <b>{{ shown.length }}</b> of {{ committees.length }} committees
       </template>
@@ -184,6 +242,41 @@ onMounted(async () => {
         </management-row>
       </template>
     </management-table>
+
+    <selection-bar
+      :count="selectedIdsArray.length"
+      testid="committee-list-selection"
+      @clear="clearSelection"
+    >
+      <cut-button
+        small
+        testid="committee-add-roles"
+        tone="solid"
+        @click="startAdding(TargetSystem.DISCORD)"
+      >
+        Add Discord role and channel
+      </cut-button>
+      <cut-button
+        small
+        testid="committee-add-lists"
+        @click="startAdding(TargetSystem.BREVO)"
+      >
+        Add Brevo list
+      </cut-button>
+    </selection-bar>
+
+    <bulk-add
+      :each="adding === TargetSystem.BREVO ? 'a Brevo list' : 'a Discord role and a private channel'"
+      :items="adding ? toAdd(adding) : []"
+      :noun="['committee', 'committees']"
+      :open="adding !== null"
+      :run="adding === TargetSystem.BREVO ? addList : addRole"
+      :skipped="adding ? leftOut(adding) : []"
+      testid="committee-bulk-add"
+      :title="adding === TargetSystem.BREVO ? 'Add Brevo lists' : 'Add Discord roles and channels'"
+      @done="added"
+      @update:open="adding = null"
+    />
   </management-page>
 </template>
 

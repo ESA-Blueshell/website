@@ -1,17 +1,22 @@
 <script lang="ts" setup>
 /* The association's esports teams: the games each has played, its latest season, and its role and
-   channels on Discord. Opening one renders the site's own line-up editor inside Management, on
-   that latest fielding. */
+   channels on Discord. The ticked teams without a role can be given one, with a channel, together.
+   Opening one renders the site's own line-up editor inside Management, on that latest fielding. */
 import {computed, onMounted, ref} from "vue"
 import FactList from "@/components/island/FactList.vue"
+import CutButton from "@/components/island/CutButton.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
+import SelectionBar from "@/components/island/SelectionBar.vue"
 import StateMark from "@/components/island/StateMark.vue"
+import BulkAdd from "@/components/management/BulkAdd.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
+import {useUserSelection} from "@/composables/useUserSelection"
 import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts} from "@/domains/cohorts"
 import {type CataloguedChannel, isArchive, listCatalogue} from "@/domains/discord"
-import {type Fielding, type Team, loadFieldings, loadTeamSeasons, loadTeams, useGames} from "@/domains/esports"
+import {type Fielding, type Team, loadFieldings, loadTeamSeasons, loadTeams, saveTeamDiscord, useGames} from "@/domains/esports"
 
 defineOptions({name: "TeamListPage"})
 
@@ -66,6 +71,31 @@ const facts = computed(() => {
   ]
 })
 
+/* Ticked teams are given a role and a private channel under Esports together. A team that has a
+   role, or is archived, is left out and said so before anything is added. */
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMany, clear: clearSelection} =
+  useUserSelection(computed(() => shown.value.map((one) => one.id)))
+const ticked = computed(() => teams.value.filter((one) => isSelected(one.id)))
+const adding = ref(false)
+const hasRole = (team: Team) => targetsOf(team).some((one) => one.system === TargetSystem.DISCORD && one.made)
+const channelName = (team: Team) => team.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+const toAdd = computed(() => ticked.value
+  .filter((one) => !one.archived && !hasRole(one))
+  .map((one) => ({key: one.id, name: one.name, note: `@${one.name} and #${channelName(one)}`, team: one})))
+const leftOut = computed(() => ticked.value
+  .filter((one) => one.archived || hasRole(one))
+  .map((one) => ({name: one.name, why: one.archived ? "Archived" : "Has a role already"})))
+const addRole = async ({team}: {team: Team}) => {
+  const answered = await saveTeamDiscord(team.id, {createRole: true, channelIds: [], createChannel: channelName(team)})
+  return answered.ok ? {ok: true as const} : answered
+}
+const added = async () => {
+  const [summaries, catalogue] = await Promise.all([fetchCohorts(), listCatalogue()])
+  cohorts.value = summaries
+  channels.value = catalogue
+  clearSelection()
+}
+
 /* The teams are shown only once their fieldings are known: a team drawn before that reads as never
    fielded and has no page to open. Where the one read gives no answer, each team is asked for its own. */
 onMounted(async () => {
@@ -99,9 +129,23 @@ onMounted(async () => {
       :row-key="(team) => team.id"
       :row-testid="(team) => `team-row-${team.id}`"
       :rows="shown"
+      :header-state="headerState"
+      :selected-count="selectedIdsArray.length"
       testid="team-list-table"
       :to="linkOf"
+      :total="teams.length"
+      @clear-selection="clearSelection"
+      @select-all="selectMany(teams.map((one) => one.id))"
+      @toggle-shown="toggleHeader"
     >
+      <template #check="{row}">
+        <row-check
+          :checked="isSelected(row.id)"
+          :label="`Select ${row.name}`"
+          :testid="`team-check-${row.id}`"
+          @toggle="toggle(row.id)"
+        />
+      </template>
       <template #count>
         <b>{{ shown.length }}</b> of {{ teams.length }} teams
       </template>
@@ -169,6 +213,34 @@ onMounted(async () => {
         </management-row>
       </template>
     </management-table>
+
+    <selection-bar
+      :count="selectedIdsArray.length"
+      testid="team-list-selection"
+      @clear="clearSelection"
+    >
+      <cut-button
+        small
+        testid="team-add-roles"
+        tone="solid"
+        @click="adding = true"
+      >
+        Add Discord role and channel
+      </cut-button>
+    </selection-bar>
+
+    <bulk-add
+      each="a Discord role and a private channel"
+      :items="toAdd"
+      :noun="['team', 'teams']"
+      :open="adding"
+      :run="addRole"
+      :skipped="leftOut"
+      testid="team-bulk-add"
+      title="Add Discord roles and channels"
+      @done="added"
+      @update:open="adding = $event"
+    />
   </management-page>
 </template>
 

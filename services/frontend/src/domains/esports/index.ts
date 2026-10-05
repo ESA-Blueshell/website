@@ -16,3 +16,4 @@ export {loadFieldings, loadTeamSeasons, loadTeams, type Fielding, type Team} fro
 export {type Game} from "./adapters/esports"
 export {type GameCode} from "./adapters/esports"
 export {type Season} from "./adapters/esports"
+export {saveTeamDiscord} from "./adapters/lineup"

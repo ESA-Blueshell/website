@@ -44,9 +44,9 @@ nothing but the backups, under a COMPLIANCE Object Lock.**
 - **Routine credentials live in Vault**: the writer key, the rotator key and the Kopia password.
   The writer key rotates every 30 days.
 - **Break-glass:** the Scaleway console login opens Secret Manager, which holds the Kopia
-  password, and both owners keep it in their password managers too. Vault's unseal shares are held
-  by people, never in Scaleway, so the console alone yields only ciphertext: it cannot open
-  values sealed by Vault Transit.
+  password. No owner keeps a copy of their own, so the second owner holds nothing but a login.
+  Vault's unseal shares are held by people, never in Scaleway, so the console alone yields only
+  ciphertext: it cannot open values sealed by Vault Transit.
 - **Monitoring is on the server.** A failed run, or no success in 26 hours, alerts the board. A
   weekly verify reads back 5% of the files and checks the bucket's lock and versioning, the only
   check on a lock weakened for future uploads.

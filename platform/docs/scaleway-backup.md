@@ -8,12 +8,15 @@ this way is in [architecture ADR-011](../../docs/adr/architecture/ADR-011-backup
 
 | Role | Holds |
 |------|-------|
-| `<role>`, the organization's Owner | The Owner login with 2FA, its recovery codes, the Kopia password |
-| `<role>`, the second owner | An IAM Member login with full organization rights and 2FA, its recovery codes, the Kopia password |
+| `<role>`, the organization's Owner | The Owner login with 2FA and its recovery codes |
+| `<role>`, the second owner | An IAM Member login with full organization rights and 2FA, and its recovery codes |
 | `<role>`, the billing contact | The payment method and Scaleway's invoices |
 
-Each owner keeps their own recovery codes and the Kopia password in their own password manager.
-None of it is ever stored on the server.
+Each owner keeps their own recovery codes in their own password manager, never on the server.
+The second owner holds nothing else: their login is the way in if the Owner is unavailable.
+
+The Kopia password lives in Vault for the nightly job and in Secret Manager for break-glass,
+nowhere else. Secret Manager bills each stored version, so it holds one at a time.
 
 ## What the code declares
 
@@ -37,7 +40,7 @@ OpenTofu runs with an owner's **own user key**, never an application's. The rota
 key for any application in the organization, so an application holding OpenTofu's rights would
 hand them to anyone holding the rotator key. If an `opentofu` application exists, delete it.
 
-Each owner makes their own key: IAM & API keys, API keys, Generate API key.
+An owner who applies makes their own key: IAM & API keys, API keys, Generate API key.
 
 - Bearer: **Myself (IAM user)**.
 - Expiry: about a year.
@@ -84,7 +87,7 @@ rm terraform.tfstate terraform.tfstate.backup
 ### After the first apply
 
 1. One owner generates the Kopia password and adds it as a version of `kopia-repository-password`
-   in Secret Manager. Both owners store it in their password managers, and #2085 puts it in Vault.
+   in Secret Manager, and #2085 puts it in Vault.
 2. An owner generates the first `backup-writer` and `backup-rotator` keys in the console (bearer:
    the application) and puts them in Vault. From then on, the rotation job replaces the writer
    key (#2099).
@@ -105,6 +108,12 @@ rm terraform.tfstate terraform.tfstate.backup
    Repeat the `--version-id` delete with your own key. The lock refuses it too.
 
    The probe stays for 30 days and costs nothing worth counting.
+
+## Changing the Kopia password
+
+Change it with `kopia repository change-password`, then update Vault, add the new password as a
+version of `kopia-repository-password` and delete the old version. OpenTofu manages the entry,
+never its versions, so a plan shows no change.
 
 ## Things that cannot be undone
 

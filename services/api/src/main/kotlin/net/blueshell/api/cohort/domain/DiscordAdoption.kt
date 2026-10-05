@@ -111,7 +111,9 @@ class DiscordAdoption(
 
     private companion object {
         val NAMED_CHANNELS = setOf(CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS)
-        val ADOPTED =
-            listOf(CohortType.BOARD, CohortType.KANDI, CohortType.BOARD_YEAR_MEMBERS, CohortType.COMMITTEE_MEMBERS, CohortType.TEAM_PLAYERS)
+        val BOARDS = listOf(CohortType.BOARD, CohortType.KANDI, CohortType.BOARD_YEAR_MEMBERS)
+
+        // In the order they are matched: a role called after a board goes to the board.
+        val ADOPTED = BOARDS + NAMED_CHANNELS
     }
 }

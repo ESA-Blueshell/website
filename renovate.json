@@ -134,10 +134,14 @@
       "platformAutomerge": true
     },
     {
-      "description": "build.yml publishes the production images and release.yml cuts the release, both with credentials, and no pull request check runs either workflow. An action used there would merge on age alone, so it gets a reviewed pull request.",
+      "description": "These are the paths of the ignore bucket in .github/buckets.yml that Renovate updates: every workflow but validate.yml, and the dev stack. A pull request touching only them runs no suite, so it would merge on age alone. Each gets a reviewed pull request, and a path added to that bucket belongs here too.",
       "matchFileNames": [
-        ".github/workflows/build.yml",
-        ".github/workflows/release.yml"
+        ".github/workflows/**",
+        "!.github/workflows/validate.yml",
+        "docker-compose.yml",
+        "docker-compose.oidc-e2e.yml",
+        "services/*/docker-compose.yml",
+        "services/stalwart/**"
       ],
       "automerge": false
     },

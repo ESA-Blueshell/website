@@ -18,6 +18,7 @@ import ManagementTable, {type TableColumn} from "@/components/management/Managem
 import MiniButton from "@/components/management/MiniButton.vue"
 import PairList from "@/components/management/PairList.vue"
 import {
+  FolderCare,
   type ListedTarget,
   type MissingTarget,
   type OverviewRow,
@@ -282,6 +283,14 @@ onMounted(load)
           </cut-button>
         </div>
       </notice-box>
+
+      <folder-care
+        :after="overview"
+        class="brevo__notice"
+        :system="SYSTEM"
+        testid="brevo-folders"
+        @changed="load"
+      />
 
       <management-table
         :columns="COLUMNS"

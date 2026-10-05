@@ -7,14 +7,14 @@ import net.blueshell.api.cohort.persistence.CohortType
  * type has one; a folder that is missing is created by this name.
  */
 object CohortFolders {
-    const val CONTRIBUTION_PAID = "Contribution paid"
+    const val CONTRIBUTION_PAID = "Contributions"
     const val MEMBERS = "Members"
     const val ACTIVE_MEMBERS = "Active members"
     const val COMMITTEES = "Committees"
     const val NEWSLETTER = "Newsletter"
     const val ACTIVISTS = "Activists"
     const val TEAMS = "Teams"
-    const val BOARD = "Board"
+    const val BOARD = "Boards"
 
     /** The folder a list for a cohort of [type] belongs in. */
     fun forType(type: CohortType): String =

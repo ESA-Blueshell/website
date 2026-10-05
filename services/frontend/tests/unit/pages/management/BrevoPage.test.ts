@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
   createTargetFolder: vi.fn(),
   previewFolderTidy: vi.fn(),
   applyFolderTidy: vi.fn(),
+  listTargetFolderStates: vi.fn(),
 }))
 const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {isAdmin: false} as Record<string, unknown>}}))
 
@@ -72,6 +73,18 @@ describe("the Brevo page", () => {
       lastApplied: {appliedAt: "2026-09-01T10:00:00Z", appliedByName: "Alice Board", moved: 2, failed: 0},
     }})
     api.applyFolderTidy.mockResolvedValue({status: 200, data: {moved: [made], failed: []}})
+    api.listTargetFolderStates.mockResolvedValue({status: 200, data: []})
+  })
+
+  it("says which folders want a hand, and reads the lists again once they are seen to", async () => {
+    api.listTargetFolderStates.mockResolvedValue({status: 200, data: [{id: "3", name: "Members", targets: 2}, {id: "4", name: "Old", targets: 0}]})
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="brevo-folders-empty"]').text()).toContain("1 folder holds no list: Old.")
+    api.findTargetOverview.mockClear()
+    wrapper.findComponent({name: "FolderCare"}).vm.$emit("changed")
+    await settle()
+    expect(api.findTargetOverview).toHaveBeenCalledTimes(1)
   })
 
   afterEach(() => unmountAll(wrappers, "BrevoPage"))

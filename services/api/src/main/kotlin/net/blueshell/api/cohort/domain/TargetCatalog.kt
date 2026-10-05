@@ -138,19 +138,6 @@ class TargetCatalog(
         log.info("[cohort] deleted {} target, recorded as deletion {}", system, deletion.id)
     }
 
-    // The system's own reason is what the board needs to see; nothing on our side changed.
-    private fun <T> refusedBy(
-        system: TargetSystem,
-        call: () -> T,
-    ): T =
-        try {
-            call()
-        } catch (e: ContactServiceException) {
-            throw TargetSystemRefused(system, e.message ?: "no reason given").apply { initCause(e) }
-        } catch (e: DiscordUnavailable) {
-            throw TargetSystemUnavailable(system).apply { initCause(e) }
-        }
-
     /** Every folder the system has, so a destination can be chosen rather than typed. */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun folders(system: TargetSystem): List<String> = strategies.require(system).folders()
@@ -254,3 +241,16 @@ data class TargetPlace(
     val path: List<String>,
     val folderKnown: Boolean,
 )
+
+// The system's own reason is what the board needs to see; nothing on our side changed.
+internal fun <T> refusedBy(
+    system: TargetSystem,
+    call: () -> T,
+): T =
+    try {
+        call()
+    } catch (e: ContactServiceException) {
+        throw TargetSystemRefused(system, e.message ?: "no reason given").apply { initCause(e) }
+    } catch (e: DiscordUnavailable) {
+        throw TargetSystemUnavailable(system).apply { initCause(e) }
+    }

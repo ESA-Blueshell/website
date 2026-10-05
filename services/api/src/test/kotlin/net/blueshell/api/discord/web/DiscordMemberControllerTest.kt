@@ -72,7 +72,8 @@ class DiscordMemberControllerTest {
 
     @Test
     fun `answers the channels a game may live in, or 503 without a bot`() {
-        assertThat(controller.channels(GameChannelCategory.GAMES).body).containsExactly(DiscordChannelResponse("11", "324", "valorant", "Games"))
+        assertThat(controller.channels(GameChannelCategory.GAMES).body)
+            .containsExactly(DiscordChannelResponse("11", "324", "valorant", "Games"))
         assertThat(
             controller
                 .channels(GameChannelCategory.GAMES)

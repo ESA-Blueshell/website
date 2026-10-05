@@ -48,6 +48,8 @@ export {RESOLUTION_WORDS, adoptWord, driftRowsOf, driftWords, inStepOn, isDrift,
 export {default as TargetDrift} from "./island/TargetDrift.vue"
 export {default as TargetMark} from "./island/TargetMark.vue"
 export {default as BrevoListFields} from "./island/BrevoListFields.vue"
+export {default as FolderCare} from "./island/FolderCare.vue"
+export {mergeFolders, readFolderStates, removeFolder, type FolderMerge, type FolderState} from "./adapters/cohorts"
 export {ARCHIVE_FOLDER, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
 export {fetchCohort} from "./adapters/cohorts"
 export {fetchCohorts, type SummaryTarget} from "./adapters/cohorts"

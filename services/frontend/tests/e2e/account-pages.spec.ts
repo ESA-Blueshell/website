@@ -40,7 +40,9 @@ test.describe("the account pages", () => {
 
     await page.goto("/account/payment-details")
     const incasso = page.getByTestId("incasso-set-up")
-    await expect(incasso.getByTestId("incasso-none")).toBeVisible()
+    await expect(incasso.getByTestId("incasso-none")).toContainText("Incasso is automatic")
+    await expect(incasso.getByTestId("incasso-open")).toHaveText("Set up incasso")
+    await expect(page.getByTestId("own-contribution-201")).toContainText("Paid 15 Jul 2025")
     await incasso.getByTestId("incasso-open").click()
     await incasso.getByLabel("IBAN").fill("NL91 ABNA 0417 1643 00")
     await incasso.getByLabel("Account holder").fill("Mock User")

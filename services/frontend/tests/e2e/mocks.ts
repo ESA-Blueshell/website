@@ -1581,6 +1581,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         },
       ])
     }
+    if (method === "GET" && path === "/management/cohort-targets/BREVO/folders/states") {
+      return answer(route, "listTargetFolderStates", [])
+    }
     if (method === "GET" && path === "/management/cohort-targets/BREVO/folders") {
       // Includes a folder holding nothing, which is exactly where a target tends to head.
       return answer(route, "listCohortTargetFolders", ["Committees", "Contribution periods", "Archive"])

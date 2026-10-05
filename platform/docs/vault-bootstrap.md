@@ -183,7 +183,6 @@ vault kv put secret/api \
   app.jwt.secret=$(openssl rand -base64 64) \
   app.two-factor.key=$(openssl rand -base64 32) \
   brevo.apiKey=<brevo-api-key> \
-  brevo.folders.contributionPeriodsId=<brevo-folder-id> \
   google.calendar.id=<calendar-id> \
   google.calendar.serviceAccountJson=<raw-single-line-service-account-json> \
   discord.botToken=<discord-bot-token> \

@@ -99,8 +99,9 @@ class MockContactAdapter :
     ): Long {
         recordTransactionState()
         val listId = listIdSequence.getAndIncrement()
-        lists[listId] = MockList(listId = listId, listName = name, folderName = folderName)
-        folderOf(folderName)
+        val folder = folderName?.takeIf { it.isNotBlank() } ?: ContactListAdapter.UNFILED
+        lists[listId] = MockList(listId = listId, listName = name, folderName = folder)
+        folderOf(folder)
         val safeName = sanitizeForLog(name)
         log.info("Mock: Created list id={} name='{}'", listId, safeName)
         return listId
@@ -188,6 +189,15 @@ class MockContactAdapter :
     override fun createFolder(name: String): Long {
         recordTransactionState()
         return requireNotNull(folderOf(name)) { "A folder needs a name" }
+    }
+
+    override fun deleteFolder(folderId: Long) {
+        recordTransactionState()
+        val name =
+            folderIds.entries.firstOrNull { it.value == folderId }?.key
+                ?: throw ContactServiceException("Mock: Folder not found: $folderId")
+        lists.values.removeIf { it.folderName == name }
+        folderIds.remove(name)
     }
 
     // A folder exists once a list has been filed in it, as it would have to on Brevo first.

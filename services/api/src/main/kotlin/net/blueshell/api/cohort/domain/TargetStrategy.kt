@@ -102,6 +102,9 @@ interface TargetStrategy : MemberIdentity {
      */
     fun folders(): List<String> = emptyList()
 
+    /** The system's folders as things of their own, where it has folders that can be merged or removed. */
+    val folderKeeper: FolderKeeper? get() = null
+
     /**
      * File a target under another folder, and answer with where it ended up.
      *

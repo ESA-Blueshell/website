@@ -226,7 +226,6 @@ fi
 append_field secret/api app.jwt.secret "$jwt_secret"
 append_field secret/api app.two-factor.key "$(env_value TWO_FACTOR_ENCRYPTION_KEY)"
 append_field secret/api brevo.apiKey "$(env_value BREVO_API_KEY)"
-append_field secret/api brevo.folders.contributionPeriodsId "$(env_value BREVO_FOLDER_CONTRIBUTION_PERIODS_ID)"
 append_field secret/api google.calendar.id "$(env_value GOOGLE_CALENDAR_ID)"
 append_field secret/api google.calendar.serviceAccountJson "$(env_value GOOGLE_CALENDAR_SA_JSON)"
 append_field secret/api discord.botToken "$(env_value DISCORD_BOT_TOKEN)"

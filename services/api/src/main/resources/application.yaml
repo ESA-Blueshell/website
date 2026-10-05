@@ -169,8 +169,6 @@ storage:
 brevo:
   apiKey: ""
   baseUrl: ${BREVO_BASE_URL:https://api.brevo.com/v3}
-  folders:
-    contributionPeriodsId: ${BREVO_FOLDER_CONTRIBUTION_PERIODS_ID:0}
 
 discord:
   botToken: ""

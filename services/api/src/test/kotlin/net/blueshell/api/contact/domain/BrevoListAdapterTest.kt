@@ -36,7 +36,6 @@ class BrevoListAdapterTest {
         BrevoListAdapter(
             contactsApi = contactsApi,
             jsonMapper = JsonMapper.builder().build(),
-            contributionPeriodsFolder = 7L,
         )
 
     @Test
@@ -199,21 +198,47 @@ class BrevoListAdapterTest {
     fun `a missing folder is created by name before the list goes into it`() {
         whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC)))
             .thenReturn(GetFolders200Response(count = 0L, folders = emptyList()))
-        whenever(contactsApi.createFolder(CreateUpdateFolder(name = "Contribution paid"))).thenReturn(CreateFolder201Response(12L))
+        whenever(contactsApi.createFolder(CreateUpdateFolder(name = "Contributions"))).thenReturn(CreateFolder201Response(12L))
         whenever(contactsApi.createList(any())).thenReturn(CreateFolder201Response(41L))
 
-        adapter.createList("Paid 2026-2027", "Contribution paid")
+        adapter.createList("Paid 2026-2027", "Contributions")
 
         verify(contactsApi).createList(CreateListRequest(folderId = 12L, name = "Paid 2026-2027"))
     }
 
     @Test
-    fun `a list with no folder named goes into the configured one`() {
+    fun `a list with no folder named goes into the folder for those, made when it is missing`() {
+        whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC)))
+            .thenReturn(GetFolders200Response(count = 0L, folders = emptyList()))
+        whenever(contactsApi.createFolder(CreateUpdateFolder(name = "Other"))).thenReturn(CreateFolder201Response(13L))
         whenever(contactsApi.createList(any())).thenReturn(CreateFolder201Response(42L))
 
-        adapter.createList("Loose", null)
+        adapter.createList("Loose", " ")
 
-        verify(contactsApi).createList(CreateListRequest(folderId = 7L, name = "Loose"))
+        verify(contactsApi).createList(CreateListRequest(folderId = 13L, name = "Loose"))
+    }
+
+    @Test
+    fun `where two folders share a name the older one is the folder`() {
+        whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC)))
+            .thenReturn(GetFolders200Response(count = 2L, folders = listOf(folder(9L, "Committees"), folder(3L, "committees"))))
+        whenever(contactsApi.createList(any())).thenReturn(CreateFolder201Response(43L))
+
+        adapter.createList("Sitecie", "Committees")
+
+        verify(contactsApi).createList(CreateListRequest(folderId = 3L, name = "Sitecie"))
+    }
+
+    @Test
+    fun `a folder is removed by its id, and Brevo's refusal is said`() {
+        adapter.deleteFolder(9L)
+        verify(contactsApi).deleteFolder(9L)
+
+        whenever(contactsApi.deleteFolder(10L))
+            .thenThrow(RestClientResponseException("400 error", 400, "Bad Request", null, null, null))
+        assertThatThrownBy { adapter.deleteFolder(10L) }
+            .isInstanceOf(ContactServiceException::class.java)
+            .hasMessage("Failed to delete folder: Bad Request")
     }
 
     @Test

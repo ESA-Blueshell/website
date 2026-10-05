@@ -1772,6 +1772,29 @@ export type FirstContribution = {
     periodStartDate?: string | null;
 };
 
+/**
+ * What merging the folders that share a name did.
+ */
+export type FolderMerge = {
+    /**
+     * How many targets moved into the folder that stayed.
+     */
+    moved: number;
+    /**
+     * How many folders were removed.
+     */
+    removed: number;
+};
+
+/**
+ * A folder on the system and how many targets it holds.
+ */
+export type FolderState = {
+    id: string;
+    name: string;
+    targets: number;
+};
+
 export type GameAccessState = {
     channels: Array<GameChannelAccess>;
     policy: ChannelAccessPolicy;
@@ -9863,6 +9886,136 @@ export type CreateTargetFolderResponses = {
 };
 
 export type CreateTargetFolderResponse = CreateTargetFolderResponses[keyof CreateTargetFolderResponses];
+
+export type MergeTargetFoldersData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/merge';
+};
+
+export type MergeTargetFoldersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MergeTargetFoldersError = MergeTargetFoldersErrors[keyof MergeTargetFoldersErrors];
+
+export type MergeTargetFoldersResponses = {
+    /**
+     * OK
+     */
+    200: FolderMerge;
+};
+
+export type MergeTargetFoldersResponse = MergeTargetFoldersResponses[keyof MergeTargetFoldersResponses];
+
+export type ListTargetFolderStatesData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/states';
+};
+
+export type ListTargetFolderStatesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListTargetFolderStatesError = ListTargetFolderStatesErrors[keyof ListTargetFolderStatesErrors];
+
+export type ListTargetFolderStatesResponses = {
+    /**
+     * OK
+     */
+    200: Array<FolderState>;
+};
+
+export type ListTargetFolderStatesResponse = ListTargetFolderStatesResponses[keyof ListTargetFolderStatesResponses];
+
+export type RemoveTargetFolderData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+        folderId: string;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/{folderId}';
+};
+
+export type RemoveTargetFolderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveTargetFolderError = RemoveTargetFolderErrors[keyof RemoveTargetFolderErrors];
+
+export type RemoveTargetFolderResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveTargetFolderResponse = RemoveTargetFolderResponses[keyof RemoveTargetFolderResponses];
 
 export type FindListedTargetData = {
     body?: never;

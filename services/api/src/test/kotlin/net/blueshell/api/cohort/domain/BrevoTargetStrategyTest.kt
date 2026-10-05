@@ -48,6 +48,24 @@ class BrevoTargetStrategyTest {
     }
 
     @Test
+    fun `says a folder name two folders share once, and keeps the folders themselves`() {
+        whenever(lists.listFolders()).thenReturn(mapOf(9L to "Committees", 3L to "committees", 5L to "Boards"))
+
+        assertThat(strategy.folders()).containsExactly("Boards", "Committees")
+        assertThat(strategy.folderKeeper).isInstanceOf(BrevoFolders::class.java)
+    }
+
+    @Test
+    fun `moves a list into the oldest folder of the name asked for`() {
+        whenever(lists.listFolders()).thenReturn(mapOf(9L to "Committees", 3L to "committees"))
+        val sitecie = ExternalTarget(TargetSystem.BREVO, "10", TargetKind.LIST, "Sitecie")
+
+        assertThat(strategy.move(sitecie, "Committees").folderLabel).isEqualTo("Committees")
+
+        verify(lists).moveList(10L, 3L)
+    }
+
+    @Test
     fun `says where each list sits, outside in`() {
         whenever(lists.listFolders()).thenReturn(mapOf(1L to "Committees"))
         whenever(lists.listAll()).thenReturn(listOf(list(10L, "Web Cmte", 1L), list(11L, "Loose ends", 404L)))

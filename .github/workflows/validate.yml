@@ -59,7 +59,6 @@ env:
 
   STORAGE_LOCATION: ./storage
 
-  BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
 
 permissions:
   # `packages: read` resolves net.blueshell.clients:{brevo,discord}-client from

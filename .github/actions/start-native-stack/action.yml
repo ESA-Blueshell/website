@@ -67,7 +67,6 @@ runs:
         FRONTEND_URL: http://localhost:${{ inputs.frontend-port }}
         APP_JOBS_AUTO_DISPATCH: 'true'
         STORAGE_LOCATION: /tmp/storage
-        BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
         JWT_SECRET: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh
       run: |
         set -Eeuo pipefail

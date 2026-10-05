@@ -173,7 +173,6 @@ onMounted(load)
         />
         <search-picker
           class="channel__access"
-          compact
           :options="accessOptions"
           :selected-key="addingAccess ?? accessOptions[0]?.key ?? null"
           testid-prefix="discord-channel-add-access"
@@ -181,7 +180,6 @@ onMounted(load)
         />
         <cut-button
           :disabled="acting || !adding"
-          small
           testid="discord-channel-add-go"
           tone="solid"
           @click="add"

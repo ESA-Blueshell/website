@@ -43,8 +43,8 @@ const periods = ref<ContributionPeriodResponse[]>([])
 const view = ref<PeriodContributionsView | null>(null)
 const search = ref("")
 const paid = ref<string | null>(null)
-const sortKey = ref<"name" | "lastEmail">("name")
-const descending = ref(false)
+// Nobody written to yet orders before anybody who was.
+const NEVER = "0"
 
 const paidOptions = [
   {key: "no", label: "Not paid"},
@@ -64,14 +64,9 @@ const period = computed<ContributionPeriodResponse | null>(() => {
 const members = computed(() => view.value?.members ?? [])
 const shown = computed(() => {
   const words = fold(search.value).split(" ").filter(Boolean)
-  const matching = members.value.filter((one) =>
+  return members.value.filter((one) =>
     words.every((word) => fold(`${one.name} ${one.username}`).includes(word))
     && (paid.value === null || one.paid === (paid.value === "yes")))
-  // A date sorts as a date; nobody written to yet sorts before anybody who was.
-  const sorted = [...matching].sort((a, b) => (sortKey.value === "lastEmail"
-    ? (a.lastEmailAt ?? "").localeCompare(b.lastEmailAt ?? "")
-    : a.name.localeCompare(b.name)))
-  return descending.value ? sorted.reverse() : sorted
 })
 
 const paidCount = computed(() => members.value.filter((one) => one.paid).length)
@@ -82,20 +77,20 @@ const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMa
 
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`
 
-const COLUMNS: TableColumn[] = [
-  {key: "name", label: "Member", sortable: true, wrap: true, testid: "contribution-sort-name"},
-  {key: "fee", label: "Fee type", wrap: true},
-  {key: "incasso", label: "Incasso"},
-  {key: "paid", label: "Paid"},
-  {key: "lastEmail", label: "Last payment email", sortable: true, wrap: true, testid: "contribution-sort-last-email"},
+const COLUMNS: TableColumn<PeriodMember>[] = [
+  {key: "name", label: "Member", wrap: true, testid: "contribution-sort-name", sortBy: (one) => one.name},
+  {key: "fee", label: "Fee type", wrap: true, sortBy: (one) => (one.feeType && one.fee != null ? feeTypeLabels[one.feeType] : null)},
+  {key: "incasso", label: "Incasso", sortBy: (one) => one.incasso},
+  {key: "paid", label: "Paid", sortBy: (one) => one.paid},
+  {key: "lastEmail", label: "Last payment email", wrap: true, testid: "contribution-sort-last-email", newestFirst: true, sortBy: (one) => one.lastEmailAt ?? NEVER},
 ]
 
-const RUN_COLUMNS: TableColumn[] = [
-  {key: "sent", label: "Sent"},
-  {key: "what", label: "What", wrap: true},
-  {key: "members", label: "Members"},
-  {key: "total", label: "Total"},
-  {key: "state", label: "State"},
+const RUN_COLUMNS: TableColumn<RunRow>[] = [
+  {key: "sent", label: "Sent", sortBy: (run) => run.sent},
+  {key: "what", label: "What", wrap: true, sortBy: (run) => run.what},
+  {key: "members", label: "Members", sortBy: (run) => run.members},
+  {key: "total", label: "Total", sortBy: (run) => run.amount},
+  {key: "state", label: "State", sortBy: (run) => run.state},
 ]
 
 const today = new Date().toISOString().slice(0, 10)
@@ -124,6 +119,8 @@ interface RunRow {
   what: string
   members: number
   total: string
+  /** The total as a number, for ordering; nothing for a run that collected no money. */
+  amount: number | null
   waiting: boolean
   state: string
   to: string
@@ -138,6 +135,7 @@ const runs = computed<RunRow[]>(() => {
     what: `Incasso, collected ${dayName(run.collectionDate)}`,
     members: run.collections,
     total: euro(run.total),
+    amount: run.total,
     waiting: !run.submittedAt,
     state: run.submittedAt ? `Submitted to ING ${dayName(run.submittedAt.slice(0, 10))}` : "Waiting for upload to ING",
     to: `/management/contributions/${period.value?.id}/incasso/${run.id}`,
@@ -149,18 +147,13 @@ const runs = computed<RunRow[]>(() => {
     what: contributionEmailLabels[run.kind],
     members: run.recipients,
     total: "·",
+    amount: null,
     waiting: false,
     state: "Sent",
     to: "/management/mail/sent",
   }))
   return [...incassos, ...emails].sort((a, b) => b.sent.localeCompare(a.sent))
 })
-
-const sortBy = (key: string) => {
-  // A date starts newest first; a name starts at the top of the alphabet.
-  descending.value = sortKey.value === key ? !descending.value : key === "lastEmail"
-  sortKey.value = key as "name" | "lastEmail"
-}
 
 const clear = () => {
   search.value = ""
@@ -298,11 +291,10 @@ void loadPeriods()
 
       <management-table
         :columns="COLUMNS"
-        :descending="descending"
         :row-key="(one) => one.userId"
         :row-testid="(one) => `contribution-row-${one.userId}`"
         :rows="shown"
-        :sort-key="sortKey"
+        :start-sort="{key: 'name'}"
         testid="contribution-list"
         :to="(one) => `/management/users/${one.userId}/contributions`"
         :header-state="headerState"
@@ -311,7 +303,6 @@ void loadPeriods()
         @clear-selection="clearSelection"
         @select-all="selectMany(members.map((one) => one.userId))"
         @toggle-shown="toggleHeader"
-        @sort="sortBy"
       >
         <template #count>
           <span><b>{{ shown.length }}</b> of {{ members.length }} members</span>

@@ -71,8 +71,20 @@ describe("adding to many rows at once", () => {
   it("offers nothing to continue with where no selected row can get it", async () => {
     await dialog({items: []})
 
-    expect(inPage("bulk-preview").text()).toContain("None of the selected committees can get a Discord role.")
+    expect(inPage("bulk-preview").text()).toContain("None of the selected committees can be used for this.")
     expect(inPage("bulk-continue").attributes("disabled")).toBeDefined()
+  })
+
+  it("words a task that is not an adding in the task's own words", async () => {
+    await dialog({words: {plan: "will be archived.", ask: "Archive 2 committees now?", go: "Archive 2 committees", doing: "Archiving", done: "archived"}})
+
+    expect(inPage("bulk-preview").text()).toContain("2 committees will be archived.")
+    await inPage("bulk-continue").trigger("click")
+    expect(inPage("bulk-confirm").text()).toContain("Archive 2 committees now?")
+    expect(inPage("bulk-go").text()).toBe("Archive 2 committees")
+    await inPage("bulk-go").trigger("click")
+    await flushPromises()
+    expect(inPage("bulk-done").text()).toContain("1 of 2 archived.")
   })
 
   it("closes from the dialog's own cross as well as from its button", async () => {

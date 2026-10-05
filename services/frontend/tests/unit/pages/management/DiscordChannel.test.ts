@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import DiscordChannel from "@/pages/management/DiscordChannel.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   listCataloguedChannels: vi.fn(),
@@ -53,6 +53,7 @@ describe("one Discord channel", () => {
 
   it("lists the roles with access and what each may do, and changes or removes one from the channel's side", async () => {
     const wrapper = await mount()
+    expect(await sortByEveryHead(wrapper)).toBe(2)
 
     expect(wrapper.get('[data-testid="discord-channel-page-head"]').text()).toContain("#sitecie")
     expect(wrapper.findComponent({name: "FactList"}).text()).toContain("Private text")

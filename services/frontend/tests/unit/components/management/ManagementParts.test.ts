@@ -377,6 +377,51 @@ describe("ManagementTable", () => {
     vi.unstubAllGlobals()
   })
 
+  it("orders its own rows by a head that says what it orders by: up, down, then as the page gave them", async () => {
+    interface Game {id: number; name: string; seats: number | null; live: boolean}
+    const games: Game[] = [
+      {id: 1, name: "valorant 10", seats: 3, live: false},
+      {id: 2, name: "Chess", seats: null, live: true},
+      {id: 3, name: "Valorant 2", seats: 12, live: true},
+    ]
+    const wrapper = mount(ManagementTable<Game>, {
+      props: {
+        columns: [
+          {key: "name", label: "Name", sortBy: (row: Game) => row.name},
+          {key: "seats", label: "Seats", sortBy: (row: Game) => row.seats},
+          {key: "live", label: "Live", sortBy: (row: Game) => row.live, testid: "head-live"},
+          {key: "kind", label: "Kind", sortable: true},
+        ],
+        rows: games, rowKey: (row: Game) => row.id, testid: "games", rowTestid: (row: Game) => `row-${row.id}`,
+      },
+      slots: {name: ({row}: {row: Game}) => h("span", row.name), phone: ({row}: {row: Game}) => h("p", {class: "phone"}, row.name)},
+      global: {stubs},
+    })
+    const order = () => wrapper.findAll("tbody tr[data-row]").map((one) => one.attributes("data-testid"))
+
+    await wrapper.get("[data-testid=games-sort-name]").trigger("click")
+    expect(order()).toEqual(["row-2", "row-3", "row-1"])
+    expect(wrapper.get("th[aria-sort]").attributes("aria-sort")).toBe("ascending")
+    await wrapper.get("[data-testid=games-sort-name]").trigger("click")
+    expect(order()).toEqual(["row-1", "row-3", "row-2"])
+    await wrapper.get("[data-testid=games-sort-name]").trigger("click")
+    expect(order()).toEqual(["row-1", "row-2", "row-3"])
+    expect(wrapper.find("th[aria-sort]").exists()).toBe(false)
+
+    // A row with nothing to order by is last both ways; a yes comes before a no.
+    await wrapper.get("[data-testid=games-sort-seats]").trigger("click")
+    expect(order()).toEqual(["row-1", "row-3", "row-2"])
+    await wrapper.get("[data-testid=games-sort-seats]").trigger("click")
+    expect(order()).toEqual(["row-3", "row-1", "row-2"])
+    await wrapper.get("[data-testid=head-live]").trigger("click")
+    expect(order()).toEqual(["row-2", "row-3", "row-1"])
+
+    // A head the page orders is the page's to answer, and the table lets go of its own order.
+    await wrapper.get("[data-testid=games-sort-kind]").trigger("click")
+    expect(wrapper.emitted("sort")).toEqual([["kind"]])
+    expect(order()).toEqual(["row-1", "row-2", "row-3"])
+  })
+
   it("searches its own rows where the page brings no search, and says how many it shows", async () => {
     const people = [{id: 1, name: "Ada"}, {id: 2, name: "Bo"}, {id: 3, name: "Adam"}]
     const props = {columns, rows: people, rowKey: (row: Row) => row.id, rowTestid: (row: Row) => `row-${row.id}`, searchText: (row: Row) => row.name, searchLabel: "Search people", testid: "people"}

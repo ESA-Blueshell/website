@@ -31,7 +31,7 @@ export {
   type ChannelGroup,
   type NamedRole,
 } from "./catalogue"
-export {archiveChannelOf, closeTo, createChannelFor, openTo, readOpenings, type RoleOpeningState} from "./adapters/roleOpenings"
+export {archiveChannelOf, closeTo, createChannelFor, openTo, readOpenings, unlinkRole, type RoleOpeningState} from "./adapters/roleOpenings"
 export {RoleAccess} from "@/services/api"
 export type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
 export {readStarboard} from "./adapters/starboard"

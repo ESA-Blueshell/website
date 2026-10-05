@@ -54,15 +54,20 @@ const acting = ref(false)
 
 const groups = computed(() => (overview.value ? groupsOf(overview.value, search.value) : []))
 
-const COLUMNS: TableColumn[] = [
-  {key: "name", label: "List", wrap: true},
-  {key: "follows", label: "Follows", wrap: true},
-  {key: "people", label: "People"},
-  {key: "state", label: "State"},
-  {key: "reconciled", label: "Compared"},
-]
-
 type ListRow = OverviewRow & {folder: string; kind: string}
+
+const stateWord = (row: ListRow) => {
+  if (row.missing) return row.missing.creating ? "Being created" : "Not created yet"
+  return row.kind === "archive" ? "Archived" : driftOf(row.list).word
+}
+
+const COLUMNS: TableColumn<ListRow>[] = [
+  {key: "name", label: "List", wrap: true, sortBy: (row) => row.missing?.cohortLabel ?? row.list?.label},
+  {key: "follows", label: "Follows", wrap: true, sortBy: followsOf},
+  {key: "people", label: "People", sortBy: (row) => row.missing?.memberCount ?? row.list?.memberCount},
+  {key: "state", label: "State", sortBy: stateWord},
+  {key: "reconciled", label: "Compared", sortBy: (row) => row.list?.lastReconciledAt},
+]
 
 // One table for every list, in the order of the folders they are in; each row names its folder.
 const rows = computed<ListRow[]>(() => groups.value.flatMap((group) => group.rows.map((row) => ({...row, folder: group.name, kind: group.kind}))))
@@ -328,14 +333,14 @@ onMounted(load)
             kind="not-created"
             :testid="`brevo-state-${keyOf(row)}`"
           >
-            {{ row.missing.creating ? "Being created" : "Not created yet" }}
+            {{ stateWord(row) }}
           </state-mark>
           <state-mark
             v-else
             :kind="row.kind === 'archive' ? 'not-compared' : driftOf(row.list).kind"
             :testid="`brevo-state-${keyOf(row)}`"
           >
-            {{ row.kind === "archive" ? "Archived" : driftOf(row.list).word }}
+            {{ stateWord(row) }}
           </state-mark>
         </template>
         <template #reconciled="{row}">

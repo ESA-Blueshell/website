@@ -109,6 +109,14 @@ class CohortDiscord(
     }
 
     /**
+     * Takes [roleId] off the cohort that follows it and changes nothing on Discord: the role, its
+     * holders and its channels stay. The way back from a role linked to the wrong cohort.
+     */
+    fun unlink(roleId: String) {
+        targets.findAllBySystem(TargetSystem.DISCORD.name).firstOrNull { targetIds.find(it) == roleId }?.let(targets::delete)
+    }
+
+    /**
      * Moves the private channels the cohort's role opens into the archive category, or back out.
      * Without a bot nothing moves, and that is said in the log rather than failing the archive.
      */

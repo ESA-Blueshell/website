@@ -22,7 +22,8 @@ class DiscordAdoptionTest {
     private val roles: DiscordRoleKeeper = mock()
     private val channels: DiscordChannelKeeper = mock()
     private val discord: CohortDiscord = mock()
-    private val adoption = DiscordAdoption(cohorts, targets, CohortTargetIds(targets), roles, channels, discord)
+    private val registrar: CohortRegistrar = mock()
+    private val adoption = DiscordAdoption(cohorts, targets, CohortTargetIds(targets), roles, channels, discord, registrar)
 
     private val sitecie = Entities.cohort(id = 1, label = "Sitecie").also { it.definitionKey = "COMMITTEE_MEMBERS:1" }
     private val valorant =
@@ -109,6 +110,29 @@ class DiscordAdoptionTest {
 
         assertThat(outcome).isEqualTo(AdoptionOutcome(1, listOf(RefusedMatch("Sitecie", "The bot may not change sitecie."))))
         verify(discord).apply(org.mockito.kotlin.eq("TEAM_PLAYERS:2"), org.mockito.kotlin.any(), org.mockito.kotlin.any())
+    }
+
+    @Test
+    fun `matches the board and a board year to their roles, before a committee called the same, with no channel`() {
+        given()
+        val board = Entities.cohort(id = 6, type = CohortType.BOARD, label = "Board").also { it.definitionKey = "BOARD" }
+        val committee = Entities.cohort(id = 7, label = "Board").also { it.definitionKey = "COMMITTEE_MEMBERS:9" }
+        val year =
+            Entities.cohort(id = 8, type = CohortType.BOARD_YEAR_MEMBERS, label = "Board 2024-2025").also {
+                it.definitionKey = "BOARD_YEAR_MEMBERS:4"
+            }
+        whenever(cohorts.findAll()).thenReturn(listOf(committee, year, board))
+        whenever(roles.roles()).thenReturn(listOf(KeptRole("910", "Board", true), KeptRole("911", "Board 2024-2025", true)))
+        whenever(channels.channels()).thenReturn(listOf(KeptChannel("30", "board", KeptChannelKind.TEXT, "Board")))
+
+        val proposed = adoption.proposals()
+
+        // Registered first: a board year has no cohort until a sweep or this.
+        verify(registrar).register()
+        assertThat(proposed.map { Triple(it.key, it.roleId, it.channels) }).containsExactly(
+            Triple("BOARD", "910", emptyList()),
+            Triple("BOARD_YEAR_MEMBERS:4", "911", emptyList()),
+        )
     }
 
     @Test

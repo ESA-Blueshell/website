@@ -15,7 +15,7 @@ import ManagementTable, {type TableColumn} from "@/components/management/Managem
 import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {type Board, type BoardStanding, academicYear, boardName, standingOf, useBoards} from "@/domains/boards"
-import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts} from "@/domains/cohorts"
+import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts, targetLabel} from "@/domains/cohorts"
 import {type AdoptionMatch, adoptMatches, listMatches} from "@/domains/discord"
 
 defineOptions({name: "BoardListPage"})
@@ -80,13 +80,13 @@ const shown = computed(() => {
     [boardName(board.number, board.name), academicYear(board.startDate, board.endDate), ...board.members.map((one) => one.name ?? "")]
       .some((value) => value.toLowerCase().includes(needle)))
 })
-const COLUMNS: TableColumn[] = [
-  {key: "name", label: "Board", wrap: true},
-  {key: "year", label: "Year"},
-  {key: "people", label: "Members"},
-  {key: "discord", label: "Discord"},
-  {key: "brevo", label: "Brevo"},
-  {key: "state", label: "State"},
+const COLUMNS: TableColumn<Board>[] = [
+  {key: "name", label: "Board", wrap: true, sortBy: (board) => board.number},
+  {key: "year", label: "Year", sortBy: (board) => board.startDate},
+  {key: "people", label: "Members", sortBy: (board) => board.members.length},
+  {key: "discord", label: "Discord", sortBy: (board) => targetLabel(targetsOf(board), TargetSystem.DISCORD)},
+  {key: "brevo", label: "Brevo", sortBy: (board) => targetLabel(targetsOf(board), TargetSystem.BREVO)},
+  {key: "state", label: "State", sortBy: (board) => standing(board).word},
 ]
 
 const facts = computed(() => {

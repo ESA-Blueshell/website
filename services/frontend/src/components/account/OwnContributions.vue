@@ -11,11 +11,11 @@ import {formatDay, periodName} from "@/utils/timestamps"
 
 defineOptions({name: "OwnContributions"})
 
-const COLUMNS: TableColumn[] = [
-  {key: "period", label: "Period"},
-  {key: "fee", label: "Fee"},
-  {key: "amount", label: "Amount"},
-  {key: "paid", label: "Paid"},
+const COLUMNS: TableColumn<MemberPeriodContribution>[] = [
+  {key: "period", label: "Period", sortBy: (row) => row.startDate},
+  {key: "fee", label: "Fee", sortBy: (row) => (row.feeType && row.fee != null ? feeTypeLabels[row.feeType] : null)},
+  {key: "amount", label: "Amount", sortBy: (row) => row.fee},
+  {key: "paid", label: "Paid", sortBy: (row) => (row.fee == null ? null : row.paid)},
 ]
 
 const periods = ref<MemberPeriodContribution[]>([])

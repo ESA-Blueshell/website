@@ -59,7 +59,7 @@
       />
     </p>
     <template
-      v-for="row in kept"
+      v-for="row in ordered"
       :key="rowKey(row)"
     >
       <slot
@@ -130,16 +130,16 @@
             <th
               v-for="column in columns"
               :key="column.key"
-              :aria-sort="column.key === sortKey ? (descending ? 'descending' : 'ascending') : undefined"
+              :aria-sort="column.key === sorted.key ? (sorted.descending ? 'descending' : 'ascending') : undefined"
             >
               <button
-                v-if="column.sortable"
-                :aria-label="column.key === sortKey ? `${column.label}, sorted ${descending ? 'descending' : 'ascending'}` : `Sort by ${column.label}`"
+                v-if="column.sortable || column.sortBy"
+                :aria-label="column.key === sorted.key ? `${column.label}, sorted ${sorted.descending ? 'descending' : 'ascending'}` : `Sort by ${column.label}`"
                 class="mg-table__sort"
-                :class="{'mg-table__sort--on': column.key === sortKey}"
-                :data-testid="column.testid"
+                :class="{'mg-table__sort--on': column.key === sorted.key}"
+                :data-testid="column.testid ?? (testid ? `${testid}-sort-${column.key}` : undefined)"
                 type="button"
-                @click="emit('sort', column.key)"
+                @click="sort(column)"
               >
                 {{ column.label }}
                 <svg
@@ -148,9 +148,9 @@
                   viewBox="0 0 12 12"
                 >
                   <path
-                    :d="column.key !== sortKey ? UNSORTED : descending ? DESCENDING : ASCENDING"
+                    :d="column.key !== sorted.key ? UNSORTED : sorted.descending ? DESCENDING : ASCENDING"
                     stroke="currentColor"
-                    :stroke-width="column.key === sortKey ? 1.4 : 1.2"
+                    :stroke-width="column.key === sorted.key ? 1.4 : 1.2"
                   />
                 </svg>
               </button>
@@ -275,11 +275,19 @@ import SearchBox from "@/components/island/SearchBox.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {usePhone} from "@/composables/usePhone"
 
-export interface TableColumn {
+/** What a column orders its rows by. A row with nothing to order by goes last, either way round. */
+export type SortValue = string | number | boolean | null | undefined
+
+export interface TableColumn<T = unknown> {
   /** Names the cell's slot and, where the column sorts, what it sorts by. */
   key: string
   label: string
+  /** The page orders the rows itself and hears `sort`; for a list the server orders. */
   sortable?: boolean
+  /** What the table orders its rows by under this head, for a list held whole on the page. */
+  sortBy?(row: T): SortValue
+  /** The first press puts the newest first, as a date reads; the second turns it round. */
+  newestFirst?: boolean
   /** Lets the cell's text run over several lines. */
   wrap?: boolean
   testid?: string
@@ -287,13 +295,16 @@ export interface TableColumn {
 
 const {
   columns, rows, rowKey, sortKey = "", descending = false, to = undefined, height = 0, testid = undefined, rowTestid = undefined,
-  headerState = undefined, total = 0, selectedCount = 0, searchText = undefined, searchLabel = "Search",
+  headerState = undefined, total = 0, selectedCount = 0, searchText = undefined, searchLabel = "Search", startSort = undefined,
 } = defineProps<{
-  columns: TableColumn[]
+  // The rows say what a row is; a page's columns need not name it.
+  columns: TableColumn<NoInfer<T>>[]
   rows: T[]
   rowKey: (row: T) => string | number
   sortKey?: string
   descending?: boolean
+  /** The order the table opens in, under one of its own heads; the reader can turn it round or let it go. */
+  startSort?: {key: string; descending?: boolean}
   /** A row's own page, or nothing for a row that has none. A press anywhere on the row opens it,
    * and the row ends in the arrow unless the page fills the acts slot. */
   to?: (row: T) => string | null
@@ -343,6 +354,37 @@ const kept = computed(() => {
   if (!searchText || wanted === "") return rows
   return rows.filter((_, index) => found[index]?.includes(wanted))
 })
+/* The table's own order, for the columns that say what they order by: a head pressed once puts
+   its rows in order, again turns them round, and a third time leaves them as the page gave them. */
+const own = ref<{key: string; descending: boolean} | null>(startSort ? {key: startSort.key, descending: startSort.descending === true} : null)
+const sorted = computed(() => own.value ?? {key: sortKey, descending})
+const sort = (column: TableColumn<T>) => {
+  if (!column.sortBy) {
+    own.value = null
+    return emit("sort", column.key)
+  }
+  const first = column.newestFirst === true
+  if (own.value?.key !== column.key) own.value = {key: column.key, descending: first}
+  else own.value = own.value.descending === first ? {key: column.key, descending: !first} : null
+}
+const ranked = (value: SortValue): string | number | null => {
+  if (value === null || value === undefined || value === "") return null
+  return typeof value === "boolean" ? Number(!value) : value
+}
+const ordered = computed(() => {
+  const by = columns.find((one) => one.key === own.value?.key)?.sortBy
+  if (!own.value || !by) return kept.value
+  const turn = own.value.descending ? -1 : 1
+  return kept.value
+    .map((row) => ({row, value: ranked(by(row))}))
+    .sort((a, b) => {
+      if (a.value === null || b.value === null) return Number(a.value === null) - Number(b.value === null)
+      if (typeof a.value === "number" && typeof b.value === "number") return (a.value - b.value) * turn
+      return String(a.value).localeCompare(String(b.value), undefined, {numeric: true, sensitivity: "base"}) * turn
+    })
+    .map((one) => one.row)
+})
+
 const counted = computed(() => (kept.value.length === rows.length ? `Showing ${rows.length}` : `Showing ${kept.value.length} of ${rows.length}`))
 
 /* Only the rows in the window, and a few either side, are in the document: a list of hundreds
@@ -363,7 +405,7 @@ const span = computed(() => {
   const until = Math.min(count, Math.ceil((scrolled.value + windowHeight.value) / rowHeight.value) + OVERSCAN)
   return {from, until}
 })
-const drawn = computed(() => kept.value.slice(span.value.from, span.value.until))
+const drawn = computed(() => ordered.value.slice(span.value.from, span.value.until))
 const before = computed(() => span.value.from * rowHeight.value)
 const after = computed(() => (kept.value.length - span.value.until) * rowHeight.value)
 

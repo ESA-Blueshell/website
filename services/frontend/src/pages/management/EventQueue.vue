@@ -21,11 +21,11 @@ const acting = ref<number | null>(null)
 
 const fresh = computed(() => queue.value?.filter((one) => !one.reapproval) ?? [])
 const changed = computed(() => queue.value?.filter((one) => one.reapproval) ?? [])
-const COLUMNS: TableColumn[] = [
-  {key: "event", label: "Event", wrap: true},
-  {key: "when", label: "When"},
-  {key: "state", label: "State"},
-  {key: "changed", label: "Changed", wrap: true},
+const COLUMNS: TableColumn<QueuedEvent>[] = [
+  {key: "event", label: "Event", wrap: true, sortBy: (row) => row.event.title},
+  {key: "when", label: "When", sortBy: (row) => row.event.startTime},
+  {key: "state", label: "State", sortBy: (row) => (row.reapproval ? "Awaiting re-approval" : "Awaiting approval")},
+  {key: "changed", label: "Changed", wrap: true, sortBy: (row) => (row.reapproval ? changesSaid(row.changes) : "New")},
 ]
 
 // New events first, then the ones changed since they were approved.

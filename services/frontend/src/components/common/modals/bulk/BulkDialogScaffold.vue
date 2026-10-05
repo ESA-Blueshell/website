@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 /* What a bulk task shows before anything changes: how many people it will apply to, each person
    with what will happen to them and why, and the one button that does it. */
-import {computed, ref} from "vue"
+import {computed} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import StateMark, {type StateKind} from "@/components/island/StateMark.vue"
 import StateTag from "@/components/island/StateTag.vue"
@@ -39,34 +39,14 @@ const emit = defineEmits<{
   (e: "cancel"): void
 }>()
 
-const COLUMNS: TableColumn[] = [
-  {key: "name", label: "Member", sortable: true},
-  {key: "memberType", label: "Type", sortable: true},
-  {key: "disposition", label: "What happens", sortable: true},
-  {key: "memberSince", label: "Member since", sortable: true},
-  {key: "note", label: "Why", wrap: true},
-]
-
 const ORDER: Record<string, number> = {INCLUDED: 0, WARNING: 1, EXCLUDED: 2, SKIPPED: 3}
-const comparators: Record<string, (a: BulkRow, b: BulkRow) => number> = {
-  name: (a, b) => a.name.localeCompare(b.name),
-  memberType: (a, b) => (a.memberType ?? "").localeCompare(b.memberType ?? ""),
-  disposition: (a, b) => (ORDER[a.disposition] ?? 4) - (ORDER[b.disposition] ?? 4),
-  memberSince: (a, b) => (a.memberSince ?? "").localeCompare(b.memberSince ?? ""),
-}
-
-const sortKey = ref("")
-const descending = ref(false)
-const sortBy = (key: string) => {
-  descending.value = sortKey.value === key ? !descending.value : false
-  sortKey.value = key
-}
-const sortedRows = computed(() => {
-  const compare = comparators[sortKey.value]
-  if (!compare) return props.rows
-  const sorted = [...props.rows].sort(compare)
-  return descending.value ? sorted.reverse() : sorted
-})
+const COLUMNS: TableColumn<BulkRow>[] = [
+  {key: "name", label: "Member", sortBy: (row) => row.name},
+  {key: "memberType", label: "Type", sortBy: (row) => row.memberType},
+  {key: "disposition", label: "What happens", sortBy: (row) => ORDER[row.disposition] ?? 4},
+  {key: "memberSince", label: "Member since", sortBy: (row) => row.memberSince},
+  {key: "note", label: "Why", wrap: true, sortBy: (row) => reasonLabel(row.reason)},
+]
 
 const MARKS: Record<BulkDisposition, StateKind> = {INCLUDED: "in-step", WARNING: "extra", EXCLUDED: "not-created", SKIPPED: "not-compared"}
 
@@ -127,15 +107,12 @@ const onSave = () => {
 
     <management-table
       :columns="hasReincludable ? [...COLUMNS, {key: 'include', label: 'Include anyway'}] : COLUMNS"
-      :descending="descending"
       :row-key="(row) => row.userId"
       :row-testid="(row) => `bulk-preview-row-${row.userId}`"
       search-label="Search members"
       :search-text="(row) => row.name"
-      :rows="sortedRows"
-      :sort-key="sortKey"
+      :rows="rows"
       testid="bulk-action-preview-table"
-      @sort="sortBy"
     >
       <template #name="{row}">
         <person-link

@@ -28,14 +28,13 @@ import {
   type MembershipState,
   NEEDS_LOOK_WORDS,
   type NeedsLook,
-  type PeopleSortKey,
   type PersonRow,
   type UserDetailResponse,
   filterPeople,
   listMemberships,
   listUsers,
   peopleRows,
-  sortPeople,
+  membershipRank,
 } from "@/domains/user"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import type {EditableUser} from "@/utils/editableUser"
@@ -55,20 +54,18 @@ const search = ref(typeof route.query.search === "string" ? route.query.search :
 const membership = ref<string | null>(null)
 const type = ref<string | null>(null)
 const needs = ref<string | null>(null)
-const sortKey = ref<PeopleSortKey>("name")
-const descending = ref(false)
 
 const MEMBERSHIP_MARKS: Record<MembershipState, StateKind> = {current: "in-step", pending: "missing", former: "not-compared", never: "not-compared"}
 const MEMBERSHIP_SHORT: Record<MembershipState, string> = {current: "Active", pending: "Pending", former: "Former", never: "Never a member"}
 const NEEDS_MARKS: Record<NeedsLook, StateKind> = {"locked": "not-created", "role-waiting": "unreachable", "no-discord": "unreachable", "no-address": "unreachable"}
 const MARKED_ROLES = ["admin", "board", "treasurer"]
 
-const COLUMNS: TableColumn[] = [
-  {key: "name", label: "Name", sortable: true, wrap: true, testid: "member-manager-header-name"},
-  {key: "membership", label: "Membership", sortable: true, wrap: true, testid: "member-manager-header-status"},
-  {key: "committees", label: "Committees", wrap: true},
-  {key: "discord", label: "Discord"},
-  {key: "needs", label: "Needs a look", wrap: true},
+const COLUMNS: TableColumn<PersonRow>[] = [
+  {key: "name", label: "Name", wrap: true, testid: "member-manager-header-name", sortBy: (row) => row.fullName},
+  {key: "membership", label: "Membership", wrap: true, testid: "member-manager-header-status", sortBy: membershipRank},
+  {key: "committees", label: "Committees", wrap: true, sortBy: (row) => row.committees.join(", ")},
+  {key: "discord", label: "Discord", sortBy: (row) => row.discord},
+  {key: "needs", label: "Needs a look", wrap: true, sortBy: (row) => row.needs.map((one) => NEEDS_LOOK_WORDS[one]).join(", ")},
 ]
 const membershipOptions = (Object.keys(MEMBERSHIP_WORDS) as MembershipState[]).map((key) => ({key, label: MEMBERSHIP_WORDS[key]}))
 // Picker values come from the generated SDK; NONE is no type anybody holds.
@@ -80,16 +77,12 @@ const needsOptions = [
 ]
 
 const rows = computed(() => peopleRows(users.value, memberships.value, committees.value))
-const shown = computed(() => sortPeople(
-  filterPeople(rows.value, {
-    search: search.value,
-    membership: membership.value as MembershipState | null,
-    type: type.value as MemberType | null,
-    needs: needs.value as NeedsLook | "any" | null,
-  }),
-  sortKey.value,
-  descending.value,
-))
+const shown = computed(() => filterPeople(rows.value, {
+  search: search.value,
+  membership: membership.value as MembershipState | null,
+  type: type.value as MemberType | null,
+  needs: needs.value as NeedsLook | "any" | null,
+}))
 
 const filtered = computed(() => search.value !== "" || membership.value !== null || type.value !== null || needs.value !== null)
 
@@ -98,11 +91,6 @@ const clearFilters = () => {
   membership.value = null
   type.value = null
   needs.value = null
-}
-
-const sortBy = (key: string) => {
-  descending.value = sortKey.value === key ? !descending.value : false
-  sortKey.value = key as PeopleSortKey
 }
 
 const typeName = (type: MemberType): string => type.charAt(0) + type.slice(1).toLowerCase()
@@ -213,11 +201,10 @@ onMounted(load)
 
       <management-table
         :columns="COLUMNS"
-        :descending="descending"
         :row-key="(row) => row.id"
         :row-testid="(row) => `member-manager-row-${row.id}`"
         :rows="shown"
-        :sort-key="sortKey"
+        :start-sort="{key: 'name'}"
         testid="member-manager-list"
         :header-state="headerState"
         :selected-count="selectedIdsArray.length"
@@ -226,7 +213,6 @@ onMounted(load)
         @clear-selection="clearSelection"
         @select-all="selectMany(rows.map((row) => row.id))"
         @toggle-shown="toggleHeader"
-        @sort="sortBy"
       >
         <template #count>
           <span data-testid="member-manager-count"><b>{{ shown.length }}</b> of {{ rows.length }} people</span>

@@ -2,7 +2,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import TeamList from "@/pages/management/TeamList.vue"
 import {forgetCasualGames} from "@/domains/games"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({findCasualGames: vi.fn(), findTeams: vi.fn(), findTeamSeasons: vi.fn(), findFieldings: vi.fn(), findCohorts: vi.fn(), listCataloguedChannels: vi.fn(), setTeamDiscord: vi.fn()}))
 
@@ -76,6 +76,7 @@ describe("the competition teams in Management", () => {
     expect(wrapper.get('[data-testid="team-channels-2"]').text()).toBe("No channel")
     // One read for every team, not one a team.
     expect(api.findTeamSeasons).not.toHaveBeenCalled()
+    expect(await sortByEveryHead(wrapper)).toBe(6)
   })
 
   it("asks each team for its own seasons where the one read gives no answer, and shows no team before they are known", async () => {

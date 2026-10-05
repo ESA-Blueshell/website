@@ -57,16 +57,17 @@ const bulkActions = computed(() =>
     .filter((one) => one.count > 0))
 const ticked = (row: CohortMember) => selection.value.has(row.targetMemberId)
 
-const COLUMNS: TableColumn[] = [
-  {key: "who", label: "Person", wrap: true},
-  {key: "state", label: "State"},
-  {key: "why", label: "Why", wrap: true},
+const markOf = (row: CohortMember) => (row.sync === "ONLY_HERE" ? "missing" : "extra")
+const COLUMNS: TableColumn<CohortMember>[] = [
+  {key: "who", label: "Person", wrap: true, sortBy: memberName},
+  {key: "state", label: "State", sortBy: (row) => (row.unreachable ? "unreachable" : markOf(row))},
+  {key: "why", label: "Why", wrap: true, sortBy: (row) => whyOf(row, props.cohort.label, words.value)},
 ]
-const LOG_COLUMNS: TableColumn[] = [
-  {key: "when", label: "When"},
-  {key: "by", label: "By"},
-  {key: "what", label: "What", wrap: true},
-  {key: "who", label: "Who it concerned"},
+const LOG_COLUMNS: TableColumn<Cohort["resolutions"][number]>[] = [
+  {key: "when", label: "When", sortBy: (one) => one.resolvedAt},
+  {key: "by", label: "By", sortBy: (one) => one.resolvedByName ?? "The site"},
+  {key: "what", label: "What", wrap: true, sortBy: (one) => words.value.resolved[one.action]},
+  {key: "who", label: "Who it concerned", sortBy: (one) => one.personName},
 ]
 
 /** How the people who can be selected stand against the selection; nobody reachable leaves the head unticked. */
@@ -84,7 +85,6 @@ const prepareSelected = (action: DriftAction) => resolution.prepare(action, reac
 const planTitle = computed(() => (plan.value ? `${actionWord(plan.value.action)}: ${planCount.value} ${planCount.value === 1 ? "person" : "people"}` : ""))
 const planPeople = computed(() => plan.value?.groups.flatMap((group) => group.people) ?? [])
 const proposalFor = (row: CohortMember) => plan.value?.proposals.find((one) => one.externalUserId === row.externalUserId) ?? null
-const markOf = (row: CohortMember) => (row.sync === "ONLY_HERE" ? "missing" : "extra")
 </script>
 
 <template>

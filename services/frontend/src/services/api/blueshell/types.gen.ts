@@ -1969,6 +1969,13 @@ export type InboxEntry = {
     toAddress?: string | null;
 };
 
+export enum InboxSort {
+    RECEIVED = 'RECEIVED',
+    FROM = 'FROM',
+    SUBJECT = 'SUBJECT',
+    STATE = 'STATE'
+}
+
 export enum InboxState {
     NEW = 'NEW',
     REPLIED = 'REPLIED',
@@ -9097,6 +9104,8 @@ export type FindInboxData = {
     query?: {
         search?: string;
         page?: number;
+        sort?: InboxSort;
+        descending?: boolean;
     };
     url: '/mail/inbox';
 };
@@ -11565,6 +11574,49 @@ export type ListKeptRolesResponses = {
 };
 
 export type ListKeptRolesResponse = ListKeptRolesResponses[keyof ListKeptRolesResponses];
+
+export type UnlinkDiscordRoleData = {
+    body?: never;
+    path: {
+        roleId: string;
+    };
+    query?: never;
+    url: '/management/discord/roles/{roleId}/link';
+};
+
+export type UnlinkDiscordRoleErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UnlinkDiscordRoleError = UnlinkDiscordRoleErrors[keyof UnlinkDiscordRoleErrors];
+
+export type UnlinkDiscordRoleResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UnlinkDiscordRoleResponse = UnlinkDiscordRoleResponses[keyof UnlinkDiscordRoleResponses];
 
 export type ListRoleOpeningsData = {
     body?: never;

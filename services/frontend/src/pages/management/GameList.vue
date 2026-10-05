@@ -15,7 +15,7 @@ import ManagementTable, {type TableColumn} from "@/components/management/Managem
 import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {type CataloguedChannel, GameChannelCategory, listCatalogue, makeGameChannel} from "@/domains/discord"
-import {type CasualGame, addGameChannel, useCasualGames} from "@/domains/games"
+import {type CasualGame, addGameChannel, setGameArchived, useCasualGames} from "@/domains/games"
 
 defineOptions({name: "GameListPage"})
 
@@ -32,11 +32,15 @@ const named = (game: CasualGame) => {
   return channels.length === 0 ? "No channel" : channels.map((one) => `#${one.name}`).join(", ")
 }
 
-const COLUMNS: TableColumn[] = [
-  {key: "name", label: "Game", wrap: true},
-  {key: "channels", label: "Channels", wrap: true},
-  {key: "kind", label: "Kind"},
-  {key: "state", label: "State"},
+/* A game is casual unless archived and in esports while a team is fielded in it, so it can be
+   both: the two are not kinds of game. */
+const playedAs = (game: CasualGame) => [game.archived ? null : "Casual", game.inCompetition ? "Esports" : null].filter(Boolean).join(" and ") || "Neither"
+
+const COLUMNS: TableColumn<CasualGame>[] = [
+  {key: "name", label: "Game", wrap: true, sortBy: (game) => game.name},
+  {key: "channels", label: "Channels", wrap: true, sortBy: (game) => channelsOf(game).map((one) => one.name).join(", ")},
+  {key: "kind", label: "Played as", sortBy: playedAs},
+  {key: "state", label: "State", sortBy: (game) => stateOf(game).word},
 ]
 
 // The games played first, the archived ones after them, each by name.
@@ -56,7 +60,7 @@ const facts = computed(() => {
   const live = games.value.filter((one) => !one.archived)
   return [
     {label: "Games", value: String(live.length), sub: `${games.value.length - live.length} archived`},
-    {label: "In esports", value: String(live.filter((one) => one.inCompetition).length), sub: "The rest are casual"},
+    {label: "In esports", value: String(live.filter((one) => one.inCompetition).length), sub: "A team is fielded this season; casual as well"},
     {label: "Differ on Discord", value: String(live.filter(differs).length), sub: "A channel opened otherwise than set on the site"},
   ]
 })
@@ -67,6 +71,29 @@ const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMa
   useUserSelection(computed(() => shown.value.map((one) => one.code)))
 const ticked = computed(() => games.value.filter((one) => isSelected(one.code)))
 const adding = ref(false)
+
+/* Archiving takes a game off the casual lists and bringing it back returns it; both in bulk, each
+   leaving out the ticked games already there. */
+const archiving = ref<boolean | null>(null)
+const toArchive = computed(() => ticked.value
+  .filter((one) => one.archived !== archiving.value)
+  .map((one) => ({key: one.code, name: one.name, note: channelsOf(one).length ? named(one) : "", game: one})))
+const notArchived = computed(() => ticked.value
+  .filter((one) => one.archived === archiving.value)
+  .map((one) => ({name: one.name, why: archiving.value ? "Archived already" : "Not archived"})))
+const archive = async ({game}: {game: CasualGame}) => {
+  const answered = await setGameArchived(game.code, archiving.value === true)
+  return answered.ok ? {ok: true as const} : answered
+}
+const archiveWords = computed(() => {
+  const count = `${toArchive.value.length} ${toArchive.value.length === 1 ? "game" : "games"}`
+  return archiving.value
+    ? {plan: "will be archived: off the casual lists and pickers, their pages and history kept. Nothing is changed yet.",
+      ask: `Archive ${count} now? They can be brought back from this list.`, go: `Archive ${count}`, doing: "Archiving", done: "archived"}
+    : {plan: "will be brought back onto the casual lists. Nothing is changed yet.",
+      ask: `Bring ${count} back now?`, go: `Bring ${count} back`, doing: "Bringing back", done: "brought back"}
+})
+
 const toAdd = computed(() => ticked.value
   .filter((one) => !one.archived && one.channels.length === 0)
   .map((one) => ({key: one.code, name: one.name, note: `#${one.slug} under Games`, game: one})))
@@ -165,7 +192,7 @@ onMounted(async () => {
         <span :class="{'mg-quiet': channelsOf(row).length === 0}">{{ named(row) }}</span>
       </template>
       <template #kind="{row}">
-        {{ row.inCompetition ? "Esports" : "Casual" }}
+        {{ playedAs(row) }}
       </template>
       <template #state="{row}">
         <state-mark
@@ -177,7 +204,7 @@ onMounted(async () => {
       </template>
       <template #phone="{row}">
         <management-row
-          :meta="`${row.inCompetition ? 'Esports' : 'Casual'} · ${named(row)}`"
+          :meta="`${playedAs(row)} · ${named(row)}`"
           :name="row.name"
           :testid="`game-row-${row.code}`"
           :to="`/management/games/${row.slug}`"
@@ -206,6 +233,20 @@ onMounted(async () => {
       >
         Add Discord channel
       </cut-button>
+      <cut-button
+        small
+        testid="game-archive"
+        @click="archiving = true"
+      >
+        Archive
+      </cut-button>
+      <cut-button
+        small
+        testid="game-unarchive"
+        @click="archiving = false"
+      >
+        Bring back
+      </cut-button>
     </selection-bar>
 
     <bulk-add
@@ -219,6 +260,19 @@ onMounted(async () => {
       title="Add Discord channels"
       @done="added"
       @update:open="adding = $event"
+    />
+
+    <bulk-add
+      :items="toArchive"
+      :noun="['game', 'games']"
+      :open="archiving !== null"
+      :run="archive"
+      :skipped="notArchived"
+      testid="game-bulk-archive"
+      :title="archiving ? 'Archive games' : 'Bring games back'"
+      :words="archiveWords"
+      @done="added"
+      @update:open="archiving = null"
     />
   </management-page>
 </template>

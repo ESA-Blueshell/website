@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {DOMWrapper, type VueWrapper} from "@vue/test-utils"
 import BrevoPage from "@/pages/management/BrevoPage.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findTargetOverview: vi.fn(),
@@ -92,6 +92,7 @@ describe("the Brevo page", () => {
     expect(wrapper.findAll('[data-testid^="brevo-row-"]')[0]!.attributes("data-testid")).toBe("brevo-row-missing-3")
     expect(wrapper.find('[data-testid="brevo-archive-10"]').exists()).toBe(false)
 
+    expect(await sortByEveryHead(wrapper)).toBe(5)
     wrapper.findComponent({name: "SearchBox"}).vm.$emit("update:modelValue", "nothing like it")
     await settle()
     expect(wrapper.get('[data-testid="brevo-empty"]').exists()).toBe(true)

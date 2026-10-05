@@ -2,7 +2,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import RecoveryManager from "@/pages/management/RecoveryManager.vue"
 import {aUser} from "../../helpers/apiFixtures"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findUsers: vi.fn(),
@@ -92,6 +92,7 @@ describe("the Account recovery page", () => {
     await wrapper.get('[data-testid="recovery-sort-name"]').trigger("click")
     await settle()
     expect(rowIds(wrapper)).toEqual([2, 3, 4, 1])
+    expect(await sortByEveryHead(wrapper)).toBe(3)
   })
 
   it("narrows by search, state and Needs a look, and clears them", async () => {

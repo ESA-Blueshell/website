@@ -54,11 +54,11 @@ const sourceLabels: Record<string, string> = {
   [RoleSource.GRANT]: "added by an admin",
 }
 
-const HISTORY: TableColumn[] = [
-  {key: "when", label: "When"},
-  {key: "change", label: "Change", wrap: true},
-  {key: "by", label: "By"},
-  {key: "why", label: "Why", wrap: true},
+const HISTORY: TableColumn<RoleChange>[] = [
+  {key: "when", label: "When", sortBy: (change) => change.changedAt},
+  {key: "change", label: "Change", wrap: true, sortBy: (change) => change.after.join(", ")},
+  {key: "by", label: "By", sortBy: (change) => change.actorName},
+  {key: "why", label: "Why", wrap: true, sortBy: (change) => change.note},
 ]
 
 const dirty = computed(() => {

@@ -43,6 +43,7 @@ import {
   opensOf,
   readOpenings,
   roleAccessWord,
+  unlinkRole,
 } from "@/domains/discord"
 import store from "@/plugins/store"
 
@@ -60,10 +61,10 @@ const loaded = ref(false)
 const acting = ref(false)
 
 const ACCESSES = [RoleAccess.WRITE, RoleAccess.READ, RoleAccess.SPEAK]
-const COLUMNS: TableColumn[] = [
-  {key: "channel", label: "Channel", wrap: true},
-  {key: "access", label: "Access"},
-  {key: "differs", label: "On Discord", wrap: true},
+const COLUMNS: TableColumn<RoleOpeningState>[] = [
+  {key: "channel", label: "Channel", wrap: true, sortBy: (state) => state.channel.name},
+  {key: "access", label: "Access", sortBy: (state) => state.kept ?? state.actual},
+  {key: "differs", label: "On Discord", wrap: true, sortBy: openingDiffers},
 ]
 
 const accessOptions = computed(() => ACCESSES.map((one) => ({key: one, label: roleAccessWord(one)})))
@@ -133,6 +134,20 @@ const enforce = async () => {
   const answered = await setTargetEnforced(cohort.value.id, mapping.value.targetId, !mapping.value.enforced)
   acting.value = false
   if (!answered.ok) return said(answered.reason)
+  await load()
+}
+
+/* Unlinking lets the role go from what it follows, so another committee, board or team can be
+   linked to it. Nothing changes on Discord. */
+const unlinking = ref(false)
+const unlink = async () => {
+  if (acting.value) return
+  acting.value = true
+  const answered = await unlinkRole(roleId.value)
+  acting.value = false
+  if (!answered.ok) return said(answered.reason)
+  unlinking.value = false
+  said(`@${role.value?.label ?? roleId.value} is unlinked.`)
   await load()
 }
 
@@ -322,9 +337,25 @@ onMounted(load)
         </cut-button>
       </div>
 
-      <template v-if="mapping && isAdmin">
+      <template v-if="mapping">
         <list-head title="Settings" />
         <cut-row
+          :meta="`The site decides who holds this role from ${role?.cohortLabel ?? 'what it follows'}. Unlink it to link the role to something else.`"
+          title="Linked on the site"
+        >
+          <template #end>
+            <cut-button
+              :disabled="acting"
+              small
+              testid="discord-role-unlink"
+              @click="unlinking = true"
+            >
+              Unlink
+            </cut-button>
+          </template>
+        </cut-row>
+        <cut-row
+          v-if="isAdmin"
           :meta="`Remove the role from extra holders every time it is compared. ${mapping.enforced ? 'On.' : 'Off.'}`"
           title="Enforce"
         >
@@ -341,6 +372,28 @@ onMounted(load)
         </cut-row>
       </template>
     </template>
+
+    <modal-dialog
+      :open="unlinking"
+      testid="discord-unlink-dialog"
+      :title="`Unlink @${role?.label ?? roleId}`"
+      @update:open="unlinking = $event"
+    >
+      <p class="role__note">
+        The site will stop deciding who holds this role from {{ role?.cohortLabel ?? "what it follows" }}.
+        The role stays on Discord with the people who hold it and the channels it has access to.
+      </p>
+      <template #footer>
+        <cut-button
+          :disabled="acting"
+          testid="discord-unlink-confirm"
+          tone="solid"
+          @click="unlink"
+        >
+          Unlink the role
+        </cut-button>
+      </template>
+    </modal-dialog>
 
     <modal-dialog
       :open="creating"

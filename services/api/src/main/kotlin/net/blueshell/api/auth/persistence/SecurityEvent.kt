@@ -71,7 +71,7 @@ enum class SecurityEventKind(
 ) {
     SIGNED_IN(false),
     NEW_BROWSER(true),
-    SIGN_IN_REUSED(true),
+    SIGN_IN_REUSED(false),
     SIGN_IN_BROWSER_CHANGED(true),
     CODE_LIMIT_REACHED(true),
     PASSWORD_RESET(true),

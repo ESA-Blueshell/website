@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {MemberType, Role} from "@/services/api"
-import {filterPeople, fold, membershipStateOf, peopleRows, sortPeople, type PersonRow} from "@/domains/user"
+import {filterPeople, fold, membershipRank, membershipStateOf, peopleRows, type PersonRow} from "@/domains/user"
 import {aCommittee, aMembership, aUser} from "../../helpers/apiFixtures"
 
 const row = (id: number, fullName: string, memberSince: string | null): PersonRow =>
@@ -10,13 +10,6 @@ describe("the people list", () => {
   it("folds case, accents and punctuation the same way on both sides of a search", () => {
     expect(fold("Zoë O'Brien-Smith")).toBe("zoe o brien smith")
     expect(filterPeople([row(1, "Zoë", null)], {search: "ZOE!", membership: null, type: null, needs: null})).toHaveLength(1)
-  })
-
-  it("sorts by name either way, and puts people never a member last by date", () => {
-    const rows = [row(1, "Bea", "2020-01-01"), row(2, "Ann", null), row(3, "Cas", "2019-05-01")]
-
-    expect(sortPeople(rows, "name", true).map((one) => one.id)).toEqual([3, 1, 2])
-    expect(sortPeople(rows, "memberSince", false).map((one) => one.id)).toEqual([3, 1, 2])
   })
 
   it("takes the type of the latest membership and the earliest start", () => {
@@ -49,7 +42,7 @@ describe("the people list", () => {
     expect(membershipStateOf([])).toBe("never")
 
     const rows = [{...row(1, "Ann", null), membership: "former" as const}, {...row(2, "Bea", null), membership: "pending" as const}]
-    expect(sortPeople(rows, "membership", false).map((one) => one.id)).toEqual([2, 1])
+    expect(rows.map(membershipRank)).toEqual([2, 1])
     expect(filterPeople(rows, {search: "", membership: "pending", type: null, needs: null}).map((one) => one.id)).toEqual([2])
   })
 })

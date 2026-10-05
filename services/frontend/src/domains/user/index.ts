@@ -97,11 +97,10 @@ export {
   fold,
   needsLookOf,
   peopleRows,
-  sortPeople,
+  membershipRank,
   type MembershipState,
   type NeedsLook,
   type PeopleFilter,
-  type PeopleSortKey,
   type PersonRow,
 } from "./peopleList"
 export {MemberType, Role, RoleSource} from "@/services/api"

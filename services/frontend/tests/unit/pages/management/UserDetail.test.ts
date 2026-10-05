@@ -3,7 +3,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import UserDetail from "@/pages/management/UserDetail.vue"
 import {BulkFeeType, ContributionEmailKind, MemberType} from "@/services/api"
 import {aMembership, aUser} from "../../helpers/apiFixtures"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findUserById: vi.fn(),
@@ -161,6 +161,7 @@ describe("one user's page", () => {
     await settle()
     expect(api.deleteContribution).toHaveBeenCalledWith({path: {userId: 7, contributionPeriodId: 4}})
     expect(wrapper.get('[data-testid="user-period-said-4"]').text()).toBe("Payment withdrawn.")
+    expect(await sortByEveryHead(wrapper)).toBe(5)
   })
 
   it("says why a payment could not be recorded", async () => {

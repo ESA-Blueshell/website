@@ -5,6 +5,7 @@ import java.time.Instant
 /**
  * One browser's time signed in, held on the server (api ADR-030). The auth cookie names it by
  * [id] and carries a token id that must be [currentJti], or [previousJti] within its grace.
+ * [previousRetiredAt] is when the browser first showed the current one; until then it is unset.
  */
 data class SignIn(
     val id: String,

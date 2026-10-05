@@ -56,21 +56,20 @@ const sent = ref<number | null>(null)
 
 const feeOptions = (Object.values(BulkFeeType) as BulkFeeType[]).map((value) => ({key: value, label: feeTypeLabels[value]}))
 
-const WHO_COLUMNS: TableColumn[] = [
-  {key: "name", label: "Member"},
-  {key: "what", label: "Reminder", wrap: true},
-  {key: "before", label: "Reminded before", wrap: true},
+const byName = {key: "name", label: "Member", sortBy: (one: ReminderRow) => one.name}
+const byReminder = {key: "what", label: "Reminder", wrap: true, sortBy: (one: ReminderRow) => reminderName(one)}
+const byAmount = {key: "amount", label: "Amount", sortBy: (one: ReminderRow) => amountOf(one)}
+const WHO_COLUMNS: TableColumn<ReminderRow>[] = [
+  byName,
+  byReminder,
+  {key: "before", label: "Reminded before", wrap: true, sortBy: (one) => one.remindedBefore},
 ]
-const FEE_COLUMNS: TableColumn[] = [
-  {key: "name", label: "Member"},
-  {key: "fee", label: "Fee type"},
-  {key: "amount", label: "Amount"},
+const FEE_COLUMNS: TableColumn<ReminderRow>[] = [
+  byName,
+  {key: "fee", label: "Fee type", sortBy: (one) => feeTypeLabels[feeOf(one)]},
+  byAmount,
 ]
-const CHECK_COLUMNS: TableColumn[] = [
-  {key: "name", label: "Member"},
-  {key: "what", label: "Reminder", wrap: true},
-  {key: "amount", label: "Amount"},
-]
+const CHECK_COLUMNS: TableColumn<ReminderRow>[] = [byName, byReminder, byAmount]
 const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
 
 const writable = computed(() => rows.value.filter((one) => one.leftOut === null))

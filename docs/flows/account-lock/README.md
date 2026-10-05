@@ -103,7 +103,7 @@ A lock link and an email confirmation link are rows in `recovery_tokens`, as
 | A browser trusted | the current address |
 | Two-factor reset by an admin | the current address |
 | Sign-in from a browser not seen before | the current address |
-| A sign-in ended because an old cookie was reused or it moved browsers | the current address |
+| A sign-in ended because it moved browsers | the current address |
 | Ten wrong codes in fifteen minutes | the current address |
 
 Each names what changed, when, from which browser family and operating system, and

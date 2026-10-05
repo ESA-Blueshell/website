@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import AlertList from "@/pages/management/AlertList.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const {mockList, mockHide, mockShow, mockStore} = vi.hoisted(() => ({
   mockList: vi.fn(),
@@ -46,6 +46,7 @@ describe("the Alerts page", () => {
     expect(wrapper.find('[data-testid="alert-job-dead:4"]').text()).toContain("2 jobs are dead")
     expect(wrapper.find('[data-testid="alert-open-job-dead:4"]').attributes("to")).toBe("/management/jobs?status=DEAD")
     expect(wrapper.find('[data-testid="alert-hidden"]').exists()).toBe(true)
+    expect(await sortByEveryHead(wrapper)).toBeGreaterThan(0)
   })
 
   it("hides an alert for the reader, and shows a hidden one again", async () => {

@@ -32,10 +32,10 @@ const emit = defineEmits<{(e: "changed"): void}>()
 const store = useStore<TypedStore>()
 const isAdmin = computed(() => store.getters.isAdmin)
 
-const COLUMNS: TableColumn[] = [
-  {key: "started", label: "Started"},
-  {key: "ends", label: "Ends"},
-  {key: "type", label: "Type"},
+const COLUMNS: TableColumn<MembershipResponse>[] = [
+  {key: "started", label: "Started", sortBy: (row) => row.startDate},
+  {key: "ends", label: "Ends", sortBy: (row) => row.endDate},
+  {key: "type", label: "Type", sortBy: (row) => memberTypeLabel(row.memberType)},
 ]
 
 const memberships = ref<MembershipResponse[]>([])

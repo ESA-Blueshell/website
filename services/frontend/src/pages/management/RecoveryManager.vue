@@ -32,10 +32,10 @@ const ACTION: Record<Standing, "activation" | "password" | "restore"> = {"not-ac
 
 const STANDING_MARKS: Record<Standing, StateKind> = {"not-activated": "missing", "active": "in-step", "deleted": "not-created"}
 
-const COLUMNS: TableColumn[] = [
-  {key: "name", label: "Name", sortable: true, wrap: true, testid: "recovery-sort-name"},
-  {key: "account", label: "Account", wrap: true},
-  {key: "lastEmail", label: "Last recovery email", sortable: true, testid: "recovery-sort-last-email"},
+const COLUMNS: TableColumn<RecoveryRow>[] = [
+  {key: "name", label: "Name", wrap: true, testid: "recovery-sort-name", sortBy: (row) => row.user.fullName},
+  {key: "account", label: "Account", wrap: true, sortBy: (row) => STANDING_WORDS[row.standing]},
+  {key: "lastEmail", label: "Last recovery email", testid: "recovery-sort-last-email", newestFirst: true, sortBy: (row) => row.lastEmail ?? NEVER},
 ]
 
 const users = ref<UserDetailResponse[]>([])
@@ -47,8 +47,8 @@ const loaded = ref(false)
 const search = ref("")
 const standing = ref<string | null>(null)
 const needs = ref<string | null>(null)
-const sortKey = ref<"name" | "lastEmail">("name")
-const descending = ref(false)
+// Nobody written to yet orders before anybody who was.
+const NEVER = "0"
 
 const standingOptions = (Object.keys(STANDING_WORDS) as Standing[]).map((key) => ({key, label: STANDING_WORDS[key]}))
 const needsOptions = [
@@ -63,17 +63,12 @@ const rows = computed<RecoveryRow[]>(() => [
 
 const shown = computed(() => {
   const words = fold(search.value).split(" ").filter(Boolean)
-  const matching = rows.value.filter((row) => {
+  return rows.value.filter((row) => {
     const haystack = fold(`${row.user.fullName} ${row.user.firstName} ${row.user.lastName} ${row.user.username} ${row.user.email}`)
     return words.every((word) => haystack.includes(word))
       && (standing.value === null || row.standing === standing.value)
       && (needs.value === null || (needs.value === "any" ? row.needs.length > 0 : row.needs.includes(needs.value as NeedsLook)))
   })
-  // A date sorts as a date, and an account never written to sorts before any that was.
-  const sorted = [...matching].sort((a, b) => (sortKey.value === "lastEmail"
-    ? (a.lastEmail ?? "").localeCompare(b.lastEmail ?? "")
-    : a.user.fullName.localeCompare(b.user.fullName)))
-  return descending.value ? sorted.reverse() : sorted
 })
 
 const filtered = computed(() => search.value !== "" || standing.value !== null || needs.value !== null)
@@ -82,12 +77,6 @@ const clear = () => {
   search.value = ""
   standing.value = null
   needs.value = null
-}
-
-const sortBy = (key: string) => {
-  // A date starts newest first; a name starts at the top of the alphabet.
-  descending.value = sortKey.value === key ? !descending.value : key === "lastEmail"
-  sortKey.value = key as "name" | "lastEmail"
 }
 
 const daysLeft = (user: UserDetailResponse): number | null =>
@@ -147,14 +136,12 @@ onMounted(load)
 
     <management-table
       :columns="COLUMNS"
-      :descending="descending"
       :row-key="(row) => `${row.standing}-${row.user.id}`"
       :row-testid="(row) => `recovery-user-row-${row.user.id}`"
       :rows="shown"
-      :sort-key="sortKey"
+      :start-sort="{key: 'name'}"
       testid="recovery-list"
       :to="(row) => (row.standing === 'deleted' ? null : `/management/users/${row.user.id}/account`)"
-      @sort="sortBy"
     >
       <template #count>
         <span><b>{{ shown.length }}</b> of {{ rows.length }} accounts</span>

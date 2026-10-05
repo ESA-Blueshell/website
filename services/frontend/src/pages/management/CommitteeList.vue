@@ -15,7 +15,7 @@ import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
-import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, createMissingLists, fetchCohorts, readTargetOverview} from "@/domains/cohorts"
+import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, createMissingLists, fetchCohorts, readTargetOverview, targetLabel} from "@/domains/cohorts"
 import {type Committee, listCommittees, saveCommitteeDiscord} from "@/domains/committees"
 
 defineOptions({name: "CommitteeListPage"})
@@ -40,12 +40,12 @@ const matches = (committee: Committee) => {
   const needle = search.value.trim().toLowerCase()
   return needle === "" || [committee.name, committee.slug].some((value) => value.toLowerCase().includes(needle))
 }
-const COLUMNS: TableColumn[] = [
-  {key: "name", label: "Committee", wrap: true},
-  {key: "members", label: "Members"},
-  {key: "discord", label: "Discord"},
-  {key: "brevo", label: "Brevo"},
-  {key: "state", label: "State"},
+const COLUMNS: TableColumn<Committee>[] = [
+  {key: "name", label: "Committee", wrap: true, sortBy: (committee) => committee.name},
+  {key: "members", label: "Members", sortBy: (committee) => committee.members?.length ?? 0},
+  {key: "discord", label: "Discord", sortBy: (committee) => targetLabel(targetsOf(committee), TargetSystem.DISCORD)},
+  {key: "brevo", label: "Brevo", sortBy: (committee) => targetLabel(targetsOf(committee), TargetSystem.BREVO)},
+  {key: "state", label: "State", sortBy: (committee) => (committee.archived ? "Archived" : "Active")},
 ]
 
 // The committees at work first, the archived ones after them, each by name.

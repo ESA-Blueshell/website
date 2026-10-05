@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {DOMWrapper, type VueWrapper} from "@vue/test-utils"
 import DiscordRole from "@/pages/management/DiscordRole.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findListedTarget: vi.fn(),
@@ -16,6 +16,7 @@ const api = vi.hoisted(() => ({
   removeRoleOpening: vi.fn(),
   createRoleChannel: vi.fn(),
   archiveRoleChannel: vi.fn(),
+  unlinkDiscordRole: vi.fn(),
 }))
 const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {isAdmin: false} as Record<string, unknown>}}))
 
@@ -103,6 +104,7 @@ describe("a Discord role's page", () => {
     expect(wrapper.get('[data-testid="discord-opening-set-1"]').text()).toBe("Set it on Discord")
     expect(wrapper.get('[data-testid="discord-opening-set-3"]').text()).toBe("Set it on the site")
     expect(picker(wrapper, "discord-open-another").props("options").map((one: {key: string}) => one.key)).toEqual(["11", "20", "2"])
+    expect(await sortByEveryHead(wrapper)).toBeGreaterThan(0)
   })
 
   it("sets an access, sets Discord back to what the site keeps, removes and archives", async () => {
@@ -243,7 +245,7 @@ describe("a Discord role's page", () => {
     await settle()
     expect(api.reconcileTarget).toHaveBeenCalled()
 
-    expect(wrapper.findComponent({name: "CutRow"}).text()).toContain("Off.")
+    expect(wrapper.findAllComponents({name: "CutRow"}).at(-1)!.text()).toContain("Off.")
     await wrapper.get('[data-testid="discord-role-enforce"]').trigger("click")
     await settle()
     expect(api.enforceTarget).toHaveBeenCalledWith(expect.objectContaining({path: {id: 4, targetId: 40}}))
@@ -255,5 +257,37 @@ describe("a Discord role's page", () => {
     await enforced.get('[data-testid="discord-role-enforce"]').trigger("click")
     await settle()
     expect(api.enforceTarget).toHaveBeenLastCalledWith(expect.objectContaining({body: {enforced: false}}))
+  })
+
+  it("unlinks the role from what it follows once that is confirmed, and says why when it is refused", async () => {
+    const wrapper = await mount()
+    const dialog = () => wrapper.findAllComponents({name: "ModalDialog"}).find((one) => one.props("testid") === "discord-unlink-dialog")!
+
+    // The enforce setting is an admin's; unlinking is not.
+    expect(wrapper.find('[data-testid="discord-role-enforce"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="discord-role-unlink"]').trigger("click")
+    await settle()
+    expect(dialog().props("open")).toBe(true)
+    dialog().vm.$emit("update:open", false)
+    await settle()
+    expect(dialog().props("open")).toBe(false)
+    expect(api.unlinkDiscordRole).not.toHaveBeenCalled()
+
+    await wrapper.get('[data-testid="discord-role-unlink"]').trigger("click")
+    await settle()
+    api.unlinkDiscordRole.mockResolvedValueOnce({status: 503, error: {message: "Not now."}, response: {status: 503}})
+    await new DOMWrapper(document.body.querySelector('[data-testid="discord-unlink-confirm"]')!).trigger("click")
+    await settle()
+    expect(mockStore.commit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", "The role could not be unlinked.")
+    expect(dialog().props("open")).toBe(true)
+
+    api.unlinkDiscordRole.mockResolvedValue({status: 204, data: undefined})
+    api.findListedTarget.mockClear()
+    await new DOMWrapper(document.body.querySelector('[data-testid="discord-unlink-confirm"]')!).trigger("click")
+    await settle()
+    expect(api.unlinkDiscordRole).toHaveBeenLastCalledWith({path: {roleId: "500"}})
+    expect(mockStore.commit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", "@Member is unlinked.")
+    expect(dialog().props("open")).toBe(false)
+    expect(api.findListedTarget).toHaveBeenCalledTimes(1)
   })
 })

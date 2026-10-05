@@ -42,6 +42,8 @@ export interface EmailFilter {
 
 /** Newest first, which is the order an outbox is read in. */
 const EMAIL_SORT = ["createdAt,desc"]
+/** What each of the table's columns is ordered by on the server. */
+const EMAIL_SORTS: Record<string, string> = {when: "createdAt", what: "subject", to: "recipientEmail", status: "deliveryStatus", attempts: "attempts"}
 
 /**
  * One page of the outbox.
@@ -57,7 +59,7 @@ export async function loadEmailPage(
     query: {
       page: query.page,
       size: query.size,
-      sort: EMAIL_SORT,
+      sort: query.sort && EMAIL_SORTS[query.sort.key] ? [`${EMAIL_SORTS[query.sort.key]},${query.sort.descending ? "desc" : "asc"}`, "id,desc"] : EMAIL_SORT,
       ...(filter.deliveryStatus ? {deliveryStatus: filter.deliveryStatus} : {}),
       ...(query.search ? {search: query.search} : {}),
     },

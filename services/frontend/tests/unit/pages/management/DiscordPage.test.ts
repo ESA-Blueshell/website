@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {DOMWrapper, type VueWrapper} from "@vue/test-utils"
 import DiscordPage from "@/pages/management/DiscordPage.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findTargetOverview: vi.fn(),
@@ -84,6 +84,7 @@ describe("the Discord page", () => {
     expect(wrapper.get('[data-testid="discord-role-950"]').text()).toContain("not managed by the site")
     expect(wrapper.get('[data-testid="discord-role-900"] a').attributes("to")).toBe("/management/platforms/discord/roles/900")
     expect(wrapper.findAll('[data-testid^="discord-role-"]')[0]!.attributes("data-testid")).toBe("discord-role-missing-3")
+    expect(await sortByEveryHead(wrapper)).toBe(4)
   })
 
   it("lists the channels by category with what they belong to, who gets in and where Discord differs", async () => {
@@ -103,6 +104,7 @@ describe("the Discord page", () => {
     expect(valo).toContain("Everyone reads, @Member writes")
     expect(wrapper.get('[data-testid="discord-channel-differs-2"]').text()).toBe("Everyone writes")
     expect(wrapper.get('[data-testid="discord-channel-differs-1"]').text()).toBe("No")
+    expect(await sortByEveryHead(wrapper)).toBe(4)
 
     // An archived channel is left out until the filter asks for it.
     expect(wrapper.find('[data-testid="discord-channel-3"]').exists()).toBe(false)

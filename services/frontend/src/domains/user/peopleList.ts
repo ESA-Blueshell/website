@@ -55,8 +55,6 @@ export interface PeopleFilter {
   needs: NeedsLook | "any" | null
 }
 
-export type PeopleSortKey = "name" | "membership" | "memberSince"
-
 const GRANTED = new Set<Role>([Role.BOARD, Role.TREASURER, Role.ADMIN])
 
 /** Lower case, accents gone, punctuation read as a space: typing zoe finds Zoë. */
@@ -123,13 +121,5 @@ export function filterPeople(rows: PersonRow[], filter: PeopleFilter): PersonRow
 
 const MEMBERSHIP_ORDER: Record<MembershipState, number> = {current: 0, pending: 1, former: 2, never: 3}
 
-/** Sorted by one column; people never a member sort after everyone else by date. */
-export function sortPeople(rows: PersonRow[], key: PeopleSortKey, descending: boolean): PersonRow[] {
-  const compare = (a: PersonRow, b: PersonRow): number => {
-    if (key === "membership") return MEMBERSHIP_ORDER[a.membership] - MEMBERSHIP_ORDER[b.membership]
-    if (key === "memberSince") return (a.memberSince ?? "9999").localeCompare(b.memberSince ?? "9999")
-    return a.fullName.localeCompare(b.fullName)
-  }
-  const sorted = [...rows].sort(compare)
-  return descending ? sorted.reverse() : sorted
-}
+/** Where a person's membership stands in a list ordered by it: members first, people never a member last. */
+export const membershipRank = (row: PersonRow): number => MEMBERSHIP_ORDER[row.membership]

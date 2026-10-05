@@ -82,25 +82,35 @@ const load = async () => {
 
 const said = (message: string) => store.commit("setStatusSnackbarMessage", message)
 
-const ROLE_COLUMNS: TableColumn[] = [
-  {key: "role", label: "Role", wrap: true},
-  {key: "follows", label: "Follows", wrap: true},
-  {key: "state", label: "State"},
-  {key: "access", label: "Has access to", wrap: true},
-]
-const CHANNEL_COLUMNS: TableColumn[] = [
-  {key: "channel", label: "Channel", wrap: true},
-  {key: "belongs", label: "Belongs to", wrap: true},
-  {key: "access", label: "Access", wrap: true},
-  {key: "state", label: "Differs on Discord"},
-]
-
 interface RoleRow {
   key: string
   missing: MissingTarget | null
   role: ListedTarget | null
   managed: boolean
 }
+type ChannelRow = CataloguedChannel & {category: string}
+
+const followsWord = (row: RoleRow) => {
+  if (row.missing) return followsOf({missing: row.missing})
+  return row.managed && row.role ? followsOf({list: row.role}) : "Nothing"
+}
+const stateWord = (row: RoleRow) => {
+  if (row.missing) return row.missing.creating ? "Being created" : "No role yet"
+  return row.managed && row.role ? driftOf(row.role).word : "Not compared"
+}
+
+const ROLE_COLUMNS: TableColumn<RoleRow>[] = [
+  {key: "role", label: "Role", wrap: true, sortBy: (row) => row.missing?.cohortLabel ?? row.role?.label},
+  {key: "follows", label: "Follows", wrap: true, sortBy: followsWord},
+  {key: "state", label: "State", sortBy: stateWord},
+  {key: "access", label: "Has access to", wrap: true, sortBy: (row) => (row.role ? opensOf(row.role.externalId, channels.value) : null)},
+]
+const CHANNEL_COLUMNS: TableColumn<ChannelRow>[] = [
+  {key: "channel", label: "Channel", wrap: true, sortBy: (row) => row.name},
+  {key: "belongs", label: "Belongs to", wrap: true, sortBy: (row) => belongsTo(row, roles.value)},
+  {key: "access", label: "Access", wrap: true, sortBy: (row) => accessOf(row, roles.value)},
+  {key: "state", label: "Differs on Discord", sortBy: differsOf},
+]
 
 // The roles still to create first, then the ones the site manages, then the ones made by hand.
 const roleRows = computed<RoleRow[]>(() => [
@@ -110,7 +120,6 @@ const roleRows = computed<RoleRow[]>(() => [
 ])
 const roleLink = (row: RoleRow) => (row.role ? `/management/platforms/discord/roles/${row.role.externalId}` : null)
 
-type ChannelRow = CataloguedChannel & {category: string}
 const everyChannel = computed<ChannelRow[]>(() => groups.value.flatMap((group) => group.channels.map((one) => ({...one, category: group.name}))))
 /* Archived channels are kept for history and nobody works in them, so the list leaves them out until asked. */
 const ARCHIVED_SHOWN = "shown"
@@ -146,7 +155,6 @@ const create = async () => {
 }
 
 const kindOf = (channel: CataloguedChannel) => (channel.kind === "VOICE" ? "Voice" : channel.private ? "Private" : "Public")
-const followsRow = (list: ListedTarget) => followsOf({list})
 
 /** The matches dialog: every match ticked, and linked only once confirmed. */
 const reviewing = ref(false)
@@ -276,27 +284,27 @@ onMounted(load)
           <span class="mg-sub">{{ row.managed ? "Managed by the site" : "Made by hand on Discord, not managed by the site" }}</span>
         </template>
         <template #follows="{row}">
-          <span class="mg-quiet">{{ row.missing ? followsOf({missing: row.missing}) : row.managed && row.role ? followsRow(row.role) : "Nothing" }}</span>
+          <span class="mg-quiet">{{ followsWord(row) }}</span>
         </template>
         <template #state="{row}">
           <state-mark
             v-if="row.missing"
             kind="not-created"
           >
-            {{ row.missing.creating ? "Being created" : "No role yet" }}
+            {{ stateWord(row) }}
           </state-mark>
           <state-mark
             v-else-if="row.managed && row.role"
             :kind="driftOf(row.role).kind"
             :testid="`discord-role-state-${row.role.externalId}`"
           >
-            {{ driftOf(row.role).word }}
+            {{ stateWord(row) }}
           </state-mark>
           <state-mark
             v-else
             kind="not-compared"
           >
-            Not compared
+            {{ stateWord(row) }}
           </state-mark>
         </template>
         <template #access="{row}">

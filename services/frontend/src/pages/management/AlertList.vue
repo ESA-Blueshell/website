@@ -17,10 +17,10 @@ defineOptions({name: "AlertListPage"})
 const {shown, hidden, refresh} = useAlerts()
 const loaded = ref(false)
 
-const COLUMNS: TableColumn[] = [
-  {key: "from", label: "From"},
-  {key: "what", label: "What needs a look", wrap: true},
-  {key: "since", label: "Since"},
+const COLUMNS: TableColumn<Alert>[] = [
+  {key: "from", label: "From", sortBy: (alert) => alertRow(alert).from},
+  {key: "what", label: "What needs a look", wrap: true, sortBy: alertTitle},
+  {key: "since", label: "Since", sortBy: (alert) => alert.since},
 ]
 
 const facts = computed(() => {

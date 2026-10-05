@@ -76,30 +76,32 @@ const doneFailure = ref<string | null>(null)
 
 const feeOptions = (Object.values(BulkFeeType) as BulkFeeType[]).map((value) => ({key: value, label: feeTypeLabels[value]}))
 
-const WHO_COLUMNS: TableColumn[] = [
-  {key: "name", label: "Member"},
-  {key: "account", label: "Account"},
-  {key: "mandate", label: "Mandate"},
-  {key: "why", label: "Why", wrap: true},
+const byName = {key: "name", label: "Member", sortBy: (one: {name: string}) => one.name}
+const byMandate = {key: "mandate", label: "Mandate", sortBy: (one: {mandateReference?: string | null}) => one.mandateReference}
+const WHO_COLUMNS: TableColumn<IncassoCandidate>[] = [
+  byName,
+  {key: "account", label: "Account", sortBy: (one) => maskedIban(one)},
+  byMandate,
+  {key: "why", label: "Why", wrap: true, sortBy: (one) => (one.leftOut ? leftOutLabels[one.leftOut] : null)},
 ]
-const AMOUNT_COLUMNS: TableColumn[] = [
-  {key: "name", label: "Member"},
-  {key: "since", label: "Membership started"},
-  {key: "fee", label: "Fee type"},
-  {key: "amount", label: "Amount"},
+const AMOUNT_COLUMNS: TableColumn<IncassoCandidate>[] = [
+  byName,
+  {key: "since", label: "Membership started", sortBy: (one) => one.memberSince},
+  {key: "fee", label: "Fee type", sortBy: (one) => feeTypeLabels[feeOf(one)]},
+  {key: "amount", label: "Amount", sortBy: (one) => amountOf(one)},
 ]
-const COLLECT_COLUMNS: TableColumn[] = [
-  {key: "name", label: "Member"},
-  {key: "account", label: "Account"},
-  {key: "mandate", label: "Mandate"},
-  {key: "fee", label: "Fee type"},
-  {key: "amount", label: "Amount"},
+const COLLECT_COLUMNS: TableColumn<IncassoCandidate>[] = [
+  byName,
+  {key: "account", label: "Account", sortBy: (one) => maskedIban(one)},
+  byMandate,
+  {key: "fee", label: "Fee type", sortBy: (one) => feeTypeLabels[feeOf(one)]},
+  {key: "amount", label: "Amount", sortBy: (one) => amountOf(one)},
 ]
-const DONE_COLUMNS: TableColumn[] = [
-  {key: "name", label: "Member"},
-  {key: "account", label: "Account"},
-  {key: "mandate", label: "Mandate"},
-  {key: "amount", label: "Amount"},
+const DONE_COLUMNS: TableColumn<IncassoRunView["collections"][number]>[] = [
+  byName,
+  {key: "account", label: "Account", sortBy: (one) => maskedIban(one)},
+  byMandate,
+  {key: "amount", label: "Amount", sortBy: (one) => one.amount},
 ]
 const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`

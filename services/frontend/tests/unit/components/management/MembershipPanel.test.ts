@@ -2,7 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import MembershipPanel from "@/components/management/MembershipPanel.vue"
 import {MemberType} from "@/services/api"
-import {settle} from "../../pages/helpers"
+import {settle, sortByEveryHead} from "../../pages/helpers"
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
@@ -134,6 +134,7 @@ describe("MembershipPanel", () => {
     await settle()
 
     expect((wrapper.vm as any).memberships.map((one: {id: number}) => one.id)).toEqual([2, 3, 1])
+    expect(await sortByEveryHead(wrapper)).toBe(3)
   })
 
   it("does NOT call findDeletedMemberships when not admin", async () => {

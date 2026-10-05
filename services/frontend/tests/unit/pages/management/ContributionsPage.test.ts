@@ -3,7 +3,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import ContributionsPage from "@/pages/management/ContributionsPage.vue"
 import {BulkFeeType, ContributionEmailKind} from "@/services/api"
 import {aContributionPeriod} from "../../helpers/apiFixtures"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findContributionPeriods: vi.fn(),
@@ -117,6 +117,7 @@ describe("the Contributions page", () => {
     await wrapper.get('[data-testid="contribution-filters-clear"]').trigger("click")
     await settle()
     expect(rowIds(wrapper)).toHaveLength(3)
+    expect(await sortByEveryHead(wrapper)).toBeGreaterThanOrEqual(5)
   })
 
   it("lists the period's incassos, a run not yet in ING as waiting for upload", async () => {
@@ -133,6 +134,7 @@ describe("the Contributions page", () => {
 
     expect(wrapper.get('[data-testid="contribution-incasso-run"]').attributes("to")).toBe("/management/contributions/2/incasso")
     expect(wrapper.get('[data-testid="contribution-incasso-7"]').text()).toContain("Waiting for upload to ING")
+    expect(await sortByEveryHead(wrapper)).toBeGreaterThanOrEqual(5)
     expect(wrapper.get('[data-testid="contribution-incasso-7"]').text()).toContain("€ 50.00")
     expect(wrapper.get('[data-testid="contribution-incasso-6"]').text()).toContain("Submitted to ING 20 Oct 2025")
   })

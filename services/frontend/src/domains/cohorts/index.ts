@@ -6,7 +6,7 @@
  * place a call to the api may be written. Re-exported by name rather than with `export *`,
  * because the list of names is the promise.
  */
-export {memberName, systemLabel} from "./reading"
+export {memberName, systemLabel, targetLabel} from "./reading"
 export {COHORT_TYPE_LABELS, cohortTypeLabel} from "./cohortTypeLabels"
 export type {
   CohortMember,

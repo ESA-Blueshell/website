@@ -61,6 +61,9 @@ const {
   refresh,
   more,
   resetToFirstPage,
+  sortKey,
+  descending,
+  sortBy,
 } = table
 
 watch([selectedCategory, selectedStatus, hideSkipped], () => {
@@ -96,13 +99,15 @@ const statusOptions = jobStatusOptions()
 
 const successRate = computed(() => rateOf(stats.value))
 
+// Jobs are read a page at a time, so the server orders them. A job's kind is worked out from its
+// type, not stored, so the server cannot order by it.
 const COLUMNS: TableColumn[] = [
-  {key: "queued", label: "Queued"},
-  {key: "job", label: "Job", wrap: true},
+  {key: "queued", label: "Queued", sortable: true},
+  {key: "job", label: "Job", wrap: true, sortable: true},
   {key: "kind", label: "Kind"},
-  {key: "by", label: "Started by", wrap: true},
-  {key: "status", label: "Status", wrap: true},
-  {key: "attempts", label: "Attempts"},
+  {key: "by", label: "Started by", wrap: true, sortable: true},
+  {key: "status", label: "Status", wrap: true, sortable: true},
+  {key: "attempts", label: "Attempts", sortable: true},
 ]
 
 const STATUS_MARKS: Record<JobExecutionStatus, StateKind> = {
@@ -232,12 +237,15 @@ onMounted(async () => {
 
     <management-table
       :columns="COLUMNS"
+      :descending="descending"
       :row-key="(execution) => execution.id ?? 0"
       :row-testid="(execution) => `job-row-${execution.id}`"
       :rows="executions"
+      :sort-key="sortKey"
       testid="job-manager-table"
       :to="(execution) => `/management/jobs/${execution.id}`"
       @more="more"
+      @sort="sortBy"
     >
       <template #count>
         {{ loading ? "Refreshing" : `Showing ${pageRangeLabel}` }}

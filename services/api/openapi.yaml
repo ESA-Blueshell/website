@@ -3851,6 +3851,13 @@ components:
       - state
       - subject
       type: object
+    InboxSort:
+      enum:
+      - RECEIVED
+      - FROM
+      - SUBJECT
+      - STATE
+      type: string
     InboxState:
       enum:
       - NEW
@@ -21312,6 +21319,18 @@ paths:
           default: 0
           format: int32
           type: integer
+      - in: query
+        name: sort
+        required: false
+        schema:
+          $ref: '#/components/schemas/InboxSort'
+          default: RECEIVED
+      - in: query
+        name: descending
+        required: false
+        schema:
+          default: true
+          type: boolean
       responses:
         '200':
           content:

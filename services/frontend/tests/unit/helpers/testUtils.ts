@@ -104,3 +104,21 @@ export function mountInApp(
   page.unmount = () => root.unmount()
   return page
 }
+
+/**
+ * Presses every head a table orders by three times, which orders it, turns it round and lets the
+ * order go again, and answers how many heads there were. Each first press has to leave a head
+ * saying how its rows are ordered. The heads are found again for each press, since a table that
+ * re-orders draws them anew.
+ */
+export async function sortByEveryHead(wrapper: VueWrapper<any>): Promise<number> {
+  const count = wrapper.findAll(".mg-table__sort").length
+  for (let index = 0; index < count; index++) {
+    for (const press of [1, 2, 3]) {
+      await wrapper.findAll(".mg-table__sort")[index]!.trigger("click")
+      await settle()
+      if (press === 1 && !wrapper.find("th[aria-sort]").exists()) throw new Error(`head ${index} did not order its table`)
+    }
+  }
+  return count
+}

@@ -46,6 +46,8 @@ export interface JobFilter {
 
 /** Newest first, and by id where two share a moment, so paging cannot show a row twice. */
 const JOB_SORT = ["updatedAt,desc", "id,desc"]
+/** What each of the table's columns is ordered by on the server. A job's kind is worked out from its type, so it has none. */
+const JOB_SORTS: Record<string, string> = {queued: "queuedAt", job: "jobType", by: "trigger", status: "status", attempts: "attempts"}
 
 const emptyPage: PageOf<Job> = {rows: [], totalElements: 0, totalPages: 1}
 
@@ -64,7 +66,7 @@ export async function loadJobPage(query: PageQuery, filter: JobFilter = {}): Pro
     query: {
       page: query.page,
       size: query.size,
-      sort: JOB_SORT,
+      sort: query.sort && JOB_SORTS[query.sort.key] ? [`${JOB_SORTS[query.sort.key]},${query.sort.descending ? "desc" : "asc"}`, "id,desc"] : JOB_SORT,
       ...(filter.category ? {category: filter.category} : {}),
       ...(filter.status ? {status: filter.status} : {}),
       ...(filter.hideSkipped ? {hideSkipped: true} : {}),

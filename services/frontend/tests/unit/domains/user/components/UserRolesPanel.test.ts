@@ -2,6 +2,7 @@ import {flushPromises, mount} from "@vue/test-utils"
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {Role} from "@/services/api"
 import UserRolesPanel from "@/domains/user/components/UserRolesPanel.vue"
+import {sortByEveryHead} from "../../../helpers/testUtils"
 
 vi.mock("vue-router", async importOriginal => ({...(await importOriginal<typeof import("vue-router")>()), useRouter: () => ({push: vi.fn()})}))
 
@@ -96,6 +97,7 @@ describe("the roles panel", () => {
     expect(wrapper.get('[data-testid="user-roles-history-3"]').text()).toContain("Nothing to Board")
     expect(wrapper.get('[data-testid="user-roles-history-3"]').text()).toContain("Took office")
     expect(wrapper.get('[data-testid="user-roles-history-4"]').text()).toContain("Board to nothing")
+    expect(await sortByEveryHead(wrapper)).toBe(4)
   })
 
   it("says so when the roles cannot be read, and when nothing has changed yet", async () => {

@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import EventQueue from "@/pages/management/EventQueue.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({listApprovalQueue: vi.fn(), approveEvent: vi.fn()}))
 const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {} as Record<string, unknown>}}))
@@ -52,6 +52,7 @@ describe("the events to approve", () => {
     expect(wrapper.get('[data-testid="event-queue-changes-3"]').text()).toBe("Changed since it was approved")
     expect(wrapper.get('[data-testid="event-queue-changes-1"]').text()).toBe("New")
     expect(wrapper.get('[data-testid="event-queue-open-1"]').attributes("to")).toBe("/events/1")
+    expect(await sortByEveryHead(wrapper)).toBe(4)
   })
 
   it("draws each waiting event as a row on a phone, with approving and opening at its end", async () => {

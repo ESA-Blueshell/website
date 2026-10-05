@@ -3,7 +3,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import PaymentReminders from "@/pages/management/PaymentReminders.vue"
 import {BulkFeeType, BulkRowDisposition, ContributionEmailKind, MemberType} from "@/services/api"
 import {aContributionPeriod} from "../../helpers/apiFixtures"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findContributionPeriods: vi.fn(),
@@ -68,16 +68,19 @@ describe("the payment reminders task", () => {
     expect(wrapper.get('[data-testid="payment-reminders-left-out-2"]').text()).toContain("Pays by incasso")
     expect(wrapper.get('[data-testid="payment-reminders-before-1"]').text()).toContain("Reminded before on 01/10/2025")
     expect(wrapper.get('[data-testid="payment-reminders-row-3"]').text()).toContain("First payment email")
+    expect(await sortByEveryHead(wrapper)).toBe(3)
 
     await wrapper.get('[data-testid="payment-reminders-next"]').trigger("click")
     await settle()
     wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", BulkFeeType.ALUMNI_FEE)
     await settle()
     expect(wrapper.get('[data-testid="payment-reminders-fees"]').text()).toContain("€ 5.00")
+    expect(await sortByEveryHead(wrapper)).toBe(3)
 
     await wrapper.get('[data-testid="payment-reminders-next"]').trigger("click")
     await settle()
     expect(wrapper.get('[data-testid="payment-reminders-send"]').attributes("disabled")).toBeDefined()
+    expect(await sortByEveryHead(wrapper)).toBe(3)
     wrapper.findComponent({name: "DateInput"}).vm.$emit("update:modelValue", later)
     await settle()
 

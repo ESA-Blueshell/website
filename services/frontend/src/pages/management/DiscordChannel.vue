@@ -28,9 +28,9 @@ const holders = ref<Holder[]>([])
 const loaded = ref(false)
 const acting = ref(false)
 
-const COLUMNS: TableColumn[] = [
-  {key: "role", label: "Role", wrap: true},
-  {key: "access", label: "Access"},
+const COLUMNS: TableColumn<Holder>[] = [
+  {key: "role", label: "Role", wrap: true, sortBy: (holder) => holder.name},
+  {key: "access", label: "Access", sortBy: (holder) => holder.access},
 ]
 
 const voice = computed(() => channel.value?.kind === "VOICE")

@@ -2,7 +2,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import ExceptionDetail from "@/pages/management/ExceptionDetail.vue"
 import ExceptionList from "@/pages/management/ExceptionList.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const {mockList, mockFind, mockResolve, mockStore} = vi.hoisted(() => ({
   mockList: vi.fn(),
@@ -65,6 +65,7 @@ describe("the Exceptions pages", () => {
     expect(wrapper.get('[data-testid="exception-row-3"] a').attributes("to")).toBe("/management/exceptions/3")
     expect(wrapper.find('[data-testid="exception-row-3"]').text()).toContain("IllegalStateException")
     expect(wrapper.find('[data-testid="exception-row-4"]').text()).toContain("Resolved")
+    expect(await sortByEveryHead(wrapper)).toBe(4)
   })
 
   it("draws each fault as a row on a phone, opening its own page", async () => {

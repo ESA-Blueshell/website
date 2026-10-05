@@ -41,14 +41,15 @@ const table = usePagedTable<SentEmail>((query) => {
   void loadStats()
   return loadEmailPage(query)
 }, {pageSize: 50})
-const {rows, search, pageRangeLabel, refresh, more} = table
+const {rows, search, pageRangeLabel, refresh, more, sortKey, descending, sortBy} = table
 
+// Sent mail is read a page at a time, so the server orders it.
 const COLUMNS: TableColumn[] = [
-  {key: "when", label: "Sent"},
-  {key: "what", label: "Email", wrap: true},
-  {key: "to", label: "To"},
-  {key: "status", label: "Status"},
-  {key: "attempts", label: "Attempts"},
+  {key: "when", label: "Sent", sortable: true},
+  {key: "what", label: "Email", wrap: true, sortable: true},
+  {key: "to", label: "To", sortable: true},
+  {key: "status", label: "Status", sortable: true},
+  {key: "attempts", label: "Attempts", sortable: true},
 ]
 
 const facts = computed(() => sentFacts(stats.value))
@@ -111,12 +112,15 @@ onMounted(refresh)
 
     <management-table
       :columns="COLUMNS"
+      :descending="descending"
       :row-key="(email) => email.id ?? 0"
       :row-testid="(email) => `sent-email-row-${email.id}`"
       :rows="rows"
+      :sort-key="sortKey"
       testid="sent-emails-table"
       :to="(email) => `/management/mail/sent/${email.id}`"
       @more="more"
+      @sort="sortBy"
     >
       <template #count>
         {{ pageRangeLabel }}

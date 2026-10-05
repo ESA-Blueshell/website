@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import OwnContributions from "@/components/account/OwnContributions.vue"
 import {BulkFeeType} from "@/services/api"
+import {sortByEveryHead} from "../../helpers/testUtils"
 
 const api = vi.hoisted(() => ({findOwnContributions: vi.fn()}))
 vi.mock("@/services/api", async (importOriginal) => ({...(await importOriginal<typeof import("@/services/api")>()), ...api}))
@@ -29,6 +30,7 @@ describe("a member's own contributions", () => {
     expect(row(1)).toContain("2024")
     expect(row(1)).toContain("Nothing to pay")
     expect(row(1)).not.toContain("Not paid yet")
+    expect(await sortByEveryHead(wrapper)).toBe(4)
   })
 
   it("says so when there are none, or when they cannot be read", async () => {

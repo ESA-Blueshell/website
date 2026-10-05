@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import CommitteeList from "@/pages/management/CommitteeList.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({findCommittees: vi.fn(), findCohorts: vi.fn(), setCommitteeDiscord: vi.fn(), findTargetOverview: vi.fn(), createMissingTargets: vi.fn()}))
 
@@ -65,6 +65,7 @@ describe("the committees in Management", () => {
     expect(wrapper.findAll('[data-testid^="committee-row-"]').at(-1)!.attributes("data-testid")).toBe("committee-row-3")
     expect(wrapper.findComponent({name: "FactList"}).text()).toContain("1 archived")
     expect(wrapper.findComponent({name: "FactList"}).text()).toContain("Needs a look1")
+    expect(await sortByEveryHead(wrapper)).toBe(5)
   })
 
   it("draws each committee as a row on a phone, saying what one is missing", async () => {

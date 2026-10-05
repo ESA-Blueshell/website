@@ -2,6 +2,7 @@ import {afterEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import BulkDialogScaffold from "@/components/common/modals/bulk/BulkDialogScaffold.vue"
 import type {BulkRow} from "@/utils/bulkRow"
+import {sortByEveryHead} from "../../../../helpers/testUtils"
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
@@ -40,9 +41,11 @@ describe("what a bulk task shows before it changes anything", () => {
     expect(order()).toEqual([3, 2, 4, 1].map((id) => `bulk-preview-row-${id}`))
     await sort("What happens")
     expect(order()).toEqual([1, 4, 2, 3].map((id) => `bulk-preview-row-${id}`))
+    // Somebody with no start date has nothing to order by, so they come last.
     await sort("Member since")
-    expect(order()[0]).toBe("bulk-preview-row-3")
+    expect(order()).toEqual([2, 1, 4, 3].map((id) => `bulk-preview-row-${id}`))
 
+    expect(await sortByEveryHead(wrapper)).toBe(5)
     expect(wrapper.find('[data-testid="bulk-preview-reinclude-1"]').exists()).toBe(false)
     await wrapper.get('[data-testid="bulk-preview-reinclude-2"]').trigger("change")
     expect(wrapper.emitted("update:reincludeOverrides")?.[0]?.[0]).toEqual({2: true})

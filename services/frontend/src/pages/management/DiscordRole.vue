@@ -60,10 +60,10 @@ const loaded = ref(false)
 const acting = ref(false)
 
 const ACCESSES = [RoleAccess.WRITE, RoleAccess.READ, RoleAccess.SPEAK]
-const COLUMNS: TableColumn[] = [
-  {key: "channel", label: "Channel", wrap: true},
-  {key: "access", label: "Access"},
-  {key: "differs", label: "On Discord", wrap: true},
+const COLUMNS: TableColumn<RoleOpeningState>[] = [
+  {key: "channel", label: "Channel", wrap: true, sortBy: (state) => state.channel.name},
+  {key: "access", label: "Access", sortBy: (state) => state.kept ?? state.actual},
+  {key: "differs", label: "On Discord", wrap: true, sortBy: openingDiffers},
 ]
 
 const accessOptions = computed(() => ACCESSES.map((one) => ({key: one, label: roleAccessWord(one)})))

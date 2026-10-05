@@ -15,7 +15,7 @@ import {answer} from "../../helpers/sdkAnswers"
 import {aCommittee, aContributionPeriod} from "../../helpers/apiFixtures"
 import {boardLogin, mountPage} from "../../helpers/mountPage"
 import type {StoredLogin} from "@/plugins/store"
-import {settle} from "../helpers"
+import {settle, sortByEveryHead} from "../helpers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -127,7 +127,7 @@ describe("the Users page", () => {
     expect(rowIds(wrapper)).toEqual([2, 3, 1])
   })
 
-  it("sorts by a column, and turns the order round on a second press", async () => {
+  it("sorts by a column, turns the order round on a second press and lets it go on a third", async () => {
     const wrapper = await mount()
 
     await wrapper.get('[data-testid="member-manager-header-status"]').trigger("click")
@@ -136,9 +136,13 @@ describe("the Users page", () => {
     await wrapper.get('[data-testid="member-manager-header-status"]').trigger("click")
     await settle()
     expect(rowIds(wrapper)).toEqual([3, 2, 1])
+    await wrapper.get('[data-testid="member-manager-header-status"]').trigger("click")
+    await settle()
+    expect(wrapper.find("th[aria-sort]").exists()).toBe(false)
     await wrapper.get('[data-testid="member-manager-header-name"]').trigger("click")
     await settle()
     expect(rowIds(wrapper)).toEqual([2, 3, 1])
+    expect(await sortByEveryHead(wrapper)).toBe(5)
   })
 
   it("takes the people selected to the task page that starts or ends their membership", async () => {

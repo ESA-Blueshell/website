@@ -3,7 +3,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import IncassoRun from "@/pages/management/IncassoRun.vue"
 import {BulkFeeType, ContributionEmailKind, IncassoLeftOut} from "@/services/api"
 import {aContributionPeriod} from "../../helpers/apiFixtures"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findContributionPeriods: vi.fn(),
@@ -89,16 +89,19 @@ describe("the incasso task", () => {
     expect(wrapper.get('[data-testid="incasso-run-row-1"]').text()).toContain("NL•• … ••11")
     expect(wrapper.get('[data-testid="incasso-run-left-out-3"]').text()).toContain("Ask them to add")
     expect(wrapper.get('[data-testid="incasso-run-left-out-4"]').text()).toBe("Already paid")
+    expect(await sortByEveryHead(wrapper)).toBe(4)
 
     await wrapper.get('[data-testid="incasso-run-next"]').trigger("click")
     await settle()
     wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", BulkFeeType.HALF_YEAR_FEE)
     await settle()
     expect(wrapper.get('[data-testid="incasso-run-amounts"]').text()).toContain("€ 15.00")
+    expect(await sortByEveryHead(wrapper)).toBe(4)
 
     await wrapper.get('[data-testid="incasso-run-next"]').trigger("click")
     await settle()
     expect(wrapper.text()).toContain("€ 45.00 will be collected from 2 members")
+    expect(await sortByEveryHead(wrapper)).toBe(5)
     expect(wrapper.get('[data-testid="incasso-run-renamed"]').text()).toContain("Zoë Bakker as Zoe Bakker")
     expect(wrapper.get('[data-testid="incasso-run-left-out"]').text()).toContain("Lotte Meijer")
     expect(wrapper.get('[data-testid="incasso-run-start"]').attributes("disabled")).toBeDefined()
@@ -154,6 +157,7 @@ describe("the incasso task", () => {
     const opened = await mount()
     expect(api.planIncasso).not.toHaveBeenCalled()
     expect(opened.get('[data-testid="incasso-run-in-ing"]').text()).toContain("Submitted to ING on 20 Oct 2026")
+    expect(await sortByEveryHead(opened)).toBe(4)
 
     mockRoute.params = {periodId: "2"}
     api.planIncasso.mockResolvedValue({status: 200, data: []})

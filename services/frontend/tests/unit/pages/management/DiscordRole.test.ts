@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {DOMWrapper, type VueWrapper} from "@vue/test-utils"
 import DiscordRole from "@/pages/management/DiscordRole.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({
   findListedTarget: vi.fn(),
@@ -103,6 +103,7 @@ describe("a Discord role's page", () => {
     expect(wrapper.get('[data-testid="discord-opening-set-1"]').text()).toBe("Set it on Discord")
     expect(wrapper.get('[data-testid="discord-opening-set-3"]').text()).toBe("Set it on the site")
     expect(picker(wrapper, "discord-open-another").props("options").map((one: {key: string}) => one.key)).toEqual(["11", "20", "2"])
+    expect(await sortByEveryHead(wrapper)).toBeGreaterThan(0)
   })
 
   it("sets an access, sets Discord back to what the site keeps, removes and archives", async () => {

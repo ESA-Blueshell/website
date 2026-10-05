@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository
 interface InboxMessageRepository : JpaRepository<InboxMessage, Long> {
     fun existsByMessageId(messageId: String): Boolean
 
-    /** Newest first, narrowed by a word in the sender, the address it went to or the subject. */
+    /** Narrowed by a word in the sender, the address it went to or the subject; the page says the order. */
     @Query(
         """
         select m from InboxMessage m
@@ -20,7 +20,6 @@ interface InboxMessageRepository : JpaRepository<InboxMessage, Long> {
            or lower(coalesce(m.fromName, '')) like lower(concat('%', :search, '%'))
            or lower(coalesce(m.toAddress, '')) like lower(concat('%', :search, '%'))
            or lower(m.subject) like lower(concat('%', :search, '%'))
-        order by m.receivedAt desc, m.id desc
         """,
     )
     fun search(

@@ -195,6 +195,33 @@ describe("usePagedTable", () => {
     expect(load).toHaveBeenCalledTimes(1)
   })
 
+  it("orders by a head: up, then down, then the list's own order again, each from the first page", async () => {
+    const load = vi.fn(async (): Promise<PageOf<Row>> => ({rows: rowsNumbered(1, 2), totalElements: 4, totalPages: 2}))
+    const table = host(load)
+    table.page.value = 2
+    await settle()
+    const asked = () => load.mock.lastCall?.[0] as unknown as PageQuery
+
+    table.sortBy("name")
+    await settle()
+    expect(asked()).toMatchObject({page: 0, sort: {key: "name", descending: false}})
+    expect([table.sortKey.value, table.descending.value]).toEqual(["name", false])
+    table.sortBy("name")
+    await settle()
+    expect(asked().sort).toEqual({key: "name", descending: true})
+    table.sortBy("name")
+    await settle()
+    expect(asked().sort).toBeUndefined()
+    expect(table.sortKey.value).toBe("")
+
+    table.sortBy("name")
+    table.sortBy("when")
+    await settle()
+    expect(asked().sort).toEqual({key: "when", descending: false})
+    await table.more()
+    expect(asked()).toMatchObject({page: 1, sort: {key: "when", descending: false}})
+  })
+
   it("stops loading even when the read throws", async () => {
     const table = host(vi.fn().mockRejectedValue(new Error("network")))
 

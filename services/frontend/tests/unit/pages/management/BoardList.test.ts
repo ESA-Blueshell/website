@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import BoardList from "@/pages/management/BoardList.vue"
-import {mountInApp, settle, unmountAll} from "../helpers"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
 const api = vi.hoisted(() => ({findAllBoards: vi.fn(), findCohorts: vi.fn(), listDiscordMatches: vi.fn(), adoptDiscordMatches: vi.fn()}))
 
@@ -58,6 +58,7 @@ describe("the boards in Management", () => {
     expect(wrapper.get('[data-testid="board-standing-10"]').text()).toBe("Handed over")
     expect(wrapper.get('[data-testid="board-row-10"]').text()).toContain("0 members")
     expect(wrapper.get('[data-testid="board-row-10"] a').attributes("to")).toBe("/management/board/10")
+    expect(await sortByEveryHead(wrapper)).toBe(6)
   })
 
   it("links the role and list of the board in office and of the candidate board, and the role of its years for a board that handed over", async () => {

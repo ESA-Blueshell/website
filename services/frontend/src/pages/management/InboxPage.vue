@@ -24,13 +24,14 @@ const table = usePagedTable<InboxEntry>((query) => {
   })
   return loadInboxPage(query)
 }, {pageSize: 50})
-const {rows, search, pageRangeLabel, refresh, more} = table
+const {rows, search, pageRangeLabel, refresh, more, sortKey, descending, sortBy} = table
 
+// The inbox is read a page at a time, so the server orders it.
 const COLUMNS: TableColumn[] = [
-  {key: "received", label: "Received"},
-  {key: "from", label: "From", wrap: true},
-  {key: "what", label: "Subject", wrap: true},
-  {key: "state", label: "State"},
+  {key: "received", label: "Received", sortable: true},
+  {key: "from", label: "From", wrap: true, sortable: true},
+  {key: "what", label: "Subject", wrap: true, sortable: true},
+  {key: "state", label: "State", sortable: true},
   {key: "by", label: "Handled by"},
 ]
 
@@ -75,12 +76,15 @@ onMounted(refresh)
 
     <management-table
       :columns="COLUMNS"
+      :descending="descending"
       :row-key="(entry) => entry.id"
       :row-testid="(entry) => `inbox-row-${entry.id}`"
       :rows="rows"
+      :sort-key="sortKey"
       testid="inbox-table"
       :to="(entry) => `/management/mail/inbox/${entry.id}`"
       @more="more"
+      @sort="sortBy"
     >
       <template #count>
         {{ pageRangeLabel }}

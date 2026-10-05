@@ -1,17 +1,19 @@
 <script lang="ts" setup generic="T extends {key: string | number; name: string; note?: string}">
-/* Adding the same thing to many rows at once: first what will be added and to whom, then one more
-   question, then the work, one row after another, and what could not be done at the end. Nothing is
-   made before the second yes. */
+/* Doing the same thing to many rows at once, mostly adding: first what will happen and to whom,
+   then one more question, then the work, one row after another, and what could not be done at the
+   end. Nothing happens before the second yes. */
 import {computed, ref, watch} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 
-const {open, title, each, noun, items, skipped = [], run, testid} = defineProps<{
+const {open, title, each = "", noun, items, skipped = [], run, words = undefined, testid} = defineProps<{
   open: boolean
   /** What the task is called: "Add Discord roles". */
   title: string
   /** What each row gets, after "will get": "a Discord role and a private channel". */
-  each: string
+  each?: string
+  /** The task's own wording, where it is not an adding: what happens, the last question, the button and the count. */
+  words?: {plan: string; ask: string; go: string; doing: string; done: string}
   /** What a row is, one and many: ["committee", "committees"]. */
   noun: [string, string]
   items: T[]
@@ -36,6 +38,13 @@ watch(() => open, (now) => {
 })
 
 const count = computed(() => `${items.length} ${items.length === 1 ? noun[0] : noun[1]}`)
+const said = computed(() => words ?? {
+  plan: `will each get ${each}. Nothing is added yet.`,
+  ask: `Add ${each} to ${count.value} now? This is done right away and is not undone from here.`,
+  go: `Add to ${count.value}`,
+  doing: "Adding",
+  done: "added",
+})
 
 const go = async () => {
   step.value = "working"
@@ -62,10 +71,10 @@ const go = async () => {
     >
       <template v-if="step === 'preview'">
         <p v-if="items.length">
-          {{ count }} will each get {{ each }}. Nothing is added yet.
+          {{ count }} {{ said.plan }}
         </p>
         <p v-else>
-          None of the selected {{ noun[1] }} can get {{ each }}.
+          None of the selected {{ noun[1] }} can be used for this.
         </p>
         <ul
           v-if="items.length"
@@ -95,17 +104,17 @@ const go = async () => {
         </template>
       </template>
       <p v-else-if="step === 'confirm'">
-        Add {{ each }} to {{ count }} now? This is done right away and is not undone from here.
+        {{ said.ask }}
       </p>
       <p
         v-else-if="step === 'working'"
         role="status"
       >
-        Adding, {{ finished }} of {{ items.length }} done.
+        {{ said.doing }}, {{ finished }} of {{ items.length }} done.
       </p>
       <template v-else>
         <p role="status">
-          {{ items.length - failures.length }} of {{ items.length }} added.
+          {{ items.length - failures.length }} of {{ items.length }} {{ said.done }}.
         </p>
         <ul
           v-if="failures.length"
@@ -139,7 +148,7 @@ const go = async () => {
             tone="solid"
             @click="go"
           >
-            Add to {{ count }}
+            {{ said.go }}
           </cut-button>
           <cut-button
             :testid="`${testid}-back`"

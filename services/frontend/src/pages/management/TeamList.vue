@@ -14,7 +14,7 @@ import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
-import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts} from "@/domains/cohorts"
+import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts, targetLabel} from "@/domains/cohorts"
 import {type CataloguedChannel, isArchive, listCatalogue} from "@/domains/discord"
 import {type Fielding, type Team, loadFieldings, loadTeamSeasons, loadTeams, saveTeamDiscord, useGames} from "@/domains/esports"
 
@@ -45,13 +45,13 @@ const channelsOf = (team: Team): string[] => {
   return channels.value.filter((one) => one.kind !== "CATEGORY" && !isArchive(one.category) && one.roleIds.includes(role)).map((one) => `#${one.name}`)
 }
 
-const COLUMNS: TableColumn[] = [
-  {key: "name", label: "Team", wrap: true},
-  {key: "games", label: "Games", wrap: true},
-  {key: "season", label: "Latest season"},
-  {key: "discord", label: "Discord"},
-  {key: "channels", label: "Channels", wrap: true},
-  {key: "state", label: "State"},
+const COLUMNS: TableColumn<Team>[] = [
+  {key: "name", label: "Team", wrap: true, sortBy: (team) => team.name},
+  {key: "games", label: "Games", wrap: true, sortBy: (team) => gamesOf(team).join(", ")},
+  {key: "season", label: "Latest season", sortBy: (team) => latest(team)?.season.startDate},
+  {key: "discord", label: "Discord", sortBy: (team) => targetLabel(targetsOf(team), TargetSystem.DISCORD)},
+  {key: "channels", label: "Channels", wrap: true, sortBy: (team) => channelsOf(team).join(", ")},
+  {key: "state", label: "State", sortBy: (team) => (team.archived ? "Archived" : "Active")},
 ]
 
 // The teams fielded first, the archived ones after them, each by name.

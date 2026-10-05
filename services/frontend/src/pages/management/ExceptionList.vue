@@ -24,11 +24,11 @@ const states = [
   {key: "resolved", label: "Resolved"},
 ]
 
-const COLUMNS: TableColumn[] = [
-  {key: "what", label: "Exception", wrap: true},
-  {key: "times", label: "Times"},
-  {key: "seen", label: "Last seen"},
-  {key: "state", label: "State"},
+const COLUMNS: TableColumn<RecordedException>[] = [
+  {key: "what", label: "Exception", wrap: true, sortBy: (fault) => shortType(fault.exceptionType)},
+  {key: "times", label: "Times", sortBy: (fault) => fault.occurrences},
+  {key: "seen", label: "Last seen", sortBy: (fault) => fault.lastSeenAt},
+  {key: "state", label: "State", sortBy: (fault) => (fault.resolvedAt ? "Resolved" : "Open")},
 ]
 
 const load = async () => {

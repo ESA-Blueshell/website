@@ -1,5 +1,5 @@
 /** How a cohort reads on screen: what a system and a ledger row are called. */
-import type {CohortMember} from "./adapters/cohorts"
+import type {CohortMember, SummaryTarget} from "./adapters/cohorts"
 
 /**
  * What each system is called. Keyed by the string rather than by the enum: the ledger carries
@@ -20,3 +20,7 @@ export const memberName = (member: CohortMember): string => {
   // A stranger nothing local claims: the external system's own label is all there is.
   return member.externalLabel ?? member.externalUserId ?? "Unknown"
 }
+
+/** The name of the role or list a cohort has on [system], or nothing where it has none: what a list orders by. */
+export const targetLabel = (targets: SummaryTarget[], system: string): string | null =>
+  targets.find((one) => one.system === system && one.made)?.label ?? null

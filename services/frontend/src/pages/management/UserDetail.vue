@@ -39,12 +39,12 @@ defineOptions({name: "UserDetailPage"})
 
 const TABS = ["Overview", "Membership", "Payment details", "Contributions", "Profile", "Address", "Account", "Roles"]
 
-const PERIOD_COLUMNS: TableColumn[] = [
-  {key: "period", label: "Period"},
-  {key: "fee", label: "Fee type"},
-  {key: "amount", label: "Amount"},
-  {key: "paid", label: "Paid"},
-  {key: "lastEmail", label: "Last payment email", wrap: true},
+const PERIOD_COLUMNS: TableColumn<MemberPeriodContribution>[] = [
+  {key: "period", label: "Period", sortBy: (row) => row.startDate},
+  {key: "fee", label: "Fee type", sortBy: (row) => (row.feeType && row.fee != null ? feeTypeLabels[row.feeType] : null)},
+  {key: "amount", label: "Amount", sortBy: (row) => row.fee},
+  {key: "paid", label: "Paid", sortBy: (row) => row.paid},
+  {key: "lastEmail", label: "Last payment email", wrap: true, sortBy: (row) => row.lastEmailAt},
 ]
 
 const route = useRoute()

@@ -43,6 +43,7 @@ class SignInsTest {
         clock.advance(Duration.ofMinutes(5))
 
         val rotated = (resolve(first.token) as Resolution.Honoured).rotated!!
+        resolve(rotated.token)
 
         clock.advance(Duration.ofSeconds(59))
         assertThat(resolve(first.token)).isInstanceOf(Resolution.Honoured::class.java)
@@ -54,12 +55,52 @@ class SignInsTest {
         val first = signIns.start(7, firefox)
         clock.advance(Duration.ofMinutes(5))
         val rotated = (resolve(first.token) as Resolution.Honoured).rotated!!
+        resolve(rotated.token)
 
         clock.advance(Duration.ofSeconds(61))
 
         assertThat(resolve(first.token)).isEqualTo(Resolution.Refused)
         assertThat(resolve(rotated.token)).isEqualTo(Resolution.Refused)
         assertThat(published.single()).isEqualTo(SignInEndedAsSuspicious(7, SignInEndReason.REUSED, firefox, clock.instant()))
+    }
+
+    @Test
+    fun `an old cookie whose replacement never arrived is honoured and answered with the current one`() {
+        val first = signIns.start(7, firefox)
+        clock.advance(Duration.ofMinutes(5))
+        val lost = (resolve(first.token) as Resolution.Honoured).rotated!!
+
+        clock.advance(Duration.ofMinutes(10))
+        val again = (resolve(first.token) as Resolution.Honoured).rotated!!
+
+        assertThat(tokens.read(again.token)!!.jti).isEqualTo(tokens.read(lost.token)!!.jti)
+        assertThat(resolve(first.token, mayRotate = false)).isEqualTo(Resolution.Honoured(store.find(again.signIn.id)!!, null))
+        assertThat(published).isEmpty()
+
+        // Showing the current one starts the old one's sixty seconds.
+        resolve(again.token, mayRotate = false)
+        clock.advance(Duration.ofSeconds(61))
+        assertThat(resolve(first.token)).isEqualTo(Resolution.Refused)
+    }
+
+    @Test
+    fun `requests that find the same old cookie at once report it once`() {
+        var removed = false
+        val racing =
+            object : SignInStore by store {
+                override fun delete(id: String): Boolean = (!removed).also { removed = true }
+            }
+        val raced =
+            SignIns(racing, tokens, clock, events, Duration.ofDays(30), Duration.ofDays(14), Duration.ofMinutes(5), Duration.ofSeconds(60))
+        val first = raced.start(7, firefox)
+        clock.advance(Duration.ofMinutes(5))
+        val rotated = (raced.resolve(first.token, firefox, true) as Resolution.Honoured).rotated!!
+        raced.resolve(rotated.token, firefox, true)
+        clock.advance(Duration.ofSeconds(61))
+
+        repeat(3) { assertThat(raced.resolve(first.token, firefox, true)).isEqualTo(Resolution.Refused) }
+
+        assertThat(published).hasSize(1)
     }
 
     @Test

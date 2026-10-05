@@ -10,7 +10,8 @@ interface SignInStore {
 
     fun find(id: String): SignIn?
 
-    fun delete(id: String)
+    /** Whether this call removed the record, which only one of several racing calls does. */
+    fun delete(id: String): Boolean
 
     /** Drops [id] from the person's index, for a sign-in the store has already let expire. */
     fun unindex(
@@ -29,6 +30,13 @@ interface SignInStore {
         at: Instant,
         expiresAt: Instant,
     ): Boolean
+
+    /** Starts the previous token id's grace, while [currentJti] is still current and it has not started. */
+    fun retirePrevious(
+        id: String,
+        currentJti: String,
+        at: Instant,
+    )
 
     fun securityStamp(userId: Long): Long
 

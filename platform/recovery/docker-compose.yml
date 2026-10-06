@@ -1,0 +1,46 @@
+name: blueshell-recovery
+
+services:
+  db:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: recovery
+    volumes:
+      - db:/var/lib/mysql
+
+  vault:
+    image: hashicorp/vault:1.21
+    # Production's audit log lives in /vault/audit. Vault refuses every request it cannot log, so
+    # both volumes must belong to the vault user before it starts.
+    entrypoint: ["/bin/sh", "-c", "chown -R vault:vault /vault/data /vault/audit && exec docker-entrypoint.sh server"]
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    volumes:
+      - ./vault.hcl:/vault/config/vault.hcl:ro
+      - ./restore:/restore:ro
+      - vault-data:/vault/data
+      - vault-audit:/vault/audit
+
+  adminer:
+    image: adminer:5
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "127.0.0.1:8081:8080"
+
+  kopia:
+    image: kopia/kopia:latest
+    profiles: [tools]
+    environment:
+      KOPIA_CONFIG_PATH: /kopia/repository.config
+      KOPIA_CACHE_DIRECTORY: /kopia/cache
+    volumes:
+      - ./kopia:/kopia
+      - ./restore:/restore
+
+volumes:
+  db:
+  vault-data:
+  vault-audit:

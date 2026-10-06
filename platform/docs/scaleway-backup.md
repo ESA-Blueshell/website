@@ -119,6 +119,11 @@ Change it with `kopia repository change-password`, then update Vault, add the ne
 version of `kopia-repository-password` and delete the old version. OpenTofu manages the entry,
 never its versions, so a plan shows no change.
 
+## Restoring
+
+[`platform/recovery`](../recovery/README.md) takes the member data out of the backup onto a laptop,
+without the server.
+
 ## Things that cannot be undone
 
 - Object Lock on the backup bucket can never be turned off, and versioning can never be suspended.

@@ -139,6 +139,30 @@ class CohortDiscordTest {
     }
 
     @Test
+    fun `a role or a channel already in the server by name is linked rather than made again`() {
+        given(linked = false)
+        whenever(roles.roles()).thenReturn(listOf(KeptRole("905", "SiteCie", true)))
+        whenever(targets.findAllBySystem("DISCORD")).thenReturn(emptyList())
+        whenever(targeting.linkExisting(5, TargetSystem.DISCORD, "905")).thenReturn(CohortTargetRow(role, "905"))
+        whenever(channels.openedTo("905")).thenReturn(emptyList())
+        whenever(channels.channels()).thenReturn(listOf(sitecie, KeptChannel("3", "site-cie", KeptChannelKind.VOICE, null)))
+
+        discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(createRole = true, createChannel = "#Site-Cie"), "Committees")
+
+        verify(targeting).linkExisting(5, TargetSystem.DISCORD, "905")
+        verify(targeting, never()).create(any(), any(), any(), anyOrNull())
+        verify(channels).open("1", "905", true)
+        verify(channels, never()).createPrivate(any(), any(), any())
+
+        // Run again with the channel already open to the role: nothing more is done.
+        given(linked = true)
+        whenever(channels.openedTo("900")).thenReturn(listOf(sitecie))
+        discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(channelIds = listOf("1"), createChannel = "sitecie"), "Committees")
+        verify(channels, never()).open("1", "900", true)
+        verify(channels, never()).createPrivate(any(), any(), any())
+    }
+
+    @Test
     fun `without a role nothing is opened, a cohort not yet registered is registered first, and a bot gone mid-call refuses`() {
         given(linked = false)
         assertThat(discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(channelIds = listOf("2")), "Committees").roleId).isNull()

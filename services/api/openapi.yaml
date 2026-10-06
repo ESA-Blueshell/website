@@ -2700,6 +2700,50 @@ components:
       - channelIds
       - createRole
       type: object
+    DiscordPlanAsk:
+      description: A cohort, and the channel it wants by name; none asks for no channel
+      properties:
+        channel:
+          type:
+          - string
+          - 'null'
+        key:
+          type: string
+      required:
+      - key
+      type: object
+    DiscordPlanRequest:
+      description: The rows a bulk add asks about
+      properties:
+        rows:
+          items:
+            $ref: '#/components/schemas/DiscordPlanAsk'
+          type: array
+      required:
+      - rows
+      type: object
+    DiscordPlanRow:
+      properties:
+        category:
+          description: The category a channel the row creates goes under
+          type: string
+        channel:
+          description: The channel the row gets, or null where it asked for none
+          oneOf:
+          - $ref: '#/components/schemas/PlannedChannel'
+          - type: 'null'
+        key:
+          type: string
+        label:
+          type: string
+        role:
+          $ref: '#/components/schemas/PlannedRole'
+      required:
+      - category
+      - key
+      - label
+      - role
+      type: object
     DiscordRole:
       properties:
         colour:
@@ -5459,6 +5503,44 @@ components:
       required:
       - id
       - name
+      type: object
+    PlannedChannel:
+      properties:
+        category:
+          type:
+          - string
+          - 'null'
+        channelId:
+          description: The existing channel, or null for a channel that will be created
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+      required:
+      - name
+      type: object
+    PlannedRole:
+      properties:
+        kept:
+          description: Whether the cohort follows this role already
+          type: boolean
+        name:
+          type: string
+        opens:
+          description: The channels an existing role has access to now, which applying the row keeps
+          items:
+            type: string
+          type: array
+        roleId:
+          description: The existing role, or null for a role that will be created
+          type:
+          - string
+          - 'null'
+      required:
+      - kept
+      - name
+      - opens
       type: object
     PlatformType:
       enum:
@@ -28298,6 +28380,115 @@ paths:
           description: Server error
       tags:
       - Discord management
+  /management/discord/plan:
+    post:
+      operationId: planDiscord
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscordPlanRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DiscordPlanRow'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Discord places
   /management/discord/roles:
     get:
       operationId: listKeptRoles

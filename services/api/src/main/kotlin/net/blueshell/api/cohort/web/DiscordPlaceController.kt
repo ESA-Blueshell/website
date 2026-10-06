@@ -7,6 +7,9 @@ import net.blueshell.api.cohort.domain.CohortDiscord
 import net.blueshell.api.cohort.domain.DiscordAdoption
 import net.blueshell.api.cohort.domain.DiscordChoice
 import net.blueshell.api.cohort.domain.DiscordPlace
+import net.blueshell.api.cohort.domain.DiscordPlanRow
+import net.blueshell.api.cohort.domain.DiscordPlanner
+import net.blueshell.api.cohort.domain.PlanAsk
 import net.blueshell.api.cohort.domain.RefusedMatch
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.security.BoardOnly
@@ -41,6 +44,17 @@ data class DiscordPlaceRequest(
     fun choice() = DiscordChoice(roleId, createRole, channelIds, createChannel, move)
 }
 
+@Schema(name = "DiscordPlanRequest", description = "The rows a bulk add asks about")
+data class DiscordPlanRequest(
+    val rows: List<DiscordPlanAsk>,
+)
+
+@Schema(name = "DiscordPlanAsk", description = "A cohort, and the channel it wants by name; none asks for no channel")
+data class DiscordPlanAsk(
+    val key: String,
+    val channel: String? = null,
+)
+
 @Schema(name = "AdoptDiscord", description = "The matches the board confirmed, by their cohort's key")
 data class AdoptDiscordRequest(
     val keys: List<String>,
@@ -60,6 +74,7 @@ data class AdoptDiscordResponse(
 class DiscordPlaceController(
     private val discord: CohortDiscord,
     private val adoption: DiscordAdoption,
+    private val planner: DiscordPlanner,
     @param:Value($$"${discord.committees-category:Committees}") private val committees: String,
     @param:Value($$"${discord.esports-category:Esports}") private val esports: String,
     @param:Value($$"${discord.board-category:Board}") private val boards: String,
@@ -110,6 +125,12 @@ class DiscordPlaceController(
     fun unlinkDiscordRole(
         @PathVariable roleId: String,
     ) = discord.unlink(roleId)
+
+    /** What a bulk add of roles and channels will do, row by row, before anything is done. */
+    @PostMapping("/management/discord/plan")
+    fun planDiscord(
+        @RequestBody request: DiscordPlanRequest,
+    ): List<DiscordPlanRow> = planner.plan(request.rows.map { PlanAsk(it.key, it.channel) })
 
     /** Committees and teams with no role yet, matched by name to the roles and channels already in the server. */
     @GetMapping("/management/discord/adoption")

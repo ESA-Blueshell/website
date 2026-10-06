@@ -8,14 +8,13 @@ import CutButton from "@/components/island/CutButton.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import SelectionBar from "@/components/island/SelectionBar.vue"
 import StateMark from "@/components/island/StateMark.vue"
-import BulkAdd from "@/components/management/BulkAdd.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {type CohortSummary, type SummaryTarget, TargetMark, TargetSystem, fetchCohorts, targetLabel} from "@/domains/cohorts"
-import {type CataloguedChannel, ChannelMark, isArchive, listCatalogue} from "@/domains/discord"
+import {type CataloguedChannel, ChannelMark, DiscordBulkAdd, type DiscordPlaceRequest, isArchive, listCatalogue} from "@/domains/discord"
 import {type Fielding, type Team, loadFieldings, loadTeamSeasons, loadTeams, saveTeamDiscord, useGames} from "@/domains/esports"
 
 defineOptions({name: "TeamListPage"})
@@ -85,8 +84,9 @@ const toAdd = computed(() => ticked.value
 const leftOut = computed(() => ticked.value
   .filter((one) => one.archived || hasRole(one))
   .map((one) => ({name: one.name, why: one.archived ? "Archived" : "Has a role already"})))
-const addRole = async ({team}: {team: Team}) => {
-  const answered = await saveTeamDiscord(team.id, {createRole: true, channelIds: [], createChannel: channelName(team)})
+const discordRows = computed(() => toAdd.value.map(({team}) => ({key: `TEAM_PLAYERS:${team.id}`, name: team.name, channel: channelName(team)})))
+const saveRole = async (key: string, choice: DiscordPlaceRequest) => {
+  const answered = await saveTeamDiscord(Number(key.split(":")[1]), choice)
   return answered.ok ? {ok: true as const} : answered
 }
 const added = async () => {
@@ -241,14 +241,13 @@ onMounted(async () => {
       </cut-button>
     </selection-bar>
 
-    <bulk-add
-      each="a Discord role and a private channel"
-      :items="toAdd"
+    <discord-bulk-add
       :noun="['team', 'teams']"
       :open="adding"
-      :run="addRole"
+      :rows="discordRows"
+      :save="saveRole"
       :skipped="leftOut"
-      testid="team-bulk-add"
+      testid="team-discord-add"
       title="Add Discord roles and channels"
       @done="added"
       @update:open="adding = $event"

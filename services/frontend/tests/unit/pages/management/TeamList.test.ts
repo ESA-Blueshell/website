@@ -14,6 +14,13 @@ vi.mock("@/services/api", async (importOriginal) => ({
 const season = (id: number, name: string, startDate: string) => ({id, name, startDate, endDate: "2099-01-01", played: true})
 const game = (code: string, name: string) => ({code, name, slug: name.toLowerCase(), archived: false, inCompetition: true, sortIndex: 0, channels: [], esportsChannels: []})
 
+
+// The bulk dialog's own work is DiscordBulkAdd's tests; here it only has to be handed the rows and a save.
+vi.mock("@/domains/discord/island/DiscordBulkAdd.vue", async () => {
+  const {defineComponent} = await import("vue")
+  return {default: defineComponent({name: "DiscordBulkAdd", props: {open: Boolean, title: {type: String, default: ""}, noun: {type: Array, default: () => []}, rows: {type: Array, default: () => []}, skipped: {type: Array, default: () => []}, save: {type: Function, default: null}, testid: {type: String, default: ""}}, emits: ["update:open", "done"], setup: () => () => null})}
+})
+
 describe("the competition teams in Management", () => {
   const wrappers: VueWrapper[] = []
   const mount = async () => {
@@ -124,7 +131,7 @@ describe("the competition teams in Management", () => {
   it("gives the ticked teams without a role one, with a channel, and leaves out the rest", async () => {
     api.setTeamDiscord.mockResolvedValue({status: 200, data: {available: true}})
     const wrapper = await mount()
-    const bulk = () => wrapper.findComponent({name: "BulkAdd"})
+    const bulk = () => wrapper.findComponent({name: "DiscordBulkAdd"})
 
     // The head's own offer to take every row, shown or not, and to let go again.
     wrapper.findComponent({name: "ManagementTable"}).vm.$emit("selectAll")
@@ -137,12 +144,13 @@ describe("the competition teams in Management", () => {
     await settle()
 
     expect(bulk().props("open")).toBe(true)
-    expect(bulk().props("items").map((one: {name: string; note: string}) => [one.name, one.note])).toEqual([["Blueshell CS", "@Blueshell CS and #blueshell-cs"]])
+    expect(bulk().props("rows")).toEqual([{key: "TEAM_PLAYERS:2", name: "Blueshell CS", channel: "blueshell-cs"}])
     expect(bulk().props("skipped")).toEqual([{name: "Blueshell Valorant", why: "Has a role already"}, {name: "Old team", why: "Archived"}])
-    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: true})
-    expect(api.setTeamDiscord).toHaveBeenCalledWith({path: {id: 2}, body: {createRole: true, channelIds: [], createChannel: "blueshell-cs"}})
+    const choice = {createRole: true, channelIds: [], createChannel: "blueshell-cs"}
+    expect(await bulk().props("save")("TEAM_PLAYERS:2", choice)).toEqual({ok: true})
+    expect(api.setTeamDiscord).toHaveBeenCalledWith({path: {id: 2}, body: choice})
     api.setTeamDiscord.mockResolvedValue({status: 503, error: {message: "Discord is away."}})
-    expect((await bulk().props("run")(bulk().props("items")[0])).ok).toBe(false)
+    expect((await bulk().props("save")("TEAM_PLAYERS:2", choice)).ok).toBe(false)
 
     api.findCohorts.mockClear()
     bulk().vm.$emit("done")

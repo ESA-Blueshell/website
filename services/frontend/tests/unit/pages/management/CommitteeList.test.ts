@@ -19,6 +19,13 @@ const cohort = (committeeId: number, targets: unknown[]) => ({
   definitionKey: `COMMITTEE_MEMBERS:${committeeId}`, targets,
 })
 
+
+// The bulk dialog's own work is DiscordBulkAdd's tests; here it only has to be handed the rows and a save.
+vi.mock("@/domains/discord/island/DiscordBulkAdd.vue", async () => {
+  const {defineComponent} = await import("vue")
+  return {default: defineComponent({name: "DiscordBulkAdd", props: {open: Boolean, title: {type: String, default: ""}, noun: {type: Array, default: () => []}, rows: {type: Array, default: () => []}, skipped: {type: Array, default: () => []}, save: {type: Function, default: null}, testid: {type: String, default: ""}}, emits: ["update:open", "done"], setup: () => () => null})}
+})
+
 describe("the committees in Management", () => {
   const wrappers: VueWrapper[] = []
   const mount = async () => {
@@ -119,16 +126,18 @@ describe("the committees in Management", () => {
     await wrapper.get('[data-testid="committee-add-roles"]').trigger("click")
     await settle()
 
-    expect(bulk().props("open")).toBe(true)
-    expect(bulk().props("items").map((one: {name: string; note: string}) => [one.name, one.note])).toEqual([["Nintenco", "@Nintenco and #nintenco"]])
-    expect(bulk().props("skipped")).toEqual([{name: "Sitecie", why: "Has a role already"}, {name: "Oldcie", why: "Archived"}])
-    expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: true})
-    expect(api.setCommitteeDiscord).toHaveBeenCalledWith({path: {id: 2}, body: {createRole: true, channelIds: [], createChannel: "nintenco"}})
+    const discord = () => wrapper.findComponent({name: "DiscordBulkAdd"})
+    expect(discord().props("open")).toBe(true)
+    expect(discord().props("rows")).toEqual([{key: "COMMITTEE_MEMBERS:2", name: "Nintenco", channel: "nintenco"}])
+    expect(discord().props("skipped")).toEqual([{name: "Sitecie", why: "Has a role already"}, {name: "Oldcie", why: "Archived"}])
+    const choice = {createRole: true, channelIds: [], createChannel: "nintenco"}
+    expect(await discord().props("save")("COMMITTEE_MEMBERS:2", choice)).toEqual({ok: true})
+    expect(api.setCommitteeDiscord).toHaveBeenCalledWith({path: {id: 2}, body: choice})
     api.setCommitteeDiscord.mockResolvedValue({status: 503, error: {message: "Discord is away."}})
-    expect((await bulk().props("run")(bulk().props("items")[0])).ok).toBe(false)
-    bulk().vm.$emit("update:open", false)
+    expect((await discord().props("save")("COMMITTEE_MEMBERS:2", choice)).ok).toBe(false)
+    discord().vm.$emit("update:open", false)
     await settle()
-    expect(bulk().props("open")).toBe(false)
+    expect(discord().props("open")).toBe(false)
 
     await wrapper.get('[data-testid="committee-add-lists"]').trigger("click")
     await settle()
@@ -136,6 +145,9 @@ describe("the committees in Management", () => {
     expect(bulk().props("skipped")).toEqual([{name: "Sitecie", why: "Has a list already"}, {name: "Oldcie", why: "Archived"}])
     expect(await bulk().props("run")(bulk().props("items")[0])).toEqual({ok: true})
     expect(api.createMissingTargets).toHaveBeenCalledWith({path: {system: "BREVO"}, body: {targetIds: [55]}})
+    bulk().vm.$emit("update:open", false)
+    await settle()
+    expect(bulk().props("open")).toBe(false)
 
     // A committee the site expects no list for cannot be given one from here.
     api.findTargetOverview.mockResolvedValue({status: 200, data: {lists: [], missing: []}})

@@ -18,7 +18,7 @@ const adapter = vi.hoisted(() => ({
   saveCommitteeBrevo: vi.fn(),
   readCommitteeBrevo: vi.fn(),
 }))
-const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn()}}))
+const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {isAdmin: true} as Record<string, unknown>}}))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
 const lists = vi.hoisted(() => ({refreshSharedLists: vi.fn()}))
 vi.mock("@/utils/sharedLists", async importOriginal => ({
@@ -39,7 +39,7 @@ const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slot
 const ImagePicker = {name: "ImagePicker", props: ["label", "picture", "store", "testid"], emits: ["update:picture"], template: "<div />"}
 const EventGamesPicker = {name: "EventGamesPicker", props: ["modelValue", "testid"], emits: ["update:modelValue"], template: "<div />"}
 const CommitteeSeats = {name: "CommitteeSeats", props: ["modelValue"], emits: ["update:modelValue"], template: "<div data-testid=committee-edit-member />"}
-const ConfirmDialog = {name: "ConfirmDialog", props: ["open", "question", "title", "failure", "working"], emits: ["confirm", "update:open"], template: "<div />"}
+const DeleteCommitteeDialog = {name: "DeleteCommitteeDialog", props: ["open", "committee"], emits: ["archived", "removed", "update:open"], template: "<div />"}
 const ArtCells = {name: "ArtCells", props: ["cells", "testidPrefix"], template: "<div />"}
 const RecordHead = {name: "RecordHead", props: ["title", "archived"], template: "<div data-testid=head><slot /><slot name=\"facts\" /></div>"}
 const MarkdownEditor = {name: "MarkdownEditor", props: ["modelValue"], emits: ["update:modelValue"], template: "<div />"}
@@ -48,7 +48,7 @@ const BrevoListFields = {name: "BrevoListFields", props: ["modelValue", "read", 
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
-  ImagePicker, EventGamesPicker, CommitteeSeats, ConfirmDialog, ArtCells, RecordHead, MarkdownEditor, DiscordPlaceFields, BrevoListFields,
+  ImagePicker, EventGamesPicker, CommitteeSeats, DeleteCommitteeDialog, ArtCells, RecordHead, MarkdownEditor, DiscordPlaceFields, BrevoListFields,
   CutButton: {props: ["href", "testid"], template: "<a :href='href' :data-testid='testid'><slot /></a>"},
 }
 
@@ -68,6 +68,7 @@ const describe_ = (wrapper: ReturnType<typeof mountEditor>, text: string) =>
 
 beforeEach(() => {
   Object.values(adapter).forEach(one => one.mockReset())
+  mockStore.getters.isAdmin = true
 })
 
 const seats = (wrapper: ReturnType<typeof mountEditor>) => wrapper.getComponent(CommitteeSeats)
@@ -142,30 +143,37 @@ describe("the committee edit page, for the board", () => {
     expect(adapter.saveCommitteeAsBoard).toHaveBeenCalledWith(1, expect.objectContaining({version: 3, banner: null, icon: null, members: []}))
   })
 
-  it("deletes a committee once asked, and says why where the api would not", async () => {
-    adapter.removeCommittee.mockResolvedValueOnce({ok: false, reason: "The committee could not be deleted."}).mockResolvedValueOnce({ok: true})
+  it("offers an admin the deletion, archiving in the same question, and reports either", async () => {
     const wrapper = mountEditor({...lan, members: []}, true)
     await flushPromises()
-    const dialog = wrapper.getComponent(ConfirmDialog)
+    const dialog = wrapper.getComponent(DeleteCommitteeDialog)
 
     await wrapper.get("[data-testid=committee-edit-remove]").trigger("click")
     expect(dialog.props("open")).toBe(true)
-    expect(dialog.props("question")).toContain("Archiving keeps it")
-    dialog.vm.$emit("confirm")
+    dialog.vm.$emit("archived", {...lan, archived: true})
+    expect(wrapper.emitted("saved")).toEqual([[{...lan, archived: true}]])
+    dialog.vm.$emit("removed")
     await flushPromises()
-    expect(dialog.props("failure")).toBe("The committee could not be deleted.")
-    dialog.vm.$emit("confirm")
-    dialog.vm.$emit("confirm")
-    await flushPromises()
-
-    expect(adapter.removeCommittee).toHaveBeenCalledTimes(2)
+    expect(lists.refreshSharedLists).toHaveBeenCalled()
     expect(wrapper.emitted("removed")).toHaveLength(1)
     dialog.vm.$emit("update:open", false)
+    await flushPromises()
+    expect(dialog.props("open")).toBe(false)
+  })
+
+  it("offers a board member who is not an admin no deletion", async () => {
+    mockStore.getters.isAdmin = false
+    const wrapper = mountEditor({...lan, members: []}, true)
+    await flushPromises()
+
+    expect(wrapper.find("[data-testid=committee-edit-remove]").exists()).toBe(false)
+    expect(wrapper.findComponent(DeleteCommitteeDialog).exists()).toBe(false)
   })
 })
 
 describe("the committee edit page, for its own members", () => {
   it("locks the board's fields, and saves the description, banner and games", async () => {
+    mockStore.getters.isAdmin = false
     adapter.saveOwnCommitteePage.mockResolvedValue({ok: true, saved: lan})
     const wrapper = mountEditor(lan, false)
     await flushPromises()

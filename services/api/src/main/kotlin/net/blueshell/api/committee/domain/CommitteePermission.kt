@@ -24,9 +24,12 @@ class CommitteePermission
                 return false
             }
             val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+            // Deleting hands a committee's events to another one, so it is an admin's; archiving stays the board's.
+            val isAdmin = SecurityUtils.hasAuthority(authentication, Role.ADMIN)
             if (entity == null) {
                 return when (permission) {
-                    "write", "delete" -> isBoard
+                    "write" -> isBoard
+                    "delete" -> isAdmin
                     "read" -> true
                     else -> false
                 }
@@ -38,7 +41,7 @@ class CommitteePermission
                 "read" -> true
                 "events", "page" -> isBoard || committee.hasMember(principal?.id)
                 "write" -> isBoard
-                "delete" -> isBoard
+                "delete" -> isAdmin
                 else -> false
             }
         }

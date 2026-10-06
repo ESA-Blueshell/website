@@ -50,6 +50,19 @@ interface EventRepository : BaseRepository<Event, Long> {
 
     fun existsByTitle(title: String): Boolean
 
+    @Query("select count(e) from Event e where e.committee.id = :committeeId")
+    fun countOrganisedBy(
+        @Param("committeeId") committeeId: Long,
+    ): Long
+
+    /** Native, so deleted events move too and none is left pointing at a deleted committee; the version bump fails a stale save. */
+    @Modifying
+    @Query("update events set committee_id = :to, version = version + 1 where committee_id = :from", nativeQuery = true)
+    fun handOverCommittee(
+        @Param("from") from: Long,
+        @Param("to") to: Long,
+    ): Int
+
     @Query("select count(e) from Event e join e.gameCodes code where code = :code")
     fun countNamingGame(
         @Param("code") code: String,

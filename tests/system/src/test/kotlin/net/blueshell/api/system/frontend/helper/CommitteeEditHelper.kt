@@ -75,6 +75,9 @@ object CommitteeEditHelper {
     fun delete(page: Page) {
         TestIdLocatorHelper.byTestId(page, "committee-edit-remove").click()
         val dialog = TestIdLocatorHelper.byTestId(page, "committee-remove-dialog")
-        TestIdLocatorHelper.byTestId(dialog, "confirm-go").click()
+        // A committee without events asks for no taker, so Delete is ready once the count is read.
+        val confirm = TestIdLocatorHelper.byTestId(dialog, "committee-remove-confirm")
+        assertPw(confirm).isEnabled()
+        confirm.click()
     }
 }

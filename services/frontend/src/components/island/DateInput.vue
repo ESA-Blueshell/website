@@ -127,9 +127,10 @@ const weeks = computed(() => {
   }))
 })
 
-/* The calendar drops down when the field is clicked or tabbed into, and goes away once somebody types. */
+/* The calendar drops down when the field is clicked or tabbed into, and goes away once somebody types.
+   A disabled box takes neither, so it needs no guard of its own. */
 const openPanel = () => {
-  if (!disabled) open.value = true
+  open.value = true
 }
 
 const take = (iso: string) => {

@@ -71,7 +71,7 @@ func TestPlaceSkipsTransparentPixelsAndKeepsEdgeAlpha(t *testing.T) {
 	}
 }
 
-func TestPlaceFitsTheBlueshellLogoTo900CenteredAtTheTopThird(t *testing.T) {
+func TestPlaceFitsTheBlueshellLogoTo900InTheUpperThird(t *testing.T) {
 	f, err := os.Open("../../logo.png")
 	if err != nil {
 		t.Fatal(err)
@@ -82,7 +82,7 @@ func TestPlaceFitsTheBlueshellLogoTo900CenteredAtTheTopThird(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := Place(src, 900, image.Pt(Width/2, Height/3))
+	got := Place(src, 900, image.Pt(Width/2, Height/3-180))
 
 	if got.Image.Bounds().Size() != image.Pt(900, 720) {
 		t.Fatalf("scaled to %v, want 900x720", got.Image.Bounds().Size())
@@ -92,8 +92,8 @@ func TestPlaceFitsTheBlueshellLogoTo900CenteredAtTheTopThird(t *testing.T) {
 		minX, minY = min(minX, px.X), min(minY, px.Y)
 		maxX, maxY = max(maxX, px.X), max(maxY, px.Y)
 	}
-	if minX != 1470 || maxX != 2369 || minY != 360 || maxY != 1079 {
-		t.Fatalf("logo spans x %d-%d y %d-%d, want x 1470-2369 y 360-1079", minX, maxX, minY, maxY)
+	if minX != 1470 || maxX != 2369 || minY != 180 || maxY != 899 {
+		t.Fatalf("logo spans x %d-%d y %d-%d, want x 1470-2369 y 180-899", minX, maxX, minY, maxY)
 	}
 	if len(got.Pixels) >= 900*720 {
 		t.Fatalf("got %d pixels, transparent ones were not skipped", len(got.Pixels))

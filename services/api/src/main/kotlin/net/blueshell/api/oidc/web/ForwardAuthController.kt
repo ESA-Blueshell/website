@@ -124,13 +124,14 @@ class ForwardAuthController(
 
     companion object {
         // Keep in lockstep with MyServicesController.kt's visibility filter
-        // — same five entries, same role gates.
+        // — same entries, same role gates.
         val HOST_ROLE: Map<String, Role> =
             mapOf(
                 "traefik.esa-blueshell.nl" to Role.ADMIN,
                 "vault.esa-blueshell.nl" to Role.ADMIN,
                 "headlamp.esa-blueshell.nl" to Role.ADMIN,
                 "stalwart.esa-blueshell.nl" to Role.BOARD,
+                "pings.esa-blueshell.nl" to Role.MEMBER,
             )
     }
 }

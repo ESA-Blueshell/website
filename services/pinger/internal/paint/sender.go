@@ -93,6 +93,7 @@ type Sender struct {
 	consec    atomic.Int64
 	rateMu    sync.Mutex
 	rates     []uint64
+	datagram  bool
 }
 
 func NewSender(conn Conn, pixels []canvas.Pixel, window Window, settings func() Settings) *Sender {
@@ -125,6 +126,10 @@ func (s *Sender) Seed(sent, passes, errors uint64) {
 	s.errors.Store(errors)
 }
 
+// UseDatagramAddresses makes the sender address an unprivileged ICMP datagram socket (udp6)
+// rather than a raw socket. Call it before Run when the socket was opened that way.
+func (s *Sender) UseDatagramAddresses() { s.datagram = true }
+
 func (s *Sender) Snapshot() Stats {
 	s.errMu.Lock()
 	lastErr, lastErrAt := s.lastErr, s.lastErrAt
@@ -151,7 +156,7 @@ func (s *Sender) Snapshot() Stats {
 // event is closed.
 func (s *Sender) Run(ctx context.Context) {
 	go s.sampleRate(ctx)
-	var dests []net.IPAddr
+	var dests []net.Addr
 	var destsFor canvas.Prefix
 	for ctx.Err() == nil {
 		cfg := s.settings()
@@ -186,16 +191,21 @@ func (s *Sender) decide(cfg Settings) State {
 	return Running
 }
 
-func (s *Sender) destinations(p canvas.Prefix) []net.IPAddr {
-	out := make([]net.IPAddr, len(s.pixels))
+func (s *Sender) destinations(p canvas.Prefix) []net.Addr {
+	out := make([]net.Addr, len(s.pixels))
 	for i, px := range s.pixels {
-		out[i] = net.IPAddr{IP: p.Address(px).AsSlice()}
+		ip := p.Address(px).AsSlice()
+		if s.datagram {
+			out[i] = &net.UDPAddr{IP: ip}
+		} else {
+			out[i] = &net.IPAddr{IP: ip}
+		}
 	}
 	return out
 }
 
 // pass reports whether it reached every pixel; it stops early when the settings change under it.
-func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.IPAddr) bool {
+func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr) bool {
 	order := rand.Perm(len(dests))
 	var next atomic.Int64
 	var aborted atomic.Bool
@@ -224,7 +234,7 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.IPAddr) 
 				}
 				failed := false
 				for _, i := range order[from:to] {
-					if _, err := s.conn.WriteTo(s.echo, &dests[i]); err != nil {
+					if _, err := s.conn.WriteTo(s.echo, dests[i]); err != nil {
 						s.recordError(err)
 						failed = true
 						continue

@@ -13,6 +13,12 @@ type Placement struct {
 	Pixels []Pixel
 }
 
+// PlaceLogo is where the Blueshell logo lands: 900px wide, horizontally centered, a third of the
+// way down then 180px up. The service and the helper CLI both call it, so they paint the same art.
+func PlaceLogo(src image.Image) Placement {
+	return Place(src, 900, image.Pt(Width/2, Height/3-180))
+}
+
 // Place crops src to its visible pixels, fits the long side to maxSide and centers it on the
 // given canvas point. Fully transparent pixels are dropped: painting them changes nothing.
 func Place(src image.Image, maxSide int, center image.Point) Placement {

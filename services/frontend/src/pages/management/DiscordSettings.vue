@@ -1,14 +1,16 @@
 <script lang="ts" setup>
-/* The Discord settings: which role each server-wide cohort follows, where the bots post and which
-   roles the role-claim bot hands out. What was set in the configuration shows until the board
-   changes it here. */
+/* The Discord settings: the role each server-wide cohort follows and the channels that role can
+   access, set through the same form a committee's editor uses; where the bots post; and which roles
+   the role-claim bot hands out. What was set in the configuration shows until the board changes it. */
 import {computed, onMounted, ref} from "vue"
 import ChipPicker from "@/components/island/ChipPicker.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import FormFields from "@/components/island/FormFields.vue"
 import FormSection from "@/components/island/FormSection.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
+import RoleMark from "@/components/island/RoleMark.vue"
 import PageTabs from "@/components/island/PageTabs.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
@@ -17,15 +19,18 @@ import {
   ChannelMark,
   DISCORD_TABS,
   type DiscordBotSettings,
+  DiscordPlaceFields,
+  type DiscordPlaceRequest,
   type KeptChannel,
   type KeptRole,
   type ServerCohortRole,
   listKeepableChannels,
   listKeepableRoles,
   readBotSettings,
+  readCohortDiscord,
   readServerCohortRoles,
   saveBotSettings,
-  setCohortRole,
+  saveCohortDiscord,
 } from "@/domains/discord"
 import store from "@/plugins/store"
 
@@ -39,13 +44,15 @@ const loaded = ref(false)
 const acting = ref(false)
 const failure = ref<string | null>(null)
 
+/* A role can reach most of the server; the row opens its page, where every channel is listed. */
+const SHOWN_CHANNELS = 12
+
 const COLUMNS: TableColumn<ServerCohortRole>[] = [
   {key: "cohort", label: "Cohort", sortBy: (one) => one.label},
-  {key: "role", label: "Role"},
-  {key: "defaults", label: "Channels it gets when set", wrap: true},
+  {key: "role", label: "Role", sortBy: (one) => one.roleName ?? ""},
+  {key: "access", label: "Channels they have access to", wrap: true},
 ]
 
-const roleOptions = computed(() => roles.value.map((one) => ({key: one.id, label: `@${one.name}`})))
 const textChannels = computed(() => channels.value.filter((one) => one.kind === "TEXT"))
 const channelOptions = computed(() => textChannels.value.map((one) => ({key: one.name, label: `#${one.name}`, note: one.category ?? undefined})))
 const claimChosen = computed(() =>
@@ -54,17 +61,37 @@ const claimChosen = computed(() =>
 const claimOptions = computed(() => roles.value.map((one) => ({key: one.id, label: one.name})))
 const channelOf = (name: string) => textChannels.value.find((one) => one.name.toLowerCase() === name.toLowerCase())
 
-async function pickRole(row: ServerCohortRole, choice: {roleId: string} | {create: true}) {
+/* The cohort whose role and channels the dialog sets, and what its form will ask of Discord. */
+const linking = ref<ServerCohortRole | null>(null)
+const choice = ref<DiscordPlaceRequest | null>(null)
+const slugOf = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+
+/* Why the dialog's save was refused, and the cohort that follows the chosen role where that is why. */
+const linkFailure = ref<string | null>(null)
+const linkedTo = ref<string | null>(null)
+
+function closeLink() {
+  linking.value = null
+  linkFailure.value = null
+  linkedTo.value = null
+}
+
+async function saveLink(move = false) {
+  const row = linking.value
+  if (!row || !choice.value) return
   acting.value = true
-  failure.value = null
-  const answered = await setCohortRole(row.key, choice)
+  linkFailure.value = null
+  linkedTo.value = null
+  const answered = await saveCohortDiscord(row.key, {...choice.value, move})
   acting.value = false
   if (!answered.ok) {
-    failure.value = answered.reason
+    linkFailure.value = answered.linkedTo ? `That role belongs to ${answered.linkedTo} now.` : answered.reason
+    linkedTo.value = answered.linkedTo
     return
   }
-  cohorts.value = answered.saved
-  store.commit("setStatusSnackbarMessage", `${row.label} follows ${answered.saved.find((one: ServerCohortRole) => one.key === row.key)?.roleName ?? "the role"} now.`)
+  closeLink()
+  cohorts.value = (await readServerCohortRoles()) ?? cohorts.value
+  store.commit("setStatusSnackbarMessage", `${row.label} follows @${answered.saved.roleName ?? "its role"} now.`)
 }
 
 function setChannel(field: "infoChannel" | "calendarChannel" | "starboardChannel", name: string) {
@@ -150,34 +177,36 @@ onMounted(async () => {
           <span class="mg-name">{{ row.label }}</span>
         </template>
         <template #role="{row}">
-          <search-picker
-            class="settings__role"
-            compact
-            :disabled="acting || roles.length === 0"
-            :options="roleOptions"
-            placeholder="Search roles"
-            :selected-key="row.roleId ?? null"
-            :testid-prefix="`discord-settings-role-${row.key}`"
-            @click.stop
-            @pick="(key: string) => pickRole(row, {roleId: key})"
-          >
-            <template #chosen="{option}">
-              {{ option?.label ?? "No role" }}
-            </template>
-          </search-picker>
-        </template>
-        <template #defaults="{row}">
+          <role-mark
+            v-if="row.roleName"
+            :role="row.roleName"
+            :testid="`discord-settings-role-${row.key}`"
+          />
           <span
-            v-if="row.defaultChannels.length > 0"
-            class="mg-marks"
+            v-else
+            class="mg-quiet"
+            :data-testid="`discord-settings-role-${row.key}`"
+          >No role</span>
+        </template>
+        <template #access="{row}">
+          <span
+            v-if="row.channels.length > 0"
+            class="settings__channels"
           >
             <channel-mark
-              v-for="name in row.defaultChannels"
-              :id="channelOf(name)?.id"
-              :key="name"
-              :name="channelOf(name)?.name ?? name"
-              :testid="`discord-settings-default-${row.key}-${name}`"
+              v-for="one in row.channels.slice(0, SHOWN_CHANNELS)"
+              :id="one.id"
+              :key="one.id"
+              :locked="one.private"
+              :name="one.name"
+              :testid="`discord-settings-channel-${row.key}-${one.id}`"
+              :voice="one.voice"
             />
+            <span
+              v-if="row.channels.length > SHOWN_CHANNELS"
+              class="mg-quiet"
+              :data-testid="`discord-settings-channels-more-${row.key}`"
+            >and {{ row.channels.length - SHOWN_CHANNELS }} more</span>
           </span>
           <span
             v-else
@@ -186,13 +215,12 @@ onMounted(async () => {
         </template>
         <template #acts="{row}">
           <cut-button
-            v-if="!row.roleId"
             :disabled="acting || roles.length === 0"
             small
-            :testid="`discord-settings-create-${row.key}`"
-            @click="pickRole(row, {create: true})"
+            :testid="`discord-settings-link-${row.key}`"
+            @click="linking = row"
           >
-            Create role
+            {{ row.roleId ? "Edit" : "Link" }}
           </cut-button>
         </template>
       </management-table>
@@ -290,6 +318,71 @@ onMounted(async () => {
         </div>
       </form>
     </form-section>
+    <modal-dialog
+      cancel-testid="discord-settings-link-cancel"
+      :open="linking != null"
+      testid="discord-settings-link-dialog"
+      :title="linking?.label ?? ''"
+      wide
+      @update:open="(open: boolean) => { if (!open) closeLink() }"
+    >
+      <notice-box
+        v-if="linkFailure"
+        class="settings__notice"
+        testid="discord-settings-link-failure"
+        tone="danger"
+      >
+        {{ linkFailure }}
+        <template v-if="linkedTo">
+          Moving it here takes it from {{ linkedTo }}. Nothing changes on Discord.
+        </template>
+      </notice-box>
+      <p
+        v-if="linking && !linking.roleId && linking.defaultChannels.length > 0"
+        class="settings__defaults"
+        data-testid="discord-settings-link-defaults"
+      >
+        Linking a role also gives it access to
+        <channel-mark
+          v-for="name in linking.defaultChannels"
+          :id="channelOf(name)?.id"
+          :key="name"
+          :name="channelOf(name)?.name ?? name"
+          :testid="`discord-settings-default-${linking.key}-${name}`"
+        />.
+      </p>
+      <discord-place-fields
+        v-if="linking"
+        :key="linking.key"
+        v-model="choice"
+        :category="linking.key === 'CURRENT_TEAM_PLAYERS' ? 'Esports' : linking.key === 'BOARD' || linking.key === 'KANDI' ? 'Board' : 'Committees'"
+        holders="Everyone in the cohort holds it."
+        :name="linking.label"
+        :read="linking.roleId ? () => readCohortDiscord(linking!.key) : null"
+        :slug="slugOf(linking.label)"
+        testid="discord-settings-place"
+      />
+      <template #footer>
+        <cut-button
+          v-if="linkedTo"
+          :disabled="acting"
+          testid="discord-settings-link-move"
+          tone="solid"
+          @click="saveLink(true)"
+        >
+          Move it here
+        </cut-button>
+        <cut-button
+          v-else
+          :disabled="acting || !choice"
+          testid="discord-settings-link-save"
+          tone="solid"
+          @click="saveLink()"
+        >
+          {{ acting ? "Saving" : "Save" }}
+        </cut-button>
+      </template>
+    </modal-dialog>
   </management-page>
 </template>
 
@@ -303,7 +396,15 @@ onMounted(async () => {
   color: var(--color-ash);
 }
 
-.settings__role {
-  min-width: 14rem;
+.settings__channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.4rem;
+}
+
+.settings__defaults {
+  margin: 0 0 0.8rem;
+  font-size: 0.86rem;
+  color: var(--color-ash);
 }
 </style>

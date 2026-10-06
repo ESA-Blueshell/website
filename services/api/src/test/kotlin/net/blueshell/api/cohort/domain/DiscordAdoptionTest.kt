@@ -35,12 +35,13 @@ class DiscordAdoptionTest {
             it.definitionKey =
                 "CURRENT_MEMBERS"
         }
+    private val boardsCommittee = Entities.cohort(id = 6, label = "Board").also { it.definitionKey = "COMMITTEE_MEMBERS:6" }
     private val sitecieText = KeptChannel("11", "sitecie", KeptChannelKind.TEXT, "Committees")
 
     private fun given() {
         whenever(roles.available()).thenReturn(true)
         whenever(channels.available()).thenReturn(true)
-        whenever(cohorts.findAll()).thenReturn(listOf(valorant, sitecie, linked, twice, members))
+        whenever(cohorts.findAll()).thenReturn(listOf(valorant, sitecie, linked, twice, members, boardsCommittee))
         whenever(
             targets.findAllBySystem("DISCORD"),
         ).thenReturn(listOf(Entities.target(id = 30, system = "DISCORD", cohortId = 3, externalId = "903")))
@@ -55,6 +56,8 @@ class DiscordAdoptionTest {
                 KeptRole("904", "Nintenco", true),
                 KeptRole("905", "nintenco", true),
                 KeptRole("906", "Member", true),
+                // The board's committee is never matched, so a role named Board stays free for the board in office.
+                KeptRole("907", "Board", true),
             ),
         )
         whenever(channels.channels()).thenReturn(

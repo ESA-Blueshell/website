@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.discord.api.DiscordChannelKeeper
 import net.blueshell.api.discord.api.DiscordRefused
@@ -28,13 +29,16 @@ data class DiscordPlace(
 /**
  * What a form asks of Discord. The role is linked once, to [roleId] or to a new role where
  * [createRole]; a cohort already holding one keeps it. [channelIds] is every channel the role should
- * open, and [createChannel] names a new private channel to make for it.
+ * open, and [createChannel] names a new private channel to make for it. A role another cohort follows
+ * is refused unless [move] takes it from that cohort.
  */
 data class DiscordChoice(
     val roleId: String? = null,
     val createRole: Boolean = false,
     val channelIds: List<String> = emptyList(),
     val createChannel: String? = null,
+    /** Takes [roleId] from the cohort that follows it now, rather than refusing. */
+    val move: Boolean = false,
 )
 
 /**
@@ -68,6 +72,8 @@ class CohortDiscord(
     ): DiscordPlace {
         if (!roles.available() || !channels.available()) throw TargetSystemUnavailable(TargetSystem.DISCORD)
         val cohortId = cohortIdOf(key)
+        if (isBoardCommittee(cohortId) && (choice.roleId != null || choice.createRole)) throw BoardCommitteeHasNoRole()
+        if (roleOf(cohortId) == null && choice.roleId != null) takeFromOthers(cohortId, choice.roleId, choice.move)
         val roleId =
             roleOf(cohortId)
                 ?: when {
@@ -135,6 +141,27 @@ class CohortDiscord(
         if (archived) channels.archive(opened) else channels.restore(opened)
     }
 
+    // Where another cohort follows the role, it is refused, or taken from that cohort when the board asked to move it.
+    private fun takeFromOthers(
+        cohortId: Long,
+        roleId: String,
+        move: Boolean,
+    ) {
+        val owner = targets.findFirstBySystemAndExternalId(TargetSystem.DISCORD.name, roleId) ?: return
+        if (owner.cohortId == cohortId) return
+        if (!move) {
+            val label = owner.cohortId?.let { cohorts.findById(it).map { cohort -> cohort.label }.orElse(null) } ?: owner.label
+            throw TargetLinkedElsewhere(TargetSystem.DISCORD, roleId, label)
+        }
+        targets.delete(owner)
+    }
+
+    private fun isBoardCommittee(cohortId: Long): Boolean =
+        cohorts
+            .findById(cohortId)
+            .map { it.type == CohortType.COMMITTEE_MEMBERS && it.label.equals(BOARD_COMMITTEE, ignoreCase = true) }
+            .orElse(false)
+
     // A record made a moment ago may not have its cohort yet, so one is registered for it.
     private fun cohortIdOf(key: String): Long {
         val cohort =
@@ -157,7 +184,13 @@ class CohortDiscord(
             throw TargetSystemRefused(TargetSystem.DISCORD, e.message.orEmpty()).apply { initCause(e) }
         }
 
-    private companion object {
-        val log = LoggerFactory.getLogger(CohortDiscord::class.java)
+    companion object {
+        /**
+         * The committee the board organises events through. The board in office holds the @Board role,
+         * so its committee holds none, and adoption never matches it to one.
+         */
+        const val BOARD_COMMITTEE = "Board"
+
+        private val log = LoggerFactory.getLogger(CohortDiscord::class.java)
     }
 }

@@ -8,6 +8,7 @@
  */
 import {computed, onMounted, ref} from "vue"
 import ChipPicker from "@/components/island/ChipPicker.vue"
+import ChannelMark from "./ChannelMark.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import store from "@/plugins/store"
@@ -98,7 +99,14 @@ const make = async () => {
         :testid-prefix="`${testid}-picker`"
         @add="add"
         @remove="remove"
-      />
+      >
+        <template #chip="{option}">
+          <channel-mark :name="option.label" />
+        </template>
+        <template #option="{option}">
+          <channel-mark :name="option.label" />
+        </template>
+      </chip-picker>
     </template>
   </form-field>
   <div

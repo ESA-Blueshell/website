@@ -1381,6 +1381,23 @@ components:
       - MEMBERS
       - TEAMS
       type: string
+    CohortChannel:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        private:
+          description: Whether @everyone is kept out of it
+          type: boolean
+        voice:
+          type: boolean
+      required:
+      - id
+      - name
+      - private
+      - voice
+      type: object
     CohortDetail:
       properties:
         category:
@@ -1579,6 +1596,7 @@ components:
       - CURRENT_MEMBERS
       - CURRENT_COMMITTEE_MEMBERS
       - TEAM_PLAYERS
+      - CURRENT_TEAM_PLAYERS
       - BOARD
       - KANDI
       - BOARD_YEAR_MEMBERS
@@ -2669,6 +2687,9 @@ components:
           - 'null'
         createRole:
           description: Make a new role, where there is none yet and no role is named
+          type: boolean
+        move:
+          description: Take the role from the cohort that follows it now, rather than being refused
           type: boolean
         roleId:
           description: An existing role to link, where there is none yet
@@ -6330,6 +6351,11 @@ components:
       type: object
     ServerCohortRole:
       properties:
+        channels:
+          description: The channels the role can access now; empty without a role or a bot
+          items:
+            $ref: '#/components/schemas/CohortChannel'
+          type: array
         defaultChannels:
           description: The channels the role is opened to when it is set, by name
           items:
@@ -6350,24 +6376,11 @@ components:
         type:
           $ref: '#/components/schemas/CohortType'
       required:
+      - channels
       - defaultChannels
       - key
       - label
       - type
-      type: object
-    ServerCohortRoleRequest:
-      description: The role a server-wide cohort follows
-      properties:
-        create:
-          description: Create a new role named after the cohort, where no role is named
-          type: boolean
-        roleId:
-          description: An existing role to follow
-          type:
-          - string
-          - 'null'
-      required:
-      - create
       type: object
     ServiceEntry:
       properties:
@@ -29371,9 +29384,115 @@ paths:
           description: Server error
       tags:
       - Discord settings
-  /management/discord/settings/cohorts/{key}:
+  /management/discord/settings/cohorts/{key}/discord:
+    get:
+      operationId: findServerCohortDiscord
+      parameters:
+      - in: path
+        name: key
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordPlace'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Discord settings
     put:
-      operationId: setServerCohortRole
+      operationId: setServerCohortDiscord
       parameters:
       - in: path
         name: key
@@ -29384,16 +29503,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ServerCohortRoleRequest'
+              $ref: '#/components/schemas/DiscordPlaceRequest'
         required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ServerCohortRole'
-                type: array
+                $ref: '#/components/schemas/DiscordPlace'
           description: OK
         '400':
           content:

@@ -4,7 +4,7 @@ import DiscordPlaceFields from "@/domains/discord/island/DiscordPlaceFields.vue"
 import {findCommitteeDiscord} from "@/services/api"
 import {mountInApp, settle, unmountAll} from "../../../pages/helpers"
 
-const api = vi.hoisted(() => ({findCommitteeDiscord: vi.fn(), listKeptRoles: vi.fn(), listKeptChannels: vi.fn(), listRoleOpenings: vi.fn()}))
+const api = vi.hoisted(() => ({findCommitteeDiscord: vi.fn(), listKeptRoles: vi.fn(), listCataloguedChannels: vi.fn(), listRoleOpenings: vi.fn()}))
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   ...api,
@@ -30,7 +30,7 @@ describe("a committee's Discord on its form", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     api.listKeptRoles.mockResolvedValue({status: 200, data: [{id: "900", name: "Sitecie", assignable: true}, {id: "905", name: "Admin", assignable: false}]})
-    api.listKeptChannels.mockResolvedValue({status: 200, data: channels})
+    api.listCataloguedChannels.mockResolvedValue({status: 200, data: channels})
     api.listRoleOpenings.mockResolvedValue({status: 200, data: []})
     api.findCommitteeDiscord.mockResolvedValue({status: 200, data: {available: true, roleId: "900", roleName: "Sitecie", channels: [channels[1]]}})
   })
@@ -67,7 +67,14 @@ describe("a committee's Discord on its form", () => {
     await settle()
 
     expect(api.listRoleOpenings).toHaveBeenCalledWith({path: {roleId: "900"}})
-    expect(wrapper.get('[data-testid="committee-edit-discord-already"]').text()).toContain("already has access to #sitecie.")
+    const already = wrapper.get('[data-testid="committee-edit-discord-already"]')
+    expect(already.text()).toContain("already has access to sitecie.")
+    // Drawn as a channel mark, glyph and all, as every channel on the site is.
+    expect(already.find(".channel-mark").exists()).toBe(true)
+    expect(wrapper.findAll(".chips__chip .channel-mark").map((one) => one.text())).toEqual(["sitecie"])
+    await wrapper.get('[data-testid="committee-edit-discord-channel-picker-search"]').trigger("focus")
+    await settle()
+    expect([...document.querySelectorAll(".chips__row .channel-mark")].map((one) => one.textContent?.trim())).toEqual(["sitecie-voice"])
     expect(choice(wrapper)).toEqual({roleId: "900", createRole: false, channelIds: ["1"], createChannel: null})
   })
 

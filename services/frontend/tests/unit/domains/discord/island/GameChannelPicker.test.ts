@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {flushPromises, shallowMount} from "@vue/test-utils"
+import {flushPromises, mount, shallowMount} from "@vue/test-utils"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
 
 const {mockChannels, mockEvery} = vi.hoisted(() => ({mockChannels: vi.fn(), mockEvery: vi.fn()}))
@@ -125,5 +125,17 @@ describe("making a game's channel", () => {
   it("offers no making without a name", async () => {
     const wrapper = await mountPicker([CHESS])
     expect(wrapper.find("[data-testid=game-channels-make]").exists()).toBe(false)
+  })
+  it("draws each chosen channel and each one on offer as a channel mark", async () => {
+    mockChannels.mockResolvedValue([CHESS, FIGHTING])
+    mockEvery.mockResolvedValue(null)
+    const wrapper = mount(GameChannelPicker, {props: {modelValue: [CHESS]}, global: {stubs: {FormField: throughField}}, attachTo: document.body})
+    await flushPromises()
+
+    expect(wrapper.findAll(".chips__chip .channel-mark").map((one) => one.text())).toEqual(["chess"])
+    await wrapper.get("input").trigger("focus")
+    await flushPromises()
+    expect([...document.querySelectorAll(".chips__row .channel-mark")].map((one) => one.textContent?.trim())).toEqual(["fighting-games"])
+    wrapper.unmount()
   })
 })

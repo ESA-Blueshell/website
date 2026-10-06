@@ -246,7 +246,13 @@ const chipId = (key: string) => props.chipTestid?.(key) ?? `${props.testidPrefix
         class="chips__chip"
         :data-testid="chipId(one.key)"
       >
-        <span class="chips__chip-label">{{ sigil }}{{ one.label }}</span>
+        <!-- A page draws a chip its own way where a label alone says too little, as a channel does. -->
+        <slot
+          name="chip"
+          :option="one"
+        >
+          <span class="chips__chip-label">{{ sigil }}{{ one.label }}</span>
+        </slot>
         <button
           v-if="!disabled"
           :aria-label="removeLabel(`${sigil}${one.label}`)"
@@ -344,7 +350,12 @@ const chipId = (key: string) => props.chipTestid?.(key) ?? `${props.testidPrefix
             @click="take(one.key)"
             @mouseenter="active = index"
           >
-            <span class="chips__label">{{ sigil }}{{ one.label }}</span>
+            <slot
+              name="option"
+              :option="one"
+            >
+              <span class="chips__label">{{ sigil }}{{ one.label }}</span>
+            </slot>
             <span
               v-if="one.note"
               class="chips__row-note"

@@ -21,7 +21,7 @@ import RecordHead from "@/components/island/RecordHead.vue"
 import SliceBand from "@/components/island/SliceBand.vue"
 import {saveGameOrganisers, useCommittees} from "@/domains/committees"
 import GameOrganisersPicker from "@/domains/committees/island/GameOrganisersPicker.vue"
-import {GameChannelCategory} from "@/domains/discord"
+import {ChannelMark, GameChannelCategory} from "@/domains/discord"
 import GameAccessSection from "@/domains/discord/island/GameAccessSection.vue"
 import {useIsBoard} from "@/composables/useIsBoard"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
@@ -389,7 +389,15 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
                   v-if="channels.length > 0"
                   :label="channels.length === 1 ? 'Channel' : 'Channels'"
                 >
-                  {{ channels.map(one => `#${one.name}`).join(" · ") }}
+                  <span class="game-editor__channels">
+                    <channel-mark
+                      v-for="one in channels"
+                      :id="one.id"
+                      :key="one.id"
+                      :guild-id="one.guildId"
+                      :name="one.name"
+                    />
+                  </span>
                 </record-fact>
                 <record-fact
                   :label="organiserNames.length === 1 ? 'Committee' : 'Committees'"
@@ -547,4 +555,10 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
   grid-template-columns: minmax(0, 1fr);
 }
 
+
+.game-editor__channels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
 </style>

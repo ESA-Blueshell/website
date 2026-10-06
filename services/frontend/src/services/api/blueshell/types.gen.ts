@@ -751,6 +751,16 @@ export enum CohortCategory {
     TEAMS = 'TEAMS'
 }
 
+export type CohortChannel = {
+    id: string;
+    name: string;
+    /**
+     * Whether @everyone is kept out of it
+     */
+    private: boolean;
+    voice: boolean;
+};
+
 export type CohortDetail = {
     category: CohortCategory;
     /**
@@ -863,6 +873,7 @@ export enum CohortType {
     CURRENT_MEMBERS = 'CURRENT_MEMBERS',
     CURRENT_COMMITTEE_MEMBERS = 'CURRENT_COMMITTEE_MEMBERS',
     TEAM_PLAYERS = 'TEAM_PLAYERS',
+    CURRENT_TEAM_PLAYERS = 'CURRENT_TEAM_PLAYERS',
     BOARD = 'BOARD',
     KANDI = 'KANDI',
     BOARD_YEAR_MEMBERS = 'BOARD_YEAR_MEMBERS'
@@ -1379,6 +1390,10 @@ export type DiscordPlaceRequest = {
      * Make a new role, where there is none yet and no role is named
      */
     createRole: boolean;
+    /**
+     * Take the role from the cohort that follows it now, rather than being refused
+     */
+    move?: boolean;
     /**
      * An existing role to link, where there is none yet
      */
@@ -3198,6 +3213,10 @@ export type SentEmailPreview = {
 
 export type ServerCohortRole = {
     /**
+     * The channels the role can access now; empty without a role or a bot
+     */
+    channels: Array<CohortChannel>;
+    /**
      * The channels the role is opened to when it is set, by name
      */
     defaultChannels: Array<string>;
@@ -3206,20 +3225,6 @@ export type ServerCohortRole = {
     roleId?: string | null;
     roleName?: string | null;
     type: CohortType;
-};
-
-/**
- * The role a server-wide cohort follows
- */
-export type ServerCohortRoleRequest = {
-    /**
-     * Create a new role named after the cohort, where no role is named
-     */
-    create: boolean;
-    /**
-     * An existing role to follow
-     */
-    roleId?: string | null;
 };
 
 export type ServiceEntry = {
@@ -12273,16 +12278,16 @@ export type ListServerCohortRolesResponses = {
 
 export type ListServerCohortRolesResponse = ListServerCohortRolesResponses[keyof ListServerCohortRolesResponses];
 
-export type SetServerCohortRoleData = {
-    body: ServerCohortRoleRequest;
+export type FindServerCohortDiscordData = {
+    body?: never;
     path: {
         key: string;
     };
     query?: never;
-    url: '/management/discord/settings/cohorts/{key}';
+    url: '/management/discord/settings/cohorts/{key}/discord';
 };
 
-export type SetServerCohortRoleErrors = {
+export type FindServerCohortDiscordErrors = {
     /**
      * Validation error
      */
@@ -12305,16 +12310,59 @@ export type SetServerCohortRoleErrors = {
     500: ApiError;
 };
 
-export type SetServerCohortRoleError = SetServerCohortRoleErrors[keyof SetServerCohortRoleErrors];
+export type FindServerCohortDiscordError = FindServerCohortDiscordErrors[keyof FindServerCohortDiscordErrors];
 
-export type SetServerCohortRoleResponses = {
+export type FindServerCohortDiscordResponses = {
     /**
      * OK
      */
-    200: Array<ServerCohortRole>;
+    200: DiscordPlace;
 };
 
-export type SetServerCohortRoleResponse = SetServerCohortRoleResponses[keyof SetServerCohortRoleResponses];
+export type FindServerCohortDiscordResponse = FindServerCohortDiscordResponses[keyof FindServerCohortDiscordResponses];
+
+export type SetServerCohortDiscordData = {
+    body: DiscordPlaceRequest;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/management/discord/settings/cohorts/{key}/discord';
+};
+
+export type SetServerCohortDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetServerCohortDiscordError = SetServerCohortDiscordErrors[keyof SetServerCohortDiscordErrors];
+
+export type SetServerCohortDiscordResponses = {
+    /**
+     * OK
+     */
+    200: DiscordPlace;
+};
+
+export type SetServerCohortDiscordResponse = SetServerCohortDiscordResponses[keyof SetServerCohortDiscordResponses];
 
 export type List1Data = {
     body?: never;

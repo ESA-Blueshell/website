@@ -127,7 +127,7 @@ describe("the game edit page", () => {
     expect(wrapper.get("[data-testid=game-edit-see]").attributes("href")).toBe("/casual/chess")
     expect(wrapper.getComponent(stubs.GameOrganisersPicker).props("modelValue")).toEqual([1])
     expect(wrapper.get("[data-testid=game-edit-see-competition]").attributes("href")).toBe("/competition/chess")
-    expect(wrapper.get("[data-testid=casual-head]").text()).toContain("#chess")
+    expect(wrapper.get("[data-testid=casual-head]").text()).toContain("chess")
     expect(wrapper.get("[data-testid=casual-head]").text()).toContain("LegaCie")
     await field(wrapper, "order").setValue("2")
     write(wrapper, "intro", "Rapid on Thursdays")

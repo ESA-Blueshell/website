@@ -63,6 +63,7 @@ class DiscordAdoption(
         return cohorts
             .findAll()
             .filter { it.type in ADOPTED && it.definitionKey != null }
+            .filterNot { it.type == CohortType.COMMITTEE_MEMBERS && it.label.equals(CohortDiscord.BOARD_COMMITTEE, ignoreCase = true) }
             .filter { cohort ->
                 targets.findByCohortIdAndSystem(requireNotNull(cohort.id), TargetSystem.DISCORD.name)?.let(targetIds::find) ==
                     null

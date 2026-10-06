@@ -65,9 +65,9 @@ class PresentDefinitionsTest {
     }
 
     @Test
-    fun `the activists, the teams and the board years are not listed on Brevo`() {
+    fun `the activists, the teams, the esports team members and the board years are not listed on Brevo`() {
         assertThat(CohortType.entries.filterNot { it.listedOnBrevo })
-            .containsExactly(CohortType.ACTIVISTS, CohortType.TEAM_PLAYERS, CohortType.BOARD_YEAR_MEMBERS)
+            .containsExactly(CohortType.ACTIVISTS, CohortType.TEAM_PLAYERS, CohortType.CURRENT_TEAM_PLAYERS, CohortType.BOARD_YEAR_MEMBERS)
         assertThat(listOf(CohortType.CURRENT_MEMBERS, CohortType.CURRENT_COMMITTEE_MEMBERS).map { it.category() })
             .containsOnly(CohortCategory.MEMBERS)
     }

@@ -15,6 +15,7 @@ export const COHORT_TYPE_LABELS: Record<CohortType, string> = {
   [CohortType.ACTIVISTS]: "Activists",
   [CohortType.CURRENT_MEMBERS]: "Members",
   [CohortType.CURRENT_COMMITTEE_MEMBERS]: "Committee members",
+  [CohortType.CURRENT_TEAM_PLAYERS]: "Esports team members",
   [CohortType.TEAM_PLAYERS]: "Team players",
   [CohortType.BOARD]: "Board in office",
   [CohortType.KANDI]: "Kandi",

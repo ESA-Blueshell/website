@@ -66,6 +66,8 @@ const emit = defineEmits<{
 const adding = computed(() => props.committee == null)
 const name = ref("")
 const slug = ref("")
+// TWIN: CohortDiscord.BOARD_COMMITTEE, which refuses this committee a role.
+const boardsCommittee = computed(() => name.value.trim().toLowerCase() === "board")
 const description = ref("")
 const banner = ref<Picture | null>(null)
 const icon = ref<Picture | null>(null)
@@ -303,8 +305,9 @@ const removeIt = async () => {
         <committee-seats v-model="seats" />
       </form-section>
 
+      <!-- The board in office holds @Board, so the board's own committee gets no Discord role. -->
       <discord-place-fields
-        v-if="asBoard"
+        v-if="asBoard && !boardsCommittee"
         v-model="discord"
         :name="name"
         :read="committee ? () => readCommitteeDiscord(committee!.id) : null"

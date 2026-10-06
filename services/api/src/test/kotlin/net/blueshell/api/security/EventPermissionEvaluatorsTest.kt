@@ -30,10 +30,11 @@ class EventPermissionEvaluatorsTest {
         private val evaluator = CommitteePermission(service)
 
         @Test
-        fun `null entity path allows read and gates write delete to board`() {
+        fun `null entity path allows read, gates write to the board and delete to an admin`() {
             assertThat(evaluator.hasPermission(guestAuth(), null, "read")).isTrue()
             assertThat(evaluator.hasPermission(boardAuth(), null, "write")).isTrue()
-            assertThat(evaluator.hasPermission(boardAuth(), null, "delete")).isTrue()
+            assertThat(evaluator.hasPermission(boardAuth(), null, "delete")).isFalse()
+            assertThat(evaluator.hasPermission(adminAuth(), null, "delete")).isTrue()
             assertThat(evaluator.hasPermission(guestAuth(), null, "write")).isFalse()
             assertThat(evaluator.hasPermission(guestAuth(), null, "unknown")).isFalse()
         }
@@ -59,8 +60,9 @@ class EventPermissionEvaluatorsTest {
             whenever(service.findById(5L)).thenReturn(committee)
 
             assertThat(evaluator.hasPermissionId(boardAuth(), null, "write")).isTrue()
-            assertThat(evaluator.hasPermissionId(boardAuth(), 5L, "delete")).isTrue()
-            verify(service).findById(5L)
+            assertThat(evaluator.hasPermissionId(boardAuth(), 5L, "delete")).isFalse()
+            assertThat(evaluator.hasPermissionId(adminAuth(), 5L, "delete")).isTrue()
+            verify(service, times(2)).findById(5L)
         }
     }
 

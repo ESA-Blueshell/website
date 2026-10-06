@@ -3,6 +3,7 @@ package net.blueshell.api.discord.domain
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptRole
 import net.blueshell.api.discord.api.RoleHolder
+import net.blueshell.api.testsupport.configuredDiscordSettings
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.GuildMemberResponse
 import net.dv8tion.jda.api.entities.Guild
@@ -62,7 +63,7 @@ class JdaRoleKeeperTest {
     ): JdaRoleKeeper {
         val gateways: ObjectProvider<GatewayGuild> = mock { on { ifAvailable } doReturn gateway }
         val apis: ObjectProvider<DiscordApi> = mock { on { ifAvailable } doReturn client }
-        return JdaRoleKeeper(gateways, apis, "1", "903")
+        return JdaRoleKeeper(gateways, apis, "1", configuredDiscordSettings("903"))
     }
 
     private fun member(

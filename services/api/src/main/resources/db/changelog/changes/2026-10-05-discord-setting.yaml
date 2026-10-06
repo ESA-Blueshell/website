@@ -1,0 +1,15 @@
+# The Discord settings the board sets on the site, each by name; one with no row falls back to the
+# application's configuration.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-05-discord-setting.yaml
+      id: discord-setting
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: discord_setting
+            columns:
+              - column: {name: name, type: VARCHAR(32), constraints: {nullable: false, primaryKey: true, primaryKeyName: pk_discord_setting}}
+              - column: {name: value, type: VARCHAR(1024), constraints: {nullable: false}}
+      rollback:
+        - dropTable: {tableName: discord_setting}

@@ -22,11 +22,11 @@ object CohortFolders {
             CohortType.PERIOD_PAYERS -> CONTRIBUTION_PAID
             CohortType.PERIOD_MEMBERS -> MEMBERS
             CohortType.PERIOD_ACTIVE_MEMBERS -> ACTIVE_MEMBERS
-            CohortType.COMMITTEE_MEMBERS -> COMMITTEES
+            CohortType.COMMITTEE_MEMBERS, CohortType.CURRENT_COMMITTEE_MEMBERS -> COMMITTEES
             CohortType.NEWSLETTER_SUBSCRIBERS -> NEWSLETTER
             CohortType.ACTIVISTS -> ACTIVISTS
             CohortType.CURRENT_MEMBERS -> MEMBERS
-            CohortType.TEAM_PLAYERS -> TEAMS
+            CohortType.TEAM_PLAYERS, CohortType.CURRENT_TEAM_PLAYERS -> TEAMS
             CohortType.BOARD, CohortType.KANDI, CohortType.BOARD_YEAR_MEMBERS -> BOARD
         }
 }

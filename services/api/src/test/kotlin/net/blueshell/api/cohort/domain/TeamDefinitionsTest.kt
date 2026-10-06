@@ -24,4 +24,20 @@ class TeamDefinitionsTest {
         assertThat(CohortType.TEAM_PLAYERS.listedOnBrevo).isFalse()
         assertThat(TeamPlayersProvider(rosters).type).isEqualTo(CohortType.TEAM_PLAYERS)
     }
+
+    @Test
+    fun `the esports team members are everybody on any team's line-up this season`() {
+        val rosters: TeamRosterService = mock()
+        whenever(rosters.teamNames()).thenReturn(mapOf(1L to "Valorant A", 2L to "Chess"))
+        whenever(rosters.currentPlayersOf(1L)).thenReturn(setOf(7L, 8L))
+        whenever(rosters.currentPlayersOf(2L)).thenReturn(setOf(8L, 9L))
+        val provider = CurrentTeamPlayersProvider(rosters)
+        val members = provider.definitions().single()
+
+        assertThat(members.members()).containsExactlyInAnyOrder(7L, 8L, 9L)
+        assertThat(listOf(9L, 10L).map(members::contains)).containsExactly(true, false)
+        assertThat(listOf(members.key, members.label, members.folder))
+            .containsExactly("CURRENT_TEAM_PLAYERS", "Esports team members", "Teams")
+        assertThat(listOf(members.scope, provider.type)).containsExactly(null, CohortType.CURRENT_TEAM_PLAYERS)
+    }
 }

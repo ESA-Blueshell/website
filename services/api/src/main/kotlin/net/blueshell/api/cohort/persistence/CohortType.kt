@@ -26,11 +26,17 @@ enum class CohortType {
     /** Everybody holding a committee or board seat today. */
     ACTIVISTS,
 
-    /** Everybody with a membership today. */
+    /** Everybody holding the MEMBER role, which follows an active membership. */
     CURRENT_MEMBERS,
+
+    /** Everybody holding the COMMITTEE role, which follows a seat on any committee. */
+    CURRENT_COMMITTEE_MEMBERS,
 
     /** Everybody on one team's line-up in the season fielded now. Pivots on `TEAM`. */
     TEAM_PLAYERS,
+
+    /** Everybody on any team's line-up in the season fielded now. */
+    CURRENT_TEAM_PLAYERS,
 
     /** The board in office today. */
     BOARD,
@@ -43,15 +49,16 @@ enum class CohortType {
     ;
 
     /** Whether registering a cohort of this type makes it a Brevo list; the others exist for Discord and Workspace. */
-    val listedOnBrevo: Boolean get() = this !in setOf(ACTIVISTS, CURRENT_MEMBERS, TEAM_PLAYERS, BOARD_YEAR_MEMBERS)
+    val listedOnBrevo: Boolean get() = this !in setOf(ACTIVISTS, TEAM_PLAYERS, CURRENT_TEAM_PLAYERS, BOARD_YEAR_MEMBERS)
 
     /** The bucket the dashboard browses by: every per-period cohort collapses into PERIODS. */
     fun category(): CohortCategory =
         when (this) {
             COMMITTEE_MEMBERS -> CohortCategory.COMMITTEES
             PERIOD_PAYERS, PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS -> CohortCategory.PERIODS
-            NEWSLETTER_SUBSCRIBERS, ACTIVISTS, CURRENT_MEMBERS, BOARD, KANDI, BOARD_YEAR_MEMBERS -> CohortCategory.MEMBERS
-            TEAM_PLAYERS -> CohortCategory.TEAMS
+            NEWSLETTER_SUBSCRIBERS, ACTIVISTS, CURRENT_MEMBERS, CURRENT_COMMITTEE_MEMBERS, BOARD, KANDI, BOARD_YEAR_MEMBERS ->
+                CohortCategory.MEMBERS
+            TEAM_PLAYERS, CURRENT_TEAM_PLAYERS -> CohortCategory.TEAMS
         }
 }
 

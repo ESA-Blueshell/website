@@ -6,6 +6,7 @@ import {computed, onMounted, ref} from "vue"
 import FactList from "@/components/island/FactList.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import PageTabs from "@/components/island/PageTabs.vue"
+import RoleMark from "@/components/island/RoleMark.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
@@ -172,10 +173,16 @@ onMounted(async () => {
       <template v-if="standing.above.length > 0">
         <list-head :title="`Roles above the bot's own · ${standing.above.length}`" />
         <p
-          class="bot__note"
+          class="bot__note bot__roles"
           data-testid="discord-bot-above"
         >
-          {{ standing.above.map((one) => `@${one.name}`).join(", ") }}. The bot cannot add these to anybody or remove them.
+          <role-mark
+            v-for="one in standing.above"
+            :key="one.id"
+            :role="one.name"
+            :testid="`discord-bot-above-${one.id}`"
+          />
+          <span>The bot cannot add these to anybody or remove them.</span>
         </p>
       </template>
     </template>
@@ -205,6 +212,13 @@ onMounted(async () => {
   margin: 0.35rem 0 0;
   padding: 0;
   list-style: none;
+}
+
+.bot__roles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .bot__note {

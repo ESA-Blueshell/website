@@ -32,8 +32,13 @@ data class DiscordPlaceRequest(
     val channelIds: List<String> = emptyList(),
     @param:Schema(description = "A new private channel to make for the role, by name")
     val createChannel: String? = null,
+    @param:Schema(
+        description = "Take the role from the cohort that follows it now, rather than being refused",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+    )
+    val move: Boolean = false,
 ) {
-    fun choice() = DiscordChoice(roleId, createRole, channelIds, createChannel)
+    fun choice() = DiscordChoice(roleId, createRole, channelIds, createChannel, move)
 }
 
 @Schema(name = "AdoptDiscord", description = "The matches the board confirmed, by their cohort's key")

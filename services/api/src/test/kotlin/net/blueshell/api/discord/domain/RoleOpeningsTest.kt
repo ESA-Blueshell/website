@@ -150,6 +150,24 @@ class RoleOpeningsTest {
     }
 
     @Test
+    fun `opens a channel to a role for writing when another module hands out its defaults`() {
+        val writing: PermissionOverrideAction =
+            mock {
+                on { setAllowed(any<Collection<Permission>>()) } doReturn it
+                on { setDenied(any<Collection<Permission>>()) } doReturn it
+            }
+        whenever(lounge.upsertPermissionOverride(member)).thenReturn(writing)
+        whenever(kept.findById(RoleOpeningKey("500", "1"))).thenReturn(Optional.empty())
+
+        openings().openForWriting("500", "1")
+
+        verify(writing).setAllowed(listOf(Permission.VIEW_CHANNEL, Permission.MESSAGE_SEND, Permission.MESSAGE_HISTORY))
+        val saved = argumentCaptor<RoleOpening>()
+        verify(kept).save(saved.capture())
+        assertThat(saved.firstValue.access).isEqualTo(RoleAccess.WRITE)
+    }
+
+    @Test
     fun `makes a private channel for the role under a category, and archives one`() {
         whenever(keeper.createPrivate("lounge", "Members", "500")).thenReturn(KeptChannel("1", "lounge", KeptChannelKind.TEXT, "Members"))
         val writing: PermissionOverrideAction =

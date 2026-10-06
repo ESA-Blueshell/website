@@ -31,6 +31,25 @@ class TargetSystemUnavailable(
         mapOf("system" to system.shownName),
     )
 
+class TargetLinkedElsewhere(
+    system: TargetSystem,
+    externalId: String,
+    cohort: String,
+) : TargetRefusal(
+        HttpStatus.CONFLICT,
+        "TargetLinkedElsewhere",
+        "Another cohort already follows that target.",
+        mapOf("system" to system.shownName, "externalId" to externalId, "cohort" to cohort),
+    )
+
+class BoardCommitteeHasNoRole :
+    TargetRefusal(
+        HttpStatus.CONFLICT,
+        "BoardCommitteeHasNoRole",
+        "The board's committee has no Discord role.",
+        emptyMap(),
+    )
+
 class TargetNotFound(
     system: TargetSystem,
     externalId: String,

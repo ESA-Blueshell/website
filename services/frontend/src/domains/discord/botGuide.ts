@@ -5,6 +5,7 @@ export const DISCORD_TABS = [
   {label: "Roles", to: "/management/platforms/discord"},
   {label: "Channels", to: "/management/platforms/discord/channels"},
   {label: "Bot", to: "/management/platforms/discord/bot"},
+  {label: "Settings", to: "/management/platforms/discord/settings"},
 ]
 
 const listed = (names: string[]): string =>

@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.testsupport.configuredDiscordSettings
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
@@ -157,7 +158,7 @@ class StarboardTest {
             .expect(requestTo("https://discord.test/channels/777/messages?limit=100"))
             .andRespond(withSuccess(mapper.writeValueAsString(listOf(repost(), mapOf("content" to "hi"))), MediaType.APPLICATION_JSON))
 
-        val source = RestStarboardSource(builder.build(), doors, "starboard")
+        val source = RestStarboardSource(builder.build(), doors, configuredDiscordSettings())
 
         assertThat(source.recent()!!.map { it.id }).containsExactly("1552233582498676818")
         rooms.clear()

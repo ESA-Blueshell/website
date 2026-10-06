@@ -212,6 +212,15 @@ describe("the committee edit page, for its own members", () => {
     expect(wrapper.emitted("saved")).toHaveLength(2)
   })
 
+  it("offers the board's own committee no Discord role, since the board in office holds @Board", async () => {
+    const wrapper = mountEditor(null, true)
+    await flushPromises()
+    expect(wrapper.findComponent(DiscordPlaceFields).exists()).toBe(true)
+
+    await input(wrapper, "name").setValue(" board ")
+    expect(wrapper.findComponent(DiscordPlaceFields).exists()).toBe(false)
+  })
+
   it("sets the committee's Brevo list once it is saved, and says where Brevo refused without holding the committee back", async () => {
     adapter.addCommittee.mockResolvedValue({ok: true, saved: lan})
     adapter.saveCommitteeBrevo.mockResolvedValueOnce({ok: true, saved: {available: true, listId: "7"}})

@@ -9,7 +9,7 @@ const standing = (fields: Partial<BotStanding> = {}): BotStanding => ({
 describe("what to change on Discord for the bot", () => {
   it("is nothing while the bot may do everything", () => {
     expect(botSteps(standing())).toEqual([])
-    expect(DISCORD_TABS.map((one) => one.label)).toEqual(["Roles", "Channels", "Bot"])
+    expect(DISCORD_TABS.map((one) => one.label)).toEqual(["Roles", "Channels", "Bot", "Settings"])
   })
 
   it("walks to the bot's role and names the permissions to turn on", () => {

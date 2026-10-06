@@ -9,9 +9,8 @@ import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.testsupport.Entities
-import net.blueshell.api.user.api.MembershipService
-import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -20,7 +19,7 @@ class PresentDefinitionsTest {
     private val committees: CommitteeService = mockk()
     private val committeeMembers: CommitteeMemberService = mockk()
     private val boardMembers: BoardMemberService = mockk()
-    private val memberships: MembershipService = mockk()
+    private val users: UserService = mockk()
     private val today = LocalDate.now()
 
     private fun committee(
@@ -48,26 +47,29 @@ class PresentDefinitionsTest {
     }
 
     @Test
-    fun `members hold an active membership that covers today, and a pending one does not count`() {
-        every { memberships.findActiveUserIdsOn(today) } returns setOf(5L)
-        every { memberships.findByUserId(5L) } returns mutableListOf(membership(today.minusYears(1), null))
-        every { memberships.findByUserId(6L) } returns mutableListOf(membership(today.minusYears(2), today.minusDays(1)))
-        every { memberships.findByUserId(7L) } returns mutableListOf(membership(today.plusDays(1), null))
-        every { memberships.findByUserId(8L) } returns mutableListOf(membership(today.minusDays(3), today))
-        every { memberships.findByUserId(9L) } returns
-            mutableListOf(Entities.membership(startDate = today.minusDays(3), activatedOn = null))
-        val members = CurrentMembersProvider(memberships).definitions().single()
+    fun `members are who holds the MEMBER role, and committee members who holds the COMMITTEE role`() {
+        every { users.findIdsHolding(Role.MEMBER) } returns setOf(5L, 6L)
+        every { users.findIdsHolding(Role.COMMITTEE) } returns setOf(6L, 7L)
+        val members = CurrentMembersProvider(users).definitions().single()
+        val committee = CurrentCommitteeMembersProvider(users).definitions().single()
 
-        assertThat(members.members()).containsExactly(5L)
-        assertThat(listOf(5L, 6L, 7L, 8L, 9L).map(members::contains)).containsExactly(true, false, false, true, false)
+        assertThat(members.members()).containsExactlyInAnyOrder(5L, 6L)
+        assertThat(listOf(5L, 7L).map(members::contains)).containsExactly(true, false)
         assertThat(listOf(members.key, members.label, members.folder)).containsExactly("CURRENT_MEMBERS", "Members", "Members")
-        assertThat(members.scope).isNull()
+        assertThat(committee.members()).containsExactlyInAnyOrder(6L, 7L)
+        assertThat(listOf(7L, 5L).map(committee::contains)).containsExactly(true, false)
+        assertThat(listOf(committee.key, committee.label, committee.folder))
+            .containsExactly("CURRENT_COMMITTEE_MEMBERS", "Committee members", "Committees")
+        assertThat(listOf(members.scope, committee.scope)).containsOnlyNulls()
+        assertThat(CurrentCommitteeMembersProvider(users).type).isEqualTo(CohortType.CURRENT_COMMITTEE_MEMBERS)
     }
 
     @Test
-    fun `neither is listed on Brevo, nor is a team, and both browse under members`() {
+    fun `the activists, the teams, the esports team members and the board years are not listed on Brevo`() {
         assertThat(CohortType.entries.filterNot { it.listedOnBrevo })
-            .containsExactly(CohortType.ACTIVISTS, CohortType.CURRENT_MEMBERS, CohortType.TEAM_PLAYERS, CohortType.BOARD_YEAR_MEMBERS)
+            .containsExactly(CohortType.ACTIVISTS, CohortType.TEAM_PLAYERS, CohortType.CURRENT_TEAM_PLAYERS, CohortType.BOARD_YEAR_MEMBERS)
+        assertThat(listOf(CohortType.CURRENT_MEMBERS, CohortType.CURRENT_COMMITTEE_MEMBERS).map { it.category() })
+            .containsOnly(CohortCategory.MEMBERS)
     }
 
     @Test
@@ -109,9 +111,4 @@ class PresentDefinitionsTest {
         assertThat(listOf(CohortType.BOARD, CohortType.KANDI).map { it.category() }).containsOnly(CohortCategory.MEMBERS)
         assertThat(listOf(CohortType.BOARD, CohortType.KANDI).map { CohortFolders.forType(it) }).containsOnly("Boards")
     }
-
-    private fun membership(
-        start: LocalDate,
-        end: LocalDate?,
-    ): Membership = Entities.membership(startDate = start, endDate = end)
 }

@@ -10,7 +10,9 @@ import FormField from "@/components/island/FormField.vue"
 import FormSection from "@/components/island/FormSection.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
-import {type KeptChannel, type KeptRole, listKeepableChannels, listKeepableRoles} from "../adapters/keeping"
+import {type CataloguedChannel, listCatalogue} from "../adapters/catalogue"
+import {type KeptChannel, type KeptRole, listKeepableRoles} from "../adapters/keeping"
+import ChannelMark from "./ChannelMark.vue"
 import {readOpenings} from "../adapters/roleOpenings"
 import {isArchive} from "../catalogue"
 
@@ -37,7 +39,8 @@ const emit = defineEmits<{(event: "loaded", place: DiscordPlace | null): void}>(
 const adding = read == null
 const state = ref<DiscordPlace | null>(null)
 const roles = ref<KeptRole[]>([])
-const channels = ref<KeptChannel[]>([])
+// The catalogue rather than the bare list, since it says which channels are private.
+const channels = ref<CataloguedChannel[]>([])
 const roleKey = ref<string | null>(adding ? NEW_ROLE : null)
 const channelIds = ref<string[]>([])
 const makeChannel = ref(adding)
@@ -48,9 +51,9 @@ const roleOptions = computed(() => [
   {key: NEW_ROLE, label: `A new role, @${name.trim() || "named after it"}`},
   ...roles.value.filter((one) => one.assignable).map((one) => ({key: one.id, label: `@${one.name}`})),
 ])
-const asOption = (channel: KeptChannel) => ({key: channel.id, label: channel.name, note: channel.category ?? undefined})
+const asOption = (channel: CataloguedChannel) => ({key: channel.id, label: channel.name, note: channel.category ?? undefined})
 // An archived channel is kept for history, so it is not offered to link.
-const channelOptions = computed(() => channels.value.filter((one: KeptChannel) => one.kind !== "CATEGORY" && !isArchive(one.category)).map(asOption))
+const channelOptions = computed(() => channels.value.filter((one: CataloguedChannel) => one.kind !== "CATEGORY" && !isArchive(one.category)).map(asOption))
 const chosenChannels = computed(() => channelIds.value.map((id) => channelOptions.value.find((one) => one.key === id) ?? {key: id, label: id}))
 const pickable = computed(() => channelOptions.value.filter((one) => !channelIds.value.includes(one.key)))
 const hasRole = computed(() => linkedRole.value != null || roleKey.value != null)
@@ -68,14 +71,15 @@ watch([available, roleKey, channelIds, makeChannel, () => slug], () => {
 
 /* A role picked to be linked may have access to channels already. They are filled in and the new
    channel is unticked, so the form shows them and none is linked or made a second time. */
-const alreadyOpen = ref<string[]>([])
+const alreadyOpen = ref<KeptChannel[]>([])
+const channelOf = (id: string) => channels.value.find((one) => one.id === id)
 watch(roleKey, async (key) => {
   alreadyOpen.value = []
   if (!key || key === NEW_ROLE) return
   const openings = await readOpenings(key)
   if (roleKey.value !== key || !openings) return
   const held = openings.filter((one) => (one.actual ?? one.kept) != null && one.channel.kind !== "CATEGORY").map((one) => one.channel)
-  alreadyOpen.value = held.map((one) => one.name)
+  alreadyOpen.value = held
   channelIds.value = [...new Set([...channelIds.value, ...held.map((one) => one.id)])]
   if (held.length > 0) makeChannel.value = false
 })
@@ -84,7 +88,7 @@ onMounted(async () => {
   const [found, held, open] = await Promise.all([
     read ? read() : Promise.resolve(null),
     listKeepableRoles(),
-    listKeepableChannels(),
+    listCatalogue(),
   ])
   state.value = found
   emit("loaded", found)
@@ -146,7 +150,22 @@ onMounted(async () => {
               :testid-prefix="`${testid}-channel-picker`"
               @add="(keys: string[]) => channelIds = [...channelIds, ...keys]"
               @remove="(key: string) => channelIds = channelIds.filter((one) => one !== key)"
-            />
+            >
+              <template #chip="{option}">
+                <channel-mark
+                  :locked="channelOf(option.key)?.private"
+                  :name="option.label"
+                  :voice="channelOf(option.key)?.kind === 'VOICE'"
+                />
+              </template>
+              <template #option="{option}">
+                <channel-mark
+                  :locked="channelOf(option.key)?.private"
+                  :name="option.label"
+                  :voice="channelOf(option.key)?.kind === 'VOICE'"
+                />
+              </template>
+            </chip-picker>
           </template>
         </form-field>
         <p
@@ -154,8 +173,13 @@ onMounted(async () => {
           class="discord-place__already"
           :data-testid="`${testid}-already`"
         >
-          This role already has access to {{ alreadyOpen.map((name) => `#${name}`).join(", ") }}. These channels are filled
-          in above.
+          This role already has access to <span class="mg-marks discord-place__marks"><channel-mark
+            v-for="one in alreadyOpen"
+            :key="one.id"
+            :locked="channelOf(one.id)?.private"
+            :name="one.name"
+            :voice="one.kind === 'VOICE'"
+          /></span>. These channels are filled in above.
         </p>
         <check-box
           v-model="makeChannel"
@@ -186,6 +210,12 @@ onMounted(async () => {
 .discord-place__already {
   font-size: 0.86rem;
   color: var(--color-ash);
+}
+
+.discord-place__marks {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.3rem;
 }
 
 .discord-place__note {

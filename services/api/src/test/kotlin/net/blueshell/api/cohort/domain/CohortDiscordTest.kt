@@ -16,6 +16,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -91,6 +92,50 @@ class CohortDiscordTest {
         discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "902", createChannel = " "), "Committees")
         verify(targeting, never()).linkExisting(5, TargetSystem.DISCORD, "902")
         verify(channels, never()).createPrivate(any(), any(), any())
+    }
+
+    @Test
+    fun `a role another cohort follows is refused naming that cohort, or taken from it when asked to move it`() {
+        given(linked = false)
+        val board = Entities.cohort(id = 6, type = CohortType.BOARD, label = "Board")
+        val boardsRole = Entities.target(id = 60, system = "DISCORD", cohortId = 6, externalId = "901")
+        whenever(targets.findFirstBySystemAndExternalId("DISCORD", "901")).thenReturn(boardsRole)
+        whenever(cohorts.findById(6)).thenReturn(Optional.of(board))
+
+        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "901"), "Committees") }
+            .isInstanceOfSatisfying(TargetLinkedElsewhere::class.java) { assertThat(it.facts["cohort"]).isEqualTo("Board") }
+        verify(targets, never()).delete(boardsRole)
+
+        whenever(targeting.linkExisting(5, TargetSystem.DISCORD, "901")).thenReturn(CohortTargetRow(role, "901"))
+        whenever(channels.openedTo("901")).thenReturn(emptyList())
+        discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "901", move = true), "Committees")
+        verify(targets).delete(boardsRole)
+        verify(targeting).linkExisting(5, TargetSystem.DISCORD, "901")
+
+        // A target without a cohort is named by its own label, and the cohort's own role is no conflict.
+        val orphan = Entities.target(id = 61, system = "DISCORD", label = "Orphan")
+        whenever(targets.findFirstBySystemAndExternalId("DISCORD", "903")).thenReturn(orphan)
+        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "903"), "Committees") }
+            .isInstanceOfSatisfying(TargetLinkedElsewhere::class.java) { assertThat(it.facts["cohort"]).isEqualTo("Orphan") }
+        val own = Entities.target(id = 62, system = "DISCORD", cohortId = 5)
+        whenever(targets.findFirstBySystemAndExternalId("DISCORD", "904")).thenReturn(own)
+        whenever(targeting.linkExisting(5, TargetSystem.DISCORD, "904")).thenReturn(CohortTargetRow(role, "904"))
+        whenever(channels.openedTo("904")).thenReturn(emptyList())
+        discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "904"), "Committees")
+        verify(targeting).linkExisting(5, TargetSystem.DISCORD, "904")
+    }
+
+    @Test
+    fun `the board's committee is refused a role, since the board in office holds it`() {
+        given(linked = false)
+        val boardsCommittee = Entities.cohort(id = 5, type = CohortType.COMMITTEE_MEMBERS, label = "board")
+        whenever(cohorts.findById(5)).thenReturn(Optional.of(boardsCommittee))
+
+        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(createRole = true), "Committees") }
+            .isInstanceOf(BoardCommitteeHasNoRole::class.java)
+        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "901"), "Committees") }
+            .isInstanceOf(BoardCommitteeHasNoRole::class.java)
+        verify(targeting, never()).create(any(), any(), any(), anyOrNull())
     }
 
     @Test

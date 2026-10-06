@@ -32,3 +32,27 @@ class TeamPlayersProvider(
 
     override fun definitions(): List<CohortDefinition> = rosters.teamNames().map { (id, name) -> TeamPlayersDefinition(rosters, id, name) }
 }
+
+/** Everybody on any team's line-up in the season fielded now: the esports team members, server-wide. */
+class CurrentTeamPlayersDefinition(
+    private val rosters: TeamRosterService,
+) : CohortDefinition {
+    override val key = CohortType.CURRENT_TEAM_PLAYERS.name
+    override val type = CohortType.CURRENT_TEAM_PLAYERS
+    override val scope = null
+    override val label = "Esports team members"
+    override val folder = CohortFolders.TEAMS
+
+    override fun members(): Set<Long> = rosters.teamNames().keys.flatMapTo(mutableSetOf()) { rosters.currentPlayersOf(it) }
+
+    override fun contains(userId: Long): Boolean = userId in members()
+}
+
+@Component
+class CurrentTeamPlayersProvider(
+    private val rosters: TeamRosterService,
+) : CohortDefinitionProvider {
+    override val type = CohortType.CURRENT_TEAM_PLAYERS
+
+    override fun definitions(): List<CohortDefinition> = listOf(CurrentTeamPlayersDefinition(rosters))
+}

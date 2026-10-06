@@ -7,6 +7,7 @@ import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.api.sync.api.DiscordPublisher
+import net.blueshell.api.testsupport.configuredDiscordSettings
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -198,7 +199,7 @@ class DiscordEventPostsTest {
                 on { bannerOf(42) } doReturn banner
             }
         val provider: ObjectProvider<DiscordPublisher> = mock { on { ifAvailable } doReturn bot }
-        return DiscordEventPosts(events, provider, ledger, "https://esa-blueshell.nl", "events-info", "events-calendar").apply {
+        return DiscordEventPosts(events, provider, ledger, "https://esa-blueshell.nl", configuredDiscordSettings()).apply {
             clock = Clock.fixed(at(now), ZoneOffset.UTC)
         }
     }

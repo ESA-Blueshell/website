@@ -6,7 +6,6 @@ import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import org.springframework.beans.factory.ObjectProvider
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 /** One permission the site's work on Discord needs, by the name Discord's own settings give it. */
@@ -53,18 +52,12 @@ data class BotStandingResult(
 @Service
 class BotStanding(
     private val gateway: ObjectProvider<GatewayGuild>,
-    @Value($$"${discord.claim-roles:}") claimRoles: String,
+    private val settings: DiscordSettings,
 ) {
-    private val claimRoleIds =
-        claimRoles
-            .split(",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .toSet()
-
     fun read(): BotStandingResult {
         val guild = gateway.ifAvailable?.guild() ?: return BotStandingResult(false, false, false, null, emptyList(), emptyList())
         val bot = guild.selfMember
+        val claimRoleIds = settings.claimRoleIds()
         val keepable = guild.roles.filterNot { it.isPublicRole || it.isManaged || it.id in claimRoleIds }
         return BotStandingResult(
             connected = true,

@@ -17,12 +17,6 @@ describe("what a field must hold", () => {
     expect(await said("2026-01-01", "dateRequired")).toBeUndefined()
   })
 
-  it("takes letters and numbers and nothing else", async () => {
-    expect(await said("", "alphaNum")).toBeUndefined()
-    expect(await said("abc123", "alphaNum")).toBeUndefined()
-    expect(await said("a b", "alphaNum")).toBe("Use only letters and numbers")
-  })
-
   it("counts the characters both ways", async () => {
     expect(await said("", "minChars:3")).toBeUndefined()
     expect(await said("abc", "minChars:3")).toBeUndefined()

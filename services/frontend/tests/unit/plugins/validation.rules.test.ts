@@ -3,14 +3,10 @@ import {validate} from "vee-validate"
 import "@/plugins/validation"
 
 describe("validation rules messages", () => {
-  it("returns required/alphanumeric/length messages", async () => {
+  it("returns required and length messages", async () => {
     const required = await validate("", "required")
     expect(required.valid).toBe(false)
     expect(required.errors[0]).toBe("This field is required")
-
-    const alphaNum = await validate("abc-1", "alphaNum")
-    expect(alphaNum.valid).toBe(false)
-    expect(alphaNum.errors[0]).toBe("Use only letters and numbers")
 
     const minChars = await validate("ab", "minChars:3")
     expect(minChars.valid).toBe(false)

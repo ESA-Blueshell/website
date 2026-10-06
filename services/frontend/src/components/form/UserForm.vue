@@ -423,7 +423,7 @@ defineExpose({validate, save, signupSession})
           :disabled="isReadonly || !canEditIdentity"
           label="Username*"
           name="username"
-          :rules="canEditIdentity ? 'required|alphaNum' : ''"
+          :rules="canEditIdentity ? 'required' : ''"
         />
         <VvField
           v-model="user.discord"

@@ -28,7 +28,7 @@
               v-model="form.username"
               :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'resend-confirmation-username-field' }"
               name="username"
-              rules="required|alphaNum"
+              rules="required"
             />
 
             <div class="form-save">

@@ -18,7 +18,7 @@
         <error line="29" column="101" source="standard:class-signature" />
         <error line="30" column="5" source="standard:class-signature" />
         <error line="35" column="40" source="standard:class-signature" />
-        <error line="35" column="94" source="standard:class-signature" />
+        <error line="35" column="94" source="standard:class-signature" />/Users/j.w.jonkers/IDEAProjects/website/association-assets/Blueshell logoNoEsports(2).png
         <error line="36" column="5" source="standard:class-signature" />
     </file>
     <file name="src/main/kotlin/net/blueshell/api/auth/domain/RecoveryTokenValidator.kt">

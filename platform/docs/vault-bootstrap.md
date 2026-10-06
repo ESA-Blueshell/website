@@ -254,6 +254,15 @@ leave Vault. The api uses them once `PRIVACY_SEALING` is `vault`, as the deploym
 then refuses to start if it cannot seal with either key. Run the bootstrap Job before a release
 that adds a key.
 
+### Sending-address logins (handled by the bootstrap Job)
+
+An admin adds the addresses a written email may go out from, each with its own SMTP login (api
+ADR-039). The api writes each login to `secret/data/api/sending/<id>` and reads it when it sends.
+The `api` policy may create, read, update and delete under `secret/data/api/sending/` and delete
+under `secret/metadata/api/sending/`, so removing an address leaves no versions behind; every other
+path the api reads stays read-only. The deployment sets `EMAIL_SENDING_LOGINS` to `vault`. Run the
+bootstrap Job before the release that brings sending addresses, so the policy is in place.
+
 After a release that adds sealing, run the `user.seal-addresses` job once from Jobs in Management.
 It seals every address still in plaintext, soft-deleted ones included, and empties the plaintext.
 It is safe to run again. A database backup taken after it ran shows no address without Vault, and

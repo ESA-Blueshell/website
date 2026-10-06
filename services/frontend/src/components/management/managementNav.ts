@@ -51,7 +51,14 @@ const GROUPS: ManagementGroup[] = [
       {label: "Esports", to: "/management/competition"},
     ],
   },
-  {label: "Mail", entries: [{label: "Sent", to: "/management/mail/sent"}, {label: "Inbox", to: "/management/mail/inbox"}]},
+  {
+    label: "Mail",
+    entries: [
+      {label: "Sent", to: "/management/mail/sent"},
+      {label: "Inbox", to: "/management/mail/inbox"},
+      {label: "Sending addresses", to: "/management/mail/addresses"},
+    ],
+  },
   {label: "Platforms", entries: [{label: "Brevo", to: "/management/platforms/brevo"}, {label: "Discord", to: "/management/platforms/discord"}]},
   {
     label: "System",

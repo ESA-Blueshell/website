@@ -156,6 +156,14 @@ onMounted(load)
             {{ email.recipientName || email.recipientEmail }}
           </router-link><br>{{ email.recipientEmail }}
         </p>
+        <template v-if="email.senderAddress">
+          <p class="email__aside-title">
+            From
+          </p>
+          <p data-testid="sent-email-sender">
+            {{ email.senderAddress }}
+          </p>
+        </template>
         <p class="email__aside-title">
           What happened
         </p>

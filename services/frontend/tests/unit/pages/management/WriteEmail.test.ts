@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
   sendTestEmail: vi.fn(),
   render: vi.fn(),
   findUsers: vi.fn(),
+  listSendingAddresses: vi.fn(),
 }))
 const {mockPush, mockStore} = vi.hoisted(() => ({
   mockPush: vi.fn(),
@@ -56,6 +57,7 @@ describe("writing an email", () => {
     api.sendTestEmail.mockResolvedValue({status: 200, data: {sent: 1}})
     api.render.mockResolvedValue({status: 200, data: {subject: "LAN night", html: "<p>Hi</p>"}})
     api.findUsers.mockResolvedValue({status: 200, data: {content: [aUser({id: 7, fullName: "Ann Vos", username: "ann"})]}})
+    api.listSendingAddresses.mockResolvedValue({status: 200, data: []})
   })
 
   afterEach(() => {
@@ -111,6 +113,28 @@ describe("writing an email", () => {
     await settle()
     expect(wrapper.find('[data-testid="write-preview-empty"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="write-test"]').attributes("disabled")).toBeDefined()
+  })
+
+  it("goes out from the default sending address unless another is picked, and says when it is gone", async () => {
+    const address = (id: number, displayName: string, isDefault: boolean) =>
+      ({id, address: `${displayName.toLowerCase()}@b.nl`, displayName, host: "smtp.b.nl", port: 587, security: "STARTTLS", isDefault, loginKept: true})
+    api.listSendingAddresses.mockResolvedValue({status: 200, data: [address(3, "Board", false), address(5, "Events", true)]})
+    const wrapper = await mount()
+    await fill(wrapper)
+
+    const from = wrapper.get('[data-testid="write-from"]').findComponent({name: "SearchPicker"})
+    expect((from.props("options") as Array<{key: string}>).map((one) => one.key)).toEqual(["5", "3", "site"])
+    expect(from.props("selectedKey")).toBe("5")
+    await wrapper.get('[data-testid="write-test"]').trigger("click")
+    await settle()
+    expect(api.sendTestEmail).toHaveBeenLastCalledWith({body: expect.objectContaining({from: 5})})
+
+    from.vm.$emit("pick", "site")
+    api.sendWrittenEmail.mockResolvedValue({status: 400, error: {code: "SendingAddressGone"}})
+    await wrapper.get("form").trigger("submit")
+    await settle()
+    expect(api.sendWrittenEmail).toHaveBeenLastCalledWith({body: expect.objectContaining({from: undefined})})
+    expect(wrapper.get('[data-testid="write-failure"]').text()).toBe("The address it was to go out from is removed. Pick another under From.")
   })
 
   it("says why a test was refused, and still writes when the people list cannot be read", async () => {

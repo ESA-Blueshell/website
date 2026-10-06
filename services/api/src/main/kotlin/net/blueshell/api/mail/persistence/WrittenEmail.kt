@@ -25,4 +25,7 @@ class WrittenEmail(
     val writtenAt: Instant,
     @Column(name = "recipients", nullable = false)
     val recipients: Int,
+    /** The added sending address it goes out from; none sends from the site's own. */
+    @Column(name = "sending_address_id")
+    val sendingAddressId: Long? = null,
 ) : AutoIdEntity()

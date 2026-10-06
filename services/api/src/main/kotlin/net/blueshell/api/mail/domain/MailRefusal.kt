@@ -20,6 +20,9 @@ class MessageMissing : MailRefusal(HttpStatus.BAD_REQUEST, "MessageMissing", "An
 
 class InboxMessageNotFound : MailRefusal(HttpStatus.NOT_FOUND, "InboxMessageNotFound", "There is no such message in the inbox.")
 
+class SendingAddressGone :
+    MailRefusal(HttpStatus.BAD_REQUEST, "SendingAddressGone", "The address it was to be sent from is no longer there.")
+
 class ReplyToNotAnAddress(
     replyTo: String,
 ) : MailRefusal(HttpStatus.BAD_REQUEST, "ReplyToNotAnAddress", "The reply-to is not one email address.", mapOf("replyTo" to replyTo))

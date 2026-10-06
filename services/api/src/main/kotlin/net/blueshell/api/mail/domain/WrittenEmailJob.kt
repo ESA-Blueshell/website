@@ -37,6 +37,7 @@ class WrittenEmailJob(
             subject = email.subject,
             markdownContent = siteMarkdown.forEmail(email.message),
             replyToOverride = email.replyTo,
+            sendingAddressId = email.sendingAddressId,
         )
     }
 }

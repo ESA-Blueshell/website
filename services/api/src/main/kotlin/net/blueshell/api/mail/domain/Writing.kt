@@ -2,6 +2,7 @@ package net.blueshell.api.mail.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.cohort.api.CohortAudiences
+import net.blueshell.api.email.api.KnownSendingAddresses
 import net.blueshell.api.mail.persistence.WrittenEmail
 import net.blueshell.api.mail.persistence.WrittenEmailRepository
 import net.blueshell.api.shared.enums.Role
@@ -40,6 +41,7 @@ class Writing(
     private val written: WrittenEmailRepository,
     private val jobs: JobQueue,
     private val clock: Clock,
+    private val known: KnownSendingAddresses,
 ) {
     /** Everybody the addressees name once, left out where they have no address. */
     @Transactional(readOnly = true)
@@ -73,7 +75,8 @@ class Writing(
         message: String,
         replyTo: String?,
         writer: Long?,
-    ): Int = queue(reach(to).userIds, subject, message, replyTo, writer)
+        from: Long? = null,
+    ): Int = queue(reach(to).userIds, subject, message, replyTo, writer, from)
 
     /** One copy to the writer, to see it as it will arrive. */
     @Transactional
@@ -82,7 +85,8 @@ class Writing(
         message: String,
         replyTo: String?,
         writer: Long,
-    ): Int = queue(setOf(writer), subject, message, replyTo, writer)
+        from: Long? = null,
+    ): Int = queue(setOf(writer), subject, message, replyTo, writer, from)
 
     private fun queue(
         people: Set<Long>,
@@ -90,11 +94,13 @@ class Writing(
         message: String,
         replyTo: String?,
         writer: Long?,
+        from: Long?,
     ): Int {
         if (subject.isBlank()) throw SubjectMissing()
+        if (from != null && !known.exists(from)) throw SendingAddressGone()
         if (message.isBlank()) throw MessageMissing()
         if (people.isEmpty()) throw NobodyToWrite()
-        val email = written.save(WrittenEmail(subject.trim(), message, checkedReplyTo(replyTo), writer, clock.instant(), people.size))
+        val email = written.save(WrittenEmail(subject.trim(), message, checkedReplyTo(replyTo), writer, clock.instant(), people.size, from))
         people.sorted().forEach { userId ->
             jobs.runAsync(MailJobs.Written, MailJobs.WrittenPayload(requireNotNull(email.id), userId), JobTrigger.SITE_ACTION)
         }

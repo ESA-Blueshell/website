@@ -1,0 +1,31 @@
+# The addresses the board may send a written email from. Each one's SMTP login is kept in Vault,
+# never here (api ADR-039); a sent email records the address it went out from.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-06-sending-address.yaml
+      id: sending-address
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: sending_address
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {nullable: false, primaryKey: true, primaryKeyName: pk_sending_address}}
+              - column: {name: address, type: VARCHAR(320), constraints: {nullable: false, unique: true, uniqueConstraintName: uq_sending_address_address}}
+              - column: {name: display_name, type: VARCHAR(128), constraints: {nullable: false}}
+              - column: {name: host, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: port, type: INT, constraints: {nullable: false}}
+              - column: {name: security, type: VARCHAR(16), constraints: {nullable: false}}
+              - column: {name: is_default, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+              - column: {name: login_kept_at, type: DATETIME(6)}
+        - addColumn:
+            tableName: emails
+            columns:
+              - column: {name: sender_address, type: VARCHAR(320)}
+        - addColumn:
+            tableName: written_emails
+            columns:
+              - column: {name: sending_address_id, type: BIGINT}
+      rollback:
+        - dropColumn: {tableName: written_emails, columnName: sending_address_id}
+        - dropColumn: {tableName: emails, columnName: sender_address}
+        - dropTable: {tableName: sending_address}

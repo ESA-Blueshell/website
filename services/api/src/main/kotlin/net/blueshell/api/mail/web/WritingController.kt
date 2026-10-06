@@ -36,6 +36,8 @@ data class WriteEmailRequest(
     @param:Schema(description = "The message as the site's editor writes it, in Discord's markdown")
     val message: String = "",
     val replyTo: String? = null,
+    @param:Schema(description = "The added sending address it goes out from; none sends from the site's own")
+    val from: Long? = null,
 )
 
 @Schema(name = "WrittenResponse")
@@ -72,13 +74,14 @@ class WritingController(
     @PostMapping("/mail/send")
     fun sendWrittenEmail(
         @RequestBody request: WriteEmailRequest,
-    ): WrittenResponse = WrittenResponse(writing.send(request.to, request.subject, request.message, request.replyTo, writer()))
+    ): WrittenResponse =
+        WrittenResponse(writing.send(request.to, request.subject, request.message, request.replyTo, writer(), request.from))
 
     @BoardOnly
     @PostMapping("/mail/test")
     fun sendTestEmail(
         @RequestBody request: WriteEmailRequest,
-    ): WrittenResponse = WrittenResponse(writing.test(request.subject, request.message, request.replyTo, writer()))
+    ): WrittenResponse = WrittenResponse(writing.test(request.subject, request.message, request.replyTo, writer(), request.from))
 
     private fun writer(): Long = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
 }

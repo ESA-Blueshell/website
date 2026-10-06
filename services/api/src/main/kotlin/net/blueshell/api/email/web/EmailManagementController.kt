@@ -205,4 +205,5 @@ private fun Email.toDto() =
         previewable = this.bodyMarkdown != null,
         resentFromId = this.resentFromId,
         initiatedByUserId = this.initiatedByUserId,
+        senderAddress = this.senderAddress,
     )

@@ -120,6 +120,9 @@ spec:
             # Private details are sealed by Vault Transit, never by the stand-in (api ADR-038).
             - name: PRIVACY_SEALING
               value: vault
+            # Sending addresses keep their SMTP logins in Vault, never in the database (api ADR-039).
+            - name: EMAIL_SENDING_LOGINS
+              value: vault
           ports:
             - containerPort: 8080
               name: http

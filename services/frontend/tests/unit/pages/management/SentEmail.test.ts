@@ -32,6 +32,7 @@ const bounced = {
   recipientName: "Lars Mulder", deliveryStatus: "BOUNCED", attempts: 1, jobExecutionId: 48, initiatedByUserId: 3,
   messageId: "<m@b.nl>", errorReason: "550 5.1.1 no such mailbox", createdAt: "2026-09-29T09:39:00Z",
   sentAt: "2026-09-29T09:40:00Z", updatedAt: "2026-09-29T09:41:00Z", previewable: true, resentFromId: 2,
+  senderAddress: "events@b.nl",
 }
 
 describe("the one email page", () => {
@@ -63,6 +64,7 @@ describe("the one email page", () => {
     expect(wrapper.get('[data-testid="sent-email-problem"]').text()).toContain("550 5.1.1 no such mailbox")
     expect(wrapper.get('[data-testid="sent-email-person-fix"]').attributes("to")).toBe("/management/users?search=lars%40example.com")
     expect(wrapper.get('[data-testid="sent-email-timeline"]').text()).toContain("Bounced")
+    expect(wrapper.get('[data-testid="sent-email-sender"]').text()).toBe("events@b.nl")
     expect(wrapper.get('[data-testid="sent-email-as-sent"]').attributes("srcdoc")).toContain("Hi Lars")
     expect(wrapper.get('[data-testid="sent-email-resends"]').text()).toContain("Queued")
     expect(wrapper.get('[data-testid="sent-email-resent-from"]').attributes("to")).toBe("/management/mail/sent/2")

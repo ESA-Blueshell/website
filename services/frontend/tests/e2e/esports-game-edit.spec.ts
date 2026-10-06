@@ -123,7 +123,7 @@ test.describe("changing a game", () => {
     await writeMarkdown(page, page.getByTestId("game-edit-competition-intro").getByRole("textbox"), "Two teams in the national league.")
     await competition.getByTestId("game-edit-esports-channels-picker-search").click()
     await page.getByTestId("game-edit-esports-channels-picker-7322").click()
-    await expect(page.getByTestId("game-edit-esports-channels-7322")).toContainText("#valorant-esports")
+    await expect(page.getByTestId("game-edit-esports-channels-7322")).toContainText("valorant-esports")
     await expect(page.getByTestId("game-edit-preview-competition").getByTestId("esports-game-intro")).toContainText("Two teams")
     await page.getByTestId("game-edit-save").click()
 

@@ -2623,6 +2623,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && (path === "/management/discord/roles" || path === "/management/discord/channels")) {
       return answer(route, path.endsWith("roles") ? "listKeptRoles" : "listKeptChannels", [])
     }
+    if (method === "GET" && path === "/management/discord/catalogue/channels") {
+      return answer(route, "listCataloguedChannels", [])
+    }
     if (method === "GET" && /^\/management\/discord\/games\/\w+\/access$/.test(path)) {
       return answer(route, "findGameAccess", {policy: {everyone: "READ", members: "WRITE"}, channels: []})
     }

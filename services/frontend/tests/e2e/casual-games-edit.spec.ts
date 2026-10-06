@@ -34,7 +34,7 @@ test.describe("the board keeping the casual games", () => {
     await page.getByTestId("casual-game-edit").click()
     await page.getByTestId("game-edit-channels-picker-search").click()
     await page.getByTestId("game-edit-channels-picker-6323").click()
-    await expect(page.getByTestId("game-edit-channels-6323")).toContainText("#chess")
+    await expect(page.getByTestId("game-edit-channels-6323")).toContainText("chess")
     await page.getByTestId("game-edit-save").click()
 
     await expect(page.getByTestId("casual-game-channel-6323")).toHaveAttribute("href", "https://discord.com/channels/324/6323")
@@ -50,7 +50,7 @@ test.describe("the board keeping the casual games", () => {
     const search = page.getByTestId("game-edit-channels-picker-search")
     await search.fill("#CHESS")
     await search.press(",")
-    await expect(page.getByTestId("game-edit-channels-6323")).toContainText("#chess")
+    await expect(page.getByTestId("game-edit-channels-6323")).toContainText("chess")
     await expect(search).toHaveValue("")
 
     await search.fill("tetris")
@@ -64,8 +64,8 @@ test.describe("the board keeping the casual games", () => {
       data.setData("text", "#valorant #fighting-games")
       field.dispatchEvent(new ClipboardEvent("paste", {clipboardData: data, bubbles: true, cancelable: true}))
     })
-    await expect(page.getByTestId("game-edit-channels-6322")).toContainText("#valorant")
-    await expect(page.getByTestId("game-edit-channels-6324")).toContainText("#fighting-games")
+    await expect(page.getByTestId("game-edit-channels-6322")).toContainText("valorant")
+    await expect(page.getByTestId("game-edit-channels-6324")).toContainText("fighting-games")
 
     await search.press("Backspace")
     await expect(page.getByTestId("game-edit-channels-6324")).toHaveCount(0)

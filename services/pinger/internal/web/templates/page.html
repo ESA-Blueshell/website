@@ -58,10 +58,12 @@
         if (!px || !spark || !px.getContext) return;
         var base = px.getContext('2d');
         var top = spark.getContext('2d');
-        var xs, ys, cols, order, n = 0, cursor = 0;
+        top.globalCompositeOperation = 'lighter'; // glow without a CSS blend layer
+        var xs, ys, cols, order, n = 0, cursor = 0, last = 0, full = false, staticDrawn = false, built = false;
 
-        var img = new Image();
-        img.onload = function () {
+        function build() {
+          if (built) return; // once only, so the loop never stacks
+          built = true;
           var off = document.createElement('canvas');
           off.width = 600; off.height = 480;
           var octx = off.getContext('2d');
@@ -80,42 +82,43 @@
           for (var j = 0; j < n; j++) order[j] = j;
           for (var k = n - 1; k > 0; k--) { var m = (Math.random() * (k + 1)) | 0; var t = order[k]; order[k] = order[m]; order[m] = t; }
           requestAnimationFrame(loop);
-        };
-        // Attach onload before src, and cover the cached case: the ghost img may have already
-        // loaded /preview.png, so a late handler would never fire.
+        }
+        var img = new Image();
+        img.onload = build;
         img.src = '/preview.png';
-        if (img.complete && img.naturalWidth) img.onload();
+        if (img.complete && img.naturalWidth) build();
 
-        var last = 0, staticDrawn = false;
         function drawAll() {
           for (var i = 0; i < n; i++) { base.fillStyle = cols[order[i]]; base.fillRect(xs[order[i]], ys[order[i]], 1, 1); }
         }
         function loop(now) {
           requestAnimationFrame(loop);
           if (!n) return;
-          var dt = last ? (now - last) / 1000 : 0; last = now;
+          var dt = last ? (now - last) / 1000 : 0.016; last = now;
+          if (dt > 0.1) dt = 0.1; // after a stall, don't draw one giant burst
           var el = document.querySelector('[data-live-meter]');
           var pps = el ? +el.dataset.pps : 0;
           var state = el ? el.dataset.state : 'idle';
           var lit = state !== 'idle' && state !== 'closed';
           var running = el && el.dataset.running === 'true';
 
-          if (!lit) { base.clearRect(0, 0, 600, 480); top.clearRect(0, 0, 600, 480); cursor = 0; staticDrawn = false; return; }
+          if (!lit) { base.clearRect(0, 0, 600, 480); top.clearRect(0, 0, 600, 480); cursor = 0; full = false; staticDrawn = false; return; }
           if (!smooth) { if (!staticDrawn) { drawAll(); staticDrawn = true; } top.clearRect(0, 0, 600, 480); return; }
           staticDrawn = false;
           top.clearRect(0, 0, 600, 480);
           if (!running) return; // paused: hold the built-up logo, no sparks
 
           var step = Math.min(n, Math.max(1, Math.round(pps * dt)));
+          // Draw the base only until the logo is fully painted once, then it stays. Cap the spark
+          // dots per frame so a high rate never explodes the draw-call count.
+          var every = step > 300 ? Math.ceil(step / 300) : 1;
+          top.fillStyle = '#7fd8ff';
           for (var s = 0; s < step; s++) {
             var idx = order[cursor];
-            base.fillStyle = cols[idx];
-            base.fillRect(xs[idx], ys[idx], 1, 1);
-            // The same pixels, brighter, on the spark layer: what we are painting this moment.
-            top.fillStyle = '#eaffff';
-            top.fillRect(xs[idx] - 1, ys[idx] - 1, 3, 3);
+            if (!full) { base.fillStyle = cols[idx]; base.fillRect(xs[idx], ys[idx], 1, 1); }
+            if (s % every === 0) top.fillRect(xs[idx] - 1, ys[idx] - 1, 2, 2);
             cursor++;
-            if (cursor >= n) cursor = 0;
+            if (cursor >= n) { cursor = 0; full = true; }
           }
         }
       }

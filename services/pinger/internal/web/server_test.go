@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -90,12 +91,13 @@ func TestAnAdminSeesTheSettingsForm(t *testing.T) {
 	}
 }
 
-func TestTheStatsFragmentStandsAlone(t *testing.T) {
+func TestLiveJSONStandsAlone(t *testing.T) {
 	h := newTestServer(false, &fakeSettings{current: paint.Settings{RatePPS: 50_000}})
 
-	code, body := get(t, h, "/stats", "")
+	code, body := get(t, h, "/live.json", "")
 
-	if code != http.StatusOK || strings.Contains(body, "<html") || !strings.Contains(body, "1.2M") {
+	var st map[string]any
+	if code != http.StatusOK || strings.Contains(body, "<html") || json.Unmarshal([]byte(body), &st) != nil || st["sent"] != "1.2M" || st["state"] != "running" {
 		t.Fatalf("status %d, body %q", code, body)
 	}
 }
@@ -214,11 +216,12 @@ func TestTheSocketPushesTheLiveRegion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	body := string(data)
-	for _, want := range []string{`id="live"`, "1.2M", "data-live-meter"} {
-		if !strings.Contains(body, want) {
-			t.Errorf("push lacks %q", want)
-		}
+	var st map[string]any
+	if err := json.Unmarshal(data, &st); err != nil {
+		t.Fatalf("push is not JSON: %v (%q)", err, data)
+	}
+	if st["sent"] != "1.2M" || st["state"] != "running" || st["running"] != true {
+		t.Errorf("push = %v", st)
 	}
 }
 

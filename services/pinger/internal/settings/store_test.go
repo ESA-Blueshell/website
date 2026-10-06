@@ -47,7 +47,7 @@ func TestAFreshValkeyGivesNoPrefixAndTheDefaultRate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := paint.Settings{RatePPS: 50_000}
+	want := paint.Settings{RatePPS: 100}
 	if got != want {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}

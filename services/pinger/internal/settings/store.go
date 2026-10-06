@@ -19,7 +19,7 @@ const (
 	keyRate   = "pinger:rate_pps"
 	keyPaused = "pinger:paused"
 
-	DefaultRatePPS = 50_000
+	DefaultRatePPS = 100
 )
 
 type Store struct {

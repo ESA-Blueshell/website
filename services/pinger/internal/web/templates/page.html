@@ -59,7 +59,7 @@
         var base = px.getContext('2d');
         var top = spark.getContext('2d');
         top.globalCompositeOperation = 'lighter'; // glow without a CSS blend layer
-        var xs, ys, cols, order, n = 0, cursor = 0, last = 0, full = false, staticDrawn = false, built = false;
+        var xs, ys, cols, order, n = 0, built = false, drawn = 0, base0 = -1, t0 = 0;
 
         function build() {
           if (built) return; // once only, so the loop never stacks
@@ -88,54 +88,73 @@
         img.src = '/preview.png';
         if (img.complete && img.naturalWidth) build();
 
-        function drawAll() {
-          for (var i = 0; i < n; i++) { base.fillStyle = cols[order[i]]; base.fillRect(xs[order[i]], ys[order[i]], 1, 1); }
-        }
+        // The fill tracks the real pass: we draw the first `target` pixels of the shuffled order,
+        // where target is this pass's progress interpolated between pushes. When a pass completes
+        // the count drops, so we clear and repaint — the logo visibly fills, over and over.
         function loop(now) {
           requestAnimationFrame(loop);
           if (!n) return;
-          var dt = last ? (now - last) / 1000 : 0.016; last = now;
-          if (dt > 0.1) dt = 0.1; // after a stall, don't draw one giant burst
-          var el = document.querySelector('[data-live-meter]');
-          var pps = el ? +el.dataset.pps : 0;
+          var el = document.getElementById('live');
+          var total = el ? (+el.dataset.passtotal || 1) : 1;
+          var bd = el ? (+el.dataset.passdone || 0) : 0;
+          var pps = el ? (+el.dataset.pps || 0) : 0;
           var state = el ? el.dataset.state : 'idle';
-          var lit = state !== 'idle' && state !== 'closed';
           var running = el && el.dataset.running === 'true';
+          var lit = state !== 'idle' && state !== 'closed';
 
-          if (!lit) { base.clearRect(0, 0, 600, 480); top.clearRect(0, 0, 600, 480); cursor = 0; full = false; staticDrawn = false; return; }
-          if (!smooth) { if (!staticDrawn) { drawAll(); staticDrawn = true; } top.clearRect(0, 0, 600, 480); return; }
-          staticDrawn = false;
+          if (!lit) { base.clearRect(0, 0, 600, 480); top.clearRect(0, 0, 600, 480); drawn = 0; base0 = -1; return; }
+          if (bd !== base0) { base0 = bd; t0 = now; } // resync to each fresh server count
+          var done = running && smooth ? Math.min(total, base0 + pps * (now - t0) / 1000) : base0;
+          var target = Math.max(0, Math.min(n, Math.floor(done / total * n)));
+          if (target < drawn) { base.clearRect(0, 0, 600, 480); drawn = 0; } // pass wrapped: repaint
+
           top.clearRect(0, 0, 600, 480);
-          if (!running) return; // paused: hold the built-up logo, no sparks
-
-          var step = Math.min(n, Math.max(1, Math.round(pps * dt)));
-          // Draw the base only until the logo is fully painted once, then it stays. Cap the spark
-          // dots per frame so a high rate never explodes the draw-call count.
-          var every = step > 300 ? Math.ceil(step / 300) : 1;
+          for (var j = drawn; j < target; j++) { var idx = order[j]; base.fillStyle = cols[idx]; base.fillRect(xs[idx], ys[idx], 1, 1); }
+          // Spark the pixels at the leading edge — the ones just painted — capped per frame.
           top.fillStyle = '#7fd8ff';
-          for (var s = 0; s < step; s++) {
-            var idx = order[cursor];
-            if (!full) { base.fillStyle = cols[idx]; base.fillRect(xs[idx], ys[idx], 1, 1); }
-            if (s % every === 0) top.fillRect(xs[idx] - 1, ys[idx] - 1, 2, 2);
-            cursor++;
-            if (cursor >= n) { cursor = 0; full = true; }
-          }
+          for (var s = Math.max(0, target - 300); s < target; s++) { var id2 = order[s]; top.fillRect(xs[id2] - 1, ys[id2] - 1, 2, 2); }
+          drawn = target;
         }
       }
 
-      function swap(html) {
-        var cur = document.getElementById('live');
-        if (cur) cur.outerHTML = html;
+      // Bind one push of live state onto the page: set data for the bar and canvas, update each
+      // text node, toggle the sections. No HTML is re-parsed — only the values that changed move.
+      function setText(id, v) { var e = document.getElementById(id); if (e && e.textContent !== v) e.textContent = v; }
+      function show(id, on) { var e = document.getElementById(id); if (e) e.style.display = on ? '' : 'none'; }
+      function apply(st) {
+        var live = document.getElementById('live');
+        if (live) {
+          live.dataset.passdone = st.passDone; live.dataset.passtotal = st.passTotal;
+          live.dataset.pps = st.ppsRaw; live.dataset.running = st.running ? 'true' : 'false'; live.dataset.state = st.state;
+        }
+        var chip = document.getElementById('chip'); if (chip) chip.className = st.chipClass;
+        setText('chip-label', st.chipLabel);
+        show('cd-sec', st.closed); show('err-sec', st.showErrors); show('num-sec', st.showNumbers); show('rate-sec', st.hasRate);
+        var cd = st.countdown || {}; setText('cd-d', cd.d); setText('cd-h', cd.h); setText('cd-m', cd.m); setText('cd-s', cd.s);
+        setText('err-title', st.errorTitle); setText('err-at', st.lastErrorAt); setText('err-msg', st.lastError);
+        setText('n-pps', st.pps); setText('n-cap', st.cap); setText('n-sent', st.sent); setText('n-passes', st.passes);
+        var ne = document.getElementById('n-errors');
+        if (ne) { ne.textContent = st.errors; ne.className = 'number-band__value' + (st.errorsWrong ? ' number-band__value--wrong' : ''); }
+        setText('m-done', st.passDoneTxt); setText('m-total', st.passTotalTxt); setText('eta', st.eta);
+        setText('prefixtag', st.prefixLabel);
+        if (st.hasRate) {
+          var poly = document.getElementById('r-poly'); if (poly) poly.setAttribute('points', st.ratePoints);
+          var area = document.getElementById('r-area'); if (area) area.setAttribute('points', st.rateArea);
+          var rcap = document.getElementById('r-cap'); if (rcap) rcap.style.bottom = st.rateCap + '%';
+          var rnow = document.getElementById('r-now'); if (rnow) rnow.style.top = st.rateLastY + '%';
+          setText('r-nowv', st.pps); setText('r-ceil', st.rateCeil);
+          setText('r-count', '' + st.rateCount); setText('r-count2', '' + st.rateCount); setText('r-cap-txt', st.cap);
+        }
         syncMeter();
       }
 
       // The socket is the live feed; a timed fetch is the fallback when it cannot hold.
       var ws, backoff = 1000, poll;
       function fetchOnce() {
-        fetch('/stats', { headers: { 'X-Requested-With': 'fetch' } })
-          .then(function (r) { return r.text(); }).then(swap).catch(function () {});
+        fetch('/live.json', { headers: { 'X-Requested-With': 'fetch' } })
+          .then(function (r) { return r.json(); }).then(apply).catch(function () {});
       }
-      function startPolling() { if (!poll) { fetchOnce(); poll = setInterval(fetchOnce, 2000); } }
+      function startPolling() { if (!poll) { fetchOnce(); poll = setInterval(fetchOnce, 1000); } }
       function stopPolling() { clearInterval(poll); poll = null; }
 
       function connect() {
@@ -143,7 +162,7 @@
         var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
         ws = new WebSocket(proto + '//' + location.host + '/ws');
         ws.onopen = function () { backoff = 1000; stopPolling(); };
-        ws.onmessage = function (e) { swap(e.data); };
+        ws.onmessage = function (e) { try { apply(JSON.parse(e.data)); } catch (x) {} };
         ws.onclose = function () {
           startPolling();
           setTimeout(connect, backoff);
@@ -177,7 +196,7 @@
         <p class="page-head__body body-ash">We paint the Blueshell shell onto <a href="https://pings.utwente.io/" style="color: var(--color-brand-ink);">pings.utwente.io</a>, pass after pass.</p>
       </div>
       <div class="head-acts">
-        <span class="{{.ChipClass}}"><span class="state-chip__dot"></span>{{.ChipLabel}}</span>
+        <span id="chip" class="{{.ChipClass}}"><span class="state-chip__dot"></span><span id="chip-label">{{.ChipLabel}}</span></span>
       </div>
     </div>
   </section>
@@ -221,7 +240,7 @@
           <span class="plate__shade"></span>
         </div>
         <span class="plate__tag plate__tag--tl">0 · 0</span>
-        <span class="plate__tag plate__tag--br">{{.PrefixLabel}}</span>
+        <span class="plate__tag plate__tag--br" id="prefixtag">{{.PrefixLabel}}</span>
       </div>
     </div>
   </section>
@@ -312,67 +331,61 @@
 </body>
 </html>{{end}}
 
-{{define "live"}}<div id="live">
-  {{if .IsClosed}}
-  <section class="number-band countdown">
+{{define "live"}}<div id="live" data-live-meter data-passdone="{{.Stats.PassDone}}" data-passtotal="{{.Stats.PassTotal}}" data-pps="{{.Stats.ActualPPS}}" data-running="{{.IsRunning}}" data-state="{{.State}}">
+  <section id="cd-sec" class="number-band countdown"{{if not .IsClosed}} style="display:none"{{end}}>
     <div class="wrap">
       <p class="eyebrow" style="padding-top: 2.25rem;">Until the canvas opens</p>
       <div class="number-band__grid" style="padding-top: 1.25rem;">
-        <div class="number-band__cell"><p class="number-band__value">{{.Countdown.Days}}</p><p class="number-band__label">Days</p></div>
-        <div class="number-band__cell"><p class="number-band__value">{{.Countdown.Hours}}</p><p class="number-band__label">Hours</p></div>
-        <div class="number-band__cell"><p class="number-band__value">{{.Countdown.Minutes}}</p><p class="number-band__label">Minutes</p></div>
-        <div class="number-band__cell"><p class="number-band__value">{{.Countdown.Seconds}}</p><p class="number-band__label">Seconds</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="cd-d">{{.Countdown.Days}}</p><p class="number-band__label">Days</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="cd-h">{{.Countdown.Hours}}</p><p class="number-band__label">Hours</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="cd-m">{{.Countdown.Minutes}}</p><p class="number-band__label">Minutes</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="cd-s">{{.Countdown.Seconds}}</p><p class="number-band__label">Seconds</p></div>
       </div>
     </div>
   </section>
-  {{end}}
 
-  {{if .ShowErrors}}
-  <section>
+  <section id="err-sec"{{if not .ShowErrors}} style="display:none"{{end}}>
     <div class="wrap" style="padding-top: 1.75rem;">
       <div class="notice notice--danger">
-        <p class="notice__title">{{.ErrorTitle}}</p>
-        <p class="notice__body">Last at {{.LastErrorAt}}: {{.Stats.LastError}}. The sender backs off and carries on.</p>
+        <p class="notice__title" id="err-title">{{.ErrorTitle}}</p>
+        <p class="notice__body">Last at <span id="err-at">{{.LastErrorAt}}</span>: <span id="err-msg">{{.Stats.LastError}}</span>. The sender backs off and carries on.</p>
       </div>
     </div>
   </section>
-  {{end}}
 
-  {{if .ShowNumbers}}
-  <section class="number-band">
+  <section id="num-sec" class="number-band"{{if not .ShowNumbers}} style="display:none"{{end}}>
     <div class="wrap">
       <div class="number-band__grid">
-        <div class="number-band__cell"><p class="number-band__value">{{thousands .Stats.ActualPPS}}</p><p class="number-band__label">Packets per second, cap {{thousands .Settings.RatePPS}}</p></div>
-        <div class="number-band__cell"><p class="number-band__value">{{compact .Stats.Sent}}</p><p class="number-band__label">Pixels sent</p></div>
-        <div class="number-band__cell"><p class="number-band__value">{{compact .Stats.Passes}}</p><p class="number-band__label">Passes over the logo</p></div>
-        <div class="number-band__cell"><p class="number-band__value{{if .Stats.Errors}} number-band__value--wrong{{end}}">{{compact .Stats.Errors}}</p><p class="number-band__label">Send errors</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="n-pps">{{thousands .Stats.ActualPPS}}</p><p class="number-band__label">Packets per second, cap <span id="n-cap">{{thousands .Settings.RatePPS}}</span></p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="n-sent">{{compact .Stats.Sent}}</p><p class="number-band__label">Pixels sent</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="n-passes">{{compact .Stats.Passes}}</p><p class="number-band__label">Passes over the logo</p></div>
+        <div class="number-band__cell"><p class="number-band__value{{if .Stats.Errors}} number-band__value--wrong{{end}}" id="n-errors">{{compact .Stats.Errors}}</p><p class="number-band__label">Send errors</p></div>
       </div>
-      <div class="meter-row" data-live-meter data-passdone="{{.Stats.PassDone}}" data-passtotal="{{.Stats.PassTotal}}" data-pps="{{.Stats.ActualPPS}}" data-running="{{.IsRunning}}" data-state="{{.State}}">
+      <div class="meter-row">
         <p class="meter-row__label">This pass</p>
         <div class="meter-cut" role="progressbar" aria-label="This pass" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.PassPercent}}"><span class="meter-cut__fill" style="width: {{.PassPercent}}%;"></span></div>
-        <p class="meter-row__said"><b class="meter-pct">{{.PassPercent}}%</b> · {{compact .Stats.PassDone}} of {{compact .Stats.PassTotal}}</p>
+        <p class="meter-row__said"><b class="meter-pct">{{.PassPercent}}%</b> · <span id="m-done">{{compact .Stats.PassDone}}</span> of <span id="m-total">{{compact .Stats.PassTotal}}</span></p>
       </div>
-      <p class="meter-eta">A full paint of the logo takes about <b>{{.PassEta}}</b> at this rate.</p>
+      <p class="meter-eta">A full paint of the logo takes about <b id="eta">{{.PassEta}}</b> at this rate.</p>
     </div>
   </section>
 
-  {{if .RatePoints}}
-  <section class="lead">
+  <section id="rate-sec" class="lead"{{if not .RatePoints}} style="display:none"{{end}}>
     <div class="wrap history">
       <div class="history__head">
         <div>
           <p class="eyebrow">Rate</p>
-          <h2 class="h-sub" style="margin-top: 0.5rem;">The last {{.RateCount}} seconds</h2>
+          <h2 class="h-sub" style="margin-top: 0.5rem;">The last <span id="r-count">{{.RateCount}}</span> seconds</h2>
         </div>
-        <p class="history__legend"><i></i>Cap {{thousands .Settings.RatePPS}} a second</p>
+        <p class="history__legend"><i></i>Cap <span id="r-cap-txt">{{thousands .Settings.RatePPS}}</span> a second</p>
       </div>
       <div class="history__chart">
         <div class="history__yaxis">
-          <span>{{thousands .RateCeil}}</span>
+          <span id="r-ceil">{{thousands .RateCeil}}</span>
           <span>0</span>
         </div>
         <div class="history__plot">
-          <span class="history__cap" style="bottom: {{.CapPercent}}%;"></span>
+          <span class="history__cap" id="r-cap" style="bottom: {{.CapPercent}}%;"></span>
           <svg class="history__line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <linearGradient id="rate-fill" x1="0" y1="0" x2="0" y2="1">
@@ -380,15 +393,13 @@
                 <stop class="history__fill-bottom" offset="1"></stop>
               </linearGradient>
             </defs>
-            <polygon class="history__area" points="{{.RateArea}}"></polygon>
-            <polyline class="history__stroke" points="{{.RatePoints}}"></polyline>
+            <polygon class="history__area" id="r-area" points="{{.RateArea}}"></polygon>
+            <polyline class="history__stroke" id="r-poly" points="{{.RatePoints}}"></polyline>
           </svg>
-          <span class="history__now" style="top: {{.RateLastY}}%;"><span class="history__dot"></span><b>{{thousands .Stats.ActualPPS}}</b>/s</span>
+          <span class="history__now" id="r-now" style="top: {{.RateLastY}}%;"><span class="history__dot"></span><b id="r-nowv">{{thousands .Stats.ActualPPS}}</b>/s</span>
         </div>
       </div>
-      <div class="history__axis"><span>{{.RateCount}} s ago</span><span>Now</span></div>
+      <div class="history__axis"><span><span id="r-count2">{{.RateCount}}</span> s ago</span><span>Now</span></div>
     </div>
   </section>
-  {{end}}
-  {{end}}
 </div>{{end}}

@@ -2,9 +2,9 @@
 package web
 
 import (
-	"bytes"
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -21,9 +21,9 @@ import (
 	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
 )
 
-// liveInterval is how often the socket pushes a fresh live region. The sender samples its rate
-// once a second, so a faster push would send the same numbers; the bar glides between pushes.
-const liveInterval = time.Second
+// liveInterval is how often the socket pushes the live state. It is a small JSON object, not
+// HTML, so a few times a second is cheap and the page reflects the real state quickly.
+const liveInterval = 250 * time.Millisecond
 
 // socketMaxAge bounds a socket's life. Traefik's forward-auth gates the upgrade, not the open
 // socket, so this is what re-gates a viewer whose membership lapsed: the socket closes, the page
@@ -72,7 +72,7 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", s.index)
-	mux.HandleFunc("GET /stats", s.statsFragment)
+	mux.HandleFunc("GET /live.json", s.liveJSON)
 	mux.HandleFunc("GET /ws", s.socket)
 	mux.HandleFunc("POST /settings", s.saveSettings)
 	mux.HandleFunc("GET /preview.png", s.previewImage)
@@ -94,7 +94,12 @@ type preset struct {
 	On    bool
 }
 
-type countdown struct{ Days, Hours, Minutes, Seconds string }
+type countdown struct {
+	Days    string `json:"d"`
+	Hours   string `json:"h"`
+	Minutes string `json:"m"`
+	Seconds string `json:"s"`
+}
 
 type view struct {
 	Stats       paint.Stats
@@ -190,7 +195,7 @@ func chip(state string) (label, class string) {
 	}
 }
 
-var presetRates = []int{10_000, 25_000, 50_000, 100_000}
+var presetRates = []int{100, 1_000, 10_000, 50_000}
 
 func presets(current int) []preset {
 	out := make([]preset, len(presetRates))
@@ -270,13 +275,72 @@ func (s *server) index(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "page", s.view(r))
 }
 
-func (s *server) statsFragment(w http.ResponseWriter, r *http.Request) {
-	s.render(w, "live", s.view(r))
+// liveState is the live feed the socket pushes as JSON. Raw numbers drive the bar and the canvas,
+// the formatted strings fill the text, and the flags toggle the sections. The page binds each
+// field to a node, so the browser never re-parses HTML to show a new value.
+type liveState struct {
+	State        string    `json:"state"`
+	Running      bool      `json:"running"`
+	Idle         bool      `json:"idle"`
+	Closed       bool      `json:"closed"`
+	ShowNumbers  bool      `json:"showNumbers"`
+	ShowErrors   bool      `json:"showErrors"`
+	ChipLabel    string    `json:"chipLabel"`
+	ChipClass    string    `json:"chipClass"`
+	PPS          string    `json:"pps"`
+	Sent         string    `json:"sent"`
+	Passes       string    `json:"passes"`
+	Errors       string    `json:"errors"`
+	ErrorsWrong  bool      `json:"errorsWrong"`
+	PassPercent  int       `json:"passPercent"`
+	PassDoneTxt  string    `json:"passDoneTxt"`
+	PassTotalTxt string    `json:"passTotalTxt"`
+	PassDone     int       `json:"passDone"`
+	PassTotal    int       `json:"passTotal"`
+	PPSRaw       uint64    `json:"ppsRaw"`
+	Cap          string    `json:"cap"`
+	Eta          string    `json:"eta"`
+	PrefixLabel  string    `json:"prefixLabel"`
+	ErrorTitle   string    `json:"errorTitle"`
+	LastErrorAt  string    `json:"lastErrorAt"`
+	LastError    string    `json:"lastError"`
+	Countdown    countdown `json:"countdown"`
+	HasRate      bool      `json:"hasRate"`
+	RateCount    int       `json:"rateCount"`
+	RatePoints   string    `json:"ratePoints"`
+	RateArea     string    `json:"rateArea"`
+	RateCap      int       `json:"rateCap"`
+	RateLastY    string    `json:"rateLastY"`
+	RateCeil     string    `json:"rateCeil"`
 }
 
-// socket pushes the live region over a WebSocket, once a second. The viewer's browser swaps it
-// in and interpolates the pass bar between pushes. A failed write means the viewer left, so the
-// loop ends. The default origin check rejects a socket opened from another site.
+func liveFrom(v view) liveState {
+	return liveState{
+		State: v.State, Running: v.IsRunning, Idle: v.IsIdle, Closed: v.IsClosed,
+		ShowNumbers: v.ShowNumbers, ShowErrors: v.ShowErrors,
+		ChipLabel: v.ChipLabel, ChipClass: v.ChipClass,
+		PPS: thousands(v.Stats.ActualPPS), Sent: compact(v.Stats.Sent),
+		Passes: compact(v.Stats.Passes), Errors: compact(v.Stats.Errors), ErrorsWrong: v.Stats.Errors > 0,
+		PassPercent: v.PassPercent,
+		PassDoneTxt: compact(v.Stats.PassDone), PassTotalTxt: compact(v.Stats.PassTotal),
+		PassDone: v.Stats.PassDone, PassTotal: v.Stats.PassTotal, PPSRaw: v.Stats.ActualPPS,
+		Cap: thousands(v.Settings.RatePPS), Eta: v.PassEta, PrefixLabel: v.PrefixLabel,
+		ErrorTitle: v.ErrorTitle, LastErrorAt: v.LastErrorAt, LastError: v.Stats.LastError,
+		Countdown: v.Countdown,
+		HasRate:   v.RatePoints != "", RateCount: v.RateCount,
+		RatePoints: v.RatePoints, RateArea: v.RateArea, RateCap: v.CapPercent,
+		RateLastY: v.RateLastY, RateCeil: thousands(v.RateCeil),
+	}
+}
+
+func (s *server) liveJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	_ = json.NewEncoder(w).Encode(liveFrom(s.view(r)))
+}
+
+// socket pushes the live state as JSON a few times a second. A failed write means the viewer
+// left, so the loop ends. The default origin check rejects a socket opened from another site.
 func (s *server) socket(w http.ResponseWriter, r *http.Request) {
 	c, err := websocket.Accept(w, r, nil)
 	if err != nil {
@@ -289,12 +353,12 @@ func (s *server) socket(w http.ResponseWriter, r *http.Request) {
 	tick := time.NewTicker(liveInterval)
 	defer tick.Stop()
 	for {
-		var buf bytes.Buffer
-		if err := s.page.ExecuteTemplate(&buf, "live", s.view(r)); err != nil {
-			slog.Error("render live", "err", err)
+		b, err := json.Marshal(liveFrom(s.view(r)))
+		if err != nil {
+			slog.Error("marshal live", "err", err)
 			return
 		}
-		if err := c.Write(ctx, websocket.MessageText, buf.Bytes()); err != nil {
+		if err := c.Write(ctx, websocket.MessageText, b); err != nil {
 			return
 		}
 		select {

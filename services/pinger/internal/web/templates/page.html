@@ -1,0 +1,102 @@
+{{define "page"}}<!doctype html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blueshell Pinger</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body class="min-h-full text-slate-100 antialiased">
+  <main class="mx-auto max-w-4xl px-4 py-8 sm:py-12">
+    <header class="mb-8 flex flex-wrap items-baseline justify-between gap-2">
+      <div>
+        <h1 class="text-2xl font-black tracking-tight">Blueshell <span class="text-blue-400">Pinger</span></h1>
+        <p class="text-sm text-slate-400">Painting the logo on the SNTPings canvas, bottom-right corner.</p>
+      </div>
+      <a class="text-sm text-blue-400 hover:text-blue-300" href="https://pings.utwente.io/">pings.utwente.io</a>
+    </header>
+
+    {{template "stats" .}}
+
+    <section class="mt-8">
+      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">Target</h2>
+      <div class="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
+        <img src="/preview.png" alt="The Blueshell logo where it lands on the canvas"
+             class="absolute" style="left:84.375%;top:77.7778%;width:15.625%;height:22.2222%">
+      </div>
+      <p class="mt-2 text-xs text-slate-500">Canvas 3840 × 2160. Logo 600 × 480 at x 3240–3839, y 1680–2159.</p>
+    </section>
+
+    {{if .ShowForm}}
+    <section class="mt-8 rounded-lg border border-slate-800 bg-slate-900 p-5">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">Settings</h2>
+      <form method="post" action="/settings" class="grid gap-4 sm:grid-cols-[1fr_12rem]">
+        <label class="grid gap-1 text-sm">
+          <span class="text-slate-300">Prefix</span>
+          <input name="prefix" value="{{.Prefix}}" placeholder="2001:db8:b317:a000::/64" autocomplete="off"
+                 class="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-slate-100 placeholder:text-slate-600 focus:border-blue-400 focus:outline-none">
+        </label>
+        <label class="grid gap-1 text-sm">
+          <span class="text-slate-300">Rate (packets/s)</span>
+          <input name="rate" type="number" min="1" max="200000" value="{{.Settings.RatePPS}}" required
+                 class="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-slate-100 focus:border-blue-400 focus:outline-none">
+        </label>
+        <label class="flex items-center gap-2 text-sm text-slate-300">
+          <input name="paused" type="checkbox" {{if .Settings.Paused}}checked{{end}} class="size-4 accent-blue-500">
+          Paused
+        </label>
+        <button class="justify-self-start rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-400 sm:justify-self-end">Save</button>
+      </form>
+    </section>
+    {{end}}
+  </main>
+</body>
+</html>{{end}}
+
+{{define "stats"}}<section id="stats" hx-get="/stats" hx-trigger="every 2s" hx-swap="outerHTML">
+  <div class="mb-4 flex flex-wrap items-center gap-3">
+    <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold
+      {{if eq .Stats.State "running"}}bg-emerald-500/15 text-emerald-300{{else if eq .Stats.State "paused"}}bg-amber-500/15 text-amber-300{{else}}bg-slate-700/50 text-slate-300{{end}}">
+      <span class="size-2 rounded-full {{if eq .Stats.State "running"}}bg-emerald-400 animate-pulse{{else if eq .Stats.State "paused"}}bg-amber-400{{else}}bg-slate-400{{end}}"></span>
+      {{.Stats.State}}
+    </span>
+    <span class="font-mono text-sm text-slate-400">{{if .Prefix}}{{.Prefix}}{{else}}no prefix set{{end}}</span>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+      <dt class="text-xs uppercase tracking-wider text-slate-400">Actual rate</dt>
+      <dd class="mt-1 font-mono text-xl font-bold">{{thousands .Stats.ActualPPS}}</dd>
+      <dd class="text-xs text-slate-500">cap {{thousands .Settings.RatePPS}}/s</dd>
+    </div>
+    <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+      <dt class="text-xs uppercase tracking-wider text-slate-400">Sent</dt>
+      <dd class="mt-1 font-mono text-xl font-bold">{{thousands .Stats.Sent}}</dd>
+    </div>
+    <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+      <dt class="text-xs uppercase tracking-wider text-slate-400">Passes</dt>
+      <dd class="mt-1 font-mono text-xl font-bold">{{thousands .Stats.Passes}}</dd>
+    </div>
+    <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+      <dt class="text-xs uppercase tracking-wider text-slate-400">Send errors</dt>
+      <dd class="mt-1 font-mono text-xl font-bold {{if .Stats.Errors}}text-rose-300{{end}}">{{thousands .Stats.Errors}}</dd>
+    </div>
+  </dl>
+
+  <div class="mt-4">
+    <div class="mb-1 flex justify-between text-xs text-slate-400">
+      <span>This pass</span>
+      <span class="font-mono">{{thousands .Stats.PassDone}} / {{thousands .Stats.PassTotal}} · {{.PassPercent}}%</span>
+    </div>
+    <div class="h-2 overflow-hidden rounded-full bg-slate-800">
+      <div class="h-full bg-blue-500 transition-all" style="width:{{.PassPercent}}%"></div>
+    </div>
+  </div>
+
+  {{if .Stats.LastError}}
+  <p class="mt-4 rounded-md border border-rose-900 bg-rose-950/50 px-3 py-2 text-sm text-rose-200">
+    Last send error{{if .LastErrorAt}} at {{.LastErrorAt}}{{end}}: <span class="font-mono">{{.Stats.LastError}}</span>
+  </p>
+  {{end}}
+</section>{{end}}

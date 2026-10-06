@@ -91,8 +91,14 @@ func NewWatcher(store *Store, interval time.Duration) *Watcher {
 
 func (w *Watcher) Current() paint.Settings { return *w.current.Load() }
 
-// Put makes a just-saved value current without waiting for the next poll.
-func (w *Watcher) Put(v paint.Settings) { w.current.Store(&v) }
+// Save stores v and makes it current without waiting for the next poll.
+func (w *Watcher) Save(ctx context.Context, v paint.Settings) error {
+	if err := w.store.Save(ctx, v); err != nil {
+		return err
+	}
+	w.current.Store(&v)
+	return nil
+}
 
 func (w *Watcher) Run(ctx context.Context) {
 	tick := time.NewTicker(w.interval)

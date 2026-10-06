@@ -91,3 +91,22 @@ func TestTheWatcherPicksUpAChangeMadeElsewhere(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 }
+
+func TestSavingThroughTheWatcherTakesEffectAtOnceAndPersists(t *testing.T) {
+	addr := valkeyAddr(t)
+	ctx := context.Background()
+	w := NewWatcher(open(t, addr), time.Hour)
+	p, _ := canvas.ParsePrefix("2001:db8:2::")
+	want := paint.Settings{Prefix: p, RatePPS: 99}
+
+	if err := w.Save(ctx, want); err != nil {
+		t.Fatal(err)
+	}
+
+	if w.Current() != want {
+		t.Fatalf("current %+v, want %+v", w.Current(), want)
+	}
+	if got, _ := open(t, addr).Load(ctx); got != want {
+		t.Fatalf("stored %+v, want %+v", got, want)
+	}
+}

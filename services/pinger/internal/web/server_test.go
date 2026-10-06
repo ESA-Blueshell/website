@@ -1,0 +1,166 @@
+package web
+
+import (
+	"context"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+
+	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
+	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
+)
+
+type fakeStats paint.Stats
+
+func (f fakeStats) Snapshot() paint.Stats { return paint.Stats(f) }
+
+type fakeSettings struct {
+	current paint.Settings
+	saves   int
+}
+
+func (f *fakeSettings) Current() paint.Settings { return f.current }
+func (f *fakeSettings) Save(_ context.Context, v paint.Settings) error {
+	f.current = v
+	f.saves++
+	return nil
+}
+
+type fakeAuth bool
+
+func (f fakeAuth) IsAdmin(*http.Request) (bool, error) { return bool(f), nil }
+
+func newTestServer(admin bool, settings *fakeSettings) http.Handler {
+	stats := fakeStats{State: paint.Running, Sent: 1_234_567, Errors: 3, Passes: 6, PassDone: 50_000, PassTotal: 202_158, ActualPPS: 49_876, LastError: "no buffer space available"}
+	return NewServer(stats, settings, fakeAuth(admin), []byte("png"))
+}
+
+func get(t *testing.T, h http.Handler, path string, groups string) (int, string) {
+	t.Helper()
+	r := httptest.NewRequest(http.MethodGet, path, nil)
+	if groups != "" {
+		r.Header.Set("X-User-Groups", groups)
+	}
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	body, _ := io.ReadAll(w.Result().Body)
+	return w.Code, string(body)
+}
+
+func post(h http.Handler, form url.Values) *httptest.ResponseRecorder {
+	r := httptest.NewRequest(http.MethodPost, "/settings", strings.NewReader(form.Encode()))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	return w
+}
+
+func TestThePageShowsHowThePaintingGoes(t *testing.T) {
+	p, _ := canvas.ParsePrefix("2001:db8:b317:a000::/64")
+	h := newTestServer(false, &fakeSettings{current: paint.Settings{Prefix: p, RatePPS: 50_000}})
+
+	code, body := get(t, h, "/", "MEMBER,GUEST")
+
+	if code != http.StatusOK {
+		t.Fatalf("status %d", code)
+	}
+	for _, want := range []string{"running", "1,234,567", "49,876", "50,000", "2001:db8:b317:a000::/64", "24%", "no buffer space available", `hx-get="/stats"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("page lacks %q", want)
+		}
+	}
+	if strings.Contains(body, `action="/settings"`) {
+		t.Error("a member sees the settings form")
+	}
+}
+
+func TestAnAdminSeesTheSettingsForm(t *testing.T) {
+	h := newTestServer(true, &fakeSettings{current: paint.Settings{RatePPS: 50_000}})
+
+	_, body := get(t, h, "/", "ADMIN,MEMBER")
+
+	if !strings.Contains(body, `action="/settings"`) {
+		t.Fatal("an admin does not see the settings form")
+	}
+}
+
+func TestTheStatsFragmentStandsAlone(t *testing.T) {
+	h := newTestServer(false, &fakeSettings{current: paint.Settings{RatePPS: 50_000}})
+
+	code, body := get(t, h, "/stats", "")
+
+	if code != http.StatusOK || strings.Contains(body, "<html") || !strings.Contains(body, "1,234,567") {
+		t.Fatalf("status %d, body %q", code, body)
+	}
+}
+
+func TestAnAdminChangesTheSettings(t *testing.T) {
+	settings := &fakeSettings{current: paint.Settings{RatePPS: 50_000}}
+	h := newTestServer(true, settings)
+
+	w := post(h, url.Values{"prefix": {"2001:db8:b317:a000::/64"}, "rate": {"20000"}, "paused": {"on"}})
+
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("status %d: %s", w.Code, w.Body)
+	}
+	p, _ := canvas.ParsePrefix("2001:db8:b317:a000::/64")
+	want := paint.Settings{Prefix: p, RatePPS: 20_000, Paused: true}
+	if settings.current != want {
+		t.Fatalf("saved %+v, want %+v", settings.current, want)
+	}
+}
+
+func TestAnAdminCanClearThePrefix(t *testing.T) {
+	p, _ := canvas.ParsePrefix("2001:db8:b317:a000::/64")
+	settings := &fakeSettings{current: paint.Settings{Prefix: p, RatePPS: 50_000}}
+	h := newTestServer(true, settings)
+
+	post(h, url.Values{"prefix": {""}, "rate": {"50000"}})
+
+	if !settings.current.Prefix.IsZero() {
+		t.Fatalf("prefix still %s", settings.current.Prefix)
+	}
+}
+
+func TestOnlyAnAdminChangesTheSettings(t *testing.T) {
+	settings := &fakeSettings{current: paint.Settings{RatePPS: 50_000}}
+	h := newTestServer(false, settings)
+
+	w := post(h, url.Values{"prefix": {"2001:db8::"}, "rate": {"1"}})
+
+	if w.Code != http.StatusForbidden || settings.saves != 0 {
+		t.Fatalf("status %d, %d saves", w.Code, settings.saves)
+	}
+}
+
+func TestSettingsThatCannotWorkAreRefused(t *testing.T) {
+	for name, form := range map[string]url.Values{
+		"bad prefix":    {"prefix": {"2001:db8::/48"}, "rate": {"1000"}},
+		"zero rate":     {"prefix": {""}, "rate": {"0"}},
+		"rate over cap": {"prefix": {""}, "rate": {"200001"}},
+		"no rate":       {"prefix": {""}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			settings := &fakeSettings{current: paint.Settings{RatePPS: 50_000}}
+
+			w := post(newTestServer(true, settings), form)
+
+			if w.Code != http.StatusBadRequest || settings.saves != 0 {
+				t.Fatalf("status %d, %d saves", w.Code, settings.saves)
+			}
+		})
+	}
+}
+
+func TestThePreviewIsThePlacedLogo(t *testing.T) {
+	h := newTestServer(false, &fakeSettings{})
+
+	code, body := get(t, h, "/preview.png", "")
+
+	if code != http.StatusOK || body != "png" {
+		t.Fatalf("status %d, body %q", code, body)
+	}
+}

@@ -1,0 +1,9 @@
+*
+!go.mod
+!go.sum
+!logo.go
+!logo.png
+!cmd
+!internal
+internal/**/*_test.go
+internal/web/static/app.css

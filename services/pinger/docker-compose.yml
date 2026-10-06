@@ -1,0 +1,19 @@
+# Dry run of the pinger against the dev stack: nothing leaves the container and every visitor
+# is treated as an admin. Open http://localhost:8090.
+services:
+  pinger:
+    image: pinger:dev
+    pull_policy: never
+    build:
+      context: .
+    ports:
+      - "8090:8090"
+    networks:
+      - global_network
+    environment:
+      - PINGER_DRY_RUN=1
+      - PINGER_VALKEY=valkey:6379
+      - PINGER_API_URL=http://api:8080
+    depends_on:
+      valkey:
+        condition: service_healthy

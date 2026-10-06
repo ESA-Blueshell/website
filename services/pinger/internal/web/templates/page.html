@@ -302,11 +302,12 @@
         <p class="history__legend"><i></i>Cap {{thousands .Settings.RatePPS}} a second</p>
       </div>
       <div class="history__plot">
-        <span class="history__cap" style="bottom: {{.CapPercent}}%;"></span>
+        <span class="history__ytop">{{thousands .RateCeil}}</span>
+        <span class="history__cap" style="bottom: {{.CapPercent}}%;"><span class="history__cap-tag">cap</span></span>
         <svg class="history__line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polygon class="history__area" points="{{.RateArea}}"></polygon>
           <polyline class="history__stroke" points="{{.RatePoints}}"></polyline>
         </svg>
+        <span class="history__now" style="top: {{.RateLastY}}%;"><span class="history__dot"></span><b>{{thousands .Stats.ActualPPS}}</b>/s</span>
       </div>
       <div class="history__axis"><span>{{.RateCount}} s ago</span><span>Now</span></div>
     </div>

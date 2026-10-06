@@ -975,9 +975,15 @@ body{margin:0;background:#1c1c1c}
 .history__legend i{width:18px;height:0;border-top:2px dashed var(--color-acid)}
 .history__plot{position:relative;height:9rem;border-bottom:1px solid var(--color-hairline)}
 .history__line{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
-.history__area{fill:color-mix(in oklab,var(--color-brand) 16%,transparent);stroke:none}
 .history__stroke{fill:none;stroke:var(--color-brand);stroke-width:2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
 .history__cap{position:absolute;left:0;right:0;border-top:2px dashed var(--color-acid);opacity:0.8;transition:bottom 620ms cubic-bezier(0.22,1,0.36,1)}
+.history__cap-tag{position:absolute;right:0;top:-1.05rem;font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-acid)}
+.history__ytop{position:absolute;left:0;top:-0.2rem;font-family:'Silkscreen',ui-monospace,monospace;font-size:8px;letter-spacing:0.06em;color:var(--color-ash)}
+.history__now{position:absolute;right:0.3rem;display:flex;align-items:center;gap:0.35rem;transform:translateY(-50%);
+  padding:0.1rem 0.45rem;background:color-mix(in oklab,var(--color-ground) 82%,transparent);
+  font-size:0.78rem;color:var(--color-ash);white-space:nowrap;transition:top 900ms linear}
+.history__now b{font-family:'Shellhouse One',sans-serif;font-weight:400;color:var(--color-chalk)}
+.history__dot{width:7px;height:7px;border-radius:999px;background:var(--color-brand);box-shadow:0 0 0 3px color-mix(in oklab,var(--color-brand) 30%,transparent)}
 .history__axis{display:flex;justify-content:space-between;margin-top:0.45rem;font-size:0.75rem;color:var(--color-ash)}
 
 .facts-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));row-gap:1.4rem;padding:2rem 0 2.4rem}

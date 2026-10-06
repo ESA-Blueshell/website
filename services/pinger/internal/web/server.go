@@ -25,6 +25,12 @@ import (
 // once a second, so a faster push would send the same numbers; the bar glides between pushes.
 const liveInterval = time.Second
 
+// socketMaxAge bounds a socket's life. Traefik's forward-auth gates the upgrade, not the open
+// socket, so this is what re-gates a viewer whose membership lapsed: the socket closes, the page
+// reconnects, and forward-auth runs again. The feed is read-only event telemetry, so a short
+// window of staleness is harmless; this keeps it short.
+const socketMaxAge = 15 * time.Minute
+
 //go:embed templates/*.html
 var templateFS embed.FS
 
@@ -259,7 +265,8 @@ func (s *server) socket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer c.CloseNow()
-	ctx := c.CloseRead(r.Context())
+	ctx, cancel := context.WithTimeout(c.CloseRead(r.Context()), socketMaxAge)
+	defer cancel()
 
 	tick := time.NewTicker(liveInterval)
 	defer tick.Stop()

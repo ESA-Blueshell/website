@@ -20,7 +20,7 @@ const (
 	keyPaused = "pinger:paused"
 	keyStats  = "pinger:stats"
 
-	DefaultRatePPS = 100
+	DefaultRatePPS = 128
 )
 
 // Stats is the running total the sender keeps across restarts.

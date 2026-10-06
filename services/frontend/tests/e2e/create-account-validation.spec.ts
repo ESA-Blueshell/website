@@ -43,7 +43,8 @@ test.describe("create account validation", () => {
 
     await page.getByTestId("user-form-submit-btn").click()
 
-    await expect(page.getByTestId("user-form-username-field").getByText("Use only letters and numbers")).toBeVisible()
+    // The api takes any username, so a dash is no reason to refuse one.
+    await expect(page.getByTestId("user-form-username-field").locator(".island-field__said--wrong")).toHaveCount(0)
     await expect(page.getByTestId("user-form-email-field").getByText("Enter a valid e-mail address")).toBeVisible()
     await expect(
       page.getByTestId("user-form-password-field").getByText("Include a special character")

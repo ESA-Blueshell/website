@@ -19,11 +19,6 @@ defineRule("required", (value: unknown) => {
   return "This field is required"
 })
 
-defineRule("alphaNum", (value: string) => {
-  if (isEmpty(value)) return true
-  return /^[a-zA-Z0-9]+$/.test(value) || "Use only letters and numbers"
-})
-
 defineRule("minChars", (value: string, [min]: string[]) => {
   if (isEmpty(value)) return true
   const n = Number(min ?? 0)

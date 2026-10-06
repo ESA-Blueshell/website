@@ -20,7 +20,7 @@
             v-model="form.username"
             :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'activate-member-username-field' }"
             name="username"
-            rules="required|alphaNum"
+            rules="required"
           />
 
           

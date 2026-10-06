@@ -26,7 +26,7 @@ import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
 import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
 import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, maskedIban, recordPayment, withdrawPayment} from "@/domains/contribution"
-import {type AddressResponse, MEMBERSHIP_WORDS, type MembershipResponse, type OwnMandateResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandateOf, readUser, saveMembership} from "@/domains/user"
+import {type AddressResponse, MEMBERSHIP_WORDS, type MembershipResponse, type OwnMandateResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandateOf, readUser, Role, saveMembership} from "@/domains/user"
 import UserRolesPanel from "@/domains/user/components/UserRolesPanel.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import store from "@/plugins/store"
@@ -60,6 +60,8 @@ const said = ref<{periodId: number; text: string} | null>(null)
 const profile = ref<EditableUser | null>(null)
 const profileForm = ref<InstanceType<typeof UserForm> | null>(null)
 const profileSaved = ref<string | null>(null)
+// TWIN: the api asks for the member fields of a member only, as the person's own account page does.
+const isMember = computed(() => person.value?.roles.includes(Role.MEMBER) ?? false)
 const address = ref<Partial<AddressResponse>>({})
 /** A mandate authorised before the membership started, which has no membership to be shown on yet. */
 const pendingMandate = ref<OwnMandateResponse | null>(null)
@@ -419,7 +421,7 @@ watch(id, load, {immediate: true})
         <user-form
           ref="profileForm"
           v-model="profile"
-          :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
+          :options="{includeMemberProfile: true, memberProfileRequired: isMember, updateKind: 'board', createVia: 'board'}"
           @submitted="load"
         />
         <div class="person__acts">

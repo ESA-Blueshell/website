@@ -198,6 +198,16 @@ describe("one user's page", () => {
     expect(wrapper.get('[data-testid="user-detail-missing"]').text()).toBe("There is nobody with number 7.")
   })
 
+  it("asks for the member fields on the Profile of a member only, as the person's own account page does", async () => {
+    api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, roles: ["GUEST"]})})
+    const guest = await mount("profile")
+    expect(guest.getComponent({name: "UserForm"}).props("options")).toMatchObject({includeMemberProfile: true, memberProfileRequired: false})
+
+    api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, roles: ["MEMBER"]})})
+    const member = await mount("profile")
+    expect(member.getComponent({name: "UserForm"}).props("options")).toMatchObject({includeMemberProfile: true, memberProfileRequired: true})
+  })
+
   it("edits the details on the Profile tab and the address on its own tab", async () => {
     api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, addressId: 3})})
     const profile = await mount("profile")

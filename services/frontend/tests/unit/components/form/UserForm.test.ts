@@ -267,7 +267,7 @@ describe("UserForm", () => {
       initials: "required",
       firstName: "required",
       lastName: "required",
-      username: "required|alphaNum",
+      username: "required",
       discord: "required",
       email: "required|email",
       phoneNumber: "required|phoneMobile:NL",
@@ -536,7 +536,8 @@ describe("UserForm", () => {
       const rules = rulesByName(wrapper)
 
       expect(rules.firstName).toBe("required")
-      expect(rules.username).toBe("required|alphaNum")
+      // The api takes any username, dots included, so the form refuses only an empty one.
+      expect(rules.username).toBe("required")
       // The address is the exception: it moves the confirmation link, so it
       // changes on the confirmation step instead.
       expect(rules.email).toBe("")

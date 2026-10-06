@@ -23,7 +23,7 @@ enum class CohortType {
     /** The single newsletter opt-in cohort. Pivots on `NEWSLETTER`. */
     NEWSLETTER_SUBSCRIBERS,
 
-    /** Everybody holding a committee or board seat today. */
+    /** The active members: everybody holding the COMMITTEE role, and everybody on a current esports line-up. */
     ACTIVISTS,
 
     /** Everybody holding the MEMBER role, which follows an active membership. */

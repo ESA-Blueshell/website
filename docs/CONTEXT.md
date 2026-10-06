@@ -724,9 +724,10 @@ side. Adding someone to the target, removing them from it, or taking them in on 
 
 ### Activist
 
-Anyone holding a seat on a committee today, the board included and One-Of-Committee not.
-A cohort of its own, read from what is true now rather than across a period, so a seat
-given up in October leaves it in October.
+An active member: anyone with a seat on a committee today, or on an esports team's line-up in
+the season fielded now. A cohort of its own, read from what is true now rather than across a
+period, so a seat given up in October leaves it in October. The board counts only through a
+committee seat.
 
 ### Unreachable
 

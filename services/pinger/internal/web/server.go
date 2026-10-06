@@ -77,7 +77,13 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 	mux.HandleFunc("POST /settings", s.saveSettings)
 	mux.HandleFunc("GET /preview.png", s.previewImage)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
+	// no-cache, not no-store: the browser keeps the file but revalidates each load, so a rebuilt
+	// stylesheet or script is picked up on the next visit rather than served stale from cache.
+	staticHandler := http.StripPrefix("/static/", http.FileServerFS(static))
+	mux.Handle("GET /static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		staticHandler.ServeHTTP(w, r)
+	}))
 	// The api's session cookie is SameSite=None, so a form on another site would arrive signed in.
 	return http.NewCrossOriginProtection().Handler(mux)
 }

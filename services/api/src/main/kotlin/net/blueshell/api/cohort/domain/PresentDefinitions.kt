@@ -2,21 +2,19 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.board.api.BoardMemberService
 import net.blueshell.api.cohort.persistence.CohortType
-import net.blueshell.api.committee.api.CommitteeMemberService
-import net.blueshell.api.committee.api.CommitteeService
+import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
 /**
- * Everybody holding a seat today: on any committee but One-Of-Committee, or on the board. Read
- * from what is true now, so a seat given up leaves the cohort at once.
+ * The active members: everybody holding the COMMITTEE role, which follows a seat on any committee,
+ * and everybody on an esports team's line-up in the season fielded now.
  */
 class ActivistsDefinition(
-    private val committees: CommitteeService,
-    private val committeeMembers: CommitteeMemberService,
-    private val boardMembers: BoardMemberService,
+    private val users: UserService,
+    private val rosters: TeamRosterService,
 ) : CohortDefinition {
     override val key = CohortType.ACTIVISTS.name
     override val type = CohortType.ACTIVISTS
@@ -24,33 +22,20 @@ class ActivistsDefinition(
     override val label = "Activists"
     override val folder = CohortFolders.ACTIVISTS
 
-    override fun members(): Set<Long> {
-        val today = LocalDate.now()
-        val seated =
-            committees
-                .findAll()
-                .filter { it.id != null && !it.archived && !it.name.equals(ONE_OF_COMMITTEE, ignoreCase = true) }
-                .flatMapTo(mutableSetOf()) { committeeMembers.findUserIdsOnCommittee(it.id!!) }
-        return seated + boardMembers.serversBetween(today, today)
-    }
+    override fun members(): Set<Long> =
+        users.findIdsHolding(Role.COMMITTEE) + rosters.teamNames().keys.flatMapTo(mutableSetOf()) { rosters.currentPlayersOf(it) }
 
     override fun contains(userId: Long): Boolean = userId in members()
-
-    companion object {
-        /** Seats for a single one-off event, which do not make somebody an activist. */
-        const val ONE_OF_COMMITTEE = "One-Of-Committee"
-    }
 }
 
 @Component
 class ActivistsProvider(
-    private val committees: CommitteeService,
-    private val committeeMembers: CommitteeMemberService,
-    private val boardMembers: BoardMemberService,
+    private val users: UserService,
+    private val rosters: TeamRosterService,
 ) : CohortDefinitionProvider {
     override val type = CohortType.ACTIVISTS
 
-    override fun definitions(): List<CohortDefinition> = listOf(ActivistsDefinition(committees, committeeMembers, boardMembers))
+    override fun definitions(): List<CohortDefinition> = listOf(ActivistsDefinition(users, rosters))
 }
 
 /** Everybody holding the MEMBER role, which follows an active membership: the api's own answer to who is a member. */

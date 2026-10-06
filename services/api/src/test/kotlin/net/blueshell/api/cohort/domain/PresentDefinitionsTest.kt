@@ -6,9 +6,7 @@ import net.blueshell.api.board.api.BoardMemberService
 import net.blueshell.api.board.api.BoardYear
 import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortType
-import net.blueshell.api.committee.api.CommitteeMemberService
-import net.blueshell.api.committee.api.CommitteeService
-import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
@@ -16,32 +14,21 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 class PresentDefinitionsTest {
-    private val committees: CommitteeService = mockk()
-    private val committeeMembers: CommitteeMemberService = mockk()
+    private val rosters: TeamRosterService = mockk()
     private val boardMembers: BoardMemberService = mockk()
     private val users: UserService = mockk()
     private val today = LocalDate.now()
 
-    private fun committee(
-        id: Long,
-        name: String,
-        archived: Boolean = false,
-    ) = Committee(name = name, description = "").apply {
-        this.id = id
-        this.archived = archived
-    }
-
     @Test
-    fun `activists hold a committee or board seat today, but not a One-Of-Committee seat`() {
-        every { committees.findAll() } returns
-            listOf(committee(1L, "Sitecie"), committee(2L, "one-of-committee"), committee(3L, "Old", archived = true))
-        every { committeeMembers.findUserIdsOnCommittee(1L) } returns setOf(10L)
-        every { boardMembers.serversBetween(today, today) } returns setOf(20L)
-        val activists = ActivistsProvider(committees, committeeMembers, boardMembers).definitions().single()
+    fun `activists are the active members, who hold the COMMITTEE role or play on a current line-up`() {
+        every { users.findIdsHolding(Role.COMMITTEE) } returns setOf(10L, 11L)
+        every { rosters.teamNames() } returns mapOf(1L to "Valorant A", 2L to "Chess")
+        every { rosters.currentPlayersOf(1L) } returns setOf(11L, 20L)
+        every { rosters.currentPlayersOf(2L) } returns setOf(21L)
+        val activists = ActivistsProvider(users, rosters).definitions().single()
 
-        assertThat(activists.members()).containsExactlyInAnyOrder(10L, 20L)
-        assertThat(activists.contains(20L)).isTrue()
-        assertThat(activists.contains(30L)).isFalse()
+        assertThat(activists.members()).containsExactlyInAnyOrder(10L, 11L, 20L, 21L)
+        assertThat(listOf(20L, 30L).map(activists::contains)).containsExactly(true, false)
         assertThat(listOf(activists.key, activists.label, activists.folder)).containsExactly("ACTIVISTS", "Activists", "Activists")
         assertThat(activists.scope).isNull()
     }

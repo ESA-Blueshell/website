@@ -118,7 +118,7 @@ class CohortDefinitionsTest {
                 PeriodActiveMembersProvider(mockk(), emptyList()),
                 CommitteeMembersProvider(mockk(), mockk()),
                 NewsletterSubscribersProvider(mockk()),
-                ActivistsProvider(mockk(), mockk(), mockk()),
+                ActivistsProvider(mockk(), mockk()),
                 CurrentMembersProvider(mockk()),
                 CurrentCommitteeMembersProvider(mockk()),
                 TeamPlayersProvider(mockk()),

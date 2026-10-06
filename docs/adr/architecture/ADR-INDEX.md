@@ -30,6 +30,7 @@ stack.
 |---|-------|--------|---------|
 | [009](ADR-009-link-previews-are-included-by-nginx.md) | Link Previews Are Included by nginx | Accepted | nginx SSI includes an event's tags from the api into `index.html`, falling back to generic tags; no user-agent sniffing, no SSR |
 | [010](ADR-010-descriptions-are-written-in-discords-markdown.md) | Descriptions Are Written in Discord's Markdown | Accepted | Discord's dialect on site and in Discord; emoji and mentions stored in Discord's form; Noto art; 4096-character cap |
+| [012](ADR-012-the-pinger-is-go-on-the-host-network.md) | The Pinger Is Go, on the Host Network | Accepted | A Go service on the node's network with only NET_RAW; settings changes ask the api, not the header |
 
 ### Getting there
 

@@ -113,14 +113,6 @@
       </div>
       <div class="head-acts">
         <span class="{{.ChipClass}}"><span class="state-chip__dot"></span>{{.ChipLabel}}</span>
-        {{if and .ShowForm (or .IsRunning .Paused)}}
-        <form class="head-acts__row" method="post" action="/settings">
-          <input type="hidden" name="prefix" value="{{.Prefix}}">
-          <input type="hidden" name="rate" value="{{.Settings.RatePPS}}">
-          {{if not .Paused}}<input type="hidden" name="paused" value="on">{{end}}
-          <button type="submit" class="island-cut {{if .Paused}}island-cut--solid{{else}}island-cut--warn{{end}}"><span>{{.PauseLabel}}</span></button>
-        </form>
-        {{end}}
       </div>
     </div>
   </section>
@@ -204,7 +196,6 @@
               </div>
             </div>
           </div>
-          {{if .Paused}}<input type="hidden" name="paused" value="on">{{end}}
           <div class="settings__acts">
             <button type="submit" class="island-cut island-cut--solid"><span>Save</span></button>
             <button type="submit" class="island-cut island-cut--quiet" formnovalidate onclick="document.getElementById('pinger-prefix').value=''"><span>Clear prefix</span></button>

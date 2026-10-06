@@ -110,8 +110,6 @@ type view struct {
 	ChipClass   string
 	Failing     bool
 	ErrorTitle  string
-	Paused      bool
-	PauseLabel  string
 
 	SweepTop    int
 	SweepBottom int
@@ -140,7 +138,6 @@ func (s *server) view(r *http.Request) view {
 		IsIdle:      state == string(paint.Idle),
 		IsClosed:    state == string(paint.Closed),
 		ShowNumbers: state != string(paint.Closed),
-		Paused:      state == string(paint.Paused),
 		ShowForm:    slices.Contains(strings.Split(r.Header.Get("X-User-Groups"), ","), "ADMIN"),
 	}
 	if st.PassTotal > 0 {
@@ -164,10 +161,6 @@ func (s *server) view(r *http.Request) view {
 	v.ChipLabel, v.ChipClass = chip(state)
 	if v.Failing {
 		v.ChipLabel, v.ChipClass = "Sending is failing", "state-chip state-chip--failing"
-	}
-	v.PauseLabel = "Pause"
-	if v.Paused {
-		v.PauseLabel = "Resume"
 	}
 
 	lit := v.PassPercent
@@ -209,8 +202,8 @@ func presets(current int) []preset {
 
 // rateLine turns the rate history into an SVG line across a 0..100 box, the polygon that fills
 // under it, the cap's height, the latest point's height and the value at the top of the frame.
-// The top of the frame is the cap with a little headroom, so the cap line sits near the top and
-// the line reads as how close the sender is to it; a burst above the cap lifts the top instead.
+// The top of the frame is the cap and a half, so the cap sits at two thirds height as a fixed
+// reference with room above it; a burst over the cap lifts the top past that instead of clipping.
 // x runs 0 to 100 across the samples, y is inverted because SVG's origin is top-left.
 func rateLine(rates []uint64, ratePPS int) (points, area string, capPercent int, lastY string, ceil uint64) {
 	if len(rates) == 0 {
@@ -222,7 +215,7 @@ func rateLine(rates []uint64, ratePPS int) (points, area string, capPercent int,
 			peak = r
 		}
 	}
-	top := float64(ratePPS) * 1.05
+	top := float64(ratePPS) * 1.5
 	if float64(peak) > top {
 		top = float64(peak) * 1.02
 	}

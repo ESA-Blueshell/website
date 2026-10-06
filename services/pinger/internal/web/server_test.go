@@ -222,25 +222,26 @@ func TestTheSocketPushesTheLiveRegion(t *testing.T) {
 	}
 }
 
-func TestRateLineFramesTheCapNearTheTop(t *testing.T) {
-	// Peak (50,000) is at the cap, so the top of the frame is cap*1.05 = 52,500.
+func TestRateLineFramesTheCapAtTwoThirds(t *testing.T) {
+	// Peak (50,000) is at the cap, so the top of the frame is cap*1.5 = 75,000 and the cap sits
+	// at two thirds height.
 	points, area, cap, lastY, ceil := rateLine([]uint64{0, 50_000, 25_000}, 50_000)
 
-	want := "0.00,100.00 50.00,4.76 100.00,52.38"
+	want := "0.00,100.00 50.00,33.33 100.00,66.67"
 	if points != want {
 		t.Errorf("points %q, want %q", points, want)
 	}
 	if area != "0,100 "+want+" 100,100" {
 		t.Errorf("area %q", area)
 	}
-	if cap != 95 {
-		t.Errorf("cap %d, want 95", cap)
+	if cap != 66 {
+		t.Errorf("cap %d, want 66", cap)
 	}
-	if lastY != "52.38" {
-		t.Errorf("lastY %q, want 52.38", lastY)
+	if lastY != "66.67" {
+		t.Errorf("lastY %q, want 66.67", lastY)
 	}
-	if ceil != 52_500 {
-		t.Errorf("ceil %d, want 52500", ceil)
+	if ceil != 75_000 {
+		t.Errorf("ceil %d, want 75000", ceil)
 	}
 	if p, a, c, l, ce := rateLine(nil, 50_000); p != "" || a != "" || c != 0 || l != "" || ce != 0 {
 		t.Errorf("empty history gave %q %q %d %q %d", p, a, c, l, ce)

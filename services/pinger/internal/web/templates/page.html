@@ -1,102 +1,249 @@
 {{define "page"}}<!doctype html>
-<html lang="en" class="h-full bg-slate-950">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Blueshell Pinger</title>
-  <link rel="stylesheet" href="/static/app.css">
+  <title>Shelly on SNTPings</title>
+  <link rel="stylesheet" href="/static/island.css">
+  <script>
+    // Set the theme before first paint so the page never flashes the wrong half.
+    try {
+      var t = localStorage.getItem('pinger-theme');
+      if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      if (t === 'light') document.documentElement.classList.add('theme-light');
+    } catch (e) {}
+    function toggleTheme() {
+      var light = document.documentElement.classList.toggle('theme-light');
+      try { localStorage.setItem('pinger-theme', light ? 'light' : 'dark'); } catch (e) {}
+    }
+  </script>
   <script src="/static/htmx.min.js" defer></script>
 </head>
-<body class="min-h-full text-slate-100 antialiased">
-  <main class="mx-auto max-w-4xl px-4 py-8 sm:py-12">
-    <header class="mb-8 flex flex-wrap items-baseline justify-between gap-2">
+<body>
+<div class="island pinger">
+  <header class="bar">
+    <a href="https://esa-blueshell.nl" aria-label="Blueshell, home"><img class="bar__logo" alt="ESA Blueshell" src="/static/logo.webp" width="138" height="34"></a>
+    <nav class="bar__nav" aria-label="Pinger">
+      <a class="bar__link" href="https://esa-blueshell.nl">Website</a>
+      <a class="bar__link" href="https://pings.utwente.io/">SNTPings</a>
+    </nav>
+    <span style="flex-grow: 1;"></span>
+    <button type="button" class="bar__icon" aria-label="Switch theme" onclick="toggleTheme()"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="3.6" stroke="currentColor" stroke-width="1.25"></circle><path d="M9 1v2.2M9 14.8V17M1 9h2.2M14.8 9H17M3.4 3.4l1.6 1.6M13 13l1.6 1.6M14.6 3.4L13 5M5 13l-1.6 1.6" stroke="currentColor" stroke-width="1.25"></path></svg></button>
+    <a class="bar__icon" href="https://esa-blueshell.nl/account" aria-label="Account"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="6" r="3.2" stroke="currentColor" stroke-width="1.25"></circle><path d="M2.6 16c0-3.2 2.9-5.2 6.4-5.2s6.4 2 6.4 5.2" stroke="currentColor" stroke-width="1.25"></path></svg></a>
+  </header>
+
+  <section class="island-header" style="flex-shrink: 0;">
+    <span class="island-header__blob" aria-hidden="true"></span>
+    <div class="wrap page-head">
       <div>
-        <h1 class="text-2xl font-black tracking-tight">Blueshell <span class="text-blue-400">Pinger</span></h1>
-        <p class="text-sm text-slate-400">Painting the logo on the SNTPings canvas, bottom-right corner.</p>
+        <h1 class="h-page">Shelly<br><span class="brand-ink">on SNTPings</span></h1>
+        <p class="page-head__body body-ash">We paint the Blueshell shell onto <a href="https://pings.utwente.io/" style="color: var(--color-brand-ink);">pings.utwente.io</a>, pass after pass.</p>
       </div>
-      <a class="text-sm text-blue-400 hover:text-blue-300" href="https://pings.utwente.io/">pings.utwente.io</a>
-    </header>
-
-    {{template "stats" .}}
-
-    <section class="mt-8">
-      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">Target</h2>
-      <div class="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
-        <img src="/preview.png" alt="The Blueshell logo where it lands on the canvas"
-             class="absolute" style="left:84.375%;top:77.7778%;width:15.625%;height:22.2222%">
+      <div class="head-acts">
+        <span class="{{.ChipClass}}"><span class="state-chip__dot"></span>{{.ChipLabel}}</span>
+        {{if and .ShowForm (or .IsRunning .Paused)}}
+        <form class="head-acts__row" method="post" action="/settings">
+          <input type="hidden" name="prefix" value="{{.Prefix}}">
+          <input type="hidden" name="rate" value="{{.Settings.RatePPS}}">
+          {{if not .Paused}}<input type="hidden" name="paused" value="on">{{end}}
+          <button type="submit" class="island-cut {{if .Paused}}island-cut--solid{{else}}island-cut--warn{{end}}"><span>{{.PauseLabel}}</span></button>
+        </form>
+        {{end}}
       </div>
-      <p class="mt-2 text-xs text-slate-500">Canvas 3840 × 2160. Logo 600 × 480 at x 3240–3839, y 1680–2159.</p>
-    </section>
+    </div>
+  </section>
 
-    {{if .ShowForm}}
-    <section class="mt-8 rounded-lg border border-slate-800 bg-slate-900 p-5">
-      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">Settings</h2>
-      <form method="post" action="/settings" class="grid gap-4 sm:grid-cols-[1fr_12rem]">
-        <label class="grid gap-1 text-sm">
-          <span class="text-slate-300">Prefix</span>
-          <input name="prefix" value="{{.Prefix}}" placeholder="2001:db8:b317:a000::/64" autocomplete="off"
-                 class="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-slate-100 placeholder:text-slate-600 focus:border-blue-400 focus:outline-none">
-        </label>
-        <label class="grid gap-1 text-sm">
-          <span class="text-slate-300">Rate (packets/s)</span>
-          <input name="rate" type="number" min="1" max="{{.MaxRatePPS}}" value="{{.Settings.RatePPS}}" required
-                 class="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-slate-100 focus:border-blue-400 focus:outline-none">
-        </label>
-        <label class="flex items-center gap-2 text-sm text-slate-300">
-          <input name="paused" type="checkbox" {{if .Settings.Paused}}checked{{end}} class="size-4 accent-blue-500">
-          Paused
-        </label>
-        <button class="justify-self-start rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-400 sm:justify-self-end">Save</button>
-      </form>
-    </section>
-    {{end}}
-  </main>
+  {{if and .IsIdle .ShowForm}}
+  <section>
+    <div class="wrap" style="padding-bottom: 1.75rem;">
+      <div class="notice notice--info">
+        <p class="notice__title">Waiting for the prefix</p>
+        <p class="notice__body">SNTPings announces it when the event opens. Painting starts as soon as it is set.</p>
+        <div><a class="island-cut island-cut--solid" href="#settings"><span>Set the prefix</span></a></div>
+      </div>
+    </div>
+  </section>
+  {{end}}
+
+  <section class="canvas-band">
+    <div class="wrap">
+      <input type="radio" name="zoom" id="zoom-all" class="zoom__radio" checked>
+      <input type="radio" name="zoom" id="zoom-corner" class="zoom__radio">
+      <div class="canvas-head">
+        <h2 class="h-sub">The Canvas</h2>
+        <div class="canvas-head__acts">
+          <div class="zoom">
+            <label class="zoom__opt" for="zoom-all">Whole canvas</label>
+            <label class="zoom__opt" for="zoom-corner">Our corner</label>
+          </div>
+          <a class="island-cut island-cut--quiet" href="https://pings.utwente.io/" style="padding: 0.5rem 1rem; font-size: 0.72rem;"><span>Watch the stream</span></a>
+        </div>
+      </div>
+      <div class="plate">
+        <div class="plate__stage">
+          <div class="plate__grid"></div>
+          <div class="target">
+            <img class="target__img target__dim" alt="" src="/preview.png">
+            <img class="target__img target__lit" alt="The Blueshell logo where it lands" src="/preview.png" style="clip-path: polygon(0 0, {{.SweepTop}}% 0, {{.SweepBottom}}% 100%, 0 100%);">
+            {{if .IsRunning}}<span class="target__edge" style="left: {{.PassPercent}}%;"></span>{{end}}
+            <span class="target__frame"></span>
+          </div>
+          <span class="plate__tag plate__tag--target">X 3240 · Y 1680</span>
+          <span class="plate__shade"></span>
+        </div>
+        <span class="plate__tag plate__tag--tl">0 · 0</span>
+        <span class="plate__tag plate__tag--br">{{.PrefixLabel}}</span>
+      </div>
+    </div>
+  </section>
+
+  {{template "live" .}}
+
+  <section class="ground" style="border-top: 1px solid var(--color-hairline);">
+    <div class="wrap facts-row">
+      <div class="fact"><p class="fact__label">Opens</p><p class="fact__value">Fri 9 Oct, 18:00</p><p class="fact__sub">Amsterdam time</p></div>
+      <div class="fact"><p class="fact__label">Closes</p><p class="fact__value">Sun 11 Oct, 23:59</p><p class="fact__sub">Nothing is sent after</p></div>
+      <div class="fact"><p class="fact__label">Placement</p><p class="fact__value">600 × 480</p><p class="fact__sub">X 3240 to 3839, Y 1680 to 2159</p></div>
+      <div class="fact"><p class="fact__label">Per pass</p><p class="fact__value">{{thousands .Stats.PassTotal}} pixels</p><p class="fact__sub">Shuffled every pass</p></div>
+    </div>
+  </section>
+
+  {{if .ShowForm}}
+  <section class="lead" id="settings" style="--accent: var(--color-acid);">
+    <div class="wrap settings">
+      <div class="settings__grid">
+        <form method="post" action="/settings">
+          <div class="form-section">
+            <p class="form-section__title">Prefix</p>
+            <div class="island-field">
+              <label class="island-field__label" for="pinger-prefix">The /64 SNTPings announces</label>
+              <input id="pinger-prefix" name="prefix" class="island-input island-input--mono" value="{{.Prefix}}" placeholder="2001:db8:b317:a000::/64" autocomplete="off" spellcheck="false">
+            </div>
+          </div>
+          <div class="form-section">
+            <p class="form-section__title">Rate</p>
+            <div class="rate-row">
+              <div class="seg" role="group" aria-label="Rate presets">
+                {{range .Presets}}<button type="button" class="seg__cut {{if .On}}seg__cut--on{{end}}" onclick="document.getElementById('pinger-rate').value='{{.Value}}'">{{.Label}}</button>{{end}}
+              </div>
+              <div class="island-field" style="width: 9rem;">
+                <label class="island-field__label" for="pinger-rate">Per second</label>
+                <input id="pinger-rate" name="rate" class="island-input island-input--mono" inputmode="numeric" value="{{.Settings.RatePPS}}">
+              </div>
+            </div>
+          </div>
+          {{if .Paused}}<input type="hidden" name="paused" value="on">{{end}}
+          <div class="settings__acts">
+            <button type="submit" class="island-cut island-cut--solid"><span>Save</span></button>
+            <button type="submit" class="island-cut island-cut--quiet" formnovalidate onclick="document.getElementById('pinger-prefix').value=''"><span>Clear prefix</span></button>
+          </div>
+        </form>
+        <div class="form-section" style="border-top: 0;">
+          <p class="form-section__title">Now in use</p>
+          <div class="status" style="grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 0.6rem;">
+            <div class="fact" style="padding-inline-start: 0;"><p class="fact__label">Prefix</p><p class="fact__value" style="font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; text-transform: none;">{{if .Prefix}}{{.Prefix}}{{else}}None yet{{end}}</p></div>
+            <div class="fact"><p class="fact__label">Cap</p><p class="fact__value">{{thousands .Settings.RatePPS}} a second</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {{end}}
+
+  <span style="flex-grow: 1;"></span>
+  <footer class="ground" style="flex-shrink: 0; box-sizing: border-box; border-top: 1px solid var(--color-hairline); padding-top: 1.25rem; padding-bottom: 1rem;">
+    <div class="wrap" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem 3rem; flex-wrap: wrap;">
+      <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <p class="body-ash" style="font-size: 0.8rem;">E-Sports Association Blueshell · Enschede</p>
+        <div class="socials">
+          <a href="https://discord.gg/23YMFQy" aria-label="Discord" class="social"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"></path></svg></a>
+          <a href="https://www.instagram.com/esablueshell/" aria-label="Instagram" class="social"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M6.2 2h7.6A4.2 4.2 0 0 1 18 6.2v7.6a4.2 4.2 0 0 1-4.2 4.2H6.2A4.2 4.2 0 0 1 2 13.8V6.2A4.2 4.2 0 0 1 6.2 2Zm3.8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 1.7a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 0 1 0-4.6Zm4.4-3.2a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z"></path></svg></a>
+          <a href="https://www.twitch.tv/blueshellesports" aria-label="Twitch" class="social"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M4.3 2 2.5 5.6V16h4v2.5h2.4l2.5-2.5h3.3l3.8-3.8V2Zm1.6 1.6h10.5v7.9l-2.4 2.4h-3.4l-2.3 2.3v-2.3H5.9Z"></path><path d="M8.7 6.3h1.7v4.5H8.7Zm4.2 0h1.7v4.5h-1.7Z"></path></svg></a>
+          <a href="mailto:board@blueshell.utwente.nl" aria-label="Email the board" class="social"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M2 4h16v12H2Zm1.4 1.3v.3L10 10.7l6.6-5.1v-.3Z"></path></svg></a>
+        </div>
+      </div>
+      <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+          <p class="slice__group-label">The event</p>
+          <a class="body-ash" style="font-size: 0.8rem;" href="https://pings.utwente.io/">pings.utwente.io</a>
+          <a class="body-ash" style="font-size: 0.8rem;" href="https://gitlab.snt.utwente.nl/pings/sntpings-server-nikhef-edition">The receiver's source</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+          <p class="slice__group-label">Blueshell</p>
+          <a class="body-ash" style="font-size: 0.8rem;" href="https://esa-blueshell.nl">esa-blueshell.nl</a>
+          <a class="body-ash" style="font-size: 0.8rem;" href="https://discord.gg/23YMFQy">Ask us on Discord</a>
+        </div>
+      </div>
+    </div>
+    <div class="wrap" style="margin-top: 1rem; padding-top: 0.7rem; border-top: 1px solid var(--color-hairline); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;">
+      <p class="slice__group-label">SITECIE GANG © 2026</p>
+      <p class="slice__group-label">Built by <a href="https://jorisjonkers.dev" style="color: var(--color-ash);">JorisJonkers.dev</a></p>
+    </div>
+  </footer>
+</div>
 </body>
 </html>{{end}}
 
-{{define "stats"}}<section id="stats" hx-get="/stats" hx-trigger="every 2s" hx-swap="outerHTML">
-  <div class="mb-4 flex flex-wrap items-center gap-3">
-    <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold
-      {{if eq .Stats.State "running"}}bg-emerald-500/15 text-emerald-300{{else if eq .Stats.State "paused"}}bg-amber-500/15 text-amber-300{{else}}bg-slate-700/50 text-slate-300{{end}}">
-      <span class="size-2 rounded-full {{if eq .Stats.State "running"}}bg-emerald-400 animate-pulse{{else if eq .Stats.State "paused"}}bg-amber-400{{else}}bg-slate-400{{end}}"></span>
-      {{.Stats.State}}
-    </span>
-    <span class="font-mono text-sm text-slate-400">{{if .Prefix}}{{.Prefix}}{{else}}no prefix set{{end}}</span>
-  </div>
-
-  <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-    <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
-      <dt class="text-xs uppercase tracking-wider text-slate-400">Actual rate</dt>
-      <dd class="mt-1 font-mono text-xl font-bold">{{thousands .Stats.ActualPPS}}</dd>
-      <dd class="text-xs text-slate-500">cap {{thousands .Settings.RatePPS}}/s</dd>
+{{define "live"}}<div id="live" hx-get="/stats" hx-trigger="every 2s" hx-swap="outerHTML">
+  {{if .IsClosed}}
+  <section class="number-band countdown">
+    <div class="wrap">
+      <p class="eyebrow" style="padding-top: 2.25rem;">Until the canvas opens</p>
+      <div class="number-band__grid" style="padding-top: 1.25rem;">
+        <div class="number-band__cell"><p class="number-band__value">{{.Countdown.Days}}</p><p class="number-band__label">Days</p></div>
+        <div class="number-band__cell"><p class="number-band__value">{{.Countdown.Hours}}</p><p class="number-band__label">Hours</p></div>
+        <div class="number-band__cell"><p class="number-band__value">{{.Countdown.Minutes}}</p><p class="number-band__label">Minutes</p></div>
+        <div class="number-band__cell"><p class="number-band__value">{{.Countdown.Seconds}}</p><p class="number-band__label">Seconds</p></div>
+      </div>
     </div>
-    <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
-      <dt class="text-xs uppercase tracking-wider text-slate-400">Sent</dt>
-      <dd class="mt-1 font-mono text-xl font-bold">{{thousands .Stats.Sent}}</dd>
-    </div>
-    <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
-      <dt class="text-xs uppercase tracking-wider text-slate-400">Passes</dt>
-      <dd class="mt-1 font-mono text-xl font-bold">{{thousands .Stats.Passes}}</dd>
-    </div>
-    <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
-      <dt class="text-xs uppercase tracking-wider text-slate-400">Send errors</dt>
-      <dd class="mt-1 font-mono text-xl font-bold {{if .Stats.Errors}}text-rose-300{{end}}">{{thousands .Stats.Errors}}</dd>
-    </div>
-  </dl>
-
-  <div class="mt-4">
-    <div class="mb-1 flex justify-between text-xs text-slate-400">
-      <span>This pass</span>
-      <span class="font-mono">{{thousands .Stats.PassDone}} / {{thousands .Stats.PassTotal}} · {{.PassPercent}}%</span>
-    </div>
-    <div class="h-2 overflow-hidden rounded-full bg-slate-800">
-      <div class="h-full bg-blue-500 transition-all" style="width:{{.PassPercent}}%"></div>
-    </div>
-  </div>
-
-  {{if .Stats.LastError}}
-  <p class="mt-4 rounded-md border border-rose-900 bg-rose-950/50 px-3 py-2 text-sm text-rose-200">
-    Last send error{{if .LastErrorAt}} at {{.LastErrorAt}}{{end}}: <span class="font-mono">{{.Stats.LastError}}</span>
-  </p>
+  </section>
   {{end}}
-</section>{{end}}
+
+  {{if .ShowErrors}}
+  <section>
+    <div class="wrap" style="padding-top: 1.75rem;">
+      <div class="notice notice--danger">
+        <p class="notice__title">{{.ErrorTitle}}</p>
+        <p class="notice__body">Last at {{.LastErrorAt}}: {{.Stats.LastError}}. The sender backs off and carries on.</p>
+      </div>
+    </div>
+  </section>
+  {{end}}
+
+  {{if .ShowNumbers}}
+  <section class="number-band">
+    <div class="wrap">
+      <div class="number-band__grid">
+        <div class="number-band__cell"><p class="number-band__value">{{thousands .Stats.ActualPPS}}</p><p class="number-band__label">Packets per second, cap {{thousands .Settings.RatePPS}}</p></div>
+        <div class="number-band__cell"><p class="number-band__value">{{thousands .Stats.Sent}}</p><p class="number-band__label">Pixels sent</p></div>
+        <div class="number-band__cell"><p class="number-band__value">{{thousands .Stats.Passes}}</p><p class="number-band__label">Passes over the logo</p></div>
+        <div class="number-band__cell"><p class="number-band__value{{if .Stats.Errors}} number-band__value--wrong{{end}}">{{thousands .Stats.Errors}}</p><p class="number-band__label">Send errors</p></div>
+      </div>
+      <div class="meter-row">
+        <p class="meter-row__label">This pass</p>
+        <div class="meter-cut" role="progressbar" aria-label="This pass" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.PassPercent}}"><span class="meter-cut__fill" style="width: {{.PassPercent}}%;"></span></div>
+        <p class="meter-row__said"><b>{{.PassPercent}}%</b> · {{thousands .Stats.PassDone}} of {{thousands .Stats.PassTotal}}</p>
+      </div>
+    </div>
+  </section>
+
+  {{if .Bars}}
+  <section class="lead">
+    <div class="wrap history">
+      <div class="history__head">
+        <div>
+          <p class="eyebrow">Rate</p>
+          <h2 class="h-sub" style="margin-top: 0.5rem;">The last {{len .Bars}} seconds</h2>
+        </div>
+        <p class="history__legend"><i></i>Cap {{thousands .Settings.RatePPS}} a second</p>
+      </div>
+      <div class="history__plot">
+        <span class="history__cap" style="bottom: {{.CapPercent}}%;"></span>
+        {{range .Bars}}<span class="history__bar" style="height: {{.Height}}%;"></span>{{end}}
+      </div>
+      <div class="history__axis"><span>{{len .Bars}} s ago</span><span>Now</span></div>
+    </div>
+  </section>
+  {{end}}
+  {{end}}
+</div>{{end}}

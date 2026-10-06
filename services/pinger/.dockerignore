@@ -6,4 +6,3 @@
 !cmd
 !internal
 internal/**/*_test.go
-internal/web/static/app.css

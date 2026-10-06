@@ -68,29 +68,153 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 	return http.NewCrossOriginProtection().Handler(mux)
 }
 
+type bar struct{ Height string }
+
+type preset struct {
+	Label string
+	Value int
+	On    bool
+}
+
+type countdown struct{ Days, Hours, Minutes, Seconds string }
+
 type view struct {
 	Stats       paint.Stats
 	Settings    paint.Settings
 	Prefix      string
+	PrefixLabel string
 	PassPercent int
 	LastErrorAt string
 	ShowForm    bool
 	MaxRatePPS  int
+
+	State       string
+	IsRunning   bool
+	IsIdle      bool
+	IsClosed    bool
+	ShowNumbers bool
+	ShowErrors  bool
+	ChipLabel   string
+	ChipClass   string
+	ErrorTitle  string
+	Paused      bool
+	PauseLabel  string
+
+	SweepTop    int
+	SweepBottom int
+	Bars        []bar
+	CapPercent  int
+	Countdown   countdown
+
+	Presets []preset
 }
 
 func (s *server) view(r *http.Request) view {
 	st := s.stats.Snapshot()
 	cfg := s.settings.Current()
-	v := view{Stats: st, Settings: cfg, Prefix: cfg.Prefix.String(), MaxRatePPS: paint.MaxRatePPS}
+	state := string(st.State)
+	v := view{
+		Stats:       st,
+		Settings:    cfg,
+		Prefix:      cfg.Prefix.String(),
+		MaxRatePPS:  paint.MaxRatePPS,
+		State:       state,
+		IsRunning:   state == string(paint.Running),
+		IsIdle:      state == string(paint.Idle),
+		IsClosed:    state == string(paint.Closed),
+		ShowNumbers: state != string(paint.Closed),
+		Paused:      state == string(paint.Paused),
+		ShowForm:    slices.Contains(strings.Split(r.Header.Get("X-User-Groups"), ","), "ADMIN"),
+	}
 	if st.PassTotal > 0 {
 		v.PassPercent = st.PassDone * 100 / st.PassTotal
 	}
 	if !st.LastErrorAt.IsZero() {
 		v.LastErrorAt = st.LastErrorAt.In(s.ams).Format("Mon 15:04:05")
 	}
-	// The form is only shown on the header's say-so; saving it asks the api.
-	v.ShowForm = slices.Contains(strings.Split(r.Header.Get("X-User-Groups"), ","), "ADMIN")
+	v.ShowErrors = st.Errors > 0 && v.ShowNumbers
+	if st.Errors == 1 {
+		v.ErrorTitle = "1 send error"
+	} else {
+		v.ErrorTitle = thousands(st.Errors) + " send errors"
+	}
+
+	v.PrefixLabel = "No prefix"
+	if v.Prefix != "" {
+		v.PrefixLabel = v.Prefix
+	}
+	v.ChipLabel, v.ChipClass = chip(state)
+	v.PauseLabel = "Pause"
+	if v.Paused {
+		v.PauseLabel = "Resume"
+	}
+
+	lit := v.PassPercent
+	if v.IsClosed || v.IsIdle {
+		lit = 0
+	}
+	v.SweepTop = min(100, lit+4)
+	v.SweepBottom = max(0, lit-4)
+	v.Bars, v.CapPercent = bars(st.Rates, cfg.RatePPS)
+
+	v.Countdown = s.countdown()
+	v.Presets = presets(cfg.RatePPS)
 	return v
+}
+
+func chip(state string) (label, class string) {
+	switch state {
+	case string(paint.Running):
+		return "Painting", "state-chip state-chip--running"
+	case string(paint.Paused):
+		return "Paused", "state-chip state-chip--paused"
+	case string(paint.Closed):
+		return "Opens Fri 9 Oct, 18:00", "state-chip state-chip--closed"
+	default:
+		return "Waiting for the prefix", "state-chip state-chip--idle"
+	}
+}
+
+var presetRates = []int{10_000, 25_000, 50_000, 100_000}
+
+func presets(current int) []preset {
+	out := make([]preset, len(presetRates))
+	for i, n := range presetRates {
+		out[i] = preset{Label: thousands(n), Value: n, On: n == current}
+	}
+	return out
+}
+
+// bars scales the rate history so the cap line sits at four fifths height, visible whether
+// the sender is hitting the cap or idling below it.
+func bars(rates []uint64, ratePPS int) ([]bar, int) {
+	scale := float64(ratePPS) * 1.25
+	for _, r := range rates {
+		if float64(r) > scale {
+			scale = float64(r)
+		}
+	}
+	if scale <= 0 {
+		scale = 1
+	}
+	out := make([]bar, len(rates))
+	for i, r := range rates {
+		out[i] = bar{Height: strconv.FormatFloat(float64(r)/scale*100, 'f', 1, 64)}
+	}
+	return out, int(float64(ratePPS) / scale * 100)
+}
+
+func (s *server) countdown() countdown {
+	left := time.Until(paint.EventWindow().Start)
+	if left < 0 {
+		left = 0
+	}
+	return countdown{
+		Days:    fmt.Sprintf("%02d", int(left.Hours())/24),
+		Hours:   fmt.Sprintf("%02d", int(left.Hours())%24),
+		Minutes: fmt.Sprintf("%02d", int(left.Minutes())%60),
+		Seconds: fmt.Sprintf("%02d", int(left.Seconds())%60),
+	}
 }
 
 func (s *server) index(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +222,7 @@ func (s *server) index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) statsFragment(w http.ResponseWriter, r *http.Request) {
-	s.render(w, "stats", s.view(r))
+	s.render(w, "live", s.view(r))
 }
 
 func (s *server) render(w http.ResponseWriter, name string, v view) {

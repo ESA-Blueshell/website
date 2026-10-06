@@ -47,5 +47,7 @@ visitor as an admin. Do not set it in the cluster.
 | `PINGER_API_URL` | `http://localhost:8080`, asked on every settings change |
 | `PINGER_HOST` | `pings.esa-blueshell.nl`, the host forward-auth gates |
 
-The image builds the stylesheet with the Tailwind standalone CLI. `go build` outside Docker
-serves the page without styles.
+The page is server-rendered Go with a hand-written island stylesheet, the site's fonts and the
+shell tile, all embedded through `go:embed`. There is no Node or CSS build step. htmx swaps the
+live figures in place every two seconds; everything else is plain HTML. The theme toggle and the
+rate presets are the only client script, a dozen lines inline.

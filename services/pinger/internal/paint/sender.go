@@ -53,9 +53,14 @@ type Stats struct {
 	ActualPPS   uint64
 	LastError   string
 	LastErrorAt time.Time
+	// Rates is the packets-a-second sample for each of the last 40 seconds, oldest first.
+	Rates []uint64
 }
 
-const batch = 64
+const (
+	batch      = 64
+	rateWindow = 40
+)
 
 // Sender repaints the logo pass after pass, each pass in a fresh shuffled order so the logo
 // fills in evenly instead of as a scanline others can race.
@@ -78,6 +83,8 @@ type Sender struct {
 	errMu     sync.Mutex
 	lastErr   string
 	lastErrAt time.Time
+	rateMu    sync.Mutex
+	rates     []uint64
 }
 
 func NewSender(conn Conn, pixels []canvas.Pixel, window Window, settings func() Settings) *Sender {
@@ -106,6 +113,9 @@ func (s *Sender) Snapshot() Stats {
 	s.errMu.Lock()
 	lastErr, lastErrAt := s.lastErr, s.lastErrAt
 	s.errMu.Unlock()
+	s.rateMu.Lock()
+	rates := append([]uint64(nil), s.rates...)
+	s.rateMu.Unlock()
 	return Stats{
 		State:       s.state.Load().(State),
 		Sent:        s.sent.Load(),
@@ -116,6 +126,7 @@ func (s *Sender) Snapshot() Stats {
 		ActualPPS:   s.actualPPS.Load(),
 		LastError:   lastErr,
 		LastErrorAt: lastErrAt,
+		Rates:       rates,
 	}
 }
 
@@ -228,8 +239,15 @@ func (s *Sender) sampleRate(ctx context.Context) {
 			return
 		case <-tick.C:
 			now := s.sent.Load()
-			s.actualPPS.Store(now - last)
+			rate := now - last
+			s.actualPPS.Store(rate)
 			last = now
+			s.rateMu.Lock()
+			s.rates = append(s.rates, rate)
+			if len(s.rates) > rateWindow {
+				s.rates = s.rates[len(s.rates)-rateWindow:]
+			}
+			s.rateMu.Unlock()
 		}
 	}
 }

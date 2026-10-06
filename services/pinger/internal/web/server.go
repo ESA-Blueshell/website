@@ -111,15 +111,14 @@ type view struct {
 	Failing     bool
 	ErrorTitle  string
 
-	SweepTop    int
-	SweepBottom int
-	RatePoints  string
-	RateArea    string
-	RateCount   int
-	RateLastY   string
-	RateCeil    uint64
-	CapPercent  int
-	Countdown   countdown
+	PassEta    string
+	RatePoints string
+	RateArea   string
+	RateCount  int
+	RateLastY  string
+	RateCeil   uint64
+	CapPercent int
+	Countdown  countdown
 
 	Presets []preset
 }
@@ -163,12 +162,7 @@ func (s *server) view(r *http.Request) view {
 		v.ChipLabel, v.ChipClass = "Sending is failing", "state-chip state-chip--failing"
 	}
 
-	lit := v.PassPercent
-	if v.IsClosed || v.IsIdle {
-		lit = 0
-	}
-	v.SweepTop = min(100, lit+4)
-	v.SweepBottom = max(0, lit-4)
+	v.PassEta = passEta(st.PassTotal, st.ActualPPS)
 	v.RatePoints, v.RateArea, v.CapPercent, v.RateLastY, v.RateCeil = rateLine(st.Rates, cfg.RatePPS)
 	v.RateCount = len(st.Rates)
 
@@ -239,6 +233,18 @@ func rateLine(rates []uint64, ratePPS int) (points, area string, capPercent int,
 	area = "0,100 " + points + " 100,100"
 	lastY = strconv.FormatFloat(y(rates[len(rates)-1]), 'f', 2, 64)
 	return points, area, int(float64(ratePPS) / top * 100), lastY, uint64(top)
+}
+
+// passEta estimates how long one full paint of the logo takes at the current rate.
+func passEta(total int, pps uint64) string {
+	if pps == 0 || total <= 0 {
+		return "—"
+	}
+	secs := int(uint64(total) / pps)
+	if secs < 60 {
+		return strconv.Itoa(secs) + "s"
+	}
+	return fmt.Sprintf("%dm %02ds", secs/60, secs%60)
 }
 
 func (s *server) countdown() countdown {

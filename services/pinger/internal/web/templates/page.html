@@ -19,10 +19,7 @@
   </script>
   <script>
     // A WebSocket pushes a fresh live region once a second; we swap it in. Between pushes the
-    // "this pass" bar and the logo's scan glide from the last known count and rate so they never
-    // step. The canvas and its logo sit outside the swapped region, so the scan is driven here
-    // from the meter's numbers rather than by the push. A pass that finishes mid-second holds at
-    // full until the next push resets it — a small, deliberate lag.
+    // "this pass" bar glides from the last known count and rate so it never steps.
     (function () {
       var smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
       var raf;
@@ -34,12 +31,9 @@
         var base = +el.dataset.passdone;
         var pps = +el.dataset.pps;
         var running = el.dataset.running === 'true';
-        var lit = el.dataset.state !== 'idle' && el.dataset.state !== 'closed';
         var fill = el.querySelector('.meter-cut__fill');
         var pct = el.querySelector('.meter-pct');
         var bar = el.querySelector('.meter-cut');
-        var logo = document.querySelector('.target__lit');
-        var edge = document.querySelector('.target__edge');
         if (fill) fill.style.transition = 'none';
         var t0 = performance.now();
         function paint(done) {
@@ -47,15 +41,83 @@
           if (fill) fill.style.width = p.toFixed(2) + '%';
           if (pct) pct.textContent = Math.floor(p) + '%';
           if (bar) bar.setAttribute('aria-valuenow', Math.floor(p));
-          var lp = lit ? p : 0;
-          if (logo) logo.style.clipPath = 'polygon(0 0, ' + Math.min(100, lp + 4) + '% 0, ' + Math.max(0, lp - 4) + '% 100%, 0 100%)';
-          if (edge) { edge.style.left = lp + '%'; edge.style.opacity = running ? '1' : '0'; }
         }
         if (!smooth || !running || pps <= 0) { paint(base); return; }
         (function frame(now) {
           paint(Math.min(total, base + pps * (now - t0) / 1000));
           raf = requestAnimationFrame(frame);
         })(t0);
+      }
+
+      // The canvas plate paints the real logo pixels in, the way SNTPings fills: the logo builds
+      // up in a shuffled order and then a steady stream of sparks shows the pixels we are sending
+      // right now. The rate it spawns at tracks the live packets a second.
+      function startPixels() {
+        var px = document.querySelector('.target__px');
+        var spark = document.querySelector('.target__spark');
+        if (!px || !spark || !px.getContext) return;
+        var base = px.getContext('2d');
+        var top = spark.getContext('2d');
+        var xs, ys, cols, order, n = 0, cursor = 0;
+
+        var img = new Image();
+        img.onload = function () {
+          var off = document.createElement('canvas');
+          off.width = 600; off.height = 480;
+          var octx = off.getContext('2d');
+          octx.drawImage(img, 0, 0, 600, 480);
+          var data = octx.getImageData(0, 0, 600, 480).data;
+          xs = new Uint16Array(600 * 480); ys = new Uint16Array(600 * 480); cols = new Array(600 * 480);
+          for (var i = 0, p = 0; i < 600 * 480; i++) {
+            var a = data[i * 4 + 3];
+            if (a < 8) continue;
+            xs[p] = i % 600; ys[p] = (i / 600) | 0;
+            cols[p] = 'rgba(' + data[i * 4] + ',' + data[i * 4 + 1] + ',' + data[i * 4 + 2] + ',' + (a / 255) + ')';
+            p++;
+          }
+          n = p;
+          order = new Uint32Array(n);
+          for (var j = 0; j < n; j++) order[j] = j;
+          for (var k = n - 1; k > 0; k--) { var m = (Math.random() * (k + 1)) | 0; var t = order[k]; order[k] = order[m]; order[m] = t; }
+          requestAnimationFrame(loop);
+        };
+        // Attach onload before src, and cover the cached case: the ghost img may have already
+        // loaded /preview.png, so a late handler would never fire.
+        img.src = '/preview.png';
+        if (img.complete && img.naturalWidth) img.onload();
+
+        var last = 0, staticDrawn = false;
+        function drawAll() {
+          for (var i = 0; i < n; i++) { base.fillStyle = cols[order[i]]; base.fillRect(xs[order[i]], ys[order[i]], 1, 1); }
+        }
+        function loop(now) {
+          requestAnimationFrame(loop);
+          if (!n) return;
+          var dt = last ? (now - last) / 1000 : 0; last = now;
+          var el = document.querySelector('[data-live-meter]');
+          var pps = el ? +el.dataset.pps : 0;
+          var state = el ? el.dataset.state : 'idle';
+          var lit = state !== 'idle' && state !== 'closed';
+          var running = el && el.dataset.running === 'true';
+
+          if (!lit) { base.clearRect(0, 0, 600, 480); top.clearRect(0, 0, 600, 480); cursor = 0; staticDrawn = false; return; }
+          if (!smooth) { if (!staticDrawn) { drawAll(); staticDrawn = true; } top.clearRect(0, 0, 600, 480); return; }
+          staticDrawn = false;
+          top.clearRect(0, 0, 600, 480);
+          if (!running) return; // paused: hold the built-up logo, no sparks
+
+          var step = Math.min(n, Math.max(1, Math.round(pps * dt)));
+          for (var s = 0; s < step; s++) {
+            var idx = order[cursor];
+            base.fillStyle = cols[idx];
+            base.fillRect(xs[idx], ys[idx], 1, 1);
+            // The same pixels, brighter, on the spark layer: what we are painting this moment.
+            top.fillStyle = '#eaffff';
+            top.fillRect(xs[idx] - 1, ys[idx] - 1, 3, 3);
+            cursor++;
+            if (cursor >= n) cursor = 0;
+          }
+        }
       }
 
       function swap(html) {
@@ -87,7 +149,7 @@
         ws.onerror = function () { try { ws.close(); } catch (e) {} };
       }
 
-      document.addEventListener('DOMContentLoaded', function () { syncMeter(); connect(); });
+      document.addEventListener('DOMContentLoaded', function () { syncMeter(); startPixels(); connect(); });
     })();
   </script>
 </head>
@@ -148,8 +210,8 @@
           <div class="plate__grid"></div>
           <div class="target">
             <img class="target__img target__dim" alt="" src="/preview.png">
-            <img class="target__img target__lit" alt="The Blueshell logo where it lands" src="/preview.png" style="clip-path: polygon(0 0, {{.SweepTop}}% 0, {{.SweepBottom}}% 100%, 0 100%);">
-            <span class="target__edge" style="left: {{.PassPercent}}%; opacity: {{if .IsRunning}}1{{else}}0{{end}};"></span>
+            <canvas class="target__img target__px" width="600" height="480" aria-label="The Blueshell logo filling in as we paint it"></canvas>
+            <canvas class="target__img target__spark" width="600" height="480" aria-hidden="true"></canvas>
             <span class="target__frame"></span>
           </div>
           <span class="plate__tag plate__tag--target">X 3240 · Y 1680</span>
@@ -287,6 +349,7 @@
         <div class="meter-cut" role="progressbar" aria-label="This pass" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.PassPercent}}"><span class="meter-cut__fill" style="width: {{.PassPercent}}%;"></span></div>
         <p class="meter-row__said"><b class="meter-pct">{{.PassPercent}}%</b> · {{compact .Stats.PassDone}} of {{compact .Stats.PassTotal}}</p>
       </div>
+      <p class="meter-eta">A full paint of the logo takes about <b>{{.PassEta}}</b> at this rate.</p>
     </div>
   </section>
 

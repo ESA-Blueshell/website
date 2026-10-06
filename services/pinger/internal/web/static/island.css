@@ -949,8 +949,7 @@ body{margin:0;background:#1c1c1c}
 .target{position:absolute;left:84.375%;top:77.7778%;width:15.625%;height:22.2222%}
 .target__img{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated}
 .target__dim{opacity:0.2;filter:grayscale(1) brightness(1.15)}
-.target__edge{position:absolute;top:-4%;bottom:-4%;width:2px;background:var(--color-acid);box-shadow:0 0 12px var(--color-acid);
-  transform:skewX(-12deg);transition:left 900ms linear}
+.target__spark{mix-blend-mode:screen}
 .target__frame{position:absolute;inset:-5px;border:1px dashed color-mix(in oklab,var(--color-brand) 70%,transparent)}
 .plate__tag{position:absolute;font-family:'Silkscreen',ui-monospace,monospace;font-size:8px;letter-spacing:0.08em;color:oklch(1 0 0 / 55%)}
 .plate__tag--tl{left:10px;top:8px}
@@ -966,6 +965,8 @@ body{margin:0;background:#1c1c1c}
 .meter-cut__fill::after{content:"";position:absolute;right:0;top:0;bottom:0;width:0.6rem;background:var(--color-acid);transform:skewX(-12deg)}
 .meter-row__said{font-size:0.9rem;color:var(--color-ash);white-space:nowrap}
 .meter-row__said b{font-family:'Shellhouse One',sans-serif;font-weight:400;color:var(--color-chalk)}
+.meter-eta{margin-top:0.6rem;font-size:0.82rem;color:var(--color-ash)}
+.meter-eta b{color:var(--color-chalk)}
 
 .number-band__value small{font-family:'Barlow Semi Condensed',sans-serif;font-size:1rem;letter-spacing:0.04em;color:var(--color-ash);margin-left:0.3rem}
 .number-band__value--wrong{color:var(--color-wrong)}
@@ -1041,7 +1042,7 @@ body{margin:0;background:#1c1c1c}
 }
 @media (prefers-reduced-motion: reduce){
   .state-chip__dot,.saved{animation:none}
-  .plate__stage,.target__lit,.target__edge,.meter-cut__fill,.speck{transition:none}
+  .plate__stage,.meter-cut__fill,.speck{transition:none}
 }
 
 /* The pinger sets the theme with a class on <html> before first paint, so the choice never

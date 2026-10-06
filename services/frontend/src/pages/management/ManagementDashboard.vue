@@ -103,6 +103,7 @@
 <script lang="ts" setup>
 /* Management's first page: the reader's alerts and a block per area, each linking to the page it
    sums up. Admin figures are read only for an admin, so the board never calls an admin endpoint. */
+import {countOf} from "@/utils/countOf"
 import {computed, onMounted, ref} from "vue"
 import FactList from "@/components/island/FactList.vue"
 import StateMark, {type StateKind} from "@/components/island/StateMark.vue"
@@ -159,8 +160,14 @@ const periodName = computed(() => {
 
 const membership = computed(() => (standing.value
   ? [
-      {label: "Members", value: String(standing.value.members), sub: `${standing.value.pendingFirstContribution} pending their first contribution`},
-      {label: "Paid", value: String(standing.value.paid), sub: `${standing.value.stillToPay} still to pay`},
+      // What needs somebody is the value, and what does not is the line under it.
+      {label: "Still to pay", value: String(standing.value.stillToPay), sub: `${standing.value.paid} paid`, quiet: standing.value.stillToPay === 0},
+      {
+        label: "Pending their first contribution",
+        value: String(standing.value.pendingFirstContribution),
+        sub: countOf(standing.value.members, "member", "members"),
+        quiet: standing.value.pendingFirstContribution === 0,
+      },
     ]
   : []))
 

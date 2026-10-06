@@ -6,7 +6,6 @@ import {useRoute} from "vue-router"
 import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
-import SearchPicker from "@/components/island/SearchPicker.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import {
@@ -19,6 +18,7 @@ import {
   markHandled,
   readConversation,
   sendReply,
+  ReplyToPicker,
 } from "@/domains/mail"
 import store from "@/plugins/store"
 import {formatMoment} from "@/utils/timestamps"
@@ -38,7 +38,6 @@ const failure = ref<string | null>(null)
 
 const message = computed(() => conversation.value?.message ?? null)
 const sender = computed(() => message.value && (message.value.senderName ?? message.value.fromName ?? message.value.fromAddress))
-const replyPickerOptions = computed(() => replyOptions.value.map((one) => ({key: one, label: one})))
 
 const load = async () => {
   loaded.value = false
@@ -150,17 +149,16 @@ onMounted(async () => {
           </template>
         </form-field>
         <form-field
-          label="Replies go to"
+          label="Reply-to"
           testid="inbox-reply-to"
         >
           <template #default="{controlId, labelId}">
-            <search-picker
+            <reply-to-picker
+              v-model="replyTo"
               :control-id="controlId"
               :labelled-by="labelId"
-              :options="replyPickerOptions"
-              :selected-key="replyTo"
+              :offered="replyOptions"
               testid-prefix="inbox-reply-to-picker"
-              @pick="(key: string) => replyTo = key"
             />
           </template>
         </form-field>

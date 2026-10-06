@@ -103,11 +103,17 @@ const isCurrent = (one: ContributionPeriodResponse) => one.startDate <= today &&
 
 const facts = computed(() => (period.value
   ? [
+      {
+        label: "Still to pay",
+        value: String(members.value.length - paidCount.value),
+        sub: `${paidCount.value} of ${members.value.length} paid`,
+        quiet: paidCount.value === members.value.length,
+        testid: "contribution-paid-count",
+      },
       {label: "Full-year fee", value: euro(period.value.fullYearFee)},
       {label: "Half-year fee", value: euro(period.value.halfYearFee)},
       {label: "Alumni fee", value: euro(period.value.alumniFee)},
       {label: "Half-year cutoff", value: formatDay(period.value.halfYearCutoffDate)},
-      {label: "Paid", value: `${paidCount.value} of ${members.value.length}`, testid: "contribution-paid-count"},
       {label: "On incasso", value: String(incassoCount.value), testid: "contribution-incasso-count"},
     ]
   : []))

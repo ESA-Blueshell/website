@@ -80,7 +80,9 @@ describe("the Contributions page", () => {
     expect(tiles).toEqual(["contribution-period-1", "contribution-period-2", "contribution-period-3", "contribution-period-new"])
     expect(wrapper.get('[data-testid="contribution-period-2"]').attributes("aria-current")).toBe("page")
     expect(api.findPeriodContributions).toHaveBeenCalledWith({path: {periodId: 2}})
-    expect(wrapper.get('[data-testid="contribution-paid-count"]').text()).toContain("1 of 3")
+    // Still to pay leads, with how many paid under it.
+    expect(wrapper.get('[data-testid="contribution-paid-count"]').text()).toBe("Still to pay21 of 3 paid")
+    expect(wrapper.findAll(".facts__label")[0]!.text()).toBe("Still to pay")
     expect(wrapper.get('[data-testid="contribution-incasso-count"]').text()).toContain("1")
     expect(wrapper.get('[data-testid="contribution-last-email-3"]').text()).toBe("None yet")
     expect(wrapper.get('[data-testid="contribution-last-email-2"]').text().toLowerCase()).toContain("contribution reminder")

@@ -28,8 +28,9 @@ class Answering(
         by: Long?,
     ): InboxMessage {
         if (message.isBlank()) throw MessageMissing()
+        val checked = checkedReplyTo(replyTo)
         val received = find(messageId)
-        val reply = replies.save(InboxReply(messageId, message, replyTo?.ifBlank { null }, by, clock.instant()))
+        val reply = replies.save(InboxReply(messageId, message, checked, by, clock.instant()))
         jobs.runAsync(MailJobs.InboxReply, MailJobs.InboxReplyPayload(requireNotNull(reply.id)), JobTrigger.SITE_ACTION)
         return mark(received, InboxState.REPLIED, by)
     }

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 /* Everyone with an account, in one full-length list: one search over every field, three filters
    and sortable columns. Money is not here; it lives in Contributions. */
+import {countOf} from "@/utils/countOf"
 import {computed, onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import FilterBar from "@/components/island/FilterBar.vue"
@@ -108,12 +109,13 @@ const facts = computed(() => {
   const looked = rows.value.filter((row) => row.needs.length > 0)
   const reasons = (Object.keys(NEEDS_LOOK_WORDS) as NeedsLook[]).filter((reason) => looked.some((row) => row.needs.includes(reason)))
   const start = periodStart.value
+  // What needs somebody comes first, and is quiet when nobody is waiting.
   return [
-    {label: "Members", value: String(members), sub: `${pending} pending their first contribution`, testid: "member-manager-fact-members"},
+    {label: "Pending their first contribution", value: String(pending), sub: countOf(members, "member", "members"), quiet: pending === 0, testid: "member-manager-fact-members"},
+    {label: "Needs a look", value: countOf(looked.length, "person", "people"), sub: reasons.map((reason) => NEEDS_LOOK_WORDS[reason]).join(", "), quiet: looked.length === 0},
     start
       ? {label: "New this period", value: String(rows.value.filter((row) => row.memberSince !== null && row.memberSince >= start).length), sub: `Since ${formatDay(start)}`}
       : {label: "Accounts", value: String(rows.value.length), sub: "Members or not"},
-    {label: "Needs a look", value: `${looked.length} ${looked.length === 1 ? "person" : "people"}`, sub: reasons.map((reason) => NEEDS_LOOK_WORDS[reason]).join(", ")},
   ]
 })
 

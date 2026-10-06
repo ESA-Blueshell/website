@@ -7,6 +7,8 @@ export interface Fact {
   share?: number
   /** A value that is a fault, or one worth a look, is drawn in that colour. */
   tone?: "danger" | "warning"
+  /** Nothing needs anybody here now, such as nobody still to pay: the value reads quietly. */
+  quiet?: boolean
   testid?: string
 }
 </script>
@@ -40,7 +42,7 @@ const {facts, columns = 3} = defineProps<{
       </p>
       <p
         class="facts__value"
-        :class="fact.tone ? `facts__value--${fact.tone}` : undefined"
+        :class="[fact.tone ? `facts__value--${fact.tone}` : undefined, {'facts__value--quiet': fact.quiet}]"
       >
         {{ fact.value }}
       </p>
@@ -89,6 +91,10 @@ const {facts, columns = 3} = defineProps<{
 
 .facts__value--warning {
   color: var(--color-warning);
+}
+
+.facts__value--quiet {
+  color: var(--color-ash);
 }
 
 .facts__one {

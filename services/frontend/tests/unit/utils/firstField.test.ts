@@ -35,6 +35,8 @@ describe("the first field of a form", () => {
   it("leaves a form that starts with a picker, a tick box or a field that cannot be changed alone", () => {
     for (const first of [
       '<input role="combobox" type="text">',
+      // A date field drops its calendar on focus, so a form that starts with one opens calm.
+      '<input aria-haspopup="dialog" type="text">',
       '<input type="checkbox">',
       '<select><option>One</option></select>',
       '<input type="text" disabled>',

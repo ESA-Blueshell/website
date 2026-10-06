@@ -69,8 +69,10 @@ const read = (raw: string): [number, number, number] | null => {
   return said ? [Number(said[3]), Number(said[2]), Number(said[1])] : null
 }
 
+// Typing is the other way in, so the calendar gets out of its way.
 const onType = (event: Event) => {
   const raw = (event.target as HTMLInputElement).value
+  open.value = false
   typed.value = raw
   const parts = read(raw)
   if (!parts) {
@@ -125,6 +127,11 @@ const weeks = computed(() => {
   }))
 })
 
+/* The calendar drops down when the field is clicked or tabbed into, and goes away once somebody types. */
+const openPanel = () => {
+  if (!disabled) open.value = true
+}
+
 const take = (iso: string) => {
   value.value = iso
   open.value = false
@@ -155,9 +162,14 @@ const clear = () => {
       inputmode="numeric"
       placeholder="dd/mm/yyyy"
       type="text"
+      aria-haspopup="dialog"
+      :aria-expanded="open"
       :value="typed"
       v-bind="$attrs"
+      @click="openPanel"
+      @focus="openPanel"
       @input="onType"
+      @keydown.tab="open = false"
     >
 
     <button

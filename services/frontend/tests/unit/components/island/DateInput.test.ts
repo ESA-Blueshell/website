@@ -265,3 +265,38 @@ describe("the calendar the island draws", () => {
     expect(panel()).not.toBeNull()
   })
 })
+
+describe("the calendar a date field drops down", () => {
+  it("opens on a click in the box and when the box is tabbed into, and gives way to typing", async () => {
+    const wrapper = field()
+    const box = wrapper.find("input")
+    expect(box.attributes("aria-haspopup")).toBe("dialog")
+
+    await box.trigger("click")
+    await flushPromises()
+    expect(panel()).not.toBeNull()
+    expect(box.attributes("aria-expanded")).toBe("true")
+    await box.setValue("07/03/2026")
+    await flushPromises()
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["2026-03-07"])
+    expect(panel()).toBeNull()
+
+    await box.trigger("click")
+    await box.trigger("keydown", {key: "Tab"})
+    await flushPromises()
+    expect(panel()).toBeNull()
+
+    await box.trigger("focus")
+    await flushPromises()
+    expect(panel()).not.toBeNull()
+  })
+
+  it("stays shut on a field that is off", async () => {
+    const wrapper = field({disabled: true})
+    await wrapper.find("input").trigger("click")
+    await wrapper.find("input").trigger("focus")
+    await flushPromises()
+    expect(panel()).toBeNull()
+  })
+})
+

@@ -71,9 +71,9 @@ describe("the Management dashboard", () => {
     expect(alerts.get('[data-testid="dashboard-alerts-link"]').text()).toBe("All 2 alerts")
     const membership = wrapper.get('[data-testid="dashboard-membership"]').text()
     expect(membership).toContain("Members, 2026-2027")
-    expect(membership).toContain("211")
-    expect(membership).toContain("9 pending their first contribution")
-    expect(membership).toContain("31 still to pay")
+    // What needs somebody is the value: still to pay over the paid count, the pending over the members.
+    const facts = wrapper.get('[data-testid="dashboard-membership"]').findAll(".facts__one").map((one) => one.text())
+    expect(facts).toEqual(["Still to pay31180 paid", "Pending their first contribution9211 members"])
     const events = wrapper.get('[data-testid="dashboard-events"]')
     expect(events.get('[data-testid="dashboard-events-queue"]').text()).toBe("4 awaiting approval")
     expect(events.text()).toContain("Pub quiz")
@@ -122,6 +122,9 @@ describe("the Management dashboard", () => {
 
     expect(wrapper.get('[data-testid="dashboard-membership"]').text()).toContain("Members, 2026")
     expect(wrapper.get('[data-testid="dashboard-membership"]').text()).not.toContain("2026-2026")
+    // Nobody waiting on a first contribution reads quietly; five still to pay does not.
+    const values = wrapper.get('[data-testid="dashboard-membership"]').findAll(".facts__value")
+    expect(values.map((one) => one.classes().includes("facts__value--quiet"))).toEqual([false, true])
     expect(wrapper.text()).toMatch(/Good (morning|afternoon|evening)\. Here is what needs you/)
   })
 })

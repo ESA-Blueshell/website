@@ -94,7 +94,7 @@ class Writing(
         if (subject.isBlank()) throw SubjectMissing()
         if (message.isBlank()) throw MessageMissing()
         if (people.isEmpty()) throw NobodyToWrite()
-        val email = written.save(WrittenEmail(subject.trim(), message, replyTo?.ifBlank { null }, writer, clock.instant(), people.size))
+        val email = written.save(WrittenEmail(subject.trim(), message, checkedReplyTo(replyTo), writer, clock.instant(), people.size))
         people.sorted().forEach { userId ->
             jobs.runAsync(MailJobs.Written, MailJobs.WrittenPayload(requireNotNull(email.id), userId), JobTrigger.SITE_ACTION)
         }

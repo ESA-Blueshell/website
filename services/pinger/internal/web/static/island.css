@@ -929,6 +929,10 @@ body{margin:0;background:#1c1c1c}
 .canvas-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem 2rem;flex-wrap:wrap;margin-bottom:1.1rem}
 .canvas-head__acts{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap}
 .zoom{display:flex;gap:0.4rem}
+.zoom__radio{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.zoom__radio:checked + .zoom__opt{background:var(--color-brand);color:var(--color-void)}
+.zoom__radio:focus-visible + .zoom__opt{outline:2px solid var(--color-brand);outline-offset:2px}
+.canvas-band .wrap:has(#zoom-corner:checked) .plate__stage{transform:scale(3.6)}
 .zoom__opt{position:relative;overflow:hidden;padding:0.5rem 1rem;border:0;cursor:pointer;
   clip-path:polygon(0.55rem 0,100% 0,calc(100% - 0.55rem) 100%,0 100%);
   background:color-mix(in oklab,var(--color-chalk) 6%,transparent);color:var(--color-ash);

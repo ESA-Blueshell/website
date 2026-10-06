@@ -67,13 +67,13 @@
 
   <section class="canvas-band">
     <div class="wrap">
-      <input type="radio" name="zoom" id="zoom-all" class="zoom__radio" checked>
-      <input type="radio" name="zoom" id="zoom-corner" class="zoom__radio">
       <div class="canvas-head">
         <h2 class="h-sub">The Canvas</h2>
         <div class="canvas-head__acts">
-          <div class="zoom">
+          <div class="zoom" role="group" aria-label="Zoom">
+            <input type="radio" name="zoom" id="zoom-all" class="zoom__radio" checked>
             <label class="zoom__opt" for="zoom-all">Whole canvas</label>
+            <input type="radio" name="zoom" id="zoom-corner" class="zoom__radio">
             <label class="zoom__opt" for="zoom-corner">Our corner</label>
           </div>
           <a class="island-cut island-cut--quiet" href="https://pings.utwente.io/" style="padding: 0.5rem 1rem; font-size: 0.72rem;"><span>Watch the stream</span></a>
@@ -104,7 +104,7 @@
       <div class="fact"><p class="fact__label">Opens</p><p class="fact__value">Fri 9 Oct, 18:00</p><p class="fact__sub">Amsterdam time</p></div>
       <div class="fact"><p class="fact__label">Closes</p><p class="fact__value">Sun 11 Oct, 23:59</p><p class="fact__sub">Nothing is sent after</p></div>
       <div class="fact"><p class="fact__label">Placement</p><p class="fact__value">600 × 480</p><p class="fact__sub">X 3240 to 3839, Y 1680 to 2159</p></div>
-      <div class="fact"><p class="fact__label">Per pass</p><p class="fact__value">{{thousands .Stats.PassTotal}} pixels</p><p class="fact__sub">Shuffled every pass</p></div>
+      <div class="fact"><p class="fact__label">Per pass</p><p class="fact__value">{{compact .Stats.PassTotal}} pixels</p><p class="fact__sub">Shuffled every pass</p></div>
     </div>
   </section>
 
@@ -215,14 +215,14 @@
     <div class="wrap">
       <div class="number-band__grid">
         <div class="number-band__cell"><p class="number-band__value">{{thousands .Stats.ActualPPS}}</p><p class="number-band__label">Packets per second, cap {{thousands .Settings.RatePPS}}</p></div>
-        <div class="number-band__cell"><p class="number-band__value">{{thousands .Stats.Sent}}</p><p class="number-band__label">Pixels sent</p></div>
-        <div class="number-band__cell"><p class="number-band__value">{{thousands .Stats.Passes}}</p><p class="number-band__label">Passes over the logo</p></div>
-        <div class="number-band__cell"><p class="number-band__value{{if .Stats.Errors}} number-band__value--wrong{{end}}">{{thousands .Stats.Errors}}</p><p class="number-band__label">Send errors</p></div>
+        <div class="number-band__cell"><p class="number-band__value">{{compact .Stats.Sent}}</p><p class="number-band__label">Pixels sent</p></div>
+        <div class="number-band__cell"><p class="number-band__value">{{compact .Stats.Passes}}</p><p class="number-band__label">Passes over the logo</p></div>
+        <div class="number-band__cell"><p class="number-band__value{{if .Stats.Errors}} number-band__value--wrong{{end}}">{{compact .Stats.Errors}}</p><p class="number-band__label">Send errors</p></div>
       </div>
       <div class="meter-row">
         <p class="meter-row__label">This pass</p>
         <div class="meter-cut" role="progressbar" aria-label="This pass" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.PassPercent}}"><span class="meter-cut__fill" style="width: {{.PassPercent}}%;"></span></div>
-        <p class="meter-row__said"><b>{{.PassPercent}}%</b> · {{thousands .Stats.PassDone}} of {{thousands .Stats.PassTotal}}</p>
+        <p class="meter-row__said"><b>{{.PassPercent}}%</b> · {{compact .Stats.PassDone}} of {{compact .Stats.PassTotal}}</p>
       </div>
     </div>
   </section>

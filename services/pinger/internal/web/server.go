@@ -52,7 +52,7 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 		settings: settings,
 		auth:     auth,
 		preview:  preview,
-		page:     template.Must(template.New("").Funcs(template.FuncMap{"thousands": thousands}).ParseFS(templateFS, "templates/*.html")),
+		page:     template.Must(template.New("").Funcs(template.FuncMap{"thousands": thousands, "compact": compact}).ParseFS(templateFS, "templates/*.html")),
 		ams:      ams,
 	}
 	static, _ := fs.Sub(staticFS, "static")
@@ -283,17 +283,39 @@ func (s *server) previewImage(w http.ResponseWriter, _ *http.Request) {
 }
 
 func thousands(n any) string {
-	var s string
-	switch v := n.(type) {
-	case int:
-		s = strconv.Itoa(v)
-	case uint64:
-		s = strconv.FormatUint(v, 10)
-	default:
-		s = fmt.Sprint(v)
-	}
+	s := strconv.FormatUint(toUint64(n), 10)
 	for i := len(s) - 3; i > 0; i -= 3 {
 		s = s[:i] + "," + s[i:]
 	}
 	return s
+}
+
+// compact writes a big tally as 1.2M or 3.4B, so a running total never grows wider than its
+// cell. Below a thousand it stays exact.
+func compact(n any) string {
+	v := toUint64(n)
+	for _, u := range []struct {
+		div    uint64
+		suffix string
+	}{{1e12, "T"}, {1e9, "B"}, {1e6, "M"}, {1e3, "K"}} {
+		if v >= u.div {
+			s := strconv.FormatFloat(float64(v)/float64(u.div), 'f', 1, 64)
+			return strings.TrimSuffix(s, ".0") + u.suffix
+		}
+	}
+	return strconv.FormatUint(v, 10)
+}
+
+func toUint64(n any) uint64 {
+	switch v := n.(type) {
+	case int:
+		if v < 0 {
+			return 0
+		}
+		return uint64(v)
+	case uint64:
+		return v
+	default:
+		return 0
+	}
 }

@@ -67,7 +67,7 @@ func TestThePageShowsHowThePaintingGoes(t *testing.T) {
 	if code != http.StatusOK {
 		t.Fatalf("status %d", code)
 	}
-	for _, want := range []string{"running", "1,234,567", "49,876", "50,000", "2001:db8:b317:a000::/64", "24%", "no buffer space available", `hx-get="/stats"`} {
+	for _, want := range []string{"running", "1.2M", "49,876", "50,000", "2001:db8:b317:a000::/64", "24%", "no buffer space available", `hx-get="/stats"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page lacks %q", want)
 		}
@@ -92,7 +92,7 @@ func TestTheStatsFragmentStandsAlone(t *testing.T) {
 
 	code, body := get(t, h, "/stats", "")
 
-	if code != http.StatusOK || strings.Contains(body, "<html") || !strings.Contains(body, "1,234,567") {
+	if code != http.StatusOK || strings.Contains(body, "<html") || !strings.Contains(body, "1.2M") {
 		t.Fatalf("status %d, body %q", code, body)
 	}
 }
@@ -177,5 +177,19 @@ func TestACrossSitePostIsRefusedEvenForAnAdmin(t *testing.T) {
 
 	if w.Code != http.StatusForbidden || settings.saves != 0 {
 		t.Fatalf("status %d, %d saves", w.Code, settings.saves)
+	}
+}
+
+func TestCompactShortensBigTalliesAndKeepsSmallOnesExact(t *testing.T) {
+	cases := map[any]string{
+		uint64(0): "0", 42: "42", uint64(999): "999",
+		uint64(1_000): "1K", 50_000: "50K", uint64(202_158): "202.2K",
+		uint64(1_234_567): "1.2M", uint64(18_710_842): "18.7M", uint64(3_400_000_000): "3.4B",
+		uint64(2_000_000_000_000): "2T",
+	}
+	for in, want := range cases {
+		if got := compact(in); got != want {
+			t.Errorf("compact(%v) = %q, want %q", in, got, want)
+		}
 	}
 }

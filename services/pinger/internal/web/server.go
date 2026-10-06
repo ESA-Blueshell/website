@@ -66,7 +66,8 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 	mux.HandleFunc("GET /preview.png", s.previewImage)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
-	return mux
+	// The api's session cookie is SameSite=None, so a form on another site would arrive signed in.
+	return http.NewCrossOriginProtection().Handler(mux)
 }
 
 type view struct {

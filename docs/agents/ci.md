@@ -21,7 +21,7 @@ A dispatched run has no diff to read, so it runs everything.
 ## Validate runs the suites the diff needs
 
 `.github/buckets.yml` maps a changed path to **buckets**, and each job gates on the buckets it
-belongs to. There are four, and each one skips work the others run:
+belongs to. There are five, and each one skips work the others run:
 
 | Bucket | Paths | What runs |
 | --- | --- | --- |
@@ -29,8 +29,9 @@ belongs to. There are four, and each one skips work the others run:
 | `api` | `services/api/**`, detekt config, the changeset scripts | api lint, unit, integration and coverage, `Build has no warnings`, schema compatibility, changeset SQL, and everything `app` runs |
 | `frontend` | `services/frontend/**` | frontend unit and e2e, and everything `app` runs |
 | `system` | `tests/**` | api lint, `Build has no warnings`, and everything `app` runs |
+| `pinger` | `services/pinger/**` but its compose file | `Pinger tests and image` |
 
-`app` is any bucket but `platform`. It runs both compile jobs, the image builds, the system tests
+`app` is any bucket but `platform` and `pinger`. It runs both compile jobs, the image builds, the system tests
 and the acceptance features, because the system tests drive the api through the pages and a
 change on either side can break them. `Validate OpenAPI client generation` and `Changed lines are
 covered` run on `api` or `frontend`. `Workflow checks` runs on every pull request.
@@ -39,7 +40,7 @@ covered` run on `api` or `frontend`. `Workflow checks` runs on every pull reques
 `src/utils/jobCatalog.ts` to the job types the api's sources register. The frontend unit job runs
 on `frontend` alone, so an api pull request adding a job needs the check on the `app` side.
 
-Two things sit outside the four.
+Two things sit outside the five.
 
 **`ignore`** is what no suite reads: `docs/**`, `gameart/**`, `infra/dns/**`, the editor and
 Renovate config, the release-please manifest, every workflow but `validate.yml`, and the dev

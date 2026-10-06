@@ -1,7 +1,8 @@
 # Dry run of the pinger against the dev stack: nothing leaves the container and every visitor
-# is treated as an admin. Open http://localhost:8090.
+# is treated as an admin. `docker compose --profile pinger up pinger`, then http://localhost:8090.
 services:
   pinger:
+    profiles: [pinger]
     image: pinger:dev
     pull_policy: never
     build:
@@ -17,3 +18,7 @@ services:
     depends_on:
       valkey:
         condition: service_healthy
+
+networks:
+  global_network:
+    driver: bridge

@@ -164,3 +164,18 @@ func TestThePreviewIsThePlacedLogo(t *testing.T) {
 		t.Fatalf("status %d, body %q", code, body)
 	}
 }
+
+func TestACrossSitePostIsRefusedEvenForAnAdmin(t *testing.T) {
+	settings := &fakeSettings{current: paint.Settings{RatePPS: 50_000}}
+	h := newTestServer(true, settings)
+	r := httptest.NewRequest(http.MethodPost, "/settings", strings.NewReader("prefix=&rate=1"))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Set("Sec-Fetch-Site", "cross-site")
+	w := httptest.NewRecorder()
+
+	h.ServeHTTP(w, r)
+
+	if w.Code != http.StatusForbidden || settings.saves != 0 {
+		t.Fatalf("status %d, %d saves", w.Code, settings.saves)
+	}
+}

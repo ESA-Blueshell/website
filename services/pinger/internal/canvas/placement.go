@@ -13,9 +13,9 @@ type Placement struct {
 	Pixels []Pixel
 }
 
-// Place crops src to its visible pixels, fits the long side to maxSide and anchors it in the
-// canvas's bottom-right corner. Fully transparent pixels are dropped: painting them changes nothing.
-func Place(src image.Image, maxSide int) Placement {
+// Place crops src to its visible pixels, fits the long side to maxSide and centers it on the
+// given canvas point. Fully transparent pixels are dropped: painting them changes nothing.
+func Place(src image.Image, maxSide int, center image.Point) Placement {
 	crop := visibleBounds(src)
 	w, h := crop.Dx(), crop.Dy()
 	if w >= h {
@@ -31,7 +31,7 @@ func Place(src image.Image, maxSide int) Placement {
 		draw.CatmullRom.Scale(scaled, scaled.Rect, src, crop, draw.Src, nil)
 	}
 
-	origin := image.Pt(Width-w, Height-h)
+	origin := image.Pt(center.X-w/2, center.Y-h/2)
 	pixels := make([]Pixel, 0, w*h)
 	for y := range h {
 		for x := range w {

@@ -25,7 +25,7 @@ func TestPlaceCropsToTheVisiblePixelsAndFitsTheLongSide(t *testing.T) {
 	red := color.NRGBA{R: 0xff, A: 0xff}
 	fill(src, image.Rect(40, 40, 60, 50), red)
 
-	got := Place(src, 600)
+	got := Place(src, 600, image.Pt(1920, 720))
 
 	if got.Image.Bounds().Dx() != 600 || got.Image.Bounds().Dy() != 300 {
 		t.Fatalf("scaled to %v, want 600x300", got.Image.Bounds().Size())
@@ -33,9 +33,10 @@ func TestPlaceCropsToTheVisiblePixelsAndFitsTheLongSide(t *testing.T) {
 	if len(got.Pixels) != 600*300 {
 		t.Fatalf("got %d pixels, want %d", len(got.Pixels), 600*300)
 	}
+	// Centered on (1920, 720): origin is (1920-300, 720-150) = (1620, 570).
 	for _, px := range got.Pixels {
-		if px.X < 3240 || px.X > 3839 || px.Y < 1860 || px.Y > 2159 {
-			t.Fatalf("pixel %+v outside the bottom-right 600x300", px)
+		if px.X < 1620 || px.X > 2219 || px.Y < 570 || px.Y > 869 {
+			t.Fatalf("pixel %+v outside the centered 600x300", px)
 		}
 		if px.R != 0xff || px.G != 0 || px.B != 0 || px.A != 0xff {
 			t.Fatalf("pixel %+v is not opaque red", px)
@@ -49,27 +50,28 @@ func TestPlaceSkipsTransparentPixelsAndKeepsEdgeAlpha(t *testing.T) {
 	src.SetNRGBA(10, 0, color.NRGBA{})
 	src.SetNRGBA(11, 0, color.NRGBA{R: 0x40, G: 0x80, B: 0xc0, A: 0x80})
 
-	got := Place(src, 600)
+	got := Place(src, 600, image.Pt(1920, 720))
 
 	if len(got.Pixels) != 1199 {
 		t.Fatalf("got %d pixels, want 1199", len(got.Pixels))
 	}
+	// 600x2 scaled stays 600x2; origin is (1620, 719).
 	var edge *Pixel
 	for i, px := range got.Pixels {
-		if px.X == 3240+10 && px.Y == 2158 {
+		if px.X == 1630 && px.Y == 719 {
 			t.Fatalf("transparent pixel was kept: %+v", px)
 		}
-		if px.X == 3240+11 && px.Y == 2158 {
+		if px.X == 1631 && px.Y == 719 {
 			edge = &got.Pixels[i]
 		}
 	}
-	want := Pixel{X: 3251, Y: 2158, R: 0x40, G: 0x80, B: 0xc0, A: 0x80}
+	want := Pixel{X: 1631, Y: 719, R: 0x40, G: 0x80, B: 0xc0, A: 0x80}
 	if edge == nil || *edge != want {
 		t.Fatalf("edge pixel %+v, want %+v", edge, want)
 	}
 }
 
-func TestPlaceFitsTheBlueshellLogoTo600By480InTheCorner(t *testing.T) {
+func TestPlaceFitsTheBlueshellLogoTo900CenteredAtTheTopThird(t *testing.T) {
 	f, err := os.Open("../../logo.png")
 	if err != nil {
 		t.Fatal(err)
@@ -80,20 +82,20 @@ func TestPlaceFitsTheBlueshellLogoTo600By480InTheCorner(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := Place(src, 600)
+	got := Place(src, 900, image.Pt(Width/2, Height/3))
 
-	if got.Image.Bounds().Size() != image.Pt(600, 480) {
-		t.Fatalf("scaled to %v, want 600x480", got.Image.Bounds().Size())
+	if got.Image.Bounds().Size() != image.Pt(900, 720) {
+		t.Fatalf("scaled to %v, want 900x720", got.Image.Bounds().Size())
 	}
 	minX, minY, maxX, maxY := uint16(Width), uint16(Height), uint16(0), uint16(0)
 	for _, px := range got.Pixels {
 		minX, minY = min(minX, px.X), min(minY, px.Y)
 		maxX, maxY = max(maxX, px.X), max(maxY, px.Y)
 	}
-	if minX != 3240 || maxX != 3839 || minY != 1680 || maxY != 2159 {
-		t.Fatalf("logo spans x %d-%d y %d-%d, want x 3240-3839 y 1680-2159", minX, maxX, minY, maxY)
+	if minX != 1470 || maxX != 2369 || minY != 360 || maxY != 1079 {
+		t.Fatalf("logo spans x %d-%d y %d-%d, want x 1470-2369 y 360-1079", minX, maxX, minY, maxY)
 	}
-	if len(got.Pixels) >= 600*480 {
+	if len(got.Pixels) >= 900*720 {
 		t.Fatalf("got %d pixels, transparent ones were not skipped", len(got.Pixels))
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"image"
 	"image/png"
 	"log/slog"
 	"net"
@@ -38,7 +39,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	placed := canvas.Place(src, 600)
+	// 900px wide, horizontally centered, its middle a third of the way down the canvas.
+	placed := canvas.Place(src, 900, image.Point{X: canvas.Width / 2, Y: canvas.Height / 3})
 	var preview bytes.Buffer
 	if err := png.Encode(&preview, placed.Image); err != nil {
 		return err

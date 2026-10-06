@@ -1400,6 +1400,35 @@ export type DiscordPlaceRequest = {
     roleId?: string | null;
 };
 
+/**
+ * A cohort, and the channel it wants by name; none asks for no channel
+ */
+export type DiscordPlanAsk = {
+    channel?: string | null;
+    key: string;
+};
+
+/**
+ * The rows a bulk add asks about
+ */
+export type DiscordPlanRequest = {
+    rows: Array<DiscordPlanAsk>;
+};
+
+export type DiscordPlanRow = {
+    /**
+     * The category a channel the row creates goes under
+     */
+    category: string;
+    /**
+     * The channel the row gets, or null where it asked for none
+     */
+    channel?: PlannedChannel | null;
+    key: string;
+    label: string;
+    role: PlannedRole;
+};
+
 export type DiscordRole = {
     colour?: number | null;
     id: string;
@@ -2709,6 +2738,31 @@ export type PingedRoleResponse = {
      * The role's name as last known
      */
     name: string;
+};
+
+export type PlannedChannel = {
+    category?: string | null;
+    /**
+     * The existing channel, or null for a channel that will be created
+     */
+    channelId?: string | null;
+    name: string;
+};
+
+export type PlannedRole = {
+    /**
+     * Whether the cohort follows this role already
+     */
+    kept: boolean;
+    name: string;
+    /**
+     * The channels an existing role has access to now, which applying the row keeps
+     */
+    opens: Array<string>;
+    /**
+     * The existing role, or null for a role that will be created
+     */
+    roleId?: string | null;
 };
 
 export enum PlatformType {
@@ -11852,6 +11906,47 @@ export type SetGameAccessResponses = {
 };
 
 export type SetGameAccessResponse = SetGameAccessResponses[keyof SetGameAccessResponses];
+
+export type PlanDiscordData = {
+    body: DiscordPlanRequest;
+    path?: never;
+    query?: never;
+    url: '/management/discord/plan';
+};
+
+export type PlanDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PlanDiscordError = PlanDiscordErrors[keyof PlanDiscordErrors];
+
+export type PlanDiscordResponses = {
+    /**
+     * OK
+     */
+    200: Array<DiscordPlanRow>;
+};
+
+export type PlanDiscordResponse = PlanDiscordResponses[keyof PlanDiscordResponses];
 
 export type ListKeptRolesData = {
     body?: never;

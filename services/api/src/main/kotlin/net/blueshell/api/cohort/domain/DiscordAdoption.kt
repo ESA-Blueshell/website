@@ -108,7 +108,7 @@ class DiscordAdoption(
         return AdoptionOutcome(confirmed.size - refused.size, refused)
     }
 
-    private fun plain(name: String) = name.lowercase().filter { it.isLetterOrDigit() }
+    private fun plain(name: String) = plainName(name)
 }
 
 /** The cohorts a channel of the same name is offered with. */

@@ -74,14 +74,7 @@ class CohortDiscord(
         val cohortId = cohortIdOf(key)
         if (isBoardCommittee(cohortId) && (choice.roleId != null || choice.createRole)) throw BoardCommitteeHasNoRole()
         if (roleOf(cohortId) == null && choice.roleId != null) takeFromOthers(cohortId, choice.roleId, choice.move)
-        val roleId =
-            roleOf(cohortId)
-                ?: when {
-                    choice.roleId != null -> targeting.linkExisting(cohortId, TargetSystem.DISCORD, choice.roleId).externalId
-                    choice.createRole -> targeting.create(cohortId, TargetSystem.DISCORD, labelOf(cohortId), null).externalId
-                    else -> null
-                }
-                ?: return read(key)
+        val roleId = roleOf(cohortId) ?: roleFor(cohortId, choice) ?: return read(key)
         unavailableAsRefusal {
             val opened = channels.openedTo(roleId)
             (choice.channelIds - opened.map { it.id }.toSet()).forEach { channels.open(it, roleId, private = true) }
@@ -91,8 +84,9 @@ class CohortDiscord(
                 .forEach { channels.close(it.id, roleId) }
             choice.createChannel
                 ?.trim()
+                ?.removePrefix("#")
                 ?.takeIf { it.isNotEmpty() }
-                ?.let { channels.createPrivate(it, category, roleId) }
+                ?.let { createOrOpen(it, category, roleId, held = choice.channelIds) }
         }
         return read(key)
     }
@@ -154,6 +148,40 @@ class CohortDiscord(
             throw TargetLinkedElsewhere(TargetSystem.DISCORD, roleId, label)
         }
         targets.delete(owner)
+    }
+
+    // A free role already called as the cohort is linked rather than made a second time.
+    private fun roleFor(
+        cohortId: Long,
+        choice: DiscordChoice,
+    ): String? =
+        when {
+            choice.roleId != null -> targeting.linkExisting(cohortId, TargetSystem.DISCORD, choice.roleId).externalId
+            choice.createRole -> {
+                val label = labelOf(cohortId)
+                freeRoleNamed(label)?.let { targeting.linkExisting(cohortId, TargetSystem.DISCORD, it).externalId }
+                    ?: targeting.create(cohortId, TargetSystem.DISCORD, label, null).externalId
+            }
+            else -> null
+        }
+
+    // A text channel already called so is opened to the role, so a second run makes nothing twice.
+    private fun createOrOpen(
+        name: String,
+        category: String,
+        roleId: String,
+        held: Collection<String>,
+    ) {
+        val existing = channels.channels().firstOrNull { it.kind == KeptChannelKind.TEXT && plainName(it.name) == plainName(name) }
+        when {
+            existing == null -> channels.createPrivate(name, category, roleId)
+            existing.id !in held -> channels.open(existing.id, roleId, private = true)
+        }
+    }
+
+    private fun freeRoleNamed(label: String): String? {
+        val linked = targets.findAllBySystem(TargetSystem.DISCORD.name).mapNotNull(targetIds::find).toSet()
+        return roles.roles().firstOrNull { it.id !in linked && plainName(it.name) == plainName(label) }?.id
     }
 
     private fun isBoardCommittee(cohortId: Long): Boolean =

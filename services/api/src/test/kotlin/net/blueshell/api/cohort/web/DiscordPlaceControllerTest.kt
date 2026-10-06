@@ -19,7 +19,7 @@ import org.springframework.web.server.ResponseStatusException
 class DiscordPlaceControllerTest {
     private val discord: CohortDiscord = mock()
     private val adoption: DiscordAdoption = mock()
-    private val controller = DiscordPlaceController(discord, adoption, "Committees", "Esports", "Board")
+    private val controller = DiscordPlaceController(discord, adoption, mock(), "Committees", "Esports", "Board")
     private val place = DiscordPlace(true, "900", "Sitecie", emptyList())
 
     @Test

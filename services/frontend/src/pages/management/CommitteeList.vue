@@ -10,6 +10,7 @@ import SearchBox from "@/components/island/SearchBox.vue"
 import SelectionBar from "@/components/island/SelectionBar.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import BulkAdd from "@/components/management/BulkAdd.vue"
+import {DiscordBulkAdd, type DiscordPlaceRequest} from "@/domains/discord"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
@@ -80,8 +81,9 @@ const toAdd = (system: TargetSystem): Addition[] => ticked.value
   .map((one) => ({key: one.id, name: one.name, note: system === TargetSystem.DISCORD ? `@${one.name} and #${one.slug}` : "A list in the Committees folder", committee: one}))
 
 const cohortOf = (committee: Committee) => cohorts.value.find((one) => one.definitionKey === `COMMITTEE_MEMBERS:${committee.id}`)
-const addRole = async ({committee}: Addition) => {
-  const answered = await saveCommitteeDiscord(committee.id, {createRole: true, channelIds: [], createChannel: committee.slug})
+const discordRows = computed(() => toAdd(TargetSystem.DISCORD).map(({committee}) => ({key: `COMMITTEE_MEMBERS:${committee.id}`, name: committee.name, channel: committee.slug})))
+const saveRole = async (key: string, choice: DiscordPlaceRequest) => {
+  const answered = await saveCommitteeDiscord(Number(key.split(":")[1]), choice)
   return answered.ok ? {ok: true as const} : answered
 }
 const addList = async ({committee}: Addition) => {
@@ -267,14 +269,25 @@ onMounted(async () => {
     </selection-bar>
 
     <bulk-add
-      :each="adding === TargetSystem.BREVO ? 'a Brevo list' : 'a Discord role and a private channel'"
-      :items="adding ? toAdd(adding) : []"
+      each="a Brevo list"
+      :items="adding === TargetSystem.BREVO ? toAdd(adding) : []"
       :noun="['committee', 'committees']"
-      :open="adding !== null"
-      :run="adding === TargetSystem.BREVO ? addList : addRole"
-      :skipped="adding ? leftOut(adding) : []"
+      :open="adding === TargetSystem.BREVO"
+      :run="addList"
+      :skipped="adding === TargetSystem.BREVO ? leftOut(adding) : []"
       testid="committee-bulk-add"
-      :title="adding === TargetSystem.BREVO ? 'Add Brevo lists' : 'Add Discord roles and channels'"
+      title="Add Brevo lists"
+      @done="added"
+      @update:open="adding = null"
+    />
+    <discord-bulk-add
+      :noun="['committee', 'committees']"
+      :open="adding === TargetSystem.DISCORD"
+      :rows="discordRows"
+      :save="saveRole"
+      :skipped="adding === TargetSystem.DISCORD ? leftOut(adding) : []"
+      testid="committee-discord-add"
+      title="Add Discord roles and channels"
       @done="added"
       @update:open="adding = null"
     />

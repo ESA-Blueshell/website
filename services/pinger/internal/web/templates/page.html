@@ -17,16 +17,14 @@
       try { localStorage.setItem('pinger-theme', light ? 'light' : 'dark'); } catch (e) {}
     }
   </script>
-  <script src="/static/htmx.min.js" defer></script>
   <script>
-    // The live figures are polled every two seconds. Between polls, advance the "this pass"
-    // bar from the last known count and rate so it moves smoothly instead of stepping. Each
-    // poll swaps the band in; re-sync from the fresh numbers then. A pass that finishes mid-
-    // interval holds at full until the next poll resets it — a small, deliberate lag.
+    // A WebSocket pushes a fresh live region once a second; we swap it in. Between pushes the
+    // "this pass" bar glides from the last known count and rate so it never steps. A pass that
+    // finishes mid-second holds at full until the next push resets it — a small, deliberate lag.
     (function () {
       var smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
       var raf;
-      function sync() {
+      function syncMeter() {
         cancelAnimationFrame(raf);
         var el = document.querySelector('[data-live-meter]');
         if (!el) return;
@@ -51,9 +49,37 @@
           raf = requestAnimationFrame(frame);
         })(t0);
       }
-      document.addEventListener('htmx:afterSwap', sync);
-      document.addEventListener('DOMContentLoaded', sync);
-      sync();
+
+      function swap(html) {
+        var cur = document.getElementById('live');
+        if (cur) cur.outerHTML = html;
+        syncMeter();
+      }
+
+      // The socket is the live feed; a timed fetch is the fallback when it cannot hold.
+      var ws, backoff = 1000, poll;
+      function fetchOnce() {
+        fetch('/stats', { headers: { 'X-Requested-With': 'fetch' } })
+          .then(function (r) { return r.text(); }).then(swap).catch(function () {});
+      }
+      function startPolling() { if (!poll) { fetchOnce(); poll = setInterval(fetchOnce, 2000); } }
+      function stopPolling() { clearInterval(poll); poll = null; }
+
+      function connect() {
+        if (!('WebSocket' in window)) { startPolling(); return; }
+        var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(proto + '//' + location.host + '/ws');
+        ws.onopen = function () { backoff = 1000; stopPolling(); };
+        ws.onmessage = function (e) { swap(e.data); };
+        ws.onclose = function () {
+          startPolling();
+          setTimeout(connect, backoff);
+          backoff = Math.min(backoff * 2, 15000);
+        };
+        ws.onerror = function () { try { ws.close(); } catch (e) {} };
+      }
+
+      document.addEventListener('DOMContentLoaded', function () { syncMeter(); connect(); });
     })();
   </script>
 </head>
@@ -222,7 +248,7 @@
 </body>
 </html>{{end}}
 
-{{define "live"}}<div id="live" hx-get="/stats" hx-trigger="every 2s" hx-swap="outerHTML">
+{{define "live"}}<div id="live">
   {{if .IsClosed}}
   <section class="number-band countdown">
     <div class="wrap">
@@ -265,21 +291,24 @@
     </div>
   </section>
 
-  {{if .Bars}}
+  {{if .RatePoints}}
   <section class="lead">
     <div class="wrap history">
       <div class="history__head">
         <div>
           <p class="eyebrow">Rate</p>
-          <h2 class="h-sub" style="margin-top: 0.5rem;">The last {{len .Bars}} seconds</h2>
+          <h2 class="h-sub" style="margin-top: 0.5rem;">The last {{.RateCount}} seconds</h2>
         </div>
         <p class="history__legend"><i></i>Cap {{thousands .Settings.RatePPS}} a second</p>
       </div>
       <div class="history__plot">
         <span class="history__cap" style="bottom: {{.CapPercent}}%;"></span>
-        {{range .Bars}}<span class="history__bar" style="height: {{.Height}}%;"></span>{{end}}
+        <svg class="history__line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <polygon class="history__area" points="{{.RateArea}}"></polygon>
+          <polyline class="history__stroke" points="{{.RatePoints}}"></polyline>
+        </svg>
       </div>
-      <div class="history__axis"><span>{{len .Bars}} s ago</span><span>Now</span></div>
+      <div class="history__axis"><span>{{.RateCount}} s ago</span><span>Now</span></div>
     </div>
   </section>
   {{end}}

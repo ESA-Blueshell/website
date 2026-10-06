@@ -48,6 +48,7 @@ visitor as an admin. Do not set it in the cluster.
 | `PINGER_HOST` | `pings.esa-blueshell.nl`, the host forward-auth gates |
 
 The page is server-rendered Go with a hand-written island stylesheet, the site's fonts and the
-shell tile, all embedded through `go:embed`. There is no Node or CSS build step. htmx swaps the
-live figures in place every two seconds; everything else is plain HTML. The theme toggle and the
-rate presets are the only client script, a dozen lines inline.
+shell tile, all embedded through `go:embed`. There is no Node or CSS build step. A WebSocket on
+`/ws` pushes the live region once a second and the page swaps it in; between pushes a little
+inline script glides the pass bar from the last count and rate. When the socket cannot hold, the
+page falls back to fetching `/stats`. The rest is plain HTML.

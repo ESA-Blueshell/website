@@ -2,6 +2,7 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"fmt"
@@ -14,9 +15,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coder/websocket"
+
 	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
 )
+
+// liveInterval is how often the socket pushes a fresh live region. The sender samples its rate
+// once a second, so a faster push would send the same numbers; the bar glides between pushes.
+const liveInterval = time.Second
 
 //go:embed templates/*.html
 var templateFS embed.FS
@@ -60,6 +67,7 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", s.index)
 	mux.HandleFunc("GET /stats", s.statsFragment)
+	mux.HandleFunc("GET /ws", s.socket)
 	mux.HandleFunc("POST /settings", s.saveSettings)
 	mux.HandleFunc("GET /preview.png", s.previewImage)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
@@ -67,8 +75,6 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 	// The api's session cookie is SameSite=None, so a form on another site would arrive signed in.
 	return http.NewCrossOriginProtection().Handler(mux)
 }
-
-type bar struct{ Height string }
 
 type preset struct {
 	Label string
@@ -102,7 +108,9 @@ type view struct {
 
 	SweepTop    int
 	SweepBottom int
-	Bars        []bar
+	RatePoints  string
+	RateArea    string
+	RateCount   int
 	CapPercent  int
 	Countdown   countdown
 
@@ -155,7 +163,8 @@ func (s *server) view(r *http.Request) view {
 	}
 	v.SweepTop = min(100, lit+4)
 	v.SweepBottom = max(0, lit-4)
-	v.Bars, v.CapPercent = bars(st.Rates, cfg.RatePPS)
+	v.RatePoints, v.RateArea, v.CapPercent = rateLine(st.Rates, cfg.RatePPS)
+	v.RateCount = len(st.Rates)
 
 	v.Countdown = s.countdown()
 	v.Presets = presets(cfg.RatePPS)
@@ -185,9 +194,14 @@ func presets(current int) []preset {
 	return out
 }
 
-// bars scales the rate history so the cap line sits at four fifths height, visible whether
-// the sender is hitting the cap or idling below it.
-func bars(rates []uint64, ratePPS int) ([]bar, int) {
+// rateLine turns the rate history into an SVG line across a 0..100 box, plus the polygon points
+// that fill under it and the cap's height. The scale keeps the cap line at four fifths, so it
+// stays visible whether the sender is hitting the cap or idling below it. x runs 0 to 100 across
+// the samples, y is inverted because SVG's origin is top-left.
+func rateLine(rates []uint64, ratePPS int) (points, area string, capPercent int) {
+	if len(rates) == 0 {
+		return "", "", 0
+	}
 	scale := float64(ratePPS) * 1.25
 	for _, r := range rates {
 		if float64(r) > scale {
@@ -197,11 +211,22 @@ func bars(rates []uint64, ratePPS int) ([]bar, int) {
 	if scale <= 0 {
 		scale = 1
 	}
-	out := make([]bar, len(rates))
-	for i, r := range rates {
-		out[i] = bar{Height: strconv.FormatFloat(float64(r)/scale*100, 'f', 1, 64)}
+	span := float64(len(rates) - 1)
+	if span == 0 {
+		span = 1
 	}
-	return out, int(float64(ratePPS) / scale * 100)
+	var b strings.Builder
+	for i, r := range rates {
+		if i > 0 {
+			b.WriteByte(' ')
+		}
+		x := float64(i) / span * 100
+		y := 100 - float64(r)/scale*100
+		fmt.Fprintf(&b, "%.2f,%.2f", x, y)
+	}
+	points = b.String()
+	area = "0,100 " + points + " 100,100"
+	return points, area, int(float64(ratePPS) / scale * 100)
 }
 
 func (s *server) countdown() countdown {
@@ -223,6 +248,36 @@ func (s *server) index(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) statsFragment(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "live", s.view(r))
+}
+
+// socket pushes the live region over a WebSocket, once a second. The viewer's browser swaps it
+// in and interpolates the pass bar between pushes. A failed write means the viewer left, so the
+// loop ends. The default origin check rejects a socket opened from another site.
+func (s *server) socket(w http.ResponseWriter, r *http.Request) {
+	c, err := websocket.Accept(w, r, nil)
+	if err != nil {
+		return
+	}
+	defer c.CloseNow()
+	ctx := c.CloseRead(r.Context())
+
+	tick := time.NewTicker(liveInterval)
+	defer tick.Stop()
+	for {
+		var buf bytes.Buffer
+		if err := s.page.ExecuteTemplate(&buf, "live", s.view(r)); err != nil {
+			slog.Error("render live", "err", err)
+			return
+		}
+		if err := c.Write(ctx, websocket.MessageText, buf.Bytes()); err != nil {
+			return
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+		}
+	}
 }
 
 func (s *server) render(w http.ResponseWriter, name string, v view) {

@@ -8,6 +8,9 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/coder/websocket"
 
 	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
@@ -67,7 +70,7 @@ func TestThePageShowsHowThePaintingGoes(t *testing.T) {
 	if code != http.StatusOK {
 		t.Fatalf("status %d", code)
 	}
-	for _, want := range []string{"running", "1.2M", "49,876", "50,000", "2001:db8:b317:a000::/64", "24%", "no buffer space available", `hx-get="/stats"`} {
+	for _, want := range []string{"running", "1.2M", "49,876", "50,000", "2001:db8:b317:a000::/64", "24%", "no buffer space available", `/ws`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page lacks %q", want)
 		}
@@ -191,5 +194,48 @@ func TestCompactShortensBigTalliesAndKeepsSmallOnesExact(t *testing.T) {
 		if got := compact(in); got != want {
 			t.Errorf("compact(%v) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestTheSocketPushesTheLiveRegion(t *testing.T) {
+	p, _ := canvas.ParsePrefix("2001:db8:b317:a000::/64")
+	srv := httptest.NewServer(newTestServer(false, &fakeSettings{current: paint.Settings{Prefix: p, RatePPS: 50_000}}))
+	defer srv.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	c, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http")+"/ws", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.CloseNow()
+
+	_, data, err := c.Read(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(data)
+	for _, want := range []string{`id="live"`, "1.2M", "data-live-meter"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("push lacks %q", want)
+		}
+	}
+}
+
+func TestRateLineMapsSamplesAcrossTheBox(t *testing.T) {
+	points, area, cap := rateLine([]uint64{0, 50_000, 25_000}, 50_000)
+
+	want := "0.00,100.00 50.00,20.00 100.00,60.00"
+	if points != want {
+		t.Errorf("points %q, want %q", points, want)
+	}
+	if area != "0,100 "+want+" 100,100" {
+		t.Errorf("area %q", area)
+	}
+	if cap != 80 {
+		t.Errorf("cap %d, want 80", cap)
+	}
+	if p, a, c := rateLine(nil, 50_000); p != "" || a != "" || c != 0 {
+		t.Errorf("empty history gave %q %q %d", p, a, c)
 	}
 }

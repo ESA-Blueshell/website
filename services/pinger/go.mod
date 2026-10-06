@@ -3,6 +3,7 @@ module github.com/ESA-Blueshell/website/services/pinger
 go 1.26.0
 
 require (
+	github.com/coder/websocket v1.8.15
 	github.com/testcontainers/testcontainers-go/modules/valkey v0.44.0
 	github.com/valkey-io/valkey-go v1.0.78
 	golang.org/x/image v0.46.0

@@ -3,8 +3,11 @@ name: blueshell-recovery
 services:
   db:
     image: mariadb:10.11
+    # A random password from step 2, never a fixed one: a page in the browser can reach Adminer
+    # on localhost. MYSQL_PWD lets the commands in this guide log in without typing it.
     environment:
-      MARIADB_ROOT_PASSWORD: recovery
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:?Make .env as in step 2}
+      MYSQL_PWD: ${DB_PASSWORD:?Make .env as in step 2}
     volumes:
       - db:/var/lib/mysql
 

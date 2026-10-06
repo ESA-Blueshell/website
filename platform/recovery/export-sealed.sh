@@ -5,13 +5,25 @@ set -euo pipefail
 cd "$(dirname "$0")"
 : "${VAULT_TOKEN:?Set VAULT_TOKEN first}"
 
-sql() { docker compose exec -T db mariadb -uroot -precovery -N -B blueshell -e "$1"; }
+sql() { docker compose exec -T db mariadb -uroot -N -B blueshell -e "$1"; }
+
+# A member typed these values. A tab or line break would split the row, and a value starting like
+# a formula would run when the file is opened in a spreadsheet, so it is prefixed with a quote.
+cell() {
+  local v=${1//$'\t'/ }
+  v=${v//$'\n'/ }
+  v=${v//$'\r'/ }
+  case "$v" in
+    [=+@-]*) printf "'%s" "$v" ;;
+    *) printf '%s' "$v" ;;
+  esac
+}
 
 open() { # key, context, ciphertext
   local out
   if out=$(docker compose exec -T -e VAULT_TOKEN="$VAULT_TOKEN" vault vault write -field=plaintext \
       "transit/decrypt/$1" ciphertext="$3" context="$(printf '%s' "$2" | base64)" </dev/null 2>/dev/null); then
-    printf '%s' "$out" | base64 -d
+    cell "$(printf '%s' "$out" | base64 -d)"
   else
     printf 'UNOPENABLE'
   fi

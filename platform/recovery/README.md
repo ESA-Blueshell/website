@@ -65,10 +65,16 @@ Download the three files this guide uses into it:
 base=https://raw.githubusercontent.com/ESA-Blueshell/website/main/platform/recovery
 for f in docker-compose.yml vault.hcl export-sealed.sh; do curl -fsSLO "$base/$f"; done
 chmod +x export-sealed.sh
-ls
 ```
 
-`ls` should list `docker-compose.yml`, `export-sealed.sh`, `kopia`, `restore` and `vault.hcl`. If GitHub is unreachable, the files are in the repository under `platform/recovery`, in any clone or download of it.
+Give the recovery database a random password. Adminer, the database viewer in step 6, runs in your browser, and a fixed password would let any web page you visit meanwhile try it:
+
+```bash
+echo "DB_PASSWORD=$(openssl rand -hex 16)" > .env
+ls -a
+```
+
+It should list `.env`, `docker-compose.yml`, `export-sealed.sh`, `kopia`, `restore` and `vault.hcl`. If GitHub is unreachable, the files are in the repository under `platform/recovery`, in any clone or download of it.
 
 If a command you copied from Google Docs complains about strange quote marks, Docs has turned `"` or `'` into curly quotes. Retype them as plain quotes.
 
@@ -137,8 +143,8 @@ All three should say `running`. Give the database half a minute to start.
 ## Step 6: load the database
 
 ```bash
-docker compose exec -T db mariadb -uroot -precovery -e "CREATE DATABASE IF NOT EXISTS blueshell"
-gunzip -c restore/mariadb/blueshell.sql.gz | docker compose exec -T db mariadb -uroot -precovery blueshell
+docker compose exec -T db mariadb -uroot -e "CREATE DATABASE IF NOT EXISTS blueshell"
+gunzip -c restore/mariadb/blueshell.sql.gz | docker compose exec -T db mariadb -uroot blueshell
 ```
 
 If the dump ends in plain `.sql`, use `cat` instead of `gunzip -c`.
@@ -146,10 +152,10 @@ If the dump ends in plain `.sql`, use `cat` instead of `gunzip -c`.
 Check it worked; this prints the number of accounts:
 
 ```bash
-docker compose exec -T db mariadb -uroot -precovery -N blueshell -e "SELECT COUNT(*) FROM users"
+docker compose exec -T db mariadb -uroot -N blueshell -e "SELECT COUNT(*) FROM users"
 ```
 
-**Most member data is now readable**: names, usernames, email addresses, memberships, events and more. Open http://localhost:8081 in your browser to look through it. Log in with system `MySQL`, server `db`, username `root`, password `recovery`, database `blueshell`. Adminer can export any table to CSV (Export, then format CSV).
+**Most member data is now readable**: names, usernames, email addresses, memberships, events and more. Open http://localhost:8081 in your browser to look through it. Log in with system `MySQL`, server `db`, username `root`, database `blueshell`, and the password that `cat .env` shows after `DB_PASSWORD=`. Adminer can export any table to CSV (Export, then format CSV).
 
 Addresses and bank details show as `vault:v1:…`. They are encrypted, and steps 7 and 8 open them.
 
@@ -176,6 +182,8 @@ docker compose exec -e VAULT_TOKEN=<TEMPORARY-ROOT-TOKEN> vault vault operator r
 From here on, Blueshell's own Vault is in charge, and the temporary key and token are worthless.
 
 **7b. Unseal it with the real shares.**
+
+Wait ten seconds: Vault reloads itself after a restore and is briefly sealed meanwhile. Then check:
 
 ```bash
 docker compose exec vault vault status
@@ -231,6 +239,8 @@ This writes two files into `export/`:
 Open them in a spreadsheet program, or import them into the spreadsheet at File, Import, separator Tab. Join them to the rest of the member data on the user ID, using the `users` table from step 6.
 
 A value that says `UNOPENABLE` belongs to a member whose details could not be opened, usually because the Vault and database snapshots are from different nights. Repeat steps 4 to 8 with a matching pair.
+
+A value in the export that starts with `'` was typed by a member starting with `=`, `+`, `-` or `@`. The quote keeps the spreadsheet from running it as a formula; it is not part of the value.
 
 ## Step 9: put the data to use
 

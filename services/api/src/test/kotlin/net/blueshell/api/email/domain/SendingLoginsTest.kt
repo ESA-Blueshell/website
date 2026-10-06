@@ -11,6 +11,10 @@ import org.mockito.kotlin.whenever
 import org.springframework.vault.VaultException
 import org.springframework.vault.core.VaultTemplate
 import org.springframework.vault.support.VaultResponse
+import java.net.InetAddress
+import java.net.ServerSocket
+import java.net.Socket
+import kotlin.concurrent.thread
 
 class SendingLoginsTest {
     private val vault: VaultTemplate = mock()
@@ -53,6 +57,35 @@ class SendingLoginsTest {
     }
 
     @Test
+    fun `keeps a login the server accepts`() {
+        ServerSocket(0, 1, InetAddress.getLoopbackAddress()).use { server ->
+            val answering = thread { server.accept().use(::answerSmtp) }
+
+            JavaMailSmtpProbe().test(SmtpRoute("127.0.0.1", server.localPort, SmtpSecurity.NONE, SmtpLogin("events", "secret")))
+
+            answering.join(TIMEOUT_MS)
+        }
+    }
+
+    /** Just enough of an SMTP server to accept one login: a greeting, EHLO with AUTH PLAIN, the login and QUIT. */
+    private fun answerSmtp(socket: Socket) {
+        val reader = socket.getInputStream().bufferedReader()
+        val writer = socket.getOutputStream().bufferedWriter()
+
+        fun say(line: String) = writer.apply { write("$line\r\n") }.flush()
+        say("220 test ESMTP")
+        while (true) {
+            val line = reader.readLine() ?: return
+            when {
+                line.startsWith("EHLO") -> say("250-test\r\n250 AUTH PLAIN")
+                line.startsWith("AUTH") -> say("235 2.7.0 Accepted")
+                line.startsWith("QUIT") -> return say("221 Bye")
+                else -> say("250 OK")
+            }
+        }
+    }
+
+    @Test
     fun `sends a login unencrypted only to a server on this network`() {
         val login = SmtpLogin("events", "secret")
         assertThat(listOf("127.0.0.1", "10.0.0.5", "192.168.1.2", "fe80::1").map(::onThisNetwork)).containsOnly(true)
@@ -60,5 +93,9 @@ class SendingLoginsTest {
 
         assertThatThrownBy { JavaMailSmtpProbe().test(SmtpRoute("93.184.216.34", 25, SmtpSecurity.NONE, login)) }
             .isInstanceOfSatisfying(SmtpNeedsEncryption::class.java) { assertThat(it.facts["host"]).isEqualTo("93.184.216.34") }
+    }
+
+    private companion object {
+        const val TIMEOUT_MS = 5000L
     }
 }

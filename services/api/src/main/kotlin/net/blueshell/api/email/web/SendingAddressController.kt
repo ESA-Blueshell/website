@@ -41,9 +41,9 @@ data class SendingAddressRequest(
     val username: String? = null,
     @param:Schema(description = "The SMTP password, written to Vault and never answered back; left out to keep the one there is")
     val password: String? = null,
-) {
-    fun change() = SendingAddressChange(address, displayName, host, port, security, isDefault, username, password)
-}
+)
+
+private fun SendingAddressRequest.change() = SendingAddressChange(address, displayName, host, port, security, isDefault, username, password)
 
 /** The addresses written emails may be sent from. The board reads them to pick one; an admin keeps them. */
 @RestController

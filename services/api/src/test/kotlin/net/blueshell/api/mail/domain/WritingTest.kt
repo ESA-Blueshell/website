@@ -81,6 +81,7 @@ class WritingTest {
         assertThat(MailJobs.Written.dedupKey(MailJobs.WrittenPayload(7, 1))).isNull()
         assertThat(WrittenEmail::class.java.getDeclaredConstructor().newInstance()).isNotNull
 
+        assertThatThrownBy { writing.test("Hi", "Body", null, 9, from = 5) }.isInstanceOf(SendingAddressGone::class.java)
         assertThatThrownBy { writing.test(" ", "Body", null, 9) }.isInstanceOf(SubjectMissing::class.java)
         assertThatThrownBy { writing.test("Hi", " ", null, 9) }.isInstanceOf(MessageMissing::class.java)
         whenever(users.findAllByIds(emptySet())).thenReturn(emptyList())

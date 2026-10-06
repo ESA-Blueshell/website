@@ -55,11 +55,18 @@ type Stats struct {
 	LastErrorAt time.Time
 	// Rates is the packets-a-second sample for each of the last 40 seconds, oldest first.
 	Rates []uint64
+	// Failing is set when the last failThreshold sends all errored, so the path looks broken.
+	// The sender keeps retrying with backoff either way.
+	Failing bool
 }
 
 const (
 	batch      = 64
 	rateWindow = 40
+	// failThreshold is how many sends in a row must fail before the sender reports itself as
+	// failing. A handful of full-buffer errors among successes is normal and the backoff soaks
+	// them up; only a run this long, with not one send getting out, means the path is broken.
+	failThreshold = 100
 )
 
 // Sender repaints the logo pass after pass, each pass in a fresh shuffled order so the logo
@@ -83,6 +90,7 @@ type Sender struct {
 	errMu     sync.Mutex
 	lastErr   string
 	lastErrAt time.Time
+	consec    atomic.Int64
 	rateMu    sync.Mutex
 	rates     []uint64
 }
@@ -127,6 +135,7 @@ func (s *Sender) Snapshot() Stats {
 		LastError:   lastErr,
 		LastErrorAt: lastErrAt,
 		Rates:       rates,
+		Failing:     s.consec.Load() >= failThreshold,
 	}
 }
 
@@ -205,15 +214,26 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.IPAddr) 
 				if s.limiter.WaitN(ctx, to-from) != nil {
 					return
 				}
+				failed := false
 				for _, i := range order[from:to] {
 					if _, err := s.conn.WriteTo(s.echo, &dests[i]); err != nil {
 						s.recordError(err)
-						time.Sleep(backoff.Next())
+						failed = true
 						continue
 					}
 					backoff.Reset()
+					s.consec.Store(0)
 					s.sent.Add(1)
 					s.passDone.Add(1)
+				}
+				// One backoff per batch that lost a send, not one per lost packet: a broken path
+				// must not crawl at a packet a second. The next pass retries the pixels it missed.
+				if failed {
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(backoff.Next()):
+					}
 				}
 			}
 		})
@@ -224,6 +244,7 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.IPAddr) 
 
 func (s *Sender) recordError(err error) {
 	s.errors.Add(1)
+	s.consec.Add(1)
 	s.errMu.Lock()
 	s.lastErr, s.lastErrAt = err.Error(), s.now()
 	s.errMu.Unlock()

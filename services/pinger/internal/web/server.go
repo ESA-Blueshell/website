@@ -108,6 +108,7 @@ type view struct {
 	ShowErrors  bool
 	ChipLabel   string
 	ChipClass   string
+	Failing     bool
 	ErrorTitle  string
 	Paused      bool
 	PauseLabel  string
@@ -115,6 +116,7 @@ type view struct {
 	SweepTop    int
 	SweepBottom int
 	RatePoints  string
+	RateArea    string
 	RateCount   int
 	RateLastY   string
 	RateCeil    uint64
@@ -158,7 +160,11 @@ func (s *server) view(r *http.Request) view {
 	if v.Prefix != "" {
 		v.PrefixLabel = v.Prefix
 	}
+	v.Failing = st.Failing && v.IsRunning
 	v.ChipLabel, v.ChipClass = chip(state)
+	if v.Failing {
+		v.ChipLabel, v.ChipClass = "Sending is failing", "state-chip state-chip--failing"
+	}
 	v.PauseLabel = "Pause"
 	if v.Paused {
 		v.PauseLabel = "Resume"
@@ -170,7 +176,7 @@ func (s *server) view(r *http.Request) view {
 	}
 	v.SweepTop = min(100, lit+4)
 	v.SweepBottom = max(0, lit-4)
-	v.RatePoints, v.CapPercent, v.RateLastY, v.RateCeil = rateLine(st.Rates, cfg.RatePPS)
+	v.RatePoints, v.RateArea, v.CapPercent, v.RateLastY, v.RateCeil = rateLine(st.Rates, cfg.RatePPS)
 	v.RateCount = len(st.Rates)
 
 	v.Countdown = s.countdown()
@@ -201,14 +207,14 @@ func presets(current int) []preset {
 	return out
 }
 
-// rateLine turns the rate history into an SVG line across a 0..100 box, the cap's height, the
-// latest point's height and the value at the top of the frame.
+// rateLine turns the rate history into an SVG line across a 0..100 box, the polygon that fills
+// under it, the cap's height, the latest point's height and the value at the top of the frame.
 // The top of the frame is the cap with a little headroom, so the cap line sits near the top and
 // the line reads as how close the sender is to it; a burst above the cap lifts the top instead.
 // x runs 0 to 100 across the samples, y is inverted because SVG's origin is top-left.
-func rateLine(rates []uint64, ratePPS int) (points string, capPercent int, lastY string, ceil uint64) {
+func rateLine(rates []uint64, ratePPS int) (points, area string, capPercent int, lastY string, ceil uint64) {
 	if len(rates) == 0 {
-		return "", 0, "", 0
+		return "", "", 0, "", 0
 	}
 	var peak uint64
 	for _, r := range rates {
@@ -237,8 +243,9 @@ func rateLine(rates []uint64, ratePPS int) (points string, capPercent int, lastY
 		fmt.Fprintf(&b, "%.2f,%.2f", float64(i)/span*100, y(r))
 	}
 	points = b.String()
+	area = "0,100 " + points + " 100,100"
 	lastY = strconv.FormatFloat(y(rates[len(rates)-1]), 'f', 2, 64)
-	return points, int(float64(ratePPS) / top * 100), lastY, uint64(top)
+	return points, area, int(float64(ratePPS) / top * 100), lastY, uint64(top)
 }
 
 func (s *server) countdown() countdown {

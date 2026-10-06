@@ -186,3 +186,16 @@ func TestSenderCountsALocalSendErrorAndCarriesOn(t *testing.T) {
 		t.Fatalf("last error %q", snap.LastError)
 	}
 }
+
+func TestSenderReportsABrokenPathAndRecovers(t *testing.T) {
+	conn := &fakeConn{}
+	conn.fails.Store(1 << 30)
+	box := &settingsBox{}
+	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: 100_000})
+
+	s := start(t, conn, pixels(200), open, box)
+	eventually(t, func() bool { return s.Snapshot().Failing })
+
+	conn.fails.Store(0)
+	eventually(t, func() bool { return !s.Snapshot().Failing })
+}

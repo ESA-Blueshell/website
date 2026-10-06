@@ -224,11 +224,14 @@ func TestTheSocketPushesTheLiveRegion(t *testing.T) {
 
 func TestRateLineFramesTheCapNearTheTop(t *testing.T) {
 	// Peak (50,000) is at the cap, so the top of the frame is cap*1.05 = 52,500.
-	points, cap, lastY, ceil := rateLine([]uint64{0, 50_000, 25_000}, 50_000)
+	points, area, cap, lastY, ceil := rateLine([]uint64{0, 50_000, 25_000}, 50_000)
 
 	want := "0.00,100.00 50.00,4.76 100.00,52.38"
 	if points != want {
 		t.Errorf("points %q, want %q", points, want)
+	}
+	if area != "0,100 "+want+" 100,100" {
+		t.Errorf("area %q", area)
 	}
 	if cap != 95 {
 		t.Errorf("cap %d, want 95", cap)
@@ -239,14 +242,14 @@ func TestRateLineFramesTheCapNearTheTop(t *testing.T) {
 	if ceil != 52_500 {
 		t.Errorf("ceil %d, want 52500", ceil)
 	}
-	if p, c, l, ce := rateLine(nil, 50_000); p != "" || c != 0 || l != "" || ce != 0 {
-		t.Errorf("empty history gave %q %d %q %d", p, c, l, ce)
+	if p, a, c, l, ce := rateLine(nil, 50_000); p != "" || a != "" || c != 0 || l != "" || ce != 0 {
+		t.Errorf("empty history gave %q %q %d %q %d", p, a, c, l, ce)
 	}
 }
 
 func TestRateLineLiftsTheTopForABurstAboveTheCap(t *testing.T) {
 	// Peak 80,000 exceeds the cap, so the top becomes peak*1.02 and the cap sits below it.
-	_, cap, _, ceil := rateLine([]uint64{40_000, 80_000}, 50_000)
+	_, _, cap, _, ceil := rateLine([]uint64{40_000, 80_000}, 50_000)
 	if ceil != 81_600 {
 		t.Errorf("ceil %d, want 81600", ceil)
 	}

@@ -58,7 +58,13 @@ func run() error {
 		return err
 	}
 	sender := paint.NewSender(conn, placed.Pixels, window, watcher.Current)
+	if st, err := store.LoadStats(ctx); err != nil {
+		slog.Warn("load stats", "err", err)
+	} else {
+		sender.Seed(st.Sent, st.Passes, st.Errors)
+	}
 	go sender.Run(ctx)
+	go persistStats(ctx, store, sender)
 
 	var auth web.Auth = web.NewAPIAuth(env("PINGER_API_URL", "http://localhost:8080"), env("PINGER_HOST", "pings.esa-blueshell.nl"))
 	if dryRun {
@@ -98,6 +104,29 @@ func openSocket(dryRun bool) (paint.Conn, paint.Window, error) {
 		return nil, paint.Window{}, err
 	}
 	return conn, paint.EventWindow(), nil
+}
+
+// persistStats writes the running totals to Valkey every few seconds and once more on the way
+// out, so a restart resumes the counts. Everything the service keeps lives under the pinger:
+// namespace, so `redis-cli --scan --pattern 'pinger:*' | xargs redis-cli del` wipes it all.
+func persistStats(ctx context.Context, store *settings.Store, sender *paint.Sender) {
+	save := func() {
+		s := sender.Snapshot()
+		if err := store.SaveStats(context.WithoutCancel(ctx), settings.Stats{Sent: s.Sent, Passes: s.Passes, Errors: s.Errors}); err != nil {
+			slog.Warn("save stats", "err", err)
+		}
+	}
+	tick := time.NewTicker(5 * time.Second)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			save()
+			return
+		case <-tick.C:
+			save()
+		}
+	}
 }
 
 type discard struct{}

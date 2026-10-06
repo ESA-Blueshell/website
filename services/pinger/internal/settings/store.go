@@ -18,9 +18,34 @@ const (
 	keyPrefix = "pinger:prefix"
 	keyRate   = "pinger:rate_pps"
 	keyPaused = "pinger:paused"
+	keyStats  = "pinger:stats"
 
 	DefaultRatePPS = 100
 )
+
+// Stats is the running total the sender keeps across restarts.
+type Stats struct {
+	Sent, Passes, Errors uint64
+}
+
+// LoadStats reads the saved totals; a missing hash reads as zeroes.
+func (s *Store) LoadStats(ctx context.Context) (Stats, error) {
+	m, err := s.client.Do(ctx, s.client.B().Hgetall().Key(keyStats).Build()).AsStrMap()
+	if err != nil {
+		return Stats{}, err
+	}
+	n := func(k string) uint64 { v, _ := strconv.ParseUint(m[k], 10, 64); return v }
+	return Stats{Sent: n("sent"), Passes: n("passes"), Errors: n("errors")}, nil
+}
+
+func (s *Store) SaveStats(ctx context.Context, st Stats) error {
+	return s.client.Do(ctx, s.client.B().Hset().Key(keyStats).
+		FieldValue().
+		FieldValue("sent", strconv.FormatUint(st.Sent, 10)).
+		FieldValue("passes", strconv.FormatUint(st.Passes, 10)).
+		FieldValue("errors", strconv.FormatUint(st.Errors, 10)).
+		Build()).Error()
+}
 
 type Store struct {
 	client valkey.Client

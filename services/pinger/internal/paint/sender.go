@@ -117,6 +117,14 @@ func NewSender(conn Conn, pixels []canvas.Pixel, window Window, settings func() 
 	return s
 }
 
+// Seed restores the running totals from the last saved state, so a restart continues the counts
+// rather than starting from zero. Call it before Run.
+func (s *Sender) Seed(sent, passes, errors uint64) {
+	s.sent.Store(sent)
+	s.passes.Store(passes)
+	s.errors.Store(errors)
+}
+
 func (s *Sender) Snapshot() Stats {
 	s.errMu.Lock()
 	lastErr, lastErrAt := s.lastErr, s.lastErrAt

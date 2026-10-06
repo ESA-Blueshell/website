@@ -18,36 +18,11 @@
     }
   </script>
   <script>
-    // A WebSocket pushes a fresh live region once a second; we swap it in. Between pushes the
-    // "this pass" bar glides from the last known count and rate so it never steps.
+    // The socket pushes the live state a few times a second and we bind it straight onto the
+    // page. The bar follows the real pass count on each push, with a short CSS glide between
+    // them, so it never overshoots and snaps back. The canvas tracks the same count.
     (function () {
       var smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var raf;
-      function syncMeter() {
-        cancelAnimationFrame(raf);
-        var el = document.querySelector('[data-live-meter]');
-        if (!el) return;
-        var total = +el.dataset.passtotal || 1;
-        var base = +el.dataset.passdone;
-        var pps = +el.dataset.pps;
-        var running = el.dataset.running === 'true';
-        var fill = el.querySelector('.meter-cut__fill');
-        var pct = el.querySelector('.meter-pct');
-        var bar = el.querySelector('.meter-cut');
-        if (fill) fill.style.transition = 'none';
-        var t0 = performance.now();
-        function paint(done) {
-          var p = Math.min(100, done / total * 100);
-          if (fill) fill.style.width = p.toFixed(2) + '%';
-          if (pct) pct.textContent = Math.floor(p) + '%';
-          if (bar) bar.setAttribute('aria-valuenow', Math.floor(p));
-        }
-        if (!smooth || !running || pps <= 0) { paint(base); return; }
-        (function frame(now) {
-          paint(Math.min(total, base + pps * (now - t0) / 1000));
-          raf = requestAnimationFrame(frame);
-        })(t0);
-      }
 
       // The canvas plate paints the real logo pixels in, the way SNTPings fills: the logo builds
       // up in a shuffled order and then a steady stream of sparks shows the pixels we are sending
@@ -135,7 +110,9 @@
         setText('n-pps', st.pps); setText('n-cap', st.cap); setText('n-sent', st.sent); setText('n-passes', st.passes);
         var ne = document.getElementById('n-errors');
         if (ne) { ne.textContent = st.errors; ne.className = 'number-band__value' + (st.errorsWrong ? ' number-band__value--wrong' : ''); }
-        setText('m-done', st.passDoneTxt); setText('m-total', st.passTotalTxt); setText('eta', st.eta);
+        var fill = document.getElementById('m-fill'); if (fill) fill.style.width = st.passPercent + '%';
+        var mbar = document.getElementById('m-bar'); if (mbar) mbar.setAttribute('aria-valuenow', st.passPercent);
+        setText('m-pct', st.passPercent + '%'); setText('eta', st.eta);
         setText('prefixtag', st.prefixLabel);
         if (st.hasRate) {
           var poly = document.getElementById('r-poly'); if (poly) poly.setAttribute('points', st.ratePoints);
@@ -145,7 +122,7 @@
           setText('r-nowv', st.pps); setText('r-ceil', st.rateCeil);
           setText('r-count', '' + st.rateCount); setText('r-count2', '' + st.rateCount); setText('r-cap-txt', st.cap);
         }
-        syncMeter();
+
       }
 
       // The socket is the live feed; a timed fetch is the fallback when it cannot hold.
@@ -171,7 +148,7 @@
         ws.onerror = function () { try { ws.close(); } catch (e) {} };
       }
 
-      document.addEventListener('DOMContentLoaded', function () { syncMeter(); startPixels(); connect(); });
+      document.addEventListener('DOMContentLoaded', function () { startPixels(); connect(); });
     })();
   </script>
 </head>
@@ -361,12 +338,14 @@
         <div class="number-band__cell"><p class="number-band__value" id="n-passes">{{compact .Stats.Passes}}</p><p class="number-band__label">Passes over the logo</p></div>
         <div class="number-band__cell"><p class="number-band__value{{if .Stats.Errors}} number-band__value--wrong{{end}}" id="n-errors">{{compact .Stats.Errors}}</p><p class="number-band__label">Send errors</p></div>
       </div>
-      <div class="meter-row">
-        <p class="meter-row__label">This pass</p>
-        <div class="meter-cut" role="progressbar" aria-label="This pass" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.PassPercent}}"><span class="meter-cut__fill" style="width: {{.PassPercent}}%;"></span></div>
-        <p class="meter-row__said"><b class="meter-pct">{{.PassPercent}}%</b> · <span id="m-done">{{compact .Stats.PassDone}}</span> of <span id="m-total">{{compact .Stats.PassTotal}}</span></p>
+      <div class="pass-meter">
+        <div class="pass-meter__head">
+          <span class="meter-row__label">This pass</span>
+          <b class="meter-pct" id="m-pct">{{.PassPercent}}%</b>
+        </div>
+        <div class="meter-cut" id="m-bar" role="progressbar" aria-label="This pass" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.PassPercent}}"><span class="meter-cut__fill" id="m-fill" style="width: {{.PassPercent}}%;"></span></div>
+        <p class="meter-eta">A full paint of the logo takes about <b id="eta">{{.PassEta}}</b></p>
       </div>
-      <p class="meter-eta">A full paint of the logo takes about <b id="eta">{{.PassEta}}</b> at this rate.</p>
     </div>
   </section>
 

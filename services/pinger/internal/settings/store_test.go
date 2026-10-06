@@ -126,3 +126,22 @@ func TestARateAboveTheCapIsReadAsTheCap(t *testing.T) {
 		t.Fatalf("rate %d, want 200,000", got.RatePPS)
 	}
 }
+
+func TestStatsRoundTripAndFreshZeroes(t *testing.T) {
+	addr := valkeyAddr(t)
+	ctx := context.Background()
+	want := Stats{Sent: 123, Passes: 4, Errors: 2}
+	if err := open(t, addr).SaveStats(ctx, want); err != nil {
+		t.Fatal(err)
+	}
+	got, err := open(t, addr).LoadStats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("got %+v, want %+v", got, want)
+	}
+	if z, err := open(t, valkeyAddr(t)).LoadStats(ctx); err != nil || z != (Stats{}) {
+		t.Fatalf("fresh gave %+v, %v", z, err)
+	}
+}

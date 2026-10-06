@@ -9,7 +9,6 @@ import ChipPicker from "@/components/island/ChipPicker.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
-import SearchPicker from "@/components/island/SearchPicker.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
@@ -27,6 +26,7 @@ import {
   Role,
   sendTest,
   sendWritten,
+  ReplyToPicker,
 } from "@/domains/mail"
 import {type UserDetailResponse, listUsers} from "@/domains/user"
 import store from "@/plugins/store"
@@ -63,7 +63,6 @@ const chosen = computed(() => to.value.map((one) => options.value.find((option) 
   ?? {key: addresseeKey(one), label: one.id}))
 const chosenKeys = computed(() => new Set(chosen.value.map((one) => one.key)))
 const pickable = computed(() => options.value.filter((one) => !chosenKeys.value.has(one.key)))
-const replyPickerOptions = computed(() => replyOptions.value.map((one) => ({key: one, label: one})))
 const ready = computed(() => subject.value.trim() !== "" && message.value.trim() !== "")
 const recipients = computed(() => reach.value?.recipients ?? 0)
 const reachSaid = computed(() => {
@@ -205,17 +204,16 @@ onBeforeUnmount(() => clearTimeout(previewTimer))
         </form-field>
 
         <form-field
-          label="Replies go to"
+          label="Reply-to"
           testid="write-reply-to"
         >
           <template #default="{controlId, labelId}">
-            <search-picker
+            <reply-to-picker
+              v-model="replyTo"
               :control-id="controlId"
               :labelled-by="labelId"
-              :options="replyPickerOptions"
-              :selected-key="replyTo"
+              :offered="replyOptions"
               testid-prefix="write-reply-to-picker"
-              @pick="(key: string) => replyTo = key"
             />
           </template>
         </form-field>

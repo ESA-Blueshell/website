@@ -3,9 +3,12 @@ import type {Directive} from "vue"
 const FIELDS = "input:not([type=hidden]), textarea, select, [contenteditable=true]"
 const TYPED = new Set(["text", "email", "number", "password", "search", "tel", "url", "date", "time", "datetime-local"])
 
-/** A field somebody types into. A picker opens its list on focus and a tick box has nothing to type, so neither counts. */
+/**
+ * A field somebody types into. A picker opens its list on focus, as a date field opens its calendar, and
+ * a tick box has nothing to type, so none of them counts.
+ */
 const typed = (field: HTMLElement): boolean => {
-  if (field.matches(":disabled, [readonly], [role=combobox]")) return false
+  if (field.matches(":disabled, [readonly], [role=combobox], [aria-haspopup]")) return false
   if (field instanceof HTMLInputElement) return TYPED.has(field.type)
   return field instanceof HTMLTextAreaElement || field.isContentEditable || field.getAttribute("contenteditable") === "true"
 }

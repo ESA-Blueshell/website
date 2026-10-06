@@ -202,7 +202,10 @@ describe("the Users page", () => {
     const wrapper = await mount()
 
     const facts = wrapper.findComponent({name: "FactList"}).text()
-    expect(wrapper.get('[data-testid="member-manager-fact-members"]').text()).toContain("1")
+    // What needs somebody comes first: the pending over the member count, then who needs a look.
+    const labels = wrapper.findAll(".facts__label").map((one) => one.text())
+    expect(labels).toEqual(["Pending their first contribution", "Needs a look", "New this period"])
+    expect(wrapper.get('[data-testid="member-manager-fact-members"]').text()).toMatch(/members?$/)
     expect(facts).toContain("New this period")
     expect(facts).toContain("Since 1 Sep 2023")
     expect(facts).toContain("2 people")

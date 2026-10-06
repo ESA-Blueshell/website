@@ -110,3 +110,19 @@ func TestSavingThroughTheWatcherTakesEffectAtOnceAndPersists(t *testing.T) {
 		t.Fatalf("stored %+v, want %+v", got, want)
 	}
 }
+
+func TestARateAboveTheCapIsReadAsTheCap(t *testing.T) {
+	addr := valkeyAddr(t)
+	ctx := context.Background()
+	if err := open(t, addr).Save(ctx, paint.Settings{RatePPS: 10_000_000}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := open(t, addr).Load(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.RatePPS != paint.MaxRatePPS || paint.MaxRatePPS != 200_000 {
+		t.Fatalf("rate %d, want 200,000", got.RatePPS)
+	}
+}

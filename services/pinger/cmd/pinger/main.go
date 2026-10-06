@@ -53,7 +53,7 @@ func run() error {
 	go watcher.Run(ctx)
 
 	dryRun := os.Getenv("PINGER_DRY_RUN") != ""
-	conn, window, err := sendPath(dryRun)
+	conn, window, err := openSocket(dryRun)
 	if err != nil {
 		return err
 	}
@@ -86,9 +86,9 @@ func run() error {
 	return nil
 }
 
-// sendPath opens the raw ICMPv6 socket, which needs NET_RAW. A dry run swaps in a socket that
+// openSocket opens the raw ICMPv6 socket, which needs NET_RAW. A dry run swaps in a socket that
 // sends nothing and opens the window, so the page can be tried before the event.
-func sendPath(dryRun bool) (paint.Conn, paint.Window, error) {
+func openSocket(dryRun bool) (paint.Conn, paint.Window, error) {
 	if dryRun {
 		slog.Warn("dry run: nothing leaves this host")
 		return discard{}, paint.Window{Start: time.Time{}, End: time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
@@ -102,19 +102,20 @@ func sendPath(dryRun bool) (paint.Conn, paint.Window, error) {
 
 type discard struct{}
 
-// everyoneIsAdmin and asAdmin stand in for forward-auth on a dry run, which has no api to ask.
+func (discard) WriteTo(b []byte, _ net.Addr) (int, error) { return len(b), nil }
+
+// everyoneIsAdmin stands in for the api's check on a dry run, which has no api to ask.
 type everyoneIsAdmin struct{}
 
 func (everyoneIsAdmin) IsAdmin(*http.Request) (bool, error) { return true, nil }
 
+// asAdmin stands in for forward-auth on a dry run, so the page shows the settings form.
 func asAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Set("X-User-Groups", "ADMIN")
 		next.ServeHTTP(w, r)
 	})
 }
-
-func (discard) WriteTo(b []byte, _ net.Addr) (int, error) { return len(b), nil }
 
 func env(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {

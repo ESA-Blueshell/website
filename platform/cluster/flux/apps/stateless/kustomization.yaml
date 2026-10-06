@@ -22,7 +22,8 @@ images:
   - name: ghcr.io/esa-blueshell/frontend
     newTag: v1.17.0 # {"$imagepolicy": "flux-system:frontend:tag"}
     digest: sha256:7a12986e3ecd6d9ddedefb971d32e9314094e0355fe21c99b2e577c7a2b45c09 # {"$imagepolicy": "flux-system:frontend:digest"}
-  # Released with the rest, but nothing else depends on it. The pod pulls nothing until the
-  # first release that carries a pinger image, when the next scan rewrites this line.
+  # Released with the rest, but nothing else depends on it. v0.0.0 does not exist: the pod
+  # sits in ImagePullBackOff until a release publishes a pinger image and the next scan
+  # rewrites this line.
   - name: ghcr.io/esa-blueshell/pinger
     newTag: v0.0.0 # {"$imagepolicy": "flux-system:pinger:tag"}

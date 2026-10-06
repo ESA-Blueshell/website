@@ -31,9 +31,9 @@ belongs to. There are five, and each one skips work the others run:
 | `system` | `tests/**` | api lint, `Build has no warnings`, and everything `app` runs |
 | `pinger` | `services/pinger/**` but its compose file | `Pinger tests and image` |
 
-`app` is any bucket but `platform` and `pinger`. It runs both compile jobs, the image builds, the system tests
-and the acceptance features, because the system tests drive the api through the pages and a
-change on either side can break them. `Validate OpenAPI client generation` and `Changed lines are
+`app` is any bucket but `platform` and `pinger`. It runs both compile jobs, the image builds, the
+system tests and the acceptance features, because the system tests drive the api through the
+pages and a change on either side can break them. `Validate OpenAPI client generation` and `Changed lines are
 covered` run on `api` or `frontend`. `Workflow checks` runs on every pull request.
 
 `Frontend typecheck, lint and build` also runs the job-catalogue test, which holds

@@ -39,7 +39,7 @@
         </label>
         <label class="grid gap-1 text-sm">
           <span class="text-slate-300">Rate (packets/s)</span>
-          <input name="rate" type="number" min="1" max="200000" value="{{.Settings.RatePPS}}" required
+          <input name="rate" type="number" min="1" max="{{.MaxRatePPS}}" value="{{.Settings.RatePPS}}" required
                  class="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-slate-100 focus:border-blue-400 focus:outline-none">
         </label>
         <label class="flex items-center gap-2 text-sm text-slate-300">

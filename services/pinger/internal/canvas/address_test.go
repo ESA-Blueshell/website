@@ -62,3 +62,9 @@ func TestParsePrefixRefusesWhatCannotCarryAPixel(t *testing.T) {
 		}
 	}
 }
+
+func TestNoPrefixPrintsAsNothing(t *testing.T) {
+	if s := (Prefix{}).String(); s != "" {
+		t.Fatalf("got %q", s)
+	}
+}

@@ -63,6 +63,9 @@ func (p Prefix) Address(px Pixel) netip.Addr {
 func (p Prefix) IsZero() bool { return p == Prefix{} }
 
 func (p Prefix) String() string {
+	if p.IsZero() {
+		return ""
+	}
 	var b [16]byte
 	copy(b[:8], p.high[:])
 	return netip.PrefixFrom(netip.AddrFrom16(b), 64).String()

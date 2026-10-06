@@ -23,6 +23,9 @@ type Conn interface {
 	WriteTo(b []byte, dst net.Addr) (int, error)
 }
 
+// MaxRatePPS caps the rate however it is set: the event bans prefixes that ping excessively hard.
+const MaxRatePPS = 200_000
+
 // Settings are what an admin steers the sender with.
 type Settings struct {
 	Prefix  canvas.Prefix
@@ -199,8 +202,8 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.IPAddr) 
 					}
 					backoff.Reset()
 					s.sent.Add(1)
+					s.passDone.Add(1)
 				}
-				s.passDone.Add(int64(to - from))
 			}
 		})
 	}

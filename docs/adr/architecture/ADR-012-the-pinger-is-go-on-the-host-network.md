@@ -7,7 +7,7 @@ Accepted
 
 SNTPings paints one pixel of a shared canvas for every IPv6 echo request sent to
 `<prefix>:<X>:<Y>:<B><G>:<R><A>`. The event runs for one weekend. We want the Blueshell
-logo on the canvas, a members-only page that shows progress, and admins able to set the
+logo on the canvas, a members-only page that shows progress and admins able to set the
 prefix and the rate. The event bans prefixes that send too hard.
 
 Two facts shape where the sender runs:
@@ -27,7 +27,7 @@ Alternatives considered:
 ## Decision
 
 **The pinger is a Go service in `services/pinger`.** Go was already installed, its
-standard library covers server-rendered HTML, and `golang.org/x/net/icmp` covers the
+standard library covers server-rendered HTML and `golang.org/x/net/icmp` covers the
 socket. It is the repo's second backend language. It shares nothing with the api's Gradle
 build and has its own Validate bucket.
 

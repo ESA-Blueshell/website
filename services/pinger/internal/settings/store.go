@@ -52,6 +52,7 @@ func (s *Store) Load(ctx context.Context) (paint.Settings, error) {
 		if out.RatePPS, err = strconv.Atoi(v); err != nil {
 			return paint.Settings{}, fmt.Errorf("%s: %w", keyRate, err)
 		}
+		out.RatePPS = min(out.RatePPS, paint.MaxRatePPS)
 	}
 	if v, err := values[2].ToString(); err == nil {
 		out.Paused = v == "1"
@@ -60,16 +61,12 @@ func (s *Store) Load(ctx context.Context) (paint.Settings, error) {
 }
 
 func (s *Store) Save(ctx context.Context, v paint.Settings) error {
-	prefix := ""
-	if !v.Prefix.IsZero() {
-		prefix = v.Prefix.String()
-	}
 	paused := "0"
 	if v.Paused {
 		paused = "1"
 	}
 	return s.client.Do(ctx, s.client.B().Mset().KeyValue().
-		KeyValue(keyPrefix, prefix).
+		KeyValue(keyPrefix, v.Prefix.String()).
 		KeyValue(keyRate, strconv.Itoa(v.RatePPS)).
 		KeyValue(keyPaused, paused).
 		Build()).Error()

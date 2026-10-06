@@ -4,6 +4,7 @@ package web
 import (
 	"context"
 	"embed"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"log/slog"
@@ -16,9 +17,6 @@ import (
 	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
 )
-
-// MaxRatePPS bounds what the form accepts: the event bans prefixes that ping excessively hard.
-const MaxRatePPS = 200_000
 
 //go:embed templates/*.html
 var templateFS embed.FS
@@ -77,15 +75,13 @@ type view struct {
 	PassPercent int
 	LastErrorAt string
 	ShowForm    bool
+	MaxRatePPS  int
 }
 
 func (s *server) view(r *http.Request) view {
 	st := s.stats.Snapshot()
 	cfg := s.settings.Current()
-	v := view{Stats: st, Settings: cfg}
-	if !cfg.Prefix.IsZero() {
-		v.Prefix = cfg.Prefix.String()
-	}
+	v := view{Stats: st, Settings: cfg, Prefix: cfg.Prefix.String(), MaxRatePPS: paint.MaxRatePPS}
 	if st.PassTotal > 0 {
 		v.PassPercent = st.PassDone * 100 / st.PassTotal
 	}
@@ -148,8 +144,8 @@ func parseSettings(r *http.Request) (paint.Settings, string) {
 		out.Prefix = p
 	}
 	rate, err := strconv.Atoi(strings.TrimSpace(r.FormValue("rate")))
-	if err != nil || rate < 1 || rate > MaxRatePPS {
-		return out, "rate must be a whole number from 1 to " + thousands(MaxRatePPS)
+	if err != nil || rate < 1 || rate > paint.MaxRatePPS {
+		return out, "rate must be a whole number from 1 to " + thousands(paint.MaxRatePPS)
 	}
 	out.RatePPS = rate
 	out.Paused = r.FormValue("paused") != ""
@@ -169,6 +165,8 @@ func thousands(n any) string {
 		s = strconv.Itoa(v)
 	case uint64:
 		s = strconv.FormatUint(v, 10)
+	default:
+		s = fmt.Sprint(v)
 	}
 	for i := len(s) - 3; i > 0; i -= 3 {
 		s = s[:i] + "," + s[i:]

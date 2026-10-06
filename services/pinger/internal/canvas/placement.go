@@ -10,7 +10,6 @@ import (
 // Placement is the logo as it lands on the canvas: the scaled image and every pixel worth sending.
 type Placement struct {
 	Image  *image.NRGBA
-	Origin image.Point
 	Pixels []Pixel
 }
 
@@ -46,7 +45,7 @@ func Place(src image.Image, maxSide int) Placement {
 			})
 		}
 	}
-	return Placement{Image: scaled, Origin: origin, Pixels: pixels}
+	return Placement{Image: scaled, Pixels: pixels}
 }
 
 func visibleBounds(src image.Image) image.Rectangle {

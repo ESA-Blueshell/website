@@ -18,6 +18,44 @@
     }
   </script>
   <script src="/static/htmx.min.js" defer></script>
+  <script>
+    // The live figures are polled every two seconds. Between polls, advance the "this pass"
+    // bar from the last known count and rate so it moves smoothly instead of stepping. Each
+    // poll swaps the band in; re-sync from the fresh numbers then. A pass that finishes mid-
+    // interval holds at full until the next poll resets it — a small, deliberate lag.
+    (function () {
+      var smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var raf;
+      function sync() {
+        cancelAnimationFrame(raf);
+        var el = document.querySelector('[data-live-meter]');
+        if (!el) return;
+        var total = +el.dataset.passtotal || 1;
+        var base = +el.dataset.passdone;
+        var pps = +el.dataset.pps;
+        var running = el.dataset.running === 'true';
+        var fill = el.querySelector('.meter-cut__fill');
+        var pct = el.querySelector('.meter-pct');
+        var bar = el.querySelector('.meter-cut');
+        if (fill) fill.style.transition = 'none';
+        var t0 = performance.now();
+        function paint(done) {
+          var p = Math.min(100, done / total * 100);
+          if (fill) fill.style.width = p.toFixed(2) + '%';
+          if (pct) pct.textContent = Math.floor(p) + '%';
+          if (bar) bar.setAttribute('aria-valuenow', Math.floor(p));
+        }
+        if (!smooth || !running || pps <= 0) { paint(base); return; }
+        (function frame(now) {
+          paint(Math.min(total, base + pps * (now - t0) / 1000));
+          raf = requestAnimationFrame(frame);
+        })(t0);
+      }
+      document.addEventListener('htmx:afterSwap', sync);
+      document.addEventListener('DOMContentLoaded', sync);
+      sync();
+    })();
+  </script>
 </head>
 <body>
 <div class="island pinger">
@@ -219,10 +257,10 @@
         <div class="number-band__cell"><p class="number-band__value">{{compact .Stats.Passes}}</p><p class="number-band__label">Passes over the logo</p></div>
         <div class="number-band__cell"><p class="number-band__value{{if .Stats.Errors}} number-band__value--wrong{{end}}">{{compact .Stats.Errors}}</p><p class="number-band__label">Send errors</p></div>
       </div>
-      <div class="meter-row">
+      <div class="meter-row" data-live-meter data-passdone="{{.Stats.PassDone}}" data-passtotal="{{.Stats.PassTotal}}" data-pps="{{.Stats.ActualPPS}}" data-running="{{.IsRunning}}">
         <p class="meter-row__label">This pass</p>
         <div class="meter-cut" role="progressbar" aria-label="This pass" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.PassPercent}}"><span class="meter-cut__fill" style="width: {{.PassPercent}}%;"></span></div>
-        <p class="meter-row__said"><b>{{.PassPercent}}%</b> · {{compact .Stats.PassDone}} of {{compact .Stats.PassTotal}}</p>
+        <p class="meter-row__said"><b class="meter-pct">{{.PassPercent}}%</b> · {{compact .Stats.PassDone}} of {{compact .Stats.PassTotal}}</p>
       </div>
     </div>
   </section>

@@ -2102,7 +2102,8 @@ export enum InboxSort {
     RECEIVED = 'RECEIVED',
     FROM = 'FROM',
     SUBJECT = 'SUBJECT',
-    STATE = 'STATE'
+    STATE = 'STATE',
+    HANDLED_BY = 'HANDLED_BY'
 }
 
 export enum InboxState {

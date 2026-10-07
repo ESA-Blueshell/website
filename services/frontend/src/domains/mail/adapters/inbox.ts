@@ -25,7 +25,13 @@ export type {AnsweredEmail, Conversation, ConversationItem, EarlierMail, InboxCo
 export {ConversationKind, InboxState}
 
 /** What each of the table's columns is ordered by on the server. Who handled a message is a name looked up after, so it has none. */
-const INBOX_SORTS: Record<string, InboxSort> = {received: InboxSort.RECEIVED, from: InboxSort.FROM, what: InboxSort.SUBJECT, state: InboxSort.STATE}
+const INBOX_SORTS: Record<string, InboxSort> = {
+  received: InboxSort.RECEIVED,
+  from: InboxSort.FROM,
+  what: InboxSort.SUBJECT,
+  state: InboxSort.STATE,
+  by: InboxSort.HANDLED_BY,
+}
 
 /** One page, newest first unless the reader ordered it; an empty one where it could not be read. */
 export async function loadInboxPage(query: PageQuery, mailbox: string | null = null): Promise<PageOf<InboxEntry>> {

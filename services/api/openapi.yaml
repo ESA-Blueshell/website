@@ -4045,6 +4045,7 @@ components:
       - FROM
       - SUBJECT
       - STATE
+      - HANDLED_BY
       type: string
     InboxState:
       enum:

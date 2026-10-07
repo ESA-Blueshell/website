@@ -29,7 +29,7 @@ const table = usePagedTable<InboxEntry>((query) => {
   })
   return loadInboxPage(query, mailbox.value)
 }, {pageSize: 50})
-const {rows, search, pageRangeLabel, refresh, more, sortKey, descending, sortBy} = table
+const {rows, search, pageRangeLabel, refresh, more, sortKey, descending, sortBy, orderBy} = table
 
 // The inbox is read a page at a time, so the server orders it.
 const COLUMNS: TableColumn[] = [
@@ -37,7 +37,7 @@ const COLUMNS: TableColumn[] = [
   {key: "from", label: "From", wrap: true, sortable: true},
   {key: "what", label: "Subject", wrap: true, sortable: true},
   {key: "state", label: "State", sortable: true},
-  {key: "by", label: "Handled by"},
+  {key: "by", label: "Handled by", sortable: true},
 ]
 
 const oldest = computed(() => (counts.value?.oldestNewAt ? `Oldest from ${formatMoment(counts.value.oldestNewAt)}` : "Nothing waits"))
@@ -93,6 +93,7 @@ onMounted(async () => {
       testid="inbox-table"
       :to="(entry) => `/management/mail/inbox/${entry.id}`"
       @more="more"
+      @order="orderBy"
       @sort="sortBy"
     >
       <template #count>

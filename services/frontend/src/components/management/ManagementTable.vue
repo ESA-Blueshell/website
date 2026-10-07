@@ -5,7 +5,7 @@
     :data-testid="testid"
   >
     <div
-      v-if="$slots.count || $slots.filters || $slots.search || searchText"
+      v-if="$slots.count || $slots.filters || $slots.search || searchText || orders.length > 0"
       class="mg-table__bar"
     >
       <span
@@ -13,6 +13,15 @@
         class="mg-table__count"
       ><slot name="count">{{ counted }}</slot></span>
       <slot name="filters" />
+      <filter-picker
+        v-if="orders.length > 0"
+        any-label="As listed"
+        label="Order by"
+        :model-value="orderKey"
+        :options="orders"
+        :testid="`${testid ?? 'table'}-order`"
+        @update:model-value="pickOrder"
+      />
       <span class="mg-table__search">
         <slot name="search">
           <search-box
@@ -257,6 +266,7 @@
    a ManagementRow, where a page gives one. */
 import {computed, nextTick, onMounted, ref, useTemplateRef, watch} from "vue"
 import {useRouter} from "vue-router"
+import FilterPicker from "@/components/island/FilterPicker.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
 import {usePhone} from "@/composables/usePhone"
@@ -310,6 +320,8 @@ const {
 
 const emit = defineEmits<{
   sort: [key: string]
+  /** An order picked on a phone, where there are no heads to press: a column and a way round, or none. */
+  order: [key: string | null, descending: boolean]
   toggleShown: []
   selectAll: []
   clearSelection: []
@@ -369,6 +381,27 @@ const ordered = computed(() => {
     })
     .map((one) => one.row)
 })
+
+/* On a phone there are no heads to press, so the same orders are offered in a picker, each column
+   both ways round, in the way round its head would take first. */
+const orders = computed(() => columns.filter((one) => one.sortBy || one.sortable).flatMap((one) => {
+  const first = one.sortBy ? one.newestFirst === true : false
+  return [
+    {key: `${one.key}:${first ? "down" : "up"}`, label: one.label},
+    {key: `${one.key}:${first ? "up" : "down"}`, label: `${one.label}, reversed`},
+  ]
+}))
+const orderKey = computed(() => (sorted.value.key ? `${sorted.value.key}:${sorted.value.descending ? "down" : "up"}` : null))
+const pickOrder = (picked: string | null) => {
+  const [key, way] = picked?.split(":") ?? [null, "up"]
+  const column = columns.find((one) => one.key === key)
+  if (key && column?.sortBy) {
+    own.value = {key, descending: way === "down"}
+    return
+  }
+  own.value = null
+  emit("order", key ?? null, way === "down")
+}
 
 const counted = computed(() => (kept.value.length === rows.length ? `Showing ${rows.length}` : `Showing ${kept.value.length} of ${rows.length}`))
 

@@ -1,4 +1,5 @@
 import {SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
+import {SNTPINGS_ENABLED, SNTPINGS_PATH} from "@/domains/pinger"
 
 /** A game, as the bar needs it: the esports domain owns the record this is read from. */
 export interface NavGame {
@@ -103,6 +104,8 @@ export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = [], c
   },
   {label: "Partners", to: "/partners/become-a-partner", covers: ["/partners"], entries: PARTNERS},
   {label: "Contact", to: "/contact"},
+  // The temporary public SNTPings tab. The whole entry goes when SNTPINGS_ENABLED flips off.
+  ...(SNTPINGS_ENABLED ? [{label: "SNTPings", to: SNTPINGS_PATH}] : []),
 ]
 
 /**

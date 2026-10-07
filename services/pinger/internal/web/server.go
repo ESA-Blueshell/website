@@ -434,20 +434,21 @@ func thousands(n any) string {
 	return s
 }
 
-// compact writes a big tally as 1.2M or 3.4B, so a running total never grows wider than its
-// cell. Below a thousand it stays exact.
+// compact writes a big tally with up to four comma-grouped digits and a unit suffix, so it stays
+// readable yet shows progress: 9,999 then 10K, 1,235K, 4,132B. It picks the smallest unit that
+// keeps the figure at four digits or fewer.
 func compact(n any) string {
 	v := toUint64(n)
 	for _, u := range []struct {
 		div    uint64
 		suffix string
-	}{{1e12, "T"}, {1e9, "B"}, {1e6, "M"}, {1e3, "K"}} {
-		if v >= u.div {
-			s := strconv.FormatFloat(float64(v)/float64(u.div), 'f', 1, 64)
-			return strings.TrimSuffix(s, ".0") + u.suffix
+	}{{1, ""}, {1e3, "K"}, {1e6, "M"}, {1e9, "B"}, {1e12, "T"}} {
+		q := (v + u.div/2) / u.div
+		if q <= 9999 {
+			return thousands(q) + u.suffix
 		}
 	}
-	return strconv.FormatUint(v, 10)
+	return thousands((v+5e11)/1e12) + "T"
 }
 
 func toUint64(n any) uint64 {

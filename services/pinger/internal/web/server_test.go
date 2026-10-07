@@ -71,7 +71,7 @@ func TestThePageShowsHowThePaintingGoes(t *testing.T) {
 	if code != http.StatusOK {
 		t.Fatalf("status %d", code)
 	}
-	for _, want := range []string{"running", "1.2M", "49,876", "50,000", "2001:db8:b317:a000::/64", "24%", "no buffer space available", `/ws`} {
+	for _, want := range []string{"running", "1,235K", "49,876", "50,000", "2001:db8:b317:a000::/64", "24%", "no buffer space available", `/ws`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page lacks %q", want)
 		}
@@ -97,7 +97,7 @@ func TestLiveJSONStandsAlone(t *testing.T) {
 	code, body := get(t, h, "/live.json", "")
 
 	var st map[string]any
-	if code != http.StatusOK || strings.Contains(body, "<html") || json.Unmarshal([]byte(body), &st) != nil || st["sent"] != "1.2M" || st["state"] != "running" {
+	if code != http.StatusOK || strings.Contains(body, "<html") || json.Unmarshal([]byte(body), &st) != nil || st["sent"] != "1,235K" || st["state"] != "running" {
 		t.Fatalf("status %d, body %q", code, body)
 	}
 }
@@ -187,10 +187,10 @@ func TestACrossSitePostIsRefusedEvenForAnAdmin(t *testing.T) {
 
 func TestCompactShortensBigTalliesAndKeepsSmallOnesExact(t *testing.T) {
 	cases := map[any]string{
-		uint64(0): "0", 42: "42", uint64(999): "999",
-		uint64(1_000): "1K", 50_000: "50K", uint64(202_158): "202.2K",
-		uint64(1_234_567): "1.2M", uint64(18_710_842): "18.7M", uint64(3_400_000_000): "3.4B",
-		uint64(2_000_000_000_000): "2T",
+		uint64(0): "0", 42: "42", uint64(9_999): "9,999",
+		uint64(10_000): "10K", 50_000: "50K", uint64(202_158): "202K",
+		uint64(1_234_567): "1,235K", uint64(18_710_842): "19M", uint64(3_400_000_000): "3,400M",
+		uint64(4_132_000_000_000): "4,132B", uint64(2_000_000_000_000): "2,000B",
 	}
 	for in, want := range cases {
 		if got := compact(in); got != want {
@@ -220,7 +220,7 @@ func TestTheSocketPushesTheLiveRegion(t *testing.T) {
 	if err := json.Unmarshal(data, &st); err != nil {
 		t.Fatalf("push is not JSON: %v (%q)", err, data)
 	}
-	if st["sent"] != "1.2M" || st["state"] != "running" || st["running"] != true {
+	if st["sent"] != "1,235K" || st["state"] != "running" || st["running"] != true {
 		t.Errorf("push = %v", st)
 	}
 }

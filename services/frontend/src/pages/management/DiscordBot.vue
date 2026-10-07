@@ -11,7 +11,7 @@ import StateMark from "@/components/island/StateMark.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import {type BotGrant, type BotStanding, ChannelMark, DISCORD_TABS, botSteps, readBotStanding} from "@/domains/discord"
+import {type BotGrant, type BotStanding, BotChannelProblem, ChannelMark, DISCORD_TABS, botSteps, readBotStanding} from "@/domains/discord"
 
 defineOptions({name: "DiscordBotPage"})
 
@@ -43,7 +43,7 @@ const facts = computed(() => {
   return [
     {label: "Bot's role", value: read.botRole ? `@${read.botRole.name}` : "None", sub: "It adds only the roles below its own", testid: "discord-bot-role"},
     {label: "Permissions", value: `${held} of ${read.permissions.length}`, sub: lacking.value.length === 0 ? "Everything the site needs" : `${lacking.value.length} missing`, testid: "discord-bot-held"},
-    {label: "Channels it cannot see", value: String(read.hidden.length), sub: "The site can neither read nor change these", testid: "discord-bot-hidden-count"},
+    {label: "Kept channels it cannot change", value: String(read.hidden.length), sub: "Opened to a role the site keeps", testid: "discord-bot-hidden-count"},
   ]
 })
 
@@ -136,7 +136,7 @@ onMounted(async () => {
       </management-table>
 
       <template v-if="standing.hidden.length > 0">
-        <list-head :title="`Channels the bot cannot see · ${standing.hidden.length}`" />
+        <list-head :title="`Kept channels the bot cannot change · ${standing.hidden.length}`" />
         <div
           class="bot__channels"
           data-testid="discord-bot-hidden"
@@ -164,6 +164,10 @@ onMounted(async () => {
                   :testid="`discord-bot-hidden-${channel.id}`"
                   :voice="channel.voice"
                 />
+                <span
+                  class="bot__why"
+                  :data-testid="`discord-bot-hidden-why-${channel.id}`"
+                >{{ channel.problem === BotChannelProblem.CANNOT_SEE ? "Cannot see it" : "Cannot change who it is open to" }}</span>
               </li>
             </ul>
           </div>
@@ -203,6 +207,12 @@ onMounted(async () => {
   flex-wrap: wrap;
   gap: 1rem 2.5rem;
   margin: 0.6rem 0 1.2rem;
+}
+
+.bot__why {
+  margin-left: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--color-ash);
 }
 
 .bot__list {

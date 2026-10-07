@@ -1,9 +1,11 @@
 package net.blueshell.api.discord.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
+import net.blueshell.api.discord.api.LinkedDiscordRoles
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel
+import net.dv8tion.jda.api.entities.channel.attribute.IPermissionContainer
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Service
@@ -17,7 +19,17 @@ data class BotGrant(
     val granted: Boolean,
 )
 
-/** A channel the bot cannot see, with what a link into it and a Discord-styled mark need. */
+/** Why the bot cannot keep who a channel is open to. */
+@Schema(enumAsRef = true)
+enum class BotChannelProblem {
+    /** It cannot see the channel at all. */
+    CANNOT_SEE,
+
+    /** It sees the channel but may not change its permissions. */
+    CANNOT_CHANGE_ACCESS,
+}
+
+/** A channel the site keeps that the bot cannot change, with what a link into it and a Discord-styled mark need. */
 @Schema(name = "BotHiddenChannel")
 data class BotHiddenChannel(
     val id: String,
@@ -25,6 +37,7 @@ data class BotHiddenChannel(
     val name: String,
     val category: String?,
     val voice: Boolean,
+    val problem: BotChannelProblem = BotChannelProblem.CANNOT_SEE,
 )
 
 /**
@@ -38,13 +51,13 @@ data class BotStandingResult(
     val manageChannels: Boolean,
     /** The role Discord made for the bot, or its highest where it has none; its permissions are set on it. */
     val botRole: DiscordRole?,
-    /** Roles the site could keep but the bot cannot hand out, because they sit at or above its own. */
+    /** Roles the site keeps that the bot cannot hand out, because they sit at or above its own. */
     val above: List<DiscordRole>,
     /** The roles the role-claim bot hands out, which the site never adopts. */
     val claimed: List<DiscordRole>,
     /** Every permission the site's work needs, and whether the bot holds it in the server. */
     val permissions: List<BotGrant> = emptyList(),
-    /** The channels the bot cannot see, which the site can neither read nor change. */
+    /** The channels opened to a role the site keeps that the bot cannot see or change, and why. */
     val hidden: List<BotHiddenChannel> = emptyList(),
 )
 
@@ -53,11 +66,14 @@ data class BotStandingResult(
 class BotStanding(
     private val gateway: ObjectProvider<GatewayGuild>,
     private val settings: DiscordSettings,
+    private val linked: LinkedDiscordRoles,
 ) {
     fun read(): BotStandingResult {
         val guild = gateway.ifAvailable?.guild() ?: return BotStandingResult(false, false, false, null, emptyList(), emptyList())
         val bot = guild.selfMember
         val claimRoleIds = settings.claimRoleIds()
+        // Only what stands in the site's way: the roles it keeps, and the channels opened to them.
+        val kept = linked.ids()
         val keepable = guild.roles.filterNot { it.isPublicRole || it.isManaged || it.id in claimRoleIds }
         return BotStandingResult(
             connected = true,
@@ -65,10 +81,19 @@ class BotStanding(
             manageChannels = bot.hasPermission(Permission.MANAGE_CHANNEL),
             botRole = (bot.roles.firstOrNull { it.isManaged } ?: bot.roles.firstOrNull())?.let(::describedRole),
             // A role the bot holds itself is never one it has to rise above.
-            above = keepable.filterNot { it in bot.roles || bot.canInteract(it) }.map(::describedRole),
+            above = keepable.filter { it.id in kept }.filterNot { it in bot.roles || bot.canInteract(it) }.map(::describedRole),
             claimed = guild.roles.filter { it.id in claimRoleIds }.map(::describedRole),
             permissions = NEEDED.map { BotGrant(it.name, it.why, bot.hasPermission(it.permission)) },
-            hidden = guild.channels.filterNot { bot.hasPermission(it, Permission.VIEW_CHANNEL) }.map { hiddenChannel(it, guild.id) },
+            hidden =
+                guild.channels
+                    .filter { channel -> (channel as? IPermissionContainer)?.rolePermissionOverrides.orEmpty().any { it.id in kept } }
+                    .mapNotNull { channel ->
+                        when {
+                            !bot.hasPermission(channel, Permission.VIEW_CHANNEL) -> BotChannelProblem.CANNOT_SEE
+                            !bot.hasPermission(channel, Permission.MANAGE_PERMISSIONS) -> BotChannelProblem.CANNOT_CHANGE_ACCESS
+                            else -> null
+                        }?.let { hiddenChannel(channel, guild.id, it) }
+                    },
         )
     }
 }
@@ -76,12 +101,14 @@ class BotStanding(
 private fun hiddenChannel(
     channel: GuildChannel,
     guildId: String,
+    problem: BotChannelProblem,
 ) = BotHiddenChannel(
     id = channel.id,
     guildId = guildId,
     name = channel.name,
     category = (channel as? ICategorizableChannel)?.parentCategory?.name,
     voice = channel.type == ChannelType.VOICE,
+    problem = problem,
 )
 
 /** A permission the site needs, under the name Discord's role settings give it, with what it is needed for. */

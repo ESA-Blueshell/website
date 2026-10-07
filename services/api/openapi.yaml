@@ -769,6 +769,11 @@ components:
       - updatedAt
       - version
       type: object
+    BotChannelProblem:
+      enum:
+      - CANNOT_SEE
+      - CANNOT_CHANGE_ACCESS
+      type: string
     BotGrant:
       properties:
         granted:
@@ -795,12 +800,15 @@ components:
           type: string
         name:
           type: string
+        problem:
+          $ref: '#/components/schemas/BotChannelProblem'
         voice:
           type: boolean
       required:
       - guildId
       - id
       - name
+      - problem
       - voice
       type: object
     BotStandingResult:

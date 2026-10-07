@@ -3,8 +3,6 @@ package canvas
 import (
 	"image"
 	"image/color"
-	"image/png"
-	"os"
 	"testing"
 )
 
@@ -95,34 +93,5 @@ func TestPlaceSkipsTransparentPixelsAndKeepsEdgeAlpha(t *testing.T) {
 	want := Pixel{X: 1631, Y: 719, R: 0x40, G: 0x80, B: 0xc0, A: 0x80}
 	if edge == nil || *edge != want {
 		t.Fatalf("edge pixel %+v, want %+v", edge, want)
-	}
-}
-
-func TestPlaceFitsTheBlueshellLogoTo900InTheUpperThird(t *testing.T) {
-	f, err := os.Open("../../logo.png")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	src, err := png.Decode(f)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	got := Place(src, 900, image.Pt(Width/2, Height/3-180))
-
-	if got.Image.Bounds().Size() != image.Pt(900, 720) {
-		t.Fatalf("scaled to %v, want 900x720", got.Image.Bounds().Size())
-	}
-	minX, minY, maxX, maxY := uint16(Width), uint16(Height), uint16(0), uint16(0)
-	for _, px := range got.Pixels {
-		minX, minY = min(minX, px.X), min(minY, px.Y)
-		maxX, maxY = max(maxX, px.X), max(maxY, px.Y)
-	}
-	if minX != 1470 || maxX != 2369 || minY != 180 || maxY != 899 {
-		t.Fatalf("logo spans x %d-%d y %d-%d, want x 1470-2369 y 180-899", minX, maxX, minY, maxY)
-	}
-	if len(got.Pixels) >= 900*720 {
-		t.Fatalf("got %d pixels, transparent ones were not skipped", len(got.Pixels))
 	}
 }

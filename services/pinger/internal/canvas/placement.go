@@ -13,12 +13,6 @@ type Placement struct {
 	Pixels []Pixel
 }
 
-// PlaceLogo is where the Blueshell logo lands: 900px wide, horizontally centered, a third of the
-// way down then 180px up. The service and the helper CLI both call it, so they paint the same art.
-func PlaceLogo(src image.Image) Placement {
-	return Place(src, 900, image.Pt(Width/2, Height/3-180))
-}
-
 // PlaceInBox fits src inside a box of boxW by boxH, preserving the image's aspect, and centers it
 // in the box. This is the admin's drag-and-resize box from the api descriptor: the image fills as
 // much of the box as its own shape allows, and is centered in whichever axis has room to spare.

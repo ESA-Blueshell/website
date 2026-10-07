@@ -70,8 +70,30 @@ class RegisteredClients {
                 ).tokenSettings(tokenSettings())
                 .build()
 
-        return InMemoryRegisteredClientRepository(headlamp, vault)
+        return InMemoryRegisteredClientRepository(headlamp, vault, pingerApp())
     }
+
+    // The desktop pinger client a member signs in. It is public like headlamp (no secret lives on
+    // the member's machine) and redirects to a loopback address: the client binds an ephemeral port
+    // on 127.0.0.1 and the authorization server allows any port for a loopback redirect, so the
+    // registered port is a placeholder the request overrides (RFC 8252).
+    private fun pingerApp(): RegisteredClient =
+        RegisteredClient
+            .withId(UUID.randomUUID().toString())
+            .clientId("pinger-app")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .redirectUri("http://127.0.0.1:8991/login/oauth2/code/pinger-app")
+            .scope(OidcScopes.OPENID)
+            .scope(OidcScopes.PROFILE)
+            .clientSettings(
+                ClientSettings
+                    .builder()
+                    .requireProofKey(true)
+                    .requireAuthorizationConsent(false)
+                    .build(),
+            ).tokenSettings(tokenSettings())
+            .build()
 
     private fun tokenSettings() =
         TokenSettings

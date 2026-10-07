@@ -42,8 +42,11 @@ class DownstreamClientAuthorizationFilterTest {
         SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)
     }
 
-    private fun authorize(signIn: SignIn? = null): Pair<MockHttpServletResponse, MockFilterChain> {
-        val request = MockHttpServletRequest("GET", "/oauth2/authorize").apply { setParameter("client_id", "vault") }
+    private fun authorize(
+        signIn: SignIn? = null,
+        clientId: String = "vault",
+    ): Pair<MockHttpServletResponse, MockFilterChain> {
+        val request = MockHttpServletRequest("GET", "/oauth2/authorize").apply { setParameter("client_id", clientId) }
         signIn?.let { request.setAttribute(SignInContext.ATTRIBUTE, it) }
         RequestContextHolder.setRequestAttributes(ServletRequestAttributes(request))
         val response = MockHttpServletResponse()
@@ -101,5 +104,24 @@ class DownstreamClientAuthorizationFilterTest {
         signedInAs(Role.ADMIN, twoFactor = false)
 
         assertThat(authorize().second.request).isNotNull()
+    }
+
+    @Test
+    fun `pinger-app lets a plain member past without a step-up`() {
+        signedInAs(Role.MEMBER, twoFactor = true)
+
+        val (_, chain) = authorize(signIn, clientId = "pinger-app")
+
+        assertThat(chain.request).isNotNull()
+    }
+
+    @Test
+    fun `pinger-app refuses an authenticated non-member`() {
+        signedInAs(Role.COMPANY, twoFactor = false)
+
+        val (response, chain) = authorize(clientId = "pinger-app")
+
+        assertThat(response.status).isEqualTo(403)
+        assertThat(chain.request).isNull()
     }
 }

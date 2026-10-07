@@ -36,6 +36,19 @@ describe("the page every island part is drawn on", () => {
     expect(wrapper.find(".gallery__theme").text()).toBe("Read it dark")
   })
 
+  it("draws a board's row with a member whose long text the row grows to", () => {
+    const SliceBand = {
+      name: "SliceBand",
+      props: {items: {type: Array, default: () => []}, layout: {type: String, default: "cover"}},
+      template: "<div><template v-for='item in items' :key='item.id'><slot name='details' :item='item' /></template></div>",
+    }
+    const wrapper = mount(PartsGallery, {attachTo: document.body, global: {stubs: {RouterLink: RouterLinkStub, SliceBand, ModalDialog}}})
+
+    const row = wrapper.findAllComponents({name: "SliceBand"}).find((one) => one.props("layout") === "aside")!
+    expect(row.find('[data-testid="gallery-members-blurb-2"]').text()).toContain("bake for every general meeting")
+    wrapper.unmount()
+  })
+
   it("pans the plates as far as they go and no further", async () => {
     const wrapper = mountGallery()
     const plates = () => (wrapper.find(".gallery__plates").element as HTMLElement).style.translate

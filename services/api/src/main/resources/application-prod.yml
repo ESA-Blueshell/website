@@ -64,3 +64,25 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+---
+# The SiteCie report token on its own path, shared with the pinger's VSO secret (api ADR-033). Only
+# the running api reads it: this document is gated off under `migrate`, because the migrate boot runs
+# `prod,migrate` and its Vault role is not granted the path, so importing it there would 403, which
+# `optional:` does not tolerate the way it tolerates a 404. Optional, so an unprovisioned token
+# leaves the property empty and SiteCie idle rather than failing the start.
+#
+# The vault connection settings are repeated here because this import is resolved in the profile
+# phase, after the main document's: Spring Cloud Vault binds its settings at the vault:// location it
+# resolves, so the location needs them in its own document (as application-migrate.yml does).
+spring:
+  config:
+    activate:
+      on-profile: "!migrate"
+    import:
+      - optional:vault://secret/platform/pinger-report?prefix=pinger.report.
+  cloud:
+    vault:
+      enabled: true
+      authentication: KUBERNETES
+      kubernetes:
+        role: api

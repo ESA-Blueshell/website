@@ -12,7 +12,8 @@ import net.blueshell.api.shared.model.Identifiable
  * One row, not one per anything: there is one canvas and one image on it. The migration seeds it,
  * so it always exists; an admin edits it in place. [prefix] is null until an admin sets one, which
  * is what keeps the pinger idle. [imagePath] is a stored file's path, not a foreign key, because
- * files soft-delete and this only needs the path the public URL is built from.
+ * files soft-delete and this only needs the path the public URL is built from. [siteCieEnabled]
+ * gates the always-on SiteCie painter; [ratePps] is also its rate, since SiteCie is that painter.
  */
 @Entity
 @Table(name = "pinger_paint")
@@ -35,4 +36,6 @@ class PingerPaint(
     var height: Int,
     @Column(name = "image_path", length = 255)
     var imagePath: String? = null,
+    @Column(name = "site_cie_enabled", nullable = false)
+    var siteCieEnabled: Boolean = true,
 ) : Identifiable<Long>

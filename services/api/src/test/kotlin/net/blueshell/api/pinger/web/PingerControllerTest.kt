@@ -14,7 +14,7 @@ class PingerControllerTest {
 
     @Test
     fun `paint maps the current view`() {
-        every { service.current() } returns PaintView("2001:db8::/64", 128, 1, 2, 3, 4, "/files/public/p.webp")
+        every { service.current() } returns PaintView("2001:db8::/64", 128, 1, 2, 3, 4, "/files/public/p.webp", true)
 
         val response = controller.paint()
 
@@ -22,29 +22,33 @@ class PingerControllerTest {
         assertThat(response.ratePps).isEqualTo(128)
         assertThat(response.originX).isEqualTo(1)
         assertThat(response.imageUrl).isEqualTo("/files/public/p.webp")
+        assertThat(response.siteCieEnabled).isTrue()
     }
 
     @Test
     fun `setPaint passes the request through and maps the result`() {
-        every { service.update("2001:db8::/64", 256, 10, 20, 30, 40, "p.webp") } returns
-            PaintView("2001:db8::/64", 256, 10, 20, 30, 40, "/files/public/p.webp")
+        every { service.update("2001:db8::/64", 256, 10, 20, 30, 40, "p.webp", false) } returns
+            PaintView("2001:db8::/64", 256, 10, 20, 30, 40, "/files/public/p.webp", false)
 
-        val response = controller.setPaint(PaintRequest("2001:db8::/64", 256, 10, 20, 30, 40, "p.webp"))
+        val response = controller.setPaint(PaintRequest("2001:db8::/64", 256, 10, 20, 30, 40, "p.webp", false))
 
-        verify { service.update("2001:db8::/64", 256, 10, 20, 30, 40, "p.webp") }
+        verify { service.update("2001:db8::/64", 256, 10, 20, 30, 40, "p.webp", false) }
         assertThat(response.ratePps).isEqualTo(256)
         assertThat(response.width).isEqualTo(30)
+        assertThat(response.siteCieEnabled).isFalse()
     }
 
     @Test
-    fun `a request without an image leaves the prefix and image unset`() {
-        every { service.update(null, 128, 0, 0, 100, 100, null) } returns
-            PaintView(null, 128, 0, 0, 100, 100, null)
+    fun `a request without an image leaves the prefix and image unset and SiteCie on`() {
+        every { service.update(null, 128, 0, 0, 100, 100, null, true) } returns
+            PaintView(null, 128, 0, 0, 100, 100, null, true)
 
-        // Built with only the required box and rate, so the optional prefix and imagePath default.
+        // Built with only the required box and rate, so the optional prefix, imagePath and SiteCie
+        // toggle default; the toggle defaults to on.
         val response = controller.setPaint(PaintRequest(ratePps = 128, originX = 0, originY = 0, width = 100, height = 100))
 
         assertThat(response.prefix).isNull()
         assertThat(response.imageUrl).isNull()
+        assertThat(response.siteCieEnabled).isTrue()
     }
 }

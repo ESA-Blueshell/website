@@ -42,6 +42,7 @@ class PingerController(
                 width = request.width,
                 height = request.height,
                 imagePath = request.imagePath,
+                siteCieEnabled = request.siteCieEnabled,
             ),
         )
 }

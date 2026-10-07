@@ -32,4 +32,6 @@ data class PaintRequest(
     val height: Int,
     @field:Schema(description = "Where the image is stored, as returned by the image upload; nothing takes it away")
     val imagePath: String? = null,
+    @field:Schema(description = "Whether the always-on SiteCie painter contributes; ratePps above is its rate")
+    val siteCieEnabled: Boolean = true,
 )

@@ -25,10 +25,12 @@ class PingerControllerIT : UserTestSupport() {
                     .with(signedIn(admin))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"prefix":"2001:db8:b317:a000::/64","ratePps":256,"originX":100,"originY":200,"width":800,"height":600}""",
+                        """{"prefix":"2001:db8:b317:a000::/64","ratePps":256,"originX":100,""" +
+                            """"originY":200,"width":800,"height":600,"siteCieEnabled":false}""",
                     ),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.ratePps").value(256))
+            .andExpect(jsonPath("$.siteCieEnabled").value(false))
 
         // The read is public: no session on this request.
         mvc
@@ -37,6 +39,7 @@ class PingerControllerIT : UserTestSupport() {
             .andExpect(jsonPath("$.prefix").value("2001:db8:b317:a000::/64"))
             .andExpect(jsonPath("$.originX").value(100))
             .andExpect(jsonPath("$.width").value(800))
+            .andExpect(jsonPath("$.siteCieEnabled").value(false))
     }
 
     @Test

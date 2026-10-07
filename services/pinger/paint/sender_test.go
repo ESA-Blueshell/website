@@ -89,7 +89,7 @@ func TestSenderPaintsEveryPixelOncePerPass(t *testing.T) {
 	conn := &fakeConn{}
 	box := &settingsBox{}
 	p := prefix(t, "2001:db8:b317:a000::/64")
-	box.set(Settings{Prefix: p, RatePPS: 100_000})
+	box.set(Settings{Prefix: p, RatePPS: 100_000, Enabled: true})
 	px := pixels(200)
 
 	s := start(t, conn, px, open, box)
@@ -112,7 +112,7 @@ func TestSenderPaintsEveryPixelOncePerPass(t *testing.T) {
 func TestSenderPaintsASwappedImage(t *testing.T) {
 	conn := &fakeConn{}
 	box := &settingsBox{}
-	box.set(Settings{Prefix: prefix(t, "2001:db8::/64"), RatePPS: 100_000})
+	box.set(Settings{Prefix: prefix(t, "2001:db8::/64"), RatePPS: 100_000, Enabled: true})
 
 	s := start(t, conn, pixels(10), open, box)
 	eventually(t, func() bool { return s.Snapshot().PassTotal == 10 })
@@ -139,9 +139,10 @@ func TestSenderStaysSilentWhenItMayNotSend(t *testing.T) {
 		settings Settings
 		state    State
 	}{
-		{"no prefix", open, Settings{RatePPS: 100_000}, Idle},
-		{"no rate", open, Settings{Prefix: p, RatePPS: 0}, Idle},
-		{"outside the event", closed, Settings{Prefix: p, RatePPS: 100_000}, Closed},
+		{"no prefix", open, Settings{RatePPS: 100_000, Enabled: true}, Idle},
+		{"no rate", open, Settings{Prefix: p, RatePPS: 0, Enabled: true}, Idle},
+		{"SiteCie off", open, Settings{Prefix: p, RatePPS: 100_000, Enabled: false}, Idle},
+		{"outside the event", closed, Settings{Prefix: p, RatePPS: 100_000, Enabled: true}, Closed},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -163,7 +164,7 @@ func TestSenderStaysSilentWhenItMayNotSend(t *testing.T) {
 func TestSenderHoldsTheRateCap(t *testing.T) {
 	conn := &fakeConn{}
 	box := &settingsBox{}
-	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: 1000})
+	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: 1000, Enabled: true})
 
 	start(t, conn, pixels(5000), open, box)
 	time.Sleep(500 * time.Millisecond)
@@ -177,11 +178,11 @@ func TestSenderMovesToANewPrefixMidPass(t *testing.T) {
 	conn := &fakeConn{}
 	box := &settingsBox{}
 	first, second := prefix(t, "2001:db8:1::"), prefix(t, "2001:db8:2::")
-	box.set(Settings{Prefix: first, RatePPS: 2000})
+	box.set(Settings{Prefix: first, RatePPS: 2000, Enabled: true})
 
 	start(t, conn, pixels(5000), open, box)
 	eventually(t, func() bool { return len(conn.addresses()) > 0 })
-	box.set(Settings{Prefix: second, RatePPS: 2000})
+	box.set(Settings{Prefix: second, RatePPS: 2000, Enabled: true})
 
 	want := second.Address(pixels(1)[0])
 	inSecond := func(a netip.Addr) bool { return netip.PrefixFrom(want, 64).Masked().Contains(a) }
@@ -195,7 +196,7 @@ func TestSenderCountsALocalSendErrorAndCarriesOn(t *testing.T) {
 	conn := &fakeConn{}
 	conn.fails.Store(3)
 	box := &settingsBox{}
-	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: 100_000})
+	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: 100_000, Enabled: true})
 
 	s := start(t, conn, pixels(100), open, box)
 	eventually(t, func() bool { return s.Snapshot().Passes >= 2 })
@@ -213,7 +214,7 @@ func TestSenderReportsABrokenPathAndRecovers(t *testing.T) {
 	conn := &fakeConn{}
 	conn.fails.Store(1 << 30)
 	box := &settingsBox{}
-	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: 100_000})
+	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: 100_000, Enabled: true})
 
 	s := start(t, conn, pixels(200), open, box)
 	eventually(t, func() bool { return s.Snapshot().Failing })

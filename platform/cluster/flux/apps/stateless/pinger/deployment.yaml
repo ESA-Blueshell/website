@@ -39,6 +39,15 @@ spec:
               value: valkey.data-system.svc.cluster.local:6379
             - name: PINGER_API_URL
               value: http://api.default.svc.cluster.local:8080
+            # The SiteCie service token the painter presents when it reports its contribution.
+            # Mirrored from Vault by VSO (platform/cluster/flux/apps/vso-secrets/pinger-secrets.yaml).
+            # optional: the pod boots without it and the reporter idles until the token is provisioned.
+            - name: PINGER_REPORT_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: pinger-report-token
+                  key: token
+                  optional: true
           ports:
             - containerPort: 8090
               name: http

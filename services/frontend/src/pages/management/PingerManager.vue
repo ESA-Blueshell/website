@@ -11,6 +11,8 @@ const CANVAS_H = 2160
 const box = reactive({originX: DEFAULT_PAINT.originX, originY: DEFAULT_PAINT.originY, width: DEFAULT_PAINT.width, height: DEFAULT_PAINT.height})
 const prefix = ref("")
 const rate = ref(DEFAULT_PAINT.ratePps)
+// Whether the always-on SiteCie painter contributes; rate above is its rate.
+const siteCieEnabled = ref(DEFAULT_PAINT.siteCieEnabled)
 
 // imagePath is the stored path sent back on save; previewSrc is what the editor draws.
 const imagePath = ref<string | null>(null)
@@ -29,6 +31,7 @@ function applyJob(job: PaintJob) {
   box.height = job.height
   prefix.value = job.prefix ?? ""
   rate.value = job.ratePps
+  siteCieEnabled.value = job.siteCieEnabled
   imagePath.value = job.imageUrl ? job.imageUrl.replace(/^\/files\/public\//, "") : null
   previewSrc.value = job.imageUrl ? apiUrl(job.imageUrl) : null
 }
@@ -102,6 +105,7 @@ async function save() {
     width: box.width,
     height: box.height,
     imagePath: imagePath.value,
+    siteCieEnabled: siteCieEnabled.value,
   })
   saving.value = false
   if (result.ok) {
@@ -192,9 +196,22 @@ async function save() {
           cols="12"
           md="6"
         >
+          <v-switch
+            v-model="siteCieEnabled"
+            data-testid="sitecie-toggle"
+            label="SiteCie paints"
+            color="primary"
+            hint="Turn SiteCie's cluster painter on or off; it idles within a couple of seconds when off"
+            persistent-hint
+          />
+        </v-col>
+        <v-col
+          cols="12"
+          md="6"
+        >
           <v-text-field
             v-model.number="rate"
-            label="Rate (packets per second)"
+            label="SiteCie rate (packets per second)"
             type="number"
           />
         </v-col>

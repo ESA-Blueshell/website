@@ -23,13 +23,14 @@ import (
 // Descriptor is the paint job as GET /pinger/paint returns it. Every field is a value, so two
 // descriptors compare with ==, which is how the poller notices a change.
 type Descriptor struct {
-	Prefix   string `json:"prefix"`
-	RatePPS  int    `json:"ratePps"`
-	OriginX  int    `json:"originX"`
-	OriginY  int    `json:"originY"`
-	Width    int    `json:"width"`
-	Height   int    `json:"height"`
-	ImageURL string `json:"imageUrl"`
+	Prefix         string `json:"prefix"`
+	RatePPS        int    `json:"ratePps"`
+	OriginX        int    `json:"originX"`
+	OriginY        int    `json:"originY"`
+	Width          int    `json:"width"`
+	Height         int    `json:"height"`
+	ImageURL       string `json:"imageUrl"`
+	SiteCieEnabled bool   `json:"siteCieEnabled"`
 }
 
 // Source hands back the current descriptor and fetches the image it points at. Split from the HTTP

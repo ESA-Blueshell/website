@@ -63,7 +63,7 @@ func (p *Poller) poll(ctx context.Context) {
 	if p.seen && d == p.last {
 		return
 	}
-	p.settings.Store(&paint.Settings{Prefix: parsePrefix(d.Prefix), RatePPS: d.RatePPS})
+	p.settings.Store(&paint.Settings{Prefix: parsePrefix(d.Prefix), RatePPS: d.RatePPS, Enabled: d.SiteCieEnabled})
 
 	if p.seen && !imageChanged(p.last, d) {
 		p.last = d

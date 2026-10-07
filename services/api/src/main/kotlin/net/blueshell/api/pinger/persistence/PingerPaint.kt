@@ -19,7 +19,8 @@ import net.blueshell.api.shared.model.Identifiable
 class PingerPaint(
     @Id
     @Column(name = "id", nullable = false)
-    override val id: Long = SINGLETON_ID,
+    // The one paint-job row; the migration seeds it at id 1.
+    override val id: Long = 1L,
     @Column(name = "prefix", length = 64)
     var prefix: String? = null,
     @Column(name = "rate_pps", nullable = false)
@@ -34,10 +35,4 @@ class PingerPaint(
     var height: Int,
     @Column(name = "image_path", length = 255)
     var imagePath: String? = null,
-) : Identifiable<Long> {
-    companion object {
-        // A plain val, not const: a const is inlined at every use, so the row's default id and the
-        // service's lookup would never touch the companion and it would read as untested.
-        val SINGLETON_ID = 1L
-    }
-}
+) : Identifiable<Long>

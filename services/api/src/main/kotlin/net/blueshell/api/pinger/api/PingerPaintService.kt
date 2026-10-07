@@ -61,7 +61,7 @@ class PingerPaintService(
     }
 
     private fun row(): PingerPaint =
-        repository.findById(PingerPaint.SINGLETON_ID).orElseGet {
+        repository.findById(1L).orElseGet {
             PingerPaint(ratePps = 128, originX = 1470, originY = 180, width = 900, height = 720)
         }
 

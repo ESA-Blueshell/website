@@ -77,12 +77,18 @@ class RegisteredClients {
     // the member's machine) and redirects to a loopback address: the client binds an ephemeral port
     // on 127.0.0.1 and the authorization server allows any port for a loopback redirect, so the
     // registered port is a placeholder the request overrides (RFC 8252).
+    //
+    // It holds a rotating refresh token (reuseRefreshTokens is off) so the desktop app comes back
+    // without a fresh login until the member revokes it on the security page. The authorization
+    // server mints refresh tokens for a public client on this grant since Spring 7.
     private fun pingerApp(): RegisteredClient =
         RegisteredClient
             .withId(UUID.randomUUID().toString())
             .clientId("pinger-app")
+            .clientName("Pinger app")
             .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .redirectUri("http://127.0.0.1:8991/login/oauth2/code/pinger-app")
             .scope(OidcScopes.OPENID)
             .scope(OidcScopes.PROFILE)

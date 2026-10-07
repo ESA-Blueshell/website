@@ -19,8 +19,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 /**
  * Brevo anti-corruption layer for [ContactListAdapter] (ADR-019), in production only.
@@ -40,9 +38,9 @@ import kotlin.concurrent.withLock
 class BrevoListAdapter(
     private val contactsApi: ContactsApi,
     private val jsonMapper: JsonMapper,
+    // Held across replicas, so two pods never make a folder of one name twice.
+    private val locks: NamedLocks,
 ) : ContactListAdapter {
-    private val folderLock = ReentrantLock()
-
     override val system = TargetSystem.BREVO
 
     override fun moveList(externalListId: Long, folderId: Long) {
@@ -149,11 +147,11 @@ class BrevoListAdapter(
     }
 
     // Brevo files lists by folder id, and its folders do not nest: find the one by name or make it.
-    // Under a lock, because two lists made at once would each find no folder and each make one.
+    // Under a lock every replica sees, because two lists made at once would each find no folder and each make one.
     private fun folderNamed(name: String): Long =
-        folderLock.withLock {
+        locks.holding("brevo-folder:${name.lowercase()}") {
             val found = listFolders().filterValues { it.equals(name, ignoreCase = true) }.keys.minOrNull()
-            if (found != null) return@withLock found
+            if (found != null) return@holding found
             val made = contactsApi.createFolder(CreateUpdateFolder(name = name)).id
             log.info("Created Brevo folder '{}' id={}", sanitizeForLog(name), made)
             made

@@ -306,6 +306,7 @@ components:
       - EXCEPTION_OPEN
       - ROLE_AWAITING_TWO_FACTOR
       - DISCORD_BOT_PERMISSIONS
+      - BREVO_FOLDERS_SHARE_NAME
       type: string
     AnnounceChoice:
       enum:

@@ -61,6 +61,7 @@ describe("reading an alert", () => {
       "The Discord bot lacks 2 permissions: Manage Roles, Create Invite",
       "/management/platforms/discord/bot",
     ],
+    [alert(AlertKind.BREVO_FOLDERS_SHARE_NAME, {count: 2, subjectLabel: "Boards, Teams"}), "Brevo has folders that share a name: Boards, Teams", "/management/platforms/brevo"],
   ])("words %o and links it", (one, title, link) => {
     expect(alertTitle(one)).toBe(title)
     expect(alertLink(one)).toBe(link)
@@ -79,6 +80,8 @@ describe("an alert as a short row", () => {
     [alert(AlertKind.ROLE_AWAITING_TWO_FACTOR, {subjectLabel: "ada"}), "A role waits on two-factor", "@ada", "Users"],
     [alert(AlertKind.DISCORD_BOT_PERMISSIONS, {subjectLabel: "Manage Roles"}), "The bot lacks 1 permission", "Manage Roles", "Discord"],
     [alert(AlertKind.DISCORD_BOT_PERMISSIONS, {subjectLabel: null}), "The bot lacks 1 permission", "", "Discord"],
+    [alert(AlertKind.BREVO_FOLDERS_SHARE_NAME, {subjectLabel: "Boards"}), "Folders share a name", "Boards", "Brevo"],
+    [alert(AlertKind.BREVO_FOLDERS_SHARE_NAME, {subjectLabel: null}), "Folders share a name", "", "Brevo"],
   ])("names %o, says what it is about and where it comes from", (one, name, meta, from) => {
     expect(alertRow(one)).toEqual({name, meta, from})
   })

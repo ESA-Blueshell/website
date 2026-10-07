@@ -10,7 +10,7 @@ const router = vi.hoisted(() => ({
     const url = new URL(to, "http://x")
     return {path: url.pathname, query: Object.fromEntries(url.searchParams)}
   },
-  options: {history: {state: {back: "/competition/valorant?season=3&tab=x"}}},
+  options: {history: {state: {back: "/esports/valorant?season=3&tab=x"}}},
 }))
 vi.mock("vue-router", async importOriginal => ({...(await importOriginal<typeof import("vue-router")>()), useRoute: () => route, useRouter: () => router}))
 const seasons = [{id: 3, name: "Autumn 2025"}]
@@ -32,15 +32,15 @@ describe("the season edit page", () => {
     await flushPromises()
     const editor = wrapper.getComponent(SeasonEditor)
 
-    expect(editor.props()).toMatchObject({season: seasons[0], back: "/competition/valorant?season=3&tab=x"})
+    expect(editor.props()).toMatchObject({season: seasons[0], back: "/esports/valorant?season=3&tab=x"})
     editor.vm.$emit("saved", {id: 7})
     editor.vm.$emit("removed")
     editor.vm.$emit("cancel")
 
     expect(router.replace.mock.calls).toEqual([
-      [{path: "/competition/valorant", query: {tab: "x", season: "7"}}],
-      [{path: "/competition/valorant", query: {tab: "x"}}],
-      ["/competition/valorant?season=3&tab=x"],
+      [{path: "/esports/valorant", query: {tab: "x", season: "7"}}],
+      [{path: "/esports/valorant", query: {tab: "x"}}],
+      ["/esports/valorant?season=3&tab=x"],
     ])
   })
 

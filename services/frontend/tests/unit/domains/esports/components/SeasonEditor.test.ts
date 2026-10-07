@@ -50,7 +50,7 @@ const write = async (wrapper: Awaited<ReturnType<typeof mountEditor>>, testid: s
 }
 
 const mountEditor = async (season: Season | null) => {
-  const wrapper = mount(SeasonEditor, {props: {season, back: "/competition"}, global: {stubs}})
+  const wrapper = mount(SeasonEditor, {props: {season, back: "/esports"}, global: {stubs}})
   await flushPromises()
   return wrapper
 }
@@ -109,7 +109,7 @@ describe("the season edit page", () => {
     expect(wrapper.get("[data-testid=season-edit-game-VAL]").text()).toContain("1 team")
     expect(wrapper.get("[data-testid=season-edit-game-LOL]").text()).toContain("LOL")
     expect(wrapper.getComponent(stubs.SearchPicker).props("options")).toEqual([{key: "CS2", label: "Counter-Strike 2"}])
-    expect(wrapper.get("[data-testid=season-edit-new-game]").attributes("data-to")).toBe("/competition/new?season=3")
+    expect(wrapper.get("[data-testid=season-edit-new-game]").attributes("data-to")).toBe("/esports/new?season=3")
 
     wrapper.getComponent(stubs.SearchPicker).vm.$emit("pick", "CS2")
     await flushPromises()

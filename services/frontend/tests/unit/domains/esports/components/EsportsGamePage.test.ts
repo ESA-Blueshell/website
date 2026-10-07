@@ -79,7 +79,7 @@ describe("a game's competition page", () => {
   })
 
   it("leads to the game's own edit page", () => {
-    expect(mountPage().getComponent(RouterLinkStub).props("to")).toBe("/competition/valorant/edit")
+    expect(mountPage().getComponent(RouterLinkStub).props("to")).toBe("/esports/valorant/edit")
   })
 
   it("adds and corrects a season on the season's own page", () => {
@@ -88,7 +88,7 @@ describe("a game's competition page", () => {
     strip.vm.$emit("add")
     strip.vm.$emit("edit", 3)
 
-    expect(router.push.mock.calls).toEqual([["/competition/seasons/new"], ["/competition/seasons/3/edit"]])
+    expect(router.push.mock.calls).toEqual([["/esports/seasons/new"], ["/esports/seasons/3/edit"]])
   })
 
   it("adds a team to the shown season and corrects its line-up on the team's own page", async () => {
@@ -100,8 +100,8 @@ describe("a game's competition page", () => {
     await flushPromises()
 
     expect(router.push.mock.calls).toEqual([
-      ["/competition/valorant/teams/new?season=4"],
-      ["/competition/valorant/teams/9/edit?season=4"],
+      ["/esports/valorant/teams/new?season=4"],
+      ["/esports/valorant/teams/9/edit?season=4"],
     ])
   })
 })

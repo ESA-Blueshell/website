@@ -71,9 +71,9 @@ describe("LineupBand", () => {
     const [valorant, geo] = band.props("items")
     expect(valorant).toMatchObject({
       id: "VALORANT", title: "Valorant", meta: "2 teams this season", accent: "#ff4655",
-      href: "/competition/valorant?season=4", banner: "/val.webp",
+      href: "/esports/valorant?season=4", banner: "/val.webp",
     })
-    expect(geo).toMatchObject({id: "GEOGUESSR", href: "/competition"})
+    expect(geo).toMatchObject({id: "GEOGUESSR", href: "/esports"})
     expect(wrapper.find("[data-testid=home-esports-link-VALORANT]").text()).toBe("Valorant in Spring 2026 →")
     expect(wrapper.text()).toContain("Spring 2026")
     expect(wrapper.text()).toContain("Blue Waves")
@@ -88,7 +88,7 @@ describe("LineupBand", () => {
     await flushPromises()
 
     const [valorant] = wrapper.findComponent({name: "SliceBand"}).props("items")
-    expect(valorant).toMatchObject({href: "/competition/valorant"})
+    expect(valorant).toMatchObject({href: "/esports/valorant"})
     expect(wrapper.find("[data-testid=home-esports-link-VALORANT]").text()).toBe("Every season of Valorant →")
   })
 
@@ -101,7 +101,7 @@ describe("LineupBand", () => {
     }}})
     await flushPromises()
 
-    expect(wrapper.find("[data-testid=home-esports-link-X]").findComponent(RouterLinkStub).props("to")).toBe("/competition")
+    expect(wrapper.find("[data-testid=home-esports-link-X]").findComponent(RouterLinkStub).props("to")).toBe("/esports")
     expect(wrapper.text()).not.toContain("Blue Shells")
   })
 
@@ -112,10 +112,10 @@ describe("LineupBand", () => {
     await flushPromises()
 
     const band = wrapper.findComponent({name: "SliceBand"})
-    band.vm.$emit("go", {href: "/competition/valorant"})
+    band.vm.$emit("go", {href: "/esports/valorant"})
     band.vm.$emit("go", {})
 
     expect(mockPush).toHaveBeenCalledTimes(1)
-    expect(mockPush).toHaveBeenCalledWith("/competition/valorant")
+    expect(mockPush).toHaveBeenCalledWith("/esports/valorant")
   })
 })

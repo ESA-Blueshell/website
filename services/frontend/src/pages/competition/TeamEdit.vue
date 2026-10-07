@@ -24,7 +24,7 @@ const slug = String(route.params.slug)
 const teamId = route.params.team == null ? null : Number(route.params.team)
 const seasonId = route.query.season == null ? null : Number(route.query.season)
 // Inside Management the editor goes back to Management's list of teams.
-const back = useReturnTo(route.meta.portal ?? (seasonId == null ? `/competition/${slug}` : `/competition/${slug}?season=${seasonId}`))
+const back = useReturnTo(route.meta.portal ?? (seasonId == null ? `/esports/${slug}` : `/esports/${slug}?season=${seasonId}`))
 
 const game = computed(() => bySlug(slug))
 const answered = ref(false)

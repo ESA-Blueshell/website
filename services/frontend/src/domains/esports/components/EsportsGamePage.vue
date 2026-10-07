@@ -160,15 +160,15 @@ const lastPlayedFor = (shown: Season | null): Season | null => {
   return played && played.id !== shown?.id ? played : null
 }
 /** A season is added and corrected on its own page, which comes back here on it. */
-const addSeason = () => void router.push("/competition/seasons/new")
-const editSeason = (id: number) => void router.push(`/competition/seasons/${id}/edit`)
+const addSeason = () => void router.push("/esports/seasons/new")
+const editSeason = (id: number) => void router.push(`/esports/seasons/${id}/edit`)
 
 /** A team is added to the shown season, and its line-up corrected, on its own page. */
 const slugNow = computed(() => recordOf(props.game)?.slug ?? "")
 const addTeam = (shown: Season | null) =>
-  void router.push(`/competition/${slugNow.value}/teams/new${shown ? `?season=${shown.id}` : ""}`)
+  void router.push(`/esports/${slugNow.value}/teams/new${shown ? `?season=${shown.id}` : ""}`)
 const editTeam = (teamId: number | string, shown: Season | null) =>
-  void router.push(`/competition/${slugNow.value}/teams/${teamId}/edit${shown ? `?season=${shown.id}` : ""}`)
+  void router.push(`/esports/${slugNow.value}/teams/${teamId}/edit${shown ? `?season=${shown.id}` : ""}`)
 
 /**
  * The team whose slice is open, held here because the band that holds it does not outlive a
@@ -199,7 +199,7 @@ const carried = ref<number | null>(null)
             aria-label="Edit this game"
             class="game-header__edit"
             data-testid="esports-game-edit"
-            :to="`/competition/${recordOf(game)?.slug ?? ''}/edit`"
+            :to="`/esports/${recordOf(game)?.slug ?? ''}/edit`"
           >
             <svg
               aria-hidden="true"

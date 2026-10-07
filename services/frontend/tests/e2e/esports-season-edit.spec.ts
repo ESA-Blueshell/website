@@ -8,7 +8,7 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
  * that it appears for somebody who may take it up, that it is attached to the season being
  * pointed at rather than to all of them, and that it is absent for everybody else.
  */
-const GAME_PAGE = "/competition/valorant"
+const GAME_PAGE = "/esports/valorant"
 
 /**
  * What a person does: bring the pointer to the season, then take up the affordance it
@@ -116,7 +116,7 @@ test.describe("editing a season where it is shown", () => {
     await page.goto(GAME_PAGE)
 
     await openEditor(page, 20)
-    await expect(page).toHaveURL(/\/competition\/seasons\/20\/edit$/)
+    await expect(page).toHaveURL(/\/esports\/seasons\/20\/edit$/)
     await expect(page.getByTestId("season-edit-name").locator("input")).toHaveValue("Autumn 2025")
     await expect(page.getByTestId("season-edit-start").locator("input").first()).toHaveValue("01/09/2025")
     await expect(page.getByTestId("season-edit-end").locator("input").first()).toHaveValue("31/01/2026")
@@ -127,7 +127,7 @@ test.describe("editing a season where it is shown", () => {
     await page.getByTestId("season-edit-save").click()
 
     // Back on the page it came from, on the season saved, which the strip names anew.
-    await expect(page).toHaveURL(/\/competition\/valorant\?season=20$/)
+    await expect(page).toHaveURL(/\/esports\/valorant\?season=20$/)
     await expect(page.getByTestId("esports-season-node-20")).toContainText("Autumn 2026")
   })
 
@@ -162,7 +162,7 @@ test.describe("editing a season where it is shown", () => {
     await page.getByTestId("season-edit-name").locator("input").fill("Not saved")
     await page.getByTestId("season-edit-cancel").click()
 
-    await expect(page).toHaveURL(/\/competition\/valorant\?season=19$/)
+    await expect(page).toHaveURL(/\/esports\/valorant\?season=19$/)
     await expect(page.getByTestId("esports-season-node-20")).not.toContainText("Not saved")
   })
 

@@ -8,7 +8,7 @@ import type {Page} from "@playwright/test"
  * The page carries the band the team is drawn in beside the form, live, so what the form makes is
  * seen before it is saved. The way back returns to the game page on the season it was opened from.
  */
-const GAME_PAGE = "/competition/valorant"
+const GAME_PAGE = "/esports/valorant"
 
 const openLineup = async (page: Page) => {
   await page.getByTestId("team-roster-1").hover()
@@ -24,7 +24,7 @@ test.describe("editing a line-up on its own page", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await expect(page).toHaveURL(/\/competition\/valorant\/teams\/1\/edit\?season=\d+$/)
+    await expect(page).toHaveURL(/\/esports\/valorant\/teams\/1\/edit\?season=\d+$/)
     await expect(page.locator(".island-dialog__scrim")).toHaveCount(0)
     await expect(page.getByTestId("team-roster-slices")).toHaveCount(0)
   })
@@ -61,7 +61,7 @@ test.describe("editing a line-up on its own page", () => {
     await page.getByTestId("lineup-title-1").locator("input").fill("In-game leader")
     await page.getByTestId("team-edit-back").click()
 
-    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
+    await expect(page).toHaveURL(/\/esports\/valorant(\?season=\d+)?$/)
     await expect(page.getByTestId("team-roster-1")).not.toContainText("In-game leader")
   })
 
@@ -72,7 +72,7 @@ test.describe("editing a line-up on its own page", () => {
 
     await page.getByTestId("team-roster-add").click()
 
-    await expect(page).toHaveURL(/\/competition\/valorant\/teams\/new(\?season=\d+)?$/)
+    await expect(page).toHaveURL(/\/esports\/valorant\/teams\/new(\?season=\d+)?$/)
     await expect(page.locator(".island-dialog__scrim")).toHaveCount(0)
   })
 
@@ -86,14 +86,14 @@ test.describe("editing a line-up on its own page", () => {
     await page.getByTestId("lineup-title-1").locator("input").fill("In-game leader")
     await page.getByTestId("lineup-save").click()
 
-    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
+    await expect(page).toHaveURL(/\/esports\/valorant(\?season=\d+)?$/)
     await expect(page.getByTestId("team-roster-1")).toContainText("In-game leader")
   })
 
   test("a team this game never fielded is not found", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/competition/valorant/teams/999/edit")
+    await page.goto("/esports/valorant/teams/999/edit")
 
     await expect(page.getByTestId("not-found")).toBeVisible()
   })
@@ -102,7 +102,7 @@ test.describe("editing a line-up on its own page", () => {
     await page.setViewportSize({width: 390, height: 844})
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/competition/valorant/teams/1/edit")
+    await page.goto("/esports/valorant/teams/1/edit")
     await expect(page.getByTestId("lineup-editor")).toBeVisible()
 
     const preview = page.getByTestId("team-edit-preview")

@@ -74,7 +74,7 @@ const accent = computed(() => game.accent || BRAND_ACCENT)
           >
             <router-link
               data-testid="casual-game-competition"
-              :to="`/competition/${game.slug}`"
+              :to="`/esports/${game.slug}`"
             >
               Teams and seasons
             </router-link>

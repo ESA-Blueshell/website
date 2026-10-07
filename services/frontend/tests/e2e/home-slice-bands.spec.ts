@@ -9,8 +9,8 @@ test.describe("the home page's slice bands", () => {
     const band = page.getByTestId("home-esports")
     await band.scrollIntoViewIfNeeded()
     await expect(band.getByTestId("home-esports-VALORANT")).toContainText(/\d+ teams? this season/)
-    await expect(band.getByTestId("home-esports-link-VALORANT")).toHaveAttribute("href", "/competition/valorant?season=20")
-    await expect(band.getByTestId("home-esports-more")).toHaveAttribute("href", "/competition")
+    await expect(band.getByTestId("home-esports-link-VALORANT")).toHaveAttribute("href", "/esports/valorant?season=20")
+    await expect(band.getByTestId("home-esports-more")).toHaveAttribute("href", "/esports")
   })
 
   test("runs the games that are played on the reel, each leading to its own page", async ({page}) => {

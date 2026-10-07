@@ -10,11 +10,9 @@ import org.junit.jupiter.api.Test
 class MyServicesControllerTest {
     private val controller = MyServicesController()
 
-    private fun principal(vararg roles: Role) =
-        UserPrincipal(1, "u", "h", true, roles.toSet(), null, null)
+    private fun principal(vararg roles: Role) = UserPrincipal(1, "u", "h", true, roles.toSet(), null, null)
 
-    private fun idsFor(principal: UserPrincipal?) =
-        controller.myServices(principal).body!!.map { it.id }
+    private fun idsFor(principal: UserPrincipal?) = controller.myServices(principal).body!!.map { it.id }
 
     @Test
     fun `a member is offered the pinger but not the admin tools`() {

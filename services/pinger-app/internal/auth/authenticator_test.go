@@ -1,0 +1,181 @@
+package auth
+
+import (
+	"context"
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/ESA-Blueshell/website/services/pinger-app/internal/oauth"
+	"github.com/ESA-Blueshell/website/services/pinger-app/internal/tokenstore"
+)
+
+// fakeStore is an in-memory token store.
+type fakeStore struct {
+	set   tokenstore.Set
+	empty bool
+	saved int
+}
+
+func (f *fakeStore) Load() (tokenstore.Set, error) {
+	if f.empty {
+		return tokenstore.Set{}, tokenstore.ErrNoToken
+	}
+	return f.set, nil
+}
+
+func (f *fakeStore) Save(s tokenstore.Set) error {
+	f.set, f.empty = s, false
+	f.saved++
+	return nil
+}
+
+// fakeRefresher records calls and returns a scripted result.
+type fakeRefresher struct {
+	tok    oauth.Token
+	err    error
+	called int
+}
+
+func (f *fakeRefresher) Refresh(context.Context, string) (oauth.Token, error) {
+	f.called++
+	return f.tok, f.err
+}
+
+var fixedNow = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+func newAt(a *Authenticator) { a.now = func() time.Time { return fixedNow } }
+
+func TestTokenUsesValidAccessWithoutRefreshOrLogin(t *testing.T) {
+	store := &fakeStore{set: tokenstore.Set{Access: "good", AccessExpiry: fixedNow.Add(time.Hour)}}
+	ref := &fakeRefresher{}
+	loginCalled := false
+	a := New(store, ref, func(context.Context) (oauth.Token, error) {
+		loginCalled = true
+		return oauth.Token{}, nil
+	})
+	newAt(a)
+
+	got, err := a.Token(context.Background())
+	if err != nil {
+		t.Fatalf("Token: %v", err)
+	}
+	if got != "good" {
+		t.Fatalf("token = %q, want the stored access", got)
+	}
+	if ref.called != 0 || loginCalled {
+		t.Fatal("a valid access token must not trigger refresh or login")
+	}
+}
+
+func TestTokenRefreshesWhenAccessExpired(t *testing.T) {
+	store := &fakeStore{set: tokenstore.Set{
+		Access:       "stale",
+		Refresh:      "rt",
+		AccessExpiry: fixedNow.Add(-time.Minute),
+	}}
+	ref := &fakeRefresher{tok: oauth.Token{Access: "fresh", Refresh: "rotated", Expiry: fixedNow.Add(time.Hour)}}
+	a := New(store, ref, func(context.Context) (oauth.Token, error) {
+		t.Fatal("login must not run while a refresh succeeds")
+		return oauth.Token{}, nil
+	})
+	newAt(a)
+
+	got, err := a.Token(context.Background())
+	if err != nil {
+		t.Fatalf("Token: %v", err)
+	}
+	if got != "fresh" {
+		t.Fatalf("token = %q, want the refreshed access", got)
+	}
+	if ref.called != 1 {
+		t.Fatalf("refresh called %d times, want 1", ref.called)
+	}
+	if store.set.Refresh != "rotated" {
+		t.Fatalf("rotated refresh token not persisted: %q", store.set.Refresh)
+	}
+}
+
+func TestTokenLogsInWhenRefreshRevoked(t *testing.T) {
+	store := &fakeStore{set: tokenstore.Set{
+		Access:       "stale",
+		Refresh:      "revoked",
+		AccessExpiry: fixedNow.Add(-time.Minute),
+	}}
+	ref := &fakeRefresher{err: oauth.ErrInvalidGrant}
+	login := func(context.Context) (oauth.Token, error) {
+		return oauth.Token{Access: "relogged", Refresh: "new", Expiry: fixedNow.Add(time.Hour)}, nil
+	}
+	a := New(store, ref, login)
+	newAt(a)
+
+	got, err := a.Token(context.Background())
+	if err != nil {
+		t.Fatalf("Token: %v", err)
+	}
+	if got != "relogged" {
+		t.Fatalf("token = %q, want the re-logged access", got)
+	}
+	if ref.called != 1 {
+		t.Fatalf("refresh called %d times, want 1", ref.called)
+	}
+}
+
+func TestTokenDoesNotLoginOnTransientRefreshError(t *testing.T) {
+	store := &fakeStore{set: tokenstore.Set{
+		Access:       "stale",
+		Refresh:      "rt",
+		AccessExpiry: fixedNow.Add(-time.Minute),
+	}}
+	boom := errors.New("network down")
+	ref := &fakeRefresher{err: boom}
+	a := New(store, ref, func(context.Context) (oauth.Token, error) {
+		t.Fatal("a transient refresh error must not open a browser")
+		return oauth.Token{}, nil
+	})
+	newAt(a)
+
+	if _, err := a.Token(context.Background()); !errors.Is(err, boom) {
+		t.Fatalf("err = %v, want the transient error surfaced", err)
+	}
+}
+
+func TestTokenLogsInWhenNothingStored(t *testing.T) {
+	store := &fakeStore{empty: true}
+	ref := &fakeRefresher{}
+	a := New(store, ref, func(context.Context) (oauth.Token, error) {
+		return oauth.Token{Access: "first", Refresh: "rt", Expiry: fixedNow.Add(time.Hour)}, nil
+	})
+	newAt(a)
+
+	got, err := a.Token(context.Background())
+	if err != nil {
+		t.Fatalf("Token: %v", err)
+	}
+	if got != "first" {
+		t.Fatalf("token = %q, want the fresh login access", got)
+	}
+	if ref.called != 0 {
+		t.Fatal("no stored refresh token means refresh must not be attempted")
+	}
+}
+
+func TestInvalidateDropsAccessKeepsRefresh(t *testing.T) {
+	store := &fakeStore{set: tokenstore.Set{
+		Access:       "at",
+		Refresh:      "rt",
+		AccessExpiry: fixedNow.Add(time.Hour),
+	}}
+	a := New(store, &fakeRefresher{}, nil)
+	newAt(a)
+
+	if err := a.Invalidate(); err != nil {
+		t.Fatalf("Invalidate: %v", err)
+	}
+	if store.set.Access != "" || !store.set.AccessExpiry.IsZero() {
+		t.Fatalf("access not cleared: %+v", store.set)
+	}
+	if store.set.Refresh != "rt" {
+		t.Fatalf("refresh token must survive invalidation, got %q", store.set.Refresh)
+	}
+}

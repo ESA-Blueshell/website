@@ -1,0 +1,10 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "pinger-app",
+  "outputfilename": "blueshell-pinger",
+  "frontend:dir": "frontend",
+  "info": {
+    "productName": "Blueshell Pinger",
+    "comments": "Member desktop pinger: sign in, paint the canvas, report status."
+  }
+}

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blueshell Pinger</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        background: #0f1419;
+        color: #e6edf3;
+      }
+      main {
+        width: 20rem;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.2rem;
+        margin: 0 0 1rem;
+      }
+      .state {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0.5rem 0;
+      }
+      .counts {
+        opacity: 0.8;
+        font-variant-numeric: tabular-nums;
+      }
+      .message {
+        margin: 0.75rem 0 1rem;
+        min-height: 1.2em;
+        opacity: 0.7;
+      }
+      button {
+        padding: 0.5rem 1rem;
+        border: 1px solid #30363d;
+        border-radius: 0.4rem;
+        background: #1f6feb;
+        color: #fff;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Blueshell Pinger</h1>
+      <div class="state" id="state">...</div>
+      <div class="counts" id="counts"></div>
+      <div class="message" id="message"></div>
+      <button id="signin">Sign in again</button>
+    </main>
+    <script>
+      const stateEl = document.getElementById("state");
+      const countsEl = document.getElementById("counts");
+      const messageEl = document.getElementById("message");
+
+      document.getElementById("signin").addEventListener("click", () => {
+        window.go?.main?.App?.SignInAgain();
+      });
+
+      async function refresh() {
+        const app = window.go?.main?.App;
+        if (!app) return;
+        try {
+          const s = await app.Status();
+          stateEl.textContent = s.signedIn ? s.state || "idle" : "signed out";
+          countsEl.textContent = `${s.pps} pps · sent ${s.sent} · errors ${s.errors}`;
+          messageEl.textContent = s.message || "";
+        } catch (e) {
+          messageEl.textContent = String(e);
+        }
+      }
+
+      setInterval(refresh, 1000);
+      refresh();
+    </script>
+  </body>
+</html>

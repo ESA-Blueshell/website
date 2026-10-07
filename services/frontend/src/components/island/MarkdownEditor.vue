@@ -188,7 +188,8 @@ const dress = EditorView.theme({
     fontSize: "0.85em",
     backgroundColor: "color-mix(in oklab, var(--color-void) 45%, transparent)",
   },
-  ".cm-placeholder": {color: "var(--color-ash)"},
+  // On the text's baseline, as typed text sits, so the caret measured off it stands where typing puts it.
+  ".cm-placeholder": {display: "inline", verticalAlign: "baseline", color: "var(--color-ash)"},
   "&.cm-editor .cm-selectionBackground, ::selection": {
     backgroundColor: "color-mix(in oklab, var(--color-brand) 35%, transparent)",
   },
@@ -230,7 +231,9 @@ onMounted(() => {
         }),
         // The browser's own caret sits off the line beside the placeholder in some browsers; this one is measured off the text.
         drawSelection(),
-        showPlaceholder(placeholder),
+        // An empty editor measures its caret off the placeholder; with none it falls back to the line's
+        // break, which Firefox sizes to the whole line height. A zero-width one keeps it off the text.
+        showPlaceholder(placeholder || "\u200b"),
         EditorView.lineWrapping,
         // Without this the editor is a div to a screen reader, not a textbox with a label.
         EditorView.contentAttributes.of({

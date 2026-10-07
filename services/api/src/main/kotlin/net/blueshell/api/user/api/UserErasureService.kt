@@ -89,7 +89,7 @@ class UserErasureService(
 
         userRepository.saveAndFlush(user)
         deletedUsers.save(snapshot)
-        // Collecting stops here: a recorded mandate starts its 13 months, and a pending one goes.
+        // Collecting stops here: a mandate collected under starts its 13 months, and one never collected from goes.
         mandateRetention.accountErased(userId)
 
         trackedEvents.publish { actor ->

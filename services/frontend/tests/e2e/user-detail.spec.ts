@@ -6,7 +6,7 @@ const ann = aUser({id: 71, fullName: "Ann Vos", username: "ann", enabled: true, 
 
 test.describe("one user's page", () => {
   test("opens from Users, keeps its tab in the address, and records a payment in place", async ({page}) => {
-    await installApiMocks(page, {users: [ann], memberships: [aMembership({id: 171, userId: 71, startDate: "2024-09-01", incasso: false})]})
+    await installApiMocks(page, {users: [ann], memberships: [aMembership({id: 171, userId: 71, startDate: "2024-09-01"})]})
     await loginAsBoard(page.context())
     await page.goto("/management/users")
 

@@ -68,7 +68,7 @@ class UserErasureDiscordTest {
         assertThat(kept.firstValue.discordId).isEqualTo("1144058844004233369")
         assertThat(user.discordId).isNull()
         assertThat(user.discord).isNull()
-        // Collecting stops with the account: its memberships come off incasso and a pending mandate goes.
+        // Collecting stops with the account: it comes off incasso.
         verify(mandateRetention).accountErased(7)
     }
 

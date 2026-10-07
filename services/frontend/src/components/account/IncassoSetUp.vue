@@ -88,7 +88,7 @@ onMounted(async () => {
       v-if="own?.ibanLastTwo"
       data-testid="incasso-current"
     >
-      Your contribution is collected by incasso from the account {{ maskedIban(own) }}{{ own.pending ? ", from the day your membership starts" : "" }}.
+      Your contribution is collected by incasso from the account {{ maskedIban(own) }}.
     </p>
     <p
       v-else

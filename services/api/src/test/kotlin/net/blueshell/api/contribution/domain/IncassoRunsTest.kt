@@ -11,6 +11,8 @@ import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
+import net.blueshell.api.user.api.PersonPayment
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.Membership
@@ -41,7 +43,9 @@ class IncassoRunsTest {
     private val notificationRows: IncassoNotificationRepository = mock()
     private val runs: IncassoRunRepository = mock()
     private val clock = Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC)
-    private val incasso = IncassoRuns(periods, contributions, memberships, erasure, notifications, notificationRows, runs, clock)
+    private val payments: PaymentDirectory = mock()
+    private val paying = mutableMapOf<Long, PersonPayment>()
+    private val incasso = IncassoRuns(periods, contributions, memberships, erasure, notifications, notificationRows, runs, clock, payments)
 
     private val period = Entities.period(4, startDate = LocalDate.of(2026, 9, 1)).apply { fullYearFee = 25.0 }
 
@@ -59,13 +63,15 @@ class IncassoRunsTest {
         user: User,
         lastFour: String?,
     ): Membership =
-        Entities.membership(id = 500L + requireNotNull(user.id), user = user, startDate = LocalDate.of(2025, 9, 1)).apply {
-            incasso = true
-            mandate = lastFour?.let { mandate(it) }
+        Entities.membership(id = 500L + requireNotNull(user.id), user = user, startDate = LocalDate.of(2025, 9, 1)).also {
+            paying[requireNotNull(user.id)] = PersonPayment(incasso = true, mandate = lastFour?.let { mandate(it) })
         }
 
     @BeforeEach
     fun given() {
+        whenever(payments.of(any())).thenAnswer { asked ->
+            (asked.arguments[0] as Collection<*>).map { it as Long }.associateWith { paying[it] ?: PersonPayment(false, null) }
+        }
         whenever(periods.findById(4)).thenReturn(period)
         whenever(memberships.findOverlappingWithMembers(period.startDate, period.endDate)).thenReturn(
             listOf(
@@ -104,8 +110,8 @@ class IncassoRunsTest {
 
     @Test
     fun `a member whose bank details were wiped has none to collect from, and one off incasso is not collected from whatever is on file`() {
-        val wiped = held(mila, "NL34").apply { mandate!!.sealedIban = null }
-        val stopped = held(zoe, "DE18").apply { incasso = false }
+        val wiped = held(mila, "NL34").also { paying.getValue(1).mandate!!.sealedIban = null }
+        val stopped = held(zoe, "DE18").also { paying[2] = paying.getValue(2).copy(incasso = false) }
         whenever(memberships.findOverlappingWithMembers(period.startDate, period.endDate)).thenReturn(listOf(wiped, stopped))
 
         val plan = incasso.plan(4).associateBy { it.name }

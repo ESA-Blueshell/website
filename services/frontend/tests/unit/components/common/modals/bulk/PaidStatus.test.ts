@@ -19,14 +19,13 @@ vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   markUnpaid: mockMarkUnpaid,
 }))
 
-/** Unpaid regular member (incasso: true mirrors the original local fixture default). */
+/** Unpaid regular member. */
 function unpaidRegularTarget(userId: number) {
   return target(userId, {
     mostRecentMembership: {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: null,
-      incasso: true,
     },
   })
 }
@@ -112,7 +111,6 @@ describe("PaidStatusDialog (Mark as paid)", () => {
               type: MemberType.ALUMNI,
               startDate: "2024-09-15",
               endDate: null,
-              incasso: true,
             },
           }),
         ],
@@ -330,7 +328,6 @@ describe("PaidStatusDialog (Mark as unpaid)", () => {
               type: MemberType.ALUMNI,
               startDate: "2023-06-01",
               endDate: null,
-              incasso: false,
             },
             mostRecentContribution: {paid: true},
           }),

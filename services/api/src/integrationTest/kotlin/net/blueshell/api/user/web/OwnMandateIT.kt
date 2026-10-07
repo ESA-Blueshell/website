@@ -44,7 +44,7 @@ class OwnMandateIT : UserTestSupport() {
     )
 
     @Test
-    fun `a member sets up incasso on their own membership, signed today, and sees only the last four`() {
+    fun `a member sets up incasso themselves, signed today, and sees only the last four`() {
         val member = createUserWithRole(Role.MEMBER)
         createMembershipFixture(member)
 
@@ -53,7 +53,6 @@ class OwnMandateIT : UserTestSupport() {
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
             .andExpect(jsonPath("$.signedOn").value(LocalDate.now(ZoneOffset.UTC).toString()))
             .andExpect(jsonPath("$.ibanLastTwo").value("00"))
-            .andExpect(jsonPath("$.pending").value(false))
         mvc
             .perform(get("/users/me/mandate").with(signedIn(member)))
             .andExpect(jsonPath("$.ibanLastTwo").value("00"))
@@ -81,60 +80,52 @@ class OwnMandateIT : UserTestSupport() {
     }
 
     @Test
-    fun `details given before the membership starts wait, and move onto it when it does`() {
+    fun `details given before any membership stand on the person, and are there once a membership starts`() {
         val applicant = createUserWithRole(Role.GUEST)
+        val board = createUserWithRole(Role.BOARD)
 
         setUp(applicant)
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.pending").value(true))
-        val waiting = jdbc.queryForMap("SELECT address, wording_version FROM pending_mandates WHERE user_id = ?", applicant.id)
-        assertThat(waiting["address"].toString()).doesNotContain("Hallenweg").doesNotContain("Enschede").doesNotContain("7522")
-        assertThat(waiting["wording_version"]).isEqualTo("2026-10")
-
-        val created =
-            mvc
-                .perform(
-                    post("/users/${applicant.id}/memberships")
-                        .with(signedIn(createUserWithRole(Role.BOARD)))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"userId":${applicant.id},"startDate":"${LocalDate.now()}","memberType":"REGULAR","incasso":false}"""),
-                ).andExpect(status().isCreated)
-                .andReturn()
-                .response.contentAsString
-        val membershipId = Regex("\"id\":(\\d+)").find(created)!!.groupValues[1]
+            .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
+        val kept =
+            jdbc.queryForMap(
+                "SELECT incasso, mandate_address, mandate_kind, mandate_wording_version, mandate_authorised_by FROM payment_details WHERE user_id = ?",
+                applicant.id,
+            )
+        assertThat(kept["mandate_address"].toString()).doesNotContain("Hallenweg").doesNotContain("Enschede").doesNotContain("7522")
+        assertThat(kept["mandate_kind"]).isEqualTo("ONLINE")
+        assertThat(kept["mandate_wording_version"]).isEqualTo("2026-10")
+        assertThat((kept["mandate_authorised_by"] as Number).toLong()).isEqualTo(applicant.id)
+        assertThat(kept["incasso"]).isEqualTo(true)
 
         mvc
-            .perform(get("/memberships/$membershipId/mandate").with(signedIn(createUserWithRole(Role.BOARD))))
+            .perform(
+                post("/users/${applicant.id}/memberships")
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"userId":${applicant.id},"startDate":"${LocalDate.now()}","memberType":"REGULAR"}"""),
+            ).andExpect(status().isCreated)
+
+        mvc
+            .perform(get("/users/${applicant.id}/mandate").with(signedIn(board)))
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
             .andExpect(jsonPath("$.ibanLastTwo").value("00"))
             .andExpect(jsonPath("$.kind").value("ONLINE"))
             .andExpect(jsonPath("$.authorisedAt").isNotEmpty)
-        mvc
-            .perform(get("/users/me/mandate").with(signedIn(applicant)))
-            .andExpect(jsonPath("$.pending").value(false))
-
-        // The address moved onto the membership as it was sealed, with what the authorisation recorded.
-        val moved =
-            jdbc.queryForMap(
-                "SELECT mandate_address, mandate_kind, mandate_wording_version, mandate_authorised_by FROM memberships WHERE id = ?",
-                membershipId,
-            )
-        assertThat(moved["mandate_address"]).isEqualTo(waiting["address"])
-        assertThat(moved["mandate_kind"]).isEqualTo("ONLINE")
-        assertThat(moved["mandate_wording_version"]).isEqualTo("2026-10")
-        assertThat((moved["mandate_authorised_by"] as Number).toLong()).isEqualTo(applicant.id)
+        assertThat(jdbc.queryForObject("SELECT mandate_address FROM payment_details WHERE user_id = ?", String::class.java, applicant.id))
+            .isEqualTo(kept["mandate_address"])
     }
 
     @Test
     fun `a paper mandate replaces an online one only once the board confirms what is lost`() {
         val board = createUserWithRole(Role.BOARD)
         val member = createUserWithRole(Role.MEMBER)
-        val membership = createMembershipFixture(member)
+        createMembershipFixture(member)
         setUp(member).andExpect(status().isOk)
         val paper = """{"iban":"GB82WEST12345698765432","accountHolder":"Ann Vos","signedOn":"${LocalDate.now()}"}"""
         val record = { content: String ->
             mvc.perform(
-                put("/memberships/${membership.id}/mandate").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(content),
+                put("/users/${member.id}/mandate").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(content),
             )
         }
 
@@ -145,11 +136,11 @@ class OwnMandateIT : UserTestSupport() {
         record(paper.replace("}", ""","replacesOnline":true}"""))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.kind").value("PAPER"))
-        assertThat(jdbc.queryForMap("SELECT mandate_address FROM memberships WHERE id = ?", membership.id)["mandate_address"]).isNull()
+        assertThat(jdbc.queryForMap("SELECT mandate_address FROM payment_details WHERE user_id = ?", member.id)["mandate_address"]).isNull()
 
         // Online is dominant: the member authorising again replaces the paper mandate without asking.
         setUp(member).andExpect(status().isOk)
-        mvc.perform(get("/memberships/${membership.id}/mandate").with(signedIn(board))).andExpect(jsonPath("$.kind").value("ONLINE"))
+        mvc.perform(get("/users/${member.id}/mandate").with(signedIn(board))).andExpect(jsonPath("$.kind").value("ONLINE"))
     }
 
     @Test
@@ -173,7 +164,7 @@ class OwnMandateIT : UserTestSupport() {
             ).andExpect(status().isNoContent)
         mvc
             .perform(get("/users/me/mandate").with(signedIn(applicant)))
-            .andExpect(jsonPath("$.pending").value(true))
+            .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
     }
 
     @Test

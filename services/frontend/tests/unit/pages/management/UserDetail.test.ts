@@ -12,7 +12,8 @@ const api = vi.hoisted(() => ({
   createContribution: vi.fn(),
   deleteContribution: vi.fn(),
   findAddressById: vi.fn(),
-  findMandateOf: vi.fn(),
+  findMandate: vi.fn(),
+  setPaysBy: vi.fn(),
   updateMembership: vi.fn(),
   pendingActivations: vi.fn(),
   deleteUserById: vi.fn(),
@@ -21,6 +22,7 @@ const api = vi.hoisted(() => ({
   accountStanding: vi.fn(),
   securityEvents: vi.fn(),
 }))
+const onIncasso = {userId: 7, incasso: true, standing: "ON_INCASSO_WITHOUT_BANK_DETAILS", bankDetailsWiped: false}
 const {mockRoute, mockPush, mockStore} = vi.hoisted(() => ({
   mockRoute: {path: "/management/users/7", params: {id: "7", tab: ""} as Record<string, string>},
   mockPush: vi.fn(),
@@ -81,13 +83,13 @@ describe("one user's page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     api.findUserById.mockResolvedValue({status: 200, data: aUser({id: 7, fullName: "Ann Vos", username: "ann", phoneNumber: "0612", discordId: "1", discord: "annv", roles: ["MEMBER"]})})
-    api.findMemberships.mockResolvedValue({status: 200, data: [aMembership({id: 3, userId: 7, startDate: "2023-09-01", endDate: null, incasso: true, memberType: MemberType.REGULAR})]})
+    api.findMemberships.mockResolvedValue({status: 200, data: [aMembership({id: 3, userId: 7, startDate: "2023-09-01", endDate: null, memberType: MemberType.REGULAR})]})
     api.findMemberContributions.mockResolvedValue({status: 200, data: [period(5, false), period(4, true)]})
     api.createContribution.mockResolvedValue({status: 201, data: {}})
     api.deleteContribution.mockResolvedValue({status: 204, data: undefined})
     api.findAddressById.mockResolvedValue({status: 200, data: {id: 3, street: "Hallenweg", version: 0, createdAt: "", updatedAt: ""}})
     api.pendingActivations.mockResolvedValue({status: 200, data: {activations: [{userId: 7, purpose: "USER_ACTIVATION"}]}})
-    api.findMandateOf.mockResolvedValue({status: 200, data: {standing: "NONE", pending: false}})
+    api.findMandate.mockResolvedValue({status: 200, data: onIncasso})
     api.deleteUserById.mockResolvedValue({status: 204, data: undefined})
     api.accountStanding.mockResolvedValue({status: 200, data: {twoFactorOn: false, awaitingReenrolment: false, locked: false}})
     api.securityEvents.mockResolvedValue({status: 200, data: {events: []}})
@@ -132,8 +134,8 @@ describe("one user's page", () => {
     expect(wrapper.findComponent({name: "MembershipPanel"}).exists()).toBe(true)
     wrapper.findComponent({name: "MembershipPanel"}).vm.$emit("changed")
     await settle()
-    // Once for each of the three pages opened, and again for each of the two changes.
-    expect(api.findMemberContributions).toHaveBeenCalledTimes(5)
+    // Once for each of the three pages opened, and again for the membership's change; a mandate's change reads only the mandate.
+    expect(api.findMemberContributions).toHaveBeenCalledTimes(4)
   })
 
   it("names a pending membership, and calls them a member once the first payment is recorded", async () => {
@@ -246,40 +248,38 @@ describe("one user's page", () => {
   })
 
   it("changes how the person pays from the payment details, and says so", async () => {
-    const membership = aMembership({id: 3, userId: 7, startDate: "2023-09-01", endDate: null, incasso: true, memberType: MemberType.REGULAR})
-    api.updateMembership.mockResolvedValue({status: 200, data: {...membership, incasso: false}})
+    api.setPaysBy.mockResolvedValue({status: 200, data: {...onIncasso, incasso: false, standing: "NONE"}})
     const wrapper = await mount("payment-details")
     const picker = () => wrapper.findComponent({name: "SearchPicker"})
 
     picker().vm.$emit("pick", "incasso")
     await settle()
-    expect(api.updateMembership).not.toHaveBeenCalled()
+    expect(api.setPaysBy).not.toHaveBeenCalled()
 
-    api.findMemberships.mockResolvedValue({status: 200, data: [{...membership, incasso: false}]})
     picker().vm.$emit("pick", "transfer")
     await settle()
-    expect(api.updateMembership).toHaveBeenCalledWith({path: {id: 3}, body: expect.objectContaining({incasso: false, userId: 7}), throwOnError: true})
+    expect(api.setPaysBy).toHaveBeenCalledWith({path: {userId: 7}, body: {incasso: false}})
     expect(picker().props("selectedKey")).toBe("transfer")
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("now pays by bank transfer."))
 
-    api.updateMembership.mockRejectedValue(new Error("stale"))
+    api.setPaysBy.mockResolvedValue({status: 409, error: {code: "Stale", summary: "Somebody changed it first."}})
     picker().vm.$emit("pick", "incasso")
     await settle()
     expect(mockStore.commit).not.toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("now pays by incasso."))
+    expect(wrapper.find('[data-testid="user-pays-by-failure"]').exists()).toBe(true)
     expect(picker().props("selectedKey")).toBe("transfer")
   })
 
-  it("says a mandate waiting for the membership to start has its PDF once it does", async () => {
+  it("keeps how somebody pays and their incasso details while no membership runs", async () => {
     api.findMemberships.mockResolvedValue({status: 200, data: []})
-    api.findMandateOf.mockResolvedValue({status: 200, data: {standing: "MANDATE_RECORDED", ibanCountry: "NL", ibanLastTwo: "00", signedOn: "2026-09-30", pending: true}})
+    api.findMandate.mockResolvedValue({status: 200, data: {...onIncasso, standing: "MANDATE_RECORDED", ibanCountry: "NL", ibanLastTwo: "00"}})
     const wrapper = await mount("payment-details")
 
-    expect(wrapper.get('[data-testid="user-payment-no-membership"]').text()).toContain("Add a membership first")
-    expect(wrapper.get('[data-testid="user-payment-add-membership"]').attributes("to") ?? wrapper.get('[data-testid="user-payment-add-membership"]').attributes("href")).toBe("/management/users/7/membership")
-    expect((await mount()).get('[data-testid="user-row-payment-details"]').text()).toContain("Needs a membership first")
-    expect(api.findMandateOf).toHaveBeenCalledWith({path: {userId: 7}})
-    expect(wrapper.get('[data-testid="user-pending-mandate"]').text()).toContain("NL•• … ••00")
-    expect(wrapper.get('[data-testid="user-pending-mandate"]').text()).toContain("available once the membership starts")
+    expect(wrapper.get('[data-testid="user-payment-no-membership"]').text()).toContain("nothing is collected until one starts")
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("selectedKey")).toBe("incasso")
+    expect(wrapper.findComponent({name: "MandatePanel"}).props("userId")).toBe(7)
+    expect(api.findMandate).toHaveBeenCalledWith({path: {userId: 7}})
+    expect((await mount()).get('[data-testid="user-row-payment-details"]').text()).toContain("Pays by incasso · incasso details")
   })
 
   it("offers the emails the account can be sent on the Account tab, and its security to an admin only", async () => {

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-/* A membership's incasso standing and mandate, with the board's way to record a paper mandate or
-   replace one. The account number shows masked until a board member reveals it; the revealed
+/* How a person pays and their mandate, with the board's way to record a paper mandate or replace
+   one. The account number shows masked until a board member reveals it; the revealed
    number lives in this component's memory alone, so it is gone when the panel closes. */
 import {vFirstField} from "@/utils/firstField"
 import {computed, ref, watch} from "vue"
@@ -18,8 +18,8 @@ import {formatDate, formatDay} from "@/utils/timestamps"
 
 defineOptions({name: "MandatePanel"})
 
-const {membershipId, startOpen = false} = defineProps<{
-  membershipId: number
+const {userId, startOpen = false} = defineProps<{
+  userId: number
   /** Opens on the form, where the panel is asked for in order to fill it in. */
   startOpen?: boolean
 }>()
@@ -73,7 +73,7 @@ const downloadPdf = async () => {
   if (fetchingPdf.value || !mandate.value) return
   fetchingPdf.value = true
   pdfFailure.value = null
-  const answered = await fetchMandatePdf(membershipId)
+  const answered = await fetchMandatePdf(userId)
   fetchingPdf.value = false
   if (!answered.ok) {
     pdfFailure.value = answered.reason
@@ -92,14 +92,14 @@ const downloadPdf = async () => {
 const load = async () => {
   revealed.value = null
   revealFailure.value = null
-  mandate.value = await readMandate(membershipId)
+  mandate.value = await readMandate(userId)
 }
 
 const reveal = async () => {
   if (revealing.value) return
   revealing.value = true
   revealFailure.value = null
-  const answered = await revealMandateIban(membershipId)
+  const answered = await revealMandateIban(userId)
   revealing.value = false
   if (answered.ok) revealed.value = answered.saved.replace(/(.{4})/g, "$1 ").trim()
   else revealFailure.value = answered.reason
@@ -109,7 +109,7 @@ const save = async () => {
   if (saving.value) return
   saving.value = true
   failure.value = null
-  const answered = await saveMandate(membershipId, {
+  const answered = await saveMandate(userId, {
     iban: iban.value, accountHolder: holder.value, signedOn: signedOn.value, replacesOnline: online.value && replacesOnline.value,
   })
   saving.value = false
@@ -125,7 +125,7 @@ const save = async () => {
   emit("changed")
 }
 
-watch(() => membershipId, load, {immediate: true})
+watch(() => userId, load, {immediate: true})
 </script>
 
 <template>

@@ -649,7 +649,7 @@ const leftOutPairs = computed(() => [
     >
       <mandate-panel
         v-if="detailsFor"
-        :membership-id="detailsFor.membershipId"
+        :user-id="detailsFor.userId"
         start-open
         @changed="detailsAdded"
       />

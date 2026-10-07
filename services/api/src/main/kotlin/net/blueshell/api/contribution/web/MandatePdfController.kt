@@ -25,9 +25,9 @@ class MandatePdfController(
     private val pdfs: MandatePdfs,
     private val currentUser: CurrentUserProvider,
 ) {
-    /** The membership's online mandate, filled in now and kept nowhere. Each download is written to the member's security log. */
+    /** The person's online mandate, filled in now and kept nowhere. Each download is written to their security log. */
     @BoardOnly
-    @GetMapping("/memberships/{membershipId}/mandate/pdf", produces = [MediaType.APPLICATION_PDF_VALUE])
+    @GetMapping("/users/{userId}/mandate/pdf", produces = [MediaType.APPLICATION_PDF_VALUE])
     @Operation(
         responses = [
             ApiResponse(
@@ -37,10 +37,10 @@ class MandatePdfController(
         ],
     )
     fun downloadMandatePdf(
-        @PathVariable membershipId: Long,
+        @PathVariable userId: Long,
     ): ResponseEntity<ByteArray> {
         val reader = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
-        val pdf = pdfs.pdf(membershipId, reader)
+        val pdf = pdfs.pdf(userId, reader)
         return ResponseEntity
             .ok()
             .contentType(MediaType.APPLICATION_PDF)

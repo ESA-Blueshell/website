@@ -304,7 +304,6 @@ export type BlogResponse = {
 
 export type BoardCreateMembershipRequest = {
     endDate?: string | null;
-    incasso: boolean;
     memberType: MemberType;
     startDate: string | null;
     userId: number;
@@ -2537,10 +2536,13 @@ export type MandateResponse = {
      */
     ibanLastTwo?: string | null;
     /**
+     * Pays by incasso rather than by transfer, whether or not a mandate is recorded.
+     */
+    incasso: boolean;
+    /**
      * Online where the member authorised it on the site, paper where the board recorded it.
      */
     kind?: MandateKind | null;
-    membershipId: number;
     recordedAt?: string | null;
     recordedBy?: number | null;
     /**
@@ -2550,6 +2552,7 @@ export type MandateResponse = {
     reference?: string | null;
     signedOn?: string | null;
     standing: IncassoStanding;
+    userId: number;
 };
 
 export type MemberActivationRequest = {
@@ -2604,17 +2607,7 @@ export type MembershipResponse = {
     activatedOn?: string | null;
     createdAt: string;
     endDate?: string | null;
-    /**
-     * The country code of the mandate's IBAN, where one is recorded; shown as NL•• … ••34.
-     */
-    ibanCountry?: string | null;
-    /**
-     * The last two characters of the mandate's IBAN, where one is recorded.
-     */
-    ibanLastTwo?: string | null;
     id: number;
-    incasso: boolean;
-    incassoStanding: IncassoStanding;
     memberType: MemberType;
     /**
      * Running and waiting for its first contribution, so it carries no member role yet.
@@ -2653,10 +2646,6 @@ export type NameOnRostersRequest = {
 export type OwnMandateResponse = {
     ibanCountry?: string | null;
     ibanLastTwo?: string | null;
-    /**
-     * Set up before the membership started, and moved onto it once it does.
-     */
-    pending: boolean;
     reference?: string | null;
     signedOn?: string | null;
     standing: IncassoStanding;
@@ -2717,6 +2706,10 @@ export type PaymentEmailsResultResponse = {
      */
     notWrittenTo: number;
     remindersSent: number;
+};
+
+export type PaysByRequest = {
+    incasso: boolean;
 };
 
 /**
@@ -3950,7 +3943,6 @@ export type UpdateMemberProfileRequest = {
 
 export type UpdateMembershipRequest = {
     endDate?: string | null;
-    incasso?: boolean | null;
     memberType?: MemberType | null;
     startDate: string | null;
     userId: number;
@@ -14331,178 +14323,6 @@ export type RestoreMembershipResponses = {
 
 export type RestoreMembershipResponse = RestoreMembershipResponses[keyof RestoreMembershipResponses];
 
-export type FindMandateData = {
-    body?: never;
-    path: {
-        membershipId: number;
-    };
-    query?: never;
-    url: '/memberships/{membershipId}/mandate';
-};
-
-export type FindMandateErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindMandateError = FindMandateErrors[keyof FindMandateErrors];
-
-export type FindMandateResponses = {
-    /**
-     * OK
-     */
-    200: MandateResponse;
-};
-
-export type FindMandateResponse = FindMandateResponses[keyof FindMandateResponses];
-
-export type RecordMandateData = {
-    body: RecordMandateRequest;
-    path: {
-        membershipId: number;
-    };
-    query?: never;
-    url: '/memberships/{membershipId}/mandate';
-};
-
-export type RecordMandateErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type RecordMandateError = RecordMandateErrors[keyof RecordMandateErrors];
-
-export type RecordMandateResponses = {
-    /**
-     * OK
-     */
-    200: MandateResponse;
-};
-
-export type RecordMandateResponse = RecordMandateResponses[keyof RecordMandateResponses];
-
-export type DownloadMandatePdfData = {
-    body?: never;
-    path: {
-        membershipId: number;
-    };
-    query?: never;
-    url: '/memberships/{membershipId}/mandate/pdf';
-};
-
-export type DownloadMandatePdfErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadMandatePdfError = DownloadMandatePdfErrors[keyof DownloadMandatePdfErrors];
-
-export type DownloadMandatePdfResponses = {
-    /**
-     * OK
-     */
-    200: Blob | File;
-};
-
-export type DownloadMandatePdfResponse = DownloadMandatePdfResponses[keyof DownloadMandatePdfResponses];
-
-export type RevealIbanData = {
-    body?: never;
-    path: {
-        membershipId: number;
-    };
-    query?: never;
-    url: '/memberships/{membershipId}/mandate/reveal';
-};
-
-export type RevealIbanErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type RevealIbanError = RevealIbanErrors[keyof RevealIbanErrors];
-
-export type RevealIbanResponses = {
-    /**
-     * OK
-     */
-    200: RevealedIbanResponse;
-};
-
-export type RevealIbanResponse = RevealIbanResponses[keyof RevealIbanResponses];
-
 export type ForwardAuthData = {
     body?: never;
     path?: never;
@@ -17145,7 +16965,7 @@ export type SetGameAccountResponses = {
 
 export type SetGameAccountResponse = SetGameAccountResponses[keyof SetGameAccountResponses];
 
-export type FindMandateOfData = {
+export type FindMandateData = {
     body?: never;
     path: {
         userId: number;
@@ -17154,7 +16974,7 @@ export type FindMandateOfData = {
     url: '/users/{userId}/mandate';
 };
 
-export type FindMandateOfErrors = {
+export type FindMandateErrors = {
     /**
      * Validation error
      */
@@ -17177,16 +16997,145 @@ export type FindMandateOfErrors = {
     500: ApiError;
 };
 
-export type FindMandateOfError = FindMandateOfErrors[keyof FindMandateOfErrors];
+export type FindMandateError = FindMandateErrors[keyof FindMandateErrors];
 
-export type FindMandateOfResponses = {
+export type FindMandateResponses = {
     /**
      * OK
      */
-    200: OwnMandateResponse;
+    200: MandateResponse;
 };
 
-export type FindMandateOfResponse = FindMandateOfResponses[keyof FindMandateOfResponses];
+export type FindMandateResponse = FindMandateResponses[keyof FindMandateResponses];
+
+export type RecordMandateData = {
+    body: RecordMandateRequest;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/mandate';
+};
+
+export type RecordMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RecordMandateError = RecordMandateErrors[keyof RecordMandateErrors];
+
+export type RecordMandateResponses = {
+    /**
+     * OK
+     */
+    200: MandateResponse;
+};
+
+export type RecordMandateResponse = RecordMandateResponses[keyof RecordMandateResponses];
+
+export type DownloadMandatePdfData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/mandate/pdf';
+};
+
+export type DownloadMandatePdfErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadMandatePdfError = DownloadMandatePdfErrors[keyof DownloadMandatePdfErrors];
+
+export type DownloadMandatePdfResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadMandatePdfResponse = DownloadMandatePdfResponses[keyof DownloadMandatePdfResponses];
+
+export type RevealIbanData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/mandate/reveal';
+};
+
+export type RevealIbanErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RevealIbanError = RevealIbanErrors[keyof RevealIbanErrors];
+
+export type RevealIbanResponses = {
+    /**
+     * OK
+     */
+    200: RevealedIbanResponse;
+};
+
+export type RevealIbanResponse = RevealIbanResponses[keyof RevealIbanResponses];
 
 export type FindMemberProfileByUserIdData = {
     body?: never;
@@ -17402,6 +17351,49 @@ export type SetNameOnRostersResponses = {
 };
 
 export type SetNameOnRostersResponse = SetNameOnRostersResponses[keyof SetNameOnRostersResponses];
+
+export type SetPaysByData = {
+    body: PaysByRequest;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/pays-by';
+};
+
+export type SetPaysByErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetPaysByError = SetPaysByErrors[keyof SetPaysByErrors];
+
+export type SetPaysByResponses = {
+    /**
+     * OK
+     */
+    200: MandateResponse;
+};
+
+export type SetPaysByResponse = SetPaysByResponses[keyof SetPaysByResponses];
 
 export type RestoreDeletedUserByIdData = {
     body?: never;

@@ -13,6 +13,8 @@ import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
+import net.blueshell.api.user.api.PersonPayment
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.Membership
@@ -44,6 +46,8 @@ class ContributionEmailPlannerTest {
     private val reminders: ContributionReminderService = mockk()
     private val preNotifications: IncassoNotificationService = mockk()
     private val erasure: UserErasureService = mockk()
+    private val payments: PaymentDirectory = mockk()
+    private val onIncasso = mutableSetOf<Long>()
 
     private val planner =
         ContributionEmailPlanner(
@@ -54,6 +58,7 @@ class ContributionEmailPlannerTest {
             reminders,
             preNotifications,
             erasure,
+            payments,
         )
 
     @Nested
@@ -69,15 +74,16 @@ class ContributionEmailPlannerTest {
         }
 
         @Test
-        fun `the flag is read off the membership still running, not the one that ended`() {
+        fun `the flag stands on the person, whichever of their memberships is judged`() {
             val member = member(1L, "Ann Moved")
+            onIncasso += 1L
             given(
-                Membership(user = member, startDate = LocalDate.of(2024, 9, 1), endDate = LocalDate.of(2025, 8, 31), incasso = true),
-                Membership(user = member, startDate = LocalDate.of(2025, 9, 1), incasso = false),
+                Membership(user = member, startDate = LocalDate.of(2024, 9, 1), endDate = LocalDate.of(2025, 8, 31)),
+                Membership(user = member, startDate = LocalDate.of(2025, 9, 1)),
             )
 
             assertThat(planner.plan(periodId, listOf(1L)).byUserId(1L)!!.defaultKind)
-                .isEqualTo(ContributionEmailKind.REMINDER)
+                .isEqualTo(ContributionEmailKind.INCASSO_NOTIFICATION)
         }
 
         @Test
@@ -232,8 +238,9 @@ class ContributionEmailPlannerTest {
         @Test
         fun `each statement carries its own date`() {
             val ann = member(1L, "Ann Moved")
+            onIncasso += 1L
             given(
-                Membership(user = ann, startDate = LocalDate.of(2025, 9, 1), incasso = true),
+                Membership(user = ann, startDate = LocalDate.of(2025, 9, 1)),
                 sentReminders = listOf(reminderFor(ann, LocalDate.of(2025, 9, 12))),
             )
 
@@ -247,7 +254,7 @@ class ContributionEmailPlannerTest {
         fun `the most recent of several sends is the one reported`() {
             val ann = member(1L, "Ann Chased")
             given(
-                Membership(user = ann, startDate = LocalDate.of(2025, 9, 1), incasso = false),
+                Membership(user = ann, startDate = LocalDate.of(2025, 9, 1)),
                 sentReminders =
                     listOf(
                         reminderFor(ann, LocalDate.of(2025, 9, 12)),
@@ -299,6 +306,7 @@ class ContributionEmailPlannerTest {
             if (deleted) firstArg<Collection<Long>>().toSet() else emptySet()
         }
         every { users.findAllByIdsWithProfiles(any()) } returns emptyList()
+        every { payments.of(any()) } answers { firstArg<Collection<Long>>().associateWith { PersonPayment(it in onIncasso, null) } }
     }
 
     private fun givenNoMemberships(member: User) {
@@ -314,13 +322,15 @@ class ContributionEmailPlannerTest {
         startDate: LocalDate = LocalDate.of(2025, 9, 1),
         endDate: LocalDate? = null,
         email: String = "member$userId@example.com",
-    ) = Membership(
-        user = member(userId, fullName, email),
-        startDate = startDate,
-        endDate = endDate,
-        memberType = memberType,
-        incasso = incasso,
-    )
+    ): Membership {
+        if (incasso) onIncasso += userId
+        return Membership(
+            user = member(userId, fullName, email),
+            startDate = startDate,
+            endDate = endDate,
+            memberType = memberType,
+        )
+    }
 
     private fun member(
         userId: Long,

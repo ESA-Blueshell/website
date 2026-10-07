@@ -23,17 +23,15 @@ class IncassoRunIT : UserTestSupport() {
         iban: String?,
     ): User {
         val member = createUserWithRole(Role.MEMBER)
-        val membership = createMembershipFixture(member, startDate = LocalDate.now().minusMonths(2))
+        createMembershipFixture(member, startDate = LocalDate.now().minusMonths(2))
         if (iban != null) {
             mvc
                 .perform(
-                    put("/memberships/${membership.id}/mandate")
+                    put("/users/${member.id}/mandate")
                         .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"iban":"$iban","accountHolder":"${member.fullName}","signedOn":"${LocalDate.now().minusDays(3)}"}"""),
                 ).andExpect(status().isOk)
-        } else {
-            transactionTemplate.execute { entityManager.find(membership.javaClass, membership.id).incasso = true }
         }
         return member
     }

@@ -7,19 +7,18 @@ import org.springframework.data.repository.Repository
 import org.springframework.data.repository.query.Param
 import java.time.LocalDate
 
-/** A membership whose mandate still holds sealed values, read past soft deletion. */
+/** A person whose mandate still holds sealed values. */
 interface StoppedMandateRow {
-    val id: Long
     val userId: Long
     val reference: String
 }
 
-/** The mandates the retention rule judges, and the wipe it ends with. Both read and write past soft deletion. */
-interface MandateRetentionRepository : Repository<Membership, Long> {
+/** The mandates the retention rule judges, and the wipe it ends with. */
+interface MandateRetentionRepository : Repository<PaymentDetails, Long> {
     @Query(
         value =
-            "SELECT id AS id, user_id AS userId, mandate_reference AS reference FROM memberships " +
-                "WHERE mandate_iban IS NOT NULL AND " + STOPPED,
+            "SELECT p.user_id AS userId, p.mandate_reference AS reference FROM payment_details p " +
+                "WHERE p.mandate_iban IS NOT NULL AND " + STOPPED,
         nativeQuery = true,
     )
     fun findStopped(
@@ -34,25 +33,29 @@ interface MandateRetentionRepository : Repository<Membership, Long> {
     @Modifying
     @Query(
         value =
-            "UPDATE memberships SET mandate_iban = NULL, mandate_account_holder = NULL, mandate_address = NULL " +
-                "WHERE id = :id AND mandate_iban IS NOT NULL AND mandate_reference = :reference AND " + STOPPED,
+            "UPDATE payment_details p SET p.mandate_iban = NULL, p.mandate_account_holder = NULL, p.mandate_address = NULL " +
+                "WHERE p.user_id = :userId AND p.mandate_iban IS NOT NULL AND p.mandate_reference = :reference AND " + STOPPED,
         nativeQuery = true,
     )
     fun wipe(
-        @Param("id") id: Long,
+        @Param("userId") userId: Long,
         @Param("reference") reference: String,
         @Param("today") today: LocalDate,
     ): Int
 
-    /** An erased account is no longer collected from: every membership of it comes off incasso. */
+    /** An erased account is no longer collected from. */
     @Modifying
-    @Query(value = "UPDATE memberships SET incasso = FALSE WHERE user_id = :userId", nativeQuery = true)
+    @Query(value = "UPDATE payment_details SET incasso = FALSE WHERE user_id = :userId", nativeQuery = true)
     fun stopCollecting(
         @Param("userId") userId: Long,
     ): Int
 
     private companion object {
+        // Off incasso, or every membership ended or removed. Somebody with no membership yet, such as
+        // an applicant whose signup mandate waits for it, is not stopped.
         const val STOPPED =
-            "((end_date IS NOT NULL AND end_date <= :today) OR incasso = FALSE OR deleted_at <> '" + SoftDelete.LIVE + "')"
+            "(p.incasso = FALSE OR (EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = p.user_id) " +
+                "AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = p.user_id " +
+                "AND (m.end_date IS NULL OR m.end_date > :today) AND m.deleted_at = '" + SoftDelete.LIVE + "')))"
     }
 }

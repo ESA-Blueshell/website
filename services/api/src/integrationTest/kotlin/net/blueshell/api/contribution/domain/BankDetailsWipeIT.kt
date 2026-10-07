@@ -44,12 +44,12 @@ class BankDetailsWipeIT : UserTestSupport() {
                 put("/users/me/mandate").with(signedIn(member, steppedUp = true)).contentType(MediaType.APPLICATION_JSON).content(online),
             ).andExpect(status().isOk)
 
-    /** A member whose membership carries an online mandate, and the membership's id. */
+    /** A member with a running membership and an online mandate, and their id. */
     private fun onIncasso(): Pair<User, Long> {
         val member = createUserWithRole(Role.MEMBER)
-        val membership = createMembershipFixture(member, startDate = LocalDate.now().minusMonths(2))
+        createMembershipFixture(member, startDate = LocalDate.now().minusMonths(2))
         authorise(member)
-        return member to membership.id!!
+        return member to member.id!!
     }
 
     /** A run collecting from [member] on [collectionDate], which the board submitted to ING. */
@@ -73,15 +73,17 @@ class BankDetailsWipeIT : UserTestSupport() {
         mvc.perform(post("/incassoRuns/$runId/submitted").with(signedIn(board))).andExpect(status().isOk)
     }
 
-    private fun mandateOf(membershipId: Long) =
+    private fun mandateOf(userId: Long) =
         jdbc.queryForMap(
             "SELECT mandate_iban, mandate_account_holder, mandate_address, mandate_reference, mandate_signed_on, mandate_iban_masked " +
-                "FROM memberships WHERE id = ?",
-            membershipId,
+                "FROM payment_details WHERE user_id = ?",
+            userId,
         )
 
-    private fun sealedOf(membershipId: Long) =
-        mandateOf(membershipId)
+    private fun stopCollecting(userId: Long) = jdbc.update("UPDATE payment_details SET incasso = FALSE WHERE user_id = ?", userId)
+
+    private fun sealedOf(userId: Long) =
+        mandateOf(userId)
             .filterKeys {
                 it in
                     setOf("mandate_iban", "mandate_account_holder", "mandate_address")
@@ -95,23 +97,23 @@ class BankDetailsWipeIT : UserTestSupport() {
     @Test
     fun `a mandate no longer collected from is wiped 13 months after its last collection, and keeps what it was collected under`() {
         val board = createUserWithRole(Role.BOARD)
-        val (member, membershipId) = onIncasso()
+        val (member, memberId) = onIncasso()
         val collection = LocalDate.now().plusDays(7)
         collected(board, member, collection)
-        jdbc.update("UPDATE memberships SET incasso = FALSE WHERE id = ?", membershipId)
+        stopCollecting(memberId)
 
         assertThat(runOn(collection.plusMonths(13).minusDays(1))).isInstanceOf(JobOutcome.Skipped::class.java)
-        assertThat(sealedOf(membershipId)).doesNotContainNull()
+        assertThat(sealedOf(memberId)).doesNotContainNull()
 
         assertThat(runOn(collection.plusMonths(13))).isInstanceOf(JobOutcome.Done::class.java)
 
-        val kept = mandateOf(membershipId)
-        assertThat(sealedOf(membershipId)).containsOnlyNulls()
-        assertThat(kept["mandate_reference"].toString()).startsWith("BLUESHELL-$membershipId-")
+        val kept = mandateOf(memberId)
+        assertThat(sealedOf(memberId)).containsOnlyNulls()
+        assertThat(kept["mandate_reference"].toString()).startsWith("BLUESHELL-$memberId-")
         assertThat(kept["mandate_signed_on"]).isNotNull()
         assertThat(kept["mandate_iban_masked"]).isEqualTo("NL00")
         mvc
-            .perform(get("/memberships/$membershipId/mandate").with(signedIn(board)))
+            .perform(get("/users/$memberId/mandate").with(signedIn(board)))
             .andExpect(jsonPath("$.bankDetailsWiped").value(true))
             .andExpect(jsonPath("$.standing").value("NONE"))
             .andExpect(jsonPath("$.ibanLastTwo").value("00"))
@@ -123,8 +125,8 @@ class BankDetailsWipeIT : UserTestSupport() {
         val (_, stopped) = onIncasso()
         val (_, ended) = onIncasso()
         val (_, running) = onIncasso()
-        jdbc.update("UPDATE memberships SET incasso = FALSE WHERE id = ?", stopped)
-        jdbc.update("UPDATE memberships SET end_date = ? WHERE id = ?", LocalDate.now(), ended)
+        stopCollecting(stopped)
+        jdbc.update("UPDATE memberships SET end_date = ? WHERE user_id = ?", LocalDate.now(), ended)
 
         assertThat(runOn(LocalDate.now())).isInstanceOf(JobOutcome.Done::class.java)
 
@@ -136,9 +138,19 @@ class BankDetailsWipeIT : UserTestSupport() {
     }
 
     @Test
+    fun `an applicant's mandate waits for their first membership and is not wiped meanwhile`() {
+        val applicant = createUserWithRole(Role.GUEST)
+        authorise(applicant)
+
+        runOn(LocalDate.now().plusMonths(2))
+
+        assertThat(sealedOf(applicant.id!!)).doesNotContainNull()
+    }
+
+    @Test
     fun `a run not yet marked as submitted holds the wipe off until its collection date has passed`() {
         val board = createUserWithRole(Role.BOARD)
-        val (member, membershipId) = onIncasso()
+        val (member, memberId) = onIncasso()
         val period = createContributionPeriodFixture()
         val collection = LocalDate.now().plusDays(7)
         mvc
@@ -148,34 +160,36 @@ class BankDetailsWipeIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userIds":[${member.id}],"collectionDate":"$collection","statementText":"Contributie"}"""),
             ).andExpect(status().isCreated)
-        jdbc.update("UPDATE memberships SET incasso = FALSE WHERE id = ?", membershipId)
+        stopCollecting(memberId)
 
         // Its file may be in ING already, so the bank details stay while the debit can still come.
         assertThat(runOn(collection)).isInstanceOf(JobOutcome.Skipped::class.java)
-        assertThat(sealedOf(membershipId)).doesNotContainNull()
+        assertThat(sealedOf(memberId)).doesNotContainNull()
 
         // Never marked as submitted, and its date gone: nothing was collected under it.
         assertThat(runOn(collection.plusDays(1))).isInstanceOf(JobOutcome.Done::class.java)
-        assertThat(sealedOf(membershipId)).containsOnlyNulls()
+        assertThat(sealedOf(memberId)).containsOnlyNulls()
     }
 
     @Test
-    fun `erasing an account wipes its pending mandate at once and starts the 13 months for a mandate collected under`() {
+    fun `erasing an account stops collecting, so a mandate never collected from goes at once and one collected under in 13 months`() {
         val board = createUserWithRole(Role.BOARD)
         val applicant = createUserWithRole(Role.GUEST)
         authorise(applicant)
-        val (member, membershipId) = onIncasso()
+        val (member, memberId) = onIncasso()
         val collection = LocalDate.now().plusDays(7)
         collected(board, member, collection)
 
         erasure.deleteUser(applicant.id!!)
         erasure.deleteUser(member.id!!)
 
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM pending_mandates WHERE user_id = ?", Int::class.java, applicant.id)).isZero()
-        assertThat(jdbc.queryForObject("SELECT incasso FROM memberships WHERE id = ?", Boolean::class.java, membershipId)).isFalse()
+        for (erased in listOf(applicant.id!!, memberId)) {
+            assertThat(jdbc.queryForObject("SELECT incasso FROM payment_details WHERE user_id = ?", Boolean::class.java, erased)).isFalse()
+        }
         runOn(collection.plusMonths(13).minusDays(1))
-        assertThat(sealedOf(membershipId)).doesNotContainNull()
+        assertThat(sealedOf(applicant.id!!)).containsOnlyNulls()
+        assertThat(sealedOf(memberId)).doesNotContainNull()
         assertThat(runOn(collection.plusMonths(13))).isInstanceOf(JobOutcome.Done::class.java)
-        assertThat(sealedOf(membershipId)).containsOnlyNulls()
+        assertThat(sealedOf(memberId)).containsOnlyNulls()
     }
 }

@@ -14,7 +14,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   ...api,
 }))
 
-const own = {standing: IncassoStanding.MANDATE_RECORDED, ibanCountry: "NL", ibanLastTwo: "00", reference: "BLUESHELL-9-20260930", signedOn: "2026-09-30", pending: false}
+const own = {standing: IncassoStanding.MANDATE_RECORDED, ibanCountry: "NL", ibanLastTwo: "00", reference: "BLUESHELL-9-20260930", signedOn: "2026-09-30"}
 
 const fill = async (wrapper: ReturnType<typeof mount>) => {
   await wrapper.get('[data-testid="incasso-open"]').trigger("click")
@@ -27,7 +27,7 @@ const fill = async (wrapper: ReturnType<typeof mount>) => {
 describe("setting up incasso", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    api.findOwnMandate.mockResolvedValue({status: 200, data: {standing: IncassoStanding.NONE, pending: false}})
+    api.findOwnMandate.mockResolvedValue({status: 200, data: {standing: IncassoStanding.NONE}})
     api.setUpOwnMandate.mockResolvedValue({status: 200, data: own})
     api.setUpMandate.mockResolvedValue({status: 204, data: undefined})
     api.twoFactorStanding.mockResolvedValue({status: 200, data: {on: false, required: false}})
@@ -75,13 +75,6 @@ describe("setting up incasso", () => {
     expect(wrapper.find('[data-testid="incasso-saved"]').exists()).toBe(true)
     expect(wrapper.emitted("saved")).toHaveLength(1)
     expect(wrapper.get('[data-testid="incasso-open"]').text()).toBe("Change bank details")
-  })
-
-  it("says details given ahead of a membership start with it", async () => {
-    api.findOwnMandate.mockResolvedValue({status: 200, data: {...own, standing: IncassoStanding.NONE, pending: true}})
-    const wrapper = mount(IncassoSetUp)
-    await settle()
-    expect(wrapper.get('[data-testid="incasso-current"]').text()).toContain("from the day your membership starts")
   })
 
   it("goes on the signup's token during a signup, and reads nothing without a session", async () => {

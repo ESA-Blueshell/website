@@ -579,9 +579,9 @@ _Avoid_: last four, account ending in.
 
 ### Reveal
 
-A board member opening one membership's full IBAN from its mandate panel. The number shows until
-the panel closes and is kept nowhere. Each reveal is written to the member's security log: who
-revealed which membership and when, never the IBAN.
+A board member opening one person's full IBAN from their mandate panel. The number shows until
+the panel closes and is kept nowhere. Each reveal is written to the person's security log: who
+revealed which mandate and when, never the IBAN.
 
 _Avoid_: unmask, show IBAN, decrypt.
 
@@ -592,12 +592,23 @@ The account a member is collected from: its IBAN and the name of its account hol
 mandate do not open there and cannot redirect a collection. Only the **masked IBAN** is kept
 readable. They are opened in full for one thing: ING's batch file.
 
-_Avoid_: payment details, account info.
+_Avoid_: account info.
+
+### Payment details
+
+How a person pays: by incasso or by bank transfer, and the **mandate** they are collected under.
+They stand on the person, not on one membership, so a new membership keeps them and a person
+without a membership can have them. Nobody is collected from while no membership of theirs runs.
+**Bank details** are the account inside them.
+
+_Avoid_: payment info, billing details.
 
 ### Mandate
 
-A member's permission for the association to collect from their bank details, kept on their
-membership with its reference, the date it was signed, and who recorded it and when. A paper
+A person's permission for the association to collect from their bank details, kept with their
+**payment details** across their memberships, with its reference, the date it was signed, and who
+recorded it and when. One set up during the signup is kept the same way and is used once the
+membership runs. A paper
 mandate is recorded by the board; a member sets one up themselves on the site, signed that day.
 A new IBAN makes a new mandate with a new reference; the same IBAN keeps its reference.
 
@@ -621,14 +632,6 @@ keeps only who recorded it and when. Recording one over an online mandate needs 
 confirmation, since the online mandate's record goes with it.
 
 _Avoid_: manual mandate.
-
-### Pending mandate
-
-Bank details an applicant set up before their membership started. They wait, sealed to the
-applicant, and move onto the membership as its mandate when it starts. The sealed values move as
-they are, since both belong to the same person. A pending mandate is always an **online mandate**.
-
-_Avoid_: draft mandate, provisional mandate.
 
 ### Send to
 

@@ -77,7 +77,7 @@ class SignupController(
         )
     }
 
-    /** The optional incasso step; the mandate is signed today, and waits for the membership. */
+    /** The optional incasso step; the mandate is signed today and kept on the person. */
     @PutMapping("/mandate")
     @PermitAll
     @ResponseStatus(HttpStatus.NO_CONTENT)

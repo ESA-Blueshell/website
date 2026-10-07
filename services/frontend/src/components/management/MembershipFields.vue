@@ -41,7 +41,7 @@ const save = async () => {
     // A new membership pays by transfer until the Payment details tab says otherwise; an edit keeps what it had.
     emit("saved", membership
       ? await saveMembership(membership.id, {...membership, ...fields})
-      : await startMembershipAsBoard(userId, {...fields, incasso: false}))
+      : await startMembershipAsBoard(userId, fields))
   } catch (error) {
     handleSubmitError({
       values: fields,

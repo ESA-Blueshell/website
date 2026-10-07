@@ -14,8 +14,8 @@ import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.model.RenderedEmailPreview
-import net.blueshell.api.testsupport.Entities
-import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
+import net.blueshell.api.user.api.PersonPayment
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.User
@@ -45,7 +45,7 @@ class ContributionEmailMessageServiceTest {
     private val periods: ContributionPeriodService = mockk()
     private val users: UserService = mockk()
     private val renderer: EmailPreviewRenderer = mockk()
-    private val memberships: MembershipService = mockk()
+    private val payments: PaymentDirectory = mockk()
 
     private val service =
         ContributionEmailMessageService(
@@ -54,7 +54,7 @@ class ContributionEmailMessageServiceTest {
             users,
             renderer,
             PaymentChannels(BankProperties(), "https://blueshell.test"),
-            memberships,
+            payments,
         )
 
     private val alice =
@@ -194,15 +194,7 @@ class ContributionEmailMessageServiceTest {
             )
         every { periods.findById(periodId) } returns period
         every { users.findById(1L) } returns alice
-        every { memberships.findByUserIdsWithMembers(listOf(1L)) } returns
-            mapOf(
-                1L to
-                    listOf(
-                        Entities.membership(user = alice).apply {
-                            mandate = aMandate()
-                        },
-                    ),
-            )
+        every { payments.of(listOf(1L)) } returns mapOf(1L to PersonPayment(incasso = true, mandate = aMandate()))
     }
 
     private fun aMandate() =

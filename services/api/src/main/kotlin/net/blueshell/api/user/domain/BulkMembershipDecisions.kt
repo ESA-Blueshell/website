@@ -32,7 +32,7 @@ sealed interface BulkMembershipDecision {
         override val reason: BulkRowReason? = null
     }
 
-    /** A membership of this type will be opened today, with no incasso mandate. */
+    /** A membership of this type will be opened today. */
     data class Start(
         val memberType: MemberType,
     ) : BulkMembershipDecision {
@@ -83,8 +83,7 @@ object BulkMembershipDecisions {
      * reads as two stays while "member since" still shows the day they first joined.
      *
      * The member type carries over — a returning alumnus is still an alumnus, and the fee is
-     * read off it. The incasso mandate does not: a standing authorisation to take money, given
-     * years ago for a membership that ended, is not one to re-arm in a batch.
+     * read off it. How they pay stands on the person, so it is left as it is.
      */
     private fun decideStart(held: List<Membership>): BulkMembershipDecision {
         if (held.any { it.endDate == null }) return BulkMembershipDecision.Skip(BulkRowReason.ALREADY_ACTIVE)

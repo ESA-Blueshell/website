@@ -34,7 +34,7 @@ class MandatePdfsTest {
 
     private val known =
         OpenedOnlineMandate(
-            userId = 7,
+            userId = 12,
             username = "zoe",
             reference = "BLUESHELL-12-20260930",
             signedOn = LocalDate.of(2026, 9, 30),
@@ -77,7 +77,7 @@ class MandatePdfsTest {
             "Online mandate V2.0, October 2026. Authorisation wording 2026-10.",
         )
         assertThat(text).doesNotContain("BIC")
-        verify(events).publishEvent(MandatePdfDownloaded(userId = 7, membershipId = 12, downloadedBy = 3))
+        verify(events).publishEvent(MandatePdfDownloaded(userId = 12, reference = "BLUESHELL-12-20260930", downloadedBy = 3))
         assertThat(known.toString()).doesNotContain("NL91").doesNotContain("Hallenweg")
     }
 

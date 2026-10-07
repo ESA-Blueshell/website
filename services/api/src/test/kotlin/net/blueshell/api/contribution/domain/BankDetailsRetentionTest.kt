@@ -27,9 +27,9 @@ class BankDetailsRetentionTest {
     private val retention = BankDetailsRetention(mandates, notifications, jobs, clock)
 
     private fun stopped(
-        membershipId: Long,
+        userId: Long,
         lastCollection: LocalDate?,
-    ) = StoppedMandate(membershipId, membershipId + 100, "BLUESHELL-$membershipId").also {
+    ) = StoppedMandate(userId, "BLUESHELL-$userId").also {
         whenever(notifications.lastCollectionDate(it.userId, it.reference)).thenReturn(lastCollection)
     }
 

@@ -11,7 +11,7 @@ import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.domain.Mandates
 import net.blueshell.api.user.domain.OnlineAuthorisation
 import net.blueshell.api.user.domain.incassoStanding
-import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.PaymentDetails
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -32,22 +32,23 @@ class MandateController(
     private val stepUp: StepUp,
     private val users: UserService,
 ) {
+    /** How the person pays and the mandate they are collected under, for the board. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'read')")
-    @GetMapping("/memberships/{membershipId}/mandate")
+    @GetMapping("/users/{userId}/mandate")
     fun findMandate(
-        @PathVariable membershipId: Long,
-    ): MandateResponse = mandates.find(membershipId).asMandateResponse()
+        @PathVariable userId: Long,
+    ): MandateResponse = mandates.of(userId).asMandateResponse()
 
     /** Records a paper mandate, or replaces the one before it. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
-    @PutMapping("/memberships/{membershipId}/mandate")
+    @PutMapping("/users/{userId}/mandate")
     fun recordMandate(
-        @PathVariable membershipId: Long,
+        @PathVariable userId: Long,
         @Valid @RequestBody request: RecordMandateRequest,
     ): MandateResponse =
         mandates
             .record(
-                membershipId,
+                userId,
                 request.iban,
                 request.accountHolder,
                 request.signedOn,
@@ -55,26 +56,27 @@ class MandateController(
                 request.replacesOnline,
             ).asMandateResponse()
 
+    /** Whether the person pays by incasso or by transfer. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
+    @PutMapping("/users/{userId}/pays-by")
+    fun setPaysBy(
+        @PathVariable userId: Long,
+        @Valid @RequestBody request: PaysByRequest,
+    ): MandateResponse = mandates.payBy(userId, request.incasso).asMandateResponse()
+
     /**
-     * The membership's full IBAN, for a board member who needs it. Every reveal is written to the
-     * member's security log, and the answer is never stored: not by the api, not by a cache.
+     * The person's full IBAN, for a board member who needs it. Every reveal is written to the
+     * person's security log, and the answer is never stored: not by the api, not by a cache.
      */
     @BoardOnly
-    @PostMapping("/memberships/{membershipId}/mandate/reveal")
+    @PostMapping("/users/{userId}/mandate/reveal")
     fun revealIban(
-        @PathVariable membershipId: Long,
+        @PathVariable userId: Long,
     ): ResponseEntity<RevealedIbanResponse> =
         ResponseEntity
             .ok()
             .header(HttpHeaders.CACHE_CONTROL, "no-store")
-            .body(RevealedIbanResponse(mandates.reveal(membershipId, reader()).value))
-
-    /** Somebody's mandate as they would see it, for the board: a pending one has no membership to be read on yet. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'read')")
-    @GetMapping("/users/{userId}/mandate")
-    fun findMandateOf(
-        @PathVariable userId: Long,
-    ): OwnMandateResponse = mandates.own(userId).asResponse()
+            .body(RevealedIbanResponse(mandates.reveal(userId, reader()).value))
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/users/me/mandate")
@@ -96,11 +98,12 @@ class MandateController(
 
     private fun reader(): Long = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
 
-    private fun Membership.asMandateResponse(): MandateResponse {
+    private fun PaymentDetails.asMandateResponse(): MandateResponse {
         val held = mandate
         return MandateResponse(
-            membershipId = requireNotNull(id),
+            userId = userId,
             standing = incassoStanding(),
+            incasso = incasso,
             accountHolder = held?.takeUnless { it.wiped }?.let { mandates.accountHolderOf(userId, it) },
             ibanCountry = MaskedIban.of(held?.ibanMasked)?.country,
             ibanLastTwo = MaskedIban.of(held?.ibanMasked)?.lastTwo,
@@ -116,4 +119,4 @@ class MandateController(
     }
 }
 
-fun OwnMandate.asResponse() = OwnMandateResponse(standing, iban?.country, iban?.lastTwo, reference, signedOn, pending)
+fun OwnMandate.asResponse() = OwnMandateResponse(standing, iban?.country, iban?.lastTwo, reference, signedOn)

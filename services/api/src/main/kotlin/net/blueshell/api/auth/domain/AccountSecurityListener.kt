@@ -61,14 +61,14 @@ class AccountSecurityListener(
         events.record(evt.userId, SecurityEventKind.BANK_DETAILS_CHANGED, note = evt.iban.toString())
     }
 
-    /** Who revealed whose membership, never the IBAN itself. */
+    /** Who revealed whose IBAN, never the IBAN itself. */
     @AfterCommitListener
     fun onIbanRevealed(evt: IbanRevealed) {
         events.record(
             evt.userId,
             SecurityEventKind.IBAN_REVEALED,
             SecurityActor.Person(evt.revealedBy),
-            note = "membership ${evt.membershipId}",
+            note = "mandate ${evt.reference}",
         )
     }
 
@@ -79,7 +79,7 @@ class AccountSecurityListener(
             evt.userId,
             SecurityEventKind.MANDATE_PDF_DOWNLOADED,
             SecurityActor.Person(evt.downloadedBy),
-            note = "membership ${evt.membershipId}",
+            note = "mandate ${evt.reference}",
         )
     }
 

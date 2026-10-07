@@ -24,7 +24,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   ReplacesOnlineMandate: r =>
     `This replaces the online mandate the member authorised on ${day(r.authorisedAt)}. Its PDF will no longer be available. Confirm to record it.`,
   NoOnlineMandate: () => "Only a mandate the member authorised on the site has a PDF.",
-  NoMandateRecorded: () => "No mandate is recorded on this membership.",
+  NoMandateRecorded: () => "No mandate is recorded for this person.",
   BankDetailsUnopenable: () => "These bank details were changed outside the site and no longer open. Record the mandate again.",
   SealingUnavailable: () => "Private details cannot be saved or shown right now, and nothing was changed. Try again in a moment.",
 }

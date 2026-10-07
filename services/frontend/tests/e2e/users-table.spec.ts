@@ -22,7 +22,6 @@ const memberships = users.map((user, i) => aMembership({
   userId: user.id,
   memberType: "REGULAR",
   startDate: "2024-01-01",
-  incasso: false,
 }))
 
 const contributionPeriods = [

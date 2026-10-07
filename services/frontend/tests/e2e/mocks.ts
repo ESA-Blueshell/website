@@ -43,6 +43,7 @@ import type {
   IncassoCandidate,
   IncassoRunView,
   MembershipResponse,
+  MandateResponse,
   OwnMandateResponse,
   PublishLineupRequest,
   Role,
@@ -86,6 +87,8 @@ type Fixtures = {
   users?: Wire<UserDetailResponse>[]
   deletedUsers?: Wire<UserDetailResponse>[]
   memberships?: Wire<MembershipResponse>[]
+  /** Who pays by incasso; everybody else pays by transfer. */
+  onIncasso?: number[]
   contributionPeriods?: Wire<ContributionPeriodResponse>[]
   /** The period the membership page and the signup form quote, or null where none is recorded. */
   currentContributionPeriod?: Wire<ContributionPeriodResponse> | null
@@ -731,7 +734,15 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   let exceptionResolvedAt: string | null = null
   const paidPeriods = new Set<number>()
   const incassoRuns: Wire<IncassoRunView>[] = []
-  let ownMandate: Wire<OwnMandateResponse> = {standing: "NONE", pending: false}
+  let ownMandate: Wire<OwnMandateResponse> = {standing: "NONE"}
+  const payingByIncasso = new Set(fixtures.onIncasso ?? [])
+  const recordedMandates = new Map<number, Wire<MandateResponse>>()
+  const mandateOf = (userId: number): Wire<MandateResponse> => {
+    const incasso = payingByIncasso.has(userId)
+    const recorded = recordedMandates.get(userId)
+    if (recorded) return {...recorded, incasso}
+    return {userId, incasso, standing: incasso ? "ON_INCASSO_WITHOUT_BANK_DETAILS" : "NONE", bankDetailsWiped: false}
+  }
   const baseAlerts: Wire<Alert>[] = fixtures.alerts ?? []
 
   const baseJobs: Wire<JobExecution>[] = fixtures.jobs ?? [
@@ -928,8 +939,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const {iban} = request.postDataJSON() as {iban: string}
       const signup = path.startsWith("/signup")
       ownMandate = {
-        standing: signup ? "NONE" : "MANDATE_RECORDED", ibanCountry: iban.replace(/\s/g, "").slice(0, 2), ibanLastTwo: iban.replace(/\s/g, "").slice(-2),
-        reference: signup ? undefined : "BLUESHELL-1-20260930", signedOn: "2026-09-30", pending: signup,
+        standing: "MANDATE_RECORDED", ibanCountry: iban.replace(/\s/g, "").slice(0, 2), ibanLastTwo: iban.replace(/\s/g, "").slice(-2),
+        reference: "BLUESHELL-1-20260930", signedOn: "2026-09-30",
       }
       return signup ? route.fulfill({status: 204, body: ""}) : answer(route, "setUpOwnMandate", ownMandate)
     }
@@ -1026,24 +1037,30 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       return answer(route, "restoreDeletedUserById", {}, 204)
     }
-    if (method === "GET" && /^\/users\/\d+\/mandate$/.test(path)) {
-      return answer(route, "findMandateOf", {standing: "NONE", pending: false})
-    }
-    if (method === "POST" && /^\/memberships\/\d+\/mandate\/reveal$/.test(path)) {
+    if (method === "POST" && /^\/users\/\d+\/mandate\/reveal$/.test(path)) {
       return answer(route, "revealIban", {iban: "NL91ABNA0417164300"})
     }
-    if (/^\/memberships\/\d+\/mandate$/.test(path)) {
-      const membershipId = Number(path.split("/")[2])
+    if (method === "PUT" && /^\/users\/\d+\/pays-by$/.test(path)) {
+      const userId = Number(path.split("/")[2])
+      const {incasso} = request.postDataJSON() as {incasso: boolean}
+      if (incasso) payingByIncasso.add(userId)
+      else payingByIncasso.delete(userId)
+      return answer(route, "setPaysBy", mandateOf(userId))
+    }
+    if (/^\/users\/\d+\/mandate$/.test(path)) {
+      const userId = Number(path.split("/")[2])
       if (method === "PUT") {
         const {accountHolder, signedOn, iban} = request.postDataJSON() as {accountHolder: string; signedOn: string; iban: string}
         const compact = iban.replace(/\s/g, "")
-        return answer(route, "recordMandate", {
-          membershipId, standing: "MANDATE_RECORDED", accountHolder, ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2),
-          reference: `BLUESHELL-${membershipId}`, signedOn, recordedBy: 1, recordedAt: "2026-09-30T10:00:00.000Z",
+        payingByIncasso.add(userId)
+        recordedMandates.set(userId, {
+          userId, incasso: true, standing: "MANDATE_RECORDED", accountHolder, ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2),
+          reference: `BLUESHELL-${userId}`, signedOn, recordedBy: 1, recordedAt: "2026-09-30T10:00:00.000Z",
           kind: "PAPER", bankDetailsWiped: false,
         })
+        return answer(route, "recordMandate", mandateOf(userId))
       }
-      return answer(route, "findMandate", {membershipId, standing: "NONE", bankDetailsWiped: false})
+      return answer(route, "findMandate", mandateOf(userId))
     }
     if (method === "GET" && path === "/memberships") {
       const userId = url.searchParams.get("userId")
@@ -1118,7 +1135,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           memberSince: membership?.startDate ?? null,
           disposition,
           reason,
-          defaultKind: membership?.incasso ? "INCASSO_NOTIFICATION" : "REMINDER",
+          defaultKind: payingByIncasso.has(userId) ? "INCASSO_NOTIFICATION" : "REMINDER",
           feeType: honorary ? null : "FULL_YEAR_FEE",
           amount: honorary ? null : 20,
           lastRemindedOn: userId === 2 ? "2025-09-01" : null,
@@ -1266,7 +1283,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             username: user?.username ?? `user${held.userId}`,
             feeType: honorary ? null : "FULL_YEAR_FEE" as const,
             fee: honorary ? null : period?.fullYearFee ?? 0,
-            incasso: held.incasso,
+            incasso: payingByIncasso.has(held.userId),
             paid: baseContributions.some((one) => one.userId === held.userId && one.contributionPeriodId === periodId),
             paidAt: null,
             lastEmailAt: null,

@@ -6,14 +6,12 @@ import net.blueshell.api.user.domain.OnlineAuthorisation
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
-/** A person's own mandate as they see it: on their membership, or waiting for it to start. */
+/** A person's own mandate as they see it, masked. */
 data class OwnMandate(
     val standing: IncassoStanding,
     val iban: MaskedIban?,
     val reference: String?,
     val signedOn: LocalDate?,
-    /** Set up before the membership started, and moved onto it once it does. */
-    val pending: Boolean,
 )
 
 /** The signup's optional incasso step, for the module that resolves a signup to its account. */

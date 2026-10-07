@@ -25,8 +25,8 @@ import MiniButton from "@/components/management/MiniButton.vue"
 import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
 import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
-import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, maskedIban, recordPayment, withdrawPayment} from "@/domains/contribution"
-import {type AddressResponse, MEMBERSHIP_WORDS, type MembershipResponse, type OwnMandateResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandateOf, readUser, Role, saveMembership} from "@/domains/user"
+import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, recordPayment, withdrawPayment} from "@/domains/contribution"
+import {type AddressResponse, MEMBERSHIP_WORDS, type MandateResponse, type MembershipResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandate, readUser, Role, savePaysBy} from "@/domains/user"
 import UserRolesPanel from "@/domains/user/components/UserRolesPanel.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import store from "@/plugins/store"
@@ -63,19 +63,20 @@ const profileSaved = ref<string | null>(null)
 // TWIN: the api asks for the member fields of a member only, as the person's own account page does.
 const isMember = computed(() => person.value?.roles.includes(Role.MEMBER) ?? false)
 const address = ref<Partial<AddressResponse>>({})
-/** A mandate authorised before the membership started, which has no membership to be shown on yet. */
-const pendingMandate = ref<OwnMandateResponse | null>(null)
+/** How they pay and their mandate, which stand on the person across memberships. */
+const payment = ref<MandateResponse | null>(null)
 const activation = ref<TokenPurpose | null>(null)
 const deleteOpen = ref(false)
 const isAdmin = computed(() => store.getters.isAdmin === true)
 
 const current = computed(() => memberships.value.find((one) => !one.endDate) ?? null)
-/** The membership a mandate is recorded on: the running one, else the newest. */
+/** The running membership, else the newest. */
 const latestMembership = computed(() => current.value ?? [...memberships.value].sort((a, b) => b.startDate.localeCompare(a.startDate))[0] ?? null)
 const since = computed(() => memberships.value.map((one) => one.startDate).sort()[0] ?? null)
 const membershipState = computed(() => membershipStateOf(memberships.value))
 const standing = computed(() => MEMBERSHIP_WORDS[membershipState.value])
-const incasso = computed(() => (current.value ? (current.value.incasso ? "Pays by incasso" : "Pays by transfer") : null))
+const paysBy = computed(() => (payment.value?.incasso ? "Pays by incasso" : "Pays by transfer"))
+const incasso = computed(() => (current.value ? paysBy.value : null))
 const latest = computed(() => periods.value[0] ?? null)
 
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`
@@ -94,7 +95,7 @@ const topRole = computed(() => {
 })
 
 const membershipLine = computed(() => (current.value && since.value
-  ? `${typeName.value} since ${formatDay(since.value)}, ${current.value.incasso ? "pays by incasso" : "pays by transfer"}`
+  ? `${typeName.value} since ${formatDay(since.value)}, ${paysBy.value.toLowerCase()}`
   : memberships.value.length > 0 ? `Ended ${formatDay(latestMembership.value?.endDate)}` : "Has never been a member"))
 const contributionLine = computed(() => (latest.value
   ? `${latest.value.paid ? "Paid" : "Not paid"} ${periodName(latest.value)}${latest.value.lastEmailAt ? `. Last payment email ${formatDay(latest.value.lastEmailAt)}` : ""}`
@@ -102,27 +103,27 @@ const contributionLine = computed(() => (latest.value
 const profileLine = computed(() => (person.value
   ? [person.value.email, person.value.phoneNumber, person.value.discordId ? `@${person.value.discord}` : "No Discord linked"].filter(Boolean).join(" · ")
   : ""))
-const paymentLine = computed(() => (latestMembership.value
-  ? `${latestMembership.value.incasso ? "Pays by incasso" : "Pays by transfer"} · incasso details`
-  : "Needs a membership first"))
+const paymentLine = computed(() => `${paysBy.value} · incasso details`)
 
-/* How they pay is the membership's own choice, so it is saved on the one the incasso details stand on. */
 const PAY_BY = [{key: "incasso", label: "Incasso"}, {key: "transfer", label: "Bank transfer"}]
 const changingPay = ref(false)
+const payFailure = ref<string | null>(null)
 const payBy = async (key: string) => {
-  const membership = latestMembership.value
   const incassoNext = key === "incasso"
-  if (!membership || changingPay.value || membership.incasso === incassoNext) return
+  if (changingPay.value || payment.value?.incasso === incassoNext) return
   changingPay.value = true
-  try {
-    await saveMembership(membership.id, {...membership, incasso: incassoNext})
-    await reloadMemberships()
-    store.commit("setStatusSnackbarMessage", `${person.value?.fullName} now pays by ${incassoNext ? "incasso" : "bank transfer"}.`)
-  } catch (error) {
-    $handleNetworkError(error)
-  } finally {
-    changingPay.value = false
+  payFailure.value = null
+  const answered = await savePaysBy(id.value, incassoNext)
+  changingPay.value = false
+  if (!answered.ok) {
+    payFailure.value = answered.reason
+    return
   }
+  payment.value = answered.saved
+  store.commit("setStatusSnackbarMessage", `${person.value?.fullName} now pays by ${incassoNext ? "incasso" : "bank transfer"}.`)
+}
+const reloadPayment = async () => {
+  payment.value = await readMandate(id.value)
 }
 const addressLine = computed(() => {
   if (person.value?.addressId == null) return "No address"
@@ -155,9 +156,7 @@ const load = async () => {
   periods.value = owed
   profile.value = found ? toEditableUser(found) : null
   address.value = found?.addressId == null ? {} : await readAddress(found.addressId).catch(() => ({}))
-  // Only somebody without a running membership can have a mandate waiting for one.
-  const waiting = found && !held.some((one) => !one.endDate) ? await readMandateOf(id.value) : null
-  pendingMandate.value = waiting?.pending ? waiting : null
+  payment.value = found ? await readMandate(id.value) : null
   activation.value = found && !found.enabled ? (await listPendingActivations().catch(() => ({} as Record<number, TokenPurpose>)))[found.id] ?? null : null
   loaded.value = true
 }
@@ -352,63 +351,43 @@ watch(id, load, {immediate: true})
       class="person__stack"
       data-testid="user-payment-details"
     >
-      <template v-if="latestMembership">
-        <form-field
-          class="person__pay"
-          hint="Incasso is automatic and needs incasso details. With bank transfer they pay by hand after a payment request."
-          label="Pays by"
-          testid="user-pays-by"
-        >
-          <template #default="{controlId, labelId}">
-            <search-picker
-              :control-id="controlId"
-              :disabled="changingPay"
-              :labelled-by="labelId"
-              :options="PAY_BY"
-              :selected-key="latestMembership.incasso ? 'incasso' : 'transfer'"
-              testid-prefix="user-pays-by-picker"
-              @pick="payBy"
-            />
-          </template>
-        </form-field>
-        <p
-          v-if="pendingMandate"
-          class="person__note"
-          data-testid="user-pending-mandate"
-        >
-          Pending online mandate for the account {{ maskedIban(pendingMandate) }}, authorised on {{ pendingMandate.signedOn }}.
-          Its PDF is available once the membership starts.
-        </p>
-        <mandate-panel
-          :key="`${latestMembership.id}-${latestMembership.incasso}`"
-          :membership-id="latestMembership.id"
-          @changed="reloadMemberships"
-        />
-      </template>
-      <div
-        v-else
-        class="person__none"
+      <form-field
+        class="person__pay"
+        hint="Incasso is automatic and needs incasso details. With bank transfer they pay by hand after a payment request."
+        label="Pays by"
+        testid="user-pays-by"
+      >
+        <template #default="{controlId, labelId}">
+          <search-picker
+            :control-id="controlId"
+            :disabled="changingPay"
+            :labelled-by="labelId"
+            :options="PAY_BY"
+            :selected-key="payment?.incasso ? 'incasso' : 'transfer'"
+            testid-prefix="user-pays-by-picker"
+            @pick="payBy"
+          />
+        </template>
+      </form-field>
+      <notice-box
+        v-if="payFailure"
+        testid="user-pays-by-failure"
+        tone="danger"
+        :title="payFailure"
+      />
+      <p
+        v-if="!current"
+        class="person__note"
         data-testid="user-payment-no-membership"
       >
-        <p
-          v-if="pendingMandate"
-          class="person__note"
-          data-testid="user-pending-mandate"
-        >
-          Pending online mandate for the account {{ maskedIban(pendingMandate) }}, authorised on {{ pendingMandate.signedOn }}.
-          Its PDF is available once the membership starts.
-        </p>
-        <p class="person__note">
-          Payment details are saved on a membership, and {{ person.fullName }} has none. Add a membership first, then set how
-          they pay here.
-        </p>
-        <cut-button
-          :href="`${base}/membership`"
-          testid="user-payment-add-membership"
-        >
-          Add a membership
-        </cut-button>
-      </div>
+        {{ person.fullName }} has no running membership, so nothing is collected until one starts. How they pay and their
+        incasso details are kept for when it does.
+      </p>
+      <mandate-panel
+        :key="`${id}-${payment?.incasso}`"
+        :user-id="id"
+        @changed="reloadPayment"
+      />
     </div>
 
     <div

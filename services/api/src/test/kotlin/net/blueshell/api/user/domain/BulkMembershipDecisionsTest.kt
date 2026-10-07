@@ -35,13 +35,11 @@ class BulkMembershipDecisionsTest {
         startDate: LocalDate = today.minusYears(1),
         endDate: LocalDate? = null,
         memberType: MemberType = MemberType.REGULAR,
-        incasso: Boolean = true,
     ) = Membership(
         user = holder,
         startDate = startDate,
         endDate = endDate,
         memberType = memberType,
-        incasso = incasso,
     ).also { it.id = id }
 
     private fun decideEnd(vararg held: Membership) = BulkMembershipDecisions.decide(BulkMembershipOperation.END, held.toList(), today)
@@ -113,18 +111,5 @@ class BulkMembershipDecisionsTest {
             )
 
         assertThat(decision).isEqualTo(BulkMembershipDecision.Start(MemberType.ALUMNI))
-    }
-
-    /**
-     * An incasso mandate is a standing authorisation to take money. One given for a
-     * membership that then ended is not re-armed on somebody's behalf in a batch.
-     */
-    @Test
-    fun `a returning member does not have their old incasso mandate re-armed`() {
-        val decision = decideStart(membership(endDate = today.minusYears(2), incasso = true))
-
-        assertThat(decision).isInstanceOf(BulkMembershipDecision.Start::class.java)
-        // Start carries only the type; the mandate is not in it, so nothing can carry it over.
-        assertThat((decision as BulkMembershipDecision.Start).memberType).isEqualTo(MemberType.REGULAR)
     }
 }

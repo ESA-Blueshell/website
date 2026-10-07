@@ -16,8 +16,8 @@ enum class MandateKind {
 }
 
 /**
- * The bank details and mandate a membership is collected under. The IBAN and account holder are
- * sealed by Vault Transit to the member (api ADR-038); only the masked IBAN is kept readable.
+ * The bank details and mandate a person is collected under. The IBAN and account holder are
+ * sealed by Vault Transit to the person (api ADR-038); only the masked IBAN is kept readable.
  */
 @Embeddable
 class IncassoMandate(

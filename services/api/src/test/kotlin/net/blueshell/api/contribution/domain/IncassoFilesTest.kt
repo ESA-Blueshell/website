@@ -10,7 +10,8 @@ import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.CollectionAccount
 import net.blueshell.api.user.api.CollectionAccounts
-import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
+import net.blueshell.api.user.api.PersonPayment
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -33,7 +34,7 @@ import java.util.zip.ZipInputStream
 class IncassoFilesTest {
     private val runs: IncassoRunRepository = mock()
     private val notifications: IncassoNotificationRepository = mock()
-    private val memberships: MembershipService = mock()
+    private val payments: PaymentDirectory = mock()
     private val accounts: CollectionAccounts = mock()
     private val clock = Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC)
     private val bank = BankProperties(incassantId = "NL00 ZZZ0 0000 0000 000")
@@ -41,7 +42,7 @@ class IncassoFilesTest {
 
     private val published: ApplicationEventPublisher = mock()
 
-    private fun files(bank: BankProperties = this.bank) = IncassoFiles(runs, notifications, memberships, accounts, bank, clock, published)
+    private fun files(bank: BankProperties = this.bank) = IncassoFiles(runs, notifications, payments, accounts, bank, clock, published)
 
     private fun run(
         date: LocalDate = LocalDate.of(2026, 11, 1),
@@ -71,24 +72,11 @@ class IncassoFilesTest {
     ) {
         whenever(runs.findById(11)).thenReturn(Optional.of(run()))
         whenever(notifications.findByIncassoRunIdIn(listOf(11L))).thenReturn(members.map(::told))
-        whenever(memberships.findByUserIdsWithMembers(any())).thenAnswer { invocation ->
+        whenever(payments.of(any())).thenAnswer { invocation ->
             @Suppress("UNCHECKED_CAST")
             (invocation.arguments[0] as Collection<Long>).associateWith { id ->
-                val member = members.first { it.id == id }
-                listOf(
-                    Entities.membership(user = member).apply {
-                        mandate =
-                            mandate(
-                                if (id in
-                                    changed
-                                ) {
-                                    "BLUESHELL-NEW"
-                                } else {
-                                    "BLUESHELL-$id"
-                                },
-                            ).apply { if (id in wiped) sealedIban = null }
-                    },
-                )
+                val reference = if (id in changed) "BLUESHELL-NEW" else "BLUESHELL-$id"
+                PersonPayment(incasso = true, mandate = mandate(reference).apply { if (id in wiped) sealedIban = null })
             }
         }
         // One answer per member asked for, as the one batched call gives them.

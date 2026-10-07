@@ -56,7 +56,7 @@ const write = (wrapper: ReturnType<typeof mountEditor>, id: string, value: unkno
     .find(one => one.element.parentElement?.dataset.testid === `game-edit-${id}`)!.vm.$emit("update:modelValue", value)
 
 const mountEditor = (game: CasualGame | null, area: "casual" | "competition" = "casual", enterIn: number | null = null) =>
-  mount(GameEditor, {props: {game, area, enterIn, back: `/${area}`}, global: {stubs}})
+  mount(GameEditor, {props: {game, area, enterIn, back: area === "casual" ? "/casual" : "/esports"}, global: {stubs}})
 
 beforeEach(() => {
   Object.values(adapter).forEach(one => one.mockReset())
@@ -121,7 +121,7 @@ describe("the game edit page", () => {
 
     expect(wrapper.get("[data-testid=game-edit-see]").attributes("href")).toBe("/casual/chess")
     expect(wrapper.getComponent(stubs.GameOrganisersPicker).props("modelValue")).toEqual([1])
-    expect(wrapper.get("[data-testid=game-edit-see-competition]").attributes("href")).toBe("/competition/chess")
+    expect(wrapper.get("[data-testid=game-edit-see-competition]").attributes("href")).toBe("/esports/chess")
     expect(wrapper.get("[data-testid=casual-head]").text()).toContain("#chess")
     expect(wrapper.get("[data-testid=casual-head]").text()).toContain("LegaCie")
     await field(wrapper, "order").setValue("2")
@@ -191,7 +191,7 @@ describe("the game edit page", () => {
     adapter.saveCasualGame.mockResolvedValue({ok: true, saved: chess})
     const wrapper = mountEditor(chess, "competition")
 
-    expect(wrapper.getComponent(stubs.EditPage).props("back")).toEqual({to: "/competition", label: "Esports"})
+    expect(wrapper.getComponent(stubs.EditPage).props("back")).toEqual({to: "/esports", label: "Esports"})
     await field(wrapper, "order").setValue("")
     await wrapper.get("form").trigger("submit")
     await flushPromises()

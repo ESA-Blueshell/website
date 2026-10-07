@@ -3,7 +3,7 @@ import {mount, RouterLinkStub} from "@vue/test-utils"
 import EditPage from "@/components/island/EditPage.vue"
 
 const mountPage = (slots: Record<string, string> = {}) => mount(EditPage, {
-  props: {testid: "thing-edit", eyebrow: "Competition", title: "Edit season", back: {to: "/competition?season=3", label: "Competition"}, accent: "#ff4655"},
+  props: {testid: "thing-edit", eyebrow: "Competition", title: "Edit season", back: {to: "/esports?season=3", label: "Competition"}, accent: "#ff4655"},
   slots: {default: "<form data-testid=form />", ...slots},
   global: {stubs: {RouterLink: RouterLinkStub, VMain: {template: "<main><slot /></main>"}}},
 })
@@ -12,7 +12,7 @@ describe("an edit page", () => {
   it("heads the page with the way back, what is edited and its own actions, in the thing's colour", () => {
     const wrapper = mountPage({actions: "<a data-testid=see>See it</a>"})
 
-    expect(wrapper.getComponent(RouterLinkStub).props("to")).toBe("/competition?season=3")
+    expect(wrapper.getComponent(RouterLinkStub).props("to")).toBe("/esports?season=3")
     expect(wrapper.get("h1").text()).toBe("Edit season")
     expect(wrapper.text()).toContain("Competition")
     expect(wrapper.find("[data-testid=see]").exists()).toBe(true)

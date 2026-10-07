@@ -75,60 +75,56 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true, area: "casual"},
   },
   {
-    path: "/competition/new",
+    path: "/esports/new",
     name: "competitionGameNew",
     component: () => import("@/pages/games/GameEdit.vue"),
     meta: {requiresAuth: true, area: "competition"},
   },
   {
-    path: "/competition/:slug/edit",
+    path: "/esports/:slug/edit",
     name: "competitionGameEdit",
     component: () => import("@/pages/games/GameEdit.vue"),
     meta: {requiresAuth: true, area: "competition"},
   },
   {
-    path: "/competition/seasons/new",
+    path: "/esports/seasons/new",
     name: "seasonNew",
     component: () => import("@/pages/competition/SeasonEdit.vue"),
     meta: {requiresAuth: true},
   },
   {
-    path: "/competition/seasons/:id/edit",
+    path: "/esports/seasons/:id/edit",
     name: "seasonEdit",
     component: () => import("@/pages/competition/SeasonEdit.vue"),
     meta: {requiresAuth: true},
   },
   {
-    path: "/competition/:slug/teams/new",
+    path: "/esports/:slug/teams/new",
     name: "teamNew",
     component: () => import("@/pages/competition/TeamEdit.vue"),
     meta: {requiresAuth: true},
   },
   {
-    path: "/competition/:slug/teams/:team/edit",
+    path: "/esports/:slug/teams/:team/edit",
     name: "teamEdit",
     component: () => import("@/pages/competition/TeamEdit.vue"),
     meta: {requiresAuth: true},
   },
-  // Esports is the word on screen again; the addresses stay at /competition. The old addresses
-  // redirect, so a link somebody saved or shared still lands on the same page.
+  // Esports lives at /esports, its name on screen. The old /competition addresses redirect, so a
+  // link somebody saved or shared still lands on the same page.
   {
-    path: "/competition",
+    path: "/esports",
     name: "esports",
     component: () => import("@/pages/Esports.vue"),
     meta: {title: "Competitive scene"},
   },
   {
-    path: "/esports",
-    redirect: "/competition",
-  },
-  {
     path: "/esports/competitive-scene",
-    redirect: "/competition",
+    redirect: "/esports",
   },
   {
-    path: "/esports/:slug",
-    redirect: to => `/competition/${String(to.params.slug)}`,
+    path: "/competition/:rest(.*)*",
+    redirect: to => ({path: `/esports${to.path.slice("/competition".length)}`, query: to.query, hash: to.hash}),
   },
   {
     path: "/membership",
@@ -187,7 +183,7 @@ const routes: RouteRecordRaw[] = [
   // Every game's competition page, found by the address its record names. Adding a game
   // needs no route written.
   {
-    path: "/competition/:slug",
+    path: "/esports/:slug",
     name: "game",
     component: () => import("@/pages/esports/GameBySlug.vue"),
     meta: {title: "Esports"},
@@ -472,12 +468,6 @@ const routes: RouteRecordRaw[] = [
     name: "emailManager",
     component: () => import("@/pages/management/EmailManager.vue"),
     meta: {title: "Manage emails", requiresAuth: true, requiresBoard: true},
-  },
-  {
-    // The esports manager is gone: seasons, teams and line-ups are edited on the pages that
-    // show them. A bookmark to it lands on those pages rather than on nothing.
-    path: "/management/esports",
-    redirect: "/competition",
   },
   {
     path: "/management/cohorts",

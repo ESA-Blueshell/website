@@ -41,7 +41,7 @@ test.describe("removing a game", () => {
   test("a visitor is offered no way to remove one", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/competition/valorant")
+    await page.goto("/esports/valorant")
     await page.getByTestId("esports-island").waitFor()
 
     await expect(page.getByTestId("esports-game-edit")).toHaveCount(0)
@@ -51,13 +51,13 @@ test.describe("removing a game", () => {
     await installApiMocks(page, PONG_ONLY)
     await loginAsBoard(context)
 
-    await page.goto("/competition/pong")
+    await page.goto("/esports/pong")
     await openGameEditor(page)
     await expect(page.getByTestId("game-edit-remove")).toHaveCount(0)
     await archive(page)
 
     // Archiving saves and goes back; the edit page opened again offers the removal.
-    await expect(page).toHaveURL(/\/competition\/pong$/)
+    await expect(page).toHaveURL(/\/esports\/pong$/)
     await openGameEditor(page)
     await expect(page.getByTestId("game-edit-archive")).toHaveText("Bring back")
     await expect(page.getByTestId("game-edit-remove")).toBeVisible()
@@ -67,7 +67,7 @@ test.describe("removing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/competition/valorant")
+    await page.goto("/esports/valorant")
     await openGameEditor(page)
     await archive(page)
     await openGameEditor(page)
@@ -82,7 +82,7 @@ test.describe("removing a game", () => {
     await installApiMocks(page, PONG_ONLY)
     await loginAsBoard(context)
 
-    await page.goto("/competition/pong")
+    await page.goto("/esports/pong")
     await openGameEditor(page)
     await archive(page)
     await openGameEditor(page)
@@ -93,9 +93,9 @@ test.describe("removing a game", () => {
     await page.getByTestId("remove-game-confirm").click()
 
     // Sent to the index, which no longer carries it, and the address stops answering.
-    await expect(page).toHaveURL(/\/competition$/)
+    await expect(page).toHaveURL(/\/esports$/)
     await expect(page.getByTestId("esports-game-PONG")).toHaveCount(0)
-    await page.goto("/competition/pong")
+    await page.goto("/esports/pong")
     await expect(page.getByTestId("not-found")).toBeVisible()
   })
 })

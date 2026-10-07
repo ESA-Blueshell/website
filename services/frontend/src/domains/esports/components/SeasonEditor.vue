@@ -305,7 +305,7 @@ const removeSeason = async () => {
         </form-fields>
         <div>
           <cut-button
-            :href="`/competition/new?season=${season.id}`"
+            :href="`/esports/new?season=${season.id}`"
             testid="season-edit-new-game"
             tone="quiet"
           >

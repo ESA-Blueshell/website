@@ -14,7 +14,7 @@ const COLUMNS: {title: string, links: Link[]}[] = [
     title: "The association",
     links: [
       {text: "About us", to: "/aboutus"},
-      {text: "Esports", to: "/competition"},
+      {text: "Esports", to: "/esports"},
       {text: "Events", to: "/events"},
     ],
   },

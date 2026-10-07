@@ -4,27 +4,32 @@ import router from "@/plugins/router"
 describe("Esports routes", () => {
   it("serves every game from one address, whatever the game", () => {
     // No route is written per game: a game's page is reached by the address its record names.
-    expect(router.resolve("/competition/trackmania").name).toBe("game")
-    expect(router.resolve("/competition/valorant").name).toBe("game")
-    expect(router.resolve("/competition/a-game-nobody-has-added-yet").name).toBe("game")
+    expect(router.resolve("/esports/trackmania").name).toBe("game")
+    expect(router.resolve("/esports/valorant").name).toBe("game")
+    expect(router.resolve("/esports/a-game-nobody-has-added-yet").name).toBe("game")
   })
 
   it("keeps the index on its own address rather than reading it as a game", () => {
-    expect(router.resolve("/competition").name).toBe("esports")
+    expect(router.resolve("/esports").name).toBe("esports")
     expect(router.resolve("/esports").redirectedFrom).toBeUndefined()
   })
 
-  it("sends every old esports address to its competition counterpart", () => {
+  it("sends every old address, in Management too, to the same page under /esports, its query and hash kept", () => {
+    // Read off the redirect itself, since following it would meet the sign-in guard of an edit page.
     const target = (path: string) => {
-      const record = router.getRoutes().find(one => one.path === path)
-      const redirect = record?.redirect
-      return typeof redirect === "function" ? redirect(router.resolve(path.replace(":slug", "trackmania"))) : redirect
+      const from = router.resolve(path)
+      const redirect = from.matched.at(-1)?.redirect
+      const to = typeof redirect === "function" ? redirect(from, from) : redirect
+      return router.resolve(to as Parameters<typeof router.resolve>[0]).fullPath
     }
-
-    expect(target("/esports")).toBe("/competition")
-    expect(target("/esports/competitive-scene")).toBe("/competition")
-    expect(target("/esports/:slug")).toBe("/competition/trackmania")
-    expect(target("/management/esports")).toBe("/competition")
+    for (const [from, to] of [
+      ["/competition", "/esports"],
+      ["/competition/valorant?season=19#roster", "/esports/valorant?season=19#roster"],
+      ["/competition/seasons/3/edit", "/esports/seasons/3/edit"],
+      ["/esports/competitive-scene", "/esports"],
+    ]) {
+      expect(target(from), from).toBe(to)
+    }
   })
 })
 
@@ -32,13 +37,13 @@ describe("Edit routes", () => {
   it("edits a game from either area, and a season or a team in the competition, on their own pages", () => {
     expect(router.resolve("/casual/new").name).toBe("casualGameNew")
     expect(router.resolve("/casual/chess/edit").meta.area).toBe("casual")
-    expect(router.resolve("/competition/new").name).toBe("competitionGameNew")
-    expect(router.resolve("/competition/valorant/edit").meta.area).toBe("competition")
-    expect(router.resolve("/competition/seasons/new").name).toBe("seasonNew")
-    expect(router.resolve("/competition/seasons/3/edit").name).toBe("seasonEdit")
-    expect(router.resolve("/competition/valorant/teams/new").name).toBe("teamNew")
-    expect(router.resolve("/competition/valorant/teams/9/edit").name).toBe("teamEdit")
-    expect(router.resolve("/competition/valorant").name).toBe("game")
+    expect(router.resolve("/esports/new").name).toBe("competitionGameNew")
+    expect(router.resolve("/esports/valorant/edit").meta.area).toBe("competition")
+    expect(router.resolve("/esports/seasons/new").name).toBe("seasonNew")
+    expect(router.resolve("/esports/seasons/3/edit").name).toBe("seasonEdit")
+    expect(router.resolve("/esports/valorant/teams/new").name).toBe("teamNew")
+    expect(router.resolve("/esports/valorant/teams/9/edit").name).toBe("teamEdit")
+    expect(router.resolve("/esports/valorant").name).toBe("game")
   })
 })
 

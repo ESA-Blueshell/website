@@ -11,7 +11,7 @@ test.describe("a game as its record has it", () => {
   test("names the game on its page as the record names it", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/competition/league-of-legends")
+    await page.goto("/esports/league-of-legends")
 
     await expect(page.getByRole("heading", {level: 1})).toHaveText("League of Legends")
   })
@@ -19,7 +19,7 @@ test.describe("a game as its record has it", () => {
   test("says what the record says about the game", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/competition/valorant")
+    await page.goto("/esports/valorant")
 
     await expect(page.getByTestId("esports-game-intro")).toContainText("Five-stacks, customs and clips.")
   })
@@ -27,7 +27,7 @@ test.describe("a game as its record has it", () => {
   test("carries the record's accent across the page", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/competition/valorant")
+    await page.goto("/esports/valorant")
     await page.getByTestId("esports-island").waitFor()
 
     // Valorant's own red, from its record, rather than the association's blue.
@@ -44,7 +44,7 @@ test.describe("a game as its record has it", () => {
       ],
     })
 
-    await page.goto("/competition/valorant")
+    await page.goto("/esports/valorant")
     await page.getByTestId("esports-island").waitFor()
 
     // Its name and copy still read; there is simply no icon and no colour of its own.
@@ -63,7 +63,7 @@ test.describe("a game as its record has it", () => {
       ],
     })
 
-    await page.goto("/competition/valorant")
+    await page.goto("/esports/valorant")
 
     // Nothing in the frontend holds the name any more, so the record is the whole of it.
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Valorant Reborn")
@@ -72,7 +72,7 @@ test.describe("a game as its record has it", () => {
   test("names a game on the index as its record names it, and links to its address", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/competition")
+    await page.goto("/esports")
 
     const slice = page.getByTestId("esports-game-VALORANT")
     await expect(slice).toBeVisible()

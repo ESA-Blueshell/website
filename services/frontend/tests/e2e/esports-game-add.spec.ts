@@ -1,7 +1,7 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
-const INDEX = "/competition"
+const INDEX = "/esports"
 
 /**
  * Putting a game into the shown season. The band's plus leads to the season's own page, where a
@@ -26,7 +26,7 @@ test.describe("adding a game", () => {
     await expect(page.getByTestId("esports-game-add")).toContainText("Add a game")
     await page.getByTestId("esports-game-add").click()
 
-    await expect(page).toHaveURL(/\/competition\/seasons\/\d+\/edit$/)
+    await expect(page).toHaveURL(/\/esports\/seasons\/\d+\/edit$/)
     await expect(page.getByTestId("season-edit-games")).toBeVisible()
   })
 
@@ -49,7 +49,7 @@ test.describe("adding a game", () => {
     // The board's list of what is left to do, said rather than left to be inferred.
     await expect(page.getByTestId("esports-quiet-ROCKET_LEAGUE")).toContainText("visitors do not see it")
     await expect(page.getByTestId("esports-link-ROCKET_LEAGUE"))
-      .toHaveAttribute("href", /\/competition\/rocketleague\?season=\d+/)
+      .toHaveAttribute("href", /\/esports\/rocketleague\?season=\d+/)
 
     // The same season, read by somebody who may not edit. The api decides this, not the page.
     await context.clearCookies()
@@ -94,7 +94,7 @@ test.describe("adding a game", () => {
     await page.getByTestId("esports-game-add").click()
     await page.getByTestId("season-edit-new-game").click()
 
-    await expect(page).toHaveURL(/\/competition\/new\?season=\d+$/)
+    await expect(page).toHaveURL(/\/esports\/new\?season=\d+$/)
     await expect(page.getByTestId("game-edit-archive")).toHaveCount(0)
     await page.getByTestId("game-edit-name").locator("input").fill("Age Of Empires II")
     await expect(page.getByTestId("game-edit-slug").locator("input")).toHaveValue("age-of-empires-ii")

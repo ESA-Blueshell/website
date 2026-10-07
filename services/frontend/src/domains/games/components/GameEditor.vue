@@ -224,7 +224,7 @@ const toCount = (raw: string | null) => {
       </cut-button>
       <cut-button
         v-if="game.inCompetition"
-        :href="`/competition/${game.slug}`"
+        :href="`/esports/${game.slug}`"
         testid="game-edit-see-competition"
       >
         See it in esports

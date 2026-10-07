@@ -23,7 +23,7 @@ const {seasons, ready: seasonsReady, newest} = useSeasons()
 const slug = String(route.params.slug)
 const teamId = route.params.team == null ? null : Number(route.params.team)
 const seasonId = route.query.season == null ? null : Number(route.query.season)
-const back = useReturnTo(seasonId == null ? `/competition/${slug}` : `/competition/${slug}?season=${seasonId}`)
+const back = useReturnTo(seasonId == null ? `/esports/${slug}` : `/esports/${slug}?season=${seasonId}`)
 
 const game = computed(() => bySlug(slug))
 const answered = ref(false)

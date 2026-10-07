@@ -8,7 +8,7 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
  * absence is noticed — so that is where the plus lives. It leads to a page with the strip drawn
  * beside the form, and saving comes back to the page on the new season.
  */
-const GAME_PAGE = "/competition/valorant"
+const GAME_PAGE = "/esports/valorant"
 
 test.describe("adding a season from the timeline", () => {
   test("the strip ends in a plus for somebody who may edit", async ({page}) => {
@@ -35,7 +35,7 @@ test.describe("adding a season from the timeline", () => {
 
     await page.getByTestId("esports-season-add").click()
 
-    await expect(page).toHaveURL(/\/competition\/seasons\/new$/)
+    await expect(page).toHaveURL(/\/esports\/seasons\/new$/)
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Add a season")
     await expect(page.getByTestId("season-edit-preview")).toContainText("New season")
     await expect(page.getByTestId("season-edit-name").locator("input")).toHaveValue("")
@@ -55,7 +55,7 @@ test.describe("adding a season from the timeline", () => {
     await page.getByTestId("season-edit-end").locator("input").first().fill("31/08/2024")
     await page.getByTestId("season-edit-save").click()
 
-    await expect(page).toHaveURL(/\/competition\/valorant\?season=41$/)
+    await expect(page).toHaveURL(/\/esports\/valorant\?season=41$/)
     const added = page.getByTestId("esports-season-node-41")
     await expect(added).toBeVisible()
 
@@ -100,7 +100,7 @@ test.describe("adding a season from the timeline", () => {
     await page.getByTestId("season-edit-save").click()
 
     await expect(page.getByTestId("season-edit-failure")).toHaveText("Those dates overlap Autumn 2025")
-    await expect(page).toHaveURL(/\/competition\/seasons\/new$/)
+    await expect(page).toHaveURL(/\/esports\/seasons\/new$/)
     await expect(page.getByTestId("season-edit-name").locator("input")).toHaveValue("Clashing")
     await expect(page.getByTestId("season-edit-start").locator("input").first()).toHaveValue("01/11/2025")
   })
@@ -115,6 +115,6 @@ test.describe("adding a season from the timeline", () => {
     await expect(plus).toBeFocused()
     await page.keyboard.press("Enter")
 
-    await expect(page).toHaveURL(/\/competition\/seasons\/new$/)
+    await expect(page).toHaveURL(/\/esports\/seasons\/new$/)
   })
 })

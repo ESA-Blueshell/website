@@ -8,9 +8,9 @@ describe("the bar's own declaration", () => {
     const esports = sectionsFor(GAMES).find(section => section.label === "Esports")
 
     expect(esports?.entries?.map(entry => entry.to)).toEqual([
-      "/competition",
-      "/competition/valorant",
-      "/competition/trackmania",
+      "/esports",
+      "/esports/valorant",
+      "/esports/trackmania",
     ])
   })
 
@@ -45,7 +45,7 @@ describe("the bar's own declaration", () => {
     const sections = sectionsFor([])
     const named = (label: string) => sections.find(section => section.label === label)!
 
-    expect(covers("/competition/valorant", named("Esports"))).toBe(true)
+    expect(covers("/esports/valorant", named("Esports"))).toBe(true)
     expect(covers("/casual/chess", named("Casual"))).toBe(true)
     expect(covers("/board", named("Association"))).toBe(true)
     expect(covers("/board", named("Home"))).toBe(false)

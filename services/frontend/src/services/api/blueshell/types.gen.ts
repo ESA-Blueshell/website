@@ -1984,6 +1984,28 @@ export type PingedRoleResponse = {
     name: string;
 };
 
+/**
+ * A pinger's status report
+ */
+export type PingerReportRequest = {
+    /**
+     * The client's own count of send errors this session
+     */
+    errors: number;
+    /**
+     * Whether the pinger is currently sending
+     */
+    online: boolean;
+    /**
+     * The current send rate in pings per second
+     */
+    pps: number;
+    /**
+     * The client's own cumulative pings sent this session; resets to 0 on restart
+     */
+    sent: number;
+};
+
 export enum PlatformType {
     FACEBOOK = 'FACEBOOK',
     LINKEDIN = 'LINKEDIN',
@@ -9503,6 +9525,47 @@ export type SetPaintResponses = {
 };
 
 export type SetPaintResponse = SetPaintResponses[keyof SetPaintResponses];
+
+export type ReportData = {
+    body: PingerReportRequest;
+    path?: never;
+    query?: never;
+    url: '/pinger/report';
+};
+
+export type ReportErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReportError = ReportErrors[keyof ReportErrors];
+
+export type ReportResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ReportResponse = ReportResponses[keyof ReportResponses];
 
 export type WhoamiData = {
     body?: never;

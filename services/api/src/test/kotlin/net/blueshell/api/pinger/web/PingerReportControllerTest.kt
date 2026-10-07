@@ -1,5 +1,9 @@
 package net.blueshell.api.pinger.web
 
+import io.mockk.mockk
+import io.mockk.verify
+import net.blueshell.api.pinger.api.PingerIdentity
+import net.blueshell.api.pinger.api.PingerReportService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -9,22 +13,25 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import java.time.Instant
 
 class PingerReportControllerTest {
-    private val controller = PingerReportController()
+    private val reports = mockk<PingerReportService>(relaxUnitFun = true)
+    private val controller = PingerReportController(reports)
 
-    @Test
-    fun `a member bearer resolves to the member and their roles`() {
-        val jwt =
+    private fun memberAuth(subject: String) =
+        JwtAuthenticationToken(
             Jwt
                 .withTokenValue("token")
                 .header("alg", "none")
-                .subject("42")
+                .subject(subject)
                 .issuedAt(Instant.EPOCH)
                 .expiresAt(Instant.EPOCH.plusSeconds(60))
                 .claim("roles", listOf("MEMBER"))
-                .build()
-        val authentication = JwtAuthenticationToken(jwt, listOf(SimpleGrantedAuthority("MEMBER")))
+                .build(),
+            listOf(SimpleGrantedAuthority("MEMBER")),
+        )
 
-        val response = controller.whoami(authentication)
+    @Test
+    fun `a member bearer resolves to the member and their roles`() {
+        val response = controller.whoami(memberAuth("42"))
 
         assertThat(response.subject).isEqualTo("42")
         assertThat(response.member).isTrue()
@@ -41,5 +48,12 @@ class PingerReportControllerTest {
         assertThat(response.subject).isEqualTo("sitecie")
         assertThat(response.member).isFalse()
         assertThat(response.roles).isEmpty()
+    }
+
+    @Test
+    fun `a report accrues under the resolved identity`() {
+        controller.report(memberAuth("42"), PingerReportRequest(online = true, pps = 128, sent = 500, errors = 3))
+
+        verify { reports.report(PingerIdentity.Member(42), online = true, pps = 128, sent = 500) }
     }
 }

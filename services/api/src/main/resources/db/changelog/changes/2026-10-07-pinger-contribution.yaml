@@ -1,0 +1,29 @@
+# The durable tally the pinger report endpoint accrues: one row per contributing identity, holding
+# the running total of pings that identity has sent. This row is the single source of truth; the
+# live Valkey row only mirrors presence and is rebuilt from the next report. `identity` is the
+# natural key the accrual upserts against ("sitecie" or "member:<id>"); `member_id` carries the
+# numeric member so the leaderboard can join to users, and stays null for the SiteCie house line.
+# `last_session_sent` remembers the client's own counter so a restart that resets it to 0 accrues
+# as a new session rather than double-counting. total_sent is BIGINT: the rate reaches 200000 pps
+# and accrues for hours.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-07-pinger-contribution.yaml
+      id: pinger-contribution
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: pinger_contribution
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column:
+                  name: identity
+                  type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints: {nullable: false, unique: true, uniqueConstraintName: uk_pinger_contribution_identity}
+              - column: {name: member_id, type: BIGINT}
+              - column: {name: total_sent, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: last_session_sent, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: updated, type: DATETIME, constraints: {nullable: false}}
+      rollback:
+        - dropTable:
+            tableName: pinger_contribution

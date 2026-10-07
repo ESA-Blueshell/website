@@ -1,15 +1,17 @@
 <script lang="ts" setup>
-/* Mail to an @esa-blueshell.nl address with no mailbox of its own, replies to the site's emails
-   among it, newest first. Bounces show on the email that bounced, not here. */
-import {computed, onMounted, ref} from "vue"
+/* Mail to the catch-all and to every address the site reads, replies to the site's emails among
+   it, newest first, narrowed to one address on asking. Bounces show on the email that bounced. */
+import {computed, onMounted, ref, watch} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FactList from "@/components/island/FactList.vue"
+import FilterBar from "@/components/island/FilterBar.vue"
+import FilterPicker from "@/components/island/FilterPicker.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import {emailTypeLabel} from "@/domains/emails"
+import {emailTypeLabel, loadSendingAddresses} from "@/domains/emails"
 import {type InboxCounts, type InboxEntry, InboxState, followsOf, inboxStateWord, loadInboxPage, readInboxCounts} from "@/domains/mail"
 import {usePagedTable} from "@/composables/usePagedTable"
 import {formatMoment} from "@/utils/timestamps"
@@ -17,12 +19,15 @@ import {formatMoment} from "@/utils/timestamps"
 defineOptions({name: "InboxPage"})
 
 const counts = ref<InboxCounts | null>(null)
+// The addresses whose mailboxes the site reads; the filter is offered once there is one.
+const mailboxes = ref<Array<{key: string; label: string}>>([])
+const mailbox = ref<string | null>(null)
 
 const table = usePagedTable<InboxEntry>((query) => {
   void readInboxCounts().then((read) => {
     counts.value = read
   })
-  return loadInboxPage(query)
+  return loadInboxPage(query, mailbox.value)
 }, {pageSize: 50})
 const {rows, search, pageRangeLabel, refresh, more, sortKey, descending, sortBy} = table
 
@@ -45,7 +50,11 @@ const senderOf = (entry: InboxEntry) => entry.senderName ?? entry.fromName ?? en
 const markOf = (entry: InboxEntry) => (entry.automatic ? "not-compared" : entry.state === InboxState.NEW ? "not-created" : "in-sync")
 const follows = (entry: InboxEntry) => followsOf(entry, emailTypeLabel)
 
-onMounted(refresh)
+watch(mailbox, () => void refresh())
+onMounted(async () => {
+  void refresh()
+  mailboxes.value = (await loadSendingAddresses()).filter((one) => one.imapHost).map((one) => ({key: one.address, label: one.address}))
+})
 </script>
 
 <template>
@@ -55,8 +64,8 @@ onMounted(refresh)
     title="Inbox"
   >
     <template #lede>
-      Mail sent to an @esa-blueshell.nl address that has no mailbox of its own, including replies to the site's emails.
-      Bounces are not here: they show on the email that bounced.
+      Mail sent to an @esa-blueshell.nl address that has no mailbox of its own, and to every address the site reads,
+      including replies to the site's emails. Bounces are not here: they show on the email that bounced.
     </template>
     <template #actions>
       <cut-button
@@ -88,6 +97,23 @@ onMounted(refresh)
     >
       <template #count>
         {{ pageRangeLabel }}
+      </template>
+      <template
+        v-if="mailboxes.length > 0"
+        #filters
+      >
+        <filter-bar
+          :active="mailbox !== null"
+          testid="inbox-filters"
+          @clear="mailbox = null"
+        >
+          <filter-picker
+            v-model="mailbox"
+            label="Address"
+            :options="mailboxes"
+            testid="inbox-mailbox"
+          />
+        </filter-bar>
       </template>
       <template #search>
         <search-box

@@ -1,0 +1,20 @@
+# A message in the Inbox records the address whose mailbox it was read from, so the Inbox can be
+# filtered by address; none where it came from the configured catch-all mailbox.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-07-inbox-mailbox.yaml
+      id: inbox-mailbox
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: inbox_messages
+            columns:
+              - column: {name: mailbox, type: VARCHAR(320)}
+        - createIndex:
+            tableName: inbox_messages
+            indexName: idx_inbox_messages_mailbox
+            columns:
+              - column: {name: mailbox}
+      rollback:
+        - dropIndex: {tableName: inbox_messages, indexName: idx_inbox_messages_mailbox}
+        - dropColumn: {tableName: inbox_messages, columnName: mailbox}

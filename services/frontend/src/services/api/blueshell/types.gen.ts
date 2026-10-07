@@ -2086,6 +2086,10 @@ export type InboxEntry = {
     handledBy?: number | null;
     handledByName?: string | null;
     id: number;
+    /**
+     * The address whose mailbox it was read from; absent for the site's catch-all
+     */
+    mailbox?: string | null;
     receivedAt: string;
     senderName?: string | null;
     senderUserId?: number | null;
@@ -9395,6 +9399,7 @@ export type FindInboxData = {
     path?: never;
     query?: {
         search?: string;
+        mailbox?: string;
         page?: number;
         sort?: InboxSort;
         descending?: boolean;

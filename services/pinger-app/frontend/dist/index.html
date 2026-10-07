@@ -41,6 +41,37 @@
         min-height: 1.2em;
         opacity: 0.7;
       }
+      .control {
+        text-align: left;
+        margin: 1rem 0;
+      }
+      .control label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        opacity: 0.85;
+        margin-bottom: 0.35rem;
+      }
+      .rate-value {
+        font-variant-numeric: tabular-nums;
+        opacity: 1;
+      }
+      input[type="range"] {
+        width: 100%;
+      }
+      .estimate {
+        font-size: 0.8rem;
+        opacity: 0.7;
+        margin-top: 0.35rem;
+        font-variant-numeric: tabular-nums;
+      }
+      .toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        opacity: 0.85;
+      }
       button {
         padding: 0.5rem 1rem;
         border: 1px solid #30363d;
@@ -58,22 +89,97 @@
       <div class="state" id="state">...</div>
       <div class="counts" id="counts"></div>
       <div class="message" id="message"></div>
+
+      <div class="control">
+        <label for="rate">
+          <span>Send rate</span>
+          <span class="rate-value" id="rate-value"></span>
+        </label>
+        <input type="range" id="rate" min="1" max="200000" step="1" />
+        <div class="estimate" id="estimate"></div>
+      </div>
+
+      <div class="control toggle">
+        <span>Show me on the leaderboard</span>
+        <input type="checkbox" id="optin" />
+      </div>
+
       <button id="signin">Sign in again</button>
     </main>
     <script>
+      const app = () => window.go?.main?.App;
+
       const stateEl = document.getElementById("state");
       const countsEl = document.getElementById("counts");
       const messageEl = document.getElementById("message");
+      const rateEl = document.getElementById("rate");
+      const rateValueEl = document.getElementById("rate-value");
+      const estimateEl = document.getElementById("estimate");
+      const optinEl = document.getElementById("optin");
+
+      let bytesPerPacket = 57;
+
+      // Turn a send rate into an approximate uplink Mbps the same way the Go estimator does, from
+      // the bytes-per-packet the app reports. It is an estimate: it ignores link-layer framing.
+      function estimateMbps(pps) {
+        return (pps * bytesPerPacket * 8) / 1_000_000;
+      }
+
+      function renderRate(pps) {
+        rateValueEl.textContent = `${pps} pps`;
+        estimateEl.textContent = `≈ ${estimateMbps(pps).toFixed(2)} Mbps uplink (estimate)`;
+      }
+
+      async function initControls() {
+        const a = app();
+        if (!a) return;
+        try {
+          const c = await a.Controls();
+          bytesPerPacket = c.bytesPerPacket;
+          rateEl.min = c.minRate;
+          rateEl.max = c.maxRate;
+          rateEl.value = c.rate;
+          renderRate(c.rate);
+        } catch (e) {
+          messageEl.textContent = String(e);
+        }
+        try {
+          optinEl.checked = await a.OptInState();
+        } catch (e) {
+          // Opt-in needs a signed-in member; leave the toggle off until sign-in succeeds.
+          optinEl.checked = false;
+        }
+      }
+
+      rateEl.addEventListener("input", () => renderRate(Number(rateEl.value)));
+      rateEl.addEventListener("change", async () => {
+        const a = app();
+        if (!a) return;
+        const applied = await a.SetRate(Number(rateEl.value));
+        rateEl.value = applied;
+        renderRate(applied);
+      });
+
+      optinEl.addEventListener("change", async () => {
+        const a = app();
+        if (!a) return;
+        try {
+          optinEl.checked = await a.OptIn(optinEl.checked);
+        } catch (e) {
+          messageEl.textContent = String(e);
+          optinEl.checked = !optinEl.checked;
+        }
+      });
 
       document.getElementById("signin").addEventListener("click", () => {
-        window.go?.main?.App?.SignInAgain();
+        app()?.SignInAgain();
       });
 
       async function refresh() {
-        const app = window.go?.main?.App;
-        if (!app) return;
+        const a = app();
+        if (!a) return;
         try {
-          const s = await app.Status();
+          const s = await a.Status();
           stateEl.textContent = s.signedIn ? s.state || "idle" : "signed out";
           countsEl.textContent = `${s.pps} pps · sent ${s.sent} · errors ${s.errors}`;
           messageEl.textContent = s.message || "";
@@ -82,6 +188,7 @@
         }
       }
 
+      initControls();
       setInterval(refresh, 1000);
       refresh();
     </script>

@@ -29,7 +29,7 @@ func main() {
 	if err := wails.Run(&options.App{
 		Title:     "Blueshell Pinger",
 		Width:     360,
-		Height:    320,
+		Height:    480,
 		OnStartup: app.startup,
 		AssetServer: &assetserver.Options{
 			Assets: assets,

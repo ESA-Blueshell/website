@@ -2,6 +2,7 @@
 import {computed, onBeforeUnmount, onMounted, ref} from "vue"
 import {
   apiUrl,
+  appDownloadUrl,
   DEFAULT_PAINT,
   EMPTY_LEADERBOARD,
   loadLeaderboard,
@@ -10,6 +11,7 @@ import {
   openLeaderboardStream,
   ownStanding,
   saveOptIn,
+  type AppOs,
   type Leaderboard,
   type PaintJob,
 } from "@/domains/pinger"
@@ -27,6 +29,15 @@ const snapshot = ref<Leaderboard>(EMPTY_LEADERBOARD)
 const isMember = computed<boolean>(() => store.getters.isMember)
 const optedIn = ref<boolean>(false)
 const optInError = ref<string | null>(null)
+
+// The installers are unsigned, so each platform needs its own first-run step to open them.
+const downloads: {os: AppOs, label: string, openStep: string}[] = [
+  {os: "macos", label: "macOS", openStep: "Right-click the app and choose Open the first time."},
+  {os: "windows", label: "Windows", openStep: "On the SmartScreen prompt choose More info then Run anyway."},
+  {os: "linux", label: "Linux", openStep: "Run chmod +x on the AppImage then launch it."},
+]
+
+const downloadUrl = (os: AppOs): string => appDownloadUrl(os)
 
 /** The canvas image, resolved against the api, drawn in its box over the 4K canvas. */
 const previewSrc = computed<string | null>(() => (paint.value.imageUrl ? apiUrl(paint.value.imageUrl) : null))
@@ -228,15 +239,32 @@ async function onOptIn(value: boolean | null): Promise<void> {
 
       <v-divider class="my-4" />
 
-      <v-btn
-        color="primary"
-        disabled
-        data-testid="snt-download"
-      >
+      <h3 class="text-subtitle-1 mb-1">
         Download the pinger
-      </v-btn>
-      <p class="text-caption mt-2 mb-0">
-        The download arrives soon.
+      </h3>
+      <p class="text-body-2 mb-4">
+        Pick your platform. The app signs you in on first run, so it carries no key of yours.
+      </p>
+
+      <div class="snt-downloads">
+        <div
+          v-for="d in downloads"
+          :key="d.os"
+          class="snt-download"
+        >
+          <v-btn
+            color="primary"
+            :href="downloadUrl(d.os)"
+            :data-os="d.os"
+            data-testid="snt-download"
+          >
+            {{ d.label }}
+          </v-btn>
+          <span class="text-caption text-medium-emphasis">{{ d.openStep }}</span>
+        </div>
+      </div>
+      <p class="text-caption mt-3 mb-0">
+        The installers are unsigned, so your system warns before the first run.
       </p>
     </v-card>
   </v-container>
@@ -275,6 +303,20 @@ async function onOptIn(value: boolean | null): Promise<void> {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+.snt-downloads {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.snt-download {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.snt-download .v-btn {
+  min-width: 7rem;
 }
 .snt-house__label {
   font-weight: 600;

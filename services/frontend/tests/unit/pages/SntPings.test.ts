@@ -120,6 +120,29 @@ describe("SNTPings page", () => {
     expect(wrapper.find("[data-testid=snt-download]").exists()).toBe(true)
   })
 
+  it("offers a member a download per platform with its open steps, pointed at the member endpoint", async () => {
+    const wrapper = await mount(memberLogin("robin"))
+
+    const buttons = wrapper.findAll("[data-testid=snt-download]")
+    expect(buttons.map(b => b.attributes("data-os"))).toEqual(["macos", "windows", "linux"])
+
+    const hrefs = buttons.map(b => b.attributes("href"))
+    expect(hrefs[0]).toContain("/pinger/app/download?os=macos")
+    expect(hrefs[1]).toContain("/pinger/app/download?os=windows")
+    expect(hrefs[2]).toContain("/pinger/app/download?os=linux")
+
+    const text = wrapper.get("[data-testid=snt-member]").text()
+    expect(text).toContain("Right-click the app and choose Open")
+    expect(text).toContain("More info then Run anyway")
+    expect(text).toContain("chmod +x on the AppImage")
+  })
+
+  it("keeps the download block out of a signed-out visitor's view", async () => {
+    const wrapper = await mount(null)
+
+    expect(wrapper.find("[data-testid=snt-download]").exists()).toBe(false)
+  })
+
   it("saves a member's choice to appear when they turn the switch on", async () => {
     const wrapper = await mount(memberLogin("robin"))
 

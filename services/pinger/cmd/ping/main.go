@@ -19,9 +19,9 @@ import (
 
 	"golang.org/x/net/icmp"
 
-	"github.com/ESA-Blueshell/website/services/pinger/internal/apipaint"
-	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
-	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
+	"github.com/ESA-Blueshell/website/services/pinger/apipaint"
+	"github.com/ESA-Blueshell/website/services/pinger/canvas"
+	"github.com/ESA-Blueshell/website/services/pinger/paint"
 )
 
 const defaultServer = "https://esa-blueshell.nl/api"

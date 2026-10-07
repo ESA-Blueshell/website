@@ -1,8 +1,9 @@
 *
 !go.mod
 !go.sum
-!logo.go
-!logo.png
 !cmd
 !internal
-internal/**/*_test.go
+!paint
+!apipaint
+!canvas
+**/*_test.go

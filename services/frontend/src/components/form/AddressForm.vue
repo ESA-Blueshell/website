@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import FormFields from "@/components/island/FormFields.vue"
 import {computed} from "vue"
 import {Form} from "vee-validate"
@@ -115,6 +116,7 @@ defineExpose({validate, save})
 <template>
   <Form
     ref="formRef"
+    v-first-field
     as="div"
   >
     <form-fields>

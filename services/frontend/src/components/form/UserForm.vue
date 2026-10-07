@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {computed, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {needsStepUp, StepUpDialog} from "@/domains/auth"
@@ -377,6 +378,7 @@ defineExpose({validate, save, signupSession})
     />
     <Form
       ref="formRef"
+      v-first-field
       as="div"
     >
       <form-fields class="user-form__third">

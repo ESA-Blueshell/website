@@ -789,6 +789,9 @@ watch(open, (index) => {
   min-height: clamp(21rem, 23cqw, 56svh);
   /* A layer of its own, so a slice opening repaints the row and not the page's ground under it. */
   will-change: transform;
+  /* Lets a reveal ease to the height of its own words. Without it the height jumps there, which
+     is the same end and only loses the motion. */
+  interpolate-size: allow-keywords;
 }
 
 .slices--short {
@@ -1131,21 +1134,15 @@ watch(open, (index) => {
   flex-direction: column;
   gap: 0.65rem;
   overflow: hidden;
-  max-height: 0;
+  height: 0;
   opacity: 0;
-  transition: max-height 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease;
+  transition: height 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease;
 }
 
+/* Open to the height of what it holds, never a figure: a ceiling cuts somebody's words off. */
 .slice--open .slice__reveal {
-  max-height: 12rem;
+  height: auto;
   opacity: 1;
-}
-
-/* A reveal clipped at its last line is worse than a taller slice. */
-@media (--phone) {
-  .slice--open .slice__reveal {
-    max-height: 22rem;
-  }
 }
 
 /*
@@ -1466,17 +1463,42 @@ watch(open, (index) => {
  * were given, both of which stand still, so the box the prose is laid out in never changes.
  */
 .slice--aside.slice--open .slice__reveal {
-  position: absolute;
-  inset: 0 auto 0 calc(var(--face) - 2rem);
-  width: calc(var(--blurb) + 2rem);
+  position: relative;
+  inset: auto;
+  grid-area: 1 / 2;
+  align-self: center;
+  width: auto;
   justify-content: center;
   max-width: none;
-  max-height: none;
-  padding: 1.5rem 2rem 1.5rem 3.5rem;
+  padding: 0 2rem 0 3.5rem;
   /* It starts arriving while the slice is still widening, a little over half way through, and
      is there as the slice settles. It can, now that the box it is laid out in stands still:
-     what made waiting worth it was prose being re-wrapped on every frame, not prose moving. */
-  transition: opacity 340ms ease calc(var(--slice-open) * 0.3);
+     what made waiting worth it was prose being re-wrapped on every frame, not prose moving.
+     Its height eases with the slice, so a row the words make taller grows rather than jumps. */
+  transition:
+    height var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 340ms ease calc(var(--slice-open) * 0.3);
+}
+
+/*
+ * Open, the words are in flow beside the face, so a long text makes the row taller instead of
+ * running off the foot of the slice. Two columns: the face's, less the body's own padding, and
+ * the words' fixed measure. The row stays at least as tall as the faces ask for.
+ */
+.slice--aside.slice--open .slice__body {
+  display: grid;
+  grid-template-columns: calc(var(--face) - var(--cut) - 2.5rem) calc(var(--blurb) + 2rem);
+  /* From the left, as the shut slice's flex packs it: packed to the end, tracks wider than the
+     slice while it widens slide the name off its face. */
+  justify-content: start;
+  column-gap: 0;
+  height: auto;
+  min-height: 100%;
+}
+
+.slice--aside.slice--open .slice__toggle {
+  grid-area: 1 / 1;
+  align-self: end;
 }
 
 /* Going, it goes at once. There is nothing to wait for on the way out. */
@@ -1709,12 +1731,6 @@ watch(open, (index) => {
    * `1fr`, which in a grid as tall as its own contents is the room the prose actually asked for.
    * So five lines of prose get five and one line gets one, and neither is told a figure by
    * this stylesheet.
-   *
-   * Deliberately not the `max-height` the `cover` layout reveals a line-up with — worth saying
-   * out loud, because the file now has both idioms and a reader will want to know which to reach
-   * for. A line-up is a bounded, known shape and a ceiling over it is honest. What is revealed
-   * here is prose of no known length, this band is the only place it is read, and a ceiling
-   * there cuts somebody's own words off with nowhere left to finish reading them.
    */
   .slice--aside .slice__body {
     /* No room for the words, until there is. Read into the track list below rather than being
@@ -1733,8 +1749,18 @@ watch(open, (index) => {
     transition: grid-template-rows var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
   }
 
+  /* One column, the words under the face: the two the open slice has beside a face are a row's. */
   .slice--aside.slice--open .slice__body {
     --words: 1fr;
+
+    grid-template-columns: none;
+    justify-content: stretch;
+    min-height: 0;
+  }
+
+  .slice--aside.slice--open .slice__toggle,
+  .slice--aside.slice--open .slice__reveal {
+    grid-area: auto;
   }
 
   /* No photograph, so no band to reserve for one: the name is the whole slice. */
@@ -1824,14 +1850,10 @@ watch(open, (index) => {
   }
 
   .slice--aside .slice__reveal {
-    /* The row it sits in is the one thing deciding its height, in both states. Two mechanisms
-       clipping the same box is one of them fighting the other: the ceiling a slice in a row
-       keeps its reveal under would stop the growth short of the prose it grew for, and a
-       ceiling of nothing while shut would hold the row open at nothing of its own. What
-       collapses the box is the `0fr` row above, and the clip that lets it is `overflow` on this
-       one, which the shared rule already sets. */
+    /* The `0fr` row above is the one thing deciding its height, in both states: a height of
+       nothing while shut would fight that row's growth. `overflow` on the shared rule clips it. */
     min-height: 0;
-    max-height: none;
+    height: auto;
   }
 
   /*
@@ -1980,7 +2002,8 @@ watch(open, (index) => {
   .slice__banner,
   .slice__icon,
   .slice__tick,
-  .slice__reveal {
+  .slice__reveal,
+  .slice--aside.slice--open .slice__reveal {
     transition: none;
   }
 }
@@ -2003,6 +2026,10 @@ watch(open, (index) => {
  * switched off by a blanket has to carry the ceiling itself.
  */
 @media (prefers-reduced-motion: reduce) and (--phone) {
+  .slice--aside.slice--open .slice__reveal {
+    transition: opacity calc(var(--slice-ease) * 0.23) ease;
+  }
+
   .slice--aside .slice__body {
     transition: grid-template-rows var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
   }

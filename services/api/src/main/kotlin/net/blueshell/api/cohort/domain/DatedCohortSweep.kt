@@ -1,6 +1,10 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.CohortType.ACTIVISTS
+import net.blueshell.api.cohort.persistence.CohortType.BOARD
+import net.blueshell.api.cohort.persistence.CohortType.BOARD_YEAR_MEMBERS
+import net.blueshell.api.cohort.persistence.CohortType.CURRENT_MEMBERS
+import net.blueshell.api.cohort.persistence.CohortType.KANDI
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -30,8 +34,7 @@ class DatedCohortSweep(
     }
 
     private companion object {
-        val DATED =
-            setOf(CohortType.BOARD, CohortType.KANDI, CohortType.ACTIVISTS, CohortType.CURRENT_MEMBERS, CohortType.BOARD_YEAR_MEMBERS)
+        val DATED = setOf(BOARD, KANDI, ACTIVISTS, CURRENT_MEMBERS, BOARD_YEAR_MEMBERS)
         val log = LoggerFactory.getLogger(DatedCohortSweep::class.java)
     }
 }

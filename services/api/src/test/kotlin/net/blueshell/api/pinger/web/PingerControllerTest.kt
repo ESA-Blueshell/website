@@ -35,4 +35,16 @@ class PingerControllerTest {
         assertThat(response.ratePps).isEqualTo(256)
         assertThat(response.width).isEqualTo(30)
     }
+
+    @Test
+    fun `a request without an image leaves the prefix and image unset`() {
+        every { service.update(null, 128, 0, 0, 100, 100, null) } returns
+            PaintView(null, 128, 0, 0, 100, 100, null)
+
+        // Built with only the required box and rate, so the optional prefix and imagePath default.
+        val response = controller.setPaint(PaintRequest(ratePps = 128, originX = 0, originY = 0, width = 100, height = 100))
+
+        assertThat(response.prefix).isNull()
+        assertThat(response.imageUrl).isNull()
+    }
 }

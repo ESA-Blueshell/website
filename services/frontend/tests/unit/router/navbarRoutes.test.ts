@@ -32,6 +32,7 @@ const navbarPaths = [
   "/recovery/manage",
   "/user-manager",
   "/management/jobs",
+  "/management/pinger",
 ]
 
 describe("Navbar route targets", () => {
@@ -40,6 +41,11 @@ describe("Navbar route targets", () => {
       expect(router.resolve(path).matched.length, `missing route for ${path}`).toBeGreaterThan(0)
     }
   })
+
+  it("loads the pinger manager page", async () => {
+    const load = router.getRoutes().find(one => one.name === "pingerManager")?.components?.default as () => Promise<unknown>
+    await expect(load()).resolves.toBeDefined()
+  }, 20_000)
 })
 
 describe("the account security pages", () => {

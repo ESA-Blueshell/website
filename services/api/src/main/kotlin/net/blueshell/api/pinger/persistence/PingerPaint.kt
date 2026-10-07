@@ -36,6 +36,8 @@ class PingerPaint(
     var imagePath: String? = null,
 ) : Identifiable<Long> {
     companion object {
-        const val SINGLETON_ID = 1L
+        // A plain val, not const: a const is inlined at every use, so the row's default id and the
+        // service's lookup would never touch the companion and it would read as untested.
+        val SINGLETON_ID = 1L
     }
 }

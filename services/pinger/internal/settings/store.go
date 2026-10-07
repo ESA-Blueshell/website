@@ -52,7 +52,9 @@ type Store struct {
 }
 
 func Open(addr string) (*Store, error) {
-	client, err := valkey.NewClient(valkey.ClientOption{InitAddress: []string{addr}, DisableCache: true})
+	// ForceSingleClient: our Valkey is one node, not a cluster. It skips the cluster probe and the
+	// per-slot routing, so a multi-key MGET/MSET stays one round trip.
+	client, err := valkey.NewClient(valkey.ClientOption{InitAddress: []string{addr}, DisableCache: true, ForceSingleClient: true})
 	if err != nil {
 		return nil, fmt.Errorf("valkey %s: %w", addr, err)
 	}

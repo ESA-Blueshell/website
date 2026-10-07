@@ -5,29 +5,17 @@ import (
 	"testing"
 	"time"
 
-	tcvalkey "github.com/testcontainers/testcontainers-go/modules/valkey"
+	"github.com/alicebob/miniredis/v2"
 
 	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
 )
 
+// valkeyAddr starts an in-memory Redis-compatible server the Store talks to, so the tests need no
+// Docker and the module carries no container runtime.
 func valkeyAddr(t *testing.T) string {
 	t.Helper()
-	ctx := context.Background()
-	c, err := tcvalkey.Run(ctx, "valkey/valkey:8-alpine")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = c.Terminate(ctx) })
-	host, err := c.Host(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	port, err := c.MappedPort(ctx, "6379/tcp")
-	if err != nil {
-		t.Fatal(err)
-	}
-	return host + ":" + port.Port()
+	return miniredis.RunT(t).Addr()
 }
 
 func open(t *testing.T, addr string) *Store {

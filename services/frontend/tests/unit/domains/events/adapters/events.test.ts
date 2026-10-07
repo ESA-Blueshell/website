@@ -5,6 +5,7 @@ import {
   listEvents,
   readEvent,
   readEventBanner,
+  readRoster,
   readEventPage,
   saveEvent,
   saveEventBanner,
@@ -18,6 +19,7 @@ import {
   deleteEventById,
   downloadEventBanner,
   findEventById,
+  findEventRoster,
   findEvents,
   updateEvent,
   uploadEventBanner,
@@ -43,6 +45,7 @@ const lan: CreateEventRequest = {
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   findEventById: vi.fn(),
+  findEventRoster: vi.fn(),
   findEvents: vi.fn(),
   createEvent: vi.fn(),
   updateEvent: vi.fn(),
@@ -64,6 +67,17 @@ describe("readEvent", () => {
     vi.mocked(findEventById).mockRejectedValue(new Error("refused"))
 
     await expect(readEvent(33)).rejects.toBeDefined()
+  })
+})
+
+describe("readRoster", () => {
+  it("answers who signed up, or nothing where that could not be read", async () => {
+    const roster = {people: [{name: "Nelly", avatar: null, discord: false}], guests: 1}
+    vi.mocked(findEventRoster).mockResolvedValueOnce(answer(findEventRoster, roster)).mockResolvedValueOnce(refusal(findEventRoster, {}))
+
+    expect(await readRoster(7)).toEqual(roster)
+    expect(findEventRoster).toHaveBeenCalledWith({path: {id: 7}})
+    expect(await readRoster(7)).toBeNull()
   })
 })
 

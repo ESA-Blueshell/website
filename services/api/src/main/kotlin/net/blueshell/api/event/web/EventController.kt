@@ -7,6 +7,7 @@ import net.blueshell.api.event.api.AnnounceChoice
 import net.blueshell.api.event.api.AnnouncementLedger
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.domain.EventQuery
+import net.blueshell.api.event.domain.EventRoster
 import net.blueshell.api.event.domain.EventUseCases
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.shared.web.BaseController
@@ -33,6 +34,7 @@ class EventController(
     service: EventService,
     private val useCases: EventUseCases,
     private val announcements: AnnouncementLedger,
+    private val roster: EventRoster,
 ) : BaseController<EventService>(service) {
     // Only one event's answer says whether its post is out: a list would ask once per row.
     private fun Event.asOneResponse(): EventResponse = asResponse().also { it.announced = announcements.announced(id!!) }
@@ -85,6 +87,13 @@ class EventController(
         val event = service.findById(id)
         return event.asOneResponse()
     }
+
+    /** Who signed up, for the event's page: anybody who may read the event may read this. */
+    @GetMapping("/events/{id}/roster")
+    @PreAuthorize("hasPermission(#id, 'Event', 'read')")
+    fun findEventRoster(
+        @PathVariable id: Long,
+    ): EventRosterResponse = roster.of(id).let { EventRosterResponse(it.people.map(::RosterPersonResponse), it.guests) }
 
     @GetMapping("/events")
     @PermitAll

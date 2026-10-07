@@ -15,3 +15,4 @@ export {readGuildCounts, readGuildWidget, voiceRoomUrl, type GuildCounts, type G
 export {readDiscordRooms, watchDiscordRooms, liveOf, howFull, fitting, SERVER_NAME, type DiscordRooms, type VoicePerson, type VoiceRoom} from "./rooms"
 export {GameChannelCategory} from "@/services/api"
 export type {DiscordChannelResponse, DiscordEmojiResponse, DiscordMemberResponse, DiscordMentionChannelResponse, DiscordRoleResponse, PingedRoleRequest, StarboardEntryResponse} from "@/services/api"
+export {default as PeopleList, type ListedPerson} from "./island/PeopleList.vue"

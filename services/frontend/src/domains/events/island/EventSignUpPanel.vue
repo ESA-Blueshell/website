@@ -164,6 +164,14 @@ async function withdraw() {
         @delete:sign-up="removed"
         @update:sign-up="saved"
       />
+      <p
+        class="panel__note"
+        data-testid="event-panel-shown"
+      >
+        {{ isLoggedIn
+          ? "Once you sign up, your Discord name and picture show on this page, or your username where Discord is not linked."
+          : "Guests are counted on this page, never named." }}
+      </p>
     </template>
   </aside>
 </template>
@@ -192,6 +200,12 @@ async function withdraw() {
   font-family: var(--font-display);
   font-size: 1.5rem;
   text-transform: uppercase;
+}
+
+.panel__note {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--color-ash);
 }
 
 .panel__line {

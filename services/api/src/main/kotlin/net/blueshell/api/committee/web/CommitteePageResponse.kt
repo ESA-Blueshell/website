@@ -20,9 +20,11 @@ data class CommitteePageResponse(
 
 @Schema(name = "CommitteeSeatResponse")
 data class CommitteeSeatResponse(
-    @field:Schema(description = "The name the Discord server shows them by, absent for a member who has not linked Discord")
-    val discordName: String?,
-    @field:Schema(description = "Their Discord avatar's address")
+    @field:Schema(description = "The name the Discord server shows them by, or their username where Discord is not linked")
+    val name: String,
+    @field:Schema(description = "Their Discord avatar's address; absent where Discord is not linked")
     val avatar: String?,
+    @field:Schema(description = "Whether the name is their Discord name")
+    val discord: Boolean,
     val role: String?,
 )

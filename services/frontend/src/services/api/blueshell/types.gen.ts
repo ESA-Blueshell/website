@@ -3736,9 +3736,13 @@ export type TelemetryResponse = {
 };
 
 /**
- * One linked list the tidy would move into its cohort type's folder.
+ * One list the tidy would move into its cohort type's folder.
  */
 export type TidyMove = {
+    /**
+     * Whether the list follows no cohort and is proposed only because its name is a cohort's
+     */
+    byName: boolean;
     externalId: string;
     /**
      * The folder it is in now; null at the top level.

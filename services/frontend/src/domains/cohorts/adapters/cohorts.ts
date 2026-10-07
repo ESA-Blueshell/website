@@ -270,8 +270,8 @@ export async function deleteTarget(system: TargetSystem, externalId: string, nam
   return accepted(deleteExternalTarget({path: {system, externalId}, body: {name}}), "The list could not be deleted.")
 }
 
-/** One linked list the tidy would move into its cohort type's folder. */
-export type TidyMove = {externalId: string; label: string; from: string | null; to: string}
+/** One list the tidy would move into its cohort type's folder; one matched only by its name is offered unticked. */
+export type TidyMove = {externalId: string; label: string; from: string | null; to: string; byName: boolean}
 
 /** The newest applied tidy: when, by whom, and what it moved. */
 export type LastTidy = {appliedAt: string; appliedByName: string | null; moved: number; failed: number}
@@ -283,7 +283,7 @@ export async function fetchTidyPlan(system: TargetSystem): Promise<TidyPlan> {
   const res = await previewFolderTidy({path: {system}, throwOnError: true})
   const last = res.data.lastApplied
   return {
-    moves: (res.data.moves ?? []).map((m) => ({externalId: m.externalId, label: m.label, from: m.from ?? null, to: m.to})),
+    moves: (res.data.moves ?? []).map((m) => ({externalId: m.externalId, label: m.label, from: m.from ?? null, to: m.to, byName: m.byName})),
     foldersToCreate: res.data.foldersToCreate ?? [],
     lastApplied: last ? {appliedAt: last.appliedAt, appliedByName: last.appliedByName ?? null, moved: last.moved, failed: last.failed} : null,
   }

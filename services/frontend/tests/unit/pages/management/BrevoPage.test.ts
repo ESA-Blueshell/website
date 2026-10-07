@@ -69,7 +69,11 @@ describe("the Brevo page", () => {
     api.createExternalTarget.mockResolvedValue({status: 200, data: made})
     api.createTargetFolder.mockResolvedValue({status: 200, data: ["Members", "Projects", "New"]})
     api.previewFolderTidy.mockResolvedValue({status: 200, data: {
-      moves: [{externalId: "7", label: "Members 2025-2026", to: "Members"}, {externalId: "8", label: "Sitecie", from: "Old", to: "Committees"}],
+      moves: [
+        {externalId: "7", label: "Members 2025-2026", to: "Members", byName: false},
+        {externalId: "8", label: "Sitecie", from: "Old", to: "Committees", byName: false},
+        {externalId: "9", label: "Contribution Paid 2024-2025", from: "Old", to: "Contributions", byName: true},
+      ],
       foldersToCreate: ["Committees"],
       lastApplied: {appliedAt: "2026-09-01T10:00:00Z", appliedByName: "Alice Board", moved: 2, failed: 0},
     }})
@@ -274,7 +278,15 @@ describe("the Brevo page", () => {
     expect(document.body.querySelector('[data-testid="brevo-tidy-last"]')?.textContent).toContain("by Alice Board: 2 lists moved")
     expect(document.body.textContent).toContain("Members 2025-2026: no folder to Members")
     expect(document.body.textContent).toContain("Creates Committees first.")
+    // A list matched only by its name is offered apart, and left for the reader to tick.
+    expect(document.body.querySelector('[data-testid="brevo-tidy-named"]')?.textContent).toContain("Contribution Paid 2024-2025: Old to Contributions")
+    expect(document.body.querySelector('[data-testid="brevo-tidy-moves"]')?.textContent).not.toContain("Contribution Paid")
     const boxes = () => wrapper.findAllComponents({name: "CheckBox"})
+    expect(boxes()[2].props("modelValue")).toBe(false)
+    boxes()[2].vm.$emit("update:modelValue", true)
+    await settle()
+    expect(boxes()[2].props("modelValue")).toBe(true)
+    boxes()[2].vm.$emit("update:modelValue", false)
     boxes()[1].vm.$emit("update:modelValue", false)
     boxes()[1].vm.$emit("update:modelValue", true)
     boxes()[1].vm.$emit("update:modelValue", false)

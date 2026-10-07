@@ -314,12 +314,15 @@ describe("archiving and deleting lists", () => {
 describe("the folder tidy", () => {
   it("reads the proposal, with a list at the top level as no folder", async () => {
     vi.mocked(previewFolderTidy).mockResolvedValue(answer(previewFolderTidy, {
-      moves: [{externalId: "7", label: "Sitecie", to: "Committees"}],
+      moves: [{externalId: "7", label: "Sitecie", to: "Committees", byName: false}, {externalId: "8", label: "Lancie", to: "Committees", byName: true}],
       foldersToCreate: ["Committees"],
     }))
 
     await expect(fetchTidyPlan(TargetSystem.BREVO)).resolves.toEqual({
-      moves: [{externalId: "7", label: "Sitecie", from: null, to: "Committees"}],
+      moves: [
+        {externalId: "7", label: "Sitecie", from: null, to: "Committees", byName: false},
+        {externalId: "8", label: "Lancie", from: null, to: "Committees", byName: true},
+      ],
       foldersToCreate: ["Committees"],
       lastApplied: null,
     })

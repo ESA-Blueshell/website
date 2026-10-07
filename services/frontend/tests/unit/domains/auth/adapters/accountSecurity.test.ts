@@ -2,10 +2,11 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 
 const api = vi.hoisted(() => {
   const names = [
-    "accountStanding", "answerTwoFactorOffer", "changePassword", "confirmEmailChange", "confirmTwoFactor", "emailAddress", "endSignIn",
-    "forgetTrustedBrowser", "forgetTrustedBrowsers", "lock", "mySecurityEvents", "regenerateBackupCodes",
-    "previewRecoveryEmail", "requestEmailChange", "resendReenrolmentLink", "resetTwoFactor", "securityEvents", "setUpTwoFactor", "signIns",
-    "signOutElsewhere", "signOutEverywhere", "trustedBrowsers", "turnOffTwoFactor", "twoFactorSaved", "twoFactorStanding", "unlock",
+    "accountStanding", "answerTwoFactorOffer", "changePassword", "confirmEmailChange", "confirmTwoFactor", "connectedApps", "emailAddress",
+    "endSignIn", "forgetTrustedBrowser", "forgetTrustedBrowsers", "lock", "mySecurityEvents", "regenerateBackupCodes",
+    "previewRecoveryEmail", "requestEmailChange", "resendReenrolmentLink", "resetTwoFactor", "revokeConnectedApp", "securityEvents",
+    "setUpTwoFactor", "signIns", "signOutElsewhere", "signOutEverywhere", "trustedBrowsers", "turnOffTwoFactor", "twoFactorSaved",
+    "twoFactorStanding", "unlock",
   ]
   return Object.fromEntries(names.map(name => [name, vi.fn()])) as Record<string, ReturnType<typeof vi.fn>>
 })
@@ -35,6 +36,7 @@ describe("account security writes", () => {
     ["requestEmailChange", "askToMoveEmail", () => security.askToMoveEmail("n@example.com"), {body: {email: "n@example.com"}}],
     ["confirmEmailChange", "confirmNewEmail", () => security.confirmNewEmail("s.v"), {body: {token: "s.v"}}],
     ["endSignIn", "endOneSignIn", () => security.endOneSignIn("s"), {path: {signInId: "s"}}],
+    ["revokeConnectedApp", "revokeApp", () => security.revokeApp("pinger-app"), {path: {appId: "pinger-app"}}],
     ["signOutEverywhere", "endEverySignIn", () => security.endEverySignIn(), undefined],
     ["signOutElsewhere", "endOtherSignIns", () => security.endOtherSignIns(), undefined],
     ["forgetTrustedBrowser", "forgetOneTrustedBrowser", () => security.forgetOneTrustedBrowser(3), {path: {id: 3}}],
@@ -78,8 +80,10 @@ describe("account security reads", () => {
     api.securityEvents.mockResolvedValue({data: page})
     api.accountStanding.mockResolvedValue({data: {locked: true}})
     api.emailAddress.mockResolvedValue({data: {email: "a@example.com", pendingEmail: null}})
+    api.connectedApps.mockResolvedValue({data: [{id: "pinger-app", name: "Pinger", authorizedAt: null}]})
 
     await expect(security.readTwoFactor()).resolves.toEqual({on: true})
+    await expect(security.listConnectedApps()).resolves.toEqual([{id: "pinger-app", name: "Pinger", authorizedAt: null}])
     await expect(security.lockAccount("s.v")).resolves.toBe("board@example.org")
     await expect(security.listSignIns()).resolves.toEqual([{id: "s"}])
     await expect(security.listTrustedBrowsers()).resolves.toEqual([{id: 1}])
@@ -97,6 +101,7 @@ describe("account security reads", () => {
     await expect(security.readTwoFactor()).resolves.toBeNull()
     await expect(security.lockAccount("s.v")).resolves.toBeNull()
     await expect(security.listSignIns()).resolves.toEqual([])
+    await expect(security.listConnectedApps()).resolves.toEqual([])
     await expect(security.listTrustedBrowsers()).resolves.toEqual([])
     await expect(security.readMySecurityLog()).resolves.toBeNull()
     await expect(security.readSecurityLogOf(9)).resolves.toBeNull()

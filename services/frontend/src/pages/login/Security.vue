@@ -90,6 +90,38 @@
         </template>
       </cut-row>
     </div>
+
+    <section
+      v-if="apps.length"
+      class="security__apps"
+      data-testid="security-connected-apps"
+    >
+      <h2 class="security__apps-title">
+        Connected apps
+      </h2>
+      <div class="security__rows">
+        <cut-row
+          v-for="app in apps"
+          :key="app.id"
+          :meta="appMeta(app)"
+          testid="security-connected-app"
+          :title="app.name"
+        >
+          <template #glyph>
+            <security-glyph name="screens" />
+          </template>
+          <template #end>
+            <cut-button
+              :testid="`security-revoke-${app.id}`"
+              tone="quiet"
+              @click="revoke(app.id)"
+            >
+              Revoke
+            </cut-button>
+          </template>
+        </cut-row>
+      </div>
+    </section>
   </account-frame>
 </template>
 
@@ -103,22 +135,26 @@ import FactList, {type Fact} from "@/components/island/FactList.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import {
+  type ConnectedAppResponse,
   describeBrowser,
   describeSecurityEvent,
   type EmailAddressResponse,
   formatSecurityDay,
   lastChangeIn,
+  listConnectedApps,
   listSignIns,
   LOW_BACKUP_CODES,
   readEmailAddress,
   readMySecurityLog,
   readTwoFactor,
+  revokeApp,
   sayCount,
   SECURITY_PAGES,
   SecurityGlyph,
   type SecurityEventResponse,
   type SignInResponse,
   type TwoFactorStanding,
+  type Written,
 } from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
 
@@ -128,6 +164,7 @@ const standing = ref<TwoFactorStanding | null>(null)
 const address = ref<EmailAddressResponse | null>(null)
 const signIns = ref<SignInResponse[]>([])
 const events = ref<SecurityEventResponse[]>([])
+const apps = ref<ConnectedAppResponse[]>([])
 
 const low = computed(() => standing.value?.on === true && standing.value.backupCodesLeft < LOW_BACKUP_CODES)
 const codesLeft = computed(() => `${sayCount(standing.value?.backupCodesLeft ?? 0, "backup code")} left`)
@@ -170,9 +207,24 @@ const twoFactorMeta = computed(() => {
     : "Make new backup codes or replace your authenticator app"
 })
 
+const appMeta = (app: ConnectedAppResponse) => {
+  const since = app.authorizedAt ? `Connected ${formatSecurityDay(app.authorizedAt)}` : "Connected"
+  return `${since} · signs in again after you revoke it`
+}
+
+const loadApps = async () => {
+  apps.value = await listConnectedApps()
+}
+
+const revoke = async (id: string) => {
+  const result: Written = await revokeApp(id)
+  if (!result.ok) store.commit("setStatusSnackbarMessage", result.reason)
+  await loadApps()
+}
+
 onMounted(async () => {
   const [read, email, signedIn, log] = await Promise.all([
-    readTwoFactor(), readEmailAddress(), listSignIns(), readMySecurityLog(0),
+    readTwoFactor(), readEmailAddress(), listSignIns(), readMySecurityLog(0), loadApps(),
   ])
   standing.value = read
   if (read) store.commit("setTwoFactor", read)
@@ -199,5 +251,23 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.security__apps {
+  margin-top: 2.5rem;
+}
+
+.security__apps-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+  margin-bottom: 1.1rem;
+}
+
+@media (--phone) {
+  .security__apps-title {
+    font-size: 1.3rem;
+  }
 }
 </style>

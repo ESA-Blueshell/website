@@ -123,6 +123,7 @@ export const managementFor = (reader: NavReader): NavEntry[] => [
     ? [
       {label: "Manage jobs", to: "/management/jobs"},
       {label: "Manage cohorts", to: "/management/cohorts"},
+      {label: "Manage the pinger", to: "/management/pinger"},
     ]
     : []),
   ...(reader.board || reader.admin ? [{label: "Manage emails", to: "/management/emails"}] : []),

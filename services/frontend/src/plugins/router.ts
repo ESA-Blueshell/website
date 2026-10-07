@@ -468,6 +468,12 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Manage jobs", requiresAuth: true, requiresAdmin: true},
   },
   {
+    path: "/management/pinger",
+    name: "pingerManager",
+    component: () => import("@/pages/management/PingerManager.vue"),
+    meta: {title: "Manage the pinger", requiresAuth: true, requiresAdmin: true},
+  },
+  {
     path: "/management/emails",
     name: "emailManager",
     component: () => import("@/pages/management/EmailManager.vue"),

@@ -35,7 +35,7 @@ const stubs = {
 const page = (over: Partial<Page> = {}): Page => aCommitteePage({
   id: 7, description: "LanCie **runs** the LANs.", banner: null,
   gameCodes: ["CS2", "GONE"],
-  members: [{discordName: "Nelly B", avatar: "https://cdn/n.png", role: "Chair"}, {discordName: null, avatar: null, role: null}],
+  members: [{name: "Nelly B", avatar: "https://cdn/n.png", discord: true, role: "Chair"}, {name: "jan", avatar: null, discord: false, role: null}],
   ...over,
 })
 
@@ -72,7 +72,8 @@ describe("one committee's page", () => {
     expect(wrapper.get("[data-testid=committee-seat-0]").text()).toContain("Nelly B")
     expect(wrapper.get("[data-testid=committee-seat-0]").text()).toContain("Chair")
     expect(wrapper.get("[data-testid=committee-seat-0] img").attributes("src")).toBe("https://cdn/n.png")
-    expect(wrapper.get("[data-testid=committee-seat-1]").text()).toBe("Discord not linked")
+    expect(wrapper.get("[data-testid=committee-seat-1]").text()).toBe("jan")
+    expect(wrapper.find("[data-testid=committee-seat-1] img").exists()).toBe(false)
     expect(mountPage({members: []}).find("[data-testid=committee-members]").exists()).toBe(false)
   })
 

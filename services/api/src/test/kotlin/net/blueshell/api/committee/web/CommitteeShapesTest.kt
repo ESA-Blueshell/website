@@ -18,11 +18,11 @@ class CommitteeShapesTest {
             }
 
         val summary = lan.asResponse(withMembers = false)
-        val seat = CommitteeSeatResponse(discordName = "nelly", avatar = "https://cdn/n.png", role = "Chair")
+        val seat = CommitteeSeatResponse(name = "nelly", avatar = "https://cdn/n.png", discord = true, role = "Chair")
 
         assertThat(listOf(summary.slug, summary.archived, summary.banner, summary.gameCodes))
             .containsExactly("lancie", true, null, listOf("CS2"))
-        assertThat(listOf(seat.discordName, seat.avatar, seat.role)).containsExactly("nelly", "https://cdn/n.png", "Chair")
+        assertThat(listOf(seat.name, seat.avatar, seat.discord, seat.role)).containsExactly("nelly", "https://cdn/n.png", true, "Chair")
         assertThat(listOf(summary.icon, summary.members, lan.asPageResponse(emptyList()).icon)).containsOnlyNulls()
     }
 }

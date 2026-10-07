@@ -70,6 +70,19 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
         @Param("eventId") eventId: Long,
     ): List<String>
 
+    /** Every live sign-up of [eventId] as its roster reads it, first sign-up first; a guest's has no account. */
+    @Query(
+        """
+        SELECT u.username AS username, u.discordId AS discordId, u.discord AS discord
+        FROM EventSignUp es LEFT JOIN es.user u
+        WHERE es.event.id = :eventId
+        ORDER BY es.id
+        """,
+    )
+    fun findRoster(
+        @Param("eventId") eventId: Long,
+    ): List<RosterRow>
+
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     fun findByGuestAccessTokenHashAndEvent_Id(
         accessTokenHash: String,
@@ -78,4 +91,11 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
 
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     fun findAllByEventSignUpForm_Id(surveyId: Long): MutableSet<EventSignUp>
+}
+
+/** One sign-up as the roster reads it: the account's username and Discord, all null for a guest. */
+interface RosterRow {
+    val username: String?
+    val discordId: String?
+    val discord: String?
 }

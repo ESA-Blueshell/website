@@ -47,4 +47,5 @@ export type {DiscordChannelResponse, DiscordEmojiResponse, DiscordMemberResponse
 export {default as ChannelGlyph} from "./island/ChannelGlyph.vue"
 export {default as ChannelMark} from "./island/ChannelMark.vue"
 export {default as DiscordUser} from "./island/DiscordUser.vue"
+export {default as PeopleList, type ListedPerson} from "./island/PeopleList.vue"
 export {makeGameChannel} from "./adapters/channelAccess"

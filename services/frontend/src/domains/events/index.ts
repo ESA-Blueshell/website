@@ -9,6 +9,8 @@ export {
   eventFileUrl,
   listEvents,
   readEvent,
+  readRoster,
+  type EventRoster,
   readEventBanner,
   readEventPage,
   saveEvent,

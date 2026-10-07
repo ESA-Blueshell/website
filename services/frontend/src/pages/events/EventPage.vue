@@ -13,13 +13,16 @@ import {tabTitle} from "@/plugins/tabTitle"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   downloadIcs,
+  type EventRoster,
   type EventResponse,
   type EventSignUpResponse,
   listEvents,
   pageUrlOf,
   readEvent,
+  readRoster,
   useEventReader,
 } from "@/domains/events"
+import {PeopleList} from "@/domains/discord"
 import AlsoComingUp from "@/domains/events/island/AlsoComingUp.vue"
 import EventActions from "@/domains/events/island/EventActions.vue"
 import EventBand from "@/domains/events/island/EventBand.vue"
@@ -34,6 +37,7 @@ const router = useRouter()
 const event = ref<EventResponse | null>(null)
 const missing = ref(false)
 const coming = ref<EventResponse[]>([])
+const roster = ref<EventRoster | null>(null)
 const {signUps, committees} = useEventReader()
 
 const id = computed<number>(() => Number(route.params.id))
@@ -44,10 +48,16 @@ async function read() {
     const found = await readEvent(id.value)
     event.value = found ?? null
     missing.value = found == null
+    if (found) void readWhoSignedUp(found)
   } catch (error) {
     missing.value = true
     $handleNetworkError(error)
   }
+}
+
+// Read again after the reader signs up or out, so their own face comes and goes with it.
+async function readWhoSignedUp(found: EventResponse) {
+  roster.value = found.signUp ? await readRoster(found.id) : null
 }
 
 async function readComing() {
@@ -67,6 +77,11 @@ watch(id, () => void read())
 watch(event, (found) => {
   if (found) document.title = tabTitle(found.title)
 })
+const countOf = (on: EventRoster) => on.people.length + on.guests
+const guestsLine = (on: EventRoster) => {
+  const counted = `${on.guests} ${on.guests === 1 ? "guest" : "guests"} without an account.`
+  return on.people.length ? `And ${counted}` : counted.charAt(0).toUpperCase() + counted.slice(1)
+}
 
 const committee = computed(() => committees.value.find(one => one.id === event.value?.committeeId)?.name)
 const eyebrow = computed(() => committee.value ?? "Blueshell event")
@@ -85,11 +100,13 @@ function signedUp(saved: EventSignUpResponse) {
   const known = signUps.value.some(one => one.id === saved.id)
   signUps.value = known ? signUps.value.map(one => (one.id === saved.id ? saved : one)) : [...signUps.value, saved]
   if (!known) event.value = {...event.value!, signUpCount: event.value!.signUpCount + 1}
+  void readWhoSignedUp(event.value!)
 }
 
 function signedOut(signUpId: number) {
   signUps.value = signUps.value.filter(one => one.id !== signUpId)
   event.value = {...event.value!, signUpCount: Math.max(event.value!.signUpCount - 1, 0)}
+  void readWhoSignedUp(event.value!)
 }
 </script>
 
@@ -168,6 +185,27 @@ function signedOut(signUpId: number) {
               data-testid="event-page-description"
               :source="event.description ?? ''"
             />
+            <section
+              v-if="roster && countOf(roster) > 0"
+              class="event-page__roster"
+              data-testid="event-roster"
+            >
+              <p class="event-page__eyebrow">
+                Signed up · {{ countOf(roster) }}
+              </p>
+              <people-list
+                one-row
+                :people="roster.people"
+                testid="event-roster-people"
+              />
+              <p
+                v-if="roster.guests > 0"
+                class="event-page__guests"
+                data-testid="event-roster-guests"
+              >
+                {{ guestsLine(roster) }}
+              </p>
+            </section>
           </div>
           <event-sign-up-panel
             :event="event"
@@ -214,6 +252,16 @@ function signedOut(signUpId: number) {
 /* The island root fills a page; the Vuetify main around it already does. */
 .event-page {
   min-height: 0;
+}
+
+.event-page__roster {
+  margin-top: 2rem;
+}
+
+.event-page__guests {
+  margin-top: 0.6rem;
+  font-size: 0.92rem;
+  color: var(--color-ash);
 }
 
 .event-page__wrap {

@@ -5,11 +5,13 @@ import net.blueshell.api.shared.discord.DiscordFaces
 import net.blueshell.api.shared.discord.defaultAvatarOf
 import org.springframework.stereotype.Component
 
-/** One seat as a committee's public page shows it: never the person's name, only their Discord. */
+/** One seat as a committee's public page shows it: never the person's full name, only their Discord or username. */
 data class CommitteeSeat(
-    /** The name the server shows them by, or nothing for a member who has not linked Discord. */
-    val discordName: String?,
+    /** The name the server shows them by, or their username where Discord is not linked. */
+    val name: String,
     val avatar: String?,
+    /** Whether the name is their Discord name. */
+    val discord: Boolean,
     val role: String?,
 )
 
@@ -27,11 +29,12 @@ class CommitteeSeats(
         return committee.members.map { member ->
             val id = member.user.discordId
             val face = id?.let(seen::get)
-            CommitteeSeat(
-                discordName = face?.name ?: id?.let { member.user.discord },
-                avatar = face?.avatar ?: id?.let(::defaultAvatarOf),
-                role = member.role,
-            )
+            val discordName = face?.name ?: id?.let { member.user.discord?.ifBlank { null } }
+            if (id == null || discordName == null) {
+                CommitteeSeat(name = member.user.username, avatar = null, discord = false, role = member.role)
+            } else {
+                CommitteeSeat(name = discordName, avatar = face?.avatar ?: defaultAvatarOf(id), discord = true, role = member.role)
+            }
         }
     }
 }

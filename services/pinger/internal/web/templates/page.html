@@ -73,13 +73,13 @@
           var total = el ? (+el.dataset.passtotal || 1) : 1;
           var bd = el ? (+el.dataset.passdone || 0) : 0;
           var pps = el ? (+el.dataset.pps || 0) : 0;
-          var state = el ? el.dataset.state : 'idle';
-          var running = el && el.dataset.running === 'true';
-          var lit = state !== 'idle' && state !== 'closed';
+          // Paint only while the sender is live and a prefix is set — the running state. Idle (no
+          // prefix), closed (outside the window) and paused all leave the plate blank.
+          var lit = el && el.dataset.running === 'true';
 
           if (!lit) { base.clearRect(0, 0, 600, 480); top.clearRect(0, 0, 600, 480); drawn = 0; base0 = -1; return; }
           if (bd !== base0) { base0 = bd; t0 = now; } // resync to each fresh server count
-          var done = running && smooth ? Math.min(total, base0 + pps * (now - t0) / 1000) : base0;
+          var done = smooth ? Math.min(total, base0 + pps * (now - t0) / 1000) : base0;
           var target = Math.max(0, Math.min(n, Math.floor(done / total * n)));
           if (target < drawn) { base.clearRect(0, 0, 600, 480); drawn = 0; } // pass wrapped: repaint
 

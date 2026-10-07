@@ -12,9 +12,8 @@ spec:
     - websecure
   routes:
     # Public: anyone may watch. No forward-auth here, so the page is open to anonymous viewers.
-    # Editing is gated in the api instead — the settings POST replays the caller's session to
-    # /oauth2/forward-auth and only an ADMIN gets through, so the open page cannot be edited by a
-    # visitor or a forged header.
+    # The page has no settings of its own — every setting is owned by the api and set from the
+    # main site behind its own ADMIN check — so there is nothing here to gate.
     - kind: Rule
       match: Host(`pings.esa-blueshell.nl`)
       services:

@@ -19,6 +19,22 @@ func PlaceLogo(src image.Image) Placement {
 	return Place(src, 900, image.Pt(Width/2, Height/3-180))
 }
 
+// PlaceInBox fits src inside a box of boxW by boxH, preserving the image's aspect, and centers it
+// in the box. This is the admin's drag-and-resize box from the api descriptor: the image fills as
+// much of the box as its own shape allows, and is centered in whichever axis has room to spare.
+func PlaceInBox(src image.Image, originX, originY, boxW, boxH int) Placement {
+	crop := visibleBounds(src)
+	w, h := crop.Dx(), crop.Dy()
+	if boxW < 1 || boxH < 1 || w < 1 || h < 1 {
+		return Placement{Image: image.NewNRGBA(image.Rect(0, 0, 1, 1))}
+	}
+	// Scale so neither side overflows the box, then set the long side to what that scale gives.
+	scale := min(float64(boxW)/float64(w), float64(boxH)/float64(h))
+	maxSide := max(1, int(scale*float64(max(w, h))+0.5))
+	center := image.Pt(originX+boxW/2, originY+boxH/2)
+	return Place(src, maxSide, center)
+}
+
 // Place crops src to its visible pixels, fits the long side to maxSide and centers it on the
 // given canvas point. Fully transparent pixels are dropped: painting them changes nothing.
 func Place(src image.Image, maxSide int, center image.Point) Placement {

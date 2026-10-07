@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -21,52 +20,25 @@ type fakeStats paint.Stats
 
 func (f fakeStats) Snapshot() paint.Stats { return paint.Stats(f) }
 
-type fakeSettings struct {
-	current paint.Settings
-	saves   int
-}
-
-func (f *fakeSettings) Current() paint.Settings { return f.current }
-func (f *fakeSettings) Save(_ context.Context, v paint.Settings) error {
-	f.current = v
-	f.saves++
-	return nil
-}
-
-type fakeAuth bool
-
-func (f fakeAuth) IsAdmin(*http.Request) (bool, error) { return bool(f), nil }
-
-func newTestServer(admin bool, settings *fakeSettings) http.Handler {
+func serverFor(settings paint.Settings) http.Handler {
 	stats := fakeStats{State: paint.Running, Sent: 1_234_567, Errors: 3, Passes: 6, PassDone: 50_000, PassTotal: 202_158, ActualPPS: 49_876, LastError: "no buffer space available"}
-	return NewServer(stats, settings, fakeAuth(admin), []byte("png"))
+	return NewServer(stats, func() paint.Settings { return settings }, func() []byte { return []byte("png") })
 }
 
-func get(t *testing.T, h http.Handler, path string, groups string) (int, string) {
+func get(t *testing.T, h http.Handler, path string) (int, string) {
 	t.Helper()
 	r := httptest.NewRequest(http.MethodGet, path, nil)
-	if groups != "" {
-		r.Header.Set("X-User-Groups", groups)
-	}
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, r)
 	body, _ := io.ReadAll(w.Result().Body)
 	return w.Code, string(body)
 }
 
-func post(h http.Handler, form url.Values) *httptest.ResponseRecorder {
-	r := httptest.NewRequest(http.MethodPost, "/settings", strings.NewReader(form.Encode()))
-	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	return w
-}
-
 func TestThePageShowsHowThePaintingGoes(t *testing.T) {
 	p, _ := canvas.ParsePrefix("2001:db8:b317:a000::/64")
-	h := newTestServer(false, &fakeSettings{current: paint.Settings{Prefix: p, RatePPS: 50_000}})
+	h := serverFor(paint.Settings{Prefix: p, RatePPS: 50_000})
 
-	code, body := get(t, h, "/", "MEMBER,GUEST")
+	code, body := get(t, h, "/")
 
 	if code != http.StatusOK {
 		t.Fatalf("status %d", code)
@@ -76,25 +48,16 @@ func TestThePageShowsHowThePaintingGoes(t *testing.T) {
 			t.Errorf("page lacks %q", want)
 		}
 	}
-	if strings.Contains(body, `action="/settings"`) {
-		t.Error("a member sees the settings form")
-	}
-}
-
-func TestAnAdminSeesTheSettingsForm(t *testing.T) {
-	h := newTestServer(true, &fakeSettings{current: paint.Settings{RatePPS: 50_000}})
-
-	_, body := get(t, h, "/", "ADMIN,MEMBER")
-
-	if !strings.Contains(body, `action="/settings"`) {
-		t.Fatal("an admin does not see the settings form")
+	// The pinger is steered from the main site, so the page carries no form at all.
+	if strings.Contains(body, "<form") {
+		t.Error("the watch page has a form")
 	}
 }
 
 func TestLiveJSONStandsAlone(t *testing.T) {
-	h := newTestServer(false, &fakeSettings{current: paint.Settings{RatePPS: 50_000}})
+	h := serverFor(paint.Settings{RatePPS: 50_000})
 
-	code, body := get(t, h, "/live.json", "")
+	code, body := get(t, h, "/live.json")
 
 	var st map[string]any
 	if code != http.StatusOK || strings.Contains(body, "<html") || json.Unmarshal([]byte(body), &st) != nil || st["sent"] != "1,235K" || st["state"] != "running" {
@@ -102,86 +65,23 @@ func TestLiveJSONStandsAlone(t *testing.T) {
 	}
 }
 
-func TestAnAdminChangesTheSettings(t *testing.T) {
-	settings := &fakeSettings{current: paint.Settings{RatePPS: 50_000}}
-	h := newTestServer(true, settings)
+func TestThePreviewIsThePlacedImage(t *testing.T) {
+	h := serverFor(paint.Settings{})
 
-	w := post(h, url.Values{"prefix": {"2001:db8:b317:a000::/64"}, "rate": {"20000"}, "paused": {"on"}})
-
-	if w.Code != http.StatusSeeOther {
-		t.Fatalf("status %d: %s", w.Code, w.Body)
-	}
-	p, _ := canvas.ParsePrefix("2001:db8:b317:a000::/64")
-	want := paint.Settings{Prefix: p, RatePPS: 20_000, Paused: true}
-	if settings.current != want {
-		t.Fatalf("saved %+v, want %+v", settings.current, want)
-	}
-}
-
-func TestAnAdminCanClearThePrefix(t *testing.T) {
-	p, _ := canvas.ParsePrefix("2001:db8:b317:a000::/64")
-	settings := &fakeSettings{current: paint.Settings{Prefix: p, RatePPS: 50_000}}
-	h := newTestServer(true, settings)
-
-	post(h, url.Values{"prefix": {""}, "rate": {"50000"}})
-
-	if !settings.current.Prefix.IsZero() {
-		t.Fatalf("prefix still %s", settings.current.Prefix)
-	}
-}
-
-func TestOnlyAnAdminChangesTheSettings(t *testing.T) {
-	settings := &fakeSettings{current: paint.Settings{RatePPS: 50_000}}
-	h := newTestServer(false, settings)
-
-	w := post(h, url.Values{"prefix": {"2001:db8::"}, "rate": {"1"}})
-
-	if w.Code != http.StatusForbidden || settings.saves != 0 {
-		t.Fatalf("status %d, %d saves", w.Code, settings.saves)
-	}
-}
-
-func TestSettingsThatCannotWorkAreRefused(t *testing.T) {
-	for name, form := range map[string]url.Values{
-		"bad prefix":    {"prefix": {"2001:db8::/48"}, "rate": {"1000"}},
-		"zero rate":     {"prefix": {""}, "rate": {"0"}},
-		"rate over cap": {"prefix": {""}, "rate": {"200001"}},
-		"no rate":       {"prefix": {""}},
-	} {
-		t.Run(name, func(t *testing.T) {
-			settings := &fakeSettings{current: paint.Settings{RatePPS: 50_000}}
-
-			w := post(newTestServer(true, settings), form)
-
-			if w.Code != http.StatusBadRequest || settings.saves != 0 {
-				t.Fatalf("status %d, %d saves", w.Code, settings.saves)
-			}
-		})
-	}
-}
-
-func TestThePreviewIsThePlacedLogo(t *testing.T) {
-	h := newTestServer(false, &fakeSettings{})
-
-	code, body := get(t, h, "/preview.png", "")
+	code, body := get(t, h, "/preview.png")
 
 	if code != http.StatusOK || body != "png" {
 		t.Fatalf("status %d, body %q", code, body)
 	}
 }
 
-func TestACrossSitePostIsRefusedEvenForAnAdmin(t *testing.T) {
-	settings := &fakeSettings{current: paint.Settings{RatePPS: 50_000}}
-	h := newTestServer(true, settings)
-	r := httptest.NewRequest(http.MethodPost, "/settings", strings.NewReader("prefix=&rate=1"))
-	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	r.Header.Set("Sec-Fetch-Site", "cross-site")
-	w := httptest.NewRecorder()
+func TestThePreviewIs404WithoutAnImage(t *testing.T) {
+	h := NewServer(fakeStats{}, func() paint.Settings { return paint.Settings{} }, func() []byte { return nil })
 
-	h.ServeHTTP(w, r)
+	code, _ := get(t, h, "/preview.png")
 
-	if w.Code != http.StatusForbidden || settings.saves != 0 {
-		t.Fatalf("status %d, %d saves", w.Code, settings.saves)
+	if code != http.StatusNotFound {
+		t.Fatalf("status %d, want 404", code)
 	}
 }
 
@@ -201,7 +101,7 @@ func TestCompactShortensBigTalliesAndKeepsSmallOnesExact(t *testing.T) {
 
 func TestTheSocketPushesTheLiveRegion(t *testing.T) {
 	p, _ := canvas.ParsePrefix("2001:db8:b317:a000::/64")
-	srv := httptest.NewServer(newTestServer(false, &fakeSettings{current: paint.Settings{Prefix: p, RatePPS: 50_000}}))
+	srv := httptest.NewServer(serverFor(paint.Settings{Prefix: p, RatePPS: 50_000}))
 	defer srv.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -178,13 +178,12 @@
     </div>
   </section>
 
-  {{if and .IsIdle .ShowForm}}
+  {{if .IsIdle}}
   <section>
     <div class="wrap" style="padding-bottom: 1.75rem;">
       <div class="notice notice--info">
         <p class="notice__title">Waiting for the prefix</p>
-        <p class="notice__body">SNTPings announces it when the event opens. Painting starts as soon as it is set.</p>
-        <div><a class="island-cut island-cut--solid" href="#settings"><span>Set the prefix</span></a></div>
+        <p class="notice__body">SNTPings announces it when the event opens. The board sets it on the main site, and painting starts as soon as it is set.</p>
       </div>
     </div>
   </section>
@@ -213,7 +212,7 @@
             <canvas class="target__img target__spark" width="600" height="480" aria-hidden="true"></canvas>
             <span class="target__frame"></span>
           </div>
-          <span class="plate__tag plate__tag--target">X 1470 · Y 180</span>
+          <span class="plate__tag plate__tag--target">Our image</span>
           <span class="plate__shade"></span>
         </div>
         <span class="plate__tag plate__tag--tl">0 · 0</span>
@@ -228,51 +227,10 @@
     <div class="wrap facts-row">
       <div class="fact"><p class="fact__label">Opens</p><p class="fact__value">Fri 9 Oct, 18:00</p><p class="fact__sub">Amsterdam time</p></div>
       <div class="fact"><p class="fact__label">Closes</p><p class="fact__value">Sun 11 Oct, 23:59</p><p class="fact__sub">Nothing is sent after</p></div>
-      <div class="fact"><p class="fact__label">Placement</p><p class="fact__value">900 × 720</p><p class="fact__sub">X 1470 to 2369, Y 180 to 899</p></div>
+      <div class="fact"><p class="fact__label">Placement</p><p class="fact__value">Set on the main site</p><p class="fact__sub">The board picks the image and box</p></div>
       <div class="fact"><p class="fact__label">Per pass</p><p class="fact__value">{{compact .Stats.PassTotal}} pixels</p><p class="fact__sub">Shuffled every pass</p></div>
     </div>
   </section>
-
-  {{if .ShowForm}}
-  <section class="lead" id="settings" style="--accent: var(--color-acid);">
-    <div class="wrap settings">
-      <div class="settings__grid">
-        <form method="post" action="/settings">
-          <div class="form-section">
-            <p class="form-section__title">Prefix</p>
-            <div class="island-field">
-              <label class="island-field__label" for="pinger-prefix">The /64 SNTPings announces</label>
-              <input id="pinger-prefix" name="prefix" class="island-input island-input--mono" value="{{.Prefix}}" placeholder="2001:db8:b317:a000::/64" autocomplete="off" spellcheck="false">
-            </div>
-          </div>
-          <div class="form-section">
-            <p class="form-section__title">Rate</p>
-            <div class="rate-row">
-              <div class="seg" role="group" aria-label="Rate presets">
-                {{range .Presets}}<button type="button" class="seg__cut {{if .On}}seg__cut--on{{end}}" onclick="document.getElementById('pinger-rate').value='{{.Value}}'">{{.Label}}</button>{{end}}
-              </div>
-              <div class="island-field" style="width: 9rem;">
-                <label class="island-field__label" for="pinger-rate">Per second</label>
-                <input id="pinger-rate" name="rate" class="island-input island-input--mono" inputmode="numeric" value="{{.Settings.RatePPS}}">
-              </div>
-            </div>
-          </div>
-          <div class="settings__acts">
-            <button type="submit" class="island-cut island-cut--solid"><span>Save</span></button>
-            <button type="submit" class="island-cut island-cut--quiet" formnovalidate onclick="document.getElementById('pinger-prefix').value=''"><span>Clear prefix</span></button>
-          </div>
-        </form>
-        <div class="form-section" style="border-top: 0;">
-          <p class="form-section__title">Now in use</p>
-          <div class="status" style="grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 0.6rem;">
-            <div class="fact" style="padding-inline-start: 0;"><p class="fact__label">Prefix</p><p class="fact__value" style="font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; text-transform: none;">{{if .Prefix}}{{.Prefix}}{{else}}None yet{{end}}</p></div>
-            <div class="fact"><p class="fact__label">Cap</p><p class="fact__value">{{thousands .Settings.RatePPS}} a second</p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  {{end}}
 
   <span style="flex-grow: 1;"></span>
   <footer class="ground" style="flex-shrink: 0; box-sizing: border-box; border-top: 1px solid var(--color-hairline); padding-top: 1.25rem; padding-bottom: 1rem;">

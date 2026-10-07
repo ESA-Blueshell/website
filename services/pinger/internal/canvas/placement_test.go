@@ -20,6 +20,33 @@ func fill(img *image.NRGBA, r image.Rectangle, c color.NRGBA) {
 	}
 }
 
+func TestPlaceInBoxFitsTheImagePreservingAspectAndCenters(t *testing.T) {
+	src := transparent(40, 40)
+	fill(src, image.Rect(10, 15, 30, 25), color.NRGBA{R: 0xff, A: 0xff}) // visible 20x10, aspect 2:1
+
+	got := PlaceInBox(src, 100, 200, 100, 100)
+
+	// Width binds: scale 5, so 100x50, centered in the 100x100 box at origin (100, 225).
+	if got.Image.Bounds().Dx() != 100 || got.Image.Bounds().Dy() != 50 {
+		t.Fatalf("scaled to %v, want 100x50", got.Image.Bounds().Size())
+	}
+	if len(got.Pixels) != 100*50 {
+		t.Fatalf("got %d pixels, want %d", len(got.Pixels), 100*50)
+	}
+	for _, px := range got.Pixels {
+		if px.X < 100 || px.X > 199 || px.Y < 225 || px.Y > 274 {
+			t.Fatalf("pixel %+v outside the fitted box", px)
+		}
+	}
+}
+
+func TestPlaceInBoxRefusesAZeroBox(t *testing.T) {
+	got := PlaceInBox(transparent(10, 10), 0, 0, 0, 100)
+	if len(got.Pixels) != 0 {
+		t.Fatalf("a zero-width box gave %d pixels", len(got.Pixels))
+	}
+}
+
 func TestPlaceCropsToTheVisiblePixelsAndFitsTheLongSide(t *testing.T) {
 	src := transparent(100, 100)
 	red := color.NRGBA{R: 0xff, A: 0xff}

@@ -1,4 +1,6 @@
-// Command pinger paints the Blueshell logo on the SNTPings canvas and serves its progress page.
+// Command pinger paints the image the api holds onto the SNTPings canvas and serves its progress
+// page. The prefix, rate, image and its box all come from the api; this process is the sender and
+// the public watch page, nothing more.
 package main
 
 import (
@@ -11,12 +13,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"golang.org/x/net/icmp"
 
-	pinger "github.com/ESA-Blueshell/website/services/pinger"
+	"github.com/ESA-Blueshell/website/services/pinger/internal/apipaint"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/settings"
@@ -34,46 +37,39 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	src, err := png.Decode(bytes.NewReader(pinger.Logo))
-	if err != nil {
-		return err
-	}
-	placed := canvas.PlaceLogo(src)
-	var preview bytes.Buffer
-	if err := png.Encode(&preview, placed.Image); err != nil {
-		return err
-	}
-
 	store, err := settings.Open(env("PINGER_VALKEY", "localhost:6379"))
 	if err != nil {
 		return err
 	}
 	defer store.Close()
-	watcher := settings.NewWatcher(store, time.Second)
-	go watcher.Run(ctx)
 
 	dryRun := os.Getenv("PINGER_DRY_RUN") != ""
 	conn, window, err := openSocket(dryRun)
 	if err != nil {
 		return err
 	}
-	sender := paint.NewSender(conn, placed.Pixels, window, watcher.Current)
+
+	preview := &previewHolder{}
+	var poller *apipaint.Poller
+	sender := paint.NewSender(conn, nil, window, func() paint.Settings {
+		if poller == nil {
+			return paint.Settings{}
+		}
+		return poller.Current()
+	})
 	if st, err := store.LoadStats(ctx); err != nil {
 		slog.Warn("load stats", "err", err)
 	} else {
 		sender.Seed(st.Sent, st.Passes, st.Errors)
 	}
+
+	client := apipaint.NewClient(env("PINGER_API_URL", "http://localhost:8080"))
+	poller = apipaint.NewPoller(client, 2*time.Second, sender, preview.set)
+	go poller.Run(ctx)
 	go sender.Run(ctx)
 	go persistStats(ctx, store, sender)
 
-	var auth web.Auth = web.NewAPIAuth(env("PINGER_API_URL", "http://localhost:8080"), env("PINGER_HOST", "pings.esa-blueshell.nl"))
-	if dryRun {
-		auth = everyoneIsAdmin{}
-	}
-	handler := web.NewServer(sender, watcher, auth, preview.Bytes())
-	if dryRun {
-		handler = asAdmin(handler)
-	}
+	handler := web.NewServer(sender, poller.Current, preview.get)
 	srv := &http.Server{
 		Addr:              env("PINGER_LISTEN", ":8090"),
 		Handler:           handler,
@@ -85,11 +81,38 @@ func run() error {
 		defer cancel()
 		_ = srv.Shutdown(shutdown)
 	}()
-	slog.Info("pinger up", "listen", srv.Addr, "pixels", len(placed.Pixels))
+	slog.Info("pinger up", "listen", srv.Addr)
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil
+}
+
+// previewHolder keeps the PNG of the image as it lands, swapped whenever the poller places a new
+// one, so the page can draw it. It holds nil when there is no image.
+type previewHolder struct {
+	png atomic.Pointer[[]byte]
+}
+
+func (h *previewHolder) get() []byte {
+	if p := h.png.Load(); p != nil {
+		return *p
+	}
+	return nil
+}
+
+func (h *previewHolder) set(placed canvas.Placement) {
+	if placed.Image == nil {
+		h.png.Store(nil)
+		return
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, placed.Image); err != nil {
+		slog.Warn("encode preview", "err", err)
+		return
+	}
+	b := buf.Bytes()
+	h.png.Store(&b)
 }
 
 // openSocket opens the raw ICMPv6 socket, which needs NET_RAW. A dry run swaps in a socket that
@@ -132,19 +155,6 @@ func persistStats(ctx context.Context, store *settings.Store, sender *paint.Send
 type discard struct{}
 
 func (discard) WriteTo(b []byte, _ net.Addr) (int, error) { return len(b), nil }
-
-// everyoneIsAdmin stands in for the api's check on a dry run, which has no api to ask.
-type everyoneIsAdmin struct{}
-
-func (everyoneIsAdmin) IsAdmin(*http.Request) (bool, error) { return true, nil }
-
-// asAdmin stands in for forward-auth on a dry run, so the page shows the settings form.
-func asAdmin(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.Header.Set("X-User-Groups", "ADMIN")
-		next.ServeHTTP(w, r)
-	})
-}
 
 func env(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {

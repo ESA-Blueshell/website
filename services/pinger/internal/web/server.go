@@ -1,4 +1,5 @@
-// Package web serves the progress page members watch and the form admins steer the sender with.
+// Package web serves the public progress page onlookers watch the pinger through. The pinger is
+// steered from the main site, so this holds no form and no admin check: it only shows state.
 package web
 
 import (
@@ -16,7 +17,6 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
 )
 
@@ -24,10 +24,8 @@ import (
 // HTML, so a few times a second is cheap and the page reflects the real state quickly.
 const liveInterval = 250 * time.Millisecond
 
-// socketMaxAge bounds a socket's life. Traefik's forward-auth gates the upgrade, not the open
-// socket, so this is what re-gates a viewer whose membership lapsed: the socket closes, the page
-// reconnects, and forward-auth runs again. The feed is read-only event telemetry, so a short
-// window of staleness is harmless; this keeps it short.
+// socketMaxAge bounds a socket's life, so a viewer who leaves the tab open does not hold a feed
+// forever. The feed is read-only event telemetry, so the page just reconnects when it closes.
 const socketMaxAge = 15 * time.Minute
 
 //go:embed templates/*.html
@@ -40,21 +38,17 @@ type StatsSource interface {
 	Snapshot() paint.Stats
 }
 
-type SettingsStore interface {
-	Current() paint.Settings
-	Save(ctx context.Context, v paint.Settings) error
-}
-
 type server struct {
 	stats    StatsSource
-	settings SettingsStore
-	auth     Auth
-	preview  []byte
+	settings func() paint.Settings
+	preview  func() []byte
 	page     *template.Template
 	ams      *time.Location
 }
 
-func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []byte) http.Handler {
+// NewServer serves the page. settings is the paint job the pinger currently reads from the api, and
+// preview returns the PNG of the image as it lands, or nil when there is no image yet.
+func NewServer(stats StatsSource, settings func() paint.Settings, preview func() []byte) http.Handler {
 	ams, err := time.LoadLocation("Europe/Amsterdam")
 	if err != nil {
 		panic(err)
@@ -62,7 +56,6 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 	s := &server{
 		stats:    stats,
 		settings: settings,
-		auth:     auth,
 		preview:  preview,
 		page:     template.Must(template.New("").Funcs(template.FuncMap{"thousands": thousands, "compact": compact}).ParseFS(templateFS, "templates/*.html")),
 		ams:      ams,
@@ -73,7 +66,6 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 	mux.HandleFunc("GET /{$}", s.index)
 	mux.HandleFunc("GET /live.json", s.liveJSON)
 	mux.HandleFunc("GET /ws", s.socket)
-	mux.HandleFunc("POST /settings", s.saveSettings)
 	mux.HandleFunc("GET /preview.png", s.previewImage)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
 	// no-cache, not no-store: the browser keeps the file but revalidates each load, so a rebuilt
@@ -83,14 +75,7 @@ func NewServer(stats StatsSource, settings SettingsStore, auth Auth, preview []b
 		w.Header().Set("Cache-Control", "no-cache")
 		staticHandler.ServeHTTP(w, r)
 	}))
-	// The api's session cookie is SameSite=None, so a form on another site would arrive signed in.
-	return http.NewCrossOriginProtection().Handler(mux)
-}
-
-type preset struct {
-	Label string
-	Value int
-	On    bool
+	return mux
 }
 
 type countdown struct {
@@ -107,8 +92,6 @@ type view struct {
 	PrefixLabel string
 	PassPercent int
 	LastErrorAt string
-	ShowForm    bool
-	MaxRatePPS  int
 
 	State       string
 	IsRunning   bool
@@ -129,19 +112,16 @@ type view struct {
 	RateCeil   uint64
 	CapPercent int
 	Countdown  countdown
-
-	Presets []preset
 }
 
-func (s *server) view(r *http.Request) view {
+func (s *server) view() view {
 	st := s.stats.Snapshot()
-	cfg := s.settings.Current()
+	cfg := s.settings()
 	state := string(st.State)
 	v := view{
 		Stats:       st,
 		Settings:    cfg,
 		Prefix:      cfg.Prefix.String(),
-		MaxRatePPS:  paint.MaxRatePPS,
 		State:       state,
 		IsRunning:   state == string(paint.Running),
 		IsIdle:      state == string(paint.Idle),
@@ -176,7 +156,6 @@ func (s *server) view(r *http.Request) view {
 	v.RateCount = len(st.Rates)
 
 	v.Countdown = s.countdown()
-	v.Presets = presets(cfg.RatePPS)
 	return v
 }
 
@@ -184,23 +163,11 @@ func chip(state string) (label, class string) {
 	switch state {
 	case string(paint.Running):
 		return "Painting", "state-chip state-chip--running"
-	case string(paint.Paused):
-		return "Paused", "state-chip state-chip--paused"
 	case string(paint.Closed):
 		return "Opens Fri 9 Oct, 18:00", "state-chip state-chip--closed"
 	default:
 		return "Waiting for the prefix", "state-chip state-chip--idle"
 	}
-}
-
-var presetRates = []int{100, 1_000, 10_000, 50_000}
-
-func presets(current int) []preset {
-	out := make([]preset, len(presetRates))
-	for i, n := range presetRates {
-		out[i] = preset{Label: thousands(n), Value: n, On: n == current}
-	}
-	return out
 }
 
 // rateLine turns the rate history into an SVG line across a 0..100 box, the polygon that fills
@@ -269,14 +236,8 @@ func (s *server) countdown() countdown {
 	}
 }
 
-func (s *server) index(w http.ResponseWriter, r *http.Request) {
-	v := s.view(r)
-	// The page is public, so Traefik injects no identity. Ask the api who the caller is to decide
-	// whether to render the settings form; the POST re-checks, so this is only about showing it.
-	if admin, err := s.auth.IsAdmin(r); err == nil {
-		v.ShowForm = admin
-	}
-	s.render(w, "page", v)
+func (s *server) index(w http.ResponseWriter, _ *http.Request) {
+	s.render(w, "page", s.view())
 }
 
 // liveState is the live feed the socket pushes as JSON. Raw numbers drive the bar and the canvas,
@@ -337,10 +298,10 @@ func liveFrom(v view) liveState {
 	}
 }
 
-func (s *server) liveJSON(w http.ResponseWriter, r *http.Request) {
+func (s *server) liveJSON(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
-	_ = json.NewEncoder(w).Encode(liveFrom(s.view(r)))
+	_ = json.NewEncoder(w).Encode(liveFrom(s.view()))
 }
 
 // socket pushes the live state as JSON a few times a second. A failed write means the viewer
@@ -357,7 +318,7 @@ func (s *server) socket(w http.ResponseWriter, r *http.Request) {
 	tick := time.NewTicker(liveInterval)
 	defer tick.Stop()
 	for {
-		b, err := json.Marshal(liveFrom(s.view(r)))
+		b, err := json.Marshal(liveFrom(s.view()))
 		if err != nil {
 			slog.Error("marshal live", "err", err)
 			return
@@ -381,53 +342,15 @@ func (s *server) render(w http.ResponseWriter, name string, v view) {
 	}
 }
 
-func (s *server) saveSettings(w http.ResponseWriter, r *http.Request) {
-	admin, err := s.auth.IsAdmin(r)
-	if err != nil {
-		slog.Error("admin check", "err", err)
-		http.Error(w, "could not check who you are", http.StatusBadGateway)
+func (s *server) previewImage(w http.ResponseWriter, r *http.Request) {
+	png := s.preview()
+	if png == nil {
+		http.NotFound(w, r)
 		return
 	}
-	if !admin {
-		http.Error(w, "only admins change the settings", http.StatusForbidden)
-		return
-	}
-	next, problem := parseSettings(r)
-	if problem != "" {
-		http.Error(w, problem, http.StatusBadRequest)
-		return
-	}
-	if err := s.settings.Save(r.Context(), next); err != nil {
-		slog.Error("save settings", "err", err)
-		http.Error(w, "could not save the settings", http.StatusBadGateway)
-		return
-	}
-	slog.Info("settings changed", "prefix", next.Prefix.String(), "rate", next.RatePPS, "paused", next.Paused)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-func parseSettings(r *http.Request) (paint.Settings, string) {
-	var out paint.Settings
-	if raw := strings.TrimSpace(r.FormValue("prefix")); raw != "" {
-		p, err := canvas.ParsePrefix(raw)
-		if err != nil {
-			return out, err.Error()
-		}
-		out.Prefix = p
-	}
-	rate, err := strconv.Atoi(strings.TrimSpace(r.FormValue("rate")))
-	if err != nil || rate < 1 || rate > paint.MaxRatePPS {
-		return out, "rate must be a whole number from 1 to " + thousands(paint.MaxRatePPS)
-	}
-	out.RatePPS = rate
-	out.Paused = r.FormValue("paused") != ""
-	return out, ""
-}
-
-func (s *server) previewImage(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "image/png")
-	w.Header().Set("Cache-Control", "public, max-age=3600")
-	_, _ = w.Write(s.preview)
+	w.Header().Set("Cache-Control", "no-cache")
+	_, _ = w.Write(png)
 }
 
 func thousands(n any) string {

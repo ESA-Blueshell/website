@@ -26,21 +26,27 @@ type Conn interface {
 // MaxRatePPS caps the rate however it is set: the event bans prefixes that ping excessively hard.
 const MaxRatePPS = 200_000
 
-// Settings are what an admin steers the sender with.
+// Settings are the prefix and rate the api hands the sender. The pixels travel separately, through
+// SetPixels, because they are large and change only when the image or its box changes.
 type Settings struct {
 	Prefix  canvas.Prefix
 	RatePPS int
-	Paused  bool
 }
 
 type State string
 
 const (
 	Idle    State = "idle"
-	Paused  State = "paused"
 	Closed  State = "closed"
 	Running State = "running"
 )
+
+// target is the image as pixels, versioned so the Run loop notices a swap and rebuilds its
+// destination addresses. The generation only ever grows.
+type target struct {
+	pixels []canvas.Pixel
+	gen    uint64
+}
 
 // Stats is a point-in-time copy of what the sender has done.
 type Stats struct {
@@ -73,7 +79,7 @@ const (
 // fills in evenly instead of as a scanline others can race.
 type Sender struct {
 	conn     Conn
-	pixels   []canvas.Pixel
+	target   atomic.Pointer[target]
 	window   Window
 	settings func() Settings
 	now      func() time.Time
@@ -106,7 +112,6 @@ func NewSender(conn Conn, pixels []canvas.Pixel, window Window, settings func() 
 	}
 	s := &Sender{
 		conn:     conn,
-		pixels:   pixels,
 		window:   window,
 		settings: settings,
 		now:      time.Now,
@@ -114,8 +119,20 @@ func NewSender(conn Conn, pixels []canvas.Pixel, window Window, settings func() 
 		echo:     echo,
 		limiter:  rate.NewLimiter(1, batch),
 	}
+	s.SetPixels(pixels)
 	s.state.Store(Idle)
 	return s
+}
+
+// SetPixels swaps the image the sender paints. The next pass picks up the new pixels: the Run
+// loop sees the generation change and rebuilds its destination addresses. Safe to call while the
+// sender runs.
+func (s *Sender) SetPixels(pixels []canvas.Pixel) {
+	gen := uint64(1)
+	if prev := s.target.Load(); prev != nil {
+		gen = prev.gen + 1
+	}
+	s.target.Store(&target{pixels: pixels, gen: gen})
 }
 
 // Seed restores the running totals from the last saved state, so a restart continues the counts
@@ -137,13 +154,14 @@ func (s *Sender) Snapshot() Stats {
 	s.rateMu.Lock()
 	rates := append([]uint64(nil), s.rates...)
 	s.rateMu.Unlock()
+	pixels := s.target.Load().pixels
 	return Stats{
 		State:       s.state.Load().(State),
 		Sent:        s.sent.Load(),
 		Errors:      s.errors.Load(),
 		Passes:      s.passes.Load(),
-		PassDone:    int(min(s.passDone.Load(), int64(len(s.pixels)))),
-		PassTotal:   len(s.pixels),
+		PassDone:    int(min(s.passDone.Load(), int64(len(pixels)))),
+		PassTotal:   len(pixels),
 		ActualPPS:   s.actualPPS.Load(),
 		LastError:   lastErr,
 		LastErrorAt: lastErrAt,
@@ -152,14 +170,15 @@ func (s *Sender) Snapshot() Stats {
 	}
 }
 
-// Run sends until ctx ends, idling whenever there is no prefix, the sender is paused or the
-// event is closed.
+// Run sends until ctx ends, idling whenever there is no prefix, no image or the event is closed.
 func (s *Sender) Run(ctx context.Context) {
 	go s.sampleRate(ctx)
 	var dests []net.Addr
 	var destsFor canvas.Prefix
+	var destsGen uint64
 	for ctx.Err() == nil {
 		cfg := s.settings()
+		t := s.target.Load()
 		if state := s.decide(cfg); state != Running {
 			s.state.Store(state)
 			select {
@@ -169,11 +188,11 @@ func (s *Sender) Run(ctx context.Context) {
 			continue
 		}
 		s.state.Store(Running)
-		if dests == nil || destsFor != cfg.Prefix {
-			dests = s.destinations(cfg.Prefix)
-			destsFor = cfg.Prefix
+		if dests == nil || destsFor != cfg.Prefix || destsGen != t.gen {
+			dests = destinations(cfg.Prefix, t.pixels, s.datagram)
+			destsFor, destsGen = cfg.Prefix, t.gen
 		}
-		if s.pass(ctx, cfg.Prefix, dests) {
+		if s.pass(ctx, cfg.Prefix, dests, t.gen) {
 			s.passes.Add(1)
 		}
 	}
@@ -181,21 +200,21 @@ func (s *Sender) Run(ctx context.Context) {
 
 func (s *Sender) decide(cfg Settings) State {
 	switch {
-	case cfg.Prefix.IsZero():
+	case cfg.Prefix.IsZero() || len(s.target.Load().pixels) == 0:
 		return Idle
-	case cfg.Paused || cfg.RatePPS <= 0:
-		return Paused
+	case cfg.RatePPS <= 0:
+		return Idle
 	case !s.window.Contains(s.now()):
 		return Closed
 	}
 	return Running
 }
 
-func (s *Sender) destinations(p canvas.Prefix) []net.Addr {
-	out := make([]net.Addr, len(s.pixels))
-	for i, px := range s.pixels {
+func destinations(p canvas.Prefix, pixels []canvas.Pixel, datagram bool) []net.Addr {
+	out := make([]net.Addr, len(pixels))
+	for i, px := range pixels {
 		ip := p.Address(px).AsSlice()
-		if s.datagram {
+		if datagram {
 			out[i] = &net.UDPAddr{IP: ip}
 		} else {
 			out[i] = &net.IPAddr{IP: ip}
@@ -205,7 +224,7 @@ func (s *Sender) destinations(p canvas.Prefix) []net.Addr {
 }
 
 // pass reports whether it reached every pixel; it stops early when the settings change under it.
-func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr) bool {
+func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, gen uint64) bool {
 	order := rand.Perm(len(dests))
 	var next atomic.Int64
 	var aborted atomic.Bool
@@ -221,7 +240,9 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr) bo
 					return
 				}
 				cfg := s.settings()
-				if cfg.Prefix != p || s.decide(cfg) != Running {
+				// Abort when the prefix changes, the sender leaves Running, or the image is
+				// swapped: dests then belong to a stale target and the next pass rebuilds them.
+				if cfg.Prefix != p || s.decide(cfg) != Running || s.target.Load().gen != gen {
 					aborted.Store(true)
 					return
 				}

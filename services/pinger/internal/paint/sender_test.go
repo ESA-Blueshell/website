@@ -109,6 +109,28 @@ func TestSenderPaintsEveryPixelOncePerPass(t *testing.T) {
 	}
 }
 
+func TestSenderPaintsASwappedImage(t *testing.T) {
+	conn := &fakeConn{}
+	box := &settingsBox{}
+	box.set(Settings{Prefix: prefix(t, "2001:db8::/64"), RatePPS: 100_000})
+
+	s := start(t, conn, pixels(10), open, box)
+	eventually(t, func() bool { return s.Snapshot().PassTotal == 10 })
+
+	s.SetPixels(pixels(40))
+	eventually(t, func() bool { return s.Snapshot().PassTotal == 40 })
+	eventually(t, func() bool { return s.Snapshot().Passes >= 2 })
+
+	// After the swap the sender addresses all 40 pixels, not the 10 it started with.
+	seen := map[string]bool{}
+	for _, a := range conn.addresses() {
+		seen[a.String()] = true
+	}
+	if len(seen) < 40 {
+		t.Fatalf("addressed %d distinct pixels, want 40", len(seen))
+	}
+}
+
 func TestSenderStaysSilentWhenItMayNotSend(t *testing.T) {
 	p := prefix(t, "2001:db8:b317:a000::/64")
 	cases := []struct {
@@ -118,7 +140,7 @@ func TestSenderStaysSilentWhenItMayNotSend(t *testing.T) {
 		state    State
 	}{
 		{"no prefix", open, Settings{RatePPS: 100_000}, Idle},
-		{"paused", open, Settings{Prefix: p, RatePPS: 100_000, Paused: true}, Paused},
+		{"no rate", open, Settings{Prefix: p, RatePPS: 0}, Idle},
 		{"outside the event", closed, Settings{Prefix: p, RatePPS: 100_000}, Closed},
 	}
 	for _, c := range cases {

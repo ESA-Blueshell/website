@@ -15,22 +15,16 @@ class MyServicesControllerTest {
     private fun idsFor(principal: UserPrincipal?) = controller.myServices(principal).body!!.map { it.id }
 
     @Test
-    fun `a member is offered the pinger but not the admin tools`() {
+    fun `a member is offered only the public status page`() {
         val ids = idsFor(principal(Role.MEMBER))
-        assertTrue(ids.contains("pinger"))
+        assertTrue(ids.contains("status"))
         assertFalse(ids.contains("vault"))
+        assertFalse(ids.contains("stalwart"))
     }
 
     @Test
-    fun `an admin is offered the pinger and the admin tools`() {
-        val ids = idsFor(principal(Role.ADMIN))
-        assertTrue(ids.contains("pinger"))
-        assertTrue(ids.contains("vault"))
-    }
-
-    @Test
-    fun `a guest is not offered the pinger`() {
-        assertFalse(idsFor(principal(Role.GUEST)).contains("pinger"))
+    fun `an admin is offered the admin tools`() {
+        assertTrue(idsFor(principal(Role.ADMIN)).contains("vault"))
     }
 
     @Test

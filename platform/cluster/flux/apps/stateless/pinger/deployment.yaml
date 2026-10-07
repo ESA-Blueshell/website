@@ -39,8 +39,6 @@ spec:
               value: valkey.data-system.svc.cluster.local:6379
             - name: PINGER_API_URL
               value: http://api.default.svc.cluster.local:8080
-            - name: PINGER_HOST
-              value: pings.esa-blueshell.nl
           ports:
             - containerPort: 8090
               name: http

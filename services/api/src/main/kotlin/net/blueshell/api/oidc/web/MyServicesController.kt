@@ -25,7 +25,6 @@ private val ALL_SERVICES =
         ServiceEntry("vault", "Vault", "https://vault.esa-blueshell.nl", "/icons/vault.svg", "Secrets management"),
         ServiceEntry("traefik", "Traefik", "https://traefik.esa-blueshell.nl/dashboard/", "/icons/traefik.svg", "Edge router dashboard"),
         ServiceEntry("status", "Status", "https://status.esa-blueshell.nl", "/icons/gatus.svg", "Service status page"),
-        ServiceEntry("pinger", "Pinger", "https://pings.esa-blueshell.nl", "/icons/pinger.svg", "Our logo on the SNTPings canvas"),
     )
 
 @RestController
@@ -54,7 +53,6 @@ class MyServicesController {
                     when (service.id) {
                         "headlamp", "vault", "traefik" -> Role.ADMIN
                         "stalwart" -> Role.BOARD
-                        "pinger" -> Role.MEMBER
                         else -> null
                     }
                 required == null || principal.hasAuthority(required)

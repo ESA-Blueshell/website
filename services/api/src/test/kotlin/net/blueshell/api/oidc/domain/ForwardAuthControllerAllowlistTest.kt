@@ -23,7 +23,6 @@ class ForwardAuthControllerAllowlistTest {
             "headlamp.esa-blueshell.nl",
             "stalwart.esa-blueshell.nl",
             "traefik.esa-blueshell.nl",
-            "pings.esa-blueshell.nl",
             // Case-insensitive match
             "VAULT.ESA-BLUESHELL.NL",
             "Stalwart.Esa-Blueshell.NL",
@@ -56,7 +55,6 @@ class ForwardAuthControllerAllowlistTest {
             "headlamp.esa-blueshell.nl",
             "stalwart.esa-blueshell.nl",
             "traefik.esa-blueshell.nl",
-            "pings.esa-blueshell.nl",
         )
     }
 }

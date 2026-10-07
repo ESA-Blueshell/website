@@ -6,9 +6,15 @@ Accepted
 ## Context
 
 SNTPings paints one pixel of a shared canvas for every IPv6 echo request sent to
-`<prefix>:<X>:<Y>:<B><G>:<R><A>`. The event runs for one weekend. We want the Blueshell
-logo on the canvas, a members-only page that shows progress and admins able to set the
-prefix and the rate. The event bans prefixes that send too hard.
+`<prefix>:<X>:<Y>:<B><G>:<R><A>`. The event runs for one weekend. We want an image on the
+canvas, a public page that shows progress, and an admin able to set the prefix, the rate, the
+image and where it lands. The event bans prefixes that send too hard.
+
+The paint job — the prefix, the rate, the image and the box it fills — is owned by the api and
+set from the main site, where an admin uploads the image and drags its box over a preview. The
+api serves the descriptor publicly at `GET /pinger/paint` and the image through its file module,
+so the pinger and a distributable helper both read the same source of truth. This pod is the
+sender and the watch page, nothing else: it holds no settings and no admin controls.
 
 Two facts shape where the sender runs:
 
@@ -36,18 +42,18 @@ as root with every capability dropped except `NET_RAW`, no privilege escalation 
 read-only root filesystem. Its page listens on `:8090` on the node. The NixOS firewall opens
 that port on `cni0` only, so Traefik can reach it and the internet cannot.
 
-**Anyone may watch; only an admin may edit, and editing asks the api.** The page is public —
-its IngressRoute carries no forward-auth, so anonymous viewers see the live canvas. Editing is
-gated instead: a settings change replays the caller's session to `/oauth2/forward-auth` and
-needs ADMIN in the api's answer, and the page shows the form only when that same check passes.
-Not a header: any pod in the cluster could reach the node's port with a forged `X-User-Groups`,
-and a NetworkPolicy does not cover a host-network pod, so the api's answer is the only authority.
-Cross-origin posts are refused, because the session cookie is `SameSite=None`.
+**The page only watches; the api owns the settings.** The page is public — its IngressRoute
+carries no forward-auth, so anonymous viewers see the live canvas — and it has no form and no
+admin check at all. Every setting is edited on the main site, against the api's own ADMIN-gated
+endpoint, so the node's port never has to trust a header no NetworkPolicy can cover on a
+host-network pod. The pod polls `GET /pinger/paint`, fetches the image it names and rebuilds the
+placed pixels when the descriptor changes.
 
 ## Consequences
 
 - One Deployment in the cluster runs with the node's network namespace. Remove it, its
   ingress and the `cni0` rule once the event is over.
-- The page and the sender share a process, so a pod restart pauses painting. Settings live
-  in Valkey and survive a restart.
+- The page and the sender share a process, so a pod restart pauses painting. The settings come
+  back from the api on the next poll; only the running totals live in Valkey, so the counts
+  survive a restart.
 - A second language means a second toolchain in CI: `actions/setup-go` and `go test`.

@@ -131,7 +131,6 @@ class ForwardAuthController(
                 "vault.esa-blueshell.nl" to Role.ADMIN,
                 "headlamp.esa-blueshell.nl" to Role.ADMIN,
                 "stalwart.esa-blueshell.nl" to Role.BOARD,
-                "pings.esa-blueshell.nl" to Role.MEMBER,
             )
     }
 }

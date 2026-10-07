@@ -13,21 +13,21 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest
 class MyServicesControllerIT : UserTestSupport() {
     @Test
-    fun `a member is offered the pinger and not the admin tools`() {
+    fun `an admin is offered the admin tools`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        mvc
+            .perform(get("/me/services").with(signedIn(admin)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[*].id", hasItem("vault")))
+    }
+
+    @Test
+    fun `a member is offered the status page but not the admin tools`() {
         val member = createUserWithRole(Role.MEMBER)
         mvc
             .perform(get("/me/services").with(signedIn(member)))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$[*].id", hasItem("pinger")))
+            .andExpect(jsonPath("$[*].id", hasItem("status")))
             .andExpect(jsonPath("$[*].id", not(hasItem("vault"))))
-    }
-
-    @Test
-    fun `a guest is not offered the pinger`() {
-        val guest = createUserWithRole(Role.GUEST)
-        mvc
-            .perform(get("/me/services").with(signedIn(guest)))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[*].id", not(hasItem("pinger"))))
     }
 }

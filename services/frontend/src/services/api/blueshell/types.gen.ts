@@ -2900,6 +2900,15 @@ export type Version = {
     version: string;
 };
 
+/**
+ * Who the report request resolved to: a member with their roles, or the SiteCie service
+ */
+export type WhoAmIResponse = {
+    member: boolean;
+    roles: Array<string>;
+    subject: string;
+};
+
 export type FindAllAddressesData = {
     body?: never;
     path?: never;
@@ -9494,6 +9503,47 @@ export type SetPaintResponses = {
 };
 
 export type SetPaintResponse = SetPaintResponses[keyof SetPaintResponses];
+
+export type WhoamiData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/pinger/report/whoami';
+};
+
+export type WhoamiErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type WhoamiError = WhoamiErrors[keyof WhoamiErrors];
+
+export type WhoamiResponses = {
+    /**
+     * OK
+     */
+    200: WhoAmIResponse;
+};
+
+export type WhoamiResponse = WhoamiResponses[keyof WhoamiResponses];
 
 export type ConfirmEmailChangeData = {
     body: TokenRequest;

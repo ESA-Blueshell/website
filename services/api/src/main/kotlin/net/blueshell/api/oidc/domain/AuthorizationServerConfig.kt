@@ -14,7 +14,6 @@ import org.springframework.security.config.annotation.web.configurers.oauth2.ser
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService
-import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
@@ -93,9 +92,11 @@ class AuthorizationServerConfig {
     // In-memory rather than JDBC: UserPrincipal isn't in the Jackson allowlist
     // SecurityJackson2Modules ships, so JdbcOAuth2AuthorizationService can't
     // round-trip the principal. Replicas=1 means in-memory is fine; revisit
-    // if/when we scale out.
+    // if/when we scale out. Wrapped so a member's grants can be listed and
+    // revoked by principal, which the in-memory store cannot enumerate on its own.
     @Bean
-    fun authorizationService(): OAuth2AuthorizationService = InMemoryOAuth2AuthorizationService()
+    fun authorizationService(): IndexingOAuth2AuthorizationService =
+        IndexingOAuth2AuthorizationService(InMemoryOAuth2AuthorizationService())
 
     @Bean
     fun authorizationConsentService(): OAuth2AuthorizationConsentService = InMemoryOAuth2AuthorizationConsentService()

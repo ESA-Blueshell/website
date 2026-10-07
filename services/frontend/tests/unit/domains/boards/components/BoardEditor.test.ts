@@ -99,8 +99,27 @@ describe("the board edit page", () => {
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now.")
     expect(wrapper.emitted("saved")).toHaveLength(2)
 
-    // A board being added is under no cohort yet, so it has no Discord to set.
-    expect(mountEditor(null).findComponent(editorStubs.DiscordPlaceFields).exists()).toBe(false)
+  })
+
+  it("sets a board's role as it is added, once its start says which role it holds, under the saved board's key", async () => {
+    const coming = {...tenth, id: 11, number: 11, startDate: "2099-09-01", endDate: null}
+    adapter.saveBoardOrReason.mockResolvedValue({ok: true, saved: coming})
+    adapter.saveBoardDiscord.mockResolvedValue({ok: true, saved: {}})
+    const wrapper = mountEditor(null)
+    // Without a start there is nothing to say which role a board holds.
+    expect(wrapper.findComponent(editorStubs.DiscordPlaceFields).exists()).toBe(false)
+
+    write(wrapper, "board-edit-start", "2099-09-01")
+    await flushPromises()
+    const fields = wrapper.getComponent(editorStubs.DiscordPlaceFields)
+    expect(fields.props()).toMatchObject({name: "Kandi", read: null})
+    const asked = {roleId: null, createRole: true, channelIds: [], createChannel: null}
+    fields.vm.$emit("update:modelValue", asked)
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+
+    expect(adapter.saveBoardDiscord).toHaveBeenCalledWith("KANDI", asked)
+    expect(wrapper.emitted("saved")).toEqual([[coming]])
   })
 
   it("names the role of the board in office and of the candidate board after what they are", () => {

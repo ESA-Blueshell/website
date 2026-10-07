@@ -114,12 +114,17 @@ const photoLabel = computed(() => {
    the board stands: the board in office holds @Board, the candidate board @Kandi and a board that
    handed over the role of its own years. */
 const discord = ref<DiscordPlaceRequest | null>(null)
-const discordKey = computed(() => (props.board ? boardCohortKey(props.board, props.boards) : null))
+// A board being added is placed by the dates it is given, so its role can be set as it is added.
+const placed = computed(() => (startDate.value
+  ? {id: props.board?.id ?? 0, number: numbered.value, startDate: startDate.value, endDate: endDate.value || null}
+  : null))
+const others = computed(() => props.boards.filter(one => one.id !== props.board?.id))
+const discordKey = computed(() => (placed.value ? boardCohortKey(placed.value, [...others.value, placed.value]) : null))
 const discordName = computed(() => {
-  if (!props.board) return ""
-  const standing = standingOf(props.board, props.boards)
+  if (!placed.value) return ""
+  const standing = standingOf(placed.value, [...others.value, placed.value])
   if (standing === "in office") return "Board"
-  return standing === "candidate" ? "Kandi" : `Board ${academicYear(props.board.startDate, props.board.endDate)}`
+  return standing === "candidate" ? "Kandi" : `Board ${academicYear(placed.value.startDate, placed.value.endDate)}`
 })
 
 const confirming = ref(false)
@@ -174,9 +179,10 @@ const submit = async () => {
       failure.value = result.reason
       return
     }
-    // The board is saved either way; Discord refusing only means its role and channels wait.
-    if (discordKey.value && discord.value) {
-      const set = await saveBoardDiscord(discordKey.value, discord.value)
+    // The board is saved either way; Discord refusing only means its role and channels wait. The key is
+    // the saved board's, since a board just added has its number only now.
+    if (discord.value) {
+      const set = await saveBoardDiscord(boardCohortKey(result.saved, [...others.value, result.saved]), discord.value)
       if (!set.ok) store.commit("setStatusSnackbarMessage", set.reason)
     }
     emit("saved", result.saved)
@@ -280,7 +286,7 @@ const submit = async () => {
         category="Board"
         holders="Everyone on this board holds it."
         :name="discordName"
-        :read="() => readBoardDiscord(discordKey!)"
+        :read="board ? () => readBoardDiscord(discordKey!) : null"
         :slug="discordName.toLowerCase().replace(/[^a-z0-9]+/g, '-')"
         testid="board-edit-discord"
       />

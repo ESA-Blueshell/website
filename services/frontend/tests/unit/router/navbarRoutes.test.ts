@@ -24,6 +24,7 @@ const navbarPaths = [
   "/partners/el-nino",
   "/partners/marketing-maatwerk",
   "/contact",
+  "/sntpings",
   "/login",
   "/account",
   "/account/security",
@@ -44,6 +45,11 @@ describe("Navbar route targets", () => {
 
   it("loads the pinger manager page", async () => {
     const load = router.getRoutes().find(one => one.name === "pingerManager")?.components?.default as () => Promise<unknown>
+    await expect(load()).resolves.toBeDefined()
+  }, 20_000)
+
+  it("loads the public SNTPings page", async () => {
+    const load = router.getRoutes().find(one => one.name === "sntpings")?.components?.default as () => Promise<unknown>
     await expect(load()).resolves.toBeDefined()
   }, 20_000)
 })

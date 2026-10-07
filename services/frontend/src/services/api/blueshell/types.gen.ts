@@ -779,6 +779,12 @@ export type CommitteeSeatResponse = {
     role?: string | null;
 };
 
+export type ConnectedAppResponse = {
+    authorizedAt?: string | null;
+    id: string;
+    name: string;
+};
+
 export enum ContributionEmailKind {
     REMINDER = 'REMINDER',
     INCASSO_NOTIFICATION = 'INCASSO_NOTIFICATION'
@@ -8858,6 +8864,90 @@ export type RetryResponses = {
 };
 
 export type RetryResponse = RetryResponses[keyof RetryResponses];
+
+export type ConnectedAppsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/me/connected-apps';
+};
+
+export type ConnectedAppsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ConnectedAppsError = ConnectedAppsErrors[keyof ConnectedAppsErrors];
+
+export type ConnectedAppsResponses = {
+    /**
+     * OK
+     */
+    200: Array<ConnectedAppResponse>;
+};
+
+export type ConnectedAppsResponse = ConnectedAppsResponses[keyof ConnectedAppsResponses];
+
+export type RevokeConnectedAppData = {
+    body?: never;
+    path: {
+        appId: string;
+    };
+    query?: never;
+    url: '/me/connected-apps/{appId}';
+};
+
+export type RevokeConnectedAppErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RevokeConnectedAppError = RevokeConnectedAppErrors[keyof RevokeConnectedAppErrors];
+
+export type RevokeConnectedAppResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RevokeConnectedAppResponse = RevokeConnectedAppResponses[keyof RevokeConnectedAppResponses];
 
 export type MyServicesData = {
     body?: never;

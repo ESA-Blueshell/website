@@ -5,6 +5,7 @@ import {
   TargetSystem,
   fetchCohort,
   pushDriftPeople,
+  removeDriftPeople,
   triggerReconcile,
   type Cohort,
   type ListedTarget,
@@ -14,12 +15,13 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/domains/cohorts/adapters/cohorts")>()),
   fetchCohort: vi.fn(),
   pushDriftPeople: vi.fn(),
+  removeDriftPeople: vi.fn(),
   triggerReconcile: vi.fn(),
 }))
 
 const list = (externalId: string, label: string, fields: Partial<ListedTarget> = {}): ListedTarget => ({externalId, label, enforced: false, ...fields})
-const members = list("7", "Members", {cohortId: 101, targetId: 1, cohortLabel: "Members 2025-2026", missing: 2})
-const board = list("8", "Board", {cohortId: 102, targetId: 2, cohortLabel: "Board", missing: 0})
+const members = list("7", "Members", {cohortId: 101, targetId: 1, cohortLabel: "Members 2025-2026", missing: 2, extra: 0})
+const board = list("8", "Board", {cohortId: 102, targetId: 2, cohortLabel: "Board", missing: 0, extra: 3})
 const loose = list("9", "Old newsletter")
 const person = (userId: number | null, sync: string, fields: Record<string, unknown> = {}) =>
   ({system: TargetSystem.BREVO, sync, userId, userFullName: `Person ${userId}`, ...fields})
@@ -76,5 +78,33 @@ describe("comparing or filling several lists at once", () => {
     vi.mocked(fetchCohort).mockResolvedValue({members: [person(11, "ONLY_HERE")]} as unknown as Cohort)
     vi.mocked(pushDriftPeople).mockResolvedValue({ok: false, reason: "Brevo refused."})
     expect(await sync.run(item)).toEqual({ok: false, reason: "Brevo refused."})
+  })
+
+  it("clears only a list with somebody on it who should not be, of the people the list has and the site does not", async () => {
+    vi.mocked(fetchCohort).mockResolvedValue({members: [
+      person(null, "ONLY_EXTERNAL", {externalUserId: "ann@x.nl"}), person(11, "ONLY_HERE"), person(null, "ONLY_EXTERNAL"),
+      {...person(null, "ONLY_EXTERNAL", {externalUserId: "bo@x.nl"}), system: TargetSystem.DISCORD},
+    ]} as unknown as Cohort)
+    vi.mocked(removeDriftPeople).mockResolvedValue({ok: true, saved: 0})
+    sync.task.value = "remove"
+
+    expect(sync.title.value).toBe("Remove additional people")
+    expect(sync.items.value.map((one) => [one.name, one.note])).toEqual([["Board", "3 leave"]])
+    expect(sync.skipped.value).toEqual([
+      {name: "Members", why: "Nobody is on it who should not be"},
+      {name: "Old newsletter", why: "Follows nothing on the site"},
+    ])
+    expect(sync.words.value).toMatchObject({go: "Remove them", doing: "Removing", done: "cleared"})
+    expect(sync.words.value.ask).toContain("This is not undone from here.")
+    expect(await sync.run(sync.items.value[0]!)).toEqual({ok: true})
+    expect(removeDriftPeople).toHaveBeenCalledWith(102, 2, ["ann@x.nl"])
+
+    ticked.value = [{...board, extra: 1}]
+    expect(sync.items.value[0]!.note).toBe("1 leaves")
+    vi.mocked(fetchCohort).mockResolvedValue({members: []} as unknown as Cohort)
+    expect(await sync.run(sync.items.value[0]!)).toEqual({ok: true})
+    vi.mocked(fetchCohort).mockResolvedValue({members: [person(null, "ONLY_EXTERNAL", {externalUserId: "ann@x.nl"})]} as unknown as Cohort)
+    vi.mocked(removeDriftPeople).mockResolvedValue({ok: false, reason: "Brevo refused."})
+    expect(await sync.run(sync.items.value[0]!)).toEqual({ok: false, reason: "Brevo refused."})
   })
 })

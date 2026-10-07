@@ -3,10 +3,11 @@
    then one more question, then the work, one row after another, and what could not be done at the
    end. Nothing happens before the second yes. */
 import {computed, ref, watch} from "vue"
+import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 
-const {open, title, each = "", noun, items, skipped = [], run, words = undefined, testid} = defineProps<{
+const {open, title, each = "", noun, items, skipped = [], run, words = undefined, pickable = false, testid} = defineProps<{
   open: boolean
   /** What the task is called: "Add Discord roles". */
   title: string
@@ -20,6 +21,8 @@ const {open, title, each = "", noun, items, skipped = [], run, words = undefined
   /** The ticked rows left out, and why. */
   skipped?: {name: string; why: string}[]
   run: (item: T) => Promise<{ok: true} | {ok: false; reason: string}>
+  /** Each row ticked by hand, none to begin with: for work that takes something away. */
+  pickable?: boolean
   testid: string
 }>()
 
@@ -31,13 +34,24 @@ const finished = ref(0)
 // How many rows the work started with: the page may clear its ticks when the work is done.
 const total = ref(0)
 const failures = ref<{name: string; reason: string}[]>([])
+const picked = ref<Set<string | number>>(new Set())
 
 watch(() => open, (now) => {
   if (!now) return
   step.value = "preview"
   finished.value = 0
   failures.value = []
+  picked.value = new Set()
 })
+
+const pick = (key: string | number, on: boolean) => {
+  const next = new Set(picked.value)
+  if (on) next.add(key)
+  else next.delete(key)
+  picked.value = next
+}
+// The rows the work is done to: every one, or the ones ticked where they are ticked by hand.
+const chosen = computed(() => (pickable ? items.filter((item) => picked.value.has(item.key)) : items))
 
 const count = computed(() => `${items.length} ${items.length === 1 ? noun[0] : noun[1]}`)
 const said = computed(() => words ?? {
@@ -50,8 +64,8 @@ const said = computed(() => words ?? {
 
 const go = async () => {
   step.value = "working"
-  total.value = items.length
-  for (const item of [...items]) {
+  total.value = chosen.value.length
+  for (const item of [...chosen.value]) {
     const answered = await run(item)
     if (!answered.ok) failures.value = [...failures.value, {name: item.name, reason: answered.reason}]
     finished.value += 1
@@ -88,7 +102,14 @@ const go = async () => {
             v-for="item in items"
             :key="item.key"
           >
-            <span>{{ item.name }}</span>
+            <check-box
+              v-if="pickable"
+              :label="item.name"
+              :model-value="picked.has(item.key)"
+              :testid="`${testid}-pick-${item.key}`"
+              @update:model-value="pick(item.key, $event)"
+            />
+            <span v-else>{{ item.name }}</span>
             <span class="bulk-add__note">{{ item.note }}</span>
           </li>
         </ul>
@@ -154,7 +175,7 @@ const go = async () => {
       </cut-button>
       <cut-button
         v-if="step === 'preview'"
-        :disabled="items.length === 0"
+        :disabled="chosen.length === 0"
         :testid="`${testid}-continue`"
         tone="solid"
         @click="step = 'confirm'"

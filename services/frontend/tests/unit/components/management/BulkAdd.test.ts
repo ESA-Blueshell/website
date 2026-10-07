@@ -98,4 +98,20 @@ describe("adding to many rows at once", () => {
     expect(wrapper.emitted("update:open")?.at(-1)).toEqual([false])
     expect(run).not.toHaveBeenCalled()
   })
+
+  it("starts with nothing ticked where each row is picked by hand, and does the work to the ticked ones only", async () => {
+    const {run} = await dialog({pickable: true})
+
+    expect(inPage("bulk-continue").attributes("disabled")).toBeDefined()
+    await inPage("bulk-pick-2").setValue(true)
+    await inPage("bulk-pick-1").setValue(true)
+    await inPage("bulk-pick-1").setValue(false)
+    await inPage("bulk-continue").trigger("click")
+    await inPage("bulk-go").trigger("click")
+    await flushPromises()
+
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(run).toHaveBeenCalledWith(items[1])
+  })
 })
+

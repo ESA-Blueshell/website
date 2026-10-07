@@ -39,6 +39,12 @@ interface DiscordChannelKeeper {
     /** The channels and categories [roleId] is let into by an overwrite of its own. */
     fun openedTo(roleId: String): List<KeptChannel>
 
+    /**
+     * The channels opened to any of [roleIds] that the bot cannot see or cannot set who it is open to,
+     * so the site cannot keep their access. Empty without a bot.
+     */
+    fun beyondBot(roleIds: Set<String>): List<KeptChannel>
+
     /** Makes a text channel under [category], made where it is missing, that only [roleId] can see. */
     fun createPrivate(
         name: String,

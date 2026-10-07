@@ -62,6 +62,10 @@ describe("reading an alert", () => {
       "/management/platforms/discord/bot",
     ],
     [alert(AlertKind.BREVO_FOLDERS_SHARE_NAME, {count: 2, subjectLabel: "Boards, Teams"}), "Brevo has folders that share a name: Boards, Teams", "/management/platforms/brevo"],
+    [alert(AlertKind.DISCORD_ROLES_ABOVE_BOT, {subjectLabel: "Board"}), "1 linked role sits above the bot's role: Board", "/management/platforms/discord/bot"],
+    [alert(AlertKind.DISCORD_ROLES_ABOVE_BOT, {count: 2, subjectLabel: "Board, Kandi"}), "2 linked roles sit above the bot's role: Board, Kandi", "/management/platforms/discord/bot"],
+    [alert(AlertKind.DISCORD_CHANNELS_BEYOND_BOT, {subjectLabel: "board-room"}), "The bot cannot keep who 1 channel is open to: board-room", "/management/platforms/discord/bot"],
+    [alert(AlertKind.DISCORD_CHANNELS_BEYOND_BOT, {count: 2, subjectLabel: "a, b"}), "The bot cannot keep who 2 channels are open to: a, b", "/management/platforms/discord/bot"],
   ])("words %o and links it", (one, title, link) => {
     expect(alertTitle(one)).toBe(title)
     expect(alertLink(one)).toBe(link)
@@ -82,6 +86,10 @@ describe("an alert as a short row", () => {
     [alert(AlertKind.DISCORD_BOT_PERMISSIONS, {subjectLabel: null}), "The bot lacks 1 permission", "", "Discord"],
     [alert(AlertKind.BREVO_FOLDERS_SHARE_NAME, {subjectLabel: "Boards"}), "Folders share a name", "Boards", "Brevo"],
     [alert(AlertKind.BREVO_FOLDERS_SHARE_NAME, {subjectLabel: null}), "Folders share a name", "", "Brevo"],
+    [alert(AlertKind.DISCORD_ROLES_ABOVE_BOT, {subjectLabel: "Board"}), "1 role sits above the bot", "Board", "Discord"],
+    [alert(AlertKind.DISCORD_ROLES_ABOVE_BOT, {subjectLabel: null}), "1 role sits above the bot", "", "Discord"],
+    [alert(AlertKind.DISCORD_CHANNELS_BEYOND_BOT, {subjectLabel: "board-room"}), "The bot cannot keep 1 channel", "board-room", "Discord"],
+    [alert(AlertKind.DISCORD_CHANNELS_BEYOND_BOT, {subjectLabel: null}), "The bot cannot keep 1 channel", "", "Discord"],
   ])("names %o, says what it is about and where it comes from", (one, name, meta, from) => {
     expect(alertRow(one)).toEqual({name, meta, from})
   })

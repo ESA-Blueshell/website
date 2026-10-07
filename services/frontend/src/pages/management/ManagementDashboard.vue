@@ -147,6 +147,8 @@ const ALERT_MARKS: Record<AlertKind, StateKind> = {
   [AlertKind.ROLE_AWAITING_TWO_FACTOR]: "missing",
   [AlertKind.DISCORD_BOT_PERMISSIONS]: "not-created",
   [AlertKind.BREVO_FOLDERS_SHARE_NAME]: "extra",
+  [AlertKind.DISCORD_ROLES_ABOVE_BOT]: "unreachable",
+  [AlertKind.DISCORD_CHANNELS_BEYOND_BOT]: "unreachable",
 }
 
 const hour = new Date().getHours()

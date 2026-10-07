@@ -54,6 +54,15 @@ class JdaChannelKeeper(
             .mapNotNull(::kept)
     }
 
+    override fun beyondBot(roleIds: Set<String>): List<KeptChannel> {
+        val guild = gateway.ifAvailable?.guild() ?: return emptyList()
+        val bot = guild.selfMember
+        return guild.channels
+            .filter { channel -> (channel as? IPermissionContainer)?.rolePermissionOverrides.orEmpty().any { it.id in roleIds } }
+            .filterNot { bot.hasPermission(it, Permission.VIEW_CHANNEL) && bot.hasPermission(it, Permission.MANAGE_PERMISSIONS) }
+            .mapNotNull(::kept)
+    }
+
     override fun createPrivate(
         name: String,
         category: String,

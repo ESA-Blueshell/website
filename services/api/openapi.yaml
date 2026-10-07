@@ -307,6 +307,8 @@ components:
       - ROLE_AWAITING_TWO_FACTOR
       - DISCORD_BOT_PERMISSIONS
       - BREVO_FOLDERS_SHARE_NAME
+      - DISCORD_ROLES_ABOVE_BOT
+      - DISCORD_CHANNELS_BEYOND_BOT
       type: string
     AnnounceChoice:
       enum:

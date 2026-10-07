@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.PermissionOverride
 import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.SelfMember
 import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.concrete.Category
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
@@ -103,6 +104,25 @@ class JdaChannelKeeperTest {
             ChannelOpening(KeptChannel("1", "sitecie", KeptChannelKind.TEXT, "Committees"), private = true, roleIds = listOf("900")),
             ChannelOpening(KeptChannel("2", "sitecie-voice", KeptChannelKind.VOICE, null), private = false, roleIds = emptyList()),
         )
+    }
+
+    @Test
+    fun `names the channels opened to a linked role that the bot cannot see or set access on`() {
+        val bot: SelfMember = mock()
+        whenever(guild.selfMember).thenReturn(bot)
+        whenever(opened.id).thenReturn("900")
+        val otherRole: PermissionOverride = mock { on { id } doReturn "901" }
+        whenever(text.rolePermissionOverrides).thenReturn(listOf(opened))
+        whenever(voice.rolePermissionOverrides).thenReturn(listOf(otherRole))
+        whenever(bot.hasPermission(text, Permission.VIEW_CHANNEL)).thenReturn(true)
+        whenever(bot.hasPermission(text, Permission.MANAGE_PERMISSIONS)).thenReturn(false)
+
+        assertThat(keeper().beyondBot(setOf("900"))).containsExactly(KeptChannel("1", "sitecie", KeptChannelKind.TEXT, "Committees"))
+
+        whenever(bot.hasPermission(text, Permission.MANAGE_PERMISSIONS)).thenReturn(true)
+        assertThat(keeper().beyondBot(setOf("900"))).isEmpty()
+        assertThat(keeper(gateway = GatewayGuild { null }).beyondBot(setOf("900"))).isEmpty()
+        assertThat(keeper(gateway = null).beyondBot(setOf("900"))).isEmpty()
     }
 
     @Test

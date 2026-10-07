@@ -66,7 +66,7 @@ describe("one game's page", () => {
     expect(head.text()).toContain("Five-stacks, customs and clips.")
     expect(head.get(".record-head__art img").attributes("srcset")).toBe("/v.webp?w=640 640w, /v.webp 1600w")
     expect(wrapper.findAllComponents(RouterLinkStub).map(link => link.props("to")))
-      .toEqual(["/casual", "/competition/valorant", "/committees/lancie", "/committees/yapcie"])
+      .toEqual(["/casual", "/esports/valorant", "/committees/lancie", "/committees/yapcie"])
     expect(wrapper.find("[data-testid=casual-game-archived]").exists()).toBe(false)
     expect(wrapper.find("[data-testid=casual-game-edit]").exists()).toBe(false)
   })

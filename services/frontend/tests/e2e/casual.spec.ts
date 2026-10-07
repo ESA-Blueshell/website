@@ -22,7 +22,7 @@ test.describe("the casual pages", () => {
 
     await expect(page).toHaveURL(/\/casual\/valorant$/)
     await expect(page.getByTestId("casual-game-head")).toContainText("Valorant")
-    await expect(page.getByTestId("casual-game-competition")).toHaveAttribute("href", "/competition/valorant")
+    await expect(page.getByTestId("casual-game-competition")).toHaveAttribute("href", "/esports/valorant")
 
     await page.goto("/casual/minecraft")
     await expect(page.getByTestId("casual-game-not-competitive")).toContainText("We don't currently play this game competitively")

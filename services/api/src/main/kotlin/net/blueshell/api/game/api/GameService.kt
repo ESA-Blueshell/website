@@ -261,8 +261,8 @@ class GameService(
 
         /**
          * Addresses a game's page cannot take. `new` and `seasons` are the site's own pages under
-         * /casual and /competition; `competitive-scene` is the index's old /esports address, which
-         * still redirects to the index.
+         * /casual and /esports; `competitive-scene` is the old address of the esports index, which
+         * still redirects to it.
          */
         val RESERVED = setOf("competitive-scene", "new", "seasons")
     }

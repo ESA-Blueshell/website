@@ -46,10 +46,10 @@ describe("the team edit page", () => {
   it("goes back to Management's teams when opened there", async () => {
     const team = {id: 9, name: "Blueshell", banner: null, icon: null}
     read.useTeamToEdit.mockReturnValue(answer(autumn, [team], team))
-    route.meta = {portal: "/management/competition"}
+    route.meta = {portal: "/management/esports"}
     const wrapper = await mountPage({slug: "valorant", team: "9"}, {season: "3"})
 
-    expect(wrapper.getComponent(TeamEditor).props("back")).toBe("/management/competition")
+    expect(wrapper.getComponent(TeamEditor).props("back")).toBe("/management/esports")
   })
 
   it("corrects a team's line-up in the season asked for, and goes back to the game page on it", async () => {
@@ -61,12 +61,12 @@ describe("the team edit page", () => {
     expect(read.useTeamToEdit).toHaveBeenCalledWith("VAL", 9, 3)
     expect(editor.props()).toMatchObject({
       game: "VAL", gameName: "Valorant", season: autumn, teamId: 9, teamName: "Blueshell", alreadyFielded: [9, 10],
-      back: "/competition/valorant?season=3", accent: "var(--color-brand)",
+      back: "/esports/valorant?season=3", accent: "var(--color-brand)",
     })
     editor.vm.$emit("saved")
     editor.vm.$emit("removed")
     editor.vm.$emit("cancel")
-    expect(router.replace.mock.calls).toEqual(Array(3).fill(["/competition/valorant?season=3"]))
+    expect(router.replace.mock.calls).toEqual(Array(3).fill(["/esports/valorant?season=3"]))
   })
 
   it("adds a team in a season the game has not played, or the newest where none is asked for", async () => {
@@ -75,7 +75,7 @@ describe("the team edit page", () => {
     expect(asked.getComponent(TeamEditor).props()).toMatchObject({season: autumn, teamId: null, teamName: ""})
 
     const newest = await mountPage({slug: "valorant"})
-    expect(newest.getComponent(TeamEditor).props()).toMatchObject({season: spring, back: "/competition/valorant"})
+    expect(newest.getComponent(TeamEditor).props()).toMatchObject({season: spring, back: "/esports/valorant"})
   })
 
   it("reads a game or a team nobody answers to as not found", async () => {

@@ -33,7 +33,7 @@ const gamesOf = (team: Team) => [...new Set(fieldedIn(team).map((one) => recordO
 const linkOf = (team: Team) => {
   const newest = latest(team)
   const slug = newest ? recordOf(newest.game)?.slug : null
-  return slug && newest ? `/management/competition/${slug}/teams/${team.id}?season=${newest.season.id}` : null
+  return slug && newest ? `/management/esports/${slug}/teams/${team.id}?season=${newest.season.id}` : null
 }
 
 /* A team's role is its cohort's Discord target, and its channels are the ones that role has access to. */

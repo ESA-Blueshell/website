@@ -71,7 +71,7 @@ const stubs = {
 
 const openEditor = async () => {
   const wrapper = mount(TeamEditor, {
-    props: {back: "/competition/valorant", gameName: "Valorant", game: "VAL", teamId: 7, teamName: "Blueshell", season, accent: "#0af"},
+    props: {back: "/esports/valorant", gameName: "Valorant", game: "VAL", teamId: 7, teamName: "Blueshell", season, accent: "#0af"},
     global: {stubs},
   })
   await settle()
@@ -116,7 +116,7 @@ describe("TeamEditor, fielding from a line-up that could not be read", () => {
   const pickTeamThen = async (unread: boolean) => {
     vi.mocked(loadTeams).mockResolvedValue([aTeam({id: 9, name: "Old squad"})])
     const wrapper = mount(TeamEditor, {
-      props: {back: "/competition/valorant", gameName: "Valorant", game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
+      props: {back: "/esports/valorant", gameName: "Valorant", game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
       global: {stubs},
     })
     await settle()
@@ -384,7 +384,7 @@ describe("TeamEditor, one line-up card at a time", () => {
   it("asks an adding editor which kind of team first", async () => {
     vi.mocked(loadTeams).mockResolvedValue([])
     const wrapper = mount(TeamEditor, {
-      props: {back: "/competition/valorant", gameName: "Valorant", game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
+      props: {back: "/esports/valorant", gameName: "Valorant", game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
       global: {stubs},
     })
     await settle()

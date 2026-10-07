@@ -6,9 +6,9 @@ test.describe("route redirects", () => {
     await installApiMocks(page)
 
     await page.goto("/esports")
-    await expect(page).toHaveURL(/\/competition$/)
+    await expect(page).toHaveURL(/\/esports$/)
     await page.goto("/esports/valorant")
-    await expect(page).toHaveURL(/\/competition\/valorant$/)
+    await expect(page).toHaveURL(/\/esports\/valorant$/)
     // The destination is the esports index. Asserting its root rather than a
     // heading: the wording of the page is design, the island around it is not.
     await expect(page.getByTestId("esports-island")).toBeVisible()

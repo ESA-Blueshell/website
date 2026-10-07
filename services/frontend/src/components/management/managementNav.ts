@@ -48,7 +48,7 @@ const GROUPS: ManagementGroup[] = [
       {label: "Committees", to: "/management/committees"},
       {label: "Board", to: "/management/board"},
       {label: "Games", to: "/management/games"},
-      {label: "Esports", to: "/management/competition"},
+      {label: "Esports", to: "/management/esports"},
     ],
   },
   {

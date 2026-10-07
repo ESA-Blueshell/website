@@ -6,14 +6,14 @@ vi.mock("vue-router", () => ({useRouter: () => ({options: {history: {state}}})})
 
 describe("where an edit page goes back to", () => {
   it("goes back to the page it came from, with its query", () => {
-    state.back = "/competition?season=3"
-    expect(useReturnTo("/competition")).toBe("/competition?season=3")
+    state.back = "/esports?season=3"
+    expect(useReturnTo("/esports")).toBe("/esports?season=3")
   })
 
   it("falls back where it came from nowhere, from outside, from the login page or from another edit page", () => {
-    for (const back of [null, "https://elsewhere.nl/x", "//elsewhere.nl", "/login?next=/x", "/competition/new?season=3", "/casual/chess/edit"]) {
+    for (const back of [null, "https://elsewhere.nl/x", "//elsewhere.nl", "/login?next=/x", "/esports/new?season=3", "/casual/chess/edit"]) {
       state.back = back
-      expect(useReturnTo("/competition")).toBe("/competition")
+      expect(useReturnTo("/esports")).toBe("/esports")
     }
   })
 })

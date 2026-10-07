@@ -1,0 +1,24 @@
+# A member's opt-in to the public contribution leaderboard. The board is privacy-safe by default:
+# a member is shown only once they set `opted_in` to true, and opting out hides them again. The
+# SiteCie house line is not a member and is not governed by this table. `member_id` is the account
+# id, unique so a member holds one choice; the row is kept across an opt-out so the choice is a
+# toggle rather than a destructive wipe.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-07-pinger-board-member.yaml
+      id: pinger-board-member
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: pinger_board_member
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column:
+                  name: member_id
+                  type: BIGINT
+                  constraints: {nullable: false, unique: true, uniqueConstraintName: uk_pinger_board_member_member_id}
+              - column: {name: opted_in, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+              - column: {name: updated, type: DATETIME, constraints: {nullable: false}}
+      rollback:
+        - dropTable:
+            tableName: pinger_board_member

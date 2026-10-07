@@ -14,9 +14,12 @@ class InboxIntake(
     private val sent: SentEmails,
     private val users: UserService,
 ) {
-    /** The kept message, or null where it was kept before. */
+    /** The kept message, read from [mailbox] (none for the catch-all), or null where it was kept before. */
     @Transactional
-    fun take(parsed: ParsedInboxMessage): InboxMessage? {
+    fun take(
+        parsed: ParsedInboxMessage,
+        mailbox: String? = null,
+    ): InboxMessage? {
         if (messages.existsByMessageId(parsed.messageId)) return null
         val answers = sent.answeredBy(parsed.threadIds)
         val sender = users.findAllByEmails(listOf(parsed.fromAddress)).firstOrNull()
@@ -35,6 +38,7 @@ class InboxIntake(
                 automatic = parsed.automatic,
                 answersEmailId = answers?.id,
                 senderUserId = sender?.id,
+                mailbox = mailbox,
             ),
         )
     }

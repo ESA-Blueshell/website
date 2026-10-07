@@ -3,7 +3,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import InboxPage from "@/pages/management/InboxPage.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const api = vi.hoisted(() => ({findInbox: vi.fn(), findInboxCounts: vi.fn()}))
+const api = vi.hoisted(() => ({findInbox: vi.fn(), findInboxCounts: vi.fn(), listSendingAddresses: vi.fn()}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -33,6 +33,7 @@ describe("the Inbox page", () => {
       entry({id: 4, state: "REPLIED", handledBy: 6, handledByName: "Alice Board"}),
     ], page: {totalElements: 4, totalPages: 2}}})
     api.findInboxCounts.mockResolvedValue({status: 200, data: {new: 3, oldestNewAt: "2026-09-27T10:02:00Z", done: 142, automatic: 24}})
+    api.listSendingAddresses.mockResolvedValue({status: 200, data: []})
   })
 
   afterEach(() => unmountAll(wrappers, "InboxPage"))
@@ -50,6 +51,26 @@ describe("the Inbox page", () => {
     expect(wrapper.get('[data-testid="inbox-follows-2"]').text()).toBe("To partners@")
     expect(wrapper.get('[data-testid="inbox-state-3"]').text()).toBe("Automatic reply")
     expect(wrapper.get('[data-testid="inbox-row-4"]').text()).toContain("Alice Board")
+  })
+
+  it("narrows to one address's mailbox once the site reads one, and offers no filter before", async () => {
+    let wrapper = await mount()
+    expect(wrapper.find('[data-testid="inbox-filters"]').exists()).toBe(false)
+
+    api.listSendingAddresses.mockResolvedValue({status: 200, data: [
+      {id: 5, address: "events@b.nl", imapHost: "imap.b.nl"},
+      {id: 3, address: "board@b.nl", imapHost: null},
+    ]})
+    wrapper = await mount()
+    const picker = wrapper.getComponent({name: "FilterPicker"})
+    expect((picker.props("options") as Array<{key: string}>).map((one) => one.key)).toEqual(["events@b.nl"])
+
+    picker.vm.$emit("update:modelValue", "events@b.nl")
+    await settle()
+    expect(api.findInbox).toHaveBeenLastCalledWith({query: expect.objectContaining({mailbox: "events@b.nl"})})
+    wrapper.getComponent({name: "FilterBar"}).vm.$emit("clear")
+    await settle()
+    expect(api.findInbox.mock.lastCall![0].query).not.toHaveProperty("mailbox")
   })
 
   it("draws each message as a row on a phone, opening the message", async () => {

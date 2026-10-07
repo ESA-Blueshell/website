@@ -24,19 +24,19 @@ class InboxControllerTest {
     @Test
     fun `reads a page of fifty, newest first, and the counts`() {
         val newestFirst = Sort.by(Sort.Order.desc("receivedAt"), Sort.Order.desc("id"))
-        whenever(inbox.page("x", PageRequest.of(2, 50, newestFirst))).thenReturn(Page.empty())
+        whenever(inbox.page("x", PageRequest.of(2, 50, newestFirst), "events@b.nl")).thenReturn(Page.empty())
         whenever(inbox.counts()).thenReturn(InboxCounts(1, null, 2, 3))
 
-        assertThat(controller.findInbox("x", 2).content).isEmpty()
+        assertThat(controller.findInbox("x", "events@b.nl", 2).content).isEmpty()
         assertThat(controller.findInboxCounts().automatic).isEqualTo(3)
     }
 
     @Test
     fun `orders the page by what the reader picked, and settles ties by id`() {
         val bySender = Sort.by(Sort.Order.asc("fromName"), Sort.Order.desc("id"))
-        whenever(inbox.page(null, PageRequest.of(0, 50, bySender))).thenReturn(Page.empty())
+        whenever(inbox.page(null, PageRequest.of(0, 50, bySender), null)).thenReturn(Page.empty())
 
-        assertThat(controller.findInbox(null, 0, InboxSort.FROM, descending = false).content).isEmpty()
+        assertThat(controller.findInbox(null, null, 0, InboxSort.FROM, descending = false).content).isEmpty()
         assertThat(InboxSort.entries.map { it.property }).containsExactly("receivedAt", "fromName", "subject", "state")
     }
 

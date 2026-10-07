@@ -20,6 +20,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -98,8 +99,8 @@ class InboxTest {
         val cursors: InboxCursorRepository = mock()
         whenever(cursors.findById("INBOX")).thenReturn(Optional.of(InboxCursor("INBOX", 7, 3)))
         val taken = mock<InboxIntake>()
-        val poller =
-            InboxPoller(taken, cursors, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), "", 993, "", "INBOX", true, mock<Environment>())
+        val reading = MailboxReading(taken, cursors, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
+        val poller = InboxPoller(reading, "", 993, "", "INBOX", true, mock<Environment>())
 
         poller.read(folder)
 
@@ -107,13 +108,21 @@ class InboxTest {
         val saved = argumentCaptor<InboxCursor>()
         verify(cursors).save(saved.capture())
         assertThat(saved.firstValue.lastUid).isEqualTo(5)
-        verify(taken, times(1)).take(any())
+        verify(taken, times(1)).take(any(), eq(null))
 
         whenever(cursors.findById("INBOX")).thenReturn(Optional.of(InboxCursor("INBOX", 6, 99)))
         whenever(uids.getMessagesByUID(1, UIDFolder.MAXUID)).thenReturn(arrayOf())
         poller.read(folder)
         verify(uids).getMessagesByUID(1, UIDFolder.MAXUID)
         verify(folder, never()).close(true)
+
+        // An address's own mailbox keeps its place apart, and its messages say whose mailbox they came from.
+        whenever(cursors.findById("address:events@x.nl")).thenReturn(Optional.empty())
+        whenever(uids.getMessagesByUID(1, UIDFolder.MAXUID)).thenReturn(arrayOf<Message>(two))
+        reading.read(folder, AddressInboxPoller.cursorKeyOf("Events@x.nl"), "events@x.nl")
+        verify(taken).take(any(), eq("events@x.nl"))
+        verify(cursors, times(3)).save(saved.capture())
+        assertThat(saved.lastValue.folder).isEqualTo("address:events@x.nl")
     }
 
     @Test
@@ -133,6 +142,7 @@ class InboxTest {
                 false,
                 9,
                 5,
+                "events@x.nl",
             ).apply {
                 id = 1
                 state = InboxState.REPLIED
@@ -140,7 +150,7 @@ class InboxTest {
                 handledAt = Instant.EPOCH
             }
         val page = PageRequest.of(0, 50)
-        whenever(messages.search("lars", page)).thenReturn(PageImpl(listOf(reply), page, 1))
+        whenever(messages.search("lars", "events@x.nl", page)).thenReturn(PageImpl(listOf(reply), page, 1))
         whenever(sent.byIds(listOf(9L))).thenReturn(mapOf(9L to reminder))
         whenever(users.findAllByIds(setOf(5L, 6L))).thenReturn(listOf(lars, Entities.user(id = 6, firstName = "Alice", lastName = "Board")))
         whenever(messages.countByStateAndAutomaticFalse(InboxState.NEW)).thenReturn(3)
@@ -148,11 +158,12 @@ class InboxTest {
         whenever(messages.countByStateAndAutomaticFalse(InboxState.HANDLED)).thenReturn(42)
         whenever(messages.countByAutomaticTrue()).thenReturn(24)
 
-        val entry = Inbox(messages, mock(), sent, users).page(" lars ", page).content.single()
+        val entry = Inbox(messages, mock(), sent, users).page(" lars ", page, " events@x.nl ").content.single()
 
         assertThat(entry.senderName).isEqualTo("Lars Mulder")
         assertThat(entry.handledByName).isEqualTo("Alice Board")
         assertThat(entry.answers).isEqualTo(AnsweredEmail(9, "email.contribution-reminder", Instant.EPOCH))
+        assertThat(entry.mailbox).isEqualTo("events@x.nl")
         assertThat(Inbox(messages, mock(), sent, users).counts()).isEqualTo(InboxCounts(3, null, 142, 24))
     }
 
@@ -171,9 +182,7 @@ class InboxTest {
         whenever(environment.getProperty("email.bounce.imap.password")).thenReturn("secret")
         val poller =
             InboxPoller(
-                mock(),
-                cursors,
-                Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
+                MailboxReading(mock(), cursors, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)),
                 "imap.x.nl",
                 993,
                 "catch@x.nl",
@@ -199,7 +208,7 @@ class InboxTest {
         assertThat(InboxCursor("INBOX", 7, 3).id).isEqualTo("INBOX")
         assertThat(InboxMessage::class.java.getDeclaredConstructor().newInstance()).isNotNull
         assertThat(InboxCursor::class.java.getDeclaredConstructor().newInstance()).isNotNull
-        val poller = InboxPoller(mock(), mock(), Clock.systemUTC(), "", 993, "", "INBOX", true, mock<Environment>())
+        val poller = InboxPoller(MailboxReading(mock(), mock(), Clock.systemUTC()), "", 993, "", "INBOX", true, mock<Environment>())
         assertThat(poller.sessionFor("imaps").getProperty("mail.store.protocol")).isEqualTo("imaps")
     }
 }

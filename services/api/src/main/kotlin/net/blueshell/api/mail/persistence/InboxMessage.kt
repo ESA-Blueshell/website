@@ -53,6 +53,9 @@ class InboxMessage(
     val answersEmailId: Long?,
     @Column(name = "sender_user_id")
     val senderUserId: Long?,
+    /** The address whose mailbox it was read from; none for the configured catch-all. */
+    @Column(name = "mailbox", length = 320)
+    val mailbox: String? = null,
 ) : AutoIdEntity() {
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false, length = 16)

@@ -28,9 +28,10 @@ export {ConversationKind, InboxState}
 const INBOX_SORTS: Record<string, InboxSort> = {received: InboxSort.RECEIVED, from: InboxSort.FROM, what: InboxSort.SUBJECT, state: InboxSort.STATE}
 
 /** One page, newest first unless the reader ordered it; an empty one where it could not be read. */
-export async function loadInboxPage(query: PageQuery): Promise<PageOf<InboxEntry>> {
+export async function loadInboxPage(query: PageQuery, mailbox: string | null = null): Promise<PageOf<InboxEntry>> {
   const sort = query.sort && INBOX_SORTS[query.sort.key] ? {sort: INBOX_SORTS[query.sort.key], descending: query.sort.descending} : {}
-  const page = await readOr(findInbox({query: {page: query.page, ...(query.search ? {search: query.search} : {}), ...sort}}), null)
+  const narrowed = {...(query.search ? {search: query.search} : {}), ...(mailbox ? {mailbox} : {})}
+  const page = await readOr(findInbox({query: {page: query.page, ...narrowed, ...sort}}), null)
   if (!page) return {rows: [], totalElements: 0, totalPages: 1}
   return {rows: page.content ?? [], totalElements: page.page?.totalElements ?? 0, totalPages: Math.max(1, page.page?.totalPages ?? 1)}
 }

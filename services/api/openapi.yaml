@@ -4006,6 +4006,11 @@ components:
         id:
           format: int64
           type: integer
+        mailbox:
+          description: The address whose mailbox it was read from; absent for the site's catch-all
+          type:
+          - string
+          - 'null'
         receivedAt:
           format: date-time
           type: string
@@ -21832,6 +21837,11 @@ paths:
       parameters:
       - in: query
         name: search
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: mailbox
         required: false
         schema:
           type: string

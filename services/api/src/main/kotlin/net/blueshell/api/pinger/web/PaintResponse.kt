@@ -13,6 +13,8 @@ data class PaintResponse(
     val width: Int,
     val height: Int,
     val imageUrl: String?,
+    @field:Schema(description = "Whether the always-on SiteCie painter contributes; ratePps is its rate")
+    val siteCieEnabled: Boolean,
 ) {
     companion object {
         fun from(view: PaintView) =
@@ -24,6 +26,7 @@ data class PaintResponse(
                 width = view.width,
                 height = view.height,
                 imageUrl = view.imageUrl,
+                siteCieEnabled = view.siteCieEnabled,
             )
     }
 }

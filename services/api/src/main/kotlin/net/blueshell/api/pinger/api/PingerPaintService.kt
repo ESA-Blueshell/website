@@ -34,6 +34,7 @@ class PingerPaintService(
         width: Int,
         height: Int,
         imagePath: String?,
+        siteCieEnabled: Boolean,
     ): PaintView {
         // Long arithmetic: the inputs are bounded by bean validation, but adding two request ints
         // is an overflow pattern, so widen before the sum.
@@ -57,6 +58,7 @@ class PingerPaintService(
         row.width = width
         row.height = height
         row.imagePath = stored?.path
+        row.siteCieEnabled = siteCieEnabled
         return viewOf(repository.save(row))
     }
 
@@ -76,5 +78,6 @@ class PingerPaintService(
             // Built from the stored path, not a fresh lookup: a public read must not 400 if the
             // file is later removed. This is exactly what PublicFileUrls.of(file) would return.
             imageUrl = row.imagePath?.let { "${PublicFileUrls.PATH}/$it" },
+            siteCieEnabled = row.siteCieEnabled,
         )
 }

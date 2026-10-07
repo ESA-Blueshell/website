@@ -1,0 +1,21 @@
+# The SiteCie toggle on the one paint job: whether the always-on cluster painter contributes. The
+# painter's rate stays the existing rate_pps, since SiteCie is that painter and one sender has one
+# rate. Defaults to true so the seeded row keeps painting; an admin turns it off from the main site.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-07-pinger-sitecie.yaml
+      id: pinger-sitecie-enabled
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: pinger_paint
+            columns:
+              - column:
+                  name: site_cie_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints: {nullable: false}
+      rollback:
+        - dropColumn:
+            tableName: pinger_paint
+            columnName: site_cie_enabled

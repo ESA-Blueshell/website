@@ -15,7 +15,7 @@ import (
 	"golang.org/x/net/ipv6"
 	"golang.org/x/time/rate"
 
-	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
+	"github.com/ESA-Blueshell/website/services/pinger/canvas"
 )
 
 // Conn is the raw ICMPv6 socket; *icmp.PacketConn satisfies it.

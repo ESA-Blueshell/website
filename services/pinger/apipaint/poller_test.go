@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
+	"github.com/ESA-Blueshell/website/services/pinger/canvas"
 )
 
 // fakeSource scripts the descriptor and counts image fetches, so a test can assert the poller

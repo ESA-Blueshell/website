@@ -17,7 +17,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
+	"github.com/ESA-Blueshell/website/services/pinger/paint"
 )
 
 // liveInterval is how often the socket pushes the live state. It is a small JSON object, not

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
+	"github.com/ESA-Blueshell/website/services/pinger/canvas"
 )
 
 type fakeConn struct {

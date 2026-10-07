@@ -2,20 +2,35 @@ package settings
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/alicebob/miniredis/v2"
+	"github.com/valkey-io/valkey-go"
 
 	"github.com/ESA-Blueshell/website/services/pinger/internal/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/paint"
 )
 
-// valkeyAddr starts an in-memory Redis-compatible server the Store talks to, so the tests need no
-// Docker and the module carries no container runtime.
+// valkeyAddr is the Valkey these tests talk to, from PINGER_TEST_VALKEY. CI runs a Valkey service
+// and sets it; locally, run one and point this at it, or the Valkey-backed tests skip. Keeping the
+// server out of the module means no test-only dependency.
 func valkeyAddr(t *testing.T) string {
 	t.Helper()
-	return miniredis.RunT(t).Addr()
+	addr := os.Getenv("PINGER_TEST_VALKEY")
+	if addr == "" {
+		t.Skip("set PINGER_TEST_VALKEY to a Valkey address to run the Valkey-backed tests")
+	}
+	// One shared Valkey, so wipe it for a clean slate each call.
+	c, err := valkey.NewClient(valkey.ClientOption{InitAddress: []string{addr}, DisableCache: true, ForceSingleClient: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	if err := c.Do(context.Background(), c.B().Flushall().Build()).Error(); err != nil {
+		t.Fatal(err)
+	}
+	return addr
 }
 
 func open(t *testing.T, addr string) *Store {

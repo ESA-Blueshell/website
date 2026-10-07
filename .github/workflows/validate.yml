@@ -221,7 +221,7 @@ jobs:
         run: ./scripts/check-workflow-permissions.py
 
   pinger:
-    # The settings tests start Valkey through testcontainers, on the runner's Docker.
+    # A real Valkey the settings tests point at, so the module needs no test-server dependency.
     name: Pinger tests and image
     needs: changes
     if: fromJSON(needs.changes.outputs.run).pinger
@@ -230,6 +230,11 @@ jobs:
     defaults:
       run:
         working-directory: services/pinger
+    services:
+      valkey:
+        image: valkey/valkey:8-alpine@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507
+        ports:
+          - 6379:6379
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -247,6 +252,8 @@ jobs:
 
       - name: Test
         run: go test -race -count=1 ./...
+        env:
+          PINGER_TEST_VALKEY: localhost:6379
 
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
 

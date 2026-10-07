@@ -96,8 +96,4 @@ defineExpose({validate})
 .form-fields + .form-fields {
   margin-top: 0.5rem;
 }
-
-.v-checkbox .v-selection-control {
-  min-height: 40px !important;
-}
 </style>

@@ -39,11 +39,11 @@ export interface Expandable {
 export interface PagedTable<T> {
   rows: Ref<T[]>
   loading: Ref<boolean>
-  /** One-based, as a `v-pagination` reads it. */
+  /** One-based; the API reads it zero-based. */
   page: Ref<number>
   totalPages: Ref<number>
   totalElements: Ref<number>
-  /** Nullable because a clearable `v-text-field` writes null, not "". */
+  /** Null reads as no search. */
   search: Ref<string | null>
   pageRangeLabel: ComputedRef<string>
   isExpanded: (row: T) => boolean

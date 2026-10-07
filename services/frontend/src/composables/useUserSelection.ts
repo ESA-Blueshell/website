@@ -47,7 +47,7 @@ export function useUserSelection<K extends string | number = number>(displayedId
 
   /** True when the header checkbox should show the indeterminate icon. */
   const headerIndeterminate = computed(() => headerState.value === "indeterminate")
-  /** Model-value for the header v-checkbox (true = all displayed selected). */
+  /** Model-value for the header checkbox (true = all displayed selected). */
   const headerChecked = computed(() => headerState.value === "checked")
 
   /** Toggle all currently-displayed rows. */

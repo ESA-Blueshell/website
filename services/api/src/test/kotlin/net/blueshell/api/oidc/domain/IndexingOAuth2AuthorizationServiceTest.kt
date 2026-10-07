@@ -103,4 +103,43 @@ class IndexingOAuth2AuthorizationServiceTest {
         assertThat(service.findByPrincipal("ada").map { it.id }).contains(authorization.id)
         assertThat(service.authorizedAt(authorization.id)).isNull()
     }
+
+    @Test
+    fun `a refresh racing a revoke cannot bring the grant back`() {
+        val granted = authorization(id = "race", refreshValue = "refresh-first")
+        service.save(granted)
+        service.remove(granted)
+
+        // The refresh flow rotates the token and saves the same id; the revoke must win.
+        service.save(authorization(id = "race", refreshValue = "refresh-rotated"))
+
+        assertThat(service.findByToken("refresh-rotated", OAuth2TokenType.REFRESH_TOKEN)).isNull()
+        assertThat(service.findById("race")).isNull()
+        assertThat(service.findByPrincipal("ada")).isEmpty()
+    }
+
+    @Test
+    fun `a revoked id is hidden even if a racing save slipped it into the delegate`() {
+        val granted = authorization(id = "slip", refreshValue = "refresh-slip")
+        service.save(granted)
+        service.remove(granted)
+        // A save that read the tombstone a moment too early and landed in the delegate directly.
+        delegate.save(granted)
+
+        assertThat(service.findByToken("refresh-slip", OAuth2TokenType.REFRESH_TOKEN)).isNull()
+        assertThat(service.findById("slip")).isNull()
+        assertThat(service.findByPrincipal("ada")).isEmpty()
+    }
+
+    @Test
+    fun `a fresh login after a revoke still works, since it is a new authorization id`() {
+        val old = authorization(id = "old", refreshValue = "refresh-old")
+        service.save(old)
+        service.remove(old)
+
+        service.save(authorization(id = "new", refreshValue = "refresh-new"))
+
+        assertThat(service.findByToken("refresh-new", OAuth2TokenType.REFRESH_TOKEN)?.id).isEqualTo("new")
+        assertThat(service.findByPrincipal("ada").map { it.id }).containsExactly("new")
+    }
 }

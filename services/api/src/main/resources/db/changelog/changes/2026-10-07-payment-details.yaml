@@ -1,7 +1,8 @@
 # How a person pays and the mandate they are collected under, on the person rather than on one
 # membership (#2125). The IBAN and account holder are sealed by Vault Transit to the person (api
 # ADR-038); only the masked IBAN stays readable. The way of paying moves off the memberships: a
-# person keeps that of their running membership, else that of their newest.
+# person keeps that of their running membership, else that of their newest. memberships.incasso is
+# no longer read but stays for the release before this one, and is dropped in a later one (ADR-034).
 databaseChangeLog:
   - changeSet:
       logicalFilePath: db/changelog/changes/2026-10-07-payment-details.yaml
@@ -41,16 +42,8 @@ databaseChangeLog:
                 ORDER BY j.end_date IS NULL DESC, j.start_date DESC, j.id DESC
                 LIMIT 1
               )
-        - dropIndex: {tableName: memberships, indexName: idx_memberships_incasso}
-        - dropColumn: {tableName: memberships, columnName: incasso}
+        # Nothing writes it any more, so a new membership takes false until the column goes.
+        - addDefaultValue: {tableName: memberships, columnName: incasso, columnDataType: BIT(1), defaultValueBoolean: false}
       rollback:
-        - addColumn:
-            tableName: memberships
-            columns:
-              - column: {name: incasso, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
-        - sql:
-            sql: >-
-              UPDATE memberships m JOIN payment_details p ON p.user_id = m.user_id
-              SET m.incasso = p.incasso WHERE m.end_date IS NULL
-        - createIndex: {tableName: memberships, indexName: idx_memberships_incasso, columns: [{column: {name: incasso}}]}
+        - dropDefaultValue: {tableName: memberships, columnName: incasso, columnDataType: BIT(1)}
         - dropTable: {tableName: payment_details}

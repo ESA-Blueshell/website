@@ -89,7 +89,8 @@ class OwnMandateIT : UserTestSupport() {
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
         val kept =
             jdbc.queryForMap(
-                "SELECT incasso, mandate_address, mandate_kind, mandate_wording_version, mandate_authorised_by FROM payment_details WHERE user_id = ?",
+                "SELECT incasso, mandate_address, mandate_kind, mandate_wording_version, mandate_authorised_by " +
+                    "FROM payment_details WHERE user_id = ?",
                 applicant.id,
             )
         assertThat(kept["mandate_address"].toString()).doesNotContain("Hallenweg").doesNotContain("Enschede").doesNotContain("7522")

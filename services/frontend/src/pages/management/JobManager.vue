@@ -64,6 +64,7 @@ const {
   sortKey,
   descending,
   sortBy,
+  orderBy,
 } = table
 
 watch([selectedCategory, selectedStatus, hideSkipped], () => {
@@ -100,11 +101,10 @@ const statusOptions = jobStatusOptions()
 const successRate = computed(() => rateOf(stats.value))
 
 // Jobs are read a page at a time, so the server orders them. A job's kind is worked out from its
-// type, not stored, so the server cannot order by it.
+// type, not stored, so it reads under the job's name rather than as a column nobody can order.
 const COLUMNS: TableColumn[] = [
   {key: "queued", label: "Queued", sortable: true},
   {key: "job", label: "Job", wrap: true, sortable: true},
-  {key: "kind", label: "Kind"},
   {key: "by", label: "Started by", wrap: true, sortable: true},
   {key: "status", label: "Status", wrap: true, sortable: true},
   {key: "attempts", label: "Attempts", sortable: true},
@@ -245,6 +245,7 @@ onMounted(async () => {
       testid="job-manager-table"
       :to="(execution) => `/management/jobs/${execution.id}`"
       @more="more"
+      @order="orderBy"
       @sort="sortBy"
     >
       <template #count>
@@ -304,6 +305,10 @@ onMounted(async () => {
           {{ previewTitle(row) }}
         </router-link>
         <span
+          class="mg-sub"
+          :data-testid="`job-row-kind-${row.id}`"
+        >{{ titleCase(row.category ?? "other") }}</span>
+        <span
           v-if="payloadChips(row.payload).length"
           class="mg-sub"
           :data-testid="`job-row-payload-${row.id}`"
@@ -313,9 +318,6 @@ onMounted(async () => {
           class="mg-sub"
           :data-testid="`job-row-effect-${row.id}`"
         >{{ effectLabel(row) }}</span>
-      </template>
-      <template #kind="{row}">
-        {{ titleCase(row.category ?? "other") }}
       </template>
       <template #by="{row}">
         <span :data-testid="`job-row-trigger-${row.id}`">{{ startedBy(row) }}</span>

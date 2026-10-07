@@ -200,6 +200,35 @@ describe("ManagementTable", () => {
     expect(unsorted.findAll("thead th")).toHaveLength(2)
   })
 
+  it("offers a phone the heads' orders in a picker: its own order in place, the server's to the page", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const own = [{key: "name", label: "Name", sortBy: (row: Row) => row.name}, {key: "when", label: "When", sortable: true}, {key: "seats", label: "Seats"}]
+    const wrapper = mount(ManagementTable<Row>, {
+      props: {columns: own, rows, rowKey: (row: Row) => row.id, testid: "table", sortKey: "when", descending: true},
+      slots: {...cells, phone: ({row}: {row: Row}) => h("p", {class: "as-row"}, row.name)},
+      global: {stubs},
+    })
+    const picker = wrapper.getComponent({name: "FilterPicker"})
+
+    expect((picker.props("options") as Array<{key: string; label: string}>).map((one) => `${one.key} ${one.label}`))
+      .toEqual(["name:up Name", "name:down Name, reversed", "when:up When", "when:down When, reversed"])
+    expect(picker.props("modelValue")).toBe("when:down")
+    picker.vm.$emit("update:modelValue", "name:up")
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll(".as-row").map((one) => one.text())).toEqual(["Kandi", "Sitecie"])
+    expect(picker.props("modelValue")).toBe("name:up")
+    picker.vm.$emit("update:modelValue", "when:up")
+    picker.vm.$emit("update:modelValue", null)
+    expect(wrapper.emitted("order")).toEqual([["when", false], [null, false]])
+
+    const unnamed = mount(ManagementTable<Row>, {
+      props: {columns: own, rows, rowKey: (row: Row) => row.id},
+      slots: {...cells, phone: ({row}: {row: Row}) => h("p", row.name)},
+      global: {stubs},
+    })
+    expect(unnamed.getComponent({name: "FilterPicker"}).props("testid")).toBe("table-order")
+  })
+
   it("hands each row to the page on a phone, and keeps the table where the page draws no row", () => {
     vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
     const asRows = mount(ManagementTable<Row>, {

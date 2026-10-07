@@ -12,6 +12,7 @@ import net.blueshell.api.shared.security.CurrentUserProvider
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.data.jpa.domain.JpaSort
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -35,6 +36,9 @@ enum class InboxSort(
     FROM("fromName"),
     SUBJECT("subject"),
     STATE("state"),
+
+    /** By the name of who handled it, read off the account the search joins as `h`. */
+    HANDLED_BY("h.firstName"),
 }
 
 /** The catch-all mailbox as the board reads it, newest first unless asked otherwise. */
@@ -55,8 +59,11 @@ class InboxController(
         @RequestParam(defaultValue = "true") descending: Boolean = true,
     ): Page<InboxEntry> {
         val direction = if (descending) Sort.Direction.DESC else Sort.Direction.ASC
+        // A handler's name is on the joined account rather than the message, so it is ordered by unchecked path.
+        val by =
+            if (sort == InboxSort.HANDLED_BY) JpaSort.unsafe(direction, sort.property, "h.lastName") else Sort.by(direction, sort.property)
         // The id settles messages that tie, so a page never repeats or skips one.
-        val order = Sort.by(direction, sort.property).and(Sort.by(Sort.Direction.DESC, "id"))
+        val order = by.and(Sort.by(Sort.Direction.DESC, "id"))
         return inbox.page(search, PageRequest.of(page.coerceAtLeast(0), PAGE_SIZE, order), mailbox)
     }
 

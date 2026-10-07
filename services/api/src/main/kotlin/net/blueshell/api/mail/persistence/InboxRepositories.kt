@@ -15,6 +15,7 @@ interface InboxMessageRepository : JpaRepository<InboxMessage, Long> {
     @Query(
         """
         select m from InboxMessage m
+        left join User h on h.id = m.handledBy
         where (:mailbox is null or m.mailbox = :mailbox)
           and (:search is null
            or lower(m.fromAddress) like lower(concat('%', :search, '%'))

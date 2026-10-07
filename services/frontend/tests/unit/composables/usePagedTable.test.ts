@@ -220,6 +220,14 @@ describe("usePagedTable", () => {
     expect(asked().sort).toEqual({key: "when", descending: false})
     await table.more()
     expect(asked()).toMatchObject({page: 1, sort: {key: "when", descending: false}})
+
+    // A phone's picker names the order outright, and none puts it back to what the api gives.
+    table.orderBy("name", true)
+    await settle()
+    expect(asked()).toMatchObject({page: 0, sort: {key: "name", descending: true}})
+    table.orderBy(null, true)
+    await settle()
+    expect(asked().sort).toBeUndefined()
   })
 
   it("stops loading even when the read throws", async () => {

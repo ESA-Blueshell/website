@@ -14,6 +14,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.data.jpa.domain.JpaSort
 
 class InboxControllerTest {
     private val inbox: Inbox = mock()
@@ -37,7 +38,15 @@ class InboxControllerTest {
         whenever(inbox.page(null, PageRequest.of(0, 50, bySender), null)).thenReturn(Page.empty())
 
         assertThat(controller.findInbox(null, null, 0, InboxSort.FROM, descending = false).content).isEmpty()
-        assertThat(InboxSort.entries.map { it.property }).containsExactly("receivedAt", "fromName", "subject", "state")
+        assertThat(InboxSort.entries.map { it.property }).containsExactly("receivedAt", "fromName", "subject", "state", "h.firstName")
+    }
+
+    @Test
+    fun `orders by who handled a message through the account the search joins`() {
+        val byHandler = JpaSort.unsafe(Sort.Direction.DESC, "h.firstName", "h.lastName").and(Sort.by(Sort.Direction.DESC, "id"))
+        whenever(inbox.page(null, PageRequest.of(0, 50, byHandler), null)).thenReturn(Page.empty())
+
+        assertThat(controller.findInbox(null, null, 0, InboxSort.HANDLED_BY, descending = true).content).isEmpty()
     }
 
     @Test

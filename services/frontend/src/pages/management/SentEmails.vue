@@ -41,7 +41,7 @@ const table = usePagedTable<SentEmail>((query) => {
   void loadStats()
   return loadEmailPage(query)
 }, {pageSize: 50})
-const {rows, search, pageRangeLabel, refresh, more, sortKey, descending, sortBy} = table
+const {rows, search, pageRangeLabel, refresh, more, sortKey, descending, sortBy, orderBy} = table
 
 // Sent mail is read a page at a time, so the server orders it.
 const COLUMNS: TableColumn[] = [
@@ -120,6 +120,7 @@ onMounted(refresh)
       testid="sent-emails-table"
       :to="(email) => `/management/mail/sent/${email.id}`"
       @more="more"
+      @order="orderBy"
       @sort="sortBy"
     >
       <template #count>

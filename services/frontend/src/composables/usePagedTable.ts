@@ -58,6 +58,7 @@ export interface PagedTable<T> {
   descending: Ref<boolean>
   /** A head pressed: ascending, then descending, then back to the list's own order. */
   sortBy: (key: string) => void
+  orderBy: (key: string | null, descending: boolean) => void
 }
 
 export interface PagedTableOptions {
@@ -167,6 +168,12 @@ export function usePagedTable<T extends Expandable>(
     resetToFirstPage()
   }
 
+  /** Puts the rows in one order at once, as a phone's picker does; no key leaves them as the api gives them. */
+  const orderBy = (key: string | null, downwards: boolean) => {
+    [sortKey.value, descending.value] = key ? [key, downwards] : ["", false]
+    resetToFirstPage()
+  }
+
   watch(page, () => {
     expanded.value = []
     void refresh()
@@ -198,5 +205,6 @@ export function usePagedTable<T extends Expandable>(
     sortKey,
     descending,
     sortBy,
+    orderBy,
   }
 }

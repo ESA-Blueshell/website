@@ -91,6 +91,31 @@ class InboxIT : UserTestSupport() {
     }
 
     @Test
+    fun `orders the inbox by who handled a message, and narrows it to one address's mailbox`() {
+        val board = createUserWithRole(Role.BOARD)
+        val stamp = UUID.randomUUID()
+        val handled = requireNotNull(intake.take(received("<handled-$stamp>", "a-$stamp@example.org")))
+        intake.take(received("<waiting-$stamp>", "b-$stamp@example.org"))
+        intake.take(received("<events-$stamp>", "c-$stamp@example.org"), "events-$stamp@b.nl")
+        mvc.perform(post("/mail/inbox/{id}/handled", handled.id).with(signedIn(board))).andExpect(status().isOk)
+
+        mvc
+            .perform(
+                get("/mail/inbox")
+                    .param("search", stamp.toString())
+                    .param("sort", "HANDLED_BY")
+                    .param("descending", "true")
+                    .with(signedIn(board)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.content.length()").value(3))
+            .andExpect(jsonPath("$.content[0].handledBy").value(board.id!!.toInt()))
+        mvc
+            .perform(get("/mail/inbox").param("mailbox", "events-$stamp@b.nl").with(signedIn(board)))
+            .andExpect(jsonPath("$.content.length()").value(1))
+            .andExpect(jsonPath("$.content[0].mailbox").value("events-$stamp@b.nl"))
+    }
+
+    @Test
     fun `the board answers a message in its thread and the conversation shows it, or marks it handled, and members cannot`() {
         val board = createUserWithRole(Role.BOARD)
         val member = createUserWithRole(Role.MEMBER)

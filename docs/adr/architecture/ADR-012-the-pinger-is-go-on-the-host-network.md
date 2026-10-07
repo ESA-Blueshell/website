@@ -36,11 +36,13 @@ as root with every capability dropped except `NET_RAW`, no privilege escalation 
 read-only root filesystem. Its page listens on `:8090` on the node. The NixOS firewall opens
 that port on `cni0` only, so Traefik can reach it and the internet cannot.
 
-**A settings change asks the api, not the header.** Forward-auth gates the host at MEMBER.
-Any pod in the cluster can reach the node's port with a forged `X-User-Groups`, and a
-NetworkPolicy does not cover a host-network pod. So a change replays the caller's cookies
-to `/oauth2/forward-auth` and needs ADMIN in the api's answer. Cross-origin posts are
-refused, because the session cookie is `SameSite=None`.
+**Anyone may watch; only an admin may edit, and editing asks the api.** The page is public —
+its IngressRoute carries no forward-auth, so anonymous viewers see the live canvas. Editing is
+gated instead: a settings change replays the caller's session to `/oauth2/forward-auth` and
+needs ADMIN in the api's answer, and the page shows the form only when that same check passes.
+Not a header: any pod in the cluster could reach the node's port with a forged `X-User-Groups`,
+and a NetworkPolicy does not cover a host-network pod, so the api's answer is the only authority.
+Cross-origin posts are refused, because the session cookie is `SameSite=None`.
 
 ## Consequences
 

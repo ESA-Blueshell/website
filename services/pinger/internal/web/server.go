@@ -10,7 +10,6 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -148,7 +147,6 @@ func (s *server) view(r *http.Request) view {
 		IsIdle:      state == string(paint.Idle),
 		IsClosed:    state == string(paint.Closed),
 		ShowNumbers: state != string(paint.Closed),
-		ShowForm:    slices.Contains(strings.Split(r.Header.Get("X-User-Groups"), ","), "ADMIN"),
 	}
 	if st.PassTotal > 0 {
 		v.PassPercent = st.PassDone * 100 / st.PassTotal
@@ -272,7 +270,13 @@ func (s *server) countdown() countdown {
 }
 
 func (s *server) index(w http.ResponseWriter, r *http.Request) {
-	s.render(w, "page", s.view(r))
+	v := s.view(r)
+	// The page is public, so Traefik injects no identity. Ask the api who the caller is to decide
+	// whether to render the settings form; the POST re-checks, so this is only about showing it.
+	if admin, err := s.auth.IsAdmin(r); err == nil {
+		v.ShowForm = admin
+	}
+	s.render(w, "page", v)
 }
 
 // liveState is the live feed the socket pushes as JSON. Raw numbers drive the bar and the canvas,

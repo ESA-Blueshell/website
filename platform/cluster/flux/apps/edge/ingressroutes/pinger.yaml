@@ -11,12 +11,12 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # MEMBER in ForwardAuthController.HOST_ROLE. Saving settings asks the api again for ADMIN.
+    # Public: anyone may watch. No forward-auth here, so the page is open to anonymous viewers.
+    # Editing is gated in the api instead — the settings POST replays the caller's session to
+    # /oauth2/forward-auth and only an ADMIN gets through, so the open page cannot be edited by a
+    # visitor or a forged header.
     - kind: Rule
       match: Host(`pings.esa-blueshell.nl`)
-      middlewares:
-        - name: forward-auth
-          namespace: edge-system
       services:
         - name: pinger
           namespace: default

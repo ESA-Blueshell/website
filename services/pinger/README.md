@@ -45,7 +45,7 @@ visitor as an admin. Do not set it in the cluster.
 | `PINGER_LISTEN` | `:8090` |
 | `PINGER_VALKEY` | `localhost:6379` |
 | `PINGER_API_URL` | `http://localhost:8080`, asked on every settings change |
-| `PINGER_HOST` | `pings.esa-blueshell.nl`, the host forward-auth gates |
+| `PINGER_HOST` | `pings.esa-blueshell.nl`, the host used in the admin check |
 
 The page is server-rendered Go with a hand-written island stylesheet, the site's fonts and the
 shell tile, all embedded through `go:embed`. There is no Node or CSS build step. A WebSocket on

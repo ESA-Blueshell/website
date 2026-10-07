@@ -61,6 +61,26 @@ const slices: SliceItem[] = [
   {id: 3, title: "LAN parties", meta: "Twice a year", banner: lan},
 ]
 
+// A board's row of members, one with a long text and no picture: the row grows to that text.
+const members: SliceItem[] = [
+  {id: 1, title: "Sam de Vries", meta: "Chair", banner: busy},
+  // No picture: the band reads an empty banner as none, as the board's own row does.
+  {id: 2, title: "Noor Bakker", meta: "Treasurer", banner: ""},
+  {id: 3, title: "Alex Jansen", meta: "Secretary", banner: karaoke},
+]
+const blurbs: Record<number | string, string> = {
+  1: "Runs the weekly game nights and keeps the lounge stocked.",
+  2: "Keeps the books, chases the contributions and signs off every purchase the association makes. "
+    + "Also organises the yearly budget meeting, answers every question about the incasso, keeps the "
+    + "subsidy applications going with the university and makes sure the LAN parties stay affordable "
+    + "for everyone who wants to come. Ask them about the new merchandise, the sponsor deals or the "
+    + "plans for a second lounge, and set aside an evening for the answer, because there is a lot to tell. "
+    + "Before the board they ran the LAN committee for two years, moved every table in the lounge at least "
+    + "twice and wrote the guide new committees still use to plan their first event. Outside Blueshell "
+    + "they study applied mathematics, play far too much Rocket League and bake for every general meeting.",
+  3: "Writes the minutes and the newsletter.",
+}
+
 const reel: ReelItem[] = [
   {id: "nights", title: "Game nights", href: "/events", accent: "var(--color-acid)", banner: busy, initials: "GN", notes: ["#general"], chips: ["LegaCie"]},
   {id: "karaoke", title: "Karaoke", href: "/events", accent: "#ff4655", banner: karaoke, initials: "K"},
@@ -298,6 +318,19 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
           :items="slices"
           testid-prefix="gallery-slice"
         />
+        <band-rule />
+        <slice-band
+          :accent="BRAND_ACCENT"
+          :items="members"
+          layout="aside"
+          testid-prefix="gallery-members"
+        >
+          <template #details="{item}">
+            <p :data-testid="`gallery-members-blurb-${item.id}`">
+              {{ blurbs[item.id] }}
+            </p>
+          </template>
+        </slice-band>
         <band-rule />
         <flick-reel
           class="island-dark"

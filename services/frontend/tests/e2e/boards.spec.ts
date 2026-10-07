@@ -645,6 +645,39 @@ test.describe("board page", () => {
     await expect.poll(ragged, {timeout: 5000}).toBeLessThanOrEqual(0.5)
   })
 
+  test("grows the row to a long text where a member has no portrait, and leaves a short one's row as it was", async ({page}) => {
+    await page.setViewportSize({width: 1280, height: 1000})
+    // Long enough to need more room than a row of faces gives, at the measure the words get.
+    const long = Array.from({length: 30}, (_, at) => `Line ${at + 1} of what the treasurer wrote about the year.`).join(" ")
+    const history = wholeHistory.map((one) => one.id !== 9 ? one : {
+      ...one,
+      members: one.members.map((person) => person.id === 92 ? {...person, description: `${long} The end.`} : person),
+    })
+    await installApiMocks(page, {boards: history})
+    await page.goto("/board")
+    const band = page.getByTestId("board-members").locator(".slices")
+    const heightOf = (target: Locator) => target.evaluate((el) => el.getBoundingClientRect().height)
+
+    // The chair opens first and wrote one line, so the row is the height a row of faces asks for.
+    await expect(page.getByTestId("board-member-91")).toHaveClass(/slice--open/)
+    await expect.poll(() => heightOf(band)).toBeGreaterThan(0)
+    const resting = await heightOf(band)
+
+    await page.getByTestId("board-member-92").getByRole("button").click()
+    const blurb = page.getByTestId("board-member-blurb-92")
+    await expect(blurb).toContainText("The end.")
+    // Taller than before, and every word inside the slice rather than cut off at its foot.
+    await expect.poll(() => heightOf(band), {timeout: 5000}).toBeGreaterThan(resting + 20)
+    await expect.poll(() => page.evaluate(() => {
+      const slice = document.querySelector("[data-testid='board-member-92']")!.getBoundingClientRect()
+      const words = document.querySelector("[data-testid='board-member-blurb-92']")!.getBoundingClientRect()
+      return words.bottom <= slice.bottom + 0.5 && words.top >= slice.top - 0.5
+    }), {timeout: 5000}).toBe(true)
+
+    await page.getByTestId("board-member-91").getByRole("button").click()
+    await expect.poll(() => heightOf(band), {timeout: 5000}).toBeCloseTo(resting, 0)
+  })
+
   test("asks for a copy of a portrait the size of the column it is drawn in", async ({page}) => {
     await installApiMocks(page, {boards: wholeHistory})
 

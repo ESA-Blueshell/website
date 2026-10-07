@@ -1521,6 +1521,15 @@ export type GuestResponse = {
 };
 
 /**
+ * The SiteCie house line, a labelled total shown outside the member ranking
+ */
+export type HouseLineResponse = {
+    label: string;
+    online: boolean;
+    totalSent: number;
+};
+
+/**
  * An image a public page draws, and the widths it is stored at
  */
 export type Image = {
@@ -1722,6 +1731,14 @@ export type JwtRequest = {
 };
 
 /**
+ * The SiteCie house line and the ranked, opted-in members of the contribution leaderboard
+ */
+export type LeaderboardResponse = {
+    house?: HouseLineResponse | null;
+    members: Array<StandingResponse>;
+};
+
+/**
  * One person on a line-up being saved: an entry kept, or somebody added
  */
 export type LineupEntryRequest = {
@@ -1861,6 +1878,20 @@ export type MoveTargetRequest = {
 
 export type NameOnRostersRequest = {
     shown: boolean;
+};
+
+/**
+ * The member's choice to appear on the public leaderboard
+ */
+export type OptInRequest = {
+    optedIn: boolean;
+};
+
+/**
+ * Whether the signed-in member appears on the public leaderboard
+ */
+export type OptInResponse = {
+    optedIn: boolean;
 };
 
 export type PageMetadata = {
@@ -2489,6 +2520,19 @@ export type SponsorResponse = {
     name: string;
     updatedAt: string;
     version: number;
+};
+
+/**
+ * One ranked member: their Discord tag and avatar when linked, otherwise their site username
+ */
+export type StandingResponse = {
+    avatarUrl?: string | null;
+    discordTag?: string | null;
+    memberId: number;
+    online: boolean;
+    rank: number;
+    totalSent: number;
+    username?: string | null;
 };
 
 /**
@@ -9443,6 +9487,170 @@ export type ForwardAuthResponses = {
      */
     200: unknown;
 };
+
+export type BoardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/pinger/leaderboard';
+};
+
+export type BoardErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type BoardError = BoardErrors[keyof BoardErrors];
+
+export type BoardResponses = {
+    /**
+     * OK
+     */
+    200: LeaderboardResponse;
+};
+
+export type BoardResponse2 = BoardResponses[keyof BoardResponses];
+
+export type OptInData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/pinger/leaderboard/opt-in';
+};
+
+export type OptInErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type OptInError = OptInErrors[keyof OptInErrors];
+
+export type OptInResponses = {
+    /**
+     * OK
+     */
+    200: OptInResponse;
+};
+
+export type OptInResponse2 = OptInResponses[keyof OptInResponses];
+
+export type SetOptInData = {
+    body: OptInRequest;
+    path?: never;
+    query?: never;
+    url: '/pinger/leaderboard/opt-in';
+};
+
+export type SetOptInErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetOptInError = SetOptInErrors[keyof SetOptInErrors];
+
+export type SetOptInResponses = {
+    /**
+     * OK
+     */
+    200: OptInResponse;
+};
+
+export type SetOptInResponse = SetOptInResponses[keyof SetOptInResponses];
+
+export type StreamData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/pinger/leaderboard/stream';
+};
+
+export type StreamErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type StreamError = StreamErrors[keyof StreamErrors];
+
+export type StreamResponses = {
+    /**
+     * OK
+     */
+    200: LeaderboardResponse;
+};
+
+export type StreamResponse = StreamResponses[keyof StreamResponses];
 
 export type PaintData = {
     body?: never;

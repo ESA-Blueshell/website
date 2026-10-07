@@ -66,6 +66,33 @@ jobs:
       # asks for more, so this has to match what that job declares.
       id-token: write
 
+  helper:
+    # Cross-compiles the SNTPings helper and attaches the binaries to the release, so the pinger
+    # page can offer them for download. Independent of the images; a failure here does not hold up
+    # the announcement.
+    name: Attach the SNTPings helper binaries
+    needs: version
+    if: needs.version.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: services/pinger/go.mod
+
+      - name: Cross-compile the helper
+        run: bash services/pinger/cmd/ping/build.sh
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+        run: gh release upload "$RELEASE_TAG" services/pinger/dist/* --clobber
+
   announce:
     # After `publish`, so the announcement never points at a release whose images
     # are missing or untagged. Skipped along with it if publishing fails.

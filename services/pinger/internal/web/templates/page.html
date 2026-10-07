@@ -232,6 +232,25 @@
     </div>
   </section>
 
+  <section class="lead" id="help" style="--accent: var(--color-acid); border-top: 1px solid var(--color-hairline);">
+    <div class="wrap">
+      <h2 class="h-sub">Help paint it</h2>
+      <p class="body-ash" style="max-width: 46rem; padding-bottom: 1rem;">Run the helper on your own machine and it paints the same image from your connection. It needs IPv6 and nothing to set up — it follows whatever the board chose. Be considerate: SNTPings slows down and blacklists sources that ping too hard.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+        <a class="island-cut island-cut--solid" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-macos-apple"><span>macOS (Apple)</span></a>
+        <a class="island-cut island-cut--quiet" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-macos-intel"><span>macOS (Intel)</span></a>
+        <a class="island-cut island-cut--quiet" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-windows-amd64.exe"><span>Windows</span></a>
+        <a class="island-cut island-cut--quiet" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-linux-amd64"><span>Linux (x64)</span></a>
+        <a class="island-cut island-cut--quiet" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-linux-arm64"><span>Linux (ARM)</span></a>
+      </div>
+      <ul class="body-ash" style="max-width: 46rem; padding-top: 1rem; margin: 0; line-height: 1.7; font-size: 0.85rem;">
+        <li>macOS: run <code>./blueshell-pinger-macos-apple</code> in Terminal.</li>
+        <li>Windows: right-click the file, Run as administrator.</li>
+        <li>Linux: <code>chmod +x</code> it, then run. If it says permission denied, use <code>sudo</code>, or once: <code>sudo sysctl -w net.ipv6.ping_group_range="0 2147483647"</code>.</li>
+      </ul>
+    </div>
+  </section>
+
   <span style="flex-grow: 1;"></span>
   <footer class="ground" style="flex-shrink: 0; box-sizing: border-box; border-top: 1px solid var(--color-hairline); padding-top: 1.25rem; padding-bottom: 1rem;">
     <div class="wrap" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem 3rem; flex-wrap: wrap;">

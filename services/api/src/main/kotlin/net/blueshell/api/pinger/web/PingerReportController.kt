@@ -1,0 +1,45 @@
+package net.blueshell.api.pinger.web
+
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.annotation.security.PermitAll
+import org.springframework.security.core.Authentication
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+/**
+ * The reporting surface the pinger talks to once it is authenticated. For now it proves the path:
+ * a member reaches it with a bearer token and the SiteCie painter with its service token, and each
+ * learns which identity the request resolved to.
+ */
+@RestController
+@RequestMapping("/pinger/report")
+@Tag(name = "Pinger report", description = "Authenticated endpoints the pinger clients report to")
+class PingerReportController {
+    // The report chain authorizes every request to a member or SiteCie before it reaches here, so
+    // the method adds no gate of its own.
+    @PermitAll
+    @GetMapping("/whoami")
+    fun whoami(authentication: Authentication): WhoAmIResponse {
+        val principal = authentication.principal
+        return if (principal is Jwt) {
+            WhoAmIResponse(
+                subject = principal.subject ?: authentication.name,
+                member = true,
+                roles = principal.getClaimAsStringList("roles").orEmpty(),
+            )
+        } else {
+            WhoAmIResponse(subject = authentication.name, member = false, roles = emptyList())
+        }
+    }
+}
+
+/** Who the report request resolved to: a member (with their roles) or the SiteCie service. */
+@Schema(description = "Who the report request resolved to: a member with their roles, or the SiteCie service")
+data class WhoAmIResponse(
+    val subject: String,
+    val member: Boolean,
+    val roles: List<String>,
+)

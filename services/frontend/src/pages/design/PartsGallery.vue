@@ -64,10 +64,11 @@ const slices: SliceItem[] = [
 // A board's row of members, one with a long text and no picture: the row grows to that text.
 const members: SliceItem[] = [
   {id: 1, title: "Sam de Vries", meta: "Chair", banner: busy},
-  {id: 2, title: "Noor Bakker", meta: "Treasurer"},
+  // No picture: the band reads an empty banner as none, as the board's own row does.
+  {id: 2, title: "Noor Bakker", meta: "Treasurer", banner: ""},
   {id: 3, title: "Alex Jansen", meta: "Secretary", banner: karaoke},
 ]
-const blurbs: Record<number, string> = {
+const blurbs: Record<number | string, string> = {
   1: "Runs the weekly game nights and keeps the lounge stocked.",
   2: "Keeps the books, chases the contributions and signs off every purchase the association makes. "
     + "Also organises the yearly budget meeting, answers every question about the incasso, keeps the "

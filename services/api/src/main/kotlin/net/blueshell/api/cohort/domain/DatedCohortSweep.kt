@@ -8,15 +8,18 @@ import org.springframework.stereotype.Component
 /**
  * Recomputes the cohorts read from today's date, just after midnight. No event marks a board taking
  * office or a membership running out, so without this the board would change hands, and Kandi
- * empty, only when somebody next edited a board.
+ * empty, only when somebody next edited a board. A board's own year begins that day too, so its
+ * cohort is registered first and exists from the board's first day.
  */
 @Component
 class DatedCohortSweep(
     private val definitions: CohortDefinitionRegistry,
     private val updater: CohortMembershipUpdater,
+    private val registrar: CohortRegistrar,
 ) {
     @Scheduled(cron = $$"${cohort.dated-cron:0 5 0 * * *}", zone = "Europe/Amsterdam")
     fun recompute() {
+        runCatching { registrar.register() }.onFailure { log.warn("[cohort] could not register today's cohorts: {}", it.message) }
         definitions
             .all()
             .filter { it.type in DATED }
@@ -27,7 +30,8 @@ class DatedCohortSweep(
     }
 
     private companion object {
-        val DATED = setOf(CohortType.BOARD, CohortType.KANDI, CohortType.ACTIVISTS, CohortType.CURRENT_MEMBERS)
+        val DATED =
+            setOf(CohortType.BOARD, CohortType.KANDI, CohortType.ACTIVISTS, CohortType.CURRENT_MEMBERS, CohortType.BOARD_YEAR_MEMBERS)
         val log = LoggerFactory.getLogger(DatedCohortSweep::class.java)
     }
 }

@@ -66,11 +66,11 @@ test.describe("esports pages", () => {
  * happens. The manager is gone; none of what it covered went with it.
  */
 test.describe("what the manager used to do, where it happens now", () => {
-  test("its address lands on the pages that replaced it", async ({page}) => {
+  test("its old public address lands on the esports page", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
 
-    await page.goto("/management/esports")
+    await page.goto("/competition")
 
     await expect(page).toHaveURL(/\/esports$/)
     await expect(page.getByTestId("esports-island")).toBeVisible()

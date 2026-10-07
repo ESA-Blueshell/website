@@ -35,7 +35,9 @@ class PingerPaintService(
         height: Int,
         imagePath: String?,
     ): PaintView {
-        if (originX + width > CANVAS_WIDTH || originY + height > CANVAS_HEIGHT) {
+        // Long arithmetic: the inputs are bounded by bean validation, but adding two request ints
+        // is an overflow pattern, so widen before the sum.
+        if (originX.toLong() + width > CANVAS_WIDTH || originY.toLong() + height > CANVAS_HEIGHT) {
             throw ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "The box runs off the ${CANVAS_WIDTH}x$CANVAS_HEIGHT canvas.",

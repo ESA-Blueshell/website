@@ -41,6 +41,10 @@ pinger:
   - 'services/pinger/**'
   - '!services/pinger/docker-compose.yml'
 
+# The desktop pinger app's Go suite. Like the pinger it shares nothing with the jar or the bundle.
+pingerapp:
+  - 'services/pinger-app/**'
+
 # What no suite reads. `Workflow checks` runs on every pull request, so a
 # workflow other than validate.yml needs no bucket of its own.
 # renovate.json turns automerge off for the paths here that Renovate updates,

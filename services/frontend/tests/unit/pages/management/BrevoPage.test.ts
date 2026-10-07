@@ -98,6 +98,14 @@ describe("the Brevo page", () => {
     await settle()
     expect(bulk().props("title")).toBe("Add missing people")
     expect(bulk().props("items")).toEqual([])
+    expect(bulk().props("pickable")).toBe(false)
+    bulk().vm.$emit("update:open", false)
+    await settle()
+
+    await wrapper.get('[data-testid="brevo-bulk-remove"]').trigger("click")
+    await settle()
+    expect(bulk().props("title")).toBe("Remove additional people")
+    expect(bulk().props("pickable")).toBe(true)
     bulk().vm.$emit("update:open", false)
     await settle()
 

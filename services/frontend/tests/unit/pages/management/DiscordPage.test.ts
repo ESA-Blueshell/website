@@ -109,6 +109,13 @@ describe("the Discord page", () => {
     bulk().vm.$emit("update:open", false)
     await settle()
 
+    await wrapper.get('[data-testid="discord-bulk-remove"]').trigger("click")
+    await settle()
+    expect(bulk().props("title")).toBe("Remove additional people")
+    expect(bulk().props("pickable")).toBe(true)
+    bulk().vm.$emit("update:open", false)
+    await settle()
+
     await wrapper.get('[data-testid="discord-bulk-compare"]').trigger("click")
     await settle()
     expect(bulk().props("title")).toBe("Compare with Discord")

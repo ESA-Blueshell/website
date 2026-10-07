@@ -456,10 +456,18 @@ onMounted(load)
         >
           Add missing people
         </cut-button>
+        <cut-button
+          small
+          testid="brevo-bulk-remove"
+          @click="sync.task.value = 'remove'"
+        >
+          Remove additional people
+        </cut-button>
       </selection-bar>
 
       <bulk-add
         :items="sync.items.value"
+        :pickable="sync.task.value === 'remove'"
         :noun="['list', 'lists']"
         :open="sync.task.value !== null"
         :run="sync.run"

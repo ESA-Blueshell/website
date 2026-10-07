@@ -1943,6 +1943,10 @@ export type PaintRequest = {
      */
     prefix?: string | null;
     ratePps: number;
+    /**
+     * Whether the always-on SiteCie painter contributes; ratePps above is its rate
+     */
+    siteCieEnabled: boolean;
     width: number;
 };
 
@@ -1956,6 +1960,10 @@ export type PaintResponse = {
     originY: number;
     prefix?: string | null;
     ratePps: number;
+    /**
+     * Whether the always-on SiteCie painter contributes; ratePps is its rate
+     */
+    siteCieEnabled: boolean;
     width: number;
 };
 

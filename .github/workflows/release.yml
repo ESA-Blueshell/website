@@ -93,6 +93,95 @@ jobs:
           RELEASE_TAG: ${{ needs.version.outputs.tag }}
         run: gh release upload "$RELEASE_TAG" services/pinger/dist/* --clobber
 
+  desktop:
+    # Builds the desktop pinger app into one unsigned installer per platform and attaches them to the
+    # release, so the SNTPings tab can offer a member the installer for their OS. Each installer is
+    # built on its own OS runner: Wails packages a GUI app for the host, not across operating systems.
+    # The builds are unsigned by design -- notarization and code signing are out of scope, and the
+    # download page documents the first-run open steps the lack of a signature needs. Independent of
+    # the images and the helper; a failure here does not hold up the announcement.
+    name: Build and attach the desktop pinger installers
+    needs: version
+    if: needs.version.outputs.released == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            platform: darwin/universal
+            asset: Blueshell-Pinger.dmg
+          - runner: ubuntu-22.04
+            platform: linux/amd64
+            asset: Blueshell-Pinger-x86_64.AppImage
+          - runner: windows-latest
+            platform: windows/amd64
+            asset: Blueshell-Pinger.exe
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+        working-directory: services/pinger-app
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: services/pinger-app/go.mod
+          cache-dependency-path: services/pinger-app/go.sum
+
+      # The Linux build links against GTK and WebKit; the other runners ship their native WebView.
+      - name: Install the Linux WebView libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+
+      - name: Install the Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
+
+      # Default is unsigned: no signing identity or notarization is passed on any platform.
+      - name: Build the app
+        run: wails build -clean -platform ${{ matrix.platform }}
+
+      - name: Package the macOS DMG
+        if: runner.os == 'macOS'
+        run: hdiutil create -volname "Blueshell Pinger" -srcfolder build/bin/blueshell-pinger.app -ov -format UDZO "${{ matrix.asset }}"
+
+      - name: Name the Windows installer
+        if: runner.os == 'Windows'
+        run: cp build/bin/blueshell-pinger.exe "${{ matrix.asset }}"
+
+      - name: Package the Linux AppImage
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p AppDir/usr/bin
+          cp build/bin/blueshell-pinger AppDir/usr/bin/
+          cp build/appicon.png AppDir/blueshell-pinger.png
+          cat > AppDir/blueshell-pinger.desktop <<'EOF'
+          [Desktop Entry]
+          Name=Blueshell Pinger
+          Exec=blueshell-pinger
+          Icon=blueshell-pinger
+          Type=Application
+          Categories=Utility;
+          EOF
+          cat > AppDir/AppRun <<'EOF'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/blueshell-pinger" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+          curl -fsSL https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o appimagetool
+          chmod +x appimagetool
+          ./appimagetool --appimage-extract-and-run AppDir "${{ matrix.asset }}"
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+        run: gh release upload "$RELEASE_TAG" "${{ matrix.asset }}" --clobber
+
   announce:
     # After `publish`, so the announcement never points at a release whose images
     # are missing or untagged. Skipped along with it if publishing fails.

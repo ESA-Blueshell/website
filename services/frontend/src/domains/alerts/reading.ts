@@ -22,6 +22,10 @@ export function alertTitle(alert: Alert): string {
       return `The Discord bot lacks ${counted(alert.count, "permission", "permissions")}: ${alert.subjectLabel}`
     case AlertKind.BREVO_FOLDERS_SHARE_NAME:
       return `Brevo has folders that share a name: ${alert.subjectLabel}`
+    case AlertKind.DISCORD_ROLES_ABOVE_BOT:
+      return `${counted(alert.count, "linked role sits", "linked roles sit")} above the bot's role: ${alert.subjectLabel}`
+    case AlertKind.DISCORD_CHANNELS_BEYOND_BOT:
+      return `The bot cannot keep who ${counted(alert.count, "channel", "channels")} ${alert.count === 1 ? "is" : "are"} open to: ${alert.subjectLabel}`
   }
 }
 
@@ -44,6 +48,10 @@ export function alertRow(alert: Alert): {name: string; meta: string; from: strin
       return {name: `The bot lacks ${counted(alert.count, "permission", "permissions")}`, meta: alert.subjectLabel ?? "", from: "Discord"}
     case AlertKind.BREVO_FOLDERS_SHARE_NAME:
       return {name: "Folders share a name", meta: alert.subjectLabel ?? "", from: "Brevo"}
+    case AlertKind.DISCORD_ROLES_ABOVE_BOT:
+      return {name: `${counted(alert.count, "role sits", "roles sit")} above the bot`, meta: alert.subjectLabel ?? "", from: "Discord"}
+    case AlertKind.DISCORD_CHANNELS_BEYOND_BOT:
+      return {name: `The bot cannot keep ${counted(alert.count, "channel", "channels")}`, meta: alert.subjectLabel ?? "", from: "Discord"}
   }
 }
 
@@ -64,6 +72,8 @@ export function alertLink(alert: Alert): string {
     case AlertKind.ROLE_AWAITING_TWO_FACTOR:
       return `/management/users/${alert.subjectId}`
     case AlertKind.DISCORD_BOT_PERMISSIONS:
+    case AlertKind.DISCORD_ROLES_ABOVE_BOT:
+    case AlertKind.DISCORD_CHANNELS_BEYOND_BOT:
       return "/management/platforms/discord/bot"
   }
 }

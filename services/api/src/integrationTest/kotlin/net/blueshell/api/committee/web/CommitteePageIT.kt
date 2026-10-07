@@ -71,8 +71,14 @@ class CommitteePageIT : UserTestSupport() {
                 .response.contentAsString
 
         val seats = JsonPath.read<List<Map<String, Any?>>>(body, "$.members")
-        assertThat(seats).anySatisfy { assertThat(it).containsEntry("discordName", "nelly").containsEntry("role", "Chair") }
-        assertThat(seats).anySatisfy { assertThat(it["discordName"]).isNull() }
+        assertThat(seats).anySatisfy {
+            assertThat(it).containsEntry("name", "nelly").containsEntry("discord", true).containsEntry("role", "Chair")
+        }
+        // Without Discord linked, a seat is named by username and has no picture.
+        assertThat(seats).anySatisfy {
+            assertThat(it).containsEntry("name", unlinked.username).containsEntry("discord", false)
+            assertThat(it["avatar"]).isNull()
+        }
         listOf(chair, unlinked).forEach { person ->
             assertThat(body).doesNotContain(person.firstName, person.lastName, person.email)
         }

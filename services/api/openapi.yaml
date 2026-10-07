@@ -1781,19 +1781,23 @@ components:
     CommitteeSeatResponse:
       properties:
         avatar:
-          description: Their Discord avatar's address
+          description: Their Discord avatar's address; absent where Discord is not linked
           type:
           - string
           - 'null'
-        discordName:
-          description: The name the Discord server shows them by, absent for a member who has not linked Discord
-          type:
-          - string
-          - 'null'
+        discord:
+          description: Whether the name is their Discord name
+          type: boolean
+        name:
+          description: The name the Discord server shows them by, or their username where Discord is not linked
+          type: string
         role:
           type:
           - string
           - 'null'
+      required:
+      - discord
+      - name
       type: object
     ContributionEmailKind:
       enum:
@@ -3293,6 +3297,22 @@ components:
       - title
       - updatedAt
       - version
+      type: object
+    EventRosterResponse:
+      description: Who signed up for an event, as its page shows it
+      properties:
+        guests:
+          description: How many guests signed up without an account; they are counted, never named
+          format: int32
+          type: integer
+        people:
+          description: The people signed up with an account, first sign-up first
+          items:
+            $ref: '#/components/schemas/RosterPersonResponse'
+          type: array
+      required:
+      - guests
+      - people
       type: object
     EventSignUpKind:
       enum:
@@ -6215,6 +6235,24 @@ components:
       required:
       - handle
       - role
+      type: object
+    RosterPersonResponse:
+      description: One person on an event's roster
+      properties:
+        avatar:
+          description: Their Discord picture; absent where Discord is not linked
+          type:
+          - string
+          - 'null'
+        discord:
+          description: Whether the name is their Discord name
+          type: boolean
+        name:
+          description: Their Discord name where Discord is linked, otherwise their username
+          type: string
+      required:
+      - discord
+      - name
       type: object
     SeasonContentsResponse:
       description: What a season holds, for a removal to say before it happens
@@ -20327,6 +20365,114 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Events
+  /events/{id}/roster:
+    get:
+      operationId: findEventRoster
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventRosterResponse'
           description: OK
         '400':
           content:

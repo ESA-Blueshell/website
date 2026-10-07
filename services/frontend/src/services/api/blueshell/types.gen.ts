@@ -961,13 +961,17 @@ export type CommitteeResponse = {
 
 export type CommitteeSeatResponse = {
     /**
-     * Their Discord avatar's address
+     * Their Discord avatar's address; absent where Discord is not linked
      */
     avatar?: string | null;
     /**
-     * The name the Discord server shows them by, absent for a member who has not linked Discord
+     * Whether the name is their Discord name
      */
-    discordName?: string | null;
+    discord: boolean;
+    /**
+     * The name the Discord server shows them by, or their username where Discord is not linked
+     */
+    name: string;
     role?: string | null;
 };
 
@@ -1705,6 +1709,20 @@ export type EventResponse = {
     title: string;
     updatedAt: string;
     version: number;
+};
+
+/**
+ * Who signed up for an event, as its page shows it
+ */
+export type EventRosterResponse = {
+    /**
+     * How many guests signed up without an account; they are counted, never named
+     */
+    guests: number;
+    /**
+     * The people signed up with an account, first sign-up first
+     */
+    people: Array<RosterPersonResponse>;
 };
 
 export enum EventSignUpKind {
@@ -3140,6 +3158,24 @@ export type RosterMemberResponse = {
      * What they did in the team's own words, where anything was said
      */
     roleTitle?: string | null;
+};
+
+/**
+ * One person on an event's roster
+ */
+export type RosterPersonResponse = {
+    /**
+     * Their Discord picture; absent where Discord is not linked
+     */
+    avatar?: string | null;
+    /**
+     * Whether the name is their Discord name
+     */
+    discord: boolean;
+    /**
+     * Their Discord name where Discord is linked, otherwise their username
+     */
+    name: string;
 };
 
 /**
@@ -8837,6 +8873,49 @@ export type ApproveEventResponses = {
 };
 
 export type ApproveEventResponse = ApproveEventResponses[keyof ApproveEventResponses];
+
+export type FindEventRosterData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/events/{id}/roster';
+};
+
+export type FindEventRosterErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindEventRosterError = FindEventRosterErrors[keyof FindEventRosterErrors];
+
+export type FindEventRosterResponses = {
+    /**
+     * OK
+     */
+    200: EventRosterResponse;
+};
+
+export type FindEventRosterResponse = FindEventRosterResponses[keyof FindEventRosterResponses];
 
 export type UploadPublicImageData = {
     body: {

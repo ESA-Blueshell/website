@@ -52,11 +52,13 @@ describe("the sign-up panel on an event's page", () => {
     const visitor = panel({event: event()})
     expect(visitor.getComponent({name: "EventSignUpForm"}).props("showGuestForm")).toBe(true)
     expect(visitor.text()).toContain("18 places left. Anybody can come")
+    expect(visitor.get("[data-testid=event-panel-shown]").text()).toBe("Guests are counted on this page, never named.")
 
     getters.isLoggedIn = true
     const member = panel({event: event({signUpLimit: null})})
     expect(member.getComponent({name: "EventSignUpForm"}).props("showGuestForm")).toBe(false)
     expect(member.get(".panel__line").text()).toBe("Signing up with your account.")
+    expect(member.get("[data-testid=event-panel-shown]").text()).toContain("your Discord name and picture show on this page")
     expect(panel({event: event({signUpLimit: 7})}).text()).toContain("1 place left.")
   })
 

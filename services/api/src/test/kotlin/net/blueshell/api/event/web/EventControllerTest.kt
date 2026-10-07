@@ -5,8 +5,11 @@ import net.blueshell.api.event.api.AnnouncementLedger
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.domain.EventApprovals
 import net.blueshell.api.event.domain.EventField
+import net.blueshell.api.event.domain.EventRoster
 import net.blueshell.api.event.domain.EventUseCases
 import net.blueshell.api.event.domain.QueuedEvent
+import net.blueshell.api.event.domain.Roster
+import net.blueshell.api.event.domain.RosterPerson
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -34,7 +37,18 @@ class EventControllerTest {
         }
     private val service: EventService = mock { on { findById(6L) } doReturn event }
     private val approvals: EventApprovals = mock()
-    private val controller = EventController(service, useCases, AnnouncementLedger { it == 6L }, approvals)
+    private val roster: EventRoster =
+        mock { on { of(6L) } doReturn Roster(listOf(RosterPerson("Nelly", "https://cdn/n.png", discord = true)), guests = 2) }
+    private val controller = EventController(service, useCases, AnnouncementLedger { it == 6L }, approvals, roster)
+
+    @Test
+    fun `answers an event's roster as its page shows it`() {
+        val answered = controller.findEventRoster(6L)
+
+        assertThat(answered.people.map { listOf(it.name, it.avatar, it.discord) })
+            .containsExactly(listOf("Nelly", "https://cdn/n.png", true))
+        assertThat(answered.guests).isEqualTo(2)
+    }
 
     @Test
     fun `passes the board's choice on, and says of one event whether its post is out`() {

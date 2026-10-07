@@ -12,6 +12,8 @@ import {
   downloadEventBanner,
   type EventResponse,
   findEventById,
+  findEventRoster,
+  type EventRosterResponse,
   findEvents,
   type FindEventsData,
   type PageMetadata,
@@ -19,6 +21,7 @@ import {
   type UpdateEventRequest,
   uploadEventBanner,
 } from "@/services/api"
+import {readOr} from "@/utils/answers"
 
 /** Which events a caller is asking for: a window, a page of one, and the order to read them in. */
 export type EventQuery = NonNullable<FindEventsData["query"]>
@@ -31,6 +34,10 @@ export async function readEvent(id: number): Promise<EventResponse> {
   const {data} = await findEventById({path: {id}, throwOnError: true})
   return data!
 }
+
+/** Who signed up for an event, as its page shows it; nothing where it could not be read. */
+export type EventRoster = EventRosterResponse
+export const readRoster = (id: number): Promise<EventRoster | null> => readOr(findEventRoster({path: {id}}), null)
 
 /**
  * The events the query names. Throws on a refusal rather than answering with an empty listing:

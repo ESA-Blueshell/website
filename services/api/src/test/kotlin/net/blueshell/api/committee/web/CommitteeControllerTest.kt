@@ -52,9 +52,9 @@ class CommitteeControllerTest {
     }
 
     @Test
-    fun `answers a committee's page by its address, its members by Discord only`() {
+    fun `answers a committee's page by its address, its members by Discord or username`() {
         whenever(service.findByAddress("lan")).thenReturn(lan)
-        whenever(seats.of(lan)).thenReturn(listOf(CommitteeSeat("nelly", "https://cdn/n.png", "Chair")))
+        whenever(seats.of(lan)).thenReturn(listOf(CommitteeSeat("nelly", "https://cdn/n.png", true, "Chair")))
 
         val page = controller.findCommitteePage("lan")
 
@@ -68,7 +68,7 @@ class CommitteeControllerTest {
                 banner = null,
                 icon = null,
                 gameCodes = listOf("CS2", "VALORANT"),
-                members = listOf(CommitteeSeatResponse("nelly", "https://cdn/n.png", "Chair")),
+                members = listOf(CommitteeSeatResponse("nelly", "https://cdn/n.png", true, "Chair")),
             ),
         )
     }

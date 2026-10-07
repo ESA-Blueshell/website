@@ -1087,4 +1087,30 @@ class EventControllerIT : UserTestSupport() {
     ): String = eventRequestFactory.questionJson(idx = idx, type = type, label = label)
 
     private fun signUpFormJson(vararg questions: String): String = eventRequestFactory.signUpFormJson(*questions)
+
+    @Nested
+    inner class Roster {
+        @Test
+        fun `a visitor reads who signed up by username, a guest counted, a removed sign-up gone, and nothing else about them`() {
+            val event = createEventFixture()
+            val member = createUserWithRole(Role.MEMBER)
+            createEventSignUpFixture(event = event, user = member)
+            createEventSignUpFixture(event = event, user = null, guest = createGuestFixture())
+            val removed = createEventSignUpFixture(event = event, user = createUserWithRole(Role.MEMBER))
+            transactionTemplate.execute { eventSignUpRepository.delete(eventSignUpRepository.findById(removed.id!!).orElseThrow()) }
+
+            val body =
+                mvc
+                    .perform(get("/events/{id}/roster", event.id))
+                    .andExpect(status().isOk)
+                    .andExpect(jsonPath("$.people.length()").value(1))
+                    .andExpect(jsonPath("$.people[0].name").value(member.username))
+                    .andExpect(jsonPath("$.people[0].discord").value(false))
+                    .andExpect(jsonPath("$.guests").value(1))
+                    .andReturn()
+                    .response.contentAsString
+
+            assertThat(body).doesNotContain(member.email, member.firstName, "\"id\"")
+        }
+    }
 }

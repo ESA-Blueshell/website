@@ -38,10 +38,12 @@ class CommitteeEditPageSystemTest : PlaywrightTestBase() {
     }
 
     @Test
-    fun `deletes a committee from its edit page`() {
+    fun `an admin deletes a committee from its edit page`() {
         val committeeName = "DeleteCommittee${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(name = committeeName, description = "Committee that will be deleted")
-        signInAsBoard()
+        val admin = TestHelper.registerActivateAndPromote("BOARD")
+        TestHelper.replaceRoles(admin.username, setOf("MEMBER", "BOARD", "ADMIN"))
+        assertThat(AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)).isEqualTo(200)
 
         CommitteeEditHelper.openEdit(page, frontendUrl, TestHelper.committeeAddressOf(committeeName))
         CommitteeEditHelper.delete(page)

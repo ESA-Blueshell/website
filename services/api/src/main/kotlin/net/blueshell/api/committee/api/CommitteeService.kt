@@ -23,6 +23,7 @@ class CommitteeService
         private val trackedEvents: TrackedEventPublisher,
         private val pictures: StoredPictures,
         private val games: GameService,
+        private val events: List<CommitteeEvents>,
     ) {
         /**
          * Every committee, with what a listing draws of each already read.
@@ -47,8 +48,39 @@ class CommitteeService
         @Transactional
         fun create(committee: Committee): Committee = repository.saveAndFlush(committee)
 
+        /** How many live events [id] organises, which is what a deletion hands over. */
+        @Transactional(readOnly = true)
+        fun eventCount(id: Long): Long {
+            findById(id)
+            return events.sumOf { it.countOf(id) }
+        }
+
+        /**
+         * Deletes [id], first handing its events to [takenOverBy] in the same transaction, so no event is
+         * ever left naming no committee. Only a committee without events may name none.
+         */
         @Transactional
-        fun deleteById(id: Long) = repository.delete(findById(id))
+        fun delete(
+            id: Long,
+            takenOverBy: Long?,
+        ) {
+            val committee = findById(id)
+            val count = events.sumOf { it.countOf(id) }
+            if (takenOverBy == null && count > 0) throw CommitteeEventsNeedTaker(count)
+            if (takenOverBy != null) {
+                checkTaker(id, findById(takenOverBy))
+                events.forEach { it.handOver(id, takenOverBy) }
+            }
+            repository.delete(committee)
+        }
+
+        private fun checkTaker(
+            id: Long,
+            taker: Committee,
+        ) {
+            if (taker.id == id) throw CommitteeCannotTakeOwnEvents()
+            if (taker.archived) throw ArchivedCommitteeCannotTakeEvents(taker.name)
+        }
 
         /** The committee whose page answers to [address], whatever its case. */
         @Transactional(readOnly = true)

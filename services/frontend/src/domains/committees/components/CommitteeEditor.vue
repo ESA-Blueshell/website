@@ -4,7 +4,6 @@ import {refreshSharedLists} from "@/utils/sharedLists"
 import {addressOf} from "@/utils/address"
 import {computed, ref, watch} from "vue"
 import ArtCells from "@/components/island/ArtCells.vue"
-import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import EditPage from "@/components/island/EditPage.vue"
 import FormControl from "@/components/island/FormControl.vue"
@@ -23,16 +22,17 @@ import {
   addCommittee,
   type Committee,
   listCommittees,
-  removeCommittee,
   saveCommitteeAsBoard,
   saveOwnCommitteePage,
   storeCommitteeBanner,
   storeCommitteeIcon,
 } from "../adapters/committees"
 import CommitteeSeats, {type Seat} from "../island/CommitteeSeats.vue"
+import DeleteCommitteeDialog from "../island/DeleteCommitteeDialog.vue"
 import {cellOf} from "../useCommittees"
 import {initialsOf} from "@/utils/initials"
 import {BRAND_ACCENT} from "@/utils/brand"
+import store from "@/plugins/store"
 
 /**
  * A committee added or corrected on its own page, with its page head and its cell in Every
@@ -159,27 +159,13 @@ const submit = async () => {
   }
 }
 
+// Deleting hands the committee's events to another one, so the api leaves it to an admin.
+const isAdmin = computed(() => store.getters.isAdmin === true)
 const confirming = ref(false)
-const removing = ref(false)
-const removalFailure = ref<string | null>(null)
 
-const removeIt = async () => {
-  const committee = props.committee
-  if (!committee || removing.value) return
-  removing.value = true
-  removalFailure.value = null
-  try {
-    const result = await removeCommittee(committee.id)
-    if (!result.ok) {
-      removalFailure.value = result.reason
-      return
-    }
-    confirming.value = false
-    await refreshSharedLists()
-    emit("removed")
-  } finally {
-    removing.value = false
-  }
+const removed = async () => {
+  await refreshSharedLists()
+  emit("removed")
 }
 </script>
 
@@ -202,7 +188,7 @@ const removeIt = async () => {
         See the committee
       </cut-button>
       <cut-button
-        v-if="asBoard"
+        v-if="isAdmin"
         testid="committee-edit-remove"
         tone="danger"
         @click="confirming = true"
@@ -349,18 +335,12 @@ const removeIt = async () => {
     </template>
   </edit-page>
 
-  <confirm-dialog
-    v-if="committee && asBoard"
-    :accent="BRAND_ACCENT"
-    confirm-label="Delete the committee"
-    :failure="removalFailure"
+  <delete-committee-dialog
+    v-if="committee && isAdmin"
+    :committee="committee"
     :open="confirming"
-    :question="`${committee.name} leaves every page, list and picker, and its events stay without a committee named on them. Archiving keeps it, with its page and its events.`"
-    testid="committee-remove-dialog"
-    :title="`Delete ${committee.name}?`"
-    :working="removing"
-    working-label="Deleting"
-    @confirm="removeIt"
+    @archived="emit('saved', $event)"
+    @removed="removed"
     @update:open="confirming = $event"
   />
 </template>

@@ -10,20 +10,14 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
+/**
+ * The one paint-job row is a singleton these tests edit in place, with no rollback between them, so
+ * every test sets the state it then asserts rather than leaning on the seed or on another test.
+ */
 @SpringBootTest
 class PingerControllerIT : UserTestSupport() {
     @Test
-    fun `anyone reads the seeded paint job`() {
-        mvc
-            .perform(get("/pinger/paint"))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.ratePps").value(128))
-            .andExpect(jsonPath("$.width").value(900))
-            .andExpect(jsonPath("$.imageUrl").doesNotExist())
-    }
-
-    @Test
-    fun `an admin sets the prefix and the box, and the public read reflects it`() {
+    fun `an admin sets the paint job and anyone may read it back`() {
         val admin = createUserWithRole(Role.ADMIN)
         mvc
             .perform(
@@ -34,12 +28,13 @@ class PingerControllerIT : UserTestSupport() {
                         """{"prefix":"2001:db8:b317:a000::/64","ratePps":256,"originX":100,"originY":200,"width":800,"height":600}""",
                     ),
             ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.prefix").value("2001:db8:b317:a000::/64"))
             .andExpect(jsonPath("$.ratePps").value(256))
 
+        // The read is public: no session on this request.
         mvc
             .perform(get("/pinger/paint"))
             .andExpect(status().isOk)
+            .andExpect(jsonPath("$.prefix").value("2001:db8:b317:a000::/64"))
             .andExpect(jsonPath("$.originX").value(100))
             .andExpect(jsonPath("$.width").value(800))
     }

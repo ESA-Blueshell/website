@@ -9586,6 +9586,43 @@ export type ForwardAuthResponses = {
     200: unknown;
 };
 
+export type DownloadAppData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * The platform to download for: macos, linux or windows
+         */
+        os: string;
+    };
+    url: '/pinger/app/download';
+};
+
+export type DownloadAppErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * The OS is unknown or the latest release has no installer for it
+     */
+    404: unknown;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadAppError = DownloadAppErrors[keyof DownloadAppErrors];
+
 export type BoardData = {
     body?: never;
     path?: never;

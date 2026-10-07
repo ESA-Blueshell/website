@@ -1,7 +1,5 @@
 package net.blueshell.api.user.web
 
-import net.blueshell.api.user.api.MaskedIban
-import net.blueshell.api.user.domain.incassoStanding
 import net.blueshell.api.user.persistence.Membership
 
 fun Membership.asResponse(): MembershipResponse =
@@ -10,10 +8,6 @@ fun Membership.asResponse(): MembershipResponse =
         memberType = this.memberType,
         startDate = this.startDate,
         endDate = this.endDate,
-        incasso = this.incasso,
-        incassoStanding = this.incassoStanding(),
-        ibanCountry = MaskedIban.of(this.mandate?.ibanMasked)?.country,
-        ibanLastTwo = MaskedIban.of(this.mandate?.ibanMasked)?.lastTwo,
         pending = this.isPending,
         activatedOn = this.activatedOn,
         version = this.version,

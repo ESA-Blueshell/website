@@ -1,0 +1,49 @@
+# How a person pays and the mandate they are collected under, on the person rather than on one
+# membership (#2125). The IBAN and account holder are sealed by Vault Transit to the person (api
+# ADR-038); only the masked IBAN stays readable. The way of paying moves off the memberships: a
+# person keeps that of their running membership, else that of their newest. memberships.incasso is
+# no longer read but stays for the release before this one, and is dropped in a later one (ADR-034).
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-07-payment-details.yaml
+      id: payment-details
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: payment_details
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_payment_details, nullable: false}
+              - column: {name: user_id, type: BIGINT, constraints: {nullable: false, unique: true, uniqueConstraintName: uk_payment_details_user}}
+              - column: {name: incasso, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+              - column: {name: mandate_iban, type: VARCHAR(255)}
+              - column: {name: mandate_account_holder, type: VARCHAR(512)}
+              - column: {name: mandate_iban_masked, type: CHAR(4)}
+              - column: {name: mandate_reference, type: VARCHAR(35)}
+              - column: {name: mandate_signed_on, type: DATE}
+              - column: {name: mandate_recorded_by, type: BIGINT}
+              - column: {name: mandate_recorded_at, type: DATETIME(6)}
+              - column: {name: mandate_kind, type: VARCHAR(16)}
+              - column: {name: mandate_authorised_at, type: DATETIME(6)}
+              - column: {name: mandate_wording_version, type: VARCHAR(16)}
+              - column: {name: mandate_authorised_by, type: BIGINT}
+              - column: {name: mandate_address, type: TEXT}
+        - sql:
+            sql: >-
+              INSERT INTO payment_details (user_id, incasso)
+              SELECT m.user_id, TRUE FROM memberships m
+              WHERE m.incasso = TRUE AND m.deleted_at = '9999-12-31 23:59:59'
+              AND m.id = (
+                SELECT j.id FROM memberships j
+                WHERE j.user_id = m.user_id AND j.deleted_at = '9999-12-31 23:59:59'
+                ORDER BY j.end_date IS NULL DESC, j.start_date DESC, j.id DESC
+                LIMIT 1
+              )
+        # Nothing writes it any more, so a new membership takes false until the column goes.
+        - addDefaultValue: {tableName: memberships, columnName: incasso, columnDataType: BIT(1), defaultValueBoolean: false}
+      rollback:
+        - dropDefaultValue: {tableName: memberships, columnName: incasso, columnDataType: BIT(1)}
+        - dropTable: {tableName: payment_details}

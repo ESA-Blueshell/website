@@ -11,6 +11,7 @@ import net.blueshell.api.contribution.persistence.IncassoRunRepository
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.persistence.Membership
 import org.springframework.stereotype.Service
@@ -100,6 +101,7 @@ class IncassoRuns(
     private val notificationRows: IncassoNotificationRepository,
     private val runs: IncassoRunRepository,
     private val clock: Clock,
+    private val payments: PaymentDirectory,
 ) {
     @Transactional(readOnly = true)
     fun plan(periodId: Long): List<IncassoCandidate> = candidates(periods.findById(periodId)).map { it.second }
@@ -228,13 +230,14 @@ class IncassoRuns(
                 .groupBy { it.userId }
                 .mapValues { (_, held) -> held.filter { it.endDate == null }.maxByOrNull { it.startDate } ?: held.maxBy { it.startDate } }
                 .values
-                // Off incasso is not collected from, whatever mandate is still on file.
-                .filter { it.incasso }
-        val deleted = erasure.deletedIdsAmong(judged.map { it.userId })
-        return judged
+        val paying = payments.of(judged.map { it.userId })
+        // Off incasso is not collected from, whatever mandate is still on file.
+        val onIncasso = judged.filter { paying.getValue(it.userId).incasso }
+        val deleted = erasure.deletedIdsAmong(onIncasso.map { it.userId })
+        return onIncasso
             .map { membership ->
                 val feeType = resolveFeeType(membership.memberType, membership.startDate, period)
-                val mandate = membership.mandate?.takeUnless { it.wiped }
+                val mandate = paying.getValue(membership.userId).collectable
                 val leftOut =
                     when {
                         feeType == null -> IncassoLeftOut.OWES_NOTHING

@@ -38,12 +38,12 @@ class MandatePdfs(
     /** The PDF for [downloadedBy], whose download is written to the member's security log before it is answered. */
     @Transactional(readOnly = true)
     fun pdf(
-        membershipId: Long,
+        userId: Long,
         downloadedBy: Long,
     ): MandatePdf {
-        val mandate = mandates.open(membershipId)
+        val mandate = mandates.open(userId)
         val bytes = render(templates.process("mandates/online-mandate", Context(Locale.ENGLISH, fields(mandate))))
-        events.publishEvent(MandatePdfDownloaded(mandate.userId, membershipId, downloadedBy))
+        events.publishEvent(MandatePdfDownloaded(userId, mandate.reference, downloadedBy))
         return MandatePdf("mandate-${mandate.reference}.pdf", bytes)
     }
 

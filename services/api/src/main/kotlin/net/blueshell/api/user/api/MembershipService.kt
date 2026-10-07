@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import net.blueshell.api.user.domain.Mandates
 import net.blueshell.api.user.domain.MembershipChange
 import net.blueshell.api.user.domain.MembershipNotFoundException
 import net.blueshell.api.user.domain.MembershipQuery
@@ -25,16 +24,13 @@ import org.springframework.web.server.ResponseStatusException
 class MembershipService @Autowired constructor(
     private val repository: MemberRepository,
     private val trackedEvents: TrackedEventPublisher,
-    private val currentUserProvider: CurrentUserProvider,
-    private val mandates: Mandates
+    private val currentUserProvider: CurrentUserProvider
 ) {
     @Transactional
     fun create(entity: Membership): Membership {
         // Only an honorary membership owes nothing, so only it starts active (api ADR-036).
         if (entity.memberType == MemberType.HONORARY && entity.activatedOn == null) entity.activatedOn = entity.startDate
         val saved = written(entity)
-        // Bank details given at signup wait for the membership they belong to.
-        mandates.adoptPending(saved)
         trackedEvents.publish { actor ->
             MembershipChanged(
                 saved.userId,

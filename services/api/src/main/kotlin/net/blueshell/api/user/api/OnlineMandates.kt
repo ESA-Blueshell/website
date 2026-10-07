@@ -22,10 +22,11 @@ data class OpenedOnlineMandate(
     override fun toString(): String = "OpenedOnlineMandate($reference)"
 }
 
-/** Opens a membership's online mandate, for its PDF and for nothing that answers a member. */
+/** Opens a person's online mandate, for its PDF and for nothing that answers a member. */
 @Service
 class OnlineMandates(
     private val mandates: Mandates,
+    private val users: UserService,
 ) {
-    fun open(membershipId: Long): OpenedOnlineMandate = mandates.openOnline(membershipId)
+    fun open(userId: Long): OpenedOnlineMandate = mandates.openOnline(userId, users.findById(userId).username)
 }

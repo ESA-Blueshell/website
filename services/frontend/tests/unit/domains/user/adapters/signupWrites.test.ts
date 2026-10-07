@@ -203,12 +203,12 @@ describe("the membership writes", () => {
   it("records a change against the membership the number names", async () => {
     vi.mocked(updateMembership).mockResolvedValue(answer(updateMembership, aMembership({id: 99})))
 
-    await expect(saveMembership(99, {userId: 42, startDate: "2026-09-01", incasso: true, version: 0}))
+    await expect(saveMembership(99, {userId: 42, startDate: "2026-09-01", version: 0}))
       .resolves.toEqual(aMembership({id: 99}))
   })
 
   it("starts a membership on somebody else's behalf", async () => {
-    const terms = {userId: 7, memberType: MemberType.REGULAR, incasso: false, startDate: "2026-09-01"}
+    const terms = {userId: 7, memberType: MemberType.REGULAR, startDate: "2026-09-01"}
     vi.mocked(boardCreateMembership).mockResolvedValue(answer(boardCreateMembership, aMembership({id: 33})))
 
     await expect(startMembershipAsBoard(7, terms)).resolves.toEqual(aMembership({id: 33}))

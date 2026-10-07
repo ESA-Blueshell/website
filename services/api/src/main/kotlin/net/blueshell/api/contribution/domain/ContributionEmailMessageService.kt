@@ -5,7 +5,7 @@ import net.blueshell.api.email.api.EmailPreviewRenderer
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.user.api.MaskedIban
-import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
 import net.blueshell.api.user.api.UserService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -24,7 +24,7 @@ class ContributionEmailMessageService(
     private val users: UserService,
     private val renderer: EmailPreviewRenderer,
     private val channels: PaymentChannels,
-    private val memberships: MembershipService,
+    private val payments: PaymentDirectory,
 ) {
     /** [kind] is whatever the row is set to, so a switched row previews what it will get. */
     @Transactional(readOnly = true)
@@ -54,12 +54,7 @@ class ContributionEmailMessageService(
                 ContributionEmailKind.REMINDER ->
                     createContributionReminderEmail(member, period, effectiveFeeType, amount, date, channels)
                 ContributionEmailKind.INCASSO_NOTIFICATION -> {
-                    val mandate =
-                        memberships
-                            .findByUserIdsWithMembers(listOf(userId))[userId]
-                            ?.filter { it.mandate?.wiped == false }
-                            ?.maxByOrNull { it.startDate }
-                            ?.mandate
+                    val mandate = payments.of(listOf(userId)).getValue(userId).collectable
                     createIncassoNotificationEmail(
                         member,
                         period,

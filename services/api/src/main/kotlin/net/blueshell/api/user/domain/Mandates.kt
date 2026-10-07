@@ -9,20 +9,16 @@ import net.blueshell.api.user.api.OpenedOnlineMandate
 import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.MandateKind
-import net.blueshell.api.user.persistence.MemberRepository
-import net.blueshell.api.user.persistence.Membership
-import net.blueshell.api.user.persistence.PendingMandate
-import net.blueshell.api.user.persistence.PendingMandateRepository
+import net.blueshell.api.user.persistence.PaymentDetails
+import net.blueshell.api.user.persistence.PaymentDetailsRepository
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 import java.time.Clock
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-/** Where a membership stands on incasso. */
+/** Where a person stands on incasso. */
 @Schema(enumAsRef = true)
 enum class IncassoStanding {
     /** Pays by transfer. */
@@ -41,7 +37,7 @@ data class OnlineAuthorisation(
     val address: AddressFields,
 )
 
-/** A membership's bank details opened, for the one place the full number may go: ING's file. */
+/** A person's bank details opened, for the one place the full number may go: ING's file. */
 data class BankDetails(
     val iban: Iban,
     val accountHolder: String,
@@ -50,76 +46,86 @@ data class BankDetails(
     override fun toString(): String = "BankDetails($iban)"
 }
 
-/** The mandate the membership can be collected under: one whose bank details were wiped is a record only. */
-val Membership.collectableMandate: IncassoMandate?
+/** The mandate the person can be collected under: one whose bank details were wiped is a record only. */
+val PaymentDetails.collectableMandate: IncassoMandate?
     get() = mandate?.takeUnless { it.wiped }
 
-fun Membership.incassoStanding(): IncassoStanding =
+fun PaymentDetails.incassoStanding(): IncassoStanding =
     when {
         collectableMandate != null -> IncassoStanding.MANDATE_RECORDED
         incasso -> IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS
         else -> IncassoStanding.NONE
     }
 
-/** Records, reads and opens the mandate a membership is collected under. */
+/** Records, reads and opens how a person pays and the mandate they are collected under. */
 @Service
 class Mandates(
-    private val memberships: MemberRepository,
-    private val pendingMandates: PendingMandateRepository,
+    private val payments: PaymentDetailsRepository,
     private val sealing: SealedBankDetails,
     private val clock: Clock,
     private val events: ApplicationEventPublisher,
 ) {
     /**
-     * Records a paper mandate, replacing any before it, and puts the membership on incasso. A
+     * Records a paper mandate, replacing any before it, and puts the person on incasso. A
      * mandate the member authorised online is replaced only where the board confirmed that with
      * [replacesOnline], since its record of the authorisation goes with it.
      */
     @Transactional
     fun record(
-        membershipId: Long,
+        userId: Long,
         rawIban: String,
         accountHolder: String,
         signedOn: LocalDate,
         recordedBy: Long?,
         replacesOnline: Boolean = false,
-    ): Membership {
+    ): PaymentDetails {
         val iban = Iban.parse(rawIban) ?: throw InvalidIban()
         val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
         if (signedOn.isAfter(LocalDate.now(clock))) throw MandateSignedInFuture()
-        val membership = find(membershipId)
-        val online = membership.collectableMandate?.takeIf { it.kind == MandateKind.ONLINE }
+        val details = of(userId)
+        val online = details.collectableMandate?.takeIf { it.kind == MandateKind.ONLINE }
         if (online != null && !replacesOnline) throw ReplacesOnlineMandate(online.authorisedAt ?: online.recordedAt)
-        return write(membership, iban, holder, signedOn, recordedBy, null)
+        return write(details, iban, holder, signedOn, recordedBy, null)
+    }
+
+    /** Sets whether the person pays by incasso or by transfer; a mandate on file stays either way. */
+    @Transactional
+    fun payBy(
+        userId: Long,
+        incasso: Boolean,
+    ): PaymentDetails {
+        val details = of(userId)
+        details.incasso = incasso
+        return payments.save(details)
     }
 
     // A new IBAN gets a new mandate reference; the same IBAN keeps its reference.
     private fun write(
-        membership: Membership,
+        details: PaymentDetails,
         iban: Iban,
         holder: String,
         signedOn: LocalDate,
         recordedBy: Long?,
         online: OnlineAuthorisation?,
-    ): Membership {
-        val membershipId = requireNotNull(membership.id)
-        // A mandate that no longer opens for its member is replaced as a new one, under a new reference.
+    ): PaymentDetails {
+        val userId = details.userId
+        // A mandate that no longer opens for its person is replaced as a new one, under a new reference.
         val before =
-            membership.collectableMandate?.let { held ->
+            details.collectableMandate?.let { held ->
                 try {
-                    bankDetailsOf(membership.userId, held)
+                    bankDetailsOf(userId, held)
                 } catch (_: BankDetailsUnopenable) {
                     null
                 }
             }
         val reference =
-            membership.collectableMandate
+            details.collectableMandate
                 ?.takeIf { before?.iban == iban }
                 ?.reference
-                ?: referenceFor(membershipId, signedOn)
-        val sealed = sealing.seal(membership.userId, iban, holder, online?.address)
+                ?: referenceFor(userId, signedOn)
+        val sealed = sealing.seal(userId, iban, holder, online?.address)
         val now = clock.instant()
-        membership.mandate =
+        details.mandate =
             IncassoMandate(
                 sealedIban = sealed.iban,
                 sealedAccountHolder = sealed.accountHolder,
@@ -131,11 +137,11 @@ class Mandates(
                 kind = if (online == null) MandateKind.PAPER else MandateKind.ONLINE,
                 authorisedAt = online?.let { now },
                 wordingVersion = online?.wordingVersion,
-                authorisedBy = online?.let { membership.userId },
+                authorisedBy = online?.let { userId },
                 sealedAddress = sealed.address,
             )
-        membership.incasso = true
-        return memberships.save(membership)
+        details.incasso = true
+        return payments.save(details)
     }
 
     /**
@@ -155,8 +161,8 @@ class Mandates(
 
     /**
      * A member setting up or changing incasso themselves: an online mandate, authorised now under
-     * the wording and the address they confirmed. It replaces a paper mandate without asking.
-     * Before their membership starts it waits as a pending mandate and moves onto it when it does.
+     * the wording and the address they confirmed. It replaces a paper mandate without asking. One
+     * set up during signup is kept on the person and goes unused until their membership runs.
      */
     @Transactional
     fun setUpOwn(
@@ -172,119 +178,50 @@ class Mandates(
         if (listOf(address.country, address.city, address.street, address.houseNumber, address.zipCode).any { it.isNullOrBlank() }) {
             throw MandateAddressMissing()
         }
-        val today = LocalDate.now(clock)
-        val running = memberships.findByUser_Id(userId).firstOrNull { it.endDate == null }
-        if (running != null) {
-            write(running, iban, holder, today, userId, authorisation)
-            return own(userId)
-        }
-        val sealed = sealing.seal(userId, iban, holder, address)
-        val sealedAddress = requireNotNull(sealed.address)
-        val now = clock.instant()
-        val pending = pendingMandates.findByUserId(userId)
-        val kept =
-            pending?.apply {
-                sealedIban = sealed.iban
-                sealedAccountHolder = sealed.accountHolder
-                ibanMasked = iban.masked
-                signedOn = today
-                authorisedAt = now
-                wordingVersion = authorisation.wordingVersion
-                this.sealedAddress = sealedAddress
-            }
-                ?: PendingMandate(
-                    userId,
-                    sealed.iban,
-                    sealed.accountHolder,
-                    iban.masked,
-                    today,
-                    now,
-                    authorisation.wordingVersion,
-                    sealedAddress,
-                )
-        pendingMandates.save(kept)
+        write(of(userId), iban, holder, LocalDate.now(clock), userId, authorisation)
         return own(userId)
     }
 
-    /** The person's own mandate: on their running membership, else waiting, else none. */
+    /** The person's own mandate and standing, masked. */
     @Transactional(readOnly = true)
     fun own(userId: Long): OwnMandate {
-        val running = memberships.findByUser_Id(userId).firstOrNull { it.endDate == null }
-        val held = running?.collectableMandate
-        if (held !=
-            null
-        ) {
-            return OwnMandate(IncassoStanding.MANDATE_RECORDED, MaskedIban.of(held.ibanMasked), held.reference, held.signedOn, false)
-        }
-        val pending = pendingMandates.findByUserId(userId)
-        if (pending !=
-            null
-        ) {
-            return OwnMandate(IncassoStanding.MANDATE_RECORDED, MaskedIban.of(pending.ibanMasked), null, pending.signedOn, true)
-        }
-        return OwnMandate(running?.incassoStanding() ?: IncassoStanding.NONE, null, null, null, false)
+        val details = of(userId)
+        val held = details.collectableMandate
+        return OwnMandate(details.incassoStanding(), MaskedIban.of(held?.ibanMasked), held?.reference, held?.signedOn)
     }
 
-    /**
-     * Moves a waiting mandate onto the membership that just started, which puts it on incasso. The
-     * sealed values move as they are: both belong to the same member, so their context holds.
-     */
-    @Transactional
-    fun adoptPending(membership: Membership) {
-        val pending = pendingMandates.findByUserId(membership.userId) ?: return
-        membership.mandate =
-            IncassoMandate(
-                sealedIban = pending.sealedIban,
-                sealedAccountHolder = pending.sealedAccountHolder,
-                ibanMasked = pending.ibanMasked,
-                reference = referenceFor(requireNotNull(membership.id), pending.signedOn),
-                signedOn = pending.signedOn,
-                recordedBy = membership.userId,
-                recordedAt = clock.instant(),
-                kind = MandateKind.ONLINE,
-                authorisedAt = pending.authorisedAt,
-                wordingVersion = pending.wordingVersion,
-                authorisedBy = pending.userId,
-                sealedAddress = pending.sealedAddress,
-            )
-        membership.incasso = true
-        memberships.save(membership)
-        pendingMandates.delete(pending)
-    }
-
+    /** How the person pays; one without a row pays by transfer and has no mandate. */
     @Transactional(readOnly = true)
-    fun find(membershipId: Long): Membership =
-        memberships.findById(membershipId).orElseThrow {
-            ResponseStatusException(HttpStatus.NOT_FOUND, "Membership not found with id: $membershipId")
-        }
+    fun of(userId: Long): PaymentDetails = payments.findByUserId(userId) ?: PaymentDetails(userId)
 
     /**
-     * The membership's full IBAN, for a board member who asked for it. The reveal is written to the
-     * member's security log before the IBAN is answered, so none goes out unrecorded.
+     * The person's full IBAN, for a board member who asked for it. The reveal is written to the
+     * person's security log before the IBAN is answered, so none goes out unrecorded.
      */
     @Transactional
     fun reveal(
-        membershipId: Long,
+        userId: Long,
         revealedBy: Long,
     ): Iban {
-        val membership = find(membershipId)
-        val mandate = membership.collectableMandate ?: throw NoMandateRecorded()
-        val iban = bankDetailsOf(membership.userId, mandate).iban
-        events.publishEvent(IbanRevealed(membership.userId, membershipId, revealedBy))
+        val mandate = of(userId).collectableMandate ?: throw NoMandateRecorded()
+        val iban = bankDetailsOf(userId, mandate).iban
+        events.publishEvent(IbanRevealed(userId, mandate.reference, revealedBy))
         return iban
     }
 
-    /** The membership's online mandate in full, for its PDF. A paper mandate, a wiped one and none at all have no PDF. */
+    /** The person's online mandate in full, for its PDF. A paper mandate, a wiped one and none at all have no PDF. */
     @Transactional(readOnly = true)
-    fun openOnline(membershipId: Long): OpenedOnlineMandate {
-        val membership = find(membershipId)
-        val mandate = membership.collectableMandate?.takeIf { it.kind == MandateKind.ONLINE } ?: throw NoOnlineMandate()
+    fun openOnline(
+        userId: Long,
+        username: String,
+    ): OpenedOnlineMandate {
+        val mandate = of(userId).collectableMandate?.takeIf { it.kind == MandateKind.ONLINE } ?: throw NoOnlineMandate()
         val sealed = SealedAccount(requireNotNull(mandate.sealedIban), requireNotNull(mandate.sealedAccountHolder), mandate.sealedAddress)
-        val (account, address) = sealing.openOnline(membership.userId, sealed)
+        val (account, address) = sealing.openOnline(userId, sealed)
         val version = requireNotNull(mandate.wordingVersion) { "An online mandate records its wording" }
         return OpenedOnlineMandate(
-            userId = membership.userId,
-            username = membership.user.username,
+            userId = userId,
+            username = username,
             reference = mandate.reference,
             signedOn = mandate.signedOn,
             authorisedAt = requireNotNull(mandate.authorisedAt) { "An online mandate records when it was authorised" },
@@ -324,7 +261,7 @@ class Mandates(
     )
 
     private fun referenceFor(
-        membershipId: Long,
+        userId: Long,
         signedOn: LocalDate,
-    ) = "BLUESHELL-$membershipId-${signedOn.format(DateTimeFormatter.BASIC_ISO_DATE)}"
+    ) = "BLUESHELL-$userId-${signedOn.format(DateTimeFormatter.BASIC_ISO_DATE)}"
 }

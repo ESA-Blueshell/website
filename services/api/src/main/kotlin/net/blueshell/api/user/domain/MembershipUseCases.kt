@@ -42,7 +42,6 @@ class MembershipUseCases(
         memberType: MemberType,
         startDate: LocalDate?,
         endDate: LocalDate?,
-        incasso: Boolean,
     ): Membership {
         validate(MembershipInterval(userId = userId, startDate = startDate, endDate = endDate))
         val membership =
@@ -51,7 +50,6 @@ class MembershipUseCases(
                 memberType = memberType,
                 startDate = startDate!!,
                 endDate = endDate,
-                incasso = incasso,
             )
         return service.create(membership)
     }
@@ -62,7 +60,6 @@ class MembershipUseCases(
         memberType: MemberType?,
         startDate: LocalDate?,
         endDate: LocalDate?,
-        incasso: Boolean?,
         version: Long,
     ): Membership {
         val membership = service.findById(id)
@@ -71,7 +68,6 @@ class MembershipUseCases(
         memberType?.let { membership.memberType = it }
         membership.startDate = startDate!!
         membership.endDate = endDate
-        incasso?.let { membership.incasso = it }
         return service.update(membership)
     }
 

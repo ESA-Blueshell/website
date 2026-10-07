@@ -137,7 +137,7 @@ describe("the incasso task", () => {
     expect(dialog().props("open")).toBe(true)
     expect(dialog().props("title")).toBe("Incasso details of Lotte Meijer")
     const panel = wrapper.findComponent({name: "MandatePanel"})
-    expect(panel.props()).toMatchObject({membershipId: 703, startOpen: true})
+    expect(panel.props()).toMatchObject({userId: 3, startOpen: true})
     dialog().vm.$emit("update:open", false)
     await settle()
     expect(dialog().props("open")).toBe(false)

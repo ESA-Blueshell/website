@@ -1,15 +1,13 @@
 package net.blueshell.api.user.api
 
 import net.blueshell.api.user.persistence.MandateRetentionRepository
-import net.blueshell.api.user.persistence.PendingMandateRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
-/** A mandate whose membership is no longer collected from, with its sealed bank details still kept. */
+/** A mandate no longer collected from, with its sealed bank details still kept. */
 data class StoppedMandate(
-    val membershipId: Long,
     val userId: Long,
     val reference: String,
 )
@@ -23,14 +21,13 @@ data class StoppedMandate(
 @Service
 class MandateRetention(
     private val mandates: MandateRetentionRepository,
-    private val pendingMandates: PendingMandateRepository,
 ) {
     /**
      * Every mandate still holding sealed values that is no longer collected from on [today]: its
-     * membership ended, is off incasso or was removed. An erased account's memberships are off incasso.
+     * person is off incasso, or every membership of theirs ended or was removed. An erased account is off incasso.
      */
     @Transactional(readOnly = true)
-    fun stopped(today: LocalDate): List<StoppedMandate> = mandates.findStopped(today).map { StoppedMandate(it.id, it.userId, it.reference) }
+    fun stopped(today: LocalDate): List<StoppedMandate> = mandates.findStopped(today).map { StoppedMandate(it.userId, it.reference) }
 
     /**
      * Empties the sealed IBAN, account holder and address of [stopped], and keeps the rest of it.
@@ -41,19 +38,18 @@ class MandateRetention(
         stopped: StoppedMandate,
         today: LocalDate,
     ): Boolean {
-        val wiped = mandates.wipe(stopped.membershipId, stopped.reference, today) == 1
-        if (wiped) log.info("[privacy] wiped the bank details of the mandate on membership {}", stopped.membershipId)
+        val wiped = mandates.wipe(stopped.userId, stopped.reference, today) == 1
+        if (wiped) log.info("[privacy] wiped the bank details of the mandate of user {}", stopped.userId)
         return wiped
     }
 
     /**
-     * An account was erased. Its memberships come off incasso, which starts the 13 months for a
-     * mandate collected under, and its pending mandate, never collected from, goes at once.
+     * An account was erased. It comes off incasso, which starts the 13 months for a mandate collected
+     * under; one never collected from goes at the next wipe.
      */
     @Transactional
     fun accountErased(userId: Long) {
         mandates.stopCollecting(userId)
-        pendingMandates.deleteByUserId(userId)
     }
 
     private companion object {

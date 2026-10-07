@@ -27,7 +27,7 @@ import type {
   TeamResponse,
   UserDetailResponse,
 } from "@/services/api"
-import {EventSignUpKind, IncassoStanding, JobExecutionStatus, MemberType, QuestionType, Role, TeamRole} from "@/services/api"
+import {EventSignUpKind, JobExecutionStatus, MemberType, QuestionType, Role, TeamRole} from "@/services/api"
 
 const stamped = {createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", version: 0}
 
@@ -105,8 +105,6 @@ export const aMembership = (over: Partial<MembershipResponse> = {}): MembershipR
   userId: 42,
   memberType: MemberType.REGULAR,
   pending: false,
-  incasso: false,
-  incassoStanding: over.incasso ? IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS : IncassoStanding.NONE,
   startDate: "2026-09-01",
   ...over,
 })

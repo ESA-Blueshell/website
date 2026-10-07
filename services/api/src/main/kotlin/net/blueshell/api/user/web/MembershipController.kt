@@ -60,7 +60,6 @@ class MembershipController(
                 memberType = request.memberType,
                 startDate = request.startDate,
                 endDate = request.endDate,
-                incasso = request.incasso,
             )
         return membership.asResponse()
     }
@@ -78,7 +77,6 @@ class MembershipController(
                 memberType = request.memberType,
                 startDate = request.startDate,
                 endDate = request.endDate,
-                incasso = request.incasso,
                 version = request.version,
             )
         return membership.asResponse()

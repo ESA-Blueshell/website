@@ -47,7 +47,7 @@ describe("computeBulkTargets", () => {
   it("judges a returning member against their newest membership while member since keeps the day they first joined", () => {
     const memberships = byUser(
       membership({id: 1, userId: 7, startDate: "2021-09-01", endDate: "2022-08-31"}),
-      membership({id: 2, userId: 7, startDate: "2025-01-15", memberType: MemberType.ALUMNI, incasso: true}),
+      membership({id: 2, userId: 7, startDate: "2025-01-15", memberType: MemberType.ALUMNI}),
     )
 
     const [target] = computeBulkTargets([7], memberships, new Set(), new Map([[7, {fullName: "Ada", email: "ada@example.com"}]]))
@@ -61,7 +61,6 @@ describe("computeBulkTargets", () => {
         type: MemberType.ALUMNI,
         startDate: "2025-01-15",
         endDate: null,
-        incasso: true,
       },
       mostRecentContribution: {paid: false},
       isHonorary: false,

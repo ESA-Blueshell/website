@@ -23,11 +23,11 @@ class MandateIT : UserTestSupport() {
     private val body = """{"iban":"NL91 ABNA 0417 1643 00","accountHolder":"Ann Vos","signedOn":"2026-01-15"}"""
 
     private fun record(
-        membershipId: Long?,
+        userId: Long?,
         by: User,
         content: String = body,
     ) = mvc.perform(
-        put("/memberships/$membershipId/mandate")
+        put("/users/$userId/mandate")
             .with(signedIn(by))
             .contentType(MediaType.APPLICATION_JSON)
             .content(content),
@@ -37,9 +37,9 @@ class MandateIT : UserTestSupport() {
     fun `the board records a mandate sealed at rest, and no response carries more than the last four`() {
         val board = createUserWithRole(Role.BOARD)
         val member = createUserWithRole(Role.MEMBER)
-        val membership = createMembershipFixture(member)
+        createMembershipFixture(member)
 
-        record(membership.id, board)
+        record(member.id, board)
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.ibanCountry").value("NL"))
             .andExpect(jsonPath("$.ibanLastTwo").value("00"))
@@ -48,8 +48,8 @@ class MandateIT : UserTestSupport() {
 
         val stored =
             jdbcTemplate.queryForMap(
-                "select mandate_iban, mandate_account_holder, mandate_iban_masked from memberships where id = ?",
-                membership.id,
+                "select mandate_iban, mandate_account_holder, mandate_iban_masked from payment_details where user_id = ?",
+                member.id,
             )
         assertThat(stored["mandate_iban"].toString()).doesNotContain("0417").doesNotContain(iban)
         assertThat(stored["mandate_account_holder"].toString()).doesNotContain("Ann")
@@ -57,7 +57,7 @@ class MandateIT : UserTestSupport() {
 
         val paths =
             listOf(
-                "/memberships/${membership.id}/mandate",
+                "/users/${member.id}/mandate",
                 "/memberships",
                 "/memberships?userId=${member.id}",
                 "/users/${member.id}/memberships",
@@ -75,12 +75,34 @@ class MandateIT : UserTestSupport() {
     @Test
     fun `a wrong IBAN is refused, and members cannot record or read a mandate`() {
         val member = createUserWithRole(Role.MEMBER)
-        val membership = createMembershipFixture(member)
+        createMembershipFixture(member)
 
-        record(membership.id, createUserWithRole(Role.BOARD), body.replace("NL91", "NL92"))
+        record(member.id, createUserWithRole(Role.BOARD), body.replace("NL91", "NL92"))
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.code").value("InvalidIban"))
-        record(membership.id, member).andExpect(status().isForbidden)
-        mvc.perform(get("/memberships/${membership.id}/mandate").with(signedIn(member))).andExpect(status().isForbidden)
+        record(member.id, member).andExpect(status().isForbidden)
+        mvc.perform(get("/users/${member.id}/mandate").with(signedIn(member))).andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `the board sets how somebody pays, without a membership, and a member cannot`() {
+        val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
+        val paysBy = { by: User, incasso: Boolean ->
+            mvc.perform(
+                put("/users/${member.id}/pays-by")
+                    .with(signedIn(by))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"incasso":$incasso}"""),
+            )
+        }
+
+        paysBy(board, true)
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.incasso").value(true))
+            .andExpect(jsonPath("$.standing").value("ON_INCASSO_WITHOUT_BANK_DETAILS"))
+        paysBy(member, false).andExpect(status().isForbidden)
+        assertThat(jdbcTemplate.queryForObject("select incasso from payment_details where user_id = ?", Boolean::class.java, member.id))
+            .isTrue()
     }
 }

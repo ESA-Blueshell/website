@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import MembershipFields from "@/components/management/MembershipFields.vue"
-import {IncassoStanding, MemberType, type MembershipResponse} from "@/services/api"
+import {MemberType, type MembershipResponse} from "@/services/api"
 
 const user = vi.hoisted(() => ({saveMembership: vi.fn(), startMembershipAsBoard: vi.fn()}))
 const {mockHandleSubmitError} = vi.hoisted(() => ({mockHandleSubmitError: vi.fn()}))
@@ -10,8 +10,8 @@ vi.mock("@/domains/user", async (importOriginal) => ({...(await importOriginal<t
 vi.mock("@/composables/formUtils", () => ({handleSubmitError: mockHandleSubmitError}))
 
 const held: MembershipResponse = {
-  id: 9, userId: 42, startDate: "2025-01-01", endDate: null, memberType: MemberType.ALUMNI, incasso: true,
-  incassoStanding: IncassoStanding.NONE, pending: false, version: 3, createdAt: "", updatedAt: "",
+  id: 9, userId: 42, startDate: "2025-01-01", endDate: null, memberType: MemberType.ALUMNI,
+  pending: false, version: 3, createdAt: "", updatedAt: "",
 }
 
 describe("a membership's fields", () => {
@@ -26,7 +26,7 @@ describe("a membership's fields", () => {
 
   beforeEach(() => vi.clearAllMocks())
 
-  it("adds a membership that pays by transfer, with no incasso tick to set", async () => {
+  it("adds a membership with no incasso tick, since how somebody pays stands on them", async () => {
     user.startMembershipAsBoard.mockResolvedValue({...held, id: 10})
     const wrapper = fields()
 
@@ -39,7 +39,7 @@ describe("a membership's fields", () => {
     wrapper.findComponent({name: "MemberTypeSelect"}).vm.$emit("update:modelValue", MemberType.HONORARY)
     await submit(wrapper)
 
-    expect(user.startMembershipAsBoard).toHaveBeenCalledWith(42, {userId: 42, startDate: "2026-09-01", endDate: null, memberType: MemberType.HONORARY, incasso: false})
+    expect(user.startMembershipAsBoard).toHaveBeenCalledWith(42, {userId: 42, startDate: "2026-09-01", endDate: null, memberType: MemberType.HONORARY})
     expect(wrapper.emitted("saved")?.[0]).toEqual([{...held, id: 10}])
     expect(wrapper.get('[data-testid="membership-save"]').attributes("data-submit-mode")).toBe("create")
   })
@@ -53,7 +53,7 @@ describe("a membership's fields", () => {
     await input(wrapper, "end-date").setValue("2026-08-31")
     await submit(wrapper)
 
-    expect(user.saveMembership).toHaveBeenCalledWith(9, expect.objectContaining({version: 3, incasso: true, startDate: "2025-01-01", endDate: "2026-08-31", memberType: MemberType.ALUMNI}))
+    expect(user.saveMembership).toHaveBeenCalledWith(9, expect.objectContaining({version: 3, startDate: "2025-01-01", endDate: "2026-08-31", memberType: MemberType.ALUMNI}))
     expect(wrapper.emitted("saved")).toHaveLength(1)
     expect(wrapper.get('[data-testid="membership-save"]').attributes("data-submit-mode")).toBe("update")
   })

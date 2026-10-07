@@ -33,11 +33,11 @@ logged and shown as none.
 one person's page, a reveal or ING's file opens one.
 
 **A full IBAN leaves the api in three ways only, and each is logged.** Every other response carries
-the masked IBAN. A board member can **reveal** one membership's full IBAN from its mandate panel:
+the masked IBAN. A board member can **reveal** one person's full IBAN from their mandate panel:
 the answer is sent `no-store`, shown until the panel closes and kept nowhere. A board member can
 download an online mandate as a PDF, built from the sealed mandate each time and kept nowhere.
 ING's batch file is the third. A reveal and a PDF download are each a security event on the
-member's log, naming who did it for which membership and when; each download of ING's file is one
+member's log, naming who did it, the mandate's reference and when; each download of ING's file is one
 on the downloader's log, naming the run, the file and how many members it holds. No event holds an
 IBAN. With Vault out of reach all three are refused with a 503.
 
@@ -81,8 +81,7 @@ database backup still kept, so a restored backup still opens.
 - The context binds a value to its field and its member, not to one of that member's mandates. An
   earlier sealed IBAN of the same member still opens for them, so write access to the database
   could put a member's previous account back on their mandate. It cannot put anybody else's there.
-  Binding to the mandate reference too would close this, and would mean re-sealing when a pending
-  mandate moves onto its membership.
+  Binding to the mandate reference too would close this.
 
 ## Related
 

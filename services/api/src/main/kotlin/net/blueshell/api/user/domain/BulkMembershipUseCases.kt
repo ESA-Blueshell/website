@@ -54,7 +54,6 @@ class BulkMembershipUseCases(
                         memberType = decision.memberType,
                         startDate = plan.effectiveDate,
                         endDate = null,
-                        incasso = false,
                     )
                     applied++
                 }

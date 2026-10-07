@@ -23,11 +23,13 @@ const val WORDING_VERSION_MAX = 16
 private const val ADDRESS_LINE_MAX = 150
 private const val ADDRESS_PART_MAX = 20
 
-/** A membership's mandate as any response shows it: the account number masked to its last four. */
+/** How a person pays and their mandate as any response shows it: the account number masked to its last four. */
 @Schema(name = "MandateResponse")
 data class MandateResponse(
-    val membershipId: Long,
+    val userId: Long,
     val standing: IncassoStanding,
+    @field:Schema(description = "Pays by incasso rather than by transfer, whether or not a mandate is recorded.")
+    val incasso: Boolean,
     @field:Schema(description = "Null where no mandate is recorded, or where it cannot be opened now.")
     val accountHolder: String?,
     @field:Schema(description = "The IBAN's country code; with the last two, all a response carries of it.")
@@ -71,6 +73,12 @@ data class RecordMandateRequest(
     }
 }
 
+/** Whether a person pays by incasso or by transfer. */
+@Schema(name = "PaysByRequest")
+data class PaysByRequest(
+    val incasso: Boolean,
+)
+
 /** A mandate's full IBAN, answered to a board member's reveal and to nothing else. */
 @Schema(name = "RevealedIbanResponse")
 data class RevealedIbanResponse(
@@ -92,8 +100,6 @@ data class OwnMandateResponse(
     val ibanLastTwo: String?,
     val reference: String?,
     val signedOn: LocalDate?,
-    @field:Schema(description = "Set up before the membership started, and moved onto it once it does.")
-    val pending: Boolean,
 )
 
 /** The address a member confirms when authorising incasso online. */

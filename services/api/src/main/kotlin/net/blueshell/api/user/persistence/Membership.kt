@@ -1,7 +1,6 @@
 package net.blueshell.api.user.persistence
 
 import jakarta.persistence.Column
-import jakarta.persistence.Embedded
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -26,7 +25,6 @@ import java.time.LocalDate
         Index(name = "idx_memberships_start_date", columnList = "start_date"),
         Index(name = "idx_memberships_end_date", columnList = "end_date"),
         Index(name = "idx_memberships_member_type", columnList = "type"),
-        Index(name = "idx_memberships_incasso", columnList = "incasso"),
     ],
 )
 @SQLDelete(sql = "UPDATE memberships SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
@@ -42,8 +40,6 @@ class Membership(
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
     var memberType: MemberType = MemberType.REGULAR,
-    @Column(name = "incasso", nullable = false)
-    var incasso: Boolean = false,
     /** The day it became active; null while it waits for its first contribution (api ADR-036). */
     @Column(name = "activated_on")
     var activatedOn: LocalDate? = null,
@@ -51,10 +47,6 @@ class Membership(
     /** Running and not yet paid for, so it carries no member role. */
     val isPending: Boolean
         get() = activatedOn == null && endDate == null
-
-    /** The bank details and mandate it is collected under, or null where none is recorded. */
-    @Embedded
-    var mandate: IncassoMandate? = null
 
     val userId: Long
         get() = user.id ?: 0

@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest"
 import {ref} from "vue"
-import {IncassoStanding, MemberType} from "@/services/api"
+import {MemberType} from "@/services/api"
 import {
   deriveLatestMembership,
   deriveMemberSince,
@@ -27,7 +27,6 @@ function makeMembership(overrides: {
   startDate: string
   endDate?: string
   memberType?: MemberType
-  incasso?: boolean
 }): MembershipResponse {
   return {
     id: overrides.id,
@@ -35,8 +34,6 @@ function makeMembership(overrides: {
     startDate: overrides.startDate,
     endDate: overrides.endDate,
     memberType: overrides.memberType ?? MemberType.REGULAR,
-    incasso: overrides.incasso ?? false,
-    incassoStanding: IncassoStanding.NONE,
     pending: false,
     version: 1,
     createdAt: "2025-01-01T00:00:00.000Z",
@@ -127,7 +124,7 @@ describe("deriveLatestMembership", () => {
 })
 
 describe("isNotableType / typeIcon / typeLabel / statusColor", () => {
-  const honRow: MemberRow = {id: 1, fullName: "A", username: "a", role: "", status: "Current", memberSince: null, latestType: MemberType.HONORARY, latestIncasso: false, paid: false, paidKnown: true, wasMemberInPeriod: false, discordLinked: false, security: "no-two-factor"}
+  const honRow: MemberRow = {id: 1, fullName: "A", username: "a", role: "", status: "Current", memberSince: null, latestType: MemberType.HONORARY, paid: false, paidKnown: true, wasMemberInPeriod: false, discordLinked: false, security: "no-two-factor"}
   const alumRow: MemberRow = {...honRow, latestType: MemberType.ALUMNI}
   const regRow: MemberRow = {...honRow, latestType: MemberType.REGULAR}
   const noneRow: MemberRow = {...honRow, latestType: null}
@@ -186,7 +183,7 @@ describe("useUserRows", () => {
   it("rows derives correct MemberRow for a user with active membership", () => {
     const users = ref([makeUser(1, "Alice Smith", "alice", ["MEMBER"])])
     const memberships = ref([
-      makeMembership({id: 10, userId: 1, startDate: "2024-01-01", memberType: MemberType.HONORARY, incasso: true}),
+      makeMembership({id: 10, userId: 1, startDate: "2024-01-01", memberType: MemberType.HONORARY}),
     ])
     const paidUserIds = ref(new Set<number>([1]))
 
@@ -197,7 +194,6 @@ describe("useUserRows", () => {
     expect(row.fullName).toBe("Alice Smith")
     expect(row.status).toBe("Current")
     expect(row.latestType).toBe(MemberType.HONORARY)
-    expect(row.latestIncasso).toBe(true)
     expect(row.paid).toBe(true)
   })
 

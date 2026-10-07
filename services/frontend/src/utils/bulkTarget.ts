@@ -26,7 +26,6 @@ export interface BulkTarget {
     type: MemberType
     startDate: string
     endDate: string | null
-    incasso: boolean
   } | null
   mostRecentContribution: {
     paid: boolean
@@ -56,7 +55,6 @@ export function computeBulkTargets(
             type: latest.memberType,
             startDate: latest.startDate,
             endDate: latest.endDate ?? null,
-            incasso: latest.incasso,
           }
         : null,
       mostRecentContribution: {paid: paidUserIds.has(userId)},

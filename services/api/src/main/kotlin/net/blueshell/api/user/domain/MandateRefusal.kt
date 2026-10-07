@@ -16,10 +16,10 @@ class InvalidIban : MandateRefusal(HttpStatus.BAD_REQUEST, "InvalidIban", "That 
 
 class MandateSignedInFuture : MandateRefusal(HttpStatus.BAD_REQUEST, "MandateSignedInFuture", "A mandate cannot be signed after today.")
 
-class NoMandateRecorded : MandateRefusal(HttpStatus.NOT_FOUND, "NoMandateRecorded", "No mandate is recorded on this membership.")
+class NoMandateRecorded : MandateRefusal(HttpStatus.NOT_FOUND, "NoMandateRecorded", "No mandate is recorded for this person.")
 
 /** Only a mandate the member authorised on the site has a PDF: a paper one is its own record, and a wiped one has nothing to print. */
-class NoOnlineMandate : MandateRefusal(HttpStatus.NOT_FOUND, "NoOnlineMandate", "This membership has no online mandate to print.")
+class NoOnlineMandate : MandateRefusal(HttpStatus.NOT_FOUND, "NoOnlineMandate", "This person has no online mandate to print.")
 
 class AccountHolderMissing : MandateRefusal(HttpStatus.BAD_REQUEST, "AccountHolderMissing", "A mandate names the account holder.")
 

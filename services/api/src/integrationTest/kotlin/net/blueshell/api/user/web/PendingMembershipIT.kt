@@ -25,7 +25,7 @@ class PendingMembershipIT : UserTestSupport() {
             post("/users/${member.id}/memberships")
                 .with(signedIn(board))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"userId":${member.id},"startDate":"${LocalDate.now()}","memberType":"$type","incasso":false}"""),
+                .content("""{"userId":${member.id},"startDate":"${LocalDate.now()}","memberType":"$type"}"""),
         ).andExpect(status().isCreated)
 
     private fun pay(

@@ -5,7 +5,7 @@ import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.contribution.persistence.IncassoRunRepository
 import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.user.api.CollectionAccounts
-import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -27,7 +27,7 @@ class IncassoFile(
 class IncassoFiles(
     private val runs: IncassoRunRepository,
     private val notifications: IncassoNotificationRepository,
-    private val memberships: MembershipService,
+    private val payments: PaymentDirectory,
     private val accounts: CollectionAccounts,
     private val bank: BankProperties,
     private val clock: Clock,
@@ -56,11 +56,10 @@ class IncassoFiles(
         val chunks = all.chunked(IngIncassoFile.MAX_COLLECTIONS)
         if (part < 1) throw IncassoFilePartNotFound()
         val theirs = chunks.getOrNull(part - 1) ?: throw IncassoFilePartNotFound()
-        val held = memberships.findByUserIdsWithMembers(theirs.map { it.userId })
+        val paying = payments.of(theirs.map { it.userId })
         val mandates =
             theirs.associate { told ->
-                told.userId to
-                    held[told.userId].orEmpty().mapNotNull { it.mandate }.firstOrNull { !it.wiped && it.reference == told.mandateReference }
+                told.userId to paying.getValue(told.userId).collectable?.takeIf { it.reference == told.mandateReference }
             }
         val changed = mandates.filterValues { it == null }.keys.sorted()
         if (changed.isNotEmpty()) throw MandateChanged(changed)

@@ -147,7 +147,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                         .post("/users/${targetUser.id}/memberships")
                         .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}"""),
+                        .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01"}"""),
                 ).andExpect(MockMvcResultMatchers.status().isCreated)
         }
 
@@ -162,7 +162,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                         .post("/users/${targetUser.id}/memberships")
                         .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}"""),
+                        .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01"}"""),
                 ).andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
@@ -177,7 +177,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                         .post("/users/${targetUser.id}/memberships")
                         .with(signedIn(guest))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}"""),
+                        .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01"}"""),
                 ).andExpect(MockMvcResultMatchers.status().isForbidden)
         }
 
@@ -188,7 +188,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                     MockMvcRequestBuilders
                         .post("/memberships/member")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}"""),
+                        .content("""{"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01"}"""),
                 ).andExpect(MockMvcResultMatchers.status().isUnauthorized)
         }
     }
@@ -209,7 +209,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             """
-                            {"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}
+                            {"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","version":${membership.version}}
                             """.trimIndent(),
                         ),
                 ).andExpect(MockMvcResultMatchers.status().isOk)
@@ -229,7 +229,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             """
-                            {"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}
+                            {"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","version":${membership.version}}
                             """.trimIndent(),
                         ),
                 ).andExpect(MockMvcResultMatchers.status().isForbidden)
@@ -249,7 +249,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             """
-                            {"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}
+                            {"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","version":${membership.version}}
                             """.trimIndent(),
                         ),
                 ).andExpect(MockMvcResultMatchers.status().isForbidden)
@@ -267,7 +267,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             """
-                            {"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}
+                            {"userId":999999,"memberType":"REGULAR","startDate":"2026-01-01","version":${membership.version}}
                             """.trimIndent(),
                         ),
                 ).andExpect(MockMvcResultMatchers.status().isUnauthorized)

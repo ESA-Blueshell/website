@@ -640,10 +640,18 @@ object TestHelper {
     ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
+            // How somebody pays stands on them, not on the membership.
+            conn
+                .prepareStatement(
+                    "INSERT INTO payment_details (user_id, incasso) VALUES (?, ?) ON DUPLICATE KEY UPDATE incasso = VALUES(incasso)",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.setBoolean(2, incasso)
+                    stmt.executeUpdate()
+                }
             return conn
                 .prepareStatement(
-                    "INSERT INTO memberships (user_id, start_date, end_date, type, incasso) " +
-                        "VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO memberships (user_id, start_date, end_date, type) VALUES (?, ?, ?, ?)",
                     java.sql.Statement.RETURN_GENERATED_KEYS,
                 ).use { stmt ->
                     stmt.setLong(1, userId)
@@ -654,7 +662,6 @@ object TestHelper {
                         stmt.setNull(3, java.sql.Types.DATE)
                     }
                     stmt.setString(4, memberType)
-                    stmt.setBoolean(5, incasso)
                     stmt.executeUpdate()
                     val keys = stmt.generatedKeys
                     require(keys.next()) { "INSERT memberships produced no id" }

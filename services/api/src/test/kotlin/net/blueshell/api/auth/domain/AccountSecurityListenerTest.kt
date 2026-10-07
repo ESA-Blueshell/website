@@ -137,34 +137,34 @@ class AccountSecurityListenerTest {
     }
 
     @Test
-    fun `a reveal is logged on the member, naming who revealed which membership and never the IBAN`() {
+    fun `a reveal is logged on the member, naming who revealed which mandate and never the IBAN`() {
         listener.onIbanRevealed(
             net.blueshell.api.user.api
-                .IbanRevealed(userId = 7, membershipId = 12, revealedBy = 3),
+                .IbanRevealed(userId = 7, reference = "BLUESHELL-7-20260901", revealedBy = 3),
         )
 
         verify(events).record(
             eq(7L),
             eq(SecurityEventKind.IBAN_REVEALED),
             eq(SecurityActor.Person(3)),
-            eq("membership 12"),
+            eq("mandate BLUESHELL-7-20260901"),
             anyOrNull(),
             anyOrNull(),
         )
     }
 
     @Test
-    fun `a download of a mandate's PDF is logged on the member, naming who downloaded which membership's`() {
+    fun `a download of a mandate's PDF is logged on the member, naming who downloaded which one`() {
         listener.onMandatePdfDownloaded(
             net.blueshell.api.contribution.api
-                .MandatePdfDownloaded(userId = 7, membershipId = 12, downloadedBy = 3),
+                .MandatePdfDownloaded(userId = 7, reference = "BLUESHELL-7-20260901", downloadedBy = 3),
         )
 
         verify(events).record(
             eq(7L),
             eq(SecurityEventKind.MANDATE_PDF_DOWNLOADED),
             eq(SecurityActor.Person(3)),
-            eq("membership 12"),
+            eq("mandate BLUESHELL-7-20260901"),
             anyOrNull(),
             anyOrNull(),
         )

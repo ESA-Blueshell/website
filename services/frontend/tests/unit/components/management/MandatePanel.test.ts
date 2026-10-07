@@ -12,26 +12,26 @@ vi.mock("@/services/api", async (importOriginal) => ({
 }))
 
 const recorded = {
-  membershipId: 9, standing: IncassoStanding.MANDATE_RECORDED, accountHolder: "Ann Vos", ibanCountry: "NL", ibanLastTwo: "00",
+  userId: 9, incasso: true, standing: IncassoStanding.MANDATE_RECORDED, accountHolder: "Ann Vos", ibanCountry: "NL", ibanLastTwo: "00",
   reference: "BLUESHELL-9-20260901", signedOn: "2026-09-01", recordedBy: 3, recordedAt: "2026-09-02T10:00:00Z",
 }
 
 describe("the mandate panel", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    api.findMandate.mockResolvedValue({status: 200, data: {membershipId: 9, standing: IncassoStanding.NONE}})
+    api.findMandate.mockResolvedValue({status: 200, data: {userId: 9, incasso: true, standing: IncassoStanding.NONE}})
     api.recordMandate.mockResolvedValue({status: 200, data: recorded})
   })
 
   it("opens on its form where it is asked for in order to fill it in", async () => {
-    const wrapper = mount(MandatePanel, {props: {membershipId: 9, startOpen: true}})
+    const wrapper = mount(MandatePanel, {props: {userId: 9, startOpen: true}})
     await settle()
 
     expect(wrapper.find('[data-testid="mandate-form"]').exists()).toBe(true)
   })
 
   it("records a paper mandate and shows only the last four of the account", async () => {
-    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    const wrapper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
     expect(wrapper.get('[data-testid="mandate-standing"]').text()).toBe("Pays by transfer")
 
@@ -42,7 +42,7 @@ describe("the mandate panel", () => {
     await wrapper.get('[data-testid="mandate-form"]').trigger("submit")
     await settle()
 
-    expect(api.recordMandate).toHaveBeenCalledWith({path: {membershipId: 9}, body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", signedOn: "2026-09-01", replacesOnline: false}})
+    expect(api.recordMandate).toHaveBeenCalledWith({path: {userId: 9}, body: {iban: "NL91 ABNA 0417 1643 00", accountHolder: "Ann Vos", signedOn: "2026-09-01", replacesOnline: false}})
     expect(wrapper.get('[data-testid="mandate-standing"]').text()).toBe("Collected by incasso")
     expect(wrapper.get('[data-testid="mandate-facts"]').text()).toContain("NL•• … ••00")
     expect(wrapper.text()).not.toContain("0417")
@@ -52,7 +52,7 @@ describe("the mandate panel", () => {
 
   it("shows the masked account alone where the account holder cannot be opened", async () => {
     api.findMandate.mockResolvedValue({status: 200, data: {...recorded, accountHolder: null}})
-    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    const wrapper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
 
     expect(wrapper.get('[data-testid="mandate-account"]').text()).toBe("NL•• … ••00")
@@ -61,14 +61,14 @@ describe("the mandate panel", () => {
   it("reveals the full IBAN on asking, hides it again, and forgets it when the mandate is read anew", async () => {
     api.findMandate.mockResolvedValue({status: 200, data: recorded})
     api.revealIban.mockResolvedValue({status: 200, data: {iban: "NL91ABNA0417164300"}})
-    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    const wrapper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
     const account = () => wrapper.get('[data-testid="mandate-account"]').text()
     expect(account()).toBe("NL•• … ••00, Ann Vos")
 
     await wrapper.get('[data-testid="mandate-reveal"]').trigger("click")
     await settle()
-    expect(api.revealIban).toHaveBeenCalledWith({path: {membershipId: 9}})
+    expect(api.revealIban).toHaveBeenCalledWith({path: {userId: 9}})
     expect(account()).toBe("NL91 ABNA 0417 1643 00, Ann Vos")
     expect(wrapper.get('[data-testid="mandate-reveal"]').text()).toBe("Hide the IBAN")
 
@@ -77,7 +77,7 @@ describe("the mandate panel", () => {
 
     await wrapper.get('[data-testid="mandate-reveal"]').trigger("click")
     await settle()
-    await wrapper.setProps({membershipId: 10})
+    await wrapper.setProps({userId: 10})
     await settle()
     expect(account()).not.toContain("0417")
     expect(api.revealIban).toHaveBeenCalledTimes(2)
@@ -85,7 +85,7 @@ describe("the mandate panel", () => {
 
   it("says a wiped mandate's bank details are gone, and offers no reveal", async () => {
     api.findMandate.mockResolvedValue({status: 200, data: {...recorded, standing: IncassoStanding.NONE, accountHolder: null, bankDetailsWiped: true}})
-    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    const wrapper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
 
     expect(wrapper.get('[data-testid="mandate-wiped"]').text()).toContain("wiped 13 months after the last collection")
@@ -96,7 +96,7 @@ describe("the mandate panel", () => {
   it("says why a reveal was refused, and keeps the account masked", async () => {
     api.findMandate.mockResolvedValue({status: 200, data: recorded})
     api.revealIban.mockResolvedValue({status: 503, error: {code: "SealingUnavailable"}})
-    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    const wrapper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
 
     await wrapper.get('[data-testid="mandate-reveal"]').trigger("click")
@@ -115,7 +115,7 @@ describe("the mandate panel", () => {
 
   it("says what kind of mandate it is, and replaces an online one only once that is confirmed", async () => {
     api.findMandate.mockResolvedValue({status: 200, data: {...recorded, kind: MandateKind.PAPER}})
-    const paper = mount(MandatePanel, {props: {membershipId: 9}})
+    const paper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
     expect(paper.get('[data-testid="mandate-kind"]').text()).toMatch(/^Paper mandate, recorded on .+\. The signed paper is the record, so there is no PDF\.$/)
     expect(paper.find('[data-testid="mandate-pdf"]').exists()).toBe(false)
@@ -123,7 +123,7 @@ describe("the mandate panel", () => {
     expect(paper.find('[data-testid="mandate-replaces-online"]').exists()).toBe(false)
 
     api.findMandate.mockResolvedValue({status: 200, data: {...recorded, kind: MandateKind.ONLINE, authorisedAt: "2026-09-30T10:00:00Z"}})
-    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    const wrapper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
     expect(wrapper.get('[data-testid="mandate-kind"]').text()).toContain("Online mandate, authorised on")
 
@@ -140,7 +140,7 @@ describe("the mandate panel", () => {
 
   it("downloads an online mandate's PDF, says who recorded a paper one, and says why a download was refused", async () => {
     api.findMandate.mockResolvedValue({status: 200, data: {...recorded, kind: MandateKind.PAPER, recordedByName: "Bo Ard"}})
-    const paper = mount(MandatePanel, {props: {membershipId: 9}})
+    const paper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
     expect(paper.get('[data-testid="mandate-kind"]').text()).toContain("Paper mandate, recorded by Bo Ard on")
 
@@ -149,12 +149,12 @@ describe("the mandate panel", () => {
     const created = vi.fn(() => "blob:mandate")
     const revoked = vi.fn()
     vi.stubGlobal("URL", {...URL, createObjectURL: created, revokeObjectURL: revoked})
-    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    const wrapper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
 
     await wrapper.get('[data-testid="mandate-pdf"]').trigger("click")
     await settle()
-    expect(api.downloadMandatePdf).toHaveBeenCalledWith({path: {membershipId: 9}})
+    expect(api.downloadMandatePdf).toHaveBeenCalledWith({path: {userId: 9}})
     expect(created).toHaveBeenCalled()
     expect(revoked).toHaveBeenCalledWith("blob:mandate")
 
@@ -167,8 +167,8 @@ describe("the mandate panel", () => {
 
   it("says why a mandate was refused, and cancels", async () => {
     api.recordMandate.mockResolvedValue({status: 400, error: {code: "InvalidIban", detail: "That is not a valid IBAN."}})
-    api.findMandate.mockResolvedValue({status: 200, data: {membershipId: 9, standing: IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS}})
-    const wrapper = mount(MandatePanel, {props: {membershipId: 9}})
+    api.findMandate.mockResolvedValue({status: 200, data: {userId: 9, incasso: true, standing: IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS}})
+    const wrapper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
     expect(wrapper.get('[data-testid="mandate-standing"]').text()).toContain("no bank details")
 

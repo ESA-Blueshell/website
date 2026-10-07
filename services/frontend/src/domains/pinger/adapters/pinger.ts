@@ -22,6 +22,7 @@ export const DEFAULT_PAINT: PaintJob = {
   width: 900,
   height: 720,
   imageUrl: null,
+  siteCieEnabled: true,
 }
 
 /** The current paint job, or the defaults if it cannot be read. The read is public, so this rarely fails. */

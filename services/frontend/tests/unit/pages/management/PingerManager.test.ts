@@ -5,7 +5,7 @@
  */
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
-import {VBtn, VFileInput, VTextField} from "vuetify/components"
+import {VBtn, VFileInput, VSwitch, VTextField} from "vuetify/components"
 import PingerManager from "@/pages/management/PingerManager.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
@@ -20,7 +20,7 @@ vi.mock("@/services/api", async (importOriginal) => {
   return {...actual, paint: mockPaint, setPaint: mockSetPaint, uploadPublicImage: mockUpload}
 })
 
-const job = {prefix: "2001:db8:b317:a000::/64", ratePps: 128, originX: 1470, originY: 180, width: 900, height: 720, imageUrl: "/files/public/pinger-paint/old.webp"}
+const job = {prefix: "2001:db8:b317:a000::/64", ratePps: 128, originX: 1470, originY: 180, width: 900, height: 720, imageUrl: "/files/public/pinger-paint/old.webp", siteCieEnabled: true}
 
 describe("PingerManager page", () => {
   const wrappers: VueWrapper[] = []
@@ -57,7 +57,18 @@ describe("PingerManager page", () => {
 
     const body = await save(wrapper)
 
-    expect(body).toMatchObject({prefix: job.prefix, ratePps: 128, originX: 1470, originY: 180, width: 900, height: 720, imagePath: "pinger-paint/old.webp"})
+    expect(body).toMatchObject({prefix: job.prefix, ratePps: 128, originX: 1470, originY: 180, width: 900, height: 720, imagePath: "pinger-paint/old.webp", siteCieEnabled: true})
+  })
+
+  it("loads the SiteCie toggle and saves it turned off", async () => {
+    const wrapper = mountPage()
+    await settle()
+
+    wrapper.findComponent(VSwitch).vm.$emit("update:modelValue", false)
+    await settle()
+
+    const body = await save(wrapper)
+    expect(body.siteCieEnabled).toBe(false)
   })
 
   it("uploads a chosen image and saves its stored path", async () => {

@@ -182,34 +182,34 @@
         <error line="82" column="33" source="standard:trailing-comma-on-declaration-site" />
     </file>
     <file name="src/main/kotlin/net/blueshell/api/contact/domain/BrevoListAdapter.kt">
-        <error line="48" column="27" source="standard:function-signature" />
-        <error line="48" column="49" source="standard:function-signature" />
-        <error line="48" column="63" source="standard:function-signature" />
-        <error line="61" column="24" source="standard:chain-method-continuation" />
-        <error line="86" column="26" source="standard:function-signature" />
-        <error line="86" column="40" source="standard:function-signature" />
-        <error line="86" column="70" source="standard:function-signature" />
-        <error line="90" column="24" source="standard:multiline-expression-wrapping" />
-        <error line="104" column="32" source="standard:class-signature" />
-        <error line="104" column="50" source="standard:class-signature" />
-        <error line="104" column="68" source="standard:class-signature" />
-        <error line="106" column="29" source="standard:function-signature" />
-        <error line="106" column="43" source="standard:function-signature" />
-        <error line="106" column="62" source="standard:function-signature" />
-        <error line="162" column="57" source="standard:function-signature" />
-        <error line="162" column="57" source="standard:multiline-expression-wrapping" />
-        <error line="170" column="28" source="standard:function-signature" />
-        <error line="170" column="50" source="standard:function-signature" />
-        <error line="170" column="70" source="standard:function-signature" />
-        <error line="181" column="45" source="standard:argument-list-wrapping" />
-        <error line="188" column="45" source="standard:argument-list-wrapping" />
-        <error line="209" column="33" source="standard:function-signature" />
-        <error line="209" column="55" source="standard:function-signature" />
-        <error line="209" column="75" source="standard:function-signature" />
-        <error line="221" column="37" source="standard:argument-list-wrapping" />
-        <error line="251" column="24" source="standard:multiline-expression-wrapping" />
-        <error line="278" column="65" source="standard:function-signature" />
-        <error line="278" column="65" source="standard:multiline-expression-wrapping" />
+        <error line="46" column="27" source="standard:function-signature" />
+        <error line="46" column="49" source="standard:function-signature" />
+        <error line="46" column="63" source="standard:function-signature" />
+        <error line="59" column="24" source="standard:chain-method-continuation" />
+        <error line="84" column="26" source="standard:function-signature" />
+        <error line="84" column="40" source="standard:function-signature" />
+        <error line="84" column="70" source="standard:function-signature" />
+        <error line="88" column="24" source="standard:multiline-expression-wrapping" />
+        <error line="102" column="32" source="standard:class-signature" />
+        <error line="102" column="50" source="standard:class-signature" />
+        <error line="102" column="68" source="standard:class-signature" />
+        <error line="104" column="29" source="standard:function-signature" />
+        <error line="104" column="43" source="standard:function-signature" />
+        <error line="104" column="62" source="standard:function-signature" />
+        <error line="160" column="57" source="standard:multiline-expression-wrapping" />
+        <error line="160" column="57" source="standard:function-signature" />
+        <error line="168" column="28" source="standard:function-signature" />
+        <error line="168" column="50" source="standard:function-signature" />
+        <error line="168" column="70" source="standard:function-signature" />
+        <error line="179" column="45" source="standard:argument-list-wrapping" />
+        <error line="186" column="45" source="standard:argument-list-wrapping" />
+        <error line="207" column="33" source="standard:function-signature" />
+        <error line="207" column="55" source="standard:function-signature" />
+        <error line="207" column="75" source="standard:function-signature" />
+        <error line="219" column="37" source="standard:argument-list-wrapping" />
+        <error line="249" column="24" source="standard:multiline-expression-wrapping" />
+        <error line="276" column="65" source="standard:multiline-expression-wrapping" />
+        <error line="276" column="65" source="standard:function-signature" />
     </file>
     <file name="src/main/kotlin/net/blueshell/api/contribution/web/ContributionReminderController.kt">
         <error line="19" column="37" source="standard:annotation" />

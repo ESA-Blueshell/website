@@ -20,6 +20,8 @@ export function alertTitle(alert: Alert): string {
       return `@${alert.subjectLabel}'s granted role waits on two-factor`
     case AlertKind.DISCORD_BOT_PERMISSIONS:
       return `The Discord bot lacks ${counted(alert.count, "permission", "permissions")}: ${alert.subjectLabel}`
+    case AlertKind.BREVO_FOLDERS_SHARE_NAME:
+      return `Brevo has folders that share a name: ${alert.subjectLabel}`
   }
 }
 
@@ -40,12 +42,16 @@ export function alertRow(alert: Alert): {name: string; meta: string; from: strin
       return {name: "A role waits on two-factor", meta: `@${alert.subjectLabel}`, from: "Users"}
     case AlertKind.DISCORD_BOT_PERMISSIONS:
       return {name: `The bot lacks ${counted(alert.count, "permission", "permissions")}`, meta: alert.subjectLabel ?? "", from: "Discord"}
+    case AlertKind.BREVO_FOLDERS_SHARE_NAME:
+      return {name: "Folders share a name", meta: alert.subjectLabel ?? "", from: "Brevo"}
   }
 }
 
 /** Where an alert is dealt with. */
 export function alertLink(alert: Alert): string {
   switch (alert.kind) {
+    case AlertKind.BREVO_FOLDERS_SHARE_NAME:
+      return "/management/platforms/brevo"
     case AlertKind.TARGET_DRIFT:
     case AlertKind.COHORT_WITHOUT_LIST:
       return alert.subjectId == null ? "/management/platforms/brevo" : `/management/platforms/brevo/cohort/${alert.subjectId}`

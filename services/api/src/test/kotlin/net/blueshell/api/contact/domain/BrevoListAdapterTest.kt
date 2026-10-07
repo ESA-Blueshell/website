@@ -32,10 +32,21 @@ import tools.jackson.databind.json.JsonMapper
 
 class BrevoListAdapterTest {
     private val contactsApi: ContactsApi = mock()
+
+    /** The locks taken, in order, standing in for MariaDB's. */
+    private val held = mutableListOf<String>()
+    private val locks =
+        object : NamedLocks {
+            override fun <T> holding(
+                name: String,
+                block: () -> T,
+            ): T = block().also { held += name }
+        }
     private val adapter =
         BrevoListAdapter(
             contactsApi = contactsApi,
             jsonMapper = JsonMapper.builder().build(),
+            locks = locks,
         )
 
     @Test
@@ -204,6 +215,8 @@ class BrevoListAdapterTest {
         adapter.createList("Paid 2026-2027", "Contributions")
 
         verify(contactsApi).createList(CreateListRequest(folderId = 12L, name = "Paid 2026-2027"))
+        // Found or made under a lock every replica sees, so two pods cannot each make one.
+        assertThat(held).containsExactly("brevo-folder:contributions")
     }
 
     @Test

@@ -13,6 +13,7 @@ enum class AlertKind {
     EXCEPTION_OPEN,
     ROLE_AWAITING_TWO_FACTOR,
     DISCORD_BOT_PERMISSIONS,
+    BREVO_FOLDERS_SHARE_NAME,
 }
 
 /** Who can act on an alert. An admin reads every alert; the board, the treasurer included, reads board alerts. */

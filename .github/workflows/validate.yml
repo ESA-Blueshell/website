@@ -263,6 +263,40 @@ jobs:
             --cache-from type=gha,scope=pinger --cache-to type=gha,mode=max,scope=pinger \
             -t blueshell-website/pinger:ci .
 
+  pinger-app:
+    # The desktop app's Go packages: format, vet, build and test. The full `wails build` needs the
+    # GTK/WebKit system libraries and is cross-compiled for packaging in #2237, so CI builds the Go
+    # packages under internal/ here. The Wails entry (main.go, app.go) compiles on the developer's
+    # machine; it is left out of the CI build because its WebKit bindings are not installed here.
+    name: Pinger app tests
+    needs: changes
+    if: fromJSON(needs.changes.outputs.run).pingerapp
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/pinger-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: services/pinger-app/go.mod
+          cache-dependency-path: services/pinger-app/go.sum
+
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+
+      - name: Vet
+        run: go vet ./internal/...
+
+      - name: Build
+        run: go build ./internal/...
+
+      - name: Test
+        run: go test -race -count=1 ./internal/...
+
   fe-static:
     # Also the bundle build: the system tests serve this artifact with
     # `vite preview`, so building it once here spares six shards a build each.
@@ -1087,6 +1121,7 @@ jobs:
       - flux-kustomize-check
       - workflow-checks
       - pinger
+      - pinger-app
       - changeset-compatibility
       - changeset-sql
       - fe-static

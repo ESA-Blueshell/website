@@ -106,7 +106,7 @@ def unmatched(paths, buckets):
 
 
 # Buckets whose suites need neither the jar nor the bundle, so they do not turn `app` on.
-STANDALONE = {"platform", "pinger"}
+STANDALONE = {"platform", "pinger", "pingerapp"}
 
 
 # A path for every pattern in the filter, including the negations. A bucket
@@ -153,6 +153,7 @@ FIXTURES = [
     ("services/frontend/docker-compose.yml", {"ignore"}),
     ("services/pinger/internal/paint/sender.go", {"pinger"}),
     ("services/pinger/docker-compose.yml", {"ignore"}),
+    ("services/pinger-app/internal/oauth/pkce.go", {"pingerapp"}),
     ("tests/system/src/test/kotlin/SignUpTest.kt", {"system"}),
     ("docker-compose.yml", {"ignore"}),
     ("docker-compose.oidc-e2e.yml", {"ignore"}),

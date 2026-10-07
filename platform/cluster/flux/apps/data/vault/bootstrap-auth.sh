@@ -58,6 +58,12 @@ path "secret/data/platform/mail" {
   capabilities = ["read"]
 }
 
+# The SiteCie report service token, on its own path so the pinger's VSO secret can
+# read the token without being granted read over all of secret/api (api ADR-033).
+path "secret/data/platform/pinger-report" {
+  capabilities = ["read"]
+}
+
 path "database/creds/api" {
   capabilities = ["read"]
 }
@@ -158,6 +164,12 @@ path "secret/data/platform/mariadb" {
 }
 
 path "secret/data/platform/alerting" {
+  capabilities = ["read"]
+}
+
+# The pinger's SiteCie report token, mirrored into the default namespace. Its own
+# path, not secret/api, so this shared VSO auth reads only the token (api ADR-033).
+path "secret/data/platform/pinger-report" {
   capabilities = ["read"]
 }
 EOF

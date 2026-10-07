@@ -889,6 +889,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/users/me/security-events") {
       return answer(route, "mySecurityEvents", {events: [], page: 0, totalPages: 0, totalElements: 0})
     }
+    if (method === "GET" && path === "/me/connected-apps") {
+      return answer(route, "connectedApps", [])
+    }
     if (method === "GET" && path === "/users/deleted") {
       return answer(route, "findDeletedUsers", {content: baseDeletedUsers})
     }

@@ -18,6 +18,7 @@ import {
   deleteCommitteeById,
   FileType,
   findCommitteeBrevo,
+  findCommitteeDeletion,
   findCommitteeDiscord,
   findCommitteePage,
   findCommittees,
@@ -83,9 +84,13 @@ export async function loadCommitteePage(address: string): Promise<CommitteePage 
   return res.data ? withArt(res.data) : null
 }
 
-/** Deletes the committee, or says why the api would not. */
-export const removeCommittee = (id: number): Promise<{ok: true} | Refused> =>
-  accepted(deleteCommitteeById({path: {id}}), "The committee could not be deleted.")
+/** How many events deleting the committee hands over, or nothing where that could not be read. */
+export const readEventsToHandOver = async (id: number): Promise<number | null> =>
+  (await readOr(findCommitteeDeletion({path: {id}}), null))?.events ?? null
+
+/** Deletes the committee, handing its events to [takenOverBy], or says why the api would not. */
+export const removeCommittee = (id: number, takenOverBy?: number): Promise<{ok: true} | Refused> =>
+  accepted(deleteCommitteeById({path: {id}, query: {takenOverBy}}), "The committee could not be deleted.")
 
 const withArtSaved = (saved: Saved<Committee> | Refused): Saved<Committee> | Refused =>
   saved.ok ? {ok: true, saved: withArt(saved.saved)} : saved

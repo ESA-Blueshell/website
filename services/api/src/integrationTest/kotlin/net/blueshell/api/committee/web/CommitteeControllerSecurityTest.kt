@@ -291,15 +291,20 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
     @Nested
     inner class DeleteCommittee {
         @Test
-        fun `allows BOARD to delete committees`() {
+        fun `allows ADMIN to delete committees, and refuses BOARD`() {
+            val admin = createUserWithRole(Role.ADMIN)
             val board = createUserWithRole(Role.BOARD)
             val committeeId = createCommitteeFixture().id!!
 
             mvc
-                .perform(
-                    delete("/committees/{id}", committeeId)
-                        .with(signedIn(board)),
-                ).andExpect(status().isNoContent)
+                .perform(delete("/committees/{id}", committeeId).with(signedIn(board)))
+                .andExpect(status().isForbidden)
+            mvc
+                .perform(get("/committees/{id}/deletion", committeeId).with(signedIn(board)))
+                .andExpect(status().isForbidden)
+            mvc
+                .perform(delete("/committees/{id}", committeeId).with(signedIn(admin)))
+                .andExpect(status().isNoContent)
         }
 
         @Test

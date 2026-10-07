@@ -37,6 +37,20 @@ class CommitteeServiceTest {
     private val games = mock<GameService>()
     private val actors = mock<ActorProvider> { on { currentOrSystem() } doReturn Actor.system() }
     private val afterCommit = mock<AfterCommitEventPublisher>()
+
+    /** Events by the committee organising them, handed over the way the event module does it. */
+    private val organised = mutableMapOf<Long, Long>()
+    private val events =
+        object : CommitteeEvents {
+            override fun countOf(committeeId: Long) = organised[committeeId] ?: 0
+
+            override fun handOver(
+                from: Long,
+                to: Long,
+            ) {
+                organised[to] = (organised[to] ?: 0) + (organised.remove(from) ?: 0)
+            }
+        }
     private val service =
         CommitteeService(
             repository,
@@ -44,6 +58,7 @@ class CommitteeServiceTest {
             TrackedEventPublisher(afterCommit, actors, mock()),
             pictures,
             games,
+            listOf(events),
         )
 
     private fun committee(
@@ -194,13 +209,41 @@ class CommitteeServiceTest {
     }
 
     @Test
-    fun `saves a committee as given, and removes the one it read`() {
+    fun `saves a committee as given, and deletes one without events naming no taker`() {
         val lan = committee(1, "LanCie")
         stored(lan)
 
         assertThat(service.create(lan)).isSameAs(lan)
-        service.deleteById(1)
+        assertThat(service.eventCount(1)).isZero()
+        service.delete(1, null)
 
+        verify(repository).delete(lan)
+    }
+
+    @Test
+    fun `hands every event to the committee taking over before deleting, and refuses a deletion that would orphan them`() {
+        val lan = committee(1, "LanCie")
+        val events = committee(2, "Activitiescie")
+        val archived = committee(3, "Oldcie").apply { this.archived = true }
+        listOf(lan, events, archived).forEach(::stored)
+        whenever(repository.findById(404L)).thenReturn(Optional.empty())
+        organised[1] = 4
+
+        assertThat(service.eventCount(1)).isEqualTo(4)
+        assertThatThrownBy { service.delete(1, null) }
+            .isInstanceOfSatisfying(CommitteeEventsNeedTaker::class.java) { assertThat(it.facts["events"]).isEqualTo(4L) }
+        assertThatThrownBy { service.delete(1, 1) }.isInstanceOf(CommitteeCannotTakeOwnEvents::class.java)
+        assertThatThrownBy { service.delete(1, 404) }.isInstanceOf(CommitteeNotFound::class.java)
+        assertThatThrownBy { service.delete(1, 3) }
+            .isInstanceOfSatisfying(ArchivedCommitteeCannotTakeEvents::class.java) {
+                assertThat(it.facts["committeeName"]).isEqualTo("Oldcie")
+            }
+        assertThat(organised).containsExactlyEntriesOf(mapOf(1L to 4L))
+        verify(repository, never()).delete(any<Committee>())
+
+        service.delete(1, 2)
+
+        assertThat(organised).containsExactlyEntriesOf(mapOf(2L to 4L))
         verify(repository).delete(lan)
     }
 

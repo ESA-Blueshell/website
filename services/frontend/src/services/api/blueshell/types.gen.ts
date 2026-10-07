@@ -879,6 +879,16 @@ export enum CohortType {
     BOARD_YEAR_MEMBERS = 'BOARD_YEAR_MEMBERS'
 }
 
+/**
+ * What deleting a committee hands over to the committee that takes over
+ */
+export type CommitteeDeletionResponse = {
+    /**
+     * How many live events move to the committee that takes over
+     */
+    events: number;
+};
+
 export type CommitteeMemberRequest = {
     /**
      * What this member does on the committee. Omitted for a member who simply sits on it, which is most of them.
@@ -5237,7 +5247,9 @@ export type DeleteCommitteeByIdData = {
     path: {
         id: number;
     };
-    query?: never;
+    query?: {
+        takenOverBy?: number;
+    };
     url: '/committees/{id}';
 };
 
@@ -5405,6 +5417,49 @@ export type UploadCommitteeBannerResponses = {
 };
 
 export type UploadCommitteeBannerResponse = UploadCommitteeBannerResponses[keyof UploadCommitteeBannerResponses];
+
+export type FindCommitteeDeletionData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/committees/{id}/deletion';
+};
+
+export type FindCommitteeDeletionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCommitteeDeletionError = FindCommitteeDeletionErrors[keyof FindCommitteeDeletionErrors];
+
+export type FindCommitteeDeletionResponses = {
+    /**
+     * OK
+     */
+    200: CommitteeDeletionResponse;
+};
+
+export type FindCommitteeDeletionResponse = FindCommitteeDeletionResponses[keyof FindCommitteeDeletionResponses];
 
 export type UploadCommitteeIconData = {
     body?: {

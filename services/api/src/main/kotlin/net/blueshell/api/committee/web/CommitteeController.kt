@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -162,12 +163,21 @@ class CommitteeController(
         @RequestBody request: GameOrganisersRequest,
     ): List<CommitteeResponse> = service.organisersOf(game, request.committeeIds.toSet()).map { it.asResponse(withMembers = false) }
 
+    /** What deleting the committee hands over, read before an admin is asked to confirm it. */
+    @PreAuthorize("hasPermission(#id, 'Committee', 'delete')")
+    @GetMapping("/committees/{id}/deletion")
+    fun findCommitteeDeletion(
+        @PathVariable id: Long,
+    ): CommitteeDeletionResponse = CommitteeDeletionResponse(service.eventCount(id))
+
+    /** Deletes the committee, handing its events to [takenOverBy]; one without events names none. */
     @PreAuthorize("hasPermission(#id, 'Committee', 'delete')")
     @DeleteMapping(value = ["/committees/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteCommitteeById(
         @PathVariable id: Long,
+        @RequestParam(required = false) takenOverBy: Long?,
     ) {
-        service.deleteById(id)
+        service.delete(id, takenOverBy)
     }
 }

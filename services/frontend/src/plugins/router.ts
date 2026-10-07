@@ -532,7 +532,7 @@ const routes: RouteRecordRaw[] = [
         path: "mail/addresses",
         name: "sendingAddresses",
         component: () => import("@/pages/management/SendingAddresses.vue"),
-        meta: {title: "Sending addresses"},
+        meta: {title: "Addresses"},
       },
       {path: "mail/write", name: "writeEmail", component: () => import("@/pages/management/WriteEmail.vue"), meta: {title: "Write an email"}},
       {

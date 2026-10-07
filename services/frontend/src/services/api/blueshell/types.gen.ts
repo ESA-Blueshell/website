@@ -2464,6 +2464,12 @@ export type MadeChannel = {
     name: string;
 };
 
+export enum MailSecurity {
+    STARTTLS = 'STARTTLS',
+    SSL = 'SSL',
+    NONE = 'NONE'
+}
+
 export type MandateAddressRequest = {
     city: string;
     country: string;
@@ -3267,34 +3273,66 @@ export type SendPaymentEmailsRequest = {
 
 export type SendingAddress = {
     address: string;
+    /**
+     * Whether the last check could read its mailbox; absent until checked or where it is not read
+     */
+    canRead?: boolean | null;
+    /**
+     * Whether the last check could send through it; absent until checked
+     */
+    canSend?: boolean | null;
+    checkedAt?: string | null;
     displayName: string;
     host: string;
     id: number;
+    /**
+     * Its IMAP server; absent where the address is not read
+     */
+    imapHost?: string | null;
+    imapPort?: number | null;
+    imapSecurity?: MailSecurity | null;
+    /**
+     * Whether it sends the site's own mail and is picked first when writing
+     */
     isDefault: boolean;
     /**
      * Whether a login is kept for it; the login itself is never answered
      */
     loginKept: boolean;
     port: number;
-    security: SmtpSecurity;
+    /**
+     * What the IMAP server said when the last check could not read
+     */
+    readFailure?: string | null;
+    security: MailSecurity;
+    /**
+     * What the SMTP server said when the last check could not send
+     */
+    sendFailure?: string | null;
 };
 
 /**
- * A sending address and, when it is new or its login changes, the login
+ * An address and, when it is new, its servers move or its login changes, the login
  */
 export type SendingAddressRequest = {
     address: string;
     displayName: string;
     host: string;
+    /**
+     * Its IMAP server; left out where the address is not read
+     */
+    imapHost?: string | null;
+    imapPort?: number | null;
+    imapSecurity?: MailSecurity | null;
     isDefault: boolean;
     /**
-     * The SMTP password, written to Vault and never answered back; left out to keep the one there is
+     * The password, written to Vault and never answered back; left out to keep the one there is
      */
     password?: string | null;
     port: number;
-    security: SmtpSecurity;
+    security: MailSecurity;
     /**
-     * The SMTP username; left out to keep the login there is
+     * The username for SMTP and IMAP alike; left out to keep the login there is
      */
     username?: string | null;
 };
@@ -3461,12 +3499,6 @@ export type SignupSessionResponse = {
     signupToken: string;
     userId: number;
 };
-
-export enum SmtpSecurity {
-    STARTTLS = 'STARTTLS',
-    SSL = 'SSL',
-    NONE = 'NONE'
-}
 
 export type SponsorResponse = {
     createdAt: string;
@@ -13438,6 +13470,49 @@ export type SetSendingAddressResponses = {
 };
 
 export type SetSendingAddressResponse = SetSendingAddressResponses[keyof SetSendingAddressResponses];
+
+export type CheckSendingAddressData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/sending-addresses/{id}/check';
+};
+
+export type CheckSendingAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CheckSendingAddressError = CheckSendingAddressErrors[keyof CheckSendingAddressErrors];
+
+export type CheckSendingAddressResponses = {
+    /**
+     * OK
+     */
+    200: SendingAddress;
+};
+
+export type CheckSendingAddressResponse = CheckSendingAddressResponses[keyof CheckSendingAddressResponses];
 
 export type RemoveTeamDiscordData = {
     body?: never;

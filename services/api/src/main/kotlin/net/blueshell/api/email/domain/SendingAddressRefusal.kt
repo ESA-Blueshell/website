@@ -29,17 +29,27 @@ class SendingAddressNeedsLogin :
         "A new sending address, or one moved to another server, needs its SMTP username and password.",
     )
 
-class SmtpLoginRefused(
-    reason: String,
-) : SendingAddressRefusal(HttpStatus.BAD_REQUEST, "SmtpLoginRefused", "The SMTP server refused the login.", mapOf("reason" to reason))
+class ImapServerIncomplete :
+    SendingAddressRefusal(HttpStatus.BAD_REQUEST, "ImapServerIncomplete", "An IMAP server needs its host, port and security.")
 
-class SmtpNeedsEncryption(
+class MailLoginRefused(
+    protocol: MailProtocol,
+    reason: String,
+) : SendingAddressRefusal(
+        HttpStatus.BAD_REQUEST,
+        "MailLoginRefused",
+        "The mail server refused the login.",
+        mapOf("protocol" to protocol.name, "reason" to reason),
+    )
+
+class MailNeedsEncryption(
+    protocol: MailProtocol,
     host: String,
 ) : SendingAddressRefusal(
         HttpStatus.BAD_REQUEST,
-        "SmtpNeedsEncryption",
+        "MailNeedsEncryption",
         "A login only goes unencrypted to a server on the site's own network.",
-        mapOf("host" to host),
+        mapOf("protocol" to protocol.name, "host" to host),
     )
 
 class SendingLoginsUnavailable :

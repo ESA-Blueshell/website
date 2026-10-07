@@ -256,8 +256,9 @@ that adds a key.
 
 ### Sending-address logins (handled by the bootstrap Job)
 
-An admin adds the addresses a written email may go out from, each with its own SMTP login (api
-ADR-039). The api writes each login to `secret/data/api/sending/<id>` and reads it when it sends.
+The board adds the addresses the site sends from and reads, each with its own login for SMTP and
+IMAP (api ADR-039). The api writes each login to `secret/data/api/sending/<id>` and reads it when it
+sends, reads or checks that address.
 The `api` policy may create, read, update and delete under `secret/data/api/sending/` and delete
 under `secret/metadata/api/sending/`, so removing an address leaves no versions behind; every other
 path the api reads stays read-only. The deployment sets `EMAIL_SENDING_LOGINS` to `vault`. Run the

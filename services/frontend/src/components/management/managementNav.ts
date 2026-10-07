@@ -56,7 +56,7 @@ const GROUPS: ManagementGroup[] = [
     entries: [
       {label: "Sent", to: "/management/mail/sent"},
       {label: "Inbox", to: "/management/mail/inbox"},
-      {label: "Sending addresses", to: "/management/mail/addresses"},
+      {label: "Addresses", to: "/management/mail/addresses"},
     ],
   },
   {label: "Platforms", entries: [{label: "Brevo", to: "/management/platforms/brevo"}, {label: "Discord", to: "/management/platforms/discord"}]},

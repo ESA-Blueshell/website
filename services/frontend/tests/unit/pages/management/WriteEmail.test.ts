@@ -123,17 +123,17 @@ describe("writing an email", () => {
     await fill(wrapper)
 
     const from = wrapper.get('[data-testid="write-from"]').findComponent({name: "SearchPicker"})
-    expect((from.props("options") as Array<{key: string}>).map((one) => one.key)).toEqual(["5", "3", "site"])
+    expect((from.props("options") as Array<{key: string}>).map((one) => one.key)).toEqual(["5", "3"])
     expect(from.props("selectedKey")).toBe("5")
     await wrapper.get('[data-testid="write-test"]').trigger("click")
     await settle()
     expect(api.sendTestEmail).toHaveBeenLastCalledWith({body: expect.objectContaining({from: 5})})
 
-    from.vm.$emit("pick", "site")
+    from.vm.$emit("pick", "3")
     api.sendWrittenEmail.mockResolvedValue({status: 400, error: {code: "SendingAddressGone"}})
     await wrapper.get("form").trigger("submit")
     await settle()
-    expect(api.sendWrittenEmail).toHaveBeenLastCalledWith({body: expect.objectContaining({from: undefined})})
+    expect(api.sendWrittenEmail).toHaveBeenLastCalledWith({body: expect.objectContaining({from: 3})})
     expect(wrapper.get('[data-testid="write-failure"]').text()).toBe("The address it was to go out from is removed. Pick another under From.")
   })
 

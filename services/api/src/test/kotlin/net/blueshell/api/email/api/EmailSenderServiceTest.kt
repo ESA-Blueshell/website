@@ -4,7 +4,11 @@ import net.blueshell.api.email.domain.EmailService
 import net.blueshell.api.email.domain.EmailTemplateService
 import net.blueshell.api.email.domain.EmailTransportClient
 import net.blueshell.api.email.domain.SendingAddresses
+import net.blueshell.api.email.domain.SendingRoute
+import net.blueshell.api.email.domain.SmtpLogin
+import net.blueshell.api.email.domain.SmtpRoute
 import net.blueshell.api.email.persistence.Email
+import net.blueshell.api.email.persistence.MailSecurity
 import net.blueshell.api.shared.email.EmailContent
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -67,6 +71,28 @@ class EmailSenderServiceTest {
             anyOrNull(),
         )
         verify(records).markSent(queued, "<m@b.nl>")
+    }
+
+    @Test
+    fun `the site's own mail goes out from the default address where one is marked`() {
+        val route = SmtpRoute("smtp.b.nl", 587, MailSecurity.STARTTLS, SmtpLogin("site", "secret"))
+        whenever(addresses.defaultRoute()).thenReturn(SendingRoute("hello@b.nl", "Blueshell Board", route))
+        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any(), anyOrNull())).thenReturn("<m@b.nl>")
+
+        sender.send(content, "email.test", 7)
+
+        verify(transport).send(
+            any(),
+            any(),
+            any(),
+            any(),
+            eq("Blueshell Board"),
+            eq("hello@b.nl"),
+            eq("board@b.nl"),
+            eq(emptyMap()),
+            eq(route),
+        )
+        assertThat(queued.senderAddress).isEqualTo("hello@b.nl")
     }
 
     @Test

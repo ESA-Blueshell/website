@@ -53,8 +53,9 @@ class EmailSenderService(
                 ?: htmlContent
 
         try {
-            // An added address, or its login, that cannot be read fails this email only, as any transport failure does.
-            val sending = emailContent.sendingAddressId?.let(sendingAddresses::routeFor)
+            // The site's own mail goes out from the default address where one is marked, else from configuration.
+            // An address, or its login, that cannot be read fails this email only, as any transport failure does.
+            val sending = emailContent.sendingAddressId?.let(sendingAddresses::routeFor) ?: sendingAddresses.defaultRoute()
             outbox.senderAddress = sending?.address ?: senderAddress
             val messageId =
                 emailClient.send(

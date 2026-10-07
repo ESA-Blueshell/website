@@ -11,8 +11,7 @@ import jakarta.validation.constraints.Size
 import net.blueshell.api.email.domain.SendingAddressChange
 import net.blueshell.api.email.domain.SendingAddressView
 import net.blueshell.api.email.domain.SendingAddresses
-import net.blueshell.api.email.persistence.SmtpSecurity
-import net.blueshell.api.security.AdminOnly
+import net.blueshell.api.email.persistence.MailSecurity
 import net.blueshell.api.security.BoardOnly
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -25,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
-@Schema(name = "SendingAddressRequest", description = "A sending address and, when it is new or its login changes, the login")
+@Schema(name = "SendingAddressRequest", description = "An address and, when it is new, its servers move or its login changes, the login")
 data class SendingAddressRequest(
     @field:NotBlank @field:Email @field:Size(max = 320)
     val address: String,
@@ -35,20 +34,27 @@ data class SendingAddressRequest(
     val host: String,
     @field:Min(1) @field:Max(65535)
     val port: Int,
-    val security: SmtpSecurity,
+    val security: MailSecurity,
     val isDefault: Boolean = false,
-    @param:Schema(description = "The SMTP username; left out to keep the login there is")
+    @param:Schema(description = "The username for SMTP and IMAP alike; left out to keep the login there is")
     val username: String? = null,
-    @param:Schema(description = "The SMTP password, written to Vault and never answered back; left out to keep the one there is")
+    @param:Schema(description = "The password, written to Vault and never answered back; left out to keep the one there is")
     val password: String? = null,
+    @field:Size(max = 255)
+    @param:Schema(description = "Its IMAP server; left out where the address is not read")
+    val imapHost: String? = null,
+    @field:Min(1) @field:Max(65535)
+    val imapPort: Int? = null,
+    val imapSecurity: MailSecurity? = null,
 )
 
-private fun SendingAddressRequest.change() = SendingAddressChange(address, displayName, host, port, security, isDefault, username, password)
+private fun SendingAddressRequest.change() =
+    SendingAddressChange(address, displayName, host, port, security, isDefault, username, password, imapHost, imapPort, imapSecurity)
 
-/** The addresses written emails may be sent from. The board reads them to pick one; an admin keeps them. */
+/** The addresses the site sends from and reads, kept by the board; the default one sends the site's own mail. */
 @RestController
 @RequestMapping("/management/sending-addresses")
-@Tag(name = "Sending addresses", description = "The addresses written emails go out from, each with its own SMTP login in Vault")
+@Tag(name = "Sending addresses", description = "The addresses the site sends from and reads, each with its own login in Vault")
 class SendingAddressController(
     private val addresses: SendingAddresses,
 ) {
@@ -57,21 +63,28 @@ class SendingAddressController(
     fun listSendingAddresses(): List<SendingAddressView> = addresses.list()
 
     @PostMapping
-    @AdminOnly
+    @BoardOnly
     @ResponseStatus(HttpStatus.CREATED)
     fun addSendingAddress(
         @Valid @RequestBody request: SendingAddressRequest,
     ): SendingAddressView = addresses.add(request.change())
 
     @PutMapping("/{id}")
-    @AdminOnly
+    @BoardOnly
     fun setSendingAddress(
         @PathVariable id: Long,
         @Valid @RequestBody request: SendingAddressRequest,
     ): SendingAddressView = addresses.update(id, request.change())
 
+    /** Tries the address's servers with the login kept, and answers what they said. */
+    @PostMapping("/{id}/check")
+    @BoardOnly
+    fun checkSendingAddress(
+        @PathVariable id: Long,
+    ): SendingAddressView = addresses.check(id)
+
     @DeleteMapping("/{id}")
-    @AdminOnly
+    @BoardOnly
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun removeSendingAddress(
         @PathVariable id: Long,

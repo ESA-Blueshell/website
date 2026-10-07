@@ -27,7 +27,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [007](ADR-007-repository-pattern-and-jpa.md) | Repository Pattern and JPA | Accepted | Spring Data repositories and persistence-layer rules |
 | [034](ADR-034-the-schema-starts-from-a-baseline.md) | The Schema Starts From a Baseline, Owned by Liquibase | Accepted | Baseline plus YAML changesets, each with a rollback |
 | [038](ADR-038-private-details-are-sealed-by-vault-transit.md) | Private Details Are Sealed by Vault Transit | Accepted | Address and bank details sealed by Transit under a derived key, bound to the member; refused, never plaintext, when Vault is down |
-| [039](ADR-039-sending-addresses-keep-their-logins-in-vault.md) | Sending Addresses Keep Their Logins in Vault | Proposed | An admin adds sending addresses; each SMTP login is tested, then written to Vault KV by the api and never answered back |
+| [039](ADR-039-sending-addresses-keep-their-logins-in-vault.md) | Sending Addresses Keep Their Logins in Vault | Proposed | The board keeps addresses that send and are read; one login per address, tested, written to Vault and never answered back; the default sends the site's own mail |
 | [015](ADR-015-jpa-specifications-dynamic-queries.md) | JPA Specifications and Dynamic Queries | Accepted | Query-object driven dynamic filtering |
 
 ### Validation and Mapping

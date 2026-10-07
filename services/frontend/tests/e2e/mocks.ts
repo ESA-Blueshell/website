@@ -1617,7 +1617,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/management/cohort-targets/BREVO/tidy") {
       return answer(route, "previewFolderTidy", {
-        moves: [{externalId: "33", label: "Web Cmte", from: null, to: "Committees"}],
+        moves: [{externalId: "33", label: "Web Cmte", from: null, to: "Committees", byName: false}],
         foldersToCreate: [],
         lastApplied: {appliedAt: "2026-09-01T10:00:00.000Z", appliedByName: "Mock User", moved: 4, failed: 0},
       })

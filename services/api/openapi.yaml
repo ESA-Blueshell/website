@@ -7320,8 +7320,11 @@ components:
       - version
       type: object
     TidyMove:
-      description: One linked list the tidy would move into its cohort type's folder.
+      description: One list the tidy would move into its cohort type's folder.
       properties:
+        byName:
+          description: Whether the list follows no cohort and is proposed only because its name is a cohort's
+          type: boolean
         externalId:
           type: string
         from:
@@ -7334,6 +7337,7 @@ components:
         to:
           type: string
       required:
+      - byName
       - externalId
       - label
       - to

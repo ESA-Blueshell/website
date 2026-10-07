@@ -15,8 +15,9 @@ import java.time.Instant
 
 /**
  * The one-off folder tidy: every list linked to a cohort that is not in its cohort type's folder is
- * proposed a move there. A proposal, not a rule: once applied, Brevo's folder is the truth again
- * and nothing moves a list back. Unlinked lists are never proposed.
+ * proposed a move there, and so is a list made by hand whose name is a cohort's, matched as plain
+ * letters and digits. A proposal, not a rule: once applied, Brevo's folder is the truth again and
+ * nothing moves a list back.
  */
 @Service
 class FolderTidy(
@@ -32,17 +33,25 @@ class FolderTidy(
     fun preview(system: TargetSystem): TidyPlan {
         val strategy = strategies.require(system)
         val catalog = strategy.catalog(null).associateBy { it.externalId }
-        val typeOf = cohorts.findAll().associate { it.id to it.type }
-        val moves =
-            targets
-                .findAllBySystem(system.name)
-                .mapNotNull { target ->
-                    val external = target.externalId?.let(catalog::get) ?: return@mapNotNull null
-                    val type = typeOf[target.cohortId] ?: return@mapNotNull null
-                    val folder = CohortFolders.forType(type)
-                    if (external.folderLabel.equals(folder, ignoreCase = true)) return@mapNotNull null
-                    TidyMove(external.externalId, external.label, external.folderLabel, folder)
-                }.sortedWith(compareBy({ it.to }, { it.label }))
+        val all = cohorts.findAll()
+        val typeOf = all.associate { it.id to it.type }
+        val linked = targets.findAllBySystem(system.name)
+        val linkedMoves =
+            linked.mapNotNull { target ->
+                val external = target.externalId?.let(catalog::get) ?: return@mapNotNull null
+                val type = typeOf[target.cohortId] ?: return@mapNotNull null
+                moveOf(external, CohortFolders.forType(type), byName = false)
+            }
+        // A list nobody linked, named as a cohort is: proposed apart, for the reader to tick.
+        val linkedIds = linked.mapNotNull { it.externalId }.toSet()
+        val typeByName = all.associate { plainName(it.label) to it.type }
+        val namedMoves =
+            catalog.values
+                .filter { it.externalId !in linkedIds }
+                .mapNotNull { external ->
+                    typeByName[plainName(external.label)]?.let { moveOf(external, CohortFolders.forType(it), byName = true) }
+                }
+        val moves = (linkedMoves + namedMoves).sortedWith(compareBy({ it.byName }, { it.to }, { it.label }))
         val known = strategy.folders().map { it.lowercase() }.toSet()
         val toCreate = moves.map { it.to }.distinct().filter { it.lowercase() !in known }
         return TidyPlan(moves, toCreate, lastApplied(system))
@@ -79,6 +88,17 @@ class FolderTidy(
         return BulkTargetMoveResult(moved, failed)
     }
 
+    private fun moveOf(
+        external: ExternalTarget,
+        folder: String,
+        byName: Boolean,
+    ): TidyMove? =
+        if (external.folderLabel.equals(folder, ignoreCase = true)) {
+            null
+        } else {
+            TidyMove(external.externalId, external.label, external.folderLabel, folder, byName)
+        }
+
     private fun lastApplied(system: TargetSystem): LastTidy? =
         applied.findFirstBySystemOrderByAppliedAtDesc(system.name)?.let { tidy ->
             val by = tidy.appliedBy?.let { id -> users.findAllByIds(setOf(id)).firstOrNull()?.fullName }
@@ -104,11 +124,13 @@ data class LastTidy(
     val failed: Int,
 )
 
-@Schema(name = "TidyMove", description = "One linked list the tidy would move into its cohort type's folder.")
+@Schema(name = "TidyMove", description = "One list the tidy would move into its cohort type's folder.")
 data class TidyMove(
     val externalId: String,
     val label: String,
     @field:Schema(description = "The folder it is in now; null at the top level.")
     val from: String?,
     val to: String,
+    @field:Schema(description = "Whether the list follows no cohort and is proposed only because its name is a cohort's")
+    val byName: Boolean = false,
 )

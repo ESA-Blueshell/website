@@ -51,6 +51,7 @@ class FolderTidyTest {
             listOf(
                 Entities.cohort(id = 1L, type = CohortType.PERIOD_PAYERS),
                 Entities.cohort(id = 2L, type = CohortType.COMMITTEE_MEMBERS),
+                Entities.cohort(id = 3L, type = CohortType.PERIOD_PAYERS, label = "Contribution paid 2024-2025"),
             ),
         )
         whenever(targets.findAllBySystem("BREVO")).thenReturn(
@@ -62,7 +63,7 @@ class FolderTidyTest {
     }
 
     @Test
-    fun `proposes each linked list out of its type's folder, and the folders to make, never an unlinked one`() {
+    fun `proposes each linked list out of its type's folder, and the folders to make, never an unlinked one named as no cohort`() {
         given(list("100", "Paid 2026", "Periods"), list("200", "Sitecie", "Committees"), list("300", "Loose", null))
 
         val plan = tidy.preview(TargetSystem.BREVO)
@@ -70,6 +71,22 @@ class FolderTidyTest {
         assertThat(plan.moves).containsExactly(TidyMove("100", "Paid 2026", "Periods", "Contributions"))
         assertThat(plan.moves.single().from).isEqualTo("Periods")
         assertThat(plan.foldersToCreate).containsExactly("Contributions")
+    }
+
+    @Test
+    fun `proposes a list made by hand whose name is a cohort's, apart and after the linked ones`() {
+        given(
+            list("100", "Paid 2026", "Periods"),
+            list("400", "Contribution Paid 2024-2025", "Old stuff"),
+            list("500", "contribution-paid-2024-2025", "Contributions"),
+        )
+
+        val plan = tidy.preview(TargetSystem.BREVO)
+
+        assertThat(plan.moves).containsExactly(
+            TidyMove("100", "Paid 2026", "Periods", "Contributions"),
+            TidyMove("400", "Contribution Paid 2024-2025", "Old stuff", "Contributions", byName = true),
+        )
     }
 
     @Test

@@ -197,7 +197,7 @@ const confirmCreate = async () => {
   }
 }
 
-/** The folder tidy: every proposed move ticked, and applied only once confirmed. */
+/** The folder tidy: every move of a linked list ticked, one matched only by name left for the reader, and applied once confirmed. */
 const tidying = ref(false)
 const tidy = ref<TidyPlan | null>(null)
 const tidyPicked = ref<Set<string>>(new Set())
@@ -211,12 +211,14 @@ const openTidy = async () => {
   tidyRefusal.value = null
   try {
     tidy.value = await fetchTidyPlan(SYSTEM)
-    tidyPicked.value = new Set(tidy.value.moves.map((move) => move.externalId))
+    tidyPicked.value = new Set(tidy.value.moves.filter((move) => !move.byName).map((move) => move.externalId))
   } catch {
     tidyRefusal.value = "Brevo could not be read, so nothing can be proposed."
   }
 }
 
+const tidyLinked = computed(() => tidy.value?.moves.filter((move) => !move.byName) ?? [])
+const tidyNamed = computed(() => tidy.value?.moves.filter((move) => move.byName) ?? [])
 const pickTidy = (externalId: string, picked: boolean) => {
   const next = new Set(tidyPicked.value)
   if (picked) next.add(externalId)
@@ -478,8 +480,8 @@ onMounted(load)
     >
       <div class="brevo__form">
         <p class="brevo__note">
-          Moves each list that follows a cohort into its cohort type's folder. Nothing moves until you apply it, and nothing
-          moves a list back afterwards.
+          Moves each list that follows a cohort into its cohort type's folder, and offers the same for a list named like a
+          cohort. Nothing moves until you apply it, and nothing moves a list back afterwards.
         </p>
         <p
           v-if="tidy"
@@ -496,12 +498,12 @@ onMounted(load)
           Every list is in its folder.
         </p>
         <ul
-          v-if="tidy && tidy.moves.length"
+          v-if="tidy && tidyLinked.length"
           class="brevo__moves"
           data-testid="brevo-tidy-moves"
         >
           <li
-            v-for="move in tidy.moves"
+            v-for="move in tidyLinked"
             :key="move.externalId"
           >
             <check-box
@@ -512,6 +514,27 @@ onMounted(load)
             />
           </li>
         </ul>
+        <template v-if="tidyNamed.length">
+          <p class="brevo__note brevo__note--small">
+            Lists that follow no cohort but are named like one. Tick the ones to move.
+          </p>
+          <ul
+            class="brevo__moves"
+            data-testid="brevo-tidy-named"
+          >
+            <li
+              v-for="move in tidyNamed"
+              :key="move.externalId"
+            >
+              <check-box
+                :label="`${move.label}: ${move.from ?? 'no folder'} to ${move.to}`"
+                :model-value="tidyPicked.has(move.externalId)"
+                :testid="`brevo-tidy-pick-${move.externalId}`"
+                @update:model-value="pickTidy(move.externalId, $event)"
+              />
+            </li>
+          </ul>
+        </template>
         <p
           v-if="tidy && tidy.foldersToCreate.length"
           class="brevo__note brevo__note--small"

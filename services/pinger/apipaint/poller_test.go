@@ -128,3 +128,19 @@ func TestPollerClearsThePixelsWhenTheImageGoes(t *testing.T) {
 		t.Fatalf("pixels not cleared: %d", n)
 	}
 }
+
+func TestPollerCarriesTheSiteCieToggleIntoSettings(t *testing.T) {
+	src := &fakeSource{desc: Descriptor{Prefix: "2001:db8::/64", RatePPS: 128, SiteCieEnabled: true}}
+	p := NewPoller(src, 0, &pixelSink{}, nil)
+
+	p.poll(context.Background())
+	if !p.Current().Enabled {
+		t.Fatal("enabled toggle not carried into settings")
+	}
+
+	src.set(Descriptor{Prefix: "2001:db8::/64", RatePPS: 128, SiteCieEnabled: false})
+	p.poll(context.Background())
+	if p.Current().Enabled {
+		t.Fatal("disabled toggle not carried into settings")
+	}
+}

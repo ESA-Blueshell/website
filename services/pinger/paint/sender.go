@@ -31,6 +31,8 @@ const MaxRatePPS = 200_000
 type Settings struct {
 	Prefix  canvas.Prefix
 	RatePPS int
+	// Enabled is the SiteCie toggle: false idles the sender even with a prefix and image set.
+	Enabled bool
 }
 
 type State string
@@ -200,6 +202,8 @@ func (s *Sender) Run(ctx context.Context) {
 
 func (s *Sender) decide(cfg Settings) State {
 	switch {
+	case !cfg.Enabled:
+		return Idle
 	case cfg.Prefix.IsZero() || len(s.target.Load().pixels) == 0:
 		return Idle
 	case cfg.RatePPS <= 0:

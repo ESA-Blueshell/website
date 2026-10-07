@@ -63,11 +63,20 @@ func run() error {
 		sender.Seed(st.Sent, st.Passes, st.Errors)
 	}
 
-	client := apipaint.NewClient(env("PINGER_API_URL", "http://localhost:8080"))
+	apiURL := env("PINGER_API_URL", "http://localhost:8080")
+	client := apipaint.NewClient(apiURL)
 	poller = apipaint.NewPoller(client, 2*time.Second, sender, preview.set)
 	go poller.Run(ctx)
 	go sender.Run(ctx)
 	go persistStats(ctx, store, sender)
+
+	// Report this painter's contribution as SiteCie. The token is a secret read from the
+	// environment; an empty one leaves the reporter idle rather than talking unauthenticated.
+	reporter := apipaint.NewReporter(apiURL, os.Getenv("PINGER_REPORT_SERVICE_TOKEN"), 10*time.Second, func() apipaint.ReportStats {
+		s := sender.Snapshot()
+		return apipaint.ReportStats{Online: s.State == paint.Running, PPS: int(s.ActualPPS), Sent: s.Sent, Errors: s.Errors}
+	})
+	go reporter.Run(ctx)
 
 	handler := web.NewServer(sender, poller.Current, preview.get)
 	srv := &http.Server{

@@ -17,7 +17,9 @@ import (
 
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/auth"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/config"
+	"github.com/ESA-Blueshell/website/services/pinger-app/internal/leaderboard"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/oauth"
+	"github.com/ESA-Blueshell/website/services/pinger-app/internal/prefs"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/report"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/tokenstore"
 )
@@ -36,6 +38,8 @@ type Status struct {
 	Sent     uint64 `json:"sent"`
 	Errors   uint64 `json:"errors"`
 	Message  string `json:"message"`
+	// Rate is this app's chosen send rate in pps, so the UI shows the target next to the live pps.
+	Rate int `json:"rate"`
 }
 
 // Runner holds the authenticated engine. One Run spans the app's lifetime.
@@ -43,14 +47,20 @@ type Runner struct {
 	base   string
 	auth   *auth.Authenticator
 	poster *report.Poster
+	prefs  *prefs.Store
+	board  *leaderboard.Client
 
 	sender   atomic.Pointer[paint.Sender]
 	signedIn atomic.Bool
 	message  atomic.Pointer[string]
+	// rate is this app's own send rate in pps, clamped to the server range. It overrides the paint
+	// job's rate so the member sets how hard their own machine pings, independent of SiteCie's.
+	rate atomic.Int64
 }
 
-// New builds a runner for a base URL, loading the token store and wiring the OAuth client and the
-// report poster. It does not sign in or send; Run does that.
+// New builds a runner for a base URL, loading the token store and local preferences and wiring the
+// OAuth client, the report poster and the leaderboard client. It does not sign in or send; Run does
+// that.
 func New(base string) (*Runner, error) {
 	dir, err := config.Dir()
 	if err != nil {
@@ -60,19 +70,23 @@ func New(base string) (*Runner, error) {
 	client := oauth.NewClient(base, config.ClientID)
 	login := oauth.BrowserLogin{Client: client, Open: openBrowser}
 	authn := auth.New(store, client, login.Run)
+	prefStore := prefs.New(dir)
 
 	r := &Runner{
 		base:   base,
 		auth:   authn,
 		poster: report.NewPoster(base, authn),
+		prefs:  prefStore,
+		board:  leaderboard.NewClient(base, authn),
 	}
+	r.rate.Store(int64(prefStore.Load().RatePPS))
 	r.setMessage("starting")
 	return r, nil
 }
 
 // Status is a safe snapshot for the UI.
 func (r *Runner) Status() Status {
-	st := Status{SignedIn: r.signedIn.Load(), Message: r.loadMessage()}
+	st := Status{SignedIn: r.signedIn.Load(), Message: r.loadMessage(), Rate: int(r.rate.Load())}
 	if s := r.sender.Load(); s != nil {
 		snap := s.Snapshot()
 		st.State = string(snap.State)
@@ -90,6 +104,39 @@ func (r *Runner) SignInAgain() {
 		slog.Warn("invalidate token", "err", err)
 	}
 	r.setMessage("signing in")
+}
+
+// Rate is this app's current send rate in pps.
+func (r *Runner) Rate() int { return int(r.rate.Load()) }
+
+// applyRate keeps the api's prefix and box but sets the rate from this app's own choice, so the
+// member paints the right place at a rate they control rather than SiteCie's cluster rate.
+func (r *Runner) applyRate(cur paint.Settings) paint.Settings {
+	cur.RatePPS = int(r.rate.Load())
+	return cur
+}
+
+// SetRate sets this app's send rate, clamps it to the server's valid range, persists it so a
+// restart keeps the choice, and returns the rate that took effect. The sender picks it up on its
+// next settings read, so the live pps follows within a second.
+func (r *Runner) SetRate(pps int) int {
+	clamped := prefs.Clamp(pps)
+	r.rate.Store(int64(clamped))
+	if err := r.prefs.Save(prefs.Prefs{RatePPS: clamped}); err != nil {
+		slog.Warn("save rate", "err", err)
+	}
+	return clamped
+}
+
+// OptInState reads whether the member currently appears on the public leaderboard. It is the
+// server's flag, so the UI shows what the server returns rather than a local guess.
+func (r *Runner) OptInState(ctx context.Context) (bool, error) {
+	return r.board.State(ctx)
+}
+
+// SetOptIn adds or removes the member from the public leaderboard and returns the resulting state.
+func (r *Runner) SetOptIn(ctx context.Context, optedIn bool) (bool, error) {
+	return r.board.Set(ctx, optedIn)
 }
 
 // Run signs the member in, then paints and reports until ctx ends. It blocks, so callers run it in
@@ -113,10 +160,11 @@ func (r *Runner) Run(ctx context.Context) error {
 
 	var poller *apipaint.Poller
 	settings := func() paint.Settings {
-		if poller == nil {
-			return paint.Settings{}
+		cur := paint.Settings{}
+		if poller != nil {
+			cur = poller.Current()
 		}
-		return poller.Current()
+		return r.applyRate(cur)
 	}
 	sender := paint.NewSender(conn, nil, paint.EventWindow(), settings)
 	if datagram {

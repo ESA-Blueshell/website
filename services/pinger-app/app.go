@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 
+	"github.com/ESA-Blueshell/website/services/pinger-app/internal/bandwidth"
+	"github.com/ESA-Blueshell/website/services/pinger-app/internal/prefs"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/runner"
 )
 
@@ -10,6 +12,7 @@ import (
 // comes up, so the first run signs the member in and begins painting and reporting at once.
 type App struct {
 	runner *runner.Runner
+	ctx    context.Context
 }
 
 // NewApp builds the app around a runner for the given api base URL.
@@ -17,9 +20,10 @@ func NewApp(r *runner.Runner) *App {
 	return &App{runner: r}
 }
 
-// startup is wired as Wails' OnStartup. It launches the paint-and-report loop on the app context,
-// which Wails cancels when the window closes.
+// startup is wired as Wails' OnStartup. It keeps the app context for the bound methods and launches
+// the paint-and-report loop, which Wails cancels when the window closes.
 func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
 	go func() { _ = a.runner.Run(ctx) }()
 }
 
@@ -32,4 +36,44 @@ func (a *App) Status() runner.Status {
 // no valid refresh remains.
 func (a *App) SignInAgain() {
 	a.runner.SignInAgain()
+}
+
+// Controls is the fixed shape the rate slider needs: the valid range, the home-safe default, the
+// current rate and the bytes-per-packet the live bandwidth estimate multiplies by. The frontend
+// reads it once to build the slider and compute the estimate without a round trip per drag.
+type Controls struct {
+	MinRate        int `json:"minRate"`
+	MaxRate        int `json:"maxRate"`
+	DefaultRate    int `json:"defaultRate"`
+	Rate           int `json:"rate"`
+	BytesPerPacket int `json:"bytesPerPacket"`
+}
+
+// Controls is bound to the frontend so it can render the slider and the estimate.
+func (a *App) Controls() Controls {
+	return Controls{
+		MinRate:        prefs.MinRatePPS,
+		MaxRate:        prefs.MaxRatePPS,
+		DefaultRate:    prefs.DefaultRatePPS,
+		Rate:           a.runner.Rate(),
+		BytesPerPacket: bandwidth.BytesPerPacket,
+	}
+}
+
+// SetRate is bound to the slider; it clamps and persists the chosen rate and returns the rate that
+// took effect so the UI can snap to it.
+func (a *App) SetRate(pps int) int {
+	return a.runner.SetRate(pps)
+}
+
+// OptInState is bound to the leaderboard toggle; it reads the member's current opt-in from the
+// server so the toggle reflects the real state on load.
+func (a *App) OptInState() (bool, error) {
+	return a.runner.OptInState(a.ctx)
+}
+
+// OptIn is bound to the leaderboard toggle; it adds or removes the member from the public board and
+// returns the resulting state.
+func (a *App) OptIn(optedIn bool) (bool, error) {
+	return a.runner.SetOptIn(a.ctx, optedIn)
 }

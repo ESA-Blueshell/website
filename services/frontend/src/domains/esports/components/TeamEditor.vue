@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {computed, ref, watch} from "vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import EditPage from "@/components/island/EditPage.vue"
@@ -623,6 +624,7 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
     </template>
 
     <div
+      v-first-field
       class="lineup"
       data-testid="lineup-editor"
     >

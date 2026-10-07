@@ -91,6 +91,12 @@ describe("an event's own page", () => {
     expect(mockRoster).toHaveBeenCalledTimes(2)
     expect(wrapper.get("[data-testid=event-roster-guests]").text()).toBe("1 guest without an account.")
 
+    mockRoster.mockResolvedValue({people: [{name: "lars", avatar: null, discord: false}], guests: 0})
+    wrapper.getComponent({name: "EventSignUpPanel"}).vm.$emit("update:signUp", {id: 40, eventId: 7, note: "again"})
+    await flushPromises()
+    expect(wrapper.get("[data-testid=event-roster]").text()).toContain("Signed up · 1")
+    expect(wrapper.find("[data-testid=event-roster-guests]").exists()).toBe(false)
+
     mockRoster.mockResolvedValue({people: [], guests: 0})
     wrapper.getComponent({name: "EventSignUpPanel"}).vm.$emit("delete:signUp", 40)
     await flushPromises()

@@ -48,6 +48,7 @@ async function read() {
     const found = await readEvent(id.value)
     event.value = found ?? null
     missing.value = found == null
+    if (found) void readWhoSignedUp(found)
   } catch (error) {
     missing.value = true
     $handleNetworkError(error)
@@ -55,8 +56,8 @@ async function read() {
 }
 
 // Read again after the reader signs up or out, so their own face comes and goes with it.
-async function readWhoSignedUp() {
-  roster.value = event.value?.signUp ? await readRoster(event.value.id) : null
+async function readWhoSignedUp(found: EventResponse) {
+  roster.value = found.signUp ? await readRoster(found.id) : null
 }
 
 async function readComing() {
@@ -76,13 +77,11 @@ watch(id, () => void read())
 watch(event, (found) => {
   if (found) document.title = tabTitle(found.title)
 })
-watch(() => event.value?.id, () => void readWhoSignedUp())
-const signedUpCount = computed(() => (roster.value ? roster.value.people.length + roster.value.guests : 0))
-const guestsLine = computed(() => {
-  const guests = roster.value?.guests ?? 0
-  const counted = `${guests} ${guests === 1 ? "guest" : "guests"} without an account.`
-  return roster.value?.people.length ? `And ${counted}` : counted.charAt(0).toUpperCase() + counted.slice(1)
-})
+const countOf = (on: EventRoster) => on.people.length + on.guests
+const guestsLine = (on: EventRoster) => {
+  const counted = `${on.guests} ${on.guests === 1 ? "guest" : "guests"} without an account.`
+  return on.people.length ? `And ${counted}` : counted.charAt(0).toUpperCase() + counted.slice(1)
+}
 
 const committee = computed(() => committees.value.find(one => one.id === event.value?.committeeId)?.name)
 const eyebrow = computed(() => committee.value ?? "Blueshell event")
@@ -101,13 +100,13 @@ function signedUp(saved: EventSignUpResponse) {
   const known = signUps.value.some(one => one.id === saved.id)
   signUps.value = known ? signUps.value.map(one => (one.id === saved.id ? saved : one)) : [...signUps.value, saved]
   if (!known) event.value = {...event.value!, signUpCount: event.value!.signUpCount + 1}
-  void readWhoSignedUp()
+  void readWhoSignedUp(event.value!)
 }
 
 function signedOut(signUpId: number) {
   signUps.value = signUps.value.filter(one => one.id !== signUpId)
   event.value = {...event.value!, signUpCount: Math.max(event.value!.signUpCount - 1, 0)}
-  void readWhoSignedUp()
+  void readWhoSignedUp(event.value!)
 }
 </script>
 
@@ -187,12 +186,12 @@ function signedOut(signUpId: number) {
               :source="event.description ?? ''"
             />
             <section
-              v-if="roster && signedUpCount > 0"
+              v-if="roster && countOf(roster) > 0"
               class="event-page__roster"
               data-testid="event-roster"
             >
               <p class="event-page__eyebrow">
-                Signed up · {{ signedUpCount }}
+                Signed up · {{ countOf(roster) }}
               </p>
               <people-list
                 one-row
@@ -204,7 +203,7 @@ function signedOut(signUpId: number) {
                 class="event-page__guests"
                 data-testid="event-roster-guests"
               >
-                {{ guestsLine }}
+                {{ guestsLine(roster) }}
               </p>
             </section>
           </div>

@@ -3,6 +3,7 @@ package net.blueshell.api.email.api
 import net.blueshell.api.email.domain.EmailService
 import net.blueshell.api.email.domain.EmailTemplateService
 import net.blueshell.api.email.domain.EmailTransportClient
+import net.blueshell.api.email.domain.SendingAddresses
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.util.PersonalDetails
 import org.slf4j.LoggerFactory
@@ -14,6 +15,7 @@ class EmailSenderService(
     private val templateService: EmailTemplateService,
     private val emailClient: EmailTransportClient,
     private val emailService: EmailService,
+    private val sendingAddresses: SendingAddresses,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     @param:Value($$"${app.url}") private val appUrl: String,
     @param:Value($$"${email.from.name}") private val senderName: String,
@@ -51,16 +53,20 @@ class EmailSenderService(
                 ?: htmlContent
 
         try {
+            // An added address, or its login, that cannot be read fails this email only, as any transport failure does.
+            val sending = emailContent.sendingAddressId?.let(sendingAddresses::routeFor)
+            outbox.senderAddress = sending?.address ?: senderAddress
             val messageId =
                 emailClient.send(
                     emailContent.recipientEmail,
                     emailContent.recipientName,
                     emailContent.subject,
                     trackedHtml,
-                    emailContent.senderNameOverride ?: senderName,
-                    senderAddress,
+                    emailContent.senderNameOverride ?: sending?.displayName ?: senderName,
+                    sending?.address ?: senderAddress,
                     emailContent.replyToOverride ?: defaultReplyTo,
                     emailContent.threadHeaders,
+                    sending?.route,
                 )
             log.info("Sent email id={} type={}", outbox.id, emailType)
             emailService.markSent(outbox, messageId)

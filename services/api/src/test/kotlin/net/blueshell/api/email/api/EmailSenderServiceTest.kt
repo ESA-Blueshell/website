@@ -3,6 +3,7 @@ package net.blueshell.api.email.api
 import net.blueshell.api.email.domain.EmailService
 import net.blueshell.api.email.domain.EmailTemplateService
 import net.blueshell.api.email.domain.EmailTransportClient
+import net.blueshell.api.email.domain.SendingAddresses
 import net.blueshell.api.email.persistence.Email
 import net.blueshell.api.shared.email.EmailContent
 import org.assertj.core.api.Assertions.assertThat
@@ -10,6 +11,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -24,8 +26,19 @@ class EmailSenderServiceTest {
     private val templates: EmailTemplateService = mock()
     private val transport: EmailTransportClient = mock()
     private val records: EmailService = mock()
+    private val addresses: SendingAddresses = mock()
     private val sender =
-        EmailSenderService(templates, transport, records, "https://site", "https://api", "Blueshell", "no-reply@b.nl", "board@b.nl")
+        EmailSenderService(
+            templates,
+            transport,
+            records,
+            addresses,
+            "https://site",
+            "https://api",
+            "Blueshell",
+            "no-reply@b.nl",
+            "board@b.nl",
+        )
     private val content = EmailContent("a@b.nl", "Ann", "Hi", "Body")
     private val queued = Email(recipientEmail = "a@b.nl", trackingToken = "tok").also { it.id = 5 }
 
@@ -36,7 +49,7 @@ class EmailSenderServiceTest {
 
     @Test
     fun `sends into the record its job queued, with the tracking pixel in it`() {
-        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@b.nl>")
+        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any(), anyOrNull())).thenReturn("<m@b.nl>")
 
         sender.send(content, "email.test", 7)
 
@@ -51,13 +64,14 @@ class EmailSenderServiceTest {
             any(),
             any(),
             eq(emptyMap()),
+            anyOrNull(),
         )
         verify(records).markSent(queued, "<m@b.nl>")
     }
 
     @Test
     fun `a sent email is logged by its outbox id`(output: CapturedOutput) {
-        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@b.nl>")
+        whenever(transport.send(any(), any(), any(), any(), any(), any(), any(), any(), anyOrNull())).thenReturn("<m@b.nl>")
 
         sender.send(content, "email.test", 7)
 
@@ -67,7 +81,7 @@ class EmailSenderServiceTest {
     @Test
     fun `a failed send records and logs the failure without the address it names`(output: CapturedOutput) {
         whenever(
-            transport.send(any(), any(), any(), any(), any(), any(), any(), any()),
+            transport.send(any(), any(), any(), any(), any(), any(), any(), any(), anyOrNull()),
         ).thenThrow(MailSendException("550 <a@b.nl> unknown"))
 
         assertThatThrownBy { sender.send(content, "email.test", 7) }.isInstanceOf(IllegalStateException::class.java)

@@ -249,6 +249,8 @@ spring.mail:
     mail.smtp.writetimeout: 30000
 
 email:
+  # Where an added sending address keeps its SMTP login: vault in production (api ADR-039), stand-in elsewhere.
+  sending-logins: ${EMAIL_SENDING_LOGINS:stand-in}
   from:
     name: ${EMAIL_FROM_NAME:Blueshell}
     address: ${EMAIL_FROM_ADDRESS:no-reply@esa-blueshell.nl}

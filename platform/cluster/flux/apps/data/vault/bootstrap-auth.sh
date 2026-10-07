@@ -60,6 +60,16 @@ path "secret/data/api/*" {
   capabilities = ["read"]
 }
 
+# The SMTP logins of the sending addresses an admin adds: the one path the api writes (api ADR-039).
+path "secret/data/api/sending/*" {
+  capabilities = ["create", "read", "update", "delete"]
+}
+
+# Removing an address removes every version of its login.
+path "secret/metadata/api/sending/*" {
+  capabilities = ["delete"]
+}
+
 # The mail passwords, from the path Stalwart shares.
 path "secret/data/platform/mail" {
   capabilities = ["read"]

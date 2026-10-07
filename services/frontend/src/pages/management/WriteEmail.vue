@@ -9,10 +9,11 @@ import ChipPicker from "@/components/island/ChipPicker.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
-import {renderWritten} from "@/domains/emails"
+import {SITE_SENDER, fromOptions, loadSendingAddresses, renderWritten} from "@/domains/emails"
 import {
   type Addressee,
   AddresseeKind,
@@ -45,6 +46,8 @@ const to = ref<Addressee[]>([])
 const subject = ref("")
 const message = ref("")
 const replyTo = ref<string | null>(null)
+const senders = ref<ReturnType<typeof fromOptions>["options"]>([])
+const from = ref(SITE_SENDER)
 const reach = ref<ReachResponse | null>(null)
 const preview = ref<string | null>(null)
 const sending = ref(false)
@@ -79,7 +82,13 @@ const remove = (key: string) => {
   to.value = to.value.filter((one) => addresseeKey(one) !== key)
 }
 
-const body = () => ({to: to.value, subject: subject.value, message: message.value, replyTo: replyTo.value ?? undefined})
+const body = () => ({
+  to: to.value,
+  subject: subject.value,
+  message: message.value,
+  replyTo: replyTo.value ?? undefined,
+  from: from.value === SITE_SENDER ? undefined : Number(from.value),
+})
 
 const finish = (answered: {ok: true} | {ok: false; reason: string}, done: () => void) => {
   if (!answered.ok) {
@@ -123,7 +132,10 @@ watch([subject, message], () => {
 })
 
 onMounted(async () => {
-  const [groups, everyone, replies] = await Promise.all([listAudiences(), listUsers().catch(() => []), listReplyTo()])
+  const [groups, everyone, replies, addresses] = await Promise.all([listAudiences(), listUsers().catch(() => []), listReplyTo(), loadSendingAddresses()])
+  const offered = fromOptions(addresses)
+  senders.value = offered.options
+  from.value = offered.start
   audiences.value = groups
   people.value = everyone
   replyOptions.value = replies
@@ -199,6 +211,23 @@ onBeforeUnmount(() => clearTimeout(previewTimer))
               :labelled-by="labelId"
               min-height="18rem"
               testid="write-message-editor"
+            />
+          </template>
+        </form-field>
+
+        <form-field
+          v-if="senders.length > 1"
+          label="From"
+          testid="write-from"
+        >
+          <template #default="{controlId, labelId}">
+            <search-picker
+              :control-id="controlId"
+              :labelled-by="labelId"
+              :options="senders"
+              :selected-key="from"
+              testid-prefix="write-from-picker"
+              @pick="(key: string) => from = key"
             />
           </template>
         </form-field>

@@ -43,7 +43,7 @@ describe("the Sent page", () => {
     mockList.mockResolvedValue(page([
       email({id: 1, deliveryStatus: "QUEUED", sentAt: null}),
       email({id: 2, deliveryStatus: "FAILED"}),
-      email({id: 3, deliveryStatus: "OPENED"}),
+      email({id: 3, deliveryStatus: "OPENED", senderAddress: "events@b.nl"}),
       email({id: 4, deliveryStatus: "DELIVERED", jobExecutionId: null}),
     ], 2))
     mockStats.mockResolvedValue({status: 200, data: {
@@ -66,6 +66,8 @@ describe("the Sent page", () => {
     expect(wrapper.get('[data-testid="sent-email-row-1"]').text()).toContain("Job waiting")
     expect(wrapper.get('[data-testid="sent-email-status-1"]').text()).toBe("Queued")
     expect(wrapper.get('[data-testid="sent-email-row-1"]').text()).toContain("Contribution reminder")
+    expect(wrapper.get('[data-testid="sent-email-row-1"]').text()).not.toContain("from")
+    expect(wrapper.get('[data-testid="sent-email-row-3"]').text()).toContain("Contribution reminder · from events@b.nl")
     expect(wrapper.get('[data-testid="sent-email-open-3"]').attributes("to")).toBe("/management/mail/sent/3")
     expect(wrapper.find('[data-testid="sent-email-retry-2"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="sent-email-resend-3"]').exists()).toBe(true)

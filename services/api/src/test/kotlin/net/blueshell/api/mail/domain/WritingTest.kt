@@ -2,6 +2,7 @@ package net.blueshell.api.mail.domain
 
 import net.blueshell.api.cohort.api.CohortAudiences
 import net.blueshell.api.email.api.EmailSenderService
+import net.blueshell.api.email.api.KnownSendingAddresses
 import net.blueshell.api.email.api.SiteMarkdownEmails
 import net.blueshell.api.mail.persistence.WrittenEmail
 import net.blueshell.api.mail.persistence.WrittenEmailRepository
@@ -33,7 +34,9 @@ class WritingTest {
     private val users: UserService = mock()
     private val written: WrittenEmailRepository = mock()
     private val jobs: JobQueue = mock()
-    private val writing = Writing(audiences, users, written, jobs, Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC))
+    private val known = KnownSendingAddresses { it == 4L }
+    private val clock = Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC)
+    private val writing = Writing(audiences, users, written, jobs, clock, known)
 
     private val ann = Entities.user(id = 1, username = "ann")
     private val bea = Entities.user(id = 2, username = "bea")
@@ -78,6 +81,7 @@ class WritingTest {
         assertThat(MailJobs.Written.dedupKey(MailJobs.WrittenPayload(7, 1))).isNull()
         assertThat(WrittenEmail::class.java.getDeclaredConstructor().newInstance()).isNotNull
 
+        assertThatThrownBy { writing.test("Hi", "Body", null, 9, from = 5) }.isInstanceOf(SendingAddressGone::class.java)
         assertThatThrownBy { writing.test(" ", "Body", null, 9) }.isInstanceOf(SubjectMissing::class.java)
         assertThatThrownBy { writing.test("Hi", " ", null, 9) }.isInstanceOf(MessageMissing::class.java)
         whenever(users.findAllByIds(emptySet())).thenReturn(emptyList())

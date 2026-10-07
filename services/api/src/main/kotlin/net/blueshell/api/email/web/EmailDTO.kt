@@ -29,6 +29,8 @@ data class EmailDTO(
     val resentFromId: Long? = null,
     @param:Schema(description = "Who queued it, where a person did")
     val initiatedByUserId: Long?,
+    @param:Schema(description = "The address it went out from; none for an email sent before this was kept")
+    val senderAddress: String? = null,
 )
 
 @Schema(name = "SentEmailPreview")

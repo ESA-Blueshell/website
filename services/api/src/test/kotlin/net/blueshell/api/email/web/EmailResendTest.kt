@@ -59,6 +59,7 @@ class EmailResendTest {
         val made =
             Entities.email(3).apply {
                 resentFromId = 2
+                senderAddress = "events@b.nl"
                 createdAt = Instant.EPOCH
                 updatedAt = Instant.EPOCH
             }
@@ -67,7 +68,7 @@ class EmailResendTest {
         whenever(emails.linkResend(9, linked)).thenReturn(made)
         whenever(emails.countByStatus(EmailDeliveryStatus.QUEUED)).thenReturn(4)
 
-        assertThat(controller.resend(2).resentFromId).isEqualTo(2)
+        assertThat(controller.resend(2).let { listOf(it.resentFromId, it.senderAddress) }).containsExactly(2L, "events@b.nl")
         whenever(emails.resendsOf(2)).thenReturn(listOf(made))
         val detail = controller.findEmail(2)
         assertThat(detail.resends.map { it.id }).containsExactly(3)

@@ -1574,6 +1574,10 @@ export type Email = {
      * The email this one was made again from, when it was resent
      */
     resentFromId?: number | null;
+    /**
+     * The address it went out from; none for an email sent before this was kept
+     */
+    senderAddress?: string | null;
     sentAt?: string | null;
     subject?: string | null;
     updatedAt?: string | null;
@@ -3251,6 +3255,40 @@ export type SendPaymentEmailsRequest = {
     userIds: Array<number>;
 };
 
+export type SendingAddress = {
+    address: string;
+    displayName: string;
+    host: string;
+    id: number;
+    isDefault: boolean;
+    /**
+     * Whether a login is kept for it; the login itself is never answered
+     */
+    loginKept: boolean;
+    port: number;
+    security: SmtpSecurity;
+};
+
+/**
+ * A sending address and, when it is new or its login changes, the login
+ */
+export type SendingAddressRequest = {
+    address: string;
+    displayName: string;
+    host: string;
+    isDefault: boolean;
+    /**
+     * The SMTP password, written to Vault and never answered back; left out to keep the one there is
+     */
+    password?: string | null;
+    port: number;
+    security: SmtpSecurity;
+    /**
+     * The SMTP username; left out to keep the login there is
+     */
+    username?: string | null;
+};
+
 export type SentEmailPreview = {
     /**
      * The email's html with every url stripped out
@@ -3413,6 +3451,12 @@ export type SignupSessionResponse = {
     signupToken: string;
     userId: number;
 };
+
+export enum SmtpSecurity {
+    STARTTLS = 'STARTTLS',
+    SSL = 'SSL',
+    NONE = 'NONE'
+}
 
 export type SponsorResponse = {
     createdAt: string;
@@ -3947,6 +3991,10 @@ export type Version = {
 };
 
 export type WriteEmailRequest = {
+    /**
+     * The added sending address it goes out from; none sends from the site's own
+     */
+    from?: number | null;
     /**
      * The message as the site's editor writes it, in Discord's markdown
      */
@@ -13167,6 +13215,174 @@ export type RetryResponses = {
 };
 
 export type RetryResponse = RetryResponses[keyof RetryResponses];
+
+export type ListSendingAddressesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/sending-addresses';
+};
+
+export type ListSendingAddressesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListSendingAddressesError = ListSendingAddressesErrors[keyof ListSendingAddressesErrors];
+
+export type ListSendingAddressesResponses = {
+    /**
+     * OK
+     */
+    200: Array<SendingAddress>;
+};
+
+export type ListSendingAddressesResponse = ListSendingAddressesResponses[keyof ListSendingAddressesResponses];
+
+export type AddSendingAddressData = {
+    body: SendingAddressRequest;
+    path?: never;
+    query?: never;
+    url: '/management/sending-addresses';
+};
+
+export type AddSendingAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AddSendingAddressError = AddSendingAddressErrors[keyof AddSendingAddressErrors];
+
+export type AddSendingAddressResponses = {
+    /**
+     * Created
+     */
+    201: SendingAddress;
+};
+
+export type AddSendingAddressResponse = AddSendingAddressResponses[keyof AddSendingAddressResponses];
+
+export type RemoveSendingAddressData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/sending-addresses/{id}';
+};
+
+export type RemoveSendingAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveSendingAddressError = RemoveSendingAddressErrors[keyof RemoveSendingAddressErrors];
+
+export type RemoveSendingAddressResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveSendingAddressResponse = RemoveSendingAddressResponses[keyof RemoveSendingAddressResponses];
+
+export type SetSendingAddressData = {
+    body: SendingAddressRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/sending-addresses/{id}';
+};
+
+export type SetSendingAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetSendingAddressError = SetSendingAddressErrors[keyof SetSendingAddressErrors];
+
+export type SetSendingAddressResponses = {
+    /**
+     * OK
+     */
+    200: SendingAddress;
+};
+
+export type SetSendingAddressResponse = SetSendingAddressResponses[keyof SetSendingAddressResponses];
 
 export type RemoveTeamDiscordData = {
     body?: never;

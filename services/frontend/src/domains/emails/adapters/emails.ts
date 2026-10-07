@@ -19,7 +19,7 @@ import type {PageOf, PageQuery} from "@/composables/usePagedTable"
 import type {RenderedEmailPreview} from "@/composables/useEmailPreview"
 import type {Refused} from "@/types/api"
 import {readOr} from "@/utils/answers"
-import {refusalReader} from "@/utils/refusals"
+import {refusable} from "../refusals"
 
 // Re-exported so this adapter still answers for its own surface, while the type has one definition.
 export type {Refused}
@@ -28,12 +28,6 @@ export type SentEmail = Email
 export type {EmailDetail}
 export type EmailStats = EmailStatsDto
 export {EmailDeliveryStatus}
-
-/**
- * The api declares no refusal codes for this module, so a refused email write reads as whatever
- * detail it carried; the sentence map stays empty rather than inventing codes it does not send.
- */
-const {refusable} = refusalReader({})
 
 /** What the manager narrows a page of emails by. None set is the whole outbox. */
 export interface EmailFilter {

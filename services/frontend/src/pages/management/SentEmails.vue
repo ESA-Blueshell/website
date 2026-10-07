@@ -147,7 +147,7 @@ onMounted(refresh)
         >
           {{ row.subject }}
         </router-link>
-        <span class="mg-sub">{{ emailTypeLabel(row.emailType) }}</span>
+        <span class="mg-sub">{{ emailTypeLabel(row.emailType) }}{{ row.senderAddress ? ` · from ${row.senderAddress}` : "" }}</span>
       </template>
       <template #to="{row}">
         {{ row.recipientEmail }}

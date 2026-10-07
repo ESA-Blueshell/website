@@ -11,6 +11,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   SubjectMissing: () => "Give the email a subject.",
   MessageMissing: () => "Write a message.",
   InboxMessageNotFound: () => "That message is no longer in the inbox.",
+  SendingAddressGone: () => "The address it was to go out from is removed. Pick another under From.",
   ReplyToNotAnAddress: (r) => `${r.replyTo} is not an email address. Type one address for replies, such as board@esa-blueshell.nl.`,
 }
 

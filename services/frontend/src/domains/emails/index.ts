@@ -21,3 +21,6 @@ export {
 export type {EmailDetail, EmailFilter, EmailStats, SentEmail} from "./adapters/emails"
 export {EmailDeliveryStatus} from "./adapters/emails"
 export {loadEmailPage, loadEmailStats, readEmail, readSentEmail, renderWritten, resendEmail, retrySend} from "./adapters/emails"
+export type {SendingAddress, SendingAddressRequest} from "./adapters/sendingAddresses"
+export {SmtpSecurity, addAddress, loadSendingAddresses, removeAddress, saveAddress} from "./adapters/sendingAddresses"
+export {SITE_SENDER, fromOptions, securityLabel, usualPort} from "./sending"

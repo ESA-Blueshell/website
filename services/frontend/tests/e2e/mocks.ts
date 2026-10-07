@@ -2413,6 +2413,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/mail/reply-to") {
       return answer(route, "findReplyToOptions", ["board@esa-blueshell.nl", "mock-user@example.com"])
     }
+    if (method === "GET" && path === "/management/sending-addresses") {
+      return answer(route, "listSendingAddresses", [])
+    }
     if (method === "POST" && path === "/mail/reach") {
       const {to} = request.postDataJSON() as {to: unknown[]}
       return answer(route, "findReach", {recipients: to.length === 0 ? 0 : 217, withoutEmail: to.length === 0 ? 0 : 3})

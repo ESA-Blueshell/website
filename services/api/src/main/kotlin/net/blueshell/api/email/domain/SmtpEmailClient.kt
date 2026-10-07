@@ -45,9 +45,11 @@ class SmtpEmailClient(
         senderAddress: String,
         replyToAddress: String,
         threadHeaders: Map<String, String>,
+        route: SmtpRoute?,
     ): String {
         val messageId = generateMessageId(senderAddress)
-        val mime = mailSender.createMimeMessage()
+        val sender = route?.let(::senderFor) ?: mailSender
+        val mime = sender.createMimeMessage()
         // Set Message-ID on the underlying MimeMessage before MimeMessageHelper
         // writes any other headers; otherwise Jakarta Mail synthesises its own
         // at send time and our outbox correlation key is lost.
@@ -64,8 +66,8 @@ class SmtpEmailClient(
         mime.setHeader("Message-ID", messageId)
         threadHeaders.forEach(mime::setHeader)
 
-        (mailSender as? JavaMailSenderImpl)?.password = password.current()
-        mailSender.send(mime)
+        if (route == null) (mailSender as? JavaMailSenderImpl)?.password = password.current()
+        sender.send(mime)
         return messageId
     }
 

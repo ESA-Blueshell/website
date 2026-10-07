@@ -9,6 +9,8 @@ import {
   changePassword,
   confirmEmailChange,
   confirmTwoFactor,
+  connectedApps,
+  type ConnectedAppResponse,
   emailAddress,
   type EmailAddressResponse,
   endSignIn,
@@ -22,6 +24,7 @@ import {
   requestEmailChange,
   resendReenrolmentLink,
   resetTwoFactor,
+  revokeConnectedApp,
   securityEvents,
   type SecurityEventPageResponse,
   setUpTwoFactor,
@@ -120,6 +123,13 @@ export const endEverySignIn = (): Promise<Written> =>
 
 export const endOtherSignIns = (): Promise<Written> =>
   stepAccepted(signOutElsewhere(), "The other sign-ins could not be ended.")
+
+export async function listConnectedApps(): Promise<ConnectedAppResponse[]> {
+  return (await connectedApps()).data ?? []
+}
+
+export const revokeApp = (id: string): Promise<Written> =>
+  stepAccepted(revokeConnectedApp({path: {appId: id}}), "That app could not be revoked.")
 
 export async function listTrustedBrowsers(): Promise<TrustedBrowserResponse[]> {
   return (await trustedBrowsers()).data ?? []

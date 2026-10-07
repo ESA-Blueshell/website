@@ -2,6 +2,7 @@ package net.blueshell.api.oidc.domain
 
 import net.blueshell.api.security.JwtAuthFilter
 import net.blueshell.api.testsupport.StandInHttpSecurity
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -18,5 +19,10 @@ class AuthorizationServerChainTest {
         AuthorizationServerConfig().authorizationServerFilterChain(http, mock(), mock(), mock(), repository, mock())
 
         verify(http).addFilterAfter(any<DownstreamClientAuthorizationFilter>(), eq(JwtAuthFilter::class.java))
+    }
+
+    @Test
+    fun `the authorization store is the principal-indexing one, so grants can be listed and revoked`() {
+        assertThat(AuthorizationServerConfig().authorizationService()).isInstanceOf(IndexingOAuth2AuthorizationService::class.java)
     }
 }

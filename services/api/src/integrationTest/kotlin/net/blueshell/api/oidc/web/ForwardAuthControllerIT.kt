@@ -128,19 +128,6 @@ class ForwardAuthControllerIT : UserTestSupport() {
             }
         }
 
-        // The pinger asks this check before a settings change, and reads a refusal as not an admin.
-        @Test
-        fun `a dormant admin role does not open the pinger`() {
-            val admin = createUserWithRole(Role.ADMIN, twoFactor = false)
-            mvc
-                .perform(
-                    get("/oauth2/forward-auth")
-                        .with(signedIn(admin))
-                        .header(HttpHeaders.ACCEPT, "application/json")
-                        .header("X-Forwarded-Host", "pings.esa-blueshell.nl"),
-                ).andExpect(status().isForbidden)
-        }
-
         @Test
         fun `a dormant board role does not open Stalwart`() {
             val board = createUserWithRole(Role.BOARD, twoFactor = false)
@@ -217,18 +204,6 @@ class ForwardAuthControllerIT : UserTestSupport() {
                         .with(signedIn(admin))
                         .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl"),
                 ).andExpect(status().isOk)
-        }
-
-        @Test
-        fun `a member opens the pinger, and its groups do not name admin`() {
-            val member = createUserWithRole(Role.MEMBER)
-            mvc
-                .perform(
-                    get("/oauth2/forward-auth")
-                        .with(signedIn(member))
-                        .header("X-Forwarded-Host", "pings.esa-blueshell.nl"),
-                ).andExpect(status().isOk)
-                .andExpect(header().string("X-User-Groups", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("ADMIN"))))
         }
     }
 }

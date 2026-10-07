@@ -1419,7 +1419,8 @@ export enum FileType {
     TEAM_ICON = 'TEAM_ICON',
     ROSTER_ICON = 'ROSTER_ICON',
     BOARD_PHOTO = 'BOARD_PHOTO',
-    BOARD_PORTRAIT = 'BOARD_PORTRAIT'
+    BOARD_PORTRAIT = 'BOARD_PORTRAIT',
+    PINGER_PAINT = 'PINGER_PAINT'
 }
 
 /**
@@ -1887,6 +1888,38 @@ export type PagedModelJobExecution = {
 export type PagedModelUserDetailResponse = {
     content?: Array<UserDetailResponse>;
     page?: PageMetadata;
+};
+
+/**
+ * An admin's edit to the paint job
+ */
+export type PaintRequest = {
+    height: number;
+    /**
+     * Where the image is stored, as returned by the image upload; nothing takes it away
+     */
+    imagePath?: string | null;
+    originX: number;
+    originY: number;
+    /**
+     * The SNTPings /64 to paint towards, e.g. 2001:db8:b317:a000::/64; empty leaves the pinger idle
+     */
+    prefix?: string | null;
+    ratePps: number;
+    width: number;
+};
+
+/**
+ * The image, prefix, rate and placement the pinger paints with
+ */
+export type PaintResponse = {
+    height: number;
+    imageUrl?: string | null;
+    originX: number;
+    originY: number;
+    prefix?: string | null;
+    ratePps: number;
+    width: number;
 };
 
 export type PasswordChangeRequest = {
@@ -9379,6 +9412,88 @@ export type ForwardAuthResponses = {
      */
     200: unknown;
 };
+
+export type PaintData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/pinger/paint';
+};
+
+export type PaintErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PaintError = PaintErrors[keyof PaintErrors];
+
+export type PaintResponses = {
+    /**
+     * OK
+     */
+    200: PaintResponse;
+};
+
+export type PaintResponse2 = PaintResponses[keyof PaintResponses];
+
+export type SetPaintData = {
+    body: PaintRequest;
+    path?: never;
+    query?: never;
+    url: '/pinger/paint';
+};
+
+export type SetPaintErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetPaintError = SetPaintErrors[keyof SetPaintErrors];
+
+export type SetPaintResponses = {
+    /**
+     * OK
+     */
+    200: PaintResponse;
+};
+
+export type SetPaintResponse = SetPaintResponses[keyof SetPaintResponses];
 
 export type ConfirmEmailChangeData = {
     body: TokenRequest;

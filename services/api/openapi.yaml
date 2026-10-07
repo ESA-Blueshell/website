@@ -2835,6 +2835,7 @@ components:
       - ROSTER_ICON
       - BOARD_PHOTO
       - BOARD_PORTRAIT
+      - PINGER_PAINT
       type: string
     GameAccountRequest:
       description: Set what a member is called in one game
@@ -3812,6 +3813,85 @@ components:
           type: array
         page:
           $ref: '#/components/schemas/PageMetadata'
+      type: object
+    PaintRequest:
+      description: An admin's edit to the paint job
+      properties:
+        height:
+          format: int32
+          maximum: 2160
+          minimum: 1
+          type: integer
+        imagePath:
+          description: Where the image is stored, as returned by the image upload; nothing takes it away
+          type:
+          - string
+          - 'null'
+        originX:
+          format: int32
+          maximum: 3839
+          minimum: 0
+          type: integer
+        originY:
+          format: int32
+          maximum: 2159
+          minimum: 0
+          type: integer
+        prefix:
+          description: The SNTPings /64 to paint towards, e.g. 2001:db8:b317:a000::/64; empty leaves the pinger idle
+          pattern: ^$|^[0-9a-fA-F:]+(/\d{1,3})?$
+          type:
+          - string
+          - 'null'
+        ratePps:
+          format: int32
+          maximum: 200000
+          minimum: 1
+          type: integer
+        width:
+          format: int32
+          maximum: 3840
+          minimum: 1
+          type: integer
+      required:
+      - height
+      - originX
+      - originY
+      - ratePps
+      - width
+      type: object
+    PaintResponse:
+      description: The image, prefix, rate and placement the pinger paints with
+      properties:
+        height:
+          format: int32
+          type: integer
+        imageUrl:
+          type:
+          - string
+          - 'null'
+        originX:
+          format: int32
+          type: integer
+        originY:
+          format: int32
+          type: integer
+        prefix:
+          type:
+          - string
+          - 'null'
+        ratePps:
+          format: int32
+          type: integer
+        width:
+          format: int32
+          type: integer
+      required:
+      - height
+      - originX
+      - originY
+      - ratePps
+      - width
       type: object
     PasswordChangeRequest:
       properties:
@@ -22523,6 +22603,213 @@ paths:
           description: Server error
       tags:
       - Forward Auth
+  /pinger/paint:
+    get:
+      operationId: paint
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaintResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Pinger
+    put:
+      operationId: setPaint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaintRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaintResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Pinger
   /recovery/email/confirm:
     post:
       operationId: confirmEmailChange
@@ -29855,3 +30142,5 @@ tags:
   name: Cohort Subjects
 - description: API for managing job executions
   name: Job Management
+- description: The image the association paints on the SNTPings canvas
+  name: Pinger

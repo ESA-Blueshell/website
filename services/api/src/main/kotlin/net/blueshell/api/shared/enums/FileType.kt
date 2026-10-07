@@ -223,6 +223,23 @@ enum class FileType(
         webpQuality = 85,
         renditionWidths = PORTRAIT_WIDTHS,
     ),
+
+    /**
+     * The image the pinger paints onto the SNTPings canvas, uploaded by an admin and read back by
+     * the pinger and its helper exe. Lossless, because every pixel becomes a ping of an exact
+     * colour and a lossy pass would smear the edges into wrong pixels. No vector: the pinger reads
+     * the stored bytes directly and does not rasterise. The ceiling is high enough to stay crisp at
+     * any box an admin drags on the 4K canvas, and no narrower renditions are kept because the
+     * pinger always scales the one master down to the box itself.
+     */
+    PINGER_PAINT(
+        "pinger-paint",
+        publiclyReadable = true,
+        maxBytes = 10 * MB,
+        allowedMediaTypes = IMAGE,
+        maxImageEdge = 1920,
+        webpLossless = true,
+    ),
     ;
 
     /** Whether a logo of this kind may be a vector, which the banner kinds are not. */

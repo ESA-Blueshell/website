@@ -1,0 +1,33 @@
+# The one paint job the pinger reads: the prefix it targets, the rate, the box the image lands in
+# and where that image is stored. One row, id 1, seeded with a sensible box and no prefix, so the
+# pinger stays idle until an admin sets one. image_path points at a stored file by its path; no
+# foreign key, because files soft-delete and this only needs the path the public URL is built from.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-07-pinger-paint.yaml
+      id: pinger-paint
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: pinger_paint
+            columns:
+              - column: {name: id, type: BIGINT, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: prefix, type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci}
+              - column: {name: rate_pps, type: INT, constraints: {nullable: false}}
+              - column: {name: origin_x, type: INT, constraints: {nullable: false}}
+              - column: {name: origin_y, type: INT, constraints: {nullable: false}}
+              - column: {name: width, type: INT, constraints: {nullable: false}}
+              - column: {name: height, type: INT, constraints: {nullable: false}}
+              - column: {name: image_path, type: VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci}
+        - insert:
+            tableName: pinger_paint
+            columns:
+              - column: {name: id, valueNumeric: 1}
+              - column: {name: rate_pps, valueNumeric: 128}
+              - column: {name: origin_x, valueNumeric: 1470}
+              - column: {name: origin_y, valueNumeric: 180}
+              - column: {name: width, valueNumeric: 900}
+              - column: {name: height, valueNumeric: 720}
+      rollback:
+        - dropTable:
+            tableName: pinger_paint

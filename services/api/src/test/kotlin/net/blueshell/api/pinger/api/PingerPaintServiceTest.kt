@@ -4,10 +4,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.file.api.StoredPictures
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.pinger.persistence.PingerPaint
 import net.blueshell.api.pinger.persistence.PingerPaintRepository
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -26,8 +26,7 @@ class PingerPaintServiceTest {
     fun `update saves the box and builds the image url from the stored path`() {
         every { repository.findById(1L) } returns Optional.of(row())
         every { repository.save(any()) } answers { firstArg() }
-        val file = mockk<File>()
-        every { file.path } returns "pinger-paint/a.webp"
+        val file = Entities.file(type = FileType.PINGER_PAINT, path = "pinger-paint/a.webp")
         every { pictures.of("pinger-paint/a.webp", FileType.PINGER_PAINT) } returns file
 
         val view = service.update("2001:db8::/64", 256, 100, 200, 800, 600, "pinger-paint/a.webp")

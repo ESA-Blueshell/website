@@ -419,6 +419,11 @@ export type BoardResponse = {
     version: number;
 };
 
+export enum BotChannelProblem {
+    CANNOT_SEE = 'CANNOT_SEE',
+    CANNOT_CHANGE_ACCESS = 'CANNOT_CHANGE_ACCESS'
+}
+
 export type BotGrant = {
     granted: boolean;
     name: string;
@@ -433,6 +438,7 @@ export type BotHiddenChannel = {
     guildId: string;
     id: string;
     name: string;
+    problem: BotChannelProblem;
     voice: boolean;
 };
 

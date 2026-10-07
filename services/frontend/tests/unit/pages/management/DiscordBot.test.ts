@@ -18,8 +18,8 @@ vi.mock("@/services/api", async (importOriginal) => ({
 const standing = (fields: Record<string, unknown> = {}) => ({
   connected: true, manageRoles: true, manageChannels: false, botRole: {id: "904", name: "Blueshell bot"}, claimed: [],
   above: [{id: "905", name: "Admin"}], hidden: [
-    {id: "907", guildId: "324", name: "mods", category: "Moderation", voice: false},
-    {id: "908", guildId: "324", name: "board-room", category: null, voice: true},
+    {id: "907", guildId: "324", name: "mods", category: "Moderation", voice: false, problem: "CANNOT_SEE"},
+    {id: "908", guildId: "324", name: "board-room", category: null, voice: true, problem: "CANNOT_CHANGE_ACCESS"},
   ],
   permissions: [
     {name: "View Channels", neededFor: "Read the server's channels", granted: true},
@@ -59,6 +59,10 @@ describe("the Discord bot's page", () => {
     expect(wrapper.get('[data-testid="discord-bot-hidden-907"]').attributes("href")).toBe("https://discord.com/channels/324/907")
     expect(wrapper.get('[data-testid="discord-bot-hidden"]').text()).toContain("Moderation")
     expect(wrapper.get('[data-testid="discord-bot-hidden-908"]').text()).toBe("board-room")
+    // Each kept channel says why the bot cannot keep who it is open to.
+    expect(wrapper.get('[data-testid="discord-bot-hidden-why-907"]').text()).toBe("Cannot see it")
+    expect(wrapper.get('[data-testid="discord-bot-hidden-why-908"]').text()).toBe("Cannot change who it is open to")
+    expect(wrapper.text()).toContain("Kept channels the bot cannot change · 2")
     expect(wrapper.get('[data-testid="discord-bot-above"]').text()).toContain("@Admin")
     expect(await sortByEveryHead(wrapper)).toBe(3)
   })

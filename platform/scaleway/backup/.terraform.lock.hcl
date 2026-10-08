@@ -6,9 +6,18 @@ provider "registry.opentofu.org/scaleway/scaleway" {
   constraints = "~> 2.84"
   hashes = [
     "h1:8ovPEDIEIbhp3puR8V26i07Gb99gBxr5AU71HemFRJ4=",
+    "h1:ADbDEJf4t5Hz5ei+KfQ7Gr+dAuL06sglpGx5EgdrZXs=",
     "h1:E1snGTTWnxxIuHoAcwVkig7OSa1f8JWLA6T4LeuB0t0=",
     "h1:JCI6fF9vW4M9c3CNprZGGw2rODybdljprSa7LFLwxrk=",
+    "h1:KSKNTFMPHo/36eL1ZYc7YQDwEsLch/zjUooDdliDFlA=",
+    "h1:N+tqCJWfawKtfB2sDY+RqF20saLEC6u+UNI2nWM9LEw=",
+    "h1:NUZMV6NdSuo6ugDmW8tmRMcCLZuPXqb4kJte5q4Ml4I=",
+    "h1:QzsvHf/hdZXH9h3pKvoaPFIlpepIeItDAdKJkpquGUw=",
+    "h1:Rvx0kReEavnuiwe0XLqwYYIDqlvd7jU6rGXcmjqzju8=",
+    "h1:S3VzJ5lXwws9lPCv9MU69jlj2qMp5z/sDOgbCZYtw1M=",
     "h1:jyUdqha9BlA1ersPY6FshCHN+CtjpZUytp/jSKrjsDs=",
+    "h1:kt0493AKpxP9F41xTQAfw1L9Iip11S5zpq+ohlhd8CU=",
+    "h1:nQ5ZbrOvBzt/9nzywnjEIGtD5i5McCU4cR0Lp8kraaM=",
     "zh:08d18a6e946a4d578324a6c2667537df6cd2292ad5044af5f4ae2eed51b51e77",
     "zh:7197a12f04984af58bc6242b619f303aaf7a3badf93e35251d48699265f146f9",
     "zh:73875b3a1307c5754358f5a1784c217def859c7866b11467fab58ec7b7b8d708",

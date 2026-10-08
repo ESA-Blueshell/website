@@ -1,5 +1,7 @@
 <script lang="ts" setup>
+import {useTemplateRef} from "vue"
 import {DialogClose, DialogContent, DialogOverlay, DialogPortal, DialogRoot, DialogTitle} from "reka-ui"
+import {focusFirstField} from "@/utils/firstField"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 /**
@@ -23,6 +25,12 @@ defineProps<{
 const emit = defineEmits<{(event: "update:open", open: boolean): void}>()
 
 const {decorative} = useMotionAllowed()
+
+/** A dialog with a form opens on its first field; one without keeps Reka's focus. */
+const body = useTemplateRef<HTMLElement>("body")
+const toFirstField = (event: Event) => {
+  if (body.value && focusFirstField(body.value)) event.preventDefault()
+}
 </script>
 
 <template>
@@ -40,6 +48,7 @@ const {decorative} = useMotionAllowed()
         :class="{'island-dialog--still': !decorative}"
         :data-testid="testid ?? 'island-dialog'"
         :style="accent ? {'--dialog-accent': accent} : undefined"
+        @open-auto-focus="toFirstField"
       >
         <div class="island-dialog__head">
           <dialog-title class="island-dialog__title">
@@ -54,7 +63,10 @@ const {decorative} = useMotionAllowed()
           </dialog-close>
         </div>
 
-        <div class="island-dialog__body">
+        <div
+          ref="body"
+          class="island-dialog__body"
+        >
           <slot />
         </div>
 

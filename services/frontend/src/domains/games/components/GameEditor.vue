@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {addressOf} from "@/utils/address"
 import {computed, ref, watch} from "vue"
 import VvField from "@/components/form/fields/VvField.vue"
@@ -224,6 +225,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
 
     <form
       id="game-edit-form"
+      v-first-field
       class="game-form"
       @submit.prevent="submit"
     >

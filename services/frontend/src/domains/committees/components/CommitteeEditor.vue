@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {refreshSharedLists} from "@/utils/sharedLists"
 import {addressOf} from "@/utils/address"
 import {computed, ref, watch} from "vue"
@@ -211,6 +212,7 @@ const removeIt = async () => {
     </template>
 
     <form
+      v-first-field
       class="committee-editor"
       @submit.prevent="submit"
     >

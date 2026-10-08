@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {computed, ref, watch} from "vue"
 import ColourControl from "@/components/island/ColourControl.vue"
 import {isHexColour} from "@/components/island/colour"
@@ -179,6 +180,7 @@ const submit = async () => {
     </template>
 
     <form
+      v-first-field
       class="board-editor"
       @submit.prevent="submit"
     >

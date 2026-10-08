@@ -17,94 +17,61 @@ vi.mock("vuex", async (importOriginal) => {
     useStore: () => mockStore,
   }
 })
-vi.mock("flag-icons/css/flag-icons.min.css", () => ({}))
-vi.mock("v-phone-input/styles", () => ({}))
 
-vi.mock("v-phone-input", () => ({}))
+const empty = () => ({name: "", discord: "", email: "", phoneNumber: ""})
 
-const capturedProps: Record<string, unknown>[] = []
-const vvFieldStub = {
-  name: "VvField",
-  props: ["name", "rules", "component", "componentProps"],
-  setup(props: Record<string, unknown>) {
-    capturedProps.push({...props})
-  },
-  template: "<div class='vv-field-stub' :data-name='name' :data-rules='rules' />",
-}
-const formStub = {template: "<div><slot /></div>"}
-
-function rulesByName(wrapper: ReturnType<typeof mount>) {
-  return Object.fromEntries(
-    wrapper
-      .findAll(".vv-field-stub")
-      .map((field) => [String(field.attributes("data-name")), String(field.attributes("data-rules") ?? "")]),
-  )
-}
+const fieldLabelled = (wrapper: ReturnType<typeof mount>, label: string) =>
+  wrapper.findAllComponents({name: "FormControl"}).find(field => field.props("label") === label)!
 
 describe("GuestForm", () => {
   beforeEach(() => {
     mockStore.getters.isLoggedIn = false
-    capturedProps.length = 0
   })
 
-  it("declares all guest validation rules", () => {
+  it("asks for every detail, a real e-mail address and a mobile number", async () => {
+    const wrapper = mount(GuestForm, {props: {modelValue: {...empty(), email: "gordon", phoneNumber: "+31201234567"}}})
+
+    expect(await (wrapper.vm as any).validate()).toBe(false)
+    await wrapper.vm.$nextTick()
+
+    expect(fieldLabelled(wrapper, "Full name*").props("errorMessages")).toEqual(["This field is required"])
+    expect(fieldLabelled(wrapper, "Discord username*").props("errorMessages")).toEqual(["This field is required"])
+    expect(fieldLabelled(wrapper, "Email*").props("errorMessages")).toEqual(["Enter a valid e-mail address"])
+    expect(fieldLabelled(wrapper, "Phone Number*").props("errorMessages")).toEqual(["Enter a mobile phone number"])
+  })
+
+  it("lets complete details through", async () => {
     const wrapper = mount(GuestForm, {
-      global: {
-        stubs: {
-          Form: formStub,
-          VvField: vvFieldStub,
-        },
-      },
+      props: {modelValue: {name: "Gordon", discord: "gordon", email: "gordon@example.com", phoneNumber: "+31612345678"}},
     })
-    expect(rulesByName(wrapper)).toMatchObject({
-      name: "required",
-      discord: "required",
-      email: "required|email",
-      phoneNumber: "required|phoneMobile:NL",
-    })
+
+    expect(await (wrapper.vm as any).validate()).toBe(true)
   })
 
   it("asks the island control for a phone field", () => {
-    mount(GuestForm, {
-      global: {
-        stubs: {
-          Form: formStub,
-          VvField: vvFieldStub,
-        },
-      },
-    })
-    const phoneField = capturedProps.find((p) => p.name === "phoneNumber")
-    expect(phoneField).toBeDefined()
-    // The default control is the island one, so the kind is what says this is a phone number.
-    expect(phoneField!.component).toBeUndefined()
-    expect((phoneField!.componentProps as {kind?: string}).kind).toBe("phone")
+    const wrapper = mount(GuestForm)
+
+    expect(fieldLabelled(wrapper, "Phone Number*").props("kind")).toBe("phone")
   })
 
   it("hides guest form fields for logged-in users", () => {
     mockStore.getters.isLoggedIn = true
-    const wrapper = mount(GuestForm, {
-      global: {
-        stubs: {
-          Form: formStub,
-          VvField: vvFieldStub,
-        },
-      },
-    })
-    expect(wrapper.findAll(".vv-field-stub")).toHaveLength(0)
+    const wrapper = mount(GuestForm)
+
+    expect(wrapper.findAllComponents({name: "FormControl"})).toHaveLength(0)
   })
 
   it("writes what each field reports back onto the guest", async () => {
-    const guest = {name: "", discord: "", email: "", phoneNumber: ""}
+    const guest = empty()
     const wrapper = mount(GuestForm, {
       props: {modelValue: guest, "onUpdate:modelValue": (v: typeof guest) => Object.assign(guest, v)},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
     })
 
-    const fields = wrapper.findAllComponents({name: "VvField"})
-    await fields[0]!.vm.$emit("update:modelValue", "Guest Gordon")
-    await fields[1]!.vm.$emit("update:modelValue", "gordon#0001")
-    await fields[2]!.vm.$emit("update:modelValue", "gordon@example.com")
-    await fields[3]!.vm.$emit("update:modelValue", "+31612345678")
+    fieldLabelled(wrapper, "Full name*").vm.$emit("update:modelValue", "Guest Gordon")
+    fieldLabelled(wrapper, "Discord username*").vm.$emit("update:modelValue", "gordon#0001")
+    fieldLabelled(wrapper, "Email*").vm.$emit("update:modelValue", "gordon@example.com")
+    fieldLabelled(wrapper, "Phone Number*").vm.$emit("update:modelValue", "+31612345678")
+    await wrapper.vm.$nextTick()
 
     expect(guest).toEqual({
       name: "Guest Gordon",
@@ -117,12 +84,9 @@ describe("GuestForm", () => {
   it("shows the fields to a logged-in board member editing somebody else, without the sign-in notice", () => {
     mockStore.getters.isLoggedIn = true
 
-    const wrapper = mount(GuestForm, {
-      props: {force: true},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
-    })
+    const wrapper = mount(GuestForm, {props: {force: true}})
 
-    expect(wrapper.findAll(".vv-field-stub")).toHaveLength(4)
-    expect(wrapper.text()).not.toContain("It seems you are not logged in")
+    expect(wrapper.findAllComponents({name: "FormControl"})).toHaveLength(4)
+    expect(wrapper.find("[data-testid='guest-form-signed-out']").exists()).toBe(false)
   })
 })

@@ -10,6 +10,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.PosixFilePermission
+import java.nio.file.attribute.PosixFilePermissions
 
 /**
  * The only place in the application that knows the bytes are on a disk.
@@ -58,6 +60,11 @@ class FilesystemBlobStore(
 
         val scratch = Files.createTempFile(destination.parent, "blob-", ".tmp")
         try {
+            // createTempFile makes the file 0600 under the api's own uid, and the nightly
+            // backup (apps/data/backup) reads the volume as another user.
+            if ("posix" in scratch.fileSystem.supportedFileAttributeViews()) {
+                Files.setPosixFilePermissions(scratch, READABLE_BY_ALL)
+            }
             content.use { input ->
                 Files.newOutputStream(scratch).use(input::transferTo)
             }
@@ -89,5 +96,6 @@ class FilesystemBlobStore(
 
     private companion object {
         val log = LoggerFactory.getLogger(FilesystemBlobStore::class.java)
+        val READABLE_BY_ALL: Set<PosixFilePermission> = PosixFilePermissions.fromString("rw-r--r--")
     }
 }

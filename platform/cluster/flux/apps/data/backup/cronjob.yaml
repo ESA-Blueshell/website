@@ -160,6 +160,8 @@ spec:
                 # The root filesystem is read-only.
                 - name: TMPDIR
                   value: /work
+              # Never DAC_READ_SEARCH here: with it, open_by_handle_at reaches any file on the
+              # node's filesystem through the uploads hostPath. The api stores uploads 0644.
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true

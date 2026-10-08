@@ -160,18 +160,13 @@ spec:
                 # The root filesystem is read-only.
                 - name: TMPDIR
                   value: /work
-              # Root with DAC_READ_SEARCH alone reads every upload whatever its mode, so one the
-              # api left unreadable is still backed up. The mount is read-only, so it changes
-              # nothing there.
+              # Never DAC_READ_SEARCH here: with it, open_by_handle_at reaches any file on the
+              # node's filesystem through the uploads hostPath. The api stores uploads 0644.
               securityContext:
-                runAsNonRoot: false
-                runAsUser: 0
-                runAsGroup: 0
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities:
                   drop: [ALL]
-                  add: [DAC_READ_SEARCH]
               resources:
                 requests:
                   cpu: 100m

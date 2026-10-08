@@ -104,8 +104,8 @@ with member powers only and is sent to set up two-factor before anything else.
 10. **A sign-in cannot move browsers.** A request whose browser family or operating
     system differs from the one the sign-in began in ends it.
 11. **An old cookie cannot come back.** A token id that is neither the current one
-    nor the previous one within its grace ends the sign-in and sends a security
-    notification.
+    nor the previous one within its grace ends the sign-in and is written to the
+    person's security log.
 12. **The OIDC path cannot skip the code.** Every authorization request from an
     account with two-factor asks for a fresh one, trusted browser or not.
 13. **An OIDC refresh token cannot outlive the sign-in behind it.** It renews
@@ -202,8 +202,10 @@ never rotates: Traefik keeps the Set-Cookie of its answer to itself, so a rotati
 would leave the browser holding a retired id.
 
 **Reuse.** A token id that is neither current nor previous within its grace ends the
-whole sign-in, for whoever holds it, and sends a security notification. Somebody holding
-a copy of the cookie and the owner are signed out of that browser together.
+whole sign-in, for whoever holds it. Somebody holding a copy of the cookie and the owner
+are signed out of that browser together. It is written to the person's security log once,
+however many requests carried the old id, and sends no email: an old cookie is far more
+often a browser's own than a thief's.
 
 **Browser binding.** The sign-in records the browser family and operating system it
 began in, not their versions, so an update does not sign anybody out. A request from a
@@ -270,8 +272,9 @@ a [two-factor reset](../two-factor/README.md).
 **Code limit reached.** Codes are refused for the account until fifteen minutes after
 the first of the ten failures. The owner has been told by a security notification.
 
-**Signed out by reuse or another browser.** Sign in again. The security notification
-carries a lock link in case it was not them.
+**Signed out by reuse or another browser.** Sign in again. Another browser sends a
+security notification carrying a lock link in case it was not them; reuse is on the
+security log of the account page.
 
 **Rate limited.** 10 password attempts a minute per client; the limiter answers before
 the credentials are examined.

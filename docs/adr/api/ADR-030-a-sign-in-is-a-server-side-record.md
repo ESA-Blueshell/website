@@ -53,7 +53,8 @@ whenever the record disagrees.**
   answered with a new one. The previous `jti` is still accepted for sixty seconds, so
   parallel calls and other tabs holding it do not sign the reader out.
 - **A copy older than that ends the sign-in.** It means two holders, and the record cannot
-  tell which is the owner, so both lose it. The person is sent a security notification.
+  tell which is the owner, so both lose it. It is written to the person's security log,
+  once, and sends no email.
 - **Thirty days absolute, fourteen days idle.** The sign-in ends thirty days after it
   began however much it is used, and after fourteen days without a request.
 - **The sign-in is pinned to a browser family and platform**, read coarsely from the

@@ -196,9 +196,12 @@ somebody else knows their password.
 | Retired by | a right code, the fifth wrong one, expiry | logout, its lifetime, reuse, another browser, being ended, sign out everywhere, a lock, a two-factor reset | rotation, then sixty seconds | its lifetime, being revoked, a password change or reset, a two-factor change or reset, a lock |
 
 **Rotation.** A request made with an auth cookie older than five minutes is answered
-with a new one naming a new token id. The previous token id stays good for sixty
-seconds so that calls already in flight, and other tabs, are not refused. Forward-auth
-never rotates: Traefik keeps the Set-Cookie of its answer to itself, so a rotation there
+with a new one naming a new token id. The previous token id stays good until the browser
+first shows the new one, and for sixty seconds after that, so that calls already in
+flight, and other tabs, are not refused. A request made with the previous id before then
+is answered with the current cookie again: an answer that never arrived, because the page
+was reloaded or closed under it, would otherwise leave the browser holding a dead id.
+Forward-auth never rotates: Traefik keeps the Set-Cookie of its answer to itself, so a rotation there
 would leave the browser holding a retired id.
 
 **Reuse.** A token id that is neither current nor previous within its grace ends the

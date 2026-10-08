@@ -61,9 +61,26 @@ class ValkeySignInStoreTest {
         val read = store.find("s1")!!
         assertThat(read.currentJti).isEqualTo("j2")
         assertThat(read.previousJti).isEqualTo("j1")
-        assertThat(read.previousRetiredAt).isEqualTo(at)
+        assertThat(read.previousRetiredAt).isNull()
         assertThat(read.lastSeenAt).isEqualTo(at)
         assertThat(store.rotate("s1", "j1", "j3", at, later)).isFalse()
+    }
+
+    @Test
+    fun `the previous token id is retired once, and only for the token id that is current`() {
+        store.save(signIn, later)
+        val at = now.plusSeconds(300)
+        store.rotate("s1", "j1", "j2", at, later)
+
+        store.retirePrevious("s1", "j1", at.plusSeconds(1))
+        assertThat(store.find("s1")!!.previousRetiredAt).isNull()
+
+        store.retirePrevious("s1", "j2", at.plusSeconds(2))
+        store.retirePrevious("s1", "j2", at.plusSeconds(3))
+        assertThat(store.find("s1")!!.previousRetiredAt).isEqualTo(at.plusSeconds(2))
+
+        store.rotate("s1", "j2", "j3", at.plusSeconds(300), later)
+        assertThat(store.find("s1")!!.previousRetiredAt).isNull()
     }
 
     @Test

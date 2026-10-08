@@ -111,6 +111,7 @@ class SignInIT : UserTestSupport() {
         clock.advance(Duration.ofMinutes(5))
         val rotated = rotatedCookie(user, first)
         assertThat(rotated.value).isNotEqualTo(first.value)
+        read(user, rotated).andExpect(status().isOk)
 
         clock.advance(Duration.ofSeconds(59))
         read(user, first).andExpect(status().isOk)
@@ -118,6 +119,20 @@ class SignInIT : UserTestSupport() {
         clock.advance(Duration.ofSeconds(2))
         read(user, first).andExpect(status().isUnauthorized)
         read(user, rotated).andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `an old cookie whose replacement never reached the browser is answered with it again`() {
+        val user = createUserWithRole(Role.MEMBER)
+        val first = signIn(user)
+
+        clock.advance(Duration.ofMinutes(5))
+        rotatedCookie(user, first)
+
+        clock.advance(Duration.ofMinutes(10))
+        val again = rotatedCookie(user, first)
+
+        read(user, again).andExpect(status().isOk)
     }
 
     @Test

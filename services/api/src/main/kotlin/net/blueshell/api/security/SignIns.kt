@@ -13,7 +13,9 @@ import java.util.UUID
  *
  * A request's token is honoured only while the record agrees with it: the record exists, carries
  * the person's current security stamp, is inside its thirty days and fourteen idle days, began in
- * the same browser, and names the token id as current or as previous within its grace.
+ * the same browser, and names the token id as current or as previous within its grace. The grace
+ * starts when the browser first shows the new token id, so an answer that never arrived cannot
+ * leave it holding a dead one.
  */
 @Component
 class SignIns(
@@ -83,11 +85,28 @@ class SignIns(
         if (browser != signIn.browser) return endAsSuspicious(signIn, SignInEndReason.BROWSER_CHANGED, browser, now)
 
         return when (claims.jti) {
-            signIn.currentJti -> Resolution.Honoured(signIn, if (mayRotate) rotateIfDue(signIn, now) else null)
-            signIn.previousJti.takeIf { signIn.previousRetiredAt?.plus(grace)?.isAfter(now) == true } ->
-                Resolution.Honoured(signIn, null)
+            signIn.currentJti -> {
+                if (signIn.previousJti != null && signIn.previousRetiredAt == null) store.retirePrevious(signIn.id, signIn.currentJti, now)
+                Resolution.Honoured(signIn, if (mayRotate) rotateIfDue(signIn, now) else null)
+            }
+            signIn.previousJti -> previous(signIn, browser, now, mayRotate)
             else -> endAsSuspicious(signIn, SignInEndReason.REUSED, browser, now)
         }
+    }
+
+    /**
+     * The token id before the current one. Until the browser has shown the current one it is the
+     * only one the browser is known to hold, so it is honoured and the current one is sent again.
+     */
+    private fun previous(
+        signIn: SignIn,
+        browser: Browser,
+        now: Instant,
+        mayRotate: Boolean,
+    ): Resolution {
+        val retiredAt = signIn.previousRetiredAt ?: return Resolution.Honoured(signIn, if (mayRotate) issue(signIn) else null)
+        if (retiredAt.plus(grace).isAfter(now)) return Resolution.Honoured(signIn, null)
+        return endAsSuspicious(signIn, SignInEndReason.REUSED, browser, now)
     }
 
     fun find(id: String): SignIn? = store.find(id)
@@ -161,7 +180,7 @@ class SignIns(
         val rotated =
             signIn.copy(
                 previousJti = signIn.currentJti,
-                previousRetiredAt = now,
+                previousRetiredAt = null,
                 currentJti = newJti,
                 currentIssuedAt = now,
                 lastSeenAt = now,

@@ -31,6 +31,13 @@ interface SignInStore {
         expiresAt: Instant,
     ): Boolean
 
+    /** Starts the previous token id's grace, while [currentJti] is still current and it has not started. */
+    fun retirePrevious(
+        id: String,
+        currentJti: String,
+        at: Instant,
+    )
+
     fun securityStamp(userId: Long): Long
 
     fun bumpSecurityStamp(userId: Long): Long

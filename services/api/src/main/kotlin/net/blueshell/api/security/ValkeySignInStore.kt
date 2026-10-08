@@ -67,6 +67,14 @@ class ValkeySignInStore(
         return result == 1L
     }
 
+    override fun retirePrevious(
+        id: String,
+        currentJti: String,
+        at: Instant,
+    ) {
+        redis.execute(RETIRE_PREVIOUS, listOf(key(id)), currentJti, at.toEpochMilli().toString())
+    }
+
     override fun securityStamp(userId: Long): Long = redis.opsForValue().get(stampKey(userId))?.toLong() ?: 0
 
     override fun bumpSecurityStamp(userId: Long): Long = redis.opsForValue().increment(stampKey(userId)) ?: 0
@@ -144,10 +152,20 @@ class ValkeySignInStore(
                 """
                 if redis.call('HGET', KEYS[1], '$CURRENT_JTI') ~= ARGV[1] then return 0 end
                 redis.call('HSET', KEYS[1],
-                    '$PREVIOUS_JTI', ARGV[1], '$PREVIOUS_RETIRED_AT', ARGV[3],
+                    '$PREVIOUS_JTI', ARGV[1],
                     '$CURRENT_JTI', ARGV[2], '$CURRENT_ISSUED_AT', ARGV[3], '$LAST_SEEN_AT', ARGV[3])
+                redis.call('HDEL', KEYS[1], '$PREVIOUS_RETIRED_AT')
                 redis.call('PEXPIREAT', KEYS[1], ARGV[4])
                 return 1
+                """.trimIndent(),
+                Long::class.javaObjectType,
+            )
+
+        private val RETIRE_PREVIOUS =
+            DefaultRedisScript(
+                """
+                if redis.call('HGET', KEYS[1], '$CURRENT_JTI') ~= ARGV[1] then return 0 end
+                return redis.call('HSETNX', KEYS[1], '$PREVIOUS_RETIRED_AT', ARGV[2])
                 """.trimIndent(),
                 Long::class.javaObjectType,
             )

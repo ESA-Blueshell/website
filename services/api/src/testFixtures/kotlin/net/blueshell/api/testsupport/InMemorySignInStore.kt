@@ -42,12 +42,21 @@ class InMemorySignInStore : SignInStore {
         signIns[id] =
             signIn.copy(
                 previousJti = expectedJti,
-                previousRetiredAt = at,
+                previousRetiredAt = null,
                 currentJti = newJti,
                 currentIssuedAt = at,
                 lastSeenAt = at,
             )
         return true
+    }
+
+    override fun retirePrevious(
+        id: String,
+        currentJti: String,
+        at: Instant,
+    ) {
+        val signIn = signIns[id]?.takeIf { it.currentJti == currentJti && it.previousRetiredAt == null } ?: return
+        signIns[id] = signIn.copy(previousRetiredAt = at)
     }
 
     override fun securityStamp(userId: Long): Long = stamps[userId] ?: 0

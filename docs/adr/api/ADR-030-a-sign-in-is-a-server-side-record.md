@@ -50,8 +50,9 @@ whenever the record disagrees.**
 - **The `SESSION` cookie no longer authenticates.** The servlet session survives for what
   Spring Authorization Server keeps in it during an authorize round trip, and nothing else.
 - **The cookie rotates.** A request made with a credential older than five minutes is
-  answered with a new one. The previous `jti` is still accepted for sixty seconds, so
-  parallel calls and other tabs holding it do not sign the reader out.
+  answered with a new one. The previous `jti` is still accepted until the browser shows
+  the new one and for sixty seconds after, so parallel calls and other tabs holding it do
+  not sign the reader out.
 - **A copy older than that ends the sign-in.** It means two holders, and the record cannot
   tell which is the owner, so both lose it. It is written to the person's security log,
   once, and sends no email.
@@ -84,6 +85,13 @@ machine and are left for a later decision, since not every browser supports them
 
 Sixty seconds of grace means a stolen copy used within a minute of theft is not noticed
 until the owner's next rotation, at which point the sign-in ends for both.
+
+The grace starts when the browser first shows the new token id, not when it was issued.
+A rotation is written before its answer is sent, and an answer lost to a reload or a
+closed tab left the browser holding only the retired id, which ended the sign-in a minute
+later. Until the new id is shown, the old one is the only one the browser is known to
+hold, so it is honoured and answered with the current cookie again. A thief gains nothing
+by it: an id nobody has shown is as good as the one before it was while it was current.
 
 `UserTestSupport.bearer` mints a token with no record behind it. The integration suites
 move to a helper that creates a sign-in and sends its cookie.

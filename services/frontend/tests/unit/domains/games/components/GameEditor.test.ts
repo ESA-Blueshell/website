@@ -51,8 +51,9 @@ const chess = aCasualGame({
 })
 
 const field = (wrapper: ReturnType<typeof mountEditor>, id: string) => wrapper.get(`[data-testid=game-edit-${id}] input`)
-const write = (wrapper: ReturnType<typeof mountEditor>, name: string, value: unknown) =>
-  wrapper.findAllComponents({name: "VvField"}).find(one => one.props("name") === name)!.vm.$emit("update:modelValue", value)
+const write = (wrapper: ReturnType<typeof mountEditor>, id: string, value: unknown) =>
+  wrapper.findAllComponents({name: "FormControl"})
+    .find(one => one.element.parentElement?.dataset.testid === `game-edit-${id}`)!.vm.$emit("update:modelValue", value)
 
 const mountEditor = (game: CasualGame | null, area: "casual" | "competition" = "casual", enterIn: number | null = null) =>
   mount(GameEditor, {props: {game, area, enterIn, back: `/${area}`}, global: {stubs}})
@@ -172,7 +173,7 @@ describe("the game edit page", () => {
     const esports = wrapper.findAllComponents(stubs.GameChannelPicker).find(one => one.props("testid") === "game-edit-esports-channels")!
 
     expect(head().props("intro")).toBe("Blitz")
-    write(wrapper, "competitionIntro", "Rated only")
+    write(wrapper, "competition-intro", "Rated only")
     esports.vm.$emit("update:modelValue", [{id: "7", guildId: "324", name: "chess-esports"}])
     await flushPromises()
 

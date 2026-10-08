@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {useTemplateRef} from "vue"
 import {DialogClose, DialogContent, DialogOverlay, DialogPortal, DialogRoot, DialogTitle} from "reka-ui"
+import CutButton from "./CutButton.vue"
 import {focusFirstField} from "@/utils/firstField"
 import {useMotionAllowed} from "./useMotionAllowed"
 
@@ -14,12 +15,16 @@ import {useMotionAllowed} from "./useMotionAllowed"
  */
 defineOptions({name: "ModalDialog"})
 
-defineProps<{
+const {cancel = true, testid = undefined, accent = undefined, cancelTestid = undefined} = defineProps<{
   open: boolean
   title: string
   testid?: string
   /** The game's colour, so the dialog belongs to the page it was opened from. */
   accent?: string
+  wide?: boolean
+  danger?: boolean
+  cancel?: boolean
+  cancelTestid?: string
 }>()
 
 const emit = defineEmits<{(event: "update:open", open: boolean): void}>()
@@ -45,7 +50,7 @@ const toFirstField = (event: Event) => {
       />
       <dialog-content
         class="island island-dialog"
-        :class="{'island-dialog--still': !decorative}"
+        :class="{'island-dialog--still': !decorative, 'island-dialog--wide': wide, 'island-dialog--danger': danger}"
         :data-testid="testid ?? 'island-dialog'"
         :style="accent ? {'--dialog-accent': accent} : undefined"
         @open-auto-focus="toFirstField"
@@ -77,7 +82,20 @@ const toFirstField = (event: Event) => {
           dialogs that have no buttons to put here yet.
         -->
         <div class="island-dialog__foot">
-          <slot name="footer" />
+          <div
+            v-if="$slots.footer"
+            class="island-dialog__acts"
+          >
+            <cut-button
+              v-if="cancel"
+              :testid="cancelTestid ?? `${testid ?? 'island-dialog'}-cancel`"
+              tone="quiet"
+              @click="emit('update:open', false)"
+            >
+              Cancel
+            </cut-button>
+            <slot name="footer" />
+          </div>
         </div>
       </dialog-content>
     </dialog-portal>
@@ -123,6 +141,10 @@ const toFirstField = (event: Event) => {
   animation: island-dialog-rise 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.island-dialog--wide {
+  width: min(56rem, calc(100vw - 2rem));
+}
+
 .island-dialog__scrim--still,
 .island-dialog--still {
   animation: none;
@@ -136,6 +158,23 @@ const toFirstField = (event: Event) => {
 
 .island-dialog__foot {
   flex: 0 0 auto;
+}
+
+.island-dialog__acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.island-dialog--danger {
+  --dialog-accent: var(--color-danger);
+}
+
+.island-dialog--danger .island-dialog__title {
+  color: var(--color-danger);
 }
 
 .island-dialog__head {

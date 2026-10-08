@@ -5,7 +5,7 @@ import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vu
 // The island's dialog portals to the body; a stand-in keeps what it holds where it can be read.
 const ModalDialog = {
   name: "ModalDialog",
-  props: ["open", "title", "testid"],
+  props: ["open", "title", "testid", "cancelTestid", "danger"],
   emits: ["update:open"],
   template: "<div><slot /><slot name='footer' /></div>",
 }
@@ -48,13 +48,15 @@ describe("RemoveSignUpDialog", () => {
     expect(dialog({modelValue: true}).text()).toContain("Remove this sign-up from the sign-ups?")
   })
 
-  it("closes on Cancel, and passes a close from the dialog straight through", async () => {
+  it("hands the dialog its Cancel and danger line, and passes a close from the dialog straight through", () => {
     const wrapper = dialog()
+    const modal = wrapper.getComponent({name: "ModalDialog"})
 
-    await wrapper.get("[data-testid=remove-signup-cancel-btn]").trigger("click")
-    wrapper.getComponent({name: "ModalDialog"}).vm.$emit("update:open", false)
+    modal.vm.$emit("update:open", false)
 
-    expect(wrapper.emitted("update:modelValue")).toEqual([[false], [false]])
-    expect(wrapper.getComponent({name: "ModalDialog"}).props("testid")).toBe("remove-signup-dialog")
+    expect(wrapper.emitted("update:modelValue")).toEqual([[false]])
+    expect(modal.props("testid")).toBe("remove-signup-dialog")
+    expect(modal.props("cancelTestid")).toBe("remove-signup-cancel-btn")
+    expect(modal.props("danger")).not.toBeUndefined()
   })
 })

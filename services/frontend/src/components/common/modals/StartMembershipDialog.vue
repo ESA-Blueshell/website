@@ -10,35 +10,29 @@
       </v-card-title>
 
       <v-card-text>
-        <Form
-          ref="formRef"
-          as="div"
-        >
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="membership.startDate"
-                :component-props="{ type: 'date', max: maxDate, 'data-testid': 'start-membership-start-date-field' }"
-                label="Start Date"
-                name="startDate"
-                rules="required"
-              />
-            </v-col>
-          </v-row>
+        <v-row>
+          <v-col cols="12">
+            <form-control
+              v-model="membership.startDate"
+              data-testid="start-membership-start-date-field"
+              :error-messages="errorsOf('startDate')"
+              kind="date"
+              label="Start Date"
+              :max="maxDate"
+              @blur="touch('startDate')"
+            />
+          </v-col>
+        </v-row>
 
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="membership.memberType"
-                :component="MemberTypeSelect"
-                :component-props="{ 'data-testid': 'start-membership-member-type-field' }"
-                label="Member Type"
-                name="memberType"
-                rules="required"
-              />
-            </v-col>
-          </v-row>
-        </Form>
+        <v-row>
+          <v-col cols="12">
+            <member-type-select
+              v-model="membership.memberType"
+              data-testid="start-membership-member-type-field"
+              :error-messages="errorsOf('memberType')"
+            />
+          </v-col>
+        </v-row>
       </v-card-text>
 
       <v-card-actions>
@@ -68,8 +62,7 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
 import {DateTime} from "luxon"
-import {Form, type FormContext} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import {
   type BoardCreateMembershipRequest,
@@ -77,7 +70,8 @@ import {
   type MembershipResponse,
   startMembershipAsBoard,
 } from "@/domains/user"
-import {handleSubmitError} from "@/composables/formUtils"
+import {reportRefusal, useFormChecks} from "@/composables/useFormChecks"
+import {required} from "@/utils/checks"
 
 interface Props {
   modelValue: boolean;
@@ -90,7 +84,6 @@ const emit = defineEmits<{
   (e: "update:membership", value: MembershipResponse): void;
 }>()
 
-const formRef = ref<FormContext>()
 const open = computed({
   get: () => props.modelValue,
   set: (val: boolean) => emit("update:modelValue", val),
@@ -105,18 +98,23 @@ const membership = ref<BoardCreateMembershipRequest>({
   incasso: false,
 })
 
+const checks = useFormChecks(() => ({
+  startDate: {value: () => membership.value.startDate, checks: [required]},
+  memberType: {value: () => membership.value.memberType, checks: [required]},
+}))
+const {errorsOf, touch} = checks
+
 const isSubmitting = ref(false)
 
 const confirm = async () => {
-  const validation = await formRef.value?.validate()
-  if (!validation?.valid) return
+  if (!checks.attempt()) return
 
   isSubmitting.value = true
   try {
     emit("update:membership", await startMembershipAsBoard(props.userId, membership.value))
     open.value = false
   } catch (error) {
-    handleSubmitError(formRef.value, error)
+    reportRefusal(checks, error)
   } finally {
     isSubmitting.value = false
   }

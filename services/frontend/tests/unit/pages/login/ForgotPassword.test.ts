@@ -5,13 +5,11 @@ import {mountInApp, settle} from "../helpers"
 const {
   mockRoute,
   mockRequestPasswordReset,
-  mockSetFieldValue,
 } = vi.hoisted(() => ({
   mockRoute: {
     query: {username: "alice"},
   },
   mockRequestPasswordReset: vi.fn(),
-  mockSetFieldValue: vi.fn(),
 }))
 
 vi.mock("vue-router", async (importOriginal) => {
@@ -21,17 +19,6 @@ vi.mock("vue-router", async (importOriginal) => {
     useRoute: () => mockRoute,
   }
 })
-
-vi.mock("vee-validate", () => ({
-  Form: {
-    emits: ["submit"],
-    template: "<form @submit.prevent=\"$emit('submit', {})\"><slot :meta='{ valid: true }' /></form>",
-  },
-  useForm: () => ({
-    setFieldValue: mockSetFieldValue,
-    handleSubmit: (cb: () => Promise<void>) => cb,
-  }),
-}))
 
 vi.mock("@/domains/recovery", () => ({
   requestPasswordReset: mockRequestPasswordReset,
@@ -44,15 +31,14 @@ describe("ForgotPassword page", () => {
     mockRequestPasswordReset.mockResolvedValue(undefined)
   })
 
-  const mountPage = () =>
-    mountInApp(ForgotPassword, {global: {stubs: {VvField: true}}})
+  const mountPage = () => mountInApp(ForgotPassword)
+  const field = (wrapper: ReturnType<typeof mountPage>) => wrapper.getComponent({name: "FormControl"})
 
   it("prefills username from query and asks for the reset", async () => {
     const wrapper = mountPage()
     await settle()
 
-    expect(mockSetFieldValue).toHaveBeenCalledWith("username", "alice")
-    expect((wrapper.vm as any).form.username).toBe("alice")
+    expect(field(wrapper).props("modelValue")).toBe("alice")
 
     await wrapper.get('[data-testid="forgot-password-form"]').trigger("submit")
     await settle()
@@ -70,7 +56,7 @@ describe("ForgotPassword page", () => {
     const wrapper = mountPage()
     await settle()
 
-    await (wrapper.vm as any).onSubmit()
+    await wrapper.get('[data-testid="forgot-password-form"]').trigger("submit")
     await settle()
 
     expect(wrapper.text()).not.toContain("you’ll receive an email")
@@ -81,18 +67,25 @@ describe("ForgotPassword page", () => {
     const wrapper = mountPage()
     await settle()
 
-    await (wrapper.vm as any).onSubmit()
+    await wrapper.get('[data-testid="forgot-password-form"]').trigger("submit")
     await settle()
 
     expect(wrapper.find('[data-testid="forgot-password-failed-alert"]').exists()).toBe(false)
   })
 
-  it("takes the username as typed", async () => {
-    const wrapper = mountInApp(ForgotPassword, {global: {stubs: {VvField: true}}})
-    await settle()
-    wrapper.getComponent({name: "VvField"}).vm.$emit("update:modelValue", "bob")
+  it("takes the username as typed, and asks for one before sending anything", async () => {
+    mockRoute.query = {}
+    const wrapper = mountPage()
     await settle()
 
-    expect((wrapper.vm as any).form.username).toBe("bob")
+    await wrapper.get('[data-testid="forgot-password-form"]').trigger("submit")
+    await settle()
+    expect(mockRequestPasswordReset).not.toHaveBeenCalled()
+    expect(field(wrapper).props("errorMessages")).toEqual(["This field is required"])
+
+    field(wrapper).vm.$emit("update:modelValue", "bob")
+    await wrapper.get('[data-testid="forgot-password-form"]').trigger("submit")
+    await settle()
+    expect(mockRequestPasswordReset).toHaveBeenCalledWith("bob")
   })
 })

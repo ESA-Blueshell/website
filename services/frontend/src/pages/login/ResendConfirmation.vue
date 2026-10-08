@@ -18,30 +18,30 @@
             You need it before you can sign in.
           </p>
 
-          <Form
-            v-slot="{ meta }"
-            as="form"
+          <form
             data-testid="resend-confirmation-form"
-            @submit="() => onSubmit()"
+            @submit.prevent="onSubmit"
           >
-            <VvField
+            <form-control
               v-model="form.username"
-              :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'resend-confirmation-username-field' }"
-              name="username"
-              rules="required"
+              autocomplete="username"
+              data-testid="resend-confirmation-username-field"
+              :error-messages="errorsOf('username')"
+              label="Username"
+              @blur="touch('username')"
             />
 
             <div class="form-save">
               <cut-button
                 tone="solid"
                 submit
-                :disabled="!meta.valid || loading"
+                :disabled="loading"
                 data-testid="resend-confirmation-submit-btn"
               >
                 Send confirmation mail
               </cut-button>
             </div>
-          </Form>
+          </form>
         </div>
 
         <div
@@ -63,8 +63,9 @@ import CutButton from "@/components/island/CutButton.vue"
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import VvField from "@/components/form/fields/VvField.vue"
-import {Form, useForm} from "vee-validate"
+import FormControl from "@/components/island/FormControl.vue"
+import {useFormChecks} from "@/composables/useFormChecks"
+import {required} from "@/utils/checks"
 import {resendActivation} from "@/domains/recovery"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 
@@ -82,19 +83,17 @@ const loading = ref(false)
 const succeeded = ref(false)
 
 const form = ref({username: ""})
-const {handleSubmit, setFieldValue} = useForm<{ username: string }>({
-  initialValues: {username: ""},
-})
+const {errorsOf, touch, attempt} = useFormChecks(() => ({
+  username: {value: () => form.value.username, checks: [required]},
+}))
 
 onMounted(() => {
   const q = route.query.username
-  if (typeof q === "string") {
-    setFieldValue("username", q)
-    form.value.username = q
-  }
+  if (typeof q === "string") form.value.username = q
 })
 
-const onSubmit = handleSubmit(async () => {
+const onSubmit = async () => {
+  if (!attempt()) return
   loading.value = true
   try {
     const result = await resendActivation(form.value.username)
@@ -106,7 +105,7 @@ const onSubmit = handleSubmit(async () => {
   } finally {
     loading.value = false
   }
-})
+}
 </script>
 
 <style lang="scss" scoped>

@@ -63,10 +63,14 @@ trap cleanup EXIT
 # Vault's public host sits behind the site's sign-in, which the vault CLI cannot pass, so the
 # script reaches the Service directly. An exported VAULT_ADDR skips this.
 if [[ -z ${VAULT_ADDR:-} ]]; then
-  # A machine with several clusters points kubectl at whichever was used last.
-  context=${KUBE_CONTEXT:-$(kubectl config current-context)}
+  # Never kubectl's current context: on a machine with several clusters that is whichever was
+  # used last, and every cluster may have a data-system/vault.
+  context=${KUBE_CONTEXT:-blueshell}
+  kubectl config get-contexts -o name | grep -qx "$context" ||
+    die "kubectl has no context \"$context\". Name Blueshell's with KUBE_CONTEXT=<name> $0"
   server=$(kubectl config view -o jsonpath="{.clusters[?(@.name==\"$(kubectl config view -o jsonpath="{.contexts[?(@.name==\"$context\")].context.cluster}")\")].cluster.server}")
-  read -rp "kubectl context \"$context\" ($server). Is this Blueshell's cluster? Type yes: " answer
+  read -rp "kubectl context \"$context\" ($server). Is this Blueshell's cluster? Type yes: " answer ||
+    die "No answer given."
   [[ $answer == yes ]] || die "Not confirmed. Pick the cluster with KUBE_CONTEXT=<name> $0"
   log=$(mktemp)
   kubectl --context "$context" -n data-system port-forward svc/vault :8200 >"$log" 2>&1 &

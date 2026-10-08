@@ -150,4 +150,20 @@ interface UserRepository : BaseRepository<User, Long> {
         @Param("afterId") afterId: Long,
         pageable: Pageable,
     ): List<Long>
+
+    /**
+     * The username and linked Discord id of the accounts among [ids], as a projection so the
+     * eagerly-joined member profile is left untouched and the leaderboard does not pay the N+1.
+     */
+    @Query("SELECT u.id AS id, u.username AS username, u.discordId AS discordId FROM User u WHERE u.id IN :ids")
+    fun findMemberIdentities(
+        @Param("ids") ids: Collection<Long>,
+    ): List<MemberIdentityRow>
+}
+
+/** A row of [UserRepository.findMemberIdentities]: an account's id, site username and linked Discord id. */
+interface MemberIdentityRow {
+    val id: Long
+    val username: String
+    val discordId: String?
 }

@@ -1,0 +1,26 @@
+package net.blueshell.api.pinger.api
+
+/**
+ * The paint job as anyone reads it: the settings, and the placements that make up the canvas, each
+ * already resolved to a public image URL and its box. A path, not an absolute URL — the caller
+ * resolves it against the api origin, as it does every other public file.
+ *
+ * [siteCieEnabled] gates the always-on SiteCie painter; [ratePps] is also its rate, since SiteCie
+ * is that painter.
+ */
+data class PaintView(
+    val prefix: String?,
+    val ratePps: Int,
+    val siteCieEnabled: Boolean,
+    val placements: List<PlacementView>,
+)
+
+/** One image on the canvas: its id, its public URL and the box it lands in on the 3840x2160 canvas. */
+data class PlacementView(
+    val id: Long,
+    val imageUrl: String,
+    val originX: Int,
+    val originY: Int,
+    val width: Int,
+    val height: Int,
+)

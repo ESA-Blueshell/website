@@ -3,7 +3,7 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {autocompletion} from "@codemirror/autocomplete"
 import {Compartment, EditorState} from "@codemirror/state"
-import {EditorView, placeholder as showPlaceholder} from "@codemirror/view"
+import {drawSelection, EditorView, placeholder as showPlaceholder} from "@codemirror/view"
 import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
 import {CODE_FONT} from "@/components/island/markdownLive"
 import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
@@ -188,7 +188,7 @@ const dress = EditorView.theme({
     fontSize: "0.85em",
     backgroundColor: "color-mix(in oklab, var(--color-void) 45%, transparent)",
   },
-  ".cm-placeholder": {color: "var(--color-ash)"},
+  ".cm-placeholder": {display: "inline", verticalAlign: "baseline", color: "var(--color-ash)"},
   "&.cm-editor .cm-selectionBackground, ::selection": {
     backgroundColor: "color-mix(in oklab, var(--color-brand) 35%, transparent)",
   },
@@ -228,7 +228,9 @@ onMounted(() => {
           addToOptions: [emojiOption, mentionOption],
           optionClass: mentionOptionClass,
         }),
-        showPlaceholder(placeholder),
+        drawSelection(),
+        // An empty editor places its cursor off the placeholder; without one Firefox sizes it to the whole line.
+        showPlaceholder(placeholder || "\u200b"),
         EditorView.lineWrapping,
         // Without this the editor is a div to a screen reader, not a textbox with a label.
         EditorView.contentAttributes.of({

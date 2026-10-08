@@ -49,6 +49,22 @@ describe("the markdown editor", () => {
     wrapper.unmount()
   })
 
+  it("draws its own cursor rather than the browser's", () => {
+    const wrapper = editor()
+    expect(wrapper.find(".cm-cursorLayer").exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it("keeps a placeholder text in an empty editor, a zero-width one where the form names none", () => {
+    const blank = editor({modelValue: "", placeholder: ""})
+    expect(blank.find(".cm-placeholder").text()).toBe("\u200b")
+    blank.unmount()
+
+    const named = editor({modelValue: "", placeholder: "Say what it is about."})
+    expect(named.find(".cm-placeholder").text()).toBe("Say what it is about.")
+    named.unmount()
+  })
+
   it("is a textbox with the field's own name, for anything reading the page", () => {
     const wrapper = editor({labelledBy: "description-label"})
     const content = wrapper.find(".cm-content")

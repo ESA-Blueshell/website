@@ -1,0 +1,28 @@
+# Dry run of the pinger against the dev stack: nothing leaves the container and every visitor
+# is treated as an admin. `docker compose --profile pinger up pinger`, then http://localhost:8090.
+services:
+  pinger:
+    profiles: [pinger]
+    image: pinger:dev
+    pull_policy: never
+    build:
+      context: .
+    ports:
+      - "8090:8090"
+    networks:
+      - global_network
+    environment:
+      - PINGER_DRY_RUN=1
+      - PINGER_VALKEY=valkey:6379
+      - PINGER_API_URL=http://api:8080
+      # A throwaway LOCAL dev token so the SiteCie reporter authenticates to the dev api. Matches
+      # the api's pinger.report.service-token (set in services/api/docker-compose.yml). Dry run
+      # sends nothing, so with the seeded documentation prefix nothing real is ever pinged.
+      - PINGER_REPORT_SERVICE_TOKEN=dev-sitecie-service-token
+    depends_on:
+      valkey:
+        condition: service_healthy
+
+networks:
+  global_network:
+    driver: bridge

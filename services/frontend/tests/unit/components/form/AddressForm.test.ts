@@ -21,61 +21,42 @@ vi.mock("@/domains/user", () => ({
   saveSignupAddress: mockSaveSignupAddress,
 }))
 
-vi.mock("@/composables/formUtils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/composables/formUtils")>()
-  return {
-    ...actual,
-    // formRef stays the composable's own ref: a template ref bound to a plain object
-    // never populates.
-    useVeeForm: () => ({...actual.useVeeForm(), validate: () => Promise.resolve(true)}),
-  }
-})
+const full = {street: "Hallenweg", houseNumber: "5", zipCode: "7522NH", city: "Enschede", country: "NL"}
 
-const vvFieldStub = {
-  name: "VvField",
-  props: ["name", "rules"],
-  template: "<div class='vv-field-stub' :data-name='name' :data-rules='rules' />",
-}
-const formStub = {template: "<div><slot /></div>"}
-
-function fieldRules(wrapper: ReturnType<typeof mountComponent>) {
-  return Object.fromEntries(
-    wrapper
-      .findAll(".vv-field-stub")
-      .map((field) => [String(field.attributes("data-name")), String(field.attributes("data-rules") ?? "")]),
-  )
-}
+const fieldLabelled = (wrapper: ReturnType<typeof mountComponent>, label: string) =>
+  wrapper.findAllComponents({name: "FormControl"}).find(field => field.props("label") === label)!
 
 describe("AddressForm", () => {
-  it("declares validation rules for all address fields", () => {
-    const wrapper = mountComponent(AddressForm, {
-      global: {
-        stubs: {
-          Form: formStub,
-          VvField: vvFieldStub,
-        },
-      },
-    })
-    expect(fieldRules(wrapper)).toMatchObject({
-      street: "required|minChars:2",
-      houseNumber: "required",
-      zipCode: "required|minChars:2",
-      city: "required|minChars:2",
-      country: "required",
-    })
-  })
+  it("asks for every part of the address, and two characters of the street, zipcode and city", async () => {
+    const wrapper = mountComponent(AddressForm, {props: {modelValue: {...full, street: "H", zipCode: "", city: "E"}, signupToken: "sel.ver"}})
 
-
-  it("takes what is typed into each field", async () => {
-    const wrapper = mountComponent(AddressForm, {global: {stubs: {Form: formStub, VvField: vvFieldStub}}})
-    const typed: Record<string, string> = {houseNumber: "12a", zipCode: "7522NB", city: "Enschede", country: "NL"}
-    for (const field of wrapper.findAllComponents(vvFieldStub)) {
-      const name = field.props("name") as string
-      if (name in typed) field.vm.$emit("update:modelValue", typed[name])
-    }
+    expect(await (wrapper.vm as any).save()).toBeNull()
     await wrapper.vm.$nextTick()
 
-    expect((wrapper.vm as any).address).toMatchObject(typed)
+    expect(mockSaveSignupAddress).not.toHaveBeenCalled()
+    expect(fieldLabelled(wrapper, "Street").props("errorMessages")).toEqual(["Must be at least 2 characters"])
+    expect(fieldLabelled(wrapper, "Zipcode").props("errorMessages")).toEqual(["This field is required"])
+    expect(fieldLabelled(wrapper, "City").props("errorMessages")).toEqual(["Must be at least 2 characters"])
+    expect(fieldLabelled(wrapper, "House Number").props("errorMessages")).toEqual([])
+  })
+
+  it("takes what is typed into each field", async () => {
+    const wrapper = mountComponent(AddressForm)
+    const typed: Record<string, string> = {"Street": "Hallenweg", "House Number": "12a", "Zipcode": "7522NB", "City": "Enschede", "Country": "BE"}
+    for (const [label, value] of Object.entries(typed)) fieldLabelled(wrapper, label).vm.$emit("update:modelValue", value)
+    await wrapper.vm.$nextTick()
+
+    expect((wrapper.vm as any).address).toMatchObject({street: "Hallenweg", houseNumber: "12a", zipCode: "7522NB", city: "Enschede", country: "BE"})
+  })
+
+  it("puts the api's refusal on the field it names", async () => {
+    mockSaveSignupAddress.mockRejectedValue({response: {status: 400, data: {errors: [{field: "zipCode", message: "is not a Dutch zipcode"}]}}})
+    const wrapper = mountComponent(AddressForm, {props: {modelValue: full, signupToken: "sel.ver"}, attrs: {"onUpdate:modelValue": vi.fn()}})
+
+    await (wrapper.vm as any).save()
+    await wrapper.vm.$nextTick()
+
+    expect(fieldLabelled(wrapper, "Zipcode").props("errorMessages")).toEqual(["is not a Dutch zipcode"])
   })
 
   describe("saving", () => {
@@ -88,9 +69,9 @@ describe("AddressForm", () => {
 
     const mount = (props: Record<string, unknown>) =>
       mountComponent(AddressForm, {
-        props,
+        props: {modelValue: full, ...props},
         attrs: {"onUpdate:modelValue": vi.fn()},
-        global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: true, CountrySelect: true}},
+        global: {stubs: {SubmitButton: true}},
       })
 
     it("signup: saves on the token and never sends a userId", async () => {
@@ -115,7 +96,7 @@ describe("AddressForm", () => {
     })
 
     it("updates the address it already has", async () => {
-      const wrapper = mount({modelValue: {id: 3, city: "Enschede", version: 1}})
+      const wrapper = mount({modelValue: {...full, id: 3, version: 1}})
 
       await (wrapper.vm as any).save()
 
@@ -125,7 +106,7 @@ describe("AddressForm", () => {
 
     it("hands back the address as saved, so a second save carries its new version", async () => {
       mockSaveAddressChange.mockResolvedValue({id: 3, city: "Enschede", version: 2})
-      const wrapper = mount({modelValue: {id: 3, city: "Enschede", version: 1}})
+      const wrapper = mount({modelValue: {...full, id: 3, version: 1}})
 
       expect(await (wrapper.vm as any).save()).toMatchObject({id: 3, version: 2})
     })

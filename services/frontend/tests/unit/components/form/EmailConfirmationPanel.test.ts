@@ -7,17 +7,11 @@ const {
   mockResendActivation,
   mockStore,
   mockHandleNetworkError,
-  mockHandleSubmitError,
-  mockValidate,
 } = vi.hoisted(() => ({
   mockCorrectSignupEmail: vi.fn(),
   mockResendActivation: vi.fn(),
   mockStore: {commit: vi.fn(), getters: {}},
   mockHandleNetworkError: vi.fn(),
-  mockHandleSubmitError: vi.fn(),
-  // What the address field's own rules say, which is what decides whether the
-  // correction is sent at all. Passes by default; one test flips it.
-  mockValidate: vi.fn(),
 }))
 
 vi.mock("@/domains/recovery", () => ({
@@ -25,25 +19,11 @@ vi.mock("@/domains/recovery", () => ({
   resendActivation: mockResendActivation,
 }))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
-vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
-// formRef is a real ref: a template ref bound to a plain object never populates.
-vi.mock("@/composables/formUtils", async () => {
-  const {ref} = await import("vue")
-  return {
-    useVeeForm: () => ({formRef: ref(), validate: mockValidate}),
-    handleSubmitError: mockHandleSubmitError,
-  }
-})
-
-// Shallow mounting stubs the vee-validate form, and a stub that swallows its slot
-// hides the field and the buttons inside it.
-const formStub = {template: "<div><slot /></div>"}
-const vvFieldStub = {name: "VvField", props: ["name", "rules"], template: "<div />"}
+vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError, $showStatusMessage: vi.fn()}))
 
 const mountPanel = (props: Record<string, unknown> = {}) =>
   mount(EmailConfirmationPanel, {
     props: {email: "lena@example.com", username: "lena", continuationToken: "sel.ver", ...props},
-    global: {stubs: {Form: formStub, VvField: vvFieldStub}},
   })
 
 type Panel = {
@@ -59,7 +39,6 @@ describe("EmailConfirmationPanel", () => {
     vi.clearAllMocks()
     mockCorrectSignupEmail.mockResolvedValue(undefined)
     mockResendActivation.mockResolvedValue({outcome: "sent"})
-    mockValidate.mockResolvedValue(true)
   })
 
   describe("correcting a mistyped address", () => {
@@ -94,13 +73,12 @@ describe("EmailConfirmationPanel", () => {
 
       await vm.correctEmailAddress()
 
-      expect(mockHandleSubmitError).toHaveBeenCalled()
+      expect(mockHandleNetworkError).toHaveBeenCalled()
       expect(vm.correcting).toBe(true)
       expect(wrapper.emitted("email-corrected")).toBeUndefined()
     })
 
     it("sends nothing when the address does not pass its own rules", async () => {
-      mockValidate.mockResolvedValue(false)
       const wrapper = mountPanel()
       const vm = wrapper.vm as unknown as Panel
       vm.correctedEmail = ""
@@ -129,9 +107,13 @@ describe("EmailConfirmationPanel", () => {
       ;(wrapper.vm as unknown as Panel).startCorrecting()
       await wrapper.vm.$nextTick()
 
-      const field = wrapper.findComponent({name: "VvField"})
-      expect(field.props("name")).toBe("email")
-      expect(field.props("rules")).toBe("required|email")
+      const field = wrapper.findComponent({name: "FormControl"})
+      field.vm.$emit("update:modelValue", "lena@example")
+      await (wrapper.vm as unknown as Panel).correctEmailAddress()
+      await wrapper.vm.$nextTick()
+
+      expect(mockCorrectSignupEmail).not.toHaveBeenCalled()
+      expect(field.props("errorMessages")).toEqual(["Enter a valid e-mail address"])
     })
 
     it("abandons the correction on cancel", async () => {

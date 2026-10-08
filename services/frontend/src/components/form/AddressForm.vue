@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 import {vFirstField} from "@/utils/firstField"
 import FormFields from "@/components/island/FormFields.vue"
-import {computed} from "vue"
-import {Form} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
+import {computed, reactive} from "vue"
+import FormControl from "@/components/island/FormControl.vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {
@@ -14,7 +13,9 @@ import {
   saveSignupAddress,
   type UpdateAddressRequest,
 } from "@/domains/user"
-import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
+import {useSaving} from "@/composables/formUtils"
+import {reportRefusal, useFormChecks} from "@/composables/useFormChecks"
+import {minChars, required} from "@/utils/checks"
 import {$showStatusMessage} from "@/plugins/handleNetworkError"
 import type {PartialNullable} from "@/types/api"
 
@@ -32,8 +33,9 @@ const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
 }>()
 
+// A default handed to an unbound v-model stays raw, so its checks would never see an edit.
 const address = defineModel<AddressModel>({
-  default: () => ({
+  default: () => reactive({
     country: "NL",
     city: "",
     street: "",
@@ -43,7 +45,15 @@ const address = defineModel<AddressModel>({
 })
 
 const isCreating = computed<boolean>(() => !address.value?.id)
-const {formRef, validate} = useVeeForm()
+const checks = useFormChecks(() => ({
+  street: {value: () => address.value.street, checks: [required, minChars(2)]},
+  houseNumber: {value: () => address.value.houseNumber, checks: [required]},
+  zipCode: {value: () => address.value.zipCode, checks: [required, minChars(2)]},
+  city: {value: () => address.value.city, checks: [required, minChars(2)]},
+  country: {value: () => address.value.country, checks: [required]},
+}))
+const {errorsOf, touch} = checks
+const validate = async (): Promise<boolean> => checks.attempt()
 const {isSaving, withSaving} = useSaving()
 
 const toCreateAddressRequest = (): CreateAddressRequest => ({
@@ -104,7 +114,7 @@ const save = async (): Promise<AddressModel | null> => {
     // Bound through v-model, address.value still reads the copy from before the save.
     return resp
   } catch (error: unknown) {
-    handleSubmitError(formRef.value, error)
+    reportRefusal(checks, error)
     emit("submitted", false)
     return null
   }
@@ -114,48 +124,43 @@ defineExpose({validate, save})
 </script>
 
 <template>
-  <Form
-    ref="formRef"
-    v-first-field
-    as="div"
-  >
+  <div v-first-field>
     <form-fields>
-      <VvField
+      <form-control
         v-model="address.street"
+        :error-messages="errorsOf('street')"
         label="Street"
-        name="street"
-        rules="required|minChars:2"
+        @blur="touch('street')"
       />
-      <VvField
+      <form-control
         v-model="address.houseNumber"
+        :error-messages="errorsOf('houseNumber')"
         label="House Number"
-        name="houseNumber"
-        rules="required"
+        @blur="touch('houseNumber')"
       />
     </form-fields>
 
     <form-fields>
-      <VvField
+      <form-control
         v-model="address.zipCode"
+        :error-messages="errorsOf('zipCode')"
         label="Zipcode"
-        name="zipCode"
-        rules="required|minChars:2"
+        @blur="touch('zipCode')"
       />
-      <VvField
+      <form-control
         v-model="address.city"
+        :error-messages="errorsOf('city')"
         label="City"
-        name="city"
-        rules="required|minChars:2"
+        @blur="touch('city')"
       />
     </form-fields>
 
     <form-fields>
-      <VvField
+      <country-select
         v-model="address.country"
-        :component="CountrySelect"
+        :error-messages="errorsOf('country')"
         label="Country"
-        name="country"
-        rules="required"
+        @blur="touch('country')"
       />
     </form-fields>
 
@@ -172,7 +177,7 @@ defineExpose({validate, save})
         @click="save"
       />
     </div>
-  </Form>
+  </div>
 </template>
 <style lang="scss" scoped>
 .form-save {

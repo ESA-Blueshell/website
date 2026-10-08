@@ -12,68 +12,74 @@
       </v-card-title>
 
       <v-card-text>
-        <Form
-          ref="formRef"
-          as="div"
-        >
-          <v-row dense>
-            <v-col cols="6">
-              <VvField
-                v-model="periodForm.startDate"
-                :component-props="{ type: 'date', 'data-testid': 'contribution-period-start-date-field' }"
-                label="Start Date"
-                name="startDate"
-                rules="required|dateBefore:@endDate"
-              />
-            </v-col>
-            <v-col cols="6">
-              <VvField
-                v-model="periodForm.endDate"
-                :component-props="{ type: 'date', 'data-testid': 'contribution-period-end-date-field' }"
-                label="End Date"
-                name="endDate"
-                rules="required|dateAfter:@startDate"
-              />
-            </v-col>
-          </v-row>
+        <v-row dense>
+          <v-col cols="6">
+            <form-control
+              v-model="periodForm.startDate"
+              data-testid="contribution-period-start-date-field"
+              :error-messages="errorsOf('startDate')"
+              kind="date"
+              label="Start Date"
+              @blur="touch('startDate')"
+            />
+          </v-col>
+          <v-col cols="6">
+            <form-control
+              v-model="periodForm.endDate"
+              data-testid="contribution-period-end-date-field"
+              :error-messages="errorsOf('endDate')"
+              kind="date"
+              label="End Date"
+              @blur="touch('endDate')"
+            />
+          </v-col>
+        </v-row>
 
-          <VvField
-            v-model="periodForm.halfYearCutoffDate"
-            :component-props="{ type: 'date', 'data-testid': 'contribution-period-half-year-cutoff-field' }"
-            hint="A regular membership starting after this date pays the half-year fee; one starting on it or before pays the full year."
-            label="Half Year Cutoff Date"
-            name="halfYearCutoffDate"
-            persistent-hint
-            rules="required|dateMin:@startDate|dateMax:@endDate"
-          />
+        <form-control
+          v-model="periodForm.halfYearCutoffDate"
+          data-testid="contribution-period-half-year-cutoff-field"
+          :error-messages="errorsOf('halfYearCutoffDate')"
+          hint="A regular membership starting after this date pays the half-year fee; one starting on it or before pays the full year."
+          kind="date"
+          label="Half Year Cutoff Date"
+          @blur="touch('halfYearCutoffDate')"
+        />
 
-          <VvField
-            v-model="periodForm.halfYearFee"
-            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-half-year-fee-field' }"
-            :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
-            label="Half Year Fee"
-            name="halfYearFee"
-            rules="required|minValue:0"
-          />
+        <form-control
+          data-testid="contribution-period-half-year-fee-field"
+          :error-messages="errorsOf('halfYearFee')"
+          kind="number"
+          label="Half Year Fee"
+          :model-value="String(periodForm.halfYearFee)"
+          step="0.01"
+          inputmode="decimal"
+          @blur="touch('halfYearFee')"
+          @update:model-value="(raw: string | null) => (periodForm.halfYearFee = raw ? Number(raw) : 0)"
+        />
 
-          <VvField
-            v-model="periodForm.fullYearFee"
-            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-full-year-fee-field' }"
-            :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
-            label="Full Year Fee"
-            name="fullYearFee"
-            rules="required|minValue:0"
-          />
+        <form-control
+          data-testid="contribution-period-full-year-fee-field"
+          :error-messages="errorsOf('fullYearFee')"
+          kind="number"
+          label="Full Year Fee"
+          :model-value="String(periodForm.fullYearFee)"
+          step="0.01"
+          inputmode="decimal"
+          @blur="touch('fullYearFee')"
+          @update:model-value="(raw: string | null) => (periodForm.fullYearFee = raw ? Number(raw) : 0)"
+        />
 
-          <VvField
-            v-model="periodForm.alumniFee"
-            :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-alumni-fee-field' }"
-            :update="(raw: string, handle: HandleChange<number>) => handle(raw === '' ? 0 : Number(raw))"
-            label="Alumni Fee"
-            name="alumniFee"
-            rules="required|minValue:0"
-          />
-        </Form>
+        <form-control
+          data-testid="contribution-period-alumni-fee-field"
+          :error-messages="errorsOf('alumniFee')"
+          kind="number"
+          label="Alumni Fee"
+          :model-value="String(periodForm.alumniFee)"
+          step="0.01"
+          inputmode="decimal"
+          @blur="touch('alumniFee')"
+          @update:model-value="(raw: string | null) => (periodForm.alumniFee = raw ? Number(raw) : 0)"
+        />
       </v-card-text>
 
       <v-card-actions>
@@ -107,8 +113,7 @@
 
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import {Form, type FormContext} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import {
   type ContributionPeriodResponse,
   type CreateContributionPeriodRequest,
@@ -116,8 +121,8 @@ import {
   savePeriod,
   type UpdateContributionPeriodRequest,
 } from "@/domains/contribution"
-import {handleSubmitError} from "@/composables/formUtils"
-import type {HandleChange} from "@/types/VVField.types.ts"
+import {reportRefusal, useFormChecks} from "@/composables/useFormChecks"
+import {dateAfter, dateBefore, dateMax, dateMin, minValue, required} from "@/utils/checks"
 
 defineOptions({name: "ContributionPeriodDialog"})
 
@@ -140,7 +145,21 @@ const emptyPeriod = (): PeriodFormModel => ({
 })
 
 const periodForm = ref<PeriodFormModel>(emptyPeriod())
-const formRef = ref<FormContext>()
+const checks = useFormChecks(() => {
+  const form = periodForm.value
+  return {
+    startDate: {value: () => form.startDate, checks: [required, dateBefore(() => form.endDate)]},
+    endDate: {value: () => form.endDate, checks: [required, dateAfter(() => form.startDate)]},
+    halfYearCutoffDate: {
+      value: () => form.halfYearCutoffDate,
+      checks: [required, dateMin(() => form.startDate), dateMax(() => form.endDate)],
+    },
+    halfYearFee: {value: () => form.halfYearFee, checks: [required, minValue(0)]},
+    fullYearFee: {value: () => form.fullYearFee, checks: [required, minValue(0)]},
+    alumniFee: {value: () => form.alumniFee, checks: [required, minValue(0)]},
+  }
+})
+const {errorsOf, touch} = checks
 const editedPeriodId = computed(() => props.contributionPeriod?.id)
 
 /**
@@ -150,7 +169,7 @@ const editedPeriodId = computed(() => props.contributionPeriod?.id)
  */
 const loadPeriod = (val?: ContributionPeriodResponse | null) => {
   periodForm.value = val ? {...val} : emptyPeriod()
-  formRef.value?.resetForm({values: {...periodForm.value}})
+  checks.settle()
 }
 
 watch(() => props.contributionPeriod, (val) => loadPeriod(val), {immediate: true})
@@ -176,8 +195,7 @@ const confirmDeletePeriod = () => {
 }
 
 const saveContributionPeriod = async () => {
-  const result = await formRef.value?.validate()
-  if (!result?.valid) return
+  if (!checks.attempt()) return
 
   const form = periodForm.value
   const fees = {
@@ -206,7 +224,7 @@ const saveContributionPeriod = async () => {
       closeDialog()
     }
   } catch (err) {
-    handleSubmitError(formRef.value, err)
+    reportRefusal(checks, err)
   }
 }
 </script>

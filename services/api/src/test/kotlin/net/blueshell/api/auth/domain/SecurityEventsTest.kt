@@ -92,6 +92,14 @@ class SecurityEventsTest {
     }
 
     @Test
+    fun `an old sign-in cookie is written to the log and mails nobody`() {
+        assertThat(events.record(7, SecurityEventKind.SIGN_IN_REUSED).kind).isEqualTo(SecurityEventKind.SIGN_IN_REUSED)
+
+        verifyNoInteractions(jobs)
+        verifyNoInteractions(tokens)
+    }
+
+    @Test
     fun `a lock and a break-glass run tell every admin`() {
         whenever(users.findAdministrators()).thenReturn(listOf(admin))
 

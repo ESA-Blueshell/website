@@ -1,41 +1,43 @@
 <script lang="ts" setup>
-import {Field} from "vee-validate"
 import CheckBox from "@/components/island/CheckBox.vue"
 import RadioGroup from "@/components/island/RadioGroup.vue"
 import TextArea from "@/components/island/TextArea.vue"
-import {computed, watch} from "vue"
+import {computed, reactive, watch} from "vue"
 import {type AnswerRequest, type QuestionResponse, QuestionType} from "@/domains/events"
 
 const props = withDefaults(
   defineProps<{
     question: QuestionResponse
+    /** What the form's checks say of this answer. */
+    errorMessages?: string[]
   }>(),
-  {},
+  {errorMessages: () => []},
 )
 
+const emit = defineEmits<{blur: []}>()
+
+// A default handed to an unbound v-model stays raw, so its checks would never see an edit.
 const answer = defineModel<AnswerRequest>({
-  default: () => ({questionId: 0, textResponse: "", optionSelections: []}),
+  default: () => reactive({questionId: 0, textResponse: "", optionSelections: []}),
 })
 
-const required = computed(() => props.question.required === true)
+const said = computed<string | undefined>(() => props.errorMessages[0])
+const blank = (): boolean[] => new Array(props.question.choiceLabels!.length).fill(false)
+const picked = computed<string | null>(() => {
+  const i = (answer.value.optionSelections ?? []).findIndex(Boolean)
+  return i >= 0 ? String(i) : null
+})
 
-const requireText = (val: unknown) => {
-  if (!required.value) return true
-  return (typeof val === "string" && val.trim().length > 0) || "This field is required"
+const pick = (key: string | null) => {
+  const next = blank()
+  if (key !== null) next[Number(key)] = true
+  answer.value.optionSelections = next
 }
 
-const requireAtLeastOneSelection = (selections: unknown) => {
-  if (!required.value) return true
-  const arr = Array.isArray(selections) ? selections : []
-  return arr.some(Boolean) || "Select at least one option"
-}
-
-const requireExactlyOneSelection = (selections: unknown) => {
-  const arr = Array.isArray(selections) ? selections : []
-  const chosen = arr.filter(Boolean).length
-  if (chosen > 1) return "Select exactly one option"
-  if (required.value && chosen === 0) return "Select one option"
-  return true
+const tick = (j: number, checked: boolean) => {
+  const next = Array.isArray(answer.value.optionSelections) ? [...answer.value.optionSelections] : blank()
+  next[j] = checked
+  answer.value.optionSelections = next
 }
 
 watch(
@@ -65,95 +67,47 @@ watch(
 
 <template v-if="answer">
   <template v-if="question.type === QuestionType.OPEN">
-    <Field
-      v-slot="{ value, errors, handleChange, handleBlur, meta }"
-      v-model="answer.textResponse"
-      :name="`${question.idx}.textResponse`"
-      :rules="requireText"
-      :validate-on-mount="false"
-    >
-      <text-area
-        class="answer-field__open"
-        :invalid="meta.touched && errors.length > 0"
-        :model-value="value ?? ''"
-        placeholder="Your answer"
-        :rows="2"
-        @blur="handleBlur"
-        @update:model-value="(v: string) => handleChange(v)"
-      />
-      <p
-        v-if="meta.touched && errors.length"
-        class="answer-field__said"
-      >
-        {{ errors[0] }}
-      </p>
-    </Field>
+    <text-area
+      class="answer-field__open"
+      :invalid="!!said"
+      :model-value="answer.textResponse ?? ''"
+      placeholder="Your answer"
+      :rows="2"
+      @blur="emit('blur')"
+      @update:model-value="(typed: string) => (answer.textResponse = typed)"
+    />
   </template>
 
   <template v-else-if="question.type === QuestionType.RADIO">
-    <Field
-      v-slot="{ value, errors, handleChange, handleBlur, meta }"
-      v-model="answer.optionSelections"
-      :name="`${question.idx}.optionSelections`"
-      :rules="requireExactlyOneSelection"
-      :validate-on-mount="false"
-    >
-      <radio-group
-        class="answer-field__radio"
-        :model-value="(() => {
-          const i = (value ?? []).findIndex(Boolean)
-          return i >= 0 ? String(i) : null
-        })()"
-        :name="`answer-${question.idx}`"
-        :options="(question.choiceLabels ?? []).map((label, j) => ({key: String(j), label}))"
-        @focusout="handleBlur"
-        @update:model-value="(key: string | null) => {
-          const arr = new Array(question.choiceLabels!.length).fill(false)
-          if (key !== null) arr[Number(key)] = true
-          handleChange(arr)
-        }"
-      />
-      <p
-        v-if="meta.touched && errors.length"
-        class="answer-field__said"
-      >
-        {{ errors[0] }}
-      </p>
-    </Field>
+    <radio-group
+      class="answer-field__radio"
+      :model-value="picked"
+      :name="`answer-${question.idx}`"
+      :options="(question.choiceLabels ?? []).map((label, j) => ({key: String(j), label}))"
+      @focusout="emit('blur')"
+      @update:model-value="pick"
+    />
   </template>
 
   <template v-else-if="question.type === QuestionType.CHECKBOX">
-    <Field
-      v-slot="{ value, errors, handleChange, handleBlur, meta }"
-      v-model="answer.optionSelections"
-      :name="`${question.idx}.optionSelections`"
-      :rules="requireAtLeastOneSelection"
-      :validate-on-mount="false"
-    >
-      <div class="answer-field__checkbox">
-        <check-box
-          v-for="(opt, j) in question.choiceLabels"
-          :key="j"
-          :label="opt"
-          :model-value="value?.[j] ?? false"
-          @focusout="handleBlur"
-          @update:model-value="(checked: boolean) => {
-            const arr = Array.isArray(value)
-              ? [...value]
-              : new Array(question.choiceLabels!.length).fill(false)
-            arr[j] = checked
-            handleChange(arr)
-          }"
-        />
-        <p
-          v-if="meta.touched && errors?.length"
-          class="answer-field__said"
-        >
-          {{ errors[0] }}
-        </p>
-      </div>
-    </Field>
+    <div class="answer-field__checkbox">
+      <check-box
+        v-for="(opt, j) in question.choiceLabels"
+        :key="j"
+        :label="opt"
+        :model-value="answer.optionSelections?.[j] ?? false"
+        @focusout="emit('blur')"
+        @update:model-value="(checked: boolean) => tick(j, checked)"
+      />
+    </div>
   </template>
+
+  <p
+    v-if="said"
+    class="answer-field__said"
+  >
+    {{ said }}
+  </p>
 </template>
 
 <style lang="scss" scoped>

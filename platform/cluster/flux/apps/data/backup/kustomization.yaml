@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - cronjob.yaml
+
+# Hashed, so an edit to a script reaches the next night's Job.
+configMapGenerator:
+  - name: backup-scripts
+    namespace: data-system
+    files:
+      - collect.sh
+      - dump.sh
+      - snapshot.sh

@@ -136,6 +136,26 @@ path "auth/token/renew-self"   { capabilities = ["update"] }
 path "auth/token/revoke-self"  { capabilities = ["update"] }
 EOF
 
+# The nightly backup (apps/data/backup): a Raft snapshot, a read-only database login, the
+# Kopia password and writer key, and the token it reports to Gatus with.
+cat <<'EOF' >/tmp/backup.hcl
+path "sys/storage/raft/snapshot" {
+  capabilities = ["read"]
+}
+
+path "database/creds/backup" {
+  capabilities = ["read"]
+}
+
+path "secret/data/platform/backup" {
+  capabilities = ["read"]
+}
+
+path "secret/data/platform/alerting" {
+  capabilities = ["read"]
+}
+EOF
+
 cat <<'EOF' >/tmp/vso.hcl
 path "secret/data/platform/edge" {
   capabilities = ["read"]
@@ -167,6 +187,7 @@ vault policy write migrate /tmp/migrate.hcl
 vault policy write stalwart /tmp/stalwart.hcl
 vault policy write vso /tmp/vso.hcl
 vault policy write admin /tmp/admin.hcl
+vault policy write backup /tmp/backup.hcl
 
 # --- Kubernetes auth roles ---------------------------------------------
 
@@ -186,6 +207,12 @@ vault write auth/kubernetes/role/stalwart \
   bound_service_account_names="stalwart" \
   bound_service_account_namespaces="mail-system" \
   policies="stalwart" \
+  ttl="1h"
+
+vault write auth/kubernetes/role/backup \
+  bound_service_account_names="backup" \
+  bound_service_account_namespaces="data-system" \
+  policies="backup" \
   ttl="1h"
 
 vault write auth/kubernetes/role/vso \
@@ -216,6 +243,26 @@ else
 fi
 unset BOUNCE_READ
 
+# The nightly backup reports to Gatus with this token, which Gatus reads through the
+# alerting-discord Secret. Seeded once and never overwritten, like account.bounce.
+if TOKEN_READ=$(vault kv get -field=gatus.backup_token secret/platform/alerting 2>&1); then
+  :
+elif printf '%s' "$TOKEN_READ" | grep -q -e 'No value found' -e 'not present in secret'; then
+  BACKUP_TOKEN=$(head -c 48 /dev/urandom | base64 | tr -d '=+/\n' | head -c 48)
+  [ "${#BACKUP_TOKEN}" -eq 48 ] || { echo "Could not generate gatus.backup_token." >&2; exit 1; }
+  if printf '%s' "$TOKEN_READ" | grep -q 'No value found'; then
+    printf '%s' "$BACKUP_TOKEN" | vault kv put secret/platform/alerting gatus.backup_token=- >/dev/null
+  else
+    printf '%s' "$BACKUP_TOKEN" | vault kv patch secret/platform/alerting gatus.backup_token=- >/dev/null
+  fi
+  unset BACKUP_TOKEN
+  echo "Seeded secret/platform/alerting gatus.backup_token."
+else
+  echo "Could not read secret/platform/alerting: $TOKEN_READ" >&2
+  exit 1
+fi
+unset TOKEN_READ
+
 # --- MariaDB dynamic secrets (database engine) --------------------------
 #
 # The api reads DB creds from Vault via `database/creds/api`. The
@@ -238,7 +285,7 @@ if vault kv get secret/platform/mariadb >/dev/null 2>&1; then
 
   vault write database/config/mariadb \
     plugin_name=mysql-database-plugin \
-    allowed_roles="api" \
+    allowed_roles="api,backup" \
     connection_url="{{username}}:{{password}}@tcp(mariadb.data-system.svc.cluster.local:3306)/" \
     username="${DB_ADMIN_USER}" \
     password="${DB_ADMIN_PASS}" \
@@ -251,6 +298,13 @@ if vault kv get secret/platform/mariadb >/dev/null 2>&1; then
     default_ttl="72h" \
     max_ttl="168h" \
     creation_statements="CREATE USER '{{name}}'@'%' IDENTIFIED BY '{{password}}'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE TEMPORARY TABLES ON blueshell.* TO '{{name}}'@'%';"
+
+  # The nightly dump: reads only, for an hour at most. TRIGGER lets it dump the triggers.
+  vault write database/roles/backup \
+    db_name=mariadb \
+    default_ttl="1h" \
+    max_ttl="2h" \
+    creation_statements="CREATE USER '{{name}}'@'%' IDENTIFIED BY '{{password}}'; GRANT SELECT, SHOW VIEW, TRIGGER ON blueshell.* TO '{{name}}'@'%';"
 
   unset DB_ADMIN_USER DB_ADMIN_PASS
 else

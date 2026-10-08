@@ -1,0 +1,150 @@
+# Vault's kubernetes auth binds role `backup` to this account (apps/data/vault/bootstrap-auth.sh).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup
+  namespace: data-system
+---
+# Every night MariaDB and Vault go to the Kopia repository on Scaleway in one run, so both carry
+# the same date and restore together. platform/docs/backup.md has the restore paths.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup
+  namespace: data-system
+spec:
+  schedule: '0 3 * * *'
+  timeZone: Europe/Amsterdam
+  concurrencyPolicy: Forbid
+  # A night missed by more than an hour is left to Gatus's heartbeat, not run at noon.
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: backup
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          # The steps run in order and hand over through /work. An init step that fails writes
+          # /work/status/failed and exits 0, so the last step can report it to Gatus.
+          initContainers:
+            - name: collect
+              image: hashicorp/vault:1.21
+              imagePullPolicy: IfNotPresent
+              command: [sh, /scripts/collect.sh]
+              env:
+                - name: VAULT_ADDR
+                  value: http://vault.data-system.svc.cluster.local:8200
+                - name: HOME
+                  value: /work
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+            - name: dump
+              image: mariadb:10.11
+              imagePullPolicy: IfNotPresent
+              command: [bash, /scripts/dump.sh]
+              env:
+                - name: MARIADB_HOST
+                  value: mariadb.data-system.svc.cluster.local
+                - name: HOME
+                  value: /work
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  memory: 768Mi
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          containers:
+            - name: snapshot
+              image: kopia/kopia:0.23.1
+              imagePullPolicy: IfNotPresent
+              command: [bash, /scripts/snapshot.sh]
+              env:
+                - name: BACKUP_BUCKET
+                  value: esa-blueshell-backups
+                - name: BACKUP_ENDPOINT
+                  value: s3.nl-ams.scw.cloud
+                - name: BACKUP_REGION
+                  value: nl-ams
+                # The bucket's COMPLIANCE lock, platform/scaleway/backup's lock_days. Change both.
+                - name: LOCK_PERIOD
+                  value: 720h
+                - name: GATUS_PUSH_URL
+                  value: http://gatus.utility-system.svc.cluster.local/api/v1/endpoints/backups_nightly-backup/external
+                - name: KOPIA_CONFIG_PATH
+                  value: /work/kopia/repository.config
+                - name: KOPIA_CACHE_DIRECTORY
+                  value: /work/kopia/cache
+                - name: KOPIA_LOG_DIR
+                  value: /work/kopia/logs
+                - name: HOME
+                  value: /work
+                # The root filesystem is read-only.
+                - name: TMPDIR
+                  value: /work
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  memory: 1536Mi
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            # In memory: the dump, the snapshot and the night's credentials never touch the node's disk.
+            - name: work
+              emptyDir:
+                medium: Memory
+                sizeLimit: 1Gi
+            - name: scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0555

@@ -17,6 +17,7 @@ platform:
   - 'scripts/check-flux-manifests.sh'
   - 'scripts/regenerate-flux-components.sh'
   - 'scripts/seed-vault-from-env.sh'
+  - 'scripts/seed-backup-credentials.sh'
 
 # The api suites, and the system tests, which drive the api.
 api:

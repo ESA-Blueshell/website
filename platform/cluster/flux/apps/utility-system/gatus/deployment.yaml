@@ -43,6 +43,16 @@ spec:
                   name: alerting-discord
                   key: DISCORD_WEBHOOK_URL
                   optional: true
+            - name: BACKUP_TOKEN_FROM_VAULT
+              valueFrom:
+                secretKeyRef:
+                  name: alerting-discord
+                  key: GATUS_BACKUP_TOKEN
+                  optional: true
+            # Never empty, or Gatus panics: without the Secret the reference stays unresolved
+            # and the literal text stands in. No Secret means no webhook, so no alert to hide.
+            - name: GATUS_BACKUP_TOKEN
+              value: $(BACKUP_TOKEN_FROM_VAULT)
           ports:
             - containerPort: 8080
               name: http

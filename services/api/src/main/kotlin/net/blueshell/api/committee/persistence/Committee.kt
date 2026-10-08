@@ -22,6 +22,7 @@ import net.blueshell.api.user.persistence.User
 import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.time.Instant
 
 @Entity
 @Table(
@@ -48,6 +49,9 @@ class Committee(
     /** A committee that no longer runs: kept, with its page and its events, but not offered. */
     @Column(name = "archived", nullable = false)
     var archived: Boolean = false,
+    /** Since when it no longer runs; set exactly while [archived] is, which the database checks. */
+    @Column(name = "archived_at")
+    var archivedAt: Instant? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "banner_file_id")
     var banner: File? = null,

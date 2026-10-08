@@ -2,6 +2,7 @@ package net.blueshell.api.committee.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.file.api.Image
+import java.time.Instant
 
 /** A committee as its public page shows it. Its members are named by Discord only, never by name. */
 @Schema(name = "CommitteePageResponse")
@@ -11,6 +12,8 @@ data class CommitteePageResponse(
     val slug: String,
     val description: String,
     val archived: Boolean,
+    @field:Schema(description = "Since when it no longer runs; absent while it runs")
+    val archivedAt: Instant?,
     val banner: Image?,
     @field:Schema(description = "Its logo, absent for none")
     val icon: Image?,

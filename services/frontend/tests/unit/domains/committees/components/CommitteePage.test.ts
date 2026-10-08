@@ -114,6 +114,12 @@ describe("one committee's page", () => {
     expect(wrapper.find("[data-testid=committee-games]").exists()).toBe(false)
   })
 
+  it("says since when a committee is archived, where that is known", () => {
+    const wrapper = mountPage({archived: true, archivedAt: "2025-02-26T22:33:42Z", gameCodes: []})
+
+    expect(wrapper.get("[data-testid=committee-archived]").text()).toBe("Archived since February 2025")
+  })
+
   it("reads the committee again once it is archived or brought back", async () => {
     rights.isBoard = ref(true)
     committees.committees = ref([])

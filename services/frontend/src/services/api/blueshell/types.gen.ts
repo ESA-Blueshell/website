@@ -734,6 +734,10 @@ export type CommitteeOwnPageRequest = {
 
 export type CommitteePageResponse = {
     archived: boolean;
+    /**
+     * Since when it no longer runs; absent while it runs
+     */
+    archivedAt?: string | null;
     banner?: Image | null;
     description: string;
     gameCodes: Array<string>;
@@ -752,6 +756,10 @@ export type CommitteeResponse = {
      * Whether the committee no longer runs
      */
     archived: boolean;
+    /**
+     * Since when it no longer runs; absent while it runs
+     */
+    archivedAt?: string | null;
     banner?: Image | null;
     createdAt: string;
     description: string;

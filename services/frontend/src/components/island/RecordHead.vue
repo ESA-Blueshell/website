@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed} from "vue"
+import {DateTime} from "luxon"
 import {type Picture, srcsetOf} from "./pictures"
 import BackBar from "./BackBar.vue"
 
@@ -11,7 +12,7 @@ import BackBar from "./BackBar.vue"
  */
 defineOptions({name: "RecordHead"})
 
-const {banner = null, icon = null, archived = false} = defineProps<{
+const {banner = null, icon = null, archived = false, archivedSince = null} = defineProps<{
   testid: string
   back: {to: string; label: string}
   eyebrow: string
@@ -21,9 +22,13 @@ const {banner = null, icon = null, archived = false} = defineProps<{
   banner?: Picture | null
   icon?: string | null
   archived?: boolean
+  /** When it was archived, as the api answers it; the tag names the month where one is known. */
+  archivedSince?: string | null
 }>()
 
 const bannerSrcset = computed(() => srcsetOf(banner))
+const archivedSaid = computed(() =>
+  (archivedSince ? `Archived since ${DateTime.fromISO(archivedSince).toFormat("LLLL yyyy")}` : "Archived"))
 </script>
 
 <template>
@@ -48,7 +53,7 @@ const bannerSrcset = computed(() => srcsetOf(banner))
           v-if="archived"
           class="record-head__tag"
           :data-testid="`${testid}-archived`"
-        >Archived</span>
+        >{{ archivedSaid }}</span>
       </div>
       <h1 class="record-head__title">
         <img

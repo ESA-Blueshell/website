@@ -13,6 +13,8 @@ import net.blueshell.api.user.api.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
+import java.time.Instant
 
 @Service
 class CommitteeService
@@ -24,6 +26,7 @@ class CommitteeService
         private val pictures: StoredPictures,
         private val games: GameService,
         private val events: List<CommitteeEvents>,
+        private val clock: Clock,
     ) {
         /**
          * Every committee, with what a listing draws of each already read.
@@ -149,14 +152,17 @@ class CommitteeService
             return repository.saveAndFlush(committee)
         }
 
-        /** A committee that stopped running, or runs again. */
+        /** A committee that stopped running, or runs again. Archived again, it keeps the moment it first stopped. */
         @Transactional
         fun archive(
             id: Long,
             archived: Boolean,
         ): Committee {
             val committee = findById(id)
-            committee.archived = archived
+            if (archived != committee.archived) {
+                committee.archived = archived
+                committee.archivedAt = if (archived) Instant.now(clock) else null
+            }
             return repository.saveAndFlush(committee)
         }
 

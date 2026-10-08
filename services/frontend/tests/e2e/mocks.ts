@@ -38,6 +38,7 @@ import type {
   JobExecution,
   LinkBoardMemberRequest,
   LinkRosterEntryRequest,
+  FirstContribution,
   MembershipResponse,
   PublishLineupRequest,
   Role,
@@ -72,6 +73,8 @@ type Fixtures = {
   contributionPeriods?: Wire<ContributionPeriodResponse>[]
   /** The period the membership page and the signup form quote, or null where none is recorded. */
   currentContributionPeriod?: Wire<ContributionPeriodResponse> | null
+  /** What the signed-in reader pays to make a pending membership active; none by default. */
+  firstContribution?: Wire<FirstContribution> | null
   /** The association's own numbers, or null where the endpoint refuses to say. */
   associationStatistics?: Wire<AssociationStatisticsResponse> | null
   contributions?: Wire<ContributionResponse>[]
@@ -879,6 +882,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/users/me/trusted-browsers") {
       return answer(route, "trustedBrowsers", [])
+    }
+    if (method === "GET" && path === "/users/me/first-contribution") {
+      return fixtures.firstContribution ? answer(route, "findOwnFirstContribution", fixtures.firstContribution) : route.fulfill({status: 204, body: ""})
     }
     if (method === "POST" && path === "/users/me/two-factor/setup") {
       return answer(route, "setUpTwoFactor", {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})

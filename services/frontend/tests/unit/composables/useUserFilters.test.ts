@@ -95,6 +95,19 @@ describe("useUserFilters", () => {
     expect(filteredRows.value[0]!.id).toBe(2)
   })
 
+  it("memberFilter=pending shows only members waiting for their first contribution", () => {
+    const rows = ref([
+      makeRow(1, {status: "Current"}),
+      makeRow(2, {status: "Pending"}),
+      makeRow(3, {status: "Former"}),
+    ])
+    const index = ref(new Map([[1, "u1"], [2, "u2"], [3, "u3"]]))
+    const {filteredRows, memberFilter} = useUserFilters(rows, index)
+
+    memberFilter.value = "pending"
+    expect(filteredRows.value.map((row) => row.id)).toEqual([2])
+  })
+
   it("paidFilter=yes shows only paid users", () => {
     const rows = ref([makeRow(1, {paid: true}), makeRow(2, {paid: false})])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))

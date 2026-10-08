@@ -29,6 +29,11 @@
           give it a description and add any members to it.
         </p>
 
+        <pending-membership
+          v-if="user"
+          class="mt-6"
+        />
+
         <div
           v-if="user"
           class="mt-10"
@@ -53,6 +58,7 @@ import {useStore} from "vuex"
 import AccountFrame from "@/components/common/AccountFrame.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import UserForm from "@/components/form/UserForm.vue"
+import PendingMembership from "@/components/account/PendingMembership.vue"
 import {readUser} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useIsBoard} from "@/composables/useIsBoard"

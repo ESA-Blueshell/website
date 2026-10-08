@@ -18,9 +18,7 @@ class InMemorySignInStore : SignInStore {
 
     override fun find(id: String): SignIn? = signIns[id]
 
-    override fun delete(id: String) {
-        signIns.remove(id)
-    }
+    override fun delete(id: String): Boolean = signIns.remove(id) != null
 
     override fun unindex(
         userId: Long,

@@ -107,7 +107,9 @@ class SignIns(
             .filter { isLive(it.id) }
             .sortedByDescending { it.startedAt }
 
-    fun end(id: String) = store.delete(id)
+    fun end(id: String) {
+        store.delete(id)
+    }
 
     /**
      * Ends every sign-in the person holds by moving their security stamp. The one named by [keep]
@@ -174,8 +176,8 @@ class SignIns(
         browser: Browser,
         now: Instant,
     ): Resolution {
-        store.delete(signIn.id)
-        events.publishEvent(SignInEndedAsSuspicious(signIn.userId, reason, browser, now))
+        // Requests arriving together all find the record; only the one that removes it reports it.
+        if (store.delete(signIn.id)) events.publishEvent(SignInEndedAsSuspicious(signIn.userId, reason, browser, now))
         return Resolution.Refused
     }
 

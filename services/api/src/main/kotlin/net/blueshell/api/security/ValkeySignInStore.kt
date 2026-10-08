@@ -32,10 +32,11 @@ class ValkeySignInStore(
         return signInOf(id, fields)
     }
 
-    override fun delete(id: String) {
+    override fun delete(id: String): Boolean {
         val userId = redis.opsForHash<String, String>().get(key(id), USER_ID)
-        redis.delete(key(id))
+        val removed = redis.delete(key(id))
         userId?.let { redis.opsForSet().remove(indexKey(it.toLong()), id) }
+        return removed
     }
 
     override fun unindex(

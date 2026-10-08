@@ -71,9 +71,10 @@ class ValkeySignInStoreTest {
         store.save(signIn, later)
         store.save(signIn.copy(id = "s2"), later)
 
-        store.delete("s1")
+        assertThat(store.delete("s1")).isTrue()
+        assertThat(store.delete("s1")).isFalse()
         store.unindex(7, "s2")
-        store.delete("never-was")
+        assertThat(store.delete("never-was")).isFalse()
 
         assertThat(store.find("s1")).isNull()
         assertThat(store.idsOf(7)).isEmpty()

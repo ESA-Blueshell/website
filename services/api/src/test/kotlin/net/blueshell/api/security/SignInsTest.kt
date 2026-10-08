@@ -63,6 +63,25 @@ class SignInsTest {
     }
 
     @Test
+    fun `requests that find the same old cookie at once report it once`() {
+        var removed = false
+        val racing =
+            object : SignInStore by store {
+                override fun delete(id: String): Boolean = (!removed).also { removed = true }
+            }
+        val raced =
+            SignIns(racing, tokens, clock, events, Duration.ofDays(30), Duration.ofDays(14), Duration.ofMinutes(5), Duration.ofSeconds(60))
+        val first = raced.start(7, firefox)
+        clock.advance(Duration.ofMinutes(5))
+        raced.resolve(first.token, firefox, true)
+        clock.advance(Duration.ofSeconds(61))
+
+        repeat(3) { assertThat(raced.resolve(first.token, firefox, true)).isEqualTo(Resolution.Refused) }
+
+        assertThat(published).hasSize(1)
+    }
+
+    @Test
     fun `a request from another browser family or system ends the sign-in`() {
         val issued = signIns.start(7, firefox)
 

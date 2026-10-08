@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, reactive, ref} from "vue"
 import DocumentTable from "@/components/base/DocumentTable.vue"
 import ContributionPeriod from "@/components/base/ContributionPeriodComponent.vue"
-import {defineRule, Form} from "vee-validate"
 import {
   applyForMembership,
   type MembershipResponse,
@@ -11,15 +10,13 @@ import {
   startMembershipAsBoard,
   startOwnMembership,
 } from "@/domains/user"
-import VvField from "@/components/form/fields/VvField.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import SubmitButton from "@/components/form/SubmitButton.vue"
-import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
-import type {FieldMap} from "@/plugins/validation"
-
-// TWIN: the api's MembershipConditions, which refuses an application that does not accept them.
-defineRule("accepted", (value: unknown) => value === true || "You must accept the membership conditions to continue.")
+import {useSaving} from "@/composables/formUtils"
+import {type FieldChecks, type FieldMap, reportRefusal, useFormChecks} from "@/composables/useFormChecks"
+import {accepted, required} from "@/utils/checks"
 
 // The request calls the agreement `conditionsAccepted` and the checkbox that
 // collects it is `consented`, so a refusal only reaches the box by name.
@@ -50,13 +47,29 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ (e: "submitted", ok: boolean): void }>()
 
-const membership = defineModel<MembershipResponse>({default: () => ({}) as MembershipResponse})
+// A default handed to an unbound v-model stays raw, so its checks would never see an edit.
+const membership = defineModel<MembershipResponse>({default: () => reactive({}) as MembershipResponse})
 
-const {formRef, validate} = useVeeForm()
 const {isSaving, withSaving} = useSaving()
 const consented = ref(false)
 const isCreating = computed<boolean>(() => !membership.value?.id)
 const isBoardMode = computed<boolean>(() => props.userId !== undefined)
+
+const checks = useFormChecks((): Record<string, FieldChecks> => (isBoardMode.value
+  ? {
+    startDate: {value: () => membership.value.startDate, checks: [required]},
+    endDate: {value: () => membership.value.endDate, checks: []},
+    memberType: {value: () => membership.value.memberType, checks: [required]},
+  }
+  : {
+    // TWIN: the api's MembershipConditions, which refuses an application that does not accept them.
+    consented: {
+      value: () => consented.value,
+      checks: [accepted("You must accept the membership conditions to continue.")],
+    },
+  }))
+const {errorsOf, touch, valid} = checks
+const validate = async (): Promise<boolean> => checks.attempt()
 
 const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null> => {
   if (!(await validate())) {
@@ -90,7 +103,7 @@ const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null
     emit("submitted", true)
     return membership.value
   } catch (err: unknown) {
-    handleSubmitError(formRef.value, err, membershipFieldMap)
+    reportRefusal(checks, err, membershipFieldMap)
     emit("submitted", false)
     return null
   }
@@ -100,11 +113,7 @@ defineExpose({validate, save})
 </script>
 
 <template>
-  <Form
-    ref="formRef"
-    v-slot="{ meta }"
-    as="div"
-  >
+  <div>
     <!-- Board mode: compact date/type/incasso fields for administrative use -->
     <template v-if="isBoardMode">
       <v-row dense>
@@ -112,23 +121,26 @@ defineExpose({validate, save})
           cols="12"
           sm="6"
         >
-          <VvField
+          <form-control
             v-model="membership.startDate"
-            :component-props="{ type: 'date', 'data-testid': 'membership-form-start-date' }"
+            data-testid="membership-form-start-date"
+            :error-messages="errorsOf('startDate')"
+            kind="date"
             label="Start Date"
-            name="startDate"
-            rules="required"
+            @blur="touch('startDate')"
           />
         </v-col>
         <v-col
           cols="12"
           sm="6"
         >
-          <VvField
+          <form-control
             v-model="membership.endDate"
-            :component-props="{ type: 'date', 'data-testid': 'membership-form-end-date' }"
+            data-testid="membership-form-end-date"
+            :error-messages="errorsOf('endDate')"
+            kind="date"
             label="End Date"
-            name="endDate"
+            @blur="touch('endDate')"
           />
         </v-col>
       </v-row>
@@ -137,13 +149,10 @@ defineExpose({validate, save})
           cols="12"
           sm="6"
         >
-          <VvField
+          <member-type-select
             v-model="membership.memberType"
-            :component="MemberTypeSelect"
-            :component-props="{ 'data-testid': 'membership-form-member-type' }"
-            label="Member Type"
-            name="memberType"
-            rules="required"
+            data-testid="membership-form-member-type"
+            :error-messages="errorsOf('memberType')"
           />
         </v-col>
         <v-col
@@ -177,12 +186,10 @@ defineExpose({validate, save})
         <contribution-period is-form />
 
         <div class="checkbox-row">
-          <VvField
+          <check-box
             v-model="consented"
-            :component="CheckBox"
+            :error-messages="errorsOf('consented')"
             label="I confirm that I have read and agree to the membership terms above, including the Statutes, Domestic Regulations, and Privacy Policy, and I understand these conditions are required for membership."
-            name="consented"
-            rules="accepted"
           />
         </div>
       </div>
@@ -193,7 +200,7 @@ defineExpose({validate, save})
       class="form-save"
     >
       <submit-button
-        :disabled="isSaving || !meta.valid"
+        :disabled="isSaving || !valid"
         :loading="isSaving"
         :text="props.submitText"
         :data-testid="props.submitTestId"
@@ -201,7 +208,7 @@ defineExpose({validate, save})
         @click="save"
       />
     </div>
-  </Form>
+  </div>
 </template>
 
 <style lang="scss" scoped>

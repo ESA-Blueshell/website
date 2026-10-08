@@ -1,16 +1,16 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import {Form, type FormContext} from "vee-validate"
 import AnswerField from "@/components/form/fields/AnswerField.vue"
+import {answerChecks} from "@/components/form/fields/answerChecks"
 import QuestionCard from "@/components/form/common/QuestionCard.vue"
 import QuestionLabel from "@/components/form/common/QuestionLabel.vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
 import {type AnswerRequest, type QuestionResponse, QuestionType, type SurveyResponse} from "@/domains/events"
+import {useFormChecks} from "@/composables/useFormChecks"
 
 const props = defineProps<{ survey?: SurveyResponse | null }>()
 const answers = defineModel<AnswerRequest[]>({default: () => []})
 
-const formRef = ref<FormContext | undefined>()
 const questions = computed<QuestionResponse[]>(() => props.survey?.questions ?? [])
 
 const answerIndexByQuestionIdx = ref<Map<number, number>>(new Map())
@@ -29,20 +29,24 @@ watch(
   {immediate: true, deep: true},
 )
 
+const answerName = (question: QuestionResponse): string => `answers[${answerIndexByQuestionIdx.value.get(question.idx)}]`
+
+const {errorsOf, touch, attempt} = useFormChecks(() => Object.fromEntries(questions.value
+  .filter(question => answerIndexByQuestionIdx.value.has(question.idx))
+  .map(question => [answerName(question), {
+    value: () => answers.value[answerIndexByQuestionIdx.value.get(question.idx)!],
+    checks: answerChecks(question),
+  }])))
+
 async function validate() {
-  const result = await formRef.value?.validate()
-  return !!result?.valid
+  return attempt()
 }
 
 defineExpose({validate})
 </script>
 
 <template>
-  <Form
-    ref="formRef"
-    as="div"
-    class="answers-form"
-  >
+  <div class="answers-form">
     <template
       v-for="question in questions"
       :key="question?.idx"
@@ -69,11 +73,13 @@ defineExpose({validate})
         <answer-field
           v-if="answerIndexByQuestionIdx.has(question.idx)"
           v-model="answers[answerIndexByQuestionIdx.get(question.idx)!]"
+          :error-messages="errorsOf(answerName(question))"
           :question="question"
+          @blur="touch(answerName(question))"
         />
       </question-card>
     </template>
-  </Form>
+  </div>
 </template>
 
 <style lang="scss" scoped>

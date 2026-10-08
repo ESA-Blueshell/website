@@ -1,7 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {mount, type VueWrapper} from "@vue/test-utils"
 import SurveyForm from "@/components/form/SurveyForm.vue"
-import "@/plugins/validation"
 import {QuestionType, type SurveyRequest} from "@/domains/events"
 
 const mountSurvey = (survey: SurveyRequest = {questions: []}) => {

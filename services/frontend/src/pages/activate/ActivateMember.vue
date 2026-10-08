@@ -6,92 +6,65 @@
       class="mx-auto my-10"
       style="max-width: 600px"
     >
-      <v-card class="pa-6">
-        <Form
-          ref="formRef"
-          v-slot="{ meta }"
-          as="form"
+      <div class="island-panel">
+        <form
           data-testid="activate-member-form"
-          @submit="onSubmit"
+          @submit.prevent="onSubmit"
         >
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="form.username"
-                :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'activate-member-username-field' }"
-                name="username"
-                rules="required|alphaNum"
-              />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="form.password"
-                :component-props="{
-                  label: 'Password',
-                  autocomplete: 'new-password',
-                  'data-testid': 'activate-member-password-field',
-                  ...passwordFieldProps
-                }"
-                name="password"
-                rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-              />
-            </v-col>
-          </v-row>
+          <form-control
+            v-model="form.username"
+            autocomplete="username"
+            data-testid="activate-member-username-field"
+            :error-messages="errorsOf('username')"
+            label="Username"
+            @blur="touch('username')"
+          />
+          <form-control
+            v-model="form.password"
+            autocomplete="new-password"
+            data-testid="activate-member-password-field"
+            :error-messages="errorsOf('password')"
+            kind="password"
+            label="Password"
+            @blur="touch('password')"
+          />
+          <form-control
+            v-model="passwordAgain"
+            autocomplete="new-password"
+            data-testid="activate-member-repeat-password-field"
+            :error-messages="errorsOf('passwordAgain')"
+            kind="password"
+            label="Repeat Password"
+            @blur="touch('passwordAgain')"
+          />
 
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="passwordAgain"
-                :component-props="{
-                  label: 'Repeat Password',
-                  autocomplete: 'new-password',
-                  'data-testid': 'activate-member-repeat-password-field',
-                  ...passwordFieldProps
-                }"
-                name="passwordAgain"
-                rules="required|match:@password"
-              />
-            </v-col>
-          </v-row>
-
-          <v-row
-            align="center"
-            class="mt-2"
-            justify="end"
-          >
-            <v-btn
-              :disabled="!meta.valid || loading"
-              :loading="loading"
-              color="primary"
+          <div class="form-save">
+            <cut-button
               data-testid="activate-member-submit-btn"
-              type="submit"
+              :disabled="loading"
+              submit
+              tone="solid"
             >
               Activate Member
-            </v-btn>
-          </v-row>
+            </cut-button>
+          </div>
 
-          <v-alert
+          <notice-box
             v-if="errorMessage"
-            class="mt-4"
-            data-testid="activate-member-error-alert"
-            type="error"
-            variant="tonal"
+            testid="activate-member-error-alert"
+            tone="danger"
           >
             {{ errorMessage }}
-          </v-alert>
-
-          <v-alert
+          </notice-box>
+          <notice-box
             v-if="succeeded"
-            class="mb-2"
-            data-testid="activate-member-success-alert"
-            type="success"
+            testid="activate-member-success-alert"
+            tone="info"
           >
             Account activated! You will be redirected to the login page.
-          </v-alert>
-        </Form>
-      </v-card>
+          </notice-box>
+        </form>
+      </div>
     </div>
   </v-main>
 </template>
@@ -99,13 +72,15 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import {Form} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import VvField from "@/components/form/fields/VvField.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FormControl from "@/components/island/FormControl.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {activateMember, type MemberActivationRequest} from "@/domains/recovery"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 import {announceAccountActivation} from "@/plugins/signupContinuation"
-import {handleSubmitError, usePasswordToggle, useVeeForm} from "@/composables/formUtils"
+import {reportRefusal, useFormChecks} from "@/composables/useFormChecks"
+import {matches, maxChars, minChars, required, strongPassword} from "@/utils/checks"
 
 const route = useRoute()
 const router = useRouter()
@@ -123,8 +98,12 @@ const form = ref<MemberActivationRequest>({
 const passwordAgain = ref("")
 const RECOVERY_TOKEN_STORAGE_KEY = "recovery:member-activation:token"
 
-const {formRef} = useVeeForm()
-const {passwordFieldProps} = usePasswordToggle()
+const checks = useFormChecks(() => ({
+  username: {value: () => form.value.username, checks: [required]},
+  password: {value: () => form.value.password, checks: [required, minChars(8), maxChars(100), strongPassword]},
+  passwordAgain: {value: () => passwordAgain.value, checks: [required, matches(() => form.value.password)]},
+}))
+const {errorsOf, touch, attempt} = checks
 
 onMounted(() => {
   form.value.token = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
@@ -140,6 +119,7 @@ function redirectToLogin(ms = 2000) {
 }
 
 async function onSubmit() {
+  if (!attempt()) return
   loading.value = true
   errorMessage.value = null
 
@@ -150,7 +130,7 @@ async function onSubmit() {
     announceAccountActivation(form.value.username)
     redirectToLogin(2500)
   } catch (e: unknown) {
-    if (!handleSubmitError(formRef.value, e)) {
+    if (!reportRefusal(checks, e)) {
       errorMessage.value = "We couldn't activate your membership. The link may be invalid or expired."
     }
   } finally {
@@ -160,7 +140,9 @@ async function onSubmit() {
 </script>
 
 <style lang="scss" scoped>
-.v-card {
-  border-radius: 12px;
+.form-save {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1.2rem 0 1.25rem;
 }
 </style>

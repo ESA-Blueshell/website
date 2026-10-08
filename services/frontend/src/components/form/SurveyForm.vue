@@ -7,9 +7,12 @@
 import {QuestionType, type QuestionRequest, type SurveyRequest} from "@/domains/events"
 import QuestionEditor from "@/components/form/fields/QuestionEditor.vue"
 import CutButton from "@/components/island/CutButton.vue"
+import {NO_CHECKS, type QuestionChecks} from "@/components/form/fields/questionChecks"
 
-/* VvField hands every control a label and its messages; the questions carry their own. */
-defineOptions({name: "SurveyForm", inheritAttrs: false})
+defineOptions({name: "SurveyForm"})
+
+/** The form's checks, which name each question's fields; see questionFields. */
+const {checks = NO_CHECKS} = defineProps<{checks?: QuestionChecks}>()
 
 const model = defineModel<SurveyRequest>({default: () => ({questions: []})})
 
@@ -66,6 +69,7 @@ const swapQuestions = (a: number, b: number) => {
         :key="q.idx"
         :can-move-down="i < questions().length - 1"
         :can-move-up="i > 0"
+        :checks="checks"
         :model-value="q"
         @move-down="swapQuestions(i, i + 1)"
         @move-up="swapQuestions(i - 1, i)"

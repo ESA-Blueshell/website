@@ -1,10 +1,10 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
+import {flushPromises, mount} from "@vue/test-utils"
 import StartMembershipDialog from "@/components/common/modals/StartMembershipDialog.vue"
+import {clearEveryField, saidByLabel} from "../../../helpers/fields"
 
-const {mockStartMembershipAsBoard, mockApply, mockHandleNetworkError} = vi.hoisted(() => ({
+const {mockStartMembershipAsBoard, mockHandleNetworkError} = vi.hoisted(() => ({
   mockStartMembershipAsBoard: vi.fn(),
-  mockApply: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
@@ -15,53 +15,24 @@ vi.mock("@/domains/user", () => ({
   },
 }))
 
-vi.mock("@/plugins/validation.ts", () => ({
-  apply: mockApply,
-}))
-
-vi.mock("@/plugins/handleNetworkError.ts", () => ({
+vi.mock("@/plugins/handleNetworkError", () => ({
   $handleNetworkError: mockHandleNetworkError,
+  $showStatusMessage: vi.fn(),
 }))
 
-vi.mock("@/components/form/fields/VvField.vue", () => ({
-  default: {
-    name: "VvField",
-    template: "<div />",
-  },
-}))
-
-vi.mock("@/components/form/fields/MemberTypeSelect.vue", () => ({
-  default: {
-    name: "MemberTypeSelect",
-    template: "<div />",
-  },
-}))
+const mountDialog = () => mount(StartMembershipDialog, {
+  props: {modelValue: true, userId: 7},
+  global: {stubs: {VDialog: {template: "<div><slot /></div>"}}},
+})
 
 describe("StartMembershipDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockStartMembershipAsBoard.mockResolvedValue({id: 33, userId: 7})
-    mockApply.mockReturnValue(false)
   })
 
   it("creates membership and closes dialog", async () => {
-    const wrapper = mount(StartMembershipDialog, {
-      props: {
-        modelValue: true,
-        userId: 7,
-      },
-      global: {
-        stubs: {
-          Form: true,
-          VvField: true,
-          MemberTypeSelect: true,
-        },
-      },
-    })
-
-    ;(wrapper.vm as any).formRef = {
-      validate: vi.fn().mockResolvedValue({valid: true}),
-    }
+    const wrapper = mountDialog()
 
     await (wrapper.vm as any).confirm()
 
@@ -69,5 +40,42 @@ describe("StartMembershipDialog", () => {
       .toHaveBeenCalledWith(7, expect.objectContaining({userId: 7}))
     expect(wrapper.emitted("update:membership")?.[0]).toEqual([{id: 33, userId: 7}])
     expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([false])
+  })
+
+  it("asks for a start date before it starts anything", async () => {
+    const wrapper = mountDialog()
+    const startDate = wrapper.findComponent({name: "FormControl"})
+    await startDate.vm.$emit("update:modelValue", "")
+
+    await (wrapper.vm as any).confirm()
+    await wrapper.vm.$nextTick()
+
+    expect(mockStartMembershipAsBoard).not.toHaveBeenCalled()
+    expect(startDate.props("errorMessages")).toEqual(["This field is required"])
+  })
+
+  it("puts the api's refusal on the start date", async () => {
+    mockStartMembershipAsBoard.mockRejectedValue({
+      response: {status: 400, data: {errors: [{field: "startDate", message: "Overlaps a running membership."}]}},
+    })
+    const wrapper = mountDialog()
+
+    await (wrapper.vm as any).confirm()
+    await flushPromises()
+
+    expect(wrapper.findComponent({name: "FormControl"}).props("errorMessages")).toEqual(["Overlaps a running membership."])
+    expect(mockHandleNetworkError).not.toHaveBeenCalled()
+  })
+
+  it("says a field left empty is required once it is left, and takes the member type picked", async () => {
+    const wrapper = mountDialog()
+
+    await clearEveryField(wrapper)
+    await wrapper.getComponent({name: "MemberTypeSelect"}).vm.$emit("update:modelValue", "ALUMNI")
+    await (wrapper.vm as any).confirm()
+
+    expect(saidByLabel(wrapper)).toEqual({"Start Date": ["This field is required"]})
+    expect(mockStartMembershipAsBoard).not.toHaveBeenCalled()
+    expect((wrapper.vm as any).membership.memberType).toBe("ALUMNI")
   })
 })

@@ -1,5 +1,5 @@
 <script lang="ts">
-/* What `VvField` hands a control, answered on the island side: a form names a kind. */
+/* What a form asks a control to be: it names a kind rather than a component. */
 export type ControlKind = "text" | "email" | "tel" | "url" | "number" | "password" | "date"
   | "time" | "datetime" | "count" | "money" | "textarea" | "markdown" | "phone" | "country"
   | "nationality"
@@ -37,7 +37,7 @@ const {
 } = defineProps<{
   kind?: ControlKind
   label?: string
-  /** What vee-validate found wrong, in the shape Vuetify's controls are handed it. */
+  /** What the form's checks or the api found wrong; the first is shown. */
   errorMessages?: string | string[]
   hint?: string
   disabled?: boolean

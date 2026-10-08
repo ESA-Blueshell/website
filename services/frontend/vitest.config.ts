@@ -46,11 +46,11 @@ export default defineConfig({
         // Whole folders held at every line and branch: a new file in one needs no entry here,
         // and a deleted test fails its file's floor. The names left out are held below.
         "src/components/island/!(BandSwipe|ChipPicker|ColourControl|ConfirmDialog|CutRow|DriftRow|FlickReel|HeaderBand|ImagePicker|ModalDialog|PreviewFrame|SliceBand|TaskLayout|Timeline|reelMotion|stripAxis|useSwipeArrival).{ts,vue}": {100: true, perFile: true},
-        "src/components/form/fields/!(AnswerField|QuestionEditor|VvField).{ts,vue}": {100: true, perFile: true},
+        "src/components/form/fields/!(AnswerField|QuestionEditor).{ts,vue}": {100: true, perFile: true},
         "src/domains/association/island/!(HeroBand|HistoryBand|JoinHero|PlacementBand).{ts,vue}": {100: true, perFile: true},
         "src/domains/events/island/**": {100: true, perFile: true},
         "src/{pages/events/EventPage,pages/partners/Partner,components/common/modals/{Edit,Remove}SignUpDialog,domains/discord/island/DiscordBand,domains/esports/island/LineupBand}.vue": {100: true, perFile: true},
-        "src/{domains/association/{adapters/association,partnerPages},domains/discord/rooms,domains/esports/island/lineupSlice,plugins/{discordMarkdown,emojiArt,validation}}.ts": {100: true, perFile: true},
+        "src/{domains/association/{adapters/association,partnerPages},domains/discord/rooms,domains/esports/island/lineupSlice,plugins/{discordMarkdown,emojiArt}}.ts": {100: true, perFile: true},
 
         // Held at what they cover today, so a change cannot quietly take one backwards.
         "src/pages/activate/ActivateUser.vue": { lines: 90, branches: 90, functions: 100 },
@@ -65,7 +65,6 @@ export default defineConfig({
         "src/components/form/EventForm.vue": { lines: 50, branches: 42, functions: 52 },
         "src/components/form/GuestForm.vue": { lines: 77, branches: 100, functions: 66 },
         "src/components/form/UserForm.vue": { lines: 81, branches: 84, functions: 65 },
-        "src/components/form/fields/VvField.vue": { lines: 83, branches: 57, functions: 75 },
         "src/components/island/Timeline.vue": { lines: 64, branches: 41, functions: 50 },
       },
     },

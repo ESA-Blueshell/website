@@ -2,9 +2,9 @@
 import {vFirstField} from "@/utils/firstField"
 import {addressOf} from "@/utils/address"
 import {computed, ref, watch} from "vue"
-import VvField from "@/components/form/fields/VvField.vue"
 import ArtCells from "@/components/island/ArtCells.vue"
 import ColourControl from "@/components/island/ColourControl.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import {isHexColour} from "@/components/island/colour"
 import CutButton from "@/components/island/CutButton.vue"
 import EditPage from "@/components/island/EditPage.vue"
@@ -32,6 +32,8 @@ import RemoveGameDialog from "../island/RemoveGameDialog.vue"
 import {cellOf} from "../useCasualGames"
 import {initialsOf} from "@/utils/initials"
 import {BRAND_ACCENT} from "@/utils/brand"
+import {useFormChecks} from "@/composables/useFormChecks"
+import {required} from "@/utils/checks"
 
 /**
  * One game, added or corrected on one page for both areas it appears in. A game is one record, so
@@ -91,10 +93,15 @@ const slugTouched = ref(false)
 watch(name, typed => {
   if (adding.value && !slugTouched.value) slug.value = addressOf(typed)
 })
-const typeSlug = (value: string, handle: (value: string) => void) => {
+const typeSlug = (value: string | null) => {
   slugTouched.value = true
-  handle(value)
+  slug.value = value ?? ""
 }
+
+const {errorsOf, touch} = useFormChecks(() => ({
+  name: {value: () => name.value, checks: [required]},
+  slug: {value: () => slug.value, checks: [required]},
+}))
 
 const colourOk = computed(() => colour.value.trim() === "" || isHexColour(colour.value.trim()))
 const complete = computed(() => name.value.trim() !== "" && slug.value.trim() !== "" && colourOk.value)
@@ -192,8 +199,9 @@ const removed = async () => {
 }
 
 const backLabel = computed(() => (props.area === "casual" ? "Casual" : "Competition"))
-const count = (value: unknown) => (value == null ? "" : String(value))
-const toCount = (raw: string, handle: (value: number | null) => void) => handle(raw === "" ? null : Number(raw))
+const toCount = (raw: string | null) => {
+  sortIndex.value = raw ? Number(raw) : null
+}
 </script>
 
 <template>
@@ -231,39 +239,42 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
     >
       <form-section title="The game">
         <form-fields>
-          <vv-field
-            v-model="name"
-            :component-props="{hint: game ? `Code ${game.code}, which never changes` : ''}"
-            label="Name*"
-            name="name"
-            rules="required"
-            test-id="game-edit-name"
-          />
-          <vv-field
-            v-model="slug"
-            label="Address*"
-            name="slug"
-            rules="required"
-            test-id="game-edit-slug"
-            :update="typeSlug"
-          />
-          <vv-field
-            v-model="colour"
-            :component="ColourControl"
-            :component-props="{placeholder: '#1f6feb', testid: 'game-edit-accent-field'}"
-            label="Highlight colour"
-            name="accent"
-            test-id="game-edit-accent"
-          />
-          <vv-field
-            v-model="sortIndex"
-            :component-props="{kind: 'count', empty: 'Last', min: 0}"
-            :display="count"
-            label="Order"
-            name="sortIndex"
-            test-id="game-edit-order"
-            :update="toCount"
-          />
+          <div data-testid="game-edit-name">
+            <form-control
+              v-model="name"
+              :error-messages="errorsOf('name')"
+              :hint="game ? `Code ${game.code}, which never changes` : ''"
+              label="Name*"
+              @blur="touch('name')"
+            />
+          </div>
+          <div data-testid="game-edit-slug">
+            <form-control
+              :error-messages="errorsOf('slug')"
+              label="Address*"
+              :model-value="slug"
+              @blur="touch('slug')"
+              @update:model-value="typeSlug"
+            />
+          </div>
+          <div data-testid="game-edit-accent">
+            <colour-control
+              v-model="colour"
+              label="Highlight colour"
+              placeholder="#1f6feb"
+              testid="game-edit-accent-field"
+            />
+          </div>
+          <div data-testid="game-edit-order">
+            <form-control
+              empty="Last"
+              kind="count"
+              label="Order"
+              :min="0"
+              :model-value="sortIndex == null ? '' : String(sortIndex)"
+              @update:model-value="toCount"
+            />
+          </div>
           <image-picker
             class="form-span"
             label="Banner"
@@ -289,13 +300,13 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
         testid="game-edit-casual"
         title="Casual gaming"
       >
-        <vv-field
-          v-model="intro"
-          :component-props="{kind: 'markdown'}"
-          label="Intro"
-          name="intro"
-          test-id="game-edit-intro"
-        />
+        <div data-testid="game-edit-intro">
+          <form-control
+            v-model="intro"
+            kind="markdown"
+            label="Intro"
+          />
+        </div>
         <game-channel-picker
           v-model="channels"
           empty-note="The games category has no channels left to add."
@@ -308,13 +319,14 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
         testid="game-edit-competition"
         title="Competition"
       >
-        <vv-field
-          v-model="competitionIntro"
-          :component-props="{kind: 'markdown', hint: 'Empty uses the casual intro'}"
-          label="Intro"
-          name="competitionIntro"
-          test-id="game-edit-competition-intro"
-        />
+        <div data-testid="game-edit-competition-intro">
+          <form-control
+            v-model="competitionIntro"
+            hint="Empty uses the casual intro"
+            kind="markdown"
+            label="Intro"
+          />
+        </div>
         <game-channel-picker
           v-model="esportsChannels"
           :category="GameChannelCategory.ESPORTS"

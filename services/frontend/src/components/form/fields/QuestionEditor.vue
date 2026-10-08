@@ -4,17 +4,21 @@
  * buttons to move or delete it. A choice question lists its options under the text, never
  * fewer than two.
  */
-import {Field} from "vee-validate"
 import {computed} from "vue"
 import {type QuestionRequest, QuestionType} from "@/domains/events"
 import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormControl from "@/components/island/FormControl.vue"
 import IconButton from "@/components/island/IconButton.vue"
+import {choiceField, labelField, NO_CHECKS, type QuestionChecks} from "@/components/form/fields/questionChecks"
 
 defineOptions({name: "QuestionEditor"})
 
-const {canMoveUp = true, canMoveDown = true} = defineProps<{canMoveUp?: boolean; canMoveDown?: boolean}>()
+const {canMoveUp = true, canMoveDown = true, checks = NO_CHECKS} = defineProps<{
+  canMoveUp?: boolean
+  canMoveDown?: boolean
+  checks?: QuestionChecks
+}>()
 const emit = defineEmits<{moveUp: []; moveDown: []; remove: []}>()
 const model = defineModel<QuestionRequest>({required: true})
 
@@ -121,22 +125,15 @@ const removeChoice = (j: number) => {
       </span>
     </div>
 
-    <Field
-      v-slot="{value, errors, handleChange, handleBlur}"
+    <form-control
+      :error-messages="checks.errorsOf(labelField(model.idx))"
+      :kind="isDescription ? 'markdown' : 'textarea'"
+      :label="isDescription ? 'Description text*' : 'Question text*'"
       :model-value="model.label"
-      :name="`survey.questions[${model.idx}].label`"
-      rules="required"
-    >
-      <form-control
-        :error-messages="errors"
-        :kind="isDescription ? 'markdown' : 'textarea'"
-        :label="isDescription ? 'Description text*' : 'Question text*'"
-        :model-value="value"
-        :rows="isDescription ? 2 : 1"
-        @blur="handleBlur"
-        @update:model-value="(label: string | null) => { setLabel(label ?? ''); handleChange(label ?? '') }"
-      />
-    </Field>
+      :rows="isDescription ? 2 : 1"
+      @blur="checks.touch(labelField(model.idx))"
+      @update:model-value="(label: string | null) => setLabel(label ?? '')"
+    />
 
     <template v-if="isChoice">
       <div class="question__options">
@@ -170,20 +167,13 @@ const removeChoice = (j: number) => {
               />
             </svg>
           </span>
-          <Field
-            v-slot="{value, errors, handleChange, handleBlur}"
+          <form-control
+            :error-messages="checks.errorsOf(choiceField(model.idx, j))"
+            :label="`Option ${j + 1}*`"
             :model-value="choices[j] ?? ''"
-            :name="`survey.questions[${model.idx}].choiceLabels[${j}]`"
-            rules="required|maxChars:100"
-          >
-            <form-control
-              :error-messages="errors"
-              :label="`Option ${j + 1}*`"
-              :model-value="value"
-              @blur="handleBlur"
-              @update:model-value="(label: string | null) => { setChoice(j, label ?? ''); handleChange(label ?? '') }"
-            />
-          </Field>
+            @blur="checks.touch(choiceField(model.idx, j))"
+            @update:model-value="(label: string | null) => setChoice(j, label ?? '')"
+          />
           <span class="question__option-acts">
             <icon-button
               :disabled="j === 0"

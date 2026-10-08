@@ -23,30 +23,30 @@
             We could not send that just now, so no email is on its way. Please try again.
           </notice-box>
 
-          <Form
-            v-slot="{ meta }"
-            as="form"
+          <form
             data-testid="forgot-password-form"
-            @submit="() => onSubmit()"
+            @submit.prevent="onSubmit"
           >
-            <VvField
+            <form-control
               v-model="form.username"
-              :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'forgot-password-username-field' }"
-              name="username"
-              rules="required"
+              autocomplete="username"
+              data-testid="forgot-password-username-field"
+              :error-messages="errorsOf('username')"
+              label="Username"
+              @blur="touch('username')"
             />
 
             <div class="form-save">
               <cut-button
                 tone="solid"
                 submit
-                :disabled="!meta.valid || loading"
+                :disabled="loading"
                 data-testid="forgot-password-submit-btn"
               >
                 Send reset mail
               </cut-button>
             </div>
-          </Form>
+          </form>
         </div>
 
         <div
@@ -69,8 +69,9 @@ import NoticeBox from "@/components/island/NoticeBox.vue"
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import VvField from "@/components/form/fields/VvField.vue"
-import {Form, useForm} from "vee-validate"
+import FormControl from "@/components/island/FormControl.vue"
+import {useFormChecks} from "@/composables/useFormChecks"
+import {required} from "@/utils/checks"
 import {requestPasswordReset} from "@/domains/recovery"
 
 const route = useRoute()
@@ -80,19 +81,17 @@ const succeeded = ref(false)
 const failed = ref(false)
 
 const form = ref({username: ""})
-const {handleSubmit, setFieldValue} = useForm<{ username: string }>({
-  initialValues: {username: ""},
-})
+const {errorsOf, touch, attempt} = useFormChecks(() => ({
+  username: {value: () => form.value.username, checks: [required]},
+}))
 
 onMounted(() => {
   const q = route.query.username
-  if (typeof q === "string") {
-    setFieldValue("username", q)
-    form.value.username = q
-  }
+  if (typeof q === "string") form.value.username = q
 })
 
-const onSubmit = handleSubmit(async () => {
+const onSubmit = async () => {
+  if (!attempt()) return
   loading.value = true
   failed.value = false
   try {
@@ -105,11 +104,5 @@ const onSubmit = handleSubmit(async () => {
   } finally {
     loading.value = false
   }
-})
-</script>
-
-<style lang="scss" scoped>
-.v-card {
-  border-radius: 12px;
 }
-</style>
+</script>

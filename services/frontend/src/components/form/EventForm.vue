@@ -2,9 +2,9 @@
 import {vFirstField} from "@/utils/firstField"
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {Form} from "vee-validate"
 import SurveyForm from "@/components/form/SurveyForm.vue"
-import VvField from "@/components/form/fields/VvField.vue"
+import FormControl from "@/components/island/FormControl.vue"
+import {questionFields} from "@/components/form/fields/questionChecks"
 import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
 import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import CommitteePicker from "@/components/form/fields/CommitteePicker.vue"
@@ -35,9 +35,10 @@ import {
   listCommittees,
   listMyCommittees,
 } from "@/domains/committees"
-import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+import {useSaving, useSubmitFeedback} from "@/composables/formUtils"
+import {type FieldChecks, reportRefusal, useFormChecks} from "@/composables/useFormChecks"
+import {minValue, momentAfter, momentNotAfter, required} from "@/utils/checks"
 import {safeFormatISO, toISO} from "@/utils/datetime"
-import type {HandleChange} from "@/types/VVField.types.ts"
 import {useIsBoard} from "@/composables/useIsBoard"
 
 const props = defineProps<{
@@ -101,7 +102,6 @@ const approvedOnServer = ref<boolean>(props.modelValue?.id != null && props.mode
 const {open: announceOpen, later: announceLater, ask: askAnnounce, answer: answerAnnounce} = useAnnouncePrompt()
 
 const committees = ref<CommitteeOption[]>([])
-const {formRef, validate} = useVeeForm()
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
@@ -137,6 +137,34 @@ const nowISO = DateTime.now().toISO()
 const hadSignUp = ref<boolean>(!!event.value.signUp)
 const enableSignUpForm = ref<boolean>(!!event.value.signUpForm)
 const removeExistingSignUps = ref<boolean>(false)
+
+const checks = useFormChecks((): Record<string, FieldChecks> => ({
+  title: {value: () => event.value.title, checks: [required]},
+  location: {value: () => event.value.location, checks: [required]},
+  startTime: {value: () => event.value.startTime, checks: event.value.id ? [required] : [required, momentAfter(() => nowISO)]},
+  endTime: {value: () => event.value.endTime, checks: [required, momentAfter(() => event.value.startTime)]},
+  committeeId: {value: () => event.value.committeeId, checks: [required]},
+  description: {value: () => event.value.description, checks: [required]},
+  memberPrice: {value: () => event.value.memberPrice, checks: [minValue(0)]},
+  publicPrice: {value: () => event.value.publicPrice, checks: [minValue(0)]},
+  ...(event.value.signUp
+    ? {
+      signUpDeadline: {value: () => event.value.signUpDeadline, checks: [required, momentNotAfter(() => event.value.endTime)]},
+      signUpLimit: {value: () => event.value.signUpLimit, checks: [minValue(1)]},
+    }
+    : {}),
+  ...(enableSignUpForm.value
+    ? questionFields(() => event.value.signUpForm)
+    : {}),
+}))
+const {errorsOf, touch} = checks
+const validate = async (): Promise<boolean> => checks.attempt()
+
+const shownMoment = (iso?: string | null): string => safeFormatISO(String(iso ?? ""), "yyyy-MM-dd'T'HH:mm")
+const shownAmount = (amount: unknown): string => (amount == null ? "" : String(amount))
+/* Kept as typed: a number would turn "12." back into "12" under the cursor, and the api reads
+   either. */
+const typedAmount = (raw: string | null): number => (raw ?? "") as unknown as number
 
 const initialEvent = ref(JSON.stringify(event.value))
 const eventIsDirty = computed(() => JSON.stringify(event.value) !== initialEvent.value)
@@ -236,7 +264,7 @@ async function fetchCommittees() {
       })
       .filter((committee): committee is CommitteeOption => committee != null)
   } catch (e: unknown) {
-    handleSubmitError(formRef.value, e)
+    reportRefusal(checks, e)
   }
 }
 
@@ -326,7 +354,7 @@ const save = async () => {
       setSubmitResult(true)
     })
   } catch (e: unknown) {
-    handleSubmitError(formRef.value, e)
+    reportRefusal(checks, e)
     emit("submitted", false)
     setSubmitResult(false)
   }
@@ -336,10 +364,8 @@ defineExpose({validate, save})
 </script>
 
 <template>
-  <Form
-    ref="formRef"
+  <div
     v-first-field
-    as="div"
     class="event-form"
   >
     <div class="event-form__grid">
@@ -358,48 +384,48 @@ defineExpose({validate, save})
                 @update:picture="onPoster"
               />
             </div>
-            <VvField
-              v-model="event.title"
-              label="Event name*"
-              name="title"
-              rules="required"
-              test-id="event-form-title-field"
-            />
-            <VvField
-              v-model="event.location"
-              label="Location*"
-              name="location"
-              rules="required"
-              test-id="event-form-location-field"
-            />
-            <VvField
-              v-model="event.startTime"
-              :component-props="{type: 'datetime-local'}"
-              :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
+            <div data-testid="event-form-title-field">
+              <form-control
+                v-model="event.title"
+                :error-messages="errorsOf('title')"
+                label="Event name*"
+                @blur="touch('title')"
+              />
+            </div>
+            <div data-testid="event-form-location-field">
+              <form-control
+                v-model="event.location"
+                :error-messages="errorsOf('location')"
+                label="Location*"
+                @blur="touch('location')"
+              />
+            </div>
+            <form-control
+              :error-messages="errorsOf('startTime')"
+              kind="datetime"
               label="Starts*"
-              name="startTime"
-              :rules="event.id ? 'required' : `required|dateTimeAfter:${nowISO}`"
-              :update="(v: string, handle: HandleChange<string>) => handle(toISO({dateTime: v}))"
+              :model-value="shownMoment(event.startTime)"
+              @blur="touch('startTime')"
+              @update:model-value="(typed: string | null) => (event.startTime = toISO({dateTime: typed ?? ''}))"
             />
-            <VvField
-              v-model="event.endTime"
-              :component-props="{type: 'datetime-local'}"
-              :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
+            <form-control
+              :error-messages="errorsOf('endTime')"
+              kind="datetime"
               label="Ends*"
-              name="endTime"
-              rules="required|dateTimeAfter:@startTime"
-              :update="(v: string, handle: HandleChange<string>) => handle(toISO({dateTime: v}))"
+              :model-value="shownMoment(event.endTime)"
+              @blur="touch('endTime')"
+              @update:model-value="(typed: string | null) => (event.endTime = toISO({dateTime: typed ?? ''}))"
             />
             <div class="form-span">
-              <VvField
-                v-model="event.committeeId"
-                :component="CommitteePicker"
-                :component-props="{committees, required: true}"
-                label="Representative committee"
-                name="committeeId"
-                rules="required"
-                test-id="event-form-committee-field"
-              />
+              <div data-testid="event-form-committee-field">
+                <committee-picker
+                  v-model="event.committeeId"
+                  :committees="committees"
+                  :error-messages="errorsOf('committeeId')"
+                  label="Representative committee"
+                  required
+                />
+              </div>
             </div>
             <div class="form-span">
               <event-games-picker
@@ -408,44 +434,41 @@ defineExpose({validate, save})
               />
             </div>
             <div class="form-span">
-              <VvField
-                v-model="event.description"
-                :component-props="{kind: 'markdown'}"
-                label="Description*"
-                name="description"
-                rules="required"
-                test-id="event-form-description-field"
-              />
+              <div data-testid="event-form-description-field">
+                <form-control
+                  v-model="event.description"
+                  :error-messages="errorsOf('description')"
+                  kind="markdown"
+                  label="Description*"
+                  @blur="touch('description')"
+                />
+              </div>
             </div>
           </form-fields>
         </form-section>
 
         <form-section title="Price and access">
           <form-fields>
-            <VvField
-              v-model="event.memberPrice"
-              :component-props="{kind: 'money'}"
-              :display="(v: unknown) => (v == null ? '' : String(v))"
+            <form-control
+              :error-messages="errorsOf('memberPrice')"
+              kind="money"
               label="Price for members"
-              name="memberPrice"
-              rules="minValue:0"
-              :update="(raw: string, handle: HandleChange<string>) => handle(raw)"
+              :model-value="shownAmount(event.memberPrice)"
+              @blur="touch('memberPrice')"
+              @update:model-value="(raw: string | null) => (event.memberPrice = typedAmount(raw))"
             />
-            <VvField
-              v-model="event.publicPrice"
-              :component-props="{kind: 'money'}"
-              :display="(v: unknown) => (v == null ? '' : String(v))"
+            <form-control
+              :error-messages="errorsOf('publicPrice')"
+              kind="money"
               label="Price for non-members"
-              name="publicPrice"
-              rules="minValue:0"
-              :update="(raw: string, handle: HandleChange<string>) => handle(raw)"
+              :model-value="shownAmount(event.publicPrice)"
+              @blur="touch('publicPrice')"
+              @update:model-value="(raw: string | null) => (event.publicPrice = typedAmount(raw))"
             />
             <div class="form-span">
-              <VvField
+              <check-box
                 v-model="event.membersOnly"
-                :component="CheckBox"
                 label="Members only"
-                name="membersOnly"
               />
             </div>
           </form-fields>
@@ -460,48 +483,44 @@ defineExpose({validate, save})
 
         <form-section title="Sign-ups">
           <div class="event-form__checks">
-            <VvField
-              v-model="event.signUp"
-              :component="CheckBox"
-              label="Allow sign-ups"
-              name="signUp"
-              test-id="event-form-signup-field"
-            />
-            <VvField
+            <div data-testid="event-form-signup-field">
+              <check-box
+                v-model="event.signUp"
+                label="Allow sign-ups"
+              />
+            </div>
+            <check-box
               v-model="enableSignUpForm"
-              :component="CheckBox"
               label="Add a sign-up form"
-              name="enableSignUpForm"
             />
           </div>
           <form-fields v-if="event.signUp">
-            <VvField
-              v-model="event.signUpDeadline"
-              :component-props="{type: 'datetime-local'}"
-              :display="(v?: string | null) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
-              label="Sign-ups close*"
-              name="signUpDeadline"
-              :rules="`required|dateTimeNotAfter:@endTime`"
-              test-id="event-form-signup-deadline-field"
-              :update="(v: string, handle: HandleChange<string>) => handle(toISO({dateTime: v}))"
-            />
-            <VvField
-              v-model="event.signUpLimit"
-              :component-props="{kind: 'count'}"
-              :display="(v: unknown) => (v == null ? '' : String(v))"
-              label="Sign-up limit"
-              name="signUpLimit"
-              rules="minValue:1"
-              test-id="event-form-signup-limit-field"
-              :update="(raw: string, handle: HandleChange<string>) => handle(raw)"
-            />
+            <div data-testid="event-form-signup-deadline-field">
+              <form-control
+                :error-messages="errorsOf('signUpDeadline')"
+                kind="datetime"
+                label="Sign-ups close*"
+                :model-value="shownMoment(event.signUpDeadline)"
+                @blur="touch('signUpDeadline')"
+                @update:model-value="(typed: string | null) => (event.signUpDeadline = toISO({dateTime: typed ?? ''}))"
+              />
+            </div>
+            <div data-testid="event-form-signup-limit-field">
+              <form-control
+                :error-messages="errorsOf('signUpLimit')"
+                kind="count"
+                label="Sign-up limit"
+                :model-value="shownAmount(event.signUpLimit)"
+                @blur="touch('signUpLimit')"
+                @update:model-value="(raw: string | null) => (event.signUpLimit = typedAmount(raw))"
+              />
+            </div>
           </form-fields>
-          <VvField
+          <survey-form
             v-if="enableSignUpForm"
-            v-model="event.signUpForm"
-            :component="SurveyForm"
-            name="signUpForm"
-            rules="required"
+            :checks="checks"
+            :model-value="event.signUpForm ?? undefined"
+            @update:model-value="(survey: SurveyRequest) => (event.signUpForm = survey)"
           />
           <notice-box
             v-if="event.id && (event.signUpCount ?? 0) > 0 && (signUpFormIsDirty || (hadSignUp && !event.signUp))"
@@ -536,14 +555,15 @@ defineExpose({validate, save})
     </div>
 
     <div class="event-form__save">
-      <VvField
+      <div
         v-if="isBoard"
-        v-model="event.approved"
-        :component="CheckBox"
-        label="Approved"
-        name="approved"
-        test-id="event-form-approved-field"
-      />
+        data-testid="event-form-approved-field"
+      >
+        <check-box
+          v-model="event.approved"
+          label="Approved"
+        />
+      </div>
       <p
         v-else-if="eventIsDirty || !event.id"
         class="event-form__save-note"
@@ -576,7 +596,7 @@ defineExpose({validate, save})
       :open="announceOpen"
       @answer="answerAnnounce"
     />
-  </Form>
+  </div>
 </template>
 
 <style scoped>

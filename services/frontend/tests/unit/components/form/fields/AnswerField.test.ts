@@ -1,90 +1,33 @@
 import {describe, expect, it} from "vitest"
-import {flushPromises, mount, shallowMount} from "@vue/test-utils"
+import {flushPromises, mount} from "@vue/test-utils"
 import AnswerField from "@/components/form/fields/AnswerField.vue"
 import {QuestionType} from "@/domains/events"
 
 describe("AnswerField", () => {
-  it("rejects blank text for a required open question", () => {
-    const wrapper = shallowMount(AnswerField, {
+  it("says what its form's checks say of it, and tells the form when it is left", async () => {
+    const wrapper = mount(AnswerField, {
       props: {
-        question: {
-          id: 1,
-          idx: 0,
-          type: QuestionType.OPEN,
-          label: "Why?",
-          required: true,
-        },
+        question: {id: 1, idx: 0, type: QuestionType.OPEN, label: "Why?", required: true},
+        errorMessages: ["This field is required"],
       },
     })
 
-    const field = wrapper.findComponent({name: "Field"})
-    const rule = field.props("rules") as (value: string) => true | string
-
-    expect(rule("")).toBe("This field is required")
-    expect(rule("valid")).toBe(true)
+    expect(wrapper.get(".answer-field__said").text()).toBe("This field is required")
+    await wrapper.get("textarea").trigger("blur")
+    expect(wrapper.emitted("blur")).toHaveLength(1)
   })
 
-  it("accepts blank text for an optional open question", () => {
-    const wrapper = shallowMount(AnswerField, {
-      props: {
-        question: {
-          id: 1,
-          idx: 0,
-          type: QuestionType.OPEN,
-          label: "Why?",
-          required: false,
-        },
-      },
+  it("writes what is typed into an open answer", async () => {
+    const typed = {questionId: 1, textResponse: ""}
+    const wrapper = mount(AnswerField, {
+      props: {question: {id: 1, idx: 0, type: QuestionType.OPEN, label: "Why?"}, modelValue: typed},
     })
 
-    const field = wrapper.findComponent({name: "Field"})
-    const rule = field.props("rules") as (value: string) => true | string
+    await wrapper.get("textarea").setValue("Because")
 
-    expect(rule("")).toBe(true)
-    expect(rule("filled")).toBe(true)
+    expect(typed.textResponse).toBe("Because")
   })
 
-  it("requires at least one selection for a required checkbox question", () => {
-    const wrapper = shallowMount(AnswerField, {
-      props: {
-        question: {
-          id: 2,
-          idx: 1,
-          type: QuestionType.CHECKBOX,
-          label: "Pick one",
-          choiceLabels: ["A", "B"],
-          required: true,
-        },
-      },
-    })
-
-    const field = wrapper.findComponent({name: "Field"})
-    const rule = field.props("rules") as (value: boolean[]) => true | string
-
-    expect(rule([false, false])).toBe("Select at least one option")
-    expect(rule([true, false])).toBe(true)
-  })
-
-  it("accepts no selection on an optional checkbox question", () => {
-    const wrapper = shallowMount(AnswerField, {
-      props: {
-        question: {
-          id: 2,
-          idx: 1,
-          type: QuestionType.CHECKBOX,
-          label: "Pick any",
-          choiceLabels: ["A", "B"],
-          required: false,
-        },
-      },
-    })
-
-    const field = wrapper.findComponent({name: "Field"})
-    const rule = field.props("rules") as (value: boolean[]) => true | string
-
-    expect(rule([false, false])).toBe(true)
-    expect(rule([true, false])).toBe(true)
-  })
   it("offers a radio question's choices and records the one picked", async () => {
     const picked = {questionId: 3, textResponse: "", optionSelections: [false, false]}
     const wrapper = mount(AnswerField, {
@@ -117,5 +60,19 @@ describe("AnswerField", () => {
     await flushPromises()
 
     expect(ticked.optionSelections).toEqual([false, true])
+  })
+
+  it("tells its form when a choice is left", async () => {
+    const radio = mount(AnswerField, {
+      props: {question: {id: 3, idx: 2, type: QuestionType.RADIO, label: "Which?", choiceLabels: ["Tea", "Coffee"]}},
+    })
+    await radio.getComponent({name: "RadioGroup"}).trigger("focusout")
+    expect(radio.emitted("blur")).toHaveLength(1)
+
+    const boxes = mount(AnswerField, {
+      props: {question: {id: 4, idx: 3, type: QuestionType.CHECKBOX, label: "Which?", choiceLabels: ["A", "B"]}},
+    })
+    await boxes.getComponent({name: "CheckBox"}).trigger("focusout")
+    expect(boxes.emitted("blur")).toHaveLength(1)
   })
 })

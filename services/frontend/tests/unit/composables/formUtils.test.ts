@@ -1,13 +1,7 @@
 import {describe, expect, it, vi, beforeEach, afterEach} from "vitest"
 import {nextTick} from "vue"
-import type {FormContext} from "vee-validate"
 
-const form = () => ({values: {}, setFieldError: vi.fn()})
-
-const {mockApply, mockHandleNetworkError, mockShowStatusMessage, mockStore} = vi.hoisted(() => ({
-  mockApply: vi.fn(),
-  mockHandleNetworkError: vi.fn(),
-  mockShowStatusMessage: vi.fn(),
+const {mockStore} = vi.hoisted(() => ({
   mockStore: {
     getters: {
       isLoggedIn: true,
@@ -20,23 +14,11 @@ vi.mock("vuex", () => ({
   useStore: () => mockStore,
 }))
 
-vi.mock("@/plugins/validation.ts", () => ({
-  apply: mockApply,
-}))
-
-vi.mock("@/plugins/handleNetworkError.ts", () => ({
-  $handleNetworkError: mockHandleNetworkError,
-  $showStatusMessage: mockShowStatusMessage,
-}))
-
 import {
-  handleSubmitError,
   useCountry,
-  usePasswordToggle,
   useReadonly,
   useSaving,
   useSubmitFeedback,
-  useVeeForm,
 } from "@/composables/formUtils"
 
 describe("formUtils composables", () => {
@@ -46,16 +28,6 @@ describe("formUtils composables", () => {
     mockStore.getters.isBoard = false
   })
 
-  it("validates vee form through formRef", async () => {
-    const {formRef, validate} = useVeeForm()
-    // Only validate is read; the rest of a vee-validate form has no part in this.
-    formRef.value = {
-      validate: vi.fn().mockResolvedValue({valid: true}),
-    } as unknown as FormContext
-
-    await expect(validate()).resolves.toBe(true)
-  })
-
   it("tracks saving state around async action", async () => {
     const {isSaving, withSaving} = useSaving()
     expect(isSaving.value).toBe(false)
@@ -63,28 +35,6 @@ describe("formUtils composables", () => {
     const result = await withSaving(async () => "ok")
     expect(result).toBe("ok")
     expect(isSaving.value).toBe(false)
-  })
-
-  it("delegates submit errors to field validation first", () => {
-    mockApply.mockReturnValue({messages: []})
-    handleSubmitError(form(), new Error("x"))
-    expect(mockApply).toHaveBeenCalled()
-    expect(mockHandleNetworkError).not.toHaveBeenCalled()
-    expect(mockShowStatusMessage).not.toHaveBeenCalled()
-  })
-
-  it("falls back to network error handler when the error is not a field validation one", () => {
-    mockApply.mockReturnValue(null)
-    const error = new Error("x")
-    handleSubmitError(form(), error)
-    expect(mockHandleNetworkError).toHaveBeenCalledWith(error)
-  })
-
-  it("says out loud what it could not attach to a field", () => {
-    mockApply.mockReturnValue({messages: ["Username is taken.", "Email is taken."]})
-    handleSubmitError(form(), new Error("x"))
-    expect(mockHandleNetworkError).not.toHaveBeenCalled()
-    expect(mockShowStatusMessage).toHaveBeenCalledWith("Username is taken. Email is taken.")
   })
 
   it("derives readonly state from auth/board getters", async () => {
@@ -102,14 +52,6 @@ describe("formUtils composables", () => {
     const {country, onCountryUpdate} = useCountry("NL")
     onCountryUpdate("DE")
     expect(country.value).toBe("DE")
-  })
-
-  it("toggles password field props", () => {
-    const {isPasswordVisible, passwordFieldProps} = usePasswordToggle(false)
-    expect(passwordFieldProps.value.type).toBe("password")
-    passwordFieldProps.value["onClick:append-inner"]()
-    expect(isPasswordVisible.value).toBe(true)
-    expect(passwordFieldProps.value.type).toBe("text")
   })
 
   it("shows transient submit feedback state", () => {

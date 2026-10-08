@@ -1,18 +1,17 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import ResendConfirmation from "@/pages/login/ResendConfirmation.vue"
 import {mountInApp, settle} from "../helpers"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {
   mockRoute,
   mockResendActivation,
-  mockSetFieldValue,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockRoute: {
     query: {username: "alice"},
   },
   mockResendActivation: vi.fn(),
-  mockSetFieldValue: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
@@ -24,17 +23,6 @@ vi.mock("vue-router", async (importOriginal) => {
   }
 })
 
-vi.mock("vee-validate", () => ({
-  Form: {
-    emits: ["submit"],
-    template: "<form @submit.prevent=\"$emit('submit', {})\"><slot :meta='{ valid: true }' /></form>",
-  },
-  useForm: () => ({
-    setFieldValue: mockSetFieldValue,
-    handleSubmit: (cb: () => Promise<void>) => cb,
-  }),
-}))
-
 vi.mock("@/domains/recovery", () => ({
   resendActivation: mockResendActivation,
 }))
@@ -42,7 +30,13 @@ vi.mock("@/domains/recovery", () => ({
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
 
 function mountPage() {
-  return mountInApp(ResendConfirmation, {global: {stubs: {VvField: true}}})
+  return mountInApp(ResendConfirmation)
+}
+
+const field = (wrapper: ReturnType<typeof mountPage>) => wrapper.getComponent({name: "FormControl"})
+const send = async (wrapper: ReturnType<typeof mountPage>) => {
+  await wrapper.get('[data-testid="resend-confirmation-form"]').trigger("submit")
+  await settle()
 }
 
 describe("ResendConfirmation page", () => {
@@ -56,8 +50,7 @@ describe("ResendConfirmation page", () => {
     const wrapper = mountPage()
     await settle()
 
-    expect(mockSetFieldValue).toHaveBeenCalledWith("username", "alice")
-    expect((wrapper.vm as any).form.username).toBe("alice")
+    expect(field(wrapper).props("modelValue")).toBe("alice")
   })
 
   it("asks for a fresh confirmation link", async () => {
@@ -77,8 +70,7 @@ describe("ResendConfirmation page", () => {
     const wrapper = mountPage()
     await settle()
 
-    await (wrapper.vm as any).onSubmit()
-    await settle()
+    await send(wrapper)
 
     expect(wrapper.text()).toContain("you’ll receive an email")
   })
@@ -90,8 +82,7 @@ describe("ResendConfirmation page", () => {
     const wrapper = mountPage()
     await settle()
 
-    await (wrapper.vm as any).onSubmit()
-    await settle()
+    await send(wrapper)
 
     expect(mockHandleNetworkError).toHaveBeenCalled()
     expect(wrapper.find('[data-testid="resend-confirmation-form-state"]').exists()).toBe(true)
@@ -105,12 +96,26 @@ describe("ResendConfirmation page", () => {
     expect(wrapper.find('[data-testid="resend-confirmation-success-state"]').exists()).toBe(false)
   })
 
-  it("takes the username as typed", async () => {
-    const wrapper = mountInApp(ResendConfirmation, {global: {stubs: {VvField: true}}})
-    await settle()
-    wrapper.getComponent({name: "VvField"}).vm.$emit("update:modelValue", "bob")
+  it("takes the username as typed, and asks for one before sending anything", async () => {
+    mockRoute.query = {}
+    const wrapper = mountPage()
     await settle()
 
-    expect((wrapper.vm as any).form.username).toBe("bob")
+    await send(wrapper)
+    expect(mockResendActivation).not.toHaveBeenCalled()
+    expect(field(wrapper).props("errorMessages")).toEqual(["This field is required"])
+
+    field(wrapper).vm.$emit("update:modelValue", "bob")
+    await send(wrapper)
+    expect(mockResendActivation).toHaveBeenCalledWith("bob")
+  })
+
+  it("says a field left empty is required once it is left", async () => {
+    const wrapper = mountInApp(ResendConfirmation)
+    await settle()
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({"Username": ["This field is required"]})
   })
 })

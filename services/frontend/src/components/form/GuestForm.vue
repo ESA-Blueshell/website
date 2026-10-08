@@ -1,17 +1,19 @@
 <script lang="ts" setup>
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import FormFields from "@/components/island/FormFields.vue"
-import {computed} from "vue"
+import {computed, reactive} from "vue"
 import {useStore} from "vuex"
-import {Form} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import type {CreateGuestRequest, GuestResponse} from "@/domains/events"
-import {useCountry, useVeeForm} from "@/composables/formUtils"
+import {useCountry} from "@/composables/formUtils"
+import {type FieldChecks, useFormChecks} from "@/composables/useFormChecks"
+import {email, phoneMobile, required} from "@/utils/checks"
 
 type GuestFormModel = CreateGuestRequest & Partial<GuestResponse>
 
+// A default handed to an unbound v-model stays raw, so its checks would never see an edit.
 const guest = defineModel<GuestFormModel>({
-  default: () => ({
+  default: () => reactive({
     name: "",
     discord: "",
     email: "",
@@ -27,16 +29,23 @@ const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const shown = computed<boolean>(() => props.force || !isLoggedIn.value)
 
 const {country, onCountryUpdate} = useCountry("NL")
-const {formRef, validate} = useVeeForm()
+const checks = useFormChecks((): Record<string, FieldChecks> => (shown.value
+  ? {
+    name: {value: () => guest.value.name, checks: [required]},
+    discord: {value: () => guest.value.discord, checks: [required]},
+    email: {value: () => guest.value.email, checks: [required, email]},
+    phoneNumber: {value: () => guest.value.phoneNumber, checks: [required, phoneMobile(() => country.value)]},
+  }
+  : {}))
+const {errorsOf, touch} = checks
+const validate = async (): Promise<boolean> => checks.attempt()
 
 defineExpose({validate})
 </script>
 
 <template>
-  <Form
+  <div
     v-if="shown"
-    ref="formRef"
-    as="div"
     class="mb-2"
   >
     <notice-box
@@ -50,42 +59,47 @@ defineExpose({validate})
     </notice-box>
 
     <form-fields>
-      <VvField
-        v-model="guest.name"
-        label="Full name*"
-        name="name"
-        test-id="guest-form-name"
-        rules="required"
-      />
-      <VvField
-        v-model="guest.discord"
-        label="Discord username*"
-        name="discord"
-        test-id="guest-form-discord"
-        rules="required"
-      />
+      <div data-testid="guest-form-name">
+        <form-control
+          v-model="guest.name"
+          :error-messages="errorsOf('name')"
+          label="Full name*"
+          @blur="touch('name')"
+        />
+      </div>
+      <div data-testid="guest-form-discord">
+        <form-control
+          v-model="guest.discord"
+          :error-messages="errorsOf('discord')"
+          label="Discord username*"
+          @blur="touch('discord')"
+        />
+      </div>
     </form-fields>
 
     <form-fields>
-      <VvField
-        v-model="guest.email"
-        test-id="guest-form-email"
-        :component-props="{ hint: `We'll use this to send you a link you can use to edit your sign-up form later` }"
-        label="Email*"
-        name="email"
-        rules="required|email"
-      />
-      <VvField
-        v-model="guest.phoneNumber"
-        test-id="guest-form-phone"
-        :component-props="{kind: 'phone', defaultCountry: 'NL'}"
-        :rules="`required|phoneMobile:${country}`"
-        label="Phone Number*"
-        name="phoneNumber"
-        @update:country="onCountryUpdate"
-      />
+      <div data-testid="guest-form-email">
+        <form-control
+          v-model="guest.email"
+          :error-messages="errorsOf('email')"
+          hint="We'll use this to send you a link you can use to edit your sign-up form later"
+          label="Email*"
+          @blur="touch('email')"
+        />
+      </div>
+      <div data-testid="guest-form-phone">
+        <form-control
+          v-model="guest.phoneNumber"
+          default-country="NL"
+          :error-messages="errorsOf('phoneNumber')"
+          kind="phone"
+          label="Phone Number*"
+          @blur="touch('phoneNumber')"
+          @update:country="onCountryUpdate"
+        />
+      </div>
     </form-fields>
-  </Form>
+  </div>
 </template>
 
 <style lang="scss" scoped>

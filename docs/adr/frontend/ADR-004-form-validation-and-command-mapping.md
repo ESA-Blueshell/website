@@ -10,7 +10,7 @@ Backend write APIs are command-oriented with stricter field semantics. Frontend 
 Use a three-stage validation and mapping pipeline for mutating features.
 
 ### Validation Pipeline
-1. UI interaction validation for immediate field feedback (VeeValidate)
+1. UI interaction validation for immediate field feedback (plain checks in `utils/checks.ts`, held per form by `useFormChecks`)
 2. Schema validation for command payload shape (Zod)
 3. Backend error reconciliation (`Problem Details` -> field/global errors)
 
@@ -43,6 +43,5 @@ Use a three-stage validation and mapping pipeline for mutating features.
 - Collapse all backend failures into a single generic error message
 
 ## References
-- VeeValidate: https://vee-validate.logaretm.com/v4/
 - Zod: https://zod.dev/
 - RFC 7807 Problem Details: https://datatracker.ietf.org/doc/html/rfc7807

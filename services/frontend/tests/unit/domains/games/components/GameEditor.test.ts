@@ -5,7 +5,7 @@ import type {Committee} from "@/domains/committees/adapters/committees"
 import type {CasualGame} from "@/domains/games/adapters/games"
 import {aCasualGame, aCommittee, anImage} from "../../../helpers/apiFixtures"
 import GameEditor from "@/domains/games/components/GameEditor.vue"
-import "@/plugins/validation"
+import {clearEveryField, saidByLabel} from "../../../helpers/fields"
 
 const adapter = vi.hoisted(() => ({addCasualGame: vi.fn(), saveCasualGame: vi.fn(), storeGameBanner: vi.fn(), storeGameIcon: vi.fn()}))
 vi.mock("@/domains/games/adapters/games", () => adapter)
@@ -51,8 +51,9 @@ const chess = aCasualGame({
 })
 
 const field = (wrapper: ReturnType<typeof mountEditor>, id: string) => wrapper.get(`[data-testid=game-edit-${id}] input`)
-const write = (wrapper: ReturnType<typeof mountEditor>, name: string, value: unknown) =>
-  wrapper.findAllComponents({name: "VvField"}).find(one => one.props("name") === name)!.vm.$emit("update:modelValue", value)
+const write = (wrapper: ReturnType<typeof mountEditor>, id: string, value: unknown) =>
+  wrapper.findAllComponents({name: "FormControl"})
+    .find(one => one.element.parentElement?.dataset.testid === `game-edit-${id}`)!.vm.$emit("update:modelValue", value)
 
 const mountEditor = (game: CasualGame | null, area: "casual" | "competition" = "casual", enterIn: number | null = null) =>
   mount(GameEditor, {props: {game, area, enterIn, back: `/${area}`}, global: {stubs}})
@@ -172,7 +173,7 @@ describe("the game edit page", () => {
     const esports = wrapper.findAllComponents(stubs.GameChannelPicker).find(one => one.props("testid") === "game-edit-esports-channels")!
 
     expect(head().props("intro")).toBe("Blitz")
-    write(wrapper, "competitionIntro", "Rated only")
+    write(wrapper, "competition-intro", "Rated only")
     esports.vm.$emit("update:modelValue", [{id: "7", guildId: "324", name: "chess-esports"}])
     await flushPromises()
 
@@ -240,5 +241,13 @@ describe("the game edit page", () => {
     expect(mountEditor(chess).find("[data-testid=game-edit-remove]").exists()).toBe(false)
     await wrapper.get("[data-testid=game-edit-cancel]").trigger("click")
     expect(wrapper.emitted("cancel")).toHaveLength(1)
+  })
+
+  it("says a name or address left empty is required once it is left", async () => {
+    const wrapper = mountEditor(chess)
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({"Name*": ["This field is required"], "Address*": ["This field is required"]})
   })
 })

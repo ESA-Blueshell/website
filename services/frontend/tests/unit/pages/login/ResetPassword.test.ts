@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import ResetPassword from "@/pages/login/ResetPassword.vue"
 import {mountInApp, settle} from "../helpers"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {
   mockRoute,
@@ -29,19 +30,6 @@ vi.mock("vue-router", async (importOriginal) => {
   }
 })
 
-vi.mock("vee-validate", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("vee-validate")>()
-  return {
-    ...actual,
-    Form: {
-      template: "<form @submit.prevent><slot :meta='{ valid: true }' /></form>",
-    },
-    useForm: () => ({
-      handleSubmit: (cb: () => Promise<void>) => cb,
-    }),
-  }
-})
-
 vi.mock("@/domains/recovery", () => ({
   setNewPassword: mockSetNewPassword,
 }))
@@ -59,15 +47,19 @@ describe("ResetPassword page", () => {
     mockSetNewPassword.mockResolvedValue(undefined)
   })
 
-  it("reads token from hash, strips it from URL, and submits reset request", async () => {
-    const wrapper = shallowMount(ResetPassword, {
-      global: {
-        stubs: {
-          VvField: true,
-        },
-      },
-    })
+  const fields = (wrapper: ReturnType<typeof mountInApp>) => wrapper.findAllComponents({name: "FormControl"})
+  const typeBoth = async (wrapper: ReturnType<typeof mountInApp>, password: string, again: string) => {
+    fields(wrapper)[0]!.vm.$emit("update:modelValue", password)
+    fields(wrapper)[1]!.vm.$emit("update:modelValue", again)
+    await settle()
+  }
+  const send = async (wrapper: ReturnType<typeof mountInApp>) => {
+    await wrapper.get('[data-testid="reset-password-form"]').trigger("submit")
+    await settle()
+  }
 
+  it("reads token from hash, strips it from URL, and submits reset request", async () => {
+    const wrapper = mountInApp(ResetPassword)
     await settle()
 
     expect(mockRouterReplace).toHaveBeenCalledWith({
@@ -75,15 +67,38 @@ describe("ResetPassword page", () => {
       hash: "",
     })
 
-    ;(wrapper.vm as any).form.password = "NewPass123!"
-    await (wrapper.vm as any).onSubmit()
-    await settle()
+    await typeBoth(wrapper, "NewPass123!", "NewPass123!")
+    await send(wrapper)
 
     expect(mockSetNewPassword).toHaveBeenCalledWith({
       password: "NewPass123!",
       token: "reset-token",
     })
-    expect((wrapper.vm as any).succeeded).toBe(true)
+    expect(wrapper.find('[data-testid="reset-password-success-state"]').exists()).toBe(true)
+  })
+
+  it("sends nothing while the password is weak or its repeat differs, and says which", async () => {
+    const wrapper = mountInApp(ResetPassword)
+    await settle()
+
+    await typeBoth(wrapper, "newpass123!", "other")
+    await send(wrapper)
+
+    expect(mockSetNewPassword).not.toHaveBeenCalled()
+    expect(fields(wrapper)[0]!.props("errorMessages")).toEqual(["Include an uppercase letter"])
+    expect(fields(wrapper)[1]!.props("errorMessages")).toEqual(["Values do not match"])
+    expect(fields(wrapper)[0]!.props("kind")).toBe("password")
+  })
+
+  it("says the link may be spent when the api refuses it without naming a field", async () => {
+    mockSetNewPassword.mockRejectedValue(new Error("gone"))
+    const wrapper = mountInApp(ResetPassword)
+    await settle()
+
+    await typeBoth(wrapper, "NewPass123!", "NewPass123!")
+    await send(wrapper)
+
+    expect(wrapper.get('[data-testid="reset-password-error-alert"]').text()).toContain("may be invalid or expired")
   })
 
   it("redirects home when token is absent", async () => {
@@ -96,16 +111,19 @@ describe("ResetPassword page", () => {
     expect(mockRouterReplace).toHaveBeenCalledWith({name: "home"})
   })
 
-  it("takes the new password and its repeat as typed, under a Reset Password button", async () => {
-    const wrapper = mountInApp(ResetPassword, {global: {stubs: {VvField: true}}})
-    await settle()
-    const [password, again] = wrapper.findAllComponents({name: "VvField"})
-    password!.vm.$emit("update:modelValue", "NewPass123!")
-    again!.vm.$emit("update:modelValue", "NewPass123!")
+  it("says Reset Password on its button", async () => {
+    const wrapper = mountInApp(ResetPassword)
     await settle()
 
-    expect((wrapper.vm as any).form.password).toBe("NewPass123!")
-    expect((wrapper.vm as any).passwordAgain).toBe("NewPass123!")
     expect(wrapper.get('[data-testid="reset-password-submit-btn"]').text()).toBe("Reset Password")
+  })
+
+  it("says a field left empty is required once it is left", async () => {
+    const wrapper = mountInApp(ResetPassword)
+    await settle()
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({"New Password": ["This field is required"], "Repeat New Password": ["This field is required"]})
   })
 })

@@ -2,7 +2,6 @@ import {describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import FieldGallery from "@/pages/design/FieldGallery.vue"
 // The app loads its rules in main.ts; the sign-up form builder's fields validate as they mount.
-import "@/plugins/validation"
 
 const {mockCohorts, mockEvents, mockPeriods, mockUsers, mockSearch} = vi.hoisted(() => ({
   mockCohorts: vi.fn(), mockEvents: vi.fn(), mockPeriods: vi.fn(), mockUsers: vi.fn(),

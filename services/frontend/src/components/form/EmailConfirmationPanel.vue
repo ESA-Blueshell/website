@@ -14,18 +14,17 @@
       {{ confirmationConsequence }}
     </notice-box>
 
-    <Form
+    <div
       v-if="correcting"
-      ref="formRef"
-      as="div"
       data-testid="email-confirm-correct-form"
     >
-      <VvField
+      <form-control
         v-model="correctedEmail"
-        :component-props="{ type: 'email', 'data-testid': 'email-confirm-address-field' }"
+        data-testid="email-confirm-address-field"
+        :error-messages="errorsOf('email')"
+        kind="email"
         label="Email address"
-        name="email"
-        rules="required|email"
+        @blur="touch('email')"
       />
       <div class="panel-acts">
         <cut-button
@@ -45,7 +44,7 @@
           Send to this address
         </cut-button>
       </div>
-    </Form>
+    </div>
 
     <div
       v-else
@@ -82,12 +81,12 @@
 import CutButton from "@/components/island/CutButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import {ref} from "vue"
-import {Form} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import {correctSignupEmail, resendActivation} from "@/domains/recovery"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {handleSubmitError, useVeeForm} from "@/composables/formUtils"
+import {reportRefusal, useFormChecks} from "@/composables/useFormChecks"
+import {email as emailCheck, required} from "@/utils/checks"
 
 const {
   email,
@@ -115,7 +114,10 @@ const correcting = ref(false)
 const correctedEmail = ref("")
 const submitting = ref(false)
 
-const {formRef, validate} = useVeeForm()
+const checks = useFormChecks(() => ({
+  email: {value: () => correctedEmail.value, checks: [required, emailCheck]},
+}))
+const {errorsOf, touch} = checks
 
 async function withSubmitting(action: () => Promise<void>) {
   try {
@@ -132,7 +134,7 @@ function startCorrecting() {
 }
 
 const correctEmailAddress = () => withSubmitting(async () => {
-  if (!(await validate())) return
+  if (!checks.attempt()) return
   if (!continuationToken) {
     store.commit("setStatusSnackbarMessage", "this signup expired, so sign in or start again")
     return
@@ -143,7 +145,7 @@ const correctEmailAddress = () => withSubmitting(async () => {
     store.commit("setStatusSnackbarMessage", `Confirmation sent to ${correctedEmail.value}`)
     emit("email-corrected", correctedEmail.value)
   } catch (e) {
-    handleSubmitError(formRef.value, e)
+    reportRefusal(checks, e)
   }
 })
 

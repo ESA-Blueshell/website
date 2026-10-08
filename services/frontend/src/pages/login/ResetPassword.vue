@@ -9,43 +9,34 @@
       <div
         class="island-panel"
       >
-        <Form
-          ref="formRef"
-          v-slot="{ meta }"
-          as="form"
+        <form
           data-testid="reset-password-form"
-          @submit="onSubmit"
+          @submit.prevent="onSubmit"
         >
-          <VvField
+          <form-control
             v-model="form.password"
-            :component-props="{
-              autocomplete: 'new-password',
-              label: 'New Password',
-              'data-testid': 'reset-password-new-password-field',
-              ...passwordFieldProps
-            }"
-            name="password"
-            rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
+            autocomplete="new-password"
+            data-testid="reset-password-new-password-field"
+            :error-messages="errorsOf('password')"
+            kind="password"
+            label="New Password"
+            @blur="touch('password')"
           />
-
-          
-          <VvField
+          <form-control
             v-model="passwordAgain"
-            :component-props="{
-              autocomplete: 'new-password',
-              label: 'Repeat New Password',
-              'data-testid': 'reset-password-repeat-password-field',
-              ...passwordFieldProps
-            }"
-            name="passwordAgain"
-            rules="required|match:@password"
+            autocomplete="new-password"
+            data-testid="reset-password-repeat-password-field"
+            :error-messages="errorsOf('passwordAgain')"
+            kind="password"
+            label="Repeat New Password"
+            @blur="touch('passwordAgain')"
           />
 
           <div class="form-save">
             <cut-button
               tone="solid"
               submit
-              :disabled="!meta.valid || loading"
+              :disabled="loading"
               data-testid="reset-password-submit-btn"
             >
               Reset Password
@@ -75,7 +66,7 @@
               </RouterLink>
             </p>
           </div>
-        </Form>
+        </form>
       </div>
     </div>
   </v-main>
@@ -86,12 +77,12 @@ import CutButton from "@/components/island/CutButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import {Form} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import VvField from "@/components/form/fields/VvField.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import {type PasswordResetRequest, setNewPassword} from "@/domains/recovery"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
-import {handleSubmitError, usePasswordToggle, useVeeForm} from "@/composables/formUtils"
+import {reportRefusal, useFormChecks} from "@/composables/useFormChecks"
+import {matches, maxChars, minChars, required, strongPassword} from "@/utils/checks"
 
 const route = useRoute()
 const router = useRouter()
@@ -108,8 +99,11 @@ const form = ref<PasswordResetRequest>({
   token: "",
 })
 
-const {formRef} = useVeeForm()
-const {passwordFieldProps} = usePasswordToggle()
+const checks = useFormChecks(() => ({
+  password: {value: () => form.value.password, checks: [required, minChars(8), maxChars(100), strongPassword]},
+  passwordAgain: {value: () => passwordAgain.value, checks: [required, matches(() => form.value.password)]},
+}))
+const {errorsOf, touch, attempt} = checks
 
 onMounted(() => {
   const resolvedToken = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
@@ -123,6 +117,7 @@ onMounted(() => {
 })
 
 async function onSubmit() {
+  if (!attempt()) return
   loading.value = true
   errorMessage.value = null
 
@@ -131,7 +126,7 @@ async function onSubmit() {
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
   } catch (e: unknown) {
-    if (!handleSubmitError(formRef.value, e)) {
+    if (!reportRefusal(checks, e)) {
       errorMessage.value = "We couldn't reset your password. The link may be invalid or expired."
     }
   } finally {

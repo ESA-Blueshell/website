@@ -1,19 +1,7 @@
 import {computed, ref} from "vue"
-import type {FormContext} from "vee-validate"
 import {useStore} from "vuex"
-import {apply, type FieldMap, type RejectableForm} from "@/plugins/validation.ts"
-import {$handleNetworkError, $showStatusMessage} from "@/plugins/handleNetworkError.ts"
 import type {CountryCode} from "libphonenumber-js/max"
 import {useIsBoard} from "@/composables/useIsBoard"
-
-export function useVeeForm() {
-  const formRef = ref<FormContext>()
-  const validate = async (): Promise<boolean> => {
-    const result = await formRef.value?.validate()
-    return !!result?.valid
-  }
-  return {formRef, validate}
-}
 
 export function useSaving() {
   const isSaving = ref(false)
@@ -30,30 +18,6 @@ export function useSaving() {
   return {isSaving, withSaving}
 }
 
-/**
- * Reports a rejected submit, and answers whether it was a field-validation one.
- *
- * A rejection the form cannot pin on a field still has to reach the person who
- * submitted it. Backend and form name the same field differently often enough
- * that leaving those errors to the form alone is what strands somebody on a step
- * where pressing the button appears to do nothing at all.
- */
-export function handleSubmitError(
-  formRef: RejectableForm | undefined,
-  err: unknown,
-  fieldMap?: FieldMap
-): boolean {
-  const unattached = formRef ? apply(formRef, err, fieldMap) : null
-  if (!unattached) {
-    $handleNetworkError(err)
-    return false
-  }
-  if (unattached.messages.length) {
-    $showStatusMessage(unattached.messages.join(" "))
-  }
-  return true
-}
-
 export function useReadonly() {
   const store = useStore()
   const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
@@ -68,18 +32,6 @@ export function useCountry(initial: CountryCode = "NL" as CountryCode) {
     country.value = newCountry as CountryCode
   }
   return {country, onCountryUpdate}
-}
-
-export function usePasswordToggle(defaultVisible = false) {
-  const isPasswordVisible = ref<boolean>(defaultVisible)
-  const passwordFieldProps = computed(() => ({
-    type: isPasswordVisible.value ? "text" : "password",
-    "append-inner-icon": isPasswordVisible.value ? "mdi-eye" : "mdi-eye-off",
-    "onClick:append-inner": () => {
-      isPasswordVisible.value = !isPasswordVisible.value
-    },
-  }))
-  return {isPasswordVisible, passwordFieldProps}
 }
 
 export type SubmitState = "idle" | "success" | "error"

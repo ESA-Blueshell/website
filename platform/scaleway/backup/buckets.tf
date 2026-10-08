@@ -53,7 +53,9 @@ resource "scaleway_object_bucket" "backup" {
   }
 
   # A deleted object only gains a delete marker, and its locked version cannot be
-  # removed early. Once the lock has run out, this rule erases it.
+  # removed early. Once the lock has run out, this rule erases it. No rule may carry
+  # an `expiration` block: Scaleway reads one without days as expiring every current
+  # object at the next midnight, even with only expired_object_delete_marker set.
   lifecycle_rule {
     id                                     = "noncurrent-after-lock"
     enabled                                = true
@@ -61,15 +63,6 @@ resource "scaleway_object_bucket" "backup" {
 
     noncurrent_version_expiration {
       noncurrent_days = var.lock_days
-    }
-  }
-
-  lifecycle_rule {
-    id      = "orphaned-delete-markers"
-    enabled = true
-
-    expiration {
-      expired_object_delete_marker = true
     }
   }
 }

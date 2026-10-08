@@ -13,9 +13,9 @@ import {
 } from "@/domains/user"
 import VvField from "@/components/form/fields/VvField.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
-import {VCheckbox} from "vuetify/components"
+import CheckBox from "@/components/island/CheckBox.vue"
 import SubmitButton from "@/components/form/SubmitButton.vue"
-import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
 import type {FieldMap} from "@/plugins/validation"
 
 // TWIN: the api's MembershipConditions, which refuses an application that does not accept them.
@@ -54,7 +54,6 @@ const membership = defineModel<MembershipResponse>({default: () => ({}) as Membe
 
 const {formRef, validate} = useVeeForm()
 const {isSaving, withSaving} = useSaving()
-const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 const consented = ref(false)
 const isCreating = computed<boolean>(() => !membership.value?.id)
 const isBoardMode = computed<boolean>(() => props.userId !== undefined)
@@ -62,7 +61,6 @@ const isBoardMode = computed<boolean>(() => props.userId !== undefined)
 const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null> => {
   if (!(await validate())) {
     emit("submitted", false)
-    setSubmitResult(false)
     return null
   }
   try {
@@ -73,13 +71,11 @@ const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null
       const outcome = await withSaving(async () =>
         await applyForMembership(props.signupToken!, consented.value))
       emit("submitted", true)
-      setSubmitResult(true)
       return outcome
     }
     if (!membership.value?.id && props.userId === undefined) {
       const outcome = await withSaving(async () => await startOwnMembership(consented.value))
       emit("submitted", true)
-      setSubmitResult(true)
       return outcome
     }
     const resp = await withSaving(async () => {
@@ -92,12 +88,10 @@ const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null
     })
     membership.value = resp
     emit("submitted", true)
-    setSubmitResult(true)
     return membership.value
   } catch (err: unknown) {
     handleSubmitError(formRef.value, err, membershipFieldMap)
     emit("submitted", false)
-    setSubmitResult(false)
     return null
   }
 }
@@ -169,10 +163,7 @@ defineExpose({validate, save})
 
     <!-- Self-service mode: membership conditions + consent + member type -->
     <template v-else>
-      <v-sheet
-        class="pa-4"
-        style="border-radius: 10px"
-      >
+      <div class="membership-terms">
         <strong>Membership conditions</strong><br>
         By submitting this form you declare to be a member of Blueshell E-Sports Association Enschede until further
         notice. You hereby agree to the Statutes, privacy policy and the Domestic Regulations (Huishoudelijk reglement) of
@@ -188,48 +179,45 @@ defineExpose({validate, save})
         <div class="checkbox-row">
           <VvField
             v-model="consented"
-            :component="VCheckbox"
-            :component-props="{ hideDetails: 'auto', class: 'w-100' }"
+            :component="CheckBox"
             label="I confirm that I have read and agree to the membership terms above, including the Statutes, Domestic Regulations, and Privacy Policy, and I understand these conditions are required for membership."
             name="consented"
             rules="accepted"
           />
         </div>
-      </v-sheet>
+      </div>
     </template>
 
-    <v-row
-      align="end"
-      class="mb-5 mt-2"
-      justify="end"
+    <div
+      v-if="props.showSubmit"
+      class="form-save"
     >
-      <v-col
-        v-if="props.showSubmit"
-        cols="auto"
-      >
-        <submit-button
-          :disabled="isSaving || !meta.valid"
-          :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-          :loading="isSaving"
-          :show-submit-status="showSubmitStatus"
-          :submit-state="submitState"
-          :text="props.submitText"
-          :data-testid="props.submitTestId"
-          :data-submit-mode="isCreating ? 'create' : 'update'"
-          @click="save"
-        />
-      </v-col>
-    </v-row>
+      <submit-button
+        :disabled="isSaving || !meta.valid"
+        :loading="isSaving"
+        :text="props.submitText"
+        :data-testid="props.submitTestId"
+        :data-submit-mode="isCreating ? 'create' : 'update'"
+        @click="save"
+      />
+    </div>
   </Form>
 </template>
 
 <style lang="scss" scoped>
-.checkbox-row {
-  width: 100%;
+.membership-terms {
+  padding: 1rem 1.1rem;
+  background-color: var(--band-ground);
 }
 
-.checkbox-row :deep(.v-selection-control) {
-  align-items: flex-start;
+.form-save {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1.2rem 0 1.25rem;
+}
+
+.checkbox-row {
+  width: 100%;
 }
 
 .checkbox-row :deep(.v-label) {

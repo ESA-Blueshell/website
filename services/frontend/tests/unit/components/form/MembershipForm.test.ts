@@ -122,6 +122,13 @@ describe("MembershipForm", () => {
     })
   })
 
+  it("accepts the conditions with the island's tick box", () => {
+    const wrapper = mount(MembershipForm, {global: {stubs: {Form: formStub}}})
+
+    expect(wrapper.findComponent({name: "CheckBox"}).exists()).toBe(true)
+    expect(wrapper.find(".v-checkbox").exists()).toBe(false)
+  })
+
   it("returns the intended acceptance validation message", async () => {
     mount(MembershipForm)
     const result = await validate(false, "accepted")

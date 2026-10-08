@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import NoticeBox from "@/components/island/NoticeBox.vue"
+import FormFields from "@/components/island/FormFields.vue"
 import {computed} from "vue"
 import {useStore} from "vuex"
 import {Form} from "vee-validate"
@@ -37,76 +39,61 @@ defineExpose({validate})
     as="div"
     class="mb-2"
   >
-    <v-alert
+    <notice-box
       v-if="!force"
-      class="mb-4"
-      text="It seems you are not logged in. You can still sign up for this event, but we'll need some extra info from you."
-      type="info"
-      variant="outlined"
-    />
+      class="guest-form__notice"
+      testid="guest-form-signed-out"
+      title="You are not signed in"
+      tone="info"
+    >
+      <p>You can still sign up for this event, but we need a few details from you.</p>
+    </notice-box>
 
-    <v-row>
-      <v-col
-        cols="12"
-        md="6"
-      >
-        <VvField
-          v-model="guest.name"
-          label="Full name*"
-          name="name"
-          test-id="guest-form-name"
-          rules="required"
-        />
-      </v-col>
-      <v-col
-        cols="12"
-        md="6"
-      >
-        <VvField
-          v-model="guest.discord"
-          label="Discord username*"
-          name="discord"
-          test-id="guest-form-discord"
-          rules="required"
-        />
-      </v-col>
-    </v-row>
+    <form-fields>
+      <VvField
+        v-model="guest.name"
+        label="Full name*"
+        name="name"
+        test-id="guest-form-name"
+        rules="required"
+      />
+      <VvField
+        v-model="guest.discord"
+        label="Discord username*"
+        name="discord"
+        test-id="guest-form-discord"
+        rules="required"
+      />
+    </form-fields>
 
-    <v-row>
-      <v-col
-        cols="12"
-        md="6"
-      >
-        <VvField
-          v-model="guest.email"
-          test-id="guest-form-email"
-          :component-props="{ hint: `We'll use this to send you a link you can use to edit your sign-up form later` }"
-          label="Email*"
-          name="email"
-          rules="required|email"
-        />
-      </v-col>
-
-      <v-col
-        cols="12"
-        md="6"
-      >
-        <VvField
-          v-model="guest.phoneNumber"
-          test-id="guest-form-phone"
-          :component-props="{kind: 'phone', defaultCountry: 'NL'}"
-          :rules="`required|phoneMobile:${country}`"
-          label="Phone Number*"
-          name="phoneNumber"
-          @update:country="onCountryUpdate"
-        />
-      </v-col>
-    </v-row>
+    <form-fields>
+      <VvField
+        v-model="guest.email"
+        test-id="guest-form-email"
+        :component-props="{ hint: `We'll use this to send you a link you can use to edit your sign-up form later` }"
+        label="Email*"
+        name="email"
+        rules="required|email"
+      />
+      <VvField
+        v-model="guest.phoneNumber"
+        test-id="guest-form-phone"
+        :component-props="{kind: 'phone', defaultCountry: 'NL'}"
+        :rules="`required|phoneMobile:${country}`"
+        label="Phone Number*"
+        name="phoneNumber"
+        @update:country="onCountryUpdate"
+      />
+    </form-fields>
   </Form>
 </template>
 
 <style lang="scss" scoped>
-.v-checkbox .v-selection-control {
-  min-height: 40px !important;
+.guest-form__notice {
+  margin-bottom: 1rem;
+}
+
+.form-fields + .form-fields {
+  margin-top: 0.5rem;
 }
 </style>

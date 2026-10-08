@@ -35,44 +35,26 @@ It is safe to run again: it fills in only what is missing, stops without writing
 Secret Manager disagree about the password, and never replaces a password the repository already
 opens with.
 
-**You need** `vault`, `kubectl` with the cluster's kubeconfig, `jq` and `openssl`
-(`brew install hashicorp/tap/vault jq`), your own Scaleway API key (the one OpenTofu uses) and
-an admin login to the site.
+**You need** `kubectl` with the cluster's kubeconfig, `vault`, `jq` and `openssl`
+(`brew install hashicorp/tap/vault jq`), your own Scaleway API key (the one OpenTofu uses), the
+organization ID and an admin login to the site. Then:
 
-1. In one terminal, open a path to Vault. Its public address sits behind the site's sign-in, which
-   the `vault` CLI cannot pass:
+```bash
+scripts/seed-backup-credentials.sh
+```
 
-   ```bash
-   kubectl -n data-system port-forward svc/vault 8200:8200
-   ```
+It asks for your Scaleway secret key without showing it, and for the organization ID. It opens
+its own port-forward to Vault, since Vault's public host sits behind the site's sign-in, and
+opens a browser on that sign-in. Its Vault token stays in the script and is revoked when it ends,
+as is the port-forward.
 
-2. In a second terminal, sign in to Vault through the site:
-
-   ```bash
-   bash
-   export VAULT_ADDR=http://127.0.0.1:8200
-   vault login -method=oidc
-   ```
-
-   A browser opens on the site's sign-in. An admin account is needed.
-
-3. Load your Scaleway key without showing it, and run the script:
-
-   ```bash
-   read -rsp "Scaleway secret key: " SCW_SECRET_KEY; echo; export SCW_SECRET_KEY
-   export SCW_DEFAULT_ORGANIZATION_ID=<organization id> SCW_DEFAULT_PROJECT_ID=<project id>
-   scripts/seed-backup-credentials.sh
-   ```
-
-   Each line it prints is one thing checked or done. The last check must say Vault has all three
-   fields, Secret Manager `1 enabled version` and `backup-writer 1 key(s)`. If it names a second
-   writer key, delete that one in the console.
-
-4. Close the port-forward, and `vault token revoke -self` if you are done with Vault.
+Each line it prints is one thing checked or done. The last check must say Vault has all three
+fields, Secret Manager `1 enabled version` and `backup-writer 1 key(s)`. If it names a second
+writer key, delete that one in the console.
 
 `secret/platform/alerting` gains `gatus.backup_token` on its own: `bootstrap-auth.sh` seeds it.
 
-**Replacing the writer key** by hand, say after a suspected leak: run the same steps with
+**Replacing the writer key** by hand, say after a suspected leak: run
 `scripts/seed-backup-credentials.sh --new-writer-key`. It makes a new key, puts it in Vault and
 deletes the old one. The rotation job (#2099) will do this every 30 days on its own.
 

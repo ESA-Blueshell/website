@@ -6,7 +6,8 @@
 #   scripts/seed-backup-credentials.sh                   first seeding; safe to run again
 #   scripts/seed-backup-credentials.sh --new-writer-key  replaces the writer key, deletes the old
 #
-# platform/docs/backup.md has what to set up first and what to check afterwards.
+# It opens its own port-forward to Vault and signs in through the site in a browser; the Vault
+# token stays in this process and is revoked on exit. platform/docs/backup.md has the rest.
 set -euo pipefail
 
 REGION=nl-ams
@@ -25,24 +26,68 @@ esac
 die() { echo "Stopped: $*" >&2; exit 1; }
 step() { echo "- $*"; }
 
-for tool in vault curl jq openssl; do
+for tool in kubectl vault curl jq openssl; do
   command -v "$tool" >/dev/null || die "$tool is not installed."
 done
-: "${SCW_SECRET_KEY:?Load your own Scaleway key first: read -rsp 'Scaleway secret key: ' SCW_SECRET_KEY; export SCW_SECRET_KEY}"
-: "${SCW_DEFAULT_ORGANIZATION_ID:?Export SCW_DEFAULT_ORGANIZATION_ID.}"
-: "${SCW_DEFAULT_PROJECT_ID:?Export SCW_DEFAULT_PROJECT_ID.}"
-: "${VAULT_ADDR:?Export VAULT_ADDR=https://vault.esa-blueshell.nl and run vault login -method=oidc.}"
 
+if [[ -z ${SCW_SECRET_KEY:-} ]]; then
+  read -rsp "Your Scaleway secret key (not shown): " SCW_SECRET_KEY
+  echo
+fi
+[[ -n $SCW_SECRET_KEY ]] || die "No Scaleway key given."
+if [[ -z ${SCW_DEFAULT_ORGANIZATION_ID:-} ]]; then
+  read -rp "Scaleway organization ID: " SCW_DEFAULT_ORGANIZATION_ID
+fi
+# The organization's first project shares its ID, and the backups live there.
+SCW_DEFAULT_PROJECT_ID=${SCW_DEFAULT_PROJECT_ID:-$SCW_DEFAULT_ORGANIZATION_ID}
+
+# The key reaches curl through a file descriptor, never as an argument `ps` would show.
 scw() {
   local method=$1 path=$2
   shift 2
-  curl -sS --fail-with-body -X "$method" -H "X-Auth-Token: $SCW_SECRET_KEY" \
+  curl -sS --fail-with-body -X "$method" -H @<(printf 'X-Auth-Token: %s\n' "$SCW_SECRET_KEY") \
     -H 'Content-Type: application/json' "$API$path" "$@"
 }
 
+forward_pid=""
+cleanup() {
+  if [[ -n ${VAULT_TOKEN:-} ]]; then
+    vault token revoke -self >/dev/null 2>&1 && echo "- Your Vault token is revoked."
+  fi
+  [[ -n $forward_pid ]] && kill "$forward_pid" 2>/dev/null
+  unset VAULT_TOKEN SCW_SECRET_KEY
+}
+trap cleanup EXIT
+
+# Vault's public host sits behind the site's sign-in, which the vault CLI cannot pass, so the
+# script reaches the Service directly. An exported VAULT_ADDR skips this.
+if [[ -z ${VAULT_ADDR:-} ]]; then
+  log=$(mktemp)
+  kubectl -n data-system port-forward svc/vault :8200 >"$log" 2>&1 &
+  forward_pid=$!
+  port=""
+  for _ in $(seq 1 30); do
+    port=$(sed -n 's/^Forwarding from 127\.0\.0\.1:\([0-9]*\) .*/\1/p' "$log" | head -1)
+    [[ -n $port ]] && break
+    kill -0 "$forward_pid" 2>/dev/null || break
+    sleep 0.5
+  done
+  [[ -n $port ]] || die "kubectl could not reach Vault: $(tail -1 "$log")"
+  rm -f "$log"
+  export VAULT_ADDR=http://127.0.0.1:$port
+  step "Reaching Vault through a port-forward on $port."
+fi
+
+# Kept out of ~/.vault-token: the token lives in this process and is revoked on exit.
+if [[ -z ${VAULT_TOKEN:-} ]]; then
+  echo "- A browser opens on the site's sign-in; sign in with an admin account."
+  VAULT_TOKEN=$(vault login -method=oidc -no-store -token-only) || die "The Vault sign-in did not complete."
+  export VAULT_TOKEN
+fi
+
 # --- Preflight: every check before anything is written --------------------------------------
 
-vault token lookup >/dev/null 2>&1 || die "Vault does not accept your token. Run: vault login -method=oidc"
+vault token lookup >/dev/null 2>&1 || die "Vault does not accept the token."
 caps=$(vault token capabilities "secret/data/${VAULT_PATH#secret/}")
 [[ $caps == *root* || ($caps == *create* && $caps == *update* && $caps == *read*) ]] ||
   die "Your Vault token may not write $VAULT_PATH (it has: $caps)."

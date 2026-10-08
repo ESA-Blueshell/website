@@ -104,6 +104,7 @@ export const aMembership = (over: Partial<MembershipResponse> = {}): MembershipR
   id: 1,
   userId: 42,
   memberType: MemberType.REGULAR,
+  pending: false,
   incasso: false,
   startDate: "2026-09-01",
   ...over,

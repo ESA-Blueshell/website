@@ -472,7 +472,7 @@ async function confirmDeleteUser() {
               <div class="mm-filters">
                 <v-select
                   v-model="memberFilter"
-                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'Pending',value:'pending'},{title:'No',value:'no'}]"
                   data-testid="member-manager-filter-membership"
                   :density="toolbarDensity"
                   hide-details

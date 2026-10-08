@@ -12,6 +12,9 @@ data class MembershipResponse(
     var startDate: LocalDate,
     var endDate: LocalDate? = null,
     var incasso: Boolean,
+    @field:Schema(description = "Running and waiting for its first contribution, so it carries no member role yet.")
+    var pending: Boolean,
+    var activatedOn: LocalDate?,
     var version: Long,
     var id: Long,
     var createdAt: Instant,

@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {
-  accepted, alphaNum, dateAfter, dateBefore, dateMax, dateMin, dateRequired, email, firstFailure, matches,
+  accepted, dateAfter, dateBefore, dateMax, dateMin, dateRequired, email, firstFailure, matches,
   maxChars, maxValue, minChars, minValue, momentAfter, momentNotAfter, notEmpty, phoneMobile, required,
   strongPassword,
 } from "@/utils/checks"
@@ -15,12 +15,6 @@ describe("what a field must hold", () => {
     expect(required("said")).toBeNull()
     expect(dateRequired("")).toBe("Date is required")
     expect(dateRequired("2026-01-01")).toBeNull()
-  })
-
-  it("takes letters and numbers and nothing else", () => {
-    expect(alphaNum("")).toBeNull()
-    expect(alphaNum("abc123")).toBeNull()
-    expect(alphaNum("a b")).toBe("Use only letters and numbers")
   })
 
   it("counts the characters and the number both ways, and leaves an empty field to required", () => {

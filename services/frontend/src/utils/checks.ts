@@ -30,8 +30,6 @@ export const dateRequired = (value: unknown): string | null => (value ? null : "
 
 export const accepted = (message: string) => (value: unknown): string | null => (value === true ? null : message)
 
-export const alphaNum = unlessEmpty(value => (/^[a-zA-Z0-9]+$/.test(value) ? null : "Use only letters and numbers"))
-
 export const email = unlessEmpty(value =>
   (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value) ? null : "Enter a valid e-mail address"))
 

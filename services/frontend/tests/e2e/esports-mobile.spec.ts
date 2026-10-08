@@ -7,9 +7,9 @@ test.describe("esports mobile layout", {tag: "@phone"}, () => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})
 
-    await page.goto("/competition/valorant")
+    await page.goto("/esports/valorant")
 
-    await expect(page).toHaveURL(/\/competition\/valorant$/)
+    await expect(page).toHaveURL(/\/esports\/valorant$/)
     const first = page.getByTestId("team-roster-1")
     const second = page.getByTestId("team-roster-2")
     await expect(first).toContainText("BS Waterboarders")
@@ -30,7 +30,7 @@ test.describe("esports mobile layout", {tag: "@phone"}, () => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})
 
-    await page.goto("/competition/valorant")
+    await page.goto("/esports/valorant")
     const strip = page.getByTestId("esports-season-timeline")
     await strip.waitFor()
 
@@ -62,7 +62,7 @@ test.describe("travelling between seasons with a finger", {tag: "@phone"}, () =>
   // here to observe.
   test.skip(({isMobile}) => !isMobile, "the gesture binds only where the pointer is coarse")
 
-  const INDEX = "/competition?season=20"
+  const INDEX = "/esports?season=20"
 
   test("carries the index back to the season before this one, and the back button returns", async ({page}) => {
     await installApiMocks(page)
@@ -74,20 +74,20 @@ test.describe("travelling between seasons with a finger", {tag: "@phone"}, () =>
 
     await expect(page).toHaveURL(/\?season=19$/)
     // The season's own games, read for it: Valorant fielded one team in it rather than two.
-    await expect(page.locator('a[href="/competition/valorant?season=19"]')).toHaveCount(1)
+    await expect(page.locator('a[href="/esports/valorant?season=19"]')).toHaveCount(1)
 
     // A swipe is a navigation like any other: it has left a history entry behind it.
     await page.goBack()
     await expect(page).toHaveURL(/\?season=20$/)
-    await expect(page.locator('a[href="/competition/valorant?season=20"]')).toHaveCount(1)
+    await expect(page.locator('a[href="/esports/valorant?season=20"]')).toHaveCount(1)
   })
 
   test("returns to the newest season where the back button lands on a url naming none", async ({page}) => {
     await installApiMocks(page)
     // Opened without a season named, which the page reads as the association's newest.
-    await page.goto("/competition")
+    await page.goto("/esports")
     await page.getByTestId("esports-game-slices").waitFor()
-    await expect(page.locator('a[href="/competition/valorant?season=20"]')).toHaveCount(1)
+    await expect(page.locator('a[href="/esports/valorant?season=20"]')).toHaveCount(1)
 
     // A swipe pushes, so it leaves the entry a tap never made: one that goes back to a url with
     // no season in it at all.
@@ -95,11 +95,11 @@ test.describe("travelling between seasons with a finger", {tag: "@phone"}, () =>
     await expect(page).toHaveURL(/\?season=19$/)
 
     await page.goBack()
-    await expect(page).toHaveURL(/\/competition$/)
+    await expect(page).toHaveURL(/\/esports$/)
     // The band goes back with it. A url naming no season names the newest one, so the address and
     // the page say the same thing rather than the band keeping a season the url has left behind.
-    await expect(page.locator('a[href="/competition/valorant?season=20"]')).toHaveCount(1)
-    await expect(page.locator('a[href="/competition/valorant?season=19"]')).toHaveCount(0)
+    await expect(page.locator('a[href="/esports/valorant?season=20"]')).toHaveCount(1)
+    await expect(page.locator('a[href="/esports/valorant?season=19"]')).toHaveCount(0)
   })
 
   test("leaves the season alone for a drag that was neither far enough nor fast enough", async ({page}) => {
@@ -110,12 +110,12 @@ test.describe("travelling between seasons with a finger", {tag: "@phone"}, () =>
     await dragBand(page, page.getByTestId("season-swipe"), {by: 48})
 
     await expect(page).toHaveURL(/\?season=20$/)
-    await expect(page.locator('a[href="/competition/valorant?season=20"]')).toHaveCount(1)
+    await expect(page.locator('a[href="/esports/valorant?season=20"]')).toHaveCount(1)
   })
 
   test("goes nowhere at either end of the strip, however far the finger hauls", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/competition?season=19")
+    await page.goto("/esports?season=19")
     await page.getByTestId("esports-game-slices").waitFor()
 
     // The oldest season recorded, hauled further back still.
@@ -193,7 +193,7 @@ test.describe("travelling between seasons on a game's page", {tag: "@phone"}, ()
 
   test("carries the page to the season before this one", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/competition/valorant?season=20")
+    await page.goto("/esports/valorant?season=20")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
 
     await dragBand(page, page.getByTestId("season-swipe"), {by: 260})
@@ -204,7 +204,7 @@ test.describe("travelling between seasons on a game's page", {tag: "@phone"}, ()
 
   test("returns to the newest season where the back button lands on a url naming none", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/competition/valorant")
+    await page.goto("/esports/valorant")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
 
     await dragBand(page, page.getByTestId("season-swipe"), {by: 260})
@@ -212,7 +212,7 @@ test.describe("travelling between seasons on a game's page", {tag: "@phone"}, ()
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
 
     await page.goBack()
-    await expect(page).toHaveURL(/\/competition\/valorant$/)
+    await expect(page).toHaveURL(/\/esports\/valorant$/)
     // As on the index: the url names no season, so it names the newest, and the roster on the
     // page is that season's rather than the one the finger reached.
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
@@ -224,7 +224,7 @@ test.describe("travelling between seasons on a game's page", {tag: "@phone"}, ()
     // CS:GO played the older of the two seasons and nothing since, so this page opens on the
     // association's newest season with nothing to show. The strip carries the season being read
     // whether the game played it or not, and the gesture offers exactly what the strip offers.
-    await page.goto("/competition/counter-strike-global-offensive")
+    await page.goto("/esports/counter-strike-global-offensive")
     await expect(page.getByTestId("esports-empty")).toBeVisible()
 
     await dragBand(page, page.getByTestId("season-swipe"), {by: 260})
@@ -238,7 +238,7 @@ test.describe("travelling between seasons on a game's page", {tag: "@phone"}, ()
     // A board member's strip carries every season, because a season has to be reachable before
     // a team can be put in it — so a season this game sat out is somewhere a finger can go.
     await loginAsBoard(context)
-    await page.goto("/competition/counter-strike-global-offensive?season=19")
+    await page.goto("/esports/counter-strike-global-offensive?season=19")
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
 
     await dragBand(page, page.getByTestId("season-swipe"), {by: -260})
@@ -273,7 +273,7 @@ test.describe("travelling between seasons on a game's page", {tag: "@phone"}, ()
         }),
       })
     })
-    await page.goto("/competition/valorant?season=20")
+    await page.goto("/esports/valorant?season=20")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
 
     const band = page.getByTestId("season-swipe")
@@ -304,7 +304,7 @@ test.describe("travelling between seasons on a game's page", {tag: "@phone"}, ()
 
   test("keeps hitting a node on the strip working exactly as it did", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/competition/valorant?season=20")
+    await page.goto("/esports/valorant?season=20")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
 
     // The gesture has added a way rather than replaced one.

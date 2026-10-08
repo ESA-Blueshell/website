@@ -187,8 +187,8 @@ const removeSeason = async () => {
 
 <template>
   <edit-page
-    :back="{to: back, label: 'Competition'}"
-    :eyebrow="season ? season.name : 'Competition'"
+    :back="{to: back, label: 'Esports'}"
+    :eyebrow="season ? season.name : 'Esports'"
     testid="season-edit"
     :title="season ? 'Edit season' : 'Add a season'"
   >
@@ -305,7 +305,7 @@ const removeSeason = async () => {
         </form-fields>
         <div>
           <cut-button
-            :href="`/competition/new?season=${season.id}`"
+            :href="`/esports/new?season=${season.id}`"
             testid="season-edit-new-game"
             tone="quiet"
           >

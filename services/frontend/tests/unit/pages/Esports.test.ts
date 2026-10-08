@@ -139,10 +139,10 @@ describe("Esports page", () => {
     await wrapper.get('[data-testid="esports-game-add"]').trigger("click")
 
     expect(push.mock.calls.map(call => call[0])).toEqual([
-      "/competition/seasons/1/edit",
-      "/competition/seasons/new",
-      "/competition/valorant/edit",
-      "/competition/seasons/2/edit",
+      "/esports/seasons/1/edit",
+      "/esports/seasons/new",
+      "/esports/valorant/edit",
+      "/esports/seasons/2/edit",
     ])
   })
 
@@ -178,8 +178,8 @@ describe("Esports page", () => {
 
     // Somebody who chose a season and then follows a game wants that game in that season.
     const targets = wrapper.findAll("a[data-to]").map(node => node.attributes("data-to"))
-    expect(targets).toContain(`/competition/valorant?season=${newest.id}`)
-    expect(targets).toContain(`/competition/counter-strike-2?season=${newest.id}`)
+    expect(targets).toContain(`/esports/valorant?season=${newest.id}`)
+    expect(targets).toContain(`/esports/counter-strike-2?season=${newest.id}`)
   })
 
   it("opens on the season its own url names", async () => {

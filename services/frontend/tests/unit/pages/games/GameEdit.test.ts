@@ -44,11 +44,11 @@ describe("the game edit page", () => {
   })
 
   it("goes back to the page it came from when that was not the game's own", async () => {
-    const wrapper = await mountPage({params: {slug: "chess"}, area: "competition", back: "/competition?season=3"})
+    const wrapper = await mountPage({params: {slug: "chess"}, area: "competition", back: "/esports?season=3"})
 
     wrapper.getComponent(GameEditor).vm.$emit("saved", {...chess, slug: "schaak"})
 
-    expect(router.replace).toHaveBeenCalledWith("/competition?season=3")
+    expect(router.replace).toHaveBeenCalledWith("/esports?season=3")
   })
 
   it("adds a game: a casual one lands on its page, a competition one goes back to the season it was entered in", async () => {
@@ -57,11 +57,11 @@ describe("the game edit page", () => {
     casual.getComponent(GameEditor).vm.$emit("saved", chess)
     expect(router.replace).toHaveBeenLastCalledWith("/casual/chess")
 
-    const competition = await mountPage({area: "competition", query: {season: "4"}, back: "/competition/seasons/4/edit"})
-    expect(competition.getComponent(GameEditor).props("back")).toBe("/competition/seasons/4/edit")
+    const competition = await mountPage({area: "competition", query: {season: "4"}, back: "/esports/seasons/4/edit"})
+    expect(competition.getComponent(GameEditor).props("back")).toBe("/esports/seasons/4/edit")
     expect(competition.getComponent(GameEditor).props("enterIn")).toBe(4)
     competition.getComponent(GameEditor).vm.$emit("saved", chess)
-    expect(router.replace).toHaveBeenLastCalledWith("/competition/seasons/4/edit")
+    expect(router.replace).toHaveBeenLastCalledWith("/esports/seasons/4/edit")
   })
 
   it("reads an address no game answers to as not found", async () => {

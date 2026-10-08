@@ -27,7 +27,7 @@ defineOptions({name: "EsportsPage"})
 
 /** What the head of the index says, which no season changes. */
 const HEAD = {
-  eyebrow: "Blueshell Competition",
+  eyebrow: "Blueshell Esports",
   heading: "Any game you want to play,",
   headingTail: "competitively",
   body: "The games below have teams in them right now, and that list is not a limit: bring enough people who want to play something else and the association will arrange it. Tryouts run every season, and there is a room full of people who will help you get better.",
@@ -43,7 +43,7 @@ const {ready, games, identityOf, recordOf} = useGames()
 
 const urlOf = (game: string) => {
   const record = recordOf(game)
-  return record ? `/competition/${record.slug}` : "/competition"
+  return record ? `/esports/${record.slug}` : "/esports"
 }
 
 // The band is one read now: the api answers with the games of the shown season, and with
@@ -182,8 +182,8 @@ const stripSeasons = computed<Season[]>(() =>
 /** The strip is about stops on a line; which of them is a season is this page's knowledge. */
 const stripStops = computed(() => seasonStops(stripSeasons.value))
 /** A season is added and corrected on its own page, which comes back here on it. */
-const addSeason = () => void router.push("/competition/seasons/new")
-const editSeason = (id: number) => void router.push(`/competition/seasons/${id}/edit`)
+const addSeason = () => void router.push("/esports/seasons/new")
+const editSeason = (id: number) => void router.push(`/esports/seasons/${id}/edit`)
 
 /**
  * A game is corrected on its own page. One is added to the shown season from the season's page,
@@ -191,9 +191,9 @@ const editSeason = (id: number) => void router.push(`/competition/seasons/${id}/
  */
 const editGame = (game: string) => {
   const record = recordOf(game)
-  if (record) void router.push(`/competition/${record.slug}/edit`)
+  if (record) void router.push(`/esports/${record.slug}/edit`)
 }
-const addGame = () => void router.push(seasonOnShow.value ? `/competition/seasons/${seasonOnShow.value.id}/edit` : "/competition/new")
+const addGame = () => void router.push(seasonOnShow.value ? `/esports/seasons/${seasonOnShow.value.id}/edit` : "/esports/new")
 
 /**
  * The game whose slice is open, held here because the band that holds it does not outlive a

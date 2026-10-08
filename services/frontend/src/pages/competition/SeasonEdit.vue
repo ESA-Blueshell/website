@@ -16,7 +16,7 @@ defineOptions({name: "SeasonEditPage"})
  */
 const route = useRoute()
 const router = useRouter()
-const back = useReturnTo("/competition")
+const back = useReturnTo("/esports")
 const {seasons, ready} = useSeasons()
 
 const adding = computed(() => route.params.id == null)

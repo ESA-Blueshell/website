@@ -38,15 +38,15 @@ test.describe("navbar route integrity", () => {
 
     await page.goto("/")
     // The menu lists what the records report as fielded, so a game no longer fielded is not on it.
-    await expect(page.locator("a[href='/competition/counter-strike-global-offensive']")).toHaveCount(0)
+    await expect(page.locator("a[href='/esports/counter-strike-global-offensive']")).toHaveCount(0)
 
-    await assertPathRenders(page, "/competition", /ESPORTS/i)
-    await assertPathRenders(page, "/competition/trackmania", /TRACKMANIA/i)
-    await assertPathRenders(page, "/competition/league-of-legends", /LEAGUE OF LEGENDS/i)
-    await assertPathRenders(page, "/competition/counter-strike-2", /COUNTER-STRIKE 2/i)
-    await assertPathRenders(page, "/competition/valorant", /VALORANT/i)
-    await assertPathRenders(page, "/competition/rocketleague", /ROCKET LEAGUE/i)
-    await assertPathRenders(page, "/competition/geoguessr", /GEOGUESSR/i)
+    await assertPathRenders(page, "/esports", /ESPORTS/i)
+    await assertPathRenders(page, "/esports/trackmania", /TRACKMANIA/i)
+    await assertPathRenders(page, "/esports/league-of-legends", /LEAGUE OF LEGENDS/i)
+    await assertPathRenders(page, "/esports/counter-strike-2", /COUNTER-STRIKE 2/i)
+    await assertPathRenders(page, "/esports/valorant", /VALORANT/i)
+    await assertPathRenders(page, "/esports/rocketleague", /ROCKET LEAGUE/i)
+    await assertPathRenders(page, "/esports/geoguessr", /GEOGUESSR/i)
   })
 
   test("committees have a tab of their own, listing the ones running now", {tag: "@phone"}, async ({page}) => {
@@ -97,7 +97,7 @@ test.describe("navbar route integrity", () => {
 
     await openDrawer(page)
     // A section's pages are drawn once it is unfolded, which is what a reader does to reach them.
-    for (const section of ["association", "events", "competition", "partners"]) {
+    for (const section of ["association", "events", "esports", "partners"]) {
       await page.getByTestId(`nav-drawer-${section}-more`).click()
     }
 
@@ -106,8 +106,8 @@ test.describe("navbar route integrity", () => {
       "/partners/become-a-partner",
       "/partners/el-nino",
       "/partners/marketing-maatwerk",
-      "/competition/geoguessr",
-      "/competition/trackmania",
+      "/esports/geoguessr",
+      "/esports/trackmania",
       "/events/circuitShowdown",
     ]
 
@@ -115,6 +115,6 @@ test.describe("navbar route integrity", () => {
       await expect(page.locator(`a[href='${path}']`).first()).toBeAttached()
     }
 
-    await expect(page.locator("a[href='/competition/counter-strike-global-offensive']")).toHaveCount(0)
+    await expect(page.locator("a[href='/esports/counter-strike-global-offensive']")).toHaveCount(0)
   })
 })

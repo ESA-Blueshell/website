@@ -27,8 +27,8 @@ const season = computed(() => seasons.value.find(one => one.id === selected.valu
 
 const hrefOf = (game: string) => {
   const slug = recordOf(game)?.slug
-  if (!slug) return "/competition"
-  return season.value ? `/competition/${slug}?season=${season.value.id}` : `/competition/${slug}`
+  if (!slug) return "/esports"
+  return season.value ? `/esports/${slug}?season=${season.value.id}` : `/esports/${slug}`
 }
 
 const slices = computed(() => entries.value.map(entry => lineupSliceOf(entry, identityOf(entry.game), hrefOf(entry.game))))
@@ -42,17 +42,17 @@ const teamsOf = (game: string | number) => entries.value.find(entry => entry.gam
   >
     <band-head
       eyebrow="Competitive gaming for anyone who wants to"
-      heading="Blueshell in competition"
+      heading="Blueshell in esports"
     >
       <template #heading>
-        Blueshell in <span class="text-brand-ink">competition</span>
+        Blueshell in <span class="text-brand-ink">esports</span>
       </template>
       <cut-button
-        href="/competition"
+        href="/esports"
         testid="home-esports-more"
         tone="solid"
       >
-        More on competition
+        More on esports
       </cut-button>
     </band-head>
 
@@ -72,7 +72,7 @@ const teamsOf = (game: string | number) => entries.value.find(entry => entry.gam
           <router-link
             class="slice__link"
             :data-testid="`home-esports-link-${item.id}`"
-            :to="item.href ?? '/competition'"
+            :to="item.href ?? '/esports'"
           >
             {{ season ? `${item.title} in ${season.name}` : `Every season of ${item.title}` }} →
           </router-link>

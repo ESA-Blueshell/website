@@ -1,11 +1,11 @@
 import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
 import {defineComponent, h, ref} from "vue"
-import {Form} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import EnumPicker from "@/components/form/fields/EnumPicker.vue"
-import {apply, type RejectableForm} from "@/plugins/validation"
+import {type FormChecks, useFormChecks} from "@/composables/useFormChecks"
+import type {ControlKind} from "@/components/island/FormControl.vue"
 
 /** What the api sends when it refuses a field: ADR-026's shape, as the forms receive it. */
 const refusal = (field: string, said: string) => ({
@@ -15,34 +15,32 @@ const refusal = (field: string, said: string) => ({
   },
 })
 
-/**
- * A form holding one island field, with a handle on the vee-validate context, which is what
- * `handleSubmitError` reaches for when the api refuses a save.
- */
-const formWith = (name: string, control: {componentProps?: Record<string, unknown>}) => {
-  const held = ref("")
-  let context: RejectableForm | undefined
+/** A form holding one island field, shown with what its checks say of it. */
+const formWith = (name: string, kind: ControlKind = "text") => {
+  let checks: FormChecks | undefined
   const wrapper = mount(defineComponent({
     setup() {
-      return () => h(Form, null, {
-        default: (slot: RejectableForm) => {
-          context = slot
-          return h(VvField, {modelValue: held.value, "onUpdate:modelValue": (v: unknown) => {
-            held.value = String(v)
-          }, name, label: "Country", ...control})
+      const held = ref("")
+      checks = useFormChecks(() => ({[name]: {value: () => held.value, checks: []}}))
+      return () => h(FormControl, {
+        modelValue: held.value,
+        "onUpdate:modelValue": (v: string | null) => {
+          held.value = v ?? ""
         },
+        errorMessages: checks!.errorsOf(name),
+        kind,
+        label: "Country",
       })
     },
   }))
-  return {wrapper, context: () => context!}
+  return {wrapper, checks: () => checks!}
 }
 
 describe("an api refusal", () => {
   it("is shown under the field it names", async () => {
-    const {wrapper, context} = formWith("country", {componentProps: {kind: "country"}})
+    const {wrapper, checks} = formWith("country", "country")
 
-    apply(context(), refusal("country", "We do not ship there."))
-    await wrapper.vm.$nextTick()
+    checks().refuse(refusal("country", "We do not ship there."))
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find(".island-field__said").text()).toBe("We do not ship there.")
@@ -50,10 +48,9 @@ describe("an api refusal", () => {
   })
 
   it("reaches a text field the same way", async () => {
-    const {wrapper, context} = formWith("username", {})
+    const {wrapper, checks} = formWith("username")
 
-    apply(context(), refusal("username", "That name is taken."))
-    await wrapper.vm.$nextTick()
+    checks().refuse(refusal("username", "That name is taken."))
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find(".island-field__said").text()).toBe("That name is taken.")

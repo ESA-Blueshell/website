@@ -5,7 +5,6 @@ import type {Committee} from "@/domains/committees/adapters/committees"
 import type {CasualGame} from "@/domains/games/adapters/games"
 import {aCasualGame, aCommittee, anImage} from "../../../helpers/apiFixtures"
 import GameEditor from "@/domains/games/components/GameEditor.vue"
-import "@/plugins/validation"
 
 const adapter = vi.hoisted(() => ({addCasualGame: vi.fn(), saveCasualGame: vi.fn(), storeGameBanner: vi.fn(), storeGameIcon: vi.fn()}))
 vi.mock("@/domains/games/adapters/games", () => adapter)

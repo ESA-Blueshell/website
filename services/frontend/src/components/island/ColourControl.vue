@@ -6,7 +6,7 @@ import {isHexColour} from "./colour"
 
 /**
  * A colour, picked from the swatch or written as a hex, drawn as the island's other fields are.
- * Handed to `VvField` as its component, so it takes what a form control takes.
+ * It takes what a form control takes, so a form binds it like one.
  */
 defineOptions({name: "ColourControl", inheritAttrs: false})
 

@@ -133,7 +133,6 @@ else stays deterministic.
 - **@hey-api/openapi-ts 0.92.4** - OpenAPI code generator, which writes the Axios client into the generated code
 
 ### Form Handling & Validation
-- **VeeValidate 4.15.1** - Form validation framework
 - **Zod 4.3.6** - Schema validation
 - **libphonenumber-js 1.12.37** - Phone validation
 - **v-phone-input 6.0.1** - Phone input component
@@ -157,7 +156,6 @@ components/
 │   └── ...
 ├── form/              # Form-specific components
 │   ├── fields/        # Input field wrappers
-│   │   ├── VvField.vue           # Validation wrapper
 │   │   ├── CountrySelect.vue
 │   │   └── ...
 │   ├── AddressForm.vue
@@ -172,7 +170,6 @@ components/
 **Naming Convention:**
 - Components: PascalCase (`UserProfile.vue`)
 - Base components: Prefix `Base` (`BaseButton.vue`)
-- Validation wrapper: `VvField.vue`
 - Template usage: kebab-case (`<user-profile>`)
 
 ### Composables (`src/composables/`)
@@ -209,7 +206,6 @@ Vue plugin configuration:
 - `router.ts` - Vue Router setup
 - `store.ts` - Vuex store
 - `vuetify.ts` - Vuetify theme & configuration
-- `validation.ts` - VeeValidate rules & setup
 - `markdownToHtml.ts` - Markdown rendering plugin
 - `handleNetworkError.ts` - Global error handling
 - `cookies.ts` - Cookie management
@@ -229,41 +225,33 @@ const user = await UserService.getUserById({ id: 123 });
 
 ## Form Validation
 
-### VvField Component
+### A form's checks
 
-The custom `VvField` wrapper integrates VeeValidate with Vuetify for consistent validation:
+A form lists its fields with their checks, from `utils/checks.ts`, and binds each island control
+to what `useFormChecks` says of it:
 
 ```vue
-<template>
-  <VvField
-      v-model="email"
-      name="email"
-      label="Email Address"
-      :rules="'required|email'"
-      type="email"
-  />
+<script setup lang="ts">
+const checks = useFormChecks(() => ({
+  email: {value: () => user.value.email, checks: [required, email]},
+  username: {value: () => user.value.username, checks: [required, minChars(3)]},
+}))
+const {errorsOf, touch} = checks
+</script>
 
-  <VvField
-      v-model="username"
-      name="username"
-      label="Username"
-      :rules="'required|min:3|max:20'"
+<template>
+  <form-control
+    v-model="user.email"
+    :error-messages="errorsOf('email')"
+    label="E-mail*"
+    @blur="touch('email')"
   />
 </template>
 ```
 
-### Validation Rules
-
-Use pipe-separated rule syntax:
-
-```typescript
-:rules="'required|email'"           // Email required
-:rules="'required|min:3|max:20'"   // Length constraints
-:rules="'required|phone'"           // Phone validation
-:rules="'required|numeric'"         // Numeric only
-```
-
-For custom validation rules, see `plugins/validation.ts`.
+A check is a function that says what is wrong, or `null`. A failure shows once its field was left or
+a save was tried (`checks.attempt()`). `reportRefusal(checks, error, fieldMap)` puts the api's
+refusal on the field it names, and says out loud what names no field.
 
 ### Backend Validation
 
@@ -305,19 +293,8 @@ const html = DOMPurify.sanitize(marked.parse(markdownContent));
 
 ### Input Validation
 
-Always use `VvField` component for validated inputs:
-
-```vue
-<!-- ✅ Good: Using VvField with validation -->
-<VvField
-    v-model="email"
-    name="email"
-    :rules="'required|email'"
-/>
-
-<!-- ❌ Avoid: Direct input without validation -->
-<v-text-field v-model="email" />
-```
+Check a typed field with the form's checks (see Form Validation) and show its failure on the
+island control, so a save the api would refuse is caught before it is sent.
 
 ### API Security
 
@@ -410,7 +387,7 @@ Refer to these in signup flows, consent workflows, and user-facing documentation
 1. Follow the architecture in CLAUDE.md
 2. Reference ADRs when making design decisions
 3. Use TypeScript strict mode (no `any`)
-4. Always use `VvField` for form inputs
+4. Check form fields with `useFormChecks` and the checks in `utils/checks.ts`
 5. Generate OpenAPI clients when backend changes
 6. Run `yarn lint` before committing
 

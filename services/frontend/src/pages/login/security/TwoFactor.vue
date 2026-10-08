@@ -16,7 +16,7 @@
           :title="`${sayCount(standing.backupCodesLeft, 'backup code')} left`"
           tone="warning"
         >
-          Make new ones before you run out. The old ones stop working.
+          Create new ones before you run out. The old ones stop working.
         </notice-box>
         <fact-list
           :columns="2"
@@ -43,7 +43,7 @@
                 testid="security-new-backup-codes-btn"
                 @click="withStepUp(makeNewCodes)"
               >
-                Make new codes
+                Create new codes
               </cut-button>
             </template>
           </cut-row>
@@ -145,7 +145,6 @@ import {
   type Written,
 } from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
-
 
 const store = useStore() as TypedStore
 const tell = (message: string) => store.commit("setStatusSnackbarMessage", message)

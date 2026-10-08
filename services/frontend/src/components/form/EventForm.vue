@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import {Form} from "vee-validate"
@@ -337,6 +338,7 @@ defineExpose({validate, save})
 <template>
   <Form
     ref="formRef"
+    v-first-field
     as="div"
     class="event-form"
   >
@@ -461,7 +463,7 @@ defineExpose({validate, save})
             <VvField
               v-model="event.signUp"
               :component="CheckBox"
-              label="Take sign-ups"
+              label="Allow sign-ups"
               name="signUp"
               test-id="event-form-signup-field"
             />

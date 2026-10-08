@@ -29,4 +29,13 @@ describe("a cut row", () => {
     expect(row.find(".cut-row__title [data-testid=tag]").exists()).toBe(true)
     expect(row.find("button").text()).toBe("Sign out")
   })
+
+  it("gives a row without a glyph its words the whole width", () => {
+    const bare = mount(CutRow, {props: {title: "Password", testid: "row"}})
+    const marked = mount(CutRow, {props: {title: "Password", testid: "row"}, slots: {glyph: "<svg />"}})
+
+    expect(bare.get("[data-testid=row]").classes()).toContain("cut-row--bare")
+    expect(bare.find(".cut-row__glyph").exists()).toBe(false)
+    expect(marked.get("[data-testid=row]").classes()).not.toContain("cut-row--bare")
+  })
 })

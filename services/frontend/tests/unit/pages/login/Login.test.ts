@@ -209,6 +209,18 @@ describe("Login page", () => {
       .toBe("/login/forgor?username=alice")
   })
 
+  it("takes the username and password as typed into their fields", async () => {
+    const wrapper = mountInApp(Login)
+    await settle()
+    const field = (testid: string) => wrapper.findAllComponents({name: "FormControl"}).find(one => one.attributes("data-testid") === testid || one.find(`[data-testid="${testid}"]`).exists())!
+    field("login-username-field").vm.$emit("update:modelValue", "alice")
+    field("login-password-field").vm.$emit("update:modelValue", "Secret123!")
+    await settle()
+
+    expect((wrapper.vm as any).username).toBe("alice")
+    expect((wrapper.vm as any).password).toBe("Secret123!")
+  })
+
   describe("with two-factor", () => {
     const submitPassword = async () => {
       const wrapper = mountInApp(Login)
@@ -274,7 +286,7 @@ describe("Login page", () => {
       await wrapper.find("[data-testid=login-use-backup-code-btn]").trigger("click")
       expect((wrapper.vm as any).useBackupCode).toBe(true)
       await wrapper.find("[data-testid=login-code-field] input").setValue("abcde-fghjk")
-      await wrapper.find("[data-testid=login-trust-browser] input").setValue(true)
+      await wrapper.find("[data-testid=login-trust-browser]").setValue(true)
       await (wrapper.vm as any).submitCode()
 
       expect(mockAnswerChallenge).toHaveBeenCalledWith("abcde-fghjk", true)

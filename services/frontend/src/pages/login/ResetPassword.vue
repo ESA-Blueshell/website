@@ -6,7 +6,9 @@
       class="mx-auto my-10"
       style="max-width: 600px"
     >
-      <v-card class="pa-6">
+      <div
+        class="island-panel"
+      >
         <Form
           ref="formRef"
           v-slot="{ meta }"
@@ -14,62 +16,49 @@
           data-testid="reset-password-form"
           @submit="onSubmit"
         >
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="form.password"
-                :component-props="{
-                  autocomplete: 'new-password',
-                  label: 'New Password',
-                  'data-testid': 'reset-password-new-password-field',
-                  ...passwordFieldProps
-                }"
-                name="password"
-                rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-              />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12">
-              <VvField
-                v-model="passwordAgain"
-                :component-props="{
-                  autocomplete: 'new-password',
-                  label: 'Repeat New Password',
-                  'data-testid': 'reset-password-repeat-password-field',
-                  ...passwordFieldProps
-                }"
-                name="passwordAgain"
-                rules="required|match:@password"
-              />
-            </v-col>
-          </v-row>
+          <VvField
+            v-model="form.password"
+            :component-props="{
+              autocomplete: 'new-password',
+              label: 'New Password',
+              'data-testid': 'reset-password-new-password-field',
+              ...passwordFieldProps
+            }"
+            name="password"
+            rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
+          />
 
-          <v-row
-            align="center"
-            class="mt-2"
-            justify="end"
-          >
-            <v-btn
+          
+          <VvField
+            v-model="passwordAgain"
+            :component-props="{
+              autocomplete: 'new-password',
+              label: 'Repeat New Password',
+              'data-testid': 'reset-password-repeat-password-field',
+              ...passwordFieldProps
+            }"
+            name="passwordAgain"
+            rules="required|match:@password"
+          />
+
+          <div class="form-save">
+            <cut-button
+              tone="solid"
+              submit
               :disabled="!meta.valid || loading"
-              :loading="loading"
-              color="primary"
               data-testid="reset-password-submit-btn"
-              type="submit"
             >
               Reset Password
-            </v-btn>
-          </v-row>
+            </cut-button>
+          </div>
 
-          <v-alert
+          <notice-box
             v-if="errorMessage"
-            class="mt-4"
-            data-testid="reset-password-error-alert"
-            type="error"
-            variant="tonal"
+            tone="danger"
+            testid="reset-password-error-alert"
           >
             {{ errorMessage }}
-          </v-alert>
+          </notice-box>
 
           <div
             v-if="succeeded"
@@ -87,12 +76,14 @@
             </p>
           </div>
         </Form>
-      </v-card>
+      </div>
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
+import CutButton from "@/components/island/CutButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Form} from "vee-validate"

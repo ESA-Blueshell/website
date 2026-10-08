@@ -33,14 +33,12 @@
           v-if="user"
           class="mt-10"
         >
-          <v-form ref="form">
-            <user-form
-              v-model="user"
-              data-testid="account-user-form"
-              :options="{ includeMemberProfile: true, memberProfileRequired: isMember }"
-              show-submit
-            />
-          </v-form>
+          <user-form
+            v-model="user"
+            data-testid="account-user-form"
+            :options="{ includeMemberProfile: true, memberProfileRequired: isMember }"
+            show-submit
+          />
         </div>
         <v-progress-circular v-else />
       </div>

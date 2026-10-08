@@ -71,6 +71,7 @@ const read = (raw: string): [number, number, number] | null => {
 
 const onType = (event: Event) => {
   const raw = (event.target as HTMLInputElement).value
+  open.value = false
   typed.value = raw
   const parts = read(raw)
   if (!parts) {
@@ -125,6 +126,10 @@ const weeks = computed(() => {
   }))
 })
 
+const openPanel = () => {
+  open.value = true
+}
+
 const take = (iso: string) => {
   value.value = iso
   open.value = false
@@ -155,9 +160,14 @@ const clear = () => {
       inputmode="numeric"
       placeholder="dd/mm/yyyy"
       type="text"
+      aria-haspopup="dialog"
+      :aria-expanded="open"
       :value="typed"
       v-bind="$attrs"
+      @click="openPanel"
+      @focus="openPanel"
       @input="onType"
+      @keydown.tab="open = false"
     >
 
     <button

@@ -17,12 +17,12 @@ vi.mock("vue-router", async (importOriginal) => {
 })
 
 const VSnackbar = {name: "VSnackbar", props: ["modelValue"], template: "<div v-if='modelValue'><slot /><slot name='actions' /></div>"}
-const VBtn = {name: "VBtn", props: ["to"], emits: ["click"], template: "<button @click=\"$emit('click')\"><slot /></button>"}
+const RouterLink = {name: "RouterLink", props: ["to"], template: "<a><slot /></a>"}
 
 const signedIn = (on: boolean, backupCodesLeft: number) => {
   mockStore.getters.getLogin = {twoFactor: {on, backupCodesLeft, required: false, offered: false}}
 }
-const banner = () => mount(BackupCodesBanner, {global: {stubs: {VSnackbar, VBtn}}})
+const banner = () => mount(BackupCodesBanner, {global: {stubs: {VSnackbar, RouterLink}}})
 
 describe("the low backup codes banner", () => {
   beforeEach(() => {
@@ -35,7 +35,7 @@ describe("the low backup codes banner", () => {
     const wrapper = banner()
 
     expect(wrapper.text()).toContain("1 backup code left.")
-    expect(wrapper.findComponent(VBtn).props("to")).toBe("/account/security/two-factor")
+    expect(wrapper.findComponent(RouterLink).props("to")).toBe("/account/security/two-factor")
     await wrapper.find("[data-testid=backup-codes-banner-open-btn]").trigger("click")
     expect(wrapper.find("[data-testid=backup-codes-banner-open-btn]").exists()).toBe(false)
   })

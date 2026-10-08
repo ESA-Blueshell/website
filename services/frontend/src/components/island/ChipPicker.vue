@@ -30,7 +30,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   sigil: "",
   chipTestid: undefined,
-  removeLabel: (label: string) => `Take ${label} away`,
+  removeLabel: (label: string) => `Remove ${label}`,
   placeholder: "Search",
   emptyNote: "There is nothing left to choose.",
   disabled: false,

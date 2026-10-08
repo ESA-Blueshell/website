@@ -16,20 +16,20 @@
           it any time from the Security page.
         </p>
         <div class="d-flex ga-3">
-          <v-btn
-            color="primary"
+          <cut-button
+            tone="solid"
             data-testid="two-factor-offer-accept-btn"
             @click="answer(true)"
           >
             Set up now
-          </v-btn>
-          <v-btn
+          </cut-button>
+          <cut-button
+            tone="plain"
             data-testid="two-factor-offer-decline-btn"
-            variant="outlined"
             @click="answer(false)"
           >
             Not now
-          </v-btn>
+          </cut-button>
         </div>
       </div>
     </div>
@@ -37,6 +37,7 @@
 </template>
 
 <script lang="ts" setup>
+import CutButton from "@/components/island/CutButton.vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"

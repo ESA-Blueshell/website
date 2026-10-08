@@ -55,7 +55,7 @@ describe("ChipPicker", () => {
     expect(wrapper.find("[data-testid=pick-chip-1]").exists()).toBe(true)
     expect(search().attributes("placeholder")).toBe("")
 
-    await wrapper.get("[aria-label='Take #chess away']").trigger("click")
+    await wrapper.get("[aria-label='Remove #chess']").trigger("click")
 
     expect(chips()).toEqual(["#rocket-league"])
   })

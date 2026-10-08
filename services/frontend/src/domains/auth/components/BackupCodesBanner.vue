@@ -6,29 +6,31 @@
     location="top"
     timeout="-1"
   >
-    {{ left }} backup {{ left === 1 ? "code" : "codes" }} left. Make new ones before you run out.
+    {{ left }} backup {{ left === 1 ? "code" : "codes" }} left. Create new ones before you run out.
     <template #actions>
-      <v-btn
-        data-testid="backup-codes-banner-open-btn"
-        :to="SECURITY_PAGES.twoFactor"
-        variant="text"
+      <cut-button
+        :href="SECURITY_PAGES.twoFactor"
+        small
+        testid="backup-codes-banner-open-btn"
         @click="dismissed = true"
       >
-        Make new codes
-      </v-btn>
-      <v-btn
-        data-testid="backup-codes-banner-dismiss-btn"
-        variant="text"
+        Create new codes
+      </cut-button>
+      <cut-button
+        small
+        testid="backup-codes-banner-dismiss-btn"
+        tone="quiet"
         @click="dismissed = true"
       >
         Later
-      </v-btn>
+      </cut-button>
     </template>
   </v-snackbar>
 </template>
 
 <script lang="ts" setup>
 import {computed, ref} from "vue"
+import CutButton from "@/components/island/CutButton.vue"
 import {useRoute} from "vue-router"
 import {useStore} from "vuex"
 import type {TypedStore} from "@/plugins/store"

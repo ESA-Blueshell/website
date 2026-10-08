@@ -2,7 +2,7 @@ import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
 import AnnounceDialog from "@/domains/events/island/AnnounceDialog.vue"
 
-const ModalDialog = {name: "ModalDialog", props: ["open", "title", "testid"], emits: ["update:open"], template: "<div><slot /></div>"}
+const ModalDialog = {name: "ModalDialog", props: ["open", "title", "testid", "cancelTestid"], emits: ["update:open"], template: "<div><slot /><button :data-testid=\"cancelTestid\" @click=\"$emit('update:open', false)\" /><slot name=\"footer\" /></div>"}
 
 describe("AnnounceDialog", () => {
   it("offers now and the later morning, preselects nothing, and answers null on cancel or close", async () => {

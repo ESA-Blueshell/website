@@ -1,69 +1,64 @@
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    max-width="440"
-    @update:model-value="emit('update:modelValue', $event)"
+  <modal-dialog
+    cancel-testid="step-up-cancel-btn"
+    :open="modelValue"
+    testid="step-up-dialog"
+    title="Confirm it is you"
+    @update:open="emit('update:modelValue', $event)"
   >
-    <v-card
-      data-testid="step-up-dialog"
-      title="Confirm it is you"
+    <form
+      id="step-up-form"
+      class="step-up"
+      @submit.prevent="submit"
     >
-      <v-form @submit.prevent="submit">
-        <v-card-text>
-          <p class="mb-3">
-            {{ twoFactorOn
-              ? (useBackupCode ? "Enter one of your backup codes." : "Enter the code from your authenticator app.")
-              : "Enter your password." }}
-          </p>
-          <v-text-field
-            v-model="proof"
-            :autocomplete="twoFactorOn ? 'one-time-code' : 'current-password'"
-            data-testid="step-up-field"
-            :inputmode="twoFactorOn && !useBackupCode ? 'numeric' : 'text'"
-            :label="twoFactorOn ? (useBackupCode ? 'Backup code' : 'Code') : 'Password'"
-            :type="twoFactorOn ? 'text' : 'password'"
-            autofocus
-          />
-          <v-alert
-            v-if="error"
-            type="error"
-            variant="tonal"
-          >
-            {{ error }}
-          </v-alert>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn
-            v-if="twoFactorOn"
-            size="small"
-            variant="text"
-            @click="useBackupCode = !useBackupCode"
-          >
-            {{ useBackupCode ? "use the authenticator app" : "use a backup code" }}
-          </v-btn>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="emit('update:modelValue', false)"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            :disabled="!proof"
-            :loading="busy"
-            color="primary"
-            data-testid="step-up-submit-btn"
-            type="submit"
-          >
-            Confirm
-          </v-btn>
-        </v-card-actions>
-      </v-form>
-    </v-card>
-  </v-dialog>
+      <p>
+        {{ twoFactorOn
+          ? (useBackupCode ? "Enter one of your backup codes." : "Enter the code from your authenticator app.")
+          : "Enter your password." }}
+      </p>
+      <form-control
+        v-model="proof"
+        :autocomplete="twoFactorOn ? 'one-time-code' : 'current-password'"
+        data-testid="step-up-field"
+        :inputmode="twoFactorOn && !useBackupCode ? 'numeric' : 'text'"
+        :kind="twoFactorOn ? 'text' : 'password'"
+        :label="twoFactorOn ? (useBackupCode ? 'Backup code' : 'Code') : 'Password'"
+      />
+      <notice-box
+        v-if="error"
+        tone="danger"
+      >
+        <p>{{ error }}</p>
+      </notice-box>
+      <cut-button
+        v-if="twoFactorOn"
+        small
+        testid="step-up-backup-toggle"
+        tone="quiet"
+        @click="useBackupCode = !useBackupCode"
+      >
+        {{ useBackupCode ? "Use the authenticator app" : "Use a backup code" }}
+      </cut-button>
+    </form>
+    <template #footer>
+      <cut-button
+        :disabled="!proof || busy"
+        form="step-up-form"
+        submit
+        testid="step-up-submit-btn"
+        tone="solid"
+      >
+        {{ busy ? "Confirming" : "Confirm" }}
+      </cut-button>
+    </template>
+  </modal-dialog>
 </template>
 
 <script lang="ts" setup>
+import ModalDialog from "@/components/island/ModalDialog.vue"
+import FormControl from "@/components/island/FormControl.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {ref, watch} from "vue"
 import {stepUp} from "../adapters/auth"
 
@@ -93,3 +88,16 @@ const submit = async () => {
   emit("proved")
 }
 </script>
+
+<style scoped>
+.step-up {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.step-up > :deep(.island-field) {
+  align-self: stretch;
+}
+</style>

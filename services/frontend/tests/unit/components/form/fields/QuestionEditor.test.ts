@@ -1,7 +1,6 @@
-import {describe, expect, it} from "vitest"
-import {flushPromises, mount, type VueWrapper} from "@vue/test-utils"
+import {describe, expect, it, vi} from "vitest"
+import {mount, type VueWrapper} from "@vue/test-utils"
 import QuestionEditor from "@/components/form/fields/QuestionEditor.vue"
-import "@/plugins/validation"
 import {type QuestionRequest, QuestionType} from "@/domains/events"
 
 const mountEditor = (question: QuestionRequest, props: Record<string, unknown> = {}) => {
@@ -91,31 +90,20 @@ describe("QuestionEditor", () => {
     expect(held(wrapper).choiceLabels).toEqual(["Kosher", "Vegan"])
   })
 
-  it("says an emptied option needs its text", async () => {
-    const wrapper = mountEditor({idx: 0, type: QuestionType.RADIO, label: "Pick", choiceLabels: ["A", "B"]})
-
-    const option = wrapper.findAll("input[type=text]")[0]!
-    await option.setValue("")
-    await option.trigger("blur")
-    await flushPromises()
+  it("shows what its form's checks say of each field, and tells the form when one is left", async () => {
+    const said: Record<string, string> = {"signUpForm.questions[1].choiceLabels[0]": "This field is required"}
+    const checks = {errorsOf: (name: string) => (said[name] ? [said[name]] : []), touch: vi.fn()}
+    const wrapper = mountEditor({idx: 1, type: QuestionType.RADIO, label: "Pick", choiceLabels: ["", "B"]}, {checks})
 
     expect(wrapper.text()).toContain("This field is required")
+    await wrapper.findAll("input[type=text]")[1]!.trigger("blur")
+
+    expect(checks.touch).toHaveBeenCalledWith("signUpForm.questions[1].choiceLabels[1]")
   })
 
   it("marks a multiple choice option with a round glyph", () => {
     const wrapper = mountEditor({idx: 0, type: QuestionType.RADIO, label: "Pick", choiceLabels: ["A", "B"]})
 
     expect(wrapper.findAll(".question__glyph circle")).toHaveLength(2)
-  })
-
-  it("names its fields for the form's validation, as the event form reads them", () => {
-    const wrapper = mountEditor({idx: 1, type: QuestionType.RADIO, label: "Pick", choiceLabels: ["A", "B"]})
-
-    const fields = wrapper.findAllComponents({name: "Field"})
-    expect(fields.map(field => [field.props("name"), field.props("rules")])).toEqual([
-      ["survey.questions[1].label", "required"],
-      ["survey.questions[1].choiceLabels[0]", "required|maxChars:100"],
-      ["survey.questions[1].choiceLabels[1]", "required|maxChars:100"],
-    ])
   })
 })

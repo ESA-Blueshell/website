@@ -137,7 +137,7 @@ path "auth/token/revoke-self"  { capabilities = ["update"] }
 EOF
 
 # The nightly backup (apps/data/backup): a Raft snapshot, a read-only database login, the
-# Kopia password and writer key, and the token it reports to Gatus with.
+# Kopia password and writer key, and its own token for reporting to Gatus.
 cat <<'EOF' >/tmp/backup.hcl
 path "sys/storage/raft/snapshot" {
   capabilities = ["read"]
@@ -151,22 +151,26 @@ path "secret/data/platform/backup" {
   capabilities = ["read"]
 }
 
-path "secret/data/platform/alerting" {
+path "secret/data/platform/backup-report/data-system" {
   capabilities = ["read"]
 }
 EOF
 
 # The backups of Stalwart and Gatus (apps/mail/backup, apps/utility-system/backup): the Kopia
-# password and writer key and the Gatus token, without the snapshot or the database login.
-cat <<'EOF' >/tmp/backup-store.hcl
+# password and writer key and each Job's own report token, without the snapshot or the
+# database login. Each token answers for its own Gatus endpoints only, so one Job cannot
+# report another's store done.
+for job in mail:mail-system gatus:utility-system; do
+  cat <<EOF >"/tmp/backup-${job%%:*}.hcl"
 path "secret/data/platform/backup" {
   capabilities = ["read"]
 }
 
-path "secret/data/platform/alerting" {
+path "secret/data/platform/backup-report/${job#*:}" {
   capabilities = ["read"]
 }
 EOF
+done
 
 cat <<'EOF' >/tmp/vso.hcl
 path "secret/data/platform/edge" {
@@ -192,6 +196,11 @@ path "secret/data/platform/mariadb" {
 path "secret/data/platform/alerting" {
   capabilities = ["read"]
 }
+
+# Gatus checks each backup Job's report against that Job's token.
+path "secret/data/platform/backup-report/*" {
+  capabilities = ["read"]
+}
 EOF
 
 vault policy write api /tmp/api.hcl
@@ -200,7 +209,8 @@ vault policy write stalwart /tmp/stalwart.hcl
 vault policy write vso /tmp/vso.hcl
 vault policy write admin /tmp/admin.hcl
 vault policy write backup /tmp/backup.hcl
-vault policy write backup-store /tmp/backup-store.hcl
+vault policy write backup-mail /tmp/backup-mail.hcl
+vault policy write backup-gatus /tmp/backup-gatus.hcl
 
 # --- Kubernetes auth roles ---------------------------------------------
 
@@ -228,10 +238,16 @@ vault write auth/kubernetes/role/backup \
   policies="backup" \
   ttl="1h"
 
-vault write auth/kubernetes/role/backup-store \
+vault write auth/kubernetes/role/backup-mail \
   bound_service_account_names="backup" \
-  bound_service_account_namespaces="mail-system,utility-system" \
-  policies="backup-store" \
+  bound_service_account_namespaces="mail-system" \
+  policies="backup-mail" \
+  ttl="1h"
+
+vault write auth/kubernetes/role/backup-gatus \
+  bound_service_account_names="backup" \
+  bound_service_account_namespaces="utility-system" \
+  policies="backup-gatus" \
   ttl="1h"
 
 vault write auth/kubernetes/role/vso \
@@ -262,25 +278,22 @@ else
 fi
 unset BOUNCE_READ
 
-# The nightly backup reports to Gatus with this token, which Gatus reads through the
-# alerting-discord Secret. Seeded once and never overwritten, like account.bounce.
-if TOKEN_READ=$(vault kv get -field=gatus.backup_token secret/platform/alerting 2>&1); then
-  :
-elif printf '%s' "$TOKEN_READ" | grep -q -e 'No value found' -e 'not present in secret'; then
-  BACKUP_TOKEN=$(head -c 48 /dev/urandom | base64 | tr -d '=+/\n' | head -c 48)
-  [ "${#BACKUP_TOKEN}" -eq 48 ] || { echo "Could not generate gatus.backup_token." >&2; exit 1; }
-  if printf '%s' "$TOKEN_READ" | grep -q 'No value found'; then
-    printf '%s' "$BACKUP_TOKEN" | vault kv put secret/platform/alerting gatus.backup_token=- >/dev/null
-  else
-    printf '%s' "$BACKUP_TOKEN" | vault kv patch secret/platform/alerting gatus.backup_token=- >/dev/null
+# Each backup Job reports to Gatus with its own token, on a path of its own: not beside the
+# Discord webhook, which no backup role reads. Seeded once and never overwritten.
+for ns in data-system mail-system utility-system; do
+  if REPORT_READ=$(vault kv get -field=token "secret/platform/backup-report/$ns" 2>&1); then
+    continue
+  elif ! printf '%s' "$REPORT_READ" | grep -q -e 'No value found' -e 'not present in secret'; then
+    echo "Could not read secret/platform/backup-report/$ns: $REPORT_READ" >&2
+    exit 1
   fi
-  unset BACKUP_TOKEN
-  echo "Seeded secret/platform/alerting gatus.backup_token."
-else
-  echo "Could not read secret/platform/alerting: $TOKEN_READ" >&2
-  exit 1
-fi
-unset TOKEN_READ
+  REPORT_TOKEN=$(head -c 48 /dev/urandom | base64 | tr -d '=+/\n' | head -c 48)
+  [ "${#REPORT_TOKEN}" -eq 48 ] || { echo "Could not generate the $ns report token." >&2; exit 1; }
+  printf '%s' "$REPORT_TOKEN" | vault kv put "secret/platform/backup-report/$ns" token=- >/dev/null
+  unset REPORT_TOKEN
+  echo "Seeded secret/platform/backup-report/$ns."
+done
+unset REPORT_READ
 
 # --- MariaDB dynamic secrets (database engine) --------------------------
 #

@@ -1,4 +1,4 @@
-# Vault's kubernetes auth binds role `backup-store` to this account (apps/data/vault/bootstrap-auth.sh).
+# Vault's kubernetes auth binds role `backup-mail` to this account (apps/data/vault/bootstrap-auth.sh).
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -76,7 +76,7 @@ spec:
               command: [sh, /scripts/collect.sh]
               env:
                 - name: VAULT_ROLE
-                  value: backup-store
+                  value: backup-mail
                 - name: VAULT_ADDR
                   value: http://vault.data-system.svc.cluster.local:8200
                 - name: HOME

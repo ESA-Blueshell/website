@@ -2,7 +2,7 @@
 # Reads the night's credentials from Vault onto the pod's memory-backed volume and, where asked,
 # takes Vault's Raft snapshot and leases a read-only database login. A failure is written under
 # /work/status and the step exits 0, so the Kopia step still runs and reports it.
-#   VAULT_ROLE      the kubernetes auth role to log in as
+#   VAULT_ROLE      the kubernetes auth role to log in as; it may read this namespace's report token
 #   COLLECT_PAIR    true in data-system: also the Raft snapshot and the database login, the pair
 #                   PAIR_GROUP names
 set -eu
@@ -20,7 +20,8 @@ VAULT_TOKEN=$(vault write -field=token auth/kubernetes/login role="$VAULT_ROLE" 
 export VAULT_TOKEN
 
 # Read first, so even a failure further down can still be reported.
-vault kv get -field=gatus.backup_token secret/platform/alerting > /work/secrets/gatus-token || true
+ns=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+vault kv get -field=token "secret/platform/backup-report/$ns" > /work/secrets/gatus-token || true
 
 for field in kopia.password writer.access_key writer.secret_key; do
   vault kv get -field="$field" secret/platform/backup > "/work/secrets/$field" 2>/dev/null ||

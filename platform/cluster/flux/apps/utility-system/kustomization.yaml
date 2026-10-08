@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - alerting-vss.yaml
+  - backup-report-vss.yaml
   - headlamp
   - gatus
   - backup

@@ -43,16 +43,34 @@ spec:
                   name: alerting-discord
                   key: DISCORD_WEBHOOK_URL
                   optional: true
-            - name: BACKUP_TOKEN_FROM_VAULT
+            # One token per backup Job (apps/utility-system/backup-report-vss.yaml). Never empty,
+            # or Gatus panics: before bootstrap-auth.sh has seeded a token its Secret is missing,
+            # the reference stays unresolved and the literal text stands in. No backup can run
+            # then either, since the same Job seeds their Vault roles.
+            - name: BACKUP_REPORT_DATA_SYSTEM_FROM_VAULT
               valueFrom:
                 secretKeyRef:
-                  name: alerting-discord
-                  key: GATUS_BACKUP_TOKEN
+                  name: backup-report-data-system
+                  key: token
                   optional: true
-            # Never empty, or Gatus panics: without the Secret the reference stays unresolved
-            # and the literal text stands in. No Secret means no webhook, so no alert to hide.
-            - name: GATUS_BACKUP_TOKEN
-              value: $(BACKUP_TOKEN_FROM_VAULT)
+            - name: BACKUP_REPORT_DATA_SYSTEM
+              value: $(BACKUP_REPORT_DATA_SYSTEM_FROM_VAULT)
+            - name: BACKUP_REPORT_MAIL_SYSTEM_FROM_VAULT
+              valueFrom:
+                secretKeyRef:
+                  name: backup-report-mail-system
+                  key: token
+                  optional: true
+            - name: BACKUP_REPORT_MAIL_SYSTEM
+              value: $(BACKUP_REPORT_MAIL_SYSTEM_FROM_VAULT)
+            - name: BACKUP_REPORT_UTILITY_SYSTEM_FROM_VAULT
+              valueFrom:
+                secretKeyRef:
+                  name: backup-report-utility-system
+                  key: token
+                  optional: true
+            - name: BACKUP_REPORT_UTILITY_SYSTEM
+              value: $(BACKUP_REPORT_UTILITY_SYSTEM_FROM_VAULT)
           ports:
             - containerPort: 8080
               name: http

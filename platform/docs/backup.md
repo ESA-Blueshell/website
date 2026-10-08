@@ -18,9 +18,11 @@ reaches the node's disk.
 | 03:30 | `mail-system/backup` | Stalwart | Stalwart is stopped, its RocksDB store snapshotted straight from its volume, and started again |
 | 03:45 | `utility-system/backup` | Gatus's history | SQLite's online backup, while Gatus runs |
 
-Every Job first logs in to Vault, as role `backup` in `data-system`, which may also take the
-Raft snapshot and lease a read-only database login, and as role `backup-store` elsewhere, which
-may only read the Kopia password, the writer key and the Gatus token.
+Every Job first logs in to Vault with a role of its own: `backup` in `data-system`, which may also
+take the Raft snapshot and lease a read-only database login, `backup-mail` and `backup-gatus`.
+Each reads the Kopia password, the writer key and its own token for reporting to Gatus, from
+`secret/platform/backup-report/<namespace>`, and nothing else: no Job can report another's store
+done, and none reads the Discord webhook.
 
 **Stalwart is down for a minute or two** each night: RocksDB must not be copied while it is
 open. Senders retry, so no mail is lost. The snapshot step starts Stalwart again however it ends,
@@ -66,7 +68,7 @@ Each line it prints is one thing checked or done. The last check must say Vault 
 fields, Secret Manager `1 enabled version` and `backup-writer 1 key(s)`. If it names a second
 writer key, delete that one in the console.
 
-`secret/platform/alerting` gains `gatus.backup_token` on its own: `bootstrap-auth.sh` seeds it.
+The report tokens in `secret/platform/backup-report` are seeded on their own, by `bootstrap-auth.sh`.
 
 **Replacing the writer key** by hand, say after a suspected leak: run
 `scripts/seed-backup-credentials.sh --new-writer-key`. It makes a new key, puts it in Vault and
@@ -109,7 +111,7 @@ Read the failed Job's logs: `kubectl --context blueshell -n <namespace> logs job
 --all-containers`. The alert carries the line that failed.
 
 - **"secret/platform/backup has no …"**: the credentials are not seeded, or a field is missing.
-- **"Vault refused the backup role's login"** (or `backup-store`): Vault is sealed, or
+- **"Vault refused the backup role's login"** (or `backup-mail`, `backup-gatus`): Vault is sealed, or
   `bootstrap-auth.sh` has not run since the role was added.
 - **"Kopia could not connect: … invalid repository password"**: the password in Vault does not
   match the repository's. Never "fix" it by creating a new repository: find the right password

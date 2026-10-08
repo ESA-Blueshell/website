@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {vFirstField} from "@/utils/firstField"
-import {computed, ref, watch} from "vue"
+import {computed, reactive, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {needsStepUp, StepUpDialog} from "@/domains/auth"
 import {
@@ -20,31 +20,30 @@ import {
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import DiscordMemberPicker from "@/domains/discord/island/DiscordMemberPicker.vue"
-import {defineRule, Form} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import FormFields from "@/components/island/FormFields.vue"
 import {$require} from "@/plugins/require.ts"
-import type {FieldMap} from "@/plugins/validation"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 
+import {useCountry, useReadonly, useSaving} from "@/composables/formUtils"
+import {type FieldMap, reportRefusal, useFormChecks} from "@/composables/useFormChecks"
 import {
-  handleSubmitError,
-  useCountry,
-  usePasswordToggle,
-  useReadonly,
-  useSaving,
-  useVeeForm,
-} from "@/composables/formUtils"
+  accepted,
+  type Check,
+  dateRequired,
+  email,
+  matches,
+  maxChars,
+  minChars,
+  phoneMobile,
+  required,
+  strongPassword,
+} from "@/utils/checks"
 
 defineOptions({name: "UserForm"})
 
 const privacyPolicyUrl = $require("@/assets/documents/20261003 - ESA Blueshell Privacy Policy.pdf")
-
-defineRule(
-  "acceptedPrivacyPolicy",
-  (value: unknown) => value === true || "You must agree to the privacy policy to create an account.",
-)
 
 const props = withDefaults(defineProps<{
   showPassword?: boolean
@@ -75,8 +74,9 @@ const props = withDefaults(defineProps<{
   }),
 })
 
+// A default handed to an unbound v-model stays raw, so its checks would never see an edit.
 const user = defineModel<EditableUser>({
-  default: () => ({
+  default: () => reactive({
     discord: "",
     email: "",
     phoneNumber: "",
@@ -126,11 +126,9 @@ const requiresPrivacyConsent = computed<boolean>(() => isCreating.value && effec
 
 const {country, onCountryUpdate} = useCountry("NL")
 const {isSaving, withSaving} = useSaving()
-const {formRef, validate} = useVeeForm()
 const confirmPassword = ref<string>("")
 // Set by a public registration; the stepper reads it to carry the applicant on.
 const signupSession = ref<SignupSessionResponse>()
-const {passwordFieldProps} = usePasswordToggle()
 
 const defaultMemberProfile = (): UpsertMemberProfileRequest => ({
   dateOfBirth: "",
@@ -164,6 +162,51 @@ const memberProfileModel = computed<UpsertMemberProfileRequest>({
     user.value.memberProfile = value
   },
 })
+
+const identityEditable = computed<boolean>(() => !isReadonly.value && canEditIdentity.value)
+const emailEditable = computed<boolean>(() => !isReadonly.value && canEditEmail.value)
+const ifEditable = (editable: boolean, checks: Check[]): Check[] => (editable ? checks : [])
+
+const passwordFields = () => ({
+  password: {value: () => user.value.password, checks: [required, minChars(8), maxChars(100), strongPassword]},
+  confirmPassword: {value: () => confirmPassword.value, checks: [required, matches(() => user.value.password)]},
+})
+
+const profileFields = () => {
+  const profile = memberProfileModel.value
+  return {
+    dateOfBirth: {value: () => profile.dateOfBirth, checks: memberProfileRequired.value ? [dateRequired] : []},
+    nationality: {value: () => profile.nationality, checks: memberProfileRequired.value ? [required] : []},
+    gender: {value: () => profile.gender, checks: []},
+    studentNumber: {value: () => profile.studentNumber, checks: []},
+    ehbo: {value: () => profile.ehbo, checks: []},
+    bhv: {value: () => profile.bhv, checks: []},
+    nameOnRosters: {value: () => profile.nameOnRosters, checks: []},
+  }
+}
+
+const checks = useFormChecks(() => ({
+  initials: {value: () => user.value.initials, checks: ifEditable(identityEditable.value, [required])},
+  firstName: {value: () => user.value.firstName, checks: ifEditable(identityEditable.value, [required])},
+  prefix: {value: () => user.value.prefix, checks: []},
+  lastName: {value: () => user.value.lastName, checks: ifEditable(identityEditable.value, [required])},
+  username: {value: () => user.value.username, checks: ifEditable(identityEditable.value, [required])},
+  discord: {value: () => user.value.discord, checks: [required]},
+  email: {value: () => user.value.email, checks: ifEditable(emailEditable.value, [required, email])},
+  phoneNumber: {value: () => user.value.phoneNumber, checks: [required, phoneMobile(() => country.value)]},
+  newsletter: {value: () => user.value.newsletter, checks: []},
+  photoConsent: {value: () => user.value.photoConsent, checks: []},
+  ...(canSetPassword.value ? passwordFields() : {}),
+  ...(includeMemberProfile.value ? profileFields() : {}),
+  ...(requiresPrivacyConsent.value
+    ? {consentPrivacy: {
+      value: () => user.value.consentPrivacy,
+      checks: [accepted("You must agree to the privacy policy to create an account.")],
+    }}
+    : {}),
+}))
+const {errorsOf, touch} = checks
+const validate = async (): Promise<boolean> => checks.attempt()
 
 const fromMemberProfileResponse = (data: MemberProfileResponse): UpsertMemberProfileRequest => ({
   dateOfBirth: data.dateOfBirth ?? "",
@@ -356,7 +399,7 @@ const save = async (): Promise<EditableUser | null> => {
     return updated
   } catch (error: unknown) {
     if (needsStepUp(error)) stepUpOpen.value = true
-    else handleSubmitError(formRef.value, error, userFieldMap)
+    else reportRefusal(checks, error, userFieldMap)
     emit("submitted", false)
     return null
   }
@@ -376,213 +419,224 @@ defineExpose({validate, save, signupSession})
       :two-factor-on="twoFactorOn"
       @proved="save"
     />
-    <Form
-      ref="formRef"
-      v-first-field
-      as="div"
-    >
+    <div v-first-field>
       <form-fields class="user-form__third">
-        <VvField
-          v-model="user.initials"
-          test-id="user-form-initials-field"
-          :disabled="isReadonly || !canEditIdentity"
-          label="Initials*"
-          name="initials"
-          :rules="canEditIdentity ? 'required' : ''"
-        />
-        <VvField
-          v-model="user.firstName"
-          test-id="user-form-first-name-field"
-          :disabled="isReadonly || !canEditIdentity"
-          label="First Name*"
-          name="firstName"
-          :rules="canEditIdentity ? 'required' : ''"
-        />
+        <div data-testid="user-form-initials-field">
+          <form-control
+            v-model="user.initials"
+            :disabled="isReadonly || !canEditIdentity"
+            :error-messages="errorsOf('initials')"
+            label="Initials*"
+            @blur="touch('initials')"
+          />
+        </div>
+        <div data-testid="user-form-first-name-field">
+          <form-control
+            v-model="user.firstName"
+            :disabled="isReadonly || !canEditIdentity"
+            :error-messages="errorsOf('firstName')"
+            label="First Name*"
+            @blur="touch('firstName')"
+          />
+        </div>
       </form-fields>
 
       <form-fields class="user-form__third">
-        <VvField
-          v-model="user.prefix"
-          test-id="user-form-prefix-field"
-          :disabled="isReadonly || !canEditIdentity"
-          label="Surname Prefix"
-          name="prefix"
-        />
-        <VvField
-          v-model="user.lastName"
-          test-id="user-form-last-name-field"
-          :disabled="isReadonly || !canEditIdentity"
-          label="Surname*"
-          name="lastName"
-          :rules="canEditIdentity ? 'required' : ''"
-        />
+        <div data-testid="user-form-prefix-field">
+          <form-control
+            v-model="user.prefix"
+            :disabled="isReadonly || !canEditIdentity"
+            :error-messages="errorsOf('prefix')"
+            label="Surname Prefix"
+            @blur="touch('prefix')"
+          />
+        </div>
+        <div data-testid="user-form-last-name-field">
+          <form-control
+            v-model="user.lastName"
+            :disabled="isReadonly || !canEditIdentity"
+            :error-messages="errorsOf('lastName')"
+            label="Surname*"
+            @blur="touch('lastName')"
+          />
+        </div>
       </form-fields>
 
       <form-fields>
-        <VvField
-          v-model="user.username"
-          test-id="user-form-username-field"
-          :disabled="isReadonly || !canEditIdentity"
-          label="Username*"
-          name="username"
-          :rules="canEditIdentity ? 'required' : ''"
-        />
-        <VvField
-          v-model="user.discord"
-          :component="DiscordMemberPicker"
-          :component-props="{discordId: user.discordId, 'onUpdate:discordId': (id: string | null) => (user.discordId = id)}"
-          test-id="user-form-discord-field"
-          label="Discord*"
-          name="discord"
-          rules="required"
-        />
+        <div data-testid="user-form-username-field">
+          <form-control
+            v-model="user.username"
+            :disabled="isReadonly || !canEditIdentity"
+            :error-messages="errorsOf('username')"
+            label="Username*"
+            @blur="touch('username')"
+          />
+        </div>
+        <div data-testid="user-form-discord-field">
+          <discord-member-picker
+            v-model="user.discord"
+            :discord-id="user.discordId"
+            :error-messages="errorsOf('discord')"
+            label="Discord*"
+            @update:discord-id="(id: string | null) => (user.discordId = id)"
+          />
+        </div>
       </form-fields>
 
       <form-fields>
-        <VvField
-          v-model="user.email"
-          test-id="user-form-email-field"
-          :disabled="isReadonly || !canEditEmail"
-          :rules="canEditEmail ? 'required|email' : ''"
-          label="E-mail*"
-          name="email"
-        />
-        <VvField
-          v-model="user.phoneNumber"
-          test-id="user-form-phone-number-field"
-          :component-props="{kind: 'phone', defaultCountry: 'NL'}"
-          :rules="`required|phoneMobile:${country}`"
-          label="Phone Number*"
-          name="phoneNumber"
-          @update:country="onCountryUpdate"
-        />
+        <div data-testid="user-form-email-field">
+          <form-control
+            v-model="user.email"
+            :disabled="isReadonly || !canEditEmail"
+            :error-messages="errorsOf('email')"
+            label="E-mail*"
+            @blur="touch('email')"
+          />
+        </div>
+        <div data-testid="user-form-phone-number-field">
+          <form-control
+            v-model="user.phoneNumber"
+            default-country="NL"
+            :error-messages="errorsOf('phoneNumber')"
+            kind="phone"
+            label="Phone Number*"
+            @blur="touch('phoneNumber')"
+            @update:country="onCountryUpdate"
+          />
+        </div>
       </form-fields>
 
       <form-fields v-if="canSetPassword">
-        <VvField
-          v-model="user.password"
-          test-id="user-form-password-field"
-          :component-props="passwordFieldProps"
-          label="Password*"
-          name="password"
-          rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
-        />
-        <VvField
-          v-model="confirmPassword"
-          test-id="user-form-password-repeat-field"
-          :component-props="passwordFieldProps"
-          label="Password (repeated)"
-          name="confirmPassword"
-          rules="required|match:@password"
-        />
+        <div data-testid="user-form-password-field">
+          <form-control
+            v-model="user.password"
+            kind="password"
+            :error-messages="errorsOf('password')"
+            label="Password*"
+            @blur="touch('password')"
+          />
+        </div>
+        <div data-testid="user-form-password-repeat-field">
+          <form-control
+            v-model="confirmPassword"
+            kind="password"
+            :error-messages="errorsOf('confirmPassword')"
+            label="Password (repeated)"
+            @blur="touch('confirmPassword')"
+          />
+        </div>
       </form-fields>
 
       <template v-if="includeMemberProfile">
         <form-fields>
-          <VvField
-            v-model="memberProfileModel.dateOfBirth"
-            test-id="user-form-date-of-birth-field"
-            :component-props="{ type: 'date' }"
-            :label="memberProfileRequired ? 'Date of Birth*' : 'Date of Birth'"
-            name="dateOfBirth"
-            :rules="memberProfileRequired ? 'dateRequired' : ''"
-          />
-          <VvField
-            v-model="memberProfileModel.nationality"
-            test-id="user-form-nationality-field"
-            :component="NationalitySelect"
-            :label="memberProfileRequired ? 'Nationality*' : 'Nationality'"
-            name="nationality"
-            :rules="memberProfileRequired ? 'required' : ''"
-          />
+          <div data-testid="user-form-date-of-birth-field">
+            <form-control
+              v-model="memberProfileModel.dateOfBirth"
+              :error-messages="errorsOf('dateOfBirth')"
+              kind="date"
+              :label="memberProfileRequired ? 'Date of Birth*' : 'Date of Birth'"
+              @blur="touch('dateOfBirth')"
+            />
+          </div>
+          <div data-testid="user-form-nationality-field">
+            <nationality-select
+              v-model="memberProfileModel.nationality"
+              :error-messages="errorsOf('nationality')"
+              :label="memberProfileRequired ? 'Nationality*' : 'Nationality'"
+            />
+          </div>
         </form-fields>
 
         <form-fields>
-          <VvField
-            v-model="memberProfileModel.gender"
-            test-id="user-form-gender-field"
-            label="Gender"
-            name="gender"
-          />
-          <VvField
-            v-model="memberProfileModel.studentNumber"
-            test-id="user-form-student-number-field"
-            label="Student Number"
-            name="studentNumber"
-          />
+          <div data-testid="user-form-gender-field">
+            <form-control
+              v-model="memberProfileModel.gender"
+              :error-messages="errorsOf('gender')"
+              label="Gender"
+              @blur="touch('gender')"
+            />
+          </div>
+          <div data-testid="user-form-student-number-field">
+            <form-control
+              v-model="memberProfileModel.studentNumber"
+              :error-messages="errorsOf('studentNumber')"
+              label="Student Number"
+              @blur="touch('studentNumber')"
+            />
+          </div>
         </form-fields>
 
         <div class="checkbox-row">
-          <VvField
-            v-model="memberProfileModel.ehbo"
-            test-id="user-form-ehbo-field"
-            :component="CheckBox"
-            label="I hold a valid EHBO (first aid) diploma."
-            name="ehbo"
-          />
+          <div data-testid="user-form-ehbo-field">
+            <check-box
+              v-model="memberProfileModel.ehbo"
+              :error-messages="errorsOf('ehbo')"
+              label="I hold a valid EHBO (first aid) diploma."
+            />
+          </div>
         </div>
 
         <div class="checkbox-row">
-          <VvField
-            v-model="memberProfileModel.bhv"
-            test-id="user-form-bhv-field"
-            :component="CheckBox"
-            label="I hold a valid BHV diploma."
-            name="bhv"
-          />
+          <div data-testid="user-form-bhv-field">
+            <check-box
+              v-model="memberProfileModel.bhv"
+              :error-messages="errorsOf('bhv')"
+              label="I hold a valid BHV diploma."
+            />
+          </div>
         </div>
 
         <div class="checkbox-row">
-          <VvField
-            v-model="memberProfileModel.nameOnRosters"
-            test-id="user-form-name-on-rosters-field"
-            :component="CheckBox"
-            label="Show my name next to my handle on the esports team pages."
-            name="nameOnRosters"
-          />
+          <div data-testid="user-form-name-on-rosters-field">
+            <check-box
+              v-model="memberProfileModel.nameOnRosters"
+              :error-messages="errorsOf('nameOnRosters')"
+              label="Show my name next to my handle on the esports team pages."
+            />
+          </div>
         </div>
       </template>
 
       <div class="checkbox-row">
-        <VvField
-          v-model="user.newsletter"
-          test-id="user-form-newsletter-field"
-          :component="CheckBox"
-          label="I want to receive the monthly ESA Blueshell newsletter by email."
-          name="newsletter"
-        />
+        <div data-testid="user-form-newsletter-field">
+          <check-box
+            v-model="user.newsletter"
+            :error-messages="errorsOf('newsletter')"
+            label="I want to receive the monthly ESA Blueshell newsletter by email."
+          />
+        </div>
       </div>
 
       <div class="checkbox-row">
-        <VvField
-          v-model="user.photoConsent"
-          test-id="user-form-photo-consent-field"
-          :component="CheckBox"
-          label="I give consent to having my picture taken at ESA Blueshell events."
-          name="photoConsent"
-        />
+        <div data-testid="user-form-photo-consent-field">
+          <check-box
+            v-model="user.photoConsent"
+            :error-messages="errorsOf('photoConsent')"
+            label="I give consent to having my picture taken at ESA Blueshell events."
+          />
+        </div>
       </div>
 
       <div
         v-if="requiresPrivacyConsent"
         class="checkbox-row checkbox-row--multiline"
       >
-        <VvField
-          v-model="user.consentPrivacy"
-          test-id="user-form-privacy-consent-field"
-          :component="CheckBox"
-          name="consentPrivacy"
-          :rules="requiresPrivacyConsent ? 'acceptedPrivacyPolicy' : ''"
-        >
-          <template #label>
-            <span class="checkbox-label-text">I have read and agree to the <a
-              :href="privacyPolicyUrl"
-              class="text-primary"
-              target="_blank"
-              @click.stop
-            >Privacy Policy</a> and consent to the processing of my personal data as described therein.</span>
-          </template>
-        </VvField>
+        <div data-testid="user-form-privacy-consent-field">
+          <check-box
+            :error-messages="errorsOf('consentPrivacy')"
+            :model-value="user.consentPrivacy ?? false"
+            @update:model-value="user.consentPrivacy = $event"
+          >
+            <template #label>
+              <span class="checkbox-label-text">I have read and agree to the <a
+                :href="privacyPolicyUrl"
+                class="text-primary"
+                target="_blank"
+                @click.stop
+              >Privacy Policy</a> and consent to the processing of my personal data as described therein.</span>
+            </template>
+          </check-box>
+        </div>
       </div>
 
       <div
@@ -598,7 +652,7 @@ defineExpose({validate, save, signupSession})
           @click="save"
         />
       </div>
-    </Form>
+    </div>
   </div>
 </template>
 

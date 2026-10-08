@@ -14,6 +14,7 @@ REGION=nl-ams
 SECRET_NAME=kopia-repository-password
 WRITER_APP=backup-writer
 VAULT_PATH=secret/platform/backup
+BLUESHELL_OIDC=https://esa-blueshell.nl/api
 API=${SCW_API_URL:-https://api.scaleway.com}
 
 new_writer=false
@@ -62,8 +63,13 @@ trap cleanup EXIT
 # Vault's public host sits behind the site's sign-in, which the vault CLI cannot pass, so the
 # script reaches the Service directly. An exported VAULT_ADDR skips this.
 if [[ -z ${VAULT_ADDR:-} ]]; then
+  # A machine with several clusters points kubectl at whichever was used last.
+  context=${KUBE_CONTEXT:-$(kubectl config current-context)}
+  server=$(kubectl config view -o jsonpath="{.clusters[?(@.name==\"$(kubectl config view -o jsonpath="{.contexts[?(@.name==\"$context\")].context.cluster}")\")].cluster.server}")
+  read -rp "kubectl context \"$context\" ($server). Is this Blueshell's cluster? Type yes: " answer
+  [[ $answer == yes ]] || die "Not confirmed. Pick the cluster with KUBE_CONTEXT=<name> $0"
   log=$(mktemp)
-  kubectl -n data-system port-forward svc/vault :8200 >"$log" 2>&1 &
+  kubectl --context "$context" -n data-system port-forward svc/vault :8200 >"$log" 2>&1 &
   forward_pid=$!
   port=""
   for _ in $(seq 1 30); do
@@ -88,6 +94,11 @@ fi
 # --- Preflight: every check before anything is written --------------------------------------
 
 vault token lookup >/dev/null 2>&1 || die "Vault does not accept the token."
+# The port-forward reaches whichever cluster kubectl named; only Blueshell's Vault signs in
+# through the site, so this is the last check before anything is read or written.
+oidc=$(vault read -field=oidc_discovery_url auth/oidc/config 2>/dev/null || true)
+[[ $oidc == "$BLUESHELL_OIDC" ]] || die "This Vault signs in through ${oidc:-an unknown provider}, not $BLUESHELL_OIDC. It is not Blueshell's Vault; nothing was written."
+step "This is Blueshell's Vault: it signs in through $BLUESHELL_OIDC."
 caps=$(vault token capabilities "secret/data/${VAULT_PATH#secret/}")
 [[ $caps == *root* || ($caps == *create* && $caps == *update* && $caps == *read*) ]] ||
   die "Your Vault token may not write $VAULT_PATH (it has: $caps)."

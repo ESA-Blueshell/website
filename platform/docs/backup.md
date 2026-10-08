@@ -43,7 +43,10 @@ organization ID and an admin login to the site. Then:
 scripts/seed-backup-credentials.sh
 ```
 
-It asks for your Scaleway secret key without showing it, and for the organization ID. It opens
+It asks for your Scaleway secret key without showing it, and for the organization ID. It shows
+the `kubectl` context it is about to use and asks you to confirm it is Blueshell's; pick another
+with `KUBE_CONTEXT=<name>`. After you sign in it checks the Vault signs in through
+`esa-blueshell.nl`, and stops before reading or writing anything if not. It opens
 its own port-forward to Vault, since Vault's public host sits behind the site's sign-in, and
 opens a browser on that sign-in. Its Vault token stays in the script and is revoked when it ends,
 as is the port-forward.

@@ -1380,6 +1380,12 @@ components:
       properties:
         archived:
           type: boolean
+        archivedAt:
+          description: Since when it no longer runs; absent while it runs
+          format: date-time
+          type:
+          - string
+          - 'null'
         banner:
           oneOf:
           - $ref: '#/components/schemas/Image'
@@ -1420,6 +1426,12 @@ components:
         archived:
           description: Whether the committee no longer runs
           type: boolean
+        archivedAt:
+          description: Since when it no longer runs; absent while it runs
+          format: date-time
+          type:
+          - string
+          - 'null'
         banner:
           oneOf:
           - $ref: '#/components/schemas/Image'

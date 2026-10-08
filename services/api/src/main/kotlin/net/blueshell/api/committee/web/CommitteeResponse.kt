@@ -17,6 +17,8 @@ data class CommitteeResponse(
     var slug: String,
     @field:Schema(description = "Whether the committee no longer runs")
     var archived: Boolean,
+    @field:Schema(description = "Since when it no longer runs; absent while it runs")
+    var archivedAt: Instant?,
     var banner: Image?,
     @field:Schema(description = "Its logo, absent for none")
     var icon: Image?,

@@ -34,7 +34,7 @@ class CommitteeControllerTest {
     private val controller = CommitteeController(service, seats, files)
 
     private val lan =
-        Committee(name = "LanCie", description = "LANs", slug = "lan", archived = true).apply {
+        Committee(name = "LanCie", description = "LANs", slug = "lan", archived = true, archivedAt = Instant.EPOCH).apply {
             id = 1
             gameCodes += listOf("VALORANT", "CS2")
             createdAt = Instant.EPOCH
@@ -58,6 +58,7 @@ class CommitteeControllerTest {
 
         val page = controller.findCommitteePage("lan")
 
+        assertThat(page.archivedAt).isEqualTo(Instant.EPOCH)
         assertThat(page).isEqualTo(
             CommitteePageResponse(
                 id = 1,
@@ -65,6 +66,7 @@ class CommitteeControllerTest {
                 slug = "lan",
                 description = "LANs",
                 archived = true,
+                archivedAt = Instant.EPOCH,
                 banner = null,
                 icon = null,
                 gameCodes = listOf("CS2", "VALORANT"),

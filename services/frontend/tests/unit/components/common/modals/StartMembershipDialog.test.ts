@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import StartMembershipDialog from "@/components/common/modals/StartMembershipDialog.vue"
+import {clearEveryField, saidByLabel} from "../../../helpers/fields"
 
 const {mockStartMembershipAsBoard, mockHandleNetworkError} = vi.hoisted(() => ({
   mockStartMembershipAsBoard: vi.fn(),
@@ -64,5 +65,17 @@ describe("StartMembershipDialog", () => {
 
     expect(wrapper.findComponent({name: "FormControl"}).props("errorMessages")).toEqual(["Overlaps a running membership."])
     expect(mockHandleNetworkError).not.toHaveBeenCalled()
+  })
+
+  it("says a field left empty is required once it is left, and takes the member type picked", async () => {
+    const wrapper = mountDialog()
+
+    await clearEveryField(wrapper)
+    await wrapper.getComponent({name: "MemberTypeSelect"}).vm.$emit("update:modelValue", "ALUMNI")
+    await (wrapper.vm as any).confirm()
+
+    expect(saidByLabel(wrapper)).toEqual({"Start Date": ["This field is required"]})
+    expect(mockStartMembershipAsBoard).not.toHaveBeenCalled()
+    expect((wrapper.vm as any).membership.memberType).toBe("ALUMNI")
   })
 })

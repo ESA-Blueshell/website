@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {
   mockCorrectSignupEmail,
@@ -196,5 +197,15 @@ describe("EmailConfirmationPanel", () => {
       expect(wrapper.find('[data-testid="email-confirm-resend-btn"]').exists()).toBe(false)
       expect(wrapper.find('[data-testid="email-confirm-correct-form"]').exists()).toBe(true)
     })
+  })
+
+  it("says a correction left empty is required once it is left", async () => {
+    const wrapper = mountPanel()
+    ;(wrapper.vm as unknown as Panel).startCorrecting()
+    await wrapper.vm.$nextTick()
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toEqual({"Email address": ["This field is required"]})
   })
 })

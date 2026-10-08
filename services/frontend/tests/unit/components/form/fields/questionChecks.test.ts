@@ -30,7 +30,9 @@ describe("questionFields", () => {
     expect(checks.errorsOf("signUpForm.questions[0].choiceLabels[1]")).toEqual([])
   })
 
-  it("asks nothing of a form without questions", () => {
+  it("asks nothing of a form without questions, nor of a choice without options", () => {
     expect(questionFields(() => null)).toEqual({})
+    expect(Object.keys(questionFields(() => ({questions: [{idx: 0, type: QuestionType.RADIO, label: "Pick"}]}))))
+      .toEqual(["signUpForm.questions[0].label"])
   })
 })

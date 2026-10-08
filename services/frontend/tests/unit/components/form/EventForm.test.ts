@@ -4,6 +4,7 @@ import EventForm from "@/components/form/EventForm.vue"
 import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
 import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import {settle} from "../../helpers/testUtils"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {
   mockStore,
@@ -547,5 +548,28 @@ describe("EventForm", () => {
 
       expect(wrapper.emitted("cancel")).toHaveLength(1)
     })
+  })
+
+  it("says a field left empty is required once it is left, and takes the sign-up form as it is built", async () => {
+    const wrapper = mountForm(validEvent({signUp: true, signUpDeadline: "2099-01-01T09:00:00", signUpForm: {questions: [{idx: 0, type: "OPEN", label: "Q"}]}}))
+    await settle()
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({
+      "Event name*": ["This field is required"],
+      "Location*": ["This field is required"],
+      "Starts*": ["This field is required"],
+      "Ends*": ["This field is required"],
+      "Description*": ["This field is required"],
+      "Sign-ups close*": ["This field is required"],
+      "Sign-up limit": [],
+      "Question text*": ["This field is required"],
+    })
+
+    const built = {questions: [{idx: 0, type: "OPEN", label: "Anything else?"}]}
+    wrapper.getComponent({name: "SurveyForm"}).vm.$emit("update:modelValue", built)
+    await settle()
+    expect((wrapper.vm as any).event.signUpForm).toEqual(built)
   })
 })

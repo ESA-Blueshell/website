@@ -2,6 +2,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import ActivateMember from "@/pages/activate/ActivateMember.vue"
 import {mountInApp, settle} from "../helpers"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {
   mockRoute,
@@ -119,5 +120,14 @@ describe("ActivateMember page", () => {
     await settle()
 
     expect(mockRouterReplace).toHaveBeenCalledWith({name: "home"})
+  })
+
+  it("says a field left empty is required once it is left", async () => {
+    const wrapper = mountInApp(ActivateMember)
+    await settle()
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({"Username": ["This field is required"], "Password": ["This field is required"], "Repeat Password": ["This field is required"]})
   })
 })

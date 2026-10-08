@@ -106,4 +106,15 @@ describe("QuestionEditor", () => {
 
     expect(wrapper.findAll(".question__glyph circle")).toHaveLength(2)
   })
+
+  it("tells its form when the question text is left, and takes it quietly without one", async () => {
+    const checks = {errorsOf: () => [], touch: vi.fn()}
+    const wrapper = mountEditor({idx: 3, type: QuestionType.OPEN, label: "Q"}, {checks})
+    await wrapper.find("textarea").trigger("blur")
+    expect(checks.touch).toHaveBeenCalledWith("signUpForm.questions[3].label")
+
+    const alone = mountEditor({idx: 0, type: QuestionType.OPEN, label: "Q"})
+    await alone.find("textarea").trigger("blur")
+    expect(alone.text()).not.toContain("This field is required")
+  })
 })

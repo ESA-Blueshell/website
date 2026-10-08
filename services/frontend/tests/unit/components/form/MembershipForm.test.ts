@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {MemberType} from "@/services/api"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
@@ -262,5 +263,13 @@ describe("MembershipForm", () => {
       global: {stubs: {SubmitButton: submitButtonStub}},
     })
     expect(wrapper.findComponent({name: "SubmitButton"}).attributes("data-testid")).toBe("manage-membership-create-btn")
+  })
+
+  it("says a board date left empty is required once it is left, where it is", async () => {
+    const wrapper = mount(MembershipForm, {props: {userId: 42, modelValue: makeNewMembership()}})
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toEqual({"Start Date": ["This field is required"], "End Date": []})
   })
 })

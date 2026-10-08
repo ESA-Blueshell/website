@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import ResendConfirmation from "@/pages/login/ResendConfirmation.vue"
 import {mountInApp, settle} from "../helpers"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {
   mockRoute,
@@ -107,5 +108,14 @@ describe("ResendConfirmation page", () => {
     field(wrapper).vm.$emit("update:modelValue", "bob")
     await send(wrapper)
     expect(mockResendActivation).toHaveBeenCalledWith("bob")
+  })
+
+  it("says a field left empty is required once it is left", async () => {
+    const wrapper = mountInApp(ResendConfirmation)
+    await settle()
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({"Username": ["This field is required"]})
   })
 })

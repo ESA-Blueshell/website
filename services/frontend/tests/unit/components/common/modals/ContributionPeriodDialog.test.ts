@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import ContributionPeriodDialog from "@/components/common/modals/ContributionPeriodDialog.vue"
+import {clearEveryField, saidByLabel} from "../../../helpers/fields"
 
 const {mockSaveNewPeriod, mockSavePeriod, mockHandleNetworkError} = vi.hoisted(() => ({
   mockSaveNewPeriod: vi.fn(),
@@ -111,5 +112,13 @@ describe("ContributionPeriodDialog", () => {
 
     ;(wrapper.vm as any).confirmDeletePeriod()
     expect(wrapper.emitted("delete")?.[0]).toEqual([55])
+  })
+
+  it("says a date left empty is required once it is left", async () => {
+    const wrapper = mountDialog()
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({"Start Date": ["This field is required"], "End Date": ["This field is required"], "Half Year Cutoff Date": ["This field is required"], "Alumni Fee": []})
   })
 })

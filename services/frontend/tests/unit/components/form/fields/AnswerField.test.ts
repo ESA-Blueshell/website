@@ -61,4 +61,18 @@ describe("AnswerField", () => {
 
     expect(ticked.optionSelections).toEqual([false, true])
   })
+
+  it("tells its form when a choice is left", async () => {
+    const radio = mount(AnswerField, {
+      props: {question: {id: 3, idx: 2, type: QuestionType.RADIO, label: "Which?", choiceLabels: ["Tea", "Coffee"]}},
+    })
+    await radio.getComponent({name: "RadioGroup"}).trigger("focusout")
+    expect(radio.emitted("blur")).toHaveLength(1)
+
+    const boxes = mount(AnswerField, {
+      props: {question: {id: 4, idx: 3, type: QuestionType.CHECKBOX, label: "Which?", choiceLabels: ["A", "B"]}},
+    })
+    await boxes.getComponent({name: "CheckBox"}).trigger("focusout")
+    expect(boxes.emitted("blur")).toHaveLength(1)
+  })
 })

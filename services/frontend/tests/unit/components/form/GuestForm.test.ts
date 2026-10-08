@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import GuestForm from "@/components/form/GuestForm.vue"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {mockStore} = vi.hoisted(() => ({
   mockStore: {
@@ -88,5 +89,20 @@ describe("GuestForm", () => {
 
     expect(wrapper.findAllComponents({name: "FormControl"})).toHaveLength(4)
     expect(wrapper.find("[data-testid='guest-form-signed-out']").exists()).toBe(false)
+  })
+
+  it("says a field left empty is required once it is left", async () => {
+    const wrapper = mount(GuestForm)
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toEqual({"Full name*": ["This field is required"], "Discord username*": ["This field is required"], "Email*": ["This field is required"], "Phone Number*": ["This field is required"]})
+  })
+
+  it("checks nothing it does not show", async () => {
+    mockStore.getters.isLoggedIn = true
+    const wrapper = mount(GuestForm)
+
+    expect(await (wrapper.vm as any).validate()).toBe(true)
   })
 })

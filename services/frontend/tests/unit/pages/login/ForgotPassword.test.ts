@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import ForgotPassword from "@/pages/login/ForgotPassword.vue"
 import {mountInApp, settle} from "../helpers"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {
   mockRoute,
@@ -87,5 +88,14 @@ describe("ForgotPassword page", () => {
     await wrapper.get('[data-testid="forgot-password-form"]').trigger("submit")
     await settle()
     expect(mockRequestPasswordReset).toHaveBeenCalledWith("bob")
+  })
+
+  it("says a field left empty is required once it is left", async () => {
+    const wrapper = mountInApp(ForgotPassword)
+    await settle()
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({"Username": ["This field is required"]})
   })
 })

@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 // aliased: the local mount helper below would otherwise shadow what it calls
 import {mount as mountComponent} from "@vue/test-utils"
 import AddressForm from "@/components/form/AddressForm.vue"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {mockSaveNewAddress, mockSaveAddressChange, mockSaveSignupAddress, mockShowStatusMessage} = vi.hoisted(() => ({
   mockSaveNewAddress: vi.fn(),
@@ -129,5 +130,14 @@ describe("AddressForm", () => {
       expect(await (wrapper.vm as any).save()).toBeNull()
       expect(wrapper.emitted("submitted")).toEqual([[false]])
     })
+  })
+
+  it("says a field left empty is required once it is left", async () => {
+    const wrapper = mountComponent(AddressForm, {props: {modelValue: {...full, country: ""}}})
+
+    await clearEveryField(wrapper)
+
+    const required = ["This field is required"]
+    expect(saidByLabel(wrapper)).toEqual({"Street": required, "House Number": required, "Zipcode": required, "City": required, "Country": required})
   })
 })

@@ -29,6 +29,11 @@ describe("answerChecks", () => {
     expect(failureOf(question(QuestionType.CHECKBOX, false), {optionSelections: []})).toBeNull()
   })
 
+  it("reads a missing answer as an empty one", () => {
+    expect(firstFailure(undefined, answerChecks(question(QuestionType.OPEN, true)))).toBe("This field is required")
+    expect(firstFailure(undefined, answerChecks(question(QuestionType.CHECKBOX, true)))).toBe("Select at least one option")
+  })
+
   it("asks nothing of a description", () => {
     expect(answerChecks(question(QuestionType.DESCRIPTION, true))).toEqual([])
   })

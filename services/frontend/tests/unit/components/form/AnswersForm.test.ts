@@ -49,4 +49,15 @@ describe("AnswersForm", () => {
 
     expect(wrapper.findAll(".answer-field__said").map(said => said.text())).toEqual(["This field is required"])
   })
+
+  it("shows a required answer missing once it is left", async () => {
+    const wrapper = mount(AnswersForm, {
+      props: {survey: {questions: [{id: 2, idx: 0, type: QuestionType.OPEN, label: "Open", required: true}]}},
+    })
+    await wrapper.vm.$nextTick()
+
+    await wrapper.getComponent({name: "AnswerField"}).vm.$emit("blur")
+
+    expect(wrapper.get(".answer-field__said").text()).toBe("This field is required")
+  })
 })

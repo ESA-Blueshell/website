@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import ResetPassword from "@/pages/login/ResetPassword.vue"
 import {mountInApp, settle} from "../helpers"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {
   mockRoute,
@@ -115,5 +116,14 @@ describe("ResetPassword page", () => {
     await settle()
 
     expect(wrapper.get('[data-testid="reset-password-submit-btn"]').text()).toBe("Reset Password")
+  })
+
+  it("says a field left empty is required once it is left", async () => {
+    const wrapper = mountInApp(ResetPassword)
+    await settle()
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({"New Password": ["This field is required"], "Repeat New Password": ["This field is required"]})
   })
 })

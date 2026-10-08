@@ -1,7 +1,9 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {nextTick} from "vue"
+import {defineComponent, nextTick, ref} from "vue"
 import {flushPromises, mount} from "@vue/test-utils"
 import UserForm from "@/components/form/UserForm.vue"
+import type {EditableUser} from "@/utils/editableUser"
+import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
 const {
   mockStore,
@@ -565,5 +567,48 @@ describe("UserForm", () => {
       dateOfBirth: "2000-01-02", gender: "X", studentNumber: "s1", nationality: "DE", ehbo: true, bhv: true, nameOnRosters: true,
     })
     expect((wrapper.vm as any).confirmPassword).toBe("Secret1!")
+  })
+
+  it("says what a field left empty lacks once it is left", async () => {
+    const wrapper = mount(UserForm, {
+      props: {showPassword: true, modelValue: filled(), options: {includeMemberProfile: true, createVia: "signup"}},
+      global: {stubs},
+    })
+
+    await clearEveryField(wrapper)
+
+    const required = ["This field is required"]
+    expect(saidByLabel(wrapper)).toMatchObject({
+      "Initials*": required,
+      "First Name*": required,
+      "Surname*": required,
+      "Surname Prefix": [],
+      "E-mail*": required,
+      "Phone Number*": required,
+      "Password*": required,
+      "Password (repeated)": required,
+      "Date of Birth*": ["Date is required"],
+      "Gender": [],
+    })
+  })
+
+  it("sees what is entered where its page hands it no account yet", async () => {
+    const page = defineComponent({
+      components: {UserForm},
+      setup: () => ({user: ref<EditableUser>()}),
+      template: "<user-form v-model=\"user\" show-password />",
+    })
+    const wrapper = mount(page, {global: {stubs}})
+    const form = wrapper.findComponent(UserForm)
+
+    await (form.vm as any).validate()
+    await nextTick()
+    expect(box(form, "privacy-consent").text()).toContain("You must agree to the privacy policy")
+
+    await box(form, "privacy-consent").get("input").setValue(true)
+    await (form.vm as any).validate()
+    await nextTick()
+
+    expect(box(form, "privacy-consent").text()).not.toContain("You must agree to the privacy policy")
   })
 })

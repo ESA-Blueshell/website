@@ -5,6 +5,7 @@ import type {Committee} from "@/domains/committees/adapters/committees"
 import type {CasualGame} from "@/domains/games/adapters/games"
 import {aCasualGame, aCommittee, anImage} from "../../../helpers/apiFixtures"
 import GameEditor from "@/domains/games/components/GameEditor.vue"
+import {clearEveryField, saidByLabel} from "../../../helpers/fields"
 
 const adapter = vi.hoisted(() => ({addCasualGame: vi.fn(), saveCasualGame: vi.fn(), storeGameBanner: vi.fn(), storeGameIcon: vi.fn()}))
 vi.mock("@/domains/games/adapters/games", () => adapter)
@@ -240,5 +241,13 @@ describe("the game edit page", () => {
     expect(mountEditor(chess).find("[data-testid=game-edit-remove]").exists()).toBe(false)
     await wrapper.get("[data-testid=game-edit-cancel]").trigger("click")
     expect(wrapper.emitted("cancel")).toHaveLength(1)
+  })
+
+  it("says a name or address left empty is required once it is left", async () => {
+    const wrapper = mountEditor(chess)
+
+    await clearEveryField(wrapper)
+
+    expect(saidByLabel(wrapper)).toMatchObject({"Name*": ["This field is required"], "Address*": ["This field is required"]})
   })
 })

@@ -9,6 +9,7 @@ import LeadBand from "@/components/island/LeadBand.vue"
 import RecordFact from "@/components/island/RecordFact.vue"
 import MarkdownView from "@/components/island/MarkdownView.vue"
 import RecordHead from "@/components/island/RecordHead.vue"
+import {PeopleList} from "@/domains/discord"
 import ScopedEvents from "@/domains/events/island/ScopedEvents.vue"
 import {cellOf as gameCellOf, useCasualGames} from "@/domains/games"
 import type {Committee, CommitteePage} from "../adapters/committees"
@@ -123,34 +124,11 @@ const archived = async (now: Committee) => {
           <p class="committee-page__people-label">
             The people behind its events
           </p>
-          <ul
-            class="committee-page__seats"
-            data-testid="committee-members"
-          >
-            <li
-              v-for="(seat, at) in page.members"
-              :key="at"
-              class="committee-page__seat"
-              :data-testid="`committee-seat-${at}`"
-            >
-              <img
-                v-if="seat.avatar"
-                alt=""
-                class="committee-page__avatar"
-                :src="seat.avatar"
-              >
-              <span class="committee-page__who">
-                <span
-                  class="committee-page__name"
-                  :class="{'committee-page__name--none': !seat.discordName}"
-                >{{ seat.discordName ?? "Discord not linked" }}</span>
-                <span
-                  v-if="seat.role"
-                  class="committee-page__role"
-                >{{ seat.role }}</span>
-              </span>
-            </li>
-          </ul>
+          <people-list
+            item-testid="committee-seat"
+            :people="page.members"
+            testid="committee-members"
+          />
         </template>
       </record-head>
 
@@ -193,72 +171,6 @@ const archived = async (now: Committee) => {
   margin: 0;
   font-size: 0.6rem;
   letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-ash);
-}
-
-/*
- * One row parted by a rule at the lean the buttons are cut on, as the partners are. The rule
- * stands just left of each member and the row clips its left edge, so a member that wraps to the
- * start of a line has none before it.
- */
-.committee-page__seats {
-  display: flex;
-  flex-wrap: wrap;
-  row-gap: 0.9rem;
-  margin: 0.7rem 0 0 -1.5rem;
-  padding: 0;
-  overflow: hidden;
-  list-style: none;
-}
-
-.committee-page__seat {
-  position: relative;
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  min-width: 0;
-  padding: 0 1.5rem;
-}
-
-.committee-page__seat::before {
-  position: absolute;
-  top: 0.2rem;
-  bottom: 0.2rem;
-  left: -4px;
-  width: 1px;
-  content: "";
-  background-color: var(--color-hairline);
-  transform: skewX(-12deg);
-}
-
-.committee-page__avatar {
-  flex: none;
-  width: 2.6rem;
-  height: 2.6rem;
-  border-radius: 50%;
-}
-
-.committee-page__who {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.2;
-}
-
-.committee-page__name {
-  font-size: 1.05rem;
-  color: var(--color-chalk);
-  white-space: nowrap;
-}
-
-.committee-page__name--none {
-  color: var(--color-ash);
-}
-
-.committee-page__role {
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-ash);
 }

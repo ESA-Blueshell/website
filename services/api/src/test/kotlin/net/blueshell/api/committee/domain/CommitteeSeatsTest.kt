@@ -12,7 +12,7 @@ class CommitteeSeatsTest {
     private fun user(
         discordId: String?,
         discord: String?,
-    ) = Entities.user().also {
+    ) = Entities.user(username = "u-$discord").also {
         it.discordId = discordId
         it.discord = discord
     }
@@ -29,15 +29,15 @@ class CommitteeSeatsTest {
         }
 
     @Test
-    fun `names each seat by the Discord the bot sees, else as last known, else not at all`() {
+    fun `names each seat by the Discord the bot sees, else as last known, else by username without a picture`() {
         val faces = DiscordFaces { ids -> ids.filter { it == "111" }.associateWith { DiscordFace("Mo the Great", "https://cdn/mo.png") } }
 
         val seats = CommitteeSeats(faces).of(committee)
 
         assertThat(seats).containsExactly(
-            CommitteeSeat("Nelly", "https://cdn.discordapp.com/embed/avatars/5.png", "Chair"),
-            CommitteeSeat("Mo the Great", "https://cdn/mo.png", null),
-            CommitteeSeat(null, null, "Treasurer"),
+            CommitteeSeat("Nelly", "https://cdn.discordapp.com/embed/avatars/5.png", true, "Chair"),
+            CommitteeSeat("Mo the Great", "https://cdn/mo.png", true, null),
+            CommitteeSeat("u-Typed name", null, false, "Treasurer"),
         )
     }
 
@@ -45,7 +45,7 @@ class CommitteeSeatsTest {
     fun `without a bot every linked seat keeps its last known name and Discord's default avatar`() {
         val seats = CommitteeSeats { emptyMap() }.of(committee)
 
-        assertThat(seats.map { it.discordName }).containsExactly("Nelly", "Mo", null)
+        assertThat(seats.map { it.name }).containsExactly("Nelly", "Mo", "u-Typed name")
         assertThat(seats[1].avatar).startsWith("https://cdn.discordapp.com/embed/avatars/")
     }
 }

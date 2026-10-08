@@ -1209,6 +1209,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const eventId = path.split("/")[2]
       return answer(route, "findEventSignUpsByEventId", fixtures.eventSignUpsByEventId?.[eventId] ?? [])
     }
+    if (method === "GET" && /^\/events\/\d+\/roster$/.test(path)) {
+      return answer(route, "findEventRoster", {people: [{name: "nelly", avatar: null, discord: false}], guests: 1})
+    }
     if (method === "GET" && /^\/events\/\d+$/.test(path)) {
       const eventId = Number(path.split("/").at(-1))
       const detail = fixtures.eventDetailsById?.[String(eventId)]
@@ -1230,8 +1233,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const found = committeesNow().find(one => one.slug === decodeURIComponent(committeeAddress[1]!).toLowerCase())
       if (!found) return fulfillJson(route, {code: "UnknownCommitteeAddress", address: committeeAddress[1]}, 404)
       const seats = (found.members ?? []).map((member, at) => (at === 0
-        ? {discordName: "Nelly B", avatar: "https://cdn.discordapp.com/embed/avatars/1.png", role: member.role ?? null}
-        : {discordName: null, avatar: null, role: member.role ?? null}))
+        ? {name: "Nelly B", avatar: "https://cdn.discordapp.com/embed/avatars/1.png", discord: true, role: member.role ?? null}
+        : {name: "jan", avatar: null, discord: false, role: member.role ?? null}))
       return answer(route, "findCommitteePage", {...found, members: seats})
     }
     const committeeOwn = /^\/committees\/(\d+)\/(page|archived)$/.exec(path)

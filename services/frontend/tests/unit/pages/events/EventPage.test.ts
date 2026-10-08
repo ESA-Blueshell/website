@@ -6,9 +6,10 @@ import type {CommitteeOption} from "@/domains/events/island/useEventReader"
 import {aSignUp} from "../../helpers/apiFixtures"
 import EventPage from "@/pages/events/EventPage.vue"
 
-const {mockRead, mockList, mockPush, mockCommit, getters, reader, mockNetworkError, mockIcs, route} = vi.hoisted(() => ({
+const {mockRead, mockRoster, mockList, mockPush, mockCommit, getters, reader, mockNetworkError, mockIcs, route} = vi.hoisted(() => ({
   route: {params: {id: "7"}},
   mockRead: vi.fn(),
+  mockRoster: vi.fn(),
   mockList: vi.fn(),
   mockPush: vi.fn(),
   mockCommit: vi.fn(),
@@ -35,6 +36,7 @@ vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockNetwork
 vi.mock("@/domains/events", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   readEvent: mockRead,
+  readRoster: mockRoster,
   listEvents: mockList,
   downloadIcs: mockIcs,
   useEventReader: () => reader,
@@ -71,6 +73,42 @@ describe("an event's own page", () => {
     reader.committees = ref([])
     mockRead.mockResolvedValue(event())
     mockList.mockResolvedValue([event(), event({id: 8}), event({id: 9})])
+    mockRoster.mockResolvedValue({people: [], guests: 0})
+  })
+
+  it("shows who signed up under the description, the guests counted, and reads it again when the reader signs up or out", async () => {
+    mockRoster.mockResolvedValue({people: [{name: "Nelly", avatar: "https://cdn/n.png", discord: true}, {name: "lars", avatar: null, discord: false}], guests: 2})
+    const wrapper = await mountPage()
+
+    expect(mockRoster).toHaveBeenCalledWith(7)
+    expect(wrapper.get("[data-testid=event-roster]").text()).toContain("Signed up · 4")
+    expect(wrapper.getComponent({name: "PeopleList"}).props("people")).toHaveLength(2)
+    expect(wrapper.get("[data-testid=event-roster-guests]").text()).toBe("And 2 guests without an account.")
+
+    mockRoster.mockResolvedValue({people: [], guests: 1})
+    wrapper.getComponent({name: "EventSignUpPanel"}).vm.$emit("update:signUp", {id: 40, eventId: 7})
+    await flushPromises()
+    expect(mockRoster).toHaveBeenCalledTimes(2)
+    expect(wrapper.get("[data-testid=event-roster-guests]").text()).toBe("1 guest without an account.")
+
+    mockRoster.mockResolvedValue({people: [{name: "lars", avatar: null, discord: false}], guests: 0})
+    wrapper.getComponent({name: "EventSignUpPanel"}).vm.$emit("update:signUp", {id: 40, eventId: 7, note: "again"})
+    await flushPromises()
+    expect(wrapper.get("[data-testid=event-roster]").text()).toContain("Signed up · 1")
+    expect(wrapper.find("[data-testid=event-roster-guests]").exists()).toBe(false)
+
+    mockRoster.mockResolvedValue({people: [], guests: 0})
+    wrapper.getComponent({name: "EventSignUpPanel"}).vm.$emit("delete:signUp", 40)
+    await flushPromises()
+    expect(wrapper.find("[data-testid=event-roster]").exists()).toBe(false)
+  })
+
+  it("reads no roster for an event that takes no sign-ups", async () => {
+    mockRead.mockResolvedValue(event({signUp: false}))
+    const wrapper = await mountPage()
+
+    expect(mockRoster).not.toHaveBeenCalled()
+    expect(wrapper.find("[data-testid=event-roster]").exists()).toBe(false)
   })
 
   it("reads the event its address names, and heads the page with it", async () => {

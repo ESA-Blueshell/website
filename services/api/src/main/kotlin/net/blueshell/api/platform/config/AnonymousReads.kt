@@ -17,6 +17,7 @@ internal object AnonymousReads {
         mapOf(
             "/events/{id}" to "method security lets a visitor read an approved event",
             "/events/{id}/link-preview" to "method security lets a visitor read an approved event, as Discord's embed does",
+            "/events/{id}/roster" to "method security lets a visitor read who signed up for an event they may read",
             "/events/{eventId}/banners" to "method security lets a visitor read an approved event's banner",
             "/events/signups/byAccessToken" to "a guest has no login; method security checks the access token sent",
             "/committees/{committeeId}" to "method security answers a visitor the committee's summary",

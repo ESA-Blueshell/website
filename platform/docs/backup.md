@@ -27,33 +27,54 @@ A failed step, or a night that never reports, alerts Discord through Gatus: the 
 
 ## Seeding the credentials
 
-An owner does this once, and again whenever the Kopia password changes. No agent reads these
-values. The rotation job (#2099) later replaces the writer key on its own.
+`scripts/seed-backup-credentials.sh` does it, run by an owner on their own machine. It makes the
+Kopia password and a `backup-writer` key itself and hands them straight to Vault and Secret
+Manager, so neither appears on screen, in a file or on a command line. No agent runs it.
 
-1. **Kopia password.** Generate it on your own machine and keep it in your terminal only:
+It is safe to run again: it fills in only what is missing, stops without writing when Vault and
+Secret Manager disagree about the password, and never replaces a password the repository already
+opens with.
+
+**You need** `vault`, `kubectl` with the cluster's kubeconfig, `jq` and `openssl`
+(`brew install hashicorp/tap/vault jq`), your own Scaleway API key (the one OpenTofu uses) and
+an admin login to the site.
+
+1. In one terminal, open a path to Vault. Its public address sits behind the site's sign-in, which
+   the `vault` CLI cannot pass:
 
    ```bash
-   KOPIA_PASSWORD=$(openssl rand -base64 32)
+   kubectl -n data-system port-forward svc/vault 8200:8200
    ```
 
-   Add it as the only version of `kopia-repository-password` in Scaleway Secret Manager
-   (`nl-ams`). That copy is the break-glass one.
-2. **Writer key.** In the Scaleway console, IAM & API keys, Generate API key: bearer the
-   application `backup-writer`, expiry a year, Object Storage **Yes** with project `Website`.
-3. **Into Vault**, logged in through the Vault UI's OIDC (an admin) or `vault login -method=oidc`:
+2. In a second terminal, sign in to Vault through the site:
 
    ```bash
-   read -rsp "Writer access key: " AK; echo
-   read -rsp "Writer secret key: " SK; echo
-   vault kv put secret/platform/backup \
-     kopia.password="$KOPIA_PASSWORD" writer.access_key="$AK" writer.secret_key="$SK"
-   unset KOPIA_PASSWORD AK SK
+   bash
+   export VAULT_ADDR=http://127.0.0.1:8200
+   vault login -method=oidc
    ```
 
-   `kv put` replaces the whole path. Once #2099 adds the rotator's key to it, use
-   `vault kv patch` to change one field.
+   A browser opens on the site's sign-in. An admin account is needed.
+
+3. Load your Scaleway key without showing it, and run the script:
+
+   ```bash
+   read -rsp "Scaleway secret key: " SCW_SECRET_KEY; echo; export SCW_SECRET_KEY
+   export SCW_DEFAULT_ORGANIZATION_ID=<organization id> SCW_DEFAULT_PROJECT_ID=<project id>
+   scripts/seed-backup-credentials.sh
+   ```
+
+   Each line it prints is one thing checked or done. The last check must say Vault has all three
+   fields, Secret Manager `1 enabled version` and `backup-writer 1 key(s)`. If it names a second
+   writer key, delete that one in the console.
+
+4. Close the port-forward, and `vault token revoke -self` if you are done with Vault.
 
 `secret/platform/alerting` gains `gatus.backup_token` on its own: `bootstrap-auth.sh` seeds it.
+
+**Replacing the writer key** by hand, say after a suspected leak: run the same steps with
+`scripts/seed-backup-credentials.sh --new-writer-key`. It makes a new key, puts it in Vault and
+deletes the old one. The rotation job (#2099) will do this every 30 days on its own.
 
 ## The first night
 

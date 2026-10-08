@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blueshell Pinger</title>
+    <style>
+      @font-face {
+        font-family: "Shellhouse One";
+        src: url("fonts/ShellhouseOne-Regular.ttf") format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Barlow Semi Condensed";
+        src: url("fonts/BarlowSemiCondensed-Light.ttf") format("truetype");
+        font-weight: 300;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Barlow Semi Condensed";
+        src: url("fonts/BarlowSemiCondensed-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Barlow Semi Condensed";
+        src: url("fonts/BarlowSemiCondensed-Bold.ttf") format("truetype");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Silkscreen";
+        src: url("fonts/Silkscreen-Regular.ttf") format("truetype");
+        font-display: swap;
+      }
+      :root {
+        color-scheme: dark;
+        --void: #0b0f1a;
+        --panel: #141a24;
+        --hairline: #273041;
+        --chalk: #e6edf3;
+        --ash: #8b97a7;
+        --brand: #1f6feb;
+        --brand-lit: #3387fa;
+        --acid: #a8ff00;
+        --danger: #ff5964;
+        --font-display: "Shellhouse One", system-ui, sans-serif;
+        --font-body: "Barlow Semi Condensed", system-ui, sans-serif;
+        --font-bitmap: "Silkscreen", ui-monospace, monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background-color: var(--void);
+        background-image:
+          radial-gradient(900px 500px at 50% -20%, rgba(31, 111, 235, 0.16), transparent),
+          url("shelly-bg-black.png");
+        background-repeat: no-repeat, repeat;
+        background-size: auto, 135px 77px;
+        color: var(--chalk);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 30rem;
+        margin: 0 auto;
+        padding: 1.75rem 1.5rem 2.25rem;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      header img {
+        width: 2.6rem;
+        height: 2.6rem;
+        object-fit: contain;
+      }
+      .wordmark {
+        font-family: var(--font-display);
+        font-size: 1.35rem;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.01em;
+      }
+      .wordmark b {
+        color: var(--brand-lit);
+        font-weight: inherit;
+      }
+      .account {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+        padding: 0.7rem 0.85rem;
+        background: var(--panel);
+        border: 1px solid var(--hairline);
+      }
+      .account__who {
+        min-width: 0;
+      }
+      .account__label {
+        font-size: 0.68rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ash);
+      }
+      .account__name {
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .cut {
+        flex: none;
+        border: 0;
+        padding: 0.5rem 0.9rem;
+        background: var(--brand);
+        color: #fff;
+        font-family: var(--font-body);
+        font-weight: 700;
+        font-size: 0.82rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+        clip-path: polygon(0.5rem 0, 100% 0, calc(100% - 0.5rem) 100%, 0 100%);
+      }
+      .cut:hover {
+        background: var(--brand-lit);
+      }
+      .cut--wide {
+        display: block;
+        width: 100%;
+        margin-top: 0.75rem;
+        padding: 0.7rem 0.9rem;
+        text-align: center;
+        clip-path: polygon(0.7rem 0, 100% 0, calc(100% - 0.7rem) 100%, 0 100%);
+      }
+      .hero {
+        margin-top: 1.25rem;
+        padding: 1.4rem 1.25rem;
+        background: var(--panel);
+        border: 1px solid var(--hairline);
+        text-align: center;
+      }
+      .hero__eyebrow {
+        font-size: 0.68rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--acid);
+      }
+      .hero__pps {
+        font-weight: 700;
+        font-size: 3.4rem;
+        line-height: 1.05;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
+      }
+      .hero__unit {
+        font-size: 0.8rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ash);
+      }
+      .state {
+        margin-top: 0.4rem;
+        font-size: 0.78rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ash);
+      }
+      .state b {
+        color: var(--acid);
+      }
+      .countdown {
+        margin-top: 0.3rem;
+        min-height: 1.1em;
+        font-family: var(--font-bitmap);
+        font-size: 0.82rem;
+        letter-spacing: 0.04em;
+        color: var(--acid);
+        font-variant-numeric: tabular-nums;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+        margin-top: 0.6rem;
+      }
+      .stat {
+        padding: 0.7rem 0.85rem;
+        background: var(--panel);
+        border: 1px solid var(--hairline);
+      }
+      .stat__label {
+        font-size: 0.64rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ash);
+      }
+      .stat__value {
+        font-weight: 700;
+        font-size: 1.35rem;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
+      }
+      .stat--errors .stat__value {
+        color: var(--danger);
+      }
+      .control {
+        margin-top: 1rem;
+        padding: 1rem 0.95rem 1.1rem;
+        background: var(--panel);
+        border: 1px solid var(--hairline);
+      }
+      .control__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .control__title {
+        font-family: var(--font-display);
+        font-size: 1rem;
+        text-transform: uppercase;
+      }
+      .rate-input {
+        display: flex;
+        align-items: baseline;
+        gap: 0.4rem;
+      }
+      .rate-input input {
+        width: 7rem;
+        padding: 0.3rem 0.45rem;
+        background: var(--void);
+        border: 1px solid var(--hairline);
+        color: var(--chalk);
+        font-family: var(--font-body);
+        font-weight: 700;
+        font-size: 1rem;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+      .rate-input span {
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ash);
+      }
+      input[type="range"] {
+        width: 100%;
+        margin-top: 0.9rem;
+        accent-color: var(--brand-lit);
+      }
+      .estimate {
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--ash);
+        font-variant-numeric: tabular-nums;
+      }
+      .estimate b {
+        color: var(--chalk);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="shelly.png" alt="" />
+        <div class="wordmark">Blueshell <b>Pinger</b></div>
+      </header>
+
+      <div class="account">
+        <div class="account__who">
+          <div class="account__label">Signed in as</div>
+          <div class="account__name" id="account">Not signed in</div>
+        </div>
+        <button class="cut" id="signin">Sign in</button>
+      </div>
+
+      <section class="hero">
+        <div class="hero__eyebrow">Painting the canvas</div>
+        <div class="hero__pps"><span id="pps">0</span></div>
+        <div class="hero__unit">pings per second</div>
+        <div class="state" id="state">Starting</div>
+        <div class="countdown" id="countdown"></div>
+      </section>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat__label">Pings sent</div>
+          <div class="stat__value" id="sent">0</div>
+        </div>
+        <div class="stat stat--errors">
+          <div class="stat__label">Errors</div>
+          <div class="stat__value" id="errors">0</div>
+        </div>
+      </div>
+
+      <button class="cut cut--wide" id="leaderboard">Open the leaderboard</button>
+
+      <div class="control">
+        <div class="control__head">
+          <div class="control__title">Your send rate</div>
+          <div class="rate-input">
+            <input type="number" id="rate-number" min="1" step="1" />
+            <span>pps</span>
+          </div>
+        </div>
+        <input type="range" id="rate-range" min="1" max="2192982" step="1" />
+        <div class="estimate" id="estimate"></div>
+      </div>
+    </main>
+
+    <script>
+      const app = () => window.go?.main?.App;
+
+      const el = (id) => document.getElementById(id);
+      const accountEl = el("account");
+      const stateEl = el("state");
+      const ppsEl = el("pps");
+      const sentEl = el("sent");
+      const errorsEl = el("errors");
+      const countdownEl = el("countdown");
+      const signinEl = el("signin");
+      const numberEl = el("rate-number");
+      const rangeEl = el("rate-range");
+      const estimateEl = el("estimate");
+
+      let signedIn = false;
+
+      let bytesPerPacket = 57;
+      const fmt = (n) => Number(n).toLocaleString("en");
+
+      // Turn a send rate into an approximate uplink Mbps the way the Go estimator does, from the
+      // bytes-per-packet the app reports. An estimate: it ignores link-layer framing.
+      function estimateMbps(pps) {
+        return (pps * bytesPerPacket * 8) / 1_000_000;
+      }
+
+      function showEstimate(pps) {
+        const mbps = estimateMbps(pps);
+        const text = mbps >= 1000 ? `${(mbps / 1000).toFixed(2)} Gbit/s` : `${mbps.toFixed(2)} Mbps`;
+        estimateEl.innerHTML = `≈ <b>${text}</b> uplink (estimate)`;
+      }
+
+      function reflectRate(pps) {
+        numberEl.value = pps;
+        rangeEl.value = pps;
+        showEstimate(pps);
+      }
+
+      async function applyRate(raw) {
+        const a = app();
+        if (!a) return;
+        const applied = await a.SetRate(Math.round(Number(raw) || 0));
+        reflectRate(applied);
+      }
+
+      numberEl.addEventListener("input", () => showEstimate(Number(numberEl.value) || 0));
+      numberEl.addEventListener("change", () => applyRate(numberEl.value));
+      rangeEl.addEventListener("input", () => {
+        numberEl.value = rangeEl.value;
+        showEstimate(Number(rangeEl.value));
+      });
+      rangeEl.addEventListener("change", () => applyRate(rangeEl.value));
+      // The one button that opens the browser login; signing out is immediate.
+      signinEl.addEventListener("click", () => {
+        const a = app();
+        if (!a) return;
+        if (signedIn) a.SignOut();
+        else a.SignIn();
+      });
+      el("leaderboard").addEventListener("click", () => app()?.OpenLeaderboard());
+
+      // Pad and label the time until the event opens; a closed window past its end reads as ended.
+      function pad(n) {
+        return String(n).padStart(2, "0");
+      }
+
+      function countdownText(ms) {
+        const total = Math.floor(ms / 1000);
+        const days = Math.floor(total / 86400);
+        const hours = Math.floor((total % 86400) / 3600);
+        const mins = Math.floor((total % 3600) / 60);
+        const secs = total % 60;
+        const head = days > 0 ? `${days}d ` : "";
+        return `${head}${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+      }
+
+      function showWindow(s) {
+        if (s.state !== "closed") {
+          countdownEl.textContent = "";
+          return;
+        }
+        const now = Date.now();
+        if (s.eventStart && now < s.eventStart) {
+          countdownEl.textContent = `Event opens in ${countdownText(s.eventStart - now)}`;
+        } else {
+          countdownEl.textContent = "The event has ended";
+        }
+      }
+
+      async function initControls() {
+        const a = app();
+        if (!a) return;
+        try {
+          const c = await a.Controls();
+          bytesPerPacket = c.bytesPerPacket;
+          numberEl.min = c.minRate;
+          numberEl.max = c.maxRate;
+          rangeEl.min = c.minRate;
+          rangeEl.max = c.maxRate;
+          reflectRate(c.rate);
+        } catch {
+          // Controls fall back to their defaults; the error is not surfaced in the UI.
+        }
+      }
+
+      async function refresh() {
+        const a = app();
+        if (!a) return;
+        try {
+          const s = await a.Status();
+          signedIn = !!s.signedIn;
+          accountEl.textContent = signedIn ? s.account || "Signed in" : "Not signed in";
+          signinEl.textContent = signedIn ? "Sign out" : "Sign in";
+          ppsEl.textContent = fmt(s.pps);
+          sentEl.textContent = fmt(s.sent);
+          errorsEl.textContent = fmt(s.errors);
+          const state = signedIn ? s.state || "idle" : "signed out";
+          stateEl.innerHTML = `State <b>${state}</b>`;
+          showWindow(s);
+        } catch {
+          // A failed status poll leaves the last values on screen; the next tick recovers.
+        }
+      }
+
+      initControls();
+      setInterval(refresh, 1000);
+      refresh();
+    </script>
+  </body>
+</html>

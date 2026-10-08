@@ -1,0 +1,2 @@
+# Wails generates the JS/TS bindings on build; they are not source.
+wailsjs/

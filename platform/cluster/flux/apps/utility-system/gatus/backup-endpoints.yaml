@@ -1,0 +1,56 @@
+# The nightly backups' endpoints (apps/*/backup), pushed rather than probed: one per store, so
+# one failing neither hides nor silences another, and each takes only the token of the Job that
+# backs it up. A failed run alerts at once, and so does a store that has not reported for 26
+# hours. The render-backup-endpoints init container (deployment.yaml) puts each token in its
+# @…@ placeholder at pod start.
+external-endpoints:
+- name: "mariadb-vault"
+  group: "backups"
+  token: "@BACKUP_REPORT_DATA_SYSTEM@"
+  heartbeat:
+    interval: 26h
+  alerts:
+  - type: discord
+    failure-threshold: 1
+    success-threshold: 1
+    description: "The nightly backup of MariaDB and Vault failed, or has not reported for 26 hours"
+- name: "uploads"
+  group: "backups"
+  token: "@BACKUP_REPORT_DATA_SYSTEM@"
+  heartbeat:
+    interval: 26h
+  alerts:
+  - type: discord
+    failure-threshold: 1
+    success-threshold: 1
+    description: "The nightly backup of the api's uploaded files failed, or has not reported for 26 hours"
+- name: "valkey"
+  group: "backups"
+  token: "@BACKUP_REPORT_DATA_SYSTEM@"
+  heartbeat:
+    interval: 26h
+  alerts:
+  - type: discord
+    failure-threshold: 1
+    success-threshold: 1
+    description: "The nightly backup of Valkey failed, or has not reported for 26 hours"
+- name: "stalwart"
+  group: "backups"
+  token: "@BACKUP_REPORT_MAIL_SYSTEM@"
+  heartbeat:
+    interval: 26h
+  alerts:
+  - type: discord
+    failure-threshold: 1
+    success-threshold: 1
+    description: "The nightly backup of Stalwart failed, or has not reported for 26 hours"
+- name: "gatus"
+  group: "backups"
+  token: "@BACKUP_REPORT_UTILITY_SYSTEM@"
+  heartbeat:
+    interval: 26h
+  alerts:
+  - type: discord
+    failure-threshold: 1
+    success-threshold: 1
+    description: "The nightly backup of Gatus's history failed, or has not reported for 26 hours"

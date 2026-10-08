@@ -48,7 +48,14 @@ nothing but the backups, under a COMPLIANCE Object Lock.**
   password. No owner keeps a copy of their own, so the second owner holds nothing but a login.
   Vault's unseal shares are held by people, never in Scaleway, so the console alone yields only
   ciphertext: it cannot open values sealed by Vault Transit.
-- **Monitoring is on the server.** A failed run, or no success in 26 hours, alerts the board. A
+- **Every store, each copied the way it restores cleanly.** MariaDB as a dump in one
+  transaction and Vault as a Raft snapshot, in one run; Valkey from a fresh save; the api's
+  uploads as their directory; Gatus through SQLite's online backup. Stalwart's RocksDB store is
+  snapshotted while Stalwart is stopped for a minute or two: its own `--export` is documented as
+  a migration tool and "not a substitute for proper backup", which points to the backend's own
+  copy instead.
+- **Monitoring is on the server.** Each store reports to its own Gatus endpoint; a failed run, or
+  no success in 26 hours, alerts the board, and one store failing does not stop the others. A
   weekly verify reads back 5% of the files and checks the bucket's lock and versioning, the only
   check on a lock weakened for future uploads.
 

@@ -23,10 +23,10 @@ metadata:
   namespace: mail-system
   annotations:
 spec:
-  replicas: 1
-  # Mail server state lives in the RocksDB PVC; two replicas would race
-  # on the same files. Recreate is correct for single-replica stateful
-  # pods.
+  # No `replicas`: Kubernetes defaults it to 1, and leaving it unset lets the nightly backup
+  # (apps/mail/backup) scale Stalwart to 0 around its snapshot without Flux, which reconciles
+  # every two minutes, starting it again mid-copy. Never more than 1: two replicas would race
+  # on the RocksDB files. Recreate is correct for single-replica stateful pods.
   strategy:
     type: Recreate
   selector:

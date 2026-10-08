@@ -1,0 +1,58 @@
+# Each backup Job's report token, for Gatus to check that Job's reports against. One path per
+# Job, so the token Gatus holds for one never answers for another.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: backup-report-data-system
+  namespace: utility-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/backup-report/data-system
+  destination:
+    name: backup-report-data-system
+    create: true
+  refreshAfter: 1h
+  rolloutRestartTargets:
+    # Gatus reads its tokens once, at config load.
+    - kind: Deployment
+      name: gatus
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: backup-report-mail-system
+  namespace: utility-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/backup-report/mail-system
+  destination:
+    name: backup-report-mail-system
+    create: true
+  refreshAfter: 1h
+  rolloutRestartTargets:
+    # Gatus reads its tokens once, at config load.
+    - kind: Deployment
+      name: gatus
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: backup-report-utility-system
+  namespace: utility-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/backup-report/utility-system
+  destination:
+    name: backup-report-utility-system
+    create: true
+  refreshAfter: 1h
+  rolloutRestartTargets:
+    # Gatus reads its tokens once, at config load.
+    - kind: Deployment
+      name: gatus

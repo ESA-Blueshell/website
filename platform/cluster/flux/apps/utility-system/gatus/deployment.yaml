@@ -28,6 +28,62 @@ spec:
       labels:
         app.kubernetes.io/name: gatus
     spec:
+      # Renders the backup endpoints with each backup Job's token. A token whose Secret is not
+      # there yet becomes a random one, never a guessable value: that Job's reports are then
+      # refused and its 26-hour heartbeat alerts, rather than anyone being able to report it done.
+      initContainers:
+        - name: render-backup-endpoints
+          image: busybox:1.38-musl
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              umask 077
+              cp /template/backup-endpoints.yaml /tmp/rendered.yaml
+              for job in DATA_SYSTEM MAIL_SYSTEM UTILITY_SYSTEM; do
+                eval "token=\${$job:-}"
+                if [ -z "$token" ]; then
+                  token=$(head -c 48 /dev/urandom | base64 | tr -d '=+/\n' | head -c 48)
+                  echo "No report token for $job yet; its reports are refused until the next restart." >&2
+                fi
+                sed -i "s|@BACKUP_REPORT_$job@|$token|g" /tmp/rendered.yaml
+              done
+              grep -q '@BACKUP_REPORT_' /tmp/rendered.yaml && { echo "A placeholder was left unrendered." >&2; exit 1; }
+              mv /tmp/rendered.yaml /config/backup-endpoints.yaml
+          env:
+            - name: DATA_SYSTEM
+              valueFrom:
+                secretKeyRef:
+                  name: backup-report-data-system
+                  key: token
+                  optional: true
+            - name: MAIL_SYSTEM
+              valueFrom:
+                secretKeyRef:
+                  name: backup-report-mail-system
+                  key: token
+                  optional: true
+            - name: UTILITY_SYSTEM
+              valueFrom:
+                secretKeyRef:
+                  name: backup-report-utility-system
+                  key: token
+                  optional: true
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: tmp
+              mountPath: /tmp
+            - name: backup-endpoints
+              mountPath: /template
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
       containers:
         - name: gatus
           image: twinproduction/gatus:v5.37.0
@@ -43,16 +99,6 @@ spec:
                   name: alerting-discord
                   key: DISCORD_WEBHOOK_URL
                   optional: true
-            - name: BACKUP_TOKEN_FROM_VAULT
-              valueFrom:
-                secretKeyRef:
-                  name: alerting-discord
-                  key: GATUS_BACKUP_TOKEN
-                  optional: true
-            # Never empty, or Gatus panics: without the Secret the reference stays unresolved
-            # and the literal text stands in. No Secret means no webhook, so no alert to hide.
-            - name: GATUS_BACKUP_TOKEN
-              value: $(BACKUP_TOKEN_FROM_VAULT)
           ports:
             - containerPort: 8080
               name: http
@@ -69,8 +115,13 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            # The rendered backup endpoints sit in /config; the ConfigMaps under it in /config/static,
+            # where Gatus still reloads them on change. It reads the directory tree whole.
             - name: config
               mountPath: /config
+            - name: static
+              mountPath: /config/static
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -82,13 +133,25 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: gatus-data
+        # In memory: it holds the backup Jobs' report tokens.
         - name: config
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        - name: static
           projected:
             sources:
               - configMap:
                   name: gatus-config
               - configMap:
                   name: gatus-endpoints
+        - name: backup-endpoints
+          configMap:
+            name: gatus-backup-endpoints
 ---
 apiVersion: v1
 kind: Service

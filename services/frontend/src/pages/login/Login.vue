@@ -2,169 +2,128 @@
   <v-main>
     <top-banner :title="stepUpMode ? 'Confirm it is you' : 'Login'" />
 
-    <div class="mx-3">
-      <v-alert
+    <div class="login">
+      <notice-box
         v-if="refusal"
-        class="mx-auto mt-10"
-        data-testid="login-refusal"
-        style="max-width: 500px"
-        type="warning"
-        variant="tonal"
+        testid="login-refusal"
+        tone="warning"
       >
-        {{ refusal }}
-      </v-alert>
+        <p>{{ refusal }}</p>
+      </notice-box>
 
-      <v-form
+      <form
         v-if="step === 'code'"
-        ref="codeForm"
-        class="mx-auto mt-10"
+        class="island-form"
         data-testid="login-code-form"
-        style="max-width: 500px"
         @submit.prevent="submitCode"
       >
-        <p class="mb-4">
+        <p>
           {{ useBackupCode
             ? "Enter one of your backup codes. Each works once."
             : "Enter the six-digit code from your authenticator app." }}
         </p>
-        <v-row>
-          <v-text-field
-            v-model="code"
-            :autocomplete="useBackupCode ? 'off' : 'one-time-code'"
-            :inputmode="useBackupCode ? 'text' : 'numeric'"
-            :label="useBackupCode ? 'Backup code' : 'Code'"
-            autofocus
-            data-testid="login-code-field"
-          />
-        </v-row>
-        <v-row v-if="!stepUpMode">
-          <v-checkbox
-            v-model="trustThisBrowser"
-            data-testid="login-trust-browser"
-            hide-details
-            label="Trust this browser for 30 days"
-          />
-        </v-row>
-        <v-row class="justify-end">
-          <v-btn
-            data-testid="login-use-backup-code-btn"
-            size="small"
-            variant="text"
+        <form-control
+          v-model="code"
+          :autocomplete="useBackupCode ? 'off' : 'one-time-code'"
+          autofocus
+          data-testid="login-code-field"
+          :inputmode="useBackupCode ? 'text' : 'numeric'"
+          :label="useBackupCode ? 'Backup code' : 'Code'"
+        />
+        <check-box
+          v-if="!stepUpMode"
+          v-model="trustThisBrowser"
+          label="Trust this browser for 30 days"
+          testid="login-trust-browser"
+        />
+        <div class="login__aside">
+          <cut-button
+            small
+            testid="login-use-backup-code-btn"
+            tone="quiet"
             @click="useBackupCode = !useBackupCode"
           >
-            {{ useBackupCode ? "use the authenticator app" : "use a backup code" }}
-          </v-btn>
-        </v-row>
-        <v-row class="mb-3">
-          <v-col cols="auto">
-            <v-btn
-              v-if="!stepUpMode"
-              data-testid="login-code-back-btn"
-              variant="outlined"
-              @click="backToPassword"
-            >
-              Back
-            </v-btn>
-          </v-col>
-          <v-spacer />
-          <v-col cols="auto">
-            <v-btn
-              :disabled="!code.trim()"
-              :loading="loading"
-              color="primary"
-              data-testid="login-code-submit-btn"
-              type="submit"
-            >
-              Verify
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-form>
+            {{ useBackupCode ? "Use the authenticator app" : "Use a backup code" }}
+          </cut-button>
+        </div>
+        <div class="form-save panel-acts--split">
+          <cut-button
+            v-if="!stepUpMode"
+            testid="login-code-back-btn"
+            @click="backToPassword"
+          >
+            Back
+          </cut-button>
+          <cut-button
+            :disabled="!code.trim() || loading"
+            submit
+            testid="login-code-submit-btn"
+            tone="solid"
+          >
+            {{ loading ? "Verifying" : "Verify" }}
+          </cut-button>
+        </div>
+      </form>
 
-      <v-form
+      <form
         v-else
-        ref="form"
-        v-model="valid"
-        class="mx-auto mt-10"
+        class="island-form"
         data-testid="login-form"
-        style="max-width: 500px"
-        @submit.prevent
+        @submit.prevent="login"
       >
-        <v-row>
-          <v-text-field
-            ref="usernameField"
-            v-model="username"
-            :input-props="{ 'data-testid': 'login-username-input' }"
-            :rules="usernameRules"
-            data-testid="login-username-field"
-            label="Username"
-            required
-            @keydown.enter="login"
-          />
-        </v-row>
-        <v-row>
-          <v-text-field
-            v-model="password"
-            :append-inner-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
-            :input-props="{ 'data-testid': 'login-password-input' }"
-            :rules="passwordRules"
-            :type="showPass ? 'text' : 'password'"
-            data-testid="login-password-field"
-            hide-details
-            label="Password"
-            required
-            @keydown.enter="login"
-            @click:append-inner="showPass = !showPass"
-          />
-        </v-row>
-        <v-row class="justify-end">
+        <form-control
+          v-model="username"
+          autocomplete="username"
+          data-testid="login-username-field"
+          label="Username"
+        />
+        <form-control
+          v-model="password"
+          autocomplete="current-password"
+          data-testid="login-password-field"
+          kind="password"
+          label="Password"
+        />
+        <div class="login__aside">
           <!--
             An account still waiting on its confirmation link cannot be told apart from a
             wrong password here, on purpose. Offering the way out beside the other one is
             what keeps that from being a dead end.
           -->
-          <v-btn
-            :to="`login/confirm?username=${username}`"
-            data-testid="login-resend-confirmation-btn"
-            size="small"
-            variant="text"
+          <cut-button
+            :href="`/login/confirm?username=${username}`"
+            small
+            testid="login-resend-confirmation-btn"
+            tone="quiet"
           >
-            didn't get your confirmation mail?
-          </v-btn>
-          <v-btn
-            :to="`login/forgor?username=${username}`"
-            data-testid="login-forgot-password-btn"
-            size="small"
-            variant="text"
+            Didn't get your confirmation mail?
+          </cut-button>
+          <cut-button
+            :href="`/login/forgor?username=${username}`"
+            small
+            testid="login-forgot-password-btn"
+            tone="quiet"
           >
-            forgot password?
-          </v-btn>
-        </v-row>
-        <v-row class="mb-3">
-          <v-col cols="auto">
-            <v-btn
-              color="accent"
-              data-testid="login-create-account-btn"
-              to="account/create"
-              variant="outlined"
-            >
-              Create Account
-            </v-btn>
-          </v-col>
-          <v-spacer />
-          <v-col cols="auto">
-            <v-btn
-              :disabled="!valid"
-              :loading="loading"
-              color="primary"
-              data-testid="login-submit-btn"
-              @click="login"
-            >
-              Login
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-form>
+            Forgot password?
+          </cut-button>
+        </div>
+        <div class="form-save panel-acts--split">
+          <cut-button
+            href="/account/create"
+            testid="login-create-account-btn"
+          >
+            Create account
+          </cut-button>
+          <cut-button
+            :disabled="!valid || loading"
+            submit
+            testid="login-submit-btn"
+            tone="solid"
+          >
+            {{ loading ? "Signing in" : "Login" }}
+          </cut-button>
+        </div>
+      </form>
     </div>
   </v-main>
 </template>
@@ -178,19 +137,18 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 import {answerChallenge, type LoginResponse, signIn, stepUp} from "@/domains/auth"
 import {resolveLoginRedirect} from "@/utils/loginRedirect"
 import type {State} from "@/plugins/store"
-import type {VForm} from "vuetify/components"
+import CheckBox from "@/components/island/CheckBox.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FormControl from "@/components/island/FormControl.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 
 const router = useRouter()
 const route = useRoute()
 const store = useStore<State>()
 
-const form = ref<VForm>()
-const usernameField = ref()
 const username = ref<string>("")
 const password = ref<string>("")
-const valid = ref<boolean>(false)
 const loading = ref<boolean>(false)
-const showPass = ref<boolean>(false)
 const step = ref<"password" | "code">("password")
 const code = ref<string>("")
 const useBackupCode = ref<boolean>(false)
@@ -199,13 +157,7 @@ const refusal = ref<string | null>(null)
 
 const stepUpMode = computed(() => route.query.stepUp === "1" && store.getters.isLoggedIn)
 
-const usernameRules = [
-  (v: string) => !!v || "Username is required",
-]
-
-const passwordRules = [
-  (v: string) => !!v || "Password is required",
-]
+const valid = computed(() => username.value.trim() !== "" && password.value !== "")
 
 /**
  * A reader who is already signed in has no form to fill, so the page steps out of their way —
@@ -247,7 +199,7 @@ const signedIn = async (login: LoginResponse) => {
 }
 
 const login = async () => {
-  if (!form.value || !(await form.value.validate()).valid) return
+  if (!valid.value || loading.value) return
   loading.value = true
   refusal.value = null
   const result = await signIn(username.value, password.value)
@@ -295,3 +247,21 @@ const backToPassword = () => {
   password.value = ""
 }
 </script>
+
+<style scoped>
+.login {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 500px;
+  margin: 2.5rem auto;
+  padding-inline: 1rem;
+}
+
+.login__aside {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+</style>

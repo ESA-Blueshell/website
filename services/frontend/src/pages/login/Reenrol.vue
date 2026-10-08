@@ -2,52 +2,53 @@
   <v-main>
     <top-banner title="Sign in again" />
     <div class="mx-3">
-      <v-form
-        class="mx-auto mt-10"
+      <form
+        v-first-field
+        class="island-form"
         data-testid="reenrol-form"
-        style="max-width: 500px"
         @submit.prevent="submit"
       >
         <p class="mb-4">
           An admin reset your two-factor authentication. Sign in with your username and password to set it up
           again.
         </p>
-        <v-alert
+        <notice-box
           v-if="refusal"
-          class="mb-4"
-          type="warning"
-          variant="tonal"
+          tone="warning"
         >
           {{ refusal }}
-        </v-alert>
-        <v-text-field
+        </notice-box>
+        <form-control
           v-model="username"
           data-testid="reenrol-username-field"
           autocomplete="username"
           label="Username"
         />
-        <v-text-field
+        <form-control
           v-model="password"
+          kind="password"
           data-testid="reenrol-password-field"
           autocomplete="current-password"
           label="Password"
-          type="password"
         />
-        <v-btn
-          :disabled="!username || !password || !token"
-          :loading="loading"
-          color="primary"
+        <cut-button
+          tone="solid"
+          submit
+          :disabled="!username || !password || !token || loading"
           data-testid="reenrol-submit-btn"
-          type="submit"
         >
           Sign in
-        </v-btn>
-      </v-form>
+        </cut-button>
+      </form>
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
+import FormControl from "@/components/island/FormControl.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
+import {vFirstField} from "@/utils/firstField"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"

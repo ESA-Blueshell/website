@@ -6,7 +6,9 @@
       class="mx-auto my-10"
       style="max-width: 600px"
     >
-      <v-card class="pa-6">
+      <div
+        class="island-panel"
+      >
         <div
           v-if="!succeeded"
           data-testid="resend-confirmation-form-state"
@@ -22,31 +24,23 @@
             data-testid="resend-confirmation-form"
             @submit="() => onSubmit()"
           >
-            <v-row>
-              <v-col cols="12">
-                <VvField
-                  v-model="form.username"
-                  :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'resend-confirmation-username-field' }"
-                  name="username"
-                  rules="required|alphaNum"
-                />
-              </v-col>
-            </v-row>
+            <VvField
+              v-model="form.username"
+              :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'resend-confirmation-username-field' }"
+              name="username"
+              rules="required"
+            />
 
-            <v-row>
-              <v-spacer />
-              <v-col cols="auto">
-                <v-btn
-                  :disabled="!meta.valid || loading"
-                  :loading="loading"
-                  color="primary"
-                  data-testid="resend-confirmation-submit-btn"
-                  type="submit"
-                >
-                  Send confirmation mail
-                </v-btn>
-              </v-col>
-            </v-row>
+            <div class="form-save">
+              <cut-button
+                tone="solid"
+                submit
+                :disabled="!meta.valid || loading"
+                data-testid="resend-confirmation-submit-btn"
+              >
+                Send confirmation mail
+              </cut-button>
+            </div>
           </Form>
         </div>
 
@@ -59,12 +53,13 @@
             email with a fresh link. Didn’t get it? Check your spam folder or try again later.
           </p>
         </div>
-      </v-card>
+      </div>
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
+import CutButton from "@/components/island/CutButton.vue"
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"

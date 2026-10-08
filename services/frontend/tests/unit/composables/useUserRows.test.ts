@@ -28,6 +28,7 @@ function makeMembership(overrides: {
   endDate?: string
   memberType?: MemberType
   incasso?: boolean
+  pending?: boolean
 }): MembershipResponse {
   return {
     id: overrides.id,
@@ -36,6 +37,7 @@ function makeMembership(overrides: {
     endDate: overrides.endDate,
     memberType: overrides.memberType ?? MemberType.REGULAR,
     incasso: overrides.incasso ?? false,
+    pending: overrides.pending ?? false,
     version: 1,
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-01T00:00:00.000Z",
@@ -89,6 +91,13 @@ describe("deriveStatus", () => {
       makeMembership({id: 1, userId: 1, startDate: "2020-01-01", endDate: "2021-01-01"}),
       makeMembership({id: 2, userId: 1, startDate: "2023-01-01"}), // active
     ])).toBe("Current")
+  })
+
+  it("returns Pending when the running membership waits for its first contribution", () => {
+    expect(deriveStatus([
+      makeMembership({id: 1, userId: 1, startDate: "2020-01-01", endDate: "2021-01-01"}),
+      makeMembership({id: 2, userId: 1, startDate: "2026-09-01", pending: true}),
+    ])).toBe("Pending")
   })
 
   it("returns Former when all memberships have endDates", () => {
@@ -151,6 +160,7 @@ describe("isNotableType / typeIcon / typeLabel / statusColor", () => {
 
   it("statusColor returns correct colours", () => {
     expect(statusColor("Current")).toBe("green")
+    expect(statusColor("Pending")).toBe("amber")
     expect(statusColor("Former")).toBe("orange")
     expect(statusColor("Never")).toBe("grey")
   })

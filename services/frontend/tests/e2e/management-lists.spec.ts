@@ -26,13 +26,9 @@ test.describe("management pages", () => {
     await expect(page.getByTestId("member-manager-search-input")).toContainText("Search users")
   })
 
-  test("renders address and recovery manager lists", async ({page}) => {
+  test("renders the recovery manager lists", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-
-    await page.goto("/addresses/manage")
-    await expect(page.getByTestId("address-user-list-with-address")).toBeVisible()
-    await expect(page.getByTestId("address-user-list-without-address")).toBeVisible()
 
     await page.goto("/recovery/manage")
     await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible()

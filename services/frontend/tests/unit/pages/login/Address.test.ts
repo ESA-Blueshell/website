@@ -73,6 +73,15 @@ describe("Address page", () => {
     expect(wrapper.find("[data-test='address-form']").text()).toContain("Enschede::5")
   })
 
+  it("says an address that cannot be opened is written anew by saving", async () => {
+    mockReadAddress.mockResolvedValue({id: 12, opened: false})
+    const wrapper = mountInApp(Address, {global: {stubs: {AddressForm: true}}})
+
+    await settle()
+
+    expect(wrapper.get("[data-testid='account-address-unopened']").text()).toContain("Saving writes it anew")
+  })
+
   it("calls handleNetworkError when address fetch fails", async () => {
     const error = new Error("network failure")
     mockReadAddress.mockRejectedValue(error)

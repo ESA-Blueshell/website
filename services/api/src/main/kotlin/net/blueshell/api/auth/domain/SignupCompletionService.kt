@@ -31,7 +31,8 @@ class SignupCompletionService(
     override fun completeIfReady(userId: Long): SignupOutcome {
         val user = users.findById(userId)
 
-        if (memberships.existsActiveMembershipByUserId(userId)) {
+        // A pending membership is the one this signup started, so it is not started twice.
+        if (memberships.existsRunningMembershipByUserId(userId)) {
             return SignupOutcome(emailConfirmed = user.enabled, membershipStarted = false)
         }
         if (!user.enabled) {

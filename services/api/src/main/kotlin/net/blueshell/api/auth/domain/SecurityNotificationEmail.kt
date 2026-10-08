@@ -90,7 +90,6 @@ private fun sentence(event: SecurityEvent): String {
     val byOther = event.actorKind != SecurityActorKind.PERSON || event.actor?.id != event.subject.id
     return when (event.kind) {
         SecurityEventKind.NEW_BROWSER -> "Your account was signed in to from a browser it has not used before"
-        SecurityEventKind.SIGN_IN_REUSED -> "An old copy of your sign-in cookie was used, so that sign-in was ended"
         SecurityEventKind.SIGN_IN_BROWSER_CHANGED -> "Your sign-in turned up in another browser, so it was ended"
         SecurityEventKind.CODE_LIMIT_REACHED ->
             "Ten wrong two-factor codes were entered for your account. Whoever entered them knows your password"

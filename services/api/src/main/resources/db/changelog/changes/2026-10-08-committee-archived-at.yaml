@@ -1,0 +1,22 @@
+# Since when a committee no longer runs (#2264). A committee archived before this keeps its last
+# update as the best date known, and the check keeps the flag and the date from disagreeing.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-08-committee-archived-at.yaml
+      id: committee-archived-at
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: committees
+            columns:
+              - column: {name: archived_at, type: DATETIME}
+        - sql:
+            sql: UPDATE committees SET archived_at = updated_at WHERE archived = 1
+        - sql:
+            sql: ALTER TABLE committees ADD CONSTRAINT ck_committees_archived_at CHECK ((archived = 0) = (archived_at IS NULL))
+      rollback:
+        - sql:
+            sql: ALTER TABLE committees DROP CONSTRAINT ck_committees_archived_at
+        - dropColumn:
+            tableName: committees
+            columnName: archived_at

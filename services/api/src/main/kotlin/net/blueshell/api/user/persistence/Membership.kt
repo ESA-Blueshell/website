@@ -43,7 +43,13 @@ class Membership(
     var memberType: MemberType = MemberType.REGULAR,
     @Column(name = "incasso", nullable = false)
     var incasso: Boolean = false,
+    @Column(name = "activated_on")
+    var activatedOn: LocalDate? = null,
 ) : AuditedAutoIdEntity() {
+    /** Running and not yet paid for, so it carries no member role. */
+    val isPending: Boolean
+        get() = activatedOn == null && endDate == null
+
     val userId: Long
         get() = user.id ?: 0
 }

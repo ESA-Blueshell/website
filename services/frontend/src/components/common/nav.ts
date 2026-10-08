@@ -117,7 +117,6 @@ export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = [], c
 export const managementFor = (reader: NavReader): NavEntry[] => [
   ...(reader.board
     ? [
-      {label: "Manage addresses", to: "/addresses/manage"},
       {label: "Manage account recovery", to: "/recovery/manage"},
       {label: "Manage users", to: "/user-manager"},
     ]

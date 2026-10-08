@@ -3,7 +3,7 @@ import {MemberType, type ContributionPeriodResponse, type MembershipResponse} fr
 import {highestRoleLabel} from "@/domains/user"
 import {type EditableUser} from "@/utils/editableUser"
 
-export type MemberStatus = "Current" | "Former" | "Never"
+export type MemberStatus = "Current" | "Pending" | "Former" | "Never"
 
 export type MemberRow = {
   id: number
@@ -43,10 +43,12 @@ export function deriveAccountSecurity(
   return user.twoFactorOn ? "two-factor" : "no-two-factor"
 }
 
+/** A running membership is pending until its first contribution is paid (api ADR-036). */
 export function deriveStatus(ums: MembershipResponse[]): MemberStatus {
   if (ums.length === 0) return "Never"
-  if (ums.some((m) => !m.endDate)) return "Current"
-  return "Former"
+  const running = ums.filter((m) => !m.endDate)
+  if (running.some((m) => !m.pending)) return "Current"
+  return running.length > 0 ? "Pending" : "Former"
 }
 
 export function deriveMemberSince(ums: MembershipResponse[]): string | null {
@@ -80,6 +82,7 @@ export function typeLabel(row: MemberRow): string {
 
 export function statusColor(status: MemberStatus): string {
   if (status === "Current") return "green"
+  if (status === "Pending") return "amber"
   if (status === "Former") return "orange"
   return "grey"
 }

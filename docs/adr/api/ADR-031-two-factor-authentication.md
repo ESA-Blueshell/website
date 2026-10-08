@@ -146,6 +146,7 @@ panel shows the role as dormant so an admin can see why.
 ## Related
 
 - [ADR-030: A Sign-In Is a Server-Side Record](ADR-030-a-sign-in-is-a-server-side-record.md) — where the factor state lives
+- [ADR-038: Private Details Are Sealed by Vault Transit](ADR-038-private-details-are-sealed-by-vault-transit.md): why the address and bank details use Transit where these secrets use an app key
 - [ADR-028: A Derived Role Is Not Hand-Assignable](ADR-028-a-derived-role-is-not-hand-assignable.md) — the granted roles this makes demanding
 - [ADR-024: Scoped Signup Continuation Tokens](ADR-024-scoped-signup-continuation-tokens.md) — `recovery_tokens` and the selector scheme the new links reuse
 - [testing ADR-008](../testing/ADR-008-time-is-injected-where-a-rule-reads-it.md) — how these rules are tested against time

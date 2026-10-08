@@ -60,6 +60,7 @@ const archived = async (now: Committee) => {
       <record-head
         :accent="BRAND_ACCENT"
         :archived="page.archived"
+        :archived-since="page.archivedAt"
         :back="{to: '/committees', label: 'Committees'}"
         :banner="page.banner"
         eyebrow="Committee"

@@ -53,6 +53,7 @@ export const aMembership = (over: Partial<Wire<MembershipResponse>> = {}): Wire<
   userId: 1,
   memberType: "REGULAR",
   incasso: false,
+  pending: false,
   startDate: "2025-01-01",
   ...over,
 })
@@ -80,6 +81,7 @@ export const anAddress = (over: Partial<Wire<AddressResponse>> = {}): Wire<Addre
   zipCode: "1234AB",
   city: "Enschede",
   country: "NL",
+  opened: true,
   ...over,
 })
 

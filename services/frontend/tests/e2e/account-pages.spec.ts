@@ -53,6 +53,16 @@ test.describe("the account pages", () => {
     expect(badge!.x).toBeGreaterThan(heading!.x)
   })
 
+  test("tell a pending member what their first contribution is", async ({page}) => {
+    await installApiMocks(page, {firstContribution: {
+      membershipStartDate: "2026-09-10", periodId: 4, periodStartDate: "2026-09-01", periodEndDate: "2027-08-31", feeType: "FULL_YEAR_FEE", amount: 30,
+    }})
+    await loginAsMember(page.context())
+
+    await page.goto("/account")
+    await expect(page.getByTestId("pending-membership")).toContainText("€ 30.00, the full-year fee for 2026-2027")
+  })
+
   test("move the address from a page of its own", async ({page}) => {
     await installApiMocks(page)
     await loginAsMember(page.context())

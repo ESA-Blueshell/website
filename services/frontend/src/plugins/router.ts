@@ -447,12 +447,6 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Manage users", requiresAuth: true, requiresBoard: true},
   },
   {
-    path: "/addresses/manage",
-    name: "addressManager",
-    component: () => import("@/pages/management/AddressManager.vue"),
-    meta: {title: "Manage addresses", requiresAuth: true, requiresBoard: true},
-  },
-  {
     path: "/recovery/manage",
     name: "recoveryManager",
     component: () => import("@/pages/management/RecoveryManager.vue"),

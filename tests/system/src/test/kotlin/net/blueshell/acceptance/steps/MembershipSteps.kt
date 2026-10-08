@@ -3,10 +3,13 @@ package net.blueshell.acceptance.steps
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
+import io.restassured.http.ContentType
 import net.blueshell.acceptance.AcceptanceApi
 import net.blueshell.acceptance.AcceptanceWorld
+import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
+import java.time.LocalDate
 
 class MembershipSteps(
     private val world: AcceptanceWorld,
@@ -83,6 +86,37 @@ class MembershipSteps(
         assertThat(TestHelper.findRoles(world.applicant().username))
             .describedAs("roles for ${world.applicant().username}")
             .contains("MEMBER")
+    }
+
+    @Then("they do not hold the MEMBER role")
+    fun theyDoNotHoldTheMemberRole() {
+        assertThat(TestHelper.findRoles(world.applicant().username))
+            .describedAs("roles for ${world.applicant().username}")
+            .doesNotContain("MEMBER")
+    }
+
+    @When("the treasurer records their first contribution")
+    fun theTreasurerRecordsTheirFirstContribution() {
+        val treasurer = TestHelper.registerActivateAndPromote("TREASURER")
+        world.createdUsernames += treasurer.username
+        val periodId =
+            TestHelper.createContributionPeriod(
+                startDate = LocalDate.now().minusMonths(6),
+                endDate = LocalDate.now().plusMonths(6),
+                fullYearFee = 40.0,
+                halfYearFee = 20.0,
+                alumniFee = 10.0,
+            )
+        val response =
+            TestHelper
+                .givenCsrfApi()
+                .baseUri(TestEnvironment.apiUrl)
+                .cookie(TestEnvironment.authCookieName, TestHelper.login(treasurer).auth)
+                .contentType(ContentType.JSON)
+                .body("""{"userId":${world.applicantId()},"contributionPeriodId":$periodId}""")
+                .`when`()
+                .post("/contributions")
+        world.recordResponse(response.statusCode, response.asString())
     }
 
     @Then("they have exactly one membership")

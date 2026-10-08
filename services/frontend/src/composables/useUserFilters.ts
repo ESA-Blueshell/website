@@ -4,9 +4,10 @@ import {filtersFor, useRowFilters} from "@/composables/useRowFilters"
 import {useTableSort} from "@/composables/useTableSort"
 
 export type FilterState = "all" | "yes" | "no"
+export type MemberFilterState = FilterState | "pending"
 export type SortKey = "name" | "username" | "role" | "status" | "memberSince" | "paid" | "wasMemberInPeriod"
 
-const statusOrder: Record<MemberStatus, number> = {Current: 0, Former: 1, Never: 2}
+const statusOrder: Record<MemberStatus, number> = {Current: 0, Pending: 1, Former: 2, Never: 3}
 
 const comparators: Record<SortKey, (a: MemberRow, b: MemberRow) => number> = {
   name: (a, b) => a.fullName.localeCompare(b.fullName),
@@ -30,10 +31,10 @@ export function useUserFilters(
   // Declared cheapest-first: each dropdown is one comparison per row and rules most of
   // them out before the search filter has to touch a haystack.
   const {state, filteredRows: matchingRows} = useRowFilters(rows, {
-    memberFilter: filter<FilterState>({
+    memberFilter: filter<MemberFilterState>({
       initial: "all",
       unset: "all",
-      match: (value) => (row) => (row.status === "Current") === (value === "yes"),
+      match: (value) => (row) => (value === "pending" ? row.status === "Pending" : (row.status === "Current") === (value === "yes")),
     }),
     paidFilter: filter<FilterState>({
       initial: "all",

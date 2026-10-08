@@ -40,7 +40,7 @@ class SignupCompletionServiceTest {
         user.memberProfile =
             if (hasProfile) MemberProfile(user = user, bhv = false, ehbo = false, conditionsAcceptedAt = conditionsAcceptedAt) else null
         whenever(users.findById(USER_ID)).thenReturn(user)
-        whenever(memberships.existsActiveMembershipByUserId(USER_ID)).thenReturn(alreadyMember)
+        whenever(memberships.existsRunningMembershipByUserId(USER_ID)).thenReturn(alreadyMember)
         return user
     }
 
@@ -124,7 +124,7 @@ class SignupCompletionServiceTest {
         service.completeIfReady(USER_ID)
 
         // What the caller sees on the way back in: the membership now exists.
-        whenever(memberships.existsActiveMembershipByUserId(USER_ID)).thenReturn(true)
+        whenever(memberships.existsRunningMembershipByUserId(USER_ID)).thenReturn(true)
         val second = service.completeIfReady(USER_ID)
 
         assertThat(second.membershipStarted).isFalse()
@@ -147,7 +147,7 @@ class SignupCompletionServiceTest {
         whenever(memberships.create(any())).thenAnswer { it.arguments[0] }
         service.completeIfReady(USER_ID)
 
-        whenever(memberships.existsActiveMembershipByUserId(USER_ID)).thenReturn(true)
+        whenever(memberships.existsRunningMembershipByUserId(USER_ID)).thenReturn(true)
         service.completeIfReady(USER_ID)
 
         verify(joiningAsk, org.mockito.kotlin.times(1)).askOnJoining(any(), any())

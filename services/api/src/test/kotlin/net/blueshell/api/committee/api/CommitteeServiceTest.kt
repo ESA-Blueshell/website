@@ -24,6 +24,9 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.dao.OptimisticLockingFailureException
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.Optional
 
 class CommitteeServiceTest {
@@ -57,6 +60,7 @@ class CommitteeServiceTest {
             pictures,
             games,
             listOf(events),
+            Clock.fixed(NOW, ZoneOffset.UTC),
         )
 
     private fun committee(
@@ -161,8 +165,22 @@ class CommitteeServiceTest {
         val lan = committee(1, "LanCie")
         stored(lan)
 
-        assertThat(service.archive(1, true).archived).isTrue()
-        assertThat(service.archive(1, false).archived).isFalse()
+        assertThat(service.archive(1, true).archivedAt).isEqualTo(NOW)
+        assertThat(lan.archived).isTrue()
+        assertThat(service.archive(1, false).archivedAt).isNull()
+        assertThat(lan.archived).isFalse()
+    }
+
+    @Test
+    fun `an archived committee archived again keeps the moment it first stopped`() {
+        val lan =
+            committee(1, "LanCie").apply {
+                archived = true
+                archivedAt = Instant.EPOCH
+            }
+        stored(lan)
+
+        assertThat(service.archive(1, true).archivedAt).isEqualTo(Instant.EPOCH)
     }
 
     @Test
@@ -219,7 +237,7 @@ class CommitteeServiceTest {
     fun `hands every event to the committee taking over before deleting, and refuses a deletion that would orphan them`() {
         val lan = committee(1, "LanCie")
         val events = committee(2, "Activitiescie")
-        val archived = committee(3, "Oldcie").apply { this.archived = true }
+        val archived = committee(3, "Oldcie").apply { archived = true }
         listOf(lan, events, archived).forEach(::stored)
         whenever(repository.findById(404L)).thenReturn(Optional.empty())
         organised[1] = 4
@@ -240,5 +258,9 @@ class CommitteeServiceTest {
 
         assertThat(organised).containsExactlyEntriesOf(mapOf(2L to 4L))
         verify(repository).delete(lan)
+    }
+
+    private companion object {
+        val NOW: Instant = Instant.parse("2026-10-08T12:00:00Z")
     }
 }

@@ -2,6 +2,7 @@ package net.blueshell.api.user.web
 
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.testsupport.Entities
+import net.blueshell.api.user.persistence.Membership
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -54,5 +55,21 @@ class MembershipResponseMappingsTest {
         val response = membership.asResponse()
 
         assertThat(response.endDate).isNull()
+    }
+
+    @Test
+    fun `asResponse says a membership waiting for its first contribution is pending`() {
+        val start = LocalDate.of(2026, 9, 1)
+        val stamped: (Membership) -> Unit = {
+            it.createdAt = Instant.now()
+            it.updatedAt = Instant.now()
+        }
+        val pending = Entities.membership(id = 3L, startDate = start, activatedOn = null).also(stamped)
+        val active = Entities.membership(id = 4L, startDate = start).also(stamped)
+
+        assertThat(pending.asResponse().pending).isTrue()
+        assertThat(pending.asResponse().activatedOn).isNull()
+        assertThat(active.asResponse().pending).isFalse()
+        assertThat(active.asResponse().activatedOn).isEqualTo(start)
     }
 }

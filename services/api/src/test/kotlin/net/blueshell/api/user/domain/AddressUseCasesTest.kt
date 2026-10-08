@@ -17,7 +17,7 @@ import org.springframework.dao.OptimisticLockingFailureException
 class AddressUseCasesTest {
     private val userService = mock<UserService>()
     private val addressService = mock<AddressService>()
-    private val useCases = AddressUseCases(addressService, userService)
+    private val useCases = AddressUseCases(addressService, userService, net.blueshell.api.user.api.TestSealing.addresses)
 
     @Nested
     inner class Create {
@@ -38,11 +38,15 @@ class AddressUseCasesTest {
                 )
 
             assertThat(user.address).isNotNull
-            assertThat(user.address?.country).isEqualTo("NL")
-            assertThat(user.address?.city).isEqualTo("Utrecht")
-            assertThat(user.address?.street).isEqualTo("Main Street")
-            assertThat(user.address?.houseNumber).isEqualTo("12A")
-            assertThat(user.address?.zipCode).isEqualTo("1234AB")
+            assertThat(user.address?.country).isNull()
+            assertThat(user.address?.sealed).doesNotContain("Utrecht")
+            assertThat(
+                net.blueshell.api.user.api.TestSealing.addresses
+                    .open(user.address!!),
+            ).isEqualTo(
+                net.blueshell.api.user.api
+                    .AddressFields("NL", "Utrecht", "Main Street", "12A", "1234AB"),
+            )
             assertThat(result).isSameAs(user.address)
         }
     }
@@ -66,11 +70,14 @@ class AddressUseCasesTest {
                     version = 0L,
                 )
 
-            assertThat(address.country).isEqualTo("BE")
-            assertThat(address.city).isEqualTo("Ghent")
-            assertThat(address.street).isEqualTo("River Road")
-            assertThat(address.houseNumber).isEqualTo("99")
-            assertThat(address.zipCode).isEqualTo("9000")
+            assertThat(address.city).isNull()
+            assertThat(
+                net.blueshell.api.user.api.TestSealing.addresses
+                    .open(address),
+            ).isEqualTo(
+                net.blueshell.api.user.api
+                    .AddressFields("BE", "Ghent", "River Road", "99", "9000"),
+            )
             assertThat(address.version).isEqualTo(0L)
             assertThat(result).isSameAs(address)
         }
@@ -115,5 +122,5 @@ class AddressUseCasesTest {
             phoneNumber = "0612345678",
             discord = "john#0001",
             newsletter = true,
-        )
+        ).also { it.id = 1L }
 }

@@ -84,6 +84,10 @@ export type AddressResponse = {
     createdAt: string;
     houseNumber?: string | null;
     id: number;
+    /**
+     * False where the address could not be opened now, or is one of many in a list: its fields are then empty
+     */
+    opened: boolean;
     street?: string | null;
     updatedAt: string;
     userId?: number | null;
@@ -734,6 +738,10 @@ export type CommitteeOwnPageRequest = {
 
 export type CommitteePageResponse = {
     archived: boolean;
+    /**
+     * Since when it no longer runs; absent while it runs
+     */
+    archivedAt?: string | null;
     banner?: Image | null;
     description: string;
     gameCodes: Array<string>;
@@ -752,6 +760,10 @@ export type CommitteeResponse = {
      * Whether the committee no longer runs
      */
     archived: boolean;
+    /**
+     * Since when it no longer runs; absent while it runs
+     */
+    archivedAt?: string | null;
     banner?: Image | null;
     createdAt: string;
     description: string;
@@ -1457,6 +1469,15 @@ export enum FileType {
     PINGER_PAINT = 'PINGER_PAINT'
 }
 
+export type FirstContribution = {
+    amount?: number | null;
+    feeType?: BulkFeeType | null;
+    membershipStartDate: string;
+    periodEndDate?: string | null;
+    periodId?: number | null;
+    periodStartDate?: string | null;
+};
+
 /**
  * Set what a member is called in one game
  */
@@ -1893,11 +1914,16 @@ export type MembershipApplicationRequest = {
 };
 
 export type MembershipResponse = {
+    activatedOn?: string | null;
     createdAt: string;
     endDate?: string | null;
     id: number;
     incasso: boolean;
     memberType: MemberType;
+    /**
+     * Running and waiting for its first contribution, so it carries no member role yet.
+     */
+    pending: boolean;
     startDate: string;
     updatedAt: string;
     userId: number;
@@ -11452,6 +11478,47 @@ export type RequestEmailChangeResponses = {
 };
 
 export type RequestEmailChangeResponse = RequestEmailChangeResponses[keyof RequestEmailChangeResponses];
+
+export type FindOwnFirstContributionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/first-contribution';
+};
+
+export type FindOwnFirstContributionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnFirstContributionError = FindOwnFirstContributionErrors[keyof FindOwnFirstContributionErrors];
+
+export type FindOwnFirstContributionResponses = {
+    /**
+     * OK
+     */
+    200: FirstContribution;
+};
+
+export type FindOwnFirstContributionResponse = FindOwnFirstContributionResponses[keyof FindOwnFirstContributionResponses];
 
 export type ChangePasswordData = {
     body: PasswordChangeRequest;

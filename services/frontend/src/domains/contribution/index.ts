@@ -18,6 +18,7 @@ export {
   type SendPaymentEmailsBody,
 } from "./adapters/paymentEmails"
 export {recordPaid, recordUnpaid, type BulkContributionCall} from "./adapters/contributions"
+export {readFirstContribution, type FirstContribution} from "./adapters/firstContribution"
 export {
   changedFeeTypes,
   changedKinds,

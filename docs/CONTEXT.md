@@ -225,6 +225,16 @@ Never granted and never revoked by hand. Ticking one would be a lie — the list
 that owns it takes it straight back off — so the panel shows it read-only, naming the
 thing to go and change instead.
 
+### Pending membership
+
+A membership waiting for its first contribution. Signing up starts one, and it becomes
+active once a contribution for it is paid; an honorary membership is active from the
+start. Once active it stays active across periods until the board ends it, so a member who
+has not yet paid for the new period is still a member. Rejoining starts a new pending
+membership.
+
+A pending membership does not carry the **member** role.
+
 ### Implied role
 
 A role a person holds by inheritance rather than by a row of their own, because the
@@ -294,6 +304,15 @@ browser, not one machine: a second browser on the same laptop is asked. It never
 skips a step-up, nor the sign-in to Vault or Headlamp.
 
 _Avoid_: trusted device, remembered device.
+
+### Sealed
+
+Stored so that only Vault can open it. A sealed value is encrypted by Vault Transit under a key
+the api never holds, and bound to its member: copied onto another member's row, it does not
+open. A member's address and their bank details are sealed. When Vault cannot be reached, nothing
+sealed is saved or shown, and nothing falls back to plaintext (api ADR-038).
+
+_Avoid_: encrypted (in the interface), hidden.
 
 ### Step-up
 

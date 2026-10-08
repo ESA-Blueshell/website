@@ -27,7 +27,7 @@ class ContactSyncServiceTest {
     private val userId = 42L
 
     private fun stubUser() {
-        val user = Entities.user(email = "a@b.c", firstName = "A", lastName = "B", roles = emptySet())
+        val user = Entities.user(id = userId, email = "a@b.c", firstName = "A", lastName = "B", roles = emptySet())
         whenever(userService.findById(userId)).thenReturn(user)
     }
 

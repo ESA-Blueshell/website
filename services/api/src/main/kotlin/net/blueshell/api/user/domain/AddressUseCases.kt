@@ -1,5 +1,7 @@
 package net.blueshell.api.user.domain
 
+import net.blueshell.api.user.api.AddressFields
+import net.blueshell.api.user.api.SealedAddresses
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.Address
 import org.springframework.stereotype.Service
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service
 class AddressUseCases(
     private val addressService: AddressService,
     private val users: UserService,
+    private val sealing: SealedAddresses,
 ) {
     fun create(
         userId: Long,
@@ -22,16 +25,7 @@ class AddressUseCases(
         zipCode: String,
     ): Address {
         val user = users.findById(userId)
-        user.replaceAddress(
-            Address(
-                user = user,
-                country = country,
-                city = city,
-                street = street,
-                houseNumber = houseNumber,
-                zipCode = zipCode,
-            ),
-        )
+        user.replaceAddress(Address(user = user).also { sealing.seal(it, AddressFields(country, city, street, houseNumber, zipCode)) })
         val updated = users.update(user)
         return checkNotNull(updated.address) { "Address was not linked to user ${user.id}" }
     }
@@ -48,11 +42,7 @@ class AddressUseCases(
         val address =
             addressService.findById(id).apply {
                 requireVersion(version)
-                this.country = country
-                this.city = city
-                this.street = street
-                this.houseNumber = houseNumber
-                this.zipCode = zipCode
+                sealing.seal(this, AddressFields(country, city, street, houseNumber, zipCode))
             }
         return addressService.update(address)
     }

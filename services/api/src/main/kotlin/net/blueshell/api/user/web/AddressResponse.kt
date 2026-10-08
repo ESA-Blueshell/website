@@ -15,4 +15,6 @@ data class AddressResponse(
     var userId: Long? = null,
     var createdAt: Instant,
     var updatedAt: Instant,
+    @param:Schema(description = "False where the address could not be opened now, or is one of many in a list: its fields are then empty")
+    var opened: Boolean,
 )

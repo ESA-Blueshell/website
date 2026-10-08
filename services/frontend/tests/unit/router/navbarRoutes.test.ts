@@ -29,7 +29,6 @@ const navbarPaths = [
   "/account",
   "/account/security",
   "/account/games",
-  "/addresses/manage",
   "/recovery/manage",
   "/user-manager",
   "/management/jobs",

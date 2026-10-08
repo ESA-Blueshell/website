@@ -28,3 +28,9 @@ data class CommitteeResponse(
     var createdAt: Instant,
     var updatedAt: Instant,
 )
+
+@Schema(description = "What deleting a committee hands over to the committee that takes over")
+data class CommitteeDeletionResponse(
+    @field:Schema(description = "How many live events move to the committee that takes over")
+    val events: Long,
+)

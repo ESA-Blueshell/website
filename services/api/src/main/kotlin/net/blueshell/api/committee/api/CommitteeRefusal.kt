@@ -28,6 +28,27 @@ class UnknownCommitteeAddress(
     address: String,
 ) : CommitteeRefusal(HttpStatus.NOT_FOUND, "UnknownCommitteeAddress", "No committee has that address.", mapOf("address" to address))
 
+class CommitteeEventsNeedTaker(
+    events: Long,
+) : CommitteeRefusal(
+        HttpStatus.CONFLICT,
+        "CommitteeEventsNeedTaker",
+        "A committee with events is deleted only once another committee takes them over.",
+        mapOf("events" to events),
+    )
+
+class CommitteeCannotTakeOwnEvents :
+    CommitteeRefusal(HttpStatus.BAD_REQUEST, "CommitteeCannotTakeOwnEvents", "A committee cannot take over its own events.", emptyMap())
+
+class ArchivedCommitteeCannotTakeEvents(
+    committeeName: String,
+) : CommitteeRefusal(
+        HttpStatus.BAD_REQUEST,
+        "ArchivedCommitteeCannotTakeEvents",
+        "An archived committee cannot take over events.",
+        mapOf("committeeName" to committeeName),
+    )
+
 class CommitteeNotFound(
     id: Long,
 ) : CommitteeRefusal(HttpStatus.NOT_FOUND, "CommitteeNotFound", "That committee does not exist.", mapOf("id" to id))

@@ -282,26 +282,60 @@ class CommitteeControllerIT : UserTestSupport() {
 
     @Nested
     inner class DeleteCommitteeById {
+        private fun committeeOf(eventId: Long): Long? =
+            transactionTemplate.execute {
+                val query = entityManager.createNativeQuery("select committee_id from events where id = ?").setParameter(1, eventId)
+                (query.singleResult as Number?)?.toLong()
+            }
+
         @Test
-        fun `deletes committee`() {
-            val board = createUserWithRole(Role.BOARD)
+        fun `deletes a committee without events`() {
+            val admin = createUserWithRole(Role.ADMIN)
             val committee = createCommitteeFixture()
 
             mvc
-                .perform(delete("/committees/{id}", committee.id).with(signedIn(board)))
+                .perform(get("/committees/{id}/deletion", committee.id).with(signedIn(admin)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.events").value(0))
+            mvc
+                .perform(delete("/committees/{id}", committee.id).with(signedIn(admin)))
                 .andExpect(status().isNoContent)
 
             mvc
-                .perform(get("/committees/{committeeId}", committee.id).with(signedIn(board)))
+                .perform(get("/committees/{committeeId}", committee.id).with(signedIn(admin)))
                 .andExpect(status().isNotFound)
         }
 
         @Test
-        fun `returns not found when deleting missing committee`() {
-            val board = createUserWithRole(Role.BOARD)
+        fun `hands a committee's events to the committee taking over, and refuses to leave them without one`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val committee = createCommitteeFixture()
+            val taker = createCommitteeFixture(name = "Taker ${System.nanoTime()}")
+            val event = createEventFixture(committee = committee)
 
             mvc
-                .perform(delete("/committees/{id}", 999999L).with(signedIn(board)))
+                .perform(get("/committees/{id}/deletion", committee.id).with(signedIn(admin)))
+                .andExpect(jsonPath("$.events").value(1))
+            mvc
+                .perform(delete("/committees/{id}", committee.id).with(signedIn(admin)))
+                .andExpect(status().isConflict)
+                .andExpect(jsonPath("$.code").value("CommitteeEventsNeedTaker"))
+                .andExpect(jsonPath("$.events").value(1))
+            assertThat(committeeOf(event.id!!)).isEqualTo(committee.id)
+
+            mvc
+                .perform(delete("/committees/{id}", committee.id).param("takenOverBy", taker.id.toString()).with(signedIn(admin)))
+                .andExpect(status().isNoContent)
+
+            assertThat(committeeOf(event.id!!)).isEqualTo(taker.id)
+        }
+
+        @Test
+        fun `returns not found when deleting missing committee`() {
+            val admin = createUserWithRole(Role.ADMIN)
+
+            mvc
+                .perform(delete("/committees/{id}", 999999L).with(signedIn(admin)))
                 .andExpect(status().isNotFound)
         }
     }

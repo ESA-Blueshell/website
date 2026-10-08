@@ -42,6 +42,16 @@ class CommitteeControllerTest {
         }
 
     @Test
+    fun `says how many events a deletion hands over, and deletes with the committee taking over`() {
+        whenever(service.eventCount(1)).thenReturn(3)
+
+        assertThat(controller.findCommitteeDeletion(1).events).isEqualTo(3)
+        controller.deleteCommitteeById(1, 2)
+
+        verify(service).delete(1, 2)
+    }
+
+    @Test
     fun `answers a committee's page by its address, its members by Discord or username`() {
         whenever(service.findByAddress("lan")).thenReturn(lan)
         whenever(seats.of(lan)).thenReturn(listOf(CommitteeSeat("nelly", "https://cdn/n.png", true, "Chair")))

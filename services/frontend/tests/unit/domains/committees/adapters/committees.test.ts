@@ -9,6 +9,7 @@ import {
   saveCommitteeAsBoard,
   saveGameOrganisers,
   saveOwnCommitteePage,
+  readEventsToHandOver,
   setCommitteeArchived,
   storeCommitteeBanner,
   storeCommitteeIcon,
@@ -22,6 +23,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   findCommittees: vi.fn(),
   findCommitteesByUserId: vi.fn(),
   deleteCommitteeById: vi.fn(),
+  findCommitteeDeletion: vi.fn(),
   findCommitteePage: vi.fn(),
   createCommittee: vi.fn(),
   updateCommittee: vi.fn(),
@@ -148,8 +150,18 @@ describe("writing committees", () => {
   it("deletes a committee by its number, or says why not", async () => {
     vi.mocked(api.deleteCommitteeById).mockResolvedValueOnce(emptyAnswer(api.deleteCommitteeById)).mockResolvedValueOnce(refusal(api.deleteCommitteeById, {}))
 
-    expect(await removeCommittee(5)).toEqual({ok: true})
-    expect(api.deleteCommitteeById).toHaveBeenCalledWith({path: {id: 5}})
+    expect(await removeCommittee(5, 7)).toEqual({ok: true})
+    expect(api.deleteCommitteeById).toHaveBeenCalledWith({path: {id: 5}, query: {takenOverBy: 7}})
     expect(await removeCommittee(5)).toEqual({ok: false, reason: "The committee could not be deleted."})
+  })
+
+  it("reads how many events a deletion hands over, or nothing where that could not be read", async () => {
+    vi.mocked(api.findCommitteeDeletion)
+      .mockResolvedValueOnce(answer(api.findCommitteeDeletion, {events: 3}))
+      .mockResolvedValueOnce(refusal(api.findCommitteeDeletion, {}))
+
+    expect(await readEventsToHandOver(5)).toBe(3)
+    expect(api.findCommitteeDeletion).toHaveBeenCalledWith({path: {id: 5}})
+    expect(await readEventsToHandOver(5)).toBeNull()
   })
 })

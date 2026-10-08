@@ -63,7 +63,7 @@ class TwoFactorSystemTest : PlaywrightTestBase() {
         byTestId("login-code-form").waitFor()
         TotpCodes.awaitNextStep()
         TestIdLocatorHelper.textInput(page, "login-code-field").fill(TotpCodes.now(key))
-        byTestId("login-trust-browser").locator("input").check()
+        byTestId("login-trust-browser").check()
         page.awaitResponseFrom(
             control = byTestId("login-code-submit-btn"),
             expected = "POST /auth/two-factor",

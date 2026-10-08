@@ -111,8 +111,13 @@ step "Vault accepts you and lets you write $VAULT_PATH."
 secret_id=$(scw GET "/secret-manager/v1beta1/regions/$REGION/secrets?name=$SECRET_NAME&project_id=$SCW_DEFAULT_PROJECT_ID" |
   jq -r '.secrets[0].id // empty') || die "Scaleway refused your key for Secret Manager."
 [[ -n $secret_id ]] || die "Secret Manager has no $SECRET_NAME in $REGION. Has platform/scaleway/backup been applied?"
-enabled_versions=$(scw GET "/secret-manager/v1beta1/regions/$REGION/secrets/$secret_id/versions?status=enabled" |
-  jq -r '.total_count')
+# Filtered here, not by the API: a version deleted moments ago may still come back as enabled.
+enabled() {
+  scw GET "/secret-manager/v1beta1/regions/$REGION/secrets/$secret_id/versions?page_size=100" |
+    jq -r '[.versions[] | select(.status == "enabled") | .revision] | map(tostring) | join(" ")'
+}
+enabled_revisions=$(enabled)
+enabled_versions=$(wc -w <<<"$enabled_revisions" | tr -d ' ')
 
 app_id=$(scw GET "/iam/v1alpha1/applications?name=$WRITER_APP&organization_id=$SCW_DEFAULT_ORGANIZATION_ID" |
   jq -r --arg n "$WRITER_APP" '[.applications[] | select(.name == $n)][0].id // empty') ||
@@ -136,7 +141,7 @@ in_vault=$(jq -r '."kopia.password" // empty' <<<"$current")
 in_sm=""
 if (( enabled_versions > 0 )); then
   (( enabled_versions == 1 )) || die "$SECRET_NAME has $enabled_versions enabled versions; disable all but the one the repository opens with."
-  in_sm=$(scw GET "/secret-manager/v1beta1/regions/$REGION/secrets/$secret_id/versions/latest_enabled/access" |
+  in_sm=$(scw GET "/secret-manager/v1beta1/regions/$REGION/secrets/$secret_id/versions/$enabled_revisions/access" |
     jq -r '.data' | openssl base64 -d -A)
 fi
 
@@ -225,7 +230,7 @@ for field in kopia.password writer.access_key writer.secret_key; do
   [[ -n $(jq -r --arg f "$field" '.[$f] // empty' <<<"$after") ]] || die "$VAULT_PATH has no $field after writing."
 done
 unset after
-versions=$(scw GET "/secret-manager/v1beta1/regions/$REGION/secrets/$secret_id/versions?status=enabled" | jq -r '.total_count')
+versions=$(wc -w <<<"$(enabled)" | tr -d ' ')
 keys=$(scw GET "/iam/v1alpha1/api-keys?application_id=$app_id&organization_id=$SCW_DEFAULT_ORGANIZATION_ID" | jq -r '.total_count')
 step "Check: Vault has all three fields, Secret Manager $versions enabled version, $WRITER_APP $keys key(s)."
 (( keys == 1 )) || echo "  $WRITER_APP has $keys keys; delete every one but $( [[ -n $access ]] && echo "$access" || echo "the one in Vault") in the console." >&2

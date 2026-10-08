@@ -15,6 +15,8 @@ interface MemberRepository : BaseRepository<Membership, Long> {
 
     fun existsByUser_IdAndEndDateIsNull(userId: Long): Boolean
 
+    fun existsByUser_IdAndEndDateIsNullAndActivatedOnIsNotNull(userId: Long): Boolean
+
     fun findByUser_Id(userId: Long): MutableList<Membership>
 
     /**

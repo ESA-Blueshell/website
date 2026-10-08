@@ -225,6 +225,16 @@ Never granted and never revoked by hand. Ticking one would be a lie — the list
 that owns it takes it straight back off — so the panel shows it read-only, naming the
 thing to go and change instead.
 
+### Pending membership
+
+A membership waiting for its first contribution. Signing up starts one, and it becomes
+active once a contribution for it is paid; an honorary membership is active from the
+start. Once active it stays active across periods until the board ends it, so a member who
+has not yet paid for the new period is still a member. Rejoining starts a new pending
+membership.
+
+A pending membership does not carry the **member** role.
+
 ### Implied role
 
 A role a person holds by inheritance rather than by a row of their own, because the

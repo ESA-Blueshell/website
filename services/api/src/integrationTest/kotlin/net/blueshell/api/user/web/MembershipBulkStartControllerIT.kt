@@ -124,7 +124,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
     }
 
     @Test
-    fun `starting membership gives the member role back`() {
+    fun `starting membership again is pending, and gives the member role back once paid`() {
         val board = createUserWithRole(Role.BOARD)
         // A former member whose role went with their membership, which is what ending one
         // leaves behind.
@@ -144,6 +144,15 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(1))
 
+        // Rejoining starts a new pending membership (api ADR-036).
+        assertThat(refreshUser(returner).roles).doesNotContain(Role.MEMBER)
+        mvc
+            .perform(
+                post("/contributions")
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"userId":${returner.id},"contributionPeriodId":${createContributionPeriodFixture().id}}"""),
+            ).andExpect(status().is2xxSuccessful)
         assertThat(refreshUser(returner).roles).contains(Role.MEMBER)
     }
 

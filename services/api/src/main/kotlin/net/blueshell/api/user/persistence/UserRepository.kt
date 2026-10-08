@@ -98,6 +98,7 @@ interface UserRepository : BaseRepository<User, Long> {
         FROM Membership m
         WHERE m.user.id = :userId
           AND m.endDate IS NULL
+          AND m.activatedOn IS NOT NULL
         """,
     )
     fun existsActiveMembershipByUserId(

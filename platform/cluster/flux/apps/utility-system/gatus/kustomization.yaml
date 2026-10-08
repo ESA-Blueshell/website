@@ -5,3 +5,10 @@ resources:
   - gatus-config-configmap.yaml
   - gatus-endpoints-configmap.yaml
   - deployment.yaml
+
+# Hashed, so an edit to the backup endpoints rolls Gatus, whose init container renders them.
+configMapGenerator:
+  - name: gatus-backup-endpoints
+    namespace: utility-system
+    files:
+      - backup-endpoints.yaml

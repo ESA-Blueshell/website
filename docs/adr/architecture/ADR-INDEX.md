@@ -31,6 +31,12 @@ stack.
 | [009](ADR-009-link-previews-are-included-by-nginx.md) | Link Previews Are Included by nginx | Accepted | nginx SSI includes an event's tags from the api into `index.html`, falling back to generic tags; no user-agent sniffing, no SSR |
 | [010](ADR-010-descriptions-are-written-in-discords-markdown.md) | Descriptions Are Written in Discord's Markdown | Accepted | Discord's dialect on site and in Discord; emoji and mentions stored in Discord's form; Noto art; 4096-character cap |
 
+### Operations
+
+| # | Title | Status | Summary |
+|---|-------|--------|---------|
+| [011](ADR-011-backups-go-off-site-to-scaleway-under-a-compliance-object-lock.md) | Backups Go Off-Site to Scaleway Under a Compliance Object Lock | Accepted | Kopia nightly to Standard One Zone in `nl-ams`, in a backup-only organization; a 30-day COMPLIANCE lock bounds how long erased data survives; OpenTofu runs on an owner's user key |
+
 ### Getting there
 
 | # | Title | Status | Summary |

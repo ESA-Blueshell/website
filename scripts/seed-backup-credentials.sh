@@ -226,4 +226,4 @@ keys=$(scw GET "/iam/v1alpha1/api-keys?application_id=$app_id&organization_id=$S
 step "Check: Vault has all three fields, Secret Manager $versions enabled version, $WRITER_APP $keys key(s)."
 (( keys == 1 )) || echo "  $WRITER_APP has $keys keys; delete every one but $( [[ -n $access ]] && echo "$access" || echo "the one in Vault") in the console." >&2
 
-echo "Done. Run the first night: kubectl -n data-system create job --from=cronjob/backup backup-first"
+echo "Done. Run the first night: kubectl --context ${context:-<blueshell>} -n data-system create job --from=cronjob/backup backup-first"

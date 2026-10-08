@@ -63,11 +63,12 @@ deletes the old one. The rotation job (#2099) will do this every 30 days on its 
 
 ## The first night
 
-The first run creates the repository. To run it now rather than at 03:00:
+The first run creates the repository. To run it now rather than at 03:00, with `blueshell` being
+your kubeconfig's name for the Blueshell cluster (`kubectl config get-contexts`):
 
 ```bash
-kubectl -n data-system create job --from=cronjob/backup backup-first
-kubectl -n data-system logs -f job/backup-first --all-containers
+kubectl --context blueshell -n data-system create job --from=cronjob/backup backup-first
+kubectl --context blueshell -n data-system logs -f job/backup-first --all-containers
 ```
 
 It ends with two `Created snapshot` lines and the status page shows `nightly-backup` green. Then
@@ -83,7 +84,7 @@ $S3 head-object --bucket esa-blueshell-backups --key "$KEY" \
 
 It must say `ONEZONE_IA`, `COMPLIANCE` and a date 30 days out, and no `Expiration`.
 
-Delete the manual Job afterwards with `kubectl -n data-system delete job backup-first`.
+Delete the manual Job afterwards with `kubectl --context blueshell -n data-system delete job backup-first`.
 
 ## When it alerts
 

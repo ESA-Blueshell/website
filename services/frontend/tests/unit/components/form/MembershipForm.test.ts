@@ -1,18 +1,16 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import {validate} from "vee-validate"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {MemberType} from "@/services/api"
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
-const {mockStartMembershipAsBoard, mockStartOwnMembership, mockSaveMembership, mockApplyForMembership, mockValidate} =
+const {mockStartMembershipAsBoard, mockStartOwnMembership, mockSaveMembership, mockApplyForMembership} =
   vi.hoisted(() => ({
     mockStartMembershipAsBoard: vi.fn(),
     mockStartOwnMembership: vi.fn(),
     mockSaveMembership: vi.fn(),
     mockApplyForMembership: vi.fn(),
-    mockValidate: vi.fn(),
   }))
 
 vi.mock("@/domains/user", async () => {
@@ -26,26 +24,8 @@ vi.mock("@/domains/user", async () => {
   }
 })
 
-// validate() is driven per test: it passes by default, and one test flips it.
-// formRef stays the composable's own ref, because a template ref bound to a plain
-// object never populates and the form context backend errors land on is then absent.
-vi.mock("@/composables/formUtils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/composables/formUtils")>()
-  return {
-    ...actual,
-    useVeeForm: () => ({...actual.useVeeForm(), validate: mockValidate}),
-  }
-})
-
 // ── Stubs ─────────────────────────────────────────────────────────────────────
 
-const vvFieldStub = {
-  name: "VvField",
-  props: ["name", "rules", "modelValue"],
-  emits: ["update:modelValue"],
-  template: "<div class='vv-field-stub' :data-name='name' :data-rules='rules' />",
-}
-const formStub = {template: "<div><slot v-bind='{ meta: { valid: true } }' /></div>"}
 const emittingStub = (name: string) => ({
   name,
   props: ["modelValue"],
@@ -57,6 +37,8 @@ const submitButtonStub = {
   props: ["text", "loading", "disabled"],
   template: "<button :data-testid=\"$attrs['data-testid']\" />",
 }
+
+// ── Fixtures ──────────────────────────────────────────────────────────────────
 
 function makeNewMembership(): import("@/services/api").MembershipResponse {
   return {
@@ -84,78 +66,53 @@ function makeExistingMembership(): import("@/services/api").MembershipResponse {
   }
 }
 
-function rulesByName(wrapper: ReturnType<typeof mount>) {
-  return Object.fromEntries(
-    wrapper
-      .findAll(".vv-field-stub")
-      .map((field) => [String(field.attributes("data-name")), String(field.attributes("data-rules") ?? "")]),
-  )
+const tickConditions = async (wrapper: ReturnType<typeof mount>) => {
+  await wrapper.findComponent({name: "CheckBox"}).vm.$emit("update:modelValue", true)
 }
+
+const fieldLabelled = (wrapper: ReturnType<typeof mount>, label: string) =>
+  wrapper.findAllComponents({name: "FormControl"}).find(field => field.props("label") === label)!
 
 describe("MembershipForm", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockValidate.mockResolvedValue(true)
   })
-
-  function fieldNamed(wrapper: ReturnType<typeof mount>, name: string) {
-    const field = wrapper
-      .findAllComponents({name: "VvField"})
-      .find((candidate) => candidate.props("name") === name)
-    if (!field) throw new Error(`No VvField named ${name}`)
-    return field
-  }
 
   // ── Self-service mode ──────────────────────────────────────────────────────
 
-  it("requires explicit terms acceptance in self-service mode", () => {
-    const wrapper = mount(MembershipForm, {
-      global: {
-        stubs: {
-          Form: formStub,
-          VvField: vvFieldStub,
-        },
-      },
-    })
-    expect(rulesByName(wrapper)).toMatchObject({
-      consented: "accepted",
-    })
+  it("refuses to go on until the conditions are accepted", async () => {
+    const wrapper = mount(MembershipForm, {props: {showSubmit: true}, global: {stubs: {SubmitButton: submitButtonStub}}})
+
+    expect(wrapper.findComponent({name: "SubmitButton"}).props("disabled")).toBe(true)
+    expect(await (wrapper.vm as any).save()).toBeNull()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findComponent({name: "CheckBox"}).props("errorMessages"))
+      .toEqual(["You must accept the membership conditions to continue."])
+    expect(mockStartOwnMembership).not.toHaveBeenCalled()
+    expect(wrapper.emitted("submitted")).toEqual([[false]])
   })
 
   it("accepts the conditions with the island's tick box", () => {
-    const wrapper = mount(MembershipForm, {global: {stubs: {Form: formStub}}})
+    const wrapper = mount(MembershipForm)
 
     expect(wrapper.findComponent({name: "CheckBox"}).exists()).toBe(true)
     expect(wrapper.find(".v-checkbox").exists()).toBe(false)
   })
 
-  it("returns the intended acceptance validation message", async () => {
-    mount(MembershipForm)
-    const result = await validate(false, "accepted")
-
-    expect(result.valid).toBe(false)
-    expect(result.errors[0]).toBe("You must accept the membership conditions to continue.")
-  })
-
   // ── Board mode ─────────────────────────────────────────────────────────────
 
-  it("board mode shows startDate and memberType fields with required rules", () => {
-    const wrapper = mount(MembershipForm, {
-      props: {userId: 42},
-      global: {
-        stubs: {
-          Form: formStub,
-          VvField: vvFieldStub,
-        },
-      },
-    })
-    const rules = rulesByName(wrapper)
-    expect(rules).toMatchObject({
-      startDate: "required",
-      memberType: "required",
-    })
-    // No consent field in board mode
-    expect(rules["consented"]).toBeUndefined()
+  it("board mode asks for a start date and a member type, and no acceptance", async () => {
+    const wrapper = mount(MembershipForm, {props: {userId: 42, modelValue: {...makeNewMembership(), startDate: ""}}})
+    await wrapper.findComponent({name: "MemberTypeSelect"}).vm.$emit("update:modelValue", "")
+
+    expect(await (wrapper.vm as any).validate()).toBe(false)
+    await wrapper.vm.$nextTick()
+
+    expect(fieldLabelled(wrapper, "Start Date").props("errorMessages")).toEqual(["This field is required"])
+    expect(fieldLabelled(wrapper, "End Date").props("errorMessages")).toEqual([])
+    expect(wrapper.findComponent({name: "MemberTypeSelect"}).props("errorMessages")).toEqual(["This field is required"])
+    expect(wrapper.findComponent({name: "CheckBox"}).exists()).toBe(false)
   })
 
   it("board create: save() calls boardCreateMembership and emits submitted(true)", async () => {
@@ -166,7 +123,7 @@ describe("MembershipForm", () => {
     const wrapper = mount(MembershipForm, {
       props: {userId: 42, showSubmit: true},
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
+      global: {stubs: {SubmitButton: submitButtonStub}},
     })
 
     await (wrapper.vm as any).save()
@@ -182,7 +139,7 @@ describe("MembershipForm", () => {
     const wrapper = mount(MembershipForm, {
       props: {userId: 42, showSubmit: true},
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
+      global: {stubs: {SubmitButton: submitButtonStub}},
     })
 
     await (wrapper.vm as any).save()
@@ -197,8 +154,9 @@ describe("MembershipForm", () => {
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true},
       attrs: {"onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
+      global: {stubs: {SubmitButton: submitButtonStub}},
     })
+    await tickConditions(wrapper)
 
     await (wrapper.vm as any).save()
 
@@ -213,12 +171,13 @@ describe("MembershipForm", () => {
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
       attrs: {"onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
+      global: {stubs: {SubmitButton: submitButtonStub}},
     })
+    await tickConditions(wrapper)
 
     const outcome = await (wrapper.vm as any).save()
 
-    expect(mockApplyForMembership).toHaveBeenCalledWith("sel.ver", false)
+    expect(mockApplyForMembership).toHaveBeenCalledWith("sel.ver", true)
     // A new applicant must not go through the signed-in route.
     expect(mockStartOwnMembership).not.toHaveBeenCalled()
     expect(outcome).toEqual({emailConfirmed: false, membershipStarted: false})
@@ -231,25 +190,11 @@ describe("MembershipForm", () => {
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
       attrs: {"onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
+      global: {stubs: {SubmitButton: submitButtonStub}},
     })
+    await tickConditions(wrapper)
 
     expect(await (wrapper.vm as any).save()).toBeNull()
-    expect(wrapper.emitted("submitted")).toEqual([[false]])
-  })
-
-  it("an invalid form is not submitted anywhere", async () => {
-    mockValidate.mockResolvedValue(false)
-
-    const wrapper = mount(MembershipForm, {
-      props: {showSubmit: true, signupToken: "sel.ver"},
-      attrs: {"onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
-    })
-
-    expect(await (wrapper.vm as any).save()).toBeNull()
-    expect(mockApplyForMembership).not.toHaveBeenCalled()
-    expect(mockStartOwnMembership).not.toHaveBeenCalled()
     expect(wrapper.emitted("submitted")).toEqual([[false]])
   })
 
@@ -258,12 +203,12 @@ describe("MembershipForm", () => {
     const wrapper = mount(MembershipForm, {
       props: {userId: 42},
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, VCheckbox: emittingStub("VCheckbox")}},
+      global: {stubs: {VCheckbox: emittingStub("VCheckbox")}},
     })
 
-    await fieldNamed(wrapper, "startDate").vm.$emit("update:modelValue", "2026-03-01")
-    await fieldNamed(wrapper, "endDate").vm.$emit("update:modelValue", "2026-09-01")
-    await fieldNamed(wrapper, "memberType").vm.$emit("update:modelValue", MemberType.ALUMNI)
+    await fieldLabelled(wrapper, "Start Date").vm.$emit("update:modelValue", "2026-03-01")
+    await fieldLabelled(wrapper, "End Date").vm.$emit("update:modelValue", "2026-09-01")
+    await wrapper.findComponent({name: "MemberTypeSelect"}).vm.$emit("update:modelValue", MemberType.ALUMNI)
     await wrapper.findComponent({name: "VCheckbox"}).vm.$emit("update:modelValue", true)
 
     expect(membership).toMatchObject({
@@ -278,10 +223,9 @@ describe("MembershipForm", () => {
     const membership = makeNewMembership()
     const wrapper = mount(MembershipForm, {
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
     })
 
-    await fieldNamed(wrapper, "consented").vm.$emit("update:modelValue", true)
+    await tickConditions(wrapper)
 
     mockStartOwnMembership.mockResolvedValue(makeExistingMembership())
     await (wrapper.vm as any).save()
@@ -290,9 +234,6 @@ describe("MembershipForm", () => {
     expect(mockStartOwnMembership).toHaveBeenCalledWith(true)
   })
 
-  // The whole point of the template ref (ADR-004): a refusal the api pins on a field
-  // has to arrive on that field. Runs against the real <Form> and real VvField, so it
-  // fails if formRef never populates.
   it("a refused field lands on the field the api named", async () => {
     mockSaveMembership.mockRejectedValue({
       response: {
@@ -312,15 +253,14 @@ describe("MembershipForm", () => {
     await (wrapper.vm as any).save()
     await flushPromises()
 
-    expect(wrapper.text()).toContain("Pick a start date in the future.")
+    expect(fieldLabelled(wrapper, "Start Date").props("errorMessages")).toEqual(["Pick a start date in the future."])
   })
 
   it("submitTestId is forwarded to SubmitButton as data-testid", () => {
     const wrapper = mount(MembershipForm, {
       props: {userId: 42, showSubmit: true, submitTestId: "manage-membership-create-btn"},
-      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
+      global: {stubs: {SubmitButton: submitButtonStub}},
     })
-    const btn = wrapper.find("button")
-    expect(btn.attributes("data-testid")).toBe("manage-membership-create-btn")
+    expect(wrapper.findComponent({name: "SubmitButton"}).attributes("data-testid")).toBe("manage-membership-create-btn")
   })
 })

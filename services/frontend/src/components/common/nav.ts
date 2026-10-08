@@ -1,4 +1,5 @@
 import {SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
+import {SNTPINGS_ENABLED, SNTPINGS_PATH} from "@/domains/pinger"
 
 /** A game, as the bar needs it: the esports domain owns the record this is read from. */
 export interface NavGame {
@@ -75,12 +76,14 @@ export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = [], c
   {
     label: "Events",
     to: "/events",
-    covers: ["/events"],
+    covers: ["/events", SNTPINGS_PATH],
     // Circuit Showdown is only ever arrived at from here: nothing else on the site links to it.
+    // SNTPings is the temporary event tab; it drops out with the whole entry when the flag flips.
     entries: [
       {label: "Upcoming events", to: "/events"},
       {label: "Past events", to: "/events/past"},
       {label: "Circuit Showdown", to: "/events/circuitShowdown"},
+      ...(SNTPINGS_ENABLED ? [{label: "SNTPings", to: SNTPINGS_PATH}] : []),
     ],
   },
   {
@@ -123,6 +126,7 @@ export const managementFor = (reader: NavReader): NavEntry[] => [
     ? [
       {label: "Manage jobs", to: "/management/jobs"},
       {label: "Manage cohorts", to: "/management/cohorts"},
+      {label: "Manage the pinger", to: "/management/pinger"},
     ]
     : []),
   ...(reader.board || reader.admin ? [{label: "Manage emails", to: "/management/emails"}] : []),

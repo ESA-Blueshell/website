@@ -880,6 +880,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/users/me/trusted-browsers") {
       return answer(route, "trustedBrowsers", [])
     }
+    if (method === "GET" && path === "/me/connected-apps") {
+      return answer(route, "connectedApps", [])
+    }
     if (method === "POST" && path === "/users/me/two-factor/setup") {
       return answer(route, "setUpTwoFactor", {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})
     }

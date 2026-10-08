@@ -18,15 +18,19 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import java.time.Duration
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 /** Signing in through the endpoints, setting up two-factor, and reading the links the emails carry. */
 abstract class AccountSecurityTestSupport : UserTestSupport() {
     @Autowired
     protected lateinit var recoveryTokens: RecoveryTokenRepository
 
+    // Today rather than a fixed date: Valkey expires a sign-in by the real clock (EXPIREAT), so
+    // a date more than the 14 idle days back stores every sign-in already expired. A whole
+    // minute starts on a TOTP step.
     @BeforeEach
     fun stopTheClock() {
-        clock.set(Instant.parse("2026-09-24T12:00:00Z"))
+        clock.set(Instant.now().truncatedTo(ChronoUnit.MINUTES))
     }
 
     protected fun json(

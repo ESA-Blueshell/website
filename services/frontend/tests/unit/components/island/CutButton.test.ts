@@ -40,4 +40,9 @@ describe("CutButton", () => {
     expect(cut({tone: "solid"}).classes()).toContain("island-cut--solid")
     expect(cut({tone: "quiet"}).classes()).toContain("island-cut--quiet")
   })
+
+  it("draws a smaller button for a bar of several", () => {
+    expect(cut({small: true}).classes()).toContain("island-cut--small")
+    expect(cut().classes()).not.toContain("island-cut--small")
+  })
 })

@@ -5,11 +5,12 @@ import {useId} from "vue"
 
 defineOptions({name: "CheckBox"})
 
-const {label, hint = "", disabled = false, testid = undefined} = defineProps<{
-  label: string
+const {label = "", hint = "", disabled = false, testid = undefined, errorMessages = []} = defineProps<{
+  label?: string
   hint?: string
   disabled?: boolean
   testid?: string
+  errorMessages?: string[]
 }>()
 
 const ticked = defineModel<boolean>({default: false})
@@ -47,9 +48,14 @@ const controlId = `${useId()}-check`
       class="island-check__say"
       :for="controlId"
     >
-      {{ label }}
+      <slot name="label">{{ label }}</slot>
       <span
-        v-if="hint"
+        v-if="errorMessages.length > 0"
+        class="island-check__hint island-check__hint--wrong"
+        role="alert"
+      >{{ errorMessages[0] }}</span>
+      <span
+        v-else-if="hint"
         class="island-check__hint"
       >{{ hint }}</span>
     </label>
@@ -125,5 +131,9 @@ const controlId = `${useId()}-check`
   display: block;
   font-size: 0.72rem;
   color: var(--color-ash);
+}
+
+.island-check__hint--wrong {
+  color: var(--color-wrong);
 }
 </style>

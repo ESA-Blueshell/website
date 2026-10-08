@@ -9,7 +9,7 @@ import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 
 defineOptions({name: "CutButton"})
 
-const {href = "", tone = "plain", away = false, submit = false, testid = undefined} = defineProps<{
+const {href = "", tone = "plain", away = false, submit = false, small = false, testid = undefined} = defineProps<{
   /** Where it leads. A path is followed by the router; anything else is a plain link. Omit for
    * something the page handles itself, which is drawn as a button. */
   href?: string
@@ -18,6 +18,7 @@ const {href = "", tone = "plain", away = false, submit = false, testid = undefin
   away?: boolean
   /** Sends the form it stands in, so Enter in a field presses it too. */
   submit?: boolean
+  small?: boolean
   testid?: string
 }>()
 
@@ -33,7 +34,7 @@ const inside = computed<boolean>(() => href.startsWith("/"))
  */
 const routed = computed<boolean>(() => href !== "" && inside.value)
 
-const tones = computed(() => ["island-cut", `island-cut--${tone}`])
+const tones = computed(() => ["island-cut", `island-cut--${tone}`, {"island-cut--small": small}])
 </script>
 
 <template>
@@ -146,6 +147,11 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`])
 .island-cut--quiet:hover,
 .island-cut--quiet:focus-visible {
   color: var(--color-chalk);
+}
+
+.island-cut--small {
+  padding: 0.5rem 1.05rem;
+  font-size: 0.66rem;
 }
 
 @media (--phone) {

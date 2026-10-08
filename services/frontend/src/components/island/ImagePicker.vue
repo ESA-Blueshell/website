@@ -171,7 +171,7 @@ const clear = () => {
 
     <button
       v-if="has && mayClear"
-      :aria-label="`Take the ${noun} off`"
+      :aria-label="`Remove the ${noun}`"
       class="picture__off"
       :data-testid="`${testid}-clear`"
       :disabled="working"

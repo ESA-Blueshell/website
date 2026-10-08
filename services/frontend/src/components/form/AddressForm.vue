@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import {vFirstField} from "@/utils/firstField"
+import FormFields from "@/components/island/FormFields.vue"
 import {computed} from "vue"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
@@ -12,7 +14,7 @@ import {
   saveSignupAddress,
   type UpdateAddressRequest,
 } from "@/domains/user"
-import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+import {handleSubmitError, useSaving, useVeeForm} from "@/composables/formUtils"
 import {$showStatusMessage} from "@/plugins/handleNetworkError"
 import type {PartialNullable} from "@/types/api"
 
@@ -43,7 +45,6 @@ const address = defineModel<AddressModel>({
 const isCreating = computed<boolean>(() => !address.value?.id)
 const {formRef, validate} = useVeeForm()
 const {isSaving, withSaving} = useSaving()
-const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
 const toCreateAddressRequest = (): CreateAddressRequest => ({
   city: address.value.city ?? "",
@@ -74,7 +75,6 @@ const toUpdateAddressRequest = (): UpdateAddressRequest => ({
 const save = async (): Promise<AddressModel | null> => {
   if (!(await validate())) {
     emit("submitted", false)
-    setSubmitResult(false)
     return null
   }
   // An address belongs to somebody. Without a signup token and without an account
@@ -82,7 +82,6 @@ const save = async (): Promise<AddressModel | null> => {
   // be told so under a field name this form does not render.
   if (!signupToken && !userId && !address.value?.id) {
     emit("submitted", false)
-    setSubmitResult(false)
     $showStatusMessage("your account is not ready for an address yet, so start again")
     return null
   }
@@ -92,7 +91,6 @@ const save = async (): Promise<AddressModel | null> => {
       // going back a step to correct the address just posts again.
       await withSaving(async () => await saveSignupAddress(signupToken, toSignupAddressRequest()))
       emit("submitted", true)
-      setSubmitResult(true)
       return address.value
     }
     const resp = await withSaving(async () => {
@@ -103,13 +101,11 @@ const save = async (): Promise<AddressModel | null> => {
     })
     address.value = resp
     emit("submitted", true)
-    setSubmitResult(true)
     // Bound through v-model, address.value still reads the copy from before the save.
     return resp
   } catch (error: unknown) {
     handleSubmitError(formRef.value, error)
     emit("submitted", false)
-    setSubmitResult(false)
     return null
   }
 }
@@ -120,91 +116,72 @@ defineExpose({validate, save})
 <template>
   <Form
     ref="formRef"
+    v-first-field
     as="div"
   >
-    <v-row>
-      <v-col
-        cols="12"
-        sm="8"
-      >
-        <VvField
-          v-model="address.street"
-          label="Street"
-          name="street"
-          rules="required|minChars:2"
-        />
-      </v-col>
-      <v-col
-        cols="12"
-        sm="4"
-      >
-        <VvField
-          v-model="address.houseNumber"
-          label="House Number"
-          name="houseNumber"
-          rules="required"
-        />
-      </v-col>
-    </v-row>
+    <form-fields>
+      <VvField
+        v-model="address.street"
+        label="Street"
+        name="street"
+        rules="required|minChars:2"
+      />
+      <VvField
+        v-model="address.houseNumber"
+        label="House Number"
+        name="houseNumber"
+        rules="required"
+      />
+    </form-fields>
 
-    <v-row>
-      <v-col
-        cols="12"
-        sm="6"
-      >
-        <VvField
-          v-model="address.zipCode"
-          label="Zipcode"
-          name="zipCode"
-          rules="required|minChars:2"
-        />
-      </v-col>
-      <v-col
-        cols="12"
-        sm="6"
-      >
-        <VvField
-          v-model="address.city"
-          label="City"
-          name="city"
-          rules="required|minChars:2"
-        />
-      </v-col>
-    </v-row>
+    <form-fields>
+      <VvField
+        v-model="address.zipCode"
+        label="Zipcode"
+        name="zipCode"
+        rules="required|minChars:2"
+      />
+      <VvField
+        v-model="address.city"
+        label="City"
+        name="city"
+        rules="required|minChars:2"
+      />
+    </form-fields>
 
-    <v-row>
-      <v-col cols="12">
-        <VvField
-          v-model="address.country"
-          :component="CountrySelect"
-          label="Country"
-          name="country"
-          rules="required"
-        />
-      </v-col>
-    </v-row>
+    <form-fields>
+      <VvField
+        v-model="address.country"
+        :component="CountrySelect"
+        label="Country"
+        name="country"
+        rules="required"
+      />
+    </form-fields>
 
-    <v-row
+    <div
       v-if="showSubmit"
-      align="end"
-      class="mt-2"
-      justify="end"
+      class="form-save"
     >
-      <v-col cols="auto">
-        <submit-button
-          :disabled="isSaving"
-          :icon="isCreating ? 'mdi-content-save' : 'mdi-content-save-edit'"
-          :loading="isSaving"
-          :show-submit-status="showSubmitStatus"
-          :submit-state="submitState"
-          :text="submitText"
-          data-testid="address-form-submit-btn"
-          :data-submit-mode="isCreating ? 'create' : 'update'"
-          @click="save"
-        />
-      </v-col>
-    </v-row>
+      <submit-button
+        :disabled="isSaving"
+        :loading="isSaving"
+        :text="submitText"
+        data-testid="address-form-submit-btn"
+        :data-submit-mode="isCreating ? 'create' : 'update'"
+        @click="save"
+      />
+    </div>
   </Form>
 </template>
 <style lang="scss" scoped>
+.form-save {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1.2rem 0 1.25rem;
+}
+
+.form-fields + .form-fields {
+  margin-top: 0.5rem;
+}
 </style>

@@ -267,7 +267,7 @@ describe("UserForm", () => {
       initials: "required",
       firstName: "required",
       lastName: "required",
-      username: "required|alphaNum",
+      username: "required",
       discord: "required",
       email: "required|email",
       phoneNumber: "required|phoneMobile:NL",
@@ -536,7 +536,8 @@ describe("UserForm", () => {
       const rules = rulesByName(wrapper)
 
       expect(rules.firstName).toBe("required")
-      expect(rules.username).toBe("required|alphaNum")
+      // The api takes any username, dots included, so the form refuses only an empty one.
+      expect(rules.username).toBe("required")
       // The address is the exception: it moves the confirmation link, so it
       // changes on the confirmation step instead.
       expect(rules.email).toBe("")
@@ -632,6 +633,34 @@ describe("UserForm", () => {
     await (wrapper.vm as any).save()
 
     expect(mockSignUp).toHaveBeenCalledWith(expect.objectContaining({discord: "Nelly B", discordId: "803"}))
+  })
+  it("takes what is typed into each of its fields", async () => {
+    const wrapper = mount(UserForm, {
+      props: {
+        showPassword: true,
+        modelValue: baseModel(),
+        options: {includeMemberProfile: true, createVia: "signup"},
+      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+    const typed: Record<string, string> = {
+      initials: "A.", firstName: "Ann", prefix: "de", username: "ann", email: "ann@example.com", password: "Secret1!",
+      dateOfBirth: "2000-01-02", gender: "X", studentNumber: "s1",
+      lastName: "Vos", discord: "ann#1", phoneNumber: "+31600000000", nationality: "NL", confirmPassword: "Secret1!",
+    }
+    for (const field of wrapper.findAllComponents(vvFieldStub)) {
+      const name = field.props("name") as string
+      if (name in typed) field.vm.$emit("update:modelValue", typed[name])
+    }
+    await nextTick()
+
+    const user = (wrapper.vm as any).user
+    expect(user).toMatchObject({
+      initials: "A.", firstName: "Ann", prefix: "de", lastName: "Vos", username: "ann", email: "ann@example.com", password: "Secret1!",
+      discord: "ann#1", phoneNumber: "+31600000000",
+    })
+    expect(user.memberProfile).toMatchObject({dateOfBirth: "2000-01-02", gender: "X", studentNumber: "s1", nationality: "NL"})
+    expect((wrapper.vm as any).confirmPassword).toBe("Secret1!")
   })
 })
 

@@ -1,28 +1,18 @@
 <template>
-  <v-card
-    class="pa-6"
+  <div
+    class="island-panel"
     data-testid="email-confirm-step"
   >
-    <div class="d-flex align-center mb-2">
-      <v-icon
-        class="mr-2"
-        color="primary"
-        size="28"
-      >
-        mdi-email-fast-outline
-      </v-icon>
-      <span class="text-h6 font-weight-medium">Confirm your email address</span>
-    </div>
+    <h2 class="island-panel__title">
+      Confirm your email address
+    </h2>
 
-    <v-alert
-      border="start"
-      class="mb-4"
-      color="primary"
-      variant="tonal"
+    <notice-box
+      tone="info"
     >
       Open the link we sent to <strong>{{ email }}</strong> to confirm your address.
       {{ confirmationConsequence }}
-    </v-alert>
+    </notice-box>
 
     <Form
       v-if="correcting"
@@ -37,74 +27,60 @@
         name="email"
         rules="required|email"
       />
-      <v-row
-        align="center"
-        justify="end"
-      >
-        <v-col cols="auto">
-          <v-btn
-            :disabled="submitting"
-            data-testid="email-confirm-address-cancel-btn"
-            variant="text"
-            @click="correcting = false"
-          >
-            Cancel
-          </v-btn>
-        </v-col>
-        <v-col cols="auto">
-          <v-btn
-            :disabled="submitting"
-            :loading="submitting"
-            color="primary"
-            data-testid="email-confirm-address-submit-btn"
-            @click="correctEmailAddress"
-          >
-            Send to this address
-          </v-btn>
-        </v-col>
-      </v-row>
+      <div class="panel-acts">
+        <cut-button
+          tone="quiet"
+          :disabled="submitting"
+          data-testid="email-confirm-address-cancel-btn"
+          @click="correcting = false"
+        >
+          Cancel
+        </cut-button>
+        <cut-button
+          tone="solid"
+          :disabled="submitting"
+          data-testid="email-confirm-address-submit-btn"
+          @click="correctEmailAddress"
+        >
+          Send to this address
+        </cut-button>
+      </div>
     </Form>
 
-    <v-row
+    <div
       v-else
-      align="center"
+      class="panel-acts panel-acts--split"
     >
-      <v-col cols="auto">
-        <v-btn
-          data-testid="email-confirm-back-btn"
-          variant="outlined"
-          @click="emit('back')"
-        >
-          Previous
-        </v-btn>
-      </v-col>
-      <v-spacer />
-      <v-col cols="auto">
-        <v-btn
-          :disabled="submitting"
-          data-testid="email-confirm-correct-btn"
-          variant="outlined"
-          @click="startCorrecting"
-        >
-          Wrong address?
-        </v-btn>
-      </v-col>
-      <v-col cols="auto">
-        <v-btn
-          :disabled="submitting"
-          :loading="submitting"
-          data-testid="email-confirm-resend-btn"
-          variant="outlined"
-          @click="resend"
-        >
-          Send it again
-        </v-btn>
-      </v-col>
-    </v-row>
-  </v-card>
+      <cut-button
+        tone="plain"
+        data-testid="email-confirm-back-btn"
+        @click="emit('back')"
+      >
+        Previous
+      </cut-button>
+      <cut-button
+        tone="plain"
+        :disabled="submitting"
+        data-testid="email-confirm-correct-btn"
+        @click="startCorrecting"
+      >
+        Wrong address?
+      </cut-button>
+      <cut-button
+        tone="plain"
+        :disabled="submitting"
+        data-testid="email-confirm-resend-btn"
+        @click="resend"
+      >
+        Send it again
+      </cut-button>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
+import CutButton from "@/components/island/CutButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {ref} from "vue"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"

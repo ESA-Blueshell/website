@@ -1,30 +1,28 @@
-# Vault's kubernetes auth binds role `backup` to this account (apps/data/vault/bootstrap-auth.sh).
+# Vault's kubernetes auth binds role `backup-store` to this account (apps/data/vault/bootstrap-auth.sh).
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: backup
-  namespace: data-system
+  namespace: utility-system
 ---
-# Every night MariaDB and Vault go to the Kopia repository on Scaleway in one run, so both carry
-# the same date and restore together, and Valkey and the api's uploads go along. The scripts are
-# in apps/backup-common; platform/docs/backup.md has the restore paths.
+# Every night Gatus's uptime history goes to the Kopia repository, copied with SQLite's online
+# backup while Gatus keeps running.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: backup
-  namespace: data-system
+  namespace: utility-system
 spec:
-  schedule: '0 3 * * *'
+  schedule: '45 3 * * *'
   timeZone: Europe/Amsterdam
   concurrencyPolicy: Forbid
-  # A night missed by more than an hour is left to Gatus's heartbeat, not run at noon.
   startingDeadlineSeconds: 3600
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
       backoffLimit: 0
-      activeDeadlineSeconds: 3600
+      activeDeadlineSeconds: 1800
       template:
         metadata:
           labels:
@@ -33,14 +31,8 @@ spec:
           restartPolicy: Never
           serviceAccountName: backup
           securityContext:
-            runAsNonRoot: true
-            runAsUser: 65534
-            runAsGroup: 65534
-            fsGroup: 65534
             seccompProfile:
               type: RuntimeDefault
-          # The steps run in order and hand over through /work. An init step that fails writes
-          # /work/status/failed and exits 0, so the last step can report it to Gatus.
           initContainers:
             - name: collect
               image: hashicorp/vault:1.21
@@ -48,16 +40,15 @@ spec:
               command: [sh, /scripts/collect.sh]
               env:
                 - name: VAULT_ROLE
-                  value: backup
-                - name: COLLECT_PAIR
-                  value: 'true'
-                - name: PAIR_GROUP
-                  value: mariadb-vault
+                  value: backup-store
                 - name: VAULT_ADDR
                   value: http://vault.data-system.svc.cluster.local:8200
                 - name: HOME
                   value: /work
               securityContext:
+                runAsNonRoot: true
+                runAsUser: 65534
+                runAsGroup: 65534
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities:
@@ -74,48 +65,18 @@ spec:
                 - name: scripts
                   mountPath: /scripts
                   readOnly: true
-            - name: dump
-              image: mariadb:10.11
+            # Root, as Gatus runs: SQLite takes its locks next to Gatus's root-owned database.
+            - name: sqlite
+              image: python:3.13-alpine
               imagePullPolicy: IfNotPresent
-              command: [bash, /scripts/dump.sh]
-              env:
-                - name: PAIR_GROUP
-                  value: mariadb-vault
-                - name: MARIADB_HOST
-                  value: mariadb.data-system.svc.cluster.local
-                - name: HOME
-                  value: /work
+              command: [sh, /scripts/gatus.sh]
               securityContext:
+                runAsUser: 0
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities:
                   drop: [ALL]
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 128Mi
-                limits:
-                  memory: 768Mi
-              volumeMounts:
-                - name: work
-                  mountPath: /work
-                - name: scripts
-                  mountPath: /scripts
-                  readOnly: true
-            - name: valkey
-              image: valkey/valkey:8-alpine
-              imagePullPolicy: IfNotPresent
-              command: [sh, /scripts/valkey.sh]
-              env:
-                - name: VALKEY_HOST
-                  value: valkey.data-system.svc.cluster.local
-                - name: HOME
-                  value: /work
-              securityContext:
-                allowPrivilegeEscalation: false
-                readOnlyRootFilesystem: true
-                capabilities:
-                  drop: [ALL]
+                  add: [CHOWN, DAC_OVERRIDE, FOWNER]
               resources:
                 requests:
                   cpu: 50m
@@ -128,25 +89,22 @@ spec:
                 - name: scripts
                   mountPath: /scripts
                   readOnly: true
+                - name: gatus
+                  mountPath: /gatus
           containers:
             - name: snapshot
               image: kopia/kopia:0.23.1
               imagePullPolicy: IfNotPresent
               command: [bash, /scripts/snapshot.sh]
               env:
+                - name: BACKUP_GROUPS
+                  value: gatus=/work/gatus
                 - name: BACKUP_BUCKET
                   value: esa-blueshell-backups
                 - name: BACKUP_ENDPOINT
                   value: s3.nl-ams.scw.cloud
                 - name: BACKUP_REGION
                   value: nl-ams
-                # The bucket's COMPLIANCE lock, platform/scaleway/backup's lock_days. Change both.
-                - name: LOCK_PERIOD
-                  value: 720h
-                - name: BACKUP_GROUPS
-                  value: mariadb-vault=/work/mariadb,/work/vault valkey=/work/valkey uploads=/uploads
-                - name: ALLOW_CREATE
-                  value: 'true'
                 - name: GATUS_PUSH_BASE
                   value: http://gatus.utility-system.svc.cluster.local/api/v1/endpoints/backups_
                 - name: KOPIA_CONFIG_PATH
@@ -157,10 +115,12 @@ spec:
                   value: /work/kopia/logs
                 - name: HOME
                   value: /work
-                # The root filesystem is read-only.
                 - name: TMPDIR
                   value: /work
               securityContext:
+                runAsNonRoot: true
+                runAsUser: 65534
+                runAsGroup: 65534
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities:
@@ -170,29 +130,23 @@ spec:
                   cpu: 100m
                   memory: 256Mi
                 limits:
-                  memory: 1536Mi
+                  memory: 1Gi
               volumeMounts:
                 - name: work
                   mountPath: /work
                 - name: scripts
                   mountPath: /scripts
                   readOnly: true
-                - name: uploads
-                  mountPath: /uploads
-                  readOnly: true
           volumes:
-            # In memory: the dump, the snapshot and the night's credentials never touch the node's disk.
+            # In memory: the copy and the night's credentials never touch the node's disk.
             - name: work
               emptyDir:
                 medium: Memory
-                sizeLimit: 1Gi
+                sizeLimit: 512Mi
             - name: scripts
               configMap:
                 name: backup-scripts
                 defaultMode: 0555
-            # The api's uploads: its PV is this hostPath (apps/stateless/api/pvc.yaml), and a
-            # claim can only be mounted in its own namespace.
-            - name: uploads
-              hostPath:
-                path: /srv/blueshell/storage
-                type: Directory
+            - name: gatus
+              persistentVolumeClaim:
+                claimName: gatus-data

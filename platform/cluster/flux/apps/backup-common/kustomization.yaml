@@ -1,0 +1,16 @@
+# The nightly backup's scripts, shared by the backup CronJobs in data-system, mail-system and
+# utility-system. A ConfigMap mounts only in its own namespace, so each takes this component
+# and its own `namespace:` places the copy.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Hashed, so an edit to a script reaches the next night's Jobs.
+configMapGenerator:
+  - name: backup-scripts
+    files:
+      - collect.sh
+      - dump.sh
+      - valkey.sh
+      - stalwart.sh
+      - gatus.sh
+      - snapshot.sh

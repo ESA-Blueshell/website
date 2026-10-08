@@ -5,6 +5,7 @@ resources:
   # stalwart-secrets VaultStaticSecret has a namespace to land in before
   # apps-mail reconciles (apps-mail depends on apps-vso-secrets).
   - stalwart
+  - backup
 # Written by image-automation-controller, the same as api and frontend, and the
 # same shape: a readable version tag with the digest it named beside it, so the
 # cluster runs an image no later build can move.

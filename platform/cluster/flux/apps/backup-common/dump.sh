@@ -2,14 +2,15 @@
 # Dumps the database in one transaction, gzipped, as the read-only login collect.sh leased.
 set -uo pipefail
 umask 077
+marker=/work/status/$PAIR_GROUP.failed
 
 fail() {
   echo "$1" >&2
-  printf '%s\n' "$1" > /work/status/failed
+  printf '%s\n' "$1" > "$marker"
   exit 0
 }
 
-[ -s /work/status/failed ] && exit 0
+[ -s /work/status/failed ] || [ -s "$marker" ] && exit 0
 
 field() { sed -n "s/^ *\"$1\": \"\\(.*\\)\",\\{0,1\\}\$/\\1/p" /work/secrets/db.json; }
 user=$(field username)

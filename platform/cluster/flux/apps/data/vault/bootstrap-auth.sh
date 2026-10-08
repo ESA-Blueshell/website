@@ -156,6 +156,18 @@ path "secret/data/platform/alerting" {
 }
 EOF
 
+# The backups of Stalwart and Gatus (apps/mail/backup, apps/utility-system/backup): the Kopia
+# password and writer key and the Gatus token, without the snapshot or the database login.
+cat <<'EOF' >/tmp/backup-store.hcl
+path "secret/data/platform/backup" {
+  capabilities = ["read"]
+}
+
+path "secret/data/platform/alerting" {
+  capabilities = ["read"]
+}
+EOF
+
 cat <<'EOF' >/tmp/vso.hcl
 path "secret/data/platform/edge" {
   capabilities = ["read"]
@@ -188,6 +200,7 @@ vault policy write stalwart /tmp/stalwart.hcl
 vault policy write vso /tmp/vso.hcl
 vault policy write admin /tmp/admin.hcl
 vault policy write backup /tmp/backup.hcl
+vault policy write backup-store /tmp/backup-store.hcl
 
 # --- Kubernetes auth roles ---------------------------------------------
 
@@ -213,6 +226,12 @@ vault write auth/kubernetes/role/backup \
   bound_service_account_names="backup" \
   bound_service_account_namespaces="data-system" \
   policies="backup" \
+  ttl="1h"
+
+vault write auth/kubernetes/role/backup-store \
+  bound_service_account_names="backup" \
+  bound_service_account_namespaces="mail-system,utility-system" \
+  policies="backup-store" \
   ttl="1h"
 
 vault write auth/kubernetes/role/vso \

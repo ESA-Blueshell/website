@@ -6,3 +6,4 @@ resources:
   - alerting-vss.yaml
   - headlamp
   - gatus
+  - backup

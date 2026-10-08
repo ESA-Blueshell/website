@@ -137,6 +137,8 @@ UNCOVERED=0
 for dir in "$FLUX_ROOT"/apps/*/ "$FLUX_ROOT"/clusters/*/; do
   dir=${dir%/}
   [[ -f "$dir/kustomization.yaml" ]] || continue
+  # A component is never applied alone: the overlays that include it are built above.
+  grep -q '^kind: Component$' "$dir/kustomization.yaml" && continue
   covered=0
   for overlay in "${PATHS[@]}"; do
     [[ "$dir" == "$overlay" ]] && covered=1 && break

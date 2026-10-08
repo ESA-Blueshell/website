@@ -65,8 +65,10 @@ nothing but the backups, under a COMPLIANCE Object Lock.**
 ## Implementation status
 
 The organization and its owners exist (#2096), and `platform/scaleway/backup` declares the
-buckets, applications and secret (#2098). Nothing backs up yet: the nightly job is #2085 and
-#2093, rotation and the weekly verify are #2099, and the unseal shares are #2097.
+buckets, applications and secret and is applied (#2098). A probe proved the lock: the writer
+cannot erase a version or see the state bucket, an owner cannot erase a locked version, and the
+rotator cannot write a policy. Nothing backs up yet: the nightly job is #2085 and #2093, rotation
+and the weekly verify are #2099, and the unseal shares are #2097.
 
 ## Related Documentation
 - [Applying the Scaleway side](../../../platform/docs/scaleway-backup.md)

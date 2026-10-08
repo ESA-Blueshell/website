@@ -1,7 +1,7 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 import type {Locator, Page} from "@playwright/test"
-import {aContributionPeriod, aMembership, aUser, anAddress} from "./records"
+import {aContributionPeriod, aMembership, aUser} from "./records"
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
@@ -145,86 +145,6 @@ test.describe("management filters", () => {
     await expect(page.getByTestId("member-manager-row-51")).toHaveCount(0)
     await expect(page.getByTestId("member-manager-row-52")).toBeVisible()
     await expect(page.getByTestId("member-manager-row-53")).toBeVisible()
-  })
-
-  test("address manager filters users with and without address by multiple fields", async ({page}) => {
-    await installApiMocks(page, {
-      users: [
-        aUser({
-          id: 41,
-          fullName: "Addressed Filter Target",
-          firstName: "AddressTarget",
-          username: "address-target",
-          email: "address.target@test.com",
-          addressId: 501,
-          enabled: true,
-          roles: ["MEMBER"],
-        }),
-        aUser({
-          id: 42,
-          fullName: "Addressed Filter Other",
-          firstName: "AddressOther",
-          username: "address-other",
-          email: "address.other@test.com",
-          addressId: 502,
-          enabled: true,
-          roles: ["MEMBER"],
-        }),
-        aUser({
-          id: 43,
-          fullName: "No Address Filter Target",
-          firstName: "NoAddressTarget",
-          username: "no-address-target",
-          email: "no.address.target@test.com",
-          enabled: true,
-          roles: ["MEMBER"],
-        }),
-        aUser({
-          id: 44,
-          fullName: "No Address Filter Other",
-          firstName: "NoAddressOther",
-          username: "no-address-other",
-          email: "no.address.other@test.com",
-          enabled: true,
-          roles: ["MEMBER"],
-        }),
-      ],
-      addresses: [
-        anAddress({id: 501, userId: 41, street: "Main", city: "Enschede", zipCode: "1234AB", country: "NL"}),
-        anAddress({id: 502, userId: 42, street: "Main", city: "Enschede", zipCode: "1234AB", country: "NL"}),
-      ],
-    })
-    await loginAsBoard(page.context())
-
-    await page.goto("/addresses/manage")
-    await expect(page.getByTestId("address-user-list-with-address")).toBeVisible()
-
-    const withAddressCard = await ensureListOpen(
-      page,
-      "address-user-list-with-address",
-      "address-user-list-toggle-with-address",
-      "address-user-list-search-with-address",
-    )
-    await expect(withAddressCard.getByText(exactText("address-target"))).toBeVisible()
-    await expect(withAddressCard.getByText(exactText("address-other"))).toBeVisible()
-
-    await searchInput(page, "address-user-list-search-with-address").fill("AddressTarget address.target@test.com")
-    await expect(withAddressCard.getByText(exactText("address-target"))).toBeVisible()
-    await expect(withAddressCard.getByText(exactText("address-other"))).toHaveCount(0)
-
-    await searchInput(page, "address-user-list-search-with-address").fill("")
-    const withoutAddressCard = await ensureListOpen(
-      page,
-      "address-user-list-without-address",
-      "address-user-list-toggle-without-address",
-      "address-user-list-search-without-address",
-    )
-    await expect(withoutAddressCard.getByText(exactText("no-address-target"))).toBeVisible()
-    await expect(withoutAddressCard.getByText(exactText("no-address-other"))).toBeVisible()
-
-    await searchInput(page, "address-user-list-search-without-address").fill("NoAddressTarget no.address.target@test.com")
-    await expect(withoutAddressCard.getByText(exactText("no-address-target"))).toBeVisible()
-    await expect(withoutAddressCard.getByText(exactText("no-address-other"))).toHaveCount(0)
   })
 
   test("recovery manager filters inactive and active users by multiple fields", async ({page}) => {

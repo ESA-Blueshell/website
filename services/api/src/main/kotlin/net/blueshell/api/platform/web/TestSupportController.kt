@@ -15,6 +15,8 @@ import net.blueshell.api.security.Browser
 import net.blueshell.api.security.SignIn
 import net.blueshell.api.security.SignInContext
 import net.blueshell.api.security.SignIns
+import net.blueshell.api.user.api.AddressFields
+import net.blueshell.api.user.api.SealedAddresses
 import net.blueshell.api.user.api.UserService
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpHeaders
@@ -53,7 +55,15 @@ class TestSupportController(
     private val trustedBrowsers: TrustedBrowsers,
     private val cookies: AuthTokenCookieService,
     private val signIns: SignIns,
+    private val sealedAddresses: SealedAddresses,
 ) {
+    /** A member's address opened as the api opens it, for a test that checks what was saved; the table holds it sealed. */
+    @GetMapping("/address")
+    @PermitAll
+    fun openAddress(
+        @RequestParam username: String,
+    ): AddressFields? = users.findByUsername(username).address?.let(sealedAddresses::open)
+
     @GetMapping("/emails")
     @PermitAll
     fun listEmails(

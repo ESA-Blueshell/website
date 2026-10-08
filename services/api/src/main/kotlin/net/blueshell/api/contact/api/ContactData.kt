@@ -9,6 +9,8 @@ import net.blueshell.api.user.persistence.User
  * isolated from domain entity structure.
  */
 data class ContactData(
+    /** The account the contact is, which a log line names in place of the email address. */
+    val userId: Long,
     val email: String,
     val firstName: String,
     val lastName: String,
@@ -20,6 +22,7 @@ data class ContactData(
 
 fun User.toContactData(): ContactData =
     ContactData(
+        userId = requireNotNull(id) { "A user is saved before it is synced" },
         email = this.email,
         firstName = this.firstName,
         lastName = this.lastName,

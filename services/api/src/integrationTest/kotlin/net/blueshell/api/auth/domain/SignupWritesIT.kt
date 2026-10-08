@@ -22,6 +22,9 @@ import java.time.Duration
 @SpringBootTest
 class SignupWritesIT : UserTestSupport() {
     @Autowired
+    private lateinit var sealedAddresses: net.blueshell.api.user.api.SealedAddresses
+
+    @Autowired
     private lateinit var tokenFactory: RecoveryTokenFactory
 
     @Autowired
@@ -84,7 +87,7 @@ class SignupWritesIT : UserTestSupport() {
                     .content(addressPayload.replace("\"houseNumber\":\"5\"", "\"houseNumber\":\"7\"")),
             ).andExpect(status().isNoContent)
 
-        assertThat(refreshUser(user).address!!.houseNumber)
+        assertThat(sealedAddresses.open(refreshUser(user).address!!)?.houseNumber)
             .describedAs("going back a step must correct the address, not accumulate")
             .isEqualTo("7")
         assertThat(first).isNotNull()

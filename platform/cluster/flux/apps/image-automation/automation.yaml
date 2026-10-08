@@ -73,6 +73,22 @@ spec:
     semver:
       range: '>=0.0.0'
 ---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: pinger
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: pinger
+  digestReflectionPolicy: IfNotPresent
+  filterTags:
+    pattern: '^v(?P<version>\d+\.\d+\.\d+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '>=0.0.0'
+---
 # What deploys a release. A scan finds the version a release published, this
 # commits the reference to the overlay, and kustomize-controller rolls it out.
 #

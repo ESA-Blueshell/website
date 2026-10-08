@@ -5,6 +5,7 @@ resources:
   - api.yaml
   - frontend.yaml
   - headlamp.yaml
+  - pinger.yaml
   - stalwart-admin.yaml
   - status.yaml
   - traefik-dashboard.yaml

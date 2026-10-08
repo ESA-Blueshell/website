@@ -1,0 +1,94 @@
+# Paints the Blueshell logo on the SNTPings canvas. See services/pinger/README.md and
+# architecture ADR-012 for why it runs on the host network.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pinger
+  namespace: default
+spec:
+  replicas: 1
+  # Recreate: the pod binds :8090 on the node itself, so two pods cannot overlap.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pinger
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pinger
+    spec:
+      # Pods have no IPv6 here; the node does. Every ping leaves from the node's address.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pinger
+          # Tag comes from the images block in ../kustomization.yaml.
+          image: ghcr.io/esa-blueshell/pinger
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PINGER_LISTEN
+              value: ":8090"
+            - name: PINGER_VALKEY
+              value: valkey.data-system.svc.cluster.local:6379
+            - name: PINGER_API_URL
+              value: http://api.default.svc.cluster.local:8080
+            # The SiteCie service token the painter presents when it reports its contribution.
+            # Mirrored from Vault by VSO (platform/cluster/flux/apps/vso-secrets/pinger-secrets.yaml).
+            # optional: the pod boots without it and the reporter idles until the token is provisioned.
+            - name: PINGER_REPORT_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: pinger-report-token
+                  key: token
+                  optional: true
+          ports:
+            - containerPort: 8090
+              name: http
+          # Root with NET_RAW and nothing else: Kubernetes cannot hand a capability to a
+          # non-root user, and the raw ICMPv6 socket needs it.
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              add: ["NET_RAW"]
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 250m
+              memory: 64Mi
+            limits:
+              cpu: "1"
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pinger
+  namespace: default
+spec:
+  selector:
+    app.kubernetes.io/name: pinger
+  ports:
+    - name: http
+      port: 8090
+      targetPort: http

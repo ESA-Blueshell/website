@@ -43,6 +43,12 @@ spec:
                   name: alerting-discord
                   key: DISCORD_WEBHOOK_URL
                   optional: true
+            - name: GATUS_BACKUP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: alerting-discord
+                  key: GATUS_BACKUP_TOKEN
+                  optional: true
           ports:
             - containerPort: 8080
               name: http

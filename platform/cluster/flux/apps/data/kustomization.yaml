@@ -8,3 +8,4 @@ resources:
   - vault
   - mariadb
   - valkey
+  - backup

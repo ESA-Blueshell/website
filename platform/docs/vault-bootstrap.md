@@ -298,8 +298,10 @@ new auth on their next pull.
 
 Gatus posts uptime alerts and Flagger posts release events to
 the same Discord incoming webhook. VSO materialises
-`utility-system/alerting-discord` with a single key,
-`DISCORD_WEBHOOK_URL`, from this path.
+`utility-system/alerting-discord` from this path, with
+`DISCORD_WEBHOOK_URL` and `GATUS_BACKUP_TOKEN`. The second is the token
+the nightly backup reports to Gatus with; `bootstrap-auth.sh` seeds
+`gatus.backup_token` on its own.
 
 ```bash
 vault kv put secret/platform/alerting \
@@ -312,9 +314,18 @@ the channel it targets receives both alerts and rollout messages.
 The path is optional: both consumers mark their Secret reference
 `optional`, so an unseeded Vault costs notifications but neither the
 status page nor image auto-updates. Seeding it turns both on within one
-refresh cycle (1 h, or force a reconcile). Rotate with the same
-`kv put` — Gatus is restarted by the `rolloutRestartTargets` entry on
-the VaultStaticSecret, Flagger needs no restart.
+refresh cycle (1 h, or force a reconcile). Rotate the webhook with
+`vault kv patch secret/platform/alerting discord.webhook_url=…`: a
+`kv put` replaces the whole path and drops the backup token until the
+bootstrap Job next runs. Gatus is restarted by the
+`rolloutRestartTargets` entry on the VaultStaticSecret, Flagger needs no
+restart.
+
+### Nightly backup
+
+`secret/platform/backup` holds the Kopia password and the
+`backup-writer` key the nightly backup reads. An owner seeds it, never an
+agent; [backup.md](backup.md#seeding-the-credentials) has the steps.
 
 ## 5. Confirm VSO sync
 

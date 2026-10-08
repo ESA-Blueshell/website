@@ -15,8 +15,9 @@ spec:
     # Status page is deliberately public — no forward-auth. The whole
     # point is that an outside observer (including logged-out users)
     # can see whether the stack is up.
+    # Pushing a result is for the cluster only, so the internet cannot report a backup done.
     - kind: Rule
-      match: Host(`status.esa-blueshell.nl`)
+      match: Host(`status.esa-blueshell.nl`) && !PathRegexp(`^/api/v1/endpoints/[^/]+/external`)
       services:
         - name: gatus
           namespace: utility-system

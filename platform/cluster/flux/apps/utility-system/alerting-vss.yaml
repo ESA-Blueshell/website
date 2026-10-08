@@ -28,6 +28,10 @@ spec:
       templates:
         DISCORD_WEBHOOK_URL:
           text: '{{- get .Secrets "discord.webhook_url" -}}'
+        # Gatus refuses to start with an external endpoint that has no token, so an unseeded
+        # one still yields a value. bootstrap-auth.sh seeds the real one.
+        GATUS_BACKUP_TOKEN:
+          text: '{{- get .Secrets "gatus.backup_token" | default "unseeded" -}}'
   refreshAfter: 1h
   rolloutRestartTargets:
     # Gatus reads the URL once, at config load.

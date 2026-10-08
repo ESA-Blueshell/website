@@ -31,7 +31,8 @@ nothing but the backups, under a COMPLIANCE Object Lock.**
   provider and country from the host. The class is set by the bucket's `.storageconfig`, which
   Kopia reads, because S3 has no bucket-wide default class. SSE-ONE encrypts at rest as well.
 - **A dedicated organization.** Scaleway IAM rights reach a whole organization, so a key here
-  reaches nothing but backups. Two named owners, each with their own login and 2FA.
+  reaches nothing but backups. Two owners, each a role account with its own login and 2FA: the
+  SiteCie's, which is the Owner, and the board's. Each is handed over with its role.
 - **A 30-day lock**, with 7 daily and 4 weekly snapshots. Nothing can erase a locked version
   before its lock runs out, owners included. The writer key has no `s3:DeleteObjectVersion`, so it
   can only add data or delete markers. A lifecycle rule erases a version 30 days after it stops

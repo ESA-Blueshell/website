@@ -6,18 +6,24 @@ this way is in [architecture ADR-011](../../docs/adr/architecture/ADR-011-backup
 
 ## Who holds what
 
-| Role | Holds |
-|------|-------|
-| `<role>`, the organization's Owner | The Owner login with 2FA and its recovery codes |
-| `<role>`, the second owner | An IAM Member login with full organization rights and 2FA, and its recovery codes |
-| `<role>`, the billing contact | The payment method and Scaleway's invoices |
+The two owners are role accounts, not people. Each is handed over with its role, so the
+organization never depends on one person staying on.
 
-Each owner keeps their own recovery codes in their own password manager, never on the server.
-The second owner holds nothing else: their login is the way in if the Owner is unavailable.
+| Account | Scaleway rights | Its login, 2FA and recovery codes |
+|---------|-----------------|-----------------------------------|
+| **SiteCie** | The organization's Owner | Held by the chair of the SiteCie |
+| **Board** | IAM Member in the Administrators group, with `OrganizationManager` and `AllProductsFullAccess` | The board's password manager, passed on from board to board |
+
+Billing mail and the billing alerts (€2 a month, at 50% and 100%) go to board@ and
+sitecie@blueshell.utwente.nl and to a Discord webhook. Neither mailbox runs on the Blueshell
+server, so they still arrive when it is down.
+
+Neither account's materials are ever stored on the server. The board account is the way in if
+the SiteCie account is unavailable.
 
 A suspended account takes the backups with it, so the organization is paid from the
 association's bank account, its billing contact is a role mailbox, and a billing alert emails the
-billing contact and both owners. Scaleway has no hard spending cap; the alert is the only guard.
+billing contact. Scaleway has no hard spending cap; the alert is the only guard.
 
 The Kopia password lives in Vault for the nightly job and in Secret Manager for break-glass,
 nowhere else. Secret Manager bills each stored version, so it holds one at a time.

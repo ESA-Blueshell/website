@@ -90,4 +90,14 @@ describe("Account page", () => {
     expect(guest.getComponent(UserForm).props("options")).toEqual({includeMemberProfile: true, memberProfileRequired: false})
     mockStore.getters.isMember = true
   })
+
+  it("keeps what the form hands back", async () => {
+    const wrapper = mountInApp(Account, {global: {stubs: {UserForm}}})
+    await settle()
+
+    wrapper.getComponent(UserForm).vm.$emit("update:modelValue", {id: 42, firstName: "Janet"})
+    await settle()
+
+    expect(wrapper.getComponent(UserForm).props("modelValue")).toEqual({id: 42, firstName: "Janet"})
+  })
 })

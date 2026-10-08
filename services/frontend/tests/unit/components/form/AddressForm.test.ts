@@ -68,7 +68,7 @@ describe("AddressForm", () => {
 
   it("takes what is typed into each field", async () => {
     const wrapper = mountComponent(AddressForm, {global: {stubs: {Form: formStub, VvField: vvFieldStub}}})
-    const typed: Record<string, string> = {houseNumber: "12a", zipCode: "7522NB", city: "Enschede"}
+    const typed: Record<string, string> = {houseNumber: "12a", zipCode: "7522NB", city: "Enschede", country: "NL"}
     for (const field of wrapper.findAllComponents(vvFieldStub)) {
       const name = field.props("name") as string
       if (name in typed) field.vm.$emit("update:modelValue", typed[name])

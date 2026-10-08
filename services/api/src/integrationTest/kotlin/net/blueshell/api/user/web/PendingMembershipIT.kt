@@ -48,7 +48,14 @@ class PendingMembershipIT : UserTestSupport() {
         start(applicant, "REGULAR").andExpect(jsonPath("$.pending").value(true))
         assertThat(isMember(applicant)).isFalse()
 
-        pay(applicant, createContributionPeriodFixture().id!!)
+        val period = createContributionPeriodFixture()
+        mvc
+            .perform(get("/users/me/first-contribution").with(signedIn(applicant)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.periodId").value(period.id!!))
+
+        pay(applicant, period.id!!)
+        mvc.perform(get("/users/me/first-contribution").with(signedIn(applicant))).andExpect(status().isNoContent)
         mvc
             .perform(get("/memberships?userId=${applicant.id}").with(signedIn(board)))
             .andExpect(jsonPath("$[0].pending").value(false))

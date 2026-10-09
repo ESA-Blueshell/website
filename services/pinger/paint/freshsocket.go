@@ -15,9 +15,11 @@ const (
 	// freshSendBuffer is the send buffer FreshSocket asks for, under macOS's default 8 MiB
 	// kern.ipc.maxsockbuf.
 	freshSendBuffer = 4 << 20
-	// freshEvery swaps the socket after this many sends, half of what a 4 MiB buffer held on
-	// the Mac it was measured on.
-	freshEvery = 4096
+	// freshEvery swaps the socket after this many sends. Behind a content filter each send costs
+	// more the more destinations its socket has reached: 16 workers held about 1,500 pps swapping
+	// every 4,096 and 3,000 every 256. Each swap closes a socket on a goroutine for about a second,
+	// so much lower piles up blocked threads for little more rate.
+	freshEvery = 256
 	// freshStall bounds a send: a wedged socket fails the send and is replaced instead of
 	// holding the worker forever.
 	freshStall = 100 * time.Millisecond

@@ -85,13 +85,11 @@ func (s *rawSocket) send(b []byte, dst net.Addr) error {
 	return nil
 }
 
-// ReadFrom takes whatever ICMPv6 arrives: a raw socket receives a copy of every ICMPv6 packet.
+// ReadFrom blocks until an ICMPv6 packet arrives, as a raw socket receives a copy of each, or until
+// Close.
 func (s *rawSocket) ReadFrom(b []byte) (int, net.Addr, error) {
 	n, from, err := windows.Recvfrom(s.h, b, 0)
 	if err != nil {
-		if errors.Is(err, windows.WSAETIMEDOUT) {
-			return 0, nil, os.ErrDeadlineExceeded
-		}
 		return 0, nil, os.NewSyscallError("recvfrom", err)
 	}
 	if sa, ok := from.(*windows.SockaddrInet6); ok {
@@ -100,14 +98,8 @@ func (s *rawSocket) ReadFrom(b []byte) (int, net.Addr, error) {
 	return n, nil, nil
 }
 
-// SetReadDeadline sets SO_RCVTIMEO, which a blocking socket counts from the start of each read
-// rather than to a fixed time.
-func (s *rawSocket) SetReadDeadline(t time.Time) error {
-	ms := 0
-	if !t.IsZero() {
-		ms = max(1, int(time.Until(t)/time.Millisecond))
-	}
-	return windows.SetsockoptInt(s.h, windows.SOL_SOCKET, windows.SO_RCVTIMEO, ms)
-}
+// SetReadDeadline does nothing: Windows documents a socket whose receive timed out as unusable, and
+// this one also sends.
+func (s *rawSocket) SetReadDeadline(time.Time) error { return nil }
 
 func (s *rawSocket) Close() error { return windows.Closesocket(s.h) }

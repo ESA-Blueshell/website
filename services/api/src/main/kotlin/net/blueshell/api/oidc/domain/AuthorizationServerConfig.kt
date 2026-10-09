@@ -11,12 +11,19 @@ import org.springframework.core.annotation.Order
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer
+import org.springframework.security.oauth2.jwt.JwtEncoder
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings
+import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext
+import org.springframework.security.oauth2.server.authorization.token.JwtGenerator
+import org.springframework.security.oauth2.server.authorization.token.OAuth2AccessTokenGenerator
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.context.SecurityContextHolderFilter
@@ -28,10 +35,6 @@ import java.nio.charset.StandardCharsets
 class AuthorizationServerConfig {
     @Bean
     @Order(1)
-    // jwkSource and tokenCustomizer are declared so the container resolves them
-    // before this chain is built; the body reaches them through the shared
-    // authorization-server configurer rather than by name.
-    @Suppress("UnusedParameter")
     fun authorizationServerFilterChain(
         http: HttpSecurity,
         jwkSource: JWKSource<SecurityContext>,
@@ -39,12 +42,25 @@ class AuthorizationServerConfig {
         jwtAuthFilter: JwtAuthFilter,
         securityContextRepository: SecurityContextRepository,
         signIns: SignIns,
+        jwtEncoder: JwtEncoder?,
+        registeredClients: RegisteredClientRepository,
     ): SecurityFilterChain {
         val authServerConfigurer = OAuth2AuthorizationServerConfigurer()
+        val jwtGenerator = JwtGenerator(jwtEncoder ?: NimbusJwtEncoder(jwkSource)).apply { setJwtCustomizer(tokenCustomizer) }
 
         authServerConfigurer
             .oidc(Customizer.withDefaults())
+            .clientAuthentication {
+                it.authenticationConverter(PublicClientRefreshConverter())
+                it.authenticationProvider(PublicClientRefreshProvider(registeredClients))
+            }
 
+        // The configurer's own tokenGenerator() needs it attached to http first; the shared object is
+        // what it sets, and the configurer reads it when it builds.
+        http.setSharedObject(
+            OAuth2TokenGenerator::class.java,
+            DelegatingOAuth2TokenGenerator(jwtGenerator, OAuth2AccessTokenGenerator(), RefreshTokenGenerator()),
+        )
         http
             .securityMatcher(authServerConfigurer.endpointsMatcher)
             .with(authServerConfigurer) {}

@@ -56,11 +56,11 @@ func run(server string, rate int, sectorArg, prefixArg string, anytime bool) err
 		}
 	}
 
-	conn, datagram, err := openICMP()
+	socks, datagram, err := openICMP()
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer paint.CloseSockets(socks)
 
 	window := paint.EventWindow()
 	if anytime {
@@ -84,7 +84,7 @@ func run(server string, rate int, sectorArg, prefixArg string, anytime bool) err
 		}
 		return cur
 	}
-	sender := paint.NewSender(conn, nil, window, settings)
+	sender := paint.NewSender(paint.Conns(socks), nil, window, settings)
 	if datagram {
 		sender.UseDatagramAddresses()
 	}
@@ -110,11 +110,11 @@ func (s sectorSink) SetPixels(px []canvas.Pixel) { s.sender.SetPixels(sectorPixe
 // openICMP opens an unprivileged ICMP datagram socket where the OS allows it, and falls back to
 // a raw socket otherwise. The bool reports whether the datagram socket won, so the sender knows
 // to address it with UDP destinations.
-func openICMP() (socket, bool, error) {
-	if c, err := listen("udp6"); err == nil {
+func openICMP() ([]socket, bool, error) {
+	if c, err := listenAll("udp6"); err == nil {
 		return c, true, nil
 	}
-	c, err := listen("ip6:ipv6-icmp")
+	c, err := listenAll("ip6:ipv6-icmp")
 	if err != nil {
 		return nil, false, fmt.Errorf("could not open an ICMPv6 socket (need IPv6; on Windows run as administrator, "+
 			"on Linux either run with sudo or set once: sudo sysctl -w net.ipv6.ping_group_range=\"0 2147483647\"): %w", err)
@@ -125,6 +125,11 @@ func openICMP() (socket, bool, error) {
 type socket interface {
 	paint.Conn
 	Close() error
+}
+
+// listenAll opens one socket per send worker: workers sharing a socket queue behind each other.
+func listenAll(network string) ([]socket, error) {
+	return paint.OpenSockets(func() (socket, error) { return listen(network) })
 }
 
 // listen opens a FreshSocket on macOS, where a long-lived socket that reaches many destinations

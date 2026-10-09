@@ -45,6 +45,10 @@ type Authenticator struct {
 	login   LoginFunc
 	now     func() time.Time
 	mu      sync.Mutex
+	// cancelLogin abandons the browser login still waiting on its redirect, and attempt numbers
+	// that login so a superseded one does not clear its successor's cancel.
+	cancelLogin context.CancelFunc
+	attempt     uint64
 }
 
 // New wires an authenticator over a token store, a refresher and the interactive login.
@@ -92,18 +96,34 @@ func (a *Authenticator) current(ctx context.Context) (string, error) {
 
 // Token returns a valid access token, opening the browser login when no token or refresh will
 // serve. It backs the explicit sign-in action; the report loop uses Current so it never logs in on
-// its own. Calls are serialized so a burst triggers at most one login.
+// its own. Any failure to serve a stored token opens the login, not only a refused refresh: the
+// token endpoint answers this client's refresh with a redirect to the site's login page, and a
+// member who clicks Sign in must end up signed in whatever the refresh did. The lock is not held across the browser flow: a member who closes that tab leaves the
+// login waiting for good, so a later Token abandons it and opens a fresh one instead of queueing
+// behind it.
 func (a *Authenticator) Token(ctx context.Context) (string, error) {
 	a.mu.Lock()
-	defer a.mu.Unlock()
-	tok, err := a.current(ctx)
-	if err == nil {
+	if tok, err := a.current(ctx); err == nil {
+		a.mu.Unlock()
 		return tok, nil
 	}
-	if !errors.Is(err, ErrSignInRequired) {
-		return "", err
+	if a.cancelLogin != nil {
+		a.cancelLogin()
 	}
-	logged, lerr := a.login(ctx)
+	loginCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	a.attempt++
+	attempt := a.attempt
+	a.cancelLogin = cancel
+	a.mu.Unlock()
+
+	logged, lerr := a.login(loginCtx)
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.attempt == attempt {
+		a.cancelLogin = nil
+	}
 	if lerr != nil {
 		return "", lerr
 	}

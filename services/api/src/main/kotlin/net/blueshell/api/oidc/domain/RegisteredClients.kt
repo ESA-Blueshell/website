@@ -79,8 +79,8 @@ class RegisteredClients {
     // registered port is a placeholder the request overrides (RFC 8252).
     //
     // It holds a rotating refresh token (reuseRefreshTokens is off) so the desktop app comes back
-    // without a fresh login until the member revokes it on the security page. The authorization
-    // server mints refresh tokens for a public client on this grant since Spring 7.
+    // without a fresh login until the member revokes it on the security page. The stock authorization
+    // server neither mints nor accepts a public client's refresh token; PublicClientRefresh adds both.
     //
     // Refresh tokens live in memory, so every api restart forgets them. The access token therefore
     // lives for days: the report chain checks it statelessly, so it outlasts a restart. Revoking the

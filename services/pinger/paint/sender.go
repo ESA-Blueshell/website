@@ -23,6 +23,11 @@ type Conn interface {
 	WriteTo(b []byte, dst net.Addr) (int, error)
 }
 
+// Workers is how many goroutines send at once, and so how many sockets a caller opens: one socket
+// carries one send at a time (Go's write lock and the kernel's socket lock both serialise it), so
+// workers sharing a socket queue behind each other instead of adding rate.
+func Workers() int { return max(2, runtime.NumCPU()) }
+
 // MaxRatePPS caps the rate however it is set: the event bans prefixes that ping excessively hard.
 const MaxRatePPS = 200_000
 
@@ -80,7 +85,7 @@ const (
 // Sender repaints the logo pass after pass, each pass in a fresh shuffled order so the logo
 // fills in evenly instead of as a scanline others can race.
 type Sender struct {
-	conn     Conn
+	conns    []Conn
 	target   atomic.Pointer[target]
 	window   Window
 	settings func() Settings
@@ -126,13 +131,15 @@ func echoRequest() []byte {
 // packet rather than a hand-copied constant.
 func EchoRequestSize() int { return len(echoRequest()) }
 
-func NewSender(conn Conn, pixels []canvas.Pixel, window Window, settings func() Settings) *Sender {
+// NewSender sends through conns, worker i on conns[i % len(conns)]; pass Workers() sockets so no
+// two workers share one.
+func NewSender(conns []Conn, pixels []canvas.Pixel, window Window, settings func() Settings) *Sender {
 	s := &Sender{
-		conn:     conn,
+		conns:    conns,
 		window:   window,
 		settings: settings,
 		now:      time.Now,
-		workers:  max(2, runtime.NumCPU()),
+		workers:  Workers(),
 		echo:     echoRequest(),
 		limiter:  rate.NewLimiter(1, batch),
 	}
@@ -250,9 +257,15 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 	s.passDone.Store(0)
 
 	var wg sync.WaitGroup
-	for range s.workers {
+	for w := range s.workers {
+		conn := s.conns[w%len(s.conns)]
 		wg.Go(func() {
 			var backoff Backoff
+			bc := batcher(conn)
+			msgs := make([]ipv6.Message, batch)
+			for i := range msgs {
+				msgs[i].Buffers = [][]byte{s.echo}
+			}
 			for {
 				from := int(next.Add(batch)) - batch
 				if from >= len(order) || ctx.Err() != nil || aborted.Load() {
@@ -272,21 +285,21 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 				if s.limiter.WaitN(ctx, to-from) != nil {
 					return
 				}
-				failed := false
-				for _, i := range order[from:to] {
-					if _, err := s.conn.WriteTo(s.echo, dests[i]); err != nil {
-						s.recordError(err)
-						failed = true
-						continue
+				var sent, trailing int
+				if bc != nil {
+					for k, i := range order[from:to] {
+						msgs[k].Addr = dests[i]
 					}
-					backoff.Reset()
-					s.consec.Store(0)
-					s.sent.Add(1)
-					s.passDone.Add(1)
+					sent, trailing = s.writeBatch(bc, msgs[:to-from])
+				} else {
+					sent, trailing = s.writeEach(conn, dests, order[from:to])
 				}
+				// The shared counters move once per batch: per packet, every worker contends on
+				// the same cache lines at millions of sends a second.
+				s.settle(&backoff, sent, trailing)
 				// One backoff per batch that lost a send, not one per lost packet: a broken path
 				// must not crawl at a packet a second. The next pass retries the pixels it missed.
-				if failed {
+				if sent < to-from {
 					select {
 					case <-ctx.Done():
 						return
@@ -300,9 +313,56 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 	return !aborted.Load() && ctx.Err() == nil
 }
 
+// writeEach sends one packet per syscall. It reports how many got out, and how many failed after
+// the last one that did.
+func (s *Sender) writeEach(conn Conn, dests []net.Addr, idx []int) (sent, trailing int) {
+	for _, i := range idx {
+		if _, err := conn.WriteTo(s.echo, dests[i]); err != nil {
+			s.recordError(err)
+			trailing++
+			continue
+		}
+		sent++
+		trailing = 0
+	}
+	return sent, trailing
+}
+
+// writeBatch sends msgs in as few syscalls as the socket allows. A batch write stops at the first
+// message that fails, so that one is counted and skipped and the rest go again.
+func (s *Sender) writeBatch(bc batchConn, msgs []ipv6.Message) (sent, trailing int) {
+	for len(msgs) > 0 {
+		n, err := bc.WriteBatch(msgs, 0)
+		if n > 0 {
+			sent += n
+			trailing = 0
+			msgs = msgs[n:]
+		}
+		if err != nil {
+			s.recordError(err)
+			trailing++
+			msgs = msgs[min(1, len(msgs)):]
+		} else if n == 0 {
+			break
+		}
+	}
+	return sent, trailing
+}
+
+// settle books a batch: sent made it out, and trailing failed after the last one that did.
+func (s *Sender) settle(backoff *Backoff, sent, trailing int) {
+	if sent > 0 {
+		backoff.Reset()
+		s.consec.Store(int64(trailing))
+		s.sent.Add(uint64(sent))
+		s.passDone.Add(int64(sent))
+	} else {
+		s.consec.Add(int64(trailing))
+	}
+}
+
 func (s *Sender) recordError(err error) {
 	s.errors.Add(1)
-	s.consec.Add(1)
 	s.errMu.Lock()
 	s.lastErr, s.lastErrAt = err.Error(), s.now()
 	s.errMu.Unlock()

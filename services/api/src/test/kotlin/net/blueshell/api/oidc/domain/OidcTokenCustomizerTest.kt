@@ -16,18 +16,21 @@ import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
 import org.springframework.security.oauth2.jwt.JwsHeader
 import org.springframework.security.oauth2.jwt.JwtClaimsSet
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext
 
 class OidcTokenCustomizerTest {
     private val loader = mock<OidcUserLoader>()
     private val signIns = mock<SignIns>()
     private val customizer = OidcTokenCustomizer(loader, signIns).tokenCustomizer()
-    private val client = RegisteredClients().registeredClientRepository("secret").findByClientId("headlamp")!!
+    private val clients = RegisteredClients().registeredClientRepository("secret")
+    private val client = clients.findByClientId("headlamp")!!
 
     private fun context(
         tokenType: OAuth2TokenType,
         grant: AuthorizationGrantType,
         details: SignInDetails?,
+        client: RegisteredClient = this.client,
     ): Pair<JwtEncodingContext, JwtClaimsSet.Builder> {
         val claims = JwtClaimsSet.builder()
         val principal = UsernamePasswordAuthenticationToken("alice", null).also { it.details = details }
@@ -43,6 +46,11 @@ class OidcTokenCustomizerTest {
         return context to claims
     }
 
+    private fun refresh(
+        details: SignInDetails?,
+        client: RegisteredClient = this.client,
+    ) = context(OAuth2TokenType.ACCESS_TOKEN, AuthorizationGrantType.REFRESH_TOKEN, details, client).first
+
     private fun admin() =
         whenever(loader.load("alice")).thenReturn(OidcUserData(7, "alice", "a@example.com", "Alice", "Doe", setOf(Role.ADMIN)))
 
@@ -53,13 +61,13 @@ class OidcTokenCustomizerTest {
             context(
                 OAuth2TokenType.ACCESS_TOKEN,
                 AuthorizationGrantType.AUTHORIZATION_CODE,
-                SignInDetails("s", setOf("pwd", "otp")),
+                SignInDetails("s", setOf("pwd", "otp"), 7, 1),
             )
         val (id, idClaims) =
             context(
                 OAuth2TokenType("id_token"),
                 AuthorizationGrantType.AUTHORIZATION_CODE,
-                SignInDetails("s", setOf("pwd", "otp")),
+                SignInDetails("s", setOf("pwd", "otp"), 7, 1),
             )
 
         customizer.customize(access)
@@ -84,16 +92,20 @@ class OidcTokenCustomizerTest {
         admin()
         whenever(signIns.isLive("live")).thenReturn(true)
 
-        customizer.customize(
-            context(OAuth2TokenType.ACCESS_TOKEN, AuthorizationGrantType.REFRESH_TOKEN, SignInDetails("live", setOf("pwd"))).first,
-        )
-        assertThrows<OAuth2AuthenticationException> {
-            customizer.customize(
-                context(OAuth2TokenType.ACCESS_TOKEN, AuthorizationGrantType.REFRESH_TOKEN, SignInDetails("gone", setOf("pwd"))).first,
-            )
-        }
-        assertThrows<OAuth2AuthenticationException> {
-            customizer.customize(context(OAuth2TokenType.ACCESS_TOKEN, AuthorizationGrantType.REFRESH_TOKEN, null).first)
-        }
+        customizer.customize(refresh(SignInDetails("live", setOf("pwd"), 7, 1)))
+        assertThrows<OAuth2AuthenticationException> { customizer.customize(refresh(SignInDetails("gone", setOf("pwd"), 7, 1))) }
+        assertThrows<OAuth2AuthenticationException> { customizer.customize(refresh(null)) }
+    }
+
+    @Test
+    fun `the pinger app renews after its website sign-in ends, until the security stamp moves`() {
+        admin()
+        val pingerApp = clients.findByClientId("pinger-app")!!
+        whenever(signIns.stampHolds(7, 1)).thenReturn(true)
+        whenever(signIns.stampHolds(7, 0)).thenReturn(false)
+
+        customizer.customize(refresh(SignInDetails("gone", setOf("pwd"), 7, 1), pingerApp))
+        assertThrows<OAuth2AuthenticationException> { customizer.customize(refresh(SignInDetails("gone", setOf("pwd"), 7, 0), pingerApp)) }
+        assertThrows<OAuth2AuthenticationException> { customizer.customize(refresh(null, pingerApp)) }
     }
 }

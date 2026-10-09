@@ -16,7 +16,7 @@ class AuthorizationServerChainTest {
         val http = StandInHttpSecurity.create()
         val repository = mock<SecurityContextRepository>()
 
-        AuthorizationServerConfig().authorizationServerFilterChain(http, mock(), mock(), mock(), repository, mock())
+        AuthorizationServerConfig().authorizationServerFilterChain(http, mock(), mock(), mock(), repository, mock(), mock(), mock())
 
         verify(http).addFilterAfter(any<DownstreamClientAuthorizationFilter>(), eq(JwtAuthFilter::class.java))
     }

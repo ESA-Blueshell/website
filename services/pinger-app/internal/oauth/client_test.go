@@ -83,6 +83,39 @@ func TestRefreshMapsInvalidGrant(t *testing.T) {
 	}
 }
 
+func TestRefreshTreatsALoginRedirectAsARefusal(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/login" {
+			w.Header().Set("Content-Type", "text/html")
+			w.Write([]byte("<html>sign in</html>"))
+			return
+		}
+		http.Redirect(w, r, "/login?redirect=%2F", http.StatusFound)
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "pinger-app")
+	_, err := c.Refresh(context.Background(), "stale")
+	if !errors.Is(err, ErrInvalidGrant) {
+		t.Fatalf("err = %v, want ErrInvalidGrant", err)
+	}
+}
+
+func TestRefreshTreatsAnUnknownClientAsARefusal(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"error":"invalid_client"}`))
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "pinger-app")
+	_, err := c.Refresh(context.Background(), "stale")
+	if !errors.Is(err, ErrInvalidGrant) {
+		t.Fatalf("err = %v, want ErrInvalidGrant", err)
+	}
+}
+
 func TestRefreshSendsRefreshGrant(t *testing.T) {
 	var gotForm url.Values
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

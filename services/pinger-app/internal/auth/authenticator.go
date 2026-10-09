@@ -96,15 +96,16 @@ func (a *Authenticator) current(ctx context.Context) (string, error) {
 
 // Token returns a valid access token, opening the browser login when no token or refresh will
 // serve. It backs the explicit sign-in action; the report loop uses Current so it never logs in on
-// its own. The lock is not held across the browser flow: a member who closes that tab leaves the
+// its own. Any failure to serve a stored token opens the login, not only a refused refresh: the
+// token endpoint answers this client's refresh with a redirect to the site's login page, and a
+// member who clicks Sign in must end up signed in whatever the refresh did. The lock is not held across the browser flow: a member who closes that tab leaves the
 // login waiting for good, so a later Token abandons it and opens a fresh one instead of queueing
 // behind it.
 func (a *Authenticator) Token(ctx context.Context) (string, error) {
 	a.mu.Lock()
-	tok, err := a.current(ctx)
-	if err == nil || !errors.Is(err, ErrSignInRequired) {
+	if tok, err := a.current(ctx); err == nil {
 		a.mu.Unlock()
-		return tok, err
+		return tok, nil
 	}
 	if a.cancelLogin != nil {
 		a.cancelLogin()

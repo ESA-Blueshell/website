@@ -121,22 +121,27 @@ func TestTokenLogsInWhenRefreshRevoked(t *testing.T) {
 	}
 }
 
-func TestTokenDoesNotLoginOnTransientRefreshError(t *testing.T) {
+func TestTokenLogsInWhenRefreshFailsForAnyReason(t *testing.T) {
 	store := &fakeStore{set: tokenstore.Set{
 		Access:       "stale",
 		Refresh:      "rt",
 		AccessExpiry: fixedNow.Add(-time.Minute),
 	}}
-	boom := errors.New("network down")
-	ref := &fakeRefresher{err: boom}
+	ref := &fakeRefresher{err: errors.New("oauth token: response had no access_token")}
 	a := New(store, ref, func(context.Context) (oauth.Token, error) {
-		t.Fatal("a transient refresh error must not open a browser")
-		return oauth.Token{}, nil
+		return oauth.Token{Access: "relogged", Refresh: "new", Expiry: fixedNow.Add(time.Hour)}, nil
 	})
 	newAt(a)
 
-	if _, err := a.Token(context.Background()); !errors.Is(err, boom) {
-		t.Fatalf("err = %v, want the transient error surfaced", err)
+	got, err := a.Token(context.Background())
+	if err != nil {
+		t.Fatalf("Token: %v", err)
+	}
+	if got != "relogged" || store.set.Access != "relogged" || store.set.Refresh != "new" {
+		t.Fatalf("token = %q, stored %+v, want the login's tokens", got, store.set)
+	}
+	if cur, err := a.Current(context.Background()); err != nil || cur != "relogged" {
+		t.Fatalf("Current = %q, %v, want the login's access", cur, err)
 	}
 }
 

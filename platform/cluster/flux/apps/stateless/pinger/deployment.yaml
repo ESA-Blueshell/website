@@ -37,8 +37,10 @@ spec:
               value: ":8090"
             - name: PINGER_VALKEY
               value: valkey.data-system.svc.cluster.local:6379
+            # The public https address: a plain-http call to the service hits the api's https
+            # redirect and answers 500, so the pinger never read its paint job.
             - name: PINGER_API_URL
-              value: http://api.default.svc.cluster.local:8080
+              value: https://esa-blueshell.nl/api
             # The SiteCie service token the painter presents when it reports its contribution.
             # Mirrored from Vault by VSO (platform/cluster/flux/apps/vso-secrets/pinger-secrets.yaml).
             # optional: the pod boots without it and the reporter idles until the token is provisioned.

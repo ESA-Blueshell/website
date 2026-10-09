@@ -117,8 +117,9 @@ test.describe("the esports island", () => {
 
     // Outside, a bare paragraph keeps the margin the browser gives it. This is
     // the assertion that Preflight is not imported: Tailwind's reset would have
-    // zeroed this on every page in the app at once.
-    await page.goto("/contact")
+    // zeroed this on every page in the app at once. The page is one that stands
+    // on no island at all.
+    await page.goto("/unauthorized")
     const outsideParagraph = await page.locator("p").first()
       .evaluate(el => getComputedStyle(el).marginBlockStart)
     expect(outsideParagraph).not.toBe("0px")

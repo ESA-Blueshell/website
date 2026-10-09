@@ -80,7 +80,8 @@ spec:
               # ffmpeg decoding the livestream holds about 100Mi of its own.
               memory: 192Mi
             limits:
-              cpu: "1"
+              # ffmpeg decodes each new two-second segment, about a third of a core.
+              cpu: "2"
               memory: 512Mi
 ---
 apiVersion: v1

@@ -96,8 +96,9 @@ const (
 	// retarget caps a targeted pass at this many seconds of sending, so the next pass works from a
 	// fresher frame.
 	retarget = 10
-	// holdoff is how long a sent pixel is left alone: the livestream runs this far behind the canvas.
-	holdoff = 15 * time.Second
+	// holdoff is how long a sent pixel is left alone: the newest livestream frame trails the canvas
+	// by one two-second segment plus encoding.
+	holdoff = 5 * time.Second
 )
 
 // Sender repaints the logo pass after pass, each pass in a fresh shuffled order so the logo

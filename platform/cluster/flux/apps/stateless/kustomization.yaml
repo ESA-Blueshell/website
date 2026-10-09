@@ -17,11 +17,11 @@ resources:
 # reverts it. See "Rolling back under automation" in the runbook.
 images:
   - name: ghcr.io/esa-blueshell/api
-    newTag: v1.18.3 # {"$imagepolicy": "flux-system:api:tag"}
-    digest: sha256:cc42a8ded9c227d7ff58ab5bd2c42653d9cbe8f8f0ea3bb0055e267eb53b4a95 # {"$imagepolicy": "flux-system:api:digest"}
+    newTag: v1.18.4 # {"$imagepolicy": "flux-system:api:tag"}
+    digest: sha256:6d9e39fe85d5d7470b69e40ed47dbfe3abaca1bf8fc3aa0469ac6a887d792cd3 # {"$imagepolicy": "flux-system:api:digest"}
   - name: ghcr.io/esa-blueshell/frontend
-    newTag: v1.18.3 # {"$imagepolicy": "flux-system:frontend:tag"}
-    digest: sha256:932e78f36c673c867776d72ea937ee28cf83074d94f61c57148e6fa3b2b6e0f1 # {"$imagepolicy": "flux-system:frontend:digest"}
+    newTag: v1.18.4 # {"$imagepolicy": "flux-system:frontend:tag"}
+    digest: sha256:a6d6deb11fb12fb10aab5b97d3607aad6f616d80d048ff1c040a303c6203fe8f # {"$imagepolicy": "flux-system:frontend:digest"}
   # Released with the rest, but nothing else depends on it. v0.0.0 does not exist: the pod
   # sits in ImagePullBackOff until a release publishes a pinger image and the next scan
   # rewrites this line.

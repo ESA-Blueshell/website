@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -74,30 +75,36 @@ type Controller struct {
 	judged   time.Time
 	judgedAt time.Duration
 	silent   int
-	disabled bool
+	// disabled is read without mu: Limit runs on every send batch, and the cap is off by default.
+	disabled atomic.Bool
+	// enabled wakes a Run parked while the cap is off.
+	enabled chan struct{}
 }
 
 // New starts the ceiling low, so the first seconds of a run ramp up rather than flood.
 func New() *Controller {
-	return &Controller{ceiling: startPPS}
+	return &Controller{ceiling: startPPS, enabled: make(chan struct{}, 1)}
 }
 
 // SetEnabled turns the cap on or off; off sends at the member's rate however the queue looks.
 func (c *Controller) SetEnabled(on bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.disabled = !on
+	c.disabled.Store(!on)
+	if on {
+		select {
+		case c.enabled <- struct{}{}:
+		default:
+		}
+	}
 }
 
 // Enabled reports whether the cap is on.
-func (c *Controller) Enabled() bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return !c.disabled
-}
+func (c *Controller) Enabled() bool { return !c.disabled.Load() }
 
 // Limit is the rate to send at for a chosen rate: the chosen rate, or the ceiling when it is lower.
 func (c *Controller) Limit(want int) int {
+	if c.disabled.Load() {
+		return want
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if !c.capping() || want <= 0 {
@@ -116,7 +123,7 @@ func (c *Controller) Held(want int) int {
 
 func (c *Controller) capping() bool {
 	switch {
-	case c.disabled:
+	case c.disabled.Load():
 		return false
 	case len(c.base) == 0:
 		return c.silent < giveUp
@@ -210,11 +217,20 @@ func (c *Controller) queue() time.Duration {
 	return recent - base
 }
 
-// Run probes every Interval until ctx ends, stepping the controller on each result.
+// Run probes every Interval until ctx ends, stepping the controller on each result. While the cap
+// is off it sends no probe and sleeps until SetEnabled turns it on.
 func (c *Controller) Run(ctx context.Context, probe func(context.Context) (time.Duration, error), load func() Load) {
 	tick := time.NewTicker(Interval)
 	defer tick.Stop()
 	for {
+		if c.disabled.Load() {
+			select {
+			case <-ctx.Done():
+				return
+			case <-c.enabled:
+				continue
+			}
+		}
 		rtt, err := probe(ctx)
 		if ctx.Err() != nil {
 			return

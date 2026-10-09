@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -22,15 +23,38 @@ func NewApp(r *runner.Runner) *App {
 	return &App{runner: r}
 }
 
+// statusInterval is how often the live counters are pushed to the window.
+const statusInterval = time.Second
+
 // startup is wired as Wails' OnStartup. It keeps the app context for the bound methods and launches
 // the paint-and-report loop, which Wails cancels when the window closes.
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	a.runner.OnChange = func() { runtime.EventsEmit(ctx, "status") }
+	a.runner.OnChange = func() { runtime.EventsEmit(ctx, "status", a.runner.Status()) }
 	go func() { _ = a.runner.Run(ctx) }()
+	go a.pushStatus(ctx)
 }
 
-// Status is bound to the frontend, which polls it for the signed-in state and the live counters.
+// pushStatus sends the window the live counters every statusInterval, and nothing while it is
+// minimised: the frontend keeps no timer of its own, so a minimised window costs no render work. A
+// webview does not always mark its page hidden when its window is minimised, so the page cannot
+// make this call itself.
+func (a *App) pushStatus(ctx context.Context) {
+	tick := time.NewTicker(statusInterval)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+		}
+		if !runtime.WindowIsMinimised(ctx) {
+			runtime.EventsEmit(ctx, "status", a.runner.Status())
+		}
+	}
+}
+
+// Status is bound to the frontend, which reads it on load and after a sign-in or sign-out click.
 func (a *App) Status() runner.Status {
 	return a.runner.Status()
 }

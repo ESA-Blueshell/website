@@ -10,11 +10,13 @@ const (
 	// scaleHold is how long a worker count that did not add throughput stays the ceiling before
 	// the scaler probes past it again.
 	scaleHold = 30 * time.Second
+	scaleGain = 1.3
 )
 
 // scaler picks how many workers send. More workers than the rate needs do not send faster: they
 // queue on the same kernel locks and burn a core each while they wait, so it starts at one,
-// doubles while the workers are saturated and behind, and backs off a doubling that added nothing.
+// doubles while the workers are saturated and behind, and backs off a doubling that added less
+// than scaleGain: on macOS a second worker adds a fifth of the rate for twice the CPU.
 type scaler struct {
 	max          int
 	active       int
@@ -34,7 +36,7 @@ func (c *scaler) step(now time.Time, pps, busyCores, ratePPS float64) int {
 		return c.active
 	}
 	if c.prevActive != 0 {
-		grew := pps >= c.prevPPS*1.1
+		grew := pps >= c.prevPPS*scaleGain
 		if !grew {
 			c.active, c.ceiling, c.ceilingUntil = c.prevActive, c.prevActive, now.Add(scaleHold)
 		}

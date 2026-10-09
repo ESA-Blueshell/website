@@ -20,7 +20,7 @@ class PingerPlatformTest {
     @Test
     fun `each platform carries a distinct installer asset name`() {
         assertThat(PingerPlatform.MACOS.assetName).isEqualTo("Blueshell-Pinger.dmg")
-        assertThat(PingerPlatform.LINUX.assetName).isEqualTo("Blueshell-Pinger-x86_64.AppImage")
+        assertThat(PingerPlatform.LINUX.assetName).isEqualTo("Blueshell-Pinger-x86_64")
         assertThat(PingerPlatform.WINDOWS.assetName).isEqualTo("Blueshell-Pinger.exe")
     }
 }

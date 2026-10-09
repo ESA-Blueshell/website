@@ -8,7 +8,7 @@ import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
  */
 defineOptions({name: "PingerProgress"})
 
-const WINDOW_SECONDS = 40
+const WINDOW_SECONDS = 60
 
 const props = defineProps<{
   /** The cluster painter's cumulative pixels, as the board last pushed it. */

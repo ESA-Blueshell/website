@@ -36,6 +36,8 @@ const paintPollInterval = 5 * time.Second
 // Status is the snapshot the UI renders. It carries no token, only what is safe to show.
 type Status struct {
 	SignedIn bool `json:"signedIn"`
+	// SigningIn is true while a browser login waits on the member.
+	SigningIn bool `json:"signingIn"`
 	// Account is the subject the server resolved the token to, shown so the member sees who is signed in.
 	Account string `json:"account"`
 	State   string `json:"state"`
@@ -78,6 +80,11 @@ type Runner struct {
 	headroom *headroom.Controller
 	// wake asks the report loop to report now rather than on its next tick, after a sign-in.
 	wake chan struct{}
+	// signingIn counts browser logins still waiting on the member.
+	signingIn atomic.Int32
+	// OnChange is called whenever the signed-in state or account changes, so the UI redraws at once
+	// instead of on its next poll. Nil is fine.
+	OnChange func()
 }
 
 // New builds a runner for a base URL, loading the token store and local preferences and wiring the
@@ -129,7 +136,7 @@ func New(base string) (*Runner, error) {
 
 // Status is a safe snapshot for the UI.
 func (r *Runner) Status() Status {
-	st := Status{SignedIn: r.signedIn.Load(), Account: r.loadAccount(), Message: r.loadMessage(), Rate: int(r.rate.Load())}
+	st := Status{SignedIn: r.signedIn.Load(), SigningIn: r.signingIn.Load() > 0, Account: r.loadAccount(), Message: r.loadMessage(), Rate: int(r.rate.Load())}
 	st.FullUplink = !r.headroom.Enabled()
 	if !r.window.Start.IsZero() {
 		st.EventStart = r.window.Start.UnixMilli()
@@ -153,14 +160,31 @@ func (r *Runner) Status() Status {
 // a goroutine; it is the only thing that opens the browser. A second SignIn abandons a login still
 // waiting on its browser tab.
 func (r *Runner) SignIn(ctx context.Context) {
-	if _, err := r.auth.Token(ctx); err != nil {
+	r.signingIn.Add(1)
+	r.changed()
+	_, err := r.auth.Token(ctx)
+	r.signingIn.Add(-1)
+	if err != nil {
 		slog.Warn("sign in", "err", err)
+		r.changed()
 		return
 	}
 	r.signedIn.Store(true)
+	r.changed()
 	select {
 	case r.wake <- struct{}{}:
 	default:
+	}
+	// The account is read now rather than after the first report, which can be a tick away.
+	if who, werr := r.poster.Whoami(ctx); werr == nil && who != "" {
+		r.setAccount(who)
+		r.changed()
+	}
+}
+
+func (r *Runner) changed() {
+	if r.OnChange != nil {
+		r.OnChange()
 	}
 }
 
@@ -169,6 +193,7 @@ func (r *Runner) SignIn(ctx context.Context) {
 func (r *Runner) SignOut() {
 	r.signedIn.Store(false)
 	r.setAccount("")
+	r.changed()
 	if err := r.auth.SignOut(); err != nil {
 		slog.Warn("sign out", "err", err)
 	}
@@ -327,6 +352,7 @@ func (r *Runner) afterReport(ctx context.Context, err error) {
 	case errors.Is(err, auth.ErrSignInRequired):
 		r.signedIn.Store(false)
 		r.setAccount("")
+		r.changed()
 	case errors.Is(err, report.ErrUnauthorized):
 		if rerr := r.auth.Refused(ctx); rerr != nil {
 			slog.Warn("renew refused token", "err", rerr)

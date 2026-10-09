@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 
+	"github.com/wailsapp/wails/v2/pkg/runtime"
+
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/bandwidth"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/prefs"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/runner"
@@ -24,6 +26,7 @@ func NewApp(r *runner.Runner) *App {
 // the paint-and-report loop, which Wails cancels when the window closes.
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.runner.OnChange = func() { runtime.EventsEmit(ctx, "status") }
 	go func() { _ = a.runner.Run(ctx) }()
 }
 

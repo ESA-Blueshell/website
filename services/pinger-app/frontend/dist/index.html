@@ -403,8 +403,8 @@
       signinEl.addEventListener("click", () => {
         const a = app();
         if (!a) return;
-        if (signedIn) a.SignOut();
-        else a.SignIn();
+        if (signedIn) a.SignOut().then(refresh);
+        else a.SignIn().then(refresh);
       });
       el("leaderboard").addEventListener("click", () => app()?.OpenLeaderboard());
 
@@ -460,7 +460,7 @@
           const s = await a.Status();
           signedIn = !!s.signedIn;
           accountEl.textContent = signedIn ? s.account || "Signed in" : "Not signed in";
-          signinEl.textContent = signedIn ? "Sign out" : "Sign in";
+          signinEl.textContent = signedIn ? "Sign out" : s.signingIn ? "Signing in…" : "Sign in";
           ppsEl.textContent = fmt(s.pps);
           sentEl.textContent = fmt(s.sent);
           errorsEl.textContent = fmt(s.errors);
@@ -476,6 +476,8 @@
       }
 
       initControls();
+      // The app emits "status" the moment sign-in state changes; the poll is the fallback.
+      window.runtime?.EventsOn("status", refresh);
       setInterval(refresh, 1000);
       refresh();
     </script>

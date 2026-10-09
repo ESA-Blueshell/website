@@ -29,7 +29,9 @@ func (b *BrowserLogin) Run(ctx context.Context) (Token, error) {
 	if err != nil {
 		return Token{}, err
 	}
-	defer lb.Close()
+	// Shutdown waits on the browser's idle keep-alive and preconnect sockets for up to its timeout,
+	// so it runs aside rather than holding the tokens back.
+	defer func() { go lb.Close() }() //nolint:errcheck // nothing to do with a failed shutdown.
 
 	redirect := lb.RedirectURI()
 	authURL := b.Client.AuthorizeURL(redirect, pkce.Challenge, state)

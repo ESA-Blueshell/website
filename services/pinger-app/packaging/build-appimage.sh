@@ -112,22 +112,9 @@ inject = r'''
 # everywhere; the pinger UI is static and does not need GPU compositing.
 export WEBKIT_DISABLE_COMPOSITING_MODE=1
 export WEBKIT_DISABLE_DMABUF_RENDERER=1
-# libwebkit2gtk's helper/injected-bundle paths were patched to this fixed dir; fill it with symlinks
-# to the bundled helpers. webkit EXECUTES from here, and the path is world-writable (/tmp), so fail
-# closed: refuse a pre-existing dir we do not own (it could point webkit at a planted binary), and
-# create ours atomically with mkdir (no -p), which errors rather than reusing a racing attacker's dir.
-# The dir name is fixed because it is compiled into libwebkit (patch-webkit.py); it cannot carry the
-# uid. So guard by ownership instead.
-_wk="/tmp/bspinger-wk2gtk40"
-if [ -e "$_wk" ]; then
-  if [ -O "$_wk" ] && [ ! -L "$_wk" ]; then rm -rf "$_wk"; else
-    echo "pinger: $_wk exists and is not ours; refusing to start" >&2; exit 1
-  fi
-fi
-( umask 077 && mkdir "$_wk" && mkdir "$_wk/injected-bundle" ) || { echo "pinger: cannot create $_wk" >&2; exit 1; }
-ln -sf "$this_dir"/usr/lib/webkit2gtk-4.0/WebKit* "$_wk"/ 2>/dev/null || true
-ln -sf "$this_dir"/usr/lib/webkit2gtk-4.0/MiniBrowser "$_wk"/ 2>/dev/null || true
-ln -sf "$this_dir"/usr/lib/webkit2gtk-4.0/injected-bundle/*.so "$_wk"/injected-bundle/ 2>/dev/null || true
+# libwebkit2gtk's helper/injected-bundle paths were patched to be RELATIVE, so run from the mount root
+# and webkit finds its helpers in the read-only bundle -- no writable temp dir to hijack or to block.
+cd "$this_dir" || exit 1
 _fc="$(mktemp -d "${TMPDIR:-/tmp}/bspinger-fc.XXXXXX")"
 cat > "$_fc/fonts.conf" <<FCEOF
 <?xml version="1.0"?>

@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-# Rewrite libwebkit2gtk's compiled-in helper and injected-bundle paths to a fixed, writable location
-# the AppRun fills with symlinks. WebKitGTK ignores WEBKIT_EXEC_PATH in distro builds, so the only
-# cross-distro fix is to change the path baked into the library. Done in place, same length, NUL-padded.
+# Rewrite libwebkit2gtk's compiled-in helper and injected-bundle paths from absolute to RELATIVE, so
+# webkit spawns its helpers and loads the injected bundle from the (read-only) AppImage mount rather
+# than a fixed system path. WebKitGTK ignores WEBKIT_EXEC_PATH in distro builds, so patching the
+# library is the only cross-distro fix; a relative path (resolved against the cwd the AppRun sets to
+# the mount root) avoids any writable temp dir, so there is no temp-file hijack or denial of service.
+# Done in place, same length, NUL-padded.
 import sys
 
 so_path, multiarch = sys.argv[1], sys.argv[2]
-FIXED_DIR = "/tmp/bspinger-wk2gtk40"
 
 # Longest first: the injected-bundle string contains the dir string as a prefix.
 replacements = [
-    (f"/usr/lib/{multiarch}/webkit2gtk-4.0/injected-bundle/", f"{FIXED_DIR}/injected-bundle/"),
-    (f"/usr/lib/{multiarch}/webkit2gtk-4.0",                  FIXED_DIR),
+    (f"/usr/lib/{multiarch}/webkit2gtk-4.0/injected-bundle/", "usr/lib/webkit2gtk-4.0/injected-bundle/"),
+    (f"/usr/lib/{multiarch}/webkit2gtk-4.0",                  "usr/lib/webkit2gtk-4.0"),
 ]
 
 data = open(so_path, "rb").read()

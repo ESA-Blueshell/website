@@ -261,6 +261,11 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 		conn := s.conns[w%len(s.conns)]
 		wg.Go(func() {
 			var backoff Backoff
+			bc := batcher(conn)
+			msgs := make([]ipv6.Message, batch)
+			for i := range msgs {
+				msgs[i].Buffers = [][]byte{s.echo}
+			}
 			for {
 				from := int(next.Add(batch)) - batch
 				if from >= len(order) || ctx.Err() != nil || aborted.Load() {
@@ -280,18 +285,17 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 				if s.limiter.WaitN(ctx, to-from) != nil {
 					return
 				}
+				var sent, trailing int
+				if bc != nil {
+					for k, i := range order[from:to] {
+						msgs[k].Addr = dests[i]
+					}
+					sent, trailing = s.writeBatch(bc, msgs[:to-from])
+				} else {
+					sent, trailing = s.writeEach(conn, dests, order[from:to])
+				}
 				// The shared counters move once per batch: per packet, every worker contends on
 				// the same cache lines at millions of sends a second.
-				sent, trailing := 0, 0
-				for _, i := range order[from:to] {
-					if _, err := conn.WriteTo(s.echo, dests[i]); err != nil {
-						s.recordError(err)
-						trailing++
-						continue
-					}
-					sent++
-					trailing = 0
-				}
 				s.settle(&backoff, sent, trailing)
 				// One backoff per batch that lost a send, not one per lost packet: a broken path
 				// must not crawl at a packet a second. The next pass retries the pixels it missed.
@@ -307,6 +311,42 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 	}
 	wg.Wait()
 	return !aborted.Load() && ctx.Err() == nil
+}
+
+// writeEach sends one packet per syscall. It reports how many got out, and how many failed after
+// the last one that did.
+func (s *Sender) writeEach(conn Conn, dests []net.Addr, idx []int) (sent, trailing int) {
+	for _, i := range idx {
+		if _, err := conn.WriteTo(s.echo, dests[i]); err != nil {
+			s.recordError(err)
+			trailing++
+			continue
+		}
+		sent++
+		trailing = 0
+	}
+	return sent, trailing
+}
+
+// writeBatch sends msgs in as few syscalls as the socket allows. A batch write stops at the first
+// message that fails, so that one is counted and skipped and the rest go again.
+func (s *Sender) writeBatch(bc batchConn, msgs []ipv6.Message) (sent, trailing int) {
+	for len(msgs) > 0 {
+		n, err := bc.WriteBatch(msgs, 0)
+		if n > 0 {
+			sent += n
+			trailing = 0
+			msgs = msgs[n:]
+		}
+		if err != nil {
+			s.recordError(err)
+			trailing++
+			msgs = msgs[min(1, len(msgs)):]
+		} else if n == 0 {
+			break
+		}
+	}
+	return sent, trailing
 }
 
 // settle books a batch: sent made it out, and trailing failed after the last one that did.

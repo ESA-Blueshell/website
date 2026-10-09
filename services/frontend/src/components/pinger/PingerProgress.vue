@@ -112,7 +112,10 @@ onBeforeUnmount(() => {
   <div class="progress">
     <div class="numbers">
       <div class="numbers__cell">
-        <p class="numbers__value">
+        <p
+          class="numbers__value"
+          data-testid="snt-progress-pps"
+        >
           {{ thousands(running ? pps : 0) }}
         </p>
         <p class="numbers__label">

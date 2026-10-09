@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref} from "vue"
 import Island from "@/components/island/Island.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
@@ -64,23 +64,12 @@ const siteSent = computed<number>(() =>
   (house.value?.totalSent ?? 0) + ranked.value.reduce((sum, row) => sum + row.totalSent, 0))
 
 /**
- * SiteCie's live rate, read off the board rather than a separate feed: the api does not hand out a
- * pps, so it is the growth of the total between two pushes, smoothed. That is enough to animate the
- * fill between pushes and to draw the rate chart.
+ * The live rate is the sum of what each online sender reports. Deriving it from the growth of the
+ * totals overshoots: a member reports every ten seconds, so one push can carry ten seconds of pings.
  */
-const sitePps = ref<number>(0)
-let lastSiteSent = 0
-let lastSiteAt = 0
-watch(siteSent, (value) => {
-  const at = Date.now()
-  if (lastSiteAt > 0 && value > lastSiteSent) {
-    const instant = (value - lastSiteSent) / Math.max(0.25, (at - lastSiteAt) / 1000)
-    // Smoothed, so a push that lands a touch late does not spike the chart.
-    sitePps.value = Math.round(sitePps.value === 0 ? instant : sitePps.value * 0.5 + instant * 0.5)
-  }
-  lastSiteSent = value
-  lastSiteAt = at
-})
+const sitePps = computed<number>(() =>
+  (house.value?.online ? house.value.pps : 0) +
+  ranked.value.reduce((sum, row) => sum + (row.online ? row.pps : 0), 0))
 
 /** Pixels in one pass, measured from the logo by the canvas plate and shared with the meter. */
 const passTotal = ref<number>(0)
@@ -203,7 +192,6 @@ onBeforeUnmount(() => {
               :sent="siteSent"
             />
           </div>
-
         </div>
       </section>
 

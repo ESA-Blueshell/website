@@ -26,4 +26,4 @@ images:
   # sits in ImagePullBackOff until a release publishes a pinger image and the next scan
   # rewrites this line.
   - name: ghcr.io/esa-blueshell/pinger
-    newTag: v1.18.4 # {"$imagepolicy": "flux-system:pinger:tag"}
+    newTag: v1.19.0 # {"$imagepolicy": "flux-system:pinger:tag"}

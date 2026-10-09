@@ -58,7 +58,9 @@ func cpuTime() time.Duration {
 
 // benchSend runs a sender until it has sent b.N packets and reports the CPU it burnt as a share of
 // one core.
-func benchSend(b *testing.B, conns []Conn, ratePPS int) {
+func benchSend(b *testing.B, conns []Conn, ratePPS int) { benchSendWith(b, conns, ratePPS, nil) }
+
+func benchSendWith(b *testing.B, conns []Conn, ratePPS int, offsets []Offset) {
 	p, err := canvas.ParsePrefix("2001:db8:b317:a000::/64")
 	if err != nil {
 		b.Fatal(err)
@@ -70,6 +72,7 @@ func benchSend(b *testing.B, conns []Conn, ratePPS int) {
 	settings := func() Settings { return Settings{Prefix: p, RatePPS: ratePPS, Enabled: true} }
 	b.ReportAllocs()
 	s := NewSender(conns, px, open, settings)
+	s.SetOffsets(offsets)
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	b.ResetTimer()
@@ -106,4 +109,9 @@ func BenchmarkSendDiscardAtRate(b *testing.B) {
 	}{{"100k", 100_000}, {"500k", 500_000}, {"1M", 1_000_000}, {"2M", 2_000_000}} {
 		b.Run(r.name, func(b *testing.B) { benchSend(b, discardConns(), r.pps) })
 	}
+}
+
+// BenchmarkSendDiscardMoving is BenchmarkSendDiscard with every pixel shifted by a moving offset.
+func BenchmarkSendDiscardMoving(b *testing.B) {
+	benchSendWith(b, discardConns(), 1<<40, []Offset{{X: 3, Y: -2}})
 }

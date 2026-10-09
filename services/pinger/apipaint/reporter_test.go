@@ -76,3 +76,15 @@ func TestReporterReportsAnErrorOnABadStatus(t *testing.T) {
 		t.Fatal("a 401 was not reported as an error")
 	}
 }
+
+func TestReporterPostsToAnApiThatRequiresHTTPS(t *testing.T) {
+	srv := httptest.NewServer(requireHTTPS(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	r := NewReporter(srv.URL, "test-token", "replica-1", time.Hour, func() ReportStats { return ReportStats{} })
+	if err := r.post(context.Background()); err != nil {
+		t.Fatalf("post: %v", err)
+	}
+}

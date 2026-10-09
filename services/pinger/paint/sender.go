@@ -454,6 +454,8 @@ func writeBatch(bc batchConn, msgs []ipv6.Message, err error) (int, error) {
 	sent := 0
 	for len(msgs) > 0 {
 		n, e := bc.WriteBatch(msgs, 0)
+		// sendmmsg refusing its first message returns -1, which x/net hands on as the count.
+		n = max(n, 0)
 		sent += n
 		msgs = msgs[n:]
 		if e != nil {

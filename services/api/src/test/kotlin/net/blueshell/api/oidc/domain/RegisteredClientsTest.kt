@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
+import java.time.Duration
 
 /**
  * Pins the redirect URIs each downstream client may be sent back to. The
@@ -52,5 +53,28 @@ class RegisteredClientsTest {
 
         assertThat(pingerApp!!.authorizationGrantTypes)
             .contains(AuthorizationGrantType.AUTHORIZATION_CODE, AuthorizationGrantType.REFRESH_TOKEN)
+    }
+
+    @Test
+    fun `pinger-app access token outlasts an api restart that forgets its refresh token`() {
+        val pingerApp = clients.findByClientId("pinger-app")!!
+
+        assertThat(pingerApp.tokenSettings.accessTokenTimeToLive).isEqualTo(Duration.ofHours(72))
+    }
+
+    @Test
+    fun `headlamp and vault keep short access tokens`() {
+        listOf("headlamp", "vault").forEach {
+            assertThat(clients.findByClientId(it)!!.tokenSettings.accessTokenTimeToLive).isEqualTo(Duration.ofMinutes(15))
+        }
+    }
+
+    @Test
+    fun `each client keeps its id across api starts`() {
+        val again = RegisteredClients().registeredClientRepository("secret")
+
+        listOf("headlamp", "vault", "pinger-app").forEach {
+            assertThat(again.findByClientId(it)!!.id).isEqualTo(clients.findByClientId(it)!!.id)
+        }
     }
 }

@@ -12,9 +12,9 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings
 import java.time.Duration
-import java.util.UUID
 
 private const val ACCESS_TOKEN_MINUTES = 15L
+private const val PINGER_ACCESS_TOKEN_HOURS = 72L
 private const val REFRESH_TOKEN_DAYS = 7L
 
 @Configuration
@@ -25,7 +25,7 @@ class RegisteredClients {
     ): RegisteredClientRepository {
         val headlamp =
             RegisteredClient
-                .withId(UUID.randomUUID().toString())
+                .withId("headlamp")
                 .clientId("headlamp")
                 .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
@@ -45,7 +45,7 @@ class RegisteredClients {
 
         val vault =
             RegisteredClient
-                .withId(UUID.randomUUID().toString())
+                .withId("vault")
                 .clientId("vault")
                 .clientSecret("{noop}$vaultClientSecret")
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
@@ -81,9 +81,13 @@ class RegisteredClients {
     // It holds a rotating refresh token (reuseRefreshTokens is off) so the desktop app comes back
     // without a fresh login until the member revokes it on the security page. The authorization
     // server mints refresh tokens for a public client on this grant since Spring 7.
+    //
+    // Refresh tokens live in memory, so every api restart forgets them. The access token therefore
+    // lives for days: the report chain checks it statelessly, so it outlasts a restart. Revoking the
+    // app stops its refreshes but not an access token already issued, which runs until it expires.
     private fun pingerApp(): RegisteredClient =
         RegisteredClient
-            .withId(UUID.randomUUID().toString())
+            .withId("pinger-app")
             .clientId("pinger-app")
             .clientName("Pinger app")
             .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
@@ -98,13 +102,13 @@ class RegisteredClients {
                     .requireProofKey(true)
                     .requireAuthorizationConsent(false)
                     .build(),
-            ).tokenSettings(tokenSettings())
+            ).tokenSettings(tokenSettings(Duration.ofHours(PINGER_ACCESS_TOKEN_HOURS)))
             .build()
 
-    private fun tokenSettings() =
+    private fun tokenSettings(accessTokenTimeToLive: Duration = Duration.ofMinutes(ACCESS_TOKEN_MINUTES)) =
         TokenSettings
             .builder()
-            .accessTokenTimeToLive(Duration.ofMinutes(ACCESS_TOKEN_MINUTES))
+            .accessTokenTimeToLive(accessTokenTimeToLive)
             .refreshTokenTimeToLive(Duration.ofDays(REFRESH_TOKEN_DAYS))
             .reuseRefreshTokens(false)
             .build()

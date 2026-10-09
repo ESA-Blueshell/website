@@ -37,8 +37,13 @@ Type=Application
 Categories=Utility;
 EOF
 
+# Build tooling. The gtk plugin is shell code run here, so it is pinned to an immutable commit. The
+# AppImage runtimes (linuxdeploy, appimagetool) publish only a rolling "continuous" build upstream, so
+# they cannot be pinned to a version; they run on the trusted release runner, never on a contributor's
+# machine.
+GTK_PLUGIN_COMMIT=7a3fbc31a9e5075073ff8790f26effbac5f84453
 wget -q "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${LD_ARCH}.AppImage"
-wget -q "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh"
+wget -q "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/${GTK_PLUGIN_COMMIT}/linuxdeploy-plugin-gtk.sh"
 chmod +x "linuxdeploy-${LD_ARCH}.AppImage" linuxdeploy-plugin-gtk.sh
 
 # Populate AppDir with the binary's libs plus the GTK runtime (themes, pixbuf loaders, gio modules).
@@ -107,10 +112,19 @@ inject = r'''
 # everywhere; the pinger UI is static and does not need GPU compositing.
 export WEBKIT_DISABLE_COMPOSITING_MODE=1
 export WEBKIT_DISABLE_DMABUF_RENDERER=1
-# libwebkit2gtk's helper/injected-bundle paths were patched to a fixed dir; fill it with the bundled
-# helpers so webkit can spawn them on any distro.
+# libwebkit2gtk's helper/injected-bundle paths were patched to this fixed dir; fill it with symlinks
+# to the bundled helpers. webkit EXECUTES from here, and the path is world-writable (/tmp), so fail
+# closed: refuse a pre-existing dir we do not own (it could point webkit at a planted binary), and
+# create ours atomically with mkdir (no -p), which errors rather than reusing a racing attacker's dir.
+# The dir name is fixed because it is compiled into libwebkit (patch-webkit.py); it cannot carry the
+# uid. So guard by ownership instead.
 _wk="/tmp/bspinger-wk2gtk40"
-mkdir -p "$_wk/injected-bundle" 2>/dev/null || true
+if [ -e "$_wk" ]; then
+  if [ -O "$_wk" ] && [ ! -L "$_wk" ]; then rm -rf "$_wk"; else
+    echo "pinger: $_wk exists and is not ours; refusing to start" >&2; exit 1
+  fi
+fi
+( umask 077 && mkdir "$_wk" && mkdir "$_wk/injected-bundle" ) || { echo "pinger: cannot create $_wk" >&2; exit 1; }
 ln -sf "$this_dir"/usr/lib/webkit2gtk-4.0/WebKit* "$_wk"/ 2>/dev/null || true
 ln -sf "$this_dir"/usr/lib/webkit2gtk-4.0/MiniBrowser "$_wk"/ 2>/dev/null || true
 ln -sf "$this_dir"/usr/lib/webkit2gtk-4.0/injected-bundle/*.so "$_wk"/injected-bundle/ 2>/dev/null || true

@@ -81,4 +81,26 @@ class PingerLiveStoreTest {
         assertThat(all["member:1"]).isEqualTo(PingerLive(online = true, pps = 150, lastSeen = at.plusMillis(5)))
         assertThat(all.getValue("sitecie").online).isFalse()
     }
+
+    @Test
+    fun `devices lists every device row apart with its identity and device id`() {
+        val at = Instant.ofEpochMilli(1_000)
+        store.touch("member:1", "a", online = true, pps = 100, at = at)
+        store.touch("member:1", "b#2", online = false, pps = 0, at = at)
+        store.touch("sitecie", "r1", online = true, pps = 7, at = at)
+
+        assertThat(store.devices()).containsExactlyInAnyOrder(
+            PingerLiveDevice("member:1", "a", PingerLive(online = true, pps = 100, lastSeen = at)),
+            PingerLiveDevice("member:1", "b#2", PingerLive(online = false, pps = 0, lastSeen = at)),
+            PingerLiveDevice("sitecie", "r1", PingerLive(online = true, pps = 7, lastSeen = at)),
+        )
+    }
+
+    @Test
+    fun `devices skips a key outside the device shape`() {
+        UnitValkey.template.opsForHash<String, String>().putAll("blueshell-api:pinger-live:nohash", mapOf("online" to "true"))
+        UnitValkey.template.opsForHash<String, String>().putAll("blueshell-api:pinger-live:member:1#d", mapOf("online" to "true"))
+
+        assertThat(store.devices()).isEmpty()
+    }
 }

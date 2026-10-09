@@ -2217,6 +2217,24 @@ export type PingerReportRequest = {
 };
 
 /**
+ * The slice of the paint this device takes: it keeps pixel i (0-based, placements concatenated in descriptor order) iff frac((i + 1) * 0.6180339887498949) lies in [from, to)
+ */
+export type PingerShareResponse = {
+    /**
+     * How many devices share the paint, this one included
+     */
+    devices: number;
+    /**
+     * Inclusive start of the slice, in [0, 1)
+     */
+    from: number;
+    /**
+     * Exclusive end of the slice, in (0, 1]; the last device's is exactly 1
+     */
+    to: number;
+};
+
+/**
  * An admin moving or resizing a placement's box
  */
 export type PlacementBoxRequest = {
@@ -10310,6 +10328,92 @@ export type ReportResponses = {
 };
 
 export type ReportResponse = ReportResponses[keyof ReportResponses];
+
+export type ShareData = {
+    body?: never;
+    path?: never;
+    query: {
+        deviceId: string;
+    };
+    url: '/pinger/report/share';
+};
+
+export type ShareErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ShareError = ShareErrors[keyof ShareErrors];
+
+export type ShareResponses = {
+    /**
+     * OK
+     */
+    200: PingerShareResponse;
+};
+
+export type ShareResponse = ShareResponses[keyof ShareResponses];
+
+export type ShareStreamData = {
+    body?: never;
+    path?: never;
+    query: {
+        deviceId: string;
+    };
+    url: '/pinger/report/share/stream';
+};
+
+export type ShareStreamErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ShareStreamError = ShareStreamErrors[keyof ShareStreamErrors];
+
+export type ShareStreamResponses = {
+    /**
+     * OK
+     */
+    200: PingerShareResponse;
+};
+
+export type ShareStreamResponse = ShareStreamResponses[keyof ShareStreamResponses];
 
 export type WhoamiData = {
     body?: never;

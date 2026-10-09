@@ -86,6 +86,8 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`, {"island-cut-
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  /* Off an island root the site's own link underline reaches a cut drawn as a link. */
+  text-decoration: none;
   color: var(--color-chalk);
   white-space: nowrap;
   cursor: pointer;

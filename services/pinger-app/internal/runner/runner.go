@@ -132,7 +132,6 @@ func New(base string) (*Runner, error) {
 	saved := prefStore.Load()
 	r.rate.Store(int64(saved.RatePPS))
 	r.headroom.SetEnabled(saved.HoldBack)
-	r.setMessage("starting")
 	return r, nil
 }
 
@@ -264,9 +263,8 @@ func (r *Runner) Run(ctx context.Context) error {
 		r.signedIn.Store(true)
 	}
 
-	socks, datagram, err := openICMP()
+	socks, datagram, err := r.open()
 	if err != nil {
-		r.setMessage("cannot open socket: " + err.Error())
 		return err
 	}
 	defer paint.CloseSockets(socks)
@@ -306,6 +304,21 @@ func (r *Runner) Run(ctx context.Context) error {
 	go func() { defer wg.Done(); sender.Run(ctx) }()
 	wg.Wait()
 	return ctx.Err()
+}
+
+// openSockets is openICMP, swapped out by tests that cannot open a real socket.
+var openSockets = openICMP
+
+// open opens the send sockets and puts what the member should know about them in the status line:
+// the error that stops the app, or a notice that costs rate, or nothing.
+func (r *Runner) open() ([]socket, bool, error) {
+	socks, datagram, notice, err := openSockets()
+	if err != nil {
+		r.setMessage("cannot open socket: " + err.Error())
+		return nil, false, err
+	}
+	r.setMessage(notice)
+	return socks, datagram, nil
 }
 
 // load is what the headroom controller needs from the sender for one step.

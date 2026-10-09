@@ -159,4 +159,4 @@ func (s *FrameSocket) Close() error {
 }
 
 // WarnIfConntrack does nothing: only Linux's netfilter takes an entry per ping.
-func WarnIfConntrack() {}
+func WarnIfConntrack() string { return "" }

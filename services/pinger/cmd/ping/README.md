@@ -33,6 +33,12 @@ On Linux without that right, a firewall that tracks connections (ufw, firewalld,
 entry for every ping and drops pings once its table fills. The helper warns when this applies;
 exempt the pings once with
 `sudo ip6tables -t raw -A OUTPUT -p ipv6-icmp --icmpv6-type echo-request -j CT --notrack`.
+The desktop app shows the same line under its state.
+
+On Windows every pixel is a new destination, and Windows keeps a route cache entry per
+destination. If a large logo sends well under your rate, an administrator prompt can raise the
+cache limit (check the syntax with `netsh interface ipv6 set global /?` first):
+`netsh interface ipv6 set global routecachelimit=<entries>`. It is untested at event scale.
 
 It prints a line a second: state, packets a second, total sent, passes, errors. Until the board
 sets a prefix it just says `idle` and waits. It only sends during the event window (Fri 9 Oct 18:00

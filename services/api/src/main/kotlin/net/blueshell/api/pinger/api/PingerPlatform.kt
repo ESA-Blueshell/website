@@ -12,7 +12,7 @@ enum class PingerPlatform(
     val assetName: String,
 ) {
     MACOS("Blueshell-Pinger.dmg"),
-    LINUX("Blueshell-Pinger-x86_64.AppImage"),
+    LINUX("Blueshell-Pinger-x86_64"),
     WINDOWS("Blueshell-Pinger.exe"),
     ;
 

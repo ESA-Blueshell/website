@@ -28,9 +28,6 @@ import store from "@/plugins/store"
 
 defineOptions({name: "SntPingsPage"})
 
-const CANVAS_W = 3840
-const CANVAS_H = 2160
-
 // The SNTPings event start. The countdown runs to this and hides once it passes. CET is UTC+1.
 const EVENT_START = new Date("2025-12-05T18:00:00+01:00").getTime()
 
@@ -44,7 +41,7 @@ const isMember = computed<boolean>(() => store.getters.isMember)
 const downloads: {os: AppOs, label: string, openStep: string}[] = [
   {os: "macos", label: "macOS", openStep: "Right-click the app and choose Open the first time."},
   {os: "windows", label: "Windows", openStep: "On the SmartScreen prompt choose More info then Run anyway."},
-  {os: "linux", label: "Linux", openStep: "Run chmod +x on the AppImage then launch it."},
+  {os: "linux", label: "Linux", openStep: "Run chmod +x on the file then launch it. Needs webkit2gtk-4.1."},
 ]
 
 const downloadUrl = (os: AppOs): string => appDownloadUrl(os)
@@ -91,14 +88,11 @@ const passTotal = ref<number>(0)
 /** The target prefix the board set, shown on the plate as the old watch page did. */
 const prefixLabel = computed<string>(() => paint.value.prefix ?? "no prefix set")
 
-/** A live clock so the band shows the event is running now, not a frozen snapshot. */
-const clock = ref<string>("")
 let clockTimer = 0
-// A live now, so both the clock and the countdown advance on the one-second tick.
+// A live now so the countdown advances each second.
 const now = ref<number>(Date.now())
 const tickClock = (): void => {
   now.value = Date.now()
-  clock.value = new Date(now.value).toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit", second: "2-digit"})
 }
 
 /** Whether the event is still ahead, which keeps the countdown on screen until it starts. */
@@ -142,13 +136,6 @@ onBeforeUnmount(() => {
         heading-tail="top the board"
       >
         <template #acts>
-          <p
-            v-if="beforeEvent"
-            class="snt-countdown"
-            data-testid="snt-countdown"
-          >
-            Event starts in <b>{{ countdown }}</b>
-          </p>
           <cut-button
             href="https://pings.utwente.io"
             away
@@ -191,8 +178,13 @@ onBeforeUnmount(() => {
             <span>{{ anyPainting ? "Event running" : "Waiting for the canvas" }}</span>
             <span class="canvas__sep">·</span>
             <span>Painting onto <b>{{ prefixLabel }}</b></span>
-            <span class="canvas__sep">·</span>
-            <span>{{ clock }}</span>
+            <template v-if="beforeEvent">
+              <span class="canvas__sep">·</span>
+              <span
+                class="snt-countdown"
+                data-testid="snt-countdown"
+              >Event starts in <b>{{ countdown }}</b></span>
+            </template>
           </p>
 
           <div class="canvas__grid">
@@ -212,11 +204,6 @@ onBeforeUnmount(() => {
             />
           </div>
 
-          <p class="canvas__note">
-            The shell lands in a box on the {{ CANVAS_W }}&times;{{ CANVAS_H }} canvas and fills in
-            pixel by pixel as the cluster paints it. An admin sets the picture, the box and the target
-            from the management page.
-          </p>
         </div>
       </section>
 
@@ -380,13 +367,6 @@ onBeforeUnmount(() => {
   margin-top: 1.5rem;
 }
 
-.canvas__note {
-  margin-top: 1.1rem;
-  max-width: 34rem;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: var(--color-ash);
-}
 
 .board-wrap {
   margin-top: 1.75rem;

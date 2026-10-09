@@ -112,7 +112,10 @@ jobs:
             asset: Blueshell-Pinger.dmg
           - runner: ubuntu-22.04
             platform: linux/amd64
-            asset: Blueshell-Pinger-x86_64.AppImage
+            asset: Blueshell-Pinger-x86_64
+            # Link against the host's WebKitGTK 4.1 (the current one; 4.0 is end-of-life). Built on the
+            # oldest base that ships 4.1, so one glibc covers Ubuntu 22.04+, Debian 12+, Fedora, Arch.
+            buildtags: "-tags webkit2_41"
           - runner: windows-latest
             platform: windows/amd64
             asset: Blueshell-Pinger.exe
@@ -132,22 +135,20 @@ jobs:
           go-version-file: services/pinger-app/go.mod
           cache-dependency-path: services/pinger-app/go.sum
 
-      # The Linux build links against GTK and WebKit; the other runners ship their native WebView.
-      # The rest are for packaging a self-contained AppImage (see packaging/build-appimage.sh).
-      - name: Install the Linux WebView and packaging libraries
+      # The Linux build links against GTK and WebKitGTK 4.1; the other runners ship their native WebView.
+      - name: Install the Linux WebView libraries
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-3-dev libwebkit2gtk-4.0-dev \
-            patchelf imagemagick dpkg-dev fontconfig fonts-dejavu-core libfuse2
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
 
       - name: Install the Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
 
-      # Default is unsigned: no signing identity or notarization is passed on any platform.
+      # Default is unsigned: no signing identity or notarization is passed on any platform. The Linux
+      # build also takes the webkit2_41 tag so it links the host's WebKitGTK 4.1.
       - name: Build the app
-        run: wails build -clean -platform ${{ matrix.platform }}
+        run: wails build -clean -platform ${{ matrix.platform }} ${{ matrix.buildtags }}
 
       # Ad-hoc sign the whole bundle so Apple Silicon will launch it at all: arm64 refuses to run a
       # binary with no signature. This is not a Developer ID signature, so Gatekeeper still asks the
@@ -166,12 +167,12 @@ jobs:
         if: runner.os == 'Windows'
         run: cp build/bin/blueshell-pinger.exe "${{ matrix.asset }}"
 
-      # A self-contained AppImage: it carries webkit and its closure (webkit is not on every distro),
-      # keeps the GPU/driver stack from the host, and rewrites webkit's compiled-in helper path so the
-      # bundled helpers spawn anywhere. The script documents the why.
-      - name: Package the Linux AppImage
+      # A plain native binary: it links the host's WebKitGTK 4.1 and GTK, embeds the frontend, and runs
+      # on any desktop that ships webkit2gtk-4.1 (the member marks it executable and launches it). No
+      # AppImage -- a bundled webkit fought the host's glib and GPU stack and would not render.
+      - name: Name the Linux binary
         if: runner.os == 'Linux'
-        run: bash packaging/build-appimage.sh "${{ matrix.asset }}"
+        run: cp build/bin/blueshell-pinger "${{ matrix.asset }}"
 
       - name: Attach to the release
         env:

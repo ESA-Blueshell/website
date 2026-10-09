@@ -52,11 +52,12 @@ func (a *App) OpenLeaderboard() error {
 // current rate and the bytes-per-packet the live bandwidth estimate multiplies by. The frontend
 // reads it once to build the slider and compute the estimate without a round trip per drag.
 type Controls struct {
-	MinRate        int `json:"minRate"`
-	MaxRate        int `json:"maxRate"`
-	DefaultRate    int `json:"defaultRate"`
-	Rate           int `json:"rate"`
-	BytesPerPacket int `json:"bytesPerPacket"`
+	MinRate        int  `json:"minRate"`
+	MaxRate        int  `json:"maxRate"`
+	DefaultRate    int  `json:"defaultRate"`
+	Rate           int  `json:"rate"`
+	BytesPerPacket int  `json:"bytesPerPacket"`
+	FullUplink     bool `json:"fullUplink"`
 }
 
 // Controls is bound to the frontend so it can render the slider and the estimate.
@@ -67,6 +68,7 @@ func (a *App) Controls() Controls {
 		DefaultRate:    prefs.DefaultRatePPS,
 		Rate:           a.runner.Rate(),
 		BytesPerPacket: bandwidth.BytesPerPacket,
+		FullUplink:     a.runner.Status().FullUplink,
 	}
 }
 
@@ -74,6 +76,11 @@ func (a *App) Controls() Controls {
 // took effect so the UI can snap to it.
 func (a *App) SetRate(pps int) int {
 	return a.runner.SetRate(pps)
+}
+
+// SetFullUplink is bound to the uplink toggle; it returns the choice that took effect.
+func (a *App) SetFullUplink(on bool) bool {
+	return a.runner.SetFullUplink(on)
 }
 
 // OptInState is bound to the leaderboard toggle; it reads the member's current opt-in from the

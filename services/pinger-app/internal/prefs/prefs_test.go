@@ -30,15 +30,21 @@ func TestLoadMissingFileReturnsDefault(t *testing.T) {
 	if got := s.Load().RatePPS; got != DefaultRatePPS {
 		t.Fatalf("Load on missing file = %d, want default %d", got, DefaultRatePPS)
 	}
+	if s.Load().FullUplink {
+		t.Fatal("Load on missing file lets the pings fill the uplink, want headroom kept")
+	}
 }
 
 func TestSaveLoadRoundTrip(t *testing.T) {
 	s := New(t.TempDir())
-	if err := s.Save(Prefs{RatePPS: 4096}); err != nil {
+	if err := s.Save(Prefs{RatePPS: 4096, FullUplink: true}); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
 	if got := s.Load().RatePPS; got != 4096 {
 		t.Fatalf("round-trip rate = %d, want 4096", got)
+	}
+	if !s.Load().FullUplink {
+		t.Fatal("round-trip lost FullUplink")
 	}
 }
 

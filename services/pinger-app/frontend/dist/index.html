@@ -265,6 +265,25 @@
       .estimate b {
         color: var(--chalk);
       }
+      .held {
+        margin-top: 0.35rem;
+        min-height: 1.1em;
+        font-size: 0.8rem;
+        color: var(--acid);
+        font-variant-numeric: tabular-nums;
+      }
+      .uplink {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: 0.6rem;
+        font-size: 0.8rem;
+        color: var(--ash);
+        cursor: pointer;
+      }
+      .uplink input {
+        accent-color: var(--brand-lit);
+      }
     </style>
   </head>
   <body>
@@ -313,6 +332,11 @@
         </div>
         <input type="range" id="rate-range" min="1" max="2192982" step="1" />
         <div class="estimate" id="estimate"></div>
+        <div class="held" id="held"></div>
+        <label class="uplink">
+          <input type="checkbox" id="full-uplink" />
+          Use my whole uplink (other traffic may stall)
+        </label>
       </div>
     </main>
 
@@ -330,6 +354,8 @@
       const numberEl = el("rate-number");
       const rangeEl = el("rate-range");
       const estimateEl = el("estimate");
+      const heldEl = el("held");
+      const fullUplinkEl = el("full-uplink");
 
       let signedIn = false;
 
@@ -368,6 +394,11 @@
         showEstimate(Number(rangeEl.value));
       });
       rangeEl.addEventListener("change", () => applyRate(rangeEl.value));
+      fullUplinkEl.addEventListener("change", async () => {
+        const a = app();
+        if (!a) return;
+        fullUplinkEl.checked = await a.SetFullUplink(fullUplinkEl.checked);
+      });
       // The one button that opens the browser login; signing out is immediate.
       signinEl.addEventListener("click", () => {
         const a = app();
@@ -416,6 +447,7 @@
           rangeEl.min = c.minRate;
           rangeEl.max = c.maxRate;
           reflectRate(c.rate);
+          fullUplinkEl.checked = !!c.fullUplink;
         } catch {
           // Controls fall back to their defaults; the error is not surfaced in the UI.
         }
@@ -435,6 +467,9 @@
           const state = signedIn ? s.state || "idle" : "signed out";
           stateEl.innerHTML = `State <b>${state}</b>`;
           showWindow(s);
+          heldEl.textContent = s.heldAt
+            ? `Held at ${fmt(s.heldAt)} pps so your connection stays usable`
+            : "";
         } catch {
           // A failed status poll leaves the last values on screen; the next tick recovers.
         }

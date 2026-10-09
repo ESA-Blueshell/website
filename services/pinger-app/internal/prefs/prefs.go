@@ -1,5 +1,5 @@
-// Package prefs keeps the member's local control choices between runs. Only the send rate lives
-// here; the leaderboard opt-in is the server's and is read and written there. The file sits in the
+// Package prefs keeps the member's local control choices between runs. Only the send rate and the
+// uplink headroom live here; the leaderboard opt-in is the server's and is read and written there. The file sits in the
 // app config directory next to the token store.
 package prefs
 
@@ -34,6 +34,9 @@ type Prefs struct {
 	// DeviceID is this install's stable id, generated once and kept, so the api keeps this device's
 	// send counter apart from the member's other devices and accrues each exactly once.
 	DeviceID string `json:"deviceId"`
+	// FullUplink lets the pings fill the whole uplink, even when that stalls the member's other
+	// traffic. Off by default, so a missing field keeps the connection usable.
+	FullUplink bool `json:"fullUplink"`
 }
 
 // Clamp holds a rate inside the server's valid range.

@@ -2,6 +2,10 @@ package net.blueshell.api.pinger.api
 
 import net.blueshell.api.file.api.PublicFileUrls
 import net.blueshell.api.file.api.StoredPictures
+import net.blueshell.api.pinger.domain.CanvasMotion
+import net.blueshell.api.pinger.domain.CanvasMotion.CANVAS_HEIGHT
+import net.blueshell.api.pinger.domain.CanvasMotion.CANVAS_WIDTH
+import net.blueshell.api.pinger.domain.MotionMode
 import net.blueshell.api.pinger.persistence.PingerPaint
 import net.blueshell.api.pinger.persistence.PingerPaintRepository
 import net.blueshell.api.pinger.persistence.PingerPlacement
@@ -11,19 +15,23 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
-
-/** The 4K canvas the pinger paints onto, mirrored from the pinger's own bounds. */
-private const val CANVAS_WIDTH = 3840
-private const val CANVAS_HEIGHT = 2160
+import java.time.Clock
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import kotlin.math.abs
 
 /** The sender's rate cap, mirrored from the pinger's MaxRatePPS. */
 private const val MAX_RATE_PPS = 200_000
+
+/** The fastest a placement may travel on either axis, in px/s. Mirrored by PlacementMotionRequest. */
+const val MAX_SPEED_PPS = 2000.0
 
 @Service
 class PingerPaintService(
     private val repository: PingerPaintRepository,
     private val placements: PingerPlacementRepository,
     private val pictures: StoredPictures,
+    private val clock: Clock = Clock.systemUTC(),
 ) {
     @Transactional(readOnly = true)
     fun current(): PaintView = viewOf(row(), placements.findAllByOrderByOrdinalAscIdAsc())
@@ -59,12 +67,20 @@ class PingerPaintService(
         val next = (placements.findAll().maxOfOrNull { it.ordinal } ?: -1) + 1
         val placement =
             placements.save(
-                PingerPlacement(imagePath = stored, originX = originX, originY = originY, width = width, height = height, ordinal = next),
+                PingerPlacement(
+                    imagePath = stored,
+                    originX = originX,
+                    originY = originY,
+                    width = width,
+                    height = height,
+                    ordinal = next,
+                    motionEpoch = now(),
+                ),
             )
         return placementView(placement)
     }
 
-    /** Moves or resizes one placement's box. The image stays; only its box changes. */
+    /** Moves or resizes one placement's box. The image stays, and any motion restarts from the new box. */
     @Transactional
     fun movePlacement(
         id: Long,
@@ -79,6 +95,34 @@ class PingerPaintService(
         placement.originY = originY
         placement.width = width
         placement.height = height
+        placement.motionEpoch = now()
+        return placementView(placements.save(placement))
+    }
+
+    /**
+     * Sets how one placement moves. The box is re-based to where it is right now and the epoch to now,
+     * so switching motion never makes it jump.
+     */
+    @Transactional
+    fun setMotion(
+        id: Long,
+        mode: MotionMode,
+        vx: Double,
+        vy: Double,
+    ): PlacementView {
+        // Written so a NaN fails it too.
+        if (!(abs(vx) <= MAX_SPEED_PPS && abs(vy) <= MAX_SPEED_PPS)) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A speed must be at most ${MAX_SPEED_PPS.toInt()} px/s.")
+        }
+        val placement = placements.findById(id).orElseThrow { notFound(id) }
+        val now = now()
+        val (x, y) = positionAt(placement, now)
+        placement.originX = x
+        placement.originY = y
+        placement.motionMode = mode
+        placement.motionVx = if (mode == MotionMode.STATIC) 0.0 else vx
+        placement.motionVy = if (mode == MotionMode.STATIC) 0.0 else vy
+        placement.motionEpoch = now
         return placementView(placements.save(placement))
     }
 
@@ -116,6 +160,25 @@ class PingerPaintService(
         pictures.of(imagePath, FileType.PINGER_PAINT)?.path
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "That image is not in storage.")
 
+    private fun positionAt(
+        placement: PingerPlacement,
+        at: Instant,
+    ): Pair<Int, Int> =
+        CanvasMotion.positionAt(
+            originX = placement.originX,
+            originY = placement.originY,
+            width = placement.width,
+            height = placement.height,
+            mode = placement.motionMode,
+            vx = placement.motionVx,
+            vy = placement.motionVy,
+            epoch = placement.motionEpoch,
+            at = at,
+        )
+
+    // Milliseconds: the column keeps no finer, so the epoch a write returns is the one a read sees.
+    private fun now(): Instant = clock.instant().truncatedTo(ChronoUnit.MILLIS)
+
     private fun notFound(id: Long) = ResponseStatusException(HttpStatus.NOT_FOUND, "No placement with id $id.")
 
     private fun row(): PingerPaint = repository.findById(1L).orElseGet { PingerPaint(ratePps = 128) }
@@ -129,6 +192,7 @@ class PingerPaintService(
             ratePps = row.ratePps,
             siteCieEnabled = row.siteCieEnabled,
             placements = placed.map { placementView(it) },
+            serverTime = clock.instant(),
         )
 
     // Built from the stored path, not a fresh lookup: a public read must not 400 if the file is
@@ -141,5 +205,7 @@ class PingerPaintService(
             originY = placement.originY,
             width = placement.width,
             height = placement.height,
+            motion = PlacementMotion(placement.motionMode, placement.motionVx, placement.motionVy),
+            motionEpoch = placement.motionEpoch,
         )
 }

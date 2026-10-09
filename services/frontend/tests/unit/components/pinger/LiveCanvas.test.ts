@@ -142,7 +142,7 @@ describe("LiveCanvas", () => {
     expect(wrapper.text()).toContain("Stream offline")
   })
 
-  it("says the stream is offline where hls.js cannot run", async () => {
+  it("says the stream is offline where neither hls.js nor the browser can play it", async () => {
     hls.supported = false
     const wrapper = render()
     await flushPromises()
@@ -150,7 +150,16 @@ describe("LiveCanvas", () => {
     expect(wrapper.text()).toContain("Stream offline")
   })
 
-  it("lets the browser play the feed itself where it can", async () => {
+  it("prefers hls.js even where the browser claims it might play HLS itself", async () => {
+    vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue("maybe")
+    render()
+    await flushPromises()
+
+    expect(hls.loadSource).toHaveBeenCalledWith("https://tv.example/live.m3u8")
+  })
+
+  it("lets the browser play the feed itself where hls.js cannot run", async () => {
+    hls.supported = false
     vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue("maybe")
     const wrapper = render()
     await flushPromises()

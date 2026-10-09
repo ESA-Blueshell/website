@@ -4,8 +4,9 @@ import {apiUrl, type Placement} from "@/domains/pinger"
 
 /**
  * The event's livestream of the canvas with our placements drawn over it in their boxes, so what we
- * paint can be checked against what the canvas shows. Safari plays the HLS feed itself; elsewhere
- * hls.js is loaded on demand. It also measures the pixels one pass paints, which the meter reads.
+ * paint can be checked against what the canvas shows. hls.js, loaded on demand, plays the feed;
+ * the browser plays it itself only where hls.js cannot run. It also measures the pixels one pass
+ * paints, which the meter reads.
  */
 defineOptions({name: "PingerLiveCanvas"})
 
@@ -91,13 +92,12 @@ let destroy: (() => void) | null = null
 onMounted(async () => {
   const el = video.value
   if (!el) return
-  if (el.canPlayType("application/vnd.apple.mpegurl")) {
-    el.src = props.streamUrl
-    return
-  }
+  // hls.js first: desktop Chrome answers "maybe" for native HLS and then refuses the stream, so the
+  // browser's own player is only the fallback, for iOS Safari where Media Source is missing.
   const {default: Hls} = await import("hls.js")
   if (!Hls.isSupported()) {
-    failed.value = true
+    if (el.canPlayType("application/vnd.apple.mpegurl")) el.src = props.streamUrl
+    else failed.value = true
     return
   }
   const hls = new Hls({liveSyncDurationCount: 2})

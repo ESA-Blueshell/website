@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.20.0](https://github.com/ESA-Blueshell/website/compare/v1.19.0...v1.20.0) (2026-10-09)
+
+
+### Features
+
+* the event page draws its description from the api's tree ([#2320](https://github.com/ESA-Blueshell/website/issues/2320)) ([2226309](https://github.com/ESA-Blueshell/website/commit/22263096dcebd359be08a9ec2b168aafa1ca87fe))
+
+
+### Bug Fixes
+
+* **frontend:** SNTPings rate is the sum of the board's pps ([#2330](https://github.com/ESA-Blueshell/website/issues/2330)) ([27d1760](https://github.com/ESA-Blueshell/website/commit/27d1760e0f807345252f488a244820fe2ae111c1))
+* **pinger-app:** hold the send rate below the uplink queue, mark pings low priority ([#2322](https://github.com/ESA-Blueshell/website/issues/2322)) ([0660555](https://github.com/ESA-Blueshell/website/commit/0660555bec970175fd23fb87c948c2141428df12))
+* **pinger-app:** stay signed in when the api forgets a refresh token or refuses a good one ([#2325](https://github.com/ESA-Blueshell/website/issues/2325)) ([374f232](https://github.com/ESA-Blueshell/website/commit/374f23240f48285123f28792b940666acf7c5031))
+* **pinger:** look less like malware to Windows Defender ([#2319](https://github.com/ESA-Blueshell/website/issues/2319)) ([414150c](https://github.com/ESA-Blueshell/website/commit/414150cb38899eef330dd13dda59fce3e6a2a90e)), closes [#2318](https://github.com/ESA-Blueshell/website/issues/2318)
+* **pinger:** macOS sends at the asked rate instead of stalling after a few dozen pings ([#2328](https://github.com/ESA-Blueshell/website/issues/2328)) ([659ecb0](https://github.com/ESA-Blueshell/website/commit/659ecb08528f5547b22a50ca0e0c015e5c9bd84b))
+* **pinger:** say HTTPS on in-cluster api calls, so the paint job is read ([#2317](https://github.com/ESA-Blueshell/website/issues/2317)) ([a4426a6](https://github.com/ESA-Blueshell/website/commit/a4426a6c2cf4a48a1858d52391db15257f83694f)), closes [#2316](https://github.com/ESA-Blueshell/website/issues/2316)
+* **pinger:** socket per worker, CS1 on every socket, full report caps ([#2335](https://github.com/ESA-Blueshell/website/issues/2335)) ([cf9bc50](https://github.com/ESA-Blueshell/website/commit/cf9bc500a50355552b8a34649c4c4c3dc1e27d67))
+* **platform:** pinger reads the api over its public https address ([#2332](https://github.com/ESA-Blueshell/website/issues/2332)) ([6204a66](https://github.com/ESA-Blueshell/website/commit/6204a6614c5f7c66f01b18204a229ced9e84b32b))
+
+
+### Documentation
+
+* **adr:** one reader for descriptions, in the api ([#2313](https://github.com/ESA-Blueshell/website/issues/2313)) ([0709fcb](https://github.com/ESA-Blueshell/website/commit/0709fcbabe24c5aa322f3384f9cde4e98ad5f088))
+
 ## [1.19.0](https://github.com/ESA-Blueshell/website/compare/v1.18.4...v1.19.0) (2026-10-09)
 
 

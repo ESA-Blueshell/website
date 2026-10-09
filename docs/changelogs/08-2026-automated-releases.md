@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.18.0](https://github.com/ESA-Blueshell/website/compare/v1.17.0...v1.18.0) (2026-10-09)
+
+
+### Features
+
+* a committee says since when it is archived ([#2265](https://github.com/ESA-Blueshell/website/issues/2265)) ([ad9a057](https://github.com/ESA-Blueshell/website/commit/ad9a057ac4b32e67a8b7f390beb4df1dbc2955b2)), closes [#2264](https://github.com/ESA-Blueshell/website/issues/2264)
+* a membership is pending until its first contribution is paid ([#2270](https://github.com/ESA-Blueshell/website/issues/2270)) ([e5aea16](https://github.com/ESA-Blueshell/website/commit/e5aea162629a74da561ead784b0ad35ac91c04a5))
+* addresses are sealed by Vault Transit and personal details stay out of logs ([#2268](https://github.com/ESA-Blueshell/website/issues/2268)) ([6d25ac2](https://github.com/ESA-Blueshell/website/commit/6d25ac269279c48b90e580acc54f7d2c36dc9f9c))
+* an event's page shows who signed up, and a committee's page names everybody ([#2261](https://github.com/ESA-Blueshell/website/issues/2261)) ([3321dad](https://github.com/ESA-Blueshell/website/commit/3321dad56f9980510bb4462de42f23747530763b))
+* deleting a committee is an admin's, hands its events to another committee and offers archiving ([#2263](https://github.com/ESA-Blueshell/website/issues/2263)) ([0b6e1b1](https://github.com/ESA-Blueshell/website/commit/0b6e1b16d33054bc77a6fe86d3ffb71e7f0e35a4))
+* **frontend:** a board member's whole text shows, and the row of members grows to it ([#2262](https://github.com/ESA-Blueshell/website/issues/2262)) ([e0665db](https://github.com/ESA-Blueshell/website/commit/e0665db6b9fa11db91d9c5abdf842ca2dd0c7562))
+* **frontend:** the esports section is called Esports, at /esports ([#2260](https://github.com/ESA-Blueshell/website/issues/2260)) ([9374865](https://github.com/ESA-Blueshell/website/commit/9374865799c80bf939ab3f6eabec635834fbf7fb))
+* **frontend:** the site's forms are drawn with the island's own fields ([#2251](https://github.com/ESA-Blueshell/website/issues/2251)) ([2741b81](https://github.com/ESA-Blueshell/website/commit/2741b81eb3f9071a8f34aa9c33a7f6b5eba29e13))
+* **pinger:** paint the Blueshell logo on the SNTPings canvas ([#2191](https://github.com/ESA-Blueshell/website/issues/2191)) ([3d8133a](https://github.com/ESA-Blueshell/website/commit/3d8133a2404b8c4c44a5fdef023ec4ec7a2a68ba))
+* **platform:** back up Stalwart, Valkey, uploads and Gatus nightly ([#2254](https://github.com/ESA-Blueshell/website/issues/2254)) ([2848925](https://github.com/ESA-Blueshell/website/commit/2848925392990cb699fad84b335bca3e6fe50a3e))
+* **platform:** nightly MariaDB and Vault backup to Scaleway with Kopia ([#2253](https://github.com/ESA-Blueshell/website/issues/2253)) ([c6447de](https://github.com/ESA-Blueshell/website/commit/c6447de683a84f4b20d8b2574019c506667eb81e))
+* **platform:** Scaleway backup buckets, lock and IAM in OpenTofu ([#2175](https://github.com/ESA-Blueshell/website/issues/2175)) ([8e55c2e](https://github.com/ESA-Blueshell/website/commit/8e55c2e5e88c1c68a1e110743a0c31390237e180))
+
+
+### Bug Fixes
+
+* api stores uploads 0644 so the nightly backup reads them ([#2255](https://github.com/ESA-Blueshell/website/issues/2255)) ([445549c](https://github.com/ESA-Blueshell/website/commit/445549cdae88e04860a56d9033973a8ebd925002))
+* **api:** an old sign-in cookie is reported once, and a lost rotation no longer ends the sign-in ([#2267](https://github.com/ESA-Blueshell/website/issues/2267)) ([e4ddf98](https://github.com/ESA-Blueshell/website/commit/e4ddf981204e9bb854ab2b766d7a0db27ea4edc4))
+* **deps:** update cucumberversion to v7.34.9 ([#2146](https://github.com/ESA-Blueshell/website/issues/2146)) ([10a7b5b](https://github.com/ESA-Blueshell/website/commit/10a7b5bea7c20f9c3e244d6f4b6e3e3b6232e1bb))
+* **deps:** update dependency com.google.apis:google-api-services-calendar to v3-rev20260708-2.0.0 ([#2147](https://github.com/ESA-Blueshell/website/issues/2147)) ([44555b5](https://github.com/ESA-Blueshell/website/commit/44555b524a818379afc0a6301cad89a6a4577c27))
+* **deps:** update dependency com.google.auth:google-auth-library-oauth2-http to v1.53.0 ([#2161](https://github.com/ESA-Blueshell/website/issues/2161)) ([78d5b1b](https://github.com/ESA-Blueshell/website/commit/78d5b1bf1e1ecbac803f9addbdbfe618dfb974cc))
+* **deps:** update dependency com.googlecode.libphonenumber:libphonenumber to v9.0.40 ([#2148](https://github.com/ESA-Blueshell/website/issues/2148)) ([53113b2](https://github.com/ESA-Blueshell/website/commit/53113b2485e0be8c99f649e80aac6b27bb392df8))
+* **deps:** update dependency com.h2database:h2 to v2.5.252 ([#2149](https://github.com/ESA-Blueshell/website/issues/2149)) ([fddb87f](https://github.com/ESA-Blueshell/website/commit/fddb87fee03e1609c45887298f3606e4167bb9be))
+* **deps:** update dependency com.nimbusds:nimbus-jose-jwt to v10.10 ([#2163](https://github.com/ESA-Blueshell/website/issues/2163)) ([bcb5c2f](https://github.com/ESA-Blueshell/website/commit/bcb5c2f65cc0d0d445de63295822442d835d1579))
+* **deps:** update dependency io.github.classgraph:classgraph to v4.8.196 ([#2151](https://github.com/ESA-Blueshell/website/issues/2151)) ([529c89e](https://github.com/ESA-Blueshell/website/commit/529c89edb64244c2f92d35917ecd4b530016133a))
+* **deps:** update dependency jacoco to v0.8.15 ([#2152](https://github.com/ESA-Blueshell/website/issues/2152)) ([aa2dec5](https://github.com/ESA-Blueshell/website/commit/aa2dec529e7429981128fd757f9ea9d74e2ccb76))
+* **deps:** update dependency org.bouncycastle:bcpkix-jdk18on to v1.86 ([#2164](https://github.com/ESA-Blueshell/website/issues/2164)) ([7786a75](https://github.com/ESA-Blueshell/website/commit/7786a7501c887b0f2532f252434042b4b97e3ac4))
+* **deps:** update dependency org.jsoup:jsoup to v1.23.2 ([#2165](https://github.com/ESA-Blueshell/website/issues/2165)) ([676c54e](https://github.com/ESA-Blueshell/website/commit/676c54ee1b1a09971661a07e9c5c73faa669bb02))
+* **deps:** update dependency org.mockito:mockito-core to v5.24.0 ([#2166](https://github.com/ESA-Blueshell/website/issues/2166)) ([f9dcdb3](https://github.com/ESA-Blueshell/website/commit/f9dcdb39e4f6f214c5d051bf9e008d6a0d855f91))
+* **deps:** update dependency org.mockito.kotlin:mockito-kotlin to v6.4.0 ([#2167](https://github.com/ESA-Blueshell/website/issues/2167)) ([2d0a431](https://github.com/ESA-Blueshell/website/commit/2d0a4317bc06a5100454e8e5a22d27b47da9c2a9))
+* **deps:** update frontend dependencies ([#2128](https://github.com/ESA-Blueshell/website/issues/2128)) ([aef9f18](https://github.com/ESA-Blueshell/website/commit/aef9f18d58175d52b1ffae9ecd8fbdd759cb416b))
+* **deps:** update jackson monorepo ([#2153](https://github.com/ESA-Blueshell/website/issues/2153)) ([d40c55e](https://github.com/ESA-Blueshell/website/commit/d40c55e22dfe21a30fa18fcd7e8752d8b7627a30))
+
+
+### Refactoring
+
+* **frontend:** forms check their own fields, vee-validate goes ([#2258](https://github.com/ESA-Blueshell/website/issues/2258)) ([e469bd7](https://github.com/ESA-Blueshell/website/commit/e469bd7a41d2992bc39a8a7e0acb07031979bfff))
+
+
+### Build and Dependencies
+
+* **deps:** bump http-cache-semantics ([#2137](https://github.com/ESA-Blueshell/website/issues/2137)) ([87249f5](https://github.com/ESA-Blueshell/website/commit/87249f588a8602420b644fe2f6f4986e7887df8b))
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#2259](https://github.com/ESA-Blueshell/website/issues/2259)) ([e5e4575](https://github.com/ESA-Blueshell/website/commit/e5e45754b97ea18e7183dc35a0f0b467dc616264))
+* **frontend:** drop @hey-api/client-axios, which nothing imports ([#2136](https://github.com/ESA-Blueshell/website/issues/2136)) ([868b3a4](https://github.com/ESA-Blueshell/website/commit/868b3a4cbfbf2d0cf30f1db4064bb110d198eb08)), closes [#2135](https://github.com/ESA-Blueshell/website/issues/2135)
+
 ## [1.17.0](https://github.com/ESA-Blueshell/website/compare/v1.16.0...v1.17.0) (2026-10-04)
 
 

@@ -1,5 +1,6 @@
 import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router"
 import {SECURITY_PAGES} from "@/domains/auth/securityPages"
+import {SNTPINGS_ENABLED, SNTPINGS_PATH} from "@/domains/pinger/sntpings"
 import store from "./store"
 import {tabTitle} from "./tabTitle"
 
@@ -470,6 +471,12 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Manage cohorts", requiresAuth: true, requiresAdmin: true},
   },
   {
+    path: "/management/pinger",
+    name: "pingerManager",
+    component: () => import("@/pages/management/PingerManager.vue"),
+    meta: {title: "Manage the pinger", requiresAuth: true, requiresAdmin: true},
+  },
+  {
     path: "/management/cohorts/targets",
     name: "cohortTargets",
     component: () => import("@/pages/management/CohortTargets.vue"),
@@ -519,6 +526,16 @@ const routes: RouteRecordRaw[] = [
   },
   // Dev only: the fields and the parts drawn on one page each, so they can be argued over away
   // from the page that needed them. The routes are registered nowhere else, so nothing ships.
+  // The temporary public SNTPings tab, behind one flag. Flip SNTPINGS_ENABLED off after the event
+  // and this route and its nav entry both go.
+  ...(SNTPINGS_ENABLED
+    ? [{
+        path: SNTPINGS_PATH,
+        name: "sntpings",
+        component: () => import("@/pages/SntPings.vue"),
+        meta: {title: "SNTPings"},
+      }]
+    : []),
   ...(import.meta.env.DEV
     ? [{
         path: "/design/fields",

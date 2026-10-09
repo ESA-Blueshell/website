@@ -307,3 +307,11 @@ auth:
   clients:
     vault:
       secret: ""
+
+pinger:
+  report:
+    # The shared secret the SiteCie painter presents to reach the report endpoints. Production
+    # reads it from Vault, path `secret/platform/pinger-report`, key `service-token`, the same path
+    # the pinger's VSO secret reads (api ADR-033); empty elsewhere, which turns the service header
+    # off and leaves only member bearer tokens.
+    service-token: ${PINGER_REPORT_SERVICE_TOKEN:}

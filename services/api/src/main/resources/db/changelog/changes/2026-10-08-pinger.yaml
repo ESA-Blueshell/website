@@ -1,0 +1,105 @@
+# The pinger's tables, in their final shape.
+#
+# pinger_contribution is the durable tally: one row per contributing identity ("sitecie" or
+# "member:<id>"), holding the running total of pings it has sent. It is the single source of truth;
+# the live Valkey row only mirrors presence. member_id carries the numeric member so the leaderboard
+# can join to users, and is null for the SiteCie house line. total_sent is BIGINT: the rate reaches
+# 200000 pps and accrues for hours.
+#
+# pinger_paint is the singleton settings row (id 1): the prefix it targets, the rate, the SiteCie
+# toggle, and a once-ever marker the bootstrap sets when it lays down the default image. Seeded with
+# no prefix so the pinger stays idle until an admin sets one; the default image is laid down as a
+# placement by the always-on bootstrap, not here.
+#
+# pinger_placement is one image and its box on the 3840x2160 canvas; several rows paint several
+# images at once, ordinal fixing their draw order. image_path points at a stored file with no
+# foreign key, because files soft-delete and this only needs the path the public URL is built from.
+#
+# pinger_device_session is the per-device last-seen counter: one member may run the app on several
+# devices at once, each with its own counter that resets on its own restart, so each device's delta
+# accrues independently and a reset on one never clobbers another.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-08-pinger.yaml
+      id: pinger-contribution
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: pinger_contribution
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column:
+                  name: identity
+                  type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints: {nullable: false, unique: true, uniqueConstraintName: uk_pinger_contribution_identity}
+              - column: {name: member_id, type: BIGINT}
+              - column: {name: total_sent, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: updated, type: DATETIME, constraints: {nullable: false}}
+      rollback:
+        - dropTable:
+            tableName: pinger_contribution
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-08-pinger.yaml
+      id: pinger-paint
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: pinger_paint
+            columns:
+              - column: {name: id, type: BIGINT, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: prefix, type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci}
+              - column: {name: rate_pps, type: INT, constraints: {nullable: false}}
+              - column: {name: site_cie_enabled, type: BOOLEAN, defaultValueBoolean: true, constraints: {nullable: false}}
+              - column: {name: defaults_initialized, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+        - insert:
+            tableName: pinger_paint
+            columns:
+              - column: {name: id, valueNumeric: 1}
+              - column: {name: rate_pps, valueNumeric: 128}
+      rollback:
+        - dropTable:
+            tableName: pinger_paint
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-08-pinger.yaml
+      id: pinger-placement
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: pinger_placement
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: image_path, type: VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, constraints: {nullable: false}}
+              - column: {name: origin_x, type: INT, constraints: {nullable: false}}
+              - column: {name: origin_y, type: INT, constraints: {nullable: false}}
+              - column: {name: width, type: INT, constraints: {nullable: false}}
+              - column: {name: height, type: INT, constraints: {nullable: false}}
+              - column: {name: ordinal, type: INT, defaultValueNumeric: 0, constraints: {nullable: false}}
+      rollback:
+        - dropTable:
+            tableName: pinger_placement
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-08-pinger.yaml
+      id: pinger-device-session
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: pinger_device_session
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column:
+                  name: identity
+                  type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints: {nullable: false}
+              - column:
+                  name: device_id
+                  type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints: {nullable: false}
+              - column: {name: last_session_sent, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: updated, type: DATETIME, constraints: {nullable: false}}
+        - addUniqueConstraint:
+            tableName: pinger_device_session
+            columnNames: identity, device_id
+            constraintName: uk_pinger_device_session_identity_device
+      rollback:
+        - dropTable:
+            tableName: pinger_device_session

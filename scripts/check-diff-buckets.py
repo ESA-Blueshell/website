@@ -105,6 +105,10 @@ def unmatched(paths, buckets):
     return [path for path in paths if not classify(path, buckets)]
 
 
+# Buckets whose suites need neither the jar nor the bundle, so they do not turn `app` on.
+STANDALONE = {"platform", "pinger", "pingerapp"}
+
+
 # A path for every pattern in the filter, including the negations. A bucket
 # that stops covering its own tree fails here rather than on the pull request
 # that happens to touch it, and the self-test refuses a pattern no fixture
@@ -148,6 +152,9 @@ FIXTURES = [
     ("services/frontend/src/pages/Home.vue", {"frontend"}),
     ("services/frontend/Dockerfile", {"frontend"}),
     ("services/frontend/docker-compose.yml", {"ignore"}),
+    ("services/pinger/internal/paint/sender.go", {"pinger"}),
+    ("services/pinger/docker-compose.yml", {"ignore"}),
+    ("services/pinger-app/internal/oauth/pkce.go", {"pingerapp"}),
     ("tests/system/src/test/kotlin/SignUpTest.kt", {"system"}),
     ("docker-compose.yml", {"ignore"}),
     ("docker-compose.oidc-e2e.yml", {"ignore"}),
@@ -227,7 +234,7 @@ def decide(base, head):
     """
     The `run` output the `changes` job publishes: each bucket, and `app`, as JSON.
 
-    `app` is any bucket but `platform`: what needs the jar and the bundle built.
+    `app` is any bucket but `platform` and `pinger`: what needs the jar and the bundle built.
     A path in no bucket turns every bucket on, and a run with no diff to read
     passes no base and runs everything.
     """
@@ -243,7 +250,7 @@ def decide(base, head):
             print("::notice::these changed paths are in no bucket, so the whole suite runs: "
                   + " ".join(stray))
             on = dict.fromkeys(gates, True)
-    on["app"] = any(value for name, value in on.items() if name != "platform")
+    on["app"] = any(value for name, value in on.items() if name not in STANDALONE)
     return "run=" + json.dumps(on)
 
 

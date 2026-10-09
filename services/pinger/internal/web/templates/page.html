@@ -1,0 +1,361 @@
+{{define "page"}}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shelly on SNTPings</title>
+  <link rel="stylesheet" href="/static/island.css">
+  <script>
+    // Set the theme before first paint so the page never flashes the wrong half.
+    try {
+      var t = localStorage.getItem('pinger-theme');
+      if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      if (t === 'light') document.documentElement.classList.add('theme-light');
+    } catch (e) {}
+    function toggleTheme() {
+      var light = document.documentElement.classList.toggle('theme-light');
+      try { localStorage.setItem('pinger-theme', light ? 'light' : 'dark'); } catch (e) {}
+    }
+  </script>
+  <script>
+    // The socket pushes the live state a few times a second and we bind it straight onto the
+    // page. The bar follows the real pass count on each push, with a short CSS glide between
+    // them, so it never overshoots and snaps back. The canvas tracks the same count.
+    (function () {
+      var smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // The canvas plate paints the real logo pixels in, the way SNTPings fills: the logo builds
+      // up in a shuffled order and then a steady stream of sparks shows the pixels we are sending
+      // right now. The rate it spawns at tracks the live packets a second.
+      function startPixels() {
+        var px = document.querySelector('.target__px');
+        var spark = document.querySelector('.target__spark');
+        if (!px || !spark || !px.getContext) return;
+        var base = px.getContext('2d');
+        var top = spark.getContext('2d');
+        top.globalCompositeOperation = 'lighter'; // glow without a CSS blend layer
+        var xs, ys, cols, order, n = 0, built = false, drawn = 0, base0 = -1, t0 = 0;
+
+        function build() {
+          if (built) return; // once only, so the loop never stacks
+          built = true;
+          var off = document.createElement('canvas');
+          off.width = 600; off.height = 480;
+          var octx = off.getContext('2d');
+          octx.drawImage(img, 0, 0, 600, 480);
+          var data = octx.getImageData(0, 0, 600, 480).data;
+          xs = new Uint16Array(600 * 480); ys = new Uint16Array(600 * 480); cols = new Array(600 * 480);
+          for (var i = 0, p = 0; i < 600 * 480; i++) {
+            var a = data[i * 4 + 3];
+            if (a < 8) continue;
+            xs[p] = i % 600; ys[p] = (i / 600) | 0;
+            cols[p] = 'rgba(' + data[i * 4] + ',' + data[i * 4 + 1] + ',' + data[i * 4 + 2] + ',' + (a / 255) + ')';
+            p++;
+          }
+          n = p;
+          order = new Uint32Array(n);
+          for (var j = 0; j < n; j++) order[j] = j;
+          for (var k = n - 1; k > 0; k--) { var m = (Math.random() * (k + 1)) | 0; var t = order[k]; order[k] = order[m]; order[m] = t; }
+          requestAnimationFrame(loop);
+        }
+        var img = new Image();
+        img.onload = build;
+        img.src = '/preview.png';
+        if (img.complete && img.naturalWidth) build();
+
+        // The fill tracks the real pass: we draw the first `target` pixels of the shuffled order,
+        // where target is this pass's progress interpolated between pushes. When a pass completes
+        // the count drops, so we clear and repaint — the logo visibly fills, over and over.
+        function loop(now) {
+          requestAnimationFrame(loop);
+          if (!n) return;
+          var el = document.getElementById('live');
+          var total = el ? (+el.dataset.passtotal || 1) : 1;
+          var bd = el ? (+el.dataset.passdone || 0) : 0;
+          var pps = el ? (+el.dataset.pps || 0) : 0;
+          // Paint only while the sender is live and a prefix is set — the running state. Idle (no
+          // prefix), closed (outside the window) and paused all leave the plate blank.
+          var lit = el && el.dataset.running === 'true';
+
+          if (!lit) { base.clearRect(0, 0, 600, 480); top.clearRect(0, 0, 600, 480); drawn = 0; base0 = -1; return; }
+          if (bd !== base0) { base0 = bd; t0 = now; } // resync to each fresh server count
+          var done = smooth ? Math.min(total, base0 + pps * (now - t0) / 1000) : base0;
+          var target = Math.max(0, Math.min(n, Math.floor(done / total * n)));
+          if (target < drawn) { base.clearRect(0, 0, 600, 480); drawn = 0; } // pass wrapped: repaint
+
+          top.clearRect(0, 0, 600, 480);
+          for (var j = drawn; j < target; j++) { var idx = order[j]; base.fillStyle = cols[idx]; base.fillRect(xs[idx], ys[idx], 1, 1); }
+          // Spark the pixels at the leading edge — the ones just painted — capped per frame.
+          top.fillStyle = '#7fd8ff';
+          for (var s = Math.max(0, target - 300); s < target; s++) { var id2 = order[s]; top.fillRect(xs[id2] - 1, ys[id2] - 1, 2, 2); }
+          drawn = target;
+        }
+      }
+
+      // Bind one push of live state onto the page: set data for the bar and canvas, update each
+      // text node, toggle the sections. No HTML is re-parsed — only the values that changed move.
+      function setText(id, v) { var e = document.getElementById(id); if (e && e.textContent !== v) e.textContent = v; }
+      function show(id, on) { var e = document.getElementById(id); if (e) e.style.display = on ? '' : 'none'; }
+      function apply(st) {
+        var live = document.getElementById('live');
+        if (live) {
+          live.dataset.passdone = st.passDone; live.dataset.passtotal = st.passTotal;
+          live.dataset.pps = st.ppsRaw; live.dataset.running = st.running ? 'true' : 'false'; live.dataset.state = st.state;
+        }
+        var chip = document.getElementById('chip'); if (chip) chip.className = st.chipClass;
+        setText('chip-label', st.chipLabel);
+        show('cd-sec', st.closed); show('err-sec', st.showErrors); show('num-sec', st.showNumbers); show('rate-sec', st.hasRate);
+        var cd = st.countdown || {}; setText('cd-d', cd.d); setText('cd-h', cd.h); setText('cd-m', cd.m); setText('cd-s', cd.s);
+        setText('err-title', st.errorTitle); setText('err-at', st.lastErrorAt); setText('err-msg', st.lastError);
+        setText('n-pps', st.pps); setText('n-cap', st.cap); setText('n-sent', st.sent); setText('n-passes', st.passes);
+        var ne = document.getElementById('n-errors');
+        if (ne) { ne.textContent = st.errors; ne.className = 'number-band__value' + (st.errorsWrong ? ' number-band__value--wrong' : ''); }
+        var fill = document.getElementById('m-fill'); if (fill) fill.style.width = st.passPercent + '%';
+        var mbar = document.getElementById('m-bar'); if (mbar) mbar.setAttribute('aria-valuenow', st.passPercent);
+        setText('m-pct', st.passPercent + '%'); setText('eta', st.eta);
+        setText('prefixtag', st.prefixLabel);
+        if (st.hasRate) {
+          var poly = document.getElementById('r-poly'); if (poly) poly.setAttribute('points', st.ratePoints);
+          var area = document.getElementById('r-area'); if (area) area.setAttribute('points', st.rateArea);
+          var rcap = document.getElementById('r-cap'); if (rcap) rcap.style.bottom = st.rateCap + '%';
+          var rnow = document.getElementById('r-now'); if (rnow) rnow.style.top = st.rateLastY + '%';
+          setText('r-nowv', st.pps); setText('r-ceil', st.rateCeil);
+          setText('r-count', '' + st.rateCount); setText('r-count2', '' + st.rateCount); setText('r-cap-txt', st.cap);
+        }
+
+      }
+
+      // The socket is the live feed; a timed fetch is the fallback when it cannot hold.
+      var ws, backoff = 1000, poll;
+      function fetchOnce() {
+        fetch('/live.json', { headers: { 'X-Requested-With': 'fetch' } })
+          .then(function (r) { return r.json(); }).then(apply).catch(function () {});
+      }
+      function startPolling() { if (!poll) { fetchOnce(); poll = setInterval(fetchOnce, 1000); } }
+      function stopPolling() { clearInterval(poll); poll = null; }
+
+      function connect() {
+        if (!('WebSocket' in window)) { startPolling(); return; }
+        var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(proto + '//' + location.host + '/ws');
+        ws.onopen = function () { backoff = 1000; stopPolling(); };
+        ws.onmessage = function (e) { try { apply(JSON.parse(e.data)); } catch (x) {} };
+        ws.onclose = function () {
+          startPolling();
+          setTimeout(connect, backoff);
+          backoff = Math.min(backoff * 2, 15000);
+        };
+        ws.onerror = function () { try { ws.close(); } catch (e) {} };
+      }
+
+      document.addEventListener('DOMContentLoaded', function () { startPixels(); connect(); });
+    })();
+  </script>
+</head>
+<body>
+<div class="island pinger">
+  <header class="bar">
+    <a href="https://esa-blueshell.nl" aria-label="Blueshell, home"><img class="bar__logo" alt="ESA Blueshell" src="/static/logo.webp" width="138" height="34"></a>
+    <nav class="bar__nav" aria-label="Pinger">
+      <a class="bar__link" href="https://esa-blueshell.nl">Website</a>
+      <a class="bar__link" href="https://pings.utwente.io/">SNTPings</a>
+    </nav>
+    <span style="flex-grow: 1;"></span>
+    <button type="button" class="bar__icon" aria-label="Switch theme" onclick="toggleTheme()"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="3.6" stroke="currentColor" stroke-width="1.25"></circle><path d="M9 1v2.2M9 14.8V17M1 9h2.2M14.8 9H17M3.4 3.4l1.6 1.6M13 13l1.6 1.6M14.6 3.4L13 5M5 13l-1.6 1.6" stroke="currentColor" stroke-width="1.25"></path></svg></button>
+    <a class="bar__icon" href="https://esa-blueshell.nl/account" aria-label="Account"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="6" r="3.2" stroke="currentColor" stroke-width="1.25"></circle><path d="M2.6 16c0-3.2 2.9-5.2 6.4-5.2s6.4 2 6.4 5.2" stroke="currentColor" stroke-width="1.25"></path></svg></a>
+  </header>
+
+  <section class="island-header" style="flex-shrink: 0;">
+    <span class="island-header__blob" aria-hidden="true"></span>
+    <div class="wrap page-head">
+      <div>
+        <h1 class="h-page">Shelly<br><span class="brand-ink">on SNTPings</span></h1>
+        <p class="page-head__body body-ash">We paint the Blueshell shell onto <a href="https://pings.utwente.io/" style="color: var(--color-brand-ink);">pings.utwente.io</a>, pass after pass.</p>
+      </div>
+      <div class="head-acts">
+        <span id="chip" class="{{.ChipClass}}"><span class="state-chip__dot"></span><span id="chip-label">{{.ChipLabel}}</span></span>
+      </div>
+    </div>
+  </section>
+
+  {{if .IsIdle}}
+  <section>
+    <div class="wrap" style="padding-bottom: 1.75rem;">
+      <div class="notice notice--info">
+        <p class="notice__title">Waiting for the prefix</p>
+        <p class="notice__body">SNTPings announces it when the event opens. The board sets it on the main site, and painting starts as soon as it is set.</p>
+      </div>
+    </div>
+  </section>
+  {{end}}
+
+  <section class="canvas-band">
+    <div class="wrap">
+      <div class="canvas-head">
+        <h2 class="h-sub">The Canvas</h2>
+        <div class="canvas-head__acts">
+          <div class="zoom" role="group" aria-label="Zoom">
+            <input type="radio" name="zoom" id="zoom-all" class="zoom__radio" checked>
+            <label class="zoom__opt" for="zoom-all">Whole canvas</label>
+            <input type="radio" name="zoom" id="zoom-corner" class="zoom__radio">
+            <label class="zoom__opt" for="zoom-corner">Our corner</label>
+          </div>
+          <a class="island-cut island-cut--quiet" href="https://pings.utwente.io/" style="padding: 0.5rem 1rem; font-size: 0.72rem;"><span>Watch the stream</span></a>
+        </div>
+      </div>
+      <div class="plate">
+        <div class="plate__stage">
+          <div class="plate__grid"></div>
+          <div class="target">
+            <img class="target__img target__dim" alt="" src="/preview.png">
+            <canvas class="target__img target__px" width="600" height="480" aria-label="The Blueshell logo filling in as we paint it"></canvas>
+            <canvas class="target__img target__spark" width="600" height="480" aria-hidden="true"></canvas>
+            <span class="target__frame"></span>
+          </div>
+          <span class="plate__tag plate__tag--target">Our image</span>
+          <span class="plate__shade"></span>
+        </div>
+        <span class="plate__tag plate__tag--tl">0 · 0</span>
+        <span class="plate__tag plate__tag--br" id="prefixtag">{{.PrefixLabel}}</span>
+      </div>
+    </div>
+  </section>
+
+  {{template "live" .}}
+
+  <section class="ground" style="border-top: 1px solid var(--color-hairline);">
+    <div class="wrap facts-row">
+      <div class="fact"><p class="fact__label">Opens</p><p class="fact__value">Fri 9 Oct, 18:00</p><p class="fact__sub">Amsterdam time</p></div>
+      <div class="fact"><p class="fact__label">Closes</p><p class="fact__value">Sun 11 Oct, 23:59</p><p class="fact__sub">Nothing is sent after</p></div>
+      <div class="fact"><p class="fact__label">Placement</p><p class="fact__value">Set on the main site</p><p class="fact__sub">The board picks the image and box</p></div>
+      <div class="fact"><p class="fact__label">Per pass</p><p class="fact__value">{{compact .Stats.PassTotal}} pixels</p><p class="fact__sub">Shuffled every pass</p></div>
+    </div>
+  </section>
+
+  <section class="lead" id="help" style="--accent: var(--color-acid); border-top: 1px solid var(--color-hairline);">
+    <div class="wrap">
+      <h2 class="h-sub">Help paint it</h2>
+      <p class="body-ash" style="max-width: 46rem; padding-bottom: 1rem;">Run the helper on your own machine and it paints the same image from your connection. It needs IPv6 and nothing to set up — it follows whatever the board chose. Be considerate: SNTPings slows down and blacklists sources that ping too hard.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+        <a class="island-cut island-cut--solid" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-macos-apple"><span>macOS (Apple)</span></a>
+        <a class="island-cut island-cut--quiet" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-macos-intel"><span>macOS (Intel)</span></a>
+        <a class="island-cut island-cut--quiet" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-windows-amd64.exe"><span>Windows</span></a>
+        <a class="island-cut island-cut--quiet" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-linux-amd64"><span>Linux (x64)</span></a>
+        <a class="island-cut island-cut--quiet" href="https://github.com/ESA-Blueshell/website/releases/latest/download/blueshell-pinger-linux-arm64"><span>Linux (ARM)</span></a>
+      </div>
+      <ul class="body-ash" style="max-width: 46rem; padding-top: 1rem; margin: 0; line-height: 1.7; font-size: 0.85rem;">
+        <li>macOS: run <code>./blueshell-pinger-macos-apple</code> in Terminal.</li>
+        <li>Windows: right-click the file, Run as administrator.</li>
+        <li>Linux: <code>chmod +x</code> it, then run. If it says permission denied, use <code>sudo</code>, or once: <code>sudo sysctl -w net.ipv6.ping_group_range="0 2147483647"</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <span style="flex-grow: 1;"></span>
+  <footer class="ground" style="flex-shrink: 0; box-sizing: border-box; border-top: 1px solid var(--color-hairline); padding-top: 1.25rem; padding-bottom: 1rem;">
+    <div class="wrap" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem 3rem; flex-wrap: wrap;">
+      <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <p class="body-ash" style="font-size: 0.8rem;">E-Sports Association Blueshell · Enschede</p>
+        <div class="socials">
+          <a href="https://discord.gg/23YMFQy" aria-label="Discord" class="social"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"></path></svg></a>
+          <a href="https://www.instagram.com/esablueshell/" aria-label="Instagram" class="social"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M6.2 2h7.6A4.2 4.2 0 0 1 18 6.2v7.6a4.2 4.2 0 0 1-4.2 4.2H6.2A4.2 4.2 0 0 1 2 13.8V6.2A4.2 4.2 0 0 1 6.2 2Zm3.8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 1.7a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 0 1 0-4.6Zm4.4-3.2a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z"></path></svg></a>
+          <a href="https://www.twitch.tv/blueshellesports" aria-label="Twitch" class="social"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M4.3 2 2.5 5.6V16h4v2.5h2.4l2.5-2.5h3.3l3.8-3.8V2Zm1.6 1.6h10.5v7.9l-2.4 2.4h-3.4l-2.3 2.3v-2.3H5.9Z"></path><path d="M8.7 6.3h1.7v4.5H8.7Zm4.2 0h1.7v4.5h-1.7Z"></path></svg></a>
+          <a href="mailto:board@blueshell.utwente.nl" aria-label="Email the board" class="social"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M2 4h16v12H2Zm1.4 1.3v.3L10 10.7l6.6-5.1v-.3Z"></path></svg></a>
+        </div>
+      </div>
+      <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+          <p class="slice__group-label">The event</p>
+          <a class="body-ash" style="font-size: 0.8rem;" href="https://pings.utwente.io/">pings.utwente.io</a>
+          <a class="body-ash" style="font-size: 0.8rem;" href="https://gitlab.snt.utwente.nl/pings/sntpings-server-nikhef-edition">The receiver's source</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+          <p class="slice__group-label">Blueshell</p>
+          <a class="body-ash" style="font-size: 0.8rem;" href="https://esa-blueshell.nl">esa-blueshell.nl</a>
+          <a class="body-ash" style="font-size: 0.8rem;" href="https://discord.gg/23YMFQy">Ask us on Discord</a>
+        </div>
+      </div>
+    </div>
+    <div class="wrap" style="margin-top: 1rem; padding-top: 0.7rem; border-top: 1px solid var(--color-hairline); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;">
+      <p class="slice__group-label">SITECIE GANG © 2026</p>
+      <p class="slice__group-label">Built by <a href="https://jorisjonkers.dev" style="color: var(--color-ash);">JorisJonkers.dev</a></p>
+    </div>
+  </footer>
+</div>
+</body>
+</html>{{end}}
+
+{{define "live"}}<div id="live" data-live-meter data-passdone="{{.Stats.PassDone}}" data-passtotal="{{.Stats.PassTotal}}" data-pps="{{.Stats.ActualPPS}}" data-running="{{.IsRunning}}" data-state="{{.State}}">
+  <section id="cd-sec" class="number-band countdown"{{if not .IsClosed}} style="display:none"{{end}}>
+    <div class="wrap">
+      <p class="eyebrow" style="padding-top: 2.25rem;">Until the canvas opens</p>
+      <div class="number-band__grid" style="padding-top: 1.25rem;">
+        <div class="number-band__cell"><p class="number-band__value" id="cd-d">{{.Countdown.Days}}</p><p class="number-band__label">Days</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="cd-h">{{.Countdown.Hours}}</p><p class="number-band__label">Hours</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="cd-m">{{.Countdown.Minutes}}</p><p class="number-band__label">Minutes</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="cd-s">{{.Countdown.Seconds}}</p><p class="number-band__label">Seconds</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="err-sec"{{if not .ShowErrors}} style="display:none"{{end}}>
+    <div class="wrap" style="padding-top: 1.75rem;">
+      <div class="notice notice--danger">
+        <p class="notice__title" id="err-title">{{.ErrorTitle}}</p>
+        <p class="notice__body">Last at <span id="err-at">{{.LastErrorAt}}</span>: <span id="err-msg">{{.Stats.LastError}}</span>. The sender backs off and carries on.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="num-sec" class="number-band"{{if not .ShowNumbers}} style="display:none"{{end}}>
+    <div class="wrap">
+      <div class="number-band__grid">
+        <div class="number-band__cell"><p class="number-band__value" id="n-pps">{{thousands .Stats.ActualPPS}}</p><p class="number-band__label">Packets per second, cap <span id="n-cap">{{thousands .Settings.RatePPS}}</span></p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="n-sent">{{compact .Stats.Sent}}</p><p class="number-band__label">Pixels sent</p></div>
+        <div class="number-band__cell"><p class="number-band__value" id="n-passes">{{compact .Stats.Passes}}</p><p class="number-band__label">Passes over the logo</p></div>
+        <div class="number-band__cell"><p class="number-band__value{{if .Stats.Errors}} number-band__value--wrong{{end}}" id="n-errors">{{compact .Stats.Errors}}</p><p class="number-band__label">Send errors</p></div>
+      </div>
+      <div class="pass-meter">
+        <div class="pass-meter__head">
+          <span class="meter-row__label">This pass</span>
+          <b class="meter-pct" id="m-pct">{{.PassPercent}}%</b>
+        </div>
+        <div class="meter-cut" id="m-bar" role="progressbar" aria-label="This pass" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.PassPercent}}"><span class="meter-cut__fill" id="m-fill" style="width: {{.PassPercent}}%;"></span></div>
+        <p class="meter-eta"><b id="eta">{{.PassEta}}</b></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="rate-sec" class="lead"{{if not .RatePoints}} style="display:none"{{end}}>
+    <div class="wrap history">
+      <div class="history__head">
+        <div>
+          <p class="eyebrow">Rate</p>
+          <h2 class="h-sub" style="margin-top: 0.5rem;">The last <span id="r-count">{{.RateCount}}</span> seconds</h2>
+        </div>
+        <p class="history__legend"><i></i>Cap <span id="r-cap-txt">{{thousands .Settings.RatePPS}}</span> a second</p>
+      </div>
+      <div class="history__chart">
+        <div class="history__yaxis">
+          <span id="r-ceil">{{thousands .RateCeil}}</span>
+          <span>0</span>
+        </div>
+        <div class="history__plot">
+          <span class="history__cap" id="r-cap" style="bottom: {{.CapPercent}}%;"></span>
+          <svg class="history__line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="rate-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop class="history__fill-top" offset="0"></stop>
+                <stop class="history__fill-bottom" offset="1"></stop>
+              </linearGradient>
+            </defs>
+            <polygon class="history__area" id="r-area" points="{{.RateArea}}"></polygon>
+            <polyline class="history__stroke" id="r-poly" points="{{.RatePoints}}"></polyline>
+          </svg>
+          <span class="history__now" id="r-now" style="top: {{.RateLastY}}%;"><span class="history__dot"></span><b id="r-nowv">{{thousands .Stats.ActualPPS}}</b>/s</span>
+        </div>
+      </div>
+      <div class="history__axis"><span><span id="r-count2">{{.RateCount}}</span> s ago</span><span>Now</span></div>
+    </div>
+  </section>
+</div>{{end}}

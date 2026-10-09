@@ -35,6 +35,13 @@ class VaultConfigImportIT {
     }
 
     @Test
+    fun `the SiteCie report token comes from its own path, not the api blob`() {
+        prodEnvironment { property ->
+            assertThat(property("pinger.report.service-token")).isEqualTo("pinger-token-from-vault")
+        }
+    }
+
+    @Test
     fun `the prod profile sends and polls as the bounce mailbox, with its password from Vault`() {
         prodEnvironment { property ->
             assertThat(property("spring.mail.username")).isEqualTo(BOUNCE_MAILBOX)
@@ -75,6 +82,7 @@ class VaultConfigImportIT {
                 "discord.botToken=discord-from-vault",
             )
             vault.put("secret/platform/mail", "account.bounce=bounce-from-vault")
+            vault.put("secret/platform/pinger-report", "service-token=pinger-token-from-vault")
             apiToken = vault.tokenFor("api")
         }
 

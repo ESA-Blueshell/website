@@ -40,6 +40,7 @@ class ApplicationModuleDetectionTest {
                 "sync",
                 "discord",
                 "oidc",
+                "pinger",
                 "security",
                 "shared",
             )

@@ -42,3 +42,14 @@ spec:
   interval: 5m0s
   secretRef:
     name: ghcr-pull-secret
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: pinger
+  namespace: flux-system
+spec:
+  image: ghcr.io/esa-blueshell/pinger
+  interval: 5m0s
+  secretRef:
+    name: ghcr-pull-secret

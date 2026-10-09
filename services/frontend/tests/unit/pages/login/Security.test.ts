@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import Security from "@/pages/login/Security.vue"
 import {mountInApp, settle} from "../helpers"
+import {ok, refused} from "./security/stubs"
 
 const {mockStore, mockAuth} = vi.hoisted(() => ({
   mockStore: {commit: vi.fn(), getters: {getLogin: {userId: 3}}},
@@ -9,6 +10,8 @@ const {mockStore, mockAuth} = vi.hoisted(() => ({
     listSignIns: vi.fn(),
     readMySecurityLog: vi.fn(),
     readEmailAddress: vi.fn(),
+    listConnectedApps: vi.fn(),
+    revokeApp: vi.fn(),
   },
 }))
 
@@ -53,6 +56,8 @@ describe("the security hub", () => {
       totalPages: 1,
       totalElements: 3,
     })
+    mockAuth.listConnectedApps.mockResolvedValue([])
+    mockAuth.revokeApp.mockResolvedValue(ok())
   })
 
   it("stands where the account stands: two-factor, where it is signed in and the last change", async () => {
@@ -129,5 +134,43 @@ describe("the security hub", () => {
     const wrapper = await open()
 
     expect(wrapper.get("[data-testid=security-standing-last-change]").text()).toContain("Nothing yet")
+  })
+
+  it("lists a connected app with its name and what revoking it does", async () => {
+    mockAuth.listConnectedApps.mockResolvedValue([{id: "pinger-app", name: "Pinger", authorizedAt: "2026-09-22T09:00:00Z"}])
+    const wrapper = await open()
+
+    const app = row(wrapper, "security-connected-app")
+    expect(app.find(".cut-row__title").text()).toBe("Pinger")
+    expect(app.text()).toContain("Connected Tue 22 Sep")
+    expect(app.text()).toContain("signs in again after you revoke it")
+  })
+
+  it("shows no connected-apps section when nothing is connected", async () => {
+    const wrapper = await open()
+
+    expect(wrapper.find("[data-testid=security-connected-apps]").exists()).toBe(false)
+  })
+
+  it("revokes a connected app, then reads the list again", async () => {
+    mockAuth.listConnectedApps.mockResolvedValue([{id: "pinger-app", name: "Pinger", authorizedAt: null}])
+    const wrapper = await open()
+
+    await row(wrapper, "security-revoke-pinger-app").trigger("click")
+    await settle()
+
+    expect(mockAuth.revokeApp).toHaveBeenCalledWith("pinger-app")
+    expect(mockAuth.listConnectedApps).toHaveBeenCalledTimes(2)
+  })
+
+  it("says why when revoking an app is refused", async () => {
+    mockAuth.listConnectedApps.mockResolvedValue([{id: "pinger-app", name: "Pinger", authorizedAt: null}])
+    mockAuth.revokeApp.mockResolvedValueOnce(refused("That app could not be revoked."))
+    const wrapper = await open()
+
+    await row(wrapper, "security-revoke-pinger-app").trigger("click")
+    await settle()
+
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "That app could not be revoked.")
   })
 })

@@ -1,0 +1,23 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: pinger
+  namespace: edge-system
+  annotations:
+    external-dns.alpha.kubernetes.io/target: 157.173.115.164,2a02:c207:2316:2642::1
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
+    kubernetes.io/ingress.class: traefik-public
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # Public: anyone may watch. No forward-auth here, so the page is open to anonymous viewers.
+    # The page has no settings of its own — every setting is owned by the api and set from the
+    # main site behind its own ADMIN check — so there is nothing here to gate.
+    - kind: Rule
+      match: Host(`pings.esa-blueshell.nl`)
+      services:
+        - name: pinger
+          namespace: default
+          port: 8090
+  tls: {}

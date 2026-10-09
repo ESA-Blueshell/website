@@ -94,6 +94,11 @@ security:
   auth-rate-limit:
     enabled: false
 
+pinger:
+  report:
+    # A known value the report suites present; production reads the real one from Vault.
+    service-token: test-pinger-service-token
+
 springdoc:
   api-docs:
     enabled: true

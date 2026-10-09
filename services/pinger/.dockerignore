@@ -1,0 +1,9 @@
+*
+!go.mod
+!go.sum
+!cmd
+!internal
+!paint
+!apipaint
+!canvas
+**/*_test.go

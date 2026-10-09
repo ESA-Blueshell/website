@@ -1,0 +1,33 @@
+package runner
+
+import (
+	"testing"
+
+	"github.com/ESA-Blueshell/website/services/pinger/canvas"
+	"github.com/ESA-Blueshell/website/services/pinger/paint"
+)
+
+// The app's chosen rate must win over the paint job's rate, while the prefix the api owns is kept,
+// so the member sets how hard their own machine pings without moving where it paints.
+func TestApplyRateOverridesPaintJobRate(t *testing.T) {
+	prefix, err := canvas.ParsePrefix("2001:db8::/64")
+	if err != nil {
+		t.Fatalf("parse prefix: %v", err)
+	}
+
+	var r Runner
+	r.rate.Store(500)
+
+	got := r.applyRate(paint.Settings{Prefix: prefix, RatePPS: 200_000})
+	if got.RatePPS != 500 {
+		t.Errorf("RatePPS = %d, want the app rate 500", got.RatePPS)
+	}
+	if got.Prefix != prefix {
+		t.Errorf("Prefix = %v, want the api prefix kept %v", got.Prefix, prefix)
+	}
+
+	r.rate.Store(42)
+	if got := r.applyRate(paint.Settings{RatePPS: 1000}); got.RatePPS != 42 {
+		t.Errorf("RatePPS = %d, want the updated app rate 42", got.RatePPS)
+	}
+}

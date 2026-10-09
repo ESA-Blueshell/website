@@ -220,6 +220,99 @@ jobs:
       - name: Check every reusable-workflow caller grants what it calls
         run: ./scripts/check-workflow-permissions.py
 
+  pinger:
+    # A real Valkey the settings tests point at, so the module needs no test-server dependency.
+    name: Pinger tests and image
+    needs: changes
+    if: fromJSON(needs.changes.outputs.run).pinger
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/pinger
+    services:
+      valkey:
+        image: valkey/valkey:8-alpine@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: services/pinger/go.mod
+          cache-dependency-path: services/pinger/go.sum
+
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race -count=1 ./...
+        env:
+          PINGER_TEST_VALKEY: localhost:6379
+
+      # The engine's send path cannot be exercised on macOS: its unprivileged ICMPv6 datagram
+      # socket wedges after a handful of sends to the spread per-pixel destinations. Linux has no
+      # such cap, so the send-path check runs here. Open the datagram socket to the ping group and
+      # route the documentation prefix to loopback, so the writes land locally and nothing leaves
+      # the runner.
+      - name: Send-path check
+        run: |
+          # Best-effort setup: a runner with IPv6 disabled or a locked-down route table cannot host
+          # the check, and the test then skips rather than failing. Enable IPv6 on loopback, open the
+          # datagram socket to the ping group, and route the documentation prefix to loopback so the
+          # writes land locally and nothing leaves the runner.
+          sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=0 || true
+          sudo sysctl -w net.ipv6.ping_group_range="0 2147483647" || true
+          sudo ip -6 route add 2001:db8:5747:5055::/64 dev lo || true
+          PINGER_SENDPATH_E2E=1 go test -race -count=1 -run TestSendPathSustains -v ./paint/
+
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+
+      - name: Build the image
+        run: |
+          docker buildx build --progress=plain \
+            --cache-from type=gha,scope=pinger --cache-to type=gha,mode=max,scope=pinger \
+            -t blueshell-website/pinger:ci .
+
+  pinger-app:
+    # The desktop app's Go packages: format, vet, build and test. The full `wails build` needs the
+    # GTK/WebKit system libraries and is cross-compiled for packaging in #2237, so CI builds the Go
+    # packages under internal/ here. The Wails entry (main.go, app.go) compiles on the developer's
+    # machine; it is left out of the CI build because its WebKit bindings are not installed here.
+    name: Pinger app tests
+    needs: changes
+    if: fromJSON(needs.changes.outputs.run).pingerapp
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/pinger-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: services/pinger-app/go.mod
+          cache-dependency-path: services/pinger-app/go.sum
+
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+
+      - name: Vet
+        run: go vet ./internal/...
+
+      - name: Build
+        run: go build ./internal/...
+
+      - name: Test
+        run: go test -race -count=1 ./internal/...
+
   fe-static:
     # Also the bundle build: the system tests serve this artifact with
     # `vite preview`, so building it once here spares six shards a build each.
@@ -1043,6 +1136,8 @@ jobs:
       - nix-flake-check
       - flux-kustomize-check
       - workflow-checks
+      - pinger
+      - pinger-app
       - changeset-compatibility
       - changeset-sql
       - fe-static

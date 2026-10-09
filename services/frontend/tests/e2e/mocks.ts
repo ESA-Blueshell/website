@@ -883,6 +883,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/users/me/trusted-browsers") {
       return answer(route, "trustedBrowsers", [])
     }
+    if (method === "GET" && path === "/me/connected-apps") {
+      return answer(route, "connectedApps", [])
+    }
     if (method === "GET" && path === "/users/me/first-contribution") {
       return fixtures.firstContribution ? answer(route, "findOwnFirstContribution", fixtures.firstContribution) : route.fulfill({status: 204, body: ""})
     }

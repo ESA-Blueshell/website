@@ -83,6 +83,13 @@ services:
       - SPRING_MAIL_PROPERTIES_MAIL_SMTP_LOCALHOST=api.dev.local
       - VALKEY_HOST=valkey
       - VALKEY_PORT=6379
+      # A throwaway LOCAL dev token so the dry-run pinger's SiteCie reports authenticate. Matches
+      # the pinger container's PINGER_REPORT_SERVICE_TOKEN. Dev only; production reads the real one
+      # from Vault, so this hardcoded value never reaches another profile.
+      - PINGER_REPORT_SERVICE_TOKEN=dev-sitecie-service-token
+      # The dev-only leaderboard demo (DevPingerActivity) is OFF: the board fills only from real
+      # pings now, so the desktop app can be tested end to end.
+      - APP_PINGER_DEMO_ENABLED=false
     depends_on:
       db:
         condition: service_healthy

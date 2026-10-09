@@ -2,6 +2,8 @@ package net.blueshell.api.oidc.domain
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.security.oauth2.core.AuthorizationGrantType
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 
 /**
  * Pins the redirect URIs each downstream client may be sent back to. The
@@ -31,5 +33,24 @@ class RegisteredClientsTest {
         assertThat(headlamp).isNotNull
         assertThat(headlamp!!.redirectUris)
             .containsExactly("https://headlamp.esa-blueshell.nl/oidc-callback")
+    }
+
+    @Test
+    fun `pinger-app is public, uses PKCE and redirects to a loopback address`() {
+        val pingerApp = clients.findByClientId("pinger-app")
+
+        assertThat(pingerApp).isNotNull
+        assertThat(pingerApp!!.clientAuthenticationMethods).containsExactly(ClientAuthenticationMethod.NONE)
+        assertThat(pingerApp.clientSettings.isRequireProofKey).isTrue()
+        assertThat(pingerApp.redirectUris)
+            .containsExactly("http://127.0.0.1:8991/login/oauth2/code/pinger-app")
+    }
+
+    @Test
+    fun `pinger-app holds a refresh token so a member can revoke it`() {
+        val pingerApp = clients.findByClientId("pinger-app")
+
+        assertThat(pingerApp!!.authorizationGrantTypes)
+            .contains(AuthorizationGrantType.AUTHORIZATION_CODE, AuthorizationGrantType.REFRESH_TOKEN)
     }
 }

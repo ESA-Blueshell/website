@@ -59,6 +59,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [030](ADR-030-a-sign-in-is-a-server-side-record.md) | A Sign-In Is a Server-Side Record | Accepted | The auth cookie is a rotating view of a Valkey record that ends on age, idleness, a stale copy or another browser |
 | [031](ADR-031-two-factor-authentication.md) | Two-Factor Authentication | Accepted | Authenticator app and backup codes; a granted role waits for two-factor, and its sign-in sets it up without the password again; lock links lock and never revert |
 | [033](ADR-033-the-api-reads-its-secrets-from-vault.md) | The API Reads Its Secrets From Vault, and They Rotate Without a Restart | Accepted | Spring Cloud Vault only, no env file, variable or synced Secret; KV polled and database logins leased, so a rotated key needs no restart |
+| [035](ADR-035-a-member-signs-a-desktop-pinger-client-in.md) | A Member Signs a Desktop Pinger Client In, and the Report Chain Takes a Bearer | Accepted | Amends 030: a `pinger-app` public client and a `/pinger/report/**` chain accept a member bearer and SiteCie's service token; the main chain stays cookie-only |
 
 ### Job System
 

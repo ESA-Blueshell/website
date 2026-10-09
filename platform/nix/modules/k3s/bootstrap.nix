@@ -29,5 +29,8 @@ in
       ++ lib.optionals isK3sServer [ 6443 ];
     # Flannel VXLAN backend.
     networking.firewall.allowedUDPPorts = [ 8472 ];
+    # The pinger runs on the host network, so Traefik reaches it on the node from the pod
+    # bridge. Open on cni0 only: the public interface stays shut.
+    networking.firewall.interfaces.cni0.allowedTCPPorts = [ 8090 ];
   };
 }

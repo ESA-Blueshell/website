@@ -72,10 +72,11 @@ describe("SNTPings page", () => {
 
   afterEach(() => unmountAll(wrappers, "SntPings"))
 
-  it("paints the canvas image and the ranked rows with the house line, for everyone", async () => {
+  it("ghosts our art over the one live canvas and shows the ranked rows with the house line, for everyone", async () => {
     const wrapper = await mount(null)
 
-    expect(wrapper.find(".target__dim").attributes("src")).toContain("/pinger-paint/art.webp")
+    expect(wrapper.findAll("canvas")).toHaveLength(0)
+    expect(wrapper.get("[data-testid=snt-live-box] img").attributes("src")).toContain("/pinger-paint/art.webp")
     expect(wrapper.get("[data-testid=snt-house]").text()).toContain("SiteCie")
 
     const rows = wrapper.findAll("[data-testid=snt-row]")

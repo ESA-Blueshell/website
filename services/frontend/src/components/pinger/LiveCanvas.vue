@@ -1,21 +1,25 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {apiUrl, type Placement} from "@/domains/pinger"
 
 /**
  * The event's livestream of the canvas with our placements drawn over it in their boxes, so what we
  * paint can be checked against what the canvas shows. Safari plays the HLS feed itself; elsewhere
- * hls.js is loaded on demand.
+ * hls.js is loaded on demand. It also measures the pixels one pass paints, which the meter reads.
  */
 defineOptions({name: "PingerLiveCanvas"})
 
 const CANVAS_W = 3840
 const CANVAS_H = 2160
+const SAMPLE_W = 600
+const SAMPLE_H = 480
 
 const props = defineProps<{
   placements: Placement[]
   streamUrl: string
 }>()
+
+const emit = defineEmits<{passtotal: [count: number]}>()
 
 type Overlay = "ghost" | "outline" | "off"
 const overlays: {mode: Overlay, label: string}[] = [
@@ -24,6 +28,7 @@ const overlays: {mode: Overlay, label: string}[] = [
   {mode: "off", label: "Off"},
 ]
 const overlay = ref<Overlay>("ghost")
+const corners = ["tl", "tr", "bl", "br"] as const
 
 const video = ref<HTMLVideoElement | null>(null)
 const playing = ref<boolean>(false)
@@ -39,6 +44,47 @@ const boxes = computed(() => props.placements.map(p => ({
     height: `${(p.height / CANVAS_H) * 100}%`,
   },
 })))
+
+/** Opaque pixels in the image sampled at a fixed size; 0 where a cross-origin image hides them. */
+function opaquePixels(img: HTMLImageElement): number {
+  const off = document.createElement("canvas")
+  off.width = SAMPLE_W
+  off.height = SAMPLE_H
+  const ctx = off.getContext("2d")
+  if (!ctx) return 0
+  ctx.drawImage(img, 0, 0, SAMPLE_W, SAMPLE_H)
+  let data: Uint8ClampedArray
+  try {
+    data = ctx.getImageData(0, 0, SAMPLE_W, SAMPLE_H).data
+  } catch {
+    return 0
+  }
+  let count = 0
+  for (let i = 3; i < data.length; i += 4) {
+    if ((data[i] ?? 0) >= 8) count++
+  }
+  return count
+}
+
+// A load from a replaced set of placements must not count towards the current one.
+let measuring = 0
+
+function measure(placements: Placement[]): void {
+  const round = ++measuring
+  const counts = new Map<number, number>()
+  emit("passtotal", 0)
+  for (const p of placements) {
+    const img = new Image()
+    img.onload = () => {
+      if (round !== measuring) return
+      counts.set(p.id, opaquePixels(img))
+      emit("passtotal", [...counts.values()].reduce((sum, n) => sum + n, 0))
+    }
+    img.src = apiUrl(p.imageUrl)
+  }
+}
+
+watch(() => props.placements, measure, {immediate: true})
 
 let destroy: (() => void) | null = null
 
@@ -63,7 +109,10 @@ onMounted(async () => {
   destroy = () => hls.destroy()
 })
 
-onBeforeUnmount(() => destroy?.())
+onBeforeUnmount(() => {
+  measuring++
+  destroy?.()
+})
 </script>
 
 <template>
@@ -99,6 +148,12 @@ onBeforeUnmount(() => destroy?.())
             class="live__img"
             :src="box.src"
           >
+          <span
+            v-for="corner in corners"
+            :key="corner"
+            class="live__corner"
+            :class="`live__corner--${corner}`"
+          />
         </div>
       </div>
       <span
@@ -159,20 +214,73 @@ onBeforeUnmount(() => destroy?.())
   pointer-events: none;
 }
 
+/* The frame has to read over whatever the stream shows, so a bright line sits between two dark
+   ones. The line is drawn inside the box, so a placement on the canvas edge keeps it past the
+   plate's clip; only the corner brackets stand outside. */
 .live__box {
   position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  outline: 3px solid var(--color-acid);
+  outline-offset: -3px;
+  box-shadow:
+    inset 0 0 0 5px oklch(0 0 0 / 75%),
+    0 0 0 2px oklch(0 0 0 / 75%),
+    0 0 14px 2px color-mix(in oklab, var(--color-acid) 45%, transparent);
 }
 
-.live__overlay--outline .live__box,
-.live__overlay--ghost .live__box {
-  outline: 1px dashed color-mix(in oklab, var(--color-brand-lit) 80%, transparent);
-  outline-offset: 0;
+.live__corner {
+  position: absolute;
+  width: clamp(12px, 18%, 32px);
+  height: clamp(12px, 18%, 32px);
+  border: 0 solid var(--color-acid);
+  filter: drop-shadow(0 0 1.5px oklch(0 0 0 / 90%));
+}
+
+.live__corner--tl {
+  left: -7px;
+  top: -7px;
+  border-left-width: 6px;
+  border-top-width: 6px;
+}
+
+.live__corner--tr {
+  right: -7px;
+  top: -7px;
+  border-right-width: 6px;
+  border-top-width: 6px;
+}
+
+.live__corner--bl {
+  left: -7px;
+  bottom: -7px;
+  border-left-width: 6px;
+  border-bottom-width: 6px;
+}
+
+.live__corner--br {
+  right: -7px;
+  bottom: -7px;
+  border-right-width: 6px;
+  border-bottom-width: 6px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .live__box {
+    animation: live-glow 1.8s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes live-glow {
+  to {
+    box-shadow:
+      inset 0 0 0 5px oklch(0 0 0 / 75%),
+      0 0 0 2px oklch(0 0 0 / 75%),
+      0 0 26px 6px color-mix(in oklab, var(--color-acid) 70%, transparent);
+  }
 }
 
 .live__img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;

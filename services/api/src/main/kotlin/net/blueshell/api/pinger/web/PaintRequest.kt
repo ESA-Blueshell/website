@@ -1,10 +1,13 @@
 package net.blueshell.api.pinger.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.DecimalMax
+import jakarta.validation.constraints.DecimalMin
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
+import net.blueshell.api.pinger.domain.MotionMode
 
 /**
  * An admin's edit to the canvas settings: the prefix, the rate and the SiteCie toggle. The prefix is
@@ -45,4 +48,15 @@ data class PlacementBoxRequest(
     @field:Min(0) @field:Max(2159) val originY: Int,
     @field:Min(1) @field:Max(3840) val width: Int,
     @field:Min(1) @field:Max(2160) val height: Int,
+)
+
+/** An admin setting how one placement moves. A static placement drops its velocity. */
+@Schema(description = "An admin setting a placement's motion")
+data class PlacementMotionRequest(
+    val mode: MotionMode,
+    // Mirrors MAX_SPEED_PPS in PingerPaintService; change one, change the other.
+    @field:Schema(description = "Horizontal speed in px/s, negative is leftwards")
+    @field:DecimalMin("-2000") @field:DecimalMax("2000") val vx: Double = 0.0,
+    @field:Schema(description = "Vertical speed in px/s, negative is upwards")
+    @field:DecimalMin("-2000") @field:DecimalMax("2000") val vy: Double = 0.0,
 )

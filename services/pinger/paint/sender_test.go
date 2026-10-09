@@ -203,12 +203,8 @@ func TestSenderCountsALocalSendErrorAndCarriesOn(t *testing.T) {
 	s := start(t, conn, pixels(100), open, box)
 	eventually(t, func() bool { return s.Snapshot().Passes >= 2 })
 
-	snap := s.Snapshot()
-	if snap.Errors != 3 {
-		t.Fatalf("counted %d errors, want 3", snap.Errors)
-	}
-	if snap.LastError != syscall.ENOBUFS.Error() {
-		t.Fatalf("last error %q", snap.LastError)
+	if snap := s.Snapshot(); snap.Errors != 3 || snap.Failing {
+		t.Fatalf("counted %d errors, failing %v; want 3 and a path that works", snap.Errors, snap.Failing)
 	}
 }
 
@@ -220,6 +216,9 @@ func TestSenderReportsABrokenPathAndRecovers(t *testing.T) {
 
 	s := start(t, conn, pixels(200), open, box)
 	eventually(t, func() bool { return s.Snapshot().Failing })
+	if got := s.Snapshot().LastError; got != syscall.ENOBUFS.Error() {
+		t.Fatalf("last error %q", got)
+	}
 
 	conn.fails.Store(0)
 	eventually(t, func() bool { return !s.Snapshot().Failing })

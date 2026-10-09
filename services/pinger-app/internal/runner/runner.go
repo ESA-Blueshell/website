@@ -14,8 +14,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"golang.org/x/net/icmp"
-
 	"github.com/ESA-Blueshell/website/services/pinger/apipaint"
 	"github.com/ESA-Blueshell/website/services/pinger/paint"
 
@@ -322,7 +320,7 @@ func (r *Runner) reportLoop(ctx context.Context, sender *paint.Sender) {
 
 // drainSocket reads and discards whatever comes back on the ICMP socket, so a flood of replies or
 // ICMP error messages from a contained local target cannot fill the receive buffer and block sends.
-func drainSocket(ctx context.Context, c *icmp.PacketConn) {
+func drainSocket(ctx context.Context, c socket) {
 	buf := make([]byte, 1500)
 	for ctx.Err() == nil {
 		_ = c.SetReadDeadline(time.Now().Add(time.Second))

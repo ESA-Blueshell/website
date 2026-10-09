@@ -64,19 +64,22 @@ func run() error {
 	}
 
 	apiURL := env("PINGER_API_URL", "http://localhost:8080")
+	// The replica id keeps this replica's send counter and paint share apart from the other SiteCie
+	// replicas'; it defaults to the hostname, which is the pod name in the cluster and is stable
+	// across a restart of the same replica. The token is a secret read from the environment; an
+	// empty one leaves the reporter idle and this replica painting every pixel.
+	replicaID := env("PINGER_REPLICA_ID", hostnameOr("sitecie-replica"))
+	serviceToken := os.Getenv("PINGER_REPORT_SERVICE_TOKEN")
+
+	shared := apipaint.NewShareFilter(sender)
 	client := apipaint.NewClient(apiURL)
-	poller = apipaint.NewPoller(client, 2*time.Second, sender, preview.set)
+	poller = apipaint.NewPoller(client, 2*time.Second, shared, preview.set)
 	go poller.Run(ctx)
+	go apipaint.NewShareStream(apiURL, replicaID, apipaint.ServiceToken(serviceToken)).Run(ctx, shared.SetShare)
 	go sender.Run(ctx)
 	go persistStats(ctx, store, sender)
 
-	// Report this painter's contribution as SiteCie. The token is a secret read from the
-	// environment; an empty one leaves the reporter idle rather than talking unauthenticated. The
-	// replica id keeps this replica's send counter apart from the other SiteCie replicas', so the
-	// api aggregates them instead of one clobbering another; it defaults to the hostname, which is
-	// the pod name in the cluster and is stable across a restart of the same replica.
-	replicaID := env("PINGER_REPLICA_ID", hostnameOr("sitecie-replica"))
-	reporter := apipaint.NewReporter(apiURL, os.Getenv("PINGER_REPORT_SERVICE_TOKEN"), replicaID, 10*time.Second, func() apipaint.ReportStats {
+	reporter := apipaint.NewReporter(apiURL, serviceToken, replicaID, 10*time.Second, func() apipaint.ReportStats {
 		s := sender.Snapshot()
 		return apipaint.ReportStats{Online: s.State == paint.Running, PPS: int(s.ActualPPS), Sent: s.Sent, Errors: s.Errors}
 	})
@@ -128,13 +131,22 @@ func (h *previewHolder) set(placed canvas.Placement) {
 	h.png.Store(&b)
 }
 
-// openSocket opens the raw ICMPv6 socket, which needs NET_RAW. A dry run swaps in a socket that
-// sends nothing and opens the window, so the page can be tried before the event.
+// openSocket opens frame sockets on Linux, falling back to the raw ICMPv6 socket; both need
+// NET_RAW. The frames skip the qdisc: this host sends nothing else that needs fair queueing. A dry
+// run swaps in a socket that sends nothing and opens the window, so the page can be tried before
+// the event.
 func openSocket(dryRun bool) ([]paint.Conn, paint.Window, error) {
 	if dryRun {
 		slog.Warn("dry run: nothing leaves this host")
 		return []paint.Conn{discard{}}, paint.Window{Start: time.Time{}, End: time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
 	}
+	frames, err := paint.OpenFrameSockets(true, nil)
+	if err == nil {
+		slog.Info("sending frames on a packet socket")
+		return paint.Conns(frames), paint.EventWindow(), nil
+	}
+	slog.Warn("no packet socket, sending through the raw socket", "err", err)
+	paint.WarnIfConntrack()
 	socks, err := paint.OpenSockets(func() (*icmp.PacketConn, error) { return icmp.ListenPacket("ip6:ipv6-icmp", "::") })
 	if err != nil {
 		return nil, paint.Window{}, err

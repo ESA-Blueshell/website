@@ -245,8 +245,8 @@
       </div>
       <ul class="body-ash" style="max-width: 46rem; padding-top: 1rem; margin: 0; line-height: 1.7; font-size: 0.85rem;">
         <li>macOS: run <code>./blueshell-pinger-macos-apple</code> in Terminal.</li>
-        <li>Windows: right-click the file, Run as administrator.</li>
-        <li>Linux: <code>chmod +x</code> it, then run. If it says permission denied, use <code>sudo</code>, or once: <code>sudo sysctl -w net.ipv6.ping_group_range="0 2147483647"</code>.</li>
+        <li>Windows: run it; Run as administrator sends faster.</li>
+        <li>Linux: <code>chmod +x</code> it, then run. It sends fastest after <code>sudo setcap cap_net_raw+ep</code> on the file. If it says permission denied, use <code>sudo</code>, or once: <code>sudo sysctl -w net.ipv6.ping_group_range="0 2147483647"</code>.</li>
       </ul>
     </div>
   </section>

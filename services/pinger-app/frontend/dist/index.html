@@ -43,7 +43,6 @@
         --brand: #1f6feb;
         --brand-lit: #3387fa;
         --acid: #a8ff00;
-        --danger: #ff5964;
         --font-display: "Shellhouse One", system-ui, sans-serif;
         --font-body: "Barlow Semi Condensed", system-ui, sans-serif;
         --font-bitmap: "Silkscreen", ui-monospace, monospace;
@@ -186,9 +185,6 @@
         font-variant-numeric: tabular-nums;
       }
       .stats {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.6rem;
         margin-top: 0.6rem;
       }
       .stat {
@@ -207,9 +203,6 @@
         font-size: 1.35rem;
         font-variant-numeric: tabular-nums;
         font-feature-settings: "tnum" 1;
-      }
-      .stat--errors .stat__value {
-        color: var(--danger);
       }
       .control {
         margin-top: 1rem;
@@ -305,7 +298,7 @@
         <div class="hero__eyebrow">Painting the canvas</div>
         <div class="hero__pps"><span id="pps">0</span></div>
         <div class="hero__unit">pings per second</div>
-        <div class="state" id="state">Starting</div>
+        <div class="state">State <b id="state">starting</b></div>
         <div class="countdown" id="countdown"></div>
       </section>
 
@@ -313,10 +306,6 @@
         <div class="stat">
           <div class="stat__label">Pings sent</div>
           <div class="stat__value" id="sent">0</div>
-        </div>
-        <div class="stat stat--errors">
-          <div class="stat__label">Errors</div>
-          <div class="stat__value" id="errors">0</div>
         </div>
       </div>
 
@@ -348,7 +337,6 @@
       const stateEl = el("state");
       const ppsEl = el("pps");
       const sentEl = el("sent");
-      const errorsEl = el("errors");
       const countdownEl = el("countdown");
       const signinEl = el("signin");
       const numberEl = el("rate-number");
@@ -361,6 +349,11 @@
 
       let bytesPerPacket = 57;
       const fmt = (n) => Number(n).toLocaleString("en");
+
+      // Writes only a changed value, so an unchanged counter costs no layout or repaint.
+      function setText(node, text) {
+        if (node.textContent !== text) node.textContent = text;
+      }
 
       // Turn a send rate into an approximate uplink Mbps the way the Go estimator does, from the
       // bytes-per-packet the app reports. An estimate: it ignores link-layer framing.
@@ -425,14 +418,14 @@
 
       function showWindow(s) {
         if (s.state !== "closed") {
-          countdownEl.textContent = "";
+          setText(countdownEl, "");
           return;
         }
         const now = Date.now();
         if (s.eventStart && now < s.eventStart) {
-          countdownEl.textContent = `Event opens in ${countdownText(s.eventStart - now)}`;
+          setText(countdownEl, `Event opens in ${countdownText(s.eventStart - now)}`);
         } else {
-          countdownEl.textContent = "The event has ended";
+          setText(countdownEl, "The event has ended");
         }
       }
 
@@ -453,32 +446,38 @@
         }
       }
 
+      function render(s) {
+        signedIn = !!s.signedIn;
+        setText(accountEl, signedIn ? s.account || "Signed in" : "Not signed in");
+        setText(signinEl, signedIn ? "Sign out" : s.signingIn ? "Signing in…" : "Sign in");
+        setText(ppsEl, fmt(s.pps));
+        setText(sentEl, fmt(s.sent));
+        setText(stateEl, signedIn ? s.state || "idle" : "signed out");
+        showWindow(s);
+        setText(heldEl, s.heldAt ? `Held at ${fmt(s.heldAt)} pps so your connection stays usable` : "");
+      }
+
       async function refresh() {
         const a = app();
         if (!a) return;
         try {
-          const s = await a.Status();
-          signedIn = !!s.signedIn;
-          accountEl.textContent = signedIn ? s.account || "Signed in" : "Not signed in";
-          signinEl.textContent = signedIn ? "Sign out" : s.signingIn ? "Signing in…" : "Sign in";
-          ppsEl.textContent = fmt(s.pps);
-          sentEl.textContent = fmt(s.sent);
-          errorsEl.textContent = fmt(s.errors);
-          const state = signedIn ? s.state || "idle" : "signed out";
-          stateEl.innerHTML = `State <b>${state}</b>`;
-          showWindow(s);
-          heldEl.textContent = s.heldAt
-            ? `Held at ${fmt(s.heldAt)} pps so your connection stays usable`
-            : "";
+          render(await a.Status());
         } catch {
-          // A failed status poll leaves the last values on screen; the next tick recovers.
+          // A failed read leaves the last values on screen; the next push recovers.
         }
       }
 
       initControls();
-      // The app emits "status" the moment sign-in state changes; the poll is the fallback.
-      window.runtime?.EventsOn("status", refresh);
-      setInterval(refresh, 1000);
+      // The app pushes the status every second while the window is not minimised, and at once when
+      // the sign-in state changes. A hidden page skips the push and catches up when it shows again.
+      window.runtime?.EventsOn("status", (s) => {
+        if (document.hidden) return;
+        if (s) render(s);
+        else refresh();
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) refresh();
+      });
       refresh();
     </script>
   </body>

@@ -9,12 +9,14 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/ESA-Blueshell/website/services/pinger/apipaint"
+	"github.com/ESA-Blueshell/website/services/pinger/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/paint"
 
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/auth"
@@ -129,7 +131,7 @@ func New(base string) (*Runner, error) {
 	}
 	saved := prefStore.Load()
 	r.rate.Store(int64(saved.RatePPS))
-	r.headroom.SetEnabled(!saved.FullUplink)
+	r.headroom.SetEnabled(saved.HoldBack)
 	r.setMessage("starting")
 	return r, nil
 }
@@ -220,7 +222,7 @@ func (r *Runner) applyRate(cur paint.Settings) paint.Settings {
 func (r *Runner) SetFullUplink(on bool) bool {
 	r.headroom.SetEnabled(!on)
 	saved := r.prefs.Load()
-	saved.FullUplink = on
+	saved.HoldBack = !on
 	if err := r.prefs.Save(saved); err != nil {
 		slog.Warn("save full uplink", "err", err)
 	}
@@ -269,14 +271,6 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 	defer paint.CloseSockets(socks)
 
-	// Drain the socket: every ping can draw a reply or an error message back, and against a contained
-	// local test target (a route to loopback) they arrive for every packet. If nothing reads them the
-	// receive buffer fills and the next WriteTo blocks, which freezes the sender. A reader discards
-	// them continuously. Harmless in production, where few of the real addresses ever answer.
-	for _, c := range socks {
-		go drainSocket(ctx, c)
-	}
-
 	var poller *apipaint.Poller
 	settings := func() paint.Settings {
 		cur := paint.Settings{}
@@ -290,7 +284,12 @@ func (r *Runner) Run(ctx context.Context) error {
 		sender.UseDatagramAddresses()
 	}
 	r.sender.Store(sender)
-	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, sender, nil)
+	// Placing an image allocates about 50 MB of scratch (decode, scaler buffers) once per paint
+	// change; hand it back to the OS rather than keep it resident for the whole event. Signed out
+	// there is no token, and the share stream paints every pixel.
+	shared := apipaint.NewShareFilter(sender)
+	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, shared, func(canvas.Placement) { debug.FreeOSMemory() })
+	shares := apipaint.NewShareStream(r.base, r.poster.DeviceID, apipaint.Bearer(r.auth.Current))
 
 	var wg sync.WaitGroup
 	if probe, err := headroom.NewTCPProbe(r.base); err == nil {
@@ -299,8 +298,9 @@ func (r *Runner) Run(ctx context.Context) error {
 		r.headroom.SetEnabled(false)
 		slog.Warn("headroom probe", "err", err)
 	}
-	wg.Add(3)
+	wg.Add(4)
 	go func() { defer wg.Done(); poller.Run(ctx) }()
+	go func() { defer wg.Done(); shares.Run(ctx, shared.SetShare) }()
 	go func() { defer wg.Done(); r.reportLoop(ctx, sender) }()
 	go func() { defer wg.Done(); sender.Run(ctx) }()
 	wg.Wait()
@@ -359,18 +359,6 @@ func (r *Runner) afterReport(ctx context.Context, err error) {
 		}
 	default:
 		slog.Warn("post report", "err", err)
-	}
-}
-
-// drainSocket reads and discards whatever comes back on the ICMP socket, so a flood of replies or
-// ICMP error messages from a contained local target cannot fill the receive buffer and block sends.
-func drainSocket(ctx context.Context, c socket) {
-	buf := make([]byte, 1500)
-	for ctx.Err() == nil {
-		_ = c.SetReadDeadline(time.Now().Add(time.Second))
-		if _, _, err := c.ReadFrom(buf); err != nil {
-			continue
-		}
 	}
 }
 

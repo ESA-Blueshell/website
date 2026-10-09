@@ -13,7 +13,6 @@ import (
 
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv6"
-	"golang.org/x/time/rate"
 
 	"github.com/ESA-Blueshell/website/services/pinger/canvas"
 )
@@ -23,10 +22,16 @@ type Conn interface {
 	WriteTo(b []byte, dst net.Addr) (int, error)
 }
 
-// Workers is how many goroutines send at once, and so how many sockets a caller opens: one socket
-// carries one send at a time (Go's write lock and the kernel's socket lock both serialise it), so
-// workers sharing a socket queue behind each other instead of adding rate.
-func Workers() int { return max(2, runtime.NumCPU()) }
+// Workers is the most goroutines that send at once, and so how many sockets a caller opens: one
+// socket carries one send at a time, so workers sharing a socket queue behind each other. The
+// scaler runs fewer while fewer carry the rate. macOS gets two: past that its sendto spins on a
+// kernel lock, so a third worker lowers the rate and burns another core.
+func Workers() int {
+	if runtime.GOOS == "darwin" {
+		return 2
+	}
+	return max(2, runtime.NumCPU())
+}
 
 // MaxRatePPS caps the rate however it is set: the event bans prefixes that ping excessively hard.
 const MaxRatePPS = 200_000
@@ -48,8 +53,8 @@ const (
 	Running State = "running"
 )
 
-// target is the image as pixels, versioned so the Run loop notices a swap and rebuilds its
-// destination addresses. The generation only ever grows.
+// target is the image as pixels, versioned so the Run loop notices a swap and reshuffles. The
+// generation only ever grows.
 type target struct {
 	pixels []canvas.Pixel
 	gen    uint64
@@ -57,29 +62,36 @@ type target struct {
 
 // Stats is a point-in-time copy of what the sender has done.
 type Stats struct {
-	State       State
-	Sent        uint64
-	Errors      uint64
-	Passes      uint64
-	PassDone    int
-	PassTotal   int
-	ActualPPS   uint64
+	State     State
+	Sent      uint64
+	Errors    uint64
+	Passes    uint64
+	PassDone  int
+	PassTotal int
+	ActualPPS uint64
+	// LastError is the error that failed a whole chunk; a send lost among successes is only counted.
 	LastError   string
 	LastErrorAt time.Time
 	// Rates is the packets-a-second sample for each of the last 40 seconds, oldest first.
 	Rates []uint64
-	// Failing is set when the last failThreshold sends all errored, so the path looks broken.
-	// The sender keeps retrying with backoff either way.
+	// Failing is set while a worker's last chunk got nothing out, so the path looks broken. The
+	// sender keeps retrying after failPause either way.
 	Failing bool
 }
 
 const (
 	batch      = 64
 	rateWindow = 40
-	// failThreshold is how many sends in a row must fail before the sender reports itself as
-	// failing. A handful of full-buffer errors among successes is normal and the backoff soaks
-	// them up; only a run this long, with not one send getting out, means the path is broken.
-	failThreshold = 100
+	// chunkSpan is how much of a worker's share of the rate it sends between two sleeps, capped
+	// at chunkMax packets: a sleep and wake per few packets costs more CPU than the sends.
+	chunkSpan = 20 * time.Millisecond
+	chunkMax  = 1024
+	// paceSlack is how far a worker may fall behind its schedule and still catch up, so a sleep
+	// that overshoots does not cost rate. It also bounds the burst after an idle spell.
+	paceSlack = 2 * time.Millisecond
+	// failPause is how long a worker rests after a chunk with not one send out, so a broken socket
+	// does not spin. A lost ping costs nothing worth more bookkeeping than a count.
+	failPause = 20 * time.Millisecond
 )
 
 // Sender repaints the logo pass after pass, each pass in a fresh shuffled order so the logo
@@ -92,7 +104,7 @@ type Sender struct {
 	now      func() time.Time
 	workers  int
 	echo     []byte
-	limiter  *rate.Limiter
+	pacers   []pacer
 
 	state     atomic.Value
 	sent      atomic.Uint64
@@ -103,22 +115,22 @@ type Sender struct {
 	errMu     sync.Mutex
 	lastErr   string
 	lastErrAt time.Time
-	consec    atomic.Int64
+	failing   atomic.Bool
+	active    atomic.Int64
+	busy      atomic.Int64
 	rateMu    sync.Mutex
 	rates     []uint64
 	datagram  bool
 }
-
-// echoPayload is the fixed ICMPv6 echo body every pixel carries. Fixed so each packet is the same
-// size, which lets a bandwidth estimate derive bytes-per-packet from the real packet.
-const echoPayload = "blueshell"
 
 // echoRequest builds the ICMPv6 echo request the sender emits. The ID is this process, but it does
 // not change the length, so EchoRequestSize reads off the same construction.
 func echoRequest() []byte {
 	b, err := (&icmp.Message{
 		Type: ipv6.ICMPTypeEchoRequest,
-		Body: &icmp.Echo{ID: os.Getpid() & 0xffff, Seq: 1, Data: []byte(echoPayload)},
+		// No payload: the address alone paints the pixel, so every byte past the echo header is
+		// uplink spent for nothing.
+		Body: &icmp.Echo{ID: os.Getpid() & 0xffff, Seq: 1},
 	}).Marshal(nil)
 	if err != nil {
 		panic(err)
@@ -127,8 +139,8 @@ func echoRequest() []byte {
 }
 
 // EchoRequestSize is the on-wire byte length of one echo request the sender emits: the ICMPv6
-// header plus echoPayload. A bandwidth estimate adds the IPv6 header to this so it tracks the real
-// packet rather than a hand-copied constant.
+// header alone, since it carries no payload. A bandwidth estimate adds the IPv6 header to this so
+// it tracks the real packet rather than a hand-copied constant.
 func EchoRequestSize() int { return len(echoRequest()) }
 
 // NewSender sends through conns, worker i on conns[i % len(conns)]; pass Workers() sockets so no
@@ -141,16 +153,16 @@ func NewSender(conns []Conn, pixels []canvas.Pixel, window Window, settings func
 		now:      time.Now,
 		workers:  Workers(),
 		echo:     echoRequest(),
-		limiter:  rate.NewLimiter(1, batch),
 	}
+	s.pacers = make([]pacer, s.workers)
+	s.active.Store(1)
 	s.SetPixels(pixels)
 	s.state.Store(Idle)
 	return s
 }
 
-// SetPixels swaps the image the sender paints. The next pass picks up the new pixels: the Run
-// loop sees the generation change and rebuilds its destination addresses. Safe to call while the
-// sender runs.
+// SetPixels swaps the image the sender paints; the pass under way stops and the next one paints
+// the new pixels. Safe to call while the sender runs.
 func (s *Sender) SetPixels(pixels []canvas.Pixel) {
 	gen := uint64(1)
 	if prev := s.target.Load(); prev != nil {
@@ -190,16 +202,15 @@ func (s *Sender) Snapshot() Stats {
 		LastError:   lastErr,
 		LastErrorAt: lastErrAt,
 		Rates:       rates,
-		Failing:     s.consec.Load() >= failThreshold,
+		Failing:     s.failing.Load(),
 	}
 }
 
 // Run sends until ctx ends, idling whenever there is no prefix, no image or the event is closed.
 func (s *Sender) Run(ctx context.Context) {
 	go s.sampleRate(ctx)
-	var dests []net.Addr
-	var destsFor canvas.Prefix
-	var destsGen uint64
+	var order []uint32
+	var orderGen uint64
 	for ctx.Err() == nil {
 		cfg := s.settings()
 		t := s.target.Load()
@@ -212,11 +223,15 @@ func (s *Sender) Run(ctx context.Context) {
 			continue
 		}
 		s.state.Store(Running)
-		if dests == nil || destsFor != cfg.Prefix || destsGen != t.gen {
-			dests = destinations(cfg.Prefix, t.pixels, s.datagram)
-			destsFor, destsGen = cfg.Prefix, t.gen
+		if order == nil || orderGen != t.gen {
+			order = make([]uint32, len(t.pixels))
+			for i := range order {
+				order[i] = uint32(i)
+			}
+			orderGen = t.gen
 		}
-		if s.pass(ctx, cfg.Prefix, dests, t.gen) {
+		rand.Shuffle(len(order), func(i, j int) { order[i], order[j] = order[j], order[i] })
+		if s.pass(ctx, cfg.Prefix, t, order) {
 			s.passes.Add(1)
 		}
 	}
@@ -236,157 +251,238 @@ func (s *Sender) decide(cfg Settings) State {
 	return Running
 }
 
-func destinations(p canvas.Prefix, pixels []canvas.Pixel, datagram bool) []net.Addr {
-	out := make([]net.Addr, len(pixels))
-	for i, px := range pixels {
-		ip := p.Address(px).AsSlice()
-		if datagram {
-			out[i] = &net.UDPAddr{IP: ip}
-		} else {
-			out[i] = &net.IPAddr{IP: ip}
-		}
-	}
-	return out
-}
-
 // pass reports whether it reached every pixel; it stops early when the settings change under it.
-func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, gen uint64) bool {
-	order := rand.Perm(len(dests))
+func (s *Sender) pass(ctx context.Context, p canvas.Prefix, t *target, order []uint32) bool {
 	var next atomic.Int64
 	var aborted atomic.Bool
+	over := make(chan struct{})
+	var once sync.Once
+	end := func() { once.Do(func() { close(over) }) }
 	s.passDone.Store(0)
 
 	var wg sync.WaitGroup
 	for w := range s.workers {
-		conn := s.conns[w%len(s.conns)]
-		wg.Go(func() {
-			var backoff Backoff
-			bc := batcher(conn)
-			msgs := make([]ipv6.Message, batch)
-			for i := range msgs {
-				msgs[i].Buffers = [][]byte{s.echo}
-			}
-			for {
-				from := int(next.Add(batch)) - batch
-				if from >= len(order) || ctx.Err() != nil || aborted.Load() {
-					return
-				}
-				cfg := s.settings()
-				// Abort when the prefix changes, the sender leaves Running, or the image is
-				// swapped: dests then belong to a stale target and the next pass rebuilds them.
-				if cfg.Prefix != p || s.decide(cfg) != Running || s.target.Load().gen != gen {
-					aborted.Store(true)
-					return
-				}
-				if s.limiter.Limit() != rate.Limit(cfg.RatePPS) {
-					s.limiter.SetLimit(rate.Limit(cfg.RatePPS))
-				}
-				to := min(from+batch, len(order))
-				if s.limiter.WaitN(ctx, to-from) != nil {
-					return
-				}
-				var sent, trailing int
-				if bc != nil {
-					for k, i := range order[from:to] {
-						msgs[k].Addr = dests[i]
-					}
-					sent, trailing = s.writeBatch(bc, msgs[:to-from])
-				} else {
-					sent, trailing = s.writeEach(conn, dests, order[from:to])
-				}
-				// The shared counters move once per batch: per packet, every worker contends on
-				// the same cache lines at millions of sends a second.
-				s.settle(&backoff, sent, trailing)
-				// One backoff per batch that lost a send, not one per lost packet: a broken path
-				// must not crawl at a packet a second. The next pass retries the pixels it missed.
-				if sent < to-from {
-					select {
-					case <-ctx.Done():
-						return
-					case <-time.After(backoff.Next()):
-					}
-				}
-			}
-		})
+		wk := worker{
+			s: s, idx: w, conn: s.conns[w%len(s.conns)], pace: &s.pacers[w],
+			prefix: p, target: t, order: order, next: &next, aborted: &aborted, over: over, end: end,
+		}
+		wg.Go(func() { wk.run(ctx) })
 	}
 	wg.Wait()
 	return !aborted.Load() && ctx.Err() == nil
 }
 
-// writeEach sends one packet per syscall. It reports how many got out, and how many failed after
-// the last one that did.
-func (s *Sender) writeEach(conn Conn, dests []net.Addr, idx []int) (sent, trailing int) {
-	for _, i := range idx {
-		if _, err := conn.WriteTo(s.echo, dests[i]); err != nil {
-			s.recordError(err)
-			trailing++
+// worker is one send goroutine's view of a pass. Workers share only the claim counter, which moves
+// once per chunk.
+type worker struct {
+	s       *Sender
+	idx     int
+	conn    Conn
+	pace    *pacer
+	prefix  canvas.Prefix
+	target  *target
+	order   []uint32
+	next    *atomic.Int64
+	aborted *atomic.Bool
+	// over closes when the pass runs out of pixels or aborts, so a parked worker leaves at once.
+	over chan struct{}
+	end  func()
+}
+
+func (w *worker) run(ctx context.Context) {
+	s := w.s
+	bc := batcher(w.conn)
+	// One reused address per message: the conns copy it out during the call, so a pass of any size
+	// allocates nothing per packet.
+	dsts := make([]net.Addr, batch)
+	ips := make([]net.IP, batch)
+	for i := range dsts {
+		ips[i] = make(net.IP, net.IPv6len)
+		if s.datagram {
+			dsts[i] = &net.UDPAddr{IP: ips[i]}
+		} else {
+			dsts[i] = &net.IPAddr{IP: ips[i]}
+		}
+	}
+	// speed is the packets a second this worker's last chunk went out at. A chunk is cut to what
+	// it sends in chunkSpan, so the scaler's samples stay smooth on a socket slower than the rate.
+	var speed float64
+	var msgs []ipv6.Message
+	if bc != nil {
+		msgs = make([]ipv6.Message, batch)
+		for i := range msgs {
+			msgs[i] = ipv6.Message{Buffers: [][]byte{s.echo}, Addr: dsts[i]}
+		}
+	}
+	for {
+		active := int(s.active.Load())
+		if w.idx >= active {
+			if !w.idle(ctx) {
+				return
+			}
+			continue
+		}
+		cfg := s.settings()
+		share := float64(cfg.RatePPS) / float64(active)
+		n := chunkSize(share)
+		if speed > 0 {
+			n = min(n, chunkSize(speed))
+		} else {
+			n = min(n, batch)
+		}
+		if !w.pace.take(ctx, n, share) {
+			return
+		}
+		if ctx.Err() != nil || w.aborted.Load() {
+			return
+		}
+		cfg = s.settings()
+		// Abort when the prefix changes, the sender leaves Running, or the image is swapped: the
+		// order then belongs to a stale target and the next pass reshuffles.
+		if cfg.Prefix != w.prefix || s.decide(cfg) != Running || s.target.Load() != w.target {
+			w.aborted.Store(true)
+			w.end()
+			return
+		}
+		from := int(w.next.Add(int64(n))) - n
+		if from >= len(w.order) {
+			w.end()
+			return
+		}
+		chunk := w.order[from:min(from+n, len(w.order))]
+		total := len(chunk)
+		var sent, failed int
+		var err error
+		began := time.Now()
+		for len(chunk) > 0 {
+			part := chunk[:min(batch, len(chunk))]
+			chunk = chunk[len(part):]
+			for k, i := range part {
+				a := w.prefix.Address(w.target.pixels[i]).As16()
+				copy(ips[k], a[:])
+			}
+			var ok int
+			if bc != nil {
+				ok, err = writeBatch(bc, msgs[:len(part)], err)
+			} else {
+				ok, err = s.writeEach(w.conn, dsts[:len(part)], err)
+			}
+			sent += ok
+			failed += len(part) - ok
+		}
+		took := time.Since(began)
+		s.busy.Add(int64(took))
+		if took > 0 {
+			speed = float64(total) / took.Seconds()
+		}
+		if failed > 0 {
+			s.errors.Add(uint64(failed))
+		}
+		if sent > 0 {
+			s.sent.Add(uint64(sent))
+			s.passDone.Add(int64(sent))
+			if s.failing.Load() {
+				s.failing.Store(false)
+			}
+			continue
+		}
+		s.fail(err)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(failPause):
+		}
+	}
+}
+
+// idle parks a worker the scaler has not asked for; it reports false once the pass is over.
+func (w *worker) idle(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return false
+	case <-w.over:
+		return false
+	case <-time.After(scaleEvery / 2):
+		return true
+	}
+}
+
+// writeEach sends one packet per syscall. It reports how many got out, and the last error, or
+// err when none failed.
+func (s *Sender) writeEach(conn Conn, dsts []net.Addr, err error) (int, error) {
+	sent := 0
+	for _, dst := range dsts {
+		if _, e := conn.WriteTo(s.echo, dst); e != nil {
+			err = e
 			continue
 		}
 		sent++
-		trailing = 0
 	}
-	return sent, trailing
+	return sent, err
 }
 
 // writeBatch sends msgs in as few syscalls as the socket allows. A batch write stops at the first
-// message that fails, so that one is counted and skipped and the rest go again.
-func (s *Sender) writeBatch(bc batchConn, msgs []ipv6.Message) (sent, trailing int) {
+// message that fails, so that one is skipped and the rest go again.
+func writeBatch(bc batchConn, msgs []ipv6.Message, err error) (int, error) {
+	sent := 0
 	for len(msgs) > 0 {
-		n, err := bc.WriteBatch(msgs, 0)
-		if n > 0 {
-			sent += n
-			trailing = 0
-			msgs = msgs[n:]
-		}
-		if err != nil {
-			s.recordError(err)
-			trailing++
+		n, e := bc.WriteBatch(msgs, 0)
+		sent += n
+		msgs = msgs[n:]
+		if e != nil {
+			err = e
 			msgs = msgs[min(1, len(msgs)):]
 		} else if n == 0 {
 			break
 		}
 	}
-	return sent, trailing
+	return sent, err
 }
 
-// settle books a batch: sent made it out, and trailing failed after the last one that did.
-func (s *Sender) settle(backoff *Backoff, sent, trailing int) {
-	if sent > 0 {
-		backoff.Reset()
-		s.consec.Store(int64(trailing))
-		s.sent.Add(uint64(sent))
-		s.passDone.Add(int64(sent))
-	} else {
-		s.consec.Add(int64(trailing))
+// fail books a chunk that got nothing out. It runs once per failPause at most, so the lock and
+// the clock cost nothing.
+func (s *Sender) fail(err error) {
+	s.failing.Store(true)
+	if err == nil {
+		return
 	}
-}
-
-func (s *Sender) recordError(err error) {
-	s.errors.Add(1)
 	s.errMu.Lock()
 	s.lastErr, s.lastErrAt = err.Error(), s.now()
 	s.errMu.Unlock()
 }
 
+// sampleRate books the packets-a-second sample every second and resizes the worker pool every
+// scaleEvery.
 func (s *Sender) sampleRate(ctx context.Context) {
-	tick := time.NewTicker(time.Second)
+	tick := time.NewTicker(scaleEvery)
 	defer tick.Stop()
-	last := s.sent.Load()
-	for {
+	sc := newScaler(s.workers)
+	perSecond := int(time.Second / scaleEvery)
+	lastSent, lastBusy, lastSecond := s.sent.Load(), s.busy.Load(), s.sent.Load()
+	for n := 1; ; n++ {
 		select {
 		case <-ctx.Done():
 			return
 		case <-tick.C:
-			now := s.sent.Load()
-			rate := now - last
-			s.actualPPS.Store(rate)
-			last = now
-			s.rateMu.Lock()
-			s.rates = append(s.rates, rate)
-			if len(s.rates) > rateWindow {
-				s.rates = s.rates[len(s.rates)-rateWindow:]
-			}
-			s.rateMu.Unlock()
 		}
+		sent, busy := s.sent.Load(), s.busy.Load()
+		if s.state.Load() == Running {
+			pps := float64(sent-lastSent) / scaleEvery.Seconds()
+			cores := float64(busy-lastBusy) / float64(scaleEvery)
+			s.active.Store(int64(sc.step(time.Now(), pps, cores, float64(s.settings().RatePPS))))
+		}
+		lastSent, lastBusy = sent, busy
+		if n%perSecond != 0 {
+			continue
+		}
+		rate := sent - lastSecond
+		lastSecond = sent
+		s.actualPPS.Store(rate)
+		s.rateMu.Lock()
+		s.rates = append(s.rates, rate)
+		if len(s.rates) > rateWindow {
+			s.rates = s.rates[len(s.rates)-rateWindow:]
+		}
+		s.rateMu.Unlock()
 	}
 }

@@ -224,3 +224,28 @@ func TestOneStallDoesNotCut(t *testing.T) {
 		}
 	}
 }
+
+// The cap is opt-in; while it is off, Run must not touch the api at all.
+func TestRunDoesNotProbeWhileDisabled(t *testing.T) {
+	c := New()
+	c.SetEnabled(false)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	probed := make(chan struct{}, 10)
+	probe := func(context.Context) (time.Duration, error) {
+		probed <- struct{}{}
+		return 20 * time.Millisecond, nil
+	}
+	go c.Run(ctx, probe, func() Load { return Load{} })
+	select {
+	case <-probed:
+		t.Fatal("probed while disabled")
+	case <-time.After(3 * Interval):
+	}
+	c.SetEnabled(true)
+	select {
+	case <-probed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("no probe after enabling")
+	}
+}

@@ -15,7 +15,7 @@ import (
 const fileName = "prefs.json"
 
 // Rate bounds for the member's own machine. The maximum is the pings per second that fill roughly a
-// 1 Gbit/s uplink at ~57 bytes per packet — the physical ceiling on fast campus broadband — so a
+// 1 Gbit/s uplink at ~57 bytes per packet (the payload-free pings are 48 now, so it leaves headroom) — the physical ceiling on fast campus broadband — so a
 // member can give as much as their connection allows. The SNTPings event may rate-limit a prefix
 // separately; that is the event's concern, not a local cap.
 const (
@@ -34,9 +34,9 @@ type Prefs struct {
 	// DeviceID is this install's stable id, generated once and kept, so the api keeps this device's
 	// send counter apart from the member's other devices and accrues each exactly once.
 	DeviceID string `json:"deviceId"`
-	// FullUplink lets the pings fill the whole uplink, even when that stalls the member's other
-	// traffic. Off by default, so a missing field keeps the connection usable.
-	FullUplink bool `json:"fullUplink"`
+	// HoldBack keeps the send rate below what queues up the member's uplink. Off by default, so the
+	// app sends at the chosen rate; the older fullUplink field is ignored, so it cannot turn it on.
+	HoldBack bool `json:"holdBack"`
 }
 
 // Clamp holds a rate inside the server's valid range.

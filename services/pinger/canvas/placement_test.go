@@ -74,16 +74,17 @@ func TestPlaceSkipsTransparentPixelsAndKeepsEdgeAlpha(t *testing.T) {
 	fill(src, image.Rect(0, 0, 600, 2), color.NRGBA{G: 0xff, A: 0xff})
 	src.SetNRGBA(10, 0, color.NRGBA{})
 	src.SetNRGBA(11, 0, color.NRGBA{R: 0x40, G: 0x80, B: 0xc0, A: 0x80})
+	src.SetNRGBA(12, 0, color.NRGBA{G: 0xff, A: minAlpha - 1})
 
 	got := Place(src, 600, image.Pt(1920, 720))
 
-	if len(got.Pixels) != 1199 {
-		t.Fatalf("got %d pixels, want 1199", len(got.Pixels))
+	if len(got.Pixels) != 1198 {
+		t.Fatalf("got %d pixels, want 1198", len(got.Pixels))
 	}
 	// 600x2 scaled stays 600x2; origin is (1620, 719).
 	var edge *Pixel
 	for i, px := range got.Pixels {
-		if px.X == 1630 && px.Y == 719 {
+		if (px.X == 1630 || px.X == 1632) && px.Y == 719 {
 			t.Fatalf("transparent pixel was kept: %+v", px)
 		}
 		if px.X == 1631 && px.Y == 719 {

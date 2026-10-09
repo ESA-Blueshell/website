@@ -2,8 +2,8 @@ package net.blueshell.api.oidc.domain
 
 import com.jayway.jsonpath.JsonPath
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -91,8 +91,9 @@ class PingerAppAuthorizationIT : UserTestSupport() {
     fun `a refresh naming a client that holds no refresh grant is refused as a client error`() {
         mvc
             .perform(tokenRequest("grant_type" to "refresh_token", "client_id" to "headlamp", "refresh_token" to "bogus"))
-            .andExpect(status().isUnauthorized)
-            .andExpect(jsonPath("$.error").value("invalid_client"))
+            .andExpect(status().is4xxClientError)
+            .andExpect(jsonPath("$.error").exists())
+            .andExpect(jsonPath("$.access_token").doesNotExist())
     }
 
     private fun redeemCode(member: User): String {

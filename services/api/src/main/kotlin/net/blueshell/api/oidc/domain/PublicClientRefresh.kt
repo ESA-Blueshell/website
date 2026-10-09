@@ -83,6 +83,7 @@ internal class RefreshTokenGenerator(
     override fun generate(context: OAuth2TokenContext): OAuth2RefreshToken? {
         if (context.tokenType != OAuth2TokenType.REFRESH_TOKEN) return null
         val issuedAt = clock.instant()
-        return OAuth2RefreshToken(keys.generateKey(), issuedAt, issuedAt.plus(context.registeredClient.tokenSettings.refreshTokenTimeToLive))
+        val expiresAt = issuedAt.plus(context.registeredClient.tokenSettings.refreshTokenTimeToLive)
+        return OAuth2RefreshToken(keys.generateKey(), issuedAt, expiresAt)
     }
 }

@@ -5,9 +5,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import net.blueshell.api.pinger.api.PingerPaintService
 import net.blueshell.api.security.AdminOnly
+import net.blueshell.api.security.ClientAddresses
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -36,6 +38,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 class PingerController(
     private val paint: PingerPaintService,
     private val stream: PaintStream,
+    private val clientAddresses: ClientAddresses,
 ) {
     @PermitAll
     @GetMapping("/paint")
@@ -48,7 +51,7 @@ class PingerController(
         description = "The whole paint job as each event's data, on connect and on every change, with a comment every 15 s",
         content = [Content(schema = Schema(implementation = PaintResponse::class))],
     )
-    fun paintStream(): SseEmitter = stream.open()
+    fun paintStream(request: HttpServletRequest): SseEmitter = stream.open(clientAddresses.resolve(request))
 
     @AdminOnly
     @PutMapping("/paint/settings")

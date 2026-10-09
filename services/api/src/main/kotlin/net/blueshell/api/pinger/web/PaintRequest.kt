@@ -56,7 +56,11 @@ data class PlacementMotionRequest(
     val mode: MotionMode,
     // Mirrors MAX_SPEED_PPS in PingerPaintService; change one, change the other.
     @field:Schema(description = "Horizontal speed in px/s, negative is leftwards")
-    @field:DecimalMin("-2000") @field:DecimalMax("2000") val vx: Double = 0.0,
+    @field:DecimalMin("-2000")
+    @field:DecimalMax("2000")
+    val vx: Double = 0.0,
     @field:Schema(description = "Vertical speed in px/s, negative is upwards")
-    @field:DecimalMin("-2000") @field:DecimalMax("2000") val vy: Double = 0.0,
+    @field:DecimalMin("-2000")
+    @field:DecimalMax("2000")
+    val vy: Double = 0.0,
 )

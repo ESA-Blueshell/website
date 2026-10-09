@@ -135,7 +135,11 @@ class PingerPaintServiceTest {
 
     @Test
     fun `movePlacement restarts the motion from the new box`() {
-        val moving = placement(5).apply { motionMode = MotionMode.BOUNCE; motionVx = 100.0 }
+        val moving =
+            placement(5).apply {
+                motionMode = MotionMode.BOUNCE
+                motionVx = 100.0
+            }
         every { placements.findById(5L) } returns Optional.of(moving)
         every { placements.save(any()) } answers { firstArg() }
 
@@ -148,7 +152,12 @@ class PingerPaintServiceTest {
     @Test
     fun `setMotion re-bases the box to where it is now, so it does not jump`() {
         // Bouncing at 50 px/s right and 20 px/s down for the 10 s since the epoch.
-        val moving = placement(5).apply { motionMode = MotionMode.BOUNCE; motionVx = 50.0; motionVy = 20.0 }
+        val moving =
+            placement(5).apply {
+                motionMode = MotionMode.BOUNCE
+                motionVx = 50.0
+                motionVy = 20.0
+            }
         every { placements.findById(5L) } returns Optional.of(moving)
         every { placements.save(any()) } answers { firstArg() }
 
@@ -162,7 +171,11 @@ class PingerPaintServiceTest {
 
     @Test
     fun `setMotion to static freezes the box where it is and drops the speed`() {
-        val moving = placement(5).apply { motionMode = MotionMode.BOUNCE; motionVx = -50.0 }
+        val moving =
+            placement(5).apply {
+                motionMode = MotionMode.BOUNCE
+                motionVx = -50.0
+            }
         every { placements.findById(5L) } returns Optional.of(moving)
         every { placements.save(any()) } answers { firstArg() }
 

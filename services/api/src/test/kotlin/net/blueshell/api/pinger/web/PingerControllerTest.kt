@@ -8,15 +8,17 @@ import net.blueshell.api.pinger.api.PingerPaintService
 import net.blueshell.api.pinger.api.PlacementMotion
 import net.blueshell.api.pinger.api.PlacementView
 import net.blueshell.api.pinger.domain.MotionMode
+import net.blueshell.api.security.ClientAddresses
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.time.Instant
 
 class PingerControllerTest {
     private val service = mockk<PingerPaintService>(relaxUnitFun = true)
     private val stream = mockk<PaintStream>(relaxUnitFun = true)
-    private val controller = PingerController(service, stream)
+    private val controller = PingerController(service, stream, ClientAddresses())
     private val now = Instant.parse("2026-10-09T20:00:00Z")
 
     private fun view(vararg placements: PlacementView) = PaintView("2001:db8::/64", 128, true, placements.toList(), now)
@@ -39,11 +41,12 @@ class PingerControllerTest {
     }
 
     @Test
-    fun `paintStream opens a stream`() {
+    fun `paintStream opens a stream for the caller's address`() {
         val emitter = SseEmitter()
-        every { stream.open() } returns emitter
+        every { stream.open("198.51.100.7") } returns emitter
+        val request = MockHttpServletRequest().apply { remoteAddr = "198.51.100.7" }
 
-        assertThat(controller.paintStream()).isSameAs(emitter)
+        assertThat(controller.paintStream(request)).isSameAs(emitter)
     }
 
     @Test

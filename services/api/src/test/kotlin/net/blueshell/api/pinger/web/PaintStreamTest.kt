@@ -12,13 +12,17 @@ import net.blueshell.api.pinger.api.PingerPaintService
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+import tools.jackson.databind.json.JsonMapper
 import java.io.IOException
 import java.time.Instant
+import java.util.function.Consumer
 
 class PaintStreamTest {
     private val paint = mockk<PingerPaintService>()
+    private val json = JsonMapper.builder().build()
     private val start = Instant.parse("2026-10-09T20:00:00Z")
 
     private fun job(
@@ -26,131 +30,170 @@ class PaintStreamTest {
         at: Instant = start,
     ) = PaintView("2001:db8::/64", rate, true, emptyList(), at)
 
+    private fun stream(
+        maxStreams: Int = 100,
+        maxPerClient: Int = 100,
+    ): PaintStream = spyk(PaintStream(paint, json, 0, maxStreams, maxPerClient))
+
+    private fun emitter(): SseEmitter = mockk(relaxed = true)
+
+    /** What each send on [emitter] wrote, as the SSE text. */
+    private fun sent(emitter: SseEmitter): List<String> {
+        val events = mutableListOf<SseEmitter.SseEventBuilder>()
+        verify(atLeast = 0) { emitter.send(capture(events)) }
+        return events.map { event -> event.build().joinToString("") { it.data.toString() } }
+    }
+
+    private fun PaintStream.opening(
+        emitter: SseEmitter,
+        client: String = "192.0.2.1",
+    ): SseEmitter {
+        every { newEmitter() } returns emitter
+        return open(client)
+    }
+
     @Test
     fun `the default emitter never times out`() {
         every { paint.current() } returns job(1)
-        val stream = PaintStream(paint, 0)
 
-        assertThat(stream.open().timeout).isEqualTo(0)
+        assertThat(PaintStream(paint, json, 0, 10, 10).open("192.0.2.1").timeout).isEqualTo(0)
     }
 
     @Test
     fun `a refresh with no open stream reads nothing`() {
-        val stream = PaintStream(paint, 0)
-
-        stream.refresh()
+        stream().refresh()
 
         verify(exactly = 0) { paint.current() }
     }
 
     @Test
-    fun `opening a stream primes it with the current paint job`() {
+    fun `opening a stream primes it with the current paint job as JSON`() {
         every { paint.current() } returns job(10)
-        val emitter = mockk<SseEmitter>(relaxed = true)
+        val emitter = emitter()
 
-        streamEmitting(emitter).open()
+        stream().opening(emitter)
 
-        verify { emitter.send(PaintResponse.from(job(10))) }
+        val first = sent(emitter).single()
+        assertThat(first).startsWith("data:{")
+        assertThat(first).contains("\"ratePps\":10").contains("\"serverTime\":\"2026-10-09T20:00:00Z\"")
     }
 
     @Test
     fun `a refresh pushes a changed job and skips one where only the clock moved`() {
         every { paint.current() } returnsMany listOf(job(10), job(20), job(20, start.plusSeconds(1)))
-        val emitter = mockk<SseEmitter>(relaxed = true)
-        val stream = streamEmitting(emitter)
-        stream.open()
+        val emitter = emitter()
+        val stream = stream()
+        stream.opening(emitter)
 
         stream.refresh()
         stream.refresh()
 
-        verify(exactly = 1) { emitter.send(PaintResponse.from(job(20))) }
-        verify(exactly = 2) { emitter.send(any<Any>()) }
+        assertThat(sent(emitter)).hasSize(2)
+        assertThat(sent(emitter)[1]).contains("\"ratePps\":20")
     }
 
     @Test
-    fun `a heartbeat sends a comment to every stream`() {
+    fun `a heartbeat sends a bare comment`() {
         every { paint.current() } returns job(10)
-        val emitter = mockk<SseEmitter>(relaxed = true)
-        streamEmitting(emitter).apply { open() }.heartbeat()
-
-        verify { emitter.send(any<SseEmitter.SseEventBuilder>()) }
-    }
-
-    @Test
-    fun `a failed send ends and drops the stream`() {
-        every { paint.current() } returns job(10)
-        val emitter = mockk<SseEmitter>(relaxed = true)
-        every { emitter.send(any<Any>()) } throws IOException("closed")
-        val stream = streamEmitting(emitter)
-
-        stream.open()
-
-        verify { emitter.completeWithError(any()) }
-        every { paint.current() } returns job(99)
-        stream.refresh()
-        verify(exactly = 1) { emitter.send(any<Any>()) }
-    }
-
-    @Test
-    fun `a send on a completed emitter drops the stream`() {
-        every { paint.current() } returns job(10)
-        val emitter = mockk<SseEmitter>(relaxed = true)
-        every { emitter.send(any<SseEmitter.SseEventBuilder>()) } throws IllegalStateException("completed")
-        val stream = streamEmitting(emitter)
-        stream.open()
+        val emitter = emitter()
+        val stream = stream()
+        stream.opening(emitter)
 
         stream.heartbeat()
-        stream.heartbeat()
 
-        verify(exactly = 1) { emitter.send(any<SseEmitter.SseEventBuilder>()) }
+        assertThat(sent(emitter)[1]).isEqualTo(":\n\n")
     }
 
     @Test
-    fun `completion, timeout and error each drop the stream`() {
-        listOf<(SseEmitter, io.mockk.CapturingSlot<Runnable>) -> Unit>(
-            { e, s -> every { e.onCompletion(capture(s)) } just Runs },
-            { e, s -> every { e.onTimeout(capture(s)) } just Runs },
-        ).forEach { hook ->
-            every { paint.current() } returns job(10)
-            val captured = slot<Runnable>()
-            val emitter = mockk<SseEmitter>(relaxed = true)
-            hook(emitter, captured)
-            val stream = streamEmitting(emitter)
-            stream.open()
-
-            captured.captured.run()
-
-            every { paint.current() } returns job(99)
-            stream.refresh()
-            verify(exactly = 1) { emitter.send(any<Any>()) }
-        }
-        every { paint.current() } returns job(10)
-        val failed = slot<java.util.function.Consumer<Throwable>>()
-        val emitter = mockk<SseEmitter>(relaxed = true)
-        every { emitter.onError(capture(failed)) } just Runs
-        val stream = streamEmitting(emitter)
-        stream.open()
-
-        failed.captured.accept(IOException("reset"))
-
-        every { paint.current() } returns job(99)
-        stream.refresh()
-        verify(exactly = 1) { emitter.send(any<Any>()) }
-    }
-
-    @Test
-    fun `opening past the cap is refused rather than exhausting emitters`() {
+    fun `past the global cap a stream is refused with 503`() {
         every { paint.current() } returns job(1)
-        val stream = spyk(PaintStream(paint, 0))
-        every { stream.newEmitter() } answers { mockk(relaxed = true) }
-        repeat(2000) { stream.open() }
+        val stream = stream(maxStreams = 2)
+        stream.opening(emitter(), "192.0.2.1")
+        stream.opening(emitter(), "192.0.2.2")
 
-        assertThatThrownBy { stream.open() }.isInstanceOf(ResponseStatusException::class.java)
+        assertThatThrownBy { stream.opening(emitter(), "192.0.2.3") }
+            .isInstanceOfSatisfying(ResponseStatusException::class.java) {
+                assertThat(it.statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+            }
     }
 
-    private fun streamEmitting(emitter: SseEmitter): PaintStream {
-        val stream = spyk(PaintStream(paint, 0))
-        every { stream.newEmitter() } returns emitter
-        return stream
+    @Test
+    fun `past the per-client cap a stream is refused with 429, and other clients still open`() {
+        every { paint.current() } returns job(1)
+        val stream = stream(maxStreams = 3, maxPerClient = 2)
+        stream.opening(emitter(), "192.0.2.1")
+        stream.opening(emitter(), "192.0.2.1")
+
+        assertThatThrownBy { stream.opening(emitter(), "192.0.2.1") }
+            .isInstanceOfSatisfying(ResponseStatusException::class.java) {
+                assertThat(it.statusCode).isEqualTo(HttpStatus.TOO_MANY_REQUESTS)
+            }
+        // The refused open gave its global slot back, so the third slot is free for someone else.
+        stream.opening(emitter(), "192.0.2.2")
+    }
+
+    @Test
+    fun `a failed send ends the stream and frees its slot`() {
+        every { paint.current() } returns job(10)
+        val stream = stream(maxStreams = 1)
+        val broken = emitter()
+        stream.opening(broken)
+        every { broken.send(any<SseEmitter.SseEventBuilder>()) } throws IOException("reset")
+
+        stream.heartbeat()
+
+        verify { broken.completeWithError(any()) }
+        stream.opening(emitter())
+    }
+
+    @Test
+    fun `a send on a completed emitter frees its slot`() {
+        every { paint.current() } returns job(10)
+        val stream = stream(maxStreams = 1)
+        val done = emitter()
+        stream.opening(done)
+        every { done.send(any<SseEmitter.SseEventBuilder>()) } throws IllegalStateException("completed")
+
+        stream.heartbeat()
+
+        stream.opening(emitter())
+    }
+
+    @Test
+    fun `a stream that cannot be primed frees its slot`() {
+        every { paint.current() } throws IllegalStateException("database down")
+        val stream = stream(maxStreams = 1, maxPerClient = 1)
+
+        assertThatThrownBy { stream.opening(emitter()) }.isInstanceOf(IllegalStateException::class.java)
+
+        every { paint.current() } returns job(1)
+        stream.opening(emitter())
+    }
+
+    @Test
+    fun `completion, timeout and error each free the slot exactly once`() {
+        every { paint.current() } returns job(10)
+        val stream = stream(maxStreams = 2, maxPerClient = 2)
+        val completed = slot<Runnable>()
+        val timedOut = slot<Runnable>()
+        val failed = slot<Consumer<Throwable>>()
+        val ending = emitter()
+        every { ending.onCompletion(capture(completed)) } just Runs
+        every { ending.onTimeout(capture(timedOut)) } just Runs
+        every { ending.onError(capture(failed)) } just Runs
+        stream.opening(ending)
+
+        // An error is followed by completion, and a timeout may be too: one slot back, not three.
+        failed.captured.accept(IOException("reset"))
+        timedOut.captured.run()
+        completed.captured.run()
+
+        stream.opening(emitter())
+        stream.opening(emitter())
+        assertThatThrownBy { stream.opening(emitter()) }.isInstanceOf(ResponseStatusException::class.java)
+        // Freed: a changed job reaches only the two live streams.
+        every { paint.current() } returns job(99)
+        stream.refresh()
+        assertThat(sent(ending)).hasSize(1)
     }
 }

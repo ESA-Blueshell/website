@@ -16,11 +16,13 @@ import RecordPlate from "@/components/pinger/RecordPlate.vue"
 import PingerProgress from "@/components/pinger/PingerProgress.vue"
 import {
   appDownloadUrl,
+  clockOffset,
   DEFAULT_PAINT,
   EMPTY_LEADERBOARD,
   loadLeaderboard,
   loadPaintJob,
   openLeaderboardStream,
+  openPaintStream,
   ownStanding,
   SNTPINGS_STREAM_URL,
   type AppOs,
@@ -35,6 +37,7 @@ defineOptions({name: "SntPingsPage"})
 const EVENT_START = new Date("2025-12-05T18:00:00+01:00").getTime()
 
 const paint = ref<PaintJob>(DEFAULT_PAINT)
+const paintOffset = ref<number>(0)
 const snapshot = ref<LeaderboardSnapshot>(EMPTY_LEADERBOARD)
 
 // Only a signed-in member sees the block below the board; a visitor never does.
@@ -103,11 +106,18 @@ const countdown = computed<string>(() => {
 })
 
 let closeStream: (() => void) | null = null
+let closePaint: (() => void) | null = null
+
+const showPaint = (job: PaintJob): void => {
+  paint.value = job
+  paintOffset.value = clockOffset(job)
+}
 
 onMounted(async () => {
   tickClock()
   clockTimer = window.setInterval(tickClock, 1000)
-  paint.value = await loadPaintJob()
+  showPaint(await loadPaintJob())
+  closePaint = openPaintStream(showPaint)
   snapshot.value = await loadLeaderboard()
   // The stream drives the swap-without-reload; the GET above is the first paint and the fallback.
   closeStream = openLeaderboardStream((next) => {
@@ -117,6 +127,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   closeStream?.()
+  closePaint?.()
   clearInterval(clockTimer)
 })
 </script>
@@ -184,6 +195,7 @@ onBeforeUnmount(() => {
 
           <div class="canvas__grid">
             <live-canvas
+              :clock-offset="paintOffset"
               :placements="paint.placements"
               :stream-url="SNTPINGS_STREAM_URL"
               @passtotal="passTotal = $event"

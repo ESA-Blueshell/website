@@ -5,9 +5,10 @@ import {SERVER_EMOJI, serverEmojiImg, withEmojiArt} from "@/plugins/emojiArt"
 
 /*
  * A description read the way Discord reads a message (architecture ADR-010). Each rule is
- * Discord's own pattern; markdownDialect.ts parses the same rules for the editor, and the api's
- * DiscordMarkdown.kt translates them for Google Calendar and link previews. Change one, change
- * the others.
+ * Discord's own pattern; markdownDialect.ts parses the same rules for the editor, the api's
+ * DescriptionReader.kt reads them into the tree the event page draws, and its DiscordMarkdown.kt
+ * translates them for Google Calendar and link previews. Change one, change the others, until
+ * this reader goes (#2312).
  */
 
 const escapeHtml = (text: string): string => text

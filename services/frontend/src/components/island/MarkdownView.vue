@@ -1,22 +1,36 @@
 <script lang="ts" setup>
-/* Markdown as it reads once written: the same looks the editor gives it while it is typed. */
-import {computed, onMounted, ref, watch} from "vue"
-import {fillMentions} from "@/domains/discord"
+/*
+ * Markdown as it reads once written: the same looks the editor gives it while it is typed. Drawn
+ * from the api's tree where the caller has one, else read here from the source.
+ */
+import {computed, ref, shallowRef, watch} from "vue"
+import {type DescriptionNode, DescriptionNodes, fillMentions, mentionsOf, type NameOf, nameMentions} from "@/domains/discord"
 import $markdownToHtml from "@/plugins/markdownToHtml"
 import {fallBackToCharacter} from "@/plugins/emojiArt"
 
 defineOptions({name: "MarkdownView"})
 
-const {source} = defineProps<{
-  source: string
+const {source = "", nodes = null} = defineProps<{
+  source?: string
+  nodes?: DescriptionNode[] | null
 }>()
 
-const html = computed(() => $markdownToHtml(source))
+const html = computed(() => (nodes ? "" : $markdownToHtml(source)))
 
 const root = ref<HTMLElement | null>(null)
-const name = () => void fillMentions(root.value as HTMLElement)
-onMounted(name)
-watch(html, name, {flush: "post"})
+// The source's mentions are named once drawn, and again when it is drawn anew or in the tree's place.
+const name = () => {
+  if (!root.value) return
+  void fillMentions(root.value)
+}
+watch([html, root], name, {flush: "post"})
+
+const nameOf = shallowRef<NameOf>(() => undefined)
+watch(() => nodes, async (tree) => {
+  if (!tree) return
+  const named = await nameMentions(mentionsOf(tree))
+  if (tree === nodes) nameOf.value = named
+}, {immediate: true})
 
 /* A spoiler stays shown once shown, as in Discord, and a link inside one is not followed until
    it is. */
@@ -31,9 +45,21 @@ const reveal = (event: MouseEvent | KeyboardEvent) => {
 </script>
 
 <template>
+  <div
+    v-if="nodes"
+    class="markdown-view"
+    @click="reveal"
+    @keydown="reveal"
+  >
+    <description-nodes
+      :nodes="nodes"
+      :name-of="nameOf"
+    />
+  </div>
   <!-- Sanitised in markdownToHtml, because it is written by members and read in public. -->
   <!-- eslint-disable-next-line vue/no-v-html -->
   <div
+    v-else
     ref="root"
     class="markdown-view"
     @click="reveal"

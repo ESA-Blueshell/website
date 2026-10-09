@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount, RouterLinkStub} from "@vue/test-utils"
 import {type Ref, ref} from "vue"
-import type {EventSignUpResponse} from "@/services/api"
+import {DescriptionNodeKind, type EventSignUpResponse} from "@/services/api"
 import type {CommitteeOption} from "@/domains/events/island/useEventReader"
 import {aSignUp} from "../../helpers/apiFixtures"
 import EventPage from "@/pages/events/EventPage.vue"
@@ -42,10 +42,20 @@ vi.mock("@/domains/events", async (importOriginal) => ({
   useEventReader: () => reader,
 }))
 
+const poolNight = {
+  length: 15,
+  nodes: [{
+    kind: DescriptionNodeKind.PARAGRAPH, start: 0, end: 15, children: [
+      {kind: DescriptionNodeKind.STRONG, start: 0, end: 8, children: [{kind: DescriptionNodeKind.TEXT, start: 2, end: 6, children: [], text: "Pool"}]},
+      {kind: DescriptionNodeKind.TEXT, start: 8, end: 15, children: [], text: " night."},
+    ],
+  }],
+}
+
 const event = (over: Record<string, unknown> = {}) => ({
   id: 7, title: "4Funcie Pooling", startTime: "2099-10-02T19:00:00Z", endTime: "2099-10-02T22:00:00Z",
   location: "Esports Lounge Twente", description: "**Pool** night.", approved: true, signUp: true,
-  signUpCount: 6, signUpLimit: 24, membersOnly: false, committeeId: 2, ...over,
+  signUpCount: 6, signUpLimit: 24, membersOnly: false, committeeId: 2, descriptionTree: poolNight, ...over,
 })
 
 /* The parts have their own specs; here they only say what they were handed and what they did. */
@@ -119,6 +129,13 @@ describe("an event's own page", () => {
     expect(band.props()).toMatchObject({eyebrow: "Blueshell event", full: true, heading: "h1"})
     expect(wrapper.get("[data-testid=event-page-description]").html()).toContain("<strong>Pool</strong>")
     expect(wrapper.find("[data-testid=event-page-signup]").exists()).toBe(true)
+  })
+
+  it("reads the description from its text where the api sent no tree", async () => {
+    mockRead.mockResolvedValue(event({descriptionTree: undefined}))
+    const wrapper = await mountPage()
+
+    expect(wrapper.get("[data-testid=event-page-description]").html()).toContain("<strong>Pool</strong>")
   })
 
   it("names the event in the tab, and leaves the tab alone where there is none", async () => {
@@ -235,7 +252,7 @@ describe("an event's own page", () => {
   })
 
   it("offers no sign-up in the head of an event that takes none, and reads a missing description as none", async () => {
-    mockRead.mockResolvedValue(event({signUp: false, description: null}))
+    mockRead.mockResolvedValue(event({signUp: false, description: null, descriptionTree: null}))
     const wrapper = await mountPage()
 
     expect(wrapper.find("[data-testid=event-page-signup]").exists()).toBe(false)

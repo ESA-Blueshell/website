@@ -10,6 +10,7 @@ import net.blueshell.api.event.domain.EventQuery
 import net.blueshell.api.event.domain.EventRoster
 import net.blueshell.api.event.domain.EventUseCases
 import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.shared.discord.DescriptionReader
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
@@ -36,8 +37,13 @@ class EventController(
     private val announcements: AnnouncementLedger,
     private val roster: EventRoster,
 ) : BaseController<EventService>(service) {
-    // Only one event's answer says whether its post is out: a list would ask once per row.
-    private fun Event.asOneResponse(): EventResponse = asResponse().also { it.announced = announcements.announced(id!!) }
+    // Only one event's answer says whether its post is out and carries its description as read: a
+    // list would ask once per row.
+    private fun Event.asOneResponse(): EventResponse =
+        asResponse().also { response ->
+            response.announced = announcements.announced(id!!)
+            response.descriptionTree = description?.let(DescriptionReader::read)
+        }
 
     @PreAuthorize("hasPermission(#request.committeeId, 'Committee', 'events')")
     @PostMapping("/events")

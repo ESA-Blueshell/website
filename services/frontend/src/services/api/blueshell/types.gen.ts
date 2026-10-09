@@ -1033,6 +1033,128 @@ export type DerivedRoleResponse = {
     source: RoleSource;
 };
 
+export enum DescriptionCellAlign {
+    LEFT = 'LEFT',
+    CENTER = 'CENTER',
+    RIGHT = 'RIGHT'
+}
+
+export type DescriptionNode = {
+    align?: DescriptionCellAlign | null;
+    /**
+     * Whether a server emoji moves
+     */
+    animated?: boolean | null;
+    children: Array<DescriptionNode>;
+    /**
+     * Where the node ends in the text, exclusive
+     */
+    end: number;
+    /**
+     * Whether a cell heads its column
+     */
+    header?: boolean | null;
+    /**
+     * Where a link leads, or where a picture is
+     */
+    href?: string | null;
+    /**
+     * The Discord ID a mention or a server emoji names
+     */
+    id?: string | null;
+    kind: DescriptionNodeKind;
+    /**
+     * The language a code block names
+     */
+    language?: string | null;
+    /**
+     * A heading's level, from 1
+     */
+    level?: number | null;
+    /**
+     * A server emoji's name
+     */
+    name?: string | null;
+    /**
+     * The number an ordered list counts from
+     */
+    number?: number | null;
+    ordered?: boolean | null;
+    /**
+     * Where the node starts in the text, counted in UTF-16 code units
+     */
+    start: number;
+    style?: DescriptionTimeStyle | null;
+    /**
+     * The words of a text or code, the character of an emoji, or a picture's alternative text
+     */
+    text?: string | null;
+    /**
+     * Whether a list's items are lines rather than paragraphs
+     */
+    tight?: boolean | null;
+    title?: string | null;
+    /**
+     * A timestamp's moment, in seconds since 1970
+     */
+    unix?: number | null;
+};
+
+export enum DescriptionNodeKind {
+    PARAGRAPH = 'PARAGRAPH',
+    HEADING = 'HEADING',
+    SUBTEXT = 'SUBTEXT',
+    QUOTE = 'QUOTE',
+    LIST = 'LIST',
+    ITEM = 'ITEM',
+    CODE_BLOCK = 'CODE_BLOCK',
+    RULE = 'RULE',
+    TABLE = 'TABLE',
+    ROW = 'ROW',
+    CELL = 'CELL',
+    TEXT = 'TEXT',
+    LINE_BREAK = 'LINE_BREAK',
+    STRONG = 'STRONG',
+    EMPHASIS = 'EMPHASIS',
+    UNDERLINE = 'UNDERLINE',
+    STRIKE = 'STRIKE',
+    SPOILER = 'SPOILER',
+    CODE = 'CODE',
+    LINK = 'LINK',
+    IMAGE = 'IMAGE',
+    EMOJI = 'EMOJI',
+    SERVER_EMOJI = 'SERVER_EMOJI',
+    USER_MENTION = 'USER_MENTION',
+    ROLE_MENTION = 'ROLE_MENTION',
+    CHANNEL_MENTION = 'CHANNEL_MENTION',
+    TIMESTAMP = 'TIMESTAMP'
+}
+
+/**
+ * A description being written, not yet saved
+ */
+export type DescriptionPreviewRequest = {
+    text: string;
+};
+
+export enum DescriptionTimeStyle {
+    SHORT_TIME = 'SHORT_TIME',
+    LONG_TIME = 'LONG_TIME',
+    SHORT_DATE = 'SHORT_DATE',
+    LONG_DATE = 'LONG_DATE',
+    SHORT_DATE_TIME = 'SHORT_DATE_TIME',
+    LONG_DATE_TIME = 'LONG_DATE_TIME',
+    RELATIVE = 'RELATIVE'
+}
+
+export type DescriptionTree = {
+    /**
+     * The description's length as stored, which the cap counts
+     */
+    length: number;
+    nodes: Array<DescriptionNode>;
+};
+
 /**
  * A text channel a game may live in
  */
@@ -1279,6 +1401,10 @@ export type EventResponse = {
     committeeId?: number | null;
     createdAt: string;
     description?: string | null;
+    /**
+     * The description as read, for one event; absent in a list.
+     */
+    descriptionTree?: DescriptionTree | null;
     endTime: string;
     /**
      * The codes of the games the event names
@@ -5381,6 +5507,47 @@ export type CsrfResponses = {
 };
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
+
+export type PreviewDescriptionData = {
+    body: DescriptionPreviewRequest;
+    path?: never;
+    query?: never;
+    url: '/descriptions/preview';
+};
+
+export type PreviewDescriptionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewDescriptionError = PreviewDescriptionErrors[keyof PreviewDescriptionErrors];
+
+export type PreviewDescriptionResponses = {
+    /**
+     * OK
+     */
+    200: DescriptionTree;
+};
+
+export type PreviewDescriptionResponse = PreviewDescriptionResponses[keyof PreviewDescriptionResponses];
 
 export type OpenDiscordChannelData = {
     body?: never;

@@ -183,6 +183,7 @@ function signedOut(signUpId: number) {
             <markdown-view
               class="event-page__prose"
               data-testid="event-page-description"
+              :nodes="event.descriptionTree?.nodes"
               :source="event.description ?? ''"
             />
             <section

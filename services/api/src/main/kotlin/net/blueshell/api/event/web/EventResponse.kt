@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.discord.DescriptionTree
 import net.blueshell.api.survey.web.SurveyResponse
 import java.time.Instant
 
@@ -57,4 +58,6 @@ data class EventResponse(
                 "Answered for one event, absent in a list.",
     )
     var announced: Boolean? = null,
+    @field:Schema(description = "The description as read, for one event; absent in a list.")
+    var descriptionTree: DescriptionTree? = null,
 )

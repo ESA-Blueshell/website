@@ -8,7 +8,7 @@ import (
 	"github.com/ESA-Blueshell/website/services/pinger/paint"
 )
 
-// openICMP opens frame sockets where the helper has CAP_NET_RAW on Linux, else an unprivileged ICMP
+// openICMP opens frame sockets where the helper has CAP_NET_RAW on Linux or /dev/bpf access on macOS, else an unprivileged ICMP
 // datagram socket where the OS allows it, else a raw socket. The bool reports whether the datagram socket won, so the sender knows
 // to address it with UDP destinations.
 func openICMP() ([]socket, bool, error) {

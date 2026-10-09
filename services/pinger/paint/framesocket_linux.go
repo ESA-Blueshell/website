@@ -148,14 +148,3 @@ func sendmmsg(fd int, hs []mmsghdr) (int, error) {
 	}
 	return int(n), nil
 }
-
-func destination(a net.Addr) [16]byte {
-	var d [16]byte
-	switch a := a.(type) {
-	case *net.IPAddr:
-		copy(d[:], a.IP.To16())
-	case *net.UDPAddr:
-		copy(d[:], a.IP.To16())
-	}
-	return d
-}

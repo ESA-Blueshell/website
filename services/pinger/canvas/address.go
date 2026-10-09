@@ -13,10 +13,12 @@ const (
 	Height = 2160
 )
 
-// Pixel is one canvas coordinate and the colour to paint there.
+// Pixel is one canvas coordinate and the colour to paint there. Placement indexes the paint job's
+// placement the pixel belongs to, so the sender can shift it by that placement's motion offset.
 type Pixel struct {
 	X, Y       uint16
 	R, G, B, A uint8
+	Placement  uint16
 }
 
 // Prefix is the /64 the event announces; the low 64 bits of each address carry one pixel.

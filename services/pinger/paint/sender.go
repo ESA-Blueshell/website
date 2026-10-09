@@ -99,6 +99,7 @@ const (
 type Sender struct {
 	conns    []Conn
 	target   atomic.Pointer[target]
+	offsets  atomic.Pointer[offsets]
 	window   Window
 	settings func() Settings
 	now      func() time.Time
@@ -350,37 +351,39 @@ func (w *worker) run(ctx context.Context) {
 			return
 		}
 		chunk := w.order[from:min(from+n, len(w.order))]
-		total := len(chunk)
-		var sent, failed int
+		offs := s.offsets.Load()
+		var sent, failed, skipped int
 		var err error
 		began := time.Now()
 		for len(chunk) > 0 {
 			part := chunk[:min(batch, len(chunk))]
 			chunk = chunk[len(part):]
-			for k, i := range part {
-				a := w.prefix.Address(w.target.pixels[i]).As16()
-				copy(ips[k], a[:])
+			k := w.address(part, offs, ips)
+			skipped += len(part) - k
+			if k == 0 {
+				continue
 			}
 			var ok int
 			if bc != nil {
-				ok, err = writeBatch(bc, msgs[:len(part)], err)
+				ok, err = writeBatch(bc, msgs[:k], err)
 			} else {
-				ok, err = s.writeEach(w.conn, dsts[:len(part)], err)
+				ok, err = s.writeEach(w.conn, dsts[:k], err)
 			}
 			sent += ok
-			failed += len(part) - ok
+			failed += k - ok
 		}
 		took := time.Since(began)
 		s.busy.Add(int64(took))
-		if took > 0 {
-			speed = float64(total) / took.Seconds()
+		if took > 0 && sent+failed > 0 {
+			speed = float64(sent+failed) / took.Seconds()
 		}
 		if failed > 0 {
 			s.errors.Add(uint64(failed))
 		}
-		if sent > 0 {
+		// A chunk whose every pixel moved off the canvas sent nothing and failed nothing.
+		if sent > 0 || failed == 0 {
 			s.sent.Add(uint64(sent))
-			s.passDone.Add(int64(sent))
+			s.passDone.Add(int64(sent + skipped))
 			if s.failing.Load() {
 				s.failing.Store(false)
 			}
@@ -393,6 +396,30 @@ func (w *worker) run(ctx context.Context) {
 		case <-time.After(failPause):
 		}
 	}
+}
+
+// address writes the destination of each pixel in part into ips, shifted by its placement's offset,
+// and returns how many it wrote; a pixel shifted off the canvas is skipped.
+func (w *worker) address(part []uint32, offs *offsets, ips []net.IP) int {
+	pixels := w.target.pixels
+	if offs == nil {
+		for k, i := range part {
+			a := w.prefix.Address(pixels[i]).As16()
+			copy(ips[k], a[:])
+		}
+		return len(part)
+	}
+	k := 0
+	for _, i := range part {
+		px, on := offs.shift(pixels[i])
+		if !on {
+			continue
+		}
+		a := w.prefix.Address(px).As16()
+		copy(ips[k], a[:])
+		k++
+	}
+	return k
 }
 
 // idle parks a worker the scaler has not asked for; it reports false once the pass is over.

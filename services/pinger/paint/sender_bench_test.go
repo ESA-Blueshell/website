@@ -98,3 +98,12 @@ func BenchmarkSendSinkAtRate(b *testing.B) {
 		b.Run(r.name, func(b *testing.B) { benchSend(b, sinkConns(b), r.pps) })
 	}
 }
+
+func BenchmarkSendDiscardAtRate(b *testing.B) {
+	for _, r := range []struct {
+		name string
+		pps  int
+	}{{"100k", 100_000}, {"500k", 500_000}, {"1M", 1_000_000}, {"2M", 2_000_000}} {
+		b.Run(r.name, func(b *testing.B) { benchSend(b, discardConns(), r.pps) })
+	}
+}

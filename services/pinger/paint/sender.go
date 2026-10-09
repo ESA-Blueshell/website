@@ -22,10 +22,16 @@ type Conn interface {
 	WriteTo(b []byte, dst net.Addr) (int, error)
 }
 
-// Workers is how many goroutines send at once, and so how many sockets a caller opens: one socket
-// carries one send at a time (Go's write lock and the kernel's socket lock both serialise it), so
-// workers sharing a socket queue behind each other instead of adding rate.
-func Workers() int { return max(2, runtime.NumCPU()) }
+// Workers is the most goroutines that send at once, and so how many sockets a caller opens: one
+// socket carries one send at a time, so workers sharing a socket queue behind each other. The
+// scaler runs fewer while fewer carry the rate. macOS gets two: past that its sendto spins on a
+// kernel lock, so a third worker lowers the rate and burns another core.
+func Workers() int {
+	if runtime.GOOS == "darwin" {
+		return 2
+	}
+	return max(2, runtime.NumCPU())
+}
 
 // MaxRatePPS caps the rate however it is set: the event bans prefixes that ping excessively hard.
 const MaxRatePPS = 200_000

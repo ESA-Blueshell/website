@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.18.2](https://github.com/ESA-Blueshell/website/compare/v1.18.1...v1.18.2) (2026-10-09)
+
+
+### Bug Fixes
+
+* **frontend:** sign-in layout styles, text-only links, no link underline ([#2274](https://github.com/ESA-Blueshell/website/issues/2274)) ([fae6e40](https://github.com/ESA-Blueshell/website/commit/fae6e4057f12db2bc4eb0b1dfef7e50ee7050a19))
+* **pinger-app:** name the desktop app, give it the Blueshell icon, ad-hoc sign on macOS ([#2275](https://github.com/ESA-Blueshell/website/issues/2275)) ([430351a](https://github.com/ESA-Blueshell/website/commit/430351a6e3b396bce54c25ec5105ebbb5a43c68c))
+
 ## [1.18.1](https://github.com/ESA-Blueshell/website/compare/v1.18.0...v1.18.1) (2026-10-09)
 
 

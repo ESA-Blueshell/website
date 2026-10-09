@@ -1,8 +1,6 @@
 package apipaint
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -254,34 +252,14 @@ func (s *ShareStream) stream(ctx context.Context, connected func()) error {
 	}
 	connected()
 
-	sc := bufio.NewScanner(resp.Body)
-	var data []byte
-	for sc.Scan() {
-		watchdog.Reset(s.idle)
-		line := sc.Bytes()
-		switch {
-		case len(line) == 0:
-			if data == nil {
-				continue
-			}
-			share, perr := parseShare(data)
-			if perr != nil {
-				slog.Warn("paint share event", "err", perr)
-				share = Everything
-			}
-			s.set(share)
-			data = nil
-		case bytes.HasPrefix(line, []byte("data:")):
-			if data != nil {
-				data = append(data, '\n')
-			}
-			data = append(data, bytes.TrimPrefix(bytes.TrimPrefix(line, []byte("data:")), []byte(" "))...)
+	return readEvents(resp.Body, func() { watchdog.Reset(s.idle) }, func(data []byte) {
+		share, perr := parseShare(data)
+		if perr != nil {
+			slog.Warn("paint share event", "err", perr)
+			share = Everything
 		}
-	}
-	if err := sc.Err(); err != nil {
-		return err
-	}
-	return io.ErrUnexpectedEOF
+		s.set(share)
+	})
 }
 
 // fetch reads the share once, for an api that serves no stream.

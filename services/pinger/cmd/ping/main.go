@@ -89,6 +89,7 @@ func run(server string, rate int, sectorArg, prefixArg string, anytime bool) err
 		sender.UseDatagramAddresses()
 	}
 	poller = apipaint.NewPoller(apipaint.NewClient(server), 5*time.Second, sectorSink{sender: sender, n: n, m: m}, nil)
+	poller.SetOffsetSink(sender)
 
 	fmt.Printf("Following the paint job at %s (sector %d/%d).\n", server, n, m)
 	fmt.Println("Press Ctrl+C to stop. Please be considerate — do not raise the rate to abuse the network.")

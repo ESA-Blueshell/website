@@ -28,6 +28,12 @@ type Conn interface {
 // workers sharing a socket queue behind each other instead of adding rate.
 func Workers() int { return max(2, runtime.NumCPU()) }
 
+// Damage tells the sender which of its pixels the canvas no longer shows. ok is false when it
+// cannot tell, and the sender then repaints every pixel.
+type Damage interface {
+	Damaged(gen uint64, pixels []canvas.Pixel) (indices []int, ok bool)
+}
+
 // MaxRatePPS caps the rate however it is set: the event bans prefixes that ping excessively hard.
 const MaxRatePPS = 200_000
 
@@ -53,6 +59,9 @@ const (
 type target struct {
 	pixels []canvas.Pixel
 	gen    uint64
+	// sentAt is when each pixel last left, in unix nanoseconds, so a targeted pass skips pixels the
+	// stream cannot show yet.
+	sentAt []atomic.Int64
 }
 
 // Stats is a point-in-time copy of what the sender has done.
@@ -71,6 +80,10 @@ type Stats struct {
 	// Failing is set when the last failThreshold sends all errored, so the path looks broken.
 	// The sender keeps retrying with backoff either way.
 	Failing bool
+	// Targeting is set while the livestream decides which pixels to send; Damaged is how many
+	// pixels the last targeted pass found drawn over.
+	Targeting bool
+	Damaged   int
 }
 
 const (
@@ -80,6 +93,11 @@ const (
 	// failing. A handful of full-buffer errors among successes is normal and the backoff soaks
 	// them up; only a run this long, with not one send getting out, means the path is broken.
 	failThreshold = 100
+	// retarget caps a targeted pass at this many seconds of sending, so the next pass works from a
+	// fresher frame.
+	retarget = 10
+	// holdoff is how long a sent pixel is left alone: the livestream runs this far behind the canvas.
+	holdoff = 15 * time.Second
 )
 
 // Sender repaints the logo pass after pass, each pass in a fresh shuffled order so the logo
@@ -107,6 +125,9 @@ type Sender struct {
 	rateMu    sync.Mutex
 	rates     []uint64
 	datagram  bool
+	damage    Damage
+	targeting atomic.Bool
+	damaged   atomic.Int64
 }
 
 // echoPayload is the fixed ICMPv6 echo body every pixel carries. Fixed so each packet is the same
@@ -156,8 +177,11 @@ func (s *Sender) SetPixels(pixels []canvas.Pixel) {
 	if prev := s.target.Load(); prev != nil {
 		gen = prev.gen + 1
 	}
-	s.target.Store(&target{pixels: pixels, gen: gen})
+	s.target.Store(&target{pixels: pixels, gen: gen, sentAt: make([]atomic.Int64, len(pixels))})
 }
+
+// UseDamage makes each pass send only the pixels d reports drawn over. Call it before Run.
+func (s *Sender) UseDamage(d Damage) { s.damage = d }
 
 // Seed restores the running totals from the last saved state, so a restart continues the counts
 // rather than starting from zero. Call it before Run.
@@ -191,6 +215,8 @@ func (s *Sender) Snapshot() Stats {
 		LastErrorAt: lastErrAt,
 		Rates:       rates,
 		Failing:     s.consec.Load() >= failThreshold,
+		Targeting:   s.targeting.Load(),
+		Damaged:     int(s.damaged.Load()),
 	}
 }
 
@@ -216,10 +242,42 @@ func (s *Sender) Run(ctx context.Context) {
 			dests = destinations(cfg.Prefix, t.pixels, s.datagram)
 			destsFor, destsGen = cfg.Prefix, t.gen
 		}
-		if s.pass(ctx, cfg.Prefix, dests, t.gen) {
+		order := s.order(t, cfg.RatePPS)
+		if len(order) == 0 {
+			s.passDone.Store(0)
+			select {
+			case <-ctx.Done():
+			case <-time.After(time.Second):
+			}
+			continue
+		}
+		if s.pass(ctx, cfg.Prefix, dests, t, order) {
 			s.passes.Add(1)
 		}
 	}
+}
+
+// order is the shuffled pixels this pass sends: all of them, or with a fresh livestream frame only
+// the drawn-over ones not sent within holdoff, capped at retarget seconds of sending.
+func (s *Sender) order(t *target, ratePPS int) []int {
+	if s.damage == nil {
+		return rand.Perm(len(t.pixels))
+	}
+	damaged, ok := s.damage.Damaged(t.gen, t.pixels)
+	s.targeting.Store(ok)
+	if !ok {
+		return rand.Perm(len(t.pixels))
+	}
+	s.damaged.Store(int64(len(damaged)))
+	since := s.now().Add(-holdoff).UnixNano()
+	order := damaged[:0]
+	for _, i := range damaged {
+		if t.sentAt[i].Load() < since {
+			order = append(order, i)
+		}
+	}
+	rand.Shuffle(len(order), func(a, b int) { order[a], order[b] = order[b], order[a] })
+	return order[:min(len(order), max(batch, ratePPS*retarget))]
 }
 
 func (s *Sender) decide(cfg Settings) State {
@@ -250,8 +308,7 @@ func destinations(p canvas.Prefix, pixels []canvas.Pixel, datagram bool) []net.A
 }
 
 // pass reports whether it reached every pixel; it stops early when the settings change under it.
-func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, gen uint64) bool {
-	order := rand.Perm(len(dests))
+func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, t *target, order []int) bool {
 	var next atomic.Int64
 	var aborted atomic.Bool
 	s.passDone.Store(0)
@@ -274,7 +331,7 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 				cfg := s.settings()
 				// Abort when the prefix changes, the sender leaves Running, or the image is
 				// swapped: dests then belong to a stale target and the next pass rebuilds them.
-				if cfg.Prefix != p || s.decide(cfg) != Running || s.target.Load().gen != gen {
+				if cfg.Prefix != p || s.decide(cfg) != Running || s.target.Load().gen != t.gen {
 					aborted.Store(true)
 					return
 				}
@@ -293,6 +350,12 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 					sent, trailing = s.writeBatch(bc, msgs[:to-from])
 				} else {
 					sent, trailing = s.writeEach(conn, dests, order[from:to])
+				}
+				// Stamped per batch: a pixel whose send failed waits out the holdoff like the rest,
+				// then a later pass retries it.
+				stamp := s.now().UnixNano()
+				for _, i := range order[from:to] {
+					t.sentAt[i].Store(stamp)
 				}
 				// The shared counters move once per batch: per packet, every worker contends on
 				// the same cache lines at millions of sends a second.

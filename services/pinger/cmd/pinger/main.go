@@ -23,6 +23,7 @@ import (
 	"github.com/ESA-Blueshell/website/services/pinger/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/settings"
 	"github.com/ESA-Blueshell/website/services/pinger/internal/web"
+	"github.com/ESA-Blueshell/website/services/pinger/live"
 	"github.com/ESA-Blueshell/website/services/pinger/paint"
 )
 
@@ -66,6 +67,7 @@ func run() error {
 	apiURL := env("PINGER_API_URL", "http://localhost:8080")
 	client := apipaint.NewClient(apiURL)
 	poller = apipaint.NewPoller(client, 2*time.Second, sender, preview.set)
+	watchStream(ctx, sender, env("PINGER_STREAM_URL", live.DefaultStreamURL))
 	go poller.Run(ctx)
 	go sender.Run(ctx)
 	go persistStats(ctx, store, sender)
@@ -99,6 +101,21 @@ func run() error {
 		return err
 	}
 	return nil
+}
+
+// watchStream targets the sender at the pixels the livestream shows drawn over. "off", or no ffmpeg
+// on the PATH, leaves it repainting every pixel.
+func watchStream(ctx context.Context, sender *paint.Sender, url string) {
+	if url == "off" {
+		return
+	}
+	if !live.Available() {
+		slog.Warn("no ffmpeg on the PATH, so every pixel is repainted")
+		return
+	}
+	watcher := live.NewWatcher()
+	sender.UseDamage(watcher)
+	go watcher.Run(ctx, url)
 }
 
 // previewHolder keeps the PNG of the image as it lands, swapped whenever the poller places a new

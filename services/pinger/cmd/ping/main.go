@@ -22,6 +22,7 @@ import (
 
 	"github.com/ESA-Blueshell/website/services/pinger/apipaint"
 	"github.com/ESA-Blueshell/website/services/pinger/canvas"
+	"github.com/ESA-Blueshell/website/services/pinger/live"
 	"github.com/ESA-Blueshell/website/services/pinger/paint"
 )
 
@@ -87,6 +88,13 @@ func run(server string, rate int, sectorArg, prefixArg string, anytime bool) err
 	sender := paint.NewSender(paint.Conns(socks), nil, window, settings)
 	if datagram {
 		sender.UseDatagramAddresses()
+	}
+	// With ffmpeg installed the helper repaints only what the livestream shows drawn over.
+	if live.Available() {
+		watcher := live.NewWatcher()
+		sender.UseDamage(watcher)
+		go watcher.Run(ctx, live.DefaultStreamURL)
+		fmt.Println("Watching the livestream: only pixels drawn over are sent.")
 	}
 	poller = apipaint.NewPoller(apipaint.NewClient(server), 5*time.Second, sectorSink{sender: sender, n: n, m: m}, nil)
 

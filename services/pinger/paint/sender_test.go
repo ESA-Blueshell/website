@@ -340,3 +340,78 @@ func TestSenderSkipsOnlyTheMessageABatchFailedOn(t *testing.T) {
 		t.Fatalf("counted %d sent, but only %d left the socket", snap.Sent, got)
 	}
 }
+
+type fakeDamage struct {
+	indices []int
+	ok      bool
+}
+
+func (d fakeDamage) Damaged(uint64, []canvas.Pixel) ([]int, bool) {
+	return append([]int(nil), d.indices...), d.ok
+}
+
+func startTargeted(t *testing.T, conn Conn, px []canvas.Pixel, box *settingsBox, d Damage) *Sender {
+	t.Helper()
+	s := NewSender([]Conn{conn}, px, open, box.get)
+	s.UseDamage(d)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { s.Run(ctx); close(done) }()
+	t.Cleanup(func() { cancel(); <-done })
+	return s
+}
+
+func TestSenderRepaintsOnlyDrawnOverPixelsAndOnlyOnceWithinTheHoldoff(t *testing.T) {
+	conn := &fakeConn{}
+	box := &settingsBox{}
+	p := prefix(t, "2001:db8:b317:a000::/64")
+	box.set(Settings{Prefix: p, RatePPS: 100_000, Enabled: true})
+	px := pixels(50)
+
+	s := startTargeted(t, conn, px, box, fakeDamage{indices: []int{3, 7}, ok: true})
+	eventually(t, func() bool { return s.Snapshot().Passes >= 1 })
+	time.Sleep(50 * time.Millisecond)
+
+	sent := conn.addresses()
+	if len(sent) != 2 {
+		t.Fatalf("sent %d packets, want the 2 drawn-over pixels once each", len(sent))
+	}
+	for _, i := range []int{3, 7} {
+		if sent[0] != p.Address(px[i]) && sent[1] != p.Address(px[i]) {
+			t.Fatalf("pixel %d was not repainted", i)
+		}
+	}
+	if snap := s.Snapshot(); !snap.Targeting || snap.Damaged != 2 {
+		t.Fatalf("targeting %v damaged %d, want true and 2", snap.Targeting, snap.Damaged)
+	}
+}
+
+func TestSenderSendsNothingWhenTheCanvasShowsEveryPixel(t *testing.T) {
+	conn := &fakeConn{}
+	box := &settingsBox{}
+	box.set(Settings{Prefix: prefix(t, "2001:db8:b317:a000::/64"), RatePPS: 100_000, Enabled: true})
+
+	s := startTargeted(t, conn, pixels(50), box, fakeDamage{ok: true})
+	eventually(t, func() bool { return s.Snapshot().Targeting })
+	time.Sleep(50 * time.Millisecond)
+
+	if n := len(conn.addresses()); n != 0 {
+		t.Fatalf("sent %d packets to an intact image", n)
+	}
+}
+
+func TestSenderRepaintsEverythingWhenTheStreamCannotTell(t *testing.T) {
+	conn := &fakeConn{}
+	box := &settingsBox{}
+	box.set(Settings{Prefix: prefix(t, "2001:db8:b317:a000::/64"), RatePPS: 100_000, Enabled: true})
+
+	s := startTargeted(t, conn, pixels(50), box, fakeDamage{indices: []int{1}, ok: false})
+	eventually(t, func() bool { return s.Snapshot().Passes >= 1 })
+
+	if n := len(conn.addresses()); n < 50 {
+		t.Fatalf("sent %d packets, want a full pass of 50", n)
+	}
+	if s.Snapshot().Targeting {
+		t.Fatal("targeting without a frame")
+	}
+}

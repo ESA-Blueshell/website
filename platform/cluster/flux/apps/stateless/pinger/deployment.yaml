@@ -77,10 +77,11 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 64Mi
+              # ffmpeg decoding the livestream holds about 100Mi of its own.
+              memory: 192Mi
             limits:
               cpu: "1"
-              memory: 256Mi
+              memory: 512Mi
 ---
 apiVersion: v1
 kind: Service

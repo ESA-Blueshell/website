@@ -269,14 +269,6 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 	defer paint.CloseSockets(socks)
 
-	// Drain the socket: every ping can draw a reply or an error message back, and against a contained
-	// local test target (a route to loopback) they arrive for every packet. If nothing reads them the
-	// receive buffer fills and the next WriteTo blocks, which freezes the sender. A reader discards
-	// them continuously. Harmless in production, where few of the real addresses ever answer.
-	for _, c := range socks {
-		go drainSocket(ctx, c)
-	}
-
 	var poller *apipaint.Poller
 	settings := func() paint.Settings {
 		cur := paint.Settings{}
@@ -359,18 +351,6 @@ func (r *Runner) afterReport(ctx context.Context, err error) {
 		}
 	default:
 		slog.Warn("post report", "err", err)
-	}
-}
-
-// drainSocket reads and discards whatever comes back on the ICMP socket, so a flood of replies or
-// ICMP error messages from a contained local target cannot fill the receive buffer and block sends.
-func drainSocket(ctx context.Context, c socket) {
-	buf := make([]byte, 1500)
-	for ctx.Err() == nil {
-		_ = c.SetReadDeadline(time.Now().Add(time.Second))
-		if _, _, err := c.ReadFrom(buf); err != nil {
-			continue
-		}
 	}
 }
 

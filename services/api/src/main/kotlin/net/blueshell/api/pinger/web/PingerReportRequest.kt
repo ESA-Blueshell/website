@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
+import net.blueshell.api.pinger.api.MAX_REPORT_PPS
 
 /**
  * A pinger's status report. [sent] is the reporting device's own cumulative send counter, which
@@ -28,12 +29,12 @@ data class PingerReportRequest(
     val online: Boolean,
     @field:Schema(description = "The current send rate in pings per second")
     @field:PositiveOrZero
-    @field:Max(200_000)
+    @field:Max(MAX_REPORT_PPS)
     val pps: Int,
     @field:Schema(description = "The client's own cumulative pings sent this session; resets to 0 on restart")
     @field:PositiveOrZero
-    // Far above any real total at the capped rate; blocks an absurd one-shot value topping the board.
-    @field:Max(100_000_000_000)
+    // Far above any real session at the capped rate; blocks an absurd one-shot value topping the board.
+    @field:Max(1_000_000_000_000_000)
     val sent: Long,
     @field:Schema(description = "The client's own count of send errors this session")
     @field:PositiveOrZero

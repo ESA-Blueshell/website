@@ -20,8 +20,9 @@ import (
 // or re-logs rather than treating it as a hard failure.
 var ErrUnauthorized = errors.New("report: unauthorized")
 
-// maxPPS mirrors the server's cap, so a stray sample cannot be read as a real rate.
-const maxPPS = paint.MaxRatePPS
+// maxPPS mirrors the api's MAX_REPORT_PPS, so a stray sample cannot be read as a real rate and a
+// report is never refused for it.
+const maxPPS = 25_000_000
 
 // Report is the body POST /pinger/report accepts. The field names match the api DTO exactly.
 // DeviceID is set by the poster from this install's stable id, so the api keeps this device's send

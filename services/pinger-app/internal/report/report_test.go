@@ -30,10 +30,17 @@ func TestBuildOfflineWhenNotRunning(t *testing.T) {
 	}
 }
 
+func TestBuildReportsTheTopRateInFull(t *testing.T) {
+	r := Build(paint.Stats{State: paint.Running, ActualPPS: 2_192_982})
+	if r.PPS != 2_192_982 {
+		t.Fatalf("pps = %d, want 2192982", r.PPS)
+	}
+}
+
 func TestBuildCapsPPSAtServerLimit(t *testing.T) {
-	r := Build(paint.Stats{State: paint.Running, ActualPPS: 10_000_000})
-	if r.PPS != paint.MaxRatePPS {
-		t.Fatalf("pps = %d, want the cap %d", r.PPS, paint.MaxRatePPS)
+	r := Build(paint.Stats{State: paint.Running, ActualPPS: 90_000_000})
+	if r.PPS != maxPPS {
+		t.Fatalf("pps = %d, want the cap %d", r.PPS, maxPPS)
 	}
 }
 

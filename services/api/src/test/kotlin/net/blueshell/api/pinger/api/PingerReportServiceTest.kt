@@ -141,10 +141,28 @@ class PingerReportServiceTest {
     }
 
     @Test
-    fun `one report cannot move the total by more than the rate cap over a minute`() {
-        service.report(member, "laptop", online = true, pps = 200_000, sent = 50_000_000)
+    fun `a sender at the app's top rate counts in full`() {
+        service.report(member, "laptop", online = true, pps = 2_192_982, sent = 21_929_820)
 
-        assertThat(totalFor(member)).isEqualTo(12_000_000)
+        assertThat(totalFor(member)).isEqualTo(21_929_820)
+    }
+
+    @Test
+    fun `one report cannot move the total by more than the rate cap over a minute`() {
+        service.report(member, "laptop", online = true, pps = 1, sent = 2_000_000_000)
+
+        assertThat(totalFor(member)).isEqualTo(MAX_REPORT_PPS * 60)
+    }
+
+    @Test
+    fun `reports missed during a stall still count once the device reports again`() {
+        deviceRows[member.key to "laptop"] =
+            PingerDeviceSession(identity = member.key, deviceId = "laptop", updated = now.minusSeconds(600))
+        val fiveMinutesAtTheCap = MAX_REPORT_PPS * 300
+
+        service.report(member, "laptop", online = true, pps = 1, sent = fiveMinutesAtTheCap)
+
+        assertThat(totalFor(member)).isEqualTo(fiveMinutesAtTheCap)
     }
 
     @Test

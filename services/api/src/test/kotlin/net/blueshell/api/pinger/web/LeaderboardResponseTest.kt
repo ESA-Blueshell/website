@@ -110,6 +110,8 @@ class LeaderboardResponseTest {
                 ),
             )
         assertThat(response.record).isEqualTo(RecordResponse(pps = 2_400_000, at = at))
+        assertThat(response.record?.pps).isEqualTo(2_400_000)
+        assertThat(response.fastest.single().peakPps).isEqualTo(700)
         assertThat(response.combinedPps).isEqualTo(9_300)
     }
 

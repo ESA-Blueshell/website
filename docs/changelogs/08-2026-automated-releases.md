@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.4](https://github.com/ESA-Blueshell/website/compare/v1.18.3...v1.18.4) (2026-10-09)
+
+
+### Bug Fixes
+
+* **pinger:** drop root-only ldconfig from the AppImage build ([9452bb8](https://github.com/ESA-Blueshell/website/commit/9452bb8edcfe8fad9a1f982dea0b8b9e7ad36381))
+
 ## [1.18.3](https://github.com/ESA-Blueshell/website/compare/v1.18.2...v1.18.3) (2026-10-09)
 
 

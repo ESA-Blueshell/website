@@ -133,9 +133,14 @@ jobs:
           cache-dependency-path: services/pinger-app/go.sum
 
       # The Linux build links against GTK and WebKit; the other runners ship their native WebView.
-      - name: Install the Linux WebView libraries
+      # The rest are for packaging a self-contained AppImage (see packaging/build-appimage.sh).
+      - name: Install the Linux WebView and packaging libraries
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev libwebkit2gtk-4.0-dev \
+            patchelf imagemagick dpkg-dev fontconfig fonts-dejavu-core libfuse2
 
       - name: Install the Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
@@ -161,29 +166,12 @@ jobs:
         if: runner.os == 'Windows'
         run: cp build/bin/blueshell-pinger.exe "${{ matrix.asset }}"
 
+      # A self-contained AppImage: it carries webkit and its closure (webkit is not on every distro),
+      # keeps the GPU/driver stack from the host, and rewrites webkit's compiled-in helper path so the
+      # bundled helpers spawn anywhere. The script documents the why.
       - name: Package the Linux AppImage
         if: runner.os == 'Linux'
-        run: |
-          mkdir -p AppDir/usr/bin
-          cp build/bin/blueshell-pinger AppDir/usr/bin/
-          cp build/appicon.png AppDir/blueshell-pinger.png
-          cat > AppDir/blueshell-pinger.desktop <<'EOF'
-          [Desktop Entry]
-          Name=Blueshell Pinger
-          Exec=blueshell-pinger
-          Icon=blueshell-pinger
-          Type=Application
-          Categories=Utility;
-          EOF
-          cat > AppDir/AppRun <<'EOF'
-          #!/bin/sh
-          HERE="$(dirname "$(readlink -f "$0")")"
-          exec "$HERE/usr/bin/blueshell-pinger" "$@"
-          EOF
-          chmod +x AppDir/AppRun
-          curl -fsSL https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o appimagetool
-          chmod +x appimagetool
-          ./appimagetool --appimage-extract-and-run AppDir "${{ matrix.asset }}"
+        run: bash packaging/build-appimage.sh "${{ matrix.asset }}"
 
       - name: Attach to the release
         env:

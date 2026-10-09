@@ -1,21 +1,28 @@
 package net.blueshell.api.pinger.web
 
+import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.pinger.api.PingerIdentity
 import net.blueshell.api.pinger.api.PingerReportService
+import net.blueshell.api.pinger.api.PingerShareService
 import net.blueshell.api.shared.user.MemberIdentities
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 
 /**
  * The reporting surface the pinger talks to once it is authenticated. A member reaches it with a
@@ -28,6 +35,8 @@ import org.springframework.web.bind.annotation.RestController
 class PingerReportController(
     private val reports: PingerReportService,
     private val identities: MemberIdentities,
+    private val shares: PingerShareService,
+    private val shareStream: PingerShareStream,
 ) {
     // The report chain authorizes every request to a member or SiteCie before it reaches here, so
     // the methods add no gate of their own.
@@ -64,6 +73,36 @@ class PingerReportController(
             pps = request.pps,
             sent = request.sent,
         )
+    }
+
+    @PermitAll
+    @GetMapping("/share")
+    fun share(
+        authentication: Authentication,
+        @RequestParam deviceId: String,
+    ): PingerShareResponse = PingerShareResponse.of(shares.share(PingerIdentity.of(authentication).key, validDeviceId(deviceId)))
+
+    @PermitAll
+    @GetMapping("/share/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @ApiResponse(
+        responseCode = "200",
+        content = [Content(schema = Schema(implementation = PingerShareResponse::class))],
+    )
+    fun shareStream(
+        authentication: Authentication,
+        @RequestParam deviceId: String,
+    ): SseEmitter = shareStream.open(PingerIdentity.of(authentication).key, validDeviceId(deviceId))
+
+    // The same bounds a report's deviceId carries, so a share is asked for a device that can report.
+    private fun validDeviceId(deviceId: String): String {
+        if (deviceId.isBlank() || deviceId.length > MAX_DEVICE_ID_LENGTH) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "deviceId must be 1 to $MAX_DEVICE_ID_LENGTH characters.")
+        }
+        return deviceId
+    }
+
+    private companion object {
+        const val MAX_DEVICE_ID_LENGTH = 64
     }
 }
 

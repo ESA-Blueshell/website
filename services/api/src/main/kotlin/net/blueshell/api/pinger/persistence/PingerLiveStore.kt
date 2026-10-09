@@ -13,6 +13,13 @@ data class PingerLive(
     val lastSeen: Instant,
 )
 
+/** One device's row in the live store, kept apart from its identity's other devices. */
+data class PingerLiveDevice(
+    val identity: String,
+    val deviceId: String,
+    val live: PingerLive,
+)
+
 /**
  * The live presence of each reporting pinger device, in Valkey so every replica sees the same and a
  * device that stops reporting ages out on its own.
@@ -104,6 +111,30 @@ class PingerLiveStore(
             }
         }
         return acc.mapValues { PingerLive(it.value.online, it.value.pps, Instant.ofEpochMilli(it.value.lastSeen)) }
+    }
+
+    /** Every device row in one keyspace walk, unaggregated, for splitting the paint between devices. */
+    fun devices(): List<PingerLiveDevice> {
+        val devices = ArrayList<PingerLiveDevice>()
+        val scan =
+            ScanOptions
+                .scanOptions()
+                .match("$KEY_PREFIX*")
+                .count(SCAN_COUNT)
+                .build()
+        redis.scan(scan).use { cursor ->
+            while (cursor.hasNext()) {
+                val key = cursor.next()
+                // Split at the first '#': an identity never holds one, a device id may.
+                val rest = key.removePrefix(KEY_PREFIX)
+                val hash = rest.indexOf('#')
+                val device = if (hash > 0) read(key) else null
+                if (device != null) {
+                    devices += PingerLiveDevice(rest.substring(0, hash), rest.substring(hash + 1), device)
+                }
+            }
+        }
+        return devices
     }
 
     private class Agg(

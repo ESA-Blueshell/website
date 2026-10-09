@@ -7,6 +7,7 @@ import net.blueshell.api.event.domain.EventRoster
 import net.blueshell.api.event.domain.EventUseCases
 import net.blueshell.api.event.domain.Roster
 import net.blueshell.api.event.domain.RosterPerson
+import net.blueshell.api.shared.discord.DescriptionNodeKind
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -51,6 +52,25 @@ class EventControllerTest {
         verify(useCases).approve(eq(6L), eq(true), eq(AnnounceChoice.NEXT_MORNING))
 
         assertThat(controller.findEventById(6L).announced).isTrue()
+    }
+
+    @Test
+    fun `carries one event's description as read, and none where it has no description`() {
+        event.description = "**LAN** <@&223456789012345678>"
+
+        val read = controller.findEventById(6L).descriptionTree
+
+        assertThat(
+            read
+                ?.nodes
+                ?.single()
+                ?.children
+                ?.map { it.kind },
+        ).containsExactly(DescriptionNodeKind.STRONG, DescriptionNodeKind.TEXT, DescriptionNodeKind.ROLE_MENTION)
+        assertThat(read?.length).isEqualTo(30)
+
+        event.description = null
+        assertThat(controller.findEventById(6L).descriptionTree).isNull()
     }
 
     @Test

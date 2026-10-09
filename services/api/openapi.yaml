@@ -2112,6 +2112,172 @@ components:
       - role
       - source
       type: object
+    DescriptionCellAlign:
+      enum:
+      - LEFT
+      - CENTER
+      - RIGHT
+      type: string
+    DescriptionNode:
+      properties:
+        align:
+          oneOf:
+          - $ref: '#/components/schemas/DescriptionCellAlign'
+          - type: 'null'
+        animated:
+          description: Whether a server emoji moves
+          type:
+          - boolean
+          - 'null'
+        children:
+          items:
+            $ref: '#/components/schemas/DescriptionNode'
+          type: array
+        end:
+          description: Where the node ends in the text, exclusive
+          format: int32
+          type: integer
+        header:
+          description: Whether a cell heads its column
+          type:
+          - boolean
+          - 'null'
+        href:
+          description: Where a link leads, or where a picture is
+          type:
+          - string
+          - 'null'
+        id:
+          description: The Discord ID a mention or a server emoji names
+          type:
+          - string
+          - 'null'
+        kind:
+          $ref: '#/components/schemas/DescriptionNodeKind'
+        language:
+          description: The language a code block names
+          type:
+          - string
+          - 'null'
+        level:
+          description: A heading's level, from 1
+          format: int32
+          type:
+          - integer
+          - 'null'
+        name:
+          description: A server emoji's name
+          type:
+          - string
+          - 'null'
+        number:
+          description: The number an ordered list counts from
+          format: int32
+          type:
+          - integer
+          - 'null'
+        ordered:
+          type:
+          - boolean
+          - 'null'
+        start:
+          description: Where the node starts in the text, counted in UTF-16 code units
+          format: int32
+          type: integer
+        style:
+          oneOf:
+          - $ref: '#/components/schemas/DescriptionTimeStyle'
+          - type: 'null'
+        text:
+          description: The words of a text or code, the character of an emoji, or a picture's alternative text
+          type:
+          - string
+          - 'null'
+        tight:
+          description: Whether a list's items are lines rather than paragraphs
+          type:
+          - boolean
+          - 'null'
+        title:
+          type:
+          - string
+          - 'null'
+        unix:
+          description: A timestamp's moment, in seconds since 1970
+          format: int64
+          type:
+          - integer
+          - 'null'
+      required:
+      - children
+      - end
+      - kind
+      - start
+      type: object
+    DescriptionNodeKind:
+      enum:
+      - PARAGRAPH
+      - HEADING
+      - SUBTEXT
+      - QUOTE
+      - LIST
+      - ITEM
+      - CODE_BLOCK
+      - RULE
+      - TABLE
+      - ROW
+      - CELL
+      - TEXT
+      - LINE_BREAK
+      - STRONG
+      - EMPHASIS
+      - UNDERLINE
+      - STRIKE
+      - SPOILER
+      - CODE
+      - LINK
+      - IMAGE
+      - EMOJI
+      - SERVER_EMOJI
+      - USER_MENTION
+      - ROLE_MENTION
+      - CHANNEL_MENTION
+      - TIMESTAMP
+      type: string
+    DescriptionPreviewRequest:
+      description: A description being written, not yet saved
+      properties:
+        text:
+          maxLength: 16384
+          minLength: 0
+          type: string
+      required:
+      - text
+      type: object
+    DescriptionTimeStyle:
+      enum:
+      - SHORT_TIME
+      - LONG_TIME
+      - SHORT_DATE
+      - LONG_DATE
+      - SHORT_DATE_TIME
+      - LONG_DATE_TIME
+      - RELATIVE
+      type: string
+    DescriptionTree:
+      properties:
+        length:
+          description: The description's length as stored, which the cap counts
+          format: int32
+          type: integer
+        nodes:
+          items:
+            $ref: '#/components/schemas/DescriptionNode'
+          type: array
+      required:
+      - length
+      - nodes
+      type: object
     DiscordChannelResponse:
       description: A text channel a game may live in
       properties:
@@ -2546,6 +2712,11 @@ components:
           type:
           - string
           - 'null'
+        descriptionTree:
+          description: The description as read, for one event; absent in a list.
+          oneOf:
+          - $ref: '#/components/schemas/DescriptionTree'
+          - type: 'null'
         endTime:
           format: date-time
           type: string
@@ -12135,6 +12306,113 @@ paths:
           description: Server error
       tags:
       - Security
+  /descriptions/preview:
+    post:
+      operationId: previewDescription
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DescriptionPreviewRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DescriptionTree'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Descriptions
   /discord/channel/{door}:
     get:
       operationId: openDiscordChannel

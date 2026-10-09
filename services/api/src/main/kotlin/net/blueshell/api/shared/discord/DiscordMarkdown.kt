@@ -8,8 +8,8 @@ import java.util.Locale
 /**
  * A description written in Discord's markdown (architecture ADR-010), translated to CommonMark for
  * a place that reads only that: Google Calendar, which renders HTML, and a link preview, which
- * reads plain words. A spoiler's text never leaves. The frontend's discordMarkdown.ts renders the
- * same rules for the site; change one, change the other.
+ * reads plain words. A spoiler's text never leaves. The frontend's discordMarkdown.ts and
+ * [DescriptionReader] read the same rules for the site; change one, change the others.
  */
 object DiscordMarkdown {
     private val ZONE = ZoneId.of("Europe/Amsterdam")

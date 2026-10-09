@@ -27,6 +27,11 @@ build/
 /.nb-gradle/
 !**/src/main/**/build/
 !**/src/test/**/build/
+# The Wails desktop pinger packages this icon at release build time. build/ is ignored
+# above, so track just this one file and nothing else Wails writes under build/.
+!services/pinger-app/build/
+services/pinger-app/build/*
+!services/pinger-app/build/appicon.png
 
 ### VS Code ###
 .vscode/

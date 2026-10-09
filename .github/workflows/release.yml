@@ -144,11 +144,18 @@ jobs:
       - name: Build the app
         run: wails build -clean -platform ${{ matrix.platform }}
 
-      # The .app bundle takes wails.json's `name` (pinger-app), not `outputfilename`, so it is
-      # pinger-app.app even though the binary inside is blueshell-pinger.
+      # Ad-hoc sign the whole bundle so Apple Silicon will launch it at all: arm64 refuses to run a
+      # binary with no signature. This is not a Developer ID signature, so Gatekeeper still asks the
+      # member to confirm the first open; the download page documents that step.
+      - name: Ad-hoc sign the macOS app
+        if: runner.os == 'macOS'
+        run: codesign --force --deep --sign - "build/bin/Blueshell Pinger.app"
+
+      # The .app bundle takes wails.json's `name` ("Blueshell Pinger"), not `outputfilename`, so the
+      # bundle is "Blueshell Pinger.app" even though the binary inside is blueshell-pinger.
       - name: Package the macOS DMG
         if: runner.os == 'macOS'
-        run: hdiutil create -volname "Blueshell Pinger" -srcfolder build/bin/pinger-app.app -ov -format UDZO "${{ matrix.asset }}"
+        run: hdiutil create -volname "Blueshell Pinger" -srcfolder "build/bin/Blueshell Pinger.app" -ov -format UDZO "${{ matrix.asset }}"
 
       - name: Name the Windows installer
         if: runner.os == 'Windows'
@@ -159,7 +166,7 @@ jobs:
         run: |
           mkdir -p AppDir/usr/bin
           cp build/bin/blueshell-pinger AppDir/usr/bin/
-          cp frontend/dist/shelly.png AppDir/blueshell-pinger.png
+          cp build/appicon.png AppDir/blueshell-pinger.png
           cat > AppDir/blueshell-pinger.desktop <<'EOF'
           [Desktop Entry]
           Name=Blueshell Pinger

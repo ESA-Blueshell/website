@@ -19,8 +19,12 @@ import org.springframework.security.oauth2.jwt.JwtEncoder
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Duration
+import java.time.Instant
 
 /**
  * The `pinger/report` chain is the one chain that accepts a bearer, so these requests carry a
@@ -184,5 +188,81 @@ class PingerReportIT : UserTestSupport() {
         val row = contributions.findAll().single { it.identity == "sitecie" }
         assertThat(row.totalSent).isEqualTo(420)
         assertThat(row.memberId).isNull()
+    }
+
+    // The share service caches the live set for a second, and the cache outlives a test: step the
+    // clock past every earlier test's read so this one sees its own rows.
+    private fun freshShares() {
+        shareClock = maxOf(shareClock, clock.instant()).plus(Duration.ofSeconds(2))
+        clock.set(shareClock)
+    }
+
+    @Test
+    fun `a member's device is told its slice of the paint, weighed against the online devices`() {
+        val member = createUserWithRole(Role.MEMBER)
+        liveStore.touch("sitecie", "replica-a", online = true, pps = 3_000, at = clock.instant())
+        freshShares()
+
+        mvc
+            .perform(get("/pinger/report/share").param("deviceId", "laptop").header("Authorization", "Bearer ${memberBearer(member)}"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.from").value(0.0))
+            .andExpect(jsonPath("$.to").value(0.25))
+            .andExpect(jsonPath("$.devices").value(2))
+    }
+
+    @Test
+    fun `SiteCie's service token is told its slice`() {
+        freshShares()
+
+        mvc
+            .perform(get("/pinger/report/share").param("deviceId", "replica-a").header("X-Pinger-Service-Token", serviceToken))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.from").value(0.0))
+            .andExpect(jsonPath("$.to").value(1.0))
+            .andExpect(jsonPath("$.devices").value(1))
+    }
+
+    @Test
+    fun `a share request with no credentials is refused`() {
+        mvc
+            .perform(get("/pinger/report/share").param("deviceId", "laptop"))
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `a share request without a device id is refused`() {
+        mvc
+            .perform(get("/pinger/report/share").header("X-Pinger-Service-Token", serviceToken))
+            .andExpect(status().isBadRequest)
+        mvc
+            .perform(get("/pinger/report/share").param("deviceId", " ").header("X-Pinger-Service-Token", serviceToken))
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `the share stream opens with the device's slice as its first event`() {
+        val member = createUserWithRole(Role.MEMBER)
+        freshShares()
+
+        mvc
+            .perform(
+                get("/pinger/report/share/stream")
+                    .param("deviceId", "laptop")
+                    .header("Authorization", "Bearer ${memberBearer(member)}")
+                    .accept(MediaType.TEXT_EVENT_STREAM),
+            ).andExpect(request().asyncStarted())
+            .andExpect(content().string("data:{\"from\":0.0,\"to\":1.0,\"devices\":1}\n\n"))
+    }
+
+    @Test
+    fun `the share stream refuses a request with no credentials`() {
+        mvc
+            .perform(get("/pinger/report/share/stream").param("deviceId", "laptop").accept(MediaType.TEXT_EVENT_STREAM))
+            .andExpect(status().isUnauthorized)
+    }
+
+    private companion object {
+        var shareClock: Instant = Instant.EPOCH
     }
 }

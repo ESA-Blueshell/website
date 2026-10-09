@@ -10,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Duration
 
-/** A 10 Gbit/s uplink of echo requests, far past any member's link; a report above it is refused. */
-const val MAX_REPORT_PPS = 25_000_000L
+/** The desktop app's own top rate, about a 1 Gbit/s uplink of echo requests; a report above it is refused. */
+const val MAX_REPORT_PPS = 2_192_982L
 
 /**
  * Ingests a pinger's status report: it accrues the identity's durable, monotonic tally and refreshes

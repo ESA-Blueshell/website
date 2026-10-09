@@ -98,6 +98,9 @@ pinger:
   report:
     # A known value the report suites present; production reads the real one from Vault.
     service-token: test-pinger-service-token
+  record:
+    # The suites drive the record keeper by hand, so a background tick never races their writes.
+    check-interval-ms: 3600000
 
 springdoc:
   api-docs:

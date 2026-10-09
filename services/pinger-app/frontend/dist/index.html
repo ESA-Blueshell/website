@@ -258,6 +258,14 @@
       .estimate b {
         color: var(--chalk);
       }
+      .notice {
+        margin-top: 0.5rem;
+        font-size: 0.78rem;
+        line-height: 1.4;
+        color: var(--acid);
+        overflow-wrap: anywhere;
+        user-select: text;
+      }
       .held {
         margin-top: 0.35rem;
         min-height: 1.1em;
@@ -300,6 +308,7 @@
         <div class="hero__unit">pings per second</div>
         <div class="state">State <b id="state">starting</b></div>
         <div class="countdown" id="countdown"></div>
+        <div class="notice" id="notice"></div>
       </section>
 
       <div class="stats">
@@ -343,6 +352,7 @@
       const rangeEl = el("rate-range");
       const estimateEl = el("estimate");
       const heldEl = el("held");
+      const noticeEl = el("notice");
       const fullUplinkEl = el("full-uplink");
 
       let signedIn = false;
@@ -454,6 +464,7 @@
         setText(sentEl, fmt(s.sent));
         setText(stateEl, signedIn ? s.state || "idle" : "signed out");
         showWindow(s);
+        setText(noticeEl, s.message || "");
         setText(heldEl, s.heldAt ? `Held at ${fmt(s.heldAt)} pps so your connection stays usable` : "");
       }
 

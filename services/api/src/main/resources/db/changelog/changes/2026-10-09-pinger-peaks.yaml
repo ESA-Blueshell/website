@@ -1,0 +1,44 @@
+# The fastest rates the pinger has seen.
+#
+# peak_pps on pinger_contribution is the identity's top live rate, summed over its online devices at
+# the moment of a report, and peak_at when it set it. It only ever rises.
+#
+# pinger_record is the singleton row (id 1) holding the top combined rate: every online sender's live
+# rate summed at one moment, SiteCie included. Seeded at zero with no time, so the first sender sets it.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-09-pinger-peaks.yaml
+      id: pinger-contribution-peak
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: pinger_contribution
+            columns:
+              - column: {name: peak_pps, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: peak_at, type: DATETIME}
+      rollback:
+        - dropColumn:
+            tableName: pinger_contribution
+            columnName: peak_at
+        - dropColumn:
+            tableName: pinger_contribution
+            columnName: peak_pps
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-09-pinger-peaks.yaml
+      id: pinger-record
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: pinger_record
+            columns:
+              - column: {name: id, type: BIGINT, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: pps, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: set_at, type: DATETIME}
+        - insert:
+            tableName: pinger_record
+            columns:
+              - column: {name: id, valueNumeric: 1}
+              - column: {name: pps, valueNumeric: 0}
+      rollback:
+        - dropTable:
+            tableName: pinger_record

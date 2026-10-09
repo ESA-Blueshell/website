@@ -9,18 +9,23 @@ import (
 	"strings"
 )
 
-// WarnIfConntrack logs how to exempt the pings when netfilter tracks connections on this host:
-// every pixel is a new destination and so a new conntrack entry, which fills the table and then
-// drops pings and the host's own new connections alike. Frames skip netfilter and need no
-// exemption.
-func WarnIfConntrack() {
+// ConntrackNotice is what a member reads when netfilter tracks every ping as a connection.
+const ConntrackNotice = "The firewall tracks every ping as a connection, which fills its table, drops pings and " +
+	"costs CPU. Exempt them once with: " +
+	"sudo ip6tables -t raw -A OUTPUT -p ipv6-icmp --icmpv6-type echo-request -j CT --notrack"
+
+// WarnIfConntrack logs ConntrackNotice and returns it when netfilter tracks connections on this
+// host, or returns "" when it does not: every pixel is a new destination and so a new conntrack
+// entry, which fills the table and then drops pings and the host's own new connections alike.
+// Frames skip netfilter, so call it only on a socket path.
+func WarnIfConntrack() string {
 	b, err := os.ReadFile("/proc/sys/net/netfilter/nf_conntrack_count")
 	if err != nil {
-		return
+		return ""
 	}
 	if n, _ := strconv.Atoi(strings.TrimSpace(string(b))); n == 0 {
-		return
+		return ""
 	}
-	slog.Warn("the firewall tracks every ping as a connection, which can fill its table; exempt them once with: " +
-		"sudo ip6tables -t raw -A OUTPUT -p ipv6-icmp --icmpv6-type echo-request -j CT --notrack")
+	slog.Warn(ConntrackNotice)
+	return ConntrackNotice
 }

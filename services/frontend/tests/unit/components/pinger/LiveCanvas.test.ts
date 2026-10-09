@@ -1,7 +1,8 @@
 /**
  * The live canvas plays the event's feed and draws our placements over it in their boxes, with a
  * switch between a ghost of the image, just the outline, or nothing. It measures the pixels a pass
- * paints from the images; jsdom has no real canvas, so a stub 2D context and image stand in.
+ * paints from the images; jsdom has no real canvas, so a stub 2D context and image stand in. A
+ * box follows its placement as the stream moves it, and a bouncing one glides on the api's clock.
  */
 import {afterEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount, type VueWrapper} from "@vue/test-utils"
@@ -45,7 +46,8 @@ const stubCanvas = (getImageData: () => {data: Uint8ClampedArray}): void => {
   vi.stubGlobal("Image", FakeImage)
 }
 
-const placement = {id: 1, imageUrl: "/files/public/pinger-paint/1.webp", originX: 1920, originY: 0, width: 960, height: 1080}
+const still = {mode: "static" as const, vx: 0, vy: 0}
+const placement = {id: 1, imageUrl: "/files/public/pinger-paint/1.webp", originX: 1920, originY: 0, width: 960, height: 1080, motion: still, motionEpoch: null}
 
 describe("LiveCanvas", () => {
   const wrappers: VueWrapper[] = []
@@ -175,5 +177,36 @@ describe("LiveCanvas", () => {
 
     await wrapper.get("video").trigger("waiting")
     expect(wrapper.text()).toContain("Connecting")
+  })
+
+  it("follows a placement the stream moved", async () => {
+    const wrapper = render()
+
+    await wrapper.setProps({placements: [{...placement, originX: 960, originY: 540}]})
+
+    const style = wrapper.get("[data-testid=snt-live-box]").attributes("style")
+    expect(style).toContain("left: 25%")
+    expect(style).toContain("top: 25%")
+  })
+
+  it("glides a bouncing placement across the plate on the api's clock", async () => {
+    vi.useFakeTimers({toFake: ["Date", "requestAnimationFrame", "cancelAnimationFrame"]})
+    vi.setSystemTime(Date.parse("2026-10-09T20:00:00Z"))
+    try {
+      const bouncing = {...placement, originX: 0, originY: 0, motion: {mode: "bounce" as const, vx: 288, vy: 0}, motionEpoch: "2026-10-09T20:00:00Z"}
+      // The api's clock runs five seconds ahead, so the box is already 1440px in.
+      const wrapper = mount(LiveCanvas, {props: {placements: [bouncing], streamUrl: "https://tv.example/live.m3u8", clockOffset: 5000}})
+      wrappers.push(wrapper)
+      await wrapper.vm.$nextTick()
+      expect(wrapper.get("[data-testid=snt-live-box]").attributes("style")).toContain("left: 37.5%")
+
+      // Frames tick every 16ms, so five seconds on the box sits within a frame of 2880px.
+      vi.advanceTimersByTime(5000)
+      await wrapper.vm.$nextTick()
+      const left = Number(/left: ([\d.]+)%/.exec(wrapper.get("[data-testid=snt-live-box]").attributes("style") ?? "")?.[1])
+      expect(left).toBeCloseTo(75, 0)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

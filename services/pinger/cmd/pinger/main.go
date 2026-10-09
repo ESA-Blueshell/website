@@ -74,6 +74,7 @@ func run() error {
 	shared := apipaint.NewShareFilter(sender)
 	client := apipaint.NewClient(apiURL)
 	poller = apipaint.NewPoller(client, 2*time.Second, shared, preview.set)
+	poller.SetOffsetSink(sender)
 	go poller.Run(ctx)
 	go apipaint.NewShareStream(apiURL, replicaID, apipaint.ServiceToken(serviceToken)).Run(ctx, shared.SetShare)
 	go sender.Run(ctx)

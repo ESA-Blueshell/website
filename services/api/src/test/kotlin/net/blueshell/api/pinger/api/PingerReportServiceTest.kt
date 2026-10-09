@@ -7,6 +7,7 @@ import net.blueshell.api.pinger.persistence.PingerContribution
 import net.blueshell.api.pinger.persistence.PingerContributionRepository
 import net.blueshell.api.pinger.persistence.PingerDeviceSession
 import net.blueshell.api.pinger.persistence.PingerDeviceSessionRepository
+import net.blueshell.api.pinger.persistence.PingerLive
 import net.blueshell.api.pinger.persistence.PingerLiveStore
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -28,7 +29,21 @@ class PingerReportServiceTest {
     private val contributionRows = HashMap<String, PingerContribution>()
     private val deviceRows = HashMap<Pair<String, String>, PingerDeviceSession>()
 
+    // The live presence per (identity, device), so a peak reads the identity's rate across devices.
+    private val liveRows = HashMap<Pair<String, String>, PingerLive>()
+
     init {
+        every { live.touch(any(), any(), any(), any(), any()) } answers {
+            liveRows[firstArg<String>() to secondArg<String>()] = PingerLive(thirdArg(), arg(3), arg(4))
+        }
+        every { live.aggregate(any()) } answers {
+            val rows = liveRows.filterKeys { it.first == firstArg<String>() }.values
+            if (rows.isEmpty()) {
+                null
+            } else {
+                PingerLive(rows.any { it.online }, rows.filter { it.online }.sumOf { it.pps }, rows.maxOf { it.lastSeen })
+            }
+        }
         every { contributions.lockByIdentity(any()) } answers { contributionRows[firstArg()] }
         every { contributions.save(any()) } answers {
             val row = firstArg<PingerContribution>()
@@ -173,5 +188,49 @@ class PingerReportServiceTest {
         service.report(member, "device-10", online = true, pps = 1, sent = 1)
 
         assertThat(deviceRows.keys.count { it.first == member.key }).isEqualTo(10)
+    }
+
+    @Test
+    fun `an online report sets the identity's peak and when it was set`() {
+        service.report(member, "laptop", online = true, pps = 128, sent = 500)
+
+        val row = contributionRows.getValue(member.key)
+        assertThat(row.peakPps).isEqualTo(128)
+        assertThat(row.peakAt).isEqualTo(now)
+    }
+
+    @Test
+    fun `the peak only rises, so a slower report keeps the earlier top rate`() {
+        service.report(member, "laptop", online = true, pps = 500, sent = 500)
+
+        service.report(member, "laptop", online = true, pps = 100, sent = 600)
+
+        assertThat(contributionRows.getValue(member.key).peakPps).isEqualTo(500)
+    }
+
+    @Test
+    fun `the peak sums the member's online devices at the moment of the report`() {
+        service.report(member, "laptop", online = true, pps = 170, sent = 100)
+
+        service.report(member, "phone", online = true, pps = 130, sent = 100)
+
+        assertThat(contributionRows.getValue(member.key).peakPps).isEqualTo(300)
+    }
+
+    @Test
+    fun `an offline report sets no peak`() {
+        service.report(member, "laptop", online = false, pps = 900, sent = 100)
+
+        val row = contributionRows.getValue(member.key)
+        assertThat(row.peakPps).isZero()
+        assertThat(row.peakAt).isNull()
+    }
+
+    @Test
+    fun `SiteCie keeps its own peak across its replicas`() {
+        service.report(PingerIdentity.Sitecie, "replica-a", online = true, pps = 9_000, sent = 9_000)
+        service.report(PingerIdentity.Sitecie, "replica-b", online = true, pps = 8_000, sent = 8_000)
+
+        assertThat(contributionRows.getValue("sitecie").peakPps).isEqualTo(17_000)
     }
 }

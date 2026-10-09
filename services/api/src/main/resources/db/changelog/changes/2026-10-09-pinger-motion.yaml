@@ -1,0 +1,29 @@
+# A placement's motion: static, or bouncing off the canvas edges at (motion_vx, motion_vy) px/s from
+# its box as it stood at motion_epoch. Every existing placement starts static, so the canvas looks
+# the same until an admin sets one moving. motion_epoch keeps milliseconds: at 2000 px/s a whole
+# second of truncation moves the box 2000 px.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-09-pinger-motion.yaml
+      id: pinger-placement-motion
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: pinger_placement
+            columns:
+              - column:
+                  name: motion_mode
+                  type: VARCHAR(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  defaultValue: static
+                  constraints: {nullable: false}
+              - column: {name: motion_vx, type: DOUBLE, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: motion_vy, type: DOUBLE, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: motion_epoch, type: DATETIME(3), defaultValueComputed: CURRENT_TIMESTAMP(3), constraints: {nullable: false}}
+      rollback:
+        - dropColumn:
+            tableName: pinger_placement
+            columns:
+              - column: {name: motion_mode}
+              - column: {name: motion_vx}
+              - column: {name: motion_vy}
+              - column: {name: motion_epoch}

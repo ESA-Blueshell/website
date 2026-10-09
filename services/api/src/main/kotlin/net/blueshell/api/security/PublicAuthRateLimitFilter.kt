@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.security.web.util.matcher.IpAddressMatcher
 import org.springframework.stereotype.Component
 import org.springframework.util.AntPathMatcher
 import org.springframework.web.filter.OncePerRequestFilter
@@ -20,12 +19,6 @@ import java.time.Duration
 // Half a SHA-256 is still far more than enough to keep applicants apart.
 private const val APPLICANT_KEY_BYTES = 16
 
-// Room for brackets and a port around the longest literal below.
-private const val MAX_RAW_IP_LITERAL_LENGTH = 64
-
-// An IPv4-mapped IPv6 address, the longest form there is.
-private const val MAX_IP_LITERAL_LENGTH = 45
-
 /**
  * Requests per window one address may make to a signup step, however many applicants it
  * claims to be. High enough that a lecture hall on one NAT never reaches it, low enough
@@ -33,8 +26,7 @@ private const val MAX_IP_LITERAL_LENGTH = 45
  */
 private const val SHARED_ADDRESS_CEILING = 120
 
-private const val DEFAULT_TRUSTED_PROXY_CIDRS = "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
-private val IP_LITERAL_PATTERN = Regex("^[0-9A-Fa-f:.]+$")
+internal const val DEFAULT_TRUSTED_PROXY_CIDRS = "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
 
 @Component
 @ConditionalOnProperty(
@@ -73,18 +65,7 @@ class PublicAuthRateLimitFilter(
     )
 
     private val pathMatcher = AntPathMatcher()
-    private val trustedProxyMatchers =
-        trustedProxyCidrs
-            .split(",")
-            .mapNotNull { raw ->
-                val cidr = raw.trim()
-                if (cidr.isBlank()) {
-                    return@mapNotNull null
-                }
-                runCatching { IpAddressMatcher(cidr) }
-                    .onFailure { log.warn("Ignoring invalid trusted proxy CIDR '{}'", cidr) }
-                    .getOrNull()
-            }
+    private val clientAddresses = ClientAddresses(trustedProxyCidrs)
 
     private val rules =
         listOf(
@@ -191,7 +172,7 @@ class PublicAuthRateLimitFilter(
         rule: Rule,
         request: HttpServletRequest,
     ): InMemoryRequestRateLimiter.Decision {
-        val client = resolveClientIp(request)
+        val client = clientAddresses.resolve(request)
         val applicant =
             applicantKey(rule, request)
                 ?: return limiter.tryAcquire(keyFor(rule, client), rule.maxRequests, rule.window)
@@ -225,62 +206,5 @@ class PublicAuthRateLimitFilter(
                 ?: return null
         val digest = MessageDigest.getInstance("SHA-256").digest(token.toByteArray(Charsets.UTF_8))
         return "applicant:" + digest.take(APPLICANT_KEY_BYTES).joinToString("") { "%02x".format(it) }
-    }
-
-    private fun resolveClientIp(request: HttpServletRequest): String {
-        val remoteAddr = normalizeIpLiteral(request.remoteAddr) ?: "unknown"
-        if (!isTrustedProxy(remoteAddr)) {
-            return remoteAddr
-        }
-
-        normalizeIpLiteral(request.getHeader("X-Real-IP"))?.let { return it }
-
-        request
-            .getHeader("X-Forwarded-For")
-            ?.split(",")
-            ?.asSequence()
-            ?.mapNotNull { normalizeIpLiteral(it) }
-            ?.firstOrNull()
-            ?.let { return it }
-
-        return remoteAddr
-    }
-
-    private fun isTrustedProxy(remoteAddr: String): Boolean {
-        if (remoteAddr == "unknown") {
-            return false
-        }
-        return trustedProxyMatchers.any { matcher ->
-            runCatching { matcher.matches(remoteAddr) }.getOrDefault(false)
-        }
-    }
-
-    private fun normalizeIpLiteral(raw: String?): String? {
-        val value = raw?.trim()?.takeIf { it.isNotBlank() } ?: return null
-        if (value.length > MAX_RAW_IP_LITERAL_LENGTH) {
-            return null
-        }
-
-        val unbracketed =
-            if (value.startsWith("[") && value.contains("]")) {
-                value.substringAfter('[').substringBefore(']')
-            } else {
-                value
-            }
-
-        val withoutPort =
-            if (unbracketed.contains('.') && unbracketed.count { it == ':' } == 1) {
-                unbracketed.substringBefore(':')
-            } else {
-                unbracketed
-            }.trim()
-
-        if (withoutPort.isBlank() || withoutPort.length > MAX_IP_LITERAL_LENGTH) {
-            return null
-        }
-        if (!IP_LITERAL_PATTERN.matches(withoutPort)) {
-            return null
-        }
-        return withoutPort.lowercase()
     }
 }

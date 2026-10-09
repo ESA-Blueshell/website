@@ -1,4 +1,4 @@
-// Package runner wires the member's identity to the shared ping engine: it signs in, polls the
+// Package runner wires the member's identity to the shared ping engine: it signs in, follows the
 // api-owned paint job, paints the canvas and reports the member's status every ten seconds on their
 // bearer. The paint, canvas and apipaint packages are the pinger's own; this package only glues
 // them to the member's token and a status line for the UI.
@@ -32,7 +32,7 @@ import (
 // reportInterval is how often the app reports its status; the ticket asks for about ten seconds.
 const reportInterval = 10 * time.Second
 
-// paintPollInterval is how often the paint job is re-read, matching the pinger service.
+// paintPollInterval is how often the paint job is re-read when the api serves no paint stream.
 const paintPollInterval = 5 * time.Second
 
 // Status is the snapshot the UI renders. It carries no token, only what is safe to show.
@@ -132,7 +132,6 @@ func New(base string) (*Runner, error) {
 	saved := prefStore.Load()
 	r.rate.Store(int64(saved.RatePPS))
 	r.headroom.SetEnabled(saved.HoldBack)
-	r.setMessage("starting")
 	return r, nil
 }
 
@@ -264,9 +263,8 @@ func (r *Runner) Run(ctx context.Context) error {
 		r.signedIn.Store(true)
 	}
 
-	socks, datagram, err := openICMP()
+	socks, datagram, err := r.open()
 	if err != nil {
-		r.setMessage("cannot open socket: " + err.Error())
 		return err
 	}
 	defer paint.CloseSockets(socks)
@@ -289,6 +287,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	// there is no token, and the share stream paints every pixel.
 	shared := apipaint.NewShareFilter(sender)
 	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, shared, func(canvas.Placement) { debug.FreeOSMemory() })
+	poller.SetOffsetSink(sender)
 	shares := apipaint.NewShareStream(r.base, r.poster.DeviceID, apipaint.Bearer(r.auth.Current))
 
 	var wg sync.WaitGroup
@@ -305,6 +304,21 @@ func (r *Runner) Run(ctx context.Context) error {
 	go func() { defer wg.Done(); sender.Run(ctx) }()
 	wg.Wait()
 	return ctx.Err()
+}
+
+// openSockets is openICMP, swapped out by tests that cannot open a real socket.
+var openSockets = openICMP
+
+// open opens the send sockets and puts what the member should know about them in the status line:
+// the error that stops the app, or a notice that costs rate, or nothing.
+func (r *Runner) open() ([]socket, bool, error) {
+	socks, datagram, notice, err := openSockets()
+	if err != nil {
+		r.setMessage("cannot open socket: " + err.Error())
+		return nil, false, err
+	}
+	r.setMessage(notice)
+	return socks, datagram, nil
 }
 
 // load is what the headroom controller needs from the sender for one step.

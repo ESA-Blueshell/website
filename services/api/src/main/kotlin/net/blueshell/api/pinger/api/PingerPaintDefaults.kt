@@ -14,6 +14,8 @@ import org.springframework.context.event.EventListener
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
+import java.time.temporal.ChronoUnit
 
 /** The paint-job row the migration seeds at id 1; the bootstrap only ever reads this one. */
 private const val PAINT_ROW_ID = 1L
@@ -55,6 +57,7 @@ class PingerPaintDefaults(
     private val placements: PingerPlacementRepository,
     private val files: FileService,
     private val users: UserService,
+    private val clock: Clock = Clock.systemUTC(),
 ) {
     @Order(SeedOrder.ART)
     @EventListener(ApplicationReadyEvent::class)
@@ -81,6 +84,7 @@ class PingerPaintDefaults(
                     width = DEFAULT_WIDTH,
                     height = DEFAULT_HEIGHT,
                     ordinal = 0,
+                    motionEpoch = clock.instant().truncatedTo(ChronoUnit.MILLIS),
                 ),
             )
         }

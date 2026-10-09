@@ -1486,6 +1486,22 @@ export type FailedTargetMove = {
 };
 
 /**
+ * One member ranked by peak rate: their Discord tag and avatar when linked, otherwise their site username
+ */
+export type FastestResponse = {
+    avatarUrl?: string | null;
+    discordTag?: string | null;
+    memberId: number;
+    peakAt?: string | null;
+    /**
+     * The top rate the member reached across their devices, in pings per second
+     */
+    peakPps: number;
+    rank: number;
+    username?: string | null;
+};
+
+/**
  * Field a team in a game in a season, with or without the line-up it last had
  */
 export type FieldTeamRequest = {
@@ -1707,6 +1723,11 @@ export type GuestResponse = {
 export type HouseLineResponse = {
     label: string;
     online: boolean;
+    peakAt?: string | null;
+    /**
+     * The top rate SiteCie reached across its replicas, in pings per second
+     */
+    peakPps: number;
     /**
      * The live rate across SiteCie's replicas right now, in pings per second
      */
@@ -1916,11 +1937,23 @@ export type JwtRequest = {
 };
 
 /**
- * The SiteCie house line and the ranked, opted-in members of the contribution leaderboard
+ * The SiteCie house line, the members ranked by total sent and by peak rate, and the combined record
  */
 export type LeaderboardResponse = {
+    /**
+     * Every online sender's live rate right now, summed, SiteCie included, in pings per second
+     */
+    combinedPps: number;
+    /**
+     * The members ranked by the top rate they reached across their devices
+     */
+    fastest: Array<FastestResponse>;
     house?: HouseLineResponse | null;
     members: Array<StandingResponse>;
+    /**
+     * The top rate every online sender reached together, SiteCie included; null until one is set
+     */
+    record?: RecordResponse | null;
 };
 
 /**
@@ -2057,6 +2090,15 @@ export type MembershipResponse = {
 };
 
 /**
+ * A placement's motion: static, or bouncing off the canvas edges at (vx, vy) px/s
+ */
+export type MotionResponse = {
+    mode: 'static' | 'bounce';
+    vx: number;
+    vy: number;
+};
+
+/**
  * Where to file a target.
  */
 export type MoveTargetRequest = {
@@ -2107,6 +2149,10 @@ export type PaintResponse = {
     placements: Array<PlacementResponse>;
     prefix?: string | null;
     ratePps: number;
+    /**
+     * The api's clock when this was built; place moving boxes against it, not the local clock
+     */
+    serverTime: string;
     /**
      * Whether the always-on SiteCie painter contributes; ratePps is its rate
      */
@@ -2245,6 +2291,21 @@ export type PlacementBoxRequest = {
 };
 
 /**
+ * An admin setting a placement's motion
+ */
+export type PlacementMotionRequest = {
+    mode: 'static' | 'bounce';
+    /**
+     * Horizontal speed in px/s, negative is leftwards
+     */
+    vx: number;
+    /**
+     * Vertical speed in px/s, negative is upwards
+     */
+    vy: number;
+};
+
+/**
  * An admin adding an image to the canvas in its own box
  */
 export type PlacementRequest = {
@@ -2259,12 +2320,20 @@ export type PlacementRequest = {
 };
 
 /**
- * One image on the canvas and the box it lands in
+ * One image on the canvas and the box it lands in at motionEpoch
  */
 export type PlacementResponse = {
     height: number;
     id: number;
     imageUrl: string;
+    /**
+     * How the box moves from its origin. x(s) = reflect(originX + vx*s, 3840 - width), y(s) = reflect(originY + vy*s, 2160 - height), s seconds since motionEpoch; reflect(p, L) = 0 if L <= 0, else m = ((p mod 2L) + 2L) mod 2L, m <= L ? m : 2L - m
+     */
+    motion: MotionResponse;
+    /**
+     * When the box stood at its origin and the motion started
+     */
+    motionEpoch: string;
     originX: number;
     originY: number;
     width: number;
@@ -2354,6 +2423,17 @@ export enum QuestionType {
 
 export type ReasonRequest = {
     reason: string;
+};
+
+/**
+ * The top rate every online sender reached together, SiteCie included, and when
+ */
+export type RecordResponse = {
+    at: string;
+    /**
+     * The combined rate, in pings per second
+     */
+    pps: number;
 };
 
 /**
@@ -10287,6 +10367,90 @@ export type SetSettingsResponses = {
 };
 
 export type SetSettingsResponse = SetSettingsResponses[keyof SetSettingsResponses];
+
+export type PaintStreamData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/pinger/paint/stream';
+};
+
+export type PaintStreamErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PaintStreamError = PaintStreamErrors[keyof PaintStreamErrors];
+
+export type PaintStreamResponses = {
+    /**
+     * The whole paint job as each event's data, on connect and on every change, with a comment every 15 s
+     */
+    200: PaintResponse;
+};
+
+export type PaintStreamResponse = PaintStreamResponses[keyof PaintStreamResponses];
+
+export type SetPlacementMotionData = {
+    body: PlacementMotionRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/pinger/placements/{id}/motion';
+};
+
+export type SetPlacementMotionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetPlacementMotionError = SetPlacementMotionErrors[keyof SetPlacementMotionErrors];
+
+export type SetPlacementMotionResponses = {
+    /**
+     * OK
+     */
+    200: PlacementResponse;
+};
+
+export type SetPlacementMotionResponse = SetPlacementMotionResponses[keyof SetPlacementMotionResponses];
 
 export type ReportData = {
     body: PingerReportRequest;

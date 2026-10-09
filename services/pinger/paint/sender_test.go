@@ -2,6 +2,7 @@ package paint
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/netip"
 	"sync"
@@ -256,13 +257,19 @@ func TestSenderGivesEachWorkerItsOwnSocket(t *testing.T) {
 	go func() { s.Run(ctx); close(done) }()
 	t.Cleanup(func() { cancel(); <-done })
 
+	// exclusiveConn fails the test on any overlap; how many workers the scaler starts depends on
+	// timing, so only ask that sends got out on more than one socket.
 	eventually(t, func() bool {
+		var total int64
+		used := 0
 		for _, c := range conns {
-			if c.sent.Load() == 0 {
-				return false
+			n := c.sent.Load()
+			total += n
+			if n > 0 {
+				used++
 			}
 		}
-		return true
+		return total >= 1_000 && used >= min(2, len(conns))
 	})
 }
 
@@ -337,5 +344,85 @@ func TestSenderSkipsOnlyTheMessageABatchFailedOn(t *testing.T) {
 	}
 	if got := uint64(len(conn.addresses())); got < snap.Sent {
 		t.Fatalf("counted %d sent, but only %d left the socket", snap.Sent, got)
+	}
+}
+
+// refusingBatch fails its first message the way sendmmsg does when the kernel refuses it outright:
+// -1 and the error, which x/net passes on unchanged.
+type refusingBatch struct{ calls int }
+
+func (c *refusingBatch) WriteBatch(ms []ipv6.Message, _ int) (int, error) {
+	c.calls++
+	if c.calls == 1 {
+		return -1, syscall.EPERM
+	}
+	return len(ms), nil
+}
+
+func TestWriteBatchSkipsAMessageTheKernelRefusedOutright(t *testing.T) {
+	msgs := make([]ipv6.Message, 4)
+
+	sent, err := writeBatch(&refusingBatch{}, msgs, nil)
+
+	if sent != 3 || !errors.Is(err, syscall.EPERM) {
+		t.Fatalf("sent %d with %v, want 3 with EPERM", sent, err)
+	}
+}
+
+type countConn struct{ n atomic.Int64 }
+
+func (c *countConn) WriteTo(b []byte, _ net.Addr) (int, error) {
+	c.n.Add(1)
+	return len(b), nil
+}
+
+// A logo of a hundred pixels at 20,000 a second runs two hundred passes a second; a pause between
+// passes shows up here as a rate well under the target.
+func TestSenderHoldsTheTargetOnASmallLogo(t *testing.T) {
+	conn := &countConn{}
+	box := &settingsBox{}
+	const rate = 20_000
+	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: rate, Enabled: true})
+
+	s := start(t, conn, pixels(100), open, box)
+	eventually(t, func() bool { return conn.n.Load() > 0 })
+	from, began := conn.n.Load(), time.Now()
+	time.Sleep(time.Second)
+	sent, elapsed := conn.n.Load()-from, time.Since(began).Seconds()
+
+	if limit := rate*(elapsed+paceSlack.Seconds()) + float64(chunkSize(rate)); float64(sent) > limit {
+		t.Fatalf("sent %d in %.3fs, over the %d a second cap", sent, elapsed, rate)
+	}
+	if float64(sent) < 0.95*rate*elapsed {
+		t.Fatalf("sent %d in %.3fs, under 95%% of %d a second", sent, elapsed, rate)
+	}
+	if s.Snapshot().Passes < 100 {
+		t.Fatalf("ran %d passes", s.Snapshot().Passes)
+	}
+}
+
+// Passes run back to back, so the stream is cut into whole passes only by counting: each run of
+// len(px) sends is one pass, and paints every pixel exactly once.
+func TestSenderPaintsEveryPixelOnceInEachOfSeveralPasses(t *testing.T) {
+	conn := &fakeConn{}
+	box := &settingsBox{}
+	p := prefix(t, "2001:db8:b317:a000::/64")
+	box.set(Settings{Prefix: p, RatePPS: 20_000, Enabled: true})
+	px := pixels(150)
+
+	s := start(t, conn, px, open, box)
+	eventually(t, func() bool { return s.Snapshot().Passes >= 5 })
+
+	sent := conn.addresses()
+	for pass := range 5 {
+		seen := map[netip.Addr]int{}
+		for _, a := range sent[pass*len(px) : (pass+1)*len(px)] {
+			seen[a]++
+		}
+		for _, want := range px {
+			if seen[p.Address(want)] != 1 {
+				t.Fatalf("pass %d sent %s %d times", pass, p.Address(want), seen[p.Address(want)])
+			}
+		}
 	}
 }

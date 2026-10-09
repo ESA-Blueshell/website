@@ -304,6 +304,9 @@ func (w *worker) run(ctx context.Context) {
 			dsts[i] = &net.IPAddr{IP: ips[i]}
 		}
 	}
+	// speed is the packets a second this worker's last chunk went out at. A chunk is cut to what
+	// it sends in chunkSpan, so the scaler's samples stay smooth on a socket slower than the rate.
+	var speed float64
 	var msgs []ipv6.Message
 	if bc != nil {
 		msgs = make([]ipv6.Message, batch)
@@ -322,6 +325,11 @@ func (w *worker) run(ctx context.Context) {
 		cfg := s.settings()
 		share := float64(cfg.RatePPS) / float64(active)
 		n := chunkSize(share)
+		if speed > 0 {
+			n = min(n, chunkSize(speed))
+		} else {
+			n = min(n, batch)
+		}
 		if !w.pace.take(ctx, n, share) {
 			return
 		}
@@ -342,6 +350,7 @@ func (w *worker) run(ctx context.Context) {
 			return
 		}
 		chunk := w.order[from:min(from+n, len(w.order))]
+		total := len(chunk)
 		var sent, failed int
 		var err error
 		began := time.Now()
@@ -361,7 +370,11 @@ func (w *worker) run(ctx context.Context) {
 			sent += ok
 			failed += len(part) - ok
 		}
-		s.busy.Add(int64(time.Since(began)))
+		took := time.Since(began)
+		s.busy.Add(int64(took))
+		if took > 0 {
+			speed = float64(total) / took.Seconds()
+		}
 		if failed > 0 {
 			s.errors.Add(uint64(failed))
 		}

@@ -18,13 +18,20 @@ Download the file for your system and run it:
 # macOS (runs without extra rights)
 ./blueshell-pinger-macos-apple
 
-# Linux (if it says permission denied, either run with sudo, or once:
-#   sudo sysctl -w net.ipv6.ping_group_range="0 2147483647")
+# Linux: fastest given the raw-network right once, which lets it send whole frames itself:
+#   sudo setcap cap_net_raw+ep ./blueshell-pinger-linux-amd64
+# Without it, if it says permission denied, either run with sudo, or once:
+#   sudo sysctl -w net.ipv6.ping_group_range="0 2147483647"
 ./blueshell-pinger-linux-amd64
 
 # Windows (runs without extra rights; Run as administrator sends faster):
 blueshell-pinger-windows-amd64.exe
 ```
+
+On Linux without that right, a firewall that tracks connections (ufw, firewalld, Docker) takes an
+entry for every ping and drops pings once its table fills. The helper warns when this applies;
+exempt the pings once with
+`sudo ip6tables -t raw -A OUTPUT -p ipv6-icmp --icmpv6-type echo-request -j CT --notrack`.
 
 It prints a line a second: state, packets a second, total sent, passes, errors. Until the board
 sets a prefix it just says `idle` and waits. It only sends during the event window (Fri 9 Oct 18:00

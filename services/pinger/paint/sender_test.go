@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/ipv6"
+
 	"github.com/ESA-Blueshell/website/services/pinger/canvas"
 )
 
@@ -263,4 +265,78 @@ func TestSenderGivesEachWorkerItsOwnSocket(t *testing.T) {
 		}
 		return true
 	})
+}
+
+// batchFake sends whole batches; while fails is positive, each call gets half its batch out and
+// then fails on the next message, the way sendmmsg stops at the first send that errs.
+type batchFake struct {
+	fakeConn
+	batches atomic.Int64
+	singles atomic.Int64
+}
+
+func (c *batchFake) WriteTo(b []byte, dst net.Addr) (int, error) {
+	c.singles.Add(1)
+	return c.fakeConn.WriteTo(b, dst)
+}
+
+func (c *batchFake) WriteBatch(ms []ipv6.Message, _ int) (int, error) {
+	c.batches.Add(1)
+	n, failing := len(ms), c.fails.Load() > 0
+	if failing {
+		c.fails.Add(-1)
+		n = len(ms) / 2
+	}
+	c.mu.Lock()
+	for _, m := range ms[:n] {
+		addr, _ := netip.AddrFromSlice(m.Addr.(*net.IPAddr).IP)
+		c.sent = append(c.sent, addr)
+	}
+	c.mu.Unlock()
+	if failing {
+		return n, syscall.ENOBUFS
+	}
+	return n, nil
+}
+
+func TestSenderSendsWholeBatchesWhereTheSocketCan(t *testing.T) {
+	conn := &batchFake{}
+	box := &settingsBox{}
+	p := prefix(t, "2001:db8::/64")
+	box.set(Settings{Prefix: p, RatePPS: 1_000_000, Enabled: true})
+	px := pixels(batch * 10)
+
+	s := start(t, conn, px, open, box)
+	eventually(t, func() bool { return s.Snapshot().Passes >= 1 })
+
+	seen := map[netip.Addr]int{}
+	for _, a := range conn.addresses()[:len(px)] {
+		seen[a]++
+	}
+	for _, want := range px {
+		if seen[p.Address(want)] != 1 {
+			t.Fatalf("%s sent %d times in the first pass", p.Address(want), seen[p.Address(want)])
+		}
+	}
+	if conn.singles.Load() != 0 {
+		t.Fatalf("%d single sends on a socket that takes batches", conn.singles.Load())
+	}
+}
+
+func TestSenderSkipsOnlyTheMessageABatchFailedOn(t *testing.T) {
+	conn := &batchFake{}
+	conn.fails.Store(3)
+	box := &settingsBox{}
+	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: 1_000_000, Enabled: true})
+
+	s := start(t, conn, pixels(batch*4), open, box)
+	eventually(t, func() bool { return s.Snapshot().Passes >= 2 })
+	snap := s.Snapshot()
+
+	if snap.Errors != 3 {
+		t.Fatalf("counted %d errors, want 3", snap.Errors)
+	}
+	if got := uint64(len(conn.addresses())); got < snap.Sent {
+		t.Fatalf("counted %d sent, but only %d left the socket", snap.Sent, got)
+	}
 }

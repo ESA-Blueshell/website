@@ -27,15 +27,20 @@ type Descriptor struct {
 	RatePPS        int         `json:"ratePps"`
 	SiteCieEnabled bool        `json:"siteCieEnabled"`
 	Placements     []Placement `json:"placements"`
+	// ServerTime is the api's clock as it built this descriptor, zero from an api that sends none.
+	ServerTime time.Time `json:"serverTime"`
 }
 
-// Placement is one image on the canvas and the box it lands in.
+// Placement is one image on the canvas and the box it lands in. The origin is the box's top-left
+// at MotionEpoch; a moving box is elsewhere by now, see PositionAt.
 type Placement struct {
-	ImageURL string `json:"imageUrl"`
-	OriginX  int    `json:"originX"`
-	OriginY  int    `json:"originY"`
-	Width    int    `json:"width"`
-	Height   int    `json:"height"`
+	ImageURL    string    `json:"imageUrl"`
+	OriginX     int       `json:"originX"`
+	OriginY     int       `json:"originY"`
+	Width       int       `json:"width"`
+	Height      int       `json:"height"`
+	Motion      Motion    `json:"motion"`
+	MotionEpoch time.Time `json:"motionEpoch"`
 }
 
 // Source hands back the current descriptor and fetches the image it points at. Split from the HTTP
@@ -49,10 +54,19 @@ type Source interface {
 type Client struct {
 	base string
 	hc   *http.Client
+	// streamHC has no overall timeout: the stream body stays open for good, and idle catches a
+	// dead one.
+	streamHC *http.Client
+	idle     time.Duration
 }
 
 func NewClient(base string) *Client {
-	return &Client{base: strings.TrimSuffix(base, "/"), hc: apiHTTPClient()}
+	return &Client{
+		base:     strings.TrimSuffix(base, "/"),
+		hc:       apiHTTPClient(),
+		streamHC: &http.Client{Transport: forwardedHTTPS{next: http.DefaultTransport}},
+		idle:     streamIdle,
+	}
 }
 
 // apiHTTPClient is the client every call to the api goes through. In the cluster the pinger reaches

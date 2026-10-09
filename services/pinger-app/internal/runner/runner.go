@@ -1,4 +1,4 @@
-// Package runner wires the member's identity to the shared ping engine: it signs in, polls the
+// Package runner wires the member's identity to the shared ping engine: it signs in, follows the
 // api-owned paint job, paints the canvas and reports the member's status every ten seconds on their
 // bearer. The paint, canvas and apipaint packages are the pinger's own; this package only glues
 // them to the member's token and a status line for the UI.
@@ -32,7 +32,7 @@ import (
 // reportInterval is how often the app reports its status; the ticket asks for about ten seconds.
 const reportInterval = 10 * time.Second
 
-// paintPollInterval is how often the paint job is re-read, matching the pinger service.
+// paintPollInterval is how often the paint job is re-read when the api serves no paint stream.
 const paintPollInterval = 5 * time.Second
 
 // Status is the snapshot the UI renders. It carries no token, only what is safe to show.
@@ -289,6 +289,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	// there is no token, and the share stream paints every pixel.
 	shared := apipaint.NewShareFilter(sender)
 	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, shared, func(canvas.Placement) { debug.FreeOSMemory() })
+	poller.SetOffsetSink(sender)
 	shares := apipaint.NewShareStream(r.base, r.poster.DeviceID, apipaint.Bearer(r.auth.Current))
 
 	var wg sync.WaitGroup

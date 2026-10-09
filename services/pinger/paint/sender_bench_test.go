@@ -58,16 +58,18 @@ func cpuTime() time.Duration {
 
 // benchSend runs a sender until it has sent b.N packets and reports the CPU it burnt as a share of
 // one core.
-func benchSend(b *testing.B, conns []Conn, ratePPS int) { benchSendWith(b, conns, ratePPS, nil) }
+func benchSend(b *testing.B, conns []Conn, ratePPS int) {
+	benchSendWith(b, conns, ratePPS, 450_000, nil)
+}
 
-func benchSendWith(b *testing.B, conns []Conn, ratePPS int, offsets []Offset) {
+func benchSendWith(b *testing.B, conns []Conn, ratePPS, pixels int, offsets []Offset) {
 	p, err := canvas.ParsePrefix("2001:db8:b317:a000::/64")
 	if err != nil {
 		b.Fatal(err)
 	}
-	px := make([]canvas.Pixel, 450_000)
+	px := make([]canvas.Pixel, pixels)
 	for i := range px {
-		px[i] = canvas.Pixel{X: uint16(i % canvas.Width), Y: uint16(i / canvas.Width), A: 0xff}
+		px[i] = canvas.Pixel{X: uint16(i % canvas.Width), Y: uint16(i / canvas.Width % canvas.Height), A: 0xff}
 	}
 	settings := func() Settings { return Settings{Prefix: p, RatePPS: ratePPS, Enabled: true} }
 	b.ReportAllocs()
@@ -113,5 +115,16 @@ func BenchmarkSendDiscardAtRate(b *testing.B) {
 
 // BenchmarkSendDiscardMoving is BenchmarkSendDiscard with every pixel shifted by a moving offset.
 func BenchmarkSendDiscardMoving(b *testing.B) {
-	benchSendWith(b, discardConns(), 1<<40, []Offset{{X: 3, Y: -2}})
+	benchSendWith(b, discardConns(), 1<<40, 450_000, []Offset{{X: 3, Y: -2}})
+}
+
+// BenchmarkSendDiscardLogoSize holds one target rate across logo sizes: a small logo runs many
+// passes a second, so any gap between passes shows as a rate under the target.
+func BenchmarkSendDiscardLogoSize(b *testing.B) {
+	for _, n := range []struct {
+		name   string
+		pixels int
+	}{{"1k", 1_000}, {"10k", 10_000}, {"1M", 1_000_000}} {
+		b.Run(n.name, func(b *testing.B) { benchSendWith(b, discardConns(), 200_000, n.pixels, nil) })
+	}
 }

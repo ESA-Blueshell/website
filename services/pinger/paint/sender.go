@@ -53,11 +53,22 @@ const (
 	Running State = "running"
 )
 
-// target is the image as pixels, versioned so the Run loop notices a swap and reshuffles. The
-// generation only ever grows.
+// target is the image as pixels, versioned so a swap is told apart from the image it replaces.
+// The generation only ever grows.
 type target struct {
 	pixels []canvas.Pixel
 	gen    uint64
+}
+
+// round is one pass over the image: the order it goes in, the prefix it addresses and how far the
+// workers have claimed into it. Workers roll into a fresh round the moment one runs out, so passes
+// follow each other without a gap.
+type round struct {
+	target *target
+	prefix canvas.Prefix
+	order  []uint32
+	next   atomic.Int64
+	done   atomic.Int64
 }
 
 // Stats is a point-in-time copy of what the sender has done.
@@ -111,7 +122,8 @@ type Sender struct {
 	sent      atomic.Uint64
 	errors    atomic.Uint64
 	passes    atomic.Uint64
-	passDone  atomic.Int64
+	round     atomic.Pointer[round]
+	roundMu   sync.Mutex
 	actualPPS atomic.Uint64
 	errMu     sync.Mutex
 	lastErr   string
@@ -162,7 +174,7 @@ func NewSender(conns []Conn, pixels []canvas.Pixel, window Window, settings func
 	return s
 }
 
-// SetPixels swaps the image the sender paints; the pass under way stops and the next one paints
+// SetPixels swaps the image the sender paints; the pass under way stops and a fresh one paints
 // the new pixels. Safe to call while the sender runs.
 func (s *Sender) SetPixels(pixels []canvas.Pixel) {
 	gen := uint64(1)
@@ -191,14 +203,18 @@ func (s *Sender) Snapshot() Stats {
 	s.rateMu.Lock()
 	rates := append([]uint64(nil), s.rates...)
 	s.rateMu.Unlock()
-	pixels := s.target.Load().pixels
+	t := s.target.Load()
+	var done int64
+	if r := s.round.Load(); r != nil && r.target == t {
+		done = r.done.Load()
+	}
 	return Stats{
 		State:       s.state.Load().(State),
 		Sent:        s.sent.Load(),
 		Errors:      s.errors.Load(),
 		Passes:      s.passes.Load(),
-		PassDone:    int(min(s.passDone.Load(), int64(len(pixels)))),
-		PassTotal:   len(pixels),
+		PassDone:    int(min(done, int64(len(t.pixels)))),
+		PassTotal:   len(t.pixels),
 		ActualPPS:   s.actualPPS.Load(),
 		LastError:   lastErr,
 		LastErrorAt: lastErrAt,
@@ -210,12 +226,8 @@ func (s *Sender) Snapshot() Stats {
 // Run sends until ctx ends, idling whenever there is no prefix, no image or the event is closed.
 func (s *Sender) Run(ctx context.Context) {
 	go s.sampleRate(ctx)
-	var order []uint32
-	var orderGen uint64
 	for ctx.Err() == nil {
-		cfg := s.settings()
-		t := s.target.Load()
-		if state := s.decide(cfg); state != Running {
+		if state := s.decide(s.settings()); state != Running {
 			s.state.Store(state)
 			select {
 			case <-ctx.Done():
@@ -224,17 +236,7 @@ func (s *Sender) Run(ctx context.Context) {
 			continue
 		}
 		s.state.Store(Running)
-		if order == nil || orderGen != t.gen {
-			order = make([]uint32, len(t.pixels))
-			for i := range order {
-				order[i] = uint32(i)
-			}
-			orderGen = t.gen
-		}
-		rand.Shuffle(len(order), func(i, j int) { order[i], order[j] = order[j], order[i] })
-		if s.pass(ctx, cfg.Prefix, t, order) {
-			s.passes.Add(1)
-		}
+		s.stream(ctx)
 	}
 }
 
@@ -252,69 +254,84 @@ func (s *Sender) decide(cfg Settings) State {
 	return Running
 }
 
-// pass reports whether it reached every pixel; it stops early when the settings change under it.
-func (s *Sender) pass(ctx context.Context, p canvas.Prefix, t *target, order []uint32) bool {
-	var next atomic.Int64
-	var aborted atomic.Bool
+// stream runs the workers until the sender may no longer send. The workers and their pacing
+// outlive a pass: a small logo runs a pass in milliseconds, and stopping between passes then costs
+// a large share of the rate.
+func (s *Sender) stream(ctx context.Context) {
 	over := make(chan struct{})
 	var once sync.Once
 	end := func() { once.Do(func() { close(over) }) }
-	s.passDone.Store(0)
-
 	var wg sync.WaitGroup
 	for w := range s.workers {
-		wk := worker{
-			s: s, idx: w, conn: s.conns[w%len(s.conns)], pace: &s.pacers[w],
-			prefix: p, target: t, order: order, next: &next, aborted: &aborted, over: over, end: end,
-		}
+		wk := worker{s: s, idx: w, conn: s.conns[w%len(s.conns)], pace: &s.pacers[w], over: over, end: end}
 		wg.Go(func() { wk.run(ctx) })
 	}
 	wg.Wait()
-	return !aborted.Load() && ctx.Err() == nil
 }
 
-// worker is one send goroutine's view of a pass. Workers share only the claim counter, which moves
-// once per chunk.
+// roll replaces the spent or stale round r with a freshly shuffled one over the current image,
+// counting a pass when r ran out. Of the workers that find r spent, only the first rolls; the rest
+// get its round.
+func (s *Sender) roll(r *round, p canvas.Prefix, finished bool) *round {
+	s.roundMu.Lock()
+	defer s.roundMu.Unlock()
+	if cur := s.round.Load(); cur != r {
+		return cur
+	}
+	if finished {
+		s.passes.Add(1)
+	}
+	t := s.target.Load()
+	order := make([]uint32, len(t.pixels))
+	for i := range order {
+		order[i] = uint32(i)
+	}
+	rand.Shuffle(len(order), func(i, j int) { order[i], order[j] = order[j], order[i] })
+	nr := &round{target: t, prefix: p, order: order}
+	s.round.Store(nr)
+	return nr
+}
+
+// worker is one send goroutine. Workers share only the round's claim counter, which moves once per
+// chunk.
 type worker struct {
-	s       *Sender
-	idx     int
-	conn    Conn
-	pace    *pacer
-	prefix  canvas.Prefix
-	target  *target
-	order   []uint32
-	next    *atomic.Int64
-	aborted *atomic.Bool
-	// over closes when the pass runs out of pixels or aborts, so a parked worker leaves at once.
+	s    *Sender
+	idx  int
+	conn Conn
+	pace *pacer
+	// over closes when the stream ends, so a parked worker leaves at once.
 	over chan struct{}
 	end  func()
+	bc   batchConn
+	dsts []net.Addr
+	ips  []net.IP
+	msgs []ipv6.Message
 }
 
 func (w *worker) run(ctx context.Context) {
 	s := w.s
-	bc := batcher(w.conn)
+	w.bc = batcher(w.conn)
 	// One reused address per message: the conns copy it out during the call, so a pass of any size
 	// allocates nothing per packet.
-	dsts := make([]net.Addr, batch)
-	ips := make([]net.IP, batch)
-	for i := range dsts {
-		ips[i] = make(net.IP, net.IPv6len)
+	w.dsts = make([]net.Addr, batch)
+	w.ips = make([]net.IP, batch)
+	for i := range w.dsts {
+		w.ips[i] = make(net.IP, net.IPv6len)
 		if s.datagram {
-			dsts[i] = &net.UDPAddr{IP: ips[i]}
+			w.dsts[i] = &net.UDPAddr{IP: w.ips[i]}
 		} else {
-			dsts[i] = &net.IPAddr{IP: ips[i]}
+			w.dsts[i] = &net.IPAddr{IP: w.ips[i]}
+		}
+	}
+	if w.bc != nil {
+		w.msgs = make([]ipv6.Message, batch)
+		for i := range w.msgs {
+			w.msgs[i] = ipv6.Message{Buffers: [][]byte{s.echo}, Addr: w.dsts[i]}
 		}
 	}
 	// speed is the packets a second this worker's last chunk went out at. A chunk is cut to what
 	// it sends in chunkSpan, so the scaler's samples stay smooth on a socket slower than the rate.
 	var speed float64
-	var msgs []ipv6.Message
-	if bc != nil {
-		msgs = make([]ipv6.Message, batch)
-		for i := range msgs {
-			msgs[i] = ipv6.Message{Buffers: [][]byte{s.echo}, Addr: dsts[i]}
-		}
-	}
 	for {
 		active := int(s.active.Load())
 		if w.idx >= active {
@@ -331,47 +348,22 @@ func (w *worker) run(ctx context.Context) {
 		} else {
 			n = min(n, batch)
 		}
-		if !w.pace.take(ctx, n, share) {
+		// take returns at once while behind schedule, so it never sees ctx end on a slow socket.
+		if !w.pace.take(ctx, n, share) || ctx.Err() != nil {
 			return
 		}
-		if ctx.Err() != nil || w.aborted.Load() {
+		select {
+		case <-w.over:
 			return
+		default:
 		}
 		cfg = s.settings()
-		// Abort when the prefix changes, the sender leaves Running, or the image is swapped: the
-		// order then belongs to a stale target and the next pass reshuffles.
-		if cfg.Prefix != w.prefix || s.decide(cfg) != Running || s.target.Load() != w.target {
-			w.aborted.Store(true)
+		if s.decide(cfg) != Running {
 			w.end()
 			return
 		}
-		from := int(w.next.Add(int64(n))) - n
-		if from >= len(w.order) {
-			w.end()
-			return
-		}
-		chunk := w.order[from:min(from+n, len(w.order))]
-		offs := s.offsets.Load()
-		var sent, failed, skipped int
-		var err error
 		began := time.Now()
-		for len(chunk) > 0 {
-			part := chunk[:min(batch, len(chunk))]
-			chunk = chunk[len(part):]
-			k := w.address(part, offs, ips)
-			skipped += len(part) - k
-			if k == 0 {
-				continue
-			}
-			var ok int
-			if bc != nil {
-				ok, err = writeBatch(bc, msgs[:k], err)
-			} else {
-				ok, err = s.writeEach(w.conn, dsts[:k], err)
-			}
-			sent += ok
-			failed += k - ok
-		}
+		sent, failed, err := w.chunk(n, cfg.Prefix)
 		took := time.Since(began)
 		s.busy.Add(int64(took))
 		if took > 0 && sent+failed > 0 {
@@ -383,7 +375,6 @@ func (w *worker) run(ctx context.Context) {
 		// A chunk whose every pixel moved off the canvas sent nothing and failed nothing.
 		if sent > 0 || failed == 0 {
 			s.sent.Add(uint64(sent))
-			s.passDone.Add(int64(sent + skipped))
 			if s.failing.Load() {
 				s.failing.Store(false)
 			}
@@ -393,18 +384,61 @@ func (w *worker) run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
+		case <-w.over:
+			return
 		case <-time.After(failPause):
 		}
 	}
 }
 
+// chunk sends the next n pixels, rolling into a fresh round when this one runs out or the prefix
+// or image it paints has changed.
+func (w *worker) chunk(n int, p canvas.Prefix) (sent, failed int, err error) {
+	s := w.s
+	offs := s.offsets.Load()
+	r := s.round.Load()
+	if r == nil || r.prefix != p || r.target != s.target.Load() {
+		r = s.roll(r, p, false)
+	}
+	for n > 0 && len(r.order) > 0 {
+		from := int(r.next.Add(int64(n))) - n
+		if from >= len(r.order) {
+			r = s.roll(r, p, true)
+			continue
+		}
+		claim := r.order[from:min(from+n, len(r.order))]
+		n -= len(claim)
+		reached := 0
+		for len(claim) > 0 {
+			part := claim[:min(batch, len(claim))]
+			claim = claim[len(part):]
+			k := w.address(r, part, offs)
+			reached += len(part) - k
+			if k == 0 {
+				continue
+			}
+			var ok int
+			if w.bc != nil {
+				ok, err = writeBatch(w.bc, w.msgs[:k], err)
+			} else {
+				ok, err = s.writeEach(w.conn, w.dsts[:k], err)
+			}
+			sent += ok
+			failed += k - ok
+			reached += ok
+		}
+		r.done.Add(int64(reached))
+	}
+	return sent, failed, err
+}
+
 // address writes the destination of each pixel in part into ips, shifted by its placement's offset,
 // and returns how many it wrote; a pixel shifted off the canvas is skipped.
-func (w *worker) address(part []uint32, offs *offsets, ips []net.IP) int {
-	pixels := w.target.pixels
+func (w *worker) address(r *round, part []uint32, offs *offsets) int {
+	pixels, ips := r.target.pixels, w.ips
 	if offs == nil {
 		for k, i := range part {
-			a := w.prefix.Address(pixels[i]).As16()
+			a := r.prefix.Address(pixels[i]).As16()
 			copy(ips[k], a[:])
 		}
 		return len(part)
@@ -415,14 +449,14 @@ func (w *worker) address(part []uint32, offs *offsets, ips []net.IP) int {
 		if !on {
 			continue
 		}
-		a := w.prefix.Address(px).As16()
+		a := r.prefix.Address(px).As16()
 		copy(ips[k], a[:])
 		k++
 	}
 	return k
 }
 
-// idle parks a worker the scaler has not asked for; it reports false once the pass is over.
+// idle parks a worker the scaler has not asked for; it reports false once the stream is over.
 func (w *worker) idle(ctx context.Context) bool {
 	select {
 	case <-ctx.Done():

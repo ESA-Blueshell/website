@@ -11,6 +11,7 @@ import (
 	"github.com/ESA-Blueshell/website/services/pinger/paint"
 
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/auth"
+	"github.com/ESA-Blueshell/website/services/pinger-app/internal/headroom"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/oauth"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/report"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/tokenstore"
@@ -70,5 +71,39 @@ func TestSigningInAgainAfterAnAbandonedLoginResumesReporting(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("reporting did not resume after signing in again")
+	}
+}
+
+// The member sees "Signed in" and their name the moment the browser login returns, not after the
+// first report, which can be a whole tick away.
+func TestSignInShowsTheAccountWithoutWaitingForAReport(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == "/pinger/report/whoami" {
+			_, _ = w.Write([]byte(`{"subject":"42","username":"alice"}`))
+			return
+		}
+		t.Errorf("unexpected request to %s", req.URL.Path)
+	}))
+	defer srv.Close()
+
+	login := func(context.Context) (oauth.Token, error) {
+		return oauth.Token{Access: "fresh", Refresh: "rt", Expiry: time.Now().Add(time.Hour)}, nil
+	}
+	authn := auth.New(&memStore{}, &failingRefresher{}, login)
+	var changes atomic.Int32
+	r := &Runner{auth: authn, poster: report.NewPoster(srv.URL, authn, "device"), headroom: headroom.New(),
+		wake: make(chan struct{}, 1), OnChange: func() { changes.Add(1) }}
+
+	r.SignIn(context.Background())
+
+	st := r.Status()
+	if !st.SignedIn || st.SigningIn {
+		t.Fatalf("signedIn=%v signingIn=%v after the login returned", st.SignedIn, st.SigningIn)
+	}
+	if st.Account != "alice" {
+		t.Fatalf("account %q, want alice before any report", st.Account)
+	}
+	if changes.Load() == 0 {
+		t.Fatal("the UI was not told the sign-in state changed")
 	}
 }

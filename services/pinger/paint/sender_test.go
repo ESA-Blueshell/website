@@ -257,13 +257,19 @@ func TestSenderGivesEachWorkerItsOwnSocket(t *testing.T) {
 	go func() { s.Run(ctx); close(done) }()
 	t.Cleanup(func() { cancel(); <-done })
 
+	// exclusiveConn fails the test on any overlap; how many workers the scaler starts depends on
+	// timing, so only ask that sends got out on more than one socket.
 	eventually(t, func() bool {
+		var total int64
+		used := 0
 		for _, c := range conns {
-			if c.sent.Load() == 0 {
-				return false
+			n := c.sent.Load()
+			total += n
+			if n > 0 {
+				used++
 			}
 		}
-		return true
+		return total >= 1_000 && used >= min(2, len(conns))
 	})
 }
 

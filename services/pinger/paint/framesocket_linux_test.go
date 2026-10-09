@@ -117,3 +117,51 @@ func captureEcho(t *testing.T, fd int, dst [16]byte, id uint16) []byte {
 	t.Fatalf("no echo with id %#x to %s left", id, netip.AddrFrom16(dst))
 	return nil
 }
+
+func TestCheckOwnFrameRefusesForeignFrames(t *testing.T) {
+	ifc, src := ethernetWithIPv6(t)
+	frame := func(dstMAC, srcMAC string, src netip.Addr) []byte {
+		f := make([]byte, frameHead+8)
+		d, _ := net.ParseMAC(dstMAC)
+		s, _ := net.ParseMAC(srcMAC)
+		copy(f, d)
+		copy(f[6:], s)
+		copy(f[ethHeader+8:], src.AsSlice())
+		return f
+	}
+	own := ifc.HardwareAddr.String()
+	cases := []struct {
+		name string
+		f    []byte
+		ok   bool
+	}{
+		{"own frame", frame("02:00:00:00:00:01", own, src), true},
+		{"someone else's source MAC", frame("02:00:00:00:00:01", "02:00:00:00:00:02", src), false},
+		{"multicast next hop", frame("33:33:00:00:00:01", own, src), false},
+		{"our own MAC as next hop", frame(own, own, src), false},
+		{"someone else's source address", frame("02:00:00:00:00:01", own, netip.MustParseAddr("2001:db8::66")), false},
+	}
+	for _, c := range cases {
+		if err := checkOwnFrame(c.f, ifc.Index); (err == nil) != c.ok {
+			t.Errorf("%s: err %v, want ok=%v", c.name, err, c.ok)
+		}
+	}
+}
+
+func ethernetWithIPv6(t *testing.T) (net.Interface, netip.Addr) {
+	ifcs, _ := net.Interfaces()
+	for _, ifc := range ifcs {
+		if len(ifc.HardwareAddr) != 6 || ifc.HardwareAddr.String() == "02:00:00:00:00:01" {
+			continue
+		}
+		addrs, _ := ifc.Addrs()
+		for _, a := range addrs {
+			if n, ok := a.(*net.IPNet); ok && n.IP.To4() == nil {
+				ip, _ := netip.AddrFromSlice(n.IP)
+				return ifc, ip
+			}
+		}
+	}
+	t.Skip("no Ethernet interface with an IPv6 address")
+	return net.Interface{}, netip.Addr{}
+}

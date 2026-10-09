@@ -107,10 +107,18 @@ type sectorSink struct {
 
 func (s sectorSink) SetPixels(px []canvas.Pixel) { s.sender.SetPixels(sectorPixels(px, s.n, s.m)) }
 
-// openICMP opens an unprivileged ICMP datagram socket where the OS allows it, and falls back to
-// a raw socket otherwise. The bool reports whether the datagram socket won, so the sender knows
-// to address it with UDP destinations.
+// openICMP opens frame sockets where the helper has CAP_NET_RAW on Linux, else an unprivileged ICMP
+// datagram socket where the OS allows it, else a raw socket. The bool reports whether the datagram
+// socket won, so the sender knows to address it with UDP destinations.
 func openICMP() ([]socket, bool, error) {
+	if frames, err := paint.OpenFrameSockets(false, nil); err == nil {
+		out := make([]socket, len(frames))
+		for i, f := range frames {
+			out[i] = f
+		}
+		return out, false, nil
+	}
+	paint.WarnIfConntrack()
 	if c, err := listenAll("udp6"); err == nil {
 		return c, true, nil
 	}

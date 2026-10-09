@@ -3,6 +3,7 @@
 package paint
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -106,7 +107,7 @@ func logFallback(err error) {
 // learnTemplate pings dst once through the kernel and reads the frame it sent back off a packet
 // socket, so routing, source address selection and the neighbour lookup are the kernel's own.
 func learnTemplate(dst [16]byte, probe *icmp.PacketConn) (*frameTemplate, error) {
-	id := rand.N(uint16(0xffff)) + 1
+	id, seq := rand.N(uint16(0xffff))+1, uint16(rand.Uint32())
 	// Only ETH_P_ALL sees frames leaving; the filter keeps a busy link from drowning the probe.
 	fd, err := unix.Socket(unix.AF_PACKET, unix.SOCK_RAW|unix.SOCK_CLOEXEC, int(htons(unix.ETH_P_ALL)))
 	if err != nil {
@@ -120,7 +121,7 @@ func learnTemplate(dst [16]byte, probe *icmp.PacketConn) (*frameTemplate, error)
 	if err := unix.SetsockoptTimeval(fd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, &tv); err != nil {
 		return nil, err
 	}
-	echo, err := (&icmp.Message{Type: ipv6.ICMPTypeEchoRequest, Body: &icmp.Echo{ID: int(id), Seq: 1}}).Marshal(nil)
+	echo, err := (&icmp.Message{Type: ipv6.ICMPTypeEchoRequest, Body: &icmp.Echo{ID: int(id), Seq: int(seq)}}).Marshal(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +141,12 @@ func learnTemplate(dst [16]byte, probe *icmp.PacketConn) (*frameTemplate, error)
 			}
 			if ll.Hatype != unix.ARPHRD_ETHER {
 				return nil, fmt.Errorf("the route to %s is not Ethernet (link type %d)", netip.AddrFrom16(dst), ll.Hatype)
+			}
+			if binary.BigEndian.Uint16(buf[frameHead+6:]) != seq {
+				continue
+			}
+			if err := checkOwnFrame(buf[:n], ll.Ifindex); err != nil {
+				return nil, err
 			}
 			return newTemplate(buf[:n], int32(ll.Ifindex)), nil
 		}
@@ -184,6 +191,36 @@ func isProbe(f []byte, dst [16]byte, id uint16, hatype uint16) bool {
 	p := f[off:]
 	return len(p) >= ip6Header+8 && p[0]>>4 == 6 && p[6] == 58 && [16]byte(p[24:40]) == dst &&
 		p[ip6Header] == byte(ipv6.ICMPTypeEchoRequest) && binary.BigEndian.Uint16(p[ip6Header+4:]) == id
+}
+
+// checkOwnFrame refuses a frame that does not leave from this host to a single next hop: its source
+// MAC must be the interface's own, its source address one of ours, and its destination MAC unicast
+// and someone else's. PACKET_OUTGOING already rules out frames received from the link.
+func checkOwnFrame(f []byte, ifindex int) error {
+	ifc, err := net.InterfaceByIndex(ifindex)
+	if err != nil {
+		return err
+	}
+	dstMAC, srcMAC := net.HardwareAddr(f[:6]), net.HardwareAddr(f[6:12])
+	if !bytes.Equal(srcMAC, ifc.HardwareAddr) {
+		return fmt.Errorf("the probe left %s from %s, not its own address %s", ifc.Name, srcMAC, ifc.HardwareAddr)
+	}
+	if dstMAC[0]&1 != 0 || bytes.Equal(dstMAC, srcMAC) {
+		return fmt.Errorf("the probe's next hop %s is not another single host", dstMAC)
+	}
+	src := netip.AddrFrom16([16]byte(f[ethHeader+8 : ethHeader+24]))
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return err
+	}
+	for _, a := range addrs {
+		if p, ok := a.(*net.IPNet); ok {
+			if ip, ok := netip.AddrFromSlice(p.IP); ok && ip.Unmap() == src {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("the probe's source %s is not an address of this host", src)
 }
 
 func newTemplate(f []byte, ifindex int32) *frameTemplate {

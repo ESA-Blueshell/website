@@ -23,8 +23,18 @@ type socket interface {
 // openICMP opens an ICMPv6 socket and reports whether it is a datagram socket (addressed with UDP
 // destinations), preferring the unprivileged datagram socket and falling back to raw where the OS
 // needs it (Windows). Root opens raw first: macOS caps the unprivileged datagram socket at a few
-// outstanding sends to unresolved destinations, wedging a local test; raw has no such cap.
+// outstanding sends to unresolved destinations, wedging a local test; raw has no such cap. Linux
+// with CAP_NET_RAW (root, or `setcap cap_net_raw+ep` on the binary) sends frames before either,
+// keeping the qdisc so the member's own traffic stays fairly queued.
 func openICMP() ([]socket, bool, error) {
+	if frames, err := paint.OpenFrameSockets(false, markLowPriority); err == nil {
+		out := make([]socket, len(frames))
+		for i, f := range frames {
+			out[i] = f
+		}
+		return out, false, nil
+	}
+	paint.WarnIfConntrack()
 	if os.Geteuid() == 0 {
 		if c, err := listenAll("ip6:ipv6-icmp"); err == nil {
 			return c, false, nil

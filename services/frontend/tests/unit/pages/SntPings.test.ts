@@ -150,13 +150,12 @@ describe("SNTPings page", () => {
     expect(wrapper.text()).toContain("Painting now")
   })
 
-  it("scrolls down to the live canvas when the hero's watch button is pressed", async () => {
+  it("sends the hero's watch button to the SNTPings site in a new tab", async () => {
     const wrapper = await mount(null)
-    const scroll = vi.fn()
-    vi.spyOn(document, "getElementById").mockReturnValue({scrollIntoView: scroll} as unknown as HTMLElement)
 
-    await wrapper.get("[data-testid=snt-watch]").trigger("click")
-
-    expect(scroll).toHaveBeenCalled()
+    const watch = wrapper.get("[data-testid=snt-watch]")
+    expect(watch.attributes("href")).toBe("https://pings.utwente.io")
+    expect(watch.attributes("target")).toBe("_blank")
+    expect(watch.attributes("rel")).toBe("noopener")
   })
 })

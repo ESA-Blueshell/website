@@ -46,17 +46,6 @@ const downloads: {os: AppOs, label: string, openStep: string}[] = [
 
 const downloadUrl = (os: AppOs): string => appDownloadUrl(os)
 
-const reduceMotion = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
-
-/** The hero's way on: scrolls down to the live canvas, instantly for a reader who asked for less motion. */
-function onWatch(event: Event): void {
-  event.preventDefault()
-  document.getElementById("snt-canvas")?.scrollIntoView({
-    behavior: reduceMotion ? "auto" : "smooth",
-    block: "start",
-  })
-}
-
 /** The members in rank order, so a stream snapshot that reorders them moves the rows. */
 const ranked = computed(() => [...snapshot.value.members].sort((a, b) => a.rank - b.rank))
 
@@ -136,10 +125,10 @@ onBeforeUnmount(() => {
       >
         <template #acts>
           <cut-button
-            href="#snt-canvas"
+            href="https://pings.utwente.io"
+            away
             testid="snt-watch"
             tone="solid"
-            @click="onWatch"
           >
             Watch the live canvas
           </cut-button>

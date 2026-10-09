@@ -144,9 +144,11 @@ jobs:
       - name: Build the app
         run: wails build -clean -platform ${{ matrix.platform }}
 
+      # The .app bundle takes wails.json's `name` (pinger-app), not `outputfilename`, so it is
+      # pinger-app.app even though the binary inside is blueshell-pinger.
       - name: Package the macOS DMG
         if: runner.os == 'macOS'
-        run: hdiutil create -volname "Blueshell Pinger" -srcfolder build/bin/blueshell-pinger.app -ov -format UDZO "${{ matrix.asset }}"
+        run: hdiutil create -volname "Blueshell Pinger" -srcfolder build/bin/pinger-app.app -ov -format UDZO "${{ matrix.asset }}"
 
       - name: Name the Windows installer
         if: runner.os == 'Windows'
@@ -157,7 +159,7 @@ jobs:
         run: |
           mkdir -p AppDir/usr/bin
           cp build/bin/blueshell-pinger AppDir/usr/bin/
-          cp build/appicon.png AppDir/blueshell-pinger.png
+          cp frontend/dist/shelly.png AppDir/blueshell-pinger.png
           cat > AppDir/blueshell-pinger.desktop <<'EOF'
           [Desktop Entry]
           Name=Blueshell Pinger

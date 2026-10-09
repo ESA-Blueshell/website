@@ -22,7 +22,7 @@ Download the file for your system and run it:
 #   sudo sysctl -w net.ipv6.ping_group_range="0 2147483647")
 ./blueshell-pinger-linux-amd64
 
-# Windows: right-click → Run as administrator, then in the window:
+# Windows (runs without extra rights; Run as administrator sends faster):
 blueshell-pinger-windows-amd64.exe
 ```
 

@@ -2843,7 +2843,6 @@ __metadata:
     fast-xml-parser: "npm:^5.11.1"
     flag-icons: "npm:^7.5.0"
     globals: "npm:^17.12.0"
-    hls.js: "npm:1.6.13"
     ics: "npm:^3.12.0"
     jsdom: "npm:^30.0.1"
     libphonenumber-js: "npm:^1.13.12"
@@ -4322,13 +4321,6 @@ __metadata:
   version: 1.0.8
   resolution: "hey-listen@npm:1.0.8"
   checksum: 10c0/38db3028b4756f3d536c0f6a92da53bad577ab649b06dddfd0a4d953f9a46bbc6a7f693c8c5b466a538d6d23dbc469260c848427f0de14198a2bbecbac37b39e
-  languageName: node
-  linkType: hard
-
-"hls.js@npm:1.6.13":
-  version: 1.6.13
-  resolution: "hls.js@npm:1.6.13"
-  checksum: 10c0/3f937f64735c02cb82e16268f763e35f73214ad47345ce51e8fa55d532fff184e0f889f06a87f07f83c36c2d25bd987f791ef6cf4de216f9d90e1fa383262094
   languageName: node
   linkType: hard
 

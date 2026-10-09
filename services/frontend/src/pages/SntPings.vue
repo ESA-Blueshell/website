@@ -11,7 +11,6 @@ import NoticeBox from "@/components/island/NoticeBox.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import Leaderboard from "@/components/pinger/Leaderboard.vue"
 import CanvasStage from "@/components/pinger/CanvasStage.vue"
-import LiveCanvas from "@/components/pinger/LiveCanvas.vue"
 import PingerProgress from "@/components/pinger/PingerProgress.vue"
 import {
   appDownloadUrl,
@@ -21,7 +20,6 @@ import {
   loadPaintJob,
   openLeaderboardStream,
   ownStanding,
-  SNTPINGS_STREAM_URL,
   type AppOs,
   type Leaderboard as LeaderboardSnapshot,
   type PaintJob,
@@ -177,12 +175,6 @@ onBeforeUnmount(() => {
               >Event starts in <b>{{ countdown }}</b></span>
             </template>
           </p>
-
-          <live-canvas
-            class="canvas__live"
-            :placements="paint.placements"
-            :stream-url="SNTPINGS_STREAM_URL"
-          />
 
           <div class="canvas__grid">
             <canvas-stage
@@ -352,10 +344,6 @@ onBeforeUnmount(() => {
   background: var(--color-ok);
   opacity: 1;
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ok) 24%, transparent);
-}
-
-.canvas__live {
-  margin-top: 1.5rem;
 }
 
 /* The plate and its progress sit side by side on a wide screen and stack on a narrow one. */

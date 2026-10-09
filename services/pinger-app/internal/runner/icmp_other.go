@@ -15,7 +15,8 @@ import (
 // destinations, wedging a local test; raw has no such cap.
 func openICMP() ([]socket, bool, error) {
 	// Linux with CAP_NET_RAW (root, or `setcap cap_net_raw+ep` on the binary) sends frames before
-	// either, keeping the qdisc so the member's own traffic stays fairly queued.
+	// either, keeping the qdisc so the member's own traffic stays fairly queued; so does macOS with
+	// /dev/bpf access (root, or the access_bpf group Wireshark's ChmodBPF sets up).
 	if frames, err := paint.OpenFrameSockets(false, markLowPriority); err == nil {
 		out := make([]socket, len(frames))
 		for i, f := range frames {

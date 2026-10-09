@@ -7,6 +7,10 @@ import (
 	"golang.org/x/image/draw"
 )
 
+// minAlpha is the faintest pixel worth a ping: an antialiased edge fainter than this barely tints
+// the canvas, and a ping spent on it is one the rest of the logo goes without.
+const minAlpha = 16
+
 // Placement is the logo as it lands on the canvas: the scaled image and every pixel worth sending.
 type Placement struct {
 	Image  *image.NRGBA
@@ -30,7 +34,8 @@ func PlaceInBox(src image.Image, originX, originY, boxW, boxH int) Placement {
 }
 
 // Place crops src to its visible pixels, fits the long side to maxSide and centers it on the
-// given canvas point. Fully transparent pixels are dropped: painting them changes nothing.
+// given canvas point. Pixels fainter than minAlpha are dropped; the crop still counts them, so the
+// logo keeps its size.
 func Place(src image.Image, maxSide int, center image.Point) Placement {
 	crop := visibleBounds(src)
 	w, h := crop.Dx(), crop.Dy()
@@ -52,7 +57,7 @@ func Place(src image.Image, maxSide int, center image.Point) Placement {
 	for y := range h {
 		for x := range w {
 			c := scaled.NRGBAAt(x, y)
-			if c.A == 0 {
+			if c.A < minAlpha {
 				continue
 			}
 			pixels = append(pixels, Pixel{

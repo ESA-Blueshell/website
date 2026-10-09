@@ -47,10 +47,14 @@ func NewClient(base, clientID string) *Client {
 	return &Client{
 		Base:     strings.TrimSuffix(base, "/"),
 		ClientID: clientID,
-		HTTP:     &http.Client{Timeout: 20 * time.Second},
+		HTTP:     &http.Client{Timeout: 20 * time.Second, CheckRedirect: noRedirect},
 		now:      time.Now,
 	}
 }
+
+// noRedirect keeps a token call on the token endpoint: the api answers a client it cannot
+// authenticate with a redirect to its login page, which must read as a refusal, not as HTML.
+func noRedirect(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 
 func (c *Client) httpClient() *http.Client {
 	if c.HTTP != nil {
@@ -123,7 +127,7 @@ func (c *Client) token(ctx context.Context, form url.Values) (Token, error) {
 	// A non-2xx with no JSON body still needs a clear error; decode best-effort.
 	_ = json.Unmarshal(body, &tr)
 	if resp.StatusCode != http.StatusOK {
-		if tr.Error == "invalid_grant" {
+		if refused(resp.StatusCode, tr.Error) {
 			return Token{}, ErrInvalidGrant
 		}
 		return Token{}, fmt.Errorf("oauth token: status %d", resp.StatusCode)
@@ -136,4 +140,14 @@ func (c *Client) token(ctx context.Context, form url.Values) (Token, error) {
 		Refresh: tr.RefreshToken,
 		Expiry:  c.clock().Add(time.Duration(tr.ExpiresIn) * time.Second),
 	}, nil
+}
+
+// refused reports whether the token endpoint turned the grant or this client down for good, so only
+// a fresh browser login renews it. A 5xx or a network error is not a refusal and is retried.
+func refused(status int, code string) bool {
+	switch code {
+	case "invalid_grant", "invalid_client", "unauthorized_client":
+		return true
+	}
+	return status >= 300 && status < 400
 }

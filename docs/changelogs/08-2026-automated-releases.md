@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.3](https://github.com/ESA-Blueshell/website/compare/v1.18.2...v1.18.3) (2026-10-09)
+
+
+### Bug Fixes
+
+* **pinger:** self-contained Linux AppImage, SNTPings countdown ([f47670a](https://github.com/ESA-Blueshell/website/commit/f47670af1daa666635ac778fa05d4982008114dc))
+
 ## [1.18.2](https://github.com/ESA-Blueshell/website/compare/v1.18.1...v1.18.2) (2026-10-09)
 
 

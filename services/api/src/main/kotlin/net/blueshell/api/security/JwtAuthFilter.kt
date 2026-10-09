@@ -64,7 +64,7 @@ class JwtAuthFilter(
         // A lock ends every sign-in, and nothing may open a new one while it holds.
         if (!principal.isAccountNonLocked) return
         val auth = UsernamePasswordAuthenticationToken(principal, null, principal.authorities + factorsOf(signIn))
-        auth.details = SignInDetails(signIn.id, signIn.methods)
+        auth.details = SignInDetails(signIn.id, signIn.methods, signIn.userId, signIn.securityStamp)
         val context = SecurityContextHolder.createEmptyContext()
         context.authentication = auth
         SecurityContextHolder.setContext(context)

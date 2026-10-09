@@ -113,6 +113,12 @@ class SignIns(
 
     fun isLive(id: String): Boolean = store.find(id)?.let { isCurrent(it, clock.instant()) } ?: false
 
+    /** Whether the person still holds [stamp]: false once a password change or a sign-out everywhere moved it. */
+    fun stampHolds(
+        userId: Long,
+        stamp: Long,
+    ): Boolean = store.securityStamp(userId) == stamp
+
     private fun isCurrent(
         signIn: SignIn,
         now: Instant,

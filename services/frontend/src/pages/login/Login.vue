@@ -37,14 +37,14 @@
           testid="login-trust-browser"
         />
         <div class="login__aside">
-          <cut-button
-            small
-            testid="login-use-backup-code-btn"
-            tone="quiet"
+          <button
+            class="login__link"
+            data-testid="login-use-backup-code-btn"
+            type="button"
             @click="useBackupCode = !useBackupCode"
           >
             {{ useBackupCode ? "Use the authenticator app" : "Use a backup code" }}
-          </cut-button>
+          </button>
         </div>
         <div class="form-save panel-acts--split">
           <cut-button
@@ -90,22 +90,20 @@
             wrong password here, on purpose. Offering the way out beside the other one is
             what keeps that from being a dead end.
           -->
-          <cut-button
-            :href="`/login/confirm?username=${username}`"
-            small
-            testid="login-resend-confirmation-btn"
-            tone="quiet"
+          <router-link
+            class="login__link"
+            data-testid="login-resend-confirmation-btn"
+            :to="`/login/confirm?username=${username}`"
           >
             Didn't get your confirmation mail?
-          </cut-button>
-          <cut-button
-            :href="`/login/forgor?username=${username}`"
-            small
-            testid="login-forgot-password-btn"
-            tone="quiet"
+          </router-link>
+          <router-link
+            class="login__link"
+            data-testid="login-forgot-password-btn"
+            :to="`/login/forgor?username=${username}`"
           >
             Forgot password?
-          </cut-button>
+          </router-link>
         </div>
         <div class="form-save panel-acts--split">
           <cut-button
@@ -262,6 +260,26 @@ const backToPassword = () => {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.4rem;
+  gap: 0.4rem 1.2rem;
+}
+
+/* The ways out beside the form are words alone, so the two buttons below stay the only cuts. */
+.login__link {
+  padding: 0.3rem 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-ash);
+  cursor: pointer;
+}
+
+.login__link:hover,
+.login__link:focus-visible {
+  color: var(--color-chalk);
+  text-decoration: underline;
 }
 </style>

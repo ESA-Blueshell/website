@@ -31,6 +31,9 @@ defineOptions({name: "SntPingsPage"})
 const CANVAS_W = 3840
 const CANVAS_H = 2160
 
+// The SNTPings event start. The countdown runs to this and hides once it passes. CET is UTC+1.
+const EVENT_START = new Date("2025-12-05T18:00:00+01:00").getTime()
+
 const paint = ref<PaintJob>(DEFAULT_PAINT)
 const snapshot = ref<LeaderboardSnapshot>(EMPTY_LEADERBOARD)
 
@@ -91,9 +94,24 @@ const prefixLabel = computed<string>(() => paint.value.prefix ?? "no prefix set"
 /** A live clock so the band shows the event is running now, not a frozen snapshot. */
 const clock = ref<string>("")
 let clockTimer = 0
+// A live now, so both the clock and the countdown advance on the one-second tick.
+const now = ref<number>(Date.now())
 const tickClock = (): void => {
-  clock.value = new Date().toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit", second: "2-digit"})
+  now.value = Date.now()
+  clock.value = new Date(now.value).toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit", second: "2-digit"})
 }
+
+/** Whether the event is still ahead, which keeps the countdown on screen until it starts. */
+const beforeEvent = computed<boolean>(() => EVENT_START - now.value > 0)
+
+/** Time left until the event, as `Dd HH:MM:SS` (the day part drops inside a day). */
+const countdown = computed<string>(() => {
+  const total = Math.max(0, Math.floor((EVENT_START - now.value) / 1000))
+  const days = Math.floor(total / 86400)
+  const pad = (n: number): string => String(n).padStart(2, "0")
+  const hms = `${pad(Math.floor((total % 86400) / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`
+  return days > 0 ? `${days}d ${hms}` : hms
+})
 
 let closeStream: (() => void) | null = null
 
@@ -124,6 +142,13 @@ onBeforeUnmount(() => {
         heading-tail="top the board"
       >
         <template #acts>
+          <p
+            v-if="beforeEvent"
+            class="snt-countdown"
+            data-testid="snt-countdown"
+          >
+            Event starts in <b>{{ countdown }}</b>
+          </p>
           <cut-button
             href="https://pings.utwente.io"
             away
@@ -445,6 +470,17 @@ onBeforeUnmount(() => {
 
 .member__caveat {
   margin-top: 0.5rem;
+}
+
+.snt-countdown {
+  margin: 0 0 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ash);
+}
+
+.snt-countdown b {
+  color: var(--color-chalk);
+  font-weight: 700;
 }
 
 @media (max-width: 959px) {

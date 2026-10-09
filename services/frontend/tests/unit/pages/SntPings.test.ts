@@ -140,6 +140,30 @@ describe("SNTPings page", () => {
     expect(wrapper.find("[data-testid=snt-download]").exists()).toBe(false)
   })
 
+  it("counts down to the event start while it is still ahead", async () => {
+    vi.useFakeTimers({toFake: ["Date"]})
+    vi.setSystemTime(new Date("2025-12-05T15:30:00+01:00")) // 2h30 before the 18:00 CET start
+    try {
+      const wrapper = await mount(null)
+      const el = wrapper.get("[data-testid=snt-countdown]")
+      expect(el.text()).toContain("Event starts in")
+      expect(el.text()).toContain("02:30:00")
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("hides the countdown once the event has started", async () => {
+    vi.useFakeTimers({toFake: ["Date"]})
+    vi.setSystemTime(new Date("2025-12-05T18:00:01+01:00")) // one second past the start
+    try {
+      const wrapper = await mount(null)
+      expect(wrapper.find("[data-testid=snt-countdown]").exists()).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it("reads the canvas as painting when a member is online but the house is not", async () => {
     mockLoadBoard.mockResolvedValue({
       house: {label: "SiteCie", online: false, totalSent: 100},

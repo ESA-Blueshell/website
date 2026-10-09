@@ -15,6 +15,8 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
 
+private const val PINGER_APP = "pinger-app"
+
 @Configuration
 class OidcTokenCustomizer(
     private val userLoader: OidcUserLoader,
@@ -25,9 +27,8 @@ class OidcTokenCustomizer(
         return OAuth2TokenCustomizer { context ->
             val authentication = requireNotNull(context.getPrincipal<Authentication>()) { "A token is minted for a principal" }
             val signIn = authentication.details as? SignInDetails
-            // A refresh token renews only while the site sign-in it was issued under lives.
             if (context.authorizationGrantType == AuthorizationGrantType.REFRESH_TOKEN &&
-                (signIn == null || !signIns.isLive(signIn.signInId))
+                !mayRenew(context.registeredClient.clientId, signIn)
             ) {
                 throw OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT)
             }
@@ -71,6 +72,18 @@ class OidcTokenCustomizer(
             }
         }
     }
+
+    /** A refresh token renews only while the site sign-in it was issued under lives. */
+    private fun mayRenew(
+        clientId: String,
+        signIn: SignInDetails?,
+    ): Boolean =
+        when {
+            signIn == null -> false
+            // Trade-off: the app outlives a website sign-out; only a moved security stamp ends it.
+            clientId == PINGER_APP -> signIns.stampHolds(signIn.userId, signIn.securityStamp)
+            else -> signIns.isLive(signIn.signInId)
+        }
 
     private fun Set<Role>.toGroups(): List<String> =
         buildList {

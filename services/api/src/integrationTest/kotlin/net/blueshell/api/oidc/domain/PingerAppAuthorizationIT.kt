@@ -68,6 +68,26 @@ class PingerAppAuthorizationIT : UserTestSupport() {
     }
 
     @Test
+    fun `the app keeps refreshing after its member signs out of the website`() {
+        val member = createUserWithRole(Role.MEMBER, twoFactor = true)
+        val token = redeemCode(member)
+
+        signIns.of(requireNotNull(member.id)).forEach { signIns.end(it.id) }
+
+        refresh(token)
+    }
+
+    @Test
+    fun `signing out everywhere ends the app's refreshes`() {
+        val member = createUserWithRole(Role.MEMBER, twoFactor = true)
+        val token = redeemCode(member)
+
+        signIns.endAll(requireNotNull(member.id))
+
+        refreshRefused(token)
+    }
+
+    @Test
     fun `a refresh naming a client that holds no refresh grant is refused as a client error`() {
         mvc
             .perform(tokenRequest("grant_type" to "refresh_token", "client_id" to "headlamp", "refresh_token" to "bogus"))

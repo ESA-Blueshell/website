@@ -197,10 +197,9 @@ func (r *Runner) SetOptIn(ctx context.Context, optedIn bool) (bool, error) {
 // Run signs the member in, then paints and reports until ctx ends. It blocks, so callers run it in
 // a goroutine. A sign-in failure is reported through the status line rather than crashing the app.
 func (r *Runner) Run(ctx context.Context) error {
-	// Resume a prior session silently: a still-valid token or refresh signs the member back in
-	// without a browser. Only an explicit Sign in opens the browser, so the app never logs in on
-	// its own.
-	if _, err := r.auth.Current(ctx); err == nil {
+	// Resume a stored sign-in without asking the api, which may be down or restarting; the first
+	// report signs the member out if it has lapsed. Only an explicit Sign in opens the browser.
+	if r.auth.HasSession() {
 		r.signedIn.Store(true)
 	}
 
@@ -256,26 +255,35 @@ func (r *Runner) reportLoop(ctx context.Context, sender *paint.Sender) {
 			if !r.signedIn.Load() {
 				continue
 			}
-			rep := report.Build(sender.Snapshot())
-			err := r.poster.Post(ctx, rep)
-			switch {
-			case err == nil:
-				if r.loadAccount() == "" {
-					if who, werr := r.poster.Whoami(ctx); werr == nil && who != "" {
-						r.setAccount(who)
-					}
-				}
-			case errors.Is(err, report.ErrUnauthorized), errors.Is(err, auth.ErrSignInRequired):
-				// The token lapsed and no refresh renews it: sign out and wait for the member to
-				// sign in again rather than popping a browser mid-report.
-				r.signedIn.Store(false)
-				r.setAccount("")
-			case errors.Is(err, context.Canceled):
+			err := r.poster.Post(ctx, report.Build(sender.Snapshot()))
+			if errors.Is(err, context.Canceled) {
 				return
-			default:
-				slog.Warn("post report", "err", err)
+			}
+			r.afterReport(ctx, err)
+		}
+	}
+}
+
+// afterReport reacts to one report's outcome. Only a token that lapsed with no refresh to renew it
+// signs the member out, and the app then waits for them rather than popping a browser mid-report.
+// A refused report renews but keeps the token, since the api refuses good tokens while it restarts.
+func (r *Runner) afterReport(ctx context.Context, err error) {
+	switch {
+	case err == nil:
+		if r.loadAccount() == "" {
+			if who, werr := r.poster.Whoami(ctx); werr == nil && who != "" {
+				r.setAccount(who)
 			}
 		}
+	case errors.Is(err, auth.ErrSignInRequired):
+		r.signedIn.Store(false)
+		r.setAccount("")
+	case errors.Is(err, report.ErrUnauthorized):
+		if rerr := r.auth.Refused(ctx); rerr != nil {
+			slog.Warn("renew refused token", "err", rerr)
+		}
+	default:
+		slog.Warn("post report", "err", err)
 	}
 }
 

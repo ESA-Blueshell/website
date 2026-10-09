@@ -74,7 +74,12 @@ func (a *Authenticator) current(ctx context.Context) (string, error) {
 	if set.HasRefresh() {
 		tok, rerr := a.refresh.Refresh(ctx, set.Refresh)
 		if rerr == nil {
-			return a.persist(tok)
+			return a.persist(tok, set.Refresh)
+		}
+		// The skew asks for a refresh before the access token lapses; until it does, it still
+		// serves whatever the refresh said.
+		if set.AccessValid(a.now(), 0) {
+			return set.Access, nil
 		}
 		// Only an expired or revoked refresh sends the member back to the browser. A transient
 		// network error surfaces so the caller retries rather than signing out needlessly.
@@ -102,7 +107,7 @@ func (a *Authenticator) Token(ctx context.Context) (string, error) {
 	if lerr != nil {
 		return "", lerr
 	}
-	return a.persist(logged)
+	return a.persist(logged, "")
 }
 
 // SignOut drops both tokens, so the member is signed out until they sign in again. The next Current
@@ -113,10 +118,19 @@ func (a *Authenticator) SignOut() error {
 	return a.store.Save(tokenstore.Set{})
 }
 
-// Invalidate drops the stored access token while keeping the refresh token, so the next Token call
-// renews rather than reusing a token the server has refused. A revoked refresh then falls through
-// to a browser login. It is the recovery path for a 401 on an access token that had not yet expired.
-func (a *Authenticator) Invalidate() error {
+// HasSession reports whether a sign-in is stored, without asking the server whether it still holds.
+func (a *Authenticator) HasSession() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	set, err := a.store.Load()
+	return err == nil && (set.Access != "" || set.HasRefresh())
+}
+
+// Refused renews through the refresh token after the server refused the stored access token. A
+// failed renewal keeps that token: the api refuses a good token while its signing keys load after a
+// restart, and dropping it then would sign the member out over a blip. The token is dropped only
+// once it expires and no refresh renews it.
+func (a *Authenticator) Refused(ctx context.Context) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	set, err := a.store.Load()
@@ -126,17 +140,27 @@ func (a *Authenticator) Invalidate() error {
 	if err != nil {
 		return err
 	}
-	set.Access = ""
-	set.AccessExpiry = time.Time{}
-	return a.store.Save(set)
+	if !set.HasRefresh() {
+		return nil
+	}
+	tok, err := a.refresh.Refresh(ctx, set.Refresh)
+	if err != nil {
+		return err
+	}
+	_, err = a.persist(tok, set.Refresh)
+	return err
 }
 
 // persist saves the obtained tokens and returns the access token, so every renewal is durable and
-// a restart resumes from it.
-func (a *Authenticator) persist(tok oauth.Token) (string, error) {
+// a restart resumes from it. A response without a refresh token keeps the one it was renewed with.
+func (a *Authenticator) persist(tok oauth.Token, previousRefresh string) (string, error) {
+	refresh := tok.Refresh
+	if refresh == "" {
+		refresh = previousRefresh
+	}
 	if err := a.store.Save(tokenstore.Set{
 		Access:       tok.Access,
-		Refresh:      tok.Refresh,
+		Refresh:      refresh,
 		AccessExpiry: tok.Expiry,
 	}); err != nil {
 		return "", err

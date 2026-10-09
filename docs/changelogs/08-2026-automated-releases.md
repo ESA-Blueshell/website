@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.19.0](https://github.com/ESA-Blueshell/website/compare/v1.18.4...v1.19.0) (2026-10-09)
+
+
+### Features
+
+* **frontend:** contact page on the island, own campus map, no Google ([#2297](https://github.com/ESA-Blueshell/website/issues/2297)) ([392ed3c](https://github.com/ESA-Blueshell/website/commit/392ed3c3ae5adfa946f77c31b9f523955db35f89)), closes [#2296](https://github.com/ESA-Blueshell/website/issues/2296)
+
+
+### Bug Fixes
+
+* **pinger:** ship the Linux desktop app as a native webkit-4.1 binary ([#2298](https://github.com/ESA-Blueshell/website/issues/2298)) ([e0903d8](https://github.com/ESA-Blueshell/website/commit/e0903d8b38a3ecf91f07fc9a4e3308398b4c194f))
+
 ## [1.18.4](https://github.com/ESA-Blueshell/website/compare/v1.18.3...v1.18.4) (2026-10-09)
 
 

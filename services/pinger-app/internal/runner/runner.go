@@ -76,6 +76,8 @@ type Runner struct {
 	rate atomic.Int64
 	// headroom lowers rate while the pings queue up the member's uplink; it never raises it.
 	headroom *headroom.Controller
+	// wake asks the report loop to report now rather than on its next tick, after a sign-in.
+	wake chan struct{}
 }
 
 // New builds a runner for a base URL, loading the token store and local preferences and wiring the
@@ -116,6 +118,7 @@ func New(base string) (*Runner, error) {
 		window:         window,
 		leaderboardURL: strings.TrimSuffix(base, "/api") + "/sntpings",
 		headroom:       headroom.New(),
+		wake:           make(chan struct{}, 1),
 	}
 	saved := prefStore.Load()
 	r.rate.Store(int64(saved.RatePPS))
@@ -145,15 +148,20 @@ func (r *Runner) Status() Status {
 	return st
 }
 
-// SignIn runs the interactive browser login and, on success, marks the member signed in so the
-// report loop posts. It blocks on the browser flow, so callers run it in a goroutine; it is the only
-// thing that opens the browser.
+// SignIn runs the interactive browser login and, on success, marks the member signed in and wakes
+// the report loop so reporting resumes at once. It blocks on the browser flow, so callers run it in
+// a goroutine; it is the only thing that opens the browser. A second SignIn abandons a login still
+// waiting on its browser tab.
 func (r *Runner) SignIn(ctx context.Context) {
 	if _, err := r.auth.Token(ctx); err != nil {
 		slog.Warn("sign in", "err", err)
 		return
 	}
 	r.signedIn.Store(true)
+	select {
+	case r.wake <- struct{}{}:
+	default:
+	}
 }
 
 // SignOut drops the tokens and clears the signed-in state, so the app stops reporting until the
@@ -280,8 +288,8 @@ func (r *Runner) load(sender *paint.Sender) headroom.Load {
 	return headroom.Load{Running: snap.State == paint.Running, ActualPPS: snap.ActualPPS, Want: int(r.rate.Load())}
 }
 
-// reportLoop posts the member's status every reportInterval. A refusal renews the token and keeps
-// going; it never ends the loop.
+// reportLoop posts the member's status every reportInterval, and at once when a sign-in wakes it. A
+// refusal renews the token and keeps going; it never ends the loop.
 func (r *Runner) reportLoop(ctx context.Context, sender *paint.Sender) {
 	tick := time.NewTicker(reportInterval)
 	defer tick.Stop()
@@ -290,17 +298,18 @@ func (r *Runner) reportLoop(ctx context.Context, sender *paint.Sender) {
 		case <-ctx.Done():
 			return
 		case <-tick.C:
-			// Report only while signed in. Posting never opens a browser: the poster uses the
-			// non-interactive token, so a signed-out app just waits for the member to sign in.
-			if !r.signedIn.Load() {
-				continue
-			}
-			err := r.poster.Post(ctx, report.Build(sender.Snapshot()))
-			if errors.Is(err, context.Canceled) {
-				return
-			}
-			r.afterReport(ctx, err)
+		case <-r.wake:
 		}
+		// Report only while signed in. Posting never opens a browser: the poster uses the
+		// non-interactive token, so a signed-out app just waits for the member to sign in.
+		if !r.signedIn.Load() {
+			continue
+		}
+		err := r.poster.Post(ctx, report.Build(sender.Snapshot()))
+		if errors.Is(err, context.Canceled) {
+			return
+		}
+		r.afterReport(ctx, err)
 	}
 }
 

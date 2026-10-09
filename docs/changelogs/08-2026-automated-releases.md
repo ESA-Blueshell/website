@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.1](https://github.com/ESA-Blueshell/website/compare/v1.18.0...v1.18.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* desktop pinger installers build for every OS, watch button opens SNTPings ([#2271](https://github.com/ESA-Blueshell/website/issues/2271)) ([69a7565](https://github.com/ESA-Blueshell/website/commit/69a75651d2dc38861248aec09d241ab180fa93d7))
+
 ## [1.18.0](https://github.com/ESA-Blueshell/website/compare/v1.17.0...v1.18.0) (2026-10-09)
 
 

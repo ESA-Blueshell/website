@@ -52,7 +52,25 @@ type Client struct {
 }
 
 func NewClient(base string) *Client {
-	return &Client{base: strings.TrimSuffix(base, "/"), hc: &http.Client{Timeout: 10 * time.Second}}
+	return &Client{base: strings.TrimSuffix(base, "/"), hc: apiHTTPClient()}
+}
+
+// apiHTTPClient is the client every call to the api goes through. In the cluster the pinger reaches
+// the api over plain HTTP on :8080, and the api refuses a request that does not say it arrived over
+// HTTPS: its redirect filter answers it with a 500. The cluster's own in-cluster callers (the
+// canary checks in apps/stateless/api/canary.yaml) say so with the same header.
+func apiHTTPClient() *http.Client {
+	return &http.Client{Timeout: 10 * time.Second, Transport: forwardedHTTPS{next: http.DefaultTransport}}
+}
+
+type forwardedHTTPS struct {
+	next http.RoundTripper
+}
+
+func (t forwardedHTTPS) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Set("X-Forwarded-Proto", "https")
+	return t.next.RoundTrip(req)
 }
 
 func (c *Client) Descriptor(ctx context.Context) (Descriptor, error) {

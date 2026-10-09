@@ -52,7 +52,7 @@ func NewReporter(base, token, deviceID string, interval time.Duration, stats fun
 		deviceID: deviceID,
 		interval: interval,
 		stats:    stats,
-		hc:       &http.Client{Timeout: 10 * time.Second},
+		hc:       apiHTTPClient(),
 	}
 }
 

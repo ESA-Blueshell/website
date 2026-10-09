@@ -30,21 +30,31 @@ func TestLoadMissingFileReturnsDefault(t *testing.T) {
 	if got := s.Load().RatePPS; got != DefaultRatePPS {
 		t.Fatalf("Load on missing file = %d, want default %d", got, DefaultRatePPS)
 	}
-	if s.Load().FullUplink {
-		t.Fatal("Load on missing file lets the pings fill the uplink, want headroom kept")
+	if s.Load().HoldBack {
+		t.Fatal("Load on missing file holds the rate back, want the full rate")
 	}
 }
 
 func TestSaveLoadRoundTrip(t *testing.T) {
 	s := New(t.TempDir())
-	if err := s.Save(Prefs{RatePPS: 4096, FullUplink: true}); err != nil {
+	if err := s.Save(Prefs{RatePPS: 4096, HoldBack: true}); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
 	if got := s.Load().RatePPS; got != 4096 {
 		t.Fatalf("round-trip rate = %d, want 4096", got)
 	}
-	if !s.Load().FullUplink {
-		t.Fatal("round-trip lost FullUplink")
+	if !s.Load().HoldBack {
+		t.Fatal("round-trip lost HoldBack")
+	}
+}
+
+func TestAnOlderFullUplinkChoiceNoLongerHoldsTheRateBack(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, fileName), []byte(`{"ratePps":1000000,"fullUplink":false}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if New(dir).Load().HoldBack {
+		t.Fatal("a saved fullUplink:false from an older version turned the limiter on")
 	}
 }
 

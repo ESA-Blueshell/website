@@ -129,7 +129,7 @@ func New(base string) (*Runner, error) {
 	}
 	saved := prefStore.Load()
 	r.rate.Store(int64(saved.RatePPS))
-	r.headroom.SetEnabled(!saved.FullUplink)
+	r.headroom.SetEnabled(saved.HoldBack)
 	r.setMessage("starting")
 	return r, nil
 }
@@ -220,7 +220,7 @@ func (r *Runner) applyRate(cur paint.Settings) paint.Settings {
 func (r *Runner) SetFullUplink(on bool) bool {
 	r.headroom.SetEnabled(!on)
 	saved := r.prefs.Load()
-	saved.FullUplink = on
+	saved.HoldBack = !on
 	if err := r.prefs.Save(saved); err != nil {
 		slog.Warn("save full uplink", "err", err)
 	}

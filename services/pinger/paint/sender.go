@@ -109,16 +109,14 @@ type Sender struct {
 	datagram  bool
 }
 
-// echoPayload is the fixed ICMPv6 echo body every pixel carries. Fixed so each packet is the same
-// size, which lets a bandwidth estimate derive bytes-per-packet from the real packet.
-const echoPayload = "blueshell"
-
 // echoRequest builds the ICMPv6 echo request the sender emits. The ID is this process, but it does
 // not change the length, so EchoRequestSize reads off the same construction.
 func echoRequest() []byte {
 	b, err := (&icmp.Message{
 		Type: ipv6.ICMPTypeEchoRequest,
-		Body: &icmp.Echo{ID: os.Getpid() & 0xffff, Seq: 1, Data: []byte(echoPayload)},
+		// No payload: the address alone paints the pixel, so every byte past the echo header is
+		// uplink spent for nothing.
+		Body: &icmp.Echo{ID: os.Getpid() & 0xffff, Seq: 1},
 	}).Marshal(nil)
 	if err != nil {
 		panic(err)
@@ -127,8 +125,8 @@ func echoRequest() []byte {
 }
 
 // EchoRequestSize is the on-wire byte length of one echo request the sender emits: the ICMPv6
-// header plus echoPayload. A bandwidth estimate adds the IPv6 header to this so it tracks the real
-// packet rather than a hand-copied constant.
+// header alone, since it carries no payload. A bandwidth estimate adds the IPv6 header to this so
+// it tracks the real packet rather than a hand-copied constant.
 func EchoRequestSize() int { return len(echoRequest()) }
 
 // NewSender sends through conns, worker i on conns[i % len(conns)]; pass Workers() sockets so no

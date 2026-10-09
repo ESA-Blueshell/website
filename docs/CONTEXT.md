@@ -729,14 +729,20 @@ A small picture set in a description's text. Two kinds exist:
   still shows
 
 An emoji is written by its Discord name between colons and becomes the emoji once the
-closing colon is typed. The name is only how it is typed: what the description holds
-is the emoji itself.
+closing colon is typed, or as soon as it is pasted. The name is only how it is typed:
+what the description holds is the emoji itself.
 
 ### Mention
 
 A name in a description that points at something in the association's Discord server:
 a member (`@name`), a role (`@role`) or a channel (`#channel`). A **timestamp** sits
 beside them: a moment each reader sees in their own time zone.
+
+A name written out, such as `@sitecie` typed or pasted, is the mention of what the
+server calls by that name: a role before a member. A name the server does not know stays
+text. Once saved, a mention points at its member, role or channel rather than at the
+name, so it follows a rename and reads as the last-known name once its target is
+deleted. A name in a description nobody has saved since follows today's names.
 
 **A mention is not a ping.** A role mentioned in a description notifies nobody; the
 roles an event notifies are its pinged roles.

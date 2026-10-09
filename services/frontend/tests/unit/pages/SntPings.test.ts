@@ -4,13 +4,14 @@
  */
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
-import type {Leaderboard} from "@/domains/pinger"
+import type {Leaderboard, PaintJob} from "@/domains/pinger"
 import type {StoredLogin} from "@/plugins/store"
 import SntPings from "@/pages/SntPings.vue"
 import {mountPage} from "../helpers/mountPage"
 import {settle, unmountAll} from "../helpers/testUtils"
 
-const {mockLoadPaint, mockLoadBoard, mockOpenStream} = vi.hoisted(() => ({
+const {mockLoadPaint, mockLoadBoard, mockOpenStream, mockOpenPaint} = vi.hoisted(() => ({
+  mockOpenPaint: vi.fn(),
   mockLoadPaint: vi.fn(),
   mockLoadBoard: vi.fn(),
   mockOpenStream: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock("@/domains/pinger", async (importOriginal) => {
     loadPaintJob: mockLoadPaint,
     loadLeaderboard: mockLoadBoard,
     openLeaderboardStream: mockOpenStream,
+    openPaintStream: mockOpenPaint,
   }
 })
 
@@ -30,7 +32,11 @@ const paint = {
   prefix: null,
   ratePps: 128,
   siteCieEnabled: true,
-  placements: [{id: 1, imageUrl: "/files/public/pinger-paint/art.webp", originX: 100, originY: 100, width: 900, height: 720}],
+  serverTime: null,
+  placements: [{
+    id: 1, imageUrl: "/files/public/pinger-paint/art.webp", originX: 100, originY: 100, width: 900, height: 720,
+    motion: {mode: "static" as const, vx: 0, vy: 0}, motionEpoch: null,
+  }],
 }
 
 const board: Leaderboard = {
@@ -51,6 +57,7 @@ const memberLogin = (username: string): StoredLogin => ({
 describe("SNTPings page", () => {
   const wrappers: VueWrapper[] = []
   let streamPush: ((snapshot: Leaderboard) => void) | null = null
+  let paintPush: ((job: PaintJob) => void) | null = null
 
   const mount = async (login: StoredLogin | null) => {
     const wrapper = await mountPage(SntPings, {path: "/sntpings", login})
@@ -64,6 +71,10 @@ describe("SNTPings page", () => {
     streamPush = null
     mockLoadPaint.mockResolvedValue(paint)
     mockLoadBoard.mockResolvedValue(board)
+    mockOpenPaint.mockImplementation((cb: (job: PaintJob) => void) => {
+      paintPush = cb
+      return vi.fn()
+    })
     mockOpenStream.mockImplementation((cb: (snapshot: Leaderboard) => void) => {
       streamPush = cb
       return vi.fn()
@@ -100,6 +111,15 @@ describe("SNTPings page", () => {
     await settle()
 
     expect(wrapper.findAll("[data-testid=snt-row]")[0].text()).toContain("robin")
+  })
+
+  it("moves our art over the canvas as the paint stream sends a new job", async () => {
+    const wrapper = await mount(null)
+
+    paintPush!({...paint, placements: [{...paint.placements[0], originX: 1920}]})
+    await settle()
+
+    expect(wrapper.get("[data-testid=snt-live-box]").attributes("style")).toContain("left: 50%")
   })
 
   it("shows the empty state and hides the members-only block from a signed-out visitor", async () => {

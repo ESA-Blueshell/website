@@ -1,24 +1,25 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
-import {apiUrl, type Placement} from "@/domains/pinger"
+import {apiUrl, CANVAS_H, CANVAS_W, isMoving, positionAt, useServerClock, type Placement} from "@/domains/pinger"
 
 /**
  * The event's livestream of the canvas with our placements drawn over it in their boxes, so what we
  * paint can be checked against what the canvas shows. hls.js, loaded on demand, plays the feed;
  * the browser plays it itself only where hls.js cannot run. It also measures the pixels one pass
- * paints, which the meter reads.
+ * paints, which the meter reads. A bouncing placement's box glides across the plate the way the
+ * pinger paints it.
  */
 defineOptions({name: "PingerLiveCanvas"})
 
-const CANVAS_W = 3840
-const CANVAS_H = 2160
 const SAMPLE_W = 600
 const SAMPLE_H = 480
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   placements: Placement[]
   streamUrl: string
-}>()
+  /** How far the api's clock runs ahead of this one, in milliseconds. */
+  clockOffset?: number
+}>(), {clockOffset: 0})
 
 const emit = defineEmits<{passtotal: [count: number]}>()
 
@@ -35,16 +36,21 @@ const video = ref<HTMLVideoElement | null>(null)
 const playing = ref<boolean>(false)
 const failed = ref<boolean>(false)
 
-const boxes = computed(() => props.placements.map(p => ({
-  id: p.id,
-  src: apiUrl(p.imageUrl),
-  style: {
-    left: `${(p.originX / CANVAS_W) * 100}%`,
-    top: `${(p.originY / CANVAS_H) * 100}%`,
-    width: `${(p.width / CANVAS_W) * 100}%`,
-    height: `${(p.height / CANVAS_H) * 100}%`,
-  },
-})))
+const serverNow = useServerClock(() => props.placements.some(isMoving), () => props.clockOffset)
+
+const boxes = computed(() => props.placements.map((p) => {
+  const at = positionAt(p, serverNow.value)
+  return {
+    id: p.id,
+    src: apiUrl(p.imageUrl),
+    style: {
+      left: `${(at.x / CANVAS_W) * 100}%`,
+      top: `${(at.y / CANVAS_H) * 100}%`,
+      width: `${(p.width / CANVAS_W) * 100}%`,
+      height: `${(p.height / CANVAS_H) * 100}%`,
+    },
+  }
+}))
 
 /** Opaque pixels in the image sampled at a fixed size; 0 where a cross-origin image hides them. */
 function opaquePixels(img: HTMLImageElement): number {
@@ -85,7 +91,8 @@ function measure(placements: Placement[]): void {
   }
 }
 
-watch(() => props.placements, measure, {immediate: true})
+// Keyed on the images alone: a box that only moved paints the same pixels, so the meter holds.
+watch(() => props.placements.map(p => `${p.id}:${p.imageUrl}`).join(), () => measure(props.placements), {immediate: true})
 
 let destroy: (() => void) | null = null
 

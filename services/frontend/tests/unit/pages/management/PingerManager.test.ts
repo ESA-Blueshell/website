@@ -1,13 +1,16 @@
 /**
  * The pinger manager: loading the paint job, editing the settings, adding and removing images, and
- * dragging and resizing a placement's box over the 4K canvas, with the domain calls each makes.
+ * dragging and resizing a placement's box over the 4K canvas, setting how a placement moves, and
+ * following the paint stream, with the domain calls each makes.
  */
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import PingerManager from "@/pages/management/PingerManager.vue"
 import {mountInApp, settle, unmountAll} from "../../helpers/testUtils"
 
-const {mockLoad, mockSave, mockStore, mockAdd, mockMove, mockRemove} = vi.hoisted(() => ({
+const {mockLoad, mockSave, mockStore, mockAdd, mockMove, mockRemove, mockMotion, mockOpenPaint} = vi.hoisted(() => ({
+  mockMotion: vi.fn(),
+  mockOpenPaint: vi.fn(),
   mockLoad: vi.fn(),
   mockSave: vi.fn(),
   mockStore: vi.fn(),
@@ -26,6 +29,8 @@ vi.mock("@/domains/pinger", async (importOriginal) => {
     addPlacement: mockAdd,
     movePlacement: mockMove,
     removePlacement: mockRemove,
+    setMotion: mockMotion,
+    openPaintStream: mockOpenPaint,
   }
 })
 
@@ -43,11 +48,17 @@ const job = {
   prefix: "2001:db8:b317:a000::/64",
   ratePps: 128,
   siteCieEnabled: true,
-  placements: [{id: 5, imageUrl: "/files/public/pinger-paint/old.webp", originX: 1470, originY: 180, width: 900, height: 720}],
+  serverTime: null,
+  placements: [{
+    id: 5, imageUrl: "/files/public/pinger-paint/old.webp", originX: 1470, originY: 180, width: 900, height: 720,
+    motion: {mode: "static" as const, vx: 0, vy: 0}, motionEpoch: null,
+  }],
 }
+type Job = typeof job
 
 describe("PingerManager page", () => {
   const wrappers: VueWrapper[] = []
+  let paintPush: ((next: Job) => void) | null = null
 
   const mount = async () => {
     const wrapper = mountInApp(PingerManager)
@@ -75,7 +86,12 @@ describe("PingerManager page", () => {
     mockLoad.mockResolvedValue(job)
     mockSave.mockResolvedValue({ok: true, saved: job})
     mockStore.mockResolvedValue({ok: true, saved: "pinger-paint/new.webp"})
-    mockAdd.mockResolvedValue({ok: true, saved: {id: 9, imageUrl: "/files/public/pinger-paint/new.webp", originX: 1200, originY: 500, width: 900, height: 675}})
+    mockAdd.mockResolvedValue({ok: true, saved: {id: 9, imageUrl: "/files/public/pinger-paint/new.webp", originX: 1200, originY: 500, width: 900, height: 675, motion: job.placements[0].motion, motionEpoch: null}})
+    paintPush = null
+    mockOpenPaint.mockImplementation((cb: (next: Job) => void) => {
+      paintPush = cb
+      return vi.fn()
+    })
     mockMove.mockResolvedValue({ok: true, saved: job.placements[0]})
     mockRemove.mockResolvedValue({ok: true, saved: undefined})
   })
@@ -263,5 +279,42 @@ describe("PingerManager page", () => {
     await settle()
 
     expect(mockMove).toHaveBeenCalledWith(5, expect.objectContaining({width: 1584, height: 1980}))
+  })
+
+  it("saves a placement's motion from its row", async () => {
+    const moving = {...job.placements[0], motion: {mode: "bounce" as const, vx: 300, vy: -120}, motionEpoch: "2026-10-09T20:00:00Z"}
+    mockMotion.mockResolvedValue({ok: true, saved: moving})
+    const wrapper = await mount()
+
+    await wrapper.get("[data-testid=pinger-motion-mode-bounce]").setValue(true)
+    expect((wrapper.get("[data-testid=pinger-motion-vx] input").element as HTMLInputElement).value).toBe("240")
+    await wrapper.get("[data-testid=pinger-motion-vx] input").setValue("300")
+    await wrapper.get("[data-testid=pinger-motion-vy] input").setValue("-120")
+    await wrapper.get("[data-testid=pinger-motion-save]").trigger("click")
+    await settle()
+
+    expect(mockMotion).toHaveBeenCalledWith(5, {mode: "bounce", vx: 300, vy: -120})
+  })
+
+  it("reports a refused motion", async () => {
+    mockMotion.mockResolvedValue({ok: false, reason: "too fast"})
+    const wrapper = await mount()
+
+    await wrapper.get("[data-testid=pinger-motion-save]").trigger("click")
+    await settle()
+
+    expect(mockMotion).toHaveBeenCalledWith(5, {mode: "static", vx: 240, vy: 160})
+    expect(wrapper.text()).toContain("too fast")
+  })
+
+  it("follows the paint stream's boxes and leaves the settings as the admin has them", async () => {
+    const wrapper = await mount()
+    await wrapper.find("[data-testid=pinger-prefix] input").setValue("2001:db8:1::/64")
+
+    paintPush!({...job, prefix: "other", placements: [{...job.placements[0], originX: 2000, originY: 300}]})
+    await settle()
+
+    expect(wrapper.get("[data-testid=pinger-placement-coords]").text()).toContain("2000, 300")
+    expect((wrapper.get("[data-testid=pinger-prefix] input").element as HTMLInputElement).value).toBe("2001:db8:1::/64")
   })
 })

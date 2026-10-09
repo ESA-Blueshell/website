@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref} from "vue"
 import Island from "@/components/island/Island.vue"
 import FormSection from "@/components/island/FormSection.vue"
 import FormControl from "@/components/island/FormControl.vue"
@@ -7,32 +7,49 @@ import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import IconButton from "@/components/island/IconButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
+import RadioGroup from "@/components/island/RadioGroup.vue"
 import {
+  CANVAS_H,
+  CANVAS_W,
   DEFAULT_PAINT,
   addPlacement,
   apiUrl,
+  clockOffset,
+  isMoving,
   loadPaintJob,
   movePlacement,
+  openPaintStream,
+  positionAt,
   removePlacement,
   saveSettings,
+  setMotion,
   storePaintImage,
+  useServerClock,
   type Box,
+  type MotionMode,
   type PaintJob,
   type Placement,
 } from "@/domains/pinger"
 
 defineOptions({name: "PingerManagerPage"})
 
-const CANVAS_W = 3840
-const CANVAS_H = 2160
-
 /** Where a freshly added image lands before the admin drags it; its height follows the image ratio. */
 const ADD_ORIGIN_X = 1200
 const ADD_ORIGIN_Y = 500
 const ADD_WIDTH = 900
 
-/** A placement plus what the editor needs: where to draw it and the image's own aspect ratio. */
-type Editable = Placement & {src: string; ratio: number | null}
+/** The speeds a placement starts bouncing at when it has none of its own yet. */
+const DEFAULT_VX = 240
+const DEFAULT_VY = 160
+
+const MODE_LABELS: Record<MotionMode, string> = {static: "Static", bounce: "Bounce"}
+const modeOptions = (Object.keys(MODE_LABELS) as MotionMode[]).map(key => ({key, label: MODE_LABELS[key]}))
+
+/** The motion an admin is editing, held apart from the placement so the stream does not reset it. */
+type MotionDraft = {mode: MotionMode; vx: string; vy: string}
+
+/** A placement plus what the editor needs: where to draw it, the image's own aspect ratio and its motion draft. */
+type Editable = Placement & {src: string; ratio: number | null; draft: MotionDraft}
 
 const placements = ref<Editable[]>([])
 const selectedId = ref<number | null>(null)
@@ -48,28 +65,72 @@ const message = ref<{tone: "info" | "danger"; text: string} | null>(null)
 const stage = ref<HTMLElement | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
-const editable = (placement: Placement): Editable => ({...placement, src: apiUrl(placement.imageUrl), ratio: null})
+const draftOf = ({motion}: Placement): MotionDraft => {
+  const still = motion.vx === 0 && motion.vy === 0
+  return {mode: motion.mode, vx: String(still ? DEFAULT_VX : motion.vx), vy: String(still ? DEFAULT_VY : motion.vy)}
+}
+
+const editable = (placement: Placement, was?: Editable): Editable => ({
+  ...placement,
+  src: apiUrl(placement.imageUrl),
+  ratio: was?.ratio ?? null,
+  draft: was?.draft ?? draftOf(placement),
+})
+
+const offset = ref<number>(0)
+/** The placement under the pointer, which the stream leaves alone until it is dropped. */
+const draggingId = ref<number | null>(null)
+const serverNow = useServerClock(() => placements.value.some(isMoving), () => offset.value)
+
+/** Where a box is drawn: where the admin holds it, or where its motion has taken it. */
+const shownAt = (p: Placement): {x: number; y: number} =>
+  p.id === draggingId.value ? {x: p.originX, y: p.originY} : positionAt(p, serverNow.value)
 
 function applyJob(job: PaintJob) {
   prefix.value = job.prefix ?? ""
   rate.value = String(job.ratePps)
   siteCieEnabled.value = job.siteCieEnabled
-  placements.value = job.placements.map(editable)
+  offset.value = clockOffset(job)
+  placements.value = job.placements.map(p => editable(p))
 }
+
+/** Takes the boxes from a streamed job and leaves the settings form as the admin has it. */
+function followJob(job: PaintJob) {
+  offset.value = clockOffset(job)
+  const known = new Map(placements.value.map(p => [p.id, p]))
+  placements.value = job.placements.map((p) => {
+    const was = known.get(p.id)
+    return was && p.id === draggingId.value ? was : editable(p, was)
+  })
+}
+
+function replacePlacement(saved: Placement) {
+  placements.value = placements.value.map(p => p.id === saved.id ? editable(saved, p) : p)
+}
+
+let closePaint: (() => void) | null = null
 
 onMounted(async () => {
   applyJob(await loadPaintJob())
   loading.value = false
+  closePaint = openPaintStream(followJob)
 })
 
+onBeforeUnmount(() => closePaint?.())
+
 const boxStyle = (p: Placement) => ({
-  left: `${(p.originX / CANVAS_W) * 100}%`,
-  top: `${(p.originY / CANVAS_H) * 100}%`,
+  left: `${(shownAt(p).x / CANVAS_W) * 100}%`,
+  top: `${(shownAt(p).y / CANVAS_H) * 100}%`,
   width: `${(p.width / CANVAS_W) * 100}%`,
   height: `${(p.height / CANVAS_H) * 100}%`,
 })
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi))
+
+const rounded = (p: Placement): string => {
+  const at = shownAt(p)
+  return `${Math.round(at.x)}, ${Math.round(at.y)}`
+}
 
 const box = (p: Placement): Box => ({originX: p.originX, originY: p.originY, width: p.width, height: p.height})
 
@@ -91,6 +152,10 @@ function beginDrag(p: Editable, mode: "move" | "resize", event: PointerEvent) {
   const el = stage.value
   if (!el) return
   const rect = el.getBoundingClientRect()
+  const at = shownAt(p)
+  p.originX = Math.round(at.x)
+  p.originY = Math.round(at.y)
+  draggingId.value = p.id
   const start = {x: event.clientX, y: event.clientY, originX: p.originX, originY: p.originY, width: p.width, height: p.height}
 
   const move = (e: PointerEvent) => {
@@ -119,7 +184,9 @@ function beginDrag(p: Editable, mode: "move" | "resize", event: PointerEvent) {
     window.removeEventListener("pointermove", move)
     window.removeEventListener("pointerup", up)
     const result = await movePlacement(p.id, box(p))
-    if (!result.ok) message.value = {tone: "danger", text: result.reason}
+    draggingId.value = null
+    if (result.ok) replacePlacement(result.saved)
+    else message.value = {tone: "danger", text: result.reason}
   }
   window.addEventListener("pointermove", move)
   window.addEventListener("pointerup", up)
@@ -187,6 +254,14 @@ async function remove(id: number) {
   placements.value = placements.value.filter(p => p.id !== id)
 }
 
+async function saveMotion(p: Editable) {
+  message.value = null
+  const {mode, vx, vy} = p.draft
+  const result = await setMotion(p.id, {mode, vx: Number(vx), vy: Number(vy)})
+  if (result.ok) replacePlacement(result.saved)
+  else message.value = {tone: "danger", text: result.reason}
+}
+
 async function save() {
   saving.value = true
   message.value = null
@@ -211,7 +286,7 @@ async function save() {
         <p class="head__body">
           Set what the association paints on the SNTPings canvas. Add one or more images, drag and resize each box
           over the 4K canvas, and set the prefix the event announces. The pinger and everyone running the helper
-          follow this.
+          follow this, and a bouncing image moves the same way for all of them.
         </p>
       </header>
 
@@ -253,7 +328,7 @@ async function save() {
             <span
               class="box__coords"
               data-testid="pinger-placement-coords"
-            >{{ p.originX }}, {{ p.originY }} · {{ p.width }}&times;{{ p.height }}</span>
+            >{{ rounded(p) }} · {{ p.width }}&times;{{ p.height }}</span>
             <span
               class="box__handle"
               @pointerdown.stop="beginDrag(p, 'resize', $event)"
@@ -295,7 +370,7 @@ async function save() {
             <span class="plate__facts">
               <span class="plate__fact">
                 <span class="plate__label">Origin</span>
-                <span class="plate__value">{{ p.originX }}, {{ p.originY }}</span>
+                <span class="plate__value">{{ rounded(p) }}</span>
               </span>
               <span class="plate__fact">
                 <span class="plate__label">Size</span>
@@ -324,6 +399,38 @@ async function save() {
                 />
               </svg>
             </icon-button>
+            <div
+              class="plate__motion"
+              data-testid="pinger-motion"
+              @click.stop
+            >
+              <radio-group
+                v-model="p.draft.mode"
+                :name="`pinger-motion-${p.id}`"
+                :options="modeOptions"
+                testid="pinger-motion-mode"
+              />
+              <template v-if="p.draft.mode === 'bounce'">
+                <form-control
+                  v-model="p.draft.vx"
+                  kind="number"
+                  label="Speed X (px/s)"
+                  testid="pinger-motion-vx"
+                />
+                <form-control
+                  v-model="p.draft.vy"
+                  kind="number"
+                  label="Speed Y (px/s)"
+                  testid="pinger-motion-vy"
+                />
+              </template>
+              <cut-button
+                testid="pinger-motion-save"
+                @click="saveMotion(p)"
+              >
+                Save motion
+              </cut-button>
+            </div>
           </li>
           <li
             class="plates__add"
@@ -606,6 +713,15 @@ async function save() {
 
 .plate--selected {
   box-shadow: inset 3px 0 0 var(--color-brand);
+}
+
+.plate__motion {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 1rem;
+  margin-top: 0.6rem;
 }
 
 .plate__thumb {

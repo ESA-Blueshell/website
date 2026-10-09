@@ -55,7 +55,8 @@ export DEPLOY_GTK_VERSION=3
 # distros -- but keep glibc + the GPU/driver stack from the host (see the header).
 keep_from_host='^(ld-linux|ld-musl|libc|libm|libdl|libpthread|librt|libresolv|libnsl|libutil|libBrokenLocale|libanl|libmvec)\.'
 gpu_from_host='^(libEGL|libGLX|libGLdispatch|libGL|libOpenGL|libgbm|libdrm|libglapi|libgallium|libvulkan|libVkLayer|libva|libwayland-egl|libxcb-dri2|libxcb-dri3|libxcb-glx|libxcb-present|libxshmfence|libnvidia|libcuda)'
-ldconfig
+# Resolve system sonames through the existing ld.so cache. Read-only (ldconfig -p), so it works as the
+# unprivileged CI user; a plain `ldconfig` refresh would need root to write /etc/ld.so.cache.
 resolve_soname() { ldconfig -p | awk -v s="$1" '$1==s{print $NF; exit}'; }
 for pass in 1 2 3 4 5 6 7 8; do
   # Bundled libs carry rpath $ORIGIN, so ldd reports their unbundled deps as "<soname> => not found";

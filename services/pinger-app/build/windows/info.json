@@ -1,0 +1,17 @@
+{
+	"fixed": {
+		"file_version": "{{.Info.ProductVersion}}"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "{{.Info.ProductVersion}}",
+			"CompanyName": "{{.Info.CompanyName}}",
+			"FileDescription": "Blueshell Pinger, the ESA Blueshell member app for the SNTPings canvas",
+			"LegalCopyright": "{{.Info.Copyright}}",
+			"ProductName": "{{.Info.ProductName}}",
+			"InternalName": "blueshell-pinger",
+			"OriginalFilename": "Blueshell-Pinger.exe",
+			"Comments": "{{.Info.Comments}}"
+		}
+	}
+}

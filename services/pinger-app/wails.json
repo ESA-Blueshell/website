@@ -5,6 +5,8 @@
   "frontend:dir": "frontend",
   "info": {
     "productName": "Blueshell Pinger",
-    "comments": "Member desktop pinger: sign in, paint the canvas, report status."
+    "comments": "Member desktop pinger: sign in, paint the canvas, report status.",
+    "companyName": "ESA Blueshell",
+    "copyright": "Copyright ESA Blueshell"
   }
 }

@@ -1,3 +1,5 @@
+//go:build !windows
+
 package runner
 
 import (
@@ -19,12 +21,8 @@ func openBrowser(url string) error {
 }
 
 func openCommand(url string) (string, []string) {
-	switch runtime.GOOS {
-	case "darwin":
+	if runtime.GOOS == "darwin" {
 		return "open", []string{url}
-	case "windows":
-		return "rundll32", []string{"url.dll,FileProtocolHandler", url}
-	default:
-		return "xdg-open", []string{url}
 	}
+	return "xdg-open", []string{url}
 }

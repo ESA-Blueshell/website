@@ -1,5 +1,6 @@
 package net.blueshell.api.pinger.web
 
+import net.blueshell.api.pinger.api.PingerRecordKeeper
 import net.blueshell.api.pinger.persistence.PingerContributionRepository
 import net.blueshell.api.pinger.persistence.PingerLiveStore
 import net.blueshell.api.shared.enums.Role
@@ -39,6 +40,9 @@ class PingerReportIT : UserTestSupport() {
 
     @Autowired
     private lateinit var redis: StringRedisTemplate
+
+    @Autowired
+    private lateinit var recordKeeper: PingerRecordKeeper
 
     @Value($$"${pinger.report.service-token}")
     private lateinit var serviceToken: String
@@ -184,5 +188,46 @@ class PingerReportIT : UserTestSupport() {
         val row = contributions.findAll().single { it.identity == "sitecie" }
         assertThat(row.totalSent).isEqualTo(420)
         assertThat(row.memberId).isNull()
+    }
+
+    @Test
+    fun `reports set the member's peak on the fastest board and the keeper sets the combined record`() {
+        val member = createUserWithRole(Role.MEMBER)
+        val bearer = "Bearer ${memberBearer(member)}"
+
+        fun report(
+            deviceId: String,
+            pps: Int,
+        ) = mvc
+            .perform(
+                post("/pinger/report")
+                    .header("Authorization", bearer)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(reportBody(online = true, pps = pps, sent = 100, deviceId = deviceId)),
+            ).andExpect(status().isNoContent)
+
+        report("laptop", pps = 1_500_000)
+        report("phone", pps = 500_000)
+        report("laptop", pps = 1_000)
+        mvc
+            .perform(
+                post("/pinger/report")
+                    .header("X-Pinger-Service-Token", serviceToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(reportBody(online = true, pps = 9_000, sent = 100, deviceId = "replica-a")),
+            ).andExpect(status().isNoContent)
+        recordKeeper.tick()
+
+        mvc
+            .perform(get("/pinger/leaderboard"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.fastest.length()").value(1))
+            .andExpect(jsonPath("$.fastest[0].memberId").value(member.id))
+            .andExpect(jsonPath("$.fastest[0].peakPps").value(2_000_000))
+            .andExpect(jsonPath("$.fastest[0].peakAt").isNotEmpty)
+            .andExpect(jsonPath("$.house.peakPps").value(9_000))
+            .andExpect(jsonPath("$.combinedPps").value(510_000))
+            .andExpect(jsonPath("$.record.pps").value(510_000))
+            .andExpect(jsonPath("$.record.at").isNotEmpty)
     }
 }

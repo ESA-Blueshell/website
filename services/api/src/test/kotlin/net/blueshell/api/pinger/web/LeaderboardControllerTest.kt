@@ -17,7 +17,8 @@ class LeaderboardControllerTest {
     fun `the board maps the composed snapshot`() {
         every { leaderboard.snapshot() } returns Leaderboard(house = null, members = emptyList())
 
-        assertThat(controller.board()).isEqualTo(LeaderboardResponse(house = null, members = emptyList()))
+        assertThat(controller.board())
+            .isEqualTo(LeaderboardResponse(house = null, members = emptyList(), fastest = emptyList(), record = null, combinedPps = 0))
     }
 
     @Test

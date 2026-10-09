@@ -10,6 +10,8 @@ import CutButton from "@/components/island/CutButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import Leaderboard from "@/components/pinger/Leaderboard.vue"
+import FastestBoard from "@/components/pinger/FastestBoard.vue"
+import RecordPlate from "@/components/pinger/RecordPlate.vue"
 import CanvasStage from "@/components/pinger/CanvasStage.vue"
 import PingerProgress from "@/components/pinger/PingerProgress.vue"
 import {
@@ -50,6 +52,9 @@ const downloadUrl = (os: AppOs): string => appDownloadUrl(os)
 const ranked = computed(() => [...snapshot.value.members].sort((a, b) => a.rank - b.rank))
 
 const house = computed(() => snapshot.value.house ?? null)
+
+/** The members by peak rate, so a stream snapshot that reorders them moves the rows. */
+const fastest = computed(() => [...snapshot.value.fastest].sort((a, b) => a.rank - b.rank))
 
 /** The signed-in member's own row, where the board carries one for them. */
 const mine = computed(() => ownStanding(snapshot.value, store.getters.getLogin?.username))
@@ -204,16 +209,42 @@ onBeforeUnmount(() => {
         <band-head
           :count="ranked.length"
           count-said="members on the board"
-          eyebrow="Who is sending the most"
+          eyebrow="Who sends the most and the fastest"
           heading="Leaderboard"
           testid="snt-leaderboard-head"
         />
-        <div class="board-wrap">
-          <leaderboard
-            :house="house"
-            :mine-id="mineId"
-            :rows="ranked"
-          />
+        <record-plate
+          class="record-wrap"
+          :combined-pps="snapshot.combinedPps"
+          :record="snapshot.record"
+        />
+        <div class="boards">
+          <section
+            class="boards__one"
+            data-testid="snt-board-total"
+          >
+            <h3 class="boards__title">
+              Most sent
+            </h3>
+            <leaderboard
+              :house="house"
+              :mine-id="mineId"
+              :rows="ranked"
+            />
+          </section>
+          <section
+            class="boards__one"
+            data-testid="snt-board-fastest"
+          >
+            <h3 class="boards__title">
+              Fastest
+            </h3>
+            <fastest-board
+              :house="house"
+              :mine-id="mineId"
+              :rows="fastest"
+            />
+          </section>
         </div>
       </lead-band>
 
@@ -355,9 +386,35 @@ onBeforeUnmount(() => {
   margin-top: 1.5rem;
 }
 
-
-.board-wrap {
+.record-wrap {
   margin-top: 1.75rem;
+}
+
+/* The total board and the fastest board side by side on a wide screen, stacked on a narrow one. */
+.boards {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 2rem 2.5rem;
+  margin-top: 1.5rem;
+}
+
+.boards__one {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.boards__title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1199px) {
+  .boards {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .member {

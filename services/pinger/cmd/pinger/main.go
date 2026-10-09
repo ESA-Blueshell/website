@@ -64,19 +64,22 @@ func run() error {
 	}
 
 	apiURL := env("PINGER_API_URL", "http://localhost:8080")
+	// The replica id keeps this replica's send counter and paint share apart from the other SiteCie
+	// replicas'; it defaults to the hostname, which is the pod name in the cluster and is stable
+	// across a restart of the same replica. The token is a secret read from the environment; an
+	// empty one leaves the reporter idle and this replica painting every pixel.
+	replicaID := env("PINGER_REPLICA_ID", hostnameOr("sitecie-replica"))
+	serviceToken := os.Getenv("PINGER_REPORT_SERVICE_TOKEN")
+
+	shared := apipaint.NewShareFilter(sender)
 	client := apipaint.NewClient(apiURL)
-	poller = apipaint.NewPoller(client, 2*time.Second, sender, preview.set)
+	poller = apipaint.NewPoller(client, 2*time.Second, shared, preview.set)
 	go poller.Run(ctx)
+	go apipaint.NewShareStream(apiURL, replicaID, apipaint.ServiceToken(serviceToken)).Run(ctx, shared.SetShare)
 	go sender.Run(ctx)
 	go persistStats(ctx, store, sender)
 
-	// Report this painter's contribution as SiteCie. The token is a secret read from the
-	// environment; an empty one leaves the reporter idle rather than talking unauthenticated. The
-	// replica id keeps this replica's send counter apart from the other SiteCie replicas', so the
-	// api aggregates them instead of one clobbering another; it defaults to the hostname, which is
-	// the pod name in the cluster and is stable across a restart of the same replica.
-	replicaID := env("PINGER_REPLICA_ID", hostnameOr("sitecie-replica"))
-	reporter := apipaint.NewReporter(apiURL, os.Getenv("PINGER_REPORT_SERVICE_TOKEN"), replicaID, 10*time.Second, func() apipaint.ReportStats {
+	reporter := apipaint.NewReporter(apiURL, serviceToken, replicaID, 10*time.Second, func() apipaint.ReportStats {
 		s := sender.Snapshot()
 		return apipaint.ReportStats{Online: s.State == paint.Running, PPS: int(s.ActualPPS), Sent: s.Sent, Errors: s.Errors}
 	})

@@ -285,8 +285,11 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 	r.sender.Store(sender)
 	// Placing an image allocates about 50 MB of scratch (decode, scaler buffers) once per paint
-	// change; hand it back to the OS rather than keep it resident for the whole event.
-	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, sender, func(canvas.Placement) { debug.FreeOSMemory() })
+	// change; hand it back to the OS rather than keep it resident for the whole event. Signed out
+	// there is no token, and the share stream paints every pixel.
+	shared := apipaint.NewShareFilter(sender)
+	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, shared, func(canvas.Placement) { debug.FreeOSMemory() })
+	shares := apipaint.NewShareStream(r.base, r.poster.DeviceID, apipaint.Bearer(r.auth.Current))
 
 	var wg sync.WaitGroup
 	if probe, err := headroom.NewTCPProbe(r.base); err == nil {
@@ -295,8 +298,9 @@ func (r *Runner) Run(ctx context.Context) error {
 		r.headroom.SetEnabled(false)
 		slog.Warn("headroom probe", "err", err)
 	}
-	wg.Add(3)
+	wg.Add(4)
 	go func() { defer wg.Done(); poller.Run(ctx) }()
+	go func() { defer wg.Done(); shares.Run(ctx, shared.SetShare) }()
 	go func() { defer wg.Done(); r.reportLoop(ctx, sender) }()
 	go func() { defer wg.Done(); sender.Run(ctx) }()
 	wg.Wait()

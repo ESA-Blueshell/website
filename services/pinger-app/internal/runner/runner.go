@@ -9,12 +9,14 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/ESA-Blueshell/website/services/pinger/apipaint"
+	"github.com/ESA-Blueshell/website/services/pinger/canvas"
 	"github.com/ESA-Blueshell/website/services/pinger/paint"
 
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/auth"
@@ -282,7 +284,9 @@ func (r *Runner) Run(ctx context.Context) error {
 		sender.UseDatagramAddresses()
 	}
 	r.sender.Store(sender)
-	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, sender, nil)
+	// Placing an image allocates about 50 MB of scratch (decode, scaler buffers) once per paint
+	// change; hand it back to the OS rather than keep it resident for the whole event.
+	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, sender, func(canvas.Placement) { debug.FreeOSMemory() })
 
 	var wg sync.WaitGroup
 	if probe, err := headroom.NewTCPProbe(r.base); err == nil {

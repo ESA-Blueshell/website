@@ -40,7 +40,7 @@ const isMember = computed<boolean>(() => store.getters.isMember)
 // The installers are unsigned, so each platform needs its own first-run step to open them.
 const downloads: {os: AppOs, label: string, openStep: string}[] = [
   {os: "macos", label: "macOS", openStep: "Right-click the app and choose Open the first time."},
-  {os: "windows", label: "Windows", openStep: "On the SmartScreen prompt choose More info then Run anyway."},
+  {os: "windows", label: "Windows", openStep: "On the SmartScreen prompt choose More info then Run anyway. If Defender removes it, open Protection history in Windows Security and choose Allow on device."},
   {os: "linux", label: "Linux", openStep: "Run chmod +x on the file then launch it. Needs webkit2gtk-4.1."},
 ]
 

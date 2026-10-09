@@ -131,6 +131,7 @@ describe("SNTPings page", () => {
     const text = wrapper.get("[data-testid=snt-member]").text()
     expect(text).toContain("Right-click the app and choose Open")
     expect(text).toContain("More info then Run anyway")
+    expect(text).toContain("Protection history in Windows Security")
     expect(text).toContain("chmod +x on the file")
   })
 

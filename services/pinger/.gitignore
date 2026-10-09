@@ -1,2 +1,4 @@
 /dist/
 /ping
+# go-winres writes these for the Windows build; build.sh removes them after.
+*.syso

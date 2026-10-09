@@ -85,7 +85,9 @@ jobs:
           go-version-file: services/pinger/go.mod
 
       - name: Cross-compile the helper
-        run: bash services/pinger/cmd/ping/build.sh
+        env:
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+        run: VERSION="${RELEASE_TAG#v}" bash services/pinger/cmd/ping/build.sh
 
       - name: Attach to the release
         env:
@@ -115,10 +117,14 @@ jobs:
             asset: Blueshell-Pinger-x86_64
             # Link against the host's WebKitGTK 4.1 (the current one; 4.0 is end-of-life). Built on the
             # oldest base that ships 4.1, so one glibc covers Ubuntu 22.04+, Debian 12+, Fedora, Arch.
-            buildtags: "-tags webkit2_41"
+            buildflags: "-tags webkit2_41"
           - runner: windows-latest
             platform: windows/amd64
             asset: Blueshell-Pinger.exe
+            # Without WebView2 the app shows an error rather than fetching and running Microsoft's
+            # bootstrapper. Windows 10 and 11 ship WebView2, and a download-and-execute path is what
+            # antivirus machine learning scores as a dropper.
+            buildflags: "-webview2 error"
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     permissions:
@@ -145,10 +151,18 @@ jobs:
       - name: Install the Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
 
+      # The Windows version info and manifest read the version from wails.json.
+      - name: Stamp the release version
+        env:
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          jq --arg v "${RELEASE_TAG#v}" '.info.productVersion = $v' wails.json > wails.json.tmp
+          mv wails.json.tmp wails.json
+
       # Default is unsigned: no signing identity or notarization is passed on any platform. The Linux
       # build also takes the webkit2_41 tag so it links the host's WebKitGTK 4.1.
       - name: Build the app
-        run: wails build -clean -platform ${{ matrix.platform }} ${{ matrix.buildtags }}
+        run: wails build -clean -trimpath -platform ${{ matrix.platform }} ${{ matrix.buildflags }}
 
       # Ad-hoc sign the whole bundle so Apple Silicon will launch it at all: arm64 refuses to run a
       # binary with no signature. This is not a Developer ID signature, so Gatekeeper still asks the

@@ -34,10 +34,10 @@ const paint = {
 }
 
 const board: Leaderboard = {
-  house: {label: "SiteCie", online: true, totalSent: 9000},
+  house: {label: "SiteCie", online: true, totalSent: 9000, pps: 3000},
   members: [
-    {memberId: 1, rank: 1, totalSent: 50, online: true, discordTag: "ace#1", avatarUrl: "https://cdn/ace.png", username: null},
-    {memberId: 2, rank: 2, totalSent: 20, online: false, discordTag: null, avatarUrl: null, username: "robin"},
+    {memberId: 1, rank: 1, totalSent: 50, online: true, pps: 400, discordTag: "ace#1", avatarUrl: "https://cdn/ace.png", username: null},
+    {memberId: 2, rank: 2, totalSent: 20, online: false, pps: 0, discordTag: null, avatarUrl: null, username: "robin"},
   ],
 }
 
@@ -172,6 +172,18 @@ describe("SNTPings page", () => {
     const wrapper = await mount(null)
 
     expect(wrapper.text()).toContain("Painting now")
+  })
+
+  it("reads the rate off the board rather than the growth of the totals", async () => {
+    const wrapper = await mount(null)
+    const pps = () => wrapper.get("[data-testid=snt-progress-pps]").text()
+    expect(pps()).toBe("3,400")
+
+    // A member's report lands a ten-second jump in its total; the rate stays what the board says.
+    streamPush?.({...board, members: [{...board.members[0], totalSent: 4_000_050}, board.members[1]]})
+    await settle()
+
+    expect(pps()).toBe("3,400")
   })
 
   it("sends the hero's watch button to the SNTPings site in a new tab", async () => {

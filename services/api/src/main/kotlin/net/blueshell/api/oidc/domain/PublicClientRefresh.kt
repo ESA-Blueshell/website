@@ -21,6 +21,7 @@ import java.time.Clock
 import java.util.Base64
 
 private const val REFRESH_TOKEN_KEY_BYTES = 96
+private const val TOKEN_ENDPOINT = "/oauth2/token"
 
 /**
  * Lets a public client that holds the refresh grant (`pinger-app`) refresh with its `client_id`
@@ -33,6 +34,9 @@ private const val REFRESH_TOKEN_KEY_BYTES = 96
 internal class PublicClientRefreshConverter : AuthenticationConverter {
     override fun convert(request: HttpServletRequest): Authentication? {
         if (request.method != "POST") return null
+        // Client authentication also guards introspection and revocation; a client_id alone must
+        // never authenticate there, so this answers only on the token endpoint.
+        if (!request.requestURI.endsWith(TOKEN_ENDPOINT)) return null
         if (request.getParameter(OAuth2ParameterNames.GRANT_TYPE) != AuthorizationGrantType.REFRESH_TOKEN.value) return null
         if (request.getHeader(HttpHeaders.AUTHORIZATION) != null) return null
         if (request.getParameter(OAuth2ParameterNames.CLIENT_SECRET) != null) return null

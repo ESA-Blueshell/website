@@ -10,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Duration
 
-/** Just above the app's own top rate (a 1 Gbit/s uplink of echo requests); a report above it is refused. */
-const val MAX_REPORT_PPS = 2_500_000L
+/** A 10 Gbit/s uplink of echo requests, far past any member's link; a report above it is refused. */
+const val MAX_REPORT_PPS = 25_000_000L
 
 /**
  * Ingests a pinger's status report: it accrues the identity's durable, monotonic tally and refreshes
@@ -61,10 +61,8 @@ class PingerReportService(
         // Clamp one report's contribution to what a sender at the capped rate could reach since the
         // device last reported, so a client cannot leap the board with a counter no real run could
         // produce, while reports a stalled uplink held back still count once they get through.
-        val window =
-            existing?.let { Duration.between(it.updated, now).seconds.coerceIn(MIN_WINDOW_SECONDS, MAX_WINDOW_SECONDS) }
-                ?: MIN_WINDOW_SECONDS
-        val delta = minOf(raw, MAX_REPORT_PPS * window)
+        val window = existing?.let { Duration.between(it.updated, now).seconds }?.coerceAtLeast(MIN_WINDOW_SECONDS)
+        val delta = minOf(raw, MAX_REPORT_PPS * (window ?: MIN_WINDOW_SECONDS))
         contribution.totalSent += delta
         contribution.updated = now
         session.lastSessionSent = sent
@@ -79,12 +77,8 @@ class PingerReportService(
         // own oldest rather than growing the table without bound.
         const val MAX_DEVICES_PER_IDENTITY = 10L
 
-        // A report covers at least two report intervals, so a first report or two close together are
-        // not clamped below what a real sender produced between them.
-        const val MIN_WINDOW_SECONDS = 20L
-
-        // A report covers at most this long: enough to recover reports a stalled uplink held back,
-        // while a device that went quiet cannot bank hours of sends into one report.
-        const val MAX_WINDOW_SECONDS = 600L
+        // A report covers at least this long, so a first report or two close together are not
+        // clamped below what a real sender produced between them.
+        const val MIN_WINDOW_SECONDS = 60L
     }
 }

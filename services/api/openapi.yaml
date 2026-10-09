@@ -4281,7 +4281,7 @@ components:
         pps:
           description: The current send rate in pings per second
           format: int32
-          maximum: 2500000
+          maximum: 25000000
           minimum: 0
           type: integer
         sent:

@@ -4052,6 +4052,25 @@ components:
       - userId
       - version
       type: object
+    MotionResponse:
+      description: 'A placement''s motion: static, or bouncing off the canvas edges at (vx, vy) px/s'
+      properties:
+        mode:
+          enum:
+          - static
+          - bounce
+          type: string
+        vx:
+          format: double
+          type: number
+        vy:
+          format: double
+          type: number
+      required:
+      - mode
+      - vx
+      - vy
+      type: object
     MoveTargetRequest:
       description: Where to file a target.
       properties:
@@ -4136,12 +4155,17 @@ components:
         ratePps:
           format: int32
           type: integer
+        serverTime:
+          description: The api's clock when this was built; place moving boxes against it, not the local clock
+          format: date-time
+          type: string
         siteCieEnabled:
           description: Whether the always-on SiteCie painter contributes; ratePps is its rate
           type: boolean
       required:
       - placements
       - ratePps
+      - serverTime
       - siteCieEnabled
       type: object
     PaintSettingsRequest:
@@ -4326,6 +4350,31 @@ components:
       - originY
       - width
       type: object
+    PlacementMotionRequest:
+      description: An admin setting a placement's motion
+      properties:
+        mode:
+          enum:
+          - static
+          - bounce
+          type: string
+        vx:
+          description: Horizontal speed in px/s, negative is leftwards
+          format: double
+          maximum: 2000
+          minimum: -2000
+          type: number
+        vy:
+          description: Vertical speed in px/s, negative is upwards
+          format: double
+          maximum: 2000
+          minimum: -2000
+          type: number
+      required:
+      - mode
+      - vx
+      - vy
+      type: object
     PlacementRequest:
       description: An admin adding an image to the canvas in its own box
       properties:
@@ -4361,7 +4410,7 @@ components:
       - width
       type: object
     PlacementResponse:
-      description: One image on the canvas and the box it lands in
+      description: One image on the canvas and the box it lands in at motionEpoch
       properties:
         height:
           format: int32
@@ -4370,6 +4419,13 @@ components:
           format: int64
           type: integer
         imageUrl:
+          type: string
+        motion:
+          $ref: '#/components/schemas/MotionResponse'
+          description: 'How the box moves from its origin. x(s) = reflect(originX + vx*s, 3840 - width), y(s) = reflect(originY + vy*s, 2160 - height), s seconds since motionEpoch; reflect(p, L) = 0 if L <= 0, else m = ((p mod 2L) + 2L) mod 2L, m <= L ? m : 2L - m'
+        motionEpoch:
+          description: When the box stood at its origin and the motion started
+          format: date-time
           type: string
         originX:
           format: int32
@@ -4384,6 +4440,8 @@ components:
       - height
       - id
       - imageUrl
+      - motion
+      - motionEpoch
       - originX
       - originY
       - width
@@ -24345,6 +24403,221 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaintResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Pinger
+  /pinger/paint/stream:
+    get:
+      operationId: paintStream
+      responses:
+        '200':
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/PaintResponse'
+          description: The whole paint job as each event's data, on connect and on every change, with a comment every 15 s
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Pinger
+  /pinger/placements/{id}/motion:
+    put:
+      operationId: setPlacementMotion
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlacementMotionRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlacementResponse'
           description: OK
         '400':
           content:

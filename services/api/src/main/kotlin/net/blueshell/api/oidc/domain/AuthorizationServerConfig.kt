@@ -23,6 +23,7 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.JwtGenerator
 import org.springframework.security.oauth2.server.authorization.token.OAuth2AccessTokenGenerator
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.context.SecurityContextHolderFilter
@@ -49,12 +50,17 @@ class AuthorizationServerConfig {
 
         authServerConfigurer
             .oidc(Customizer.withDefaults())
-            .tokenGenerator(DelegatingOAuth2TokenGenerator(jwtGenerator, OAuth2AccessTokenGenerator(), RefreshTokenGenerator()))
             .clientAuthentication {
                 it.authenticationConverter(PublicClientRefreshConverter())
                 it.authenticationProvider(PublicClientRefreshProvider(registeredClients))
             }
 
+        // The configurer's own tokenGenerator() needs it attached to http first; the shared object is
+        // what it sets, and the configurer reads it when it builds.
+        http.setSharedObject(
+            OAuth2TokenGenerator::class.java,
+            DelegatingOAuth2TokenGenerator(jwtGenerator, OAuth2AccessTokenGenerator(), RefreshTokenGenerator()),
+        )
         http
             .securityMatcher(authServerConfigurer.endpointsMatcher)
             .with(authServerConfigurer) {}

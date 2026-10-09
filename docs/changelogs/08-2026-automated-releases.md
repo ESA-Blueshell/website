@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.20.1](https://github.com/ESA-Blueshell/website/compare/v1.20.0...v1.20.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **api:** tell each pinger its rate-weighted slice of the paint ([#2345](https://github.com/ESA-Blueshell/website/issues/2345)) ([60a0a89](https://github.com/ESA-Blueshell/website/commit/60a0a89fc8a4f0a94c1ca08c1745e14b047a254c))
+* **frontend:** SNTPings page shows the live canvas ([#2339](https://github.com/ESA-Blueshell/website/issues/2339)) ([007531c](https://github.com/ESA-Blueshell/website/commit/007531c9f000bc5bfc89eb2df889a392bd04b025))
+* **pinger:** event bundle — shares, fastest board, live paint stream, motion ([#2350](https://github.com/ESA-Blueshell/website/issues/2350)) ([d2a5f14](https://github.com/ESA-Blueshell/website/commit/d2a5f146d22871bb08e5ec0a6d1f34d5049330e6))
+* **pinger:** faster, lighter senders and rate-weighted shares ([#2343](https://github.com/ESA-Blueshell/website/issues/2343)) ([326f260](https://github.com/ESA-Blueshell/website/commit/326f260f4211499a1d290c36cd17a7e0acac0b73))
+
 ## [1.20.0](https://github.com/ESA-Blueshell/website/compare/v1.19.0...v1.20.0) (2026-10-09)
 
 

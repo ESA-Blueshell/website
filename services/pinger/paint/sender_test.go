@@ -2,6 +2,7 @@ package paint
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/netip"
 	"sync"
@@ -337,5 +338,27 @@ func TestSenderSkipsOnlyTheMessageABatchFailedOn(t *testing.T) {
 	}
 	if got := uint64(len(conn.addresses())); got < snap.Sent {
 		t.Fatalf("counted %d sent, but only %d left the socket", snap.Sent, got)
+	}
+}
+
+// refusingBatch fails its first message the way sendmmsg does when the kernel refuses it outright:
+// -1 and the error, which x/net passes on unchanged.
+type refusingBatch struct{ calls int }
+
+func (c *refusingBatch) WriteBatch(ms []ipv6.Message, _ int) (int, error) {
+	c.calls++
+	if c.calls == 1 {
+		return -1, syscall.EPERM
+	}
+	return len(ms), nil
+}
+
+func TestWriteBatchSkipsAMessageTheKernelRefusedOutright(t *testing.T) {
+	msgs := make([]ipv6.Message, 4)
+
+	sent, err := writeBatch(&refusingBatch{}, msgs, nil)
+
+	if sent != 3 || !errors.Is(err, syscall.EPERM) {
+		t.Fatalf("sent %d with %v, want 3 with EPERM", sent, err)
 	}
 }

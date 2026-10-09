@@ -21,6 +21,7 @@ import (
 
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/auth"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/config"
+	"github.com/ESA-Blueshell/website/services/pinger-app/internal/headroom"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/leaderboard"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/oauth"
 	"github.com/ESA-Blueshell/website/services/pinger-app/internal/prefs"
@@ -46,6 +47,11 @@ type Status struct {
 	Message string `json:"message"`
 	// Rate is this app's chosen send rate in pps, so the UI shows the target next to the live pps.
 	Rate int `json:"rate"`
+	// HeldAt is the rate the sender is held to so the member's connection stays usable, or zero
+	// when it sends at Rate.
+	HeldAt int `json:"heldAt"`
+	// FullUplink is the member's choice to let the pings fill the whole uplink.
+	FullUplink bool `json:"fullUplink"`
 	// The paint window in unix milliseconds, for the UI's countdown. Zero start = always open.
 	EventStart int64 `json:"eventStart"`
 	EventEnd   int64 `json:"eventEnd"`
@@ -70,6 +76,8 @@ type Runner struct {
 	// rate is this app's own send rate in pps, clamped to the server range. It overrides the paint
 	// job's rate so the member sets how hard their own machine pings, independent of SiteCie's.
 	rate atomic.Int64
+	// headroom lowers rate while the pings queue up the member's uplink; it never raises it.
+	headroom *headroom.Controller
 }
 
 // New builds a runner for a base URL, loading the token store and local preferences and wiring the
@@ -109,8 +117,11 @@ func New(base string) (*Runner, error) {
 		board:          leaderboard.NewClient(base, authn),
 		window:         window,
 		leaderboardURL: strings.TrimSuffix(base, "/api") + "/sntpings",
+		headroom:       headroom.New(),
 	}
-	r.rate.Store(int64(prefStore.Load().RatePPS))
+	saved := prefStore.Load()
+	r.rate.Store(int64(saved.RatePPS))
+	r.headroom.SetEnabled(!saved.FullUplink)
 	r.setMessage("starting")
 	return r, nil
 }
@@ -118,6 +129,7 @@ func New(base string) (*Runner, error) {
 // Status is a safe snapshot for the UI.
 func (r *Runner) Status() Status {
 	st := Status{SignedIn: r.signedIn.Load(), Account: r.loadAccount(), Message: r.loadMessage(), Rate: int(r.rate.Load())}
+	st.FullUplink = !r.headroom.Enabled()
 	if !r.window.Start.IsZero() {
 		st.EventStart = r.window.Start.UnixMilli()
 	}
@@ -128,6 +140,9 @@ func (r *Runner) Status() Status {
 		st.PPS = snap.ActualPPS
 		st.Sent = snap.Sent
 		st.Errors = snap.Errors
+		if snap.State == paint.Running {
+			st.HeldAt = r.headroom.Held(st.Rate)
+		}
 	}
 	return st
 }
@@ -162,10 +177,23 @@ func (r *Runner) OpenLeaderboard() error {
 func (r *Runner) Rate() int { return int(r.rate.Load()) }
 
 // applyRate keeps the api's prefix and box but sets the rate from this app's own choice, so the
-// member paints the right place at a rate they control rather than SiteCie's cluster rate.
+// member paints the right place at a rate they control rather than SiteCie's cluster rate. The
+// headroom ceiling may hold that choice lower, never higher.
 func (r *Runner) applyRate(cur paint.Settings) paint.Settings {
-	cur.RatePPS = int(r.rate.Load())
+	cur.RatePPS = r.headroom.Limit(int(r.rate.Load()))
 	return cur
+}
+
+// SetFullUplink lets the pings fill the whole uplink, or holds them back so the member's other
+// traffic keeps flowing, and persists the choice. It returns the choice that took effect.
+func (r *Runner) SetFullUplink(on bool) bool {
+	r.headroom.SetEnabled(!on)
+	saved := r.prefs.Load()
+	saved.FullUplink = on
+	if err := r.prefs.Save(saved); err != nil {
+		slog.Warn("save full uplink", "err", err)
+	}
+	return on
 }
 
 // SetRate sets this app's send rate, clamps it to the server's valid range, persists it so a
@@ -210,6 +238,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		return err
 	}
 	defer conn.Close()
+	markLowPriority(conn)
 
 	// Drain the socket: every ping can draw a reply or an error message back, and against a contained
 	// local test target (a route to loopback) they arrive for every packet. If nothing reads them the
@@ -233,12 +262,24 @@ func (r *Runner) Run(ctx context.Context) error {
 	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, sender, nil)
 
 	var wg sync.WaitGroup
+	if probe, err := headroom.NewTCPProbe(r.base); err == nil {
+		wg.Go(func() { r.headroom.Run(ctx, probe.RTT, func() headroom.Load { return r.load(sender) }) })
+	} else {
+		r.headroom.SetEnabled(false)
+		slog.Warn("headroom probe", "err", err)
+	}
 	wg.Add(3)
 	go func() { defer wg.Done(); poller.Run(ctx) }()
 	go func() { defer wg.Done(); r.reportLoop(ctx, sender) }()
 	go func() { defer wg.Done(); sender.Run(ctx) }()
 	wg.Wait()
 	return ctx.Err()
+}
+
+// load is what the headroom controller needs from the sender for one step.
+func (r *Runner) load(sender *paint.Sender) headroom.Load {
+	snap := sender.Snapshot()
+	return headroom.Load{Running: snap.State == paint.Running, ActualPPS: snap.ActualPPS, Want: int(r.rate.Load())}
 }
 
 // reportLoop posts the member's status every reportInterval. A refusal renews the token and keeps

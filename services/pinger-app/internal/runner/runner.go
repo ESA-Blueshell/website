@@ -235,7 +235,6 @@ func (r *Runner) Run(ctx context.Context) error {
 		return err
 	}
 	defer conn.Close()
-	markLowPriority(conn)
 
 	// Drain the socket: every ping can draw a reply or an error message back, and against a contained
 	// local test target (a route to loopback) they arrive for every packet. If nothing reads them the

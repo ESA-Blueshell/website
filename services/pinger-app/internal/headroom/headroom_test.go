@@ -208,3 +208,19 @@ func TestRunProbesUntilCancelled(t *testing.T) {
 		t.Errorf("base buckets = %d, want the first probe recorded", len(c.base))
 	}
 }
+
+// macOS stalls its whole stack for about a second now and then while pinging; a stall that clears
+// on the next probe is not a standing queue, so it must not cut the rate.
+func TestOneStallDoesNotCut(t *testing.T) {
+	c := New()
+	load := Load{Running: true, ActualPPS: startPPS, Want: 100_000}
+	now := t0
+	for _, rtt := range []time.Duration{8, 9, 1455, 112, 10} {
+		now = now.Add(Interval)
+		before := c.Limit(100_000)
+		c.Observe(now, rtt*time.Millisecond, nil, load)
+		if got := c.Limit(100_000); got < before {
+			t.Fatalf("Limit fell from %d to %d after a %vms probe", before, got, int(rtt))
+		}
+	}
+}

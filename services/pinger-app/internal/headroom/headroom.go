@@ -27,7 +27,7 @@ const (
 	target = 60 * time.Millisecond
 	// window is how many recent probes the delay is the minimum of, so one slow handshake on a
 	// noisy Wi-Fi link does not count as a queue.
-	window = 2
+	window = 3
 	// A queue is judged once per cooldown, which outlasts the window. It is cut again only when it
 	// has not shrunk by draining since the last judgement: a queue already draining needs no
 	// deeper cut, and cutting it anyway lands the rate far below what the link carries.

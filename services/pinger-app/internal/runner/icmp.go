@@ -42,10 +42,16 @@ func openICMP() (socket, bool, error) {
 }
 
 // listen opens a FreshSocket on macOS, where a long-lived socket that reaches many destinations
-// wedges, and a plain socket elsewhere.
+// wedges, and a plain socket elsewhere. Every socket, each replacement included, is marked low
+// priority.
 func listen(network string) (socket, error) {
 	if runtime.GOOS == "darwin" {
-		return paint.ListenFresh(network, nil)
+		return paint.ListenFresh(network, markLowPriority)
 	}
-	return icmp.ListenPacket(network, "::")
+	c, err := icmp.ListenPacket(network, "::")
+	if err != nil {
+		return nil, err
+	}
+	markLowPriority(c)
+	return c, nil
 }

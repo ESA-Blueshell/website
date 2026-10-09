@@ -295,14 +295,15 @@ func probe(dst net.IP, network string, prepare func(*icmp.PacketConn)) error {
 	return err
 }
 
-// openBPF opens the first free /dev/bpfN for writing; macOS has no cloning /dev/bpf.
+// openBPF opens the first free /dev/bpfN for writing; macOS has no cloning /dev/bpf, and creates
+// the next node only when the last one is opened.
 func openBPF() (int, error) {
 	for i := range 256 {
 		fd, err := unix.Open(fmt.Sprintf("/dev/bpf%d", i), unix.O_RDWR|unix.O_CLOEXEC, 0)
 		if err == nil {
 			return fd, nil
 		}
-		if !errors.Is(err, unix.EBUSY) {
+		if !errors.Is(err, unix.EBUSY) && !errors.Is(err, unix.ENOENT) {
 			return -1, err
 		}
 	}

@@ -44,14 +44,14 @@ func run() error {
 	defer store.Close()
 
 	dryRun := os.Getenv("PINGER_DRY_RUN") != ""
-	conn, window, err := openSocket(dryRun)
+	conns, window, err := openSocket(dryRun)
 	if err != nil {
 		return err
 	}
 
 	preview := &previewHolder{}
 	var poller *apipaint.Poller
-	sender := paint.NewSender(conn, nil, window, func() paint.Settings {
+	sender := paint.NewSender(conns, nil, window, func() paint.Settings {
 		if poller == nil {
 			return paint.Settings{}
 		}
@@ -130,16 +130,16 @@ func (h *previewHolder) set(placed canvas.Placement) {
 
 // openSocket opens the raw ICMPv6 socket, which needs NET_RAW. A dry run swaps in a socket that
 // sends nothing and opens the window, so the page can be tried before the event.
-func openSocket(dryRun bool) (paint.Conn, paint.Window, error) {
+func openSocket(dryRun bool) ([]paint.Conn, paint.Window, error) {
 	if dryRun {
 		slog.Warn("dry run: nothing leaves this host")
-		return discard{}, paint.Window{Start: time.Time{}, End: time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
+		return []paint.Conn{discard{}}, paint.Window{Start: time.Time{}, End: time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
 	}
-	conn, err := icmp.ListenPacket("ip6:ipv6-icmp", "::")
+	socks, err := paint.OpenSockets(func() (*icmp.PacketConn, error) { return icmp.ListenPacket("ip6:ipv6-icmp", "::") })
 	if err != nil {
 		return nil, paint.Window{}, err
 	}
-	return conn, paint.EventWindow(), nil
+	return paint.Conns(socks), paint.EventWindow(), nil
 }
 
 // persistStats writes the running totals to Valkey every few seconds and once more on the way

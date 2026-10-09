@@ -66,7 +66,7 @@ func pixels(n int) []canvas.Pixel {
 
 func start(t *testing.T, conn Conn, px []canvas.Pixel, w Window, box *settingsBox) *Sender {
 	t.Helper()
-	s := NewSender(conn, px, w, box.get)
+	s := NewSender([]Conn{conn}, px, w, box.get)
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() { s.Run(ctx); close(done) }()
@@ -221,4 +221,46 @@ func TestSenderReportsABrokenPathAndRecovers(t *testing.T) {
 
 	conn.fails.Store(0)
 	eventually(t, func() bool { return !s.Snapshot().Failing })
+}
+
+// exclusiveConn fails the test if two sends overlap on it, the way a real socket serialises them.
+type exclusiveConn struct {
+	t        *testing.T
+	inFlight atomic.Int32
+	sent     atomic.Int64
+}
+
+func (c *exclusiveConn) WriteTo(b []byte, _ net.Addr) (int, error) {
+	if c.inFlight.Add(1) > 1 {
+		c.t.Error("two workers wrote to one socket at once")
+	}
+	time.Sleep(50 * time.Microsecond)
+	c.inFlight.Add(-1)
+	c.sent.Add(1)
+	return len(b), nil
+}
+
+func TestSenderGivesEachWorkerItsOwnSocket(t *testing.T) {
+	conns := make([]*exclusiveConn, Workers())
+	asConns := make([]Conn, len(conns))
+	for i := range conns {
+		conns[i] = &exclusiveConn{t: t}
+		asConns[i] = conns[i]
+	}
+	box := &settingsBox{}
+	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: 1_000_000, Enabled: true})
+	s := NewSender(asConns, pixels(50_000), open, box.get)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { s.Run(ctx); close(done) }()
+	t.Cleanup(func() { cancel(); <-done })
+
+	eventually(t, func() bool {
+		for _, c := range conns {
+			if c.sent.Load() == 0 {
+				return false
+			}
+		}
+		return true
+	})
 }

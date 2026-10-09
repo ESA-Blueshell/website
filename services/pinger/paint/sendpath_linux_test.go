@@ -66,7 +66,7 @@ func TestSendPathSustains(t *testing.T) {
 	}
 	window := paint.Window{Start: time.Time{}, End: time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)}
 	settings := func() paint.Settings { return paint.Settings{Prefix: prefix, RatePPS: 100_000, Enabled: true} }
-	sender := paint.NewSender(conn, pixels, window, settings)
+	sender := paint.NewSender([]paint.Conn{conn}, pixels, window, settings)
 	sender.UseDatagramAddresses()
 	go sender.Run(ctx)
 

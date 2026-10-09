@@ -229,18 +229,20 @@ func (r *Runner) Run(ctx context.Context) error {
 		r.signedIn.Store(true)
 	}
 
-	conn, datagram, err := openICMP()
+	socks, datagram, err := openICMP()
 	if err != nil {
 		r.setMessage("cannot open socket: " + err.Error())
 		return err
 	}
-	defer conn.Close()
+	defer paint.CloseSockets(socks)
 
 	// Drain the socket: every ping can draw a reply or an error message back, and against a contained
 	// local test target (a route to loopback) they arrive for every packet. If nothing reads them the
 	// receive buffer fills and the next WriteTo blocks, which freezes the sender. A reader discards
 	// them continuously. Harmless in production, where few of the real addresses ever answer.
-	go drainSocket(ctx, conn)
+	for _, c := range socks {
+		go drainSocket(ctx, c)
+	}
 
 	var poller *apipaint.Poller
 	settings := func() paint.Settings {
@@ -250,7 +252,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		}
 		return r.applyRate(cur)
 	}
-	sender := paint.NewSender(conn, nil, r.window, settings)
+	sender := paint.NewSender(paint.Conns(socks), nil, r.window, settings)
 	if datagram {
 		sender.UseDatagramAddresses()
 	}

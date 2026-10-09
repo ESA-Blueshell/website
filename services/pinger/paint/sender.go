@@ -23,6 +23,11 @@ type Conn interface {
 	WriteTo(b []byte, dst net.Addr) (int, error)
 }
 
+// Workers is how many goroutines send at once, and so how many sockets a caller opens: one socket
+// carries one send at a time (Go's write lock and the kernel's socket lock both serialise it), so
+// workers sharing a socket queue behind each other instead of adding rate.
+func Workers() int { return max(2, runtime.NumCPU()) }
+
 // MaxRatePPS caps the rate however it is set: the event bans prefixes that ping excessively hard.
 const MaxRatePPS = 200_000
 
@@ -80,7 +85,7 @@ const (
 // Sender repaints the logo pass after pass, each pass in a fresh shuffled order so the logo
 // fills in evenly instead of as a scanline others can race.
 type Sender struct {
-	conn     Conn
+	conns    []Conn
 	target   atomic.Pointer[target]
 	window   Window
 	settings func() Settings
@@ -126,13 +131,15 @@ func echoRequest() []byte {
 // packet rather than a hand-copied constant.
 func EchoRequestSize() int { return len(echoRequest()) }
 
-func NewSender(conn Conn, pixels []canvas.Pixel, window Window, settings func() Settings) *Sender {
+// NewSender sends through conns, worker i on conns[i % len(conns)]; pass Workers() sockets so no
+// two workers share one.
+func NewSender(conns []Conn, pixels []canvas.Pixel, window Window, settings func() Settings) *Sender {
 	s := &Sender{
-		conn:     conn,
+		conns:    conns,
 		window:   window,
 		settings: settings,
 		now:      time.Now,
-		workers:  max(2, runtime.NumCPU()),
+		workers:  Workers(),
 		echo:     echoRequest(),
 		limiter:  rate.NewLimiter(1, batch),
 	}
@@ -250,7 +257,8 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 	s.passDone.Store(0)
 
 	var wg sync.WaitGroup
-	for range s.workers {
+	for w := range s.workers {
+		conn := s.conns[w%len(s.conns)]
 		wg.Go(func() {
 			var backoff Backoff
 			for {
@@ -272,21 +280,22 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 				if s.limiter.WaitN(ctx, to-from) != nil {
 					return
 				}
-				failed := false
+				// The shared counters move once per batch: per packet, every worker contends on
+				// the same cache lines at millions of sends a second.
+				sent, trailing := 0, 0
 				for _, i := range order[from:to] {
-					if _, err := s.conn.WriteTo(s.echo, dests[i]); err != nil {
+					if _, err := conn.WriteTo(s.echo, dests[i]); err != nil {
 						s.recordError(err)
-						failed = true
+						trailing++
 						continue
 					}
-					backoff.Reset()
-					s.consec.Store(0)
-					s.sent.Add(1)
-					s.passDone.Add(1)
+					sent++
+					trailing = 0
 				}
+				s.settle(&backoff, sent, trailing)
 				// One backoff per batch that lost a send, not one per lost packet: a broken path
 				// must not crawl at a packet a second. The next pass retries the pixels it missed.
-				if failed {
+				if sent < to-from {
 					select {
 					case <-ctx.Done():
 						return
@@ -300,9 +309,20 @@ func (s *Sender) pass(ctx context.Context, p canvas.Prefix, dests []net.Addr, ge
 	return !aborted.Load() && ctx.Err() == nil
 }
 
+// settle books a batch: sent made it out, and trailing failed after the last one that did.
+func (s *Sender) settle(backoff *Backoff, sent, trailing int) {
+	if sent > 0 {
+		backoff.Reset()
+		s.consec.Store(int64(trailing))
+		s.sent.Add(uint64(sent))
+		s.passDone.Add(int64(sent))
+	} else {
+		s.consec.Add(int64(trailing))
+	}
+}
+
 func (s *Sender) recordError(err error) {
 	s.errors.Add(1)
-	s.consec.Add(1)
 	s.errMu.Lock()
 	s.lastErr, s.lastErrAt = err.Error(), s.now()
 	s.errMu.Unlock()

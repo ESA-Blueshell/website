@@ -15,7 +15,8 @@ follows whatever the board set.
 Download the file for your system and run it:
 
 ```
-# macOS (runs without extra rights)
+# macOS (runs without extra rights; with sudo it writes frames itself, past a network filter
+# such as Microsoft Defender's, which otherwise holds it to a few thousand pings a second)
 ./blueshell-pinger-macos-apple
 
 # Linux: fastest given the raw-network right once, which lets it send whole frames itself:

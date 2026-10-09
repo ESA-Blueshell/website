@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-func TestChunkSizeCoversTenMillisecondsWithinBounds(t *testing.T) {
+func TestChunkSizeCoversTwentyMillisecondsWithinBounds(t *testing.T) {
 	for _, c := range []struct {
 		share float64
 		want  int
-	}{{10, 1}, {6_250, 62}, {1_000_000, chunkMax}} {
+	}{{10, 1}, {6_250, 125}, {1_000_000, chunkMax}} {
 		if got := chunkSize(c.share); got != c.want {
 			t.Fatalf("chunkSize(%v) = %d, want %d", c.share, got, c.want)
 		}

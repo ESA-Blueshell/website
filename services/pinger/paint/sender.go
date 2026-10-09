@@ -84,8 +84,8 @@ const (
 	rateWindow = 40
 	// chunkSpan is how much of a worker's share of the rate it sends between two sleeps, capped
 	// at chunkMax packets: a sleep and wake per few packets costs more CPU than the sends.
-	chunkSpan = 10 * time.Millisecond
-	chunkMax  = 512
+	chunkSpan = 20 * time.Millisecond
+	chunkMax  = 1024
 	// paceSlack is how far a worker may fall behind its schedule and still catch up, so a sleep
 	// that overshoots does not cost rate. It also bounds the burst after an idle spell.
 	paceSlack = 2 * time.Millisecond

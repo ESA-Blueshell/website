@@ -151,7 +151,7 @@ class PingerReportServiceTest {
     fun `one report cannot move the total by more than the rate cap over a minute`() {
         service.report(member, "laptop", online = true, pps = 1, sent = 2_000_000_000)
 
-        assertThat(totalFor(member)).isEqualTo(MAX_REPORT_PPS * 60)
+        assertThat(totalFor(member)).isEqualTo(MAX_REPORT_PPS * 20)
     }
 
     @Test
@@ -163,6 +163,16 @@ class PingerReportServiceTest {
         service.report(member, "laptop", online = true, pps = 1, sent = fiveMinutesAtTheCap)
 
         assertThat(totalFor(member)).isEqualTo(fiveMinutesAtTheCap)
+    }
+
+    @Test
+    fun `a device that went quiet for hours cannot bank them into one report`() {
+        deviceRows[member.key to "laptop"] =
+            PingerDeviceSession(identity = member.key, deviceId = "laptop", updated = now.minusSeconds(6 * 3600))
+
+        service.report(member, "laptop", online = true, pps = 1, sent = MAX_REPORT_PPS * 6 * 3600)
+
+        assertThat(totalFor(member)).isEqualTo(MAX_REPORT_PPS * 600)
     }
 
     @Test

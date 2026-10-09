@@ -47,3 +47,12 @@ func TestScalerHoldsWhileNotSaturated(t *testing.T) {
 		t.Fatalf("got %d workers, want 1", got)
 	}
 }
+
+func TestScalerBacksOffADoublingThatAddedLittle(t *testing.T) {
+	c := newScaler(2)
+	now := time.Unix(0, 0)
+	c.step(now, 2_092, 1, 100_000)
+	if got := c.step(now, 2_499, 2, 100_000); got != 1 {
+		t.Fatalf("got %d workers, want 1 for a fifth more rate", got)
+	}
+}

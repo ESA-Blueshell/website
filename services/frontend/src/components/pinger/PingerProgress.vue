@@ -110,115 +110,117 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="progress">
-    <div class="numbers">
-      <div class="numbers__cell">
-        <p
-          class="numbers__value"
-          data-testid="snt-progress-pps"
-        >
-          {{ thousands(running ? pps : 0) }}
-        </p>
-        <p class="numbers__label">
-          Packets per second
-        </p>
-      </div>
-      <div class="numbers__cell">
-        <p class="numbers__value">
-          {{ compact(liveSent) }}
-        </p>
-        <p class="numbers__label">
-          Pixels sent
-        </p>
-      </div>
-      <div class="numbers__cell">
-        <p class="numbers__value">
-          {{ compact(passes) }}
-        </p>
-        <p class="numbers__label">
-          Passes over the logo
-        </p>
-      </div>
-    </div>
-
-    <div class="meter">
-      <div class="meter__head">
-        <span class="meter__label">This pass</span>
-        <b class="meter__pct">{{ Math.round(passPercent) }}%</b>
-      </div>
-      <div
-        aria-label="This pass"
-        aria-valuemax="100"
-        aria-valuemin="0"
-        :aria-valuenow="Math.round(passPercent)"
-        class="meter__cut"
-        role="progressbar"
-      >
-        <span
-          class="meter__fill"
-          :style="{width: `${passPercent}%`}"
-        />
-      </div>
-      <p class="meter__eta">
-        <b>{{ eta }}</b>
-      </p>
-    </div>
-
-    <div class="rate">
-      <div class="rate__head">
-        <p class="rate__eyebrow">
-          Rate · the last {{ WINDOW_SECONDS }} seconds
-        </p>
-        <p class="rate__legend">
-          <i />Now {{ thousands(running ? pps : 0) }}/s
-        </p>
-      </div>
-      <div class="rate__chart">
-        <div class="rate__yaxis">
-          <span>{{ thousands(rateCeil) }}</span>
-          <span>0</span>
-        </div>
-        <div class="rate__plot">
-          <svg
-            aria-hidden="true"
-            class="rate__line"
-            preserveAspectRatio="none"
-            viewBox="0 0 100 100"
+    <div class="progress__body">
+      <div class="numbers">
+        <div class="numbers__cell">
+          <p
+            class="numbers__value"
+            data-testid="snt-progress-pps"
           >
-            <defs>
-              <linearGradient
-                id="snt-rate-fill"
-                x1="0"
-                x2="0"
-                y1="0"
-                y2="1"
-              >
-                <stop
-                  class="rate__fill-top"
-                  offset="0"
-                />
-                <stop
-                  class="rate__fill-bottom"
-                  offset="1"
-                />
-              </linearGradient>
-            </defs>
-            <polygon
-              class="rate__area"
-              :points="area"
-            />
-            <polyline
-              class="rate__stroke"
-              :points="points"
-            />
-          </svg>
-          <span
-            class="rate__now"
-            :style="{top: `${nowY}%`}"
-          ><span class="rate__dot" /></span>
+            {{ thousands(running ? pps : 0) }}
+          </p>
+          <p class="numbers__label">
+            Packets per second
+          </p>
+        </div>
+        <div class="numbers__cell">
+          <p class="numbers__value">
+            {{ compact(liveSent) }}
+          </p>
+          <p class="numbers__label">
+            Pixels sent
+          </p>
+        </div>
+        <div class="numbers__cell">
+          <p class="numbers__value">
+            {{ compact(passes) }}
+          </p>
+          <p class="numbers__label">
+            Passes over the logo
+          </p>
         </div>
       </div>
-      <div class="rate__axis">
-        <span>{{ WINDOW_SECONDS }}s ago</span><span>Now</span>
+
+      <div class="meter">
+        <div class="meter__head">
+          <span class="meter__label">This pass</span>
+          <b class="meter__pct">{{ Math.round(passPercent) }}%</b>
+        </div>
+        <div
+          aria-label="This pass"
+          aria-valuemax="100"
+          aria-valuemin="0"
+          :aria-valuenow="Math.round(passPercent)"
+          class="meter__cut"
+          role="progressbar"
+        >
+          <span
+            class="meter__fill"
+            :style="{width: `${passPercent}%`}"
+          />
+        </div>
+        <p class="meter__eta">
+          <b>{{ eta }}</b>
+        </p>
+      </div>
+
+      <div class="rate">
+        <div class="rate__head">
+          <p class="rate__eyebrow">
+            Rate · the last {{ WINDOW_SECONDS }} seconds
+          </p>
+          <p class="rate__legend">
+            <i />Now {{ thousands(running ? pps : 0) }}/s
+          </p>
+        </div>
+        <div class="rate__chart">
+          <div class="rate__yaxis">
+            <span>{{ thousands(rateCeil) }}</span>
+            <span>0</span>
+          </div>
+          <div class="rate__plot">
+            <svg
+              aria-hidden="true"
+              class="rate__line"
+              preserveAspectRatio="none"
+              viewBox="0 0 100 100"
+            >
+              <defs>
+                <linearGradient
+                  id="snt-rate-fill"
+                  x1="0"
+                  x2="0"
+                  y1="0"
+                  y2="1"
+                >
+                  <stop
+                    class="rate__fill-top"
+                    offset="0"
+                  />
+                  <stop
+                    class="rate__fill-bottom"
+                    offset="1"
+                  />
+                </linearGradient>
+              </defs>
+              <polygon
+                class="rate__area"
+                :points="area"
+              />
+              <polyline
+                class="rate__stroke"
+                :points="points"
+              />
+            </svg>
+            <span
+              class="rate__now"
+              :style="{top: `${nowY}%`}"
+            ><span class="rate__dot" /></span>
+          </div>
+        </div>
+        <div class="rate__axis">
+          <span>{{ WINDOW_SECONDS }}s ago</span><span>Now</span>
+        </div>
       </div>
     </div>
   </div>
@@ -226,9 +228,26 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .progress {
-  display: flex;
-  flex-direction: column;
+  container-type: inline-size;
+}
+
+.progress__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
+}
+
+/* Under a full-width canvas the numbers and the meter take one side and the rate chart the other. */
+@container (min-width: 52rem) {
+  .progress__body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem 3rem;
+  }
+
+  .rate {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
 }
 
 .numbers {

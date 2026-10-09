@@ -10,7 +10,7 @@ import CutButton from "@/components/island/CutButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import Leaderboard from "@/components/pinger/Leaderboard.vue"
-import CanvasStage from "@/components/pinger/CanvasStage.vue"
+import LiveCanvas from "@/components/pinger/LiveCanvas.vue"
 import PingerProgress from "@/components/pinger/PingerProgress.vue"
 import {
   appDownloadUrl,
@@ -20,6 +20,7 @@ import {
   loadPaintJob,
   openLeaderboardStream,
   ownStanding,
+  SNTPINGS_STREAM_URL,
   type AppOs,
   type Leaderboard as LeaderboardSnapshot,
   type PaintJob,
@@ -59,7 +60,7 @@ const mineId = computed<number | null>(() => mine.value?.memberId ?? null)
 const anyPainting = computed<boolean>(() =>
   (house.value?.online ?? false) || ranked.value.some(row => row.online))
 
-/** Total pings across SiteCie and every member, which fills the canvas and drives the plate and meter. */
+/** Total pings across SiteCie and every member, which drives the meter. */
 const siteSent = computed<number>(() =>
   (house.value?.totalSent ?? 0) + ranked.value.reduce((sum, row) => sum + row.totalSent, 0))
 
@@ -71,10 +72,10 @@ const sitePps = computed<number>(() =>
   (house.value?.online ? house.value.pps : 0) +
   ranked.value.reduce((sum, row) => sum + (row.online ? row.pps : 0), 0))
 
-/** Pixels in one pass, measured from the logo by the canvas plate and shared with the meter. */
+/** Pixels in one pass, measured from our art by the live canvas and shared with the meter. */
 const passTotal = ref<number>(0)
 
-/** The target prefix the board set, shown on the plate as the old watch page did. */
+/** The target prefix the board set, shown on the status line. */
 const prefixLabel = computed<string>(() => paint.value.prefix ?? "no prefix set")
 
 let clockTimer = 0
@@ -177,12 +178,9 @@ onBeforeUnmount(() => {
           </p>
 
           <div class="canvas__grid">
-            <canvas-stage
+            <live-canvas
               :placements="paint.placements"
-              :pps="sitePps"
-              :prefix-label="prefixLabel"
-              :running="anyPainting"
-              :sent="siteSent"
+              :stream-url="SNTPINGS_STREAM_URL"
               @passtotal="passTotal = $event"
             />
             <pinger-progress
@@ -346,15 +344,13 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ok) 24%, transparent);
 }
 
-/* The plate and its progress sit side by side on a wide screen and stack on a narrow one. */
+/* The one canvas takes the band's width with the numbers under it. */
 .canvas__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 2rem 2.5rem;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
   margin-top: 1.5rem;
 }
-
 
 .board-wrap {
   margin-top: 1.75rem;
@@ -449,13 +445,6 @@ onBeforeUnmount(() => {
 .snt-countdown b {
   color: var(--color-chalk);
   font-weight: 700;
-}
-
-@media (max-width: 959px) {
-  .canvas__grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1.75rem;
-  }
 }
 
 @media (max-width: 639px) {

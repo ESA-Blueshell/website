@@ -202,6 +202,20 @@ describe("PingerManager page", () => {
     expect(mockMove).toHaveBeenCalledWith(5, expect.objectContaining({originX: 1570, originY: 230}))
   })
 
+  it("reports a refused move after a drag", async () => {
+    mockMove.mockResolvedValue({ok: false, reason: "out of bounds"})
+    const wrapper = await mount()
+    stubStage(wrapper)
+
+    wrapper.get("[data-testid=pinger-placement]").element
+      .dispatchEvent(new MouseEvent("pointerdown", {clientX: 0, clientY: 0, bubbles: true}))
+    window.dispatchEvent(new MouseEvent("pointermove", {clientX: 100, clientY: 50}))
+    window.dispatchEvent(new MouseEvent("pointerup"))
+    await settle()
+
+    expect(wrapper.text()).toContain("out of bounds")
+  })
+
   it("resizes a placement with its handle, holding the image ratio once loaded", async () => {
     const wrapper = await mount()
     stubStage(wrapper)

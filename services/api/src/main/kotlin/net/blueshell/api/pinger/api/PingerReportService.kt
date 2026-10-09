@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Duration
+import java.time.Instant
 
 /** The desktop app's own top rate, about a 1 Gbit/s uplink of echo requests; a report above it is refused. */
 const val MAX_REPORT_PPS = 2_192_982L
@@ -22,7 +23,7 @@ const val MAX_REPORT_PPS = 2_192_982L
  * is one row per (identity, device). Each report adds only its own device's positive delta, so two
  * devices never clobber each other, a reset on one device starts that device fresh without touching
  * the others, and the member's single total only ever grows. SiteCie's replicas aggregate the same
- * way under the one `sitecie` identity.
+ * way under the one `sitecie` identity. The identity's peak rate rises in the same transaction.
  */
 @Service
 class PingerReportService(
@@ -67,9 +68,25 @@ class PingerReportService(
         contribution.updated = now
         session.lastSessionSent = sent
         session.updated = now
+        live.touch(identity.key, deviceId, online, pps, now)
+        if (online) raisePeak(contribution, identity, now)
         contributions.save(contribution)
         devices.save(session)
-        live.touch(identity.key, deviceId, online, pps, now)
+    }
+
+    // The peak is the identity's rate across all its online devices, read after this device's own
+    // presence is written, so a member on two machines counts both.
+    private fun raisePeak(
+        contribution: PingerContribution,
+        identity: PingerIdentity,
+        now: Instant,
+    ) {
+        val here = live.aggregate(identity.key)?.takeIf { it.online } ?: return
+        val across = here.pps.toLong()
+        if (across > contribution.peakPps) {
+            contribution.peakPps = across
+            contribution.peakAt = now
+        }
     }
 
     private companion object {

@@ -1486,6 +1486,22 @@ export type FailedTargetMove = {
 };
 
 /**
+ * One member ranked by peak rate: their Discord tag and avatar when linked, otherwise their site username
+ */
+export type FastestResponse = {
+    avatarUrl?: string | null;
+    discordTag?: string | null;
+    memberId: number;
+    peakAt?: string | null;
+    /**
+     * The top rate the member reached across their devices, in pings per second
+     */
+    peakPps: number;
+    rank: number;
+    username?: string | null;
+};
+
+/**
  * Field a team in a game in a season, with or without the line-up it last had
  */
 export type FieldTeamRequest = {
@@ -1707,6 +1723,11 @@ export type GuestResponse = {
 export type HouseLineResponse = {
     label: string;
     online: boolean;
+    peakAt?: string | null;
+    /**
+     * The top rate SiteCie reached across its replicas, in pings per second
+     */
+    peakPps: number;
     /**
      * The live rate across SiteCie's replicas right now, in pings per second
      */
@@ -1916,11 +1937,23 @@ export type JwtRequest = {
 };
 
 /**
- * The SiteCie house line and the ranked, opted-in members of the contribution leaderboard
+ * The SiteCie house line, the members ranked by total sent and by peak rate, and the combined record
  */
 export type LeaderboardResponse = {
+    /**
+     * Every online sender's live rate right now, summed, SiteCie included, in pings per second
+     */
+    combinedPps: number;
+    /**
+     * The members ranked by the top rate they reached across their devices
+     */
+    fastest: Array<FastestResponse>;
     house?: HouseLineResponse | null;
     members: Array<StandingResponse>;
+    /**
+     * The top rate every online sender reached together, SiteCie included; null until one is set
+     */
+    record?: RecordResponse | null;
 };
 
 /**
@@ -2354,6 +2387,17 @@ export enum QuestionType {
 
 export type ReasonRequest = {
     reason: string;
+};
+
+/**
+ * The top rate every online sender reached together, SiteCie included, and when
+ */
+export type RecordResponse = {
+    at: string;
+    /**
+     * The combined rate, in pings per second
+     */
+    pps: number;
 };
 
 /**

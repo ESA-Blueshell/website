@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import tools.jackson.databind.json.JsonMapper
 import java.io.IOException
+import java.net.InetAddress
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -44,8 +45,9 @@ class PaintStream(
 
     /** Opens a stream for [client], primed with the current paint job so a late joiner paints at once. */
     fun open(client: String): SseEmitter {
-        reserve(client)
-        val subscriber = Subscriber(newEmitter(), client)
+        val key = clientKey(client)
+        reserve(key)
+        val subscriber = Subscriber(newEmitter(), key)
         subscribers.add(subscriber)
         subscriber.emitter.onCompletion { subscriber.release() }
         subscriber.emitter.onTimeout { subscriber.release() }
@@ -140,5 +142,30 @@ class PaintStream(
                 release()
             }
         }
+    }
+
+    companion object {
+        private val IPV6_LITERAL = Regex("^[0-9A-Fa-f:.]+$")
+
+        /**
+         * The per-client cap counts an IPv6 client by its /64: one home or host holds a whole /64 and
+         * can rotate through it. IPv4 and anything unparseable count by the address as given.
+         */
+        fun clientKey(address: String): String {
+            if (':' !in address || !IPV6_LITERAL.matches(address)) return address
+            // A literal never triggers a lookup; the regex keeps hostnames out.
+            val bytes = runCatching { InetAddress.getByName(address).address }.getOrNull() ?: return address
+            if (bytes.size != IPV6_BYTES) return address
+            val groups =
+                (0 until PREFIX_GROUPS).map { i ->
+                    (bytes[2 * i].toInt() and BYTE_MASK) shl BYTE_BITS or (bytes[2 * i + 1].toInt() and BYTE_MASK)
+                }
+            return groups.joinToString(":") { Integer.toHexString(it) } + "::/64"
+        }
+
+        private const val IPV6_BYTES = 16
+        private const val PREFIX_GROUPS = 4
+        private const val BYTE_MASK = 0xff
+        private const val BYTE_BITS = 8
     }
 }

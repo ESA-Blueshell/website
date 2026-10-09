@@ -133,6 +133,28 @@ class PaintStreamTest {
     }
 
     @Test
+    fun `every address in one IPv6 slash-64 shares the per-client cap`() {
+        every { paint.current() } returns job(1)
+        val stream = stream(maxStreams = 10, maxPerClient = 2)
+        stream.opening(emitter(), "2001:db8:1:2::1")
+        stream.opening(emitter(), "2001:db8:1:2:aaaa::7")
+
+        assertThatThrownBy { stream.opening(emitter(), "2001:db8:1:2:ffff:ffff:ffff:ffff") }
+            .isInstanceOfSatisfying(ResponseStatusException::class.java) {
+                assertThat(it.statusCode).isEqualTo(HttpStatus.TOO_MANY_REQUESTS)
+            }
+        stream.opening(emitter(), "2001:db8:1:3::1")
+    }
+
+    @Test
+    fun `the cap key is the slash-64 for IPv6 and the whole address for IPv4`() {
+        assertThat(PaintStream.clientKey("2001:db8:1:2:aaaa:bbbb:cccc:dddd")).isEqualTo("2001:db8:1:2::/64")
+        assertThat(PaintStream.clientKey("2001:db8::1")).isEqualTo("2001:db8:0:0::/64")
+        assertThat(PaintStream.clientKey("192.0.2.1")).isEqualTo("192.0.2.1")
+        assertThat(PaintStream.clientKey("not-an-address")).isEqualTo("not-an-address")
+    }
+
+    @Test
     fun `a failed send ends the stream and frees its slot`() {
         every { paint.current() } returns job(10)
         val stream = stream(maxStreams = 1)

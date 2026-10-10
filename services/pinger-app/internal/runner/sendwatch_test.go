@@ -105,10 +105,10 @@ func TestStallMessageNamesTheCause(t *testing.T) {
 		err  error
 		want string
 	}{
-		{"raw socket without a route", winErr("wsasendto", 10051), "no IPv6 route"},
-		{"raw host unreachable", winErr("wsasendto", 10065), "no IPv6 route"},
-		{"helper API without a route", winErr("Icmp6SendEcho2", 11002), "no IPv6 route"},
-		{"helper API network unreachable", winErr("Icmp6SendEcho2", 1231), "no IPv6 route"},
+		{"raw socket without a route", winErr("wsasendto", 10051), "has no IPv6"},
+		{"raw host unreachable", winErr("wsasendto", 10065), "has no IPv6"},
+		{"helper API without a route", winErr("Icmp6SendEcho2", 11002), "has no IPv6"},
+		{"helper API network unreachable", winErr("Icmp6SendEcho2", 1231), "has no IPv6"},
 		{"blocked by Windows", winErr("wsasendto", 10013), "blocked"},
 		{"timed out", winErr("wsasendto", 10060), "time out"},
 		{"stuck helper API", paint.ErrNoEchoSlot, "not finishing"},
@@ -291,7 +291,7 @@ func TestWatchKeepsAPathThatHasSent(t *testing.T) {
 	if opens != 0 {
 		t.Fatalf("fell back %d times on a path that had sent", opens)
 	}
-	if got := r.Status().Message; !strings.Contains(got, "no IPv6 route") {
+	if got := r.Status().Message; !strings.Contains(got, "has no IPv6") {
 		t.Fatalf("status %q", got)
 	}
 }

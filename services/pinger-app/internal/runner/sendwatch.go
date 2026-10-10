@@ -75,7 +75,10 @@ type sendWatch struct {
 	path     string
 	fallback func() (opened, error)
 	stall    stallWatch
-	err      error
+	// v6 is the route check, or nil to skip it.
+	v6      *ipv6Watch
+	stalled bool
+	err     error
 	// openedSent and openedAt are the sent count and time when the current path took over.
 	openedSent uint64
 	openedAt   time.Time
@@ -106,14 +109,33 @@ func (w *sendWatch) step(now time.Time) {
 	case paint.Running:
 	case paint.Idle:
 		w.stall.reset()
-		w.r.setProblem(idleMessage(w.settings(), snap.PassTotal, w.readErr()))
+		w.stalled = false
+		if w.v6.missing(now, false) {
+			w.r.setProblem(noIPv6Message)
+		} else {
+			w.r.setProblem(idleMessage(w.settings(), snap.PassTotal, w.readErr()))
+		}
 		return
 	default:
 		w.stall.reset()
-		w.r.setProblem("")
+		w.stalled = false
+		if w.v6.missing(now, false) {
+			w.r.setProblem(noIPv6Message)
+		} else {
+			w.r.setProblem("")
+		}
 		return
 	}
-	if !w.stall.observe(now, snap) {
+	landed := snap.Sent != w.stall.sent
+	stalled := w.stall.observe(now, snap)
+	missing := w.v6.missing(now, stalled && !w.stalled)
+	w.stalled = stalled
+	switch {
+	case missing && !landed:
+		// No fallback: the slower path would cost rate once the member finds IPv6.
+		w.r.setProblem(noIPv6Message)
+		return
+	case !stalled:
 		w.err = nil
 		w.r.setProblem("")
 		return
@@ -159,6 +181,9 @@ func (w *sendWatch) fallBack(now time.Time, sent uint64, cause error) bool {
 
 // stallMessage is the status line for a path that gets nothing out.
 func stallMessage(path string, err error) string {
+	if noRoute(err) {
+		return noIPv6Message + " (" + err.Error() + ")"
+	}
 	msg := "No pings are getting out"
 	if path != "" {
 		msg += " over " + path
@@ -211,15 +236,14 @@ func sendHint(err error) string {
 	if errors.Is(err, paint.ErrNoEchoSlot) {
 		return "Windows is not finishing the ICMP requests it took"
 	}
+	if noRoute(err) {
+		return "this network has no IPv6"
+	}
 	var code syscall.Errno
 	if !errors.As(err, &code) {
 		return ""
 	}
 	switch code {
-	case wsaENetUnreach, wsaEHostUnreach, wsaEAddrNotAvail, errNetworkUnreachable, errHostUnreachable,
-		ipDestNoRoute, ipDestAddrUnreachable, ipBadRoute, syscall.ENETUNREACH, syscall.EHOSTUNREACH,
-		syscall.EADDRNOTAVAIL:
-		return "this PC has no IPv6 route to the internet on this network"
 	case wsaEAcces, ipDestProhibited, syscall.EACCES, syscall.EPERM:
 		return "Windows or security software blocked the send"
 	case wsaETimedOut, errTimeout, ipReqTimedOut, syscall.ETIMEDOUT:
@@ -228,6 +252,21 @@ func sendHint(err error) string {
 		return "the network stack has no buffer space left"
 	}
 	return ""
+}
+
+// noRoute reports whether err is one of the codes for a machine with no IPv6 route out.
+func noRoute(err error) bool {
+	var code syscall.Errno
+	if !errors.As(err, &code) {
+		return false
+	}
+	switch code {
+	case wsaENetUnreach, wsaEHostUnreach, wsaEAddrNotAvail, errNetworkUnreachable, errHostUnreachable,
+		ipDestNoRoute, ipDestAddrUnreachable, ipBadRoute, syscall.ENETUNREACH, syscall.EHOSTUNREACH,
+		syscall.EADDRNOTAVAIL:
+		return true
+	}
+	return false
 }
 
 // idleMessage names what an idle sender waits for, or empty when it waits on nothing the member

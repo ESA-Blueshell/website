@@ -301,6 +301,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		path:     o.path,
 		fallback: o.fallback,
 		stall:    stallWatch{after: stallAfter},
+		v6:       newIPv6Watch(),
 	}
 
 	var wg sync.WaitGroup

@@ -36,7 +36,8 @@ Packets per second with the sender pinned:
 
 | sender                         | `--cpus=1`  | all CPUs              |
 | ------------------------------ | ----------- | --------------------- |
-| Go, sendmmsg (main)            | 3.27–3.42 M | 12.5 M on 3.5 cores   |
+| Go, sendmmsg (main)            | 3.27–3.57 M | 12.5 M on 3.5 cores   |
+| Go, TX ring (#2360)            | 3.87–3.89 M |                       |
 | Rust, sendmmsg 64 per call     | 4.30–4.41 M | 4.44 M (1 worker)     |
 | Rust, sendmmsg 1024 per call   | 4.45–4.47 M |                       |
 | Rust, TX ring                  | 3.54–3.58 M | 12.7 M on 3.6 cores (4 workers) |

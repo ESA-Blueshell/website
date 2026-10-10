@@ -81,8 +81,7 @@ func (r *txRing) status(slot int) *uint32 {
 // claim returns the next slot's frame space, flushing and waiting while the kernel still holds it.
 func (r *txRing) claim(fd int, to *unix.RawSockaddrLinklayer) ([]byte, error) {
 	st := r.status(r.next)
-	// poll cannot say when this slot frees: it reports the slot at the kernel's head, which a full
-	// send buffer leaves unsent. So retry the flush on a short poll.
+	// Not poll: a packet socket polls writable whenever its send buffer has room, ring full or not.
 	var deadline time.Time
 	for atomic.LoadUint32(st)&ringBusy != 0 {
 		if err := r.flush(fd, to); err != nil {
@@ -96,7 +95,7 @@ func (r *txRing) claim(fd int, to *unix.RawSockaddrLinklayer) ([]byte, error) {
 		} else if time.Now().After(deadline) {
 			return nil, unix.ENOBUFS
 		}
-		_, _ = unix.Poll([]unix.PollFd{{Fd: int32(fd), Events: unix.POLLOUT}}, 1)
+		time.Sleep(queueRetry)
 	}
 	off := r.next*ringFrameSize + ringData + r.vnet
 	return r.mem[off : (r.next+1)*ringFrameSize], nil
@@ -115,16 +114,30 @@ func (r *txRing) ready(n int) {
 	r.next = (r.next + 1) % ringFrames
 }
 
-// flush hands the kernel every ready frame without waiting for the link. A frame the kernel
-// could not take yet stays ready for the next flush, so only a missing device is an error.
+// flush hands the kernel every ready frame. With qdisc bypass a full transmit queue refuses a
+// frame with ENOBUFS and the kernel leaves it ready in the ring, where nothing would send it until
+// the next batch; so flush waits for the queue to take the last frame, as writeBatch does for
+// sendmmsg. A queue still full after queueWait leaves the rest for the next flush. Only a missing
+// device is an error.
 func (r *txRing) flush(fd int, to *unix.RawSockaddrLinklayer) error {
-	_, _, errno := unix.Syscall6(unix.SYS_SENDTO, uintptr(fd), 0, 0, unix.MSG_DONTWAIT,
-		uintptr(unsafe.Pointer(to)), unix.SizeofSockaddrLinklayer)
-	switch {
-	case errno == 0, errno == unix.EAGAIN, errno == unix.ENOBUFS, errno == unix.EINTR:
-		return nil
+	last := r.status((r.next + ringFrames - 1) % ringFrames)
+	var giveUp time.Time
+	for {
+		_, _, errno := unix.Syscall6(unix.SYS_SENDTO, uintptr(fd), 0, 0, unix.MSG_DONTWAIT,
+			uintptr(unsafe.Pointer(to)), unix.SizeofSockaddrLinklayer)
+		if errno != 0 && errno != unix.EAGAIN && errno != unix.ENOBUFS && errno != unix.EINTR {
+			return errno
+		}
+		if atomic.LoadUint32(last) != unix.TP_STATUS_SEND_REQUEST {
+			return nil
+		}
+		if now := time.Now(); giveUp.IsZero() {
+			giveUp = now.Add(queueWait)
+		} else if now.After(giveUp) {
+			return nil
+		}
+		time.Sleep(queueRetry)
 	}
-	return errno
 }
 
 func (r *txRing) close() error {

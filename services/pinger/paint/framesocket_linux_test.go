@@ -8,8 +8,11 @@ import (
 	"net"
 	"net/netip"
 	"os"
+	"os/exec"
+	"sync/atomic"
 	"testing"
 	"time"
+	"unsafe"
 
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv6"
@@ -276,5 +279,85 @@ func TestFrameRingSendsEveryFrameInOrder(t *testing.T) {
 	}
 	if next != total {
 		t.Fatalf("%d of %d frames left", next, total)
+	}
+}
+
+// TestFrameRingWaitsOutAFullQueue sends through a tap whose transmit ring holds 16 frames and
+// which drains slowly, the way a qdisc-bypassing socket meets a full virtio queue, and requires
+// every frame WriteBatch counted to leave. It needs PINGER_FRAMES_E2E, root and the ip tool.
+func TestFrameRingWaitsOutAFullQueue(t *testing.T) {
+	if os.Getenv("PINGER_FRAMES_E2E") == "" {
+		t.Skip("set PINGER_FRAMES_E2E and run as root to run")
+	}
+	tun, err := unix.Open("/dev/net/tun", unix.O_RDWR|unix.O_CLOEXEC, 0)
+	if err != nil {
+		t.Skipf("no tun device: %v", err)
+	}
+	var ifr [unix.IFNAMSIZ + 64]byte
+	copy(ifr[:], "pingtest0")
+	*(*uint16)(unsafe.Pointer(&ifr[unix.IFNAMSIZ])) = unix.IFF_TAP | unix.IFF_NO_PI
+	if _, _, e := unix.Syscall(unix.SYS_IOCTL, uintptr(tun), unix.TUNSETIFF, uintptr(unsafe.Pointer(&ifr[0]))); e != 0 {
+		t.Fatalf("create tap: %v", e)
+	}
+	for _, args := range [][]string{
+		{"link", "set", "pingtest0", "txqueuelen", "16", "up"},
+		{"-6", "addr", "add", "2001:db8:7::2/64", "dev", "pingtest0", "nodad"},
+		{"-6", "neigh", "replace", "2001:db8:7::1", "lladdr", "02:00:00:00:00:07", "dev", "pingtest0", "nud", "permanent"},
+		{"-6", "route", "replace", "2001:db8:7:7::/64", "via", "2001:db8:7::1", "dev", "pingtest0"},
+	} {
+		if out, err := exec.Command("ip", args...).CombinedOutput(); err != nil {
+			t.Fatalf("ip %v: %v: %s", args, err, out)
+		}
+	}
+	const id, total = 0x7777, 512
+	var arrived atomic.Int64
+	// Closing the tap fd removes the link; the reader then fails out.
+	defer unix.Close(tun)
+	go func() {
+		buf := make([]byte, 2048)
+		for n := 0; ; n++ {
+			k, err := unix.Read(tun, buf)
+			if err != nil {
+				return
+			}
+			if k >= frameHead+8 && binary.BigEndian.Uint16(buf[frameHead+4:]) == id {
+				arrived.Add(1)
+			}
+			if n%8 == 0 {
+				time.Sleep(time.Millisecond)
+			}
+		}
+	}()
+
+	socks, err := OpenFrameSockets(true, nil)
+	if err != nil {
+		t.Fatalf("open frame sockets: %v", err)
+	}
+	defer CloseSockets(socks)
+	s := socks[0]
+	if s.ring == nil {
+		t.Fatal("socket has no TX ring")
+	}
+	echo, _ := (&icmp.Message{Type: ipv6.ICMPTypeEchoRequest, Body: &icmp.Echo{ID: id, Seq: 1}}).Marshal(nil)
+	prefix := netip.MustParseAddr("2001:db8:7:7::").As16()
+	msgs := make([]ipv6.Message, batch)
+	counted := 0
+	for sent := 0; sent < total; sent += batch {
+		for i := range msgs {
+			ip := net.IP(append([]byte(nil), prefix[:]...))
+			binary.BigEndian.PutUint32(ip[12:], uint32(sent+i))
+			msgs[i] = ipv6.Message{Buffers: [][]byte{echo}, Addr: &net.IPAddr{IP: ip}}
+		}
+		n, err := s.WriteBatch(msgs, 0)
+		if err != nil {
+			t.Fatalf("write batch at %d: %v", sent, err)
+		}
+		counted += n
+	}
+	for deadline := time.Now().Add(3 * time.Second); arrived.Load() < int64(counted) && time.Now().Before(deadline); {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := arrived.Load(); got != int64(counted) {
+		t.Fatalf("%d of the %d frames counted as sent left", got, counted)
 	}
 }

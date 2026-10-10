@@ -1,12 +1,12 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {computed, onBeforeUnmount, ref, watch} from "vue"
+import LiveVideo, {STREAM_BADGES, type StreamStatus} from "@/components/pinger/LiveVideo.vue"
 import {apiUrl, CANVAS_H, CANVAS_W, isMoving, positionAt, useServerClock, type Placement} from "@/domains/pinger"
 
 /**
  * The event's livestream of the canvas with our placements drawn over it in their boxes, so what we
- * paint can be checked against what the canvas shows. hls.js, loaded on demand, plays the feed;
- * the browser plays it itself only where hls.js cannot run. It also measures the pixels one pass
- * paints, which the meter reads. A bouncing placement's box glides across the plate the way the
+ * paint can be checked against what the canvas shows. It also measures the pixels one pass paints,
+ * which the meter reads. A bouncing placement's box glides across the plate the way the
  * pinger paints it.
  */
 defineOptions({name: "PingerLiveCanvas"})
@@ -32,9 +32,7 @@ const overlays: {mode: Overlay, label: string}[] = [
 const overlay = ref<Overlay>("ghost")
 const corners = ["tl", "tr", "bl", "br"] as const
 
-const video = ref<HTMLVideoElement | null>(null)
-const playing = ref<boolean>(false)
-const failed = ref<boolean>(false)
+const stream = ref<StreamStatus>("connecting")
 
 const serverNow = useServerClock(() => props.placements.some(isMoving), () => props.clockOffset)
 
@@ -94,31 +92,8 @@ function measure(placements: Placement[]): void {
 // Keyed on the images alone: a box that only moved paints the same pixels, so the meter holds.
 watch(() => props.placements.map(p => `${p.id}:${p.imageUrl}`).join(), () => measure(props.placements), {immediate: true})
 
-let destroy: (() => void) | null = null
-
-onMounted(async () => {
-  const el = video.value
-  if (!el) return
-  // hls.js first: desktop Chrome answers "maybe" for native HLS and then refuses the stream, so the
-  // browser's own player is only the fallback, for iOS Safari where Media Source is missing.
-  const {default: Hls} = await import("hls.js")
-  if (!Hls.isSupported()) {
-    if (el.canPlayType("application/vnd.apple.mpegurl")) el.src = props.streamUrl
-    else failed.value = true
-    return
-  }
-  const hls = new Hls({liveSyncDurationCount: 2})
-  hls.on(Hls.Events.ERROR, (_event, data) => {
-    if (data.fatal) failed.value = true
-  })
-  hls.loadSource(props.streamUrl)
-  hls.attachMedia(el)
-  destroy = () => hls.destroy()
-})
-
 onBeforeUnmount(() => {
   measuring++
-  destroy?.()
 })
 </script>
 
@@ -128,14 +103,10 @@ onBeforeUnmount(() => {
     data-testid="snt-live"
   >
     <div class="live__plate">
-      <video
-        ref="video"
-        autoplay
+      <live-video
+        v-model="stream"
         class="live__video"
-        muted
-        playsinline
-        @playing="playing = true"
-        @waiting="playing = false"
+        :stream-url="streamUrl"
       />
       <div
         v-if="overlay !== 'off'"
@@ -165,8 +136,8 @@ onBeforeUnmount(() => {
       </div>
       <span
         class="live__badge"
-        :class="{'live__badge--on': playing}"
-      >{{ failed ? "Stream offline" : playing ? "Live" : "Connecting" }}</span>
+        :class="{'live__badge--on': stream === 'live'}"
+      >{{ STREAM_BADGES[stream] }}</span>
     </div>
 
     <div

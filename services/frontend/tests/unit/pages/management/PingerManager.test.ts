@@ -1,7 +1,8 @@
 /**
  * The pinger manager: loading the paint job, editing the settings, adding and removing images, and
  * dragging and resizing a placement's box over the 4K canvas, setting how a placement moves, and
- * following the paint stream, with the domain calls each makes.
+ * following the paint stream, with the domain calls each makes. The event's live stream plays behind
+ * the boxes through a mocked hls.js.
  */
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
@@ -18,6 +19,20 @@ const {mockLoad, mockSave, mockStore, mockAdd, mockMove, mockRemove, mockMotion,
   mockMove: vi.fn(),
   mockRemove: vi.fn(),
 }))
+
+const hls = vi.hoisted(() => ({loadSource: vi.fn(), attachMedia: vi.fn(), destroy: vi.fn(), on: vi.fn()}))
+
+vi.mock("hls.js", () => {
+  class Hls {
+    static Events = {ERROR: "hlsError"}
+    static isSupported = () => true
+    loadSource = hls.loadSource
+    attachMedia = hls.attachMedia
+    destroy = hls.destroy
+    on = hls.on
+  }
+  return {default: Hls}
+})
 
 vi.mock("@/domains/pinger", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/domains/pinger")>()
@@ -330,5 +345,36 @@ describe("PingerManager page", () => {
 
     expect(wrapper.get("[data-testid=pinger-placement-coords]").text()).toContain("2000, 300")
     expect((wrapper.get("[data-testid=pinger-prefix] input").element as HTMLInputElement).value).toBe("2001:db8:1::/64")
+  })
+
+  it("plays the event's live stream behind the boxes and ghosts them while it is live", async () => {
+    const wrapper = await mount()
+
+    expect(hls.loadSource).toHaveBeenCalledWith("https://tv.pings.utwente.io/1080p30_hls.m3u8")
+    expect(hls.attachMedia).toHaveBeenCalledWith(wrapper.get("[data-testid=pinger-live]").element)
+    expect(wrapper.get("[data-testid=pinger-live-badge]").text()).toBe("Connecting")
+
+    await wrapper.get("[data-testid=pinger-live]").trigger("playing")
+
+    expect(wrapper.get("[data-testid=pinger-live-badge]").text()).toBe("Live")
+    expect(wrapper.get("[data-testid=pinger-placement]").classes()).toContain("box--live")
+  })
+
+  it("hides the stream once it fails and keeps the boxes draggable on the plain plate", async () => {
+    const wrapper = await mount()
+    stubStage(wrapper)
+    const onError = hls.on.mock.calls[0][1] as (event: string, data: {fatal: boolean}) => void
+
+    onError("hlsError", {fatal: true})
+    await settle()
+
+    expect(wrapper.get("[data-testid=pinger-live-badge]").text()).toBe("Stream offline")
+    expect((wrapper.get("[data-testid=pinger-live]").element as HTMLElement).style.display).toBe("none")
+    wrapper.get("[data-testid=pinger-placement]").element
+      .dispatchEvent(new MouseEvent("pointerdown", {clientX: 0, clientY: 0, bubbles: true}))
+    window.dispatchEvent(new MouseEvent("pointermove", {clientX: 100, clientY: 50}))
+    window.dispatchEvent(new MouseEvent("pointerup"))
+    await settle()
+    expect(mockMove).toHaveBeenCalledWith(5, expect.objectContaining({originX: 1570, originY: 230}))
   })
 })

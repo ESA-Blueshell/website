@@ -4,8 +4,10 @@ package paint
 
 import (
 	"errors"
+	"log/slog"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -27,11 +29,26 @@ type FrameSocket struct {
 	fd    int
 	raw   *icmp.PacketConn
 	route *frameRoute
+	// ring is nil where the kernel refuses a TX ring; frames then go out by sendmmsg.
+	ring  *txRing
 	mu    sync.Mutex
 	frame []byte
 	iovs  []unix.Iovec
 	hdrs  []mmsghdr
 	addr  unix.RawSockaddrLinklayer
+}
+
+var errFrameSize = errors.New("a frame takes one echo request of at most 64 bytes")
+
+// useTxRing is off only in benchmarks that measure the sendmmsg path.
+var useTxRing = true
+
+var ringFallbackLogged atomic.Bool
+
+func logRingFallback(err error) {
+	if ringFallbackLogged.CompareAndSwap(false, true) {
+		slog.Warn("no TX ring on the packet socket, sending frames by sendmmsg", "err", err)
+	}
 }
 
 type mmsghdr struct {
@@ -48,19 +65,24 @@ func OpenFrameSockets(bypass bool, prepare func(*icmp.PacketConn)) ([]*FrameSock
 }
 
 func openFrameSocket(route *frameRoute, bypass bool, prepare func(*icmp.PacketConn)) (*FrameSocket, error) {
-	// Protocol 0: the socket only sends, so no incoming frame is ever copied to it.
-	fd, err := unix.Socket(unix.AF_PACKET, unix.SOCK_RAW|unix.SOCK_CLOEXEC, 0)
+	fd, err := packetSocket(bypass)
 	if err != nil {
 		return nil, err
 	}
-	if bypass {
-		_ = unix.SetsockoptInt(fd, unix.SOL_PACKET, unix.PACKET_QDISC_BYPASS, 1)
-	}
-	if unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_SNDBUFFORCE, frameSendBuffer) != nil {
-		_ = unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_SNDBUF, frameSendBuffer)
+	var ring *txRing
+	if useTxRing {
+		if ring, err = openTxRing(fd); err != nil {
+			logRingFallback(err)
+			// A half-set-up ring or virtio header would change how sendmmsg reads every message.
+			_ = unix.Close(fd)
+			if fd, err = packetSocket(bypass); err != nil {
+				return nil, err
+			}
+		}
 	}
 	raw, err := icmp.ListenPacket("ip6:ipv6-icmp", "::")
 	if err != nil {
+		_ = ring.close()
 		_ = unix.Close(fd)
 		return nil, err
 	}
@@ -71,10 +93,26 @@ func openFrameSocket(route *frameRoute, bypass bool, prepare func(*icmp.PacketCo
 	if prepare != nil {
 		prepare(raw)
 	}
-	return &FrameSocket{fd: fd, raw: raw, route: route}, nil
+	return &FrameSocket{fd: fd, raw: raw, route: route, ring: ring}, nil
 }
 
-// WriteBatch sends ms in one sendmmsg, every message routed as the first one is.
+// packetSocket opens a send-only packet socket. Protocol 0: no incoming frame is ever copied to it.
+func packetSocket(bypass bool) (int, error) {
+	fd, err := unix.Socket(unix.AF_PACKET, unix.SOCK_RAW|unix.SOCK_CLOEXEC, 0)
+	if err != nil {
+		return -1, err
+	}
+	if bypass {
+		_ = unix.SetsockoptInt(fd, unix.SOL_PACKET, unix.PACKET_QDISC_BYPASS, 1)
+	}
+	if unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_SNDBUFFORCE, frameSendBuffer) != nil {
+		_ = unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_SNDBUF, frameSendBuffer)
+	}
+	return fd, nil
+}
+
+// WriteBatch sends ms in one syscall, through the TX ring or sendmmsg, every message routed as the
+// first one is.
 func (s *FrameSocket) WriteBatch(ms []ipv6.Message, flags int) (int, error) {
 	if len(ms) == 0 {
 		return 0, nil
@@ -85,7 +123,6 @@ func (s *FrameSocket) WriteBatch(ms []ipv6.Message, flags int) (int, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.grow(len(ms))
 	s.addr = unix.RawSockaddrLinklayer{
 		Family:   unix.AF_PACKET,
 		Protocol: htons(unix.ETH_P_IPV6),
@@ -93,9 +130,44 @@ func (s *FrameSocket) WriteBatch(ms []ipv6.Message, flags int) (int, error) {
 		Halen:    6,
 		Addr:     t.gateway,
 	}
+	var n int
+	var err error
+	if s.ring != nil {
+		n, err = s.writeRing(t, ms)
+	} else {
+		n, err = s.writeMmsg(t, ms)
+	}
+	if errors.Is(err, unix.ENETDOWN) || errors.Is(err, unix.ENXIO) || errors.Is(err, unix.ENODEV) {
+		s.route.invalidate()
+	}
+	return n, err
+}
+
+// writeRing queues ms in the TX ring and flushes them in one send.
+func (s *FrameSocket) writeRing(t *frameTemplate, ms []ipv6.Message) (int, error) {
 	for i, m := range ms {
 		if len(m.Buffers) != 1 || len(m.Buffers[0]) > maxICMPLen {
-			return 0, errors.New("a frame takes one echo request of at most 64 bytes")
+			return i, errors.Join(errFrameSize, s.ring.flush(s.fd, &s.addr))
+		}
+		f, err := s.ring.claim(s.fd, &s.addr)
+		if err != nil {
+			return i, err
+		}
+		n := frameHead + len(m.Buffers[0])
+		t.frame(f[:n], destination(m.Addr), m.Buffers[0])
+		s.ring.ready(n)
+	}
+	if err := s.ring.flush(s.fd, &s.addr); err != nil {
+		return 0, err
+	}
+	return len(ms), nil
+}
+
+func (s *FrameSocket) writeMmsg(t *frameTemplate, ms []ipv6.Message) (int, error) {
+	s.grow(len(ms))
+	for i, m := range ms {
+		if len(m.Buffers) != 1 || len(m.Buffers[0]) > maxICMPLen {
+			return 0, errFrameSize
 		}
 		f := s.frame[i*frameSlot : i*frameSlot+frameHead+len(m.Buffers[0])]
 		t.frame(f, destination(m.Addr), m.Buffers[0])
@@ -107,11 +179,7 @@ func (s *FrameSocket) WriteBatch(ms []ipv6.Message, flags int) (int, error) {
 		h.Iov = &s.iovs[i]
 		h.SetIovlen(1)
 	}
-	n, err := sendmmsg(s.fd, s.hdrs[:len(ms)])
-	if errors.Is(err, unix.ENETDOWN) || errors.Is(err, unix.ENXIO) || errors.Is(err, unix.ENODEV) {
-		s.route.invalidate()
-	}
-	return n, err
+	return sendmmsg(s.fd, s.hdrs[:len(ms)])
 }
 
 func (s *FrameSocket) grow(n int) {
@@ -136,6 +204,7 @@ func (s *FrameSocket) ReadFrom(b []byte) (int, net.Addr, error) { return s.raw.R
 func (s *FrameSocket) SetReadDeadline(t time.Time) error { return s.raw.SetReadDeadline(t) }
 
 func (s *FrameSocket) Close() error {
+	_ = s.ring.close()
 	_ = unix.Close(s.fd)
 	return s.raw.Close()
 }

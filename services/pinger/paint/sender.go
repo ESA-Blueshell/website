@@ -3,6 +3,7 @@ package paint
 
 import (
 	"context"
+	"errors"
 	"math/rand/v2"
 	"net"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"sort"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"golang.org/x/net/icmp"
@@ -107,6 +109,12 @@ const (
 	// failPause is how long a worker rests after a chunk with not one send out, so a broken socket
 	// does not spin. A lost ping costs nothing worth more bookkeeping than a count.
 	failPause = 20 * time.Millisecond
+	// queueWait is how long a transmit queue that refuses every send as full (ENOBUFS) is waited
+	// on before the rest of the batch counts as lost. A frame socket that skips the qdisc writes
+	// straight into the NIC's ring, and a virtio ring holds 256 frames, fewer than one chunk at
+	// 30,000 a second; the pacer makes up the wait.
+	queueWait  = 20 * time.Millisecond
+	queueRetry = 100 * time.Microsecond
 )
 
 // Sender repaints the logo pass after pass, each pass in a fresh random order so the logo
@@ -542,20 +550,37 @@ func (s *Sender) writeEach(conn Conn, dsts []net.Addr, err error) (int, error) {
 }
 
 // writeBatch sends msgs in as few syscalls as the socket allows. A batch write stops at the first
-// message that fails, so that one is skipped and the rest go again.
+// message that fails. One refused by a full transmit queue goes again once the queue drains, since
+// skipping it would only throw the rest at the same full queue; any other failure is skipped and
+// the rest go again.
 func writeBatch(bc batchConn, msgs []ipv6.Message, err error) (int, error) {
 	sent := 0
+	var giveUp time.Time
 	for len(msgs) > 0 {
 		n, e := bc.WriteBatch(msgs, 0)
 		// sendmmsg refusing its first message returns -1, which x/net hands on as the count.
 		n = max(n, 0)
 		sent += n
 		msgs = msgs[n:]
-		if e != nil {
+		if n > 0 {
+			giveUp = time.Time{}
+		}
+		switch {
+		case e == nil:
+			if n == 0 {
+				return sent, err
+			}
+		case errors.Is(e, syscall.ENOBUFS):
+			now := time.Now()
+			if giveUp.IsZero() {
+				giveUp = now.Add(queueWait)
+			} else if now.After(giveUp) {
+				return sent, e
+			}
+			time.Sleep(queueRetry)
+		default:
 			err = e
 			msgs = msgs[min(1, len(msgs)):]
-		} else if n == 0 {
-			break
 		}
 	}
 	return sent, err

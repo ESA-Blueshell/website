@@ -300,7 +300,7 @@ func (c *batchFake) WriteBatch(ms []ipv6.Message, _ int) (int, error) {
 	}
 	c.mu.Unlock()
 	if failing {
-		return n, syscall.ENOBUFS
+		return n, syscall.ENETUNREACH
 	}
 	return n, nil
 }
@@ -369,6 +369,30 @@ func TestWriteBatchSkipsAMessageTheKernelRefusedOutright(t *testing.T) {
 	}
 }
 
+type fullQueue struct{ calls int }
+
+func (c *fullQueue) WriteBatch([]ipv6.Message, int) (int, error) {
+	c.calls++
+	return -1, syscall.ENOBUFS
+}
+
+func TestWriteBatchGivesUpOnAQueueThatStaysFull(t *testing.T) {
+	q := &fullQueue{}
+	began := time.Now()
+
+	sent, err := writeBatch(q, make([]ipv6.Message, batch), nil)
+
+	if sent != 0 || !errors.Is(err, syscall.ENOBUFS) {
+		t.Fatalf("sent %d with %v, want 0 with ENOBUFS", sent, err)
+	}
+	if took := time.Since(began); took < queueWait || took > 10*queueWait {
+		t.Fatalf("gave up after %v, want about %v", took, queueWait)
+	}
+	if limit := int(queueWait/queueRetry) + 2; q.calls > limit {
+		t.Fatalf("%d writes to a full queue, want at most %d", q.calls, limit)
+	}
+}
+
 type countConn struct{ n atomic.Int64 }
 
 func (c *countConn) WriteTo(b []byte, _ net.Addr) (int, error) {
@@ -398,6 +422,58 @@ func TestSenderHoldsTheTargetOnASmallLogo(t *testing.T) {
 	}
 	if s.Snapshot().Passes < 100 {
 		t.Fatalf("ran %d passes", s.Snapshot().Passes)
+	}
+}
+
+// txQueue is a NIC transmit queue a packet socket bypassing the qdisc writes straight into: it holds
+// depth frames, drains drain a second, and refuses a frame with ENOBUFS while it is full.
+type txQueue struct {
+	mu     sync.Mutex
+	depth  float64
+	drain  float64
+	queued float64
+	last   time.Time
+	out    atomic.Int64
+}
+
+func (q *txQueue) WriteTo([]byte, net.Addr) (int, error) { panic("batch only") }
+
+func (q *txQueue) WriteBatch(ms []ipv6.Message, _ int) (int, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	now := time.Now()
+	if !q.last.IsZero() {
+		q.queued = max(0, q.queued-now.Sub(q.last).Seconds()*q.drain)
+	}
+	q.last = now
+	n := 0
+	for n < len(ms) && q.queued+1 <= q.depth {
+		q.queued++
+		n++
+	}
+	q.out.Add(int64(n))
+	if n == 0 {
+		return -1, syscall.ENOBUFS
+	}
+	return n, nil
+}
+
+// A virtio NIC holds 256 frames. A worker sends its share of a few milliseconds at once, more than
+// that queue holds, so a full queue must cost the sender time rather than pings.
+func TestSenderHoldsItsRateOnAShallowTransmitQueue(t *testing.T) {
+	q := &txQueue{depth: 256, drain: 40_000}
+	box := &settingsBox{}
+	const rate = 20_000
+	box.set(Settings{Prefix: prefix(t, "2001:db8::"), RatePPS: rate, Enabled: true})
+
+	s := start(t, q, pixels(5_000), open, box)
+	eventually(t, func() bool { return q.out.Load() > 0 })
+	from, began := q.out.Load(), time.Now()
+	time.Sleep(time.Second)
+	sent, elapsed := q.out.Load()-from, time.Since(began).Seconds()
+
+	if float64(sent) < 0.9*rate*elapsed {
+		t.Fatalf("sent %d in %.3fs, under 90%% of %d a second; %d refused sends counted lost", sent, elapsed, rate, s.Snapshot().Errors)
 	}
 }
 

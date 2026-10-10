@@ -426,3 +426,81 @@ func TestSenderPaintsEveryPixelOnceInEachOfSeveralPasses(t *testing.T) {
 		}
 	}
 }
+
+// The api pushes a share every second, and each one hands the sender a fresh slice. A pass slower
+// than that must still reach every pixel rather than restart on each swap.
+func TestSenderFinishesAPassWhileTheImageKeepsBeingSwapped(t *testing.T) {
+	conn := &fakeConn{}
+	box := &settingsBox{}
+	p := prefix(t, "2001:db8:b317:a000::/64")
+	box.set(Settings{Prefix: p, RatePPS: 10_000, Enabled: true})
+	px := pixels(1_000)
+
+	s := start(t, conn, px, open, box)
+	stop := make(chan struct{})
+	swapped := make(chan struct{})
+	go func() {
+		defer close(swapped)
+		for {
+			select {
+			case <-stop:
+				return
+			case <-time.After(2 * time.Millisecond):
+				s.SetPixels(append([]canvas.Pixel(nil), px...))
+			}
+		}
+	}()
+	eventually(t, func() bool { return len(conn.addresses()) >= 2*len(px) })
+	close(stop)
+	<-swapped
+
+	seen := map[netip.Addr]bool{}
+	for _, a := range conn.addresses()[:2*len(px)] {
+		seen[a] = true
+	}
+	for _, want := range px {
+		if !seen[p.Address(want)] {
+			t.Fatalf("%s not sent in two passes' worth of sends", p.Address(want))
+		}
+	}
+	if s.Snapshot().Passes < 1 {
+		t.Fatal("no pass finished")
+	}
+}
+
+// A swap that drops and adds pixels keeps the pass: pixels already sent wait for the next pass,
+// and the unsent ones are still to come in this one.
+func TestSenderCarriesThePassOverToAChangedImage(t *testing.T) {
+	px := pixels(2_000)
+	s := &Sender{}
+	s.SetPixels(px)
+	p := canvas.Prefix{}
+	r := s.roll(nil, p, false)
+	r.next.Store(1_000)
+	sent := map[canvas.Pixel]bool{}
+	for _, i := range r.order[:1_000] {
+		sent[px[i]] = true
+	}
+
+	next := append(append([]canvas.Pixel(nil), px[500:]...), pixels(2_500)[2_000:]...)
+	s.SetPixels(next)
+	nr := s.roll(r, p, false)
+
+	left := map[canvas.Pixel]bool{}
+	for _, i := range nr.order[nr.next.Load():] {
+		left[next[i]] = true
+	}
+	for _, px := range px[500:] {
+		if !sent[px] && !left[px] {
+			t.Fatalf("%v neither sent nor left in the pass", px)
+		}
+	}
+	for _, px := range next {
+		if sent[px] && left[px] {
+			t.Fatalf("%v sent twice in one pass", px)
+		}
+	}
+	if s.passes.Load() != 0 {
+		t.Fatal("a carried pass counted as finished")
+	}
+}

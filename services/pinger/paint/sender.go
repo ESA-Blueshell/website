@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"runtime"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -66,9 +67,12 @@ type target struct {
 type round struct {
 	target *target
 	prefix canvas.Prefix
-	order  []uint32
-	next   atomic.Int64
-	done   atomic.Int64
+	// seed orders the pass: pixels go in ascending rank(seed, pixel), so a swapped image can pick up
+	// where the pass stood instead of starting over.
+	seed  uint64
+	order []uint32
+	next  atomic.Int64
+	done  atomic.Int64
 }
 
 // Stats is a point-in-time copy of what the sender has done.
@@ -105,7 +109,7 @@ const (
 	failPause = 20 * time.Millisecond
 )
 
-// Sender repaints the logo pass after pass, each pass in a fresh shuffled order so the logo
+// Sender repaints the logo pass after pass, each pass in a fresh random order so the logo
 // fills in evenly instead of as a scanline others can race.
 type Sender struct {
 	conns    []Conn
@@ -134,6 +138,8 @@ type Sender struct {
 	rateMu    sync.Mutex
 	rates     []uint64
 	datagram  bool
+	// keys and spare are the rank sort's scratch, reused under roundMu.
+	keys, spare []uint64
 }
 
 // echoRequest builds the ICMPv6 echo request the sender emits. The ID is this process, but it does
@@ -269,9 +275,10 @@ func (s *Sender) stream(ctx context.Context) {
 	wg.Wait()
 }
 
-// roll replaces the spent or stale round r with a freshly shuffled one over the current image,
-// counting a pass when r ran out. Of the workers that find r spent, only the first rolls; the rest
-// get its round.
+// roll replaces the spent or stale round r with a fresh one over the current image, counting a
+// pass when r ran out. A round made stale by a new image keeps its pass: the api pushes a share
+// every second, and restarting on each would never finish a pass over a large logo. Of the workers
+// that find r spent, only the first rolls; the rest get its round.
 func (s *Sender) roll(r *round, p canvas.Prefix, finished bool) *round {
 	s.roundMu.Lock()
 	defer s.roundMu.Unlock()
@@ -282,14 +289,66 @@ func (s *Sender) roll(r *round, p canvas.Prefix, finished bool) *round {
 		s.passes.Add(1)
 	}
 	t := s.target.Load()
-	order := make([]uint32, len(t.pixels))
-	for i := range order {
-		order[i] = uint32(i)
+	nr := &round{target: t, prefix: p, seed: rand.Uint64()}
+	carry := !finished && r != nil && r.prefix == p
+	if carry {
+		nr.seed = r.seed
 	}
-	rand.Shuffle(len(order), func(i, j int) { order[i], order[j] = order[j], order[i] })
-	nr := &round{target: t, prefix: p, order: order}
+	nr.order = s.rank(nr.seed, t.pixels)
+	if carry {
+		if at := int(min(r.next.Load(), int64(len(r.order)))); at > 0 {
+			reached := rank(r.seed, r.target.pixels[r.order[at-1]])
+			from := sort.Search(len(nr.order), func(i int) bool { return rank(nr.seed, t.pixels[nr.order[i]]) > reached })
+			nr.next.Store(int64(from))
+			nr.done.Store(int64(from))
+		}
+	}
 	s.round.Store(nr)
 	return nr
+}
+
+// rank places a pixel in the pass seed orders. It hashes the pixel's position alone, so the same
+// pixel keeps its place across images and colours.
+func rank(seed uint64, px canvas.Pixel) uint32 {
+	z := seed ^ uint64(px.X)<<16 ^ uint64(px.Y)
+	z = (z ^ z>>30) * 0xbf58476d1ce4e5b9
+	z = (z ^ z>>27) * 0x94d049bb133111eb
+	return uint32((z ^ z>>31) >> 32)
+}
+
+// rank returns the indices of pixels in ascending rank. A radix sort keeps it linear, since it
+// runs on every share push and a large logo holds millions of pixels.
+func (s *Sender) rank(seed uint64, pixels []canvas.Pixel) []uint32 {
+	n := len(pixels)
+	if cap(s.keys) < n {
+		s.keys, s.spare = make([]uint64, n), make([]uint64, n)
+	}
+	keys, spare := s.keys[:n], s.spare[:n]
+	for i, px := range pixels {
+		keys[i] = uint64(rank(seed, px))<<32 | uint64(i)
+	}
+	for shift := 32; shift < 64; shift += 16 {
+		var counts [1 << 16]int
+		for _, k := range keys {
+			counts[k>>shift&0xffff]++
+		}
+		pos := 0
+		for b, c := range counts {
+			counts[b] = pos
+			pos += c
+		}
+		for _, k := range keys {
+			b := k >> shift & 0xffff
+			spare[counts[b]] = k
+			counts[b]++
+		}
+		keys, spare = spare, keys
+	}
+	order := make([]uint32, n)
+	for i, k := range keys {
+		order[i] = uint32(k)
+	}
+	return order
 }
 
 // worker is one send goroutine. Workers share only the round's claim counter, which moves once per

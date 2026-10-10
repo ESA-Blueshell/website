@@ -246,6 +246,7 @@ class PingerReportIT : UserTestSupport() {
     fun `a member's device is told its slice of the paint, weighed against the online devices`() {
         val member = createUserWithRole(Role.MEMBER)
         liveStore.touch("sitecie", "replica-a", online = true, pps = 3_000, at = clock.instant())
+        liveStore.touch("sitecie", "replica-b", online = true, pps = 3_000, at = clock.instant())
         freshShares()
 
         mvc
@@ -253,7 +254,7 @@ class PingerReportIT : UserTestSupport() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.from").value(0.0))
             .andExpect(jsonPath("$.to").value(0.25))
-            .andExpect(jsonPath("$.devices").value(2))
+            .andExpect(jsonPath("$.devices").value(3))
     }
 
     @Test

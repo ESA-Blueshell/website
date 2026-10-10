@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.20.2](https://github.com/ESA-Blueshell/website/compare/v1.20.1...v1.20.2) (2026-10-10)
+
+
+### Bug Fixes
+
+* **api:** give every pixel two painters ([#2354](https://github.com/ESA-Blueshell/website/issues/2354)) ([67a07b8](https://github.com/ESA-Blueshell/website/commit/67a07b88f76134b33f61958f84031ff5f8d84664))
+* **frontend:** live stream behind the pinger manager's canvas ([#2353](https://github.com/ESA-Blueshell/website/issues/2353)) ([783c6ca](https://github.com/ESA-Blueshell/website/commit/783c6cab420a3d6663c1137c81a38452b4c9dfbd))
+* **pinger-app:** say why Windows sends nothing, fall back off raw sockets ([#2356](https://github.com/ESA-Blueshell/website/issues/2356)) ([50c1a3b](https://github.com/ESA-Blueshell/website/commit/50c1a3b4604cde0c76eb9da43c04d936e25bfeac))
+* **pinger:** keep the pass going when the share moves ([#2351](https://github.com/ESA-Blueshell/website/issues/2351)) ([24bafea](https://github.com/ESA-Blueshell/website/commit/24bafea4db9c843b65218d9e5594ccbe6b9fd448))
+* **pinger:** wait for a full transmit queue instead of dropping the pings ([#2358](https://github.com/ESA-Blueshell/website/issues/2358)) ([2ce2f57](https://github.com/ESA-Blueshell/website/commit/2ce2f57e2bb9edc470025d83255abecbf9b43569))
+
 ## [1.20.1](https://github.com/ESA-Blueshell/website/compare/v1.20.0...v1.20.1) (2026-10-09)
 
 

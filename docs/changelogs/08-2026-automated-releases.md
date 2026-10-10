@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.20.3](https://github.com/ESA-Blueshell/website/compare/v1.20.2...v1.20.3) (2026-10-10)
+
+
+### Bug Fixes
+
+* **pinger-app:** say so when the network has no IPv6 ([#2363](https://github.com/ESA-Blueshell/website/issues/2363)) ([d0611f9](https://github.com/ESA-Blueshell/website/commit/d0611f9d6a7dbb33bdb82342e27529c9f4a62bb0))
+* **pinger:** write macOS frames in batches, one write per 64 ([#2362](https://github.com/ESA-Blueshell/website/issues/2362)) ([bb8ddab](https://github.com/ESA-Blueshell/website/commit/bb8ddabfbc9eb5a2921a3e590291fd2ca189602a))
+
 ## [1.20.2](https://github.com/ESA-Blueshell/website/compare/v1.20.1...v1.20.2) (2026-10-10)
 
 

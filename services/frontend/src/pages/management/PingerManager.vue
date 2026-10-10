@@ -8,10 +8,12 @@ import CutButton from "@/components/island/CutButton.vue"
 import IconButton from "@/components/island/IconButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import RadioGroup from "@/components/island/RadioGroup.vue"
+import LiveVideo, {STREAM_BADGES, type StreamStatus} from "@/components/pinger/LiveVideo.vue"
 import {
   CANVAS_H,
   CANVAS_W,
   DEFAULT_PAINT,
+  SNTPINGS_STREAM_URL,
   addPlacement,
   apiUrl,
   clockOffset,
@@ -63,6 +65,7 @@ const saving = ref(false)
 const message = ref<{tone: "info" | "danger"; text: string} | null>(null)
 
 const stage = ref<HTMLElement | null>(null)
+const stream = ref<StreamStatus>("connecting")
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const draftOf = ({motion}: Placement): MotionDraft => {
@@ -286,7 +289,8 @@ async function save() {
         <p class="head__body">
           Set what the association paints on the SNTPings canvas. Add one or more images, drag and resize each box
           over the 4K canvas, and set the prefix the event announces. The pinger and everyone running the helper
-          follow this, and a bouncing image moves the same way for all of them.
+          follow this, and a bouncing image moves the same way for all of them. The event's live stream plays
+          behind the boxes, so you see where others draw and can place an image where the canvas is quiet.
         </p>
       </header>
 
@@ -308,12 +312,19 @@ async function save() {
           class="stage"
           :style="{aspectRatio: `${CANVAS_W} / ${CANVAS_H}`}"
         >
+          <live-video
+            v-show="stream !== 'offline'"
+            v-model="stream"
+            class="stage__live"
+            data-testid="pinger-live"
+            :stream-url="SNTPINGS_STREAM_URL"
+          />
           <div class="stage__grid" />
           <div
             v-for="p in placements"
             :key="p.id"
             class="box"
-            :class="{'box--selected': p.id === selectedId}"
+            :class="{'box--selected': p.id === selectedId, 'box--live': stream === 'live'}"
             data-testid="pinger-placement"
             :style="boxStyle(p)"
             @pointerdown="beginDrag(p, 'move', $event)"
@@ -342,6 +353,11 @@ async function save() {
           </p>
           <span class="stage__tag stage__tag--tl">0 · 0</span>
           <span class="stage__tag stage__tag--br">{{ prefix || "…/64" }}</span>
+          <span
+            class="stage__badge"
+            :class="{'stage__badge--on': stream === 'live'}"
+            data-testid="pinger-live-badge"
+          >{{ STREAM_BADGES[stream] }}</span>
           <span class="stage__shade" />
         </div>
       </div>
@@ -538,7 +554,8 @@ async function save() {
 }
 
 /* The editor plate matches the public SNTPings canvas exactly: the dark field with the shell tile
-   behind it, the pixel grid, the corner tags and the brand shade. Only the draggable boxes differ. */
+   behind it, the pixel grid, the corner tags and the brand shade. The live stream covers the tile
+   while it plays, and the tile shows again once the stream is offline. */
 .stage {
   position: relative;
   width: 100%;
@@ -551,6 +568,15 @@ async function save() {
   background-size: auto, 135px 77px;
   background-repeat: repeat;
   touch-action: none;
+}
+
+.stage__live {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
 }
 
 .stage__grid {
@@ -584,6 +610,26 @@ async function save() {
   color: var(--color-brand-lit);
 }
 
+.stage__badge {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  font-family: var(--font-bitmap, ui-monospace, monospace);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: oklch(1 0 0 / 80%);
+  background: oklch(0 0 0 / 55%);
+}
+
+.stage__badge--on {
+  background: color-mix(in oklab, var(--color-danger, #d33) 85%, transparent);
+  color: #fff;
+}
+
 .stage__shade {
   position: absolute;
   inset: 0;
@@ -600,16 +646,29 @@ async function save() {
   color: var(--color-brand-lit);
 }
 
+/* The frame has to read over whatever the stream shows, so the bright line sits between two dark
+   ones, as on the public live canvas. */
 .box {
   position: absolute;
-  border: 2px solid color-mix(in oklab, var(--color-brand-lit) 60%, transparent);
+  border: 2px solid color-mix(in oklab, var(--color-brand-lit) 75%, transparent);
+  box-shadow:
+    inset 0 0 0 2px oklch(0 0 0 / 70%),
+    0 0 0 2px oklch(0 0 0 / 70%);
   cursor: move;
   touch-action: none;
 }
 
 .box--selected {
-  border-color: var(--color-brand-lit);
-  box-shadow: 0 0 0 1px var(--color-brand-lit);
+  border-color: var(--color-acid);
+  box-shadow:
+    inset 0 0 0 2px oklch(0 0 0 / 70%),
+    0 0 0 2px oklch(0 0 0 / 70%),
+    0 0 14px 2px color-mix(in oklab, var(--color-acid) 45%, transparent);
+}
+
+/* Ghosted while the stream plays, so what others draw under a box stays visible. */
+.box--live .box__img {
+  opacity: 0.45;
 }
 
 .box__img {

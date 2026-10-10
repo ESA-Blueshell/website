@@ -2,7 +2,7 @@
  * The combined record plate: the record and when it was set, and the combined rate right now
  * against it.
  */
-import {afterEach, describe, expect, it} from "vitest"
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {mount, type VueWrapper} from "@vue/test-utils"
 import RecordPlate from "@/components/pinger/RecordPlate.vue"
 
@@ -16,7 +16,16 @@ describe("RecordPlate", () => {
     return wrapper
   }
 
-  afterEach(() => wrappers.splice(0).forEach(w => w.unmount()))
+  // Same day as at, so the time shows without a date.
+  beforeEach(() => {
+    vi.useFakeTimers({toFake: ["Date"]})
+    vi.setSystemTime(new Date(2026, 9, 9, 22, 0))
+  })
+
+  afterEach(() => {
+    wrappers.splice(0).forEach(w => w.unmount())
+    vi.useRealTimers()
+  })
 
   it("shows the record with when it was set, and the rate right now against it", () => {
     const wrapper = render({record: {pps: 2_400_000, at}, combinedPps: 1_200_000})

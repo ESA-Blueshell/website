@@ -2,7 +2,7 @@
  * The fastest board: members by peak rate with when they set it, SiteCie's own peak set apart, and
  * the reader's own row marked.
  */
-import {afterEach, describe, expect, it} from "vitest"
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {mount, type VueWrapper} from "@vue/test-utils"
 import FastestBoard from "@/components/pinger/FastestBoard.vue"
 import type {FastestStanding, HouseLine} from "@/domains/pinger"
@@ -24,7 +24,16 @@ describe("FastestBoard", () => {
     return wrapper
   }
 
-  afterEach(() => wrappers.splice(0).forEach(w => w.unmount()))
+  // Same day as at, so the time shows without a date.
+  beforeEach(() => {
+    vi.useFakeTimers({toFake: ["Date"]})
+    vi.setSystemTime(new Date(2026, 9, 9, 22, 0))
+  })
+
+  afterEach(() => {
+    wrappers.splice(0).forEach(w => w.unmount())
+    vi.useRealTimers()
+  })
 
   it("ranks each member by peak rate under their public identity, with when they set it", () => {
     const wrapper = render({rows})

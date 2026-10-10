@@ -14,6 +14,10 @@ import (
 
 var errNotIPv6 = errors.New("destination is not an IPv6 address")
 
+// ErrNoEchoSlot is a send on the ICMP helper API that found every request slot still held: the
+// kernel is not finishing the requests it took.
+var ErrNoEchoSlot = errors.New("no free ICMP helper request slot")
+
 // ipv6Dest is the 16-byte address a sender writes into a sockaddr it reuses, so a send allocates
 // nothing.
 func ipv6Dest(dst net.Addr) ([16]byte, error) {

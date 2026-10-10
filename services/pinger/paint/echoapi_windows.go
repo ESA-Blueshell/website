@@ -110,7 +110,11 @@ func (s *echoAPI) send(b []byte, dst net.Addr) error {
 	slot := s.next
 	ev := s.events[slot]
 	if w, err := windows.WaitForSingleObject(ev, uint32(echoSlotWait/time.Millisecond)); w != windows.WAIT_OBJECT_0 {
-		return fmt.Errorf("no free echo slot: wait %d: %w", w, err)
+		// A timed-out wait sets no error.
+		if err != nil {
+			return fmt.Errorf("%w: %w", ErrNoEchoSlot, err)
+		}
+		return ErrNoEchoSlot
 	}
 	s.next = (slot + 1) % echoSlots
 	s.dst.Addr = addr

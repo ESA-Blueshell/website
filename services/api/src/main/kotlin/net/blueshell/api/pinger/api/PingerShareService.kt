@@ -16,8 +16,11 @@ data class PingerShare(
 /**
  * Splits the paint between the pingers running now, so devices stop all painting the same pixels.
  *
- * Every online device, plus the asking one, gets a slice of [0, 1) proportional to its reported rate,
- * in a fixed order by identity then device id so the slices hold still between polls. A client keeps
+ * Every online device, plus the asking one, joins one of two groups, and each group tiles [0, 1)
+ * with slices proportional to its members' reported rates. Every pixel so has two painters: a
+ * reported rate counts packets leaving the device, and a router that drops them would otherwise
+ * leave that device's slice bare. Members are placed in a fixed order by identity then device id so
+ * the slices hold still between polls. A client keeps
  * pixel i (0-based, placements concatenated in descriptor order) iff frac((i + 1) * 0.6180339887498949)
  * falls in its slice. The clients in services/pinger and services/pinger-app apply that rule; change
  * one, change the others.
@@ -52,12 +55,21 @@ class PingerShareService(
             } else {
                 (online + Participant(identity, deviceId, FLOOR_PPS)).sortedWith(ORDER)
             }
-        val total = participants.sumOf { it.weight }
-        val index = participants.indexOfFirst { it.identity == identity && it.deviceId == deviceId }
-        val before = participants.subList(0, index).sumOf { it.weight }
+        val group = groups(participants).first { members -> members.any { it.identity == identity && it.deviceId == deviceId } }
+        val total = group.sumOf { it.weight }
+        val index = group.indexOfFirst { it.identity == identity && it.deviceId == deviceId }
+        val before = group.subList(0, index).sumOf { it.weight }
         // The last slice ends at exactly 1.0, so rounding can never leave the top pixels unclaimed.
-        val to = if (index == participants.lastIndex) 1.0 else (before + participants[index].weight).toDouble() / total
+        val to = if (index == group.lastIndex) 1.0 else (before + group[index].weight).toDouble() / total
         return PingerShare(from = before.toDouble() / total, to = to, devices = participants.size)
+    }
+
+    // Each participant, in order, joins the lighter group, so both carry about half the rate.
+    private fun groups(participants: List<Participant>): List<List<Participant>> {
+        val first = mutableListOf<Participant>()
+        val second = mutableListOf<Participant>()
+        participants.forEach { p -> if (first.sumOf { it.weight } <= second.sumOf { it.weight }) first += p else second += p }
+        return listOf(first, second)
     }
 
     // Every stream subscriber and poller asks within the same second, so one keyspace walk serves them all.

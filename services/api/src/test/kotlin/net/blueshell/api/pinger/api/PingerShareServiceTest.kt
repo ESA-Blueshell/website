@@ -7,7 +7,6 @@ import net.blueshell.api.pinger.persistence.PingerLive
 import net.blueshell.api.pinger.persistence.PingerLiveDevice
 import net.blueshell.api.pinger.persistence.PingerLiveStore
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
@@ -46,21 +45,28 @@ class PingerShareServiceTest {
     }
 
     @Test
-    fun `slices are proportional to each device's rate`() {
+    fun `two devices each paint everything`() {
         liveDevices(device("member:1", "a", 30_000), device("member:2", "b", 10_000))
 
-        val first = service.share("member:1", "a")
-        val second = service.share("member:2", "b")
+        assertThat(service.share("member:1", "a")).isEqualTo(PingerShare(from = 0.0, to = 1.0, devices = 2))
+        assertThat(service.share("member:2", "b")).isEqualTo(PingerShare(from = 0.0, to = 1.0, devices = 2))
+    }
 
-        assertThat(first).isEqualTo(PingerShare(from = 0.0, to = 0.75, devices = 2))
-        assertThat(second).isEqualTo(PingerShare(from = 0.75, to = 1.0, devices = 2))
+    @Test
+    fun `slices within a group are proportional to each device's rate`() {
+        liveDevices(device("member:1", "a", 40_000), device("member:2", "b", 30_000), device("member:3", "c", 10_000))
+
+        assertThat(service.share("member:1", "a")).isEqualTo(PingerShare(from = 0.0, to = 1.0, devices = 3))
+        assertThat(service.share("member:2", "b")).isEqualTo(PingerShare(from = 0.0, to = 0.75, devices = 3))
+        assertThat(service.share("member:3", "c")).isEqualTo(PingerShare(from = 0.75, to = 1.0, devices = 3))
     }
 
     @Test
     fun `an idle or slow device still gets the floor's weight`() {
-        liveDevices(device("member:1", "a", 0), device("member:2", "b", 3_000))
+        liveDevices(device("member:1", "a", 0), device("member:2", "b", 3_000), device("member:3", "c", 9_000))
 
-        assertThat(service.share("member:1", "a")).isEqualTo(PingerShare(from = 0.0, to = 0.25, devices = 2))
+        assertThat(service.share("member:1", "a")).isEqualTo(PingerShare(from = 0.0, to = 0.1, devices = 3))
+        assertThat(service.share("member:3", "c")).isEqualTo(PingerShare(from = 0.1, to = 1.0, devices = 3))
     }
 
     @Test
@@ -72,33 +78,41 @@ class PingerShareServiceTest {
 
     @Test
     fun `a requester not yet online is added at the floor`() {
-        liveDevices(device("member:1", "a", 3_000))
+        liveDevices(device("member:1", "a", 3_000), device("member:3", "c", 1_000))
 
         val share = service.share("member:2", "new")
 
-        assertThat(share).isEqualTo(PingerShare(from = 0.75, to = 1.0, devices = 2))
+        assertThat(share).isEqualTo(PingerShare(from = 0.0, to = 0.5, devices = 3))
     }
 
     @Test
     fun `order is by identity then device, whatever order the store lists them in`() {
-        liveDevices(device("sitecie", "r1", 1_000), device("member:1", "b", 1_000), device("member:1", "a", 1_000))
+        liveDevices(
+            device("sitecie", "r1", 1_000),
+            device("member:1", "b", 1_000),
+            device("member:1", "a", 1_000),
+            device("member:2", "a", 1_000),
+        )
 
         assertThat(service.share("member:1", "a").from).isEqualTo(0.0)
-        assertThat(service.share("member:1", "b").from).isCloseTo(1.0 / 3, within(1e-12))
-        assertThat(service.share("sitecie", "r1").from).isCloseTo(2.0 / 3, within(1e-12))
+        assertThat(service.share("member:1", "b").from).isEqualTo(0.0)
+        assertThat(service.share("member:2", "a").from).isEqualTo(0.5)
+        assertThat(service.share("sitecie", "r1").from).isEqualTo(0.5)
     }
 
     @Test
-    fun `the slices tile the unit interval and the last ends at exactly one`() {
+    fun `every pixel has two painters and each group ends at exactly one`() {
         val devices = (1..7).map { device("member:$it", "d", 1_000 + it * 1_337) }
         liveDevices(*devices.toTypedArray())
 
         val shares = devices.map { service.share(it.identity, it.deviceId) }
 
-        assertThat(shares.first().from).isEqualTo(0.0)
-        shares.zipWithNext().forEach { (a, b) -> assertThat(b.from).isEqualTo(a.to) }
-        assertThat(shares.last().to).isEqualTo(1.0)
         shares.forEach { assertThat(it.from).isLessThan(it.to) }
+        assertThat(shares.count { it.from == 0.0 }).isEqualTo(2)
+        assertThat(shares.count { it.to == 1.0 }).isEqualTo(2)
+        listOf(0.0, 0.1, 0.33, 0.5, 0.77, 0.999).forEach { x ->
+            assertThat(shares.count { x >= it.from && x < it.to }).isEqualTo(2)
+        }
     }
 
     @Test

@@ -75,6 +75,8 @@ type Runner struct {
 	signedIn atomic.Bool
 	message  atomic.Pointer[string]
 	account  atomic.Pointer[string]
+	// problem is why the sender gets nothing out right now; it shows over message while set.
+	problem atomic.Pointer[string]
 	// rate is this app's own send rate in pps, clamped to the server range. It overrides the paint
 	// job's rate so the member sets how hard their own machine pings, independent of SiteCie's.
 	rate atomic.Int64
@@ -263,10 +265,11 @@ func (r *Runner) Run(ctx context.Context) error {
 		r.signedIn.Store(true)
 	}
 
-	socks, datagram, err := r.open()
+	o, err := r.open()
 	if err != nil {
 		return err
 	}
+	socks, tracked := track(o)
 	defer paint.CloseSockets(socks)
 
 	var poller *apipaint.Poller
@@ -278,7 +281,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		return r.applyRate(cur)
 	}
 	sender := paint.NewSender(paint.Conns(socks), nil, r.window, settings)
-	if datagram {
+	if o.datagram {
 		sender.UseDatagramAddresses()
 	}
 	r.sender.Store(sender)
@@ -289,6 +292,16 @@ func (r *Runner) Run(ctx context.Context) error {
 	poller = apipaint.NewPoller(apipaint.NewClient(r.base), paintPollInterval, shared, func(canvas.Placement) { debug.FreeOSMemory() })
 	poller.SetOffsetSink(sender)
 	shares := apipaint.NewShareStream(r.base, r.poster.DeviceID, apipaint.Bearer(r.auth.Current))
+	watch := &sendWatch{
+		r:        r,
+		snapshot: sender.Snapshot,
+		settings: poller.Current,
+		readErr:  poller.ReadError,
+		socks:    tracked,
+		path:     o.path,
+		fallback: o.fallback,
+		stall:    stallWatch{after: stallAfter},
+	}
 
 	var wg sync.WaitGroup
 	if probe, err := headroom.NewTCPProbe(r.base); err == nil {
@@ -297,7 +310,8 @@ func (r *Runner) Run(ctx context.Context) error {
 		r.headroom.SetEnabled(false)
 		slog.Warn("headroom probe", "err", err)
 	}
-	wg.Add(4)
+	wg.Add(5)
+	go func() { defer wg.Done(); watch.run(ctx) }()
 	go func() { defer wg.Done(); poller.Run(ctx) }()
 	go func() { defer wg.Done(); shares.Run(ctx, shared.SetShare) }()
 	go func() { defer wg.Done(); r.reportLoop(ctx, sender) }()
@@ -311,14 +325,29 @@ var openSockets = openICMP
 
 // open opens the send sockets and puts what the member should know about them in the status line:
 // the error that stops the app, or a notice that costs rate, or nothing.
-func (r *Runner) open() ([]socket, bool, error) {
-	socks, datagram, notice, err := openSockets()
+func (r *Runner) open() (opened, error) {
+	o, err := openSockets()
 	if err != nil {
 		r.setMessage("cannot open socket: " + err.Error())
-		return nil, false, err
+		return opened{}, err
 	}
-	r.setMessage(notice)
-	return socks, datagram, nil
+	r.setMessage(o.notice)
+	return o, nil
+}
+
+// track wraps the sockets the watch follows. The rest go to the sender bare, since a wrapper hides
+// the batch send the sender finds on a Linux socket.
+func track(o opened) ([]socket, []*swapSocket) {
+	if !o.track && o.fallback == nil {
+		return o.socks, nil
+	}
+	socks := make([]socket, len(o.socks))
+	tracked := make([]*swapSocket, len(o.socks))
+	for i, c := range o.socks {
+		tracked[i] = newSwapSocket(c)
+		socks[i] = tracked[i]
+	}
+	return socks, tracked
 }
 
 // load is what the headroom controller needs from the sender for one step.
@@ -378,6 +407,8 @@ func (r *Runner) afterReport(ctx context.Context, err error) {
 
 func (r *Runner) setMessage(m string) { r.message.Store(&m) }
 
+func (r *Runner) setProblem(m string) { r.problem.Store(&m) }
+
 func (r *Runner) setAccount(a string) { r.account.Store(&a) }
 
 func (r *Runner) loadAccount() string {
@@ -388,6 +419,9 @@ func (r *Runner) loadAccount() string {
 }
 
 func (r *Runner) loadMessage() string {
+	if p := r.problem.Load(); p != nil && *p != "" {
+		return *p
+	}
 	if m := r.message.Load(); m != nil {
 		return *m
 	}

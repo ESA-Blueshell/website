@@ -19,13 +19,23 @@ type WindowsSocket interface {
 // administrator, and otherwise handles on the ICMP helper API, which needs no rights but holds
 // every request open until it times out. Both take raw and datagram destinations alike.
 func OpenWindows() ([]WindowsSocket, error) {
-	raw, rawErr := OpenSockets(func() (WindowsSocket, error) { return listenRaw() })
+	raw, rawErr := OpenRaw()
 	if rawErr == nil {
 		return raw, nil
 	}
-	api, apiErr := OpenSockets(func() (WindowsSocket, error) { return listenEchoAPI() })
+	api, apiErr := OpenEchoAPI()
 	if apiErr == nil {
 		return api, nil
 	}
 	return nil, fmt.Errorf("raw ICMPv6 socket: %v; ICMP helper API: %w", rawErr, apiErr)
+}
+
+// OpenRaw opens Workers() raw ICMPv6 sockets, which only an administrator can.
+func OpenRaw() ([]WindowsSocket, error) {
+	return OpenSockets(func() (WindowsSocket, error) { return listenRaw() })
+}
+
+// OpenEchoAPI opens Workers() handles on the ICMP helper API, which needs no rights.
+func OpenEchoAPI() ([]WindowsSocket, error) {
+	return OpenSockets(func() (WindowsSocket, error) { return listenEchoAPI() })
 }

@@ -48,8 +48,10 @@ type Poller struct {
 	moveEvery   time.Duration
 
 	settings atomic.Pointer[paint.Settings]
-	clock    serverClock
-	boxes    atomic.Pointer[[]placedBox]
+	// readErr is the last failed read of the paint job or its images, cleared by one that lands.
+	readErr atomic.Pointer[string]
+	clock   serverClock
+	boxes   atomic.Pointer[[]placedBox]
 
 	// mu serialises applying a descriptor, which the stream and the retry both do.
 	mu      sync.Mutex
@@ -94,6 +96,17 @@ func (p *Poller) SetOffsetSink(o OffsetSink) { p.offsets = o }
 // Settings, which has no prefix, so the sender stays idle.
 func (p *Poller) Current() paint.Settings { return *p.settings.Load() }
 
+// ReadError is why the last read of the paint job or one of its images failed, or empty once a
+// read lands.
+func (p *Poller) ReadError() string {
+	if e := p.readErr.Load(); e != nil {
+		return *e
+	}
+	return ""
+}
+
+func (p *Poller) setReadError(e string) { p.readErr.Store(&e) }
+
 // Run follows the paint stream when the source has one, and polls every interval otherwise or while
 // the api serves none.
 func (p *Poller) Run(ctx context.Context) {
@@ -117,6 +130,7 @@ func (p *Poller) Run(ctx context.Context) {
 			continue
 		default:
 			slog.Warn("paint stream", "err", err)
+			p.setReadError(err.Error())
 			// A read while the stream is down keeps a change made meanwhile from waiting on it.
 			p.poll(ctx)
 		}
@@ -184,6 +198,7 @@ func (p *Poller) poll(ctx context.Context) {
 	d, err := p.src.Descriptor(ctx)
 	if err != nil {
 		slog.Warn("read paint descriptor", "err", err)
+		p.setReadError(err.Error())
 		return
 	}
 	p.apply(ctx, d, p.now())
@@ -200,6 +215,7 @@ func (p *Poller) applyLocked(ctx context.Context, d Descriptor, at time.Time) {
 	p.clock.observe(d.ServerTime, at)
 	p.settings.Store(&paint.Settings{Prefix: parsePrefix(d.Prefix), RatePPS: d.RatePPS, Enabled: d.SiteCieEnabled})
 	p.pending = nil
+	p.setReadError("")
 	if p.seen && !placementsChanged(p.last, d) {
 		p.last = d
 		return
@@ -229,6 +245,7 @@ func (p *Poller) place(ctx context.Context, placements []Placement) bool {
 		img, err := p.src.Image(ctx, pl.ImageURL)
 		if err != nil {
 			slog.Warn("fetch paint image", "url", pl.ImageURL, "err", err)
+			p.setReadError("fetch paint image: " + err.Error())
 			return false
 		}
 		placed := canvas.PlaceInBox(img, pl.OriginX, pl.OriginY, pl.Width, pl.Height)

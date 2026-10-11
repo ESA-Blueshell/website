@@ -20,8 +20,8 @@ images:
     newTag: v1.20.3 # {"$imagepolicy": "flux-system:api:tag"}
     digest: sha256:ec333b8cd4e77759cb81e4db3491e1585f73de8da0d1bd7c3c705dfdef34fd8d # {"$imagepolicy": "flux-system:api:digest"}
   - name: ghcr.io/esa-blueshell/frontend
-    newTag: v1.20.2 # {"$imagepolicy": "flux-system:frontend:tag"}
-    digest: sha256:d0b653b2fa55922396de5a7cfb22afce61d37a488666f2c2ff844fe415a6d165 # {"$imagepolicy": "flux-system:frontend:digest"}
+    newTag: v1.20.3 # {"$imagepolicy": "flux-system:frontend:tag"}
+    digest: sha256:07ed40cdc248452f4a360d58e710c2b3756fc8109a0c08937e26047e4aeb3dc5 # {"$imagepolicy": "flux-system:frontend:digest"}
   # Released with the rest, but nothing else depends on it. v0.0.0 does not exist: the pod
   # sits in ImagePullBackOff until a release publishes a pinger image and the next scan
   # rewrites this line.

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.4](https://github.com/ESA-Blueshell/website/compare/v1.20.3...v1.20.4) (2026-10-11)
+
+
+### Bug Fixes
+
+* **pinger:** send Linux frames through a TX ring ([#2360](https://github.com/ESA-Blueshell/website/issues/2360)) ([ce07c00](https://github.com/ESA-Blueshell/website/commit/ce07c009805030a5578d34d4bb2f9b0044329225))
+
 ## [1.20.3](https://github.com/ESA-Blueshell/website/compare/v1.20.2...v1.20.3) (2026-10-10)
 
 

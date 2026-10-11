@@ -8,8 +8,11 @@ import (
 	"net"
 	"net/netip"
 	"os"
+	"os/exec"
+	"sync/atomic"
 	"testing"
 	"time"
+	"unsafe"
 
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv6"
@@ -164,4 +167,197 @@ func ethernetWithIPv6(t *testing.T) (net.Interface, netip.Addr) {
 	}
 	t.Skip("no Ethernet interface with an IPv6 address")
 	return net.Interface{}, netip.Addr{}
+}
+
+func TestTxRingFillsSlotsInOrder(t *testing.T) {
+	r := &txRing{mem: make([]byte, ringFrames*ringFrameSize), vnet: vnetHdrLen}
+	for i := range ringFrames + 2 {
+		f, err := r.claim(-1, nil)
+		if err != nil {
+			t.Fatalf("claim %d: %v", i, err)
+		}
+		slot := i % ringFrames
+		if want := slot*ringFrameSize + ringData + vnetHdrLen; &f[0] != &r.mem[want] {
+			t.Fatalf("claim %d: frame space not at slot %d", i, slot)
+		}
+		r.ready(62)
+		hdr := r.mem[slot*ringFrameSize:]
+		if got := binary.NativeEndian.Uint32(hdr[4:]); got != vnetHdrLen+62 {
+			t.Fatalf("slot %d: tp_len %d, want %d", slot, got, vnetHdrLen+62)
+		}
+		if got := binary.NativeEndian.Uint16(hdr[ringData+2:]); got != 62 {
+			t.Fatalf("slot %d: vnet hdr_len %d, want the whole frame", slot, got)
+		}
+		if got := *r.status(slot); got != unix.TP_STATUS_SEND_REQUEST {
+			t.Fatalf("slot %d: status %d, want send request", slot, got)
+		}
+		if i == ringFrames-1 {
+			// The kernel hands slots back as their frames leave.
+			for s := range ringFrames {
+				*r.status(s) = unix.TP_STATUS_AVAILABLE
+			}
+		}
+	}
+}
+
+func TestTxRingClaimFailsWhileTheKernelHoldsTheSlot(t *testing.T) {
+	r := &txRing{mem: make([]byte, ringFrames*ringFrameSize)}
+	*r.status(0) = unix.TP_STATUS_SENDING
+	if _, err := r.claim(-1, &unix.RawSockaddrLinklayer{}); err == nil {
+		t.Fatal("claimed a slot the kernel still holds")
+	}
+	if r.next != 0 {
+		t.Fatalf("next %d, want 0: a failed claim must not skip the slot", r.next)
+	}
+}
+
+// TestFrameRingSendsEveryFrameInOrder wraps the TX ring several times and requires every frame to
+// leave once, in order, with its own destination. Like TestFrameMatchesKernel it needs
+// PINGER_FRAMES_E2E and the test prefix routed over an Ethernet link.
+func TestFrameRingSendsEveryFrameInOrder(t *testing.T) {
+	if os.Getenv("PINGER_FRAMES_E2E") == "" {
+		t.Skip("set PINGER_FRAMES_E2E and route 2001:db8:5747:5055::/64 over an Ethernet link to run")
+	}
+	capture, err := unix.Socket(unix.AF_PACKET, unix.SOCK_RAW, int(htons(unix.ETH_P_ALL)))
+	if err != nil {
+		t.Fatalf("open capture socket: %v", err)
+	}
+	defer unix.Close(capture)
+	_ = unix.SetsockoptInt(capture, unix.SOL_SOCKET, unix.SO_RCVBUFFORCE, 64<<20)
+	tv := unix.NsecToTimeval((200 * time.Millisecond).Nanoseconds())
+	_ = unix.SetsockoptTimeval(capture, unix.SOL_SOCKET, unix.SO_RCVTIMEO, &tv)
+
+	// No qdisc bypass: bypassed frames skip the taps the capture reads.
+	socks, err := OpenFrameSockets(false, nil)
+	if err != nil {
+		t.Fatalf("open frame sockets: %v", err)
+	}
+	defer CloseSockets(socks)
+	s := socks[0]
+	if s.ring == nil || s.ring.vnet == 0 {
+		t.Fatalf("socket has ring %+v, want a TX ring with a virtio header", s.ring)
+	}
+
+	const id, total = 0x5151, 3*ringFrames + 5
+	echo, _ := (&icmp.Message{Type: ipv6.ICMPTypeEchoRequest, Body: &icmp.Echo{ID: id, Seq: 1}}).Marshal(nil)
+	prefix := netip.MustParseAddr("2001:db8:5747:5055::").As16()
+	msgs := make([]ipv6.Message, batch)
+	for sent := 0; sent < total; {
+		n := min(batch, total-sent)
+		for i := range n {
+			ip := net.IP(append([]byte(nil), prefix[:]...))
+			binary.BigEndian.PutUint32(ip[12:], uint32(sent+i))
+			msgs[i] = ipv6.Message{Buffers: [][]byte{echo}, Addr: &net.IPAddr{IP: ip}}
+		}
+		got, err := s.WriteBatch(msgs[:n], 0)
+		if err != nil || got != n {
+			t.Fatalf("write batch at %d: %d sent, %v", sent, got, err)
+		}
+		sent += n
+	}
+
+	buf := make([]byte, 2048)
+	next := uint32(0)
+	for deadline := time.Now().Add(5 * time.Second); next < total && time.Now().Before(deadline); {
+		n, from, err := unix.Recvfrom(capture, buf, 0)
+		if err != nil {
+			continue
+		}
+		f := buf[:n]
+		ll, ok := from.(*unix.SockaddrLinklayer)
+		if !ok || ll.Pkttype != unix.PACKET_OUTGOING || n < frameHead+8 ||
+			[8]byte(f[ethHeader+24:ethHeader+32]) != [8]byte(prefix[:8]) || binary.BigEndian.Uint16(f[frameHead+4:]) != id {
+			continue
+		}
+		if got := binary.BigEndian.Uint32(f[ethHeader+36:]); got != next {
+			t.Fatalf("frame %d went to ...:%x", next, got)
+		}
+		if n != frameHead+len(echo) {
+			t.Fatalf("frame %d is %d bytes, want %d", next, n, frameHead+len(echo))
+		}
+		next++
+	}
+	if next != total {
+		t.Fatalf("%d of %d frames left", next, total)
+	}
+}
+
+// TestFrameRingWaitsOutAFullQueue sends through a tap whose transmit ring holds 16 frames and
+// which drains slowly, the way a qdisc-bypassing socket meets a full virtio queue, and requires
+// every frame WriteBatch counted to leave. It needs PINGER_FRAMES_E2E, root and the ip tool.
+func TestFrameRingWaitsOutAFullQueue(t *testing.T) {
+	if os.Getenv("PINGER_FRAMES_E2E") == "" {
+		t.Skip("set PINGER_FRAMES_E2E and run as root to run")
+	}
+	tun, err := unix.Open("/dev/net/tun", unix.O_RDWR|unix.O_CLOEXEC, 0)
+	if err != nil {
+		t.Skipf("no tun device: %v", err)
+	}
+	var ifr [unix.IFNAMSIZ + 64]byte
+	copy(ifr[:], "pingtest0")
+	*(*uint16)(unsafe.Pointer(&ifr[unix.IFNAMSIZ])) = unix.IFF_TAP | unix.IFF_NO_PI
+	if _, _, e := unix.Syscall(unix.SYS_IOCTL, uintptr(tun), unix.TUNSETIFF, uintptr(unsafe.Pointer(&ifr[0]))); e != 0 {
+		t.Fatalf("create tap: %v", e)
+	}
+	for _, args := range [][]string{
+		{"link", "set", "pingtest0", "txqueuelen", "16", "up"},
+		{"-6", "addr", "add", "2001:db8:7::2/64", "dev", "pingtest0", "nodad"},
+		{"-6", "neigh", "replace", "2001:db8:7::1", "lladdr", "02:00:00:00:00:07", "dev", "pingtest0", "nud", "permanent"},
+		{"-6", "route", "replace", "2001:db8:7:7::/64", "via", "2001:db8:7::1", "dev", "pingtest0"},
+	} {
+		if out, err := exec.Command("ip", args...).CombinedOutput(); err != nil {
+			t.Fatalf("ip %v: %v: %s", args, err, out)
+		}
+	}
+	const id, total = 0x7777, 512
+	var arrived atomic.Int64
+	// Closing the tap fd removes the link; the reader then fails out.
+	defer unix.Close(tun)
+	go func() {
+		buf := make([]byte, 2048)
+		for n := 0; ; n++ {
+			k, err := unix.Read(tun, buf)
+			if err != nil {
+				return
+			}
+			if k >= frameHead+8 && binary.BigEndian.Uint16(buf[frameHead+4:]) == id {
+				arrived.Add(1)
+			}
+			if n%8 == 0 {
+				time.Sleep(time.Millisecond)
+			}
+		}
+	}()
+
+	socks, err := OpenFrameSockets(true, nil)
+	if err != nil {
+		t.Fatalf("open frame sockets: %v", err)
+	}
+	defer CloseSockets(socks)
+	s := socks[0]
+	if s.ring == nil {
+		t.Fatal("socket has no TX ring")
+	}
+	echo, _ := (&icmp.Message{Type: ipv6.ICMPTypeEchoRequest, Body: &icmp.Echo{ID: id, Seq: 1}}).Marshal(nil)
+	prefix := netip.MustParseAddr("2001:db8:7:7::").As16()
+	msgs := make([]ipv6.Message, batch)
+	counted := 0
+	for sent := 0; sent < total; sent += batch {
+		for i := range msgs {
+			ip := net.IP(append([]byte(nil), prefix[:]...))
+			binary.BigEndian.PutUint32(ip[12:], uint32(sent+i))
+			msgs[i] = ipv6.Message{Buffers: [][]byte{echo}, Addr: &net.IPAddr{IP: ip}}
+		}
+		n, err := s.WriteBatch(msgs, 0)
+		if err != nil {
+			t.Fatalf("write batch at %d: %v", sent, err)
+		}
+		counted += n
+	}
+	for deadline := time.Now().Add(3 * time.Second); arrived.Load() < int64(counted) && time.Now().Before(deadline); {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := arrived.Load(); got != int64(counted) {
+		t.Fatalf("%d of the %d frames counted as sent left", got, counted)
+	}
 }

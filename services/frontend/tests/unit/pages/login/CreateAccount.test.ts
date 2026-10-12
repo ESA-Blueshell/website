@@ -55,6 +55,17 @@ describe("CreateAccount page", () => {
     expect(wrapper.findComponent({name: "EmailConfirmationPanel"}).props("continuationToken")).toBe("sel.ver")
   })
 
+  it("shows the panel the address and the username the form handed back", async () => {
+    const wrapper = mountPage()
+    await wrapper.findComponent({name: "UserForm"}).vm.$emit("update:modelValue", {email: "new@example.com", username: "lena"})
+
+    await submit(wrapper)
+
+    const panel = wrapper.findComponent({name: "EmailConfirmationPanel"})
+    expect(panel.props("email")).toBe("new@example.com")
+    expect(panel.props("username")).toBe("lena")
+  })
+
   it("returns to the form when the applicant steps back", async () => {
     const wrapper = mountPage()
     await submit(wrapper)

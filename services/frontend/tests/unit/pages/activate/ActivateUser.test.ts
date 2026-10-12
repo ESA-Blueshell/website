@@ -73,6 +73,9 @@ describe("ActivateUser page", () => {
     await settle()
 
     expect(wrapper.text()).toContain("your membership has started")
+    const done = wrapper.get("[data-testid=activate-user-success-state]")
+    expect(done.get("svg").attributes("aria-hidden")).toBe("true")
+    expect(done.find("i").exists()).toBe(false)
   })
 
   it("says the link could not be verified when the API refuses the token", async () => {
@@ -84,6 +87,9 @@ describe("ActivateUser page", () => {
 
     expect(mockHandleNetworkError).toHaveBeenCalledWith(refusal)
     expect(wrapper.text()).toContain("invalid, expired, or already used")
+    const notice = wrapper.getComponent({name: "NoticeBox"})
+    expect(notice.attributes("data-testid")).toBe("activate-user-error-alert")
+    expect(notice.attributes("role")).toBe("alert")
 
     vi.advanceTimersByTime(2499)
     expect(mockRouterPush).not.toHaveBeenCalled()

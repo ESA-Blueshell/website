@@ -5,11 +5,12 @@
       data-testid="not-found"
       style="max-width: 800px;"
     >
-      <v-img
-        :src="$require('@/assets/shellyooooooooooooohhhhhhhhhhh.png')"
+      <img
+        alt=""
         class="mx-auto"
-        style="max-width: 800px"
-      />
+        :src="$require('@/assets/shellyooooooooooooohhhhhhhhhhh.png')"
+        style="display: block; width: 100%; max-width: 800px"
+      >
       <p class="mt-10 text-h6 text-sm-h5">
         Uh oh, we made a fucky wucky! Pwease don't report this incident to board otherwise they will
         whip us again. Or do if you're hate sitecie (but then we hate you too >:(

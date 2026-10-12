@@ -27,6 +27,16 @@ describe("CutButton", () => {
     expect(cut({href: "https://discord.gg/x"}).attributes("href")).toBe("https://discord.gg/x")
   })
 
+  it("hands a file to the browser to save, even when the file is on the site", () => {
+    const wrapper = cut({href: "/assets/statutes.pdf", download: "Statutes.pdf"})
+
+    expect(wrapper.findComponent(RouterLinkStub).exists()).toBe(false)
+    expect(wrapper.element.tagName).toBe("A")
+    expect(wrapper.attributes("href")).toBe("/assets/statutes.pdf")
+    expect(wrapper.attributes("download")).toBe("Statutes.pdf")
+    expect(cut({href: "https://example.org/a"}).attributes("download")).toBeUndefined()
+  })
+
   it("opens a new tab only for somewhere that is not the site", () => {
     const away = cut({href: "https://discord.gg/x", away: true})
 

@@ -6,7 +6,7 @@
       class="mx-auto my-10"
       style="max-width: 600px"
     >
-      <v-card class="pa-6 text-center">
+      <div class="activate-panel">
         <div
           v-if="loading"
           class="d-flex align-center justify-center"
@@ -22,13 +22,19 @@
           v-else-if="succeeded"
           data-testid="activate-user-success-state"
         >
-          <v-icon
-            class="mb-2"
-            color="success"
-            size="48"
+          <svg
+            aria-hidden="true"
+            class="activate-panel__done"
+            fill="none"
+            height="48"
+            stroke="currentColor"
+            stroke-linecap="square"
+            stroke-width="3"
+            viewBox="0 0 24 24"
+            width="48"
           >
-            mdi-check-circle
-          </v-icon>
+            <path d="M4 12.5 9.5 18 20 6.5" />
+          </svg>
           <p class="text-subtitle-1">
             {{ membershipStarted
               ? "Account confirmed and your membership has started. You will be redirected to the login page."
@@ -37,18 +43,17 @@
         </div>
 
         <!-- Error -->
-        <v-alert
+        <notice-box
           v-else
-          data-testid="activate-user-error-alert"
-          type="warning"
-          variant="tonal"
+          tone="warning"
+          testid="activate-user-error-alert"
         >
           <div>{{ errorMessage }}</div>
           <div class="mt-2">
             You will be redirected to the login page.
           </div>
-        </v-alert>
-      </v-card>
+        </notice-box>
+      </div>
     </div>
   </v-main>
 </template>
@@ -58,6 +63,7 @@ import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {activateUser} from "@/domains/recovery"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
@@ -106,8 +112,17 @@ onMounted(async () => {
 })
 </script>
 
-<style lang="scss" scoped>
-.v-card {
-  border-radius: 12px;
+<style scoped>
+/* Not `.island-panel`: its ground is the island's, and this page stands outside one. */
+.activate-panel {
+  padding: 1.5rem;
+  background-color: var(--color-surface);
+  text-align: center;
+}
+
+.activate-panel__done {
+  display: block;
+  margin: 0 auto 0.5rem;
+  color: var(--color-ok);
 }
 </style>

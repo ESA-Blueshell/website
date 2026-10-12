@@ -51,7 +51,7 @@ const playoffs = ref<Matchup[]>([
       </p>
 
       <div class="table-container">
-        <v-table>
+        <table class="showdown-table">
           <thead>
             <tr>
               <th>Group A</th>
@@ -71,9 +71,9 @@ const playoffs = ref<Matchup[]>([
               </td>
             </tr>
           </tbody>
-        </v-table>
+        </table>
 
-        <v-table>
+        <table class="showdown-table">
           <thead>
             <tr>
               <th>Group B</th>
@@ -93,12 +93,12 @@ const playoffs = ref<Matchup[]>([
               </td>
             </tr>
           </tbody>
-        </v-table>
+        </table>
       </div>
 
       <h2>Playoffs</h2>
       <h4>Week 1</h4>
-      <v-table>
+      <table class="showdown-table">
         <thead>
           <tr>
             <th>Team 1</th>
@@ -120,12 +120,34 @@ const playoffs = ref<Matchup[]>([
             </td>
           </tr>
         </tbody>
-      </v-table>
+      </table>
     </div>
   </v-main>
 </template>
 
 <style lang="scss" scoped>
+.showdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-surface);
+}
+
+.showdown-table th,
+.showdown-table td {
+  padding: 0.6rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.showdown-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ash);
+  background-color: var(--color-raised);
+}
+
 .table-container {
   display: flex;
   gap: 32px;

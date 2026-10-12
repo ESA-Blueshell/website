@@ -23,9 +23,3 @@ export default {
   },
 }
 </script>
-
-<style lang="scss" scoped>
-.v-row {
-  background-color: #212121;
-}
-</style>

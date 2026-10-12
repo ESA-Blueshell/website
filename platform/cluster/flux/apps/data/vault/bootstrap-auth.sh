@@ -10,7 +10,7 @@ set -eu
 signed_in=false
 if [ -z "${VAULT_TOKEN:-}" ]; then
   VAULT_TOKEN=$(vault write -field=token auth/kubernetes/login role=bootstrap \
-    jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token)
+    jwt=@/var/run/secrets/vault/token)
   export VAULT_TOKEN
   signed_in=true
 fi
@@ -303,9 +303,11 @@ vault write auth/kubernetes/role/backup-gatus \
   policies="backup-gatus" \
   ttl="1h"
 
+# Only a token issued for Vault signs in: the Job's projected one, never its account's default.
 vault write auth/kubernetes/role/bootstrap \
   bound_service_account_names="vault-bootstrap-auth" \
   bound_service_account_namespaces="data-system" \
+  audience="vault" \
   policies="bootstrap" \
   ttl="15m"
 

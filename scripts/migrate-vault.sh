@@ -109,7 +109,7 @@ if $finish; then
   [[ -n $new_token ]] || die "There is no $TOKEN_SECRET; the root token is already gone."
   new token lookup >/dev/null 2>&1 || die "vault-v2 refuses the stored root token; it may be revoked already."
   # The bootstrap Job must manage without it before it goes.
-  jwt=$("${K[@]}" create token vault-bootstrap-auth --duration=10m) ||
+  jwt=$("${K[@]}" create token vault-bootstrap-auth --audience=vault --duration=10m) ||
     die "No token for the service account vault-bootstrap-auth."
   job_token=$(printf '%s' "$jwt" | new write -field=token auth/kubernetes/login role=bootstrap jwt=- 2>/dev/null) ||
     die "The bootstrap Job cannot sign in to vault-v2 yet. Run this script without --finish from a checkout that has the bootstrap role, then again with --finish."
@@ -333,7 +333,9 @@ step "Policies: as bootstrap-auth.sh writes them: $managed; copied: $(unknown "$
 
 for entry in $K8S_ROLES; do
   role=${entry%%:*}; rest=${entry#*:}; namespace=${rest%%:*}; account=${rest#*:}
-  if ! jwt=$(kubectl --context "$context" -n "$namespace" create token "$account" --duration=10m 2>/dev/null); then
+  audience=()
+  [[ $role == bootstrap ]] && audience=(--audience=vault)
+  if ! jwt=$(kubectl --context "$context" -n "$namespace" create token "$account" ${audience[@]+"${audience[@]}"} --duration=10m 2>/dev/null); then
     echo "  skipped: role $role, there is no service account $namespace/$account"
     continue
   fi

@@ -123,9 +123,6 @@ function documentUrl(path: string): string {
 
 <style scoped>
 .documents {
-  margin: 0;
-  padding: 0;
-  list-style: none;
   background-color: var(--color-surface);
 }
 
@@ -149,5 +146,26 @@ function documentUrl(path: string): string {
   min-width: 6.5rem;
   display: flex;
   justify-content: flex-end;
+}
+
+/* Three columns do not fit a phone, least of all inside the sign-up form: the title takes
+   its own line and the two buttons stand under it. */
+@media (--phone) {
+  .documents__row {
+    grid-template-columns: auto auto 1fr;
+  }
+
+  .documents__title {
+    grid-column: 1 / -1;
+  }
+
+  .documents__cell {
+    min-width: 0;
+    justify-content: flex-start;
+  }
+
+  .documents__cell:empty {
+    display: none;
+  }
 }
 </style>

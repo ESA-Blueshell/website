@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
+import {mount, RouterLinkStub} from "@vue/test-utils"
 import DocumentTable from "@/components/base/DocumentTable.vue"
 import {
   ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES,
@@ -7,7 +7,8 @@ import {
 } from "@/config/policies"
 
 const {mockRequire} = vi.hoisted(() => ({
-  mockRequire: vi.fn((path: string) => `https://assets.example.test/${encodeURIComponent(path)}`),
+  // A bundled document is served from a path on the site, which is what the build returns.
+  mockRequire: vi.fn((path: string) => `/assets/${encodeURIComponent(path)}`),
 }))
 
 vi.mock("@/plugins/require.ts", () => ({
@@ -15,11 +16,11 @@ vi.mock("@/plugins/require.ts", () => ({
 }))
 
 function assetUrl(path: string) {
-  return `https://assets.example.test/${encodeURIComponent(path)}`
+  return `/assets/${encodeURIComponent(path)}`
 }
 
 function mountTable() {
-  return mount(DocumentTable)
+  return mount(DocumentTable, {global: {stubs: {RouterLink: RouterLinkStub}}})
 }
 
 function documentLinks(wrapper: ReturnType<typeof mountTable>) {
@@ -33,6 +34,17 @@ function documentLinks(wrapper: ReturnType<typeof mountTable>) {
 describe("DocumentTable", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it("offers every document as a file to save, never as a page for the router to open", () => {
+    const wrapper = mountTable()
+
+    expect(wrapper.findAllComponents(RouterLinkStub)).toHaveLength(0)
+    expect(documentLinks(wrapper)).toHaveLength(11)
+    for (const link of documentLinks(wrapper)) {
+      expect(link.href).toMatch(/^\/assets\//)
+      expect(link.download).toMatch(/\.pdf$/)
+    }
   })
 
   it("renders a Dutch and English link for every bilingual document", () => {

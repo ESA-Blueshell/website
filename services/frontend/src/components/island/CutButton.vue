@@ -9,13 +9,16 @@ import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 
 defineOptions({name: "CutButton"})
 
-const {href = "", tone = "plain", away = false, submit = false, small = false, testid = undefined} = defineProps<{
+const {href = "", tone = "plain", away = false, download = undefined, submit = false, small = false, testid = undefined} = defineProps<{
   /** Where it leads. A path is followed by the router; anything else is a plain link. Omit for
    * something the page handles itself, which is drawn as a button. */
   href?: string
   tone?: CutTone
   /** Opens a new tab, which is only ever right for somewhere that is not the site. */
   away?: boolean
+  /** The name a file is saved under. The browser fetches it, also from a path on the site,
+   * which the router would open as a page that does not exist. */
+  download?: string
   /** Sends the form it stands in, so Enter in a field presses it too. */
   submit?: boolean
   small?: boolean
@@ -32,7 +35,7 @@ const inside = computed<boolean>(() => href.startsWith("/"))
  * router link as a value, and what it rendered was an anchor with no address in it. What a
  * press does is worth three branches.
  */
-const routed = computed<boolean>(() => href !== "" && inside.value)
+const routed = computed<boolean>(() => href !== "" && inside.value && download === undefined)
 
 const tones = computed(() => ["island-cut", `island-cut--${tone}`, {"island-cut--small": small}])
 </script>
@@ -53,6 +56,7 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`, {"island-cut-
     :class="tones"
     :style="{'--sweep': sweep}"
     :data-testid="testid"
+    :download="download"
     :href="href"
     :rel="away ? 'noopener' : undefined"
     :target="away ? '_blank' : undefined"

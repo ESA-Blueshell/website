@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - source.yaml
   - release.yaml
+  - release-v2.yaml
   - bootstrap-auth-job.yaml
 
 # Generate the bootstrap-auth ConfigMap from the extracted shell script.

@@ -1,11 +1,11 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetMember
+import net.blueshell.api.cohort.persistence.TargetMemberRepository
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import org.slf4j.LoggerFactory
@@ -24,24 +24,24 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CohortMembershipUpdater(
     private val definitions: CohortDefinitionRegistry,
-    private val subjects: CohortSubjectRepository,
     private val cohorts: CohortRepository,
-    private val memberships: CohortMemberRepository,
+    private val targets: TargetRepository,
+    private val memberships: TargetMemberRepository,
     private val jobs: JobQueue,
 ) {
     /** Reconciles one member against every cohort. */
     @Transactional
     fun updateMember(userId: Long): MembershipChange {
-        val belongsTo = definitions.definitionsFor(userId).mapNotNullTo(mutableSetOf()) { subjectIdFor(it) }
+        val belongsTo = definitions.definitionsFor(userId).mapNotNullTo(mutableSetOf()) { cohortIdFor(it) }
         val current = memberships.findAllByUserIdAndUserIdIsNotNull(userId)
-        val currentBySubject = current.groupBy { it.subject.id }
+        val currentByCohort = current.groupBy { it.cohort.id }
 
-        val toAdd = belongsTo - currentBySubject.keys.filterNotNull().toSet()
-        val toRemove = currentBySubject.keys.filterNotNull().toSet() - belongsTo
+        val toAdd = belongsTo - currentByCohort.keys.filterNotNull().toSet()
+        val toRemove = currentByCohort.keys.filterNotNull().toSet() - belongsTo
 
-        toAdd.forEach { subjectId -> cohortsOf(subjectId).forEach { add(it, userId) } }
-        toRemove.forEach { subjectId ->
-            currentBySubject[subjectId].orEmpty().forEach { remove(it) }
+        toAdd.forEach { cohortId -> targetsOf(cohortId).forEach { add(it, userId) } }
+        toRemove.forEach { cohortId ->
+            currentByCohort[cohortId].orEmpty().forEach { remove(it) }
         }
 
         if (toAdd.isNotEmpty() || toRemove.isNotEmpty()) {
@@ -56,15 +56,15 @@ class CohortMembershipUpdater(
      */
     @Transactional
     fun updateCohort(definition: CohortDefinition): MembershipChange {
-        val subjectId = subjectIdFor(definition) ?: return MembershipChange(null, emptySet(), emptySet())
+        val cohortId = cohortIdFor(definition) ?: return MembershipChange(null, emptySet(), emptySet())
         val desired = definitions.membersOf(definition)
-        val present = memberships.findAllBySubjectIdAndUserIdIsNotNull(subjectId)
+        val present = memberships.findAllByCohortIdAndUserIdIsNotNull(cohortId)
         val presentIds = present.mapNotNullTo(mutableSetOf()) { it.userId }
 
         val joining = desired - presentIds
         val leaving = presentIds - desired
 
-        cohortsOf(subjectId).forEach { cohort -> joining.forEach { add(cohort, it) } }
+        targetsOf(cohortId).forEach { target -> joining.forEach { add(target, it) } }
         present.filter { it.userId in leaving }.forEach { remove(it) }
 
         if (joining.isNotEmpty() || leaving.isNotEmpty()) {
@@ -73,33 +73,33 @@ class CohortMembershipUpdater(
         return MembershipChange(null, joining, leaving)
     }
 
-    private fun subjectIdFor(definition: CohortDefinition): Long? = subjects.findByDefinitionKey(definition.key)?.id
+    private fun cohortIdFor(definition: CohortDefinition): Long? = cohorts.findByDefinitionKey(definition.key)?.id
 
-    private fun cohortsOf(subjectId: Long): List<Cohort> = cohorts.findAllBySubjectId(subjectId)
+    private fun targetsOf(cohortId: Long): List<Target> = targets.findAllByCohortId(cohortId)
 
     private fun add(
-        cohort: Cohort,
+        target: Target,
         userId: Long,
     ) {
-        val subject: CohortSubject =
-            subjects.findById(cohort.subjectId!!).orElseThrow {
-                IllegalStateException("Cohort ${cohort.id} names a subject that is not there")
+        val cohort: Cohort =
+            cohorts.findById(target.cohortId!!).orElseThrow {
+                IllegalStateException("Target ${target.id} names a cohort that is not there")
             }
-        memberships.save(CohortMember(cohort = cohort, userId = userId, subject = subject))
+        memberships.save(TargetMember(target = target, userId = userId, cohort = cohort))
         jobs.runAsync(
             CohortJobs.SyncCohortMembership,
-            CohortJobs.SyncCohortMembershipPayload(userId, cohort.id!!, SyncCohortMembershipIntent.ADD),
+            CohortJobs.SyncCohortMembershipPayload(userId, target.id!!, SyncCohortMembershipIntent.ADD),
             JobTrigger.MEMBERSHIP_CHANGED,
         )
     }
 
-    private fun remove(member: CohortMember) {
+    private fun remove(member: TargetMember) {
         val userId = member.userId ?: return
-        val cohortId = member.cohort.id ?: return
+        val targetId = member.target.id ?: return
         memberships.delete(member) // soft delete: the row is kept for historical statistics
         jobs.runAsync(
             CohortJobs.SyncCohortMembership,
-            CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.REMOVE),
+            CohortJobs.SyncCohortMembershipPayload(userId, targetId, SyncCohortMembershipIntent.REMOVE),
             JobTrigger.MEMBERSHIP_CHANGED,
         )
     }
@@ -109,7 +109,7 @@ class CohortMembershipUpdater(
     }
 }
 
-/** What one reconciliation moved: subject ids for a member, member ids for a cohort. */
+/** What one reconciliation moved: cohort ids for a member, member ids for a cohort. */
 data class MembershipChange(
     val userId: Long?,
     val joined: Set<Long>,

@@ -1,8 +1,8 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortKind
-import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetKind
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -10,9 +10,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class TargetCatalogTest {
-    private val cohorts: CohortRepository = mock()
+    private val targets: TargetRepository = mock()
     private val strategy = RecordingStrategy()
-    private val catalog = TargetCatalog(TargetStrategies(listOf(strategy)), cohorts)
+    private val catalog = TargetCatalog(TargetStrategies(listOf(strategy)), targets)
 
     @Test
     fun `descriptors come from registered target strategies`() {
@@ -22,16 +22,16 @@ class TargetCatalogTest {
     @Test
     fun `search annotates linked cohort ids from active mappings`() {
         val linked =
-            Cohort("BREVO", CohortKind.LIST, "Members").apply {
+            Target("BREVO", TargetKind.LIST, "Members").apply {
                 id = 42L
                 externalId = "2"
             }
-        whenever(cohorts.findAllBySystem("BREVO")).thenReturn(listOf(linked))
+        whenever(targets.findAllBySystem("BREVO")).thenReturn(listOf(linked))
 
         val results = catalog.search(TargetSystem.BREVO, "members")
 
         assertThat(strategy.queries).containsExactly("members")
-        assertThat(results).extracting<Long?> { it.linkedCohortId }.containsExactly(null, 42L)
+        assertThat(results).extracting<Long?> { it.linkedTargetId }.containsExactly(null, 42L)
     }
 
     private class RecordingStrategy : TargetStrategy {
@@ -40,23 +40,23 @@ class TargetCatalogTest {
         override val descriptor =
             TargetDescriptor(
                 system = TargetSystem.BREVO,
-                kind = CohortKind.LIST,
+                kind = TargetKind.LIST,
             )
 
         override fun catalog(query: String?): List<ExternalTarget> {
             queries += query
-            return listOf(target("1", "Guests"), target("2", "Members"))
+            return listOf(external("1", "Guests"), external("2", "Members"))
         }
 
-        override fun members(target: ExternalTarget): List<ExternalMember> = emptyList()
+        override fun members(external: ExternalTarget): List<ExternalMember> = emptyList()
 
         override fun add(
-            target: ExternalTarget,
+            external: ExternalTarget,
             externalUserId: String,
         ) = Unit
 
         override fun remove(
-            target: ExternalTarget,
+            external: ExternalTarget,
             externalUserId: String,
         ) = Unit
 
@@ -65,11 +65,11 @@ class TargetCatalogTest {
             folder: String?,
         ): ExternalTarget = error("not used")
 
-        override fun delete(target: ExternalTarget) = Unit
+        override fun delete(external: ExternalTarget) = Unit
 
-        private fun target(
+        private fun external(
             id: String,
             label: String,
-        ) = ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label)
+        ) = ExternalTarget(TargetSystem.BREVO, id, TargetKind.LIST, label)
     }
 }

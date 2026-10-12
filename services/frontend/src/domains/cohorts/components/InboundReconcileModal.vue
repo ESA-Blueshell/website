@@ -4,8 +4,8 @@ import { useInboundReconcile } from "@/domains/cohorts/composables/useInboundRec
 
 const props = defineProps<{
   modelValue: boolean
-  subjectId: number
   cohortId: number
+  targetId: number
 }>()
 
 const emit = defineEmits<{
@@ -21,7 +21,7 @@ watch(
   () => props.modelValue,
   (open) => {
     if (!open) return reconcile.reset()
-    void reconcile.load(props.subjectId, props.cohortId)
+    void reconcile.load(props.cohortId, props.targetId)
   },
 )
 
@@ -30,7 +30,7 @@ function close() {
 }
 
 async function confirm() {
-  if (await reconcile.apply(props.subjectId, props.cohortId)) emit("applied")
+  if (await reconcile.apply(props.cohortId, props.targetId)) emit("applied")
 }
 </script>
 

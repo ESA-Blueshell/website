@@ -2,8 +2,8 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -21,14 +21,14 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CohortRegistrar(
     private val definitions: CohortDefinitionRegistry,
-    private val subjects: CohortSubjectRepository,
     private val cohorts: CohortRepository,
+    private val targets: TargetRepository,
     private val strategies: TargetStrategies,
 ) {
     @Transactional
     fun register(): RegistrationReport {
         val all = definitions.all()
-        val byKey = subjects.findAll().associateBy { it.definitionKey }
+        val byKey = cohorts.findAll().associateBy { it.definitionKey }
 
         var created = 0
         var relabelled = 0
@@ -43,7 +43,7 @@ class CohortRegistrar(
             // record is the definition's to change.
             if (existing.label != definition.label) {
                 existing.label = definition.label
-                subjects.save(existing)
+                cohorts.save(existing)
                 relabelled += 1
             }
         }
@@ -58,9 +58,9 @@ class CohortRegistrar(
     }
 
     private fun createFor(definition: CohortDefinition) {
-        val subject =
-            subjects.save(
-                CohortSubject(
+        val cohort =
+            cohorts.save(
+                Cohort(
                     type = definition.type,
                     label = definition.label,
                     definitionKey = definition.key,
@@ -69,14 +69,14 @@ class CohortRegistrar(
         // One target per system the association syncs to. Only the target's id is missing,
         // and an operator supplies that by creating or linking the list itself.
         val system = TargetSystem.BREVO
-        if (cohorts.findBySubjectIdAndSystem(subject.id!!, system.name) == null) {
-            cohorts.save(
-                Cohort(
+        if (targets.findByCohortIdAndSystem(cohort.id!!, system.name) == null) {
+            targets.save(
+                Target(
                     system = system.name,
                     kind = strategies.descriptor(system).kind,
                     label = definition.label,
                     folder = definition.folder,
-                    subjectId = subject.id,
+                    cohortId = cohort.id,
                 ),
             )
         }

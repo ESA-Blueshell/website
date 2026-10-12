@@ -1,19 +1,19 @@
 package net.blueshell.api.cohort.persistence
 
-import net.blueshell.api.shared.enums.CohortMemberState
+import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
-class CohortMemberStateTest {
-    private val cohort: Cohort = Entities.cohort(id = 1L)
-    private val subject: CohortSubject = Entities.cohortSubject()
+class TargetMemberStateTest {
+    private val target: Target = Entities.target(id = 1L)
+    private val cohort: Cohort = Entities.cohort()
     private val at: LocalDateTime = LocalDateTime.parse("2026-06-01T10:00:00")
 
     @Test
     fun `desired row — user, no stamps`() {
-        assertThat(member(userId = 7L).state).isEqualTo(CohortMemberState.DESIRED)
+        assertThat(member(userId = 7L).state).isEqualTo(TargetMemberState.DESIRED)
     }
 
     @Test
@@ -23,7 +23,7 @@ class CohortMemberStateTest {
                 externalUserId = "ext"
                 syncedAt = at
             }
-        assertThat(row.state).isEqualTo(CohortMemberState.SYNCED)
+        assertThat(row.state).isEqualTo(TargetMemberState.SYNCED)
     }
 
     @Test
@@ -34,7 +34,7 @@ class CohortMemberStateTest {
                 syncedAt = at
                 verifiedAt = at
             }
-        assertThat(row.state).isEqualTo(CohortMemberState.VERIFIED)
+        assertThat(row.state).isEqualTo(TargetMemberState.VERIFIED)
     }
 
     @Test
@@ -44,19 +44,19 @@ class CohortMemberStateTest {
                 externalUserId = "ext"
                 verifiedAt = at
             }
-        assertThat(row.state).isEqualTo(CohortMemberState.STRANGER)
+        assertThat(row.state).isEqualTo(TargetMemberState.STRANGER)
     }
 
     @Test
     fun `invalid — no user and no external id`() {
         val row = member(userId = null).apply { verifiedAt = at }
-        assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
+        assertThat(row.state).isEqualTo(TargetMemberState.INVALID)
     }
 
     @Test
     fun `invalid — no user, external id, but not verified`() {
         val row = member(userId = null).apply { externalUserId = "ext" }
-        assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
+        assertThat(row.state).isEqualTo(TargetMemberState.INVALID)
     }
 
     @Test
@@ -66,7 +66,7 @@ class CohortMemberStateTest {
                 externalUserId = "  "
                 verifiedAt = at
             }
-        assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
+        assertThat(row.state).isEqualTo(TargetMemberState.INVALID)
     }
 
     @Test
@@ -76,7 +76,7 @@ class CohortMemberStateTest {
                 externalUserId = ""
                 verifiedAt = at
             }
-        assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
+        assertThat(row.state).isEqualTo(TargetMemberState.INVALID)
     }
 
     @Test
@@ -86,7 +86,7 @@ class CohortMemberStateTest {
                 externalUserId = "  "
                 syncedAt = at
             }
-        assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
+        assertThat(row.state).isEqualTo(TargetMemberState.INVALID)
     }
 
     @Test
@@ -96,7 +96,7 @@ class CohortMemberStateTest {
                 externalUserId = "ext"
                 verifiedAt = at
             }
-        assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
+        assertThat(row.state).isEqualTo(TargetMemberState.INVALID)
     }
 
     @Test
@@ -111,5 +111,5 @@ class CohortMemberStateTest {
         ).isFalse()
     }
 
-    private fun member(userId: Long?): CohortMember = CohortMember(cohort = cohort, userId = userId, subject = subject)
+    private fun member(userId: Long?): TargetMember = TargetMember(target = target, userId = userId, cohort = cohort)
 }

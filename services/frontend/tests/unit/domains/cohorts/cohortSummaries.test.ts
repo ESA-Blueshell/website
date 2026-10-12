@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {countLabel, nounFor} from "@/domains/cohorts/cohortSubjectSummaries"
+import {countLabel, nounFor} from "@/domains/cohorts/cohortSummaries"
 
 describe("countLabel", () => {
   it("keeps the noun singular for exactly one", () => {

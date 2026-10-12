@@ -1,6 +1,6 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
 
 /**
  * One cohort, stated in code: what it is called, where it is filed, and who belongs to it.
@@ -17,7 +17,7 @@ interface CohortDefinition {
      */
     val key: String
 
-    val type: CohortSubjectType
+    val type: CohortType
 
     /**
      * The id of the thing this cohort is about — a contribution period, a committee — for the
@@ -50,7 +50,7 @@ interface CohortDefinition {
  * can hold its own period's dates.
  */
 interface CohortDefinitionProvider {
-    val type: CohortSubjectType
+    val type: CohortType
 
     fun definitions(): List<CohortDefinition>
 }

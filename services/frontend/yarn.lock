@@ -2081,9 +2081,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/coverage-istanbul@npm:5.0.2":
-  version: 5.0.2
-  resolution: "@vitest/coverage-istanbul@npm:5.0.2"
+"@vitest/coverage-istanbul@npm:5.0.3":
+  version: 5.0.3
+  resolution: "@vitest/coverage-istanbul@npm:5.0.3"
   dependencies:
     "@jridgewell/gen-mapping": "npm:^0.3.13"
     "@jridgewell/trace-mapping": "npm:0.3.31"
@@ -2095,8 +2095,8 @@ __metadata:
     obug: "npm:^2.1.4"
     tinyrainbow: "npm:^3.1.1"
   peerDependencies:
-    vitest: 5.0.2
-  checksum: 10c0/f67e1da4d2d30405cfbdabff890ca37c01e56bfda40ab1d8fa90c68b2fa5597162483e887cedf7f4248ae17d2098644a66ed98243b86e3a17ca22aa7e1da45cf
+    vitest: 5.0.3
+  checksum: 10c0/3e9ad2b22cec4a47177fef8848d0f3b13e1b2f95a6d39eba52987d05909e971162671296ddf7da08b10cd2de2e3ca296707bffbc6595d0cea7409543ee1f5e58
   languageName: node
   linkType: hard
 
@@ -2826,7 +2826,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:^8.69.0"
     "@typescript-eslint/parser": "npm:^8.69.0"
     "@vitejs/plugin-vue": "npm:^6.0.8"
-    "@vitest/coverage-istanbul": "npm:5.0.2"
+    "@vitest/coverage-istanbul": "npm:5.0.3"
     "@vue/compiler-dom": "npm:3.5.43"
     "@vue/server-renderer": "npm:3.5.43"
     "@vue/test-utils": "npm:^2.5.0"

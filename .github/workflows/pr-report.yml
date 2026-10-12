@@ -12,6 +12,11 @@ name: PR report
 # out or executes head-ref code — it reads the artifacts Validate uploaded and
 # the pulls API, both of which are data. Do not add a checkout of the head ref.
 #
+# The `live` job starts when the run is requested and keeps the same comment
+# current while it runs: the change counts within a minute, then each suite's
+# coverage as its artifact lands. The `report` job still renders the final
+# state once the run completes.
+#
 # The baseline job is on `push` because only the default branch may decide what
 # every pull request compares against.
 #
@@ -25,7 +30,7 @@ name: PR report
 on:
   workflow_run:
     workflows: [ Validate ]
-    types: [ completed ]
+    types: [ requested, completed ]
   push:
     branches: [ main ]
 
@@ -37,11 +42,44 @@ env:
   # The unit suites only, matching SUITES in .github/scripts/pr_report.py.
   COVERAGE_ARTIFACTS: >-
     api-unit-test-reports frontend-unit-coverage pr-report-meta changeset-sql
+  # The artifacts the live report waits for, one per suite in SUITES.
+  SUITE_ARTIFACTS: api-unit-test-reports frontend-unit-coverage
 
 jobs:
+  live:
+    name: Keep the pull request's report current while Validate runs
+    if: github.event_name == 'workflow_run' && github.event.action == 'requested' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      # No `ref:` — this must stay on the trusted default branch. See above.
+      - name: Check out the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download the newest coverage baseline uploaded from main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: .github/scripts/fetch_baseline.sh
+
+      - name: Comment, then update as each suite reports
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          BASELINE_PATH: coverage-baseline/baseline.json
+          BASE_REF: ${{ github.event.repository.default_branch }}
+          DEADLINE_SECONDS: 3300
+        run: .github/scripts/live_report.sh
+
   report:
     name: Comment the pull request's shape and coverage
-    if: github.event_name == 'workflow_run'
+    if: github.event_name == 'workflow_run' && github.event.action == 'completed'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # No concurrency group. A workflow_run job's check lands on the default
